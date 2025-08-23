@@ -9,7 +9,7 @@ import type { VoltOpsClient } from "../voltops/types";
  */
 export class AgentRegistry {
   private static instance: AgentRegistry | null = null;
-  private agents: Map<string, Agent<any>> = new Map();
+  private agents: Map<string, Agent> = new Map();
   private isInitialized = false;
   private globalVoltAgentExporter?: VoltAgentExporter;
   private globalVoltOpsClient?: VoltOpsClient;
@@ -44,7 +44,7 @@ export class AgentRegistry {
   /**
    * Register a new agent
    */
-  public registerAgent(agent: Agent<any>): void {
+  public registerAgent(agent: Agent): void {
     if (!this.isInitialized) {
       this.initialize();
     }
@@ -57,14 +57,14 @@ export class AgentRegistry {
   /**
    * Get an agent by ID
    */
-  public getAgent(id: string): Agent<any> | undefined {
+  public getAgent(id: string): Agent | undefined {
     return this.agents.get(id);
   }
 
   /**
    * Get all registered agents
    */
-  public getAllAgents(): Agent<any>[] {
+  public getAllAgents(): Agent[] {
     return Array.from(this.agents.values());
   }
 

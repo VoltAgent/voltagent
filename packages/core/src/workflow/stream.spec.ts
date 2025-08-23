@@ -111,7 +111,7 @@ describe("WorkflowStreamWriterImpl", () => {
       input: undefined,
       output: undefined,
       status: "running",
-      userContext: new Map([["userId", "user-1"]]),
+      context: new Map([["userId", "user-1"]]),
       timestamp: expect.any(String),
       stepIndex: 0,
       metadata: { foo: "bar" },

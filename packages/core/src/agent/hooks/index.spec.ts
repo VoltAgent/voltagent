@@ -56,7 +56,7 @@ const createMockContext = (id = "mock-op-1") => {
   // Cast the return object to OperationContext to satisfy the usage
   return {
     operationId: id,
-    userContext: new Map<string | symbol, any>(),
+    context: new Map<string | symbol, any>(),
     historyEntry: mockHistoryEntry,
     eventUpdaters: new Map<string, any>(),
     isActive: true,
@@ -117,7 +117,7 @@ describe("Agent Hooks Functionality", () => {
           usage: response.usage,
           finishReason: response.finishReason,
           provider: response.provider,
-          userContext: expect.any(Map), // Verify userContext is included
+          context: expect.any(Map), // Verify context is included
         }),
         error: undefined,
         conversationId: expect.any(String),
@@ -128,22 +128,22 @@ describe("Agent Hooks Functionality", () => {
       });
     });
 
-    it("should include userContext in the onEnd hook output", async () => {
+    it("should include context in the onEnd hook output", async () => {
       const onEndSpy = vi.fn();
       agent.hooks = createHooks({ onEnd: onEndSpy });
 
-      const userContext = new Map<string | symbol, unknown>();
-      userContext.set("agentName", "Test Agent");
-      userContext.set("sessionId", "test-session-123");
+      const context = new Map<string | symbol, unknown>();
+      context.set("agentName", "Test Agent");
+      context.set("sessionId", "test-session-123");
 
-      const response = await agent.generateText("Test input", { userContext });
+      const response = await agent.generateText("Test input", { context });
 
-      // Verify onEnd was called with userContext properly passed through
+      // Verify onEnd was called with context properly passed through
       expect(onEndSpy).toHaveBeenCalledWith({
         agent: agent,
         output: expect.objectContaining({
           text: response.text,
-          userContext: expect.any(Map),
+          context: expect.any(Map),
         }),
         error: undefined,
         conversationId: expect.any(String),
@@ -153,10 +153,10 @@ describe("Agent Hooks Functionality", () => {
         }),
       });
 
-      // Verify the specific userContext values are present
+      // Verify the specific context values are present
       const callArgs = onEndSpy.mock.calls[0][0];
-      expect(callArgs.output.userContext.get("agentName")).toBe("Test Agent");
-      expect(callArgs.output.userContext.get("sessionId")).toBe("test-session-123");
+      expect(callArgs.output.context.get("agentName")).toBe("Test Agent");
+      expect(callArgs.output.context.get("sessionId")).toBe("test-session-123");
     });
 
     // Add a test for the error case (optional but recommended)

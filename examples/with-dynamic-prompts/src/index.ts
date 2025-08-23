@@ -2,6 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 const logger = createPinoLogger({
@@ -16,7 +17,6 @@ const voltOpsClient = new VoltOpsClient({
 
 const supportAgent = new Agent({
   name: "SupportAgent",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
@@ -39,5 +39,6 @@ new VoltAgent({
     supportAgent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
   voltOpsClient: voltOpsClient,
 });

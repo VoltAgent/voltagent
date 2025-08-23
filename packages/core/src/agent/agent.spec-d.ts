@@ -120,7 +120,7 @@ describe("Agent Type System", () => {
         historyMemory: mockMemory,
         tools: [],
         maxSteps: 10,
-        userContext: new Map(),
+        context: new Map(),
         voltOpsClient: mockVoltOpsClient,
         subAgents: [],
         supervisorConfig: {
@@ -142,7 +142,7 @@ describe("Agent Type System", () => {
 
       // Dynamic value function
       const dynamicInstructions: InstructionsDynamicValue = async (options) => {
-        expectTypeOf(options).toMatchTypeOf<{ userContext?: UserContext }>();
+        expectTypeOf(options).toMatchTypeOf<{ context?: UserContext }>();
         return "Dynamic instructions";
       };
       expectTypeOf(dynamicInstructions).toMatchTypeOf<InstructionsDynamicValue>();
@@ -162,7 +162,7 @@ describe("Agent Type System", () => {
 
       // Dynamic model
       const dynamicModel: ModelDynamicValue<string> = async (options) => {
-        expectTypeOf(options).toMatchTypeOf<{ userContext?: UserContext }>();
+        expectTypeOf(options).toMatchTypeOf<{ context?: UserContext }>();
         return "gpt-4o-mini";
       };
       expectTypeOf(dynamicModel).toMatchTypeOf<ModelDynamicValue<string>>();
@@ -182,7 +182,7 @@ describe("Agent Type System", () => {
 
       // Dynamic tools
       const dynamicTools: ToolsDynamicValue = async (options) => {
-        expectTypeOf(options).toMatchTypeOf<{ userContext?: UserContext }>();
+        expectTypeOf(options).toMatchTypeOf<{ context?: UserContext }>();
         return [tool];
       };
       expectTypeOf(dynamicTools).toMatchTypeOf<ToolsDynamicValue>();
@@ -239,7 +239,7 @@ describe("Agent Type System", () => {
       const result = await agent.generateText("Test input");
       expectTypeOf(result).toMatchTypeOf<GenerateTextResponse<typeof agent>>();
       expectTypeOf(result.text).toEqualTypeOf<string>();
-      expectTypeOf(result.userContext).toEqualTypeOf<Map<string | symbol, unknown>>();
+      expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
     });
 
     it("should infer streamText return type", async () => {
@@ -253,7 +253,7 @@ describe("Agent Type System", () => {
       const result = await agent.streamText("Test input");
       expectTypeOf(result).toMatchTypeOf<StreamTextResponse<typeof agent>>();
       expectTypeOf(result.textStream).toMatchTypeOf<AsyncIterable<any> | undefined>();
-      expectTypeOf(result.userContext).toMatchTypeOf<UserContext | undefined>();
+      expectTypeOf(result.context).toMatchTypeOf<UserContext | undefined>();
     });
 
     it("should infer generateObject return type with schema", async () => {
@@ -272,7 +272,7 @@ describe("Agent Type System", () => {
       const result = await agent.generateObject("Test input", schema);
       expectTypeOf(result).toMatchTypeOf<GenerateObjectResponse<typeof agent, typeof schema>>();
       expectTypeOf(result.object).toEqualTypeOf<{ name: string; age: number }>();
-      expectTypeOf(result.userContext).toEqualTypeOf<Map<string | symbol, unknown>>();
+      expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
     });
 
     it("should infer streamObject return type with schema", async () => {
@@ -291,7 +291,7 @@ describe("Agent Type System", () => {
       const result = await agent.streamObject("Test input", schema);
       expectTypeOf(result).toMatchTypeOf<StreamObjectResponse<typeof agent, typeof schema>>();
       expectTypeOf(result.objectStream).toMatchTypeOf<AsyncIterable<any> | undefined>();
-      expectTypeOf(result.userContext).toMatchTypeOf<UserContext | undefined>();
+      expectTypeOf(result.context).toMatchTypeOf<UserContext | undefined>();
     });
   });
 
@@ -303,7 +303,7 @@ describe("Agent Type System", () => {
         contextLimit: 1000,
         maxSteps: 5,
         signal: new AbortSignal(),
-        userContext: new Map(),
+        context: new Map(),
       };
 
       const internalOptions: InternalGenerateOptions = {
@@ -417,12 +417,12 @@ describe("Agent Type System", () => {
 
   describe("UserContext Type Tests", () => {
     it("should handle UserContext as Map", () => {
-      const userContext: UserContext = new Map<string | symbol, unknown>();
-      userContext.set("key", "value");
-      userContext.set(Symbol("sym"), 123);
+      const context: UserContext = new Map<string | symbol, unknown>();
+      context.set("key", "value");
+      context.set(Symbol("sym"), 123);
 
-      expectTypeOf(userContext).toEqualTypeOf<UserContext>();
-      expectTypeOf(userContext.get("key")).toEqualTypeOf<unknown>();
+      expectTypeOf(context).toEqualTypeOf<UserContext>();
+      expectTypeOf(context.get("key")).toEqualTypeOf<unknown>();
     });
   });
 
@@ -500,7 +500,7 @@ describe("Agent Type System", () => {
         providerResponse: {},
         finishReason: "stop",
         warnings: ["Warning 1"],
-        userContext: new Map([["key", "value"]]),
+        context: new Map([["key", "value"]]),
       };
 
       expectTypeOf(textResult).toMatchTypeOf<StandardizedTextResult>();
@@ -513,7 +513,7 @@ describe("Agent Type System", () => {
         finishReason: "length",
         providerResponse: {},
         warnings: [],
-        userContext: new Map(),
+        context: new Map(),
       };
 
       expectTypeOf(streamTextResult).toMatchTypeOf<StreamTextFinishResult>();
@@ -526,7 +526,7 @@ describe("Agent Type System", () => {
         providerResponse: {},
         finishReason: "stop",
         warnings: undefined,
-        userContext: new Map(),
+        context: new Map(),
       };
 
       expectTypeOf(objectResult).toMatchTypeOf<
@@ -541,7 +541,7 @@ describe("Agent Type System", () => {
         providerResponse: {},
         warnings: [],
         finishReason: "stop",
-        userContext: new Map(),
+        context: new Map(),
       };
 
       expectTypeOf(streamObjectResult).toMatchTypeOf<
@@ -552,12 +552,12 @@ describe("Agent Type System", () => {
     it("should handle AgentOperationOutput union type", () => {
       const textOutput: AgentOperationOutput = {
         text: "Text",
-        userContext: new Map(),
+        context: new Map(),
       };
 
       const objectOutput: AgentOperationOutput = {
         object: { key: "value" },
-        userContext: new Map(),
+        context: new Map(),
       };
 
       expectTypeOf(textOutput).toMatchTypeOf<AgentOperationOutput>();
@@ -640,22 +640,22 @@ describe("Agent Type System", () => {
       const fullyConfiguredAgent = new Agent({
         name: "Full Agent",
         instructions: async (options: DynamicValueOptions) => {
-          expectTypeOf(options.userContext).toMatchTypeOf<Map<string | symbol, unknown>>();
+          expectTypeOf(options.context).toMatchTypeOf<Map<string | symbol, unknown>>();
           return "Dynamic instructions";
         },
         llm: mockProvider,
         model: async (options: DynamicValueOptions) => {
-          expectTypeOf(options.userContext).toMatchTypeOf<Map<string | symbol, unknown>>();
+          expectTypeOf(options.context).toMatchTypeOf<Map<string | symbol, unknown>>();
           return "gpt-4o-mini";
         },
         tools: async (options: DynamicValueOptions) => {
-          expectTypeOf(options.userContext).toMatchTypeOf<Map<string | symbol, unknown>>();
+          expectTypeOf(options.context).toMatchTypeOf<Map<string | symbol, unknown>>();
           return [];
         },
         memory: mockMemory,
         historyMemory: mockMemory,
         maxSteps: 10,
-        userContext: new Map([["initial", "value"]]),
+        context: new Map([["initial", "value"]]),
         subAgents: [
           {
             agent: {} as Agent<any>,
@@ -719,7 +719,7 @@ describe("Agent Type System", () => {
         historyMemory: undefined,
         tools: undefined,
         maxSteps: undefined,
-        userContext: undefined,
+        context: undefined,
         telemetryExporter: undefined,
         subAgents: undefined,
         supervisorConfig: undefined,

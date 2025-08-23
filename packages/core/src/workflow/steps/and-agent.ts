@@ -1,9 +1,8 @@
-import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { UIMessage } from "ai";
 import type { z } from "zod";
-import type { Agent } from "../../agent/agent";
-import type { BaseMessage } from "../../agent/providers";
-import type { PublicGenerateOptions } from "../../agent/types";
+import type { Agent, BaseGenerationOptions } from "../../agent/agent";
 import { getGlobalLogger } from "../../logger";
+import { convertUsage } from "../../utils/usage-converter";
 import {
   createStepContext,
   createWorkflowStepErrorEvent,
@@ -14,7 +13,7 @@ import {
 import type { InternalWorkflowFunc } from "../internal/types";
 import type { WorkflowStepAgent } from "./types";
 
-export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
+export type AgentConfig<SCHEMA extends z.ZodTypeAny> = BaseGenerationOptions & {
   schema: SCHEMA;
 };
 
@@ -42,11 +41,8 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
  * @returns A workflow step that executes the agent with the task
  */
 export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
-  task:
-    | BaseMessage[]
-    | string
-    | InternalWorkflowFunc<INPUT, DATA, BaseMessage[] | string, any, any>,
-  agent: Agent<{ llm: DangerouslyAllowAny }>,
+  task: UIMessage[] | string | InternalWorkflowFunc<INPUT, DATA, UIMessage[] | string, any, any>,
+  agent: Agent,
   config: AgentConfig<SCHEMA>,
 ) {
   return {
@@ -65,15 +61,22 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
         // No workflow context, execute without events
         const result = await agent.generateObject(finalTask, config.schema, {
           ...restConfig,
-          userContext: restConfig.userContext ?? state.userContext,
+          context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,
           userId: restConfig.userId ?? state.userId,
         });
         // Accumulate usage if available (no workflow context)
         if (result.usage && state.usage) {
-          state.usage.promptTokens += result.usage.promptTokens || 0;
-          state.usage.completionTokens += result.usage.completionTokens || 0;
-          state.usage.totalTokens += result.usage.totalTokens || 0;
+          const convertedUsage = convertUsage(result.usage);
+          state.usage.promptTokens += convertedUsage?.promptTokens || 0;
+          state.usage.completionTokens += convertedUsage?.completionTokens || 0;
+          if (typeof state.usage.cachedInputTokens === "number") {
+            state.usage.cachedInputTokens += convertedUsage?.cachedInputTokens || 0;
+          }
+          if (typeof state.usage.reasoningTokens === "number") {
+            state.usage.reasoningTokens += convertedUsage?.reasoningTokens || 0;
+          }
+          state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
         return result.object;
       }
@@ -95,7 +98,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           agentId: agent.id,
           stepFunction,
           taskString,
-          userContext: state.workflowContext.userContext,
+          context: state.workflowContext.context,
         },
       );
 
@@ -110,7 +113,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
       try {
         const result = await agent.generateObject(finalTask, config.schema, {
           ...restConfig,
-          userContext: restConfig.userContext ?? state.userContext,
+          context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,
           userId: restConfig.userId ?? state.userId,
           // TODO: Pass workflow context as parent to agent for proper event hierarchy
@@ -127,7 +130,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
             agentId: agent.id,
             stepFunction,
             taskString,
-            userContext: state.workflowContext.userContext,
+            context: state.workflowContext.context,
           },
         );
 
@@ -141,9 +144,16 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
 
         // Accumulate usage if available
         if (result.usage && state.usage) {
-          state.usage.promptTokens += result.usage.promptTokens || 0;
-          state.usage.completionTokens += result.usage.completionTokens || 0;
-          state.usage.totalTokens += result.usage.totalTokens || 0;
+          const convertedUsage = convertUsage(result.usage);
+          state.usage.promptTokens += convertedUsage?.promptTokens || 0;
+          state.usage.completionTokens += convertedUsage?.completionTokens || 0;
+          if (typeof state.usage.cachedInputTokens === "number") {
+            state.usage.cachedInputTokens += convertedUsage?.cachedInputTokens || 0;
+          }
+          if (typeof state.usage.reasoningTokens === "number") {
+            state.usage.reasoningTokens += convertedUsage?.reasoningTokens || 0;
+          }
+          state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
 
         return result.object;
@@ -165,7 +175,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
             agentId: agent.id,
             stepFunction,
             taskString,
-            userContext: state.workflowContext.userContext,
+            context: state.workflowContext.context,
           },
         );
 

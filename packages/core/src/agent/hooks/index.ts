@@ -5,7 +5,7 @@ import type { AbortError, AgentOperationOutput, OperationContext, VoltAgentError
 
 // Argument Object Interfaces
 export interface OnStartHookArgs {
-  agent: Agent<any>;
+  agent: Agent;
   context: OperationContext;
 }
 
@@ -17,7 +17,7 @@ export interface OnEndHookArgs {
   /**
    * The agent that generated the output.
    */
-  agent: Agent<any>;
+  agent: Agent;
   /** The standardized successful output object. Undefined on error. */
   output: AgentOperationOutput | undefined;
   /** The error object if the operation failed. Can be either VoltAgentError or AbortError. Undefined on success. */
@@ -27,18 +27,18 @@ export interface OnEndHookArgs {
 }
 
 export interface OnHandoffHookArgs {
-  agent: Agent<any>;
-  source: Agent<any>;
+  agent: Agent;
+  source: Agent;
 }
 
 export interface OnToolStartHookArgs {
-  agent: Agent<any>;
+  agent: Agent;
   tool: AgentTool;
   context: OperationContext;
 }
 
 export interface OnToolEndHookArgs {
-  agent: Agent<any>;
+  agent: Agent;
   tool: AgentTool;
   /** The successful output from the tool. Undefined on error. */
   output: unknown | undefined;
@@ -56,7 +56,7 @@ export interface OnPrepareMessagesHookArgs {
   /**
    * The agent instance making the LLM call.
    */
-  agent: Agent<any>;
+  agent: Agent;
   /**
    * The operation context containing metadata about the current operation.
    */

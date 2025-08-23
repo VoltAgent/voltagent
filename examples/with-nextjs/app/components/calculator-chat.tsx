@@ -14,22 +14,45 @@ import { useEffect, useRef, useState } from "react";
 
 export function CalculatorChat() {
   const [input, setInput] = useState("");
+  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      parts: [
+        {
+          type: "text",
+          text: "Hello! I'm your AI-powered calculator. You can write your calculations in natural language. For example: '5 plus 3 times 2' or '(25 + 75) / 4'.",
+        },
+      ],
+    },
+  ]);
+
+  // Load messages from storage on mount
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        const response = await fetch("/api/messages?conversationId=1&userId=1");
+        if (response.ok) {
+          const messages = await response.json();
+          if (messages && messages.length > 0) {
+            // Replace initial messages with loaded messages
+            setInitialMessages(messages);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load messages:", error);
+      }
+    };
+    loadMessages();
+  }, []);
+
+  console.log("Initial messages:", initialMessages);
+
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
     }),
-    messages: [
-      {
-        id: "welcome",
-        role: "assistant" as UIMessage["role"],
-        parts: [
-          {
-            type: "text",
-            text: "Hello! I'm your AI-powered calculator. You can write your calculations in natural language. For example: '5 plus 3 times 2' or '(25 + 75) / 4'.",
-          },
-        ],
-      },
-    ],
+    messages: initialMessages,
   });
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);

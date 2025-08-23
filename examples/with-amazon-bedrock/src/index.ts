@@ -3,6 +3,7 @@ import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -60,8 +61,7 @@ const logger = createPinoLogger({
 // - Titan: "amazon.titan-text-premier-v1:0", "amazon.titan-text-express-v1"
 const agent = new Agent({
   name: "bedrock-assistant",
-  description: "An AI assistant powered by Amazon Bedrock",
-  llm: new VercelAIProvider(),
+  instructions: "An AI assistant powered by Amazon Bedrock",
   model: bedrock("anthropic.claude-opus-4-1-20250805-v1:0"),
   tools: [weatherTool],
   memory: new LibSQLStorage({
@@ -70,10 +70,11 @@ const agent = new Agent({
   }),
 });
 
-// Initialize VoltAgent
+// Initialize VoltAgent with server
 new VoltAgent({
   agents: {
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

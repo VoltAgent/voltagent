@@ -4,6 +4,7 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { ElevenLabsVoiceProvider } from "@voltagent/voice";
 
@@ -30,8 +31,7 @@ const voiceProvider = new ElevenLabsVoiceProvider({
 // Initialize agent with voice capabilities
 const agent = new Agent({
   name: "ElevenLabs Voice Assistant",
-  description: "A helpful assistant that can speak and listen using ElevenLabs' voice API",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant that can speak and listen using ElevenLabs' voice API",
   model: openai("gpt-4o-mini"),
   voice: voiceProvider,
   memory: new LibSQLStorage({
@@ -46,6 +46,7 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });
 
 (async () => {

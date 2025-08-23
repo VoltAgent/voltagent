@@ -103,11 +103,7 @@ export const GenerateOptionsSchema = z
       .array(z.string())
       .optional()
       .openapi({ description: "Stop sequences to end generation" }),
-    extraOptions: z
-      .record(z.string(), z.unknown())
-      .optional()
-      .openapi({ description: "Provider-specific options" }),
-    userContext: z
+    context: z
       .record(z.string(), z.unknown())
       .optional()
       .openapi({
@@ -123,86 +119,43 @@ export const GenerateOptionsSchema = z
   })
   .passthrough(); // Allow other provider-specific options not explicitly defined here
 
-// Schema for individual content parts (text, image, file, etc.)
-const ContentPartSchema = z.union([
-  z
-    .object({
-      // Text part
-      type: z.literal("text"),
-      text: z.string(),
-    })
-    .openapi({ example: { type: "text", text: "Hello there!" } }),
-  z
-    .object({
-      // Image part
-      type: z.literal("image"),
-      image: z.string().openapi({ description: "Base64 encoded image data or a URL" }),
-      mimeType: z.string().optional().openapi({ example: "image/jpeg" }),
-      alt: z.string().optional().openapi({ description: "Alternative text for the image" }),
-    })
-    .openapi({
-      example: {
-        type: "image",
-        image: "data:image/png;base64,...",
-        mimeType: "image/png",
-      },
-    }),
-  z
-    .object({
-      // File part
-      type: z.literal("file"),
-      data: z.string().openapi({ description: "Base64 encoded file data" }),
-      filename: z.string().openapi({ example: "document.pdf" }),
-      mimeType: z.string().openapi({ example: "application/pdf" }),
-      size: z.number().optional().openapi({ description: "File size in bytes" }),
-    })
-    .openapi({
-      example: {
-        type: "file",
-        data: "...",
-        filename: "report.docx",
-        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      },
-    }),
-]);
-
-// Define a reusable schema for the message object content, used in both Text and Object requests
-const MessageContentSchema = z.union([
-  z.string().openapi({ description: "Plain text content" }),
-  z
-    .array(ContentPartSchema)
-    .openapi({ description: "An array of content parts (text, image, file)." }),
-]);
-
-// Define a reusable schema for a single message object
-const MessageObjectSchema = z
-  .object({
-    role: z.enum(["system", "user", "assistant", "tool"]).openapi({
-      description: "Role of the sender (e.g., 'user', 'assistant')",
-    }),
-    content: MessageContentSchema, // Use the reusable content schema
-  })
-  .openapi({ description: "A message object with role and content" });
-
 // Text Generation Schemas
 export const TextRequestSchema = z
   .object({
-    input: z.union([
-      z.string().openapi({
-        description: "Input text for the agent",
-        example: "Tell me a joke!",
+    // AI SDK UIMessage format or direct string - we'll convert on the backend
+    input: z
+      .union([
+        z.string().describe("Direct text input"),
+        z.array(z.any()).describe("AI SDK UIMessage format: array of messages with parts"),
+      ])
+      .openapi({
+        description: "Input text or messages array",
+        example: [
+          {
+            id: "msg1",
+            role: "user",
+            parts: [{ type: "text", text: "What is the weather?" }],
+          },
+          {
+            id: "msg2",
+            role: "assistant",
+            parts: [{ type: "text", text: "The weather is sunny." }],
+          },
+        ],
       }),
-      z
-        .array(MessageObjectSchema) // Use the reusable message object schema
-        .openapi({
-          description: "An array of message objects, representing the conversation history",
-          example: [
-            { role: "user", content: "What is the weather?" },
-            { role: "assistant", content: "The weather is sunny." },
-            { role: "user", content: [{ type: "text", text: "Thanks!" }] },
-          ],
-        }),
-    ]),
+    // Additional fields that AI SDK might send
+    conversationId: z.string().optional(),
+    userId: z.string().optional(),
+    context: z.record(z.string(), z.unknown()).optional(),
+    // Agent configuration parameters
+    temperature: z.number().min(0).max(1).optional(),
+    maxTokens: z.number().min(100).max(32000).optional(),
+    maxSteps: z.number().min(1).max(100).optional(),
+    contextLimit: z.number().min(1).max(100).default(20).optional().openapi({
+      description: "Number of previous messages to include from history",
+      example: 20,
+    }),
+    // Options can be sent separately or at root level
     options: GenerateOptionsSchema.optional().openapi({
       description: "Optional generation parameters",
       example: {
@@ -218,7 +171,26 @@ export const TextRequestSchema = z
 
 export const TextResponseSchema = z.object({
   success: z.literal(true),
-  data: z.string().openapi({ description: "Generated text response" }), // Assuming simple text response for now
+  data: z.union([
+    z.string().openapi({ description: "Generated text response (legacy)" }),
+    z
+      .object({
+        text: z.string(),
+        usage: z
+          .object({
+            promptTokens: z.number(),
+            completionTokens: z.number(),
+            totalTokens: z.number(),
+            cachedInputTokens: z.number().optional(),
+            reasoningTokens: z.number().optional(),
+          })
+          .optional(),
+        finishReason: z.string().optional(),
+        toolCalls: z.array(z.any()).optional(),
+        toolResults: z.array(z.any()).optional(),
+      })
+      .openapi({ description: "AI SDK formatted response" }),
+  ]),
 });
 
 // Stream Text Schemas (Representing SSE content)
@@ -265,12 +237,22 @@ export const BasicJsonSchema = z
 // Object Generation Schemas
 export const ObjectRequestSchema = z
   .object({
-    input: z.union([
-      z.string().openapi({ description: "Input text prompt" }),
-      z
-        .array(MessageObjectSchema) // Use the reusable message object schema
-        .openapi({ description: "Conversation history" }),
-    ]),
+    // AI SDK UIMessage format or direct string for consistency
+    input: z
+      .union([
+        z.string().describe("Direct text input"),
+        z.array(z.any()).describe("AI SDK UIMessage format: array of messages with parts"),
+      ])
+      .openapi({
+        description: "Input text or messages array",
+        example: [
+          {
+            id: "msg1",
+            role: "user",
+            parts: [{ type: "text", text: "Generate a user object" }],
+          },
+        ],
+      }),
     schema: BasicJsonSchema,
     options: GenerateOptionsSchema.optional().openapi({
       description: "Optional object generation parameters",
@@ -556,7 +538,7 @@ export const WorkflowExecutionRequestSchema = z
       .object({
         userId: z.string().optional(),
         conversationId: z.string().optional(),
-        userContext: z.any().optional(),
+        context: z.any().optional(),
       })
       .optional()
       .openapi({ description: "Optional execution options" }),

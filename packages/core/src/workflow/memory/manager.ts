@@ -1,6 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import { LoggerProxy } from "../../logger";
-import type { Memory } from "../../memory/types";
+import type { InternalMemory } from "../../memory/internal-types";
 import type { VoltAgentExporter } from "../../telemetry/exporter";
 import type {
   CreateWorkflowExecutionOptions,
@@ -23,7 +23,7 @@ export class WorkflowMemoryManager {
   private logger: Logger;
 
   constructor(
-    private storage: Memory,
+    private storage: InternalMemory,
     _exporter?: VoltAgentExporter,
   ) {
     this._exporter = _exporter;
@@ -56,8 +56,8 @@ export class WorkflowMemoryManager {
       userId: options.userId,
       conversationId: options.conversationId,
       metadata: {
-        // Store userContext in metadata if provided
-        ...(options.userContext && { userContext: options.userContext }),
+        // Store context in metadata if provided
+        ...(options.context && { context: options.context }),
         ...options.metadata,
       },
       steps: [],

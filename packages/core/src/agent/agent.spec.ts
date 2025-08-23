@@ -316,15 +316,15 @@ describe("Agent", () => {
       expect(agent.maxSteps).toBe(20);
     });
 
-    it("should initialize with userContext", () => {
-      const userContext = new Map([["key", "value"]]);
+    it("should initialize with context", () => {
+      const context = new Map([["key", "value"]]);
 
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        userContext,
+        context,
       });
 
       // User context is set internally
@@ -1043,9 +1043,9 @@ describe("Agent", () => {
         historyMemory: new InMemoryStorage(),
       });
 
-      const userContext = new Map([["customKey", "customValue"]]);
+      const context = new Map([["customKey", "customValue"]]);
 
-      await agent.generateText("Hello", { userContext });
+      await agent.generateText("Hello", { context });
 
       // Verify that generateText was called
       expect(testProvider.generateText).toHaveBeenCalled();
@@ -1057,7 +1057,7 @@ describe("Agent", () => {
       expect(call).toBeDefined();
     });
 
-    it("should include userContext in logger context", async () => {
+    it("should include context in logger context", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test instructions",
@@ -1067,22 +1067,22 @@ describe("Agent", () => {
         historyMemory: new InMemoryStorage(),
       });
 
-      const userContext = new Map([
+      const context = new Map([
         ["sessionId", "session-123"],
         ["customKey", "customValue"],
       ]);
 
-      await agent.generateText("Hello", { userContext, userId: "user-456" });
+      await agent.generateText("Hello", { context, userId: "user-456" });
 
-      // Verify logger.child was called with userContext
+      // Verify logger.child was called with context
       expect(mockLogger.child).toHaveBeenCalled();
 
-      // Find the call that has userContext (may be nested calls)
+      // Find the call that has context (may be nested calls)
       const childCalls = (mockLogger.child as any).mock.calls;
-      const callWithUserContext = childCalls.find((call: any[]) => call[0]?.userContext);
+      const callWithUserContext = childCalls.find((call: any[]) => call[0]?.context);
 
       expect(callWithUserContext).toBeDefined();
-      expect(callWithUserContext[0].userContext).toEqual({
+      expect(callWithUserContext[0].context).toEqual({
         sessionId: "session-123",
         customKey: "customValue",
       });
@@ -1955,9 +1955,9 @@ describe("Agent", () => {
       const result = await agent.generateText("Test", undefined);
       expect(result.text).toBe("Test response");
 
-      // Test with null in userContext
+      // Test with null in context
       const result2 = await agent.generateText("Test", {
-        userContext: new Map([["key", null]]),
+        context: new Map([["key", null]]),
       });
       expect(result2.text).toBe("Test response");
     });
@@ -2806,12 +2806,12 @@ describe("Agent", () => {
     });
   });
 
-  describe("userContext handling", () => {
-    it("should make userContext available in tool execution", async () => {
+  describe("context handling", () => {
+    it("should make context available in tool execution", async () => {
       // Note: In the current implementation, tools are only executed during
       // the provider's processing. The agent passes tools to the provider,
       // but doesn't directly execute them when the provider returns tool calls.
-      // This test verifies that userContext is properly passed through the system.
+      // This test verifies that context is properly passed through the system.
 
       const agent = new Agent({
         name: "TestAgent",
@@ -2821,29 +2821,29 @@ describe("Agent", () => {
         historyMemory: new InMemoryStorage(),
       });
 
-      const userContext = new Map([
+      const context = new Map([
         ["userId", "user123"],
         ["sessionId", "session456"],
       ]);
 
-      const result = await agent.generateText("Test", { userContext });
+      const result = await agent.generateText("Test", { context });
 
-      // Verify that userContext is passed through to the result
-      expect(result.userContext).toBeInstanceOf(Map);
-      expect(result.userContext.get("userId")).toBe("user123");
-      expect(result.userContext.get("sessionId")).toBe("session456");
+      // Verify that context is passed through to the result
+      expect(result.context).toBeInstanceOf(Map);
+      expect(result.context.get("userId")).toBe("user123");
+      expect(result.context.get("sessionId")).toBe("session456");
 
       // Verify the provider was called with toolExecutionContext containing operationContext
       const providerCall = testProvider.generateText.mock.calls[0][0];
       expect(providerCall.toolExecutionContext).toBeDefined();
       expect(providerCall.toolExecutionContext.operationContext).toBeDefined();
-      expect(providerCall.toolExecutionContext.operationContext.userContext).toBeInstanceOf(Map);
-      expect(providerCall.toolExecutionContext.operationContext.userContext.get("userId")).toBe(
+      expect(providerCall.toolExecutionContext.operationContext.context).toBeInstanceOf(Map);
+      expect(providerCall.toolExecutionContext.operationContext.context.get("userId")).toBe(
         "user123",
       );
     });
 
-    it("should return userContext in generateText result", async () => {
+    it("should return context in generateText result", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test instructions",
@@ -2852,20 +2852,20 @@ describe("Agent", () => {
         historyMemory: new InMemoryStorage(),
       });
 
-      const userContext = new Map([
+      const context = new Map([
         ["requestId", "req789"],
         ["feature", "chat"],
       ]);
 
-      const result = await agent.generateText("Hello", { userContext });
+      const result = await agent.generateText("Hello", { context });
 
-      // Verify userContext is returned in result
-      expect(result.userContext).toBeInstanceOf(Map);
-      expect(result.userContext.get("requestId")).toBe("req789");
-      expect(result.userContext.get("feature")).toBe("chat");
+      // Verify context is returned in result
+      expect(result.context).toBeInstanceOf(Map);
+      expect(result.context.get("requestId")).toBe("req789");
+      expect(result.context.get("feature")).toBe("chat");
     });
 
-    it("should return userContext in streamText result", async () => {
+    it("should return context in streamText result", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test instructions",
@@ -2888,13 +2888,13 @@ describe("Agent", () => {
         provider: {},
       } as any);
 
-      const userContext = new Map([["streamId", "stream123"]]);
+      const context = new Map([["streamId", "stream123"]]);
 
-      const stream = await agent.streamText("Hello", { userContext });
+      const stream = await agent.streamText("Hello", { context });
 
-      // Verify userContext is available immediately
-      expect(stream.userContext).toBeInstanceOf(Map);
-      expect(stream.userContext?.get("streamId")).toBe("stream123");
+      // Verify context is available immediately
+      expect(stream.context).toBeInstanceOf(Map);
+      expect(stream.context?.get("streamId")).toBe("stream123");
 
       // Consume the stream
       for await (const _ of stream.textStream ?? []) {
@@ -2902,7 +2902,7 @@ describe("Agent", () => {
       }
     });
 
-    it("should pass userContext to onFinish callback", async () => {
+    it("should pass context to onFinish callback", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test instructions",
@@ -2911,25 +2911,25 @@ describe("Agent", () => {
         historyMemory: new InMemoryStorage(),
       });
 
-      const userContext = new Map([["callbackTest", "value1"]]);
+      const context = new Map([["callbackTest", "value1"]]);
 
       // In the current implementation, onFinish is passed to the provider
       // The provider is responsible for calling it, not the agent directly
       const result = await agent.generateText("Hello", {
-        userContext,
+        context,
         provider: { onFinish: vi.fn() },
       });
 
-      // Verify userContext is returned in the result
-      expect(result.userContext).toBeInstanceOf(Map);
-      expect(result.userContext.get("callbackTest")).toBe("value1");
+      // Verify context is returned in the result
+      expect(result.context).toBeInstanceOf(Map);
+      expect(result.context.get("callbackTest")).toBe("value1");
 
       // Verify the provider options were passed
       const providerCall = testProvider.generateText.mock.calls[0][0];
       expect(providerCall.provider?.onFinish).toBeDefined();
     });
 
-    it("should pass userContext to onError callback", async () => {
+    it("should pass context to onError callback", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test instructions",
@@ -2941,13 +2941,13 @@ describe("Agent", () => {
       // Mock provider to throw error
       testProvider.generateText.mockRejectedValueOnce(new Error("Test error"));
 
-      const userContext = new Map([["errorTest", "errorValue"]]);
+      const context = new Map([["errorTest", "errorValue"]]);
 
       // In the current implementation, onError is passed to the provider
       // The agent itself doesn't call onError directly
       await expect(
         agent.generateText("Hello", {
-          userContext,
+          context,
           provider: { onError: vi.fn() },
         }),
       ).rejects.toThrow("Test error");
@@ -2957,7 +2957,7 @@ describe("Agent", () => {
       expect(providerCall.provider?.onError).toBeDefined();
     });
 
-    it("should inherit parent userContext in subagent handoff", async () => {
+    it("should inherit parent context in subagent handoff", async () => {
       // Create a mock sub-agent
       const subAgent = new Agent({
         name: "SubAgent",
@@ -3006,14 +3006,14 @@ describe("Agent", () => {
         ["sharedKey", "fromParent"],
       ]);
 
-      await mainAgent.generateText("Delegate task", { userContext: parentContext });
+      await mainAgent.generateText("Delegate task", { context: parentContext });
 
       // Note: In the current implementation, subagent gets a new operation context
-      // but inherits parent's userContext. The test would need to verify this
+      // but inherits parent's context. The test would need to verify this
       // through the actual handoff mechanism.
     });
 
-    it("should store userContext in history metadata", async () => {
+    it("should store context in history metadata", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test instructions",
@@ -3023,12 +3023,12 @@ describe("Agent", () => {
       });
 
       const timestamp = Date.now();
-      const userContext = new Map([
+      const context = new Map([
         ["historyKey", "historyValue"],
         ["timestamp", String(timestamp)],
       ]);
 
-      await agent.generateText("Test input", { userContext });
+      await agent.generateText("Test input", { context });
 
       // Wait for history to be written
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -3037,17 +3037,17 @@ describe("Agent", () => {
       expect(history.entries).toHaveLength(1);
 
       const entry = history.entries[0];
-      // In the current implementation, userContext is stored as a plain object in metadata
+      // In the current implementation, context is stored as a plain object in metadata
       expect(entry.metadata).toBeDefined();
-      if (entry.metadata && typeof entry.metadata === "object" && "userContext" in entry.metadata) {
-        const storedContext = entry.metadata.userContext as any;
+      if (entry.metadata && typeof entry.metadata === "object" && "context" in entry.metadata) {
+        const storedContext = entry.metadata.context as any;
         expect(storedContext).toBeDefined();
         expect(storedContext.historyKey).toBe("historyValue");
         expect(storedContext.timestamp).toBe(String(timestamp));
       }
     });
 
-    it("should include userContext in agent events", async () => {
+    it("should include context in agent events", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test instructions",
@@ -3056,9 +3056,9 @@ describe("Agent", () => {
         historyMemory: new InMemoryStorage(),
       });
 
-      const userContext = new Map([["eventKey", "eventValue"]]);
+      const context = new Map([["eventKey", "eventValue"]]);
 
-      await agent.generateText("Test", { userContext });
+      await agent.generateText("Test", { context });
 
       // Wait for events to be recorded
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -3068,16 +3068,16 @@ describe("Agent", () => {
 
       // Note: In the current implementation, events are not directly accessible from history entry
       // They are stored internally but not exposed in the AgentHistoryEntry type
-      // The test verifies that userContext is stored in the history metadata
+      // The test verifies that context is stored in the history metadata
       expect(entry.metadata).toBeDefined();
-      if (entry.metadata && typeof entry.metadata === "object" && "userContext" in entry.metadata) {
-        const storedContext = entry.metadata.userContext as any;
+      if (entry.metadata && typeof entry.metadata === "object" && "context" in entry.metadata) {
+        const storedContext = entry.metadata.context as any;
         expect(storedContext).toBeDefined();
         expect(storedContext.eventKey).toBe("eventValue");
       }
     });
 
-    it("should merge userContext correctly (operation > options > default)", async () => {
+    it("should merge context correctly (operation > options > default)", async () => {
       const defaultContext = new Map([
         ["level", "default"],
         ["defaultOnly", "defaultValue"],
@@ -3088,7 +3088,7 @@ describe("Agent", () => {
         instructions: "Test instructions",
         llm: testProvider as any,
         model: { model: "test-model" },
-        userContext: defaultContext,
+        context: defaultContext,
         historyMemory: new InMemoryStorage(),
       });
 
@@ -3097,17 +3097,17 @@ describe("Agent", () => {
         ["optionsOnly", "optionsValue"],
       ]);
 
-      const result = await agent.generateText("Test", { userContext: optionsContext });
+      const result = await agent.generateText("Test", { context: optionsContext });
 
       // Verify that options context takes precedence
-      expect(result.userContext.get("level")).toBe("options");
-      expect(result.userContext.get("optionsOnly")).toBe("optionsValue");
+      expect(result.context.get("level")).toBe("options");
+      expect(result.context.get("optionsOnly")).toBe("optionsValue");
 
       // Note: In current implementation, contexts don't merge - the most specific one is used
       // So we won't see defaultOnly in the result
     });
 
-    it("should allow modification of userContext during operation", async () => {
+    it("should allow modification of context during operation", async () => {
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test instructions",
@@ -3116,19 +3116,19 @@ describe("Agent", () => {
         historyMemory: new InMemoryStorage(),
         hooks: {
           onStart: async ({ context }) => {
-            // Modify userContext during operation
-            context.userContext.set("addedInHook", "hookValue");
+            // Modify context during operation
+            context.context.set("addedInHook", "hookValue");
           },
         },
       });
 
       const initialContext = new Map([["initial", "value"]]);
 
-      const result = await agent.generateText("Test", { userContext: initialContext });
+      const result = await agent.generateText("Test", { context: initialContext });
 
       // Verify the modification is reflected in result
-      expect(result.userContext.get("initial")).toBe("value");
-      expect(result.userContext.get("addedInHook")).toBe("hookValue");
+      expect(result.context.get("initial")).toBe("value");
+      expect(result.context.get("addedInHook")).toBe("hookValue");
     });
   });
 
@@ -3297,7 +3297,7 @@ describe("Agent", () => {
         "Query for retrieval",
         expect.objectContaining({
           logger: expect.any(Object),
-          userContext: expect.any(Map),
+          context: expect.any(Map),
         }),
       );
 
@@ -3401,7 +3401,7 @@ describe("Agent", () => {
         "Query",
         expect.objectContaining({
           logger: expect.any(Object),
-          userContext: expect.any(Map),
+          context: expect.any(Map),
         }),
       );
 
@@ -3436,7 +3436,7 @@ describe("Agent", () => {
         "Query",
         expect.objectContaining({
           logger: expect.any(Object),
-          userContext: expect.any(Map),
+          context: expect.any(Map),
         }),
       );
     });
@@ -3674,7 +3674,7 @@ describe("Agent", () => {
       // Launch concurrent operations with different contexts
       const promises = Array.from({ length: 10 }, (_, i) =>
         agent.generateText(`Request ${i}`, {
-          userContext: new Map([["requestId", i]]),
+          context: new Map([["requestId", i]]),
         }),
       );
 
@@ -3683,7 +3683,7 @@ describe("Agent", () => {
       // Each should get correct response
       results.forEach((result, i) => {
         expect(result.text).toBe(`Response for request ${i}`);
-        expect(result.userContext.get("requestId")).toBe(i);
+        expect(result.context.get("requestId")).toBe(i);
       });
 
       expect(callCount).toBe(10);

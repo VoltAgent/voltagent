@@ -1,22 +1,16 @@
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
 import { openai } from "@ai-sdk/openai";
+import { sharedMemory } from "./memory";
 
 // Create logger
-const logger = createPinoLogger({
+/* const logger = createPinoLogger({
   name: "nextjs-example",
   level: "info",
 });
-
-const memory = new LibSQLStorage({
-  url: "file:./.voltagent/memory.db",
-  logger: logger.child({ component: "libsql" }),
-});
-
+ */
 // Define a calculator tool
 const calculatorTool = createTool({
   name: "calculate",
@@ -37,22 +31,32 @@ const calculatorTool = createTool({
   },
 });
 
+// New Agent implementation - uses AI SDK directly
+export const agentV2 = new Agent({
+  name: "MathAssistantV2",
+  instructions:
+    "You are a helpful assistant that can answer questions and perform calculations. Use the calculate tool when needed.",
+  model: openai("gpt-4o-mini"),
+  tools: [calculatorTool],
+  memory: sharedMemory,
+  maxSteps: 5,
+});
+
+// Sub-agent implementation
 export const subAgent = new Agent({
   name: "MathAssistant",
-  description: "A helpful assistant that can answer questions and perform calculations",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4.1-mini"),
+  instructions: "A helpful assistant that can answer questions and perform calculations",
+  model: openai("gpt-4o-mini"),
   tools: [calculatorTool],
-  memory,
+  memory: sharedMemory,
 });
 
 export const agent = new Agent({
   name: "Boss",
-  description: "A Supervisor that can delegate tasks to sub-agents",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4.1-mini"),
+  instructions: "A Supervisor that can delegate tasks to sub-agents",
+  model: openai("gpt-4o-mini"),
   subAgents: [subAgent],
-  memory,
+  memory: sharedMemory,
 });
 
 new VoltAgent({

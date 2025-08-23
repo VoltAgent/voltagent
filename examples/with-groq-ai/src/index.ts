@@ -2,6 +2,7 @@ import { groq } from "@ai-sdk/groq";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Create logger
@@ -12,8 +13,7 @@ const logger = createPinoLogger({
 
 const agent = new Agent({
   name: "Assistant",
-  description: "A helpful assistant that answers questions",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant that answers questions",
   model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
   memory: new LibSQLStorage({
     url: "file:./.voltagent/memory.db",
@@ -26,4 +26,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

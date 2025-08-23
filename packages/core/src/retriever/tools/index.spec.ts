@@ -54,23 +54,23 @@ describe("createRetrieverTool", () => {
 
     // Assert
     expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
-      userContext: undefined,
+      context: undefined,
     });
     expect(mockRetriever.retrieve).toHaveBeenCalledTimes(1);
   });
 
-  it("should pass userContext from executeOptions to retriever", async () => {
+  it("should pass context from executeOptions to retriever", async () => {
     // Arrange
     const mockResults: string = "Test content with context";
     const mockRetriever = createMockRetriever(mockResults);
     const tool = createRetrieverTool(mockRetriever);
     const query = "test query";
 
-    // Mock userContext
-    const userContext = new Map<string | symbol, unknown>();
+    // Mock context
+    const context = new Map<string | symbol, unknown>();
     const executeOptions = {
       operationContext: {
-        userContext,
+        context,
         operationId: "test-op",
         historyEntry: {} as any,
         isActive: true,
@@ -82,7 +82,7 @@ describe("createRetrieverTool", () => {
 
     // Assert
     expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
-      userContext,
+      context,
     });
   });
 
@@ -98,7 +98,7 @@ describe("createRetrieverTool", () => {
 
     // Assert
     expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
-      userContext: undefined,
+      context: undefined,
     });
     expect(result).toBe("Test content");
   });

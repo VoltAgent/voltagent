@@ -1,11 +1,35 @@
+/**
+ * Agent - Direct AI SDK integration without provider abstraction
+ * Refactored with better architecture and type safety
+ */
+
+import type { SystemModelMessage } from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
-import { P, match } from "ts-pattern";
+import type {
+  StreamTextResult as AIStreamTextResult,
+  CallSettings,
+  GenerateObjectResult,
+  GenerateTextResult,
+  LanguageModel,
+  ToolSet,
+  UIMessage,
+} from "ai";
+import {
+  type AsyncIterableStream,
+  type CallWarning,
+  type FinishReason,
+  type LanguageModelUsage,
+  convertToModelMessages,
+  generateObject,
+  generateText,
+  stepCountIs,
+  streamObject,
+  streamText,
+} from "ai";
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
-import type { EventStatus } from "../events";
-import type { StandardEventData } from "../events/types";
 import type {
   AgentErrorEvent,
   AgentStartEvent,
@@ -18,264 +42,334 @@ import type {
   ToolSuccessEvent,
 } from "../events/types";
 import { LogEvents, LoggerProxy, ensureBufferedLogger } from "../logger";
-import {
-  ActionType,
-  ResourceType,
-  buildAgentLogMessage,
-  buildLogContext,
-  buildRetrieverLogMessage,
-  buildToolLogMessage,
-} from "../logger/message-builder";
-import { MemoryManager } from "../memory";
+import { ActionType, buildAgentLogMessage } from "../logger/message-builder";
+import type { InternalMemory } from "../memory";
+import { MemoryManager } from "../memory/manager";
+import type { Memory } from "../memory/types";
+import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
-import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
-import { ToolManager } from "../tool";
+import { ToolManager } from "../tool/manager";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import { NodeType, createNodeId } from "../utils/node-utils";
-import {
-  type StreamEvent,
-  streamEventForwarder,
-  transformStreamEventToStreamPart,
-} from "../utils/streams";
-import { zodSchemaToJsonUI } from "../utils/toolParser";
+import { convertUsage } from "../utils/usage-converter";
 import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
-import type { PromptContent } from "../voltops/types";
+import type { PromptContent, PromptHelper } from "../voltops/types";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
-import { type AgentHooks, createHooks } from "./hooks";
 import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
-import type {
-  BaseMessage,
-  BaseTool,
-  LLMProvider,
-  StepWithContent,
-  ToolExecuteOptions,
-} from "./providers";
+import type { BaseMessage, StepWithContent } from "./providers/base/types";
 import { SubAgentManager } from "./subagent";
+import { SubAgentEventCollector, createMergedFullStream } from "./subagent/merged-stream-wrapper";
 import type { SubAgentConfig } from "./subagent/types";
+import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
   AbortError,
-  AgentOptions,
-  AgentStatus,
-  CommonGenerateOptions,
+  AgentFullState,
   DynamicValue,
   DynamicValueOptions,
-  GenerateObjectResponse,
-  GenerateTextResponse,
-  InternalGenerateOptions,
-  ModelDynamicValue,
-  ModelType,
   OperationContext,
-  ProviderInstance,
-  PublicGenerateOptions,
-  StreamObjectFinishResult,
-  StreamObjectOnFinishCallback,
-  StreamObjectResponse,
-  StreamOnErrorCallback,
-  StreamTextFinishResult,
-  StreamTextOnFinishCallback,
-  StreamTextResponse,
   SupervisorConfig,
-  SystemMessageResponse,
   ToolExecutionContext,
   VoltAgentError,
 } from "./types";
 
+// ============================================================================
+// Types
+// ============================================================================
+
 /**
- * Agent class for interacting with AI models
+ * Context input type that accepts both Map and plain object
  */
-export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
-  /**
-   * Unique identifier for the agent
-   */
+export type ContextInput = Map<string | symbol, unknown> | Record<string | symbol, unknown>;
+
+/**
+ * Converts context input to Map
+ */
+function toContextMap(context?: ContextInput): Map<string | symbol, unknown> | undefined {
+  if (!context) return undefined;
+  return context instanceof Map ? context : new Map(Object.entries(context));
+}
+
+/**
+ * Agent context with comprehensive tracking
+ */
+export interface AgentContext {
+  // User-provided context
+  context: Map<string | symbol, unknown>;
+
+  // Operation metadata
+  operation: {
+    id: string;
+    userId?: string;
+    conversationId?: string;
+    parentAgentId?: string;
+    parentHistoryId?: string;
+  };
+
+  // System internals
+  system: {
+    logger: Logger;
+    signal?: AbortSignal;
+    abortController?: AbortController;
+    startTime: string;
+    agentStartEventId?: string;
+  };
+
+  // OpenTelemetry tracking
+  otelSpan?: Span;
+  toolSpans?: Map<string, Span>;
+
+  // Cancellation support
+  cancellationError?: AbortError;
+
+  // Conversation tracking
+  conversationSteps?: StepWithContent[];
+
+  // Internal operation context for compatibility
+  operationContext?: OperationContext;
+
+  // Subagent event collector for stream merging
+  subagentEventCollector?: SubAgentEventCollector;
+}
+
+/**
+ * Agent hooks for lifecycle events
+ */
+export interface AgentHooks {
+  onStart?: (context: AgentContext) => Promise<void> | void;
+  onEnd?: (context: AgentContext, result: any, error?: Error) => Promise<void> | void;
+  onError?: (context: AgentContext, error: Error) => Promise<void> | void;
+  onStepFinish?: (step: any) => Promise<void> | void;
+  onPrepareMessages?: (
+    messages: UIMessage[],
+    context: AgentContext,
+  ) => Promise<{ messages: UIMessage[] }> | { messages: UIMessage[] };
+  onHandoff?: (context: AgentContext) => Promise<void> | void;
+  onToolStart?: (context: AgentContext, tool: Tool) => Promise<void> | void;
+  onToolEnd?: (context: AgentContext, tool: Tool, output: any, error?: any) => Promise<void> | void;
+}
+
+/**
+ * Extended StreamTextResult that includes context
+ */
+export interface StreamTextResultWithContext<
+  TOOLS extends ToolSet = Record<string, any>,
+  PARTIAL_OUTPUT = any,
+> {
+  // All methods from AIStreamTextResult
+  readonly text: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["text"];
+  readonly textStream: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["textStream"];
+  readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
+  readonly usage: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["usage"];
+  readonly finishReason: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["finishReason"];
+  readonly experimental_partialOutputStream?: AIStreamTextResult<
+    TOOLS,
+    PARTIAL_OUTPUT
+  >["experimental_partialOutputStream"];
+  toUIMessageStream: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["toUIMessageStream"];
+  toUIMessageStreamResponse: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["toUIMessageStreamResponse"];
+  pipeUIMessageStreamToResponse: AIStreamTextResult<
+    TOOLS,
+    PARTIAL_OUTPUT
+  >["pipeUIMessageStreamToResponse"];
+  pipeTextStreamToResponse: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["pipeTextStreamToResponse"];
+  toTextStreamResponse: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["toTextStreamResponse"];
+  // Additional context field
+  context: Map<string | symbol, unknown>;
+}
+
+/**
+ * Extended StreamObjectResult that includes context
+ */
+export interface StreamObjectResultWithContext<T> {
+  // Delegate to original streamObject result properties
+  readonly object: Promise<T>;
+  readonly partialObjectStream: ReadableStream<Partial<T>>;
+  readonly textStream: AsyncIterableStream<string>;
+  readonly warnings: Promise<CallWarning[] | undefined>;
+  readonly usage: Promise<LanguageModelUsage>;
+  readonly finishReason: Promise<FinishReason>;
+  // Response conversion methods
+  pipeTextStreamToResponse(response: any, init?: ResponseInit): void;
+  toTextStreamResponse(init?: ResponseInit): Response;
+  // Additional context field
+  context: Map<string | symbol, unknown>;
+}
+
+/**
+ * Extended GenerateTextResult that includes context
+ */
+export interface GenerateTextResultWithContext<
+  TOOLS extends ToolSet = Record<string, any>,
+  OUTPUT = any,
+> extends GenerateTextResult<TOOLS, OUTPUT> {
+  // Additional context field
+  context: Map<string | symbol, unknown>;
+}
+
+/**
+ * Extended GenerateObjectResult that includes context
+ */
+export interface GenerateObjectResultWithContext<T> extends GenerateObjectResult<T> {
+  // Additional context field
+  context: Map<string | symbol, unknown>;
+}
+
+/**
+ * Agent constructor options
+ */
+export interface AgentOptions {
+  // Identity
+  id?: string;
+  name: string;
+  purpose?: string;
+
+  // Core AI
+  model: LanguageModel | DynamicValue<LanguageModel>;
+  instructions: string | DynamicValue<string>;
+
+  // Tools & Memory
+  tools?: (Tool<any, any> | Toolkit)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
+  toolkits?: Toolkit[];
+  memory?: Memory | false;
+  memoryOptions?: any;
+  historyMemory?: Memory;
+
+  // Retriever/RAG
+  retriever?: BaseRetriever;
+
+  // SubAgents
+  subAgents?: SubAgentConfig[];
+  supervisorConfig?: SupervisorConfig;
+  maxHistoryEntries?: number;
+
+  // Hooks
+  hooks?: AgentHooks;
+
+  // Configuration
+  temperature?: number;
+  maxOutputTokens?: number;
+  maxSteps?: number;
+  markdown?: boolean;
+
+  // Voice
+  voice?: Voice;
+
+  // System
+  logger?: Logger;
+  historyManager?: HistoryManager;
+  voltOpsClient?: VoltOpsClient;
+  telemetryExporter?: VoltAgentExporter; // Deprecated
+
+  // User context
+  context?: ContextInput;
+}
+
+/**
+ * Base options for all generation methods
+ * Extends AI SDK's CallSettings for full compatibility
+ */
+export interface BaseGenerationOptions extends Partial<CallSettings> {
+  // === VoltAgent Specific ===
+  // Context
+  userId?: string;
+  conversationId?: string;
+  context?: ContextInput;
+
+  // Parent tracking
+  parentAgentId?: string;
+  parentHistoryEntryId?: string;
+  parentOperationContext?: OperationContext;
+
+  // Memory
+  contextLimit?: number;
+
+  // Steps control
+  maxSteps?: number;
+
+  // Hooks (can override agent hooks)
+  hooks?: AgentHooks;
+
+  // === Inherited from AI SDK CallSettings ===
+  // maxOutputTokens, temperature, topP, topK,
+  // presencePenalty, frequencyPenalty, stopSequences,
+  // seed, maxRetries, abortSignal, headers
+}
+
+export type GenerateTextOptions = BaseGenerationOptions;
+export type StreamTextOptions = BaseGenerationOptions & {
+  onFinish?: (result: any) => void | Promise<void>;
+};
+export type GenerateObjectOptions = BaseGenerationOptions;
+export type StreamObjectOptions = BaseGenerationOptions & {
+  onFinish?: (result: any) => void | Promise<void>;
+};
+
+// ============================================================================
+// Agent Implementation
+// ============================================================================
+
+export class Agent {
   readonly id: string;
-
-  /**
-   * Agent name
-   */
   readonly name: string;
-
-  /**
-   * (sub)agent purpose. This is the purpose of a (sub)agent, that will be used to generate the system message for the supervisor agent, if not provided, the agent will use the `instructions` field to generate the system message.
-   *
-   * @example 'An agent for customer support'
-   */
   readonly purpose?: string;
-
-  /**
-   * @deprecated Use `instructions` instead. Will be removed in a future version.
-   */
-  readonly description: string;
-
-  /**
-   * Agent instructions. This is the preferred field over `description`.
-   */
-  readonly instructions: string;
-
-  /**
-   * Dynamic instructions value (internal)
-   */
-  private readonly dynamicInstructions?: DynamicValue<string>;
-
-  /**
-   * Dynamic model value (internal)
-   */
-  private readonly dynamicModel?: DynamicValue<ModelType<TProvider>>;
-
-  /**
-   * Dynamic tools value (internal)
-   */
-  private readonly dynamicTools?: DynamicValue<(Tool<any> | Toolkit)[]>;
-
-  /**
-   * The LLM provider to use
-   */
-  readonly llm: ProviderInstance<TProvider>;
-
-  /**
-   * The AI model to use
-   */
-  readonly model: ModelType<TProvider>;
-
-  /**
-   * Hooks for agent lifecycle events
-   */
-  public hooks: AgentHooks;
-
-  /**
-   * Voice provider for the agent
-   */
-  readonly voice?: Voice;
-
-  /**
-   * Indicates if the agent should format responses using Markdown.
-   */
+  readonly instructions: string | DynamicValue<string>;
+  readonly model: LanguageModel | DynamicValue<LanguageModel>;
+  readonly tools: (Tool<any, any> | Toolkit)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
+  readonly hooks: AgentHooks;
+  readonly temperature?: number;
+  readonly maxOutputTokens?: number;
+  readonly maxSteps: number;
   readonly markdown: boolean;
+  readonly voice?: Voice;
+  readonly retriever?: BaseRetriever;
+  readonly supervisorConfig?: SupervisorConfig;
+  private readonly context?: Map<string | symbol, unknown>;
 
-  /**
-   * Maximum number of steps the agent can take before stopping
-   */
-  readonly maxSteps?: number;
-
-  /**
-   * Memory manager for the agent
-   */
-  protected memoryManager: MemoryManager;
-
-  /**
-   * Tool manager for the agent
-   */
-  protected toolManager: ToolManager;
-
-  /**
-   * Sub-agent manager for the agent
-   */
-  protected subAgentManager: SubAgentManager;
-
-  /**
-   * History manager for the agent
-   */
-  protected historyManager: HistoryManager;
-
-  /**
-   * Retriever for automatic RAG
-   */
-  private retriever?: BaseRetriever;
-
-  /**
-   * VoltOps client for this specific agent (optional)
-   * Takes priority over global VoltOpsClient for prompt management
-   */
+  private readonly logger: Logger;
+  private readonly memoryManager: MemoryManager;
+  private readonly toolManager: ToolManager;
+  private readonly historyManager: HistoryManager;
+  private readonly subAgentManager: SubAgentManager;
   private readonly voltOpsClient?: VoltOpsClient;
+  private readonly prompts?: PromptHelper;
 
-  /**
-   * Supervisor configuration for agents with subagents
-   */
-  private readonly supervisorConfig?: SupervisorConfig;
-
-  /**
-   * User-defined context passed at agent creation
-   * Can be overridden during execution
-   */
-  private readonly defaultUserContext?: Map<string | symbol, unknown>;
-
-  /**
-   * Logger instance for this agent
-   */
-  readonly logger: Logger;
-
-  /**
-   * Create a new agent
-   */
-  constructor(
-    options: AgentOptions &
-      TProvider & {
-        model: ModelDynamicValue<ModelType<TProvider>>;
-        subAgents?: SubAgentConfig[]; // Updated to support new configuration
-        maxHistoryEntries?: number;
-        hooks?: AgentHooks;
-        retriever?: BaseRetriever;
-        voice?: Voice;
-        markdown?: boolean;
-        voltOpsClient?: VoltOpsClient;
-      },
-  ) {
+  constructor(options: AgentOptions) {
     this.id = options.id || options.name;
     this.name = options.name;
     this.purpose = options.purpose;
-
-    // Store dynamic values separately from resolved values
-    this.dynamicInstructions =
-      typeof options.instructions === "function"
-        ? (options.instructions as DynamicValue<string>)
-        : undefined;
-    this.dynamicModel =
-      typeof options.model === "function"
-        ? (options.model as DynamicValue<ModelType<TProvider>>)
-        : undefined;
-    this.dynamicTools =
-      typeof options.tools === "function"
-        ? (options.tools as DynamicValue<(Tool<any> | Toolkit)[]>)
-        : undefined;
-
-    // Set default static values for backwards compatibility
-    this.instructions =
-      typeof options.instructions === "string" ? options.instructions : (options.description ?? "");
-    this.description = this.instructions;
-    this.llm = options.llm as ProviderInstance<TProvider>;
-    this.model =
-      typeof options.model === "function"
-        ? ({} as ModelType<TProvider>) // Temporary placeholder, will be resolved dynamically
-        : options.model;
-    this.retriever = options.retriever;
-    this.voice = options.voice;
+    this.instructions = options.instructions;
+    this.model = options.model;
+    this.tools = options.tools || [];
+    this.hooks = options.hooks || {};
+    this.temperature = options.temperature;
+    this.maxOutputTokens = options.maxOutputTokens;
+    this.maxSteps = options.maxSteps || 5;
     this.markdown = options.markdown ?? false;
-    this.maxSteps = options.maxSteps;
-
-    // Store VoltOps client for agent-specific prompt management
+    this.voice = options.voice;
+    this.retriever = options.retriever;
+    this.supervisorConfig = options.supervisorConfig;
+    this.context = toContextMap(options.context);
     this.voltOpsClient = options.voltOpsClient;
 
-    // Store supervisor configuration if provided
-    this.supervisorConfig = options.supervisorConfig;
-
-    // Store user context if provided
-    this.defaultUserContext = options.userContext;
+    // Initialize prompts helper if VoltOpsClient is available
+    if (this.voltOpsClient) {
+      this.prompts = this.voltOpsClient.createPromptHelper(this.id);
+    }
 
     // Initialize logger - use provided logger or fall back to LoggerProxy
     if (options.logger) {
-      // Wrap the provided logger to ensure it syncs to global buffer
       this.logger = ensureBufferedLogger(options.logger, {
-        component: "agent",
+        component: "agent-v2",
         agentId: this.id,
         modelName: this.getModelName(),
       });
     } else {
-      // Fall back to LoggerProxy for lazy evaluation
       this.logger = new LoggerProxy({
-        component: "agent",
+        component: "agent-v2",
         agentId: this.id,
         modelName: this.getModelName(),
       });
@@ -291,27 +385,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       hasSubAgents: !!(options.subAgents && options.subAgents.length > 0),
     });
 
-    // Initialize hooks
-    if (options.hooks) {
-      this.hooks = options.hooks;
-    } else {
-      this.hooks = createHooks();
-    }
-
-    // Initialize memory manager
+    // Initialize managers
+    // Cast to InternalMemory since InMemoryStorage implements it
     this.memoryManager = new MemoryManager(
       this.id,
-      options.memory,
+      options.memory as any as InternalMemory | false | undefined,
       options.memoryOptions || {},
-      options.historyMemory,
+      options.historyMemory as any as InternalMemory | undefined,
       this.logger,
     );
 
-    // Initialize tool manager with empty array if dynamic, will be resolved later
-    const staticTools = typeof options.tools === "function" ? [] : options.tools || [];
+    // Initialize tool manager with static tools
+    const staticTools = typeof this.tools === "function" ? [] : this.tools || [];
     this.toolManager = new ToolManager(staticTools, this.logger);
+    if (options.toolkits) {
+      this.toolManager.addItems(options.toolkits);
+    }
 
-    // Initialize sub-agent manager with supervisor configuration
+    // Initialize sub-agent manager
     this.subAgentManager = new SubAgentManager(
       this.name,
       options.subAgents || [],
@@ -321,324 +412,1069 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Initialize history manager with VoltOpsClient or legacy telemetryExporter support
     let chosenExporter: VoltAgentExporter | undefined;
 
-    // NEW: Handle unified VoltOps client
-    if (options.voltOpsClient) {
-      if (options.voltOpsClient.observability) {
-        chosenExporter = options.voltOpsClient.observability;
-        this.logger.debug("VoltOpsClient initialized with observability and prompt management");
-      }
-    }
-    // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
-    else if (options.telemetryExporter) {
+    if (options.voltOpsClient?.observability) {
+      chosenExporter = options.voltOpsClient.observability;
+      this.logger.debug("VoltOpsClient initialized with observability and prompt management");
+    } else if (options.telemetryExporter) {
       this.logger.warn(
         `⚠️  DEPRECATION WARNING: 'telemetryExporter' parameter is deprecated!
    
    🔄 MIGRATION REQUIRED:
    ❌ OLD: telemetryExporter: new VoltAgentExporter({ ... })
    ✅ NEW: voltOpsClient: new VoltOpsClient({ publicKey: "...", secretKey: "..." })
-   
-   📖 Complete migration guide:
-   ${options.voltOpsClient ? "" : "http://localhost:3000/docs/observability/developer-console/#migration-guide-from-telemetryexporter-to-voltopsclient"}
-   
-   ✨ Benefits of VoltOpsClient:
-   • Unified observability + prompt management  
-   • Dynamic prompts from console
    `,
       );
       chosenExporter = options.telemetryExporter;
-    }
-    // Fallback to global exporter
-    else {
+    } else {
       chosenExporter = AgentRegistry.getInstance().getGlobalVoltAgentExporter();
     }
 
-    this.historyManager = new HistoryManager(
-      this.id,
-      this.memoryManager,
-      options.maxHistoryEntries || 0,
-      chosenExporter,
-      this.logger,
-    );
+    this.historyManager =
+      options.historyManager ||
+      new HistoryManager(
+        this.id,
+        this.memoryManager,
+        options.maxHistoryEntries || 0,
+        chosenExporter,
+        this.logger,
+      );
+  }
+
+  // ============================================================================
+  // Public API Methods
+  // ============================================================================
+
+  /**
+   * Get conversation messages in AI SDK UIMessage format
+   * @param userId - User ID to filter messages
+   * @param conversationId - Conversation ID to filter messages
+   * @param limit - Maximum number of messages to return
+   * @returns Array of UIMessages for the conversation
+   */
+  async getUIMessages(
+    userId: string,
+    conversationId: string,
+    limit?: number,
+  ): Promise<import("ai").UIMessage[]> {
+    const memory = this.memoryManager.getMemory();
+    if (!memory) {
+      return [];
+    }
+
+    return memory.getUIMessages(userId, conversationId, { limit });
   }
 
   /**
-   * Resolve dynamic instructions based on user context
+   * Generate text response
    */
-  private async resolveInstructions(
-    options: DynamicValueOptions,
-    operationContext?: OperationContext,
-  ): Promise<string | PromptContent> {
-    if (!this.dynamicInstructions) return this.instructions;
-    if (typeof this.dynamicInstructions === "function") {
-      const logger = operationContext?.logger || this.logger;
+  async generateText(
+    input: string | UIMessage[],
+    options?: GenerateTextOptions,
+  ): Promise<GenerateTextResultWithContext> {
+    const startTime = Date.now();
+    const context = await this.createContext(input, options);
+    const methodLogger = context.system.logger; // Extract logger with executionId
 
-      // Always provide prompts helper - user can choose to use it or not
-      const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
-        this.id,
+    const { messages, model, tools, maxSteps } = await this.prepareExecution(
+      input,
+      context,
+      options,
+    );
+
+    const modelName = this.getModelName();
+    const contextLimit = options?.contextLimit;
+
+    // Log generation start with only event-specific context
+    methodLogger.debug(
+      buildAgentLogMessage(
         this.name,
-        this.instructions,
-        this.voltOpsClient,
+        ActionType.GENERATION_START,
+        `Starting text generation with ${modelName}`,
+      ),
+      {
+        event: LogEvents.AGENT_GENERATION_STARTED,
+        operationType: "text",
+        contextLimit,
+        memoryEnabled: !!this.memoryManager.getMemory(),
+        model: modelName,
+        messageCount: messages?.length || 0,
+        input,
+      },
+    );
+
+    try {
+      // Call hooks
+      await this.getMergedHooks(options).onStart?.(context);
+
+      // Publish agent:start event
+      const agentStartEvent = this.createAgentStartEvent(
+        context,
+        input,
+        messages,
+        maxSteps,
+        options,
       );
-      const enhancedOptions = { ...options, prompts: promptHelper };
-      const result = await this.dynamicInstructions(enhancedOptions);
+      this.publishTimelineEvent(context, agentStartEvent);
 
-      // If result is a PromptContent object from VoltOps, return it as-is
-      if (typeof result === "object" && result !== null && "type" in result) {
-        const promptContent = result as PromptContent;
-        logger.debug(
-          buildAgentLogMessage(
-            this.name,
-            "dynamic-instructions-complete",
-            "resolved VoltOps prompt",
-          ),
-          {
-            agentId: this.id,
-            prompt: promptContent,
-          },
-        );
-        return promptContent;
-      }
+      // Setup abort signal listener
+      this.setupAbortSignalListener(
+        context.system.abortController?.signal || context.system.signal,
+        context,
+        agentStartEvent,
+      );
 
-      logger.debug(
-        buildAgentLogMessage(
-          this.name,
-          "dynamic-instructions-complete",
-          "resolved dynamic instructions",
-        ),
+      methodLogger.debug("Starting agent llm call");
+
+      methodLogger.debug("[LLM] - Generating text", {
+        messages: messages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        maxSteps,
+        tools: tools ? Object.keys(tools) : [],
+      });
+
+      // Extract VoltAgent-specific options
+      const {
+        userId,
+        conversationId,
+        parentAgentId,
+        parentHistoryEntryId,
+        parentOperationContext,
+        contextLimit,
+        hooks,
+        maxSteps: userMaxSteps,
+        ...aiSDKOptions
+      } = options || {};
+
+      const result = await generateText({
+        model,
+        messages,
+        tools,
+        // Default values
+        temperature: this.temperature,
+        maxOutputTokens: this.maxOutputTokens,
+        maxRetries: 3,
+        stopWhen: stepCountIs(maxSteps),
+        // User overrides from AI SDK options
+        ...aiSDKOptions,
+        // VoltAgent controlled (these should not be overridden)
+        abortSignal: context.system.signal,
+        onStepFinish: this.createStepHandler(context, options),
+      });
+
+      // Update history
+      this.updateHistoryEntry(context, {
+        output: result.text,
+        usage: convertUsage(result.usage),
+        endTime: new Date(),
+        status: "completed",
+      });
+
+      // Publish agent:success event
+      const agentSuccessEvent = this.createAgentSuccessEvent(context, result);
+      this.publishTimelineEvent(context, agentSuccessEvent);
+
+      // Call hooks
+      await this.getMergedHooks(options).onEnd?.(context, result);
+
+      // Log stream complete
+      methodLogger.debug(
+        buildAgentLogMessage(this.name, ActionType.STREAM_COMPLETE, "Stream generation completed"),
         {
-          prompt: result,
+          text: result.text,
+          toolCalls: [],
+          toolResults: [],
+          finishReason: result.finishReason || "stop",
+          usage: result.usage,
         },
       );
-      return result;
-    }
-    return this.dynamicInstructions;
-  }
 
-  /**
-   * Resolve dynamic model based on user context
-   */
-  private async resolveModel(options: DynamicValueOptions): Promise<ModelType<TProvider>> {
-    if (!this.dynamicModel) return this.model;
-    if (typeof this.dynamicModel === "function") {
-      return await (
-        this.dynamicModel as (
-          options: DynamicValueOptions,
-        ) => Promise<ModelType<TProvider>> | ModelType<TProvider>
-      )(options);
-    }
-    return this.dynamicModel;
-  }
+      // Log successful completion with usage details
+      const usage = result.usage;
+      const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+      methodLogger.debug(
+        buildAgentLogMessage(
+          this.name,
+          ActionType.GENERATION_COMPLETE,
+          `Text generation completed (${tokenInfo})`,
+        ),
+        {
+          event: LogEvents.AGENT_GENERATION_COMPLETED,
+          duration: Date.now() - startTime,
+          finishReason: result.finishReason,
+          usage: result.usage,
+          toolCalls: result.toolCalls?.length || 0,
+          text: result.text,
+        },
+      );
 
-  /**
-   * Resolve dynamic tools based on user context
-   */
-  private async resolveTools(options: DynamicValueOptions): Promise<(Tool<any> | Toolkit)[]> {
-    if (!this.dynamicTools) return [];
-    if (typeof this.dynamicTools === "function") {
-      return await this.dynamicTools(options);
-    }
-    return this.dynamicTools;
-  }
-
-  /**
-   * Generate a human-readable description for a stream step
-   */
-  private getStepDescription(step: StepWithContent, stepData: { text: string }): string {
-    switch (step.type) {
-      case "text":
-        return `Text generation completed (${stepData.text.length} chars)`;
-      case "tool_call":
-        return `Tool call initiated: ${step.name}`;
-      case "tool_result":
-        return `Tool result received: ${step.name}`;
-      default:
-        return "Processing stream step";
+      // Return result with context
+      return {
+        ...result,
+        context: new Map(context.context),
+      };
+    } catch (error) {
+      return this.handleError(error as Error, context, options, startTime);
     }
   }
 
   /**
-   * Get the system message for the agent
+   * Stream text response
    */
-  protected async getSystemMessage({
-    input,
-    historyEntryId,
-    contextMessages,
-    operationContext,
-  }: {
-    input?: string | BaseMessage[];
-    historyEntryId: string;
-    contextMessages: BaseMessage[];
-    operationContext?: OperationContext;
-  }): Promise<SystemMessageResponse> {
-    // Resolve dynamic instructions based on user context
+  async streamText(
+    input: string | UIMessage[],
+    options?: StreamTextOptions,
+  ): Promise<StreamTextResultWithContext> {
+    const context = await this.createContext(input, options);
+    const methodLogger = context.system.logger; // Extract logger with executionId
+
+    // Create subagent event collector for stream merging BEFORE prepareExecution
+    const subagentEventCollector = new SubAgentEventCollector();
+
+    // Add event collector to context so tools can access it
+    context.subagentEventCollector = subagentEventCollector;
+
+    const { messages, model, tools, maxSteps } = await this.prepareExecution(
+      input,
+      context,
+      options,
+    );
+
+    const modelName = this.getModelName();
+    const contextLimit = options?.contextLimit;
+
+    // Log stream start
+    methodLogger.debug(
+      buildAgentLogMessage(
+        this.name,
+        ActionType.STREAM_START,
+        `Starting stream generation with ${modelName}`,
+      ),
+      {
+        event: LogEvents.AGENT_STREAM_STARTED,
+        operationType: "stream",
+        contextLimit,
+        memoryEnabled: !!this.memoryManager.getMemory(),
+        model: modelName,
+        messageCount: messages?.length || 0,
+        input,
+      },
+    );
+
+    try {
+      // Call hooks
+      await this.getMergedHooks(options).onStart?.(context);
+
+      // Publish agent:start event
+      const agentStartEvent = this.createAgentStartEvent(
+        context,
+        input,
+        messages,
+        maxSteps,
+        options,
+      );
+      this.publishTimelineEvent(context, agentStartEvent);
+
+      // Setup abort signal listener
+      this.setupAbortSignalListener(
+        context.system.abortController?.signal || context.system.signal,
+        context,
+        agentStartEvent,
+      );
+
+      // Extract VoltAgent-specific options
+      const {
+        userId,
+        conversationId,
+        parentAgentId,
+        parentHistoryEntryId,
+        parentOperationContext,
+        contextLimit,
+        hooks,
+        maxSteps: userMaxSteps,
+        onFinish: userOnFinish,
+        ...aiSDKOptions
+      } = options || {};
+
+      const result = streamText({
+        model,
+        messages,
+        tools,
+        // Default values
+        temperature: this.temperature,
+        maxOutputTokens: this.maxOutputTokens,
+        maxRetries: 3,
+        stopWhen: stepCountIs(maxSteps),
+        // User overrides from AI SDK options
+        ...aiSDKOptions,
+        // VoltAgent controlled (these should not be overridden)
+        abortSignal: context.system.signal,
+        onStepFinish: this.createStepHandler(context, options),
+        onError: ({ error }) => {
+          // Log the error
+          methodLogger.error("Stream error occurred", {
+            error,
+            agentName: this.name,
+            modelName: this.getModelName(),
+          });
+
+          // Update history entry with error status
+          this.updateHistoryEntry(context, {
+            status: "error",
+            endTime: new Date(),
+            statusMessage: {
+              message: error instanceof Error ? error.message : "Unknown error",
+            },
+          });
+
+          // Publish agent:error event
+          const agentErrorEvent = this.createAgentErrorEvent(context, error as Error);
+          this.publishTimelineEvent(context, agentErrorEvent);
+
+          // Call error hooks if they exist
+          this.getMergedHooks(options).onError?.(context, error as Error);
+
+          // Don't re-throw - let the error be part of the stream
+          // The onError callback should return void for AI SDK compatibility
+        },
+        onFinish: async (finalResult) => {
+          // Update history
+          this.updateHistoryEntry(context, {
+            output: finalResult.text,
+            usage: convertUsage(finalResult.totalUsage),
+            endTime: new Date(),
+            status: "completed",
+          });
+
+          // Publish agent:success event
+          const agentSuccessEvent = this.createAgentSuccessEvent(context, finalResult);
+          this.publishTimelineEvent(context, agentSuccessEvent);
+
+          // Call hooks
+          await this.getMergedHooks(options).onEnd?.(context, finalResult);
+
+          // Call user's onFinish if it exists
+          if (userOnFinish) {
+            await userOnFinish(finalResult);
+          }
+        },
+      });
+
+      // Create merged fullStream that includes subagent events
+      const mergedFullStream = this.subAgentManager.hasSubAgents()
+        ? createMergedFullStream(result.fullStream, subagentEventCollector)
+        : result.fullStream;
+
+      // Create a wrapper that includes context and delegates to the original result
+      const resultWithContext: StreamTextResultWithContext = {
+        // Delegate all properties and methods to the original result
+        text: result.text,
+        textStream: result.textStream,
+        fullStream: mergedFullStream, // Use merged stream
+        usage: result.usage,
+        finishReason: result.finishReason,
+        // Don't access experimental_partialOutputStream directly, use getter
+        get experimental_partialOutputStream() {
+          return result.experimental_partialOutputStream;
+        },
+        toUIMessageStream: result.toUIMessageStream.bind(result),
+        toUIMessageStreamResponse: result.toUIMessageStreamResponse.bind(result),
+        pipeUIMessageStreamToResponse: result.pipeUIMessageStreamToResponse.bind(result),
+        pipeTextStreamToResponse: result.pipeTextStreamToResponse.bind(result),
+        toTextStreamResponse: result.toTextStreamResponse.bind(result),
+        // Add our custom context
+        context: new Map(context.context),
+      };
+
+      return resultWithContext;
+    } catch (error) {
+      return this.handleError(error as Error, context, options, 0);
+    }
+  }
+
+  /**
+   * Generate structured object
+   */
+  async generateObject<T extends z.ZodType>(
+    input: string | UIMessage[],
+    schema: T,
+    options?: GenerateObjectOptions,
+  ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
+    const startTime = Date.now();
+    const context = await this.createContext(input, options);
+    const { messages, model, maxSteps } = await this.prepareExecution(input, context, options);
+
+    try {
+      // Call hooks
+      await this.getMergedHooks(options).onStart?.(context);
+
+      // Publish agent:start event
+      const agentStartEvent = this.createAgentStartEvent(
+        context,
+        input,
+        messages,
+        maxSteps,
+        options,
+      );
+      this.publishTimelineEvent(context, agentStartEvent);
+
+      // Extract VoltAgent-specific options
+      const {
+        userId,
+        conversationId,
+        parentAgentId,
+        parentHistoryEntryId,
+        parentOperationContext,
+        contextLimit,
+        hooks,
+        maxSteps: userMaxSteps,
+        ...aiSDKOptions
+      } = options || {};
+
+      const result = await generateObject({
+        model,
+        messages,
+        output: "object",
+        schema,
+        // Default values
+        maxOutputTokens: this.maxOutputTokens,
+        temperature: this.temperature,
+        maxRetries: 3,
+        // User overrides from AI SDK options
+        ...aiSDKOptions,
+        // VoltAgent controlled
+        abortSignal: context.system.signal,
+      });
+
+      // Save the object response to memory
+      if (
+        context.operationContext &&
+        context.operation.userId &&
+        context.operation.conversationId
+      ) {
+        const stepHandler = this.memoryManager.createStepFinishHandler(
+          context.operationContext,
+          context.operation.userId,
+          context.operation.conversationId,
+        );
+
+        const step: StepWithContent = {
+          id: crypto.randomUUID(),
+          type: "text",
+          content: safeStringify(result.object),
+          role: "assistant",
+          usage: convertUsage(result.usage),
+        };
+        await stepHandler(step);
+        this.addStepToHistory(step, context);
+      }
+
+      // Update history
+      this.updateHistoryEntry(context, {
+        output: safeStringify(result.object),
+        usage: convertUsage(result.usage),
+        endTime: new Date(),
+        status: "completed",
+      });
+
+      // Publish agent:success event
+      const agentSuccessEvent = this.createAgentSuccessEvent(context, result);
+      this.publishTimelineEvent(context, agentSuccessEvent);
+
+      // Call hooks
+      await this.getMergedHooks(options).onEnd?.(context, result);
+
+      // Return result with context for consistency
+      return {
+        ...result,
+        context: new Map(context.context),
+      };
+    } catch (error) {
+      return this.handleError(error as Error, context, options, startTime);
+    }
+  }
+
+  /**
+   * Stream structured object
+   */
+  async streamObject<T extends z.ZodType>(
+    input: string | UIMessage[],
+    schema: T,
+    options?: StreamObjectOptions,
+  ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
+    const context = await this.createContext(input, options);
+    const methodLogger = context.system.logger; // Extract logger with executionId
+
+    const { messages, model, maxSteps } = await this.prepareExecution(input, context, options);
+
+    const modelName = this.getModelName();
+    const schemaName = schema.description || "unknown";
+
+    // Log stream object start
+    methodLogger.debug(
+      buildAgentLogMessage(
+        this.name,
+        ActionType.STREAM_START,
+        `Starting object stream generation with ${modelName}`,
+      ),
+      {
+        event: LogEvents.AGENT_STREAM_STARTED,
+        operationType: "object",
+        schemaName: schemaName,
+        model: modelName,
+        messageCount: messages?.length || 0,
+        input,
+      },
+    );
+
+    try {
+      // Call hooks
+      await this.getMergedHooks(options).onStart?.(context);
+
+      // Publish agent:start event
+      const agentStartEvent = this.createAgentStartEvent(
+        context,
+        input,
+        messages,
+        maxSteps,
+        options,
+      );
+      this.publishTimelineEvent(context, agentStartEvent);
+
+      // Extract VoltAgent-specific options
+      const {
+        userId,
+        conversationId,
+        parentAgentId,
+        parentHistoryEntryId,
+        parentOperationContext,
+        contextLimit,
+        hooks,
+        maxSteps: userMaxSteps,
+        onFinish: userOnFinish,
+        ...aiSDKOptions
+      } = options || {};
+
+      const result = streamObject({
+        model,
+        messages,
+        output: "object",
+        schema,
+        // Default values
+        maxOutputTokens: this.maxOutputTokens,
+        temperature: this.temperature,
+        maxRetries: 3,
+        // User overrides from AI SDK options
+        ...aiSDKOptions,
+        // VoltAgent controlled
+        abortSignal: context.system.signal,
+        onError: ({ error }) => {
+          // Log the error
+          methodLogger.error("Stream object error occurred", {
+            error,
+            agentName: this.name,
+            modelName: this.getModelName(),
+            schemaName: schemaName,
+          });
+
+          // Update history entry with error status
+          this.updateHistoryEntry(context, {
+            status: "error",
+            endTime: new Date(),
+          });
+
+          // Publish agent:error event
+          const agentErrorEvent = this.createAgentErrorEvent(context, error as Error);
+          this.publishTimelineEvent(context, agentErrorEvent);
+
+          // Call error hooks if they exist
+          this.getMergedHooks(options).onError?.(context, error as Error);
+
+          // Don't re-throw - let the error be part of the stream
+          // The onError callback should return void for AI SDK compatibility
+        },
+        onFinish: async (finalResult: any) => {
+          // Save the object response to memory
+          if (
+            context.operationContext &&
+            context.operation.userId &&
+            context.operation.conversationId
+          ) {
+            const stepHandler = this.memoryManager.createStepFinishHandler(
+              context.operationContext,
+              context.operation.userId,
+              context.operation.conversationId,
+            );
+
+            const step: StepWithContent = {
+              id: crypto.randomUUID(),
+              type: "text",
+              content: safeStringify(finalResult.object),
+              role: "assistant",
+              usage: convertUsage(finalResult.usage),
+            };
+            await stepHandler(step);
+            this.addStepToHistory(step, context);
+          }
+
+          // Update history
+          this.updateHistoryEntry(context, {
+            output: safeStringify(finalResult.object),
+            usage: convertUsage(finalResult.usage),
+            endTime: new Date(),
+            status: "completed",
+          });
+
+          // Publish agent:success event
+          const agentSuccessEvent = this.createAgentSuccessEvent(context, finalResult);
+          this.publishTimelineEvent(context, agentSuccessEvent);
+
+          // Call hooks
+          await this.getMergedHooks(options).onEnd?.(context, finalResult);
+
+          // Call user's onFinish if it exists
+          if (userOnFinish) {
+            await userOnFinish(finalResult);
+          }
+        },
+      });
+
+      // Create a wrapper that includes context and delegates to the original result
+      const resultWithContext: StreamObjectResultWithContext<z.infer<T>> = {
+        // Delegate to original properties
+        object: result.object,
+        partialObjectStream: result.partialObjectStream,
+        textStream: result.textStream,
+        warnings: result.warnings,
+        usage: result.usage,
+        finishReason: result.finishReason,
+        // Delegate response conversion methods
+        pipeTextStreamToResponse: (response, init) =>
+          result.pipeTextStreamToResponse(response, init),
+        toTextStreamResponse: (init) => result.toTextStreamResponse(init),
+        // Add our custom context
+        context: new Map(context.context),
+      };
+
+      return resultWithContext;
+    } catch (error) {
+      return this.handleError(error as Error, context, options, 0);
+    }
+  }
+
+  // ============================================================================
+  // Private Helper Methods
+  // ============================================================================
+
+  /**
+   * Common preparation for all execution methods
+   */
+  private async prepareExecution(
+    input: string | UIMessage[],
+    context: AgentContext,
+    options?: BaseGenerationOptions,
+  ): Promise<{
+    messages: BaseMessage[];
+    model: LanguageModel;
+    tools: Record<string, any>;
+    maxSteps: number;
+  }> {
+    // Resolve dynamic values
+    const model = await this.resolveValue(this.model, context);
+    const toolList = await this.resolveValue(this.tools, context);
+
+    // Prepare messages (system + memory + input) as UIMessages
+    const uiMessages = await this.prepareMessages(input, context, options);
+
+    // Convert UIMessages to ModelMessages for the LLM
+    const messages = convertToModelMessages(uiMessages);
+
+    // Calculate maxSteps (use provided option or calculate based on subagents)
+    const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
+
+    // Prepare tools with execution context
+    const toolsArray = Array.isArray(toolList) ? toolList : [];
+    const tools = await this.prepareTools(toolsArray, context, maxSteps, options);
+
+    return { messages, model, tools, maxSteps };
+  }
+
+  /**
+   * Create execution context
+   */
+  private async createContext(
+    input: string | UIMessage[],
+    options?: BaseGenerationOptions,
+  ): Promise<AgentContext> {
+    const operationId = crypto.randomUUID();
+    const startTime = new Date().toISOString();
+
+    // Merge default context with runtime context
+    const runtimeContext = toContextMap(options?.context);
+    const context = new Map([
+      ...(this.context?.entries() || []), // Agent-level default context
+      ...(runtimeContext?.entries() || []), // Runtime context (overrides defaults)
+      ...(options?.parentOperationContext?.context?.entries() || []), // Parent context (highest priority)
+    ]);
+
+    // Create OTEL span
+    const otelSpan = startOperationSpan({
+      agentId: this.id,
+      agentName: this.name,
+      operationName: "execute",
+      parentAgentId: options?.parentAgentId,
+      parentHistoryEntryId: options?.parentHistoryEntryId,
+      modelName: this.getModelName(),
+    });
+
+    // Add history entry first (before creating logger)
+    const historyEntry = await this.historyManager.addEntry({
+      input: typeof input === "string" ? input : input,
+      output: "",
+      status: "working",
+      steps: [],
+      userId: options?.userId,
+      conversationId: options?.conversationId,
+      model: this.getModelName(),
+      options: {
+        metadata: {
+          agentSnapshot: this.getFullState(),
+        },
+      },
+    });
+
+    // Create logger for this operation using historyEntry.id as executionId
+    const logger = this.getContextualLogger(
+      options?.parentAgentId,
+      options?.parentHistoryEntryId,
+    ).child({
+      operationId,
+      userId: options?.userId,
+      conversationId: options?.conversationId,
+      executionId: historyEntry.id, // Use historyEntry.id instead of operationId
+      // Preserve parent execution ID if present
+      ...(options?.parentHistoryEntryId && {
+        parentExecutionId: options?.parentHistoryEntryId,
+      }),
+    });
+
+    // Create legacy operation context for compatibility
+    const operationContext: OperationContext = {
+      operationId: historyEntry.id,
+      context,
+      systemContext: new Map(),
+      historyEntry,
+      isActive: true,
+      logger,
+      conversationSteps: options?.parentOperationContext?.conversationSteps || [],
+      signal: options?.abortSignal,
+      abortController: undefined,
+      otelSpan,
+      parentAgentId: options?.parentAgentId,
+      parentHistoryEntryId: options?.parentHistoryEntryId,
+    };
+
+    return {
+      context,
+      operation: {
+        id: operationId,
+        userId: options?.userId,
+        conversationId: options?.conversationId,
+        parentAgentId: options?.parentAgentId,
+        parentHistoryId: options?.parentHistoryEntryId,
+      },
+      system: {
+        logger,
+        signal: options?.abortSignal,
+        abortController: undefined,
+        startTime,
+      },
+      otelSpan,
+      toolSpans: new Map(),
+      conversationSteps: operationContext.conversationSteps,
+      operationContext,
+    };
+  }
+
+  /**
+   * Get contextual logger with parent tracking
+   */
+  private getContextualLogger(parentAgentId?: string, parentHistoryEntryId?: string): Logger {
+    if (parentAgentId) {
+      const parentAgent = AgentRegistry.getInstance().getAgent(parentAgentId);
+      if (parentAgent) {
+        return this.logger.child({
+          parentAgentId,
+          isSubAgent: true,
+          delegationDepth: this.calculateDelegationDepth(parentAgentId),
+          ...(parentHistoryEntryId && {
+            parentExecutionId: parentHistoryEntryId,
+          }),
+        });
+      }
+    }
+    return this.logger;
+  }
+
+  /**
+   * Calculate delegation depth
+   */
+  private calculateDelegationDepth(parentAgentId: string | undefined): number {
+    if (!parentAgentId) return 0;
+
+    let depth = 1;
+    let currentParentId = parentAgentId;
+    const visited = new Set<string>();
+
+    while (currentParentId) {
+      if (visited.has(currentParentId)) break;
+      visited.add(currentParentId);
+
+      const parentIds = AgentRegistry.getInstance().getParentAgentIds(currentParentId);
+      if (parentIds.length > 0) {
+        depth++;
+        currentParentId = parentIds[0];
+      } else {
+        break;
+      }
+    }
+
+    return depth;
+  }
+
+  /**
+   * Prepare messages with system prompt and memory
+   */
+  private async prepareMessages(
+    input: string | UIMessage[],
+    context: AgentContext,
+    options?: BaseGenerationOptions,
+  ): Promise<UIMessage[]> {
+    const messages: UIMessage[] = [];
+
+    // Get system message with retriever context
+    const systemMessage = await this.getSystemMessage(input, context);
+    if (systemMessage) {
+      // Convert system message to UIMessage format
+      const systemUIMessage: UIMessage = {
+        id: crypto.randomUUID(),
+        role: "system",
+        parts: [
+          {
+            type: "text",
+            text:
+              typeof systemMessage === "string"
+                ? systemMessage
+                : Array.isArray(systemMessage)
+                  ? systemMessage
+                      .map((m) => (typeof m.content === "string" ? m.content : ""))
+                      .join("\n")
+                  : typeof systemMessage.content === "string"
+                    ? systemMessage.content
+                    : "",
+          },
+        ],
+      };
+      messages.push(systemUIMessage);
+    }
+
+    // Load memory context if available (already returns UIMessages)
+    if (context.operationContext) {
+      const { messages: memoryMessages, conversationId } =
+        await this.memoryManager.prepareConversationContext(
+          context.operationContext,
+          input,
+          context.operation.userId,
+          context.operation.conversationId,
+          options?.contextLimit,
+        );
+
+      // Update conversation ID
+      context.operation.conversationId = conversationId;
+
+      // Add memory messages (already UIMessages)
+      messages.push(...memoryMessages);
+    }
+
+    // Add current input
+    if (typeof input === "string") {
+      messages.push({
+        id: crypto.randomUUID(),
+        role: "user",
+        parts: [{ type: "text", text: input }],
+      });
+    } else {
+      messages.push(...input);
+    }
+
+    // Allow hooks to modify messages
+    const hooks = this.getMergedHooks(options);
+    if (hooks.onPrepareMessages) {
+      const result = await hooks.onPrepareMessages(messages, context);
+      return result?.messages || messages;
+    }
+
+    return messages;
+  }
+
+  /**
+   * Get system message with dynamic instructions and retriever context
+   */
+  private async getSystemMessage(
+    input: string | UIMessage[],
+    context: AgentContext,
+  ): Promise<BaseMessage | BaseMessage[]> {
+    // Resolve dynamic instructions
     const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
       this.id,
       this.name,
-      this.instructions,
+      typeof this.instructions === "function" ? "" : this.instructions,
       this.voltOpsClient,
     );
+
     const dynamicValueOptions: DynamicValueOptions = {
-      userContext: operationContext?.userContext || new Map(),
+      context: context.context,
       prompts: promptHelper,
     };
-    const resolvedInstructions = await this.resolveInstructions(
+
+    const resolvedInstructions = await this.resolveValue(
+      this.instructions,
+      context,
       dynamicValueOptions,
-      operationContext,
     );
 
-    // Get retriever context if available (needed for both chat and text types)
+    // Get retriever context if available
     let retrieverContext: string | null = null;
-    if (this.retriever && input && historyEntryId) {
-      retrieverContext = await this.getRetrieverContext(input, historyEntryId, operationContext);
+    if (this.retriever && input && context.operationContext) {
+      retrieverContext = await this.getRetrieverContext(input, context);
     }
 
-    // Handle chat type prompts first - these return BaseMessage[]
-    if (typeof resolvedInstructions === "object" && resolvedInstructions.type === "chat") {
-      if (!resolvedInstructions.messages || resolvedInstructions.messages.length === 0) {
-        // Fallback to default instructions if chat messages are empty
-        let fallbackContent = `You are ${this.name}. ${this.instructions}`;
+    // Handle different instruction types
+    if (typeof resolvedInstructions === "object" && "type" in resolvedInstructions) {
+      const promptContent = resolvedInstructions as PromptContent;
 
-        // Add retriever context to fallback
+      if (promptContent.type === "chat" && promptContent.messages) {
+        const messages = [...promptContent.messages];
+
+        // Add retriever context to last system message if available
         if (retrieverContext) {
-          fallbackContent = `${fallbackContent}\n\nRelevant Context:\n${retrieverContext}`;
+          const lastSystemIndex = messages
+            .map((m, i) => ({ message: m, index: i }))
+            .filter(({ message }) => message.role === "system")
+            .pop()?.index;
+
+          if (lastSystemIndex !== undefined) {
+            const existingMessage = messages[lastSystemIndex];
+            messages[lastSystemIndex] = {
+              ...existingMessage,
+              content: `${existingMessage.content}\n\nRelevant Context:\n${retrieverContext}`,
+            } as typeof existingMessage;
+          } else {
+            messages.push({
+              role: "system",
+              content: `Relevant Context:\n${retrieverContext}`,
+            } as SystemModelMessage);
+          }
+        }
+
+        return messages;
+      }
+
+      if (promptContent.type === "text") {
+        let content = promptContent.text || "";
+
+        // Add toolkit instructions
+        content = this.addToolkitInstructions(content);
+
+        // Add markdown instruction
+        if (this.markdown) {
+          content = `${content}\n\nUse markdown to format your answers.`;
+        }
+
+        // Add retriever context
+        if (retrieverContext) {
+          content = `${content}\n\nRelevant Context:\n${retrieverContext}`;
+        }
+
+        // Add supervisor instructions if needed
+        if (this.subAgentManager.hasSubAgents()) {
+          const agentsMemory = await this.prepareAgentsMemory(context);
+          content = this.subAgentManager.generateSupervisorSystemMessage(
+            content,
+            agentsMemory,
+            this.supervisorConfig,
+          );
         }
 
         return {
-          systemMessages: {
-            role: "system",
-            content: fallbackContent,
-          },
-          promptMetadata: resolvedInstructions.metadata,
-          isDynamicInstructions: typeof this.dynamicInstructions === "function",
+          role: "system",
+          content: `You are ${this.name}. ${content}`,
         };
       }
-
-      // For chat type with messages, add retriever context to the last system message or create a new one
-      const messagesWithContext = [...resolvedInstructions.messages];
-
-      if (retrieverContext) {
-        // Find the last system message and append context, or create a new system message
-        const lastSystemIndex = messagesWithContext
-          .map((m, i) => ({ message: m, index: i }))
-          .filter(({ message }) => message.role === "system")
-          .pop()?.index;
-
-        if (lastSystemIndex !== undefined) {
-          // Append to the last system message
-          const lastSystemMessage = messagesWithContext[lastSystemIndex];
-          messagesWithContext[lastSystemIndex] = {
-            ...lastSystemMessage,
-            content: `${lastSystemMessage.content}\n\nRelevant Context:\n${retrieverContext}`,
-          };
-        } else {
-          // No system message exists, add a new one with context
-          messagesWithContext.push({
-            role: "system",
-            content: `Relevant Context:\n${retrieverContext}`,
-          });
-        }
-      }
-
-      return {
-        systemMessages: messagesWithContext,
-        promptMetadata: resolvedInstructions.metadata,
-        isDynamicInstructions: typeof this.dynamicInstructions === "function",
-      };
     }
 
-    // Handle text type (either string or PromptContent with text)
-    let baseInstructions = "";
-    let promptMetadata: any = null;
+    // Default string instructions
+    let content = typeof resolvedInstructions === "string" ? resolvedInstructions : "";
 
-    if (typeof resolvedInstructions === "string") {
-      baseInstructions = resolvedInstructions || "";
-    } else if (typeof resolvedInstructions === "object" && resolvedInstructions.type === "text") {
-      baseInstructions = resolvedInstructions.text || "";
-      // ✅ Capture metadata from PromptContent
-      promptMetadata = resolvedInstructions.metadata;
-    } else {
-      // Fallback to default instructions
-      baseInstructions = this.instructions || "";
-    }
+    // Add toolkit instructions
+    content = this.addToolkitInstructions(content);
 
-    // --- Add Instructions from Toolkits --- (Simplified Logic)
-    let toolInstructions = "";
-    // Get only the toolkits
-    const toolkits = this.toolManager.getToolkits();
-    for (const toolkit of toolkits) {
-      // Check if the toolkit wants its instructions added
-      if (toolkit.addInstructions && toolkit.instructions) {
-        // Append toolkit instructions
-        // Using a simple newline separation for now.
-        toolInstructions += `\n\n${toolkit.instructions}`;
-      }
-    }
-    if (toolInstructions) {
-      baseInstructions = `${baseInstructions}${toolInstructions}`;
-    }
-    // --- End Add Instructions from Toolkits ---
-
-    // Add Markdown Instruction if Enabled
+    // Add markdown instruction
     if (this.markdown) {
-      baseInstructions = `${baseInstructions}\n\nUse markdown to format your answers.`;
+      content = `${content}\n\nUse markdown to format your answers.`;
     }
 
-    let finalInstructions = baseInstructions;
-
-    // Add retriever context for text type prompts
+    // Add retriever context
     if (retrieverContext) {
-      finalInstructions = `${finalInstructions}\n\nRelevant Context:\n${retrieverContext}`;
+      content = `${content}\n\nRelevant Context:\n${retrieverContext}`;
     }
 
-    // If the agent has sub-agents, generate supervisor system message
+    // Add supervisor instructions if needed
     if (this.subAgentManager.hasSubAgents()) {
-      // Fetch recent agent history for the sub-agents
-      const agentsMemory = await this.prepareAgentsMemory(contextMessages);
-
-      // Generate the supervisor message with the agents memory inserted
-      finalInstructions = this.subAgentManager.generateSupervisorSystemMessage(
-        finalInstructions,
+      const agentsMemory = await this.prepareAgentsMemory(context);
+      content = this.subAgentManager.generateSupervisorSystemMessage(
+        content,
         agentsMemory,
         this.supervisorConfig,
       );
-
-      return {
-        systemMessages: {
-          role: "system",
-          content: finalInstructions,
-        },
-        promptMetadata,
-        isDynamicInstructions: typeof this.dynamicInstructions === "function",
-      };
     }
 
     return {
-      systemMessages: {
-        role: "system",
-        content: `You are ${this.name}. ${finalInstructions}`,
-      },
-      promptMetadata,
-      isDynamicInstructions: typeof this.dynamicInstructions === "function",
+      role: "system",
+      content: `You are ${this.name}. ${content}`,
     };
   }
 
   /**
-   * Prepare agents memory for the supervisor system message
-   * This fetches and formats recent interactions with sub-agents
+   * Add toolkit instructions
    */
-  private async prepareAgentsMemory(contextMessages: BaseMessage[]): Promise<string> {
+  private addToolkitInstructions(baseInstructions: string): string {
+    const toolkits = this.toolManager.getToolkits();
+    let toolInstructions = "";
+
+    for (const toolkit of toolkits) {
+      if (toolkit.addInstructions && toolkit.instructions) {
+        toolInstructions += `\n\n${toolkit.instructions}`;
+      }
+    }
+
+    return baseInstructions + toolInstructions;
+  }
+
+  /**
+   * Prepare agents memory for supervisor
+   */
+  private async prepareAgentsMemory(context: AgentContext): Promise<string> {
     try {
-      // Get all sub-agents
       const subAgents = this.subAgentManager.getSubAgents();
       if (subAgents.length === 0) return "";
 
-      // Format the agent histories into a readable format
-      const formattedMemory = contextMessages
-        .filter((p) => p.role !== "system")
-        .filter((p) => p.role === "assistant" && !p.content.toString().includes("toolCallId"))
-        .map((message) => {
-          return `${message.role}: ${message.content}`;
-        })
+      // Get recent conversation steps
+      const steps = context.conversationSteps || [];
+      const formattedMemory = steps
+        .filter((step) => step.role !== "system" && step.role === "assistant")
+        .map((step) => `${step.role}: ${step.content}`)
         .join("\n\n");
 
       return formattedMemory || "No previous agent interactions found.";
@@ -649,478 +1485,864 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Add input to messages array based on type
+   * Get retriever context
    */
-  private async formatInputMessages(
-    messages: BaseMessage[],
-    input: string | BaseMessage[],
-  ): Promise<BaseMessage[]> {
-    if (typeof input === "string") {
-      // Add user message to the messages array
-      return [
-        ...messages,
-        {
-          role: "user",
-          content: input,
+  private async getRetrieverContext(
+    input: string | UIMessage[],
+    context: AgentContext,
+  ): Promise<string | null> {
+    if (!this.retriever || !context.operationContext) return null;
+
+    const startTime = Date.now();
+    const retrieverLogger = context.system.logger.child({
+      operation: "retriever",
+      retrieverId: this.retriever.tool.name,
+    });
+
+    retrieverLogger.debug(buildAgentLogMessage(this.name, ActionType.START, "Retrieving context"), {
+      event: LogEvents.RETRIEVER_SEARCH_STARTED,
+      input,
+    });
+
+    const retrieverStartEvent: RetrieverStartEvent = {
+      id: crypto.randomUUID(),
+      name: "retriever:start",
+      type: "retriever",
+      startTime: new Date().toISOString(),
+      status: "running",
+      input: { query: input },
+      output: null,
+      metadata: {
+        displayName: this.retriever.tool.name || "Retriever",
+        id: this.retriever.tool.name,
+        agentId: this.id,
+      },
+      traceId: context.operationContext.historyEntry.id,
+    };
+
+    this.publishTimelineEvent(context, retrieverStartEvent);
+
+    try {
+      // Convert UIMessage to ModelMessage for retriever if needed
+      const retrieverInput = typeof input === "string" ? input : convertToModelMessages(input);
+
+      const retrieverContext = await this.retriever.retrieve(retrieverInput, {
+        context: context.context,
+        logger: retrieverLogger,
+      });
+
+      if (retrieverContext?.trim()) {
+        const documentCount = retrieverContext.split("\n").filter((line) => line.trim()).length;
+
+        retrieverLogger.debug(
+          buildAgentLogMessage(
+            this.name,
+            ActionType.COMPLETE,
+            `Retrieved ${documentCount} documents`,
+          ),
+          {
+            event: LogEvents.RETRIEVER_SEARCH_COMPLETED,
+            documentCount,
+            duration: Date.now() - startTime,
+          },
+        );
+
+        const retrieverSuccessEvent: RetrieverSuccessEvent = {
+          id: crypto.randomUUID(),
+          name: "retriever:success",
+          type: "retriever",
+          startTime: retrieverStartEvent.startTime,
+          endTime: new Date().toISOString(),
+          status: "completed",
+          input: null,
+          output: { context: retrieverContext },
+          metadata: retrieverStartEvent.metadata,
+          traceId: context.operationContext.historyEntry.id,
+          parentEventId: retrieverStartEvent.id,
+        };
+
+        this.publishTimelineEvent(context, retrieverSuccessEvent);
+        return retrieverContext;
+      }
+
+      return null;
+    } catch (error) {
+      const retrieverErrorEvent: RetrieverErrorEvent = {
+        id: crypto.randomUUID(),
+        name: "retriever:error",
+        type: "retriever",
+        startTime: retrieverStartEvent.startTime,
+        endTime: new Date().toISOString(),
+        status: "error",
+        level: "ERROR",
+        input: null,
+        output: null,
+        statusMessage: {
+          message: error instanceof Error ? error.message : "Unknown retriever error",
+          ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
         },
-      ];
+        metadata: retrieverStartEvent.metadata,
+        traceId: context.operationContext.historyEntry.id,
+        parentEventId: retrieverStartEvent.id,
+      };
+
+      this.publishTimelineEvent(context, retrieverErrorEvent);
+
+      retrieverLogger.error(
+        buildAgentLogMessage(
+          this.name,
+          ActionType.ERROR,
+          `Retriever failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        ),
+        {
+          event: LogEvents.RETRIEVER_SEARCH_FAILED,
+          error: error instanceof Error ? error.message : String(error),
+          duration: Date.now() - startTime,
+        },
+      );
+
+      this.logger.warn("Failed to retrieve context", { error, agentId: this.id });
+      return null;
     }
-    // Add all message objects directly
-    return [...messages, ...input];
   }
 
   /**
-   * Calculate maximum number of steps based on sub-agents
+   * Resolve dynamic value
+   */
+  private async resolveValue<T>(
+    value: T | DynamicValue<T>,
+    context: AgentContext,
+    options?: DynamicValueOptions,
+  ): Promise<T> {
+    if (typeof value === "function") {
+      const dynamicValue = value as DynamicValue<T>;
+      const resolveOptions: DynamicValueOptions =
+        options ||
+        (this.prompts
+          ? {
+              context: context.context,
+              prompts: this.prompts,
+            }
+          : {
+              context: context.context,
+              prompts: {
+                getPrompt: async () => ({ type: "text" as const, text: "" }),
+              },
+            });
+      return await dynamicValue(resolveOptions);
+    }
+    return value;
+  }
+
+  /**
+   * Prepare tools with execution context
+   */
+  private async prepareTools(
+    toolList: any,
+    context: AgentContext,
+    maxSteps: number,
+    options?: BaseGenerationOptions,
+  ): Promise<Record<string, any>> {
+    const tools = Array.isArray(toolList) ? toolList : [];
+    const baseTools = this.toolManager.prepareToolsForGeneration(tools);
+
+    // Add delegate tool if we have subagents
+    if (this.subAgentManager.hasSubAgents()) {
+      // Get the subagent event collector from context if available
+      const eventCollector = context.subagentEventCollector;
+
+      const delegateTool = this.subAgentManager.createDelegateTool({
+        sourceAgent: this as any, // Type workaround
+        currentHistoryEntryId: context.operationContext?.historyEntry.id,
+        operationContext: context.operationContext,
+        maxSteps: maxSteps,
+        onStreamEvent: eventCollector ? (event) => eventCollector.addEvent(event) : undefined,
+      });
+      baseTools.push(delegateTool);
+    }
+
+    // Convert to AI SDK tools with context injection
+    return this.convertTools(baseTools, context, options);
+  }
+
+  /**
+   * Convert VoltAgent tools to AI SDK format with context injection
+   */
+  private convertTools(
+    tools: Tool<any, any>[],
+    context: AgentContext,
+    options?: BaseGenerationOptions,
+  ): Record<string, any> {
+    const aiTools: Record<string, any> = {};
+    const hooks = this.getMergedHooks(options);
+
+    for (const tool of tools) {
+      aiTools[tool.name] = {
+        description: tool.description,
+        inputSchema: tool.parameters, // AI SDK will convert this to JSON Schema internally
+        execute: async (args: any) => {
+          // Create tool execution context
+          const toolExecutionContext: ToolExecutionContext = {
+            operationContext: context.operationContext,
+            agentId: this.id,
+            historyEntryId: context.operationContext?.historyEntry.id || "unknown",
+          };
+
+          // Publish tool:start event
+          const toolStartEvent: ToolStartEvent = {
+            id: crypto.randomUUID(),
+            name: "tool:start",
+            type: "tool",
+            startTime: new Date().toISOString(),
+            status: "running",
+            input: args || {},
+            output: null,
+            metadata: {
+              displayName: tool.name,
+              id: tool.name,
+              agentId: this.id,
+            },
+            traceId: context.operationContext?.historyEntry.id || context.operation.id,
+            parentEventId: context.system.agentStartEventId,
+          };
+
+          this.publishTimelineEvent(context, toolStartEvent);
+
+          // Create and track OTEL span
+          const toolSpan = startToolSpan({
+            toolName: tool.name,
+            toolCallId: crypto.randomUUID(),
+            toolInput: args,
+            agentId: this.id,
+            parentSpan: context.otelSpan,
+          });
+
+          try {
+            // Call tool start hook
+            await hooks.onToolStart?.(context, tool);
+
+            // Specifically handle Reasoning Tools (think and analyze)
+            let result: any;
+            if (tool.name === "think" || tool.name === "analyze") {
+              // Reasoning tools require ReasoningToolExecuteOptions
+              const reasoningOptions: ReasoningToolExecuteOptions = {
+                ...toolExecutionContext,
+                agentId: this.id,
+                historyEntryId: context.operationContext?.historyEntry.id || "unknown",
+              };
+
+              // Warn if historyEntryId is not available
+              if (
+                !reasoningOptions.historyEntryId ||
+                reasoningOptions.historyEntryId === "unknown"
+              ) {
+                this.logger.warn(
+                  `Executing reasoning tool '${tool.name}' without a known historyEntryId`,
+                  {
+                    toolName: tool.name,
+                    agentId: this.id,
+                    operationContext: !!context.operationContext,
+                  },
+                );
+              }
+
+              // Execute with properly typed options
+              result = await tool.execute(args, reasoningOptions);
+            } else {
+              // Execute regular tools with standard context
+              result = await tool.execute(args, toolExecutionContext);
+            }
+
+            // Validate output if schema provided
+            if (
+              tool.outputSchema &&
+              typeof tool.outputSchema === "object" &&
+              "safeParse" in tool.outputSchema
+            ) {
+              const parseResult = (tool.outputSchema as any).safeParse(result);
+              if (!parseResult.success) {
+                const error = {
+                  error: true,
+                  message: `Output validation failed: ${parseResult.error.message}`,
+                  validationErrors: parseResult.error.errors,
+                  actualOutput: result,
+                };
+
+                // End OTEL span with error
+                endToolSpan({ span: toolSpan, resultData: { error } }, this.logger);
+
+                // Publish tool:error event
+                const toolErrorEvent: ToolErrorEvent = {
+                  id: crypto.randomUUID(),
+                  name: "tool:error",
+                  type: "tool",
+                  startTime: toolStartEvent.startTime,
+                  endTime: new Date().toISOString(),
+                  status: "error",
+                  level: "ERROR",
+                  input: null,
+                  output: null,
+                  statusMessage: {
+                    message: error.message,
+                  },
+                  metadata: toolStartEvent.metadata,
+                  traceId: context.operationContext?.historyEntry.id || context.operation.id,
+                  parentEventId: toolStartEvent.id,
+                };
+
+                this.publishTimelineEvent(context, toolErrorEvent);
+
+                // Call tool end hook
+                await hooks.onToolEnd?.(context, tool, undefined, error);
+
+                return error;
+              }
+
+              // End OTEL span with success
+              endToolSpan(
+                { span: toolSpan, resultData: { result: parseResult.data } },
+                this.logger,
+              );
+
+              // Publish tool:success event
+              const toolSuccessEvent: ToolSuccessEvent = {
+                id: crypto.randomUUID(),
+                name: "tool:success",
+                type: "tool",
+                startTime: toolStartEvent.startTime,
+                endTime: new Date().toISOString(),
+                status: "completed",
+                input: null,
+                output: parseResult.data,
+                metadata: toolStartEvent.metadata,
+                traceId: context.operationContext?.historyEntry.id || context.operation.id,
+                parentEventId: toolStartEvent.id,
+              };
+
+              this.publishTimelineEvent(context, toolSuccessEvent);
+
+              // Call tool end hook
+              await hooks.onToolEnd?.(context, tool, parseResult.data);
+
+              return parseResult.data;
+            }
+
+            // End OTEL span
+            endToolSpan({ span: toolSpan, resultData: { result } }, this.logger);
+
+            // Publish tool:success event
+            const toolSuccessEvent: ToolSuccessEvent = {
+              id: crypto.randomUUID(),
+              name: "tool:success",
+              type: "tool",
+              startTime: toolStartEvent.startTime,
+              endTime: new Date().toISOString(),
+              status: "completed",
+              input: null,
+              output: result as Record<string, unknown> | null,
+              metadata: toolStartEvent.metadata,
+              traceId: context.operationContext?.historyEntry.id || context.operation.id,
+              parentEventId: toolStartEvent.id,
+            };
+
+            this.publishTimelineEvent(context, toolSuccessEvent);
+
+            // Call tool end hook
+            await hooks.onToolEnd?.(context, tool, result);
+
+            return result;
+          } catch (error) {
+            const errorResult = {
+              error: true,
+              message: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined,
+            };
+
+            // End OTEL span with error
+            endToolSpan({ span: toolSpan, resultData: { error: errorResult } }, this.logger);
+
+            // Publish tool:error event
+            const toolErrorEvent: ToolErrorEvent = {
+              id: crypto.randomUUID(),
+              name: "tool:error",
+              type: "tool",
+              startTime: toolStartEvent.startTime,
+              endTime: new Date().toISOString(),
+              status: "error",
+              level: "ERROR",
+              input: null,
+              output: null,
+              statusMessage: {
+                message: errorResult.message,
+                ...(errorResult.stack && { stack: errorResult.stack }),
+              },
+              metadata: toolStartEvent.metadata,
+              traceId: context.operationContext?.historyEntry.id || context.operation.id,
+              parentEventId: toolStartEvent.id,
+            };
+
+            this.publishTimelineEvent(context, toolErrorEvent);
+
+            // Call tool end hook
+            await hooks.onToolEnd?.(context, tool, undefined, errorResult);
+
+            return errorResult;
+          }
+        },
+      };
+    }
+
+    return aiTools;
+  }
+
+  /**
+   * Create step handler for memory and hooks
+   */
+  private createStepHandler(context: AgentContext, options?: BaseGenerationOptions) {
+    return async (event: any) => {
+      // Save to memory if operation context is available
+      if (context.operationContext) {
+        const stepHandler = this.memoryManager.createStepFinishHandler(
+          context.operationContext,
+          context.operation.userId,
+          context.operation.conversationId,
+        );
+
+        // Convert to StepWithContent format
+        if (event.finishReason === "stop" && event.text) {
+          const step: StepWithContent = {
+            id: crypto.randomUUID(),
+            type: "text",
+            content: event.text,
+            role: "assistant",
+            usage: convertUsage(event.usage),
+          };
+
+          // Log text generation step
+          context.system.logger.debug("Step: Text generated", {
+            event: LogEvents.AGENT_STEP_TEXT,
+            textPreview: event.text,
+            length: event.text.length,
+          });
+
+          await stepHandler(step);
+          this.addStepToHistory(step, context);
+        }
+
+        if (event.toolCalls && event.toolCalls.length > 0) {
+          for (const toolCall of event.toolCalls) {
+            const step: StepWithContent = {
+              id: toolCall.toolCallId,
+              type: "tool_call",
+              content: JSON.stringify(toolCall.args || {}),
+              role: "assistant",
+              name: toolCall.toolName,
+              arguments: toolCall.args || {},
+              usage: convertUsage(event.usage),
+            };
+
+            // Log tool call step
+            context.system.logger.debug(`Step: Calling tool '${toolCall.toolName}'`, {
+              event: LogEvents.AGENT_STEP_TOOL_CALL,
+              toolName: toolCall.toolName,
+              toolCallId: toolCall.toolCallId,
+              arguments: toolCall.args,
+            });
+
+            context.system.logger.debug(
+              buildAgentLogMessage(
+                this.name,
+                ActionType.TOOL_CALL,
+                `Executing ${toolCall.toolName}`,
+              ),
+              {
+                event: LogEvents.TOOL_EXECUTION_STARTED,
+                toolName: toolCall.toolName,
+                toolCallId: toolCall.toolCallId,
+                args: toolCall.args,
+              },
+            );
+
+            await stepHandler(step);
+            this.addStepToHistory(step, context);
+          }
+        }
+
+        if (event.toolResults && event.toolResults.length > 0) {
+          for (const toolResult of event.toolResults) {
+            const step: StepWithContent = {
+              id: toolResult.toolCallId,
+              type: "tool_result",
+              content: JSON.stringify(toolResult.result || {}),
+              role: "tool",
+              name: toolResult.toolName,
+              result: toolResult.result,
+              usage: convertUsage(event.usage),
+            };
+
+            // Log tool result step
+            context.system.logger.debug(`Step: Tool '${toolResult.toolName}' completed`, {
+              event: LogEvents.AGENT_STEP_TOOL_RESULT,
+              toolName: toolResult.toolName,
+              toolCallId: toolResult.toolCallId,
+              result: toolResult.result,
+              hasError: Boolean(toolResult.result?.error),
+            });
+
+            await stepHandler(step);
+            this.addStepToHistory(step, context);
+          }
+        }
+      }
+
+      // Call hooks
+      const hooks = this.getMergedHooks(options);
+      await hooks.onStepFinish?.(event);
+    };
+  }
+
+  /**
+   * Add step to history
+   */
+  private addStepToHistory(step: StepWithContent, context: AgentContext): void {
+    if (context.operationContext) {
+      this.historyManager.addStepsToEntry(context.operationContext.historyEntry.id, [step]);
+    }
+
+    // Track in conversation steps
+    if (context.conversationSteps) {
+      context.conversationSteps.push(step);
+    }
+  }
+
+  /**
+   * Update history entry
+   */
+  private updateHistoryEntry(context: AgentContext, updates: Partial<AgentHistoryEntry>): void {
+    if (context.operationContext) {
+      this.historyManager.updateEntry(context.operationContext.historyEntry.id, updates);
+    }
+  }
+
+  /**
+   * Merge agent hooks with options hooks
+   */
+  private getMergedHooks(options?: { hooks?: AgentHooks }): AgentHooks {
+    if (!options?.hooks) {
+      return this.hooks;
+    }
+
+    return {
+      onStart: async (...args) => {
+        await options.hooks?.onStart?.(...args);
+        await this.hooks.onStart?.(...args);
+      },
+      onEnd: async (...args) => {
+        await options.hooks?.onEnd?.(...args);
+        await this.hooks.onEnd?.(...args);
+      },
+      onError: async (...args) => {
+        await options.hooks?.onError?.(...args);
+        await this.hooks.onError?.(...args);
+      },
+      onHandoff: async (...args) => {
+        await options.hooks?.onHandoff?.(...args);
+        await this.hooks.onHandoff?.(...args);
+      },
+      onToolStart: async (...args) => {
+        await options.hooks?.onToolStart?.(...args);
+        await this.hooks.onToolStart?.(...args);
+      },
+      onToolEnd: async (...args) => {
+        await options.hooks?.onToolEnd?.(...args);
+        await this.hooks.onToolEnd?.(...args);
+      },
+      onStepFinish: async (...args) => {
+        await options.hooks?.onStepFinish?.(...args);
+        await this.hooks.onStepFinish?.(...args);
+      },
+      onPrepareMessages: options.hooks?.onPrepareMessages || this.hooks.onPrepareMessages,
+    };
+  }
+
+  /**
+   * Publish timeline event
+   */
+  private publishTimelineEvent(context: AgentContext, event: any, skipPropagation = false): void {
+    if (!context.operationContext) return;
+
+    AgentEventEmitter.getInstance().publishTimelineEventAsync({
+      agentId: this.id,
+      historyId: context.operationContext.historyEntry.id,
+      event,
+      skipPropagation,
+      parentHistoryEntryId: context.operationContext.parentHistoryEntryId,
+    });
+  }
+
+  /**
+   * Create agent:start event
+   */
+  private createAgentStartEvent(
+    context: AgentContext,
+    input: string | UIMessage[],
+    messages: BaseMessage[],
+    maxSteps: number,
+    options?: BaseGenerationOptions,
+  ): AgentStartEvent {
+    const event: AgentStartEvent = {
+      id: crypto.randomUUID(),
+      name: "agent:start",
+      type: "agent",
+      startTime: context.system.startTime,
+      status: "running",
+      input: { input },
+      output: null,
+      metadata: {
+        displayName: this.name,
+        id: this.id,
+        context: Object.fromEntries(context.context.entries()) as Record<string, unknown>,
+        messages,
+        modelParameters: {
+          model: this.getModelName(),
+          temperature: options?.temperature ?? this.temperature,
+          topP: options?.topP,
+          frequencyPenalty: options?.frequencyPenalty,
+          presencePenalty: options?.presencePenalty,
+          maxSteps: maxSteps,
+        },
+      },
+      traceId: context.operationContext?.historyEntry.id || context.operation.id,
+    };
+
+    // Store event ID for later reference
+    context.system.agentStartEventId = event.id;
+
+    return event;
+  }
+
+  /**
+   * Create agent:success event
+   */
+  private createAgentSuccessEvent(context: AgentContext, result: any): AgentSuccessEvent {
+    return {
+      id: crypto.randomUUID(),
+      name: "agent:success",
+      type: "agent",
+      startTime: context.system.startTime,
+      endTime: new Date().toISOString(),
+      status: "completed",
+      input: null,
+      output: result.text ? { text: result.text } : { object: result.object },
+      metadata: {
+        displayName: this.name,
+        id: this.id,
+        usage: convertUsage(result.usage),
+        context: Object.fromEntries(context.context.entries()) as Record<string, unknown>,
+      },
+      traceId: context.operationContext?.historyEntry.id || context.operation.id,
+      parentEventId: context.system.agentStartEventId,
+    };
+  }
+
+  /**
+   * Create agent:error event
+   */
+  private createAgentErrorEvent(context: AgentContext, error: VoltAgentError): AgentErrorEvent {
+    return {
+      id: crypto.randomUUID(),
+      name: "agent:error",
+      type: "agent",
+      startTime: context.system.startTime,
+      endTime: new Date().toISOString(),
+      status: "error",
+      level: "ERROR",
+      input: null,
+      output: null,
+      statusMessage: {
+        message: error.message,
+        code: error.code,
+        stage: error.stage,
+        ...(error.originalError ? { originalError: String(error.originalError) } : {}),
+      },
+      metadata: {
+        displayName: this.name,
+        id: this.id,
+        context: Object.fromEntries(context.context.entries()) as Record<string, unknown>,
+      },
+      traceId: context.operationContext?.historyEntry.id || context.operation.id,
+      parentEventId: context.system.agentStartEventId,
+    };
+  }
+
+  /**
+   * Setup abort signal listener
+   */
+  private setupAbortSignalListener(
+    signal: AbortSignal | undefined,
+    context: AgentContext,
+    agentStartEvent: { id: string; startTime: string },
+  ): void {
+    if (!signal) return;
+
+    signal.addEventListener("abort", async () => {
+      // Update history with cancelled status
+      this.updateHistoryEntry(context, {
+        status: "cancelled",
+        endTime: new Date(),
+      });
+
+      // Mark operation as inactive
+      if (context.operationContext) {
+        context.operationContext.isActive = false;
+      }
+
+      // Get abort reason
+      let abortReason: unknown = undefined;
+      if (context.system.abortController && "signal" in context.system.abortController) {
+        const sig = context.system.abortController.signal as AbortSignal & { reason?: unknown };
+        abortReason = sig.reason;
+      }
+
+      // Create cancellation error
+      const cancellationError = new Error(
+        typeof abortReason === "string"
+          ? abortReason
+          : abortReason && typeof abortReason === "object" && "message" in abortReason
+            ? String(abortReason.message)
+            : "Operation cancelled",
+      ) as AbortError;
+      cancellationError.name = "AbortError";
+      cancellationError.reason = abortReason;
+
+      // Store cancellation error
+      context.cancellationError = cancellationError;
+
+      // Create agent:cancel event
+      const agentCancelledEvent = {
+        id: crypto.randomUUID(),
+        name: "agent:cancel",
+        type: "agent",
+        startTime: agentStartEvent.startTime,
+        endTime: new Date().toISOString(),
+        level: "INFO",
+        input: null,
+        statusMessage: {
+          message: cancellationError.message,
+          code: "USER_CANCELLED",
+          stage: "cancelled",
+        },
+        status: "cancelled",
+        metadata: {
+          displayName: this.name,
+          id: this.id,
+          context: Object.fromEntries(context.context.entries()) as Record<string, unknown>,
+        },
+        traceId: context.operationContext?.historyEntry.id || context.operation.id,
+        parentEventId: agentStartEvent.id,
+      };
+
+      this.publishTimelineEvent(context, agentCancelledEvent);
+
+      // Call onEnd hook with cancellation error
+      const hooks = this.getMergedHooks();
+      await hooks.onEnd?.(context, undefined, cancellationError);
+    });
+  }
+
+  /**
+   * Handle errors
+   */
+  private async handleError(
+    error: Error,
+    context: AgentContext,
+    options?: BaseGenerationOptions,
+    startTime?: number,
+  ): Promise<never> {
+    // Check if cancelled
+    if (!context.operationContext?.isActive && context.cancellationError) {
+      throw context.cancellationError;
+    }
+
+    const voltagentError = error as VoltAgentError;
+
+    // Publish agent:error event
+    const agentErrorEvent = this.createAgentErrorEvent(context, voltagentError);
+    this.publishTimelineEvent(context, agentErrorEvent);
+
+    // Update history
+    this.updateHistoryEntry(context, {
+      status: "error",
+      endTime: new Date(),
+    });
+
+    // End OTEL span
+    if (context.otelSpan) {
+      endOperationSpan(
+        {
+          span: context.otelSpan,
+          status: "error",
+          data: { error: voltagentError },
+        },
+        this.logger,
+      );
+    }
+
+    // Call hooks
+    const hooks = this.getMergedHooks(options);
+    const errorForHooks = Object.assign(new Error(voltagentError.message), voltagentError);
+    await hooks.onEnd?.(context, undefined, errorForHooks);
+    await hooks.onError?.(context, errorForHooks);
+
+    // Log error
+    context.system.logger.error("Generation failed", {
+      event: LogEvents.AGENT_GENERATION_FAILED,
+      duration: startTime ? Date.now() - startTime : undefined,
+      error: {
+        message: voltagentError.message,
+        code: voltagentError.code,
+        stage: voltagentError.stage,
+      },
+    });
+
+    throw error;
+  }
+
+  // ============================================================================
+  // Public Utility Methods
+  // ============================================================================
+
+  /**
+   * Calculate max steps based on SubAgents
    */
   private calculateMaxSteps(): number {
     return this.subAgentManager.calculateMaxSteps(this.maxSteps);
   }
 
   /**
-   * Prepare common options for text generation
+   * Get the model name
    */
-  private async prepareTextOptions(
-    options: CommonGenerateOptions & {
-      internalStreamForwarder?: (event: StreamEvent) => Promise<void>;
-      logger?: Logger;
-    } = {},
-  ): Promise<{
-    tools: BaseTool[];
-    maxSteps: number;
-  }> {
-    const {
-      tools: dynamicTools,
-      maxSteps: optionsMaxSteps,
-      historyEntryId,
-      operationContext,
-      internalStreamForwarder,
-      logger,
-    } = options;
-
-    // Resolve dynamic tools if available
-    let resolvedTools: (Tool<any> | Toolkit)[] = [];
-    if (operationContext) {
-      const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
-        this.id,
-        this.name,
-        this.instructions,
-        this.voltOpsClient,
-      );
-      const dynamicValueOptions: DynamicValueOptions = {
-        userContext: operationContext.userContext || new Map(),
-        prompts: promptHelper,
-      };
-      resolvedTools = await this.resolveTools(dynamicValueOptions);
+  public getModelName(): string {
+    if (typeof this.model === "function") {
+      return "dynamic";
     }
-
-    // Merge resolved tools with any provided dynamic tools
-    const allTools = [...resolvedTools, ...(dynamicTools || [])];
-    const baseTools = this.toolManager.prepareToolsForGeneration(
-      allTools.length > 0 ? allTools : undefined,
-    );
-
-    // Emit tools update event if we have dynamic tools
-    if (this.dynamicTools && resolvedTools.length > 0) {
-      // Convert baseTools to API format
-      const allToolsForUpdate = baseTools.map((tool) => ({
-        name: tool.name,
-        description: tool.description,
-        parameters: tool.parameters ? zodSchemaToJsonUI(tool.parameters) : undefined,
-      }));
-
-      // Update history entry metadata with the new agent state that includes resolved tools
-      if (historyEntryId && this.historyManager) {
-        const updatedAgentSnapshot = this.getFullState();
-        this.historyManager.updateEntry(historyEntryId, {
-          metadata: {
-            agentSnapshot: {
-              ...updatedAgentSnapshot,
-              tools: allToolsForUpdate, // Include resolved tools in the snapshot
-            },
-          },
-        });
-      }
+    if (typeof this.model === "string") {
+      return this.model;
     }
-
-    // Ensure operationContext exists before proceeding
-    if (!operationContext) {
-      this.logger.warn(
-        "Missing operationContext in prepareTextOptions. Tool execution context might be incomplete.",
-        { agentId: this.id },
-      );
-      // Potentially handle this case more gracefully, e.g., throw an error or create a default context
-    }
-
-    // Create the ToolExecutionContext
-    const toolExecutionContext: ToolExecutionContext = {
-      operationContext: operationContext, // Pass the extracted context
-      agentId: this.id,
-      historyEntryId: historyEntryId || "unknown", // Fallback for historyEntryId
-    };
-
-    // Wrap ALL tools to inject ToolExecutionContext
-    const toolsToUse = baseTools.map((tool) => {
-      const originalExecute = tool.execute;
-      return {
-        ...tool,
-        execute: async (args: unknown, execOptions?: ToolExecuteOptions): Promise<unknown> => {
-          // Merge the base toolExecutionContext with any specific execOptions
-          // execOptions provided by the LLM provider might override parts of the context
-          // if needed, but typically we want to ensure our core context is passed.
-          const finalExecOptions: ToolExecuteOptions = {
-            ...toolExecutionContext, // Inject the context here
-            ...execOptions, // Allow provider-specific options to be included
-          };
-
-          // Tool execution will be logged in Stream Step Change, no need for separate log
-
-          try {
-            // Specifically handle Reasoning Tools if needed (though context is now injected for all)
-            if (tool.name === "think" || tool.name === "analyze") {
-              // Reasoning tools expect ReasoningToolExecuteOptions, which includes agentId and historyEntryId
-              // These are already present in finalExecOptions via toolExecutionContext
-              const reasoningOptions: ReasoningToolExecuteOptions =
-                finalExecOptions as ReasoningToolExecuteOptions; // Cast should be safe here
-
-              if (
-                !reasoningOptions.historyEntryId ||
-                reasoningOptions.historyEntryId === "unknown"
-              ) {
-                this.logger.warn(
-                  `Executing reasoning tool '${tool.name}' without a known historyEntryId within the operation context.`,
-                  { toolName: tool.name, agentId: this.id },
-                );
-              }
-              // Pass the correctly typed options
-              const result = await originalExecute(args, reasoningOptions);
-
-              // Validate output against schema if provided (even for reasoning tools)
-              if (tool.outputSchema && "safeParse" in tool.outputSchema) {
-                const parseResult = tool.outputSchema.safeParse(result);
-                if (!parseResult.success) {
-                  const errorLogger = logger || this.logger;
-                  errorLogger.error(
-                    buildToolLogMessage(
-                      tool.name,
-                      ActionType.TOOL_ERROR,
-                      `Output validation failed: ${parseResult.error.message}`,
-                    ),
-                    {
-                      event: LogEvents.TOOL_EXECUTION_FAILED,
-                      toolName: tool.name,
-                      error: parseResult.error,
-                      validationErrors: parseResult.error.errors,
-                    },
-                  );
-
-                  // Return validation error as a tool result so LLM can see and potentially fix it
-                  return {
-                    error: true,
-                    message: `Output validation failed: ${parseResult.error.message}`,
-                    validationErrors: parseResult.error.errors,
-                    actualOutput: result,
-                  };
-                }
-                return parseResult.data;
-              }
-
-              // Tool execution already logged in Stream Step Change
-
-              return result;
-            }
-
-            // Execute regular tools with the injected context
-            const result = await originalExecute(args, finalExecOptions);
-
-            // Validate output against schema if provided
-            if (tool.outputSchema && "safeParse" in tool.outputSchema) {
-              const parseResult = tool.outputSchema.safeParse(result);
-              if (!parseResult.success) {
-                const errorLogger = logger || this.logger;
-                errorLogger.error(
-                  buildToolLogMessage(
-                    tool.name,
-                    ActionType.TOOL_ERROR,
-                    `Output validation failed: ${parseResult.error.message}`,
-                  ),
-                  {
-                    event: LogEvents.TOOL_EXECUTION_FAILED,
-                    toolName: tool.name,
-                    agentId: this.id,
-                    modelName: this.getModelName(),
-                    error: parseResult.error,
-                    validationErrors: parseResult.error.errors,
-                  },
-                );
-
-                // Return validation error as a tool result so LLM can see and potentially fix it
-                return {
-                  error: true,
-                  message: `Output validation failed: ${parseResult.error.message}`,
-                  validationErrors: parseResult.error.errors,
-                  actualOutput: result,
-                };
-              }
-              return parseResult.data;
-            }
-
-            // Tool execution already logged in Stream Step Change
-
-            return result;
-          } catch (error) {
-            const errorLogger = logger || this.logger;
-            errorLogger.error(
-              buildToolLogMessage(
-                tool.name,
-                ActionType.TOOL_ERROR,
-                `Execution failed: ${error instanceof Error ? error.message : String(error)}`,
-              ),
-              {
-                event: LogEvents.TOOL_EXECUTION_FAILED,
-                toolName: tool.name,
-                agentId: this.id,
-                modelName: this.getModelName(),
-                error,
-              },
-            );
-
-            // Return error as a tool result instead of throwing
-            // This allows the LLM to see the error and potentially recover
-            const result = {
-              error: true,
-              message: error instanceof Error ? error.message : String(error),
-              stack: error instanceof Error ? error.stack : undefined,
-            };
-
-            return result;
-          }
-        },
-      };
-    });
-
-    // If this agent has sub-agents, always create a new delegate tool with current historyEntryId
-    if (this.subAgentManager.hasSubAgents()) {
-      // Create a real-time event forwarder for SubAgent events
-      const forwardEvent = async (event: StreamEvent) => {
-        // Don't log sub-agent events here - they are handled separately
-
-        // Use the utility function to forward events for timeline
-        if (internalStreamForwarder) {
-          await streamEventForwarder(event, {
-            forwarder: internalStreamForwarder,
-            types: this.supervisorConfig?.fullStreamEventForwarding?.types || [
-              "tool-call",
-              "tool-result",
-            ],
-            addSubAgentPrefix:
-              this.supervisorConfig?.fullStreamEventForwarding?.addSubAgentPrefix ?? true,
-          });
-        }
-      };
-
-      // Always create a delegate tool with the current operationContext
-      const delegateTool = this.subAgentManager.createDelegateTool({
-        sourceAgent: this,
-        currentHistoryEntryId: historyEntryId,
-        operationContext: options.operationContext,
-        forwardEvent, // Pass the real-time event forwarder for timeline events
-        // Pass effective maxSteps (options override or agent default)
-        maxSteps: optionsMaxSteps ?? this.calculateMaxSteps(),
-        ...options,
-      });
-
-      // Replace existing delegate tool if any
-      const delegateIndex = toolsToUse.findIndex((tool) => tool.name === "delegate_task");
-      if (delegateIndex >= 0) {
-        toolsToUse[delegateIndex] = delegateTool;
-      } else {
-        toolsToUse.push(delegateTool);
-
-        // Add the delegate tool to the tool manager only if it doesn't exist yet
-        // This logic might need refinement if delegate tool should always be added/replaced
-        // For now, assume adding if not present is correct.
-        // this.toolManager.addTools([delegateTool]); // Re-consider if this is needed or handled by prepareToolsForGeneration
-      }
-    }
-
-    return {
-      tools: toolsToUse,
-      maxSteps: optionsMaxSteps ?? this.calculateMaxSteps(),
-    };
+    return this.model.modelId || "unknown";
   }
 
   /**
-   * Get logger with parent context if available
+   * Get full agent state
    */
-  protected getContextualLogger(parentAgentId?: string, parentHistoryEntryId?: string): Logger {
-    if (parentAgentId) {
-      const parentAgent = AgentRegistry.getInstance().getAgent(parentAgentId);
-      if (parentAgent) {
-        // Create child logger with parent context and parentExecutionId
-        const childLogger = this.logger.child({
-          parentAgentId,
-          isSubAgent: true,
-          delegationDepth: this.calculateDelegationDepth(parentAgentId),
-          // Add parentExecutionId directly to sub-agent's logger
-          ...(parentHistoryEntryId && {
-            parentExecutionId: parentHistoryEntryId,
-          }),
-        });
-
-        // Return the child logger directly without forwarding
-        // This ensures all sub-agent logs have parentExecutionId
-        return childLogger;
-      }
-    }
-    return this.logger;
-  }
-
-  /**
-   * Calculate delegation depth by traversing parent chain
-   */
-  private calculateDelegationDepth(parentAgentId: string | undefined): number {
-    if (!parentAgentId) return 0;
-
-    let depth = 1;
-    let currentParentId = parentAgentId;
-    const visited = new Set<string>();
-
-    while (currentParentId) {
-      if (visited.has(currentParentId)) break; // Prevent infinite loops
-      visited.add(currentParentId);
-
-      const parentIds = AgentRegistry.getInstance().getParentAgentIds(currentParentId);
-      if (parentIds.length > 0) {
-        depth++;
-        currentParentId = parentIds[0]; // Follow first parent
-      } else {
-        break;
-      }
-    }
-
-    return depth;
-  }
-
-  /**
-   * Initialize a new history entry
-   * @param input User input
-   * @param initialStatus Initial status
-   * @param options Options including parent context
-   * @returns Created operation context
-   */
-  private async initializeHistory(
-    input: string | BaseMessage[],
-    initialStatus: AgentStatus = "working",
-    options: {
-      parentAgentId?: string;
-      parentHistoryEntryId?: string;
-      operationName: string;
-      userContext?: Map<string | symbol, unknown>;
-      userId?: string;
-      conversationId?: string;
-      parentOperationContext?: OperationContext;
-      abortController?: AbortController;
-      signal?: AbortSignal;
-    } = {
-      operationName: "unknown",
-    },
-  ): Promise<OperationContext> {
-    const otelSpan = startOperationSpan({
-      agentId: this.id,
-      agentName: this.name,
-      operationName: options.operationName,
-      parentAgentId: options.parentAgentId,
-      parentHistoryEntryId: options.parentHistoryEntryId,
-      modelName: this.getModelName(),
-    });
-
-    const historyEntry = await this.historyManager.addEntry({
-      input,
-      output: "",
-      status: initialStatus,
-      steps: [],
-      options: {
-        metadata: {
-          agentSnapshot: this.getFullState(),
-        },
-      },
-      userId: options.userId,
-      conversationId: options.conversationId,
-      model: this.getModelName(),
-    });
-
-    // Create contextual logger for this operation
-    const contextualLogger = this.getContextualLogger(
-      options.parentAgentId,
-      options.parentHistoryEntryId,
-    );
-
-    // Prepare userContext for logging
-    const userContextToUse =
-      options.parentOperationContext?.userContext || options.userContext || this.defaultUserContext;
-
-    // Convert userContext Map to object for logging
-    const userContextObject = userContextToUse
-      ? Object.fromEntries(userContextToUse.entries())
-      : {};
-
-    const methodLogger = contextualLogger.child({
-      userId: options.userId,
-      conversationId: options.conversationId,
-      executionId: historyEntry.id,
-      operationName: options.operationName,
-      userContext: userContextObject,
-      // Preserve parent execution ID if present in contextual logger
-      ...(options.parentHistoryEntryId && {
-        parentExecutionId: options.parentHistoryEntryId,
-      }),
-    });
-
-    // Handle AbortController - inherit from parent or use provided
-    const abortController =
-      options.parentOperationContext?.abortController || options.abortController;
-
-    // Derive signal with correct priority:
-    // 1. abortController.signal (new API - highest priority)
-    // 2. explicit signal (backward compatibility)
-    // 3. parent's signal (backward compatibility)
-    const signal =
-      abortController?.signal || options.signal || options.parentOperationContext?.signal;
-
-    const opContext: OperationContext = {
-      operationId: historyEntry.id,
-      userContext: userContextToUse ?? new Map<string | symbol, unknown>(),
-      systemContext: new Map<string | symbol, unknown>(),
-      historyEntry,
-      isActive: true,
-      parentAgentId: options.parentAgentId,
-      parentHistoryEntryId: options.parentHistoryEntryId,
-      otelSpan: otelSpan,
-      logger: methodLogger,
-      // Use parent's conversationSteps if available (for SubAgents), otherwise create new array
-      conversationSteps: options.parentOperationContext?.conversationSteps || [],
-      // Use the abortController
-      abortController,
-      // Keep signal for backward compatibility
-      signal,
-    };
-
-    return opContext;
-  }
-
-  /**
-   * Get full agent state including tools status
-   */
-  public getFullState() {
+  public getFullState(): AgentFullState {
     return {
       id: this.id,
       name: this.name,
-      description: this.description,
       instructions:
-        typeof this.dynamicInstructions === "function" ? "Dynamic instructions" : this.instructions,
+        typeof this.instructions === "function" ? "Dynamic instructions" : this.instructions,
       status: "idle",
       model: this.getModelName(),
-      // Create a node representing this agent
       node_id: createNodeId(NodeType.AGENT, this.id),
 
       tools: this.toolManager.getTools().map((tool) => ({
@@ -1128,7 +2350,6 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         node_id: createNodeId(NodeType.TOOL, tool.name, this.id),
       })),
 
-      // Add node_id to SubAgents
       subAgents: this.subAgentManager.getSubAgentDetails().map((subAgent) => ({
         ...subAgent,
         node_id: createNodeId(NodeType.SUBAGENT, subAgent.id),
@@ -1143,7 +2364,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         ? {
             name: this.retriever.tool.name,
             description: this.retriever.tool.description,
-            status: "idle", // Default status
+            status: "idle",
             node_id: createNodeId(NodeType.RETRIEVER, this.retriever.tool.name, this.id),
           }
         : null,
@@ -1166,2384 +2387,53 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Add step to history immediately and to conversation steps
+   * Add tools or toolkits to the agent
    */
-  private addStepToHistory(step: StepWithContent, context: OperationContext): void {
-    this.historyManager.addStepsToEntry(context.historyEntry.id, [step]);
-
-    // Also track in conversation steps for hook messages
-    if (!context.conversationSteps) {
-      context.conversationSteps = [];
-    }
-
-    const finalStep = {
-      ...step,
-      ...match(context)
-        .with({ parentAgentId: P.not(P.nullish) }, () => ({
-          subAgentId: this.id,
-          subAgentName: this.name,
-        }))
-        .otherwise(() => ({})),
-    };
-
-    context.conversationSteps.push(finalStep);
+  public addTools(tools: (Tool<any, any> | Toolkit)[]): { added: (Tool<any, any> | Toolkit)[] } {
+    this.toolManager.addItems(tools);
+    return { added: tools };
   }
 
   /**
-   * Update history entry
+   * Remove one or more tools by name
+   * @param toolNames - Array of tool names to remove
+   * @returns Object containing successfully removed tool names
    */
-  private updateHistoryEntry(context: OperationContext, updates: Partial<AgentHistoryEntry>): void {
-    this.historyManager.updateEntry(context.historyEntry.id, updates);
-  }
-
-  /**
-   * Fix delete operator usage for better performance
-   */
-  private addToolEvent(
-    context: OperationContext,
-    toolName: string,
-    status: EventStatus,
-    data: Partial<StandardEventData> & Record<string, unknown> = {},
-  ): void {
-    // Ensure the toolSpans map exists on the context
-    if (!context.toolSpans) {
-      context.toolSpans = new Map<string, Span>();
-    }
-
-    const toolCallId = data.toolId?.toString();
-
-    if (toolCallId && status === "working") {
-      if (context.toolSpans.has(toolCallId)) {
-        this.logger.warn(`OTEL tool span already exists for toolCallId: ${toolCallId}`, {
-          toolCallId,
-          toolName,
-          agentId: this.id,
-        });
-      } else {
-        // Call the helper function
-        const toolSpan = startToolSpan({
-          toolName,
-          toolCallId,
-          toolInput: data.input,
-          agentId: this.id,
-          parentSpan: context.otelSpan, // Pass the parent operation span
-        });
-        // Store the active tool span
-        context.toolSpans.set(toolCallId, toolSpan);
+  public removeTools(toolNames: string[]): { removed: string[] } {
+    const removed: string[] = [];
+    for (const name of toolNames) {
+      if (this.toolManager.removeTool(name)) {
+        removed.push(name);
       }
     }
+
+    this.logger.debug(`Removed ${removed.length} tools`, {
+      removed,
+      requested: toolNames,
+    });
+
+    return { removed };
   }
 
   /**
-   * Agent event creator (update)
+   * Remove a toolkit by name
+   * @param toolkitName - Name of the toolkit to remove
+   * @returns true if the toolkit was removed, false if it wasn't found
    */
-  private addAgentEvent(
-    context: OperationContext,
-    eventName: string,
-    status: AgentStatus,
-    data: Partial<StandardEventData> & Record<string, unknown> = {},
-  ): void {
-    // Retrieve the OpenTelemetry span from the context
-    const otelSpan = context.otelSpan;
+  public removeToolkit(toolkitName: string): boolean {
+    const result = this.toolManager.removeToolkit(toolkitName);
 
-    if (otelSpan) {
-      endOperationSpan(
-        {
-          span: otelSpan,
-          status: status as "completed" | "error",
-          data,
-        },
-        this.logger,
-      );
+    if (result) {
+      this.logger.debug(`Removed toolkit: ${toolkitName}`);
     } else {
-      this.logger.warn(
-        `OpenTelemetry span not found in OperationContext for agent event ${eventName} (Operation ID: ${context.operationId})`,
-        { eventName, operationId: context.operationId, agentId: this.id },
-      );
+      this.logger.debug(`Toolkit not found: ${toolkitName}`);
     }
+
+    return result;
   }
 
   /**
-   * Helper method to enrich and end an OpenTelemetry span associated with a tool call.
-   */
-  private _endOtelToolSpan(
-    context: OperationContext,
-    toolCallId: string,
-    toolName: string,
-    resultData: { result?: any; content?: any; error?: any },
-  ): void {
-    const toolSpan = context.toolSpans?.get(toolCallId);
-
-    if (toolSpan) {
-      endToolSpan({ span: toolSpan, resultData }, this.logger);
-      context.toolSpans?.delete(toolCallId); // Remove from map after ending
-    } else {
-      this.logger.warn(
-        `OTEL tool span not found for toolCallId: ${toolCallId} in _endOtelToolSpan (Tool: ${toolName})`,
-        { toolCallId, toolName, agentId: this.id },
-      );
-    }
-  }
-
-  private publishTimelineEvent(
-    operationContext: OperationContext | undefined,
-    event: any,
-    skipPropagation = false,
-  ): void {
-    if (!operationContext) return;
-
-    AgentEventEmitter.getInstance().publishTimelineEventAsync({
-      agentId: this.id,
-      historyId: operationContext.historyEntry.id,
-      event,
-      skipPropagation,
-      parentHistoryEntryId: operationContext.parentHistoryEntryId,
-    });
-  }
-
-  /**
-   * Sets up abort signal listener for cancellation handling
-   */
-  private setupAbortSignalListener(
-    signal: AbortSignal | undefined,
-    operationContext: OperationContext,
-    finalConversationId: string | undefined,
-    agentStartEvent: { id: string; startTime: string },
-    hooks?: AgentHooks,
-  ): void {
-    if (!signal) return;
-
-    signal.addEventListener("abort", async () => {
-      // Update history with cancelled status
-      this.updateHistoryEntry(operationContext, {
-        status: "cancelled",
-        endTime: new Date(),
-      });
-
-      // Mark operation as inactive
-      operationContext.isActive = false;
-
-      // Get abort reason from the controller if available
-      let abortReason: unknown = undefined;
-      if (operationContext.abortController && "signal" in operationContext.abortController) {
-        // Access reason through the signal's reason property (if available)
-        const sig = operationContext.abortController.signal as AbortSignal & { reason?: unknown };
-        abortReason = sig.reason;
-      }
-
-      // Create cancellation error with proper typing
-      const cancellationError = new Error(
-        typeof abortReason === "string"
-          ? abortReason
-          : abortReason && typeof abortReason === "object" && "message" in abortReason
-            ? String(abortReason.message)
-            : "Operation cancelled",
-      ) as AbortError;
-      cancellationError.name = "AbortError";
-      cancellationError.reason = abortReason;
-
-      // Store the cancellation error in the operation context
-      operationContext.cancellationError = cancellationError;
-
-      // Create agent:completed event with cancelled status
-      const agentCancelledEvent = {
-        id: crypto.randomUUID(),
-        name: "agent:cancel",
-        type: "agent",
-        startTime: agentStartEvent.startTime,
-        endTime: new Date().toISOString(),
-        level: "INFO",
-        input: null,
-        statusMessage: {
-          message: cancellationError.message,
-          code: "USER_CANCELLED",
-          stage: "cancelled",
-        },
-        status: "cancelled",
-        metadata: {
-          displayName: this.name,
-          id: this.id,
-          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-            string,
-            unknown
-          >,
-        },
-        traceId: operationContext.historyEntry.id,
-        parentEventId: agentStartEvent.id,
-      };
-
-      this.publishTimelineEvent(operationContext, agentCancelledEvent);
-
-      // Call onEnd hook with cancellation error if conversationId is available
-      await this.getMergedHooks({ hooks }).onEnd?.({
-        agent: this,
-        output: undefined,
-        error: cancellationError,
-        conversationId: finalConversationId || "",
-        context: operationContext,
-      });
-    });
-  }
-
-  /**
-   * Create an enhanced fullStream with real-time SubAgent event injection
-   */
-  private createEnhancedFullStream(
-    originalStream: AsyncIterable<any>,
-    streamController: { current: ReadableStreamDefaultController<any> | null },
-    subAgentStatus: Map<string, { isActive: boolean; isCompleted: boolean }>,
-  ): AsyncIterable<any> {
-    const logger = this.logger; // Capture logger reference
-    return {
-      async *[Symbol.asyncIterator]() {
-        // Create a merged stream using ReadableStream for real-time injection
-        const mergedStream = new ReadableStream({
-          start(controller) {
-            // Set the controller reference for real-time injection
-            streamController.current = controller;
-
-            // Start processing original stream
-            (async () => {
-              try {
-                for await (const chunk of originalStream) {
-                  controller.enqueue(chunk);
-                }
-
-                // Wait a bit for any remaining SubAgent events
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                // Mark all active SubAgents as completed
-                for (const [subAgentId, status] of subAgentStatus.entries()) {
-                  if (status.isActive && !status.isCompleted) {
-                    status.isCompleted = true;
-                    logger.debug(`[Enhanced Stream] SubAgent ${subAgentId} marked as completed`, {
-                      subAgentId,
-                    });
-                  }
-                }
-
-                controller.close();
-              } catch (error) {
-                controller.error(error);
-              } finally {
-                // Clear controller reference
-                streamController.current = null;
-              }
-            })();
-          },
-        });
-
-        // Convert ReadableStream to async iterable and yield chunks
-        const reader = mergedStream.getReader();
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            yield value;
-          }
-        } finally {
-          reader.releaseLock();
-        }
-      },
-    };
-  }
-
-  /**
-   * Generate a text response without streaming
-   */
-  public async generateText(
-    input: string | BaseMessage[],
-    options: PublicGenerateOptions = {},
-  ): Promise<GenerateTextResponse<TProvider>> {
-    const startTime = Date.now();
-
-    const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
-    const {
-      userId,
-      conversationId: initialConversationId,
-      parentAgentId,
-      parentHistoryEntryId,
-      parentOperationContext,
-      contextLimit = 10,
-      userContext,
-      abortController,
-      signal,
-    } = internalOptions;
-
-    const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId,
-      parentHistoryEntryId,
-      operationName: "generateText",
-      userContext,
-      userId,
-      conversationId: initialConversationId,
-      parentOperationContext,
-      abortController,
-      signal,
-    });
-
-    const { messages: contextMessages, conversationId: finalConversationId } =
-      await this.memoryManager.prepareConversationContext(
-        operationContext,
-        input,
-        userId,
-        initialConversationId,
-        contextLimit,
-      );
-
-    // Use logger from operationContext
-    const methodLogger = operationContext.logger;
-
-    const modelName = this.getModelName();
-
-    // Log generation start with only event-specific context
-    methodLogger.debug(
-      buildAgentLogMessage(
-        this.name,
-        ActionType.GENERATION_START,
-        `Starting text generation with ${modelName}`,
-      ),
-      {
-        event: LogEvents.AGENT_GENERATION_STARTED,
-        operationType: "text",
-        contextLimit,
-        memoryEnabled: !!this.memoryManager.getMemory(),
-        model: modelName,
-        messageCount: contextMessages?.length || 0,
-        input,
-      },
-    );
-
-    if (operationContext.otelSpan) {
-      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
-      if (finalConversationId)
-        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
-    }
-
-    let messages: BaseMessage[] = [];
-    try {
-      await this.getMergedHooks(internalOptions).onStart?.({
-        agent: this,
-        context: operationContext,
-      });
-
-      const systemMessageResponse = await this.getSystemMessage({
-        input,
-        historyEntryId: operationContext.historyEntry.id,
-        contextMessages,
-        operationContext,
-      });
-
-      // Handle both single message and array of messages from getSystemMessage
-      const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
-        ? systemMessageResponse.systemMessages
-        : [systemMessageResponse.systemMessages];
-      messages = [...systemMessages, ...contextMessages];
-      messages = await this.formatInputMessages(messages, input);
-
-      // Call onPrepareMessages hook if defined
-      try {
-        const prepareResult = await this.getMergedHooks(internalOptions).onPrepareMessages?.({
-          messages: [...messages], // Pass a copy to prevent direct mutation
-          agent: this,
-          context: operationContext,
-        });
-
-        // Use transformed messages if provided
-        if (prepareResult?.messages && Array.isArray(prepareResult.messages)) {
-          messages = prepareResult.messages;
-        }
-      } catch (error) {
-        this.logger.error("Error preparing messages", { error, agentId: this.id });
-        // Continue with original messages if hook fails
-      }
-
-      // [NEW EVENT SYSTEM] Create an agent:start event
-      const agentStartTime = new Date().toISOString(); // Capture agent start time once
-      const agentStartEvent: AgentStartEvent = {
-        id: crypto.randomUUID(),
-        name: "agent:start",
-        type: "agent",
-        startTime: agentStartTime, // Use captured time
-        status: "running",
-        input: { input },
-        output: null,
-        metadata: {
-          displayName: this.name,
-          id: this.id,
-          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-            string,
-            unknown
-          >,
-          systemPrompt: systemMessages,
-          messages,
-          promptMetadata: systemMessageResponse.promptMetadata,
-          isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
-          modelParameters: {
-            model: this.getModelName(),
-            maxTokens: internalOptions.provider?.maxTokens,
-            temperature: internalOptions.provider?.temperature,
-            topP: internalOptions.provider?.topP,
-            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
-            presencePenalty: internalOptions.provider?.presencePenalty,
-            maxSteps: internalOptions.maxSteps,
-          },
-        },
-        traceId: operationContext.historyEntry.id,
-      };
-
-      // Store agent start time in the operation context for later reference
-      operationContext.systemContext.set("agent_start_time", agentStartTime);
-      operationContext.systemContext.set("agent_start_event_id", agentStartEvent.id);
-
-      // Publish the new event through AgentEventEmitter
-      this.publishTimelineEvent(operationContext, agentStartEvent);
-
-      // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
-      this.setupAbortSignalListener(
-        abortController?.signal || signal,
-        operationContext,
-        finalConversationId,
-        {
-          id: agentStartEvent.id,
-          startTime: agentStartTime,
-        },
-        internalOptions.hooks,
-      );
-
-      const onStepFinish = this.memoryManager.createStepFinishHandler(
-        operationContext,
-        userId,
-        finalConversationId,
-      );
-      const { tools, maxSteps } = await this.prepareTextOptions({
-        ...internalOptions,
-        conversationId: finalConversationId,
-        historyEntryId: operationContext.historyEntry.id,
-        operationContext: operationContext,
-        logger: methodLogger,
-      });
-
-      // Resolve dynamic model based on user context
-      const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
-        this.id,
-        this.name,
-        this.instructions,
-        this.voltOpsClient,
-      );
-      const dynamicValueOptions: DynamicValueOptions = {
-        userContext: operationContext.userContext || new Map(),
-        prompts: promptHelper,
-      };
-      const resolvedModel = await this.resolveModel(dynamicValueOptions);
-
-      methodLogger.debug("Starting agent llm call");
-
-      methodLogger.debug("[LLM] - Generating text", {
-        messages: messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        maxSteps,
-        tools: tools?.map((t) => t.name) || [],
-      });
-
-      const response = await this.llm.generateText({
-        messages,
-        model: resolvedModel,
-        maxSteps,
-        tools,
-        provider: internalOptions.provider,
-        signal: operationContext.signal,
-        toolExecutionContext: {
-          operationContext: operationContext,
-          agentId: this.id,
-          historyEntryId: operationContext.historyEntry.id,
-        } as ToolExecutionContext,
-        onStepFinish: async (step) => {
-          this.addStepToHistory(step, operationContext);
-
-          const stepData: any = {
-            text: "",
-            toolCalls: [],
-            toolResults: [],
-            finishReason: step.type === "text" ? "stop" : "tool-calls",
-            usage: step.usage,
-          };
-
-          if (step.type === "text") {
-            stepData.text = step.content;
-            stepData.finishReason = "stop";
-          } else if (step.type === "tool_call") {
-            stepData.toolCalls = [
-              {
-                type: "tool-call",
-                toolCallId: step.id,
-                toolName: step.name,
-                args: step.arguments,
-              },
-            ];
-            stepData.finishReason = "tool-calls";
-          } else if (step.type === "tool_result") {
-            stepData.toolResults = [
-              {
-                type: "tool-result",
-                toolCallId: step.id,
-                toolName: step.name,
-                args: {},
-                result: step.result,
-              },
-            ];
-          }
-
-          const description = this.getStepDescription(step, stepData);
-
-          methodLogger.debug(
-            buildAgentLogMessage(
-              this.name,
-              ActionType.STREAM_STEP,
-              `${description} [${stepData.finishReason || "in-progress"}]`,
-            ),
-            stepData,
-          );
-
-          // Keep existing step logging for INFO level
-          if (step.type === "text") {
-            const textPreview = step.content;
-            methodLogger.debug("Step: Text generated", {
-              event: LogEvents.AGENT_STEP_TEXT,
-              textPreview,
-              length: step.content.length,
-            });
-          }
-
-          if (step.type === "tool_call") {
-            // Log tool call step
-            methodLogger.debug(`Step: Calling tool '${step.name}'`, {
-              event: LogEvents.AGENT_STEP_TOOL_CALL,
-              toolName: step.name,
-              toolCallId: step.id,
-              arguments: step.arguments,
-            });
-
-            // Tool execution started
-            methodLogger.debug(
-              buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Executing ${step.name}`),
-              {
-                event: LogEvents.TOOL_EXECUTION_STARTED,
-                toolName: step.name,
-                toolCallId: step.id,
-                args: step.arguments,
-              },
-            );
-
-            if (step.name && step.id) {
-              const tool = this.toolManager.getToolByName(step.name);
-
-              // [NEW EVENT SYSTEM] Create a tool:start event
-              const toolStartTime = new Date().toISOString(); // Capture start time once
-              const toolStartEvent: ToolStartEvent = {
-                id: crypto.randomUUID(),
-                name: "tool:start",
-                type: "tool",
-                startTime: toolStartTime, // Use captured time
-                status: "running",
-                input: step.arguments || {},
-                output: null,
-                metadata: {
-                  displayName: step.name,
-                  id: step.name,
-                  agentId: this.id,
-                },
-                traceId: operationContext.historyEntry.id,
-                parentEventId: agentStartEvent.id, // Link to the agent:start event
-              };
-
-              // Store tool ID and start time in system context for later reference
-              operationContext.systemContext.set(`tool_${step.id}`, {
-                eventId: toolStartEvent.id,
-                startTime: toolStartTime, // Store the start time for later
-              });
-
-              // Publish the tool:start event (background)
-              this.publishTimelineEvent(operationContext, toolStartEvent);
-
-              await this.addToolEvent(operationContext, step.name, "working", {
-                toolId: step.id,
-                input: step.arguments || {},
-              });
-
-              if (tool) {
-                await this.getMergedHooks(internalOptions).onToolStart?.({
-                  agent: this,
-                  tool,
-                  context: operationContext,
-                });
-              }
-            }
-          } else if (step.type === "tool_result") {
-            // Log tool result step
-            const resultPreview = step.result || step.content;
-
-            methodLogger.debug(`Step: Tool '${step.name}' completed`, {
-              event: LogEvents.AGENT_STEP_TOOL_RESULT,
-              toolName: step.name,
-              toolCallId: step.id,
-              result: resultPreview,
-              hasError: Boolean(step.result?.error),
-            });
-
-            if (step.name && step.id) {
-              const toolCallId = step.id;
-              const toolName = step.name;
-              const isError = Boolean(step.result?.error);
-
-              // [NEW EVENT SYSTEM] Create either tool:success or tool:error event
-              // Get the associated tool:start event ID and time from context
-              const toolStartInfo = (operationContext.systemContext.get(`tool_${toolCallId}`) as {
-                eventId: string;
-                startTime: string;
-              }) || { eventId: undefined, startTime: new Date().toISOString() };
-
-              if (isError) {
-                // Create tool:error event
-                const toolErrorEvent: ToolErrorEvent = {
-                  id: crypto.randomUUID(),
-                  name: "tool:error",
-                  type: "tool",
-                  startTime: toolStartInfo.startTime, // Use the original start time
-                  endTime: new Date().toISOString(), // Current time as end time
-                  status: "error",
-                  level: "ERROR",
-                  input: null,
-                  output: null,
-                  statusMessage: {
-                    message: step.result?.message || "Unknown tool error",
-                    // Include stack trace if available (from tool wrapper)
-                    ...(step.result?.stack && {
-                      stack: step.result.stack,
-                    }),
-                  },
-                  metadata: {
-                    displayName: toolName,
-                    id: toolName,
-                    agentId: this.id,
-                  },
-                  traceId: operationContext.historyEntry.id,
-                  parentEventId: toolStartInfo.eventId, // Link to the tool:start event
-                };
-
-                // Publish the tool:error event (background)
-                this.publishTimelineEvent(operationContext, toolErrorEvent);
-              } else {
-                // Create tool:success event
-                const toolSuccessEvent: ToolSuccessEvent = {
-                  id: crypto.randomUUID(),
-                  name: "tool:success",
-                  type: "tool",
-                  startTime: toolStartInfo.startTime, // Use the original start time
-                  endTime: new Date().toISOString(), // Current time as end time
-                  status: "completed",
-                  input: null,
-                  output: step.result ?? step.content,
-                  metadata: {
-                    displayName: toolName,
-                    id: toolName,
-                    agentId: this.id,
-                  },
-                  traceId: operationContext.historyEntry.id,
-                  parentEventId: toolStartInfo.eventId, // Link to the tool:start event
-                };
-
-                // Publish the tool:success event (background)
-                this.publishTimelineEvent(operationContext, toolSuccessEvent);
-              }
-
-              this._endOtelToolSpan(operationContext, toolCallId, toolName, {
-                result: step.result,
-                content: step.content,
-                error: step.result?.error,
-              });
-              const tool = this.toolManager.getToolByName(toolName);
-              if (tool) {
-                await this.getMergedHooks(internalOptions).onToolEnd?.({
-                  agent: this,
-                  tool,
-                  output: step.result ?? step.content,
-                  error: step.result?.error,
-                  context: operationContext,
-                });
-              }
-            }
-          }
-          await onStepFinish(step);
-        },
-      });
-
-      // [NEW EVENT SYSTEM] Create an agent:success event
-      const agentStartInfo = {
-        startTime:
-          (operationContext.systemContext.get("agent_start_time") as string) || agentStartTime,
-        eventId:
-          (operationContext.systemContext.get("agent_start_event_id") as string) ||
-          agentStartEvent.id,
-      };
-
-      const agentSuccessEvent: AgentSuccessEvent = {
-        id: crypto.randomUUID(),
-        name: "agent:success",
-        type: "agent",
-        startTime: agentStartInfo.startTime, // Use the original start time
-        endTime: new Date().toISOString(), // Current time as end time
-        status: "completed",
-        input: null,
-        output: { text: response.text },
-        metadata: {
-          displayName: this.name,
-          id: this.id,
-          usage: response.usage,
-          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-            string,
-            unknown
-          >,
-          modelParameters: {
-            model: this.getModelName(),
-            maxTokens: internalOptions.provider?.maxTokens,
-            temperature: internalOptions.provider?.temperature,
-            topP: internalOptions.provider?.topP,
-            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
-            presencePenalty: internalOptions.provider?.presencePenalty,
-            maxSteps: internalOptions.maxSteps,
-          },
-        },
-
-        traceId: operationContext.historyEntry.id,
-        parentEventId: agentStartInfo.eventId, // Link to the agent:start event
-      };
-
-      // Publish the agent:success event (background)
-      this.publishTimelineEvent(operationContext, agentSuccessEvent);
-
-      // Original agent completion event for backward compatibility
-      this.addAgentEvent(operationContext, "finished", "completed", {
-        input: messages,
-        output: response.text,
-        usage: response.usage,
-        status: "completed",
-      });
-
-      operationContext.isActive = false;
-
-      // Create initial response for onEnd hook
-      const initialResponse: GenerateTextResponse<TProvider> = {
-        ...response,
-        userContext: new Map(operationContext.userContext),
-      };
-
-      await this.getMergedHooks(internalOptions).onEnd?.({
-        conversationId: finalConversationId,
-        agent: this,
-        output: initialResponse,
-        error: undefined,
-        context: operationContext,
-      });
-
-      // Extend the original response with userContext AFTER onEnd hook
-      const extendedResponse: GenerateTextResponse<TProvider> = {
-        ...response,
-        userContext: new Map(operationContext.userContext),
-      };
-
-      this.updateHistoryEntry(operationContext, {
-        output: response.text,
-        usage: response.usage,
-        endTime: new Date(),
-        status: "completed",
-      });
-
-      methodLogger.debug(
-        buildAgentLogMessage(this.name, ActionType.STREAM_COMPLETE, "Stream generation completed"),
-        {
-          text: response.text,
-          toolCalls: [],
-          toolResults: [],
-          finishReason: response.finishReason || "stop",
-          usage: response.usage,
-        },
-      );
-
-      // Log successful completion with usage details
-      const usage = response.usage;
-      const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
-
-      methodLogger.debug(
-        buildAgentLogMessage(
-          this.name,
-          ActionType.GENERATION_COMPLETE,
-          `Text generation completed (${tokenInfo})`,
-        ),
-        {
-          event: LogEvents.AGENT_GENERATION_COMPLETED,
-          duration: Date.now() - startTime,
-          finishReason: response.finishReason,
-          usage: response.usage,
-          toolCalls: response.toolCalls?.length || 0,
-          text: response.text,
-        },
-      );
-
-      return extendedResponse;
-    } catch (error) {
-      // Check if operation was cancelled and throw the stored cancellation error
-      if (!operationContext.isActive && operationContext.cancellationError) {
-        throw operationContext.cancellationError;
-      }
-
-      const voltagentError = error as VoltAgentError;
-
-      // [NEW EVENT SYSTEM] Create an agent:error event
-      const agentErrorStartInfo = {
-        startTime:
-          (operationContext.systemContext.get("agent_start_time") as string) ||
-          new Date().toISOString(),
-        eventId: operationContext.systemContext.get("agent_start_event_id") as string,
-      };
-
-      const agentErrorEvent: AgentErrorEvent = {
-        id: crypto.randomUUID(),
-        name: "agent:error",
-        type: "agent",
-        startTime: agentErrorStartInfo.startTime, // Use the original start time
-        endTime: new Date().toISOString(), // Current time as end time
-        status: "error",
-        level: "ERROR",
-        input: null,
-        output: null,
-        statusMessage: {
-          message: voltagentError.message,
-          code: voltagentError.code,
-          stage: voltagentError.stage,
-          ...(voltagentError.originalError
-            ? { originalError: String(voltagentError.originalError) }
-            : {}),
-        },
-        metadata: {
-          displayName: this.name,
-          id: this.id,
-          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-            string,
-            unknown
-          >,
-        },
-        traceId: operationContext.historyEntry.id,
-        parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
-      };
-
-      // Publish the agent:error event (background)
-      this.publishTimelineEvent(operationContext, agentErrorEvent);
-
-      // Original error event for backward compatibility
-      this.addAgentEvent(operationContext, "finished", "error", {
-        input: messages,
-        error: voltagentError,
-        errorMessage: voltagentError.message,
-        status: "error",
-        metadata: {
-          code: voltagentError.code,
-          originalError: voltagentError.originalError,
-          stage: voltagentError.stage,
-          toolError: voltagentError.toolError,
-          ...voltagentError.metadata,
-        },
-      });
-
-      operationContext.isActive = false;
-
-      await this.getMergedHooks(internalOptions).onEnd?.({
-        agent: this,
-        output: undefined,
-        error: voltagentError,
-        conversationId: finalConversationId,
-        context: operationContext,
-      });
-
-      this.updateHistoryEntry(operationContext, {
-        status: "error",
-        endTime: new Date(),
-      });
-
-      // Log error
-      methodLogger.error("Generation failed", {
-        event: LogEvents.AGENT_GENERATION_FAILED,
-        duration: Date.now() - startTime,
-        error: {
-          message: voltagentError.message,
-          code: voltagentError.code,
-          stage: voltagentError.stage,
-        },
-      });
-
-      throw error;
-    }
-  }
-
-  /**
-   * Stream a text response
-   */
-  public async streamText(
-    input: string | BaseMessage[],
-    options: PublicGenerateOptions = {},
-  ): Promise<StreamTextResponse<TProvider>> {
-    const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
-    const {
-      userId,
-      conversationId: initialConversationId,
-      parentAgentId,
-      parentHistoryEntryId,
-      parentOperationContext,
-      contextLimit = 10,
-      userContext,
-      abortController,
-      signal,
-    } = internalOptions;
-
-    const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId,
-      parentHistoryEntryId,
-      operationName: "streamText",
-      userContext,
-      userId,
-      conversationId: initialConversationId,
-      parentOperationContext,
-      abortController,
-      signal,
-    });
-
-    const { messages: contextMessages, conversationId: finalConversationId } =
-      await this.memoryManager.prepareConversationContext(
-        operationContext,
-        input,
-        userId,
-        initialConversationId,
-        contextLimit,
-      );
-
-    // Use logger from operationContext
-    const methodLogger = operationContext.logger;
-
-    const modelName = this.getModelName();
-
-    // Log stream generation start with only event-specific context
-    methodLogger.debug(
-      buildAgentLogMessage(
-        this.name,
-        ActionType.STREAM_START,
-        `Starting text generation with ${modelName}`,
-      ),
-      {
-        event: LogEvents.AGENT_STREAM_STARTED,
-        operationType: "stream",
-        inputType: typeof input === "string" ? "string" : "messages",
-        contextLimit,
-        memoryEnabled: !!this.memoryManager.getMemory(),
-        model: modelName,
-        input,
-      },
-    );
-
-    if (operationContext.otelSpan) {
-      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
-      if (finalConversationId)
-        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
-    }
-
-    await this.getMergedHooks(internalOptions).onStart?.({
-      agent: this,
-      context: operationContext,
-    });
-
-    const systemMessageResponse = await this.getSystemMessage({
-      input,
-      historyEntryId: operationContext.historyEntry.id,
-      contextMessages,
-      operationContext,
-    });
-
-    // Handle both single message and array of messages from getSystemMessage
-    const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
-      ? systemMessageResponse.systemMessages
-      : [systemMessageResponse.systemMessages];
-    let messages = [...systemMessages, ...contextMessages];
-    messages = await this.formatInputMessages(messages, input);
-
-    // Call onPrepareMessages hook if defined
-    try {
-      const prepareResult = await this.getMergedHooks(internalOptions).onPrepareMessages?.({
-        messages: [...messages], // Pass a copy to prevent direct mutation
-        agent: this,
-        context: operationContext,
-      });
-
-      // Use transformed messages if provided
-      if (prepareResult?.messages && Array.isArray(prepareResult.messages)) {
-        messages = prepareResult.messages;
-      }
-    } catch (error) {
-      this.logger.error("Error preparing messages", { error, agentId: this.id });
-      // Continue with original messages if hook fails
-    }
-
-    // [NEW EVENT SYSTEM] Create an agent:start event
-    const agentStartTime = new Date().toISOString(); // Capture agent start time once
-    const agentStartEvent: AgentStartEvent = {
-      id: crypto.randomUUID(),
-      name: "agent:start",
-      type: "agent",
-      startTime: agentStartTime, // Use captured time
-      status: "running",
-      input: { input },
-      output: null,
-      metadata: {
-        displayName: this.name,
-        id: this.id,
-        userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-          string,
-          unknown
-        >,
-        systemPrompt: systemMessages,
-        messages,
-        promptMetadata: systemMessageResponse.promptMetadata,
-        isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
-        modelParameters: {
-          model: this.getModelName(),
-          maxTokens: internalOptions.provider?.maxTokens,
-          temperature: internalOptions.provider?.temperature,
-          topP: internalOptions.provider?.topP,
-          frequencyPenalty: internalOptions.provider?.frequencyPenalty,
-          presencePenalty: internalOptions.provider?.presencePenalty,
-          maxSteps: internalOptions.maxSteps,
-        },
-      },
-      traceId: operationContext.historyEntry.id,
-    };
-
-    // Store agent start time in the operation context for later reference
-    operationContext.systemContext.set("agent_start_time", agentStartTime);
-    operationContext.systemContext.set("agent_start_event_id", agentStartEvent.id);
-
-    // Publish the new event through AgentEventEmitter
-    this.publishTimelineEvent(operationContext, agentStartEvent);
-
-    // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
-    this.setupAbortSignalListener(
-      abortController?.signal || signal,
-      operationContext,
-      finalConversationId,
-      {
-        id: agentStartEvent.id,
-        startTime: agentStartTime,
-      },
-      options.hooks,
-    );
-
-    const onStepFinish = this.memoryManager.createStepFinishHandler(
-      operationContext,
-      userId,
-      finalConversationId,
-    );
-
-    // Create real-time SubAgent event tracking
-    const subAgentStatus = new Map<string, { isActive: boolean; isCompleted: boolean }>();
-    const streamController: { current: ReadableStreamDefaultController<any> | null } = {
-      current: null,
-    };
-
-    const internalStreamEventForwarder = async (event: StreamEvent) => {
-      // Update SubAgent status
-      if (!subAgentStatus.has(event.subAgentId)) {
-        subAgentStatus.set(event.subAgentId, { isActive: true, isCompleted: false });
-      }
-
-      // Immediately inject into stream if controller is available
-      if (streamController.current) {
-        try {
-          const formattedStreamPart = transformStreamEventToStreamPart(event);
-          streamController.current.enqueue(formattedStreamPart);
-        } catch (error) {
-          methodLogger.error("[Real-time Stream] Failed to inject event", {
-            error,
-          });
-        }
-      }
-    };
-
-    const { tools, maxSteps } = await this.prepareTextOptions({
-      ...internalOptions,
-      conversationId: finalConversationId,
-      historyEntryId: operationContext.historyEntry.id,
-      operationContext: operationContext,
-      // Pass the internal forwarder to tools
-      internalStreamForwarder: internalStreamEventForwarder,
-      logger: methodLogger,
-    });
-
-    // Resolve dynamic model based on user context
-    const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
-      this.id,
-      this.name,
-      this.instructions,
-      this.voltOpsClient,
-    );
-    const dynamicValueOptions: DynamicValueOptions = {
-      userContext: operationContext.userContext || new Map(),
-      prompts: promptHelper,
-    };
-    const resolvedModel = await this.resolveModel(dynamicValueOptions);
-
-    methodLogger.debug(
-      buildAgentLogMessage(this.name, ActionType.STREAMING, "Processing LLM response"),
-      {
-        messages: messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        maxSteps,
-        tools: tools?.map((t) => t.name) || [],
-      },
-    );
-
-    const response = await this.llm.streamText({
-      messages,
-      model: resolvedModel,
-      maxSteps,
-      tools,
-      signal: operationContext.signal,
-      provider: internalOptions.provider,
-      toolExecutionContext: {
-        operationContext: operationContext,
-        agentId: this.id,
-        historyEntryId: operationContext.historyEntry.id,
-      } as ToolExecutionContext,
-      onChunk: async (chunk: StepWithContent) => {
-        if (chunk.type === "tool_call") {
-          if (chunk.name && chunk.id) {
-            const tool = this.toolManager.getToolByName(chunk.name);
-
-            // [NEW EVENT SYSTEM] Create a tool:start event
-            const toolStartTime = new Date().toISOString(); // Capture start time once
-            const toolStartEvent: ToolStartEvent = {
-              id: crypto.randomUUID(),
-              name: "tool:start",
-              type: "tool",
-              startTime: toolStartTime, // Use captured time
-              status: "running",
-              input: chunk.arguments || {},
-              output: null,
-              metadata: {
-                displayName: chunk.name,
-                id: chunk.name,
-                agentId: this.id,
-              },
-              traceId: operationContext.historyEntry.id,
-              parentEventId: agentStartEvent.id, // Link to the agent:start event
-            };
-
-            // Store tool ID and start time in system context for later reference
-            operationContext.systemContext.set(`tool_${chunk.id}`, {
-              eventId: toolStartEvent.id,
-              startTime: toolStartTime, // Store the start time for later
-            });
-
-            // Publish the tool:start event (background)
-            this.publishTimelineEvent(operationContext, toolStartEvent);
-
-            // Original tool event for backward compatibility
-            this.addToolEvent(operationContext, chunk.name, "working", {
-              toolId: chunk.id,
-              input: chunk.arguments || {},
-            });
-            if (tool) {
-              await this.getMergedHooks(internalOptions).onToolStart?.({
-                agent: this,
-                tool,
-                context: operationContext,
-              });
-            }
-          }
-        } else if (chunk.type === "tool_result") {
-          if (chunk.name && chunk.id) {
-            const toolCallId = chunk.id;
-            const toolName = chunk.name;
-            const isError = Boolean(chunk.result?.error);
-
-            // [NEW EVENT SYSTEM] Create either tool:success or tool:error event
-            // Get the associated tool:start event ID and time from context
-            const toolStartInfo = (operationContext.systemContext.get(`tool_${toolCallId}`) as {
-              eventId: string;
-              startTime: string;
-            }) || { eventId: undefined, startTime: new Date().toISOString() };
-
-            if (isError) {
-              // Create tool:error event
-              const toolErrorEvent: ToolErrorEvent = {
-                id: crypto.randomUUID(),
-                name: "tool:error",
-                type: "tool",
-                startTime: toolStartInfo.startTime, // Use the original start time
-                endTime: new Date().toISOString(), // Current time as end time
-                status: "error",
-                level: "ERROR",
-                input: null,
-                output: null,
-                statusMessage: {
-                  message: chunk.result?.message || "Unknown tool error",
-                  // Include stack trace if available (from tool wrapper)
-                  ...(chunk.result?.stack && {
-                    stack: chunk.result.stack,
-                  }),
-                },
-                metadata: {
-                  displayName: toolName,
-                  id: toolName,
-                  agentId: this.id,
-                },
-                traceId: operationContext.historyEntry.id,
-                parentEventId: toolStartInfo.eventId, // Link to the tool:start event
-              };
-
-              // Publish the tool:error event (background)
-              this.publishTimelineEvent(operationContext, toolErrorEvent);
-            } else {
-              // Create tool:success event
-              const toolSuccessEvent: ToolSuccessEvent = {
-                id: crypto.randomUUID(),
-                name: "tool:success",
-                type: "tool",
-                startTime: toolStartInfo.startTime, // Use the original start time
-                endTime: new Date().toISOString(), // Current time as end time
-                status: "completed",
-                input: null,
-                output: chunk.result ?? chunk.content,
-                metadata: {
-                  displayName: toolName,
-                  id: toolName,
-                  agentId: this.id,
-                },
-                traceId: operationContext.historyEntry.id,
-                parentEventId: toolStartInfo.eventId, // Link to the tool:start event
-              };
-
-              // Publish the tool:success event (background)
-              this.publishTimelineEvent(operationContext, toolSuccessEvent);
-            }
-
-            this._endOtelToolSpan(operationContext, toolCallId, toolName, {
-              result: chunk.result,
-              content: chunk.content,
-              error: chunk.result?.error,
-            });
-            const tool = this.toolManager.getToolByName(toolName);
-            if (tool) {
-              await this.getMergedHooks(internalOptions).onToolEnd?.({
-                agent: this,
-                tool,
-                output: chunk.result ?? chunk.content,
-                error: chunk.result?.error,
-                context: operationContext,
-              });
-            }
-          }
-        }
-      },
-      onStepFinish: async (step: StepWithContent) => {
-        const stepData: any = {
-          text: "",
-          toolCalls: [],
-          toolResults: [],
-          finishReason: step.type === "text" ? "stop" : "tool-calls",
-          usage: step.usage,
-        };
-
-        if (step.type === "text") {
-          stepData.text = step.content;
-          stepData.finishReason = "stop";
-        } else if (step.type === "tool_call") {
-          stepData.toolCalls = [
-            {
-              type: "tool-call",
-              toolCallId: step.id,
-              toolName: step.name,
-              args: step.arguments,
-            },
-          ];
-          stepData.finishReason = "tool-calls";
-
-          // Tool execution started
-          methodLogger.debug(
-            buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Executing ${step.name}`),
-            {
-              event: LogEvents.TOOL_EXECUTION_STARTED,
-              toolName: step.name,
-              toolCallId: step.id,
-              args: step.arguments,
-            },
-          );
-        } else if (step.type === "tool_result") {
-          stepData.toolResults = [
-            {
-              type: "tool-result",
-              toolCallId: step.id,
-              toolName: step.name,
-              args: {},
-              result: step.result,
-            },
-          ];
-        }
-
-        const description = this.getStepDescription(step, stepData);
-
-        methodLogger.debug(
-          buildAgentLogMessage(
-            this.name,
-            ActionType.STREAM_STEP,
-            `${description} [${stepData.finishReason || "in-progress"}]`,
-          ),
-          stepData,
-        );
-
-        await onStepFinish(step);
-        if (internalOptions.provider?.onStepFinish) {
-          await (internalOptions.provider.onStepFinish as (step: StepWithContent) => Promise<void>)(
-            step,
-          );
-        }
-        this.addStepToHistory(step, operationContext);
-      },
-      onFinish: async (result: StreamTextFinishResult) => {
-        if (!operationContext.isActive) {
-          return;
-        }
-
-        // [NEW EVENT SYSTEM] Create an agent:success event
-        const agentStartInfo = {
-          startTime:
-            (operationContext.systemContext.get("agent_start_time") as string) || agentStartTime,
-          eventId:
-            (operationContext.systemContext.get("agent_start_event_id") as string) ||
-            agentStartEvent.id,
-        };
-
-        this.updateHistoryEntry(operationContext, {
-          output: result.text,
-          usage: result.usage,
-          endTime: new Date(),
-          status: "completed",
-        });
-
-        methodLogger.debug(
-          buildAgentLogMessage(
-            this.name,
-            ActionType.STREAM_COMPLETE,
-            "Stream generation completed",
-          ),
-          {
-            text: result.text || "",
-            toolCalls: [],
-            toolResults: [],
-            finishReason: result.finishReason || "stop",
-            usage: result.usage,
-          },
-        );
-
-        const agentSuccessEvent: AgentSuccessEvent = {
-          id: crypto.randomUUID(),
-          name: "agent:success",
-          type: "agent",
-          startTime: agentStartInfo.startTime, // Use the original start time
-          endTime: new Date().toISOString(), // Current time as end time
-          status: "completed",
-          input: null,
-          output: { text: result.text },
-          metadata: {
-            displayName: this.name,
-            id: this.id,
-            usage: result.usage,
-            userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-              string,
-              unknown
-            >,
-            modelParameters: {
-              model: this.getModelName(),
-              maxTokens: internalOptions.provider?.maxTokens,
-              temperature: internalOptions.provider?.temperature,
-              topP: internalOptions.provider?.topP,
-              frequencyPenalty: internalOptions.provider?.frequencyPenalty,
-              presencePenalty: internalOptions.provider?.presencePenalty,
-              maxSteps: internalOptions.maxSteps,
-            },
-          },
-          traceId: operationContext.historyEntry.id,
-          parentEventId: agentStartInfo.eventId, // Link to the agent:start event
-        };
-
-        // Publish the agent:success event (background)
-        this.publishTimelineEvent(operationContext, agentSuccessEvent);
-
-        // Original agent completion event for backward compatibility
-        this.addAgentEvent(operationContext, "finished", "completed", {
-          input: messages,
-          output: result.text,
-          usage: result.usage,
-          status: "completed",
-          metadata: {
-            finishReason: result.finishReason,
-            warnings: result.warnings,
-            providerResponse: result.providerResponse,
-          },
-        });
-        operationContext.isActive = false;
-
-        // Create initial result for onEnd hook
-        const initialResult = {
-          ...result,
-          userContext: new Map(operationContext.userContext),
-        };
-
-        await this.getMergedHooks(internalOptions).onEnd?.({
-          agent: this,
-          output: initialResult,
-          error: undefined,
-          conversationId: finalConversationId,
-          context: operationContext,
-        });
-
-        // Add userContext to result AFTER onEnd hook
-        const resultWithContext = {
-          ...result,
-          userContext: new Map(operationContext.userContext),
-        };
-
-        if (internalOptions.provider?.onFinish) {
-          await (internalOptions.provider.onFinish as StreamTextOnFinishCallback)(
-            resultWithContext,
-          );
-        }
-      },
-      onError: async (error: VoltAgentError) => {
-        // Check if operation was cancelled
-        if (!operationContext.isActive && operationContext.cancellationError) {
-          // Throw the cancellation error instead of the LLM error
-          return;
-        }
-
-        // [NEW EVENT SYSTEM] Create an agent:error event
-        const agentErrorStartInfo = {
-          startTime:
-            (operationContext.systemContext.get("agent_start_time") as string) ||
-            new Date().toISOString(),
-          eventId: operationContext.systemContext.get("agent_start_event_id") as string,
-        };
-
-        this.updateHistoryEntry(operationContext, {
-          status: "error",
-          endTime: new Date(),
-        });
-
-        const agentErrorEvent: AgentErrorEvent = {
-          id: crypto.randomUUID(),
-          name: "agent:error",
-          type: "agent",
-          startTime: agentErrorStartInfo.startTime, // Use the original start time
-          endTime: new Date().toISOString(), // Current time as end time
-          status: "error",
-          level: "ERROR",
-          input: null,
-          output: null,
-          statusMessage: {
-            message: error.message,
-            code: error.code,
-            stage: error.stage,
-            ...(error.originalError ? { originalError: String(error.originalError) } : {}),
-          },
-          metadata: {
-            displayName: this.name,
-            id: this.id,
-            userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-              string,
-              unknown
-            >,
-          },
-          traceId: operationContext.historyEntry.id,
-          parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
-        };
-
-        // Publish the agent:error event (background)
-        this.publishTimelineEvent(operationContext, agentErrorEvent);
-
-        // Original error event for backward compatibility
-        this.addAgentEvent(operationContext, "finished", "error", {
-          input: messages,
-          error: error,
-          errorMessage: error.message,
-          status: "error",
-          metadata: {
-            code: error.code,
-            originalError: error.originalError,
-            stage: error.stage,
-            toolError: error.toolError,
-            ...error.metadata,
-          },
-        });
-
-        operationContext.isActive = false;
-
-        // Log error
-        methodLogger.error(
-          buildAgentLogMessage(this.name, ActionType.ERROR, "Stream generation failed"),
-          {
-            event: LogEvents.AGENT_STREAM_FAILED,
-            error: {
-              message: error.message,
-              code: error.code,
-              stage: error.stage,
-            },
-          },
-        );
-
-        if (internalOptions.provider?.onError) {
-          await (internalOptions.provider.onError as StreamOnErrorCallback)(error);
-        }
-
-        await this.getMergedHooks(internalOptions).onEnd?.({
-          agent: this,
-          output: undefined,
-          error: error,
-          conversationId: finalConversationId,
-          context: operationContext,
-        });
-      },
-    });
-
-    // Create enhanced stream with real-time SubAgent event injection and add userContext
-    const wrappedResponse: StreamTextResponse<TProvider> = {
-      ...response,
-      fullStream: response.fullStream
-        ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus)
-        : undefined,
-      userContext: new Map(operationContext.userContext),
-    };
-
-    return wrappedResponse;
-  }
-
-  /**
-   * Generate a structured object response
-   */
-  public async generateObject<TSchema extends z.ZodType>(
-    input: string | BaseMessage[],
-    schema: TSchema,
-    options: PublicGenerateOptions = {},
-  ): Promise<GenerateObjectResponse<TProvider, TSchema>> {
-    const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
-    const {
-      userId,
-      conversationId: initialConversationId,
-      parentAgentId,
-      parentHistoryEntryId,
-      parentOperationContext,
-      contextLimit = 10,
-      userContext,
-      abortController,
-      signal,
-    } = internalOptions;
-
-    // Always create new operation context, but share conversationSteps with parent if provided
-    const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId,
-      parentHistoryEntryId,
-      operationName: "generateObject",
-      userContext,
-      userId,
-      conversationId: initialConversationId,
-      parentOperationContext,
-      abortController,
-      signal,
-    });
-
-    const { messages: contextMessages, conversationId: finalConversationId } =
-      await this.memoryManager.prepareConversationContext(
-        operationContext,
-        input,
-        userId,
-        initialConversationId,
-        contextLimit,
-      );
-
-    // Use logger from operationContext
-    const methodLogger = operationContext.logger;
-
-    const modelName = this.getModelName();
-
-    // Log object generation start with only event-specific context
-    methodLogger.debug(
-      buildAgentLogMessage(
-        this.name,
-        ActionType.OBJECT_GENERATION_START,
-        `Starting object generation with ${modelName}`,
-      ),
-      {
-        event: LogEvents.AGENT_OBJECT_STARTED,
-        operationType: "object",
-        inputType: typeof input === "string" ? "string" : "messages",
-        contextLimit,
-        memoryEnabled: !!this.memoryManager.getMemory(),
-        model: modelName,
-      },
-    );
-
-    if (operationContext.otelSpan) {
-      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
-      if (finalConversationId)
-        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
-    }
-
-    let messages: BaseMessage[] = [];
-    try {
-      await this.getMergedHooks(internalOptions).onStart?.({
-        agent: this,
-        context: operationContext,
-      });
-
-      const systemMessageResponse = await this.getSystemMessage({
-        input,
-        historyEntryId: operationContext.historyEntry.id,
-        contextMessages,
-        operationContext,
-      });
-
-      // Handle both single message and array of messages from getSystemMessage
-      const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
-        ? systemMessageResponse.systemMessages
-        : [systemMessageResponse.systemMessages];
-      messages = [...systemMessages, ...contextMessages];
-      messages = await this.formatInputMessages(messages, input);
-
-      // Call onPrepareMessages hook if defined
-      try {
-        const prepareResult = await this.getMergedHooks(internalOptions).onPrepareMessages?.({
-          messages: [...messages], // Pass a copy to prevent direct mutation
-          agent: this,
-          context: operationContext,
-        });
-
-        // Use transformed messages if provided
-        if (prepareResult?.messages && Array.isArray(prepareResult.messages)) {
-          messages = prepareResult.messages;
-        }
-      } catch (error) {
-        this.logger.error("Error preparing messages", { error, agentId: this.id });
-        // Continue with original messages if hook fails
-      }
-
-      // [NEW EVENT SYSTEM] Create an agent:start event
-      const agentStartTime = new Date().toISOString(); // Capture agent start time once
-      const agentStartEvent: AgentStartEvent = {
-        id: crypto.randomUUID(),
-        name: "agent:start",
-        type: "agent",
-        startTime: agentStartTime, // Use captured time
-        status: "running",
-        input: { input },
-        output: null,
-        metadata: {
-          displayName: this.name,
-          id: this.id,
-          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-            string,
-            unknown
-          >,
-          systemPrompt: systemMessages,
-          messages,
-          promptMetadata: systemMessageResponse.promptMetadata,
-          isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
-          modelParameters: {
-            model: this.getModelName(),
-            maxTokens: internalOptions.provider?.maxTokens,
-            temperature: internalOptions.provider?.temperature,
-            topP: internalOptions.provider?.topP,
-            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
-            presencePenalty: internalOptions.provider?.presencePenalty,
-            maxSteps: internalOptions.maxSteps,
-          },
-        },
-        traceId: operationContext.historyEntry.id,
-      };
-
-      // Store agent start time in the operation context for later reference
-      operationContext.systemContext.set("agent_start_time", agentStartTime);
-      operationContext.systemContext.set("agent_start_event_id", agentStartEvent.id);
-
-      // Publish the new event through AgentEventEmitter
-      this.publishTimelineEvent(operationContext, agentStartEvent);
-
-      // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
-      this.setupAbortSignalListener(
-        abortController?.signal || signal,
-        operationContext,
-        finalConversationId,
-        {
-          id: agentStartEvent.id,
-          startTime: agentStartTime,
-        },
-        internalOptions.hooks,
-      );
-
-      const onStepFinish = this.memoryManager.createStepFinishHandler(
-        operationContext,
-        userId,
-        finalConversationId,
-      );
-
-      // Resolve dynamic model based on user context
-      const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
-        this.id,
-        this.name,
-        this.instructions,
-        this.voltOpsClient,
-      );
-      const dynamicValueOptions: DynamicValueOptions = {
-        userContext: operationContext.userContext || new Map(),
-        prompts: promptHelper,
-      };
-      const resolvedModel = await this.resolveModel(dynamicValueOptions);
-
-      const response = await this.llm.generateObject({
-        messages,
-        model: resolvedModel,
-        schema,
-        signal: operationContext.signal,
-        provider: internalOptions.provider,
-        toolExecutionContext: {
-          operationContext: operationContext,
-          agentId: this.id,
-          historyEntryId: operationContext.historyEntry.id,
-        } as ToolExecutionContext,
-        onStepFinish: async (step) => {
-          this.addStepToHistory(step, operationContext);
-          await onStepFinish(step);
-          if (internalOptions.provider?.onStepFinish) {
-            await (
-              internalOptions.provider.onStepFinish as (step: StepWithContent) => Promise<void>
-            )(step);
-          }
-        },
-      });
-
-      // [NEW EVENT SYSTEM] Create an agent:success event
-      const agentStartInfo = {
-        startTime:
-          (operationContext.systemContext.get("agent_start_time") as string) || agentStartTime,
-        eventId:
-          (operationContext.systemContext.get("agent_start_event_id") as string) ||
-          agentStartEvent.id,
-      };
-
-      const agentSuccessEvent: AgentSuccessEvent = {
-        id: crypto.randomUUID(),
-        name: "agent:success",
-        type: "agent",
-        startTime: agentStartInfo.startTime, // Use the original start time
-        endTime: new Date().toISOString(), // Current time as end time
-        status: "completed",
-        input: null,
-        output: { object: response.object },
-        metadata: {
-          displayName: this.name,
-          id: this.id,
-          usage: response.usage,
-          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-            string,
-            unknown
-          >,
-          modelParameters: {
-            model: this.getModelName(),
-            maxTokens: internalOptions.provider?.maxTokens,
-            temperature: internalOptions.provider?.temperature,
-            topP: internalOptions.provider?.topP,
-            frequencyPenalty: internalOptions.provider?.frequencyPenalty,
-            presencePenalty: internalOptions.provider?.presencePenalty,
-            maxSteps: internalOptions.maxSteps,
-          },
-        },
-        traceId: operationContext.historyEntry.id,
-        parentEventId: agentStartInfo.eventId, // Link to the agent:start event
-      };
-
-      // Publish the agent:success event (background)
-      this.publishTimelineEvent(operationContext, agentSuccessEvent);
-
-      const responseStr = safeStringify(response.object);
-      this.addAgentEvent(operationContext, "finished", "completed", {
-        output: responseStr,
-        usage: response.usage,
-        status: "completed",
-        input: messages,
-      });
-      operationContext.isActive = false;
-
-      this.updateHistoryEntry(operationContext, {
-        output: responseStr,
-        usage: response.usage,
-        endTime: new Date(),
-        status: "completed",
-      });
-
-      // Create initial response for onEnd hook
-      const initialResponse: GenerateObjectResponse<TProvider, TSchema> = {
-        ...response,
-        userContext: new Map(operationContext.userContext),
-      };
-
-      await this.getMergedHooks(internalOptions).onEnd?.({
-        agent: this,
-        output: initialResponse,
-        error: undefined,
-        conversationId: finalConversationId,
-        context: operationContext,
-      });
-
-      // Extend the original response with userContext AFTER onEnd hook
-      const extendedResponse: GenerateObjectResponse<TProvider, TSchema> = {
-        ...response,
-        userContext: new Map(operationContext.userContext),
-      };
-
-      // Log successful completion
-      const usage = response.usage;
-      const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
-
-      methodLogger.debug(
-        buildAgentLogMessage(
-          this.name,
-          ActionType.OBJECT_GENERATION_COMPLETE,
-          `Object generation completed (${tokenInfo})`,
-        ),
-        {
-          event: LogEvents.AGENT_OBJECT_COMPLETED,
-          usage: response.usage,
-          object: response.object,
-        },
-      );
-
-      return extendedResponse;
-    } catch (error) {
-      // Check if operation was cancelled and throw the stored cancellation error
-      if (!operationContext.isActive && operationContext.cancellationError) {
-        throw operationContext.cancellationError;
-      }
-
-      const voltagentError = error as VoltAgentError;
-
-      // [NEW EVENT SYSTEM] Create an agent:error event
-      const agentErrorStartInfo = {
-        startTime:
-          (operationContext.systemContext.get("agent_start_time") as string) ||
-          new Date().toISOString(),
-        eventId: operationContext.systemContext.get("agent_start_event_id") as string,
-      };
-
-      const agentErrorEvent: AgentErrorEvent = {
-        id: crypto.randomUUID(),
-        name: "agent:error",
-        type: "agent",
-        startTime: agentErrorStartInfo.startTime, // Use the original start time
-        endTime: new Date().toISOString(), // Current time as end time
-        status: "error",
-        level: "ERROR",
-        input: null,
-        output: null,
-        statusMessage: {
-          message: voltagentError.message,
-          code: voltagentError.code,
-          stage: voltagentError.stage,
-          ...(voltagentError.originalError
-            ? { originalError: String(voltagentError.originalError) }
-            : {}),
-        },
-        metadata: {
-          displayName: this.name,
-          id: this.id,
-          userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-            string,
-            unknown
-          >,
-        },
-        traceId: operationContext.historyEntry.id,
-        parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
-      };
-
-      // Publish the agent:error event (background)
-      this.publishTimelineEvent(operationContext, agentErrorEvent);
-
-      this.addAgentEvent(operationContext, "finished", "error", {
-        input: messages,
-        error: voltagentError,
-        errorMessage: voltagentError.message,
-        status: "error",
-        metadata: {
-          code: voltagentError.code,
-          originalError: voltagentError.originalError,
-          stage: voltagentError.stage,
-          toolError: voltagentError.toolError,
-          ...voltagentError.metadata,
-        },
-      });
-      operationContext.isActive = false;
-
-      this.updateHistoryEntry(operationContext, {
-        status: "error",
-        endTime: new Date(),
-      });
-
-      // Log error
-      methodLogger.error(
-        buildAgentLogMessage(this.name, ActionType.ERROR, "Object generation failed"),
-        {
-          event: LogEvents.AGENT_OBJECT_FAILED,
-          error: {
-            message: voltagentError.message,
-            code: voltagentError.code,
-            stage: voltagentError.stage,
-          },
-        },
-      );
-
-      await this.getMergedHooks(internalOptions).onEnd?.({
-        agent: this,
-        output: undefined,
-        error: voltagentError,
-        conversationId: finalConversationId,
-        context: operationContext,
-      });
-
-      throw voltagentError;
-    }
-  }
-
-  /**
-   * Stream a structured object response
-   */
-  public async streamObject<TSchema extends z.ZodType>(
-    input: string | BaseMessage[],
-    schema: TSchema,
-    options: PublicGenerateOptions = {},
-  ): Promise<StreamObjectResponse<TProvider, TSchema>> {
-    const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
-    const {
-      userId,
-      conversationId: initialConversationId,
-      parentAgentId,
-      parentHistoryEntryId,
-      parentOperationContext,
-      provider,
-      contextLimit = 10,
-      userContext,
-      abortController,
-      signal,
-    } = internalOptions;
-
-    const operationContext = await this.initializeHistory(input, "working", {
-      parentAgentId,
-      parentHistoryEntryId,
-      operationName: "streamObject",
-      userContext,
-      userId,
-      conversationId: initialConversationId,
-      parentOperationContext,
-      abortController,
-      signal,
-    });
-
-    const { messages: contextMessages, conversationId: finalConversationId } =
-      await this.memoryManager.prepareConversationContext(
-        operationContext,
-        input,
-        userId,
-        initialConversationId,
-        contextLimit,
-      );
-
-    // Use logger from operationContext
-    const methodLogger = operationContext.logger;
-
-    const modelName = this.getModelName();
-
-    // Log stream object generation start with only event-specific context
-    methodLogger.debug(
-      buildAgentLogMessage(
-        this.name,
-        ActionType.STREAM_OBJECT_START,
-        `Starting stream object generation with ${modelName}`,
-      ),
-      {
-        event: LogEvents.AGENT_STREAM_OBJECT_STARTED,
-        operationType: "streamObject",
-        model: modelName,
-        inputType: typeof input === "string" ? "string" : "messages",
-        contextLimit,
-        memoryEnabled: !!this.memoryManager.getMemory(),
-      },
-    );
-
-    if (operationContext.otelSpan) {
-      if (userId) operationContext.otelSpan.setAttribute("enduser.id", userId);
-      if (finalConversationId)
-        operationContext.otelSpan.setAttribute("session.id", finalConversationId);
-    }
-
-    await this.getMergedHooks(internalOptions).onStart?.({
-      agent: this,
-      context: operationContext,
-    });
-
-    const systemMessageResponse = await this.getSystemMessage({
-      input,
-      historyEntryId: operationContext.historyEntry.id,
-      contextMessages,
-      operationContext,
-    });
-
-    // Handle both single message and array of messages from getSystemMessage
-    const systemMessages = Array.isArray(systemMessageResponse.systemMessages)
-      ? systemMessageResponse.systemMessages
-      : [systemMessageResponse.systemMessages];
-    let messages = [...systemMessages, ...contextMessages];
-    messages = await this.formatInputMessages(messages, input);
-
-    // Call onPrepareMessages hook if defined
-    try {
-      const prepareResult = await this.getMergedHooks(internalOptions).onPrepareMessages?.({
-        messages: [...messages], // Pass a copy to prevent direct mutation
-        agent: this,
-        context: operationContext,
-      });
-
-      // Use transformed messages if provided
-      if (prepareResult?.messages && Array.isArray(prepareResult.messages)) {
-        messages = prepareResult.messages;
-      }
-    } catch (error) {
-      this.logger.error("Error preparing messages", { error, agentId: this.id });
-      // Continue with original messages if hook fails
-    }
-
-    // [NEW EVENT SYSTEM] Create an agent:start event
-    const agentStartTime = new Date().toISOString(); // Capture agent start time once
-    const agentStartEvent: AgentStartEvent = {
-      id: crypto.randomUUID(),
-      name: "agent:start",
-      type: "agent",
-      startTime: agentStartTime, // Use captured time
-      status: "running",
-      input: { input },
-      output: null,
-      metadata: {
-        displayName: this.name,
-        id: this.id,
-        userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-          string,
-          unknown
-        >,
-        systemPrompt: systemMessages,
-        messages,
-        promptMetadata: systemMessageResponse.promptMetadata,
-        isDynamicInstructions: systemMessageResponse.isDynamicInstructions,
-        modelParameters: {
-          model: this.getModelName(),
-          maxTokens: internalOptions.provider?.maxTokens,
-          temperature: internalOptions.provider?.temperature,
-          topP: internalOptions.provider?.topP,
-          frequencyPenalty: internalOptions.provider?.frequencyPenalty,
-          presencePenalty: internalOptions.provider?.presencePenalty,
-          maxSteps: internalOptions.maxSteps,
-        },
-      },
-      traceId: operationContext.historyEntry.id,
-    };
-
-    // Store agent start time in the operation context for later reference
-    operationContext.systemContext.set("agent_start_time", agentStartTime);
-    operationContext.systemContext.set("agent_start_event_id", agentStartEvent.id);
-
-    // Publish the new event through AgentEventEmitter
-    this.publishTimelineEvent(operationContext, agentStartEvent);
-
-    // Setup abort signal listener (after finalConversationId and agentStartEvent are available)
-    this.setupAbortSignalListener(
-      abortController?.signal || signal,
-      operationContext,
-      finalConversationId,
-      {
-        id: agentStartEvent.id,
-        startTime: agentStartTime,
-      },
-      internalOptions.hooks,
-    );
-
-    const onStepFinish = this.memoryManager.createStepFinishHandler(
-      operationContext,
-      userId,
-      finalConversationId,
-    );
-
-    // Resolve dynamic model based on user context
-    const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
-      this.id,
-      this.name,
-      this.instructions,
-      this.voltOpsClient,
-    );
-    const dynamicValueOptions: DynamicValueOptions = {
-      userContext: operationContext.userContext || new Map(),
-      prompts: promptHelper,
-    };
-    const resolvedModel = await this.resolveModel(dynamicValueOptions);
-
-    const response = await this.llm.streamObject({
-      messages,
-      model: resolvedModel,
-      schema,
-      provider,
-      signal: operationContext.signal,
-      toolExecutionContext: {
-        operationContext: operationContext,
-        agentId: this.id,
-        historyEntryId: operationContext.historyEntry.id,
-      } as ToolExecutionContext,
-      onStepFinish: async (step) => {
-        this.addStepToHistory(step, operationContext);
-        await onStepFinish(step);
-        if (provider?.onStepFinish) {
-          await (provider.onStepFinish as (step: StepWithContent) => Promise<void>)(step);
-        }
-      },
-      onFinish: async (result: StreamObjectFinishResult<z.infer<TSchema>>) => {
-        if (!operationContext.isActive) {
-          return;
-        }
-
-        // [NEW EVENT SYSTEM] Create an agent:success event
-        const agentStartInfo = {
-          startTime:
-            (operationContext.systemContext.get("agent_start_time") as string) || agentStartTime,
-          eventId:
-            (operationContext.systemContext.get("agent_start_event_id") as string) ||
-            agentStartEvent.id,
-        };
-
-        const agentSuccessEvent: AgentSuccessEvent = {
-          id: crypto.randomUUID(),
-          name: "agent:success",
-          type: "agent",
-          startTime: agentStartInfo.startTime, // Use the original start time
-          endTime: new Date().toISOString(), // Current time as end time
-          status: "completed",
-          input: null,
-          output: { object: result.object },
-          metadata: {
-            displayName: this.name,
-            id: this.id,
-            usage: result.usage,
-            userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-              string,
-              unknown
-            >,
-            modelParameters: {
-              model: this.getModelName(),
-              maxTokens: internalOptions.provider?.maxTokens,
-              temperature: internalOptions.provider?.temperature,
-              topP: internalOptions.provider?.topP,
-              frequencyPenalty: internalOptions.provider?.frequencyPenalty,
-              presencePenalty: internalOptions.provider?.presencePenalty,
-              maxSteps: internalOptions.maxSteps,
-            },
-          },
-          traceId: operationContext.historyEntry.id,
-          parentEventId: agentStartInfo.eventId, // Link to the agent:start event
-        };
-
-        // Publish the agent:success event (background)
-        this.publishTimelineEvent(operationContext, agentSuccessEvent);
-
-        const responseStr = safeStringify(result.object);
-        this.addAgentEvent(operationContext, "finished", "completed", {
-          input: messages,
-          output: responseStr,
-          usage: result.usage,
-          status: "completed",
-          metadata: {
-            finishReason: result.finishReason,
-            warnings: result.warnings,
-            providerResponse: result.providerResponse,
-          },
-        });
-
-        this.updateHistoryEntry(operationContext, {
-          output: responseStr,
-          usage: result.usage,
-          status: "completed",
-        });
-
-        operationContext.isActive = false;
-
-        // Create initial result for onEnd hook
-        const initialResult = {
-          ...result,
-          userContext: new Map(operationContext.userContext),
-        };
-
-        await this.getMergedHooks(internalOptions).onEnd?.({
-          agent: this,
-          output: initialResult,
-          error: undefined,
-          conversationId: finalConversationId,
-          context: operationContext,
-        });
-
-        // Add userContext to result AFTER onEnd hook
-        const resultWithContext = {
-          ...result,
-          userContext: new Map(operationContext.userContext),
-        };
-
-        // Log successful completion
-        const usage = result.usage;
-        const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
-
-        methodLogger.debug(
-          buildAgentLogMessage(
-            this.name,
-            ActionType.STREAM_OBJECT_COMPLETE,
-            `Stream object generation completed (${tokenInfo})`,
-          ),
-          {
-            event: LogEvents.AGENT_STREAM_OBJECT_COMPLETED,
-            usage: result.usage,
-            object: result.object,
-            finishReason: result.finishReason,
-          },
-        );
-
-        if (provider?.onFinish) {
-          await (provider.onFinish as StreamObjectOnFinishCallback<z.infer<TSchema>>)(
-            resultWithContext,
-          );
-        }
-      },
-      onError: async (error: VoltAgentError) => {
-        // Check if operation was cancelled
-        if (!operationContext.isActive && operationContext.cancellationError) {
-          // Throw the cancellation error instead of the LLM error
-          throw operationContext.cancellationError;
-        }
-
-        // [NEW EVENT SYSTEM] Create an agent:error event
-        const agentErrorStartInfo = {
-          startTime:
-            (operationContext.systemContext.get("agent_start_time") as string) ||
-            new Date().toISOString(),
-          eventId: operationContext.systemContext.get("agent_start_event_id") as string,
-        };
-
-        const agentErrorEvent: AgentErrorEvent = {
-          id: crypto.randomUUID(),
-          name: "agent:error",
-          type: "agent",
-          startTime: agentErrorStartInfo.startTime, // Use the original start time
-          endTime: new Date().toISOString(), // Current time as end time
-          status: "error",
-          level: "ERROR",
-          input: null,
-          output: null,
-          statusMessage: {
-            message: error.message,
-            code: error.code,
-            stage: error.stage,
-            ...(error.originalError ? { originalError: String(error.originalError) } : {}),
-          },
-          metadata: {
-            displayName: this.name,
-            id: this.id,
-            userContext: Object.fromEntries(operationContext.userContext.entries()) as Record<
-              string,
-              unknown
-            >,
-          },
-          traceId: operationContext.historyEntry.id,
-          parentEventId: agentErrorStartInfo.eventId, // Link to the agent:start event
-        };
-
-        // Publish the agent:error event (background)
-        this.publishTimelineEvent(operationContext, agentErrorEvent);
-
-        this.addAgentEvent(operationContext, "finished", "error", {
-          input: messages,
-          error: error,
-          errorMessage: error.message,
-          status: "error",
-          metadata: {
-            code: error.code,
-            originalError: error.originalError,
-            stage: error.stage,
-            toolError: error.toolError,
-            ...error.metadata,
-          },
-        });
-
-        this.updateHistoryEntry(operationContext, {
-          status: "error",
-        });
-
-        operationContext.isActive = false;
-
-        // Log error
-        methodLogger.error(
-          buildAgentLogMessage(this.name, ActionType.ERROR, "Stream object generation failed"),
-          {
-            event: LogEvents.AGENT_STREAM_OBJECT_FAILED,
-            error: {
-              message: error.message,
-              code: error.code,
-              stage: error.stage,
-            },
-          },
-        );
-
-        if (provider?.onError) {
-          await (provider.onError as StreamOnErrorCallback)(error);
-        }
-
-        await this.getMergedHooks(internalOptions).onEnd?.({
-          agent: this,
-          output: undefined,
-          error: error,
-          conversationId: finalConversationId,
-          context: operationContext,
-        });
-      },
-    });
-
-    // Add userContext to the response for backward compatibility
-    const extendedResponse: StreamObjectResponse<TProvider, TSchema> = {
-      ...response,
-      userContext: new Map(operationContext.userContext),
-    };
-
-    return extendedResponse;
-  }
-
-  /**
-   * Add a sub-agent that this agent can delegate tasks to
+   * Add a sub-agent
    */
   public addSubAgent(agentConfig: SubAgentConfig): void {
     this.subAgentManager.addSubAgent(agentConfig);
@@ -3551,7 +2441,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     // Add delegate tool if this is the first sub-agent
     if (this.subAgentManager.getSubAgents().length === 1) {
       const delegateTool = this.subAgentManager.createDelegateTool({
-        sourceAgent: this,
+        sourceAgent: this as any,
       });
       this.toolManager.addTool(delegateTool);
     }
@@ -3570,27 +2460,17 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   }
 
   /**
-   * Get agent's tools for API exposure
-   */
-  public getToolsForApi() {
-    // Delegate to tool manager
-    return this.toolManager.getToolsForApi();
-  }
-
-  /**
    * Get all tools
    */
-  public getTools(): BaseTool[] {
-    // Delegate to tool manager
+  public getTools() {
     return this.toolManager.getTools();
   }
 
   /**
-   * Get agent's model name for API exposure
+   * Get tools for API
    */
-  public getModelName(): string {
-    // Delegate to the provider's standardized method
-    return this.llm.getModelIdentifier(this.model);
+  public getToolsForApi() {
+    return this.toolManager.getToolsForApi();
   }
 
   /**
@@ -3604,253 +2484,43 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
    * Unregister this agent
    */
   public unregister(): void {
-    // Notify event system about agent unregistration
     AgentEventEmitter.getInstance().emitAgentUnregistered(this.id);
   }
 
   /**
-   * Get agent's history manager
-   * This provides access to the history manager for direct event handling
-   * @returns The history manager instance
+   * Get history manager
    */
   public getHistoryManager(): HistoryManager {
     return this.historyManager;
   }
 
   /**
-   * Checks if telemetry (VoltAgentExporter) is configured for this agent.
-   * @returns True if telemetry is configured, false otherwise.
+   * Check if telemetry is configured
    */
   public isTelemetryConfigured(): boolean {
     return this.historyManager.isExporterConfigured();
   }
 
   /**
-   * Add tools or toolkits to the agent dynamically.
-   * @param tools Array of tools or toolkits to add to the agent
-   * @returns Object containing added tools
+   * Get memory manager
    */
-  public addTools(tools: (Tool<any, any> | Toolkit)[]): { added: (Tool<any, any> | Toolkit)[] } {
-    // ToolManager handles the logic of adding tools/toolkits and checking conflicts
-    this.toolManager.addItems(tools);
-
-    return {
-      added: tools,
-    };
+  public getMemoryManager(): MemoryManager {
+    return this.memoryManager;
   }
 
   /**
-   * @deprecated Use addTools() instead. This method will be removed in a future version.
-   * Add one or more tools or toolkits to the agent.
-   * @returns Object containing added items
+   * Get tool manager
    */
-  public addItems(items: (Tool<any, any> | Toolkit)[]): { added: (Tool<any, any> | Toolkit)[] } {
-    return this.addTools(items);
+  public getToolManager(): ToolManager {
+    return this.toolManager;
   }
 
   /**
-   * @internal
-   * Internal method to set the VoltAgentExporter on the agent's HistoryManager.
-   * This is typically called by the main VoltAgent instance after it has initialized its exporter.
+   * Internal: Set VoltAgent exporter
    */
-  public _INTERNAL_setVoltAgentExporter(exporter: VoltAgentExporter): void {
+  _INTERNAL_setVoltAgentExporter(exporter: VoltAgentExporter): void {
     if (this.historyManager) {
       this.historyManager.setExporter(exporter);
-    }
-  }
-
-  /**
-   * Helper method to merge the agent's hooks with the ones passed in the options
-   * @param options - The options passed to the generate method
-   * @returns The merged hooks
-   */
-  private getMergedHooks(options: Pick<InternalGenerateOptions, "hooks">): AgentHooks {
-    if (!options.hooks) {
-      return this.hooks;
-    }
-    return {
-      onStart: async (...args) => {
-        await options.hooks?.onStart?.(...args);
-        await this.hooks.onStart?.(...args);
-      },
-      onEnd: async (...args) => {
-        await options.hooks?.onEnd?.(...args);
-        await this.hooks.onEnd?.(...args);
-      },
-      onHandoff: async (...args) => {
-        await options.hooks?.onHandoff?.(...args);
-        await this.hooks.onHandoff?.(...args);
-      },
-      onToolStart: async (...args) => {
-        await options.hooks?.onToolStart?.(...args);
-        await this.hooks.onToolStart?.(...args);
-      },
-      onToolEnd: async (...args) => {
-        await options.hooks?.onToolEnd?.(...args);
-        await this.hooks.onToolEnd?.(...args);
-      },
-      onPrepareMessages: options.hooks?.onPrepareMessages || this.hooks.onPrepareMessages,
-    };
-  }
-
-  /**
-   * Helper method to get retriever context with event handling
-   */
-  private async getRetrieverContext(
-    input: string | BaseMessage[],
-    historyEntryId: string,
-    operationContext?: OperationContext,
-  ): Promise<string | null> {
-    if (!this.retriever) return null;
-
-    // [NEW EVENT SYSTEM] Create a retriever:start event
-    const retrieverStartTime = new Date().toISOString(); // Capture start time
-    const retrieverStartEvent: RetrieverStartEvent = {
-      id: crypto.randomUUID(),
-      name: "retriever:start",
-      type: "retriever",
-      startTime: retrieverStartTime,
-      status: "running",
-      input: { query: input },
-      output: null,
-      metadata: {
-        displayName: this.retriever?.tool.name || "Retriever",
-        id: this.retriever?.tool.name,
-        agentId: this.id,
-      },
-      traceId: historyEntryId,
-    };
-
-    // Publish the retriever:start event (background) with parent context
-    this.publishTimelineEvent(operationContext, retrieverStartEvent);
-
-    const retrieverLogger = operationContext?.logger || this.logger;
-
-    // Log retriever search started
-    const retrieverName = this.retriever.tool.name || "search_knowledge";
-    retrieverLogger.debug(
-      buildRetrieverLogMessage(retrieverName, ActionType.START, "search started"),
-      buildLogContext(ResourceType.RETRIEVER, retrieverName, ActionType.START, {
-        event: LogEvents.RETRIEVER_SEARCH_STARTED,
-        query: typeof input === "string" ? input : "BaseMessage[]",
-      }),
-    );
-
-    try {
-      const context = await this.retriever.retrieve(input, {
-        userContext: operationContext?.userContext,
-        logger: retrieverLogger,
-      });
-
-      if (context?.trim()) {
-        // Log retriever search completed
-        retrieverLogger.debug(
-          buildRetrieverLogMessage(retrieverName, ActionType.COMPLETE, "search completed"),
-          buildLogContext(ResourceType.RETRIEVER, retrieverName, ActionType.COMPLETE, {
-            event: LogEvents.RETRIEVER_SEARCH_COMPLETED,
-            result: context,
-          }),
-        );
-
-        // [NEW EVENT SYSTEM] Create a retriever:success event
-        const retrieverSuccessEvent: RetrieverSuccessEvent = {
-          id: crypto.randomUUID(),
-          name: "retriever:success",
-          type: "retriever",
-          startTime: new Date().toISOString(), // Use the original start time
-          endTime: new Date().toISOString(), // Current time as end time
-          status: "completed",
-          input: null,
-          output: { context },
-          metadata: {
-            displayName: this.retriever.tool.name || "Retriever",
-            id: this.retriever.tool.name,
-            agentId: this.id,
-          },
-          traceId: historyEntryId,
-          parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
-        };
-
-        // Publish the retriever:success event (background) with parent context
-        this.publishTimelineEvent(operationContext, retrieverSuccessEvent);
-        return context;
-      }
-
-      // If there was no context returned, log it and still create a success event
-      // but with a note that no context was found
-      retrieverLogger.debug(
-        buildRetrieverLogMessage(
-          retrieverName,
-          ActionType.COMPLETE,
-          "search completed - no relevant context found",
-        ),
-        buildLogContext(ResourceType.RETRIEVER, retrieverName, ActionType.COMPLETE, {
-          event: LogEvents.RETRIEVER_SEARCH_COMPLETED,
-          result: "No relevant context found",
-        }),
-      );
-
-      const retrieverSuccessEvent: RetrieverSuccessEvent = {
-        id: crypto.randomUUID(),
-        name: "retriever:success",
-        type: "retriever",
-        startTime: new Date().toISOString(), // Use the original start time
-        endTime: new Date().toISOString(), // Current time as end time
-        status: "completed",
-        input: null,
-        output: { context: "No relevant context found" },
-        metadata: {
-          displayName: this.retriever.tool.name || "Retriever",
-          id: this.retriever.tool.name,
-          agentId: this.id,
-        },
-        traceId: historyEntryId,
-        parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
-      };
-
-      // Publish the retriever:success event (empty result, background) with parent context
-      this.publishTimelineEvent(operationContext, retrieverSuccessEvent);
-      return null;
-    } catch (error) {
-      // Log retriever search failed
-      retrieverLogger.error(
-        buildRetrieverLogMessage(retrieverName, ActionType.ERROR, "search failed"),
-        buildLogContext(ResourceType.RETRIEVER, retrieverName, ActionType.ERROR, {
-          event: LogEvents.RETRIEVER_SEARCH_FAILED,
-          query: typeof input === "string" ? input : "BaseMessage[]",
-          error,
-        }),
-      );
-
-      // [NEW EVENT SYSTEM] Create a retriever:error event
-      const retrieverErrorEvent: RetrieverErrorEvent = {
-        id: crypto.randomUUID(),
-        name: "retriever:error",
-        type: "retriever",
-        startTime: new Date().toISOString(), // Use the original start time
-        endTime: new Date().toISOString(), // Current time as end time
-        status: "error",
-        level: "ERROR",
-        input: null,
-        output: null,
-        statusMessage: {
-          message: error instanceof Error ? error.message : "Unknown retriever error",
-          ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
-        },
-        metadata: {
-          displayName: this.retriever.tool.name || "Retriever",
-          id: this.retriever.tool.name,
-          agentId: this.id,
-        },
-        traceId: historyEntryId,
-        parentEventId: retrieverStartEvent.id, // Link to the retriever:start event
-      };
-
-      // Publish the retriever:error event (background) with parent context
-      this.publishTimelineEvent(operationContext, retrieverErrorEvent);
-
-      this.logger.warn("Failed to retrieve context", { error, agentId: this.id });
-      return null;
     }
   }
 }

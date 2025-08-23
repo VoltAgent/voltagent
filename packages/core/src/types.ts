@@ -6,11 +6,13 @@ import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { Agent } from "./agent/agent";
-import type { CustomEndpointDefinition } from "./server/custom-endpoints";
+import type { AgentStatus } from "./agent/types";
 import type { VoltAgentExporter } from "./telemetry/exporter";
-import type { VoltOpsClient } from "./voltops";
+import type { ToolStatusInfo } from "./tool";
+import type { VoltOpsClient } from "./voltops/types";
 import type { WorkflowChain } from "./workflow/chain";
-import type { Workflow } from "./workflow/types";
+import type { RegisteredWorkflow } from "./workflow/registry";
+import type { Workflow, WorkflowHistoryEntry, WorkflowSuspendController } from "./workflow/types";
 
 // Re-export VoltOps types for convenience
 export type {
@@ -28,37 +30,104 @@ export type {
 } from "./voltops/types";
 
 /**
- * Server configuration options for VoltAgent
+ * Server provider interface
  */
-export type ServerOptions = {
-  /**
-   * Whether to automatically start the server
-   * @default true
-   */
-  autoStart?: boolean;
-  /**
-   * Port number for the server
-   * @default 3141 (or next available port)
-   */
-  port?: number;
-  /**
-   * Optional flag to enable/disable Swagger UI
-   * By default:
-   * - In development (NODE_ENV !== 'production'): Swagger UI is enabled
-   * - In production (NODE_ENV === 'production'): Swagger UI is disabled
-   */
-  enableSwaggerUI?: boolean;
-  /**
-   * Optional array of custom endpoint definitions to register with the API server
-   */
-  customEndpoints?: CustomEndpointDefinition[];
-};
+export interface IServerProvider {
+  start(): Promise<{ port: number }>;
+  stop(): Promise<void>;
+  isRunning(): boolean;
+}
+
+/**
+ * Server provider dependencies
+ */
+export interface ServerProviderDeps {
+  agentRegistry: {
+    getAgent(id: string): Agent | undefined;
+    getAllAgents(): Agent[];
+    getAgentCount(): number;
+    removeAgent(id: string): boolean;
+    registerAgent(agent: Agent): void;
+    getGlobalVoltAgentExporter(): VoltAgentExporter | undefined;
+    getGlobalVoltOpsClient(): VoltOpsClient | undefined;
+    getGlobalLogger(): Logger | undefined;
+  };
+  workflowRegistry: {
+    getWorkflow(id: string): RegisteredWorkflow | undefined;
+    getWorkflowsForApi(): unknown[];
+    getWorkflowDetailForApi(id: string): unknown;
+    getWorkflowCount(): number;
+    getWorkflowExecutionsAsync(
+      workflowId: string,
+      limit?: number,
+      offset?: number,
+    ): Promise<WorkflowHistoryEntry[]>;
+    on(event: string, handler: (...args: any[]) => void): void;
+    off(event: string, handler: (...args: any[]) => void): void;
+    activeExecutions: Map<string, WorkflowSuspendController>;
+    resumeSuspendedWorkflow(
+      workflowId: string,
+      executionId: string,
+      resumeData?: any,
+      stepId?: string,
+    ): Promise<any>;
+  };
+  agentEventEmitter?: {
+    onHistoryUpdate(callback: (agentId: string, historyEntry: any) => void): () => void;
+    onHistoryEntryCreated(callback: (agentId: string, historyEntry: any) => void): () => void;
+  };
+  logger?: Logger;
+  telemetryExporter?: VoltAgentExporter;
+  voltOpsClient?: VoltOpsClient;
+}
+
+/**
+ * Server provider factory type
+ */
+export type ServerProviderFactory = (deps: ServerProviderDeps) => IServerProvider;
+
+/**
+ * Server API response types
+ */
+export interface ServerAgentResponse {
+  id: string;
+  name: string;
+  description: string;
+  status: AgentStatus; // Using proper AgentStatus type
+  model: string;
+  tools: ToolStatusInfo[]; // Using proper ToolStatusInfo type
+  memory?: Record<string, unknown>;
+  subAgents?: ServerAgentResponse[];
+  isTelemetryEnabled?: boolean;
+}
+
+export interface ServerWorkflowResponse {
+  id: string;
+  name: string;
+  purpose: string;
+  stepsCount: number;
+  status: "idle" | "running" | "completed" | "error";
+  steps: Array<{
+    id: string;
+    name: string;
+    purpose: string | null;
+    type: string;
+    agentId?: string;
+    agentName?: string;
+  }>;
+}
+
+export interface ServerApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
 
 /**
  * VoltAgent constructor options
  */
 export type VoltAgentOptions = {
-  agents: Record<string, Agent<any>>;
+  agents: Record<string, Agent>;
   /**
    * Optional workflows to register with VoltAgent
    * Can be either Workflow instances or WorkflowChain instances
@@ -75,9 +144,10 @@ export type VoltAgentOptions = {
       >
   >;
   /**
-   * Server configuration options
+   * Server provider factory function
+   * Example: honoServer({ port: 3141, enableSwaggerUI: true })
    */
-  server?: ServerOptions;
+  server?: ServerProviderFactory;
 
   /**
    * Unified VoltOps client for telemetry and prompt management
@@ -111,11 +181,11 @@ export type VoltAgentOptions = {
   autoStart?: boolean;
   checkDependencies?: boolean;
   /**
-   * @deprecated Use `server.customEndpoints` instead
+   * @deprecated Server configuration is now done through server provider
    */
-  customEndpoints?: CustomEndpointDefinition[];
+  customEndpoints?: unknown[];
   /**
-   * @deprecated Use `server.enableSwaggerUI` instead
+   * @deprecated Server configuration is now done through server provider
    */
   enableSwaggerUI?: boolean;
 };

@@ -179,7 +179,7 @@ export interface WorkflowRunOptions {
   /**
    * The user context, this can be used to track the current user context in a workflow
    */
-  userContext?: UserContext;
+  context?: UserContext;
   /**
    * Override workflow memory storage for this specific execution
    * Takes priority over workflow config memory and global memory
@@ -530,7 +530,7 @@ export interface WorkflowStreamEvent {
   /**
    * User context passed through the workflow
    */
-  userContext?: UserContext;
+  context?: UserContext;
   /**
    * Timestamp of the event
    */
@@ -616,7 +616,7 @@ export interface WorkflowStreamResponse<RESULT_SCHEMA extends z.ZodTypeAny> {
 export interface CreateWorkflowExecutionOptions {
   userId?: string;
   conversationId?: string;
-  userContext?: UserContext;
+  context?: UserContext;
   metadata?: Record<string, unknown>;
   executionId?: string;
 }

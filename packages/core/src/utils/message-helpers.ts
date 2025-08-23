@@ -110,10 +110,10 @@ export function transformTextContent(
   if (isStructuredContent(content)) {
     return content.map((part) => {
       if (part.type === "text") {
-        return { ...part, text: transformer(part.text) };
+        return { ...part, text: transformer((part as { type: "text"; text: string }).text) };
       }
       return part;
-    });
+    }) as MessageContent;
   }
 
   return content;
@@ -143,9 +143,9 @@ export function filterContentParts(
     const filtered = content.filter(predicate);
     if (filtered.length === 0) return "";
     if (filtered.length === 1 && filtered[0].type === "text") {
-      return filtered[0].text;
+      return (filtered[0] as { type: "text"; text: string }).text;
     }
-    return filtered;
+    return filtered as MessageContent;
   }
   return content;
 }
@@ -255,7 +255,7 @@ export function addTimestampToMessage(message: BaseMessage, timestamp?: string):
   return {
     ...message,
     content: transformTextContent(message.content, (text) => `[${ts}] ${text}`),
-  };
+  } as BaseMessage;
 }
 
 /**

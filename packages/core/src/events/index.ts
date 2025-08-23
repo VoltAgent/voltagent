@@ -6,7 +6,7 @@ import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import type { BaseMessage } from "../index";
 import { LogEvents, LoggerProxy, getGlobalLogger } from "../logger";
-import { AgentRegistry } from "../server/registry";
+import { AgentRegistry } from "../registries/agent-registry";
 import { BackgroundQueue } from "../utils/queue/queue";
 import type { AgentTimelineEvent } from "./types";
 

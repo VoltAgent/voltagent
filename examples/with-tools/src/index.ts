@@ -1,8 +1,8 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+// import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
 // Import all the tools
 import { addCalendarEventTool, checkCalendarTool, searchTool, weatherTool } from "./tools";
@@ -16,23 +16,24 @@ const logger = createPinoLogger({
 // Create the agent with tools
 const agent = new Agent({
   name: "Assistant with Tools",
-  description: "A helpful assistant that can use tools to provide better answers",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant that can use tools to provide better answers",
   model: openai("gpt-4o-mini"),
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db",
-    logger: logger.child({ component: "libsql" }),
-  }),
+  // TODO: Fix memory type compatibility
+  // memory: new LibSQLStorage({
+  //   url: "file:./.voltagent/memory.db",
+  //   logger: logger.child({ component: "libsql" }),
+  // }),
   tools: [checkCalendarTool, addCalendarEventTool, searchTool],
 });
 
 // Test dynamic tool addition
 agent.addTools([weatherTool]);
 
-// Initialize the VoltAgent
+// Initialize the VoltAgent with server
 new VoltAgent({
   agents: {
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

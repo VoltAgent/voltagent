@@ -2,6 +2,7 @@ import { mistral } from "@ai-sdk/mistral";
 import VoltAgent, { Agent, type OperationContext, type AgentHooks } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import {
   assertResponseTool,
@@ -46,8 +47,7 @@ const storage = new LibSQLStorage({
 // Create a specialized agent for browsing
 export const browserAgent = new Agent({
   name: "Browser Agent",
-  description: "You are an AI agent specialized in web automation with Playwright.",
-  llm: new VercelAIProvider(),
+  instructions: "You are an AI agent specialized in web automation with Playwright.",
   model: mistral("mistral-large-latest"),
 
   hooks: {
@@ -104,4 +104,5 @@ new VoltAgent({
     agent: browserAgent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

@@ -1,6 +1,7 @@
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 import { openai } from "@ai-sdk/openai";
@@ -25,8 +26,7 @@ const mcp = new MCPConfiguration({
   const tools = await mcp.getTools();
   const agent = new Agent({
     name: "Peaka Data Assistant",
-    description: "An assistant that can query Peaka's sample data.",
-    llm: new VercelAIProvider(),
+    instructions: "An assistant that can query Peaka's sample data.",
     model: openai("gpt-4o-mini"),
     tools: [...tools],
     markdown: true,
@@ -41,5 +41,6 @@ const mcp = new MCPConfiguration({
       agent,
     },
     logger,
+    server: honoServer({ port: 3141 }),
   });
 })();

@@ -2,6 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, andThen, createWorkflowChain } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -13,7 +14,6 @@ const storage = new LibSQLStorage({
 // Define reusable agents
 const analysisAgent = new Agent({
   name: "AnalysisAgent",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: "You are a data analyst. Provide clear, structured analysis.",
   memory: storage,
@@ -21,7 +21,6 @@ const analysisAgent = new Agent({
 
 const contentAgent = new Agent({
   name: "ContentAgent",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: "You are a content creator. Generate engaging and accurate content.",
   memory: storage,
@@ -346,6 +345,7 @@ new VoltAgent({
     contentAgent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
   workflows: {
     orderProcessingWorkflow,
     expenseApprovalWorkflow,

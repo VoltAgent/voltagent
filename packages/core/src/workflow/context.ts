@@ -22,7 +22,7 @@ export interface WorkflowExecutionContext {
   /**
    * User-defined context passed around during execution
    */
-  userContext: Map<string | symbol, unknown>;
+  context: Map<string | symbol, unknown>;
   /**
    * Whether the workflow is still actively running
    */

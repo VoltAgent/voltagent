@@ -1,6 +1,6 @@
 import type { Logger } from "@voltagent/internal";
+import type { UIMessage } from "ai";
 import type { StepWithContent } from "../../agent/providers";
-import type { BaseMessage } from "../../agent/providers/base/types";
 import type { OperationContext } from "../../agent/types";
 import { AgentEventEmitter } from "../../events";
 import type {
@@ -16,23 +16,8 @@ import { LogEvents, getGlobalLogger } from "../../logger";
 import { NodeType, createNodeId } from "../../utils/node-utils";
 import { BackgroundQueue } from "../../utils/queue/queue";
 import { InMemoryStorage } from "../in-memory";
-import type { Memory, MemoryMessage, MemoryOptions } from "../types";
-
-/**
- * Convert BaseMessage to MemoryMessage for memory storage
- */
-const convertToMemoryMessage = (
-  message: BaseMessage,
-  type: "text" | "tool-call" | "tool-result" = "text",
-): MemoryMessage => {
-  return {
-    id: crypto.randomUUID(),
-    role: message.role,
-    content: message.content,
-    type,
-    createdAt: new Date().toISOString(),
-  };
-};
+import type { InternalMemory } from "../internal-types";
+import type { MemoryOptions } from "../types";
 
 /**
  * Manager class to handle all memory-related operations
@@ -41,12 +26,12 @@ export class MemoryManager {
   /**
    * The memory storage instance for conversations
    */
-  private conversationMemory: Memory | undefined;
+  private conversationMemory: InternalMemory | undefined;
 
   /**
    * The memory storage instance for history (always available)
    */
-  private historyMemory: Memory;
+  private historyMemory: InternalMemory;
 
   /**
    * Memory configuration options
@@ -73,9 +58,9 @@ export class MemoryManager {
    */
   constructor(
     resourceId: string,
-    memory?: Memory | false,
+    memory?: InternalMemory | false,
     options: MemoryOptions = {},
-    historyMemory?: Memory,
+    historyMemory?: InternalMemory,
     logger?: Logger,
   ) {
     this.resourceId = resourceId;
@@ -143,7 +128,7 @@ export class MemoryManager {
    */
   async saveMessage(
     context: OperationContext,
-    message: BaseMessage,
+    message: UIMessage,
     userId?: string,
     conversationId?: string,
     type: "text" | "tool-call" | "tool-result" = "text",
@@ -181,9 +166,10 @@ export class MemoryManager {
     this.publishTimelineEvent(context, memoryWriteStartEvent);
 
     try {
-      // Perform the operation
-      const memoryMessage = convertToMemoryMessage(message, type);
-      await this.conversationMemory.addMessage(memoryMessage, conversationId);
+      // Direct save UIMessage - no conversion needed!
+      if (conversationId && userId) {
+        await this.conversationMemory.addUIMessage(message, userId, conversationId);
+      }
 
       // Log successful memory operation
       memoryLogger.debug("[Memory] Write successful (1 record)", {
@@ -203,8 +189,8 @@ export class MemoryManager {
         input: null,
         output: {
           success: true,
-          messageId: memoryMessage.id,
-          timestamp: memoryMessage.createdAt,
+          messageId: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
         },
         metadata: {
           displayName: "Memory",
@@ -268,7 +254,7 @@ export class MemoryManager {
     }
 
     return async (step: StepWithContent): Promise<void> => {
-      // Directly save the step message as received from the provider
+      // Convert step to UIMessage format
       const role = step.role || "assistant";
       const content =
         typeof step.content === "string" ? step.content : JSON.stringify(step.content);
@@ -281,16 +267,13 @@ export class MemoryManager {
         messageType = "tool-result";
       }
 
-      await this.saveMessage(
-        context,
-        {
-          role: role as "user" | "assistant" | "system" | "tool",
-          content,
-        },
-        userId,
-        conversationId,
-        messageType,
-      );
+      const uiMessage: UIMessage = {
+        id: crypto.randomUUID(),
+        role: role as "user" | "assistant" | "system",
+        parts: [{ type: "text", text: content }],
+      };
+
+      await this.saveMessage(context, uiMessage, userId, conversationId, messageType);
     };
   }
 
@@ -300,11 +283,11 @@ export class MemoryManager {
    */
   async prepareConversationContext(
     context: OperationContext,
-    input: string | BaseMessage[],
+    input: string | UIMessage[],
     userId?: string,
     conversationIdParam?: string,
     contextLimit = 10,
-  ): Promise<{ messages: BaseMessage[]; conversationId: string }> {
+  ): Promise<{ messages: UIMessage[]; conversationId: string }> {
     // Use the provided conversationId or generate a new one
     const conversationId = conversationIdParam || crypto.randomUUID();
 
@@ -318,7 +301,7 @@ export class MemoryManager {
     }
 
     // 🎯 CRITICAL: Always load conversation context (conversation continuity is essential)
-    let messages: BaseMessage[] = [];
+    let messages: UIMessage[] = [];
 
     // Create memory read start event for new timeline
     const memoryReadStartEvent: MemoryReadStartEvent = {
@@ -345,18 +328,12 @@ export class MemoryManager {
     this.publishTimelineEvent(context, memoryReadStartEvent);
 
     try {
-      // This MUST complete for proper conversation flow - no shortcuts
-      const memoryMessages = await this.conversationMemory.getMessages({
-        userId,
-        conversationId,
+      // Get UIMessages from memory directly - no conversion needed!
+      // Filter to only get user and assistant messages (exclude tool, system, etc.)
+      messages = await this.conversationMemory.getUIMessages(userId, conversationId, {
         limit: contextLimit,
-        types: ["text"], // Only retrieve text messages for conversation context
+        roles: ["user", "assistant"],
       });
-
-      messages = memoryMessages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
 
       context.logger.debug(
         `[Memory] Fetched messages from memory. Message Count: ${messages.length}`,
@@ -439,7 +416,7 @@ export class MemoryManager {
    */
   private handleSequentialBackgroundOperations(
     context: OperationContext,
-    input: string | BaseMessage[],
+    input: string | UIMessage[],
     userId: string,
     conversationId: string,
   ): void {
@@ -506,7 +483,7 @@ export class MemoryManager {
    */
   private async saveCurrentInput(
     context: OperationContext,
-    input: string | BaseMessage[],
+    input: string | UIMessage[],
     userId: string,
     conversationId: string,
   ): Promise<void> {
@@ -516,14 +493,15 @@ export class MemoryManager {
       // Handle input based on type
       if (typeof input === "string") {
         // The user message with content
-        const userMessage: BaseMessage = {
+        const userMessage: UIMessage = {
+          id: crypto.randomUUID(),
           role: "user",
-          content: input,
+          parts: [{ type: "text", text: input }],
         };
 
         await this.saveMessage(context, userMessage, userId, conversationId, "text");
       } else if (Array.isArray(input)) {
-        // If input is BaseMessage[], save all to memory
+        // If input is UIMessage[], save all to memory
         for (const message of input) {
           await this.saveMessage(context, message, userId, conversationId, "text");
         }
@@ -538,14 +516,14 @@ export class MemoryManager {
   /**
    * Get the conversation memory instance
    */
-  getMemory(): Memory | undefined {
+  getMemory(): InternalMemory | undefined {
     return this.conversationMemory;
   }
 
   /**
    * Get the history memory instance
    */
-  getHistoryMemory(): Memory {
+  getHistoryMemory(): InternalMemory {
     return this.historyMemory;
   }
 

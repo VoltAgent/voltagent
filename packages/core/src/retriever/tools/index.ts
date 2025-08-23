@@ -48,8 +48,8 @@ export const createRetrieverTool = (
       query: z.string().describe("The search query to find relevant information"),
     }),
     execute: async ({ query }, executeOptions?: ToolExecuteOptions) => {
-      // Extract userContext and logger from tool execution context
-      const userContext = executeOptions?.operationContext?.userContext;
+      // Extract context and logger from tool execution context
+      const context = executeOptions?.operationContext?.context;
       const logger = executeOptions?.operationContext?.logger;
       const startTime = Date.now();
 
@@ -63,7 +63,7 @@ export const createRetrieverTool = (
 
       try {
         const result = await retriever.retrieve(query, {
-          userContext,
+          context,
           logger,
         });
 

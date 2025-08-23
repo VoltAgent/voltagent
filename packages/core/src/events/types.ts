@@ -1,3 +1,4 @@
+import type { UIMessage } from "ai";
 import type { BaseMessage } from "../agent/providers";
 
 /**
@@ -34,7 +35,7 @@ export interface StandardEventData {
   sourceAgentId?: string;
 
   // Optional serialized user context at the time of the event
-  userContext?: Record<string, unknown>;
+  context?: Record<string, unknown>;
 }
 
 /**
@@ -107,7 +108,7 @@ export interface BaseEventMetadata {
   displayName?: string;
   id: string;
   agentId?: string;
-  userContext?: Record<string, unknown>;
+  context?: Record<string, unknown>;
 }
 
 export type AgentStartEventMetadata = {
@@ -230,7 +231,7 @@ export type ToolErrorEvent = BaseTimelineEvent<BaseEventMetadata> & {
 export type AgentStartEvent = BaseTimelineEvent<AgentStartEventMetadata & BaseEventMetadata> & {
   name: "agent:start";
   type: "agent";
-  input: { input: string | BaseMessage[] };
+  input: { input: string | UIMessage[] | BaseMessage[] };
 };
 
 export type AgentSuccessEvent = BaseTimelineEvent<AgentSuccessEventMetadata> & {

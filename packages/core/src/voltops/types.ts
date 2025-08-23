@@ -41,7 +41,7 @@ export type PromptHelper = {
  */
 export interface DynamicValueOptions {
   /** User context map */
-  userContext: Map<string | symbol, unknown>;
+  context: Map<string | symbol, unknown>;
   /** Prompt helper (available when VoltOpsClient is configured) */
   prompts: PromptHelper;
 }

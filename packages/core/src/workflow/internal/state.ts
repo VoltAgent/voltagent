@@ -13,7 +13,7 @@ export type WorkflowState<INPUT, RESULT> = {
   executionId: string;
   conversationId?: string;
   userId?: string;
-  userContext?: UserContext;
+  context?: UserContext;
   active: number;
   startAt: Date;
   endAt: Date | null;
@@ -116,7 +116,7 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
       active: config?.active ?? 0,
       userId: config?.userId,
       conversationId: config?.conversationId,
-      userContext: config?.userContext,
+      context: config?.context,
       startAt: new Date(),
       endAt: null,
       data: data,
