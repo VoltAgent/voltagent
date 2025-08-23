@@ -30,6 +30,7 @@ export function toUIMessageStream(
   // Keep track of whether we're in the middle of streaming text
   let isStreamingText = false;
   let currentTextId = "1";
+  let currentSubAgentId: string | undefined = undefined;
 
   return convertAsyncIteratorToReadableStream(stream[Symbol.asyncIterator]())
     .pipeThrough(
@@ -43,6 +44,37 @@ export function toUIMessageStream(
         async transform(part: StreamPart, controller) {
           switch (part.type) {
             case "text-delta": {
+              // Check if this text-delta is from a subagent
+              const hasSubAgent = "subAgentId" in part && part.subAgentId;
+
+              // Detect agent transitions (from one agent to another or main to sub)
+              if (currentSubAgentId !== part.subAgentId) {
+                // If we were streaming text from a different agent, end it
+                if (isStreamingText) {
+                  controller.enqueue({
+                    type: "text-end",
+                    id: currentTextId,
+                  });
+                  isStreamingText = false;
+                  currentTextId = String(Number(currentTextId) + 1);
+                }
+
+                // Emit subagent metadata when switching to a subagent
+                if (hasSubAgent) {
+                  controller.enqueue({
+                    type: "data-subagent",
+                    id: part.subAgentId,
+                    data: {
+                      subAgentId: part.subAgentId,
+                      subAgentName: part.subAgentName || "Unknown SubAgent",
+                    },
+                  });
+                }
+
+                // Update current subagent tracking
+                currentSubAgentId = part.subAgentId;
+              }
+
               // Start text streaming if not already started
               if (!isStreamingText) {
                 controller.enqueue({
@@ -52,7 +84,7 @@ export function toUIMessageStream(
                 isStreamingText = true;
               }
 
-              // Emit text delta
+              // Emit text delta (without custom fields to avoid type validation errors)
               controller.enqueue({
                 type: "text-delta",
                 delta: part.textDelta,
@@ -192,17 +224,8 @@ export function toUIMessageStream(
               break;
           }
 
-          // Handle SubAgent metadata if present
-          if ("subAgentId" in part && part.subAgentId) {
-            controller.enqueue({
-              type: "data-subagent",
-              id: part.subAgentId,
-              data: {
-                subAgentId: part.subAgentId,
-                subAgentName: part.subAgentName || "Unknown SubAgent",
-              },
-            });
-          }
+          // SubAgent metadata is now handled within each event type
+          // No need for separate handling here
         },
 
         async flush(controller) {
@@ -214,6 +237,9 @@ export function toUIMessageStream(
             });
             isStreamingText = false;
           }
+
+          // Reset subagent tracking
+          currentSubAgentId = undefined;
 
           // Emit finish events
           controller.enqueue({ type: "finish-step" });

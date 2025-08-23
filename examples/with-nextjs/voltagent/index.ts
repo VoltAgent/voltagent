@@ -25,20 +25,54 @@ const calculatorTool = createTool({
   },
 });
 
-export const subAgent = new Agent({
+// Define a date/time tool
+const dateTimeTool = createTool({
+  name: "getDateTime",
+  description: "Get current date and time",
+  parameters: z.object({
+    format: z.string().optional().describe("Date format (e.g., 'short', 'long')"),
+  }),
+  execute: async (args) => {
+    const now = new Date();
+    if (args.format === "short") {
+      return { datetime: now.toLocaleDateString() };
+    }
+    return { datetime: now.toLocaleString() };
+  },
+});
+
+// First subagent - Math specialist
+export const mathAgent = new Agent({
   name: "MathAssistant",
-  description: "A helpful assistant that can answer questions and perform calculations",
+  description: "A specialist in mathematical calculations and number operations",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4.1-mini"),
+  model: openai("gpt-4o-mini"),
   tools: [calculatorTool],
 });
 
-export const agent = new Agent({
-  name: "Boss",
-  description: "A Supervisor that can delegate tasks to sub-agents",
+// Second subagent - DateTime specialist
+export const dateTimeAgent = new Agent({
+  name: "DateTimeAssistant",
+  description: "A specialist in date and time operations",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4.1-mini"),
-  subAgents: [subAgent],
+  model: openai("gpt-4o-mini"),
+  tools: [dateTimeTool],
+});
+
+// Supervisor agent with multiple subagents
+export const agent = new Agent({
+  name: "Supervisor",
+  description: "A Supervisor that can delegate tasks to specialized sub-agents",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  subAgents: [mathAgent, dateTimeAgent],
+  // Enable text-delta streaming for subagents
+  supervisorConfig: {
+    fullStreamEventForwarding: {
+      types: ["text-delta", "tool-call", "tool-result"],
+      addSubAgentPrefix: true,
+    },
+  },
 });
 
 // Create logger

@@ -48,6 +48,18 @@ export function CalculatorChat() {
   const renderAnnotations = (parts: UIMessage["parts"] = []) => {
     return parts
       .map((part) => {
+        // Handle data-subagent parts
+        if (part.type === "data-subagent") {
+          return (
+            <div key={`subagent-${part.id}`} className="flex items-center space-x-2 my-2 text-xs">
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
+              <span className="text-purple-300">
+                Delegating to: {(part as any).data?.subAgentName || "SubAgent"}
+              </span>
+            </div>
+          );
+        }
+
         if (isToolUIPart(part)) {
           const toolName = getToolName(part);
 
@@ -144,12 +156,37 @@ export function CalculatorChat() {
                       <span className="text-xs text-gray-400">AI Assistant</span>
                     </div>
                   )}
-                  <div className="whitespace-pre-wrap">
-                    {/* In v5, content is extracted from parts */}
-                    {message.parts
-                      ?.filter((part): part is TextUIPart => part.type === "text")
-                      .map((part) => part.text)
-                      .join("")}
+                  <div className="space-y-2">
+                    {/* Render text parts with context about which agent they're from */}
+                    {message.parts?.map((part, index) => {
+                      if (part.type === "text") {
+                        // Check if there's a data-subagent part before this text
+                        const prevPart = index > 0 ? message.parts?.[index - 1] : null;
+                        const isFromSubAgent =
+                          prevPart && (prevPart as any).type === "data-subagent";
+                        const subAgentName = isFromSubAgent
+                          ? (prevPart as any).data?.subAgentName
+                          : null;
+
+                        return (
+                          <div
+                            key={`text-${
+                              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                              index
+                            }`}
+                            className={isFromSubAgent ? "border-l-2 border-purple-500 pl-3" : ""}
+                          >
+                            {isFromSubAgent && (
+                              <div className="text-xs text-purple-300 mb-1">
+                                From {subAgentName}:
+                              </div>
+                            )}
+                            <div className="whitespace-pre-wrap">{(part as TextUIPart).text}</div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
                   </div>
 
                   {message.parts && renderAnnotations(message.parts)}
