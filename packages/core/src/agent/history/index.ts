@@ -138,13 +138,6 @@ export interface AgentHistoryEntry {
    */
   status: AgentStatus;
 
-  statusMessage?: {
-    message: string;
-    stack?: string;
-    code?: string | number;
-    [key: string]: unknown; // For additional error details
-  };
-
   /**
    * Steps taken during generation
    */

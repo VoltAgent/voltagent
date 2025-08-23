@@ -723,9 +723,6 @@ export class Agent {
           this.updateHistoryEntry(context, {
             status: "error",
             endTime: new Date(),
-            statusMessage: {
-              message: error instanceof Error ? error.message : "Unknown error",
-            },
           });
 
           // Publish agent:error event
