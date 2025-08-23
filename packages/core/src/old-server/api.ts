@@ -8,6 +8,7 @@ import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
 import type { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import { Agent } from "../agent/agent";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
 import { AgentEventEmitter } from "../events";
@@ -19,6 +20,7 @@ import {
   updateAllPackages,
   updateSinglePackage,
 } from "../utils/update";
+import { convertUsage } from "../utils/usage-converter";
 import { WorkflowRegistry } from "../workflow/registry";
 import {
   type ErrorSchema,
@@ -407,7 +409,7 @@ app.openapi(executeWorkflowRoute, async (c) => {
       options?: {
         userId?: string;
         conversationId?: string;
-        userContext?: any;
+        context?: any;
         executionId?: string;
       };
     };
@@ -418,12 +420,12 @@ app.openapi(executeWorkflowRoute, async (c) => {
       throw new Error("Workflow does not support suspension");
     }
 
-    // Convert userContext from object to Map if provided
+    // Convert context from object to Map if provided
     const processedOptions = options
       ? {
           ...options,
-          ...(options.userContext && {
-            userContext: new Map(Object.entries(options.userContext)),
+          ...(options.context && {
+            context: new Map(Object.entries(options.context)),
           }),
           signal: suspendController.signal, // Add signal for suspension
           suspendController: suspendController, // Add controller for suspension tracking
@@ -517,7 +519,7 @@ app.openapi(streamWorkflowRoute, async (c) => {
       options?: {
         userId?: string;
         conversationId?: string;
-        userContext?: any;
+        context?: any;
         executionId?: string;
       };
     };
@@ -528,12 +530,12 @@ app.openapi(streamWorkflowRoute, async (c) => {
       throw new Error("Workflow does not support suspension");
     }
 
-    // Convert userContext from object to Map if provided
+    // Convert context from object to Map if provided
     const processedOptions = options
       ? {
           ...options,
-          ...(options.userContext && {
-            userContext: new Map(Object.entries(options.userContext)),
+          ...(options.context && {
+            context: new Map(Object.entries(options.context)),
           }),
           suspendController: suspendController,
         }
@@ -975,7 +977,7 @@ app.get("/agents/:id/history", async (c: ApiContext) => {
   }
 });
 
-// Generate text response
+// Generate text response - AI SDK compatible
 app.openapi(textRoute, async (c) => {
   const { id } = c.req.valid("param") as { id: string };
   const registry = AgentRegistry.getInstance();
@@ -989,24 +991,63 @@ app.openapi(textRoute, async (c) => {
   }
 
   try {
-    const { input, options = {} } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
+    const requestBody = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
 
-    // Convert userContext from object to Map if provided
-    const processedOptions = {
+    // Messages are already in UIMessage format from the request
+    const messages = requestBody.messages;
+
+    // Merge options from different sources
+    const options = {
+      ...requestBody.options,
+      // AI SDK might send these at root level
+      ...(requestBody.conversationId && { conversationId: requestBody.conversationId }),
+      ...(requestBody.userId && { userId: requestBody.userId }),
+      ...(requestBody.context && { context: requestBody.context }),
+      // Override with agent configuration parameters if provided
+      ...(requestBody.temperature !== undefined && { temperature: requestBody.temperature }),
+      ...(requestBody.maxTokens !== undefined && { maxTokens: requestBody.maxTokens }),
+      ...(requestBody.maxSteps !== undefined && { maxSteps: requestBody.maxSteps }),
+      ...(requestBody.contextLimit !== undefined && { contextLimit: requestBody.contextLimit }),
+    };
+
+    // Process options for Agent with proper typing
+    interface ProcessedOptions {
+      conversationId?: string;
+      userId?: string;
+      context?: Map<string, unknown>;
+      maxTokens?: number;
+      temperature?: number;
+      maxSteps?: number;
+      [key: string]: unknown;
+    }
+
+    const processedOptions: ProcessedOptions = {
       ...options,
-      ...((options as any).userContext && {
-        userContext: new Map(Object.entries((options as any).userContext)),
-      }),
-    } as any; // Type assertion to bypass userContext type mismatch
+    };
 
-    const response = await agent.generateText(input, processedOptions);
+    // Convert context from object to Map if provided
+    if (options.context && typeof options.context === "object") {
+      processedOptions.context = new Map(Object.entries(options.context));
+    }
 
-    // TODO: Fix this once we can force a change to the response type
-    const fixBadResponseTypeForBackwardsCompatibility = response as any;
+    // Use Agent's generateText method which returns AI SDK result
+    const result = await agent.generateText(messages, processedOptions);
+
+    // Convert usage to API expected format
+    const apiUsage = convertUsage(result.usage);
+
+    // Return AI SDK result format
     return c.json(
-      { success: true, data: fixBadResponseTypeForBackwardsCompatibility } satisfies z.infer<
-        typeof TextResponseSchema
-      >,
+      {
+        success: true,
+        data: {
+          text: result.text,
+          usage: apiUsage,
+          finishReason: result.finishReason,
+          toolCalls: result.toolCalls,
+          toolResults: result.toolResults,
+        },
+      } satisfies z.infer<typeof TextResponseSchema>,
       200,
     );
   } catch (error) {
@@ -1020,7 +1061,7 @@ app.openapi(textRoute, async (c) => {
   }
 });
 
-// Stream text response
+// Stream text response - AI SDK compatible
 app.openapi(streamRoute, async (c) => {
   const { id } = c.req.valid("param") as { id: string };
   const registry = AgentRegistry.getInstance();
@@ -1034,284 +1075,88 @@ app.openapi(streamRoute, async (c) => {
   }
 
   try {
-    const {
-      input,
-      options = {
-        maxTokens: 4000,
-        temperature: 0.7,
-      },
-    } = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
+    const requestBody = c.req.valid("json") as z.infer<typeof TextRequestSchema>;
 
-    // Create AbortController and connect to request signal
-    const abortController = new AbortController();
+    // Messages are already in UIMessage format from the request
+    const messages = requestBody.messages;
 
-    // Listen for request abort (when client cancels fetch)
-    c.req.raw.signal?.addEventListener("abort", () => {
-      abortController.abort();
-    });
+    // Merge options from different sources
+    const options = {
+      maxTokens: 4000,
+      temperature: 0.7,
+      ...requestBody.options,
+      // AI SDK might send these at root level
+      ...(requestBody.conversationId && { conversationId: requestBody.conversationId }),
+      ...(requestBody.userId && { userId: requestBody.userId }),
+      ...(requestBody.context && { context: requestBody.context }),
+      // Override with agent configuration parameters if provided
+      ...(requestBody.temperature !== undefined && { temperature: requestBody.temperature }),
+      ...(requestBody.maxTokens !== undefined && { maxTokens: requestBody.maxTokens }),
+      ...(requestBody.maxSteps !== undefined && { maxSteps: requestBody.maxSteps }),
+      ...(requestBody.contextLimit !== undefined && { contextLimit: requestBody.contextLimit }),
+    };
 
+    // Process options for Agent with proper typing
+    interface StreamProcessedOptions {
+      conversationId?: string;
+      userId?: string;
+      context?: Map<string, unknown>;
+      signal?: AbortSignal;
+      maxTokens?: number;
+      temperature?: number;
+      maxSteps?: number;
+      [key: string]: unknown;
+    }
+
+    const processedOptions: StreamProcessedOptions = {
+      ...options,
+      // Pass the abort signal
+      signal: c.req.raw.signal,
+    };
+
+    // Convert context from object to Map if provided
+    if (options.context && typeof options.context === "object") {
+      processedOptions.context = new Map(Object.entries(options.context));
+    }
+
+    // Use Agent's streamText method which returns AI SDK StreamTextResult
+    const result = await agent.streamText(messages, processedOptions);
+
+    // Return AI SDK compatible response using toUIMessageStreamResponse
+    if (result && typeof result.toUIMessageStreamResponse === "function") {
+      return result.toUIMessageStreamResponse();
+    }
+    // Fallback error if result doesn't have the expected method
+    throw new Error("Unexpected response format from Agent");
+  } catch (error) {
+    // Return error as a stream event instead of JSON for stream endpoints
+    const errorMessage = error instanceof Error ? error.message : "Failed to initiate text stream";
+
+    // Create a stream that sends the error event
     const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          // Create a flag to track if stream has been closed
-          let streamClosed = false;
+      start(controller) {
+        // Send error event in AI SDK format
+        const errorEvent = `data: ${JSON.stringify({
+          type: "error",
+          error: {
+            message: errorMessage,
+            code: "STREAM_ERROR",
+          },
+        })}\n\n`;
 
-          // Helper function to safely enqueue data
-          const safeEnqueue = (data: string) => {
-            if (!streamClosed) {
-              try {
-                controller.enqueue(new TextEncoder().encode(data));
-              } catch (e) {
-                logger.error("Failed to enqueue data:", { error: e });
-                streamClosed = true;
-              }
-            }
-          };
-
-          // Helper function to safely close stream
-          const safeClose = () => {
-            if (!streamClosed) {
-              try {
-                controller.close();
-                streamClosed = true;
-              } catch (e) {
-                logger.error("Failed to close controller:", { error: e });
-              }
-            }
-          };
-
-          // Convert userContext from object to Map if provided
-          const processedStreamOptions = {
-            ...options,
-            ...((options as any).userContext && {
-              userContext: new Map(Object.entries((options as any).userContext)),
-            }),
-            provider: {
-              maxTokens: options.maxTokens,
-              temperature: options.temperature,
-              // Note: No onError callback needed - tool errors are handled via fullStream
-              // Stream errors are handled by try/catch blocks around fullStream iteration
-            },
-            // Pass the abort signal to the agent
-            signal: abortController.signal,
-          } as any; // Type assertion to bypass userContext type mismatch
-
-          const response = await agent.streamText(input, processedStreamOptions);
-
-          // Iterate through the full stream if available, otherwise fallback to text stream
-          try {
-            if (response.fullStream) {
-              // Use fullStream for rich events (text, tool calls, reasoning, etc.)
-              for await (const part of response.fullStream) {
-                if (streamClosed) break;
-
-                switch (part.type) {
-                  case "text-delta": {
-                    const data = {
-                      text: part.textDelta,
-                      timestamp: new Date().toISOString(),
-                      type: "text",
-                      // Forward SubAgent metadata if present
-                      ...(part.subAgentId &&
-                        part.subAgentName && {
-                          subAgentId: part.subAgentId,
-                          subAgentName: part.subAgentName,
-                        }),
-                    };
-                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-                    safeEnqueue(sseMessage);
-                    break;
-                  }
-                  case "reasoning": {
-                    const data = {
-                      reasoning: part.reasoning,
-                      timestamp: new Date().toISOString(),
-                      type: "reasoning",
-                      // Forward SubAgent metadata if present
-                      ...(part.subAgentId &&
-                        part.subAgentName && {
-                          subAgentId: part.subAgentId,
-                          subAgentName: part.subAgentName,
-                        }),
-                    };
-                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-                    safeEnqueue(sseMessage);
-                    break;
-                  }
-                  case "source": {
-                    const data = {
-                      source: part.source,
-                      timestamp: new Date().toISOString(),
-                      type: "source",
-                      // Forward SubAgent metadata if present
-                      ...(part.subAgentId &&
-                        part.subAgentName && {
-                          subAgentId: part.subAgentId,
-                          subAgentName: part.subAgentName,
-                        }),
-                    };
-                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-                    safeEnqueue(sseMessage);
-                    break;
-                  }
-                  case "tool-call": {
-                    const data = {
-                      toolCall: {
-                        toolCallId: part.toolCallId,
-                        toolName: part.toolName,
-                        args: part.args,
-                      },
-                      timestamp: new Date().toISOString(),
-                      type: "tool-call",
-                      // Forward SubAgent metadata if present
-                      ...(part.subAgentId &&
-                        part.subAgentName && {
-                          subAgentId: part.subAgentId,
-                          subAgentName: part.subAgentName,
-                        }),
-                    };
-                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-                    safeEnqueue(sseMessage);
-                    break;
-                  }
-                  case "tool-result": {
-                    // Send appropriate event type based on error status
-                    const data = {
-                      toolResult: {
-                        toolCallId: part.toolCallId,
-                        toolName: part.toolName,
-                        result: part.result,
-                      },
-                      timestamp: new Date().toISOString(),
-                      type: "tool-result",
-                      // Forward SubAgent metadata if present
-                      ...(part.subAgentId &&
-                        part.subAgentName && {
-                          subAgentId: part.subAgentId,
-                          subAgentName: part.subAgentName,
-                        }),
-                    };
-                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-                    safeEnqueue(sseMessage);
-
-                    // Don't close stream for tool errors - continue processing
-                    break;
-                  }
-                  case "finish": {
-                    const data = {
-                      finishReason: part.finishReason,
-                      usage: part.usage,
-                      timestamp: new Date().toISOString(),
-                      type: "finish",
-                    };
-                    const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-                    safeEnqueue(sseMessage);
-                    break;
-                  }
-                  case "error": {
-                    // Check if this is a tool error
-                    const error = part.error as any;
-                    const isToolError = error?.constructor?.name === "ToolExecutionError";
-
-                    const errorData = {
-                      error: (part.error as Error)?.message || "Stream error occurred",
-                      timestamp: new Date().toISOString(),
-                      type: "error",
-                      code: isToolError ? "TOOL_ERROR" : "STREAM_ERROR",
-                      // Include tool details if available
-                      ...(isToolError && {
-                        toolName: error?.toolName,
-                        toolCallId: error?.toolCallId,
-                      }),
-                    };
-
-                    const errorMessage = `data: ${JSON.stringify(errorData)}\n\n`;
-                    safeEnqueue(errorMessage);
-
-                    // Don't close stream for tool errors
-                    if (!isToolError) {
-                      safeClose();
-                      return;
-                    }
-                    break;
-                  }
-                }
-              }
-            } else {
-              // Fallback to textStream for providers that don't support fullStream
-              for await (const textDelta of response.textStream) {
-                if (streamClosed) break;
-
-                const data = {
-                  text: textDelta,
-                  timestamp: new Date().toISOString(),
-                  type: "text",
-                };
-                const sseMessage = `data: ${JSON.stringify(data)}\n\n`;
-                safeEnqueue(sseMessage);
-              }
-            }
-
-            // Stream completed successfully - close without additional event
-            // The finish event should already have been sent with usage information
-            if (!streamClosed) {
-              safeClose();
-            }
-          } catch (iterationError) {
-            // Handle errors during stream iteration
-            logger.error("Error during stream iteration:", { error: iterationError });
-            const errorData = {
-              error: (iterationError as Error)?.message ?? "Stream iteration failed",
-              timestamp: new Date().toISOString(),
-              type: "error",
-              code: "ITERATION_ERROR",
-            };
-            const errorMessage = `data: ${JSON.stringify(errorData)}\n\n`;
-            safeEnqueue(errorMessage);
-            safeClose();
-          }
-        } catch (error) {
-          // Handle errors during initial setup
-          logger.error("Error during stream setup:", { error });
-          const errorData = {
-            error: error instanceof Error ? error.message : "Stream setup failed",
-            timestamp: new Date().toISOString(),
-            type: "error",
-            code: "SETUP_ERROR",
-          };
-          const errorMessage = `data: ${JSON.stringify(errorData)}\n\n`;
-          try {
-            controller.enqueue(new TextEncoder().encode(errorMessage));
-          } catch (e) {
-            logger.error("Failed to enqueue setup error message:", { error: e });
-          }
-          try {
-            controller.close();
-          } catch (e) {
-            logger.error("Failed to close controller after setup error:", { error: e });
-          }
-        }
-      },
-      cancel(reason) {
-        logger.info("Stream cancelled:", reason);
+        controller.enqueue(new TextEncoder().encode(errorEvent));
+        controller.close();
       },
     });
 
-    return c.body(stream, {
+    return new Response(stream, {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
       },
+      status: 200, // Use 200 for stream responses even on error
     });
-  } catch (error) {
-    return c.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to initiate text stream",
-      } satisfies z.infer<typeof ErrorSchema>,
-      500,
-    );
   }
 });
 
@@ -1330,29 +1175,38 @@ app.openapi(objectRoute, async (c) => {
 
   try {
     const {
-      input,
+      messages,
       schema,
       options = {},
     } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
 
+    // Messages are already in UIMessage format from the request
+
     const schemaInZodObject = convertJsonSchemaToZod(schema) as unknown as z.ZodType;
 
-    // Convert userContext from object to Map if provided
-    const processedObjectOptions = {
+    // Process options with proper typing
+    interface ObjectProcessedOptions {
+      context?: Map<string, unknown>;
+      [key: string]: unknown;
+    }
+
+    const processedObjectOptions: ObjectProcessedOptions = {
       ...options,
-      ...((options as any).userContext && {
-        userContext: new Map(Object.entries((options as any).userContext)),
-      }),
-    } as any; // Type assertion to bypass userContext type mismatch
+    };
 
-    const response = await agent.generateObject(input, schemaInZodObject, processedObjectOptions);
+    // Convert context from object to Map if provided
+    const context = (options as { context?: unknown }).context;
+    if (context && typeof context === "object") {
+      processedObjectOptions.context = new Map(Object.entries(context));
+    }
 
-    // TODO: Fix this once we can force a change to the response type
-    const fixBadResponseTypeForBackwardsCompatibility = response as any;
+    const result = await agent.generateObject(messages, schemaInZodObject, processedObjectOptions);
+
+    // Extract just the object from the result (API expects just the object in data field)
     return c.json(
       {
         success: true,
-        data: fixBadResponseTypeForBackwardsCompatibility,
+        data: result.object,
       } satisfies z.infer<typeof ObjectResponseSchema>,
       200,
     );
@@ -1382,10 +1236,12 @@ app.openapi(streamObjectRoute, async (c) => {
 
   try {
     const {
-      input,
+      messages,
       schema,
       options = {},
     } = c.req.valid("json") as z.infer<typeof ObjectRequestSchema>;
+
+    // Messages are already in UIMessage format from the request
 
     const schemaInZodObject = convertJsonSchemaToZod(schema) as unknown as z.ZodType;
 
@@ -1428,39 +1284,42 @@ app.openapi(streamObjectRoute, async (c) => {
             }
           };
 
-          // Convert userContext from object to Map if provided
-          const processedStreamObjectOptions = {
+          // Check if this is an Agent instance
+          if (!(agent instanceof Agent)) {
+            throw new Error("Only Agent is supported. Please migrate your agent to Agent.");
+          }
+
+          // Process options with proper typing
+          interface StreamObjectProcessedOptions {
+            context?: Map<string, unknown>;
+            signal?: AbortSignal;
+            onFinish?: (result: unknown) => Promise<void>;
+            [key: string]: unknown;
+          }
+
+          const processedStreamObjectOptions: StreamObjectProcessedOptions = {
             ...options,
-            ...((options as any).userContext && {
-              userContext: new Map(Object.entries((options as any).userContext)),
-            }),
-            provider: {
-              ...(options as any).provider,
-              // Add onError callback to handle streaming errors
-              onError: async (error: any) => {
-                logger.error("Object stream error occurred:", { error });
-                const errorData = {
-                  error: error?.message ?? "Object streaming failed",
-                  timestamp: new Date().toISOString(),
-                  type: "error",
-                  code: error.code || "STREAM_ERROR",
-                };
-                const errorMessage = `data: ${JSON.stringify(errorData)}\n\n`;
-                safeEnqueue(errorMessage);
-                safeClose();
-              },
-            },
             // Pass the abort signal to the agent
             signal: abortController.signal,
-          } as any; // Type assertion to bypass userContext type mismatch
+            onFinish: async (result: unknown) => {
+              // Optional: Handle stream completion
+              logger.debug("Object stream completed", { result });
+            },
+          };
+
+          // Convert context from object to Map if provided
+          const context = (options as { context?: unknown }).context;
+          if (context && typeof context === "object") {
+            processedStreamObjectOptions.context = new Map(Object.entries(context));
+          }
 
           const agentStream = await agent.streamObject(
-            input,
+            messages,
             schemaInZodObject,
             processedStreamObjectOptions,
           );
 
-          const reader = agentStream.objectStream.getReader();
+          const reader = agentStream.partialObjectStream.getReader();
 
           // Iterate through the object stream
           try {
@@ -1779,114 +1638,6 @@ app.doc("/doc", {
   },
   servers: [{ url: "http://localhost:3141", description: "Local development server" }],
 });
-
-/**
- * Register a single custom endpoint with the API server
- * @param endpoint The custom endpoint definition
- * @throws CustomEndpointError if the endpoint definition is invalid or registration fails
- */
-export function registerCustomEndpoint(endpoint: CustomEndpointDefinition): void {
-  try {
-    // Validate the endpoint
-    const validatedEndpoint = validateCustomEndpoint(endpoint);
-    const { path, method, handler } = validatedEndpoint;
-
-    // Register the endpoint with the app
-    switch (method) {
-      case "get":
-        app.get(path, handler);
-        break;
-      case "post":
-        app.post(path, handler);
-        break;
-      case "put":
-        app.put(path, handler);
-        break;
-      case "patch":
-        app.patch(path, handler);
-        break;
-      case "delete":
-        app.delete(path, handler);
-        break;
-      case "options":
-        app.options(path, handler);
-        break;
-      default:
-        throw new CustomEndpointError(`Unsupported HTTP method: ${method}`);
-    }
-
-    // Store registered endpoint for later display in server startup (accumulate, don't override)
-    if (!(global as any).__voltAgentCustomEndpoints) {
-      (global as any).__voltAgentCustomEndpoints = [];
-    }
-    (global as any).__voltAgentCustomEndpoints.push(validatedEndpoint);
-  } catch (error) {
-    if (error instanceof CustomEndpointError) {
-      throw error;
-    }
-    throw new CustomEndpointError(
-      `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-}
-
-/**
- * Register multiple custom endpoints with the API server
- * @param endpoints Array of custom endpoint definitions
- * @throws CustomEndpointError if any endpoint definition is invalid or registration fails
- */
-export function registerCustomEndpoints(endpoints: CustomEndpointDefinition[]): void {
-  try {
-    // Validate all endpoints first
-    const validatedEndpoints = validateCustomEndpoints(endpoints);
-
-    if (validatedEndpoints.length === 0) {
-      return;
-    }
-
-    // Register each endpoint quietly
-    for (const endpoint of validatedEndpoints) {
-      const { path, method, handler } = endpoint;
-
-      // Register the endpoint with the app (without individual logging)
-      switch (method) {
-        case "get":
-          app.get(path, handler);
-          break;
-        case "post":
-          app.post(path, handler);
-          break;
-        case "put":
-          app.put(path, handler);
-          break;
-        case "patch":
-          app.patch(path, handler);
-          break;
-        case "delete":
-          app.delete(path, handler);
-          break;
-        case "options":
-          app.options(path, handler);
-          break;
-        default:
-          throw new CustomEndpointError(`Unsupported HTTP method: ${method}`);
-      }
-    }
-
-    // Store registered endpoints for later display in server startup (accumulate, don't override)
-    if (!(global as any).__voltAgentCustomEndpoints) {
-      (global as any).__voltAgentCustomEndpoints = [];
-    }
-    (global as any).__voltAgentCustomEndpoints.push(...validatedEndpoints);
-  } catch (error) {
-    if (error instanceof CustomEndpointError) {
-      throw error;
-    }
-    throw new CustomEndpointError(
-      `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-}
 
 export { app as default };
 

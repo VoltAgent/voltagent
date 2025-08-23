@@ -132,7 +132,7 @@ export class WorkflowChain<
    */
   andAgent<SCHEMA extends z.ZodTypeAny>(
     task: string | InternalWorkflowFunc<INPUT_SCHEMA, CURRENT_DATA, string, any, any>,
-    agent: Agent<{ llm: DangerouslyAllowAny }>,
+    agent: Agent,
     config: AgentConfig<SCHEMA>,
   ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>, SUSPEND_SCHEMA, RESUME_SCHEMA> {
     const step = andAgent(task, agent, config) as unknown as WorkflowStep<

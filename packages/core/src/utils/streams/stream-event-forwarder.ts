@@ -73,31 +73,34 @@ export function createStreamEventForwarder(options: StreamEventForwarderOptions)
 function formatEvent(event: StreamEvent, options: StreamEventForwarderOptions): StreamEvent {
   const { addSubAgentPrefix = true } = options;
 
-  // We append the sub-agent name to the event data if the addSubAgentPrefix option is enabled
+  // We append the sub-agent name to the tool name if the addSubAgentPrefix option is enabled
   if (
     addSubAgentPrefix &&
-    (event.type === "tool-call" || event.type === "tool-result") &&
-    typeof event.data?.toolName === "string" &&
-    event.data.toolName.length > 0
+    event.type === "tool-call" &&
+    "toolName" in event &&
+    typeof event.toolName === "string" &&
+    event.toolName.length > 0 &&
+    event.subAgentName
   ) {
     return {
       ...event,
-      data: {
-        ...event.data,
-        toolName: `${event.subAgentName}: ${event.data.toolName}`,
-      },
+      toolName: `${event.subAgentName}: ${event.toolName}`,
     } as StreamEvent;
   }
 
-  if ((event.type === "tool-call" || event.type === "tool-result") && !event.data?.toolName) {
+  if (
+    addSubAgentPrefix &&
+    event.type === "tool-result" &&
+    "toolName" in event &&
+    typeof event.toolName === "string" &&
+    event.toolName.length > 0 &&
+    event.subAgentName
+  ) {
     return {
       ...event,
-      data: null,
-    };
+      toolName: `${event.subAgentName}: ${event.toolName}`,
+    } as StreamEvent;
   }
 
-  return {
-    ...event,
-    data: event.data ?? null,
-  } as StreamEvent;
+  return event;
 }

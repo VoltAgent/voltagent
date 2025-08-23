@@ -1,7 +1,11 @@
 {
   "name": "voltagent-example-with-google-drive-mcp-server",
   "private": true,
-  "keywords": ["voltagent", "ai", "agent"],
+  "keywords": [
+    "voltagent",
+    "ai",
+    "agent"
+  ],
   "license": "MIT",
   "author": "",
   "type": "module",
@@ -18,14 +22,14 @@
     "@hono/node-server": "^1.14.0",
     "@libsql/client": "^0.15.4",
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^0.1.83",
-    "@voltagent/libsql": "^0.1.0",
+    "@voltagent/core": "^1.0.0-next.0",
+    "@voltagent/libsql": "^1.0.0-next.0",
     "@voltagent/logger": "^0.1.4",
-    "@voltagent/vercel-ai": "^0.1.18",
     "composio-core": "^0.5.33",
     "hono": "^4.7.7",
     "zod": "^3.25.0",
-    "zod-from-json-schema": "^0.4.2"
+    "zod-from-json-schema": "^0.4.2",
+    "@voltagent/server-hono": "^1.0.0-next.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",

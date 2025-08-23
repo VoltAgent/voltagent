@@ -2,6 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Import the retrieval tool
@@ -22,9 +23,8 @@ const storage = new LibSQLStorage({
 // Create the agent with retrieval tool
 const agent = new Agent({
   name: "Assistant with Retrieval",
-  description:
+  instructions:
     "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   retriever: retriever,
   memory: storage,
@@ -33,9 +33,8 @@ const agent = new Agent({
 // Create the agent with retrieval tool
 const agentWithTools = new Agent({
   name: "Assistant with Retrieval and Tools",
-  description:
+  instructions:
     "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [retriever.tool],
   memory: storage,
@@ -48,4 +47,5 @@ new VoltAgent({
     agentWithTools,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

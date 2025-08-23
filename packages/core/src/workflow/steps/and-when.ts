@@ -82,7 +82,7 @@ export function andWhen<INPUT, DATA, RESULT>({
         data, // ✅ Pass input data
         {
           stepFunction,
-          userContext: state.workflowContext.userContext,
+          context: state.workflowContext.context,
         },
       );
 
@@ -123,7 +123,7 @@ export function andWhen<INPUT, DATA, RESULT>({
           {
             isSkipped: !conditionMet,
             stepFunction,
-            userContext: state.workflowContext.userContext,
+            context: state.workflowContext.context,
           },
         );
 
@@ -152,7 +152,7 @@ export function andWhen<INPUT, DATA, RESULT>({
           stepStartEvent.id,
           {
             stepFunction,
-            userContext: state.workflowContext.userContext,
+            context: state.workflowContext.context,
           },
         );
 

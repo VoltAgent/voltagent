@@ -8,12 +8,13 @@
     "@voltagent/core": "^1.0.0-next.0",
     "@voltagent/libsql": "^1.0.0-next.0",
     "@voltagent/logger": "^0.1.4",
+    "@voltagent/server-hono": "^1.0.0-next.0",
     "@voltagent/vercel-ai": "^1.0.0-next.0",
     "openai": "^4.91.0",
     "zod": "^3.25.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.2.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },

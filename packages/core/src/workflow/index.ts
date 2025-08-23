@@ -2,6 +2,7 @@ export { andAgent, andThen, andWhen, andAll, andWorkflow, andRace, andTap } from
 export { createWorkflow } from "./core";
 export { createWorkflowChain } from "./chain";
 export { WorkflowRegistry } from "./registry";
+export type { RegisteredWorkflow } from "./registry";
 export { createSuspendController } from "./suspend-controller";
 export type {
   WorkflowConfig,

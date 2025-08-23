@@ -1,8 +1,11 @@
-import { P, match } from "ts-pattern";
+// DEPRECATED: This file is only used by agent.ts which will be removed
+// TODO: Remove this file when agent.ts is removed
+
 import type { StreamPart } from "../../agent/providers";
 import type { StreamEvent } from "./types";
 
 /**
+ * @deprecated This function is only used by agent.ts which is being removed.
  * Transforms a StreamEvent to a StreamPart
  * @param event - The StreamEvent to transform
  * @returns The transformed StreamPart
@@ -10,6 +13,17 @@ import type { StreamEvent } from "./types";
 export function transformStreamEventToStreamPart(
   event: StreamEvent,
 ): StreamPart & { timestamp: string } {
+  // Since StreamEvent now uses AI SDK's TextStreamPart directly,
+  // and this transformer expects the old format with 'data' field,
+  // we need to handle this mismatch temporarily
+
+  // For now, just pass through the event as-is since it's already in the correct format
+  return {
+    ...event,
+    timestamp: event.timestamp || new Date().toISOString(),
+  } as StreamPart & { timestamp: string };
+
+  /* OLD IMPLEMENTATION - COMMENTED OUT SINCE AGENT.TS WILL BE REMOVED
   const baseStreamPart = match(event)
     .returnType<StreamPart | null>()
     .with({ type: "tool-call", data: P.not(P.nullish) }, (e) => ({
@@ -64,4 +78,5 @@ export function transformStreamEventToStreamPart(
     subAgentName: event.subAgentName,
     timestamp: event.timestamp,
   };
+  */
 }

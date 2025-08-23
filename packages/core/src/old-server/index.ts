@@ -69,34 +69,34 @@ const preferredPorts: PortConfig[] = [
 ];
 
 // To make server startup logs visually more attractive
-const printServerStartup = (port: number, config?: ServerConfig) => {
-  const divider = `${colors.cyan}${"═".repeat(50)}${colors.reset}`;
+const printServerStartup = (_port: number, config?: ServerConfig) => {
+  const _divider = `${colors.cyan}${"═".repeat(50)}${colors.reset}`;
   const isProduction = process.env.NODE_ENV === "production";
   const shouldEnableSwaggerUI = config?.enableSwaggerUI ?? !isProduction;
-
+  /* 
   console.log("\n");
   console.log(divider);
   console.log(
     `${colors.bright}${colors.yellow}  VOLTAGENT SERVER STARTED SUCCESSFULLY${colors.reset}`,
-  );
-  console.log(divider);
+  ); */
+  /*   console.log(divider);
   console.log(
     `${colors.green}  ✓ ${colors.bright}HTTP Server:  ${colors.reset}${colors.white}http://localhost:${port}${colors.reset}`,
-  );
+  ); */
 
   if (shouldEnableSwaggerUI) {
-    console.log(
+    /*     console.log(
       `${colors.green}  ✓ ${colors.bright}Swagger UI:   ${colors.reset}${colors.white}http://localhost:${port}/ui${colors.reset}`,
-    );
+    ); */
   }
 
   // Check if custom endpoints were registered
   const customEndpoints = (global as any).__voltAgentCustomEndpoints;
   if (customEndpoints && customEndpoints.length > 0) {
-    console.log();
+    /*     console.log();
     console.log(
       `${colors.green}  ✓ ${colors.bright}Custom Endpoints: ${colors.reset}${colors.dim}${customEndpoints.length} registered${colors.reset}`,
-    );
+    ); */
 
     // Group endpoints by method for compact display
     const methodGroups: Record<string, string[]> = {};
@@ -112,20 +112,20 @@ const printServerStartup = (port: number, config?: ServerConfig) => {
     const methodOrder = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"];
     methodOrder.forEach((method) => {
       if (methodGroups[method]) {
-        methodGroups[method].forEach((path) => {
-          console.log(
+        methodGroups[method].forEach((_path) => {
+          /*  console.log(
             `${colors.dim}    ${method.padEnd(6)} ${colors.reset}${colors.white}${path}${colors.reset}`,
-          );
+          ); */
         });
       }
     });
   }
 
-  console.log();
+  /*   console.log();
   console.log(
     `${colors.bright}${colors.yellow}  ${colors.bright}Test your agents with VoltOps Console: ${colors.reset}${colors.white}https://console.voltagent.dev${colors.reset}`,
   );
-  console.log(divider);
+  console.log(divider); */
 };
 
 const tryStartServer = (port: number): Promise<ReturnType<typeof serve>> => {
@@ -202,7 +202,7 @@ export const startServer = async (config?: ServerConfig): Promise<ServerReturn> 
 
         // Check WebSocket requests
         if (path.startsWith("/ws")) {
-          ws.handleUpgrade(req, socket, head, (websocket) => {
+          ws.handleUpgrade(req, socket, head, (websocket: any) => {
             ws.emit("connection", websocket, req);
           });
         } else {
@@ -218,9 +218,9 @@ export const startServer = async (config?: ServerConfig): Promise<ServerReturn> 
         error instanceof Error &&
         (error.message.includes("EADDRINUSE") || (error as any).code === "EADDRINUSE")
       ) {
-        console.log(
+        /* console.log(
           `${colors.yellow}Port ${port} is already in use, trying next port...${colors.reset}`,
-        );
+        ); */
         continue;
       }
       console.error(

@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 import type { AgentHistoryEntry } from "../agent/history";
 import type { AgentStatus } from "../agent/types";
-import { AgentRegistry } from "../server/registry";
+import { AgentRegistry } from "../registries/agent-registry";
 import { AgentEventEmitter } from "./index";
 
 // Mock AgentRegistry

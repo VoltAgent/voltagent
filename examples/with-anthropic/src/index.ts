@@ -2,6 +2,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -27,8 +28,7 @@ const weatherTool = createTool({
 
 const agent = new Agent({
   name: "weather-agent",
-  description: "A helpful weather assistant that answers questions with weather tools",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful weather assistant that answers questions with weather tools",
   model: anthropic("claude-opus-4-1"),
   tools: [weatherTool],
   memory: new LibSQLStorage({
@@ -42,4 +42,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

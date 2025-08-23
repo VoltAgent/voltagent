@@ -4,6 +4,7 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { XSAIVoiceProvider } from "@voltagent/voice";
 
@@ -19,8 +20,7 @@ const voiceProvider = new XSAIVoiceProvider({
 
 const agent = new Agent({
   name: "Voice Assistant",
-  description: "Speaks & listens via xsAI",
-  llm: new VercelAIProvider(),
+  instructions: "Speaks & listens via xsAI",
   model: openai("gpt-4o-mini"),
   voice: voiceProvider,
   memory: new LibSQLStorage({
@@ -35,6 +35,7 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });
 
 (async () => {

@@ -711,7 +711,7 @@ export function createWorkflow<
         historyEntry = await workflowRegistry.createWorkflowExecution(id, name, input, {
           userId: options?.userId,
           conversationId: options?.conversationId,
-          userContext: options?.userContext,
+          context: options?.context,
           executionId: executionId,
         });
 
@@ -745,14 +745,7 @@ export function createWorkflow<
 
     // Create stream writer - real one for streaming, no-op for regular execution
     const streamWriter = streamController
-      ? new WorkflowStreamWriterImpl(
-          streamController,
-          executionId,
-          id,
-          name,
-          0,
-          options?.userContext,
-        )
+      ? new WorkflowStreamWriterImpl(streamController, executionId, id, name, 0, options?.context)
       : new NoOpWorkflowStreamWriter();
 
     // Initialize workflow execution context with the correct execution ID
@@ -760,7 +753,7 @@ export function createWorkflow<
       workflowId: id,
       executionId: executionId,
       workflowName: name,
-      userContext: options?.userContext || new Map(),
+      context: options?.context || new Map(),
       isActive: true,
       startTime: new Date(),
       currentStepIndex: 0,
@@ -786,7 +779,7 @@ export function createWorkflow<
       from: name,
       input: input as Record<string, any>,
       status: "running",
-      userContext: options?.userContext,
+      context: options?.context,
       timestamp: new Date().toISOString(),
     });
 
@@ -968,7 +961,7 @@ export function createWorkflow<
               step.id,
               step.name || step.id,
               index,
-              options?.userContext,
+              options?.context,
             )
           : new NoOpWorkflowStreamWriter();
         executionContext.streamWriter = stepWriter;
@@ -980,7 +973,7 @@ export function createWorkflow<
           from: step.name || step.id,
           input: stateManager.state.data,
           status: "running",
-          userContext: options?.userContext,
+          context: options?.context,
           timestamp: new Date().toISOString(),
           stepIndex: index,
           stepType: step.type,
@@ -1034,7 +1027,7 @@ export function createWorkflow<
 
           // Store suspend data to be validated later when actually suspending
           if (suspendData !== undefined) {
-            executionContext.userContext.set("suspendData", suspendData);
+            executionContext.context.set("suspendData", suspendData);
           }
 
           // Trigger suspension via the controller if available
@@ -1065,7 +1058,7 @@ export function createWorkflow<
                 step.id,
                 step.name || step.id,
                 index,
-                options?.userContext,
+                options?.context,
               )
             : new NoOpWorkflowStreamWriter();
 
@@ -1119,7 +1112,7 @@ export function createWorkflow<
             input: stateManager.state.data,
             output: result,
             status: "success",
-            userContext: options?.userContext,
+            context: options?.context,
             timestamp: new Date().toISOString(),
             stepIndex: index,
             stepType: step.type as any,
@@ -1153,7 +1146,7 @@ export function createWorkflow<
               options?.suspendController?.getReason() || "Step suspended during execution";
 
             // Get suspend data if provided
-            const suspendData = executionContext.userContext.get("suspendData");
+            const suspendData = executionContext.context.get("suspendData");
 
             const suspensionMetadata = stateManager.suspend(
               suspensionReason,
@@ -1180,7 +1173,7 @@ export function createWorkflow<
               input: stateManager.state.data,
               output: undefined,
               status: "suspended",
-              userContext: options?.userContext,
+              context: options?.context,
               timestamp: new Date().toISOString(),
               stepIndex: index,
               metadata: {
@@ -1203,8 +1196,8 @@ export function createWorkflow<
               suspensionReason,
               undefined, // No parent event ID for workflow-level suspension
               {
-                userContext: executionContext.userContext
-                  ? Object.fromEntries(executionContext.userContext)
+                context: executionContext.context
+                  ? Object.fromEntries(executionContext.context)
                   : undefined,
               },
             );
@@ -1333,7 +1326,7 @@ export function createWorkflow<
         from: name,
         output: finalState.result,
         status: "success",
-        userContext: options?.userContext,
+        context: options?.context,
         timestamp: new Date().toISOString(),
       });
 
@@ -1386,7 +1379,7 @@ export function createWorkflow<
         from: name,
         status: "error",
         error: error,
-        userContext: options?.userContext,
+        context: options?.context,
         timestamp: new Date().toISOString(),
       });
 

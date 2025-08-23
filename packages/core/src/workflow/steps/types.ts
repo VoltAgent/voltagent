@@ -21,7 +21,7 @@ export type WorkflowStepType =
 export interface WorkflowStepAgent<INPUT, DATA, RESULT>
   extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, any, any> {
   type: "agent";
-  agent: Agent<{ llm: DangerouslyAllowAny }>;
+  agent: Agent;
 }
 
 export type WorkflowStepFuncConfig<

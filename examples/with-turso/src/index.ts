@@ -2,6 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Configure Turso/LibSQL Memory
@@ -17,8 +18,7 @@ const memoryStorage = new LibSQLStorage({
 
 const agent = new Agent({
   name: "Turso Memory Agent",
-  description: "A helpful assistant that remembers conversations using Turso/LibSQL.",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant that remembers conversations using Turso/LibSQL.",
   model: openai("gpt-4o-mini"),
   memory: memoryStorage, // Use the configured LibSQL storage
 });
@@ -34,4 +34,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

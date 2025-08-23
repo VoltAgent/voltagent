@@ -8,7 +8,7 @@
 import { type Logger, LoggerProxy } from "../logger";
 import { LogEvents } from "../logger/events";
 import { ResourceType, buildLogContext, buildVoltOpsLogMessage } from "../logger/message-builder";
-import { AgentRegistry } from "../server/registry";
+import { AgentRegistry } from "../registries/agent-registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import { VoltAgentExporter as VoltAgentExporterClass } from "../telemetry/exporter";
 import { VoltOpsPromptManagerImpl } from "./prompt-manager";

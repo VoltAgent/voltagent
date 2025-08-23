@@ -80,7 +80,7 @@ export function andThen<
         data, // ✅ Pass input data
         {
           stepFunction,
-          userContext: state.workflowContext.userContext,
+          context: state.workflowContext.context,
         },
       );
 
@@ -103,7 +103,7 @@ export function andThen<
           stepStartEvent.id,
           {
             stepFunction,
-            userContext: state.workflowContext.userContext,
+            context: state.workflowContext.context,
           },
         );
 
@@ -132,7 +132,7 @@ export function andThen<
           stepStartEvent.id,
           {
             stepFunction,
-            userContext: state.workflowContext.userContext,
+            context: state.workflowContext.context,
           },
         );
 

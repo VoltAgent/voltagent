@@ -8,10 +8,11 @@ import type {
   ProviderTextStreamResponse,
 } from "../agent/providers/base/types";
 
+import type { TextStreamPart } from "ai";
 import type { Memory, MemoryOptions } from "../memory/types";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
-import type { StreamEvent, StreamEventType } from "../utils/streams";
+import type { StreamEvent } from "../utils/streams";
 import type { AgentHistoryEntry } from "./history";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
@@ -31,6 +32,64 @@ import type { AgentHooks } from "./hooks";
 
 // Re-export for backward compatibility
 export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
+
+/**
+ * Tool representation for API responses
+ */
+export interface ApiToolInfo {
+  name: string;
+  description: string;
+  parameters?: any;
+}
+
+/**
+ * Tool with node_id for agent state
+ */
+export interface ToolWithNodeId extends BaseTool {
+  node_id: string;
+}
+
+/**
+ * SubAgent data structure for agent state
+ */
+export interface SubAgentStateData {
+  id: string;
+  name: string;
+  instructions?: string;
+  status: string;
+  model: string;
+  tools: ApiToolInfo[]; // API representation of tools
+  memory?: Record<string, unknown>;
+  node_id: string;
+  subAgents?: SubAgentStateData[];
+  methodConfig?: {
+    method: string;
+    schema?: string;
+    options?: string[];
+  };
+  [key: string]: unknown;
+}
+
+/**
+ * Full state of an agent including all properties
+ */
+export interface AgentFullState {
+  id: string;
+  name: string;
+  instructions?: string;
+  status: string;
+  model: string;
+  node_id: string;
+  tools: ToolWithNodeId[];
+  subAgents: SubAgentStateData[];
+  memory: Record<string, unknown> & { node_id: string };
+  retriever?: {
+    name: string;
+    description?: string;
+    status?: string;
+    node_id: string;
+  } | null;
+}
 
 /**
  * Enhanced dynamic value for instructions that supports prompt management
@@ -89,14 +148,26 @@ export type ProviderOptions = {
  * Configuration for supervisor agents that have subagents
  */
 /**
+ * StreamEventType derived from AI SDK's TextStreamPart
+ * Includes all event types from AI SDK
+ */
+export type StreamEventType = TextStreamPart<any>["type"];
+
+/**
  * Configuration for forwarding events from subagents to the parent agent's stream
  */
 export type FullStreamEventForwardingConfig = {
   /**
    * Array of event types to forward from subagents
-   * Uses StreamEventType which includes: 'text-delta', 'reasoning', 'source', 'tool-call', 'tool-result', 'finish', 'error'
+   * Uses AI SDK's TextStreamPart types:
+   * - Text: 'text-start', 'text-end', 'text-delta'
+   * - Reasoning: 'reasoning-start', 'reasoning-end', 'reasoning-delta'
+   * - Tool: 'tool-input-start', 'tool-input-end', 'tool-input-delta',
+   *         'tool-call', 'tool-result', 'tool-error'
+   * - Other: 'source', 'file', 'start-step', 'finish-step',
+   *          'start', 'finish', 'abort', 'error', 'raw'
    * @default ['tool-call', 'tool-result']
-   * @example ['tool-call', 'tool-result', 'text-delta', 'reasoning', 'source']
+   * @example ['tool-call', 'tool-result', 'text-delta']
    */
   types?: StreamEventType[];
   /**
@@ -189,7 +260,7 @@ export type AgentOptions = {
   /**
    * Optional user-defined context to be passed around
    */
-  userContext?: UserContext;
+  context?: UserContext;
 
   /**
    * @deprecated Use `voltOpsClient` instead. Will be removed in a future version.
@@ -364,7 +435,7 @@ export interface CommonGenerateOptions {
   operationContext?: OperationContext;
 
   // Optional user-defined context to be passed from a parent operation
-  userContext?: UserContext;
+  context?: UserContext;
 
   // Optional hooks to be included only during the operation call and not persisted in the agent
   hooks?: AgentHooks;
@@ -576,7 +647,7 @@ export type OperationContext = {
   readonly operationId: string;
 
   /** User-managed context map for this specific operation */
-  readonly userContext: Map<string | symbol, any>;
+  readonly context: Map<string | symbol, any>;
 
   /** System-managed context map for internal operation tracking */
   readonly systemContext: Map<string | symbol, any>;
@@ -725,7 +796,7 @@ export interface StreamTextFinishResult {
   warnings?: unknown[];
 
   /** User context containing any custom metadata from the operation. */
-  userContext?: UserContext;
+  context?: UserContext;
 }
 
 /**
@@ -755,7 +826,7 @@ export interface StreamObjectFinishResult<TObject> {
   finishReason?: string;
 
   /** User context containing any custom metadata from the operation. */
-  userContext?: UserContext;
+  context?: UserContext;
 }
 
 /**
@@ -781,7 +852,7 @@ export interface StandardizedTextResult {
   /** Warnings (if available from provider). */
   warnings?: unknown[];
   /** User context containing any custom metadata from the operation. */
-  userContext?: UserContext;
+  context?: UserContext;
 }
 
 /**
@@ -800,7 +871,7 @@ export interface StandardizedObjectResult<TObject> {
   /** Warnings (if available from provider). */
   warnings?: unknown[];
   /** User context containing any custom metadata from the operation. */
-  userContext?: UserContext;
+  context?: UserContext;
 }
 
 /**
@@ -827,24 +898,24 @@ type InferOriginalResponseFromProvider<
 
 export type GenerateTextResponse<TProvider extends { llm: LLMProvider<any> }> =
   InferGenerateTextResponseFromProvider<TProvider> & {
-    userContext: Map<string | symbol, unknown>;
+    context: Map<string | symbol, unknown>;
   };
 
 export type StreamTextResponse<TProvider extends { llm: LLMProvider<any> }> =
   InferStreamTextResponseFromProvider<TProvider> & {
-    userContext?: UserContext;
+    context?: UserContext;
   };
 
 export type GenerateObjectResponse<
   TProvider extends { llm: LLMProvider<any> },
   TSchema extends z.ZodType,
 > = InferGenerateObjectResponseFromProvider<TProvider, TSchema> & {
-  userContext: Map<string | symbol, unknown>;
+  context: Map<string | symbol, unknown>;
 };
 
 export type StreamObjectResponse<
   TProvider extends { llm: LLMProvider<any> },
   TSchema extends z.ZodType,
 > = InferStreamObjectResponseFromProvider<TProvider, TSchema> & {
-  userContext?: UserContext;
+  context?: UserContext;
 };

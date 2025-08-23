@@ -103,7 +103,7 @@ describe("SubAgentManager", () => {
     subAgentManager = new SubAgentManager("Main Agent");
     mockDelegateToolOptions = {
       sourceAgent: mockAgent1,
-      operationContext: { userContext: new Map(), systemContext: new Map() },
+      operationContext: { context: new Map(), systemContext: new Map() },
       currentHistoryEntryId: "history-123",
     };
   });
@@ -756,7 +756,7 @@ describe("SubAgentManager", () => {
       handoffToMultipleSpy.mockRestore();
     });
 
-    it("should pass supervisor's userContext to sub-agents via parentOperationContext", async () => {
+    it("should pass supervisor's context to sub-agents via parentOperationContext", async () => {
       subAgentManager.addSubAgent(mockAgent1 as any); // Math Agent
 
       // Spy on mockAgent1.streamText to check the options it receives
@@ -768,7 +768,7 @@ describe("SubAgentManager", () => {
       // Mock the OperationContext that the delegate_tool would receive from the supervisor agent
       const mockSupervisorOperationContext = {
         operationId: "supervisor-op-id",
-        userContext: supervisorUserContext,
+        context: supervisorUserContext,
         historyEntry: { id: "supervisor-history-id" }, // simplified mock
         eventUpdaters: new Map(),
         isActive: true,
@@ -782,7 +782,7 @@ describe("SubAgentManager", () => {
       });
 
       await tool.execute({
-        task: "Test task for userContext passing",
+        task: "Test task for context passing",
         targetAgents: ["Math Agent"], // Delegate to mockAgent1
         context: { someTaskContext: "taskSpecificData" },
       });
@@ -801,20 +801,18 @@ describe("SubAgentManager", () => {
 
       // Verify the task message is part of what's passed
       expect(messagesPassedToSubAgent[0].role).toBe("user");
-      expect(messagesPassedToSubAgent[0].content).toContain("Test task for userContext passing");
+      expect(messagesPassedToSubAgent[0].content).toContain("Test task for context passing");
 
       // Verify the parentOperationContext from the supervisor was passed in the options
       expect(optionsPassedToSubAgent).toBeDefined();
       expect(optionsPassedToSubAgent.parentOperationContext).toBeDefined();
-      expect(optionsPassedToSubAgent.parentOperationContext.userContext).toBeDefined();
-      expect(optionsPassedToSubAgent.parentOperationContext.userContext).toBeInstanceOf(Map);
-      expect(optionsPassedToSubAgent.parentOperationContext.userContext?.get("supervisorKey")).toBe(
+      expect(optionsPassedToSubAgent.parentOperationContext.context).toBeDefined();
+      expect(optionsPassedToSubAgent.parentOperationContext.context).toBeInstanceOf(Map);
+      expect(optionsPassedToSubAgent.parentOperationContext.context?.get("supervisorKey")).toBe(
         "supervisorValue",
       );
       // It should be the same instance as it's directly passed through options in createDelegateTool to handoffToMultiple
-      expect(optionsPassedToSubAgent.parentOperationContext.userContext).toBe(
-        supervisorUserContext,
-      );
+      expect(optionsPassedToSubAgent.parentOperationContext.context).toBe(supervisorUserContext);
 
       streamTextSpy.mockRestore();
     });
@@ -951,7 +949,7 @@ describe("SubAgentManager", () => {
 
       const tool = subAgentManager.createDelegateTool({
         sourceAgent: { id: "supervisor-agent" } as any,
-        operationContext: { userContext: new Map(), systemContext: new Map() } as any,
+        operationContext: { context: new Map(), systemContext: new Map() } as any,
         currentHistoryEntryId: "history-123",
         forwardEvent: forwardEventSpy,
       });
@@ -989,7 +987,7 @@ describe("SubAgentManager", () => {
 
       const tool = subAgentManager.createDelegateTool({
         sourceAgent: { id: "supervisor-agent" } as any,
-        operationContext: { userContext: new Map(), systemContext: new Map() } as any,
+        operationContext: { context: new Map(), systemContext: new Map() } as any,
         currentHistoryEntryId: "history-456",
         forwardEvent: forwardEventSpy,
       });
@@ -1206,7 +1204,7 @@ describe("SubAgentManager", () => {
         sourceAgent: { id: "source-agent" } as any,
         operationContext: {
           operationId: "test-op",
-          userContext: new Map(),
+          context: new Map(),
           conversationSteps: [],
           historyEntry: {
             id: "test-history",

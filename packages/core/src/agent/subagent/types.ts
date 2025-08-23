@@ -1,16 +1,12 @@
-import type { Merge } from "type-fest";
+import type { StreamTextResult, TextStreamPart } from "ai";
 import type { z } from "zod";
 import type { Agent } from "../agent";
-import type { StreamPart } from "../providers";
-import type { ProviderOptions } from "../types";
-
-export type SubAgentStreamPart = Merge<
-  StreamPart,
-  {
-    subAgentId: string;
-    subAgentName: string;
-  }
->;
+import type {
+  GenerateObjectOptions,
+  GenerateTextOptions,
+  StreamObjectOptions,
+  StreamTextOptions,
+} from "../agent";
 
 /**
  * Available methods for subagent execution
@@ -20,103 +16,153 @@ export type SubAgentMethod = "streamText" | "generateText" | "streamObject" | "g
 /**
  * Base configuration for a subagent with specific method and options
  */
-interface BaseSubAgentConfig {
-  /** The agent to be used as a subagent */
-  agent: Agent<any>; // Using any to avoid circular dependency
-  /** Provider options for the specific method call */
-  options?: ProviderOptions;
+interface BaseSubAgentConfig<TAgent extends Agent = Agent> {
+  /** The Agent instance to be used as a subagent */
+  agent: TAgent;
 }
 
 /**
- * Configuration for text-based subagent methods (streamText and generateText)
+ * Configuration for streamText method
  */
-export interface TextSubAgentConfig extends BaseSubAgentConfig {
+export interface StreamTextSubAgentConfig<TAgent extends Agent = Agent>
+  extends BaseSubAgentConfig<TAgent> {
   /** The method to use when calling the subagent */
-  method: "streamText" | "generateText";
-  /** Schema for object generation methods (optional for text methods) */
-  schema?: z.ZodType;
+  method: "streamText";
+  /** Options for streamText method */
+  options?: StreamTextOptions;
 }
 
 /**
- * Configuration for object-based subagent methods (streamObject and generateObject)
+ * Configuration for generateText method
  */
-export interface ObjectSubAgentConfig extends BaseSubAgentConfig {
+export interface GenerateTextSubAgentConfig<TAgent extends Agent = Agent>
+  extends BaseSubAgentConfig<TAgent> {
   /** The method to use when calling the subagent */
-  method: "streamObject" | "generateObject";
-  /** Schema for object generation methods (required for object methods) */
-  schema: z.ZodType;
+  method: "generateText";
+  /** Options for generateText method */
+  options?: GenerateTextOptions;
 }
 
 /**
- * Configuration for a subagent with specific method and options
- * Schema is required for object generation methods (streamObject and generateObject)
+ * Configuration for streamObject method
  */
-export type SubAgentConfigObject = TextSubAgentConfig | ObjectSubAgentConfig;
+export interface StreamObjectSubAgentConfig<
+  TAgent extends Agent = Agent,
+  TSchema extends z.ZodType = z.ZodType,
+> extends BaseSubAgentConfig<TAgent> {
+  /** The method to use when calling the subagent */
+  method: "streamObject";
+  /** Schema for object generation (required) */
+  schema: TSchema;
+  /** Options for streamObject method */
+  options?: StreamObjectOptions;
+}
 
 /**
- * Union type for subagent configuration
- * - Direct Agent instance (backward compatibility): defaults to streamText method
- * - SubAgentConfigObject: allows specifying method, schema, and options
+ * Configuration for generateObject method
  */
-export type SubAgentConfig =
-  | Agent<any> // Direct Agent instance for backward compatibility (defaults to streamText)
-  | SubAgentConfigObject; // New configuration object with explicit method
+export interface GenerateObjectSubAgentConfig<
+  TAgent extends Agent = Agent,
+  TSchema extends z.ZodType = z.ZodType,
+> extends BaseSubAgentConfig<TAgent> {
+  /** The method to use when calling the subagent */
+  method: "generateObject";
+  /** Schema for object generation (required) */
+  schema: TSchema;
+  /** Options for generateObject method */
+  options?: GenerateObjectOptions;
+}
 
 /**
- * Helper function to create a subagent configuration with specific method and options
- * This provides a convenient API for configuring subagents with different execution methods
- *
- * @param config - The configuration object containing agent, method, and optional schema/options
- * @returns A SubAgentConfigObject that can be used in the Agent constructor
+ * Union type for all subagent configurations
+ * Each configuration is type-safe with its specific options and requirements
+ */
+export type SubAgentConfig<TAgent extends Agent = Agent> =
+  | StreamTextSubAgentConfig<TAgent>
+  | GenerateTextSubAgentConfig<TAgent>
+  | StreamObjectSubAgentConfig<TAgent>
+  | GenerateObjectSubAgentConfig<TAgent>
+  | TAgent; // Direct Agent instance (defaults to streamText)
+
+/**
+ * Helper function to create a type-safe subagent configuration
  *
  * @example
- * // Backward compatible - direct agent (uses streamText by default)
+ * // Direct Agent instance (uses streamText by default)
  * const supervisorAgent = new Agent({
  *   name: "Supervisor",
  *   instructions: "...",
- *   llm: myLLM,
- *   subAgents: [myAgent] // <- This still works! Uses streamText by default
+ *   model: myModel,
+ *   subAgents: [myAgent]
  * });
  *
  * @example
- * // New API - mixed usage
- * const supervisorAgent = new Agent({
- *   name: "Supervisor",
- *   instructions: "...",
- *   llm: myLLM,
- *   subAgents: [
- *     myAgent, // <- Direct agent, uses streamText
- *     createSubagent({
- *       agent: myAgent,
- *       method: 'generateObject',
- *       schema: z.object({ result: z.string() }) // <- Schema is required for generateObject
- *     })
- *   ]
- * });
- *
- * @example
- * // Create a subagent that uses generateText with custom options
- * createSubagent({
+ * // Using streamText with options
+ * const subagent = createSubagent({
  *   agent: myAgent,
- *   method: 'generateText',
+ *   method: 'streamText',
  *   options: { temperature: 0.7, maxTokens: 1000 }
- *   // schema is optional for generateText
- * })
+ * });
  *
  * @example
- * // Create a subagent that uses streamObject - schema is required
- * createSubagent({
+ * // Using generateObject with schema
+ * const subagent = createSubagent({
  *   agent: myAgent,
- *   method: 'streamObject',
- *   schema: z.object({
- *     progress: z.number(),
- *     status: z.string()
- *   }),
+ *   method: 'generateObject',
+ *   schema: z.object({ result: z.string() }),
  *   options: { temperature: 0.2 }
- * })
+ * });
  */
-export function createSubagent(config: TextSubAgentConfig): TextSubAgentConfig;
-export function createSubagent(config: ObjectSubAgentConfig): ObjectSubAgentConfig;
-export function createSubagent(config: SubAgentConfigObject): SubAgentConfigObject {
+export function createSubagent<TAgent extends Agent>(
+  config: StreamTextSubAgentConfig<TAgent>,
+): StreamTextSubAgentConfig<TAgent>;
+export function createSubagent<TAgent extends Agent>(
+  config: GenerateTextSubAgentConfig<TAgent>,
+): GenerateTextSubAgentConfig<TAgent>;
+export function createSubagent<TAgent extends Agent, TSchema extends z.ZodType>(
+  config: StreamObjectSubAgentConfig<TAgent, TSchema>,
+): StreamObjectSubAgentConfig<TAgent, TSchema>;
+export function createSubagent<TAgent extends Agent, TSchema extends z.ZodType>(
+  config: GenerateObjectSubAgentConfig<TAgent, TSchema>,
+): GenerateObjectSubAgentConfig<TAgent, TSchema>;
+export function createSubagent<TAgent extends Agent>(
+  config: SubAgentConfig<TAgent>,
+): SubAgentConfig<TAgent> {
   return config;
+}
+
+/**
+ * Extended TextStreamPart type that includes optional subagent metadata.
+ * This type extends ai-sdk's TextStreamPart to support subagent event forwarding.
+ *
+ * @template TOOLS - The tool set type parameter from ai-sdk
+ */
+export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<string, any>> =
+  TextStreamPart<TOOLS> & {
+    /**
+     * Optional identifier for the subagent that generated this event
+     */
+    subAgentId?: string;
+
+    /**
+     * Optional name of the subagent that generated this event
+     */
+    subAgentName?: string;
+  };
+
+/**
+ * Extended StreamTextResult that uses VoltAgentTextStreamPart for fullStream.
+ * This maintains compatibility with ai-sdk while adding subagent metadata support.
+ *
+ * @template TOOLS - The tool set type parameter
+ * @template PARTIAL_OUTPUT - The partial output type parameter
+ */
+export interface VoltAgentStreamTextResult<
+  TOOLS extends Record<string, any> = Record<string, any>,
+  PARTIAL_OUTPUT = any,
+> extends Omit<StreamTextResult<TOOLS, PARTIAL_OUTPUT>, "fullStream"> {
+  /**
+   * Full stream with subagent metadata support
+   */
+  readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
 }

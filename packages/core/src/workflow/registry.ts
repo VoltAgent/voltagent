@@ -3,6 +3,7 @@ import type { UsageInfo } from "../agent/providers";
 import type { WorkflowEvent, WorkflowEventWithStatus } from "../events/workflow-emitter";
 import { WorkflowEventEmitter } from "../events/workflow-emitter";
 import { LoggerProxy } from "../logger";
+import type { InternalMemory } from "../memory";
 import type { Memory } from "../memory/types";
 import type { VoltAgentExporter } from "../telemetry/exporter";
 import { createWorkflowStepNodeId } from "../utils/node-utils";
@@ -305,7 +306,7 @@ export class WorkflowRegistry extends EventEmitter {
     options: {
       userId?: string;
       conversationId?: string;
-      userContext?: Map<string | symbol, unknown>;
+      context?: Map<string | symbol, unknown>;
       metadata?: Record<string, unknown>;
       executionId?: string;
     } = {},
@@ -327,7 +328,7 @@ export class WorkflowRegistry extends EventEmitter {
         {
           userId: options.userId,
           conversationId: options.conversationId,
-          userContext: options.userContext,
+          context: options.context,
           metadata: options.metadata,
           executionId: options.executionId,
         },
@@ -395,7 +396,8 @@ export class WorkflowRegistry extends EventEmitter {
   public registerWorkflow(workflow: Workflow<any, any>): void {
     let workflowMemoryManager: WorkflowMemoryManager | undefined;
     if (workflow.memory) {
-      workflowMemoryManager = new WorkflowMemoryManager(workflow.memory);
+      // Cast to InternalMemory since InMemoryStorage implements it
+      workflowMemoryManager = new WorkflowMemoryManager(workflow.memory as InternalMemory);
       this.logger.trace(`Created workflow-specific memory manager for ${workflow.id}`);
     }
 

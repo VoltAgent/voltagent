@@ -27,7 +27,7 @@ class MockAgent extends Agent<any> {
       object: { result: "mocked" },
       usage: this.mockUsage,
       provider: "mock" as any,
-      userContext: new Map(),
+      context: new Map(),
     };
   }
 }
@@ -306,7 +306,7 @@ describe("workflow usage tracking", () => {
       object: { result: "no usage" },
       usage: undefined as any,
       provider: "mock" as any,
-      userContext: new Map(),
+      context: new Map(),
     });
 
     const agentWithUsage = new MockAgent({

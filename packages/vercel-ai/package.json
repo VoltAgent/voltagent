@@ -4,12 +4,12 @@
   "version": "1.0.0-next.0",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
-    "ai": "^5.0.8",
+    "ai": "^5.0.12",
     "ts-pattern": "^5.7.1",
     "type-fest": "^4.41.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.2.1",
     "@vitest/coverage-v8": "^3.2.4",
     "@voltagent/core": "^1.0.0-next.0",
     "@voltagent/internal": "^0.0.9",

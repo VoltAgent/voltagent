@@ -2,6 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, type BaseMessage, BaseRetriever, VoltAgent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // --- Simple Knowledge Base Retriever ---
@@ -62,8 +63,7 @@ const knowledgeRetriever = new KnowledgeBaseRetriever();
 // Define the agent that uses the retriever directly
 const ragAgent = new Agent({
   name: "RAG Chatbot",
-  description: "A chatbot that answers questions based on its internal knowledge base.",
-  llm: new VercelAIProvider(), // Using Vercel AI SDK Provider
+  instructions: "A chatbot that answers questions based on its internal knowledge base.",
   model: openai("gpt-4o-mini"), // Using OpenAI model via Vercel
   // Attach the retriever directly
   retriever: knowledgeRetriever,
@@ -81,4 +81,5 @@ new VoltAgent({
     ragAgent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

@@ -2,6 +2,7 @@ import { vertex } from "@ai-sdk/google-vertex";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 const logger = createPinoLogger({
@@ -11,8 +12,7 @@ const logger = createPinoLogger({
 
 const agent = new Agent({
   name: "Google Vertex AI Agent",
-  description: "A helpful assistant powered by Google Gemini and Vertex AI",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant powered by Google Gemini and Vertex AI",
   model: vertex("gemini-2.0-flash"),
   memory: new LibSQLStorage({
     url: "file:./.voltagent/memory.db",
@@ -25,4 +25,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

@@ -2,6 +2,7 @@ import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 const bedrock = createAmazonBedrock({
@@ -34,9 +35,8 @@ async function main() {
     const agent = new Agent({
       id: "zapier-mcp",
       name: "Zapier MCP Agent",
-      description: "A helpful assistant using a lightweight provider",
+      instructions: "A helpful assistant using a lightweight provider",
       tools: zapierTools,
-      llm: new VercelAIProvider(),
       model: bedrock("amazon.nova-lite-v1:0"),
       markdown: true,
       memory: new LibSQLStorage({
@@ -50,6 +50,7 @@ async function main() {
         agent,
       },
       logger,
+      server: honoServer({ port: 3141 }),
     });
   } catch (error) {
     console.error("Failed to initialize VoltAgent:", error);

@@ -1,4 +1,12 @@
+import type {
+  DataContent as AISDKDataContent,
+  AssistantContent,
+  ModelMessage,
+  ToolContent,
+  UserContent,
+} from "@ai-sdk/provider-utils";
 import type { AsyncIterableStream } from "@voltagent/internal/utils";
+import type { TextStreamPart } from "ai";
 import type { z } from "zod";
 import type { Tool } from "../../../tool";
 import type {
@@ -76,77 +84,12 @@ export type ProviderTextResponse<TOriginalResponse> = {
   warnings?: any[];
 };
 
-// Standard stream part types for fullStream
-export type TextDeltaStreamPart = {
-  type: "text-delta";
-  textDelta: string;
+// Use AI SDK's TextStreamPart directly with optional subagent metadata
+export type StreamPart = TextStreamPart<any> & {
   // SubAgent fields (optional)
   subAgentId?: string;
   subAgentName?: string;
 };
-
-export type ReasoningStreamPart = {
-  type: "reasoning";
-  reasoning: string;
-  // SubAgent fields (optional)
-  subAgentId?: string;
-  subAgentName?: string;
-};
-
-export type SourceStreamPart = {
-  type: "source";
-  source: string;
-  // SubAgent fields (optional)
-  subAgentId?: string;
-  subAgentName?: string;
-};
-
-export type ToolCallStreamPart = {
-  type: "tool-call";
-  toolCallId: string;
-  toolName: string;
-  args: Record<string, any>;
-  // SubAgent fields (optional)
-  subAgentId?: string;
-  subAgentName?: string;
-};
-
-export type ToolResultStreamPart = {
-  type: "tool-result";
-  toolCallId: string;
-  toolName: string;
-  result: any;
-  // SubAgent fields (optional)
-  subAgentId?: string;
-  subAgentName?: string;
-};
-
-export type FinishStreamPart = {
-  type: "finish";
-  finishReason?: string;
-  usage?: UsageInfo;
-  // SubAgent fields (optional)
-  subAgentId?: string;
-  subAgentName?: string;
-};
-
-export type ErrorStreamPart = {
-  type: "error";
-  error: Error;
-  // SubAgent fields (optional)
-  subAgentId?: string;
-  subAgentName?: string;
-};
-
-// Union type for all stream parts
-export type StreamPart =
-  | TextDeltaStreamPart
-  | ReasoningStreamPart
-  | SourceStreamPart
-  | ToolCallStreamPart
-  | ToolResultStreamPart
-  | FinishStreamPart
-  | ErrorStreamPart;
 
 /**
  * Response type for text streaming operations
@@ -264,64 +207,25 @@ export type ProviderObjectStreamResponse<TOriginalResponse, TObject> = {
   warnings?: Promise<any[] | undefined>;
 };
 
-/**
- * Data content type for binary data
- */
-export type DataContent = string | Uint8Array | ArrayBuffer | Buffer;
+// Re-export types from AI SDK for compatibility
+export type {
+  TextPart,
+  ImagePart,
+  FilePart,
+  AssistantContent,
+  ToolContent,
+  UserContent,
+} from "@ai-sdk/provider-utils";
 
 /**
- * Text part of a message
+ * Data content type for binary data (keep our own for backward compatibility)
  */
-export type TextPart = {
-  type: "text";
-  /**
-   * The text content
-   */
-  text: string;
-};
+export type DataContent = AISDKDataContent;
 
 /**
- * Image part of a message
+ * Message content types from AI SDK
  */
-export type ImagePart = {
-  type: "image";
-  /**
-   * Image data. Can either be:
-   * - data: a base64-encoded string, a Uint8Array, an ArrayBuffer, or a Buffer
-   * - URL: a URL that points to the image
-   */
-  image: DataContent | URL;
-  /**
-   * Optional mime type of the image
-   */
-  mimeType?: string;
-};
-
-/**
- * File part of a message
- */
-export type FilePart = {
-  type: "file";
-  /**
-   * File data. Can either be:
-   * - data: a base64-encoded string, a Uint8Array, an ArrayBuffer, or a Buffer
-   * - URL: a URL that points to the file
-   */
-  data: DataContent | URL;
-  /**
-   * Optional filename of the file
-   */
-  filename?: string;
-  /**
-   * Mime type of the file
-   */
-  mimeType: string;
-};
-
-/**
- * Message content can be either a string or an array of parts
- */
-export type MessageContent = string | Array<TextPart | ImagePart | FilePart>;
+export type MessageContent = UserContent | AssistantContent | ToolContent | string;
 
 /**
  * Message role types
@@ -329,12 +233,9 @@ export type MessageContent = string | Array<TextPart | ImagePart | FilePart>;
 export type MessageRole = "user" | "assistant" | "system" | "tool";
 
 /**
- * Base message type
+ * Base message type - now using AI SDK's ModelMessage for full compatibility
  */
-export type BaseMessage = {
-  role: MessageRole;
-  content: MessageContent;
-};
+export type BaseMessage = ModelMessage;
 
 // Schema types
 export type ToolSchema = z.ZodType;
@@ -354,7 +255,7 @@ export type ToolExecuteOptions = {
 
   /**
    * The operation context associated with the agent invocation triggering this tool execution.
-   * Provides access to operation-specific state like userContext.
+   * Provides access to operation-specific state like context.
    * The context includes a logger with full execution context (userId, conversationId, executionId).
    */
   operationContext?: OperationContext;

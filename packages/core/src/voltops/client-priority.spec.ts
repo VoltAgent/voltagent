@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Agent } from "../agent/agent";
 import { LoggerProxy, getGlobalLogger } from "../logger";
-import { AgentRegistry } from "../server/registry";
+import { AgentRegistry } from "../registries/agent-registry";
 import { VoltOpsClient } from "./client";
 import type { PromptContent, PromptHelper, VoltOpsClientOptions } from "./types";
 
@@ -300,7 +300,7 @@ describe("VoltOpsClient Priority Hierarchy", () => {
         contextMessages: [],
         operationContext: {
           operationId: "test-op",
-          userContext: new Map(),
+          context: new Map(),
           historyEntry: { id: "test-id" } as any,
           isActive: true,
           conversationSteps: [],
@@ -365,7 +365,7 @@ describe("VoltOpsClient Priority Hierarchy", () => {
         contextMessages: [],
         operationContext: {
           operationId: "test-op",
-          userContext: new Map(),
+          context: new Map(),
           historyEntry: { id: "test-id" } as any,
           isActive: true,
           conversationSteps: [],

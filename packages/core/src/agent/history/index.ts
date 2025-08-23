@@ -1,4 +1,5 @@
 import type { Logger } from "@voltagent/internal";
+import type { UIMessage } from "ai";
 import { v4 as uuidv4 } from "uuid";
 import { AgentEventEmitter } from "../../events";
 import type { NewTimelineEvent } from "../../events/types";
@@ -67,7 +68,7 @@ export interface AddEntryParams {
   /**
    * Input to the agent
    */
-  input: string | Record<string, unknown> | BaseMessage[];
+  input: string | Record<string, unknown> | UIMessage[] | BaseMessage[];
 
   /**
    * Output from the agent
@@ -125,7 +126,7 @@ export interface AgentHistoryEntry {
   /**
    * Original input to the agent
    */
-  input: string | Record<string, unknown> | BaseMessage[];
+  input: string | Record<string, unknown> | UIMessage[] | BaseMessage[];
 
   /**
    * Final output from the agent

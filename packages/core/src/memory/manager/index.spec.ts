@@ -116,7 +116,7 @@ const createMockContext = (): OperationContext => {
     historyEntry: mockHistoryEntry,
     isActive: true,
     operationId: "test-operation",
-    userContext: new Map(),
+    context: new Map(),
     logger: {
       trace: vi.fn(),
       debug: vi.fn(),

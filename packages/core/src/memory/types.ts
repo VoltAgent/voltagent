@@ -1,7 +1,14 @@
-import type { BaseMessage } from "../agent/providers/base/types";
-import type { NewTimelineEvent } from "../events/types";
-import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../workflow/context";
-import type { WorkflowStats, WorkflowTimelineEvent } from "../workflow/types";
+import type { UIMessage } from "ai";
+
+/**
+ * Extended UIMessage type with storage metadata
+ * Similar to Mastra's MastraMessageShared approach
+ */
+export type StoredUIMessage = UIMessage & {
+  createdAt: Date;
+  userId: string;
+  conversationId: string;
+};
 
 /**
  * Memory options
@@ -12,47 +19,6 @@ export type MemoryOptions = {
    * @default 100
    */
   storageLimit?: number;
-};
-
-/**
- * Options for filtering messages when retrieving from memory
- */
-export type MessageFilterOptions = {
-  /**
-   * User identifier
-   */
-  userId?: string;
-
-  /**
-   * Conversation identifier
-   */
-  conversationId?: string;
-
-  /**
-   * Maximum number of messages to retrieve
-   */
-  limit?: number;
-
-  /**
-   * Only retrieve messages before this timestamp
-   */
-  before?: number;
-
-  /**
-   * Only retrieve messages after this timestamp
-   */
-  after?: number;
-
-  /**
-   * Only retrieve messages with this role
-   */
-  role?: BaseMessage["role"];
-
-  /**
-   * Only retrieve messages with these types
-   * If not specified, all message types are returned
-   */
-  types?: Array<"text" | "tool-call" | "tool-result">;
 };
 
 /**
@@ -92,28 +58,18 @@ export type ConversationQueryOptions = {
 };
 
 /**
- * Memory interface for storing and retrieving messages
+ * Memory interface for storing and retrieving messages and conversations
+ * This is the public interface exposed to users
  */
 export type Memory = {
   /**
-   * Add a message to memory
+   * Get messages from memory with optional filtering
    */
-  addMessage(message: BaseMessage, conversationId?: string): Promise<void>;
-
-  /**
-   * Get messages from memory
-   */
-  getMessages(options: MessageFilterOptions): Promise<BaseMessage[]>;
-
-  /**
-   * Clear messages from memory
-   */
-  clearMessages(options: { userId: string; conversationId?: string }): Promise<void>;
-
-  /**
-   * Create a new conversation
-   */
-  createConversation(conversation: CreateConversationInput): Promise<Conversation>;
+  getMessages(
+    userId: string,
+    conversationId: string,
+    options?: { limit?: number; before?: Date; after?: Date; roles?: string[] },
+  ): Promise<UIMessage[]>;
 
   /**
    * Get a conversation by ID
@@ -139,14 +95,6 @@ export type Memory = {
   queryConversations(options: ConversationQueryOptions): Promise<Conversation[]>;
 
   /**
-   * Get all messages for a specific conversation
-   */
-  getConversationMessages(
-    conversationId: string,
-    options?: { limit?: number; offset?: number },
-  ): Promise<MemoryMessage[]>;
-
-  /**
    * Update a conversation
    */
   updateConversation(
@@ -158,123 +106,4 @@ export type Memory = {
    * Delete a conversation
    */
   deleteConversation(id: string): Promise<void>;
-
-  /**
-   * Add or update a history entry
-   * @param key Entry ID
-   * @param value Entry data
-   * @param agentId Agent ID for filtering
-   */
-  addHistoryEntry(key: string, value: any, agentId: string): Promise<void>;
-
-  /**
-   * Update an existing history entry
-   * @param key Entry ID
-   * @param value Updated entry data
-   * @param agentId Agent ID for filtering
-   */
-  updateHistoryEntry(key: string, value: any, agentId: string): Promise<void>;
-
-  /**
-   * Add a history step
-   * @param key Step ID
-   * @param value Step data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  addHistoryStep(key: string, value: any, historyId: string, agentId: string): Promise<void>;
-
-  /**
-   * Update a history step
-   * @param key Step ID
-   * @param value Updated step data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  updateHistoryStep(key: string, value: any, historyId: string, agentId: string): Promise<void>;
-
-  /**
-   * Get a history entry by ID
-   * @param key Entry ID
-   * @returns The history entry or undefined if not found
-   */
-  getHistoryEntry(key: string): Promise<any | undefined>;
-
-  /**
-   * Get a history step by ID
-   * @param key Step ID
-   * @returns The history step or undefined if not found
-   */
-  getHistoryStep(key: string): Promise<any | undefined>;
-
-  /**
-   * Get all history entries for an agent with pagination
-   * @param agentId Agent ID
-   * @param page Page number (0-based)
-   * @param limit Number of entries per page
-   * @returns Object with entries array and total count
-   */
-  getAllHistoryEntriesByAgent(
-    agentId: string,
-    page: number,
-    limit: number,
-  ): Promise<{
-    entries: any[];
-    total: number;
-  }>;
-
-  /**
-   * Add a timeline event
-   * This is part of the new immutable event system.
-   * @param key Event ID (UUID)
-   * @param value Timeline event data with immutable structure
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  addTimelineEvent(
-    key: string,
-    value: NewTimelineEvent,
-    historyId: string,
-    agentId: string,
-  ): Promise<void>;
-
-  // Workflow History Operations
-  storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void>;
-  getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null>;
-  getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]>;
-  updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void>;
-  deleteWorkflowHistory(id: string): Promise<void>;
-
-  // Workflow Steps Operations
-  storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void>;
-  getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null>;
-  getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]>;
-  updateWorkflowStep(id: string, updates: Partial<WorkflowStepHistoryEntry>): Promise<void>;
-  deleteWorkflowStep(id: string): Promise<void>;
-
-  // Workflow Timeline Events Operations
-  storeWorkflowTimelineEvent(event: WorkflowTimelineEvent): Promise<void>;
-  getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null>;
-  getWorkflowTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]>;
-  deleteWorkflowTimelineEvent(id: string): Promise<void>;
-
-  // Query Operations
-  getAllWorkflowIds(): Promise<string[]>;
-  getWorkflowStats(workflowId: string): Promise<WorkflowStats>;
-
-  // Bulk Operations
-  getWorkflowHistoryWithStepsAndEvents(id: string): Promise<WorkflowHistoryEntry | null>;
-  deleteWorkflowHistoryWithRelated(id: string): Promise<void>;
-
-  // Cleanup Operations
-  cleanupOldWorkflowHistories(workflowId: string, maxEntries: number): Promise<number>;
-};
-
-/**
- * Memory-specific message type
- */
-export type MemoryMessage = BaseMessage & {
-  id: string; // Unique identifier for the message
-  type: "text" | "tool-call" | "tool-result"; // Type of the message
-  createdAt: string; // ISO date when the message was created
 };

@@ -86,7 +86,7 @@ describe("InMemoryStorage", () => {
   });
 
   describe("Message Operations", () => {
-    describe("addMessage", () => {
+    describe("addUIMessage", () => {
       it("should add a message and retrieve it correctly", async () => {
         // Arrange
         const message = createMessage({
@@ -104,11 +104,8 @@ describe("InMemoryStorage", () => {
         });
 
         // Act
-        await storage.addMessage(message, "test-conversation");
-        const messages = await storage.getMessages({
-          userId: "test-user",
-          conversationId: "test-conversation",
-        });
+        await storage.addUIMessage(message, "test-user", "test-conversation");
+        const messages = await storage.getMessages("test-user", "test-conversation");
 
         // Assert
         expect(messages).toHaveLength(1);
@@ -122,8 +119,8 @@ describe("InMemoryStorage", () => {
         const message = createMessage();
 
         // Act
-        await storage.addMessage(message);
-        const messages = await storage.getMessages();
+        await storage.addUIMessage(message, "default-user", "default");
+        const messages = await storage.getMessages("default-user", "default");
 
         // Assert
         expect(messages).toHaveLength(1);
@@ -157,9 +154,9 @@ describe("InMemoryStorage", () => {
         });
 
         // Act
-        await limitedStorage.addMessage(message1, "conversation1");
-        await limitedStorage.addMessage(message2, "conversation1");
-        await limitedStorage.addMessage(message3, "conversation1");
+        await limitedStorage.addUIMessage(message1, "user1", "conversation1");
+        await limitedStorage.addUIMessage(message2, "user1", "conversation1");
+        await limitedStorage.addUIMessage(message3, "user1", "conversation1");
 
         // Assert
         const messages = await limitedStorage.getMessages({
@@ -193,17 +190,31 @@ describe("InMemoryStorage", () => {
         });
 
         // Add messages to first conversation
-        await limitedStorage.addMessage(createMessage({ content: "Conv1 First" }), "conversation1");
-        await limitedStorage.addMessage(
-          createMessage({ content: "Conv1 Second" }),
+        await limitedStorage.addUIMessage(
+          createMessage({ content: "Conv1 First" }),
+          "user1",
           "conversation1",
         );
-        await limitedStorage.addMessage(createMessage({ content: "Conv1 Third" }), "conversation1");
+        await limitedStorage.addUIMessage(
+          createMessage({ content: "Conv1 Second" }),
+          "user1",
+          "conversation1",
+        );
+        await limitedStorage.addUIMessage(
+          createMessage({ content: "Conv1 Third" }),
+          "user1",
+          "conversation1",
+        );
 
         // Add messages to second conversation
-        await limitedStorage.addMessage(createMessage({ content: "Conv2 First" }), "conversation2");
-        await limitedStorage.addMessage(
+        await limitedStorage.addUIMessage(
+          createMessage({ content: "Conv2 First" }),
+          "user1",
+          "conversation2",
+        );
+        await limitedStorage.addUIMessage(
           createMessage({ content: "Conv2 Second" }),
+          "user1",
           "conversation2",
         );
 
@@ -248,39 +259,43 @@ describe("InMemoryStorage", () => {
           metadata: {},
         });
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             role: "system",
             content: "System message",
             createdAt: new Date(now - 5000).toISOString(),
           }),
+          "user1",
           "conversation1",
         );
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             role: "user",
             content: "User question",
             createdAt: new Date(now - 4000).toISOString(),
           }),
+          "user1",
           "conversation1",
         );
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             role: "assistant",
             content: "Assistant response",
             createdAt: new Date(now - 3000).toISOString(),
           }),
+          "user1",
           "conversation1",
         );
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             role: "user",
             content: "Follow-up question",
             createdAt: new Date(now - 2000).toISOString(),
           }),
+          "user1",
           "conversation1",
         );
 
@@ -293,17 +308,18 @@ describe("InMemoryStorage", () => {
           metadata: {},
         });
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             role: "user",
             content: "Another user's message",
             createdAt: new Date(now - 1000).toISOString(),
           }),
+          "user2",
           "user2-conversation1",
         );
 
         // Same user, different conversation
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             role: "user",
             content: "Different conversation",
@@ -450,7 +466,7 @@ describe("InMemoryStorage", () => {
         });
 
         // Add messages with different types
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             id: "msg-text-1",
             content: "User question",
@@ -460,7 +476,7 @@ describe("InMemoryStorage", () => {
           "type-test-conv",
         );
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             id: "msg-tool-call-1",
             content: JSON.stringify({ tool: "calculator", args: { a: 1, b: 2 } }),
@@ -470,7 +486,7 @@ describe("InMemoryStorage", () => {
           "type-test-conv",
         );
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             id: "msg-tool-result-1",
             content: JSON.stringify({ result: 3 }),
@@ -480,7 +496,7 @@ describe("InMemoryStorage", () => {
           "type-test-conv",
         );
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             id: "msg-text-2",
             content: "The result is 3",
@@ -490,7 +506,7 @@ describe("InMemoryStorage", () => {
           "type-test-conv",
         );
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             id: "msg-tool-call-2",
             content: JSON.stringify({ tool: "weather", args: { city: "NYC" } }),
@@ -500,7 +516,7 @@ describe("InMemoryStorage", () => {
           "type-test-conv",
         );
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             id: "msg-tool-result-2",
             content: JSON.stringify({ temp: 72, condition: "sunny" }),
@@ -510,7 +526,7 @@ describe("InMemoryStorage", () => {
           "type-test-conv",
         );
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({
             id: "msg-text-3",
             content: "It's 72°F and sunny in NYC",
@@ -668,9 +684,9 @@ describe("InMemoryStorage", () => {
           metadata: {},
         });
 
-        await storage.addMessage(createMessage(), "conversation1");
-        await storage.addMessage(createMessage(), "conversation2");
-        await storage.addMessage(createMessage(), "user2-conversation1");
+        await storage.addUIMessage(createMessage(), "user1", "conversation1");
+        await storage.addUIMessage(createMessage(), "user1", "conversation2");
+        await storage.addUIMessage(createMessage(), "user2", "user2-conversation1");
       });
 
       it("should clear messages for a specific user and conversation", async () => {
@@ -960,7 +976,7 @@ describe("InMemoryStorage", () => {
           metadata: {},
         });
 
-        await storage.addMessage(
+        await storage.addUIMessage(
           createMessage({ content: "This will be deleted" }),
           existingConversation.id,
         );

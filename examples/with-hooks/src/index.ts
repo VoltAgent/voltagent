@@ -1,6 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, Tool, VoltAgent, messageHelpers } from "@voltagent/core";
 import { LibSQLStorage } from "@voltagent/libsql";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -24,8 +25,7 @@ const weatherTool = new Tool({
 // Create agent with all hooks
 const agent = new Agent({
   name: "HooksDemo",
-  description: "Agent demonstrating all available hooks",
-  llm: new VercelAIProvider(),
+  instructions: "Agent demonstrating all available hooks",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
   memory: new LibSQLStorage({
@@ -112,4 +112,5 @@ new VoltAgent({
   agents: {
     agent,
   },
+  server: honoServer({ port: 3141 }),
 });

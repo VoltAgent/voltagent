@@ -5,15 +5,20 @@ import { convertToModelMessages } from "ai";
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const { messages, conversationId = "1", userId = "1" } = await req.json();
+
+    console.log("Received messages:", messages);
 
     // Get the last message
     const lastMessage = messages[messages.length - 1];
 
     const modelMessages = convertToModelMessages([lastMessage]);
 
-    // Stream text from the agent
-    const result = await agent.streamText(modelMessages as BaseMessage[]);
+    // Stream text from the agent with proper context
+    const result = await agent.streamText(modelMessages as BaseMessage[], {
+      userId,
+      conversationId,
+    });
 
     // Convert VoltAgent stream to AI SDK response using the new v5 adapter
     if (!result.fullStream) {

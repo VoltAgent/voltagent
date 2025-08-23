@@ -1,5 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import { deepClone } from "@voltagent/internal/utils";
+import type { UIMessage } from "ai";
 import type { NewTimelineEvent } from "../../events/types";
 import { LoggerProxy } from "../../logger";
 import type {
@@ -8,14 +9,13 @@ import type {
   WorkflowStepHistoryEntry,
   WorkflowTimelineEvent,
 } from "../../workflow/types";
+import type { InternalMemory } from "../internal-types";
 import type {
   Conversation,
   ConversationQueryOptions,
   CreateConversationInput,
-  Memory,
-  MemoryMessage,
   MemoryOptions,
-  MessageFilterOptions,
+  StoredUIMessage,
 } from "../types";
 
 /**
@@ -29,16 +29,13 @@ export interface InMemoryStorageOptions extends MemoryOptions {
   debug?: boolean;
 }
 
-// Type for internal message storage with metadata
-type MessageWithMetadata = MemoryMessage;
-
 /**
- * A simple in-memory implementation of the Memory and WorkflowMemory interfaces
- * Stores messages in memory, organized by user and conversation
+ * A simple in-memory implementation of the InternalMemory interface
+ * Stores messages in memory using UIMessage format, organized by user and conversation
  * Also provides workflow history, steps, and timeline events storage
  */
-export class InMemoryStorage implements Memory {
-  private storage: Record<string, Record<string, MessageWithMetadata[]>> = {};
+export class InMemoryStorage implements InternalMemory {
+  private storage: Record<string, Record<string, StoredUIMessage[]>> = {};
   private conversations: Map<string, Conversation> = new Map();
   private historyEntries: Map<string, any> = new Map();
   private historySteps: Map<string, any> = new Map();
@@ -323,89 +320,89 @@ export class InMemoryStorage implements Memory {
   }
 
   /**
-   * Get messages with filtering options
-   * @param options Filtering options
-   * @returns Filtered messages
+   * Get messages from memory with optional filtering
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
+   * @param options Optional filtering options
+   * @returns Array of UIMessages
    */
-  public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
-    const {
-      userId = "default",
-      conversationId = "default",
-      limit = this.options.storageLimit,
-      before,
-      after,
-      role,
-      types,
-    } = options;
-
-    this.debug(
-      `Getting messages for user ${userId} and conversation ${conversationId} with options`,
-      options,
-    );
-
-    // Get user's messages or create new empty object
-    const userMessages = this.storage[userId] || {};
-
-    // Get conversation's messages or create new empty array
-    const messages = userMessages[conversationId] || [];
-
-    // Apply filters
-    let filteredMessages = messages;
-
-    // Filter by role if specified
-    if (role) {
-      filteredMessages = filteredMessages.filter((m) => m.role === role);
-    }
-
-    // Filter by types if specified
-    if (types) {
-      filteredMessages = filteredMessages.filter((m) => types.includes(m.type));
-    }
-
-    // Filter by created timestamp if specified
-    if (before) {
-      filteredMessages = filteredMessages.filter(
-        (m) => new Date(m.createdAt).getTime() < new Date(before).getTime(),
-      );
-    }
-
-    if (after) {
-      filteredMessages = filteredMessages.filter(
-        (m) => new Date(m.createdAt).getTime() > new Date(after).getTime(),
-      );
-    }
-
-    // Sort by created timestamp (ascending)
-    filteredMessages.sort((a, b) => {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-
-    // Apply limit if specified
-    if (limit && limit > 0 && filteredMessages.length > limit) {
-      filteredMessages = filteredMessages.slice(-limit);
-    }
-
-    return filteredMessages;
+  public async getMessages(
+    userId: string,
+    conversationId: string,
+    options?: { limit?: number; before?: Date; after?: Date; roles?: string[] },
+  ): Promise<UIMessage[]> {
+    return this.getUIMessages(userId, conversationId, options);
   }
 
   /**
-   * Add a message to the conversation history
-   * @param message Message to add
-   * @param conversationId Conversation identifier (optional, defaults to "default")
+   * Get UIMessages with filtering options
+   * @deprecated Use getMessages instead
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
+   * @param options Optional filtering options
+   * @returns Array of UIMessages
    */
-  public async addMessage(message: MemoryMessage, conversationId = "default"): Promise<void> {
-    this.debug(`Adding message for conversation ${conversationId}`, message);
+  public async getUIMessages(
+    userId: string,
+    conversationId: string,
+    options: { limit?: number; before?: Date; after?: Date; roles?: string[] } = {},
+  ): Promise<UIMessage[]> {
+    const { limit = this.options.storageLimit, before, after, roles } = options;
 
-    // Get the conversation to find the userId
-    const conversation = await this.getConversation(conversationId);
-    let userId = "default";
+    this.debug(
+      `Getting UI messages for user ${userId} and conversation ${conversationId} with options`,
+      options,
+    );
 
-    if (conversation) {
-      userId = conversation.userId;
-    } else {
-      // If conversation doesn't exist, use default user
-      this.debug(`Conversation ${conversationId} not found, using default user`);
+    // Get user's messages or return empty array
+    const userMessages = this.storage[userId] || {};
+    let messages = userMessages[conversationId] || [];
+
+    // Apply role filter if provided
+    if (roles && roles.length > 0) {
+      messages = messages.filter((m) => roles.includes(m.role));
     }
+
+    // Apply time filters if provided
+    if (before) {
+      messages = messages.filter((m) => m.createdAt.getTime() < before.getTime());
+    }
+
+    if (after) {
+      messages = messages.filter((m) => m.createdAt.getTime() > after.getTime());
+    }
+
+    // Sort by creation time (oldest first for conversation flow)
+    messages.sort((a, b) => {
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+
+    // Apply limit if specified (take the most recent messages)
+    if (limit && limit > 0 && messages.length > limit) {
+      messages = messages.slice(-limit);
+    }
+
+    // Return as UIMessages (without storage metadata) and deep cloned
+    return messages.map((msg) => {
+      const cloned = deepClone(msg);
+      // Remove storage-specific fields to return clean UIMessage
+      const { createdAt, userId: msgUserId, conversationId: msgConvId, ...uiMessage } = cloned;
+      return uiMessage as UIMessage;
+    });
+  }
+
+  /**
+   * Add a single UIMessage to the conversation history
+   * @param message UIMessage to add
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
+   */
+  public async addUIMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    this.debug(`Adding UI message for user ${userId} conversation ${conversationId}`, message);
 
     // Create user's messages container if it doesn't exist
     if (!this.storage[userId]) {
@@ -417,8 +414,23 @@ export class InMemoryStorage implements Memory {
       this.storage[userId][conversationId] = [];
     }
 
-    // Add the message with metadata
-    this.storage[userId][conversationId].push(message);
+    // Check for duplicate by ID
+    const existingMessage = this.storage[userId][conversationId].find((m) => m.id === message.id);
+    if (existingMessage) {
+      this.debug(`Message with ID ${message.id} already exists, skipping`);
+      return;
+    }
+
+    // Create StoredUIMessage with metadata
+    const storedMessage: StoredUIMessage = {
+      ...message,
+      createdAt: new Date(),
+      userId,
+      conversationId,
+    };
+
+    // Add the message
+    this.storage[userId][conversationId].push(storedMessage);
 
     // Apply storage limit if specified
     if (this.options.storageLimit && this.options.storageLimit > 0) {
@@ -431,12 +443,27 @@ export class InMemoryStorage implements Memory {
   }
 
   /**
-   * Clear all messages for a user and optionally a specific conversation
-   * @param options Options specifying which messages to clear
+   * Add multiple UIMessages to the conversation history
+   * @param messages Array of UIMessages to add
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
    */
-  public async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
-    const { userId, conversationId } = options;
+  public async addUIMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    for (const message of messages) {
+      await this.addUIMessage(message, userId, conversationId);
+    }
+  }
 
+  /**
+   * Clear all messages for a user and optionally a specific conversation
+   * @param userId User identifier
+   * @param conversationId Optional conversation identifier
+   */
+  public async clearMessages(userId: string, conversationId?: string): Promise<void> {
     this.debug(
       `Clearing messages for user ${userId} ${conversationId ? `and conversation ${conversationId}` : ""}`,
     );
@@ -448,10 +475,10 @@ export class InMemoryStorage implements Memory {
 
     // If conversationId specified, clear only that conversation
     if (conversationId) {
-      this.storage[userId][conversationId] = [];
+      delete this.storage[userId][conversationId];
     } else {
       // Clear all conversations for the user
-      this.storage[userId] = {};
+      delete this.storage[userId];
     }
   }
 
@@ -572,44 +599,6 @@ export class InMemoryStorage implements Memory {
 
   /**
    * Query conversations with flexible filtering and pagination options
-   *
-   * This method provides a powerful way to search and filter conversations
-   * with support for user-based filtering, resource filtering, pagination,
-   * and custom sorting.
-   *
-   * @param options Query options for filtering and pagination
-   * @param options.userId Optional user ID to filter conversations by specific user
-   * @param options.resourceId Optional resource ID to filter conversations by specific resource
-   * @param options.limit Maximum number of conversations to return (default: 50)
-   * @param options.offset Number of conversations to skip for pagination (default: 0)
-   * @param options.orderBy Field to sort by: 'created_at', 'updated_at', or 'title' (default: 'updated_at')
-   * @param options.orderDirection Sort direction: 'ASC' or 'DESC' (default: 'DESC')
-   *
-   * @returns Promise that resolves to an array of conversations matching the criteria
-   *
-   * @example
-   * ```typescript
-   * // Get all conversations for a specific user
-   * const userConversations = await storage.queryConversations({
-   *   userId: 'user123',
-   *   limit: 20
-   * });
-   *
-   * // Get conversations for a resource with pagination
-   * const resourceConversations = await storage.queryConversations({
-   *   resourceId: 'chatbot-v1',
-   *   limit: 10,
-   *   offset: 20,
-   *   orderBy: 'created_at',
-   *   orderDirection: 'ASC'
-   * });
-   *
-   * // Get all conversations (admin view)
-   * const allConversations = await storage.queryConversations({
-   *   limit: 100,
-   *   orderBy: 'updated_at'
-   * });
-   * ```
    */
   public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     this.debug("Querying conversations", options);
@@ -671,86 +660,6 @@ export class InMemoryStorage implements Memory {
     }
 
     return filtered;
-  }
-
-  /**
-   * Get messages for a specific conversation with pagination support
-   *
-   * This method retrieves all messages within a conversation, ordered chronologically
-   * from oldest to newest. It supports pagination to handle large conversations
-   * efficiently and avoid memory issues.
-   *
-   * @param conversationId The unique identifier of the conversation to retrieve messages from
-   * @param options Optional pagination and filtering options
-   * @param options.limit Maximum number of messages to return (default: 100)
-   * @param options.offset Number of messages to skip for pagination (default: 0)
-   *
-   * @returns Promise that resolves to an array of messages in chronological order (oldest first)
-   *
-   * @example
-   * ```typescript
-   * // Get the first 50 messages in a conversation
-   * const messages = await storage.getConversationMessages('conv-123', {
-   *   limit: 50
-   * });
-   *
-   * // Get messages with pagination (skip first 20, get next 30)
-   * const olderMessages = await storage.getConversationMessages('conv-123', {
-   *   limit: 30,
-   *   offset: 20
-   * });
-   *
-   * // Get all messages (use with caution for large conversations)
-   * const allMessages = await storage.getConversationMessages('conv-123');
-   *
-   * // Process messages in batches
-   * const batchSize = 100;
-   * let offset = 0;
-   * let hasMore = true;
-   *
-   * while (hasMore) {
-   *   const batch = await storage.getConversationMessages('conv-123', {
-   *     limit: batchSize,
-   *     offset: offset
-   *   });
-   *
-   *   // Process batch
-   *   processBatch(batch);
-   *
-   *   hasMore = batch.length === batchSize;
-   *   offset += batchSize;
-   * }
-   * ```
-   *
-   * @throws {Error} If the conversation ID is invalid or operation fails
-   */
-  public async getConversationMessages(
-    conversationId: string,
-    options: { limit?: number; offset?: number } = {},
-  ): Promise<MemoryMessage[]> {
-    this.debug(`Getting messages for conversation ${conversationId}`, options);
-
-    const { limit = 100, offset = 0 } = options;
-
-    // Find messages across all users for this conversation
-    const allMessages: MemoryMessage[] = [];
-
-    for (const userId in this.storage) {
-      const userMessages = this.storage[userId][conversationId] || [];
-      allMessages.push(...userMessages);
-    }
-
-    // Sort by creation time
-    allMessages.sort((a, b) => {
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    });
-
-    // Apply pagination
-    if (limit > 0) {
-      return allMessages.slice(offset, offset + limit);
-    }
-
-    return allMessages;
   }
 
   /**

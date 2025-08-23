@@ -1,0 +1,92 @@
+import type { AuthProvider } from "@voltagent/server-core";
+import { requiresAuth } from "@voltagent/server-core";
+import type { Context, Next } from "hono";
+
+/**
+ * Create authentication middleware for Hono
+ * This middleware handles both authentication and user context injection
+ * @param authProvider The authentication provider
+ * @returns Hono middleware function
+ */
+export function createAuthMiddleware(authProvider: AuthProvider<Request>) {
+  return async (c: Context, next: Next) => {
+    const path = c.req.path;
+    const method = c.req.method;
+
+    // Check if this route requires authentication
+    if (!requiresAuth(method, path, authProvider.publicRoutes)) {
+      // Public route, no auth needed
+      return next();
+    }
+
+    try {
+      // Extract token
+      let token: string | undefined;
+
+      if (authProvider.extractToken) {
+        // Use provider's custom extraction
+        token = authProvider.extractToken(c.req.raw);
+      } else {
+        // Default extraction from Authorization header
+        const authHeader = c.req.header("Authorization");
+        if (authHeader?.startsWith("Bearer ")) {
+          token = authHeader.substring(7);
+        }
+      }
+
+      if (!token) {
+        return c.json(
+          {
+            success: false,
+            error: "Authentication required",
+          },
+          401,
+        );
+      }
+
+      // Verify token and get user
+      const user = await authProvider.verifyToken(token, c.req.raw);
+
+      if (!user) {
+        return c.json(
+          {
+            success: false,
+            error: "Invalid authentication",
+          },
+          401,
+        );
+      }
+
+      // Store user in context for later use
+      c.set("authenticatedUser", user);
+
+      // Inject user into request body for protected routes
+      // This modifies c.req.json() to include context
+      const originalJson = c.req.json.bind(c.req);
+      c.req.json = async () => {
+        const body = await originalJson();
+        return {
+          ...body,
+          context: {
+            ...body.context,
+            user,
+          },
+          // Set userId if available
+          ...(user.id && { userId: user.id }),
+          ...(user.sub && !user.id && { userId: user.sub }),
+        };
+      };
+
+      return next();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Authentication failed";
+      return c.json(
+        {
+          success: false,
+          error: message,
+        },
+        401,
+      );
+    }
+  };
+}

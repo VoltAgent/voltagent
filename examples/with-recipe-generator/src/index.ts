@@ -1,6 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 const mcpConfig = new MCPConfiguration({
@@ -15,7 +16,7 @@ const mcpConfig = new MCPConfiguration({
 
 const agent = new Agent({
   name: "MCP Example Agent",
-  description: `Follow this methodology for culinary suggestions:
+  instructions: `Follow this methodology for culinary suggestions:
 
         1. Initial Assessment
            - Inventory what's in the pantry
@@ -63,7 +64,6 @@ const agent = new Agent({
         - Flag potential allergens
         - Emphasize advance preparation options
         - Recommend complementary dishes`,
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: await mcpConfig.getTools(),
 });
@@ -79,4 +79,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

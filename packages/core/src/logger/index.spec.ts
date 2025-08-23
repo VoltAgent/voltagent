@@ -1,6 +1,6 @@
 import type { LogBuffer, Logger } from "@voltagent/internal";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AgentRegistry } from "../server/registry";
+import { AgentRegistry } from "../registries/agent-registry";
 import * as consoleLoggerModule from "./console-logger";
 import { getGlobalLogBuffer, getGlobalLogger } from "./index";
 

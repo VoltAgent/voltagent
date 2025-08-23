@@ -3,15 +3,11 @@ import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { Agent } from "./agent/agent";
-import type { SubAgentConfig } from "./agent/subagent/types";
+import { AgentEventEmitter } from "./events";
 import { getGlobalLogger } from "./logger";
-import { startServer } from "./server";
-import { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
-import type { ServerConfig } from "./server/api";
-import type { CustomEndpointDefinition } from "./server/custom-endpoints";
-import { AgentRegistry } from "./server/registry";
+import { AgentRegistry } from "./registries/agent-registry";
 import type { VoltAgentExporter } from "./telemetry/exporter";
-import type { ServerOptions, VoltAgentOptions } from "./types";
+import type { IServerProvider, VoltAgentOptions } from "./types";
 import { checkForUpdates } from "./utils/update";
 import { isValidVoltOpsKeys } from "./utils/voltops-validation";
 import { VoltOpsClient } from "./voltops/client";
@@ -28,10 +24,7 @@ let registeredProvider: NodeTracerProvider | null = null;
 export class VoltAgent {
   private registry: AgentRegistry;
   private workflowRegistry: WorkflowRegistry;
-  private serverStarted = false;
-  private customEndpoints: CustomEndpointDefinition[] = [];
-  private serverConfig: ServerConfig = {};
-  private serverOptions: ServerOptions = {};
+  private serverInstance?: IServerProvider;
   private logger: Logger;
 
   constructor(options: VoltAgentOptions) {
@@ -127,24 +120,16 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       this.registerWorkflows(options.workflows);
     }
 
-    // Merge server options with backward compatibility
-    // New server object takes precedence over deprecated individual options
-    this.serverOptions = {
-      autoStart: options.server?.autoStart ?? options.autoStart ?? true,
-      port: options.server?.port ?? options.port,
-      enableSwaggerUI: options.server?.enableSwaggerUI ?? options.enableSwaggerUI,
-      customEndpoints: options.server?.customEndpoints ?? options.customEndpoints ?? [],
-    };
-
-    // Store custom endpoints for registration when the server starts
-    this.customEndpoints = [...(this.serverOptions.customEndpoints || [])];
-
-    // Store server configuration for startServer
-    if (this.serverOptions.enableSwaggerUI !== undefined) {
-      this.serverConfig.enableSwaggerUI = this.serverOptions.enableSwaggerUI;
-    }
-    if (this.serverOptions.port !== undefined) {
-      this.serverConfig.port = this.serverOptions.port;
+    // Handle server provider if provided
+    if (options.server) {
+      this.serverInstance = options.server({
+        agentRegistry: this.registry,
+        workflowRegistry: this.workflowRegistry,
+        agentEventEmitter: AgentEventEmitter.getInstance(),
+        logger: this.logger,
+        telemetryExporter: this.registry.getGlobalVoltAgentExporter(),
+        voltOpsClient: this.registry.getGlobalVoltOpsClient(),
+      });
     }
 
     // Check dependencies if enabled (run in background)
@@ -157,8 +142,8 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       });
     }
 
-    // Auto-start server if enabled
-    if (this.serverOptions.autoStart !== false) {
+    // Auto-start server if provided
+    if (this.serverInstance) {
       this.startServer().catch((err) => {
         this.logger.error("Failed to start server:", err);
         process.exit(1);
@@ -187,6 +172,17 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
 
     process.on("SIGTERM", () => shutdown("SIGTERM"));
     process.on("SIGINT", () => shutdown("SIGINT"));
+
+    // Handle unhandled promise rejections to prevent server crashes
+    // This is particularly important for AI SDK's NoOutputGeneratedError
+    process.on("unhandledRejection", (reason) => {
+      this.logger.error("[VoltAgent] Unhandled Promise Rejection:", {
+        reason: reason instanceof Error ? reason.message : reason,
+        stack: reason instanceof Error ? reason.stack : undefined,
+      });
+      // Don't crash the server, just log the error
+      // In production, you might want to send this to an error tracking service
+    });
   }
 
   /**
@@ -227,42 +223,15 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   /**
    * Register an agent
    */
-  public registerAgent(agent: Agent<any>): void {
-    const globalExporter = this.registry.getGlobalVoltAgentExporter();
-    if (globalExporter && !agent.isTelemetryConfigured()) {
-      agent._INTERNAL_setVoltAgentExporter(globalExporter);
-    }
-
-    // Register the main agent
+  public registerAgent(agent: Agent): void {
+    // Register the agent
     this.registry.registerAgent(agent);
-
-    // Also register all subagents recursively
-    const subAgentConfigs = agent.getSubAgents();
-    if (subAgentConfigs && subAgentConfigs.length > 0) {
-      subAgentConfigs.forEach((subAgentConfig) => {
-        // Extract the actual agent from SubAgentConfig
-        const subAgent = this.extractAgentFromConfig(subAgentConfig);
-        this.registerAgent(subAgent);
-      });
-    }
-  }
-
-  /**
-   * Helper method to extract Agent instance from SubAgentConfig
-   */
-  private extractAgentFromConfig(config: SubAgentConfig): Agent<any> {
-    // If it's a SubAgentConfigObject, extract the agent
-    if (config && typeof config === "object" && "agent" in config && "method" in config) {
-      return config.agent;
-    }
-    // Otherwise, it's already an Agent instance
-    return config;
   }
 
   /**
    * Register multiple agents
    */
-  public registerAgents(agents: Record<string, Agent<any>>): void {
+  public registerAgents(agents: Record<string, Agent>): void {
     Object.values(agents).forEach((agent) => this.registerAgent(agent));
   }
 
@@ -270,19 +239,18 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    * Start the server
    */
   public async startServer(): Promise<void> {
-    if (this.serverStarted) {
+    if (!this.serverInstance) {
+      this.logger.warn("No server provider configured");
+      return;
+    }
+
+    if (this.serverInstance.isRunning()) {
       this.logger.info("Server is already running");
       return;
     }
 
     try {
-      // Register custom endpoints if any
-      if (this.customEndpoints.length > 0) {
-        registerCustomEndpoints(this.customEndpoints);
-      }
-
-      await startServer(this.serverConfig);
-      this.serverStarted = true;
+      await this.serverInstance.start();
     } catch (error) {
       this.logger.error(
         `Failed to start server: ${error instanceof Error ? error.message : String(error)}`,
@@ -292,48 +260,23 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   }
 
   /**
-   * Register a custom endpoint with the API server
-   * @param endpoint The custom endpoint definition
-   * @throws Error if the endpoint definition is invalid or registration fails
+   * Stop the server
    */
-  public registerCustomEndpoint(endpoint: CustomEndpointDefinition): void {
-    try {
-      // Add to the internal list
-      this.customEndpoints.push(endpoint);
-
-      // If server is already running, register the endpoint immediately
-      if (this.serverStarted) {
-        registerCustomEndpoint(endpoint);
-      }
-    } catch (error) {
-      this.logger.error(
-        `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      throw error;
+  public async stopServer(): Promise<void> {
+    if (!this.serverInstance) {
+      return;
     }
-  }
 
-  /**
-   * Register multiple custom endpoints with the API server
-   * @param endpoints Array of custom endpoint definitions
-   * @throws Error if any endpoint definition is invalid or registration fails
-   */
-  public registerCustomEndpoints(endpoints: CustomEndpointDefinition[]): void {
+    if (!this.serverInstance.isRunning()) {
+      return;
+    }
+
     try {
-      if (!endpoints || !Array.isArray(endpoints) || endpoints.length === 0) {
-        return;
-      }
-
-      // Add to the internal list
-      this.customEndpoints.push(...endpoints);
-
-      // If server is already running, register the endpoints immediately
-      if (this.serverStarted) {
-        registerCustomEndpoints(endpoints);
-      }
+      await this.serverInstance.stop();
+      this.logger.info("Server stopped");
     } catch (error) {
       this.logger.error(
-        `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to stop server: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -342,14 +285,14 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   /**
    * Get all registered agents
    */
-  public getAgents(): Agent<any>[] {
+  public getAgents(): Agent[] {
     return this.registry.getAllAgents();
   }
 
   /**
    * Get agent by ID
    */
-  public getAgent(id: string): Agent<any> | undefined {
+  public getAgent(id: string): Agent | undefined {
     return this.registry.getAgent(id);
   }
 
