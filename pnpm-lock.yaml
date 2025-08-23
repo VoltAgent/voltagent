@@ -757,7 +757,7 @@ importers:
         specifier: ^1.0.0
         version: link:../../packages/vercel-ai
       '@voltagent/vercel-ui':
-        specifier: ^1.0.0
+        specifier: ^1.0.1
         version: link:../../packages/vercel-ui
       ai:
         specifier: ^5.0.8

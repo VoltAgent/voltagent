@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/vercel-ui",
   "description": "VoltAgent Vercel UI - Vercel UI integration for VoltAgent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "dependencies": {
     "@voltagent/internal": "^0.0.9",
     "ai": "^5.0.8",
