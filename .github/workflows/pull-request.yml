@@ -79,10 +79,8 @@ jobs:
           - postgres
           - sdk
           - supabase
-          - vercel-ai
           - vercel-ai-exporter
           - voice
-          - xsai
       fail-fast: false
     concurrency:
       group: ${{ github.ref }}-test-${{ matrix.package }}

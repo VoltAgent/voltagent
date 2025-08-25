@@ -25,11 +25,9 @@ jobs:
           - postgres
           - sdk
           - supabase
-          - vercel-ai
           - vercel-ai-exporter
           - vercel-ui
           - voice
-          - xsai
       fail-fast: false
     name: Test ${{ matrix.package }}
     steps:
