@@ -118,7 +118,7 @@ export class SubAgentManager {
   /**
    * Helper method to extract agent instance from SubAgentConfig
    */
-  private extractAgent(agentConfig: SubAgentConfig): AgentV2 {
+  private extractAgent(agentConfig: SubAgentConfig): Agent {
     if (this.isDirectAgent(agentConfig)) {
       return agentConfig;
     }
@@ -149,7 +149,7 @@ export class SubAgentManager {
   /**
    * Type guard to check if a SubAgentConfig is a direct AgentV2 instance
    */
-  private isDirectAgent(agentConfig: SubAgentConfig): agentConfig is AgentV2 {
+  private isDirectAgent(agentConfig: SubAgentConfig): agentConfig is Agent {
     return !("method" in agentConfig);
   }
 
@@ -293,7 +293,7 @@ ${guidelinesText}
    */
   private async forwardStreamEvents(
     stream: AsyncIterable<any>,
-    targetAgent: AgentV2,
+    targetAgent: Agent,
     onStreamEvent: (event: any) => void,
     config?: { types?: string[]; addSubAgentMetadata?: boolean },
   ): Promise<void> {
@@ -327,7 +327,7 @@ ${guidelinesText}
   public async handoffTask(options: {
     task: string;
     targetAgent: SubAgentConfig;
-    sourceAgent?: AgentV2;
+    sourceAgent?: Agent;
     userId?: string;
     conversationId?: string;
     parentAgentId?: string;
@@ -622,7 +622,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
    * task to one or more specialized agents
    */
   public createDelegateTool(options: {
-    sourceAgent: AgentV2;
+    sourceAgent: Agent;
     currentHistoryEntryId?: string;
     operationContext?: OperationContext;
     maxSteps?: number;
@@ -732,7 +732,6 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       const subAgentData: SubAgentStateData = {
         id: agentState.id,
         name: agentState.name,
-        description: agentState.description,
         instructions: agentState.instructions,
         status: agentState.status,
         model: agentState.model,

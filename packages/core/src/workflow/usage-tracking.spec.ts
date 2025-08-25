@@ -1,35 +1,30 @@
+import type { LanguageModelUsage } from "ai";
+import { MockLanguageModelV2 } from "ai/test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { Agent } from "../agent/agent";
-import type { UsageInfo } from "../agent/providers";
+import { createTestAgent } from "../agent/test-utils";
 import { InMemoryStorage } from "../memory/in-memory";
 import { createWorkflowChain } from "./chain";
 import { WorkflowRegistry } from "./registry";
 
-// Mock Agent for testing
-class MockAgent extends Agent<any> {
-  private mockUsage: UsageInfo;
-
-  constructor(usage: UsageInfo) {
-    super({
-      name: "MockAgent",
-      instructions: "Mock agent for testing",
-      llm: {
-        getModelIdentifier: () => "mock-model",
-      } as any, // Mock LLM
-      model: {} as any, // Mock model
-    });
-    this.mockUsage = usage;
-  }
-
-  async generateObject(_input: any, _schema: any, _options?: any) {
-    return {
-      object: { result: "mocked" },
-      usage: this.mockUsage,
-      provider: "mock" as any,
-      context: new Map(),
-    };
-  }
+// Helper function to create a mock agent with specified usage
+function createMockAgentWithUsage(usage: LanguageModelUsage, responseSchema?: Record<string, any>) {
+  return createTestAgent({
+    name: "MockAgent",
+    model: new MockLanguageModelV2({
+      doGenerate: async () => ({
+        finishReason: "stop" as const,
+        usage: usage,
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(responseSchema || { result: "mocked" }),
+          },
+        ],
+        warnings: [],
+      }),
+    }) as any,
+  });
 }
 
 describe("workflow usage tracking", () => {
@@ -39,9 +34,9 @@ describe("workflow usage tracking", () => {
   });
 
   it("should track usage from single andAgent step", async () => {
-    const mockAgent = new MockAgent({
-      promptTokens: 100,
-      completionTokens: 50,
+    const mockAgent = createMockAgentWithUsage({
+      inputTokens: 100,
+      outputTokens: 50,
       totalTokens: 150,
     });
 
@@ -70,23 +65,32 @@ describe("workflow usage tracking", () => {
   });
 
   it("should accumulate usage from multiple andAgent steps", async () => {
-    const agent1 = new MockAgent({
-      promptTokens: 100,
-      completionTokens: 50,
-      totalTokens: 150,
-    });
+    const agent1 = createMockAgentWithUsage(
+      {
+        inputTokens: 100,
+        outputTokens: 50,
+        totalTokens: 150,
+      },
+      { result: "first" },
+    );
 
-    const agent2 = new MockAgent({
-      promptTokens: 200,
-      completionTokens: 100,
-      totalTokens: 300,
-    });
+    const agent2 = createMockAgentWithUsage(
+      {
+        inputTokens: 200,
+        outputTokens: 100,
+        totalTokens: 300,
+      },
+      { result: "second" },
+    );
 
-    const agent3 = new MockAgent({
-      promptTokens: 50,
-      completionTokens: 25,
-      totalTokens: 75,
-    });
+    const agent3 = createMockAgentWithUsage(
+      {
+        inputTokens: 50,
+        outputTokens: 25,
+        totalTokens: 75,
+      },
+      { final: "third" },
+    );
 
     const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
@@ -152,9 +156,9 @@ describe("workflow usage tracking", () => {
   });
 
   it("should not track usage from custom agent calls in andThen", async () => {
-    const customAgent = new MockAgent({
-      promptTokens: 100,
-      completionTokens: 50,
+    const customAgent = createMockAgentWithUsage({
+      inputTokens: 100,
+      outputTokens: 50,
       totalTokens: 150,
     });
 
@@ -192,11 +196,14 @@ describe("workflow usage tracking", () => {
   });
 
   it("should handle mixed steps with some andAgent", async () => {
-    const agent = new MockAgent({
-      promptTokens: 100,
-      completionTokens: 50,
-      totalTokens: 150,
-    });
+    const agent = createMockAgentWithUsage(
+      {
+        inputTokens: 100,
+        outputTokens: 50,
+        totalTokens: 150,
+      },
+      { analysis: "analyzed" },
+    );
 
     const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
@@ -232,20 +239,20 @@ describe("workflow usage tracking", () => {
   });
 
   it("should make usage available in state during execution", async () => {
-    const agent1 = new MockAgent({
-      promptTokens: 100,
-      completionTokens: 50,
+    const agent1 = createMockAgentWithUsage({
+      inputTokens: 100,
+      outputTokens: 50,
       totalTokens: 150,
     });
 
-    const agent2 = new MockAgent({
-      promptTokens: 200,
-      completionTokens: 100,
+    const agent2 = createMockAgentWithUsage({
+      inputTokens: 200,
+      outputTokens: 100,
       totalTokens: 300,
     });
 
-    let usageAfterFirstAgent: UsageInfo | undefined;
-    let usageAfterSecondAgent: UsageInfo | undefined;
+    let usageAfterFirstAgent: any | undefined;
+    let usageAfterSecondAgent: any | undefined;
 
     const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({
@@ -301,17 +308,30 @@ describe("workflow usage tracking", () => {
 
   it("should handle agents with undefined usage gracefully", async () => {
     // Agent that doesn't return usage
-    const agentWithoutUsage = new MockAgent({} as any);
-    agentWithoutUsage.generateObject = async () => ({
-      object: { result: "no usage" },
-      usage: undefined as any,
-      provider: "mock" as any,
-      context: new Map(),
+    const agentWithoutUsage = createTestAgent({
+      name: "NoUsageAgent",
+      model: new MockLanguageModelV2({
+        doGenerate: async () => ({
+          finishReason: "stop" as const,
+          usage: {
+            inputTokens: 0,
+            outputTokens: 0,
+            totalTokens: 0,
+          },
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ result: "no usage" }),
+            },
+          ],
+          warnings: [],
+        }),
+      }) as any,
     });
 
-    const agentWithUsage = new MockAgent({
-      promptTokens: 100,
-      completionTokens: 50,
+    const agentWithUsage = createMockAgentWithUsage({
+      inputTokens: 100,
+      outputTokens: 50,
       totalTokens: 150,
     });
 
@@ -346,9 +366,26 @@ describe("workflow usage tracking", () => {
 
   it("should handle partial usage info correctly", async () => {
     // Agent with only some usage fields
-    const partialUsageAgent = new MockAgent({
-      promptTokens: 100,
-    } as any);
+    const partialUsageAgent = createTestAgent({
+      name: "PartialUsageAgent",
+      model: new MockLanguageModelV2({
+        doGenerate: async () => ({
+          finishReason: "stop" as const,
+          usage: {
+            inputTokens: 100,
+            outputTokens: undefined,
+            totalTokens: undefined,
+          } as any,
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ result: "partial" }),
+            },
+          ],
+          warnings: [],
+        }),
+      }) as any,
+    });
 
     const memory = new InMemoryStorage();
     const workflow = createWorkflowChain({

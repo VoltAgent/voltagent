@@ -5,7 +5,18 @@ import { AgentRegistry } from "../registries/agent-registry";
 import { AgentEventEmitter } from "./index";
 
 // Mock AgentRegistry
-vi.mock("../server/registry");
+vi.mock("../registries/agent-registry", () => {
+  const mockRegistry = {
+    getAgent: vi.fn(),
+    getParentAgentIds: vi.fn(),
+  };
+
+  return {
+    AgentRegistry: {
+      getInstance: vi.fn(() => mockRegistry),
+    },
+  };
+});
 
 // Mock logger
 vi.mock("../logger", () => ({
@@ -145,11 +156,10 @@ describe("AgentEventEmitter", () => {
         .spyOn(eventEmitter as any, "publishTimelineEventSync")
         .mockResolvedValue(historyEntry as AgentHistoryEntry);
 
-      // Mock AgentRegistry.getInstance().getAgent and getParentAgentIds
-      (AgentRegistry.getInstance as any).mockReturnValue({
-        getAgent: vi.fn().mockReturnValue(mockAgent),
-        getParentAgentIds: vi.fn().mockReturnValue(["parent-agent"]),
-      });
+      // Configure AgentRegistry mock methods
+      const mockRegistry = AgentRegistry.getInstance();
+      vi.mocked(mockRegistry.getAgent).mockReturnValue(mockAgent as any);
+      vi.mocked(mockRegistry.getParentAgentIds).mockReturnValue(["parent-agent"]);
     });
 
     describe("publishTimelineEventAsync", () => {
@@ -323,13 +333,13 @@ describe("AgentEventEmitter", () => {
 
       it("should handle multi-level agent hierarchies", async () => {
         // Setup mock implementation for three-level hierarchy
-        const mockRegistry = AgentRegistry.getInstance() as any;
+        const mockRegistry = AgentRegistry.getInstance();
         const mockGetParentAgentIds = vi
           .fn()
           .mockReturnValueOnce(["parent-agent"]) // child's parent is 'parent-agent'
           .mockReturnValueOnce(["grandparent-agent"]); // parent's parent is 'grandparent-agent'
 
-        mockRegistry.getParentAgentIds = mockGetParentAgentIds;
+        vi.mocked(mockRegistry.getParentAgentIds).mockImplementation(mockGetParentAgentIds);
 
         // Mock propagateEventToParentAgents to track propagation calls
         const propagationHistory: string[] = [];

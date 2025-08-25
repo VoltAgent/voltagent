@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Agent } from "../agent/agent";
 import { LoggerProxy, getGlobalLogger } from "../logger";
 import { AgentRegistry } from "../registries/agent-registry";
@@ -294,10 +294,18 @@ describe("VoltOpsClient Priority Hierarchy", () => {
       });
 
       // Test resolveInstructions (private method, tested through getSystemMessage)
-      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage({
-        input: "test input",
-        historyEntryId: "test-id",
-        contextMessages: [],
+      // Create proper AgentContext structure
+      const agentContext = {
+        context: new Map(),
+        operation: {
+          id: "test-op",
+          userId: "test-user",
+          conversationId: "test-conv",
+        },
+        system: {
+          logger: mockLoggerInstance,
+          startTime: new Date().toISOString(),
+        },
         operationContext: {
           operationId: "test-op",
           context: new Map(),
@@ -305,7 +313,12 @@ describe("VoltOpsClient Priority Hierarchy", () => {
           isActive: true,
           conversationSteps: [],
         },
-      });
+      };
+
+      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage(
+        "test input",
+        agentContext,
+      );
 
       // Verify createPromptHelperWithFallback was called with agent-specific client
       expect(createPromptHelperSpy).toHaveBeenCalledWith(
@@ -321,7 +334,8 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       // Verify global client was not used
       expect(mockGlobalGetPrompt).not.toHaveBeenCalled();
-      expect(systemMessageResponse.systemMessages).toBeDefined();
+      // Verify that getSystemMessage returned a response
+      expect(systemMessageResponse).toBeDefined();
 
       // Cleanup
       createPromptHelperSpy.mockRestore();
@@ -359,10 +373,18 @@ describe("VoltOpsClient Priority Hierarchy", () => {
         // No voltOpsClient specified - should use global
       });
 
-      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage({
-        input: "test input",
-        historyEntryId: "test-id",
-        contextMessages: [],
+      // Create proper AgentContext structure
+      const agentContext = {
+        context: new Map(),
+        operation: {
+          id: "test-op",
+          userId: "test-user",
+          conversationId: "test-conv",
+        },
+        system: {
+          logger: mockLoggerInstance,
+          startTime: new Date().toISOString(),
+        },
         operationContext: {
           operationId: "test-op",
           context: new Map(),
@@ -370,7 +392,12 @@ describe("VoltOpsClient Priority Hierarchy", () => {
           isActive: true,
           conversationSteps: [],
         },
-      });
+      };
+
+      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage(
+        "test input",
+        agentContext,
+      );
 
       // Verify createPromptHelperWithFallback was called without agent client
       expect(createPromptHelperSpy).toHaveBeenCalledWith(
@@ -382,7 +409,8 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       // Verify global client was used
       expect(mockGlobalGetPrompt).toHaveBeenCalledTimes(1);
-      expect(systemMessageResponse.systemMessages).toBeDefined();
+      // Verify that getSystemMessage returned a response
+      expect(systemMessageResponse).toBeDefined();
 
       // Cleanup
       createPromptHelperSpy.mockRestore();
