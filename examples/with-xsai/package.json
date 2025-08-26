@@ -3,7 +3,7 @@
   "author": "",
   "dependencies": {
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^0.1.84",
+    "@voltagent/core": "^0.1.85",
     "@voltagent/logger": "^0.1.4",
     "@voltagent/xsai": "^0.3.4",
     "zod": "^3.25.0"
