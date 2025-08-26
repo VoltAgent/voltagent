@@ -168,7 +168,7 @@ export class MemoryManager {
     try {
       // Direct save UIMessage - no conversion needed!
       if (conversationId && userId) {
-        await this.conversationMemory.addUIMessage(message, userId, conversationId);
+        await this.conversationMemory.addMessage(message, userId, conversationId);
       }
 
       // Log successful memory operation
@@ -330,7 +330,7 @@ export class MemoryManager {
     try {
       // Get UIMessages from memory directly - no conversion needed!
       // Filter to only get user and assistant messages (exclude tool, system, etc.)
-      messages = await this.conversationMemory.getUIMessages(userId, conversationId, {
+      messages = await this.conversationMemory.getMessages(userId, conversationId, {
         limit: contextLimit,
         roles: ["user", "assistant"],
       });

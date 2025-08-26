@@ -78,7 +78,7 @@ describe("InMemoryStorage", () => {
   });
 
   describe("Message Operations", () => {
-    describe("addUIMessage", () => {
+    describe("addMessage", () => {
       it("should add a message and retrieve it correctly", async () => {
         // Arrange
         const message = createMessage("Hello world", "user");
@@ -93,7 +93,7 @@ describe("InMemoryStorage", () => {
         });
 
         // Act
-        await storage.addUIMessage(message, "test-user", "test-conversation");
+        await storage.addMessage(message, "test-user", "test-conversation");
         const messages = await storage.getMessages("test-user", "test-conversation");
 
         // Assert
@@ -106,7 +106,7 @@ describe("InMemoryStorage", () => {
         const message = createMessage();
 
         // Act
-        await storage.addUIMessage(message, "default-user", "default");
+        await storage.addMessage(message, "default-user", "default");
         const messages = await storage.getMessages("default-user", "default");
 
         // Assert
@@ -132,9 +132,9 @@ describe("InMemoryStorage", () => {
         const message3 = createMessage("Third message");
 
         // Act
-        await limitedStorage.addUIMessage(message1, "user1", "conversation1");
-        await limitedStorage.addUIMessage(message2, "user1", "conversation1");
-        await limitedStorage.addUIMessage(message3, "user1", "conversation1");
+        await limitedStorage.addMessage(message1, "user1", "conversation1");
+        await limitedStorage.addMessage(message2, "user1", "conversation1");
+        await limitedStorage.addMessage(message3, "user1", "conversation1");
 
         // Assert
         const messages = await limitedStorage.getMessages("user1", "conversation1");
@@ -169,13 +169,13 @@ describe("InMemoryStorage", () => {
         });
 
         // Add messages to first conversation
-        await limitedStorage.addUIMessage(createMessage("Conv1 First"), "user1", "conversation1");
-        await limitedStorage.addUIMessage(createMessage("Conv1 Second"), "user1", "conversation1");
-        await limitedStorage.addUIMessage(createMessage("Conv1 Third"), "user1", "conversation1");
+        await limitedStorage.addMessage(createMessage("Conv1 First"), "user1", "conversation1");
+        await limitedStorage.addMessage(createMessage("Conv1 Second"), "user1", "conversation1");
+        await limitedStorage.addMessage(createMessage("Conv1 Third"), "user1", "conversation1");
 
         // Add messages to second conversation
-        await limitedStorage.addUIMessage(createMessage("Conv2 First"), "user1", "conversation2");
-        await limitedStorage.addUIMessage(createMessage("Conv2 Second"), "user1", "conversation2");
+        await limitedStorage.addMessage(createMessage("Conv2 First"), "user1", "conversation2");
+        await limitedStorage.addMessage(createMessage("Conv2 Second"), "user1", "conversation2");
 
         // Assert
         const messages1 = await limitedStorage.getMessages("user1", "conversation1");
@@ -204,22 +204,14 @@ describe("InMemoryStorage", () => {
         });
 
         // Add test messages
-        await storage.addUIMessage(
-          createMessage("First message", "user"),
-          "user1",
-          "conversation1",
-        );
-        await storage.addUIMessage(
+        await storage.addMessage(createMessage("First message", "user"), "user1", "conversation1");
+        await storage.addMessage(
           createMessage("Second message", "assistant"),
           "user1",
           "conversation1",
         );
-        await storage.addUIMessage(
-          createMessage("Third message", "user"),
-          "user1",
-          "conversation1",
-        );
-        await storage.addUIMessage(
+        await storage.addMessage(createMessage("Third message", "user"), "user1", "conversation1");
+        await storage.addMessage(
           createMessage("Fourth message", "assistant"),
           "user1",
           "conversation1",
@@ -289,8 +281,8 @@ describe("InMemoryStorage", () => {
         });
 
         // Add messages to both conversations
-        await storage.addUIMessage(createMessage("Conv1 Message"), "user1", "conversation1");
-        await storage.addUIMessage(createMessage("Conv2 Message"), "user1", "conversation2");
+        await storage.addMessage(createMessage("Conv1 Message"), "user1", "conversation1");
+        await storage.addMessage(createMessage("Conv2 Message"), "user1", "conversation2");
       });
 
       it("should clear messages for a specific user and conversation", async () => {
@@ -334,7 +326,7 @@ describe("InMemoryStorage", () => {
 
       // Add more messages than the limit
       for (let i = 1; i <= 5; i++) {
-        await limitedStorage.addUIMessage(createMessage(`Message ${i}`), "user1", "conversation1");
+        await limitedStorage.addMessage(createMessage(`Message ${i}`), "user1", "conversation1");
       }
 
       // Assert

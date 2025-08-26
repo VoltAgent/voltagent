@@ -329,22 +329,6 @@ export class InMemoryStorage implements InternalMemory {
   public async getMessages(
     userId: string,
     conversationId: string,
-    options?: { limit?: number; before?: Date; after?: Date; roles?: string[] },
-  ): Promise<UIMessage[]> {
-    return this.getUIMessages(userId, conversationId, options);
-  }
-
-  /**
-   * Get UIMessages with filtering options
-   * @deprecated Use getMessages instead
-   * @param userId User identifier
-   * @param conversationId Conversation identifier
-   * @param options Optional filtering options
-   * @returns Array of UIMessages
-   */
-  public async getUIMessages(
-    userId: string,
-    conversationId: string,
     options: { limit?: number; before?: Date; after?: Date; roles?: string[] } = {},
   ): Promise<UIMessage[]> {
     const { limit = this.options.storageLimit, before, after, roles } = options;
@@ -397,7 +381,7 @@ export class InMemoryStorage implements InternalMemory {
    * @param userId User identifier
    * @param conversationId Conversation identifier
    */
-  public async addUIMessage(
+  public async addMessage(
     message: UIMessage,
     userId: string,
     conversationId: string,
@@ -448,13 +432,13 @@ export class InMemoryStorage implements InternalMemory {
    * @param userId User identifier
    * @param conversationId Conversation identifier
    */
-  public async addUIMessages(
+  public async addMessages(
     messages: UIMessage[],
     userId: string,
     conversationId: string,
   ): Promise<void> {
     for (const message of messages) {
-      await this.addUIMessage(message, userId, conversationId);
+      await this.addMessage(message, userId, conversationId);
     }
   }
 

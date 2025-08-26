@@ -461,7 +461,7 @@ export class Agent {
       return [];
     }
 
-    return memory.getUIMessages(userId, conversationId, { limit });
+    return memory.getMessages(userId, conversationId, { limit });
   }
 
   /**

@@ -16,22 +16,12 @@ export interface InternalMemory extends Memory {
   /**
    * Add a single UIMessage to memory
    */
-  addUIMessage(message: UIMessage, userId: string, conversationId: string): Promise<void>;
+  addMessage(message: UIMessage, userId: string, conversationId: string): Promise<void>;
 
   /**
    * Add multiple UIMessages to memory
    */
-  addUIMessages(messages: UIMessage[], userId: string, conversationId: string): Promise<void>;
-
-  /**
-   * Get UIMessages from memory with optional filtering
-   * @deprecated Use getMessages instead
-   */
-  getUIMessages(
-    userId: string,
-    conversationId: string,
-    options?: { limit?: number; before?: Date; after?: Date; roles?: string[] },
-  ): Promise<UIMessage[]>;
+  addMessages(messages: UIMessage[], userId: string, conversationId: string): Promise<void>;
 
   /**
    * Clear messages from memory

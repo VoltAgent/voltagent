@@ -449,7 +449,7 @@ describe("Agent", () => {
       const threadId = "test-thread";
 
       // Pre-populate memory with proper UIMessage format
-      await memory.addUIMessages(
+      await memory.addMessages(
         [
           {
             id: "1",

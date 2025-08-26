@@ -152,7 +152,7 @@ describe("MemoryManager", () => {
 
       await memoryManager.saveMessage(mockContext, message, "user1", "conversation1");
 
-      const messages = await mockMemory.getUIMessages("user1", "conversation1");
+      const messages = await mockMemory.getMessages("user1", "conversation1");
 
       expect(messages.length).toBe(1);
       expect(messages[0].role).toBe("user");
@@ -168,7 +168,7 @@ describe("MemoryManager", () => {
 
       await memoryManager.saveMessage(mockContext, message, undefined, "conversation1");
 
-      const messages = await mockMemory.getUIMessages("user1", "conversation1");
+      const messages = await mockMemory.getMessages("user1", "conversation1");
 
       expect(messages.length).toBe(0);
     });
@@ -193,9 +193,9 @@ describe("MemoryManager", () => {
         parts: [{ type: "text", text: "Message 2" }],
       };
 
-      await mockMemory.addUIMessage(message1, "user1", "conversation1");
-      await mockMemory.addUIMessage(message2, "user1", "conversation1");
-      await mockMemory.addUIMessage(message3, "user1", "conversation1");
+      await mockMemory.addMessage(message1, "user1", "conversation1");
+      await mockMemory.addMessage(message2, "user1", "conversation1");
+      await mockMemory.addMessage(message3, "user1", "conversation1");
     });
 
     it("should retrieve messages from memory during context preparation", async () => {
@@ -301,7 +301,7 @@ describe("MemoryManager", () => {
 
       await handler(step);
 
-      const messages = await mockMemory.getUIMessages("user1", "conversation1");
+      const messages = await mockMemory.getMessages("user1", "conversation1");
 
       expect(messages.length).toBe(1);
       expect(messages[0].role).toBe("assistant");
@@ -534,7 +534,7 @@ describe("MemoryManager", () => {
     it("should handle memory write errors gracefully", async () => {
       // Create a memory manager with a mock that throws errors
       const errorMemory = new InMemoryStorage();
-      vi.spyOn(errorMemory, "addUIMessage").mockRejectedValueOnce(new Error("Write failed"));
+      vi.spyOn(errorMemory, "addMessage").mockRejectedValueOnce(new Error("Write failed"));
 
       const errorManager = new MemoryManager("test-agent", errorMemory, {}, mockHistoryMemory);
 
@@ -558,7 +558,7 @@ describe("MemoryManager", () => {
 
     it("should handle memory read errors and return empty messages", async () => {
       const errorMemory = new InMemoryStorage();
-      vi.spyOn(errorMemory, "getUIMessages").mockRejectedValueOnce(new Error("Read failed"));
+      vi.spyOn(errorMemory, "getMessages").mockRejectedValueOnce(new Error("Read failed"));
 
       const errorManager = new MemoryManager("test-agent", errorMemory);
 
@@ -613,7 +613,7 @@ describe("MemoryManager", () => {
 
       await Promise.all(promises);
 
-      const messages = await mockMemory.getUIMessages("user1", "conversation1");
+      const messages = await mockMemory.getMessages("user1", "conversation1");
       expect(messages).toHaveLength(10);
     });
   });
@@ -706,7 +706,7 @@ describe("MemoryManager", () => {
 
         await customMemoryManager.saveMessage(mockContext, message, "user1", "conversation1");
 
-        const messages = await providedMemory.getUIMessages("user1", "conversation1");
+        const messages = await providedMemory.getMessages("user1", "conversation1");
         expect(messages.length).toBe(1);
         expect(getMessageText(messages[0])).toBe("Test message");
       });
@@ -718,7 +718,7 @@ describe("MemoryManager", () => {
           role: "user",
           parts: [{ type: "text", text: "Previous message" }],
         };
-        await providedMemory.addUIMessage(message, "user1", "conversation1");
+        await providedMemory.addMessage(message, "user1", "conversation1");
 
         const { messages } = await customMemoryManager.prepareConversationContext(
           mockContext,
@@ -748,7 +748,7 @@ describe("MemoryManager", () => {
 
         await handler(step);
 
-        const messages = await providedMemory.getUIMessages("user1", "conversation1");
+        const messages = await providedMemory.getMessages("user1", "conversation1");
         expect(messages.length).toBe(1);
         expect(getMessageText(messages[0])).toBe("Tool call content");
       });
@@ -808,7 +808,7 @@ describe("MemoryManager", () => {
       // Wait for background operations to complete
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const messages = await mockMemory.getUIMessages("user1", "conversation1");
+      const messages = await mockMemory.getMessages("user1", "conversation1");
 
       // Should have saved the input message in background
       const lastMessage = messages[messages.length - 1];
@@ -840,7 +840,7 @@ describe("MemoryManager", () => {
       // Wait for background operations
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const messages = await mockMemory.getUIMessages("user1", "conversation2");
+      const messages = await mockMemory.getMessages("user1", "conversation2");
 
       // Should have saved both input messages
       expect(messages).toHaveLength(2);
@@ -976,7 +976,7 @@ describe("MemoryManager", () => {
         await handler(step);
       }
 
-      const messages = await mockMemory.getUIMessages("user1", "conversation1");
+      const messages = await mockMemory.getMessages("user1", "conversation1");
       expect(messages).toHaveLength(4);
 
       // Verify all steps were saved
@@ -1002,8 +1002,8 @@ describe("MemoryManager", () => {
       await memoryManager.saveMessage(mockContext, user2Message, "user2", "conv2");
 
       // Retrieve messages for each user
-      const user1Messages = await mockMemory.getUIMessages("user1", "conv1");
-      const user2Messages = await mockMemory.getUIMessages("user2", "conv2");
+      const user1Messages = await mockMemory.getMessages("user1", "conv1");
+      const user2Messages = await mockMemory.getMessages("user2", "conv2");
 
       expect(user1Messages).toHaveLength(1);
       expect(user2Messages).toHaveLength(1);
@@ -1076,7 +1076,7 @@ describe("MemoryManager", () => {
       expect(textMessages.length).toBeGreaterThan(0);
 
       // Verify tool messages are saved correctly
-      const allMessages = await mockMemory.getUIMessages("user1", "conversation1");
+      const allMessages = await mockMemory.getMessages("user1", "conversation1");
       const toolCalls = allMessages.filter((m) => m.parts.some((p) => p.type === "tool-call"));
       const toolResults = allMessages.filter((m) => m.parts.some((p) => p.type === "tool-result"));
 
