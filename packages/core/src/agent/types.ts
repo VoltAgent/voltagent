@@ -131,6 +131,23 @@ export type SupervisorConfig = {
    * @default { types: ['tool-call', 'tool-result'], addSubAgentPrefix: true }
    */
   fullStreamEventForwarding?: FullStreamEventForwardingConfig;
+
+  /**
+   * Whether to throw an exception when a subagent stream encounters an error
+   * If true, stream errors will cause the handoff to throw an exception
+   * If false, errors will be captured and returned in the result
+   * @default false
+   */
+  throwOnStreamError?: boolean;
+
+  /**
+   * Whether to include error message in the result when no text content was produced
+   * Only applies when throwOnStreamError is false
+   * If true, the error message will be included in the result field
+   * If false, the result will be empty but status will still be 'error'
+   * @default true
+   */
+  includeErrorInEmptyResponse?: boolean;
 };
 
 /**

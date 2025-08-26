@@ -295,6 +295,9 @@ ${guidelinesText}
     // Use the provided conversationId or generate a new one
     const handoffConversationId = conversationId || crypto.randomUUID();
 
+    // Track if we should rethrow stream errors
+    let streamErrorToThrow: Error | null = null;
+
     try {
       // Call onHandoff hook if source agent is provided
       if (sourceAgent && targetAgent.hooks) {
@@ -391,6 +394,10 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
         // Collect all stream chunks for final result
         finalResult = "";
 
+        // Track stream errors and whether we received any text content
+        let streamError: Error | null = null;
+        let hasTextContent = false;
+
         if (streamResponse.fullStream && forwardEvent) {
           // Get event forwarding configuration
           const eventForwardingConfig = {
@@ -410,6 +417,7 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
             switch (part.type) {
               case "text-delta": {
                 finalResult += part.textDelta;
+                hasTextContent = true;
 
                 const eventData = {
                   type: "text-delta",
@@ -491,6 +499,9 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
               }
 
               case "error": {
+                // Capture the error for proper handling
+                streamError = part.error;
+
                 const eventData = {
                   type: "error",
                   data: {
@@ -513,7 +524,50 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
         } else {
           for await (const part of streamResponse.textStream) {
             finalResult += part;
+            hasTextContent = true;
           }
+        }
+
+        // Handle stream errors based on configuration
+        if (streamError && !hasTextContent) {
+          const errorMessage =
+            streamError instanceof Error ? streamError.message : String(streamError);
+
+          // Check if we should throw the error
+          if (this.supervisorConfig?.throwOnStreamError) {
+            // Store the error to throw after the try-catch
+            streamErrorToThrow = new Error(`Stream error in ${targetAgent.name}: ${errorMessage}`);
+            // Still throw here to exit the try block
+            throw streamErrorToThrow;
+          }
+
+          // Check if we should include error message in empty response
+          const includeErrorInResponse = this.supervisorConfig?.includeErrorInEmptyResponse ?? true;
+
+          return {
+            result: includeErrorInResponse ? `Error in ${targetAgent.name}: ${errorMessage}` : "",
+            conversationId: handoffConversationId,
+            messages: [
+              taskMessage,
+              {
+                role: "system" as const,
+                content: `Stream error occurred: ${errorMessage}`,
+              },
+            ],
+            status: "error",
+            error: streamError,
+          };
+        }
+
+        // If we have partial content despite an error, log warning but return the content
+        if (streamError && hasTextContent) {
+          const logger =
+            options.parentOperationContext?.logger ||
+            getGlobalLogger().child({ component: "subagent-manager" });
+          logger.warn(`Stream error occurred after partial content in ${targetAgent.name}`, {
+            error: streamError,
+            partialContent: finalResult,
+          });
         }
 
         finalMessages = [taskMessage, { role: "assistant", content: finalResult }];
@@ -526,6 +580,11 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
         status: "success",
       };
     } catch (error) {
+      // If this is the stream error we marked for rethrowing, rethrow it
+      if (streamErrorToThrow && error === streamErrorToThrow) {
+        throw error;
+      }
+
       const logger =
         options.parentOperationContext?.logger ||
         getGlobalLogger().child({ component: "subagent-manager" });

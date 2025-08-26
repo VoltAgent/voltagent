@@ -885,7 +885,7 @@ describe("SubAgentManager", () => {
       // Create subAgentManager with error type in configuration
       const supervisorConfig = {
         fullStreamEventForwarding: {
-          types: ["tool-call", "tool-result", "error"],
+          types: ["tool-call", "tool-result", "error"] as ("tool-call" | "tool-result" | "error")[],
         },
       };
       const localSubAgentManager = new SubAgentManager("Main Agent", [], supervisorConfig);
@@ -943,6 +943,127 @@ describe("SubAgentManager", () => {
       expect(result.status).toBe("success");
     });
 
+    it("should return error status when stream error occurs with no text content", async () => {
+      const mockAgent = new MockAgent("error-only-agent", "Error Only Agent");
+
+      // Mock streamText to only emit an error (no text content)
+      mockAgent.streamText = vi.fn().mockReturnValue({
+        fullStream: (async function* () {
+          yield { type: "error", error: new Error("Critical stream error") };
+        })(),
+        textStream: (async function* () {
+          // No text emitted
+        })(),
+      });
+
+      const options: AgentHandoffOptions = {
+        task: "Task that will fail immediately",
+        targetAgent: mockAgent,
+        context: {},
+        sharedContext: [],
+        forwardEvent: vi.fn(),
+      };
+
+      const result = await subAgentManager.handoffTask(options);
+
+      // Should return error status
+      expect(result.status).toBe("error");
+      expect(result.error).toBeInstanceOf(Error);
+      expect((result.error as Error).message).toBe("Critical stream error");
+
+      // By default, includeErrorInEmptyResponse is true, so error message should be in result
+      expect(result.result).toContain("Error in Error Only Agent");
+      expect(result.result).toContain("Critical stream error");
+    });
+
+    it("should return success with partial content when error occurs after text", async () => {
+      const mockAgent = new MockAgent("partial-content-agent", "Partial Content Agent");
+
+      // Mock streamText to emit some text then error
+      mockAgent.streamText = vi.fn().mockReturnValue({
+        fullStream: (async function* () {
+          yield { type: "text-delta", textDelta: "Partial response" };
+          yield { type: "error", error: new Error("Stream interrupted") };
+        })(),
+      });
+
+      const options: AgentHandoffOptions = {
+        task: "Task with partial completion",
+        targetAgent: mockAgent,
+        context: {},
+        sharedContext: [],
+        forwardEvent: vi.fn(),
+      };
+
+      const result = await subAgentManager.handoffTask(options);
+
+      // Should return success with the partial content
+      expect(result.status).toBe("success");
+      expect(result.result).toBe("Partial response");
+      expect(result.error).toBeUndefined();
+    });
+
+    it("should throw error when throwOnStreamError is true", async () => {
+      const supervisorConfig = {
+        throwOnStreamError: true,
+      };
+      const localSubAgentManager = new SubAgentManager("Main Agent", [], supervisorConfig);
+
+      const mockAgent = new MockAgent("throw-error-agent", "Throw Error Agent");
+
+      // Mock streamText to only emit an error
+      mockAgent.streamText = vi.fn().mockReturnValue({
+        fullStream: (async function* () {
+          yield { type: "error", error: new Error("Stream error to throw") };
+        })(),
+      });
+
+      const options: AgentHandoffOptions = {
+        task: "Task that should throw",
+        targetAgent: mockAgent,
+        context: {},
+        sharedContext: [],
+        forwardEvent: vi.fn(),
+      };
+
+      // Should throw the error
+      await expect(localSubAgentManager.handoffTask(options)).rejects.toThrow(
+        "Stream error in Throw Error Agent: Stream error to throw",
+      );
+    });
+
+    it("should not include error text when includeErrorInEmptyResponse is false", async () => {
+      const supervisorConfig = {
+        includeErrorInEmptyResponse: false,
+      };
+      const localSubAgentManager = new SubAgentManager("Main Agent", [], supervisorConfig);
+
+      const mockAgent = new MockAgent("no-error-text-agent", "No Error Text Agent");
+
+      // Mock streamText to only emit an error
+      mockAgent.streamText = vi.fn().mockReturnValue({
+        fullStream: (async function* () {
+          yield { type: "error", error: new Error("Hidden error message") };
+        })(),
+      });
+
+      const options: AgentHandoffOptions = {
+        task: "Task with hidden error",
+        targetAgent: mockAgent,
+        context: {},
+        sharedContext: [],
+        forwardEvent: vi.fn(),
+      };
+
+      const result = await localSubAgentManager.handoffTask(options);
+
+      // Should return error status but empty result
+      expect(result.status).toBe("error");
+      expect(result.result).toBe("");
+      expect(result.error).toBeInstanceOf(Error);
+      expect((result.error as Error).message).toBe("Hidden error message");
+    });
+
     it("should forward events through delegate tool", async () => {
       const forwardEventSpy = vi.fn();
       const mockAgent = new MockAgent("delegate-agent", "Delegate Agent");
@@ -977,6 +1098,45 @@ describe("SubAgentManager", () => {
           timestamp: expect.any(String),
         });
       }
+    });
+
+    it("should propagate stream errors through delegate_task tool", async () => {
+      const forwardEventSpy = vi.fn();
+      const mockAgent = new MockAgent("error-delegate-agent", "Error Delegate Agent");
+
+      // Mock streamText to only emit an error
+      mockAgent.streamText = vi.fn().mockReturnValue({
+        fullStream: (async function* () {
+          yield { type: "error", error: new Error("Delegation error") };
+        })(),
+      });
+
+      subAgentManager.addSubAgent(mockAgent as any);
+
+      const tool = subAgentManager.createDelegateTool({
+        sourceAgent: { id: "supervisor-agent" } as any,
+        operationContext: { userContext: new Map(), systemContext: new Map() } as any,
+        currentHistoryEntryId: "history-error",
+        forwardEvent: forwardEventSpy,
+      });
+
+      const result = await tool.execute({
+        task: "Task that will fail in delegation",
+        targetAgents: ["Error Delegate Agent"],
+        context: {},
+      });
+
+      // Should return structured results with error status
+      expect(Array.isArray(result)).toBe(true);
+      expect(result[0]).toMatchObject({
+        agentName: "Error Delegate Agent",
+        status: "error",
+        error: "Delegation error",
+      });
+
+      // Error message should be included in response by default
+      expect(result[0].response).toContain("Error in Error Delegate Agent");
+      expect(result[0].response).toContain("Delegation error");
     });
 
     it("should handle multiple agents with event forwarding", async () => {
@@ -1089,7 +1249,12 @@ describe("SubAgentManager", () => {
     it("should use custom event types from supervisor configuration", async () => {
       const supervisorConfig = {
         fullStreamEventForwarding: {
-          types: ["tool-call", "tool-result", "text-delta", "reasoning"],
+          types: ["tool-call", "tool-result", "text-delta", "reasoning"] as (
+            | "tool-call"
+            | "tool-result"
+            | "text-delta"
+            | "reasoning"
+          )[],
         },
       };
       subAgentManager = new SubAgentManager("Main Agent", [], supervisorConfig);
@@ -1115,7 +1280,7 @@ describe("SubAgentManager", () => {
     it("should respect addSubAgentPrefix configuration", async () => {
       const supervisorConfig = {
         fullStreamEventForwarding: {
-          types: ["tool-call"],
+          types: ["tool-call"] as "tool-call"[],
           addSubAgentPrefix: false,
         },
       };
