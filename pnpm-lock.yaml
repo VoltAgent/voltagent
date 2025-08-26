@@ -1715,7 +1715,7 @@ importers:
         version: link:../../packages/server-hono
       '@voltagent/xsai':
         specifier: ^1.0.0-next.0
-        version: link:../../packages/xsai
+        version: 1.0.0-next.0(@voltagent/core@packages+core)(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -2093,6 +2093,9 @@ importers:
       '@voltagent/core':
         specifier: ^1.0.0-next.0
         version: link:../core
+      ai:
+        specifier: ^5.0.0
+        version: 5.0.12(zod@3.25.76)
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
@@ -2316,46 +2319,6 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
-  packages/vercel-ai:
-    dependencies:
-      '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
-      ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
-      ts-pattern:
-        specifier: ^5.7.1
-        version: 5.8.0
-      type-fest:
-        specifier: ^4.41.0
-        version: 4.41.0
-    devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
-      '@vitest/coverage-v8':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
-      '@voltagent/core':
-        specifier: ^1.0.0-next.0
-        version: link:../core
-      '@voltagent/internal':
-        specifier: ^0.0.9
-        version: link:../internal
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
-      zod:
-        specifier: ^3.25.0
-        version: 3.25.76
-
   packages/vercel-ai-exporter:
     dependencies:
       '@opentelemetry/core':
@@ -2448,40 +2411,6 @@ importers:
       '@voltagent/core':
         specifier: ^1.0.0-next.0
         version: link:../core
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
-
-  packages/xsai:
-    dependencies:
-      '@voltagent/core':
-        specifier: ^1.0.0-next.0
-        version: link:../core
-      ts-pattern:
-        specifier: ^5.7.1
-        version: 5.8.0
-      type-fest:
-        specifier: ^4.41.0
-        version: 4.41.0
-      xsai:
-        specifier: 0.4.0-beta.1
-        version: 0.4.0-beta.1(zod@3.25.76)
-      zod:
-        specifier: ^3.25.0
-        version: 3.25.76
-    devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
-      '@vitest/coverage-v8':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
@@ -9754,6 +9683,25 @@ packages:
       ts-pattern: 5.8.0
       type-fest: 4.41.0
       zod: 3.25.76
+    dev: false
+
+  /@voltagent/xsai@1.0.0-next.0(@voltagent/core@packages+core)(zod@3.25.76):
+    resolution: {integrity: sha512-m5zGpLsAX0oM/OceUjo7qtczSFtvysYLd1rvc/HAtpFAzmk10nS38LZ7WuAGMjegMDX1QhvV5XpokS46q3PhOA==}
+    peerDependencies:
+      '@voltagent/core': ^1.0.0-next.0
+      zod: ^3.24.2
+    dependencies:
+      '@voltagent/core': link:packages/core
+      ts-pattern: 5.8.0
+      type-fest: 4.41.0
+      xsai: 0.4.0-beta.1(zod@3.25.76)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@valibot/to-json-schema'
+      - arktype
+      - effect
+      - sury
+      - zod-to-json-schema
     dev: false
 
   /@xsai/embed@0.4.0-beta.1:

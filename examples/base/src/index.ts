@@ -15,6 +15,7 @@ const agent = new Agent({
   name: "Base Agent",
   instructions: "You are a helpful assistant",
   model: openai("gpt-4o-mini"),
+  memory: new LibSQLStorage({}),
 });
 
 new VoltAgent({

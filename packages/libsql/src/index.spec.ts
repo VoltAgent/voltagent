@@ -1,4 +1,4 @@
-import type { MemoryMessage } from "packages/core";
+import type { UIMessage } from "ai";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { LibSQLStorage } from ".";
 import { generateTestTablePrefix } from "./test-helpers";
@@ -15,7 +15,7 @@ describe.sequential("LibSQLStorage", () => {
     storage = new LibSQLStorage({
       url: ":memory:",
       tablePrefix: testPrefix,
-      debug: false,
+      debug: true,
     });
 
     // Wait for initialization
@@ -54,10 +54,10 @@ describe.sequential("LibSQLStorage", () => {
       {
         id: "msg-1",
         role: "user",
-        content: "Hello",
-        type: "text",
-        createdAt: "2023-01-01T12:00:00.000Z",
+        parts: [{ type: "text", text: "Hello" }],
+        metadata: {},
       },
+      "user-1",
       "conversation-1",
     );
 
@@ -65,10 +65,10 @@ describe.sequential("LibSQLStorage", () => {
       {
         id: "msg-2",
         role: "assistant",
-        content: "Hi there!",
-        type: "text",
-        createdAt: "2023-01-01T12:01:00.000Z",
+        parts: [{ type: "text", text: "Hi there!" }],
+        metadata: {},
       },
+      "user-1",
       "conversation-1",
     );
 
@@ -76,10 +76,10 @@ describe.sequential("LibSQLStorage", () => {
       {
         id: "msg-3",
         role: "user",
-        content: "Different user",
-        type: "text",
-        createdAt: "2023-01-01T12:02:00.000Z",
+        parts: [{ type: "text", text: "Different user" }],
+        metadata: {},
       },
+      "user-2",
       "conversation-2",
     );
 
@@ -188,15 +188,14 @@ describe.sequential("LibSQLStorage", () => {
   describe("Message Operations", () => {
     describe("addMessage", () => {
       it("should add a message and return void", async () => {
-        const message: MemoryMessage = {
+        const message: UIMessage = {
           id: "new-message-id",
           role: "user",
-          content: "Test message",
-          type: "text",
-          createdAt: new Date().toISOString(),
+          parts: [{ type: "text", text: "Test message" }],
+          metadata: {},
         };
 
-        const result = await storage.addMessage(message, "conversation-1");
+        const result = await storage.addMessage(message, "user-1", "conversation-1");
         expect(result).toBeUndefined();
 
         // Verify message was added
@@ -204,63 +203,65 @@ describe.sequential("LibSQLStorage", () => {
         expect(messages).toContainEqual(
           expect.objectContaining({
             id: "new-message-id",
-            content: "Test message",
+            parts: expect.arrayContaining([
+              expect.objectContaining({
+                type: "text",
+                text: "Test message",
+              }),
+            ]),
           }),
         );
       });
 
       it("should handle messages without explicit user or conversation IDs", async () => {
-        const message: MemoryMessage = {
+        const message: UIMessage = {
           id: "another-message-id",
           role: "user",
-          content: "Default IDs",
-          type: "text",
-          createdAt: new Date().toISOString(),
+          parts: [{ type: "text", text: "Default IDs" }],
+          metadata: {},
         };
 
-        await expect(storage.addMessage(message)).resolves.not.toThrow();
+        await expect(
+          storage.addMessage(message, "user-1", "conversation-1"),
+        ).resolves.not.toThrow();
       });
     });
 
     describe("getMessages", () => {
       it("should retrieve messages for a specific user and conversation", async () => {
-        const messages = await storage.getMessages({
-          userId: "user-1",
-          conversationId: "conversation-1",
-        });
+        const messages = await storage.getMessages("user-1", "conversation-1");
 
         expect(messages).toHaveLength(2);
         expect(messages).toEqual([
           expect.objectContaining({
             role: "user",
-            content: "Hello",
-            type: "text",
+            parts: expect.arrayContaining([
+              expect.objectContaining({ type: "text", text: "Hello" }),
+            ]),
           }),
           expect.objectContaining({
             role: "assistant",
-            content: "Hi there!",
-            type: "text",
+            parts: expect.arrayContaining([
+              expect.objectContaining({ type: "text", text: "Hi there!" }),
+            ]),
           }),
         ]);
       });
 
       it("should filter messages by role", async () => {
-        const userMessages = await storage.getMessages({
-          userId: "user-1",
-          conversationId: "conversation-1",
-          role: "user",
+        const userMessages = await storage.getMessages("user-1", "conversation-1", {
+          roles: ["user"],
         });
 
         expect(userMessages).toHaveLength(1);
         expect(userMessages[0].role).toBe("user");
-        expect(userMessages[0].content).toBe("Hello");
+        expect(userMessages[0].parts[0]).toEqual(
+          expect.objectContaining({ type: "text", text: "Hello" }),
+        );
       });
 
       it("should return empty array for unknown user or conversation", async () => {
-        const messages = await storage.getMessages({
-          userId: "unknown-user",
-          conversationId: "conversation-1",
-        });
+        const messages = await storage.getMessages("unknown-user", "conversation-1");
 
         expect(messages).toEqual([]);
       });
@@ -268,69 +269,51 @@ describe.sequential("LibSQLStorage", () => {
 
     describe("clearMessages", () => {
       it("should clear messages for a specific conversation", async () => {
-        await storage.clearMessages({
-          userId: "user-1",
-          conversationId: "conversation-1",
-        });
+        await storage.clearMessages("user-1", "conversation-1");
 
-        const messages = await storage.getMessages({
-          userId: "user-1",
-          conversationId: "conversation-1",
-        });
+        const messages = await storage.getMessages("user-1", "conversation-1");
 
         expect(messages).toEqual([]);
       });
 
       it("should handle clearing messages for a specific user", async () => {
-        await storage.clearMessages({
-          userId: "user-1",
-        });
+        await storage.clearMessages("user-1");
 
-        const messages = await storage.getMessages({
-          userId: "user-1",
-        });
+        const messages1 = await storage.getMessages("user-1", "conversation-1");
+        const messages2 = await storage.getMessages("user-1", "conversation-2");
 
-        expect(messages).toEqual([]);
+        expect(messages1).toEqual([]);
+        expect(messages2).toEqual([]);
       });
     });
 
-    describe("Message Type Filtering", () => {
-      it("should filter messages by single type - text only", async () => {
-        const messages = await storage.getMessages({
-          userId: "user-1",
-          conversationId: "conversation-1",
-          types: ["text"],
-        });
+    describe("Message Filtering", () => {
+      it("should retrieve all messages when no filter", async () => {
+        const messages = await storage.getMessages("user-1", "conversation-1");
 
         expect(messages).toHaveLength(2);
-        expect(messages.every((m) => m.type === "text")).toBe(true);
+        expect(messages.every((m) => m.parts.length > 0)).toBe(true);
       });
 
-      it("should filter messages by single type - tool-call only", async () => {
-        const messages = await storage.getMessages({
-          userId: "user-1",
-          conversationId: "conversation-1",
-          types: ["tool-call"],
+      it("should filter messages by role", async () => {
+        const messages = await storage.getMessages("user-1", "conversation-1", {
+          roles: ["assistant"],
         });
 
-        expect(messages).toHaveLength(0);
+        expect(messages).toHaveLength(1);
+        expect(messages[0].role).toBe("assistant");
       });
 
-      it("should return no messages when types array is empty", async () => {
-        const messages = await storage.getMessages({
-          userId: "user-1",
-          conversationId: "conversation-1",
-          types: [],
+      it("should handle limit option", async () => {
+        const messages = await storage.getMessages("user-1", "conversation-1", {
+          limit: 1,
         });
 
-        expect(messages).toHaveLength(0);
+        expect(messages).toHaveLength(1);
       });
 
-      it("should return all messages when types is undefined", async () => {
-        const messages = await storage.getMessages({
-          userId: "user-1",
-          conversationId: "conversation-1",
-        });
+      it("should return all messages when limit is undefined", async () => {
+        const messages = await storage.getMessages("user-1", "conversation-1");
 
         expect(messages.length).toBeGreaterThan(0);
       });
@@ -344,13 +327,15 @@ describe.sequential("LibSQLStorage", () => {
         expect(messages).toEqual([
           expect.objectContaining({
             role: "user",
-            content: "Hello",
-            type: "text",
+            parts: expect.arrayContaining([
+              expect.objectContaining({ type: "text", text: "Hello" }),
+            ]),
           }),
           expect.objectContaining({
             role: "assistant",
-            content: "Hi there!",
-            type: "text",
+            parts: expect.arrayContaining([
+              expect.objectContaining({ type: "text", text: "Hi there!" }),
+            ]),
           }),
         ]);
       });

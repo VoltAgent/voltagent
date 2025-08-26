@@ -1,6 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
-// import { LibSQLStorage } from "@voltagent/libsql";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 
@@ -24,6 +24,7 @@ const agent = new Agent({
   //   logger: logger.child({ component: "libsql" }),
   // }),
   tools: [checkCalendarTool, addCalendarEventTool, searchTool],
+  memory: new LibSQLStorage({}),
 });
 
 // Test dynamic tool addition
