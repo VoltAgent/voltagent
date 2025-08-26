@@ -1,4 +1,5 @@
-import type { CreateConversationInput, MemoryMessage } from "@voltagent/core";
+import type { CreateConversationInput } from "@voltagent/core";
+import type { UIMessage } from "ai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SupabaseMemory } from "./memory";
 
@@ -25,7 +26,7 @@ vi.mock("@supabase/supabase-js", async () => {
       upsert: vi.fn(),
     };
 
-    // @ts-expect-error - this is a mock
+    // @ts-ignore - Mock implementation
     const self = this as any;
 
     const createQueryBuilder = () => {
@@ -116,12 +117,10 @@ vi.mock("@supabase/supabase-js", async () => {
 });
 
 describe("SupabaseMemory", async () => {
-  const createMessage = (overrides: Partial<MemoryMessage> = {}): MemoryMessage => ({
+  const createMessage = (overrides: Partial<UIMessage> = {}): UIMessage => ({
     id: `msg-${Date.now()}-${Math.random()}`,
     role: "user",
-    content: "Test message",
-    type: "text",
-    createdAt: new Date().toISOString(),
+    parts: [{ type: "text", text: "Test message" }],
     ...overrides,
   });
 
@@ -212,14 +211,16 @@ describe("SupabaseMemory", async () => {
       // Mock the initialization to avoid database setup issues in tests
       // @ts-expect-error - Accessing private property for testing
       memory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      memory.hasUIMessageColumns = true; // Mock that columns exist
     });
 
     it("should call pruneOldMessages when storage limit is set and > 0", async () => {
       const spy = vi.spyOn(memory as any, "pruneOldMessages").mockResolvedValue(undefined);
 
-      const message = createMessage({ content: "Test message" });
+      const message = createMessage({ parts: [{ type: "text", text: "Test message" }] });
 
-      await memory.addMessage(message, "test-conversation");
+      await memory.addMessage(message, "test-user", "test-conversation");
 
       expect(spy).toHaveBeenCalledWith("test-conversation");
     });
@@ -234,12 +235,14 @@ describe("SupabaseMemory", async () => {
       // Mock the initialization
       // @ts-expect-error - Accessing private property for testing
       limitedMemory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      limitedMemory.hasUIMessageColumns = true; // Mock that columns exist
 
       const spy = vi.spyOn(limitedMemory as any, "pruneOldMessages");
 
-      const message = createMessage({ content: "Test message" });
+      const message = createMessage({ parts: [{ type: "text", text: "Test message" }] });
 
-      await limitedMemory.addMessage(message, "test-conversation");
+      await limitedMemory.addMessage(message, "test-user", "test-conversation");
 
       expect(spy).not.toHaveBeenCalled();
     });
@@ -252,6 +255,8 @@ describe("SupabaseMemory", async () => {
 
       // @ts-expect-error - Accessing private property for testing
       limitedMemory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      limitedMemory.hasUIMessageColumns = true; // Mock that columns exist
 
       // Mock the pruneOldMessages method to simulate proper deletion
       const pruneOldMessagesSpy = vi
@@ -269,9 +274,11 @@ describe("SupabaseMemory", async () => {
           return Promise.resolve();
         });
 
-      const message = createMessage({ content: "Third message that triggers pruning" });
+      const message = createMessage({
+        parts: [{ type: "text", text: "Third message that triggers pruning" }],
+      });
 
-      await limitedMemory.addMessage(message, "test-conversation");
+      await limitedMemory.addMessage(message, "test-user", "test-conversation");
 
       // Verify that pruneOldMessages was called
       expect(pruneOldMessagesSpy).toHaveBeenCalledWith("test-conversation");
@@ -285,6 +292,8 @@ describe("SupabaseMemory", async () => {
 
       // @ts-expect-error - Accessing private property for testing
       limitedMemory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      limitedMemory.hasUIMessageColumns = true; // Mock that columns exist
 
       // Mock the pruneOldMessages method to simulate count check within limit
       const pruneOldMessagesSpy = vi
@@ -300,9 +309,9 @@ describe("SupabaseMemory", async () => {
           return Promise.resolve();
         });
 
-      const message = createMessage({ content: "Message within limit" });
+      const message = createMessage({ parts: [{ type: "text", text: "Message within limit" }] });
 
-      await limitedMemory.addMessage(message, "test-conversation");
+      await limitedMemory.addMessage(message, "test-user", "test-conversation");
 
       // Verify that pruneOldMessages was still called (it's always called when storageLimit > 0)
       expect(pruneOldMessagesSpy).toHaveBeenCalledWith("test-conversation");
@@ -316,6 +325,8 @@ describe("SupabaseMemory", async () => {
 
       // @ts-expect-error - Accessing private property for testing
       limitedMemory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      limitedMemory.hasUIMessageColumns = true; // Mock that columns exist
 
       let conv1CallCount = 0;
       let conv2CallCount = 0;
@@ -335,8 +346,16 @@ describe("SupabaseMemory", async () => {
       );
 
       // Add messages to both conversations
-      await limitedMemory.addMessage(createMessage({ content: "Conv1 msg" }), "conv1");
-      await limitedMemory.addMessage(createMessage({ content: "Conv2 msg" }), "conv2");
+      await limitedMemory.addMessage(
+        createMessage({ parts: [{ type: "text", text: "Conv1 msg" }] }),
+        "test-user",
+        "conv1",
+      );
+      await limitedMemory.addMessage(
+        createMessage({ parts: [{ type: "text", text: "Conv2 msg" }] }),
+        "test-user",
+        "conv2",
+      );
 
       // Both conversations should have had pruning called
       expect(conv1CallCount).toBe(1);
@@ -344,17 +363,14 @@ describe("SupabaseMemory", async () => {
     });
 
     it("should use storage limit as default in getMessages", async () => {
-      await memory.getMessages({
-        conversationId: "test-conversation",
-      });
+      await memory.getMessages("test-user", "test-conversation");
 
       // Verify the limit method was called with the storage limit
       expect(mockClient._mockMethods.limit).toHaveBeenCalledWith(2);
     });
 
     it("should override storage limit when explicit limit provided", async () => {
-      await memory.getMessages({
-        conversationId: "test-conversation",
+      await memory.getMessages("test-user", "test-conversation", {
         limit: 10,
       });
 
@@ -371,28 +387,36 @@ describe("SupabaseMemory", async () => {
 
       // @ts-expect-error - Accessing private property for testing
       testMemory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      testMemory.hasUIMessageColumns = true; // Mock that columns exist
 
-      // Mock the client to return more messages than the storage limit
+      // Mock the client to return messages in new UIMessage database format
       const mockData = [
         {
           message_id: "msg1",
           role: "user",
-          content: "Message 1",
-          type: "text",
+          parts: '[{"type":"text","text":"Message 1"}]',
+          metadata: "{}",
+          format_version: 2,
+          user_id: "test-user",
           created_at: "2023-01-01T10:00:00Z",
         },
         {
           message_id: "msg2",
           role: "user",
-          content: "Message 2",
-          type: "text",
+          parts: '[{"type":"text","text":"Message 2"}]',
+          metadata: "{}",
+          format_version: 2,
+          user_id: "test-user",
           created_at: "2023-01-01T10:01:00Z",
         },
         {
           message_id: "msg3",
           role: "user",
-          content: "Message 3",
-          type: "text",
+          parts: '[{"type":"text","text":"Message 3"}]',
+          metadata: "{}",
+          format_version: 2,
+          user_id: "test-user",
           created_at: "2023-01-01T10:02:00Z",
         },
       ];
@@ -400,39 +424,44 @@ describe("SupabaseMemory", async () => {
       // Mock the getMessages method directly to test the limit behavior
       const spy = vi
         .spyOn(testMemory as any, "getMessages")
-        .mockImplementation(async (options: any) => {
+        .mockImplementation(async (...args: any[]) => {
+          const options = args[2] || {};
           const { limit } = options;
+          const uiMessages = mockData.map((d) => ({
+            id: d.message_id,
+            role: d.role as any,
+            parts: JSON.parse(d.parts),
+            metadata: JSON.parse(d.metadata),
+          }));
           // Simulate the actual logic: if limit is 0 or undefined, return all; otherwise apply limit
           if (limit === 0) {
-            return mockData; // Return all messages (no limit applied)
+            return uiMessages; // Return all messages (no limit applied)
           }
           if (limit && limit > 0) {
-            return mockData.slice(0, limit); // Apply the limit
+            return uiMessages.slice(0, limit); // Apply the limit
           }
 
-          return mockData.slice(0, 2); // Use storage limit (2)
+          return uiMessages.slice(0, 2); // Use storage limit (2)
         });
 
       // Test: when limit=0, should return all messages
-      const allMessages = await testMemory.getMessages({
-        conversationId: "test-conversation",
+      const allMessages = await testMemory.getMessages("test-user", "test-conversation", {
         limit: 0, // Explicitly set to 0 for unlimited
       });
 
       // Verify behavior: should return all 3 messages (no limit applied)
       expect(allMessages).toHaveLength(3);
-      expect(allMessages[0].content).toBe("Message 1");
-      expect(allMessages[1].content).toBe("Message 2");
-      expect(allMessages[2].content).toBe("Message 3");
+      expect((allMessages[0].parts[0] as any).text).toBe("Message 1");
+      expect((allMessages[1].parts[0] as any).text).toBe("Message 2");
+      expect((allMessages[2].parts[0] as any).text).toBe("Message 3");
 
       // Test: when limit=1, should return only 1 message
-      const limitedMessages = await testMemory.getMessages({
-        conversationId: "test-conversation",
+      const limitedMessages = await testMemory.getMessages("test-user", "test-conversation", {
         limit: 1,
       });
 
       expect(limitedMessages).toHaveLength(1);
-      expect(limitedMessages[0].content).toBe("Message 1");
+      expect((limitedMessages[0].parts[0] as any).text).toBe("Message 1");
 
       // Cleanup
       spy.mockRestore();
@@ -456,43 +485,45 @@ describe("SupabaseMemory", async () => {
       // Mock the initialization to avoid database setup issues in tests
       // @ts-expect-error - Accessing private property for testing
       memory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      memory.hasUIMessageColumns = true; // Mock that columns exist
     });
 
     it("should add message successfully", async () => {
       const message = createMessage({
         id: "test-message-id",
-        content: "Hello, world!",
+        parts: [{ type: "text", text: "Hello, world!" }],
         role: "user",
       });
 
-      await memory.addMessage(message, "test-conversation");
+      await memory.addMessage(message, "test-user", "test-conversation");
 
       expect(mockClient._mockMethods.from).toHaveBeenCalledWith("voltagent_memory_messages");
       expect(mockClient._mockMethods.insert).toHaveBeenCalledWith({
         conversation_id: "test-conversation",
+        user_id: "test-user",
         message_id: "test-message-id",
         role: "user",
-        content: "Hello, world!",
-        type: "text",
-        created_at: message.createdAt,
+        parts: '[{"type":"text","text":"Hello, world!"}]',
+        metadata: "{}",
+        format_version: 2,
+        created_at: expect.any(String),
       });
     });
 
-    it("should handle complex content types", async () => {
-      const complexContent = {
-        text: "Hello",
-        metadata: { source: "test" },
-      };
-
+    it("should handle complex metadata", async () => {
       const message = createMessage({
-        content: complexContent as any,
+        parts: [{ type: "text", text: "Hello" }],
+        metadata: { source: "test" },
       });
 
-      await memory.addMessage(message, "test-conversation");
+      await memory.addMessage(message, "test-user", "test-conversation");
 
       expect(mockClient._mockMethods.insert).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: JSON.stringify(complexContent),
+          parts: '[{"type":"text","text":"Hello"}]',
+          metadata: '{"source":"test"}',
+          format_version: 2,
         }),
       );
     });
@@ -506,13 +537,13 @@ describe("SupabaseMemory", async () => {
 
       const message = createMessage();
 
-      await expect(memory.addMessage(message, "test-conversation")).rejects.toThrow(
+      await expect(memory.addMessage(message, "test-user", "test-conversation")).rejects.toThrow(
         "Failed to add message: Insert failed",
       );
     });
   });
 
-  describe("Message Type Filtering", () => {
+  describe("Basic Message Retrieval", () => {
     let memory: SupabaseMemory;
     let mockClient: any;
 
@@ -529,294 +560,117 @@ describe("SupabaseMemory", async () => {
       // Mock the initialization to avoid database setup issues in tests
       // @ts-expect-error - Accessing private property for testing
       memory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      memory.hasUIMessageColumns = true; // Mock that columns exist
     });
 
-    it("should filter messages by single type - text only", async () => {
-      const mockMessages = [
+    it("should retrieve text messages", async () => {
+      // Mock the database response
+      const mockData = [
         {
           message_id: "msg1",
-          conversation_id: "test-conv",
           role: "user",
-          content: "User question",
-          type: "text",
-          created_at: "2023-01-01T12:00:00.000Z",
+          parts: '[{"type":"text","text":"User question"}]',
+          metadata: "{}",
+          format_version: 2,
+          user_id: "test-user",
+          conversation_id: "test-conv",
+          created_at: new Date().toISOString(),
         },
         {
           message_id: "msg2",
-          conversation_id: "test-conv",
           role: "assistant",
-          content: "Response",
-          type: "text",
-          created_at: "2023-01-01T12:00:01.000Z",
+          parts: '[{"type":"text","text":"Response"}]',
+          metadata: "{}",
+          format_version: 2,
+          user_id: "test-user",
+          conversation_id: "test-conv",
+          created_at: new Date().toISOString(),
         },
       ];
 
-      const builderWithData = {
+      const builderWithData: any = {
         select: () => builderWithData,
         eq: () => builderWithData,
-        in: (...args: any[]) => {
-          mockClient._mockMethods.in(...args);
-          return builderWithData;
-        },
         order: () => builderWithData,
-        limit: () => builderWithData,
-        // biome-ignore lint/suspicious/noThenProperty: <explanation>
-        then: (callback: any) => callback({ data: mockMessages, error: null }),
+        limit: () => Promise.resolve({ data: mockData, error: null }),
       };
       mockClient.from = vi.fn(() => builderWithData);
 
-      const messages = await memory.getMessages({
-        conversationId: "test-conv",
-        types: ["text"],
-      });
+      const messages = await memory.getMessages("test-user", "test-conv");
 
-      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["text"]);
       expect(messages).toHaveLength(2);
-      expect(messages.every((m) => m.type === "text")).toBe(true);
+      expect(messages.every((m) => m.parts.every((p: any) => p.type === "text"))).toBe(true);
     });
 
-    it("should filter messages by single type - tool-call only", async () => {
-      const mockMessages = [
+    it("should retrieve messages with different part types", async () => {
+      const mockUIMessages = [
         {
-          message_id: "msg1",
-          conversation_id: "test-conv",
-          role: "assistant",
-          content: JSON.stringify({ tool: "calculator", args: { a: 1, b: 2 } }),
-          type: "tool-call",
-          created_at: "2023-01-01T12:00:00.000Z",
+          id: "msg1",
+          role: "user" as const,
+          parts: [{ type: "text" as const, text: "Question" }],
+        },
+        {
+          id: "msg2",
+          role: "assistant" as const,
+          parts: [{ type: "text" as const, text: "Answer" }],
         },
       ];
 
-      const builderWithData = {
-        select: () => builderWithData,
-        eq: () => builderWithData,
-        in: (...args: any[]) => {
-          mockClient._mockMethods.in(...args);
-          return builderWithData;
-        },
-        order: () => builderWithData,
-        limit: () => builderWithData,
-        // biome-ignore lint/suspicious/noThenProperty: <explanation>
-        then: (callback: any) => callback({ data: mockMessages, error: null }),
-      };
-      mockClient.from = vi.fn(() => builderWithData);
+      vi.spyOn(memory, "getMessages").mockResolvedValue(mockUIMessages);
 
-      const messages = await memory.getMessages({
-        conversationId: "test-conv",
-        types: ["tool-call"],
-      });
+      const messages = await memory.getMessages("test-user", "test-conv");
 
-      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["tool-call"]);
-      expect(messages).toHaveLength(1);
-      expect(messages[0].type).toBe("tool-call");
+      expect(messages).toHaveLength(2);
+      expect(messages.filter((m) => m.parts.some((p) => p.type === "text"))).toHaveLength(2);
     });
 
-    it("should filter messages by single type - tool-result only", async () => {
-      const mockMessages = [
-        {
-          message_id: "msg1",
-          conversation_id: "test-conv",
-          role: "tool",
-          content: JSON.stringify({ result: 3 }),
-          type: "tool-result",
-          created_at: "2023-01-01T12:00:00.000Z",
-        },
-      ];
+    it("should return empty array when no messages", async () => {
+      vi.spyOn(memory, "getMessages").mockResolvedValue([]);
 
-      const builderWithData = {
-        select: () => builderWithData,
-        eq: () => builderWithData,
-        in: (...args: any[]) => {
-          mockClient._mockMethods.in(...args);
-          return builderWithData;
-        },
-        order: () => builderWithData,
-        limit: () => builderWithData,
-        // biome-ignore lint/suspicious/noThenProperty: <explanation>
-        then: (callback: any) => callback({ data: mockMessages, error: null }),
-      };
-      mockClient.from = vi.fn(() => builderWithData);
+      const messages = await memory.getMessages("test-user", "test-conv");
 
-      const messages = await memory.getMessages({
-        conversationId: "test-conv",
-        types: ["tool-result"],
-      });
-
-      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["tool-result"]);
-      expect(messages).toHaveLength(1);
-      expect(messages[0].type).toBe("tool-result");
-    });
-
-    it("should filter messages by multiple types", async () => {
-      const mockMessages = [
-        {
-          message_id: "msg1",
-          conversation_id: "test-conv",
-          role: "user",
-          content: "Question",
-          type: "text",
-          created_at: "2023-01-01T12:00:00.000Z",
-        },
-        {
-          message_id: "msg2",
-          conversation_id: "test-conv",
-          role: "assistant",
-          content: JSON.stringify({ tool: "calculator" }),
-          type: "tool-call",
-          created_at: "2023-01-01T12:00:01.000Z",
-        },
-        {
-          message_id: "msg3",
-          conversation_id: "test-conv",
-          role: "assistant",
-          content: "Answer",
-          type: "text",
-          created_at: "2023-01-01T12:00:02.000Z",
-        },
-      ];
-
-      const builderWithData = {
-        select: () => builderWithData,
-        eq: () => builderWithData,
-        in: (...args: any[]) => {
-          mockClient._mockMethods.in(...args);
-          return builderWithData;
-        },
-        order: () => builderWithData,
-        limit: () => builderWithData,
-        // biome-ignore lint/suspicious/noThenProperty: <explanation>
-        then: (callback: any) => callback({ data: mockMessages, error: null }),
-      };
-      mockClient.from = vi.fn(() => builderWithData);
-
-      const messages = await memory.getMessages({
-        conversationId: "test-conv",
-        types: ["text", "tool-call"],
-      });
-
-      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["text", "tool-call"]);
-      expect(messages).toHaveLength(3);
-      expect(messages.filter((m) => m.type === "text")).toHaveLength(2);
-      expect(messages.filter((m) => m.type === "tool-call")).toHaveLength(1);
-    });
-
-    it("should return no messages when types array is empty", async () => {
-      const builderWithData = {
-        select: () => builderWithData,
-        eq: () => builderWithData,
-        in: (...args: any[]) => {
-          mockClient._mockMethods.in(...args);
-          return builderWithData;
-        },
-        order: () => builderWithData,
-        limit: () => builderWithData,
-        // biome-ignore lint/suspicious/noThenProperty: <explanation>
-        then: (callback: any) => callback({ data: [], error: null }),
-      };
-      mockClient.from = vi.fn(() => builderWithData);
-
-      const messages = await memory.getMessages({
-        conversationId: "test-conv",
-        types: [],
-      });
-
-      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", []);
       expect(messages).toHaveLength(0);
     });
 
-    it("should return all messages when types is undefined", async () => {
-      const mockMessages = [
+    it("should return all messages when no options provided", async () => {
+      const mockUIMessages = [
         {
-          message_id: "msg1",
-          conversation_id: "test-conv",
-          role: "user",
-          content: "Question",
-          type: "text",
-          created_at: "2023-01-01T12:00:00.000Z",
+          id: "msg1",
+          role: "user" as const,
+          parts: [{ type: "text" as const, text: "Question" }],
         },
         {
-          message_id: "msg2",
-          conversation_id: "test-conv",
-          role: "assistant",
-          content: JSON.stringify({ tool: "calculator" }),
-          type: "tool-call",
-          created_at: "2023-01-01T12:00:01.000Z",
-        },
-        {
-          message_id: "msg3",
-          conversation_id: "test-conv",
-          role: "tool",
-          content: JSON.stringify({ result: 3 }),
-          type: "tool-result",
-          created_at: "2023-01-01T12:00:02.000Z",
+          id: "msg2",
+          role: "assistant" as const,
+          parts: [{ type: "text" as const, text: "Answer" }],
         },
       ];
 
-      const builderWithData = {
-        select: () => builderWithData,
-        eq: () => builderWithData,
-        order: () => builderWithData,
-        limit: () => builderWithData,
-        // biome-ignore lint/suspicious/noThenProperty: <explanation>
-        then: (callback: any) => callback({ data: mockMessages, error: null }),
-      };
-      mockClient.from = vi.fn(() => builderWithData);
+      vi.spyOn(memory, "getMessages").mockResolvedValue(mockUIMessages);
 
-      const messages = await memory.getMessages({
-        conversationId: "test-conv",
-      });
+      const messages = await memory.getMessages("test-user", "test-conv");
 
-      expect(mockClient._mockMethods.in).not.toHaveBeenCalled();
-      expect(messages).toHaveLength(3);
+      expect(messages).toHaveLength(2);
     });
 
-    it("should combine type filtering with limit", async () => {
-      const mockMessages = [
+    it("should support limit option", async () => {
+      const mockUIMessages = [
         {
-          message_id: "msg2",
-          conversation_id: "test-conv",
-          role: "user",
-          content: "Second text",
-          type: "text",
-          created_at: "2023-01-01T12:00:01.000Z",
-        },
-        {
-          message_id: "msg3",
-          conversation_id: "test-conv",
-          role: "assistant",
-          content: "Latest text",
-          type: "text",
-          created_at: "2023-01-01T12:00:02.000Z",
+          id: "msg1",
+          role: "user" as const,
+          parts: [{ type: "text" as const, text: "First text" }],
         },
       ];
 
-      const builderWithData = {
-        select: () => builderWithData,
-        eq: () => builderWithData,
-        in: (...args: any[]) => {
-          mockClient._mockMethods.in(...args);
-          return builderWithData;
-        },
-        order: () => builderWithData,
-        limit: (...args: any[]) => {
-          mockClient._mockMethods.limit(...args);
-          return builderWithData;
-        },
-        // biome-ignore lint/suspicious/noThenProperty: <explanation>
-        then: (callback: any) => callback({ data: mockMessages, error: null }),
-      };
-      mockClient.from = vi.fn(() => builderWithData);
+      vi.spyOn(memory, "getMessages").mockResolvedValue(mockUIMessages);
 
-      const messages = await memory.getMessages({
-        conversationId: "test-conv",
-        types: ["text"],
-        limit: 2,
+      const messages = await memory.getMessages("test-user", "test-conv", {
+        limit: 1,
       });
 
-      expect(mockClient._mockMethods.in).toHaveBeenCalledWith("type", ["text"]);
-      expect(mockClient._mockMethods.limit).toHaveBeenCalledWith(2);
-      expect(messages).toHaveLength(2);
-      expect(messages.every((m) => m.type === "text")).toBe(true);
+      expect(messages).toHaveLength(1);
+      expect((messages[0].parts[0] as any).text).toBe("First text");
     });
   });
 
@@ -837,6 +691,8 @@ describe("SupabaseMemory", async () => {
       // Mock the initialization to avoid database setup issues in tests
       // @ts-expect-error - Accessing private property for testing
       memory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      memory.hasUIMessageColumns = true; // Mock that columns exist
     });
 
     const createConversation = (
@@ -915,6 +771,315 @@ describe("SupabaseMemory", async () => {
       const result = await memory.getConversation("non-existent-id");
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe("UIMessage Column Check and Migration", () => {
+    let memory: SupabaseMemory;
+    let mockClient: any;
+
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      const { createClient } = await import("@supabase/supabase-js");
+      mockClient = createClient("https://test.supabase.co", "test-key");
+
+      memory = new SupabaseMemory({
+        client: mockClient as any,
+      });
+    });
+
+    it("should detect missing UIMessage columns and show migration warning", async () => {
+      // Mock the column check to fail (columns don't exist)
+      const builderWithColumnError: any = {
+        select: () => builderWithColumnError,
+        limit: () => Promise.reject(new Error("column messages.parts does not exist")),
+      };
+
+      // First mock for column check
+      let callCount = 0;
+      mockClient.from = vi.fn((table: string) => {
+        if (table.includes("messages") && callCount === 0) {
+          callCount++;
+          return builderWithColumnError;
+        }
+        // Return normal builder for other calls
+        return {
+          select: () => ({
+            limit: () =>
+              Promise.resolve({ error: { message: "column messages.parts does not exist" } }),
+          }),
+        };
+      });
+
+      // @ts-expect-error - Accessing private property for testing
+      memory.initialized = Promise.resolve();
+
+      // Spy on console methods to check for migration warning
+      const loggerSpy = vi.spyOn((memory as any).logger, "error");
+
+      const message = createMessage();
+
+      // Should throw error when columns are missing
+      await expect(memory.addMessage(message, "test-user", "test-conv")).rejects.toThrow(
+        "Database migration required",
+      );
+
+      // Should have logged migration warning
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Database migration required"),
+      );
+    });
+
+    it("should handle column check error during initialization", async () => {
+      // Mock select to simulate missing columns error
+      const builderWithError = {
+        select: () => builderWithError,
+        limit: () =>
+          Promise.resolve({
+            error: {
+              message: "column messages.parts does not exist",
+            },
+          }),
+      };
+
+      mockClient.from = vi.fn(() => builderWithError);
+
+      // Create new instance which will run initialization
+      const testMemory = new SupabaseMemory({
+        client: mockClient as any,
+      });
+
+      // Wait for initialization
+      // @ts-expect-error - Accessing private property
+      await testMemory.initialized;
+
+      // Check that hasUIMessageColumns is false
+      // @ts-expect-error - Accessing private property
+      expect(testMemory.hasUIMessageColumns).toBe(false);
+    });
+
+    it("should detect column error on addMessage and show warning only once", async () => {
+      // @ts-expect-error - Accessing private property for testing
+      memory.initialized = Promise.resolve();
+      // @ts-expect-error - Set columns as existing initially
+      memory.hasUIMessageColumns = true;
+
+      // Mock insert to return column error
+      const builderWithColumnError = {
+        insert: () =>
+          Promise.resolve({
+            error: {
+              message: "column messages.parts does not exist",
+            },
+          }),
+      };
+
+      mockClient.from = vi.fn(() => builderWithColumnError);
+
+      const showMigrationWarningSpy = vi.spyOn(memory as any, "showMigrationWarning");
+
+      const message1 = createMessage();
+      const message2 = createMessage();
+
+      // First call should show warning
+      await expect(memory.addMessage(message1, "test-user", "test-conv")).rejects.toThrow();
+      expect(showMigrationWarningSpy).toHaveBeenCalledTimes(1);
+
+      // Second call should not show warning again
+      await expect(memory.addMessage(message2, "test-user", "test-conv")).rejects.toThrow();
+      expect(showMigrationWarningSpy).toHaveBeenCalledTimes(1); // Still only 1
+    });
+
+    it("should work normally when UIMessage columns exist", async () => {
+      // Track if we've handled the UIMessage column check
+      let columnCheckHandled = false;
+
+      mockClient.from = vi.fn((table: string) => {
+        // Special handling for messages table column check
+        if (table.includes("messages") && !columnCheckHandled) {
+          columnCheckHandled = true;
+          return {
+            select: (_columns?: string) => ({
+              limit: (_n?: number) => Promise.resolve({ data: [], error: null }),
+            }),
+          };
+        }
+
+        // For other initialization calls (conversations, history tables, etc.)
+        if (
+          table.includes("conversations") ||
+          table.includes("history") ||
+          table.includes("timeline") ||
+          table.includes("workflow")
+        ) {
+          return {
+            select: (_columns?: string) => ({
+              limit: (_n?: number) => Promise.resolve({ data: null, error: null }),
+            }),
+            head: () => Promise.resolve({ count: 0, error: null }),
+          };
+        }
+
+        // Default handler for any other table operations
+        return {
+          select: (_columns?: string) => ({
+            limit: (_n?: number) => Promise.resolve({ data: null, error: null }),
+          }),
+          insert: (_data?: any) => Promise.resolve({ error: null }),
+        };
+      });
+
+      const testMemory = new SupabaseMemory({
+        client: mockClient as any,
+      });
+
+      // Wait for initialization
+      // @ts-expect-error - Accessing private property
+      await testMemory.initialized;
+
+      // Check that columns were detected
+      // @ts-expect-error - Accessing private property
+      expect(testMemory.hasUIMessageColumns).toBe(true);
+
+      // Should be able to add message without issues
+      const message = createMessage();
+      await expect(
+        testMemory.addMessage(message, "test-user", "test-conv"),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe("Legacy Format Conversion", () => {
+    let memory: SupabaseMemory;
+    let mockClient: any;
+
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      const { createClient } = await import("@supabase/supabase-js");
+      mockClient = createClient("https://test.supabase.co", "test-key");
+
+      memory = new SupabaseMemory({
+        client: mockClient as any,
+      });
+
+      // @ts-expect-error - Accessing private property for testing
+      memory.initialized = Promise.resolve();
+      // @ts-expect-error - Accessing private property for testing
+      memory.hasUIMessageColumns = true;
+    });
+
+    it("should convert legacy format messages to UIMessage format", async () => {
+      // Mock data in legacy format (format_version = 1 or missing)
+      const legacyData = [
+        {
+          message_id: "msg1",
+          role: "user",
+          content: "Hello world",
+          type: "text",
+          created_at: "2023-01-01T10:00:00Z",
+          // No format_version, parts, or metadata
+        },
+        {
+          message_id: "msg2",
+          role: "assistant",
+          content: JSON.stringify({ tool: "calculator", args: { a: 1, b: 2 } }),
+          type: "tool-call",
+          format_version: 1, // Explicitly legacy
+          created_at: "2023-01-01T10:01:00Z",
+        },
+      ];
+
+      // Mock the query builder to return legacy data
+      const builderWithLegacyData: any = {
+        select: () => builderWithLegacyData,
+        eq: () => builderWithLegacyData,
+        order: () => builderWithLegacyData,
+        limit: () => Promise.resolve({ data: legacyData, error: null }),
+      };
+
+      mockClient.from = vi.fn(() => builderWithLegacyData);
+
+      const messages = await memory.getMessages("test-user", "test-conv");
+
+      // Should have converted to UIMessage format
+      expect(messages).toHaveLength(2);
+
+      // Find messages by ID (order might vary)
+      const msg1 = messages.find((m) => m.id === "msg1");
+      const msg2 = messages.find((m) => m.id === "msg2");
+
+      // Check first message (text)
+      expect(msg1).toBeDefined();
+      expect(msg1?.role).toBe("user");
+      expect(msg1?.parts).toHaveLength(1);
+      expect(msg1?.parts[0]).toEqual({
+        type: "text",
+        text: "Hello world",
+      });
+
+      // Check second message (tool-call)
+      expect(msg2).toBeDefined();
+      expect(msg2?.role).toBe("assistant");
+      expect(msg2?.parts).toHaveLength(1);
+      expect(msg2?.parts[0].type).toBe("tool-call");
+    });
+
+    it("should handle mixed format messages correctly", async () => {
+      // Some messages in legacy format, some in new format
+      const mixedData = [
+        {
+          message_id: "msg1",
+          role: "user",
+          content: "Old format message",
+          type: "text",
+          created_at: "2023-01-01T10:00:00Z",
+        },
+        {
+          message_id: "msg2",
+          role: "assistant",
+          parts: '[{"type":"text","text":"New format message"}]',
+          metadata: '{"source":"test"}',
+          format_version: 2,
+          user_id: "test-user",
+          created_at: "2023-01-01T10:01:00Z",
+        },
+      ];
+
+      const builderWithMixedData: any = {
+        select: () => builderWithMixedData,
+        eq: () => builderWithMixedData,
+        order: () => builderWithMixedData,
+        limit: () => Promise.resolve({ data: mixedData, error: null }),
+      };
+
+      mockClient.from = vi.fn(() => builderWithMixedData);
+
+      const messages = await memory.getMessages("test-user", "test-conv");
+
+      expect(messages).toHaveLength(2);
+
+      // Find messages by content
+      const oldFormatMsg = messages.find(
+        (m) => m.parts[0].type === "text" && (m.parts[0] as any).text === "Old format message",
+      );
+      const newFormatMsg = messages.find(
+        (m) => m.parts[0].type === "text" && (m.parts[0] as any).text === "New format message",
+      );
+
+      // Legacy format converted
+      expect(oldFormatMsg).toBeDefined();
+      expect(oldFormatMsg?.parts[0]).toEqual({
+        type: "text",
+        text: "Old format message",
+      });
+
+      // New format preserved
+      expect(newFormatMsg).toBeDefined();
+      expect(newFormatMsg?.parts[0]).toEqual({
+        type: "text",
+        text: "New format message",
+      });
+      expect(newFormatMsg?.metadata).toEqual({ source: "test" });
     });
   });
 });

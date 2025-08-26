@@ -2315,6 +2315,9 @@ importers:
       '@voltagent/core':
         specifier: ^1.0.0-next.0
         version: link:../core
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)

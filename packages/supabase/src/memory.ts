@@ -3,9 +3,7 @@ import {
   type Conversation,
   type ConversationQueryOptions,
   type CreateConversationInput,
-  type Memory,
-  type MemoryMessage,
-  type MessageFilterOptions,
+  type InternalMemory,
   type WorkflowHistoryEntry,
   type WorkflowStepHistoryEntry,
   safeJsonParse,
@@ -13,6 +11,7 @@ import {
 import type { NewTimelineEvent } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { type Logger, createPinoLogger } from "@voltagent/logger";
+import type { UIMessage } from "ai";
 import { P, match } from "ts-pattern";
 import type { SupabaseMemoryOptions, WorkflowStats } from "./types";
 import { safeParseError } from "./utils";
@@ -43,13 +42,15 @@ import { safeParseError } from "./utils";
  *
  * @see {@link https://voltagent.dev/docs/agents/memory/supabase | Supabase Storage Documentation}
  */
-export class SupabaseMemory implements Memory {
+export class SupabaseMemory implements InternalMemory {
   private client: SupabaseClient;
   private baseTableName: string;
   private debug: boolean;
   private options: SupabaseMemoryOptions;
   private initialized: Promise<void>;
   private logger: Logger;
+  private hasUIMessageColumns = false;
+  private hasMigrationWarned = false;
 
   constructor(options: SupabaseMemoryOptions) {
     if (!options.client && (!options.supabaseUrl || !options.supabaseKey)) {
@@ -100,27 +101,66 @@ export class SupabaseMemory implements Memory {
    * Add a message to the messages table
    *
    * @param message - The message to add
+   * @param userId - The user ID associated with the message
    * @param conversationId - The ID of the conversation to add the message to
    */
-  public async addMessage(message: MemoryMessage, conversationId: string): Promise<void> {
+  public async addMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
     await this.initialized;
 
+    // Check if we should warn about missing columns
+    if (!this.hasUIMessageColumns && !this.hasMigrationWarned) {
+      this.logger.error("Database migration required for UIMessage format support.");
+      this.showMigrationWarning();
+      throw new Error("Database migration required. Please run the migration script shown above.");
+    }
+
     // Ensure message has necessary fields
+    const partsString = safeStringify(message.parts || []);
+    const metadataString = safeStringify(message.metadata || {});
+
     const record = {
       conversation_id: conversationId,
-      message_id: message.id, // Assuming MemoryMessage has an ID
+      message_id: message.id || this.generateId(),
+      user_id: userId,
       role: message.role,
-      content: match(message.content)
-        .with(P.string, (content) => content)
-        .otherwise(() => safeStringify(message.content)),
-      type: message.type,
-      created_at: message.createdAt || new Date().toISOString(),
+      parts: partsString,
+      metadata: metadataString,
+      format_version: 2, // New UIMessage format
+      created_at: new Date().toISOString(),
     };
 
     const { error } = await this.client.from(this.messagesTable).insert(record);
 
     // Handle potential duplicate message_id errors if needed
     if (error) {
+      // Check if error is due to missing columns
+      if (
+        error.message?.includes("column") &&
+        (error.message.includes("parts") ||
+          error.message.includes("metadata") ||
+          error.message.includes("format_version") ||
+          error.message.includes("user_id"))
+      ) {
+        // Mark that columns are missing
+        this.hasUIMessageColumns = false;
+
+        // Show migration warning
+        if (!this.hasMigrationWarned) {
+          this.logger.error("Database migration required for UIMessage format support.");
+          this.showMigrationWarning();
+        }
+
+        // Re-throw the error with migration hint
+        throw new Error(
+          `Failed to add message: ${error.message}. Please run the migration script shown above.`,
+        );
+      }
+
+      // Other error, not column-related
       this.logger.error(`Error adding message ${message.id} to Supabase:`, error);
       throw new Error(`Failed to add message: ${error.message}`);
     }
@@ -136,26 +176,25 @@ export class SupabaseMemory implements Memory {
   /**
    * Get messages from the messages table
    *
-   * @param options - The options for the query to filter the messages
+   * @param userId - The user ID to filter messages by
+   * @param conversationId - The conversation ID to get messages for
+   * @param options - Additional filter options
    * @returns The messages
    */
-  public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
-    const { conversationId, before, after, role, types } = options;
-    // Handle the case where limit is explicitly set to 0 (unlimited)
-    const actualLimit = options.limit !== undefined ? options.limit : this.options.storageLimit;
+  public async getMessages(
+    userId: string,
+    conversationId: string,
+    options?: { limit?: number; before?: Date; after?: Date; roles?: string[] },
+  ): Promise<UIMessage[]> {
+    const { limit = this.options.storageLimit, before, after, roles } = options || {};
 
-    let query = this.client.from(this.messagesTable).select("*"); // Select all columns to reconstruct MemoryMessage
+    let query = this.client.from(this.messagesTable).select("*");
 
-    if (conversationId) {
-      query = query.eq("conversation_id", conversationId);
-    }
+    // Always filter by user_id and conversation_id
+    query = query.eq("user_id", userId).eq("conversation_id", conversationId);
 
-    if (role) {
-      query = query.eq("role", role);
-    }
-
-    if (types) {
-      query = query.in("type", types);
+    if (roles && roles.length > 0) {
+      query = query.in("role", roles);
     }
     if (before) {
       // Assuming "before" is a timestamp or message ID that can be compared with created_at
@@ -167,9 +206,9 @@ export class SupabaseMemory implements Memory {
 
     // Order by creation time
     // When limit is specified, we need to get the most recent messages
-    if (actualLimit && actualLimit > 0) {
+    if (limit && limit > 0) {
       // Get the most recent messages first
-      query = query.order("created_at", { ascending: false }).limit(actualLimit);
+      query = query.order("created_at", { ascending: false }).limit(limit);
     } else {
       // No limit, order ascending
       query = query.order("created_at", { ascending: true });
@@ -182,27 +221,74 @@ export class SupabaseMemory implements Memory {
       throw new Error(`Failed to fetch messages: ${error.message}`);
     }
 
-    // Map Supabase rows back to MemoryMessage objects
+    // Map Supabase rows back to UIMessage objects
     const messages =
       data?.map((row) => {
-        // Try to parse content if it's JSON, otherwise use as-is
+        const formatVersion = row.format_version as number;
+
+        // If format_version is 2, parse the new format
+        if (formatVersion === 2 || row.parts) {
+          const parts = row.parts ? safeJsonParse(row.parts) || [] : [];
+          const metadata = row.metadata ? safeJsonParse(row.metadata) || {} : {};
+
+          return {
+            id: row.message_id,
+            role: row.role as "user" | "assistant" | "system",
+            parts,
+            metadata,
+          } as UIMessage;
+        }
+
+        // Legacy format - convert to UIMessage
         let content = row.content;
         const parsedContent = safeJsonParse(content);
         if (parsedContent !== null) {
           content = parsedContent;
         }
 
+        // Convert legacy format to UIMessage parts
+        const messageType = row.type as string;
+        const parts = [];
+
+        if (messageType === "text") {
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        } else if (messageType === "tool-call") {
+          parts.push({
+            type: "tool-call",
+            toolCallId: row.message_id,
+            toolName:
+              typeof content === "object" && content !== null && "name" in content
+                ? (content as any).name
+                : "unknown",
+            args: typeof content === "object" ? content : {},
+          });
+        } else if (messageType === "tool-result") {
+          parts.push({
+            type: "tool-result",
+            toolCallId: row.message_id,
+            result: content,
+          });
+        } else {
+          // Default to text for unknown types
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        }
+
         return {
           id: row.message_id,
-          role: row.role as MemoryMessage["role"],
-          content,
-          type: row.type as MemoryMessage["type"],
-          createdAt: row.created_at,
-        };
+          role: row.role as "user" | "assistant" | "system",
+          parts,
+          metadata: {},
+        } as UIMessage;
       }) || [];
 
     // If we used descending order with limit, reverse to get chronological order
-    if (actualLimit && actualLimit > 0 && messages.length > 0) {
+    if (limit && limit > 0 && messages.length > 0) {
       return messages.reverse();
     }
 
@@ -210,31 +296,52 @@ export class SupabaseMemory implements Memory {
   }
 
   /**
+   * Add multiple messages to the messages table
+   *
+   * @param messages - The messages to add
+   * @param userId - The user ID associated with the messages
+   * @param conversationId - The ID of the conversation to add the messages to
+   */
+  public async addMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    for (const message of messages) {
+      await this.addMessage(message, userId, conversationId);
+    }
+  }
+
+  /**
    * Clear messages from the messages table
    *
-   * @param options - The options for the query to filter the messages to clear either by `conversationId` or `userId`
+   * @param userId - The user ID to clear messages for
+   * @param conversationId - Optional conversation ID to clear messages for
    */
-  public async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
-    const { conversationId } = options;
+  public async clearMessages(userId: string, conversationId?: string): Promise<void> {
+    let query = this.client.from(this.messagesTable).delete();
 
-    if (!conversationId) {
-      throw new Error("conversationId is required");
+    // Always filter by user_id
+    query = query.eq("user_id", userId);
+
+    // Optionally filter by conversation_id
+    if (conversationId) {
+      query = query.eq("conversation_id", conversationId);
     }
 
-    const { error } = await this.client
-      .from(this.messagesTable)
-      .delete()
-      .eq("conversation_id", conversationId);
+    const { error } = await query;
 
     if (error) {
       this.logger.error(
-        `Error clearing messages for conversation ${conversationId} from Supabase:`,
+        `Error clearing messages for user ${userId}${conversationId ? ` and conversation ${conversationId}` : ""} from Supabase:`,
         error,
       );
       throw new Error(`Failed to clear messages: ${error.message}`);
     }
 
-    this.debugLog(`Cleared messages for conversation ${conversationId}`);
+    this.debugLog(
+      `Cleared messages for user ${userId}${conversationId ? ` and conversation ${conversationId}` : ""}`,
+    );
   }
 
   /*
@@ -623,7 +730,7 @@ export class SupabaseMemory implements Memory {
   public async getConversationMessages(
     conversationId: string,
     options: { limit?: number; offset?: number } = {},
-  ): Promise<MemoryMessage[]> {
+  ): Promise<UIMessage[]> {
     await this.initialized;
 
     const { limit = 100, offset = 0 } = options;
@@ -646,13 +753,69 @@ export class SupabaseMemory implements Memory {
         throw new Error(`Failed to get conversation messages: ${error.message}`);
       }
 
-      return (data || []).map((row: any) => ({
-        id: row.message_id,
-        role: row.role,
-        content: row.content,
-        type: row.type,
-        createdAt: row.created_at,
-      }));
+      return (data || []).map((row: any) => {
+        const formatVersion = row.format_version as number;
+
+        // If format_version is 2, parse the new format
+        if (formatVersion === 2 || row.parts) {
+          const parts = row.parts ? safeJsonParse(row.parts) || [] : [];
+          const metadata = row.metadata ? safeJsonParse(row.metadata) || {} : {};
+
+          return {
+            id: row.message_id,
+            role: row.role as "user" | "assistant" | "system",
+            parts,
+            metadata,
+          } as UIMessage;
+        }
+
+        // Legacy format - convert to UIMessage
+        let content = row.content;
+        const parsedContent = safeJsonParse(content);
+        if (parsedContent !== null) {
+          content = parsedContent;
+        }
+
+        // Convert legacy format to UIMessage parts
+        const messageType = row.type as string;
+        const parts = [];
+
+        if (messageType === "text") {
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        } else if (messageType === "tool-call") {
+          parts.push({
+            type: "tool-call",
+            toolCallId: row.message_id,
+            toolName:
+              typeof content === "object" && content !== null && "name" in content
+                ? (content as any).name
+                : "unknown",
+            args: typeof content === "object" ? content : {},
+          });
+        } else if (messageType === "tool-result") {
+          parts.push({
+            type: "tool-result",
+            toolCallId: row.message_id,
+            result: content,
+          });
+        } else {
+          // Default to text for unknown types
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        }
+
+        return {
+          id: row.message_id,
+          role: row.role as "user" | "assistant" | "system",
+          parts,
+          metadata: {},
+        } as UIMessage;
+      });
     } catch (error) {
       this.logger.error("Error getting conversation messages:", safeParseError(error));
       throw new Error("Failed to get conversation messages from Supabase database");
@@ -2878,6 +3041,72 @@ ON CONFLICT (migration_type) DO NOTHING;
   }
 
   /**
+   * Check if UIMessage columns exist in messages table
+   */
+  private async checkUIMessageColumns(): Promise<void> {
+    try {
+      // Try to select with new columns
+      const { error } = await this.client
+        .from(this.messagesTable)
+        .select("message_id, parts, metadata, format_version, user_id")
+        .limit(1);
+
+      if (!error) {
+        // If no error, columns exist
+        this.hasUIMessageColumns = true;
+        this.debugLog("UIMessage columns detected in messages table");
+      } else if (error.message.includes("column") || error.message.includes("does not exist")) {
+        // Columns don't exist
+        this.hasUIMessageColumns = false;
+        this.showMigrationWarning();
+      }
+    } catch (_error) {
+      this.debugLog("Could not check UIMessage columns, assuming legacy format");
+      this.hasUIMessageColumns = false;
+    }
+  }
+
+  /**
+   * Show migration warning to the user
+   */
+  private showMigrationWarning(): void {
+    if (this.hasMigrationWarned) return;
+    this.hasMigrationWarned = true;
+
+    const migrationSQL = `
+-- ========================================
+-- SUPABASE MIGRATION REQUIRED
+-- ========================================
+-- Your messages table needs to be updated to support the new UIMessage format.
+-- Please run the following SQL in your Supabase SQL Editor:
+
+-- 1. Add new columns for UIMessage format
+ALTER TABLE ${this.messagesTable} 
+ADD COLUMN IF NOT EXISTS parts TEXT,
+ADD COLUMN IF NOT EXISTS metadata TEXT,
+ADD COLUMN IF NOT EXISTS format_version INTEGER DEFAULT 1,
+ADD COLUMN IF NOT EXISTS user_id TEXT;
+
+-- 2. Make old columns nullable to support new format
+ALTER TABLE ${this.messagesTable} 
+ALTER COLUMN content DROP NOT NULL,
+ALTER COLUMN type DROP NOT NULL;
+
+-- 3. Add index for better performance
+CREATE INDEX IF NOT EXISTS idx_${this.messagesTable}_user_id 
+ON ${this.messagesTable}(user_id);
+
+-- Note: After running this migration, new messages will use the UIMessage format
+-- with parts/metadata, while old messages will continue to work with content/type.
+
+-- ========================================
+`;
+
+    this.logger.warn("Migration required for UIMessage support");
+    this.logger.info(migrationSQL);
+  }
+
+  /**
    * Initialize the database and run migration if needed
    * @returns Promise that resolves when initialization is complete
    */
@@ -2888,6 +3117,9 @@ ON CONFLICT (migration_type) DO NOTHING;
 
       // Ensure database tables exist with correct structure
       await this.ensureDatabaseStructure();
+
+      // Check for UIMessage columns
+      await this.checkUIMessageColumns();
 
       // Skip all migrations if this is a fresh installation
       if (isFreshInstallation) {
