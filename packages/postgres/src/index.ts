@@ -2,16 +2,16 @@ import {
   type Conversation,
   type ConversationQueryOptions,
   type CreateConversationInput,
-  type Memory,
-  type MemoryMessage,
+  type InternalMemory,
   type MemoryOptions,
-  type MessageFilterOptions,
   type NewTimelineEvent,
   type WorkflowHistoryEntry,
   type WorkflowStepHistoryEntry,
   type WorkflowTimelineEvent,
   safeJsonParse,
 } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal/utils";
+import type { UIMessage } from "ai";
 import { Pool } from "pg";
 
 /**
@@ -86,7 +86,7 @@ export interface PostgresStorageOptions extends MemoryOptions {
  * A PostgreSQL storage implementation of the Memory and WorkflowMemory interfaces
  * Uses node-postgres to store and retrieve conversation history and workflow data
  */
-export class PostgresStorage implements Memory {
+export class PostgresStorage implements InternalMemory {
   private pool: Pool;
   private options: PostgresStorageOptions;
   private initialized: Promise<void>;
@@ -234,14 +234,18 @@ export class PostgresStorage implements Memory {
         )
       `);
 
-      // Create messages table without user_id
+      // Create messages table with UIMessage support
       await client.query(`
         CREATE TABLE IF NOT EXISTS ${this.options.tablePrefix}_messages (
           conversation_id TEXT NOT NULL REFERENCES ${this.options.tablePrefix}_conversations(id) ON DELETE CASCADE,
           message_id TEXT NOT NULL,
+          user_id TEXT NOT NULL DEFAULT 'default',
           role TEXT NOT NULL,
-          content TEXT NOT NULL,
-          type TEXT NOT NULL,
+          parts JSONB,
+          metadata JSONB,
+          format_version INTEGER DEFAULT 2,
+          content TEXT,
+          type TEXT,
           created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
           PRIMARY KEY (conversation_id, message_id)
         )
@@ -553,10 +557,131 @@ export class PostgresStorage implements Memory {
       } catch (error) {
         this.debug("Error migrating agent history schema:", error);
       }
+
+      // Run UIMessage format migration for existing tables
+      try {
+        await this.addUIMessageColumnsToMessagesTable();
+      } catch (error) {
+        this.debug("Error adding UIMessage columns (non-critical):", error);
+      }
     } catch (error) {
       await client.query("ROLLBACK");
       this.debug("Error initializing database:", error);
       throw new Error("Failed to initialize PostgreSQL database");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Add new columns to messages table for UIMessage format if they don't exist
+   * This allows existing tables to support both old and new message formats
+   */
+  private async addUIMessageColumnsToMessagesTable(): Promise<void> {
+    const messagesTableName = `${this.options.tablePrefix}_messages`;
+    const client = await this.pool.connect();
+
+    try {
+      // Check which columns exist
+      const columnCheck = await client.query(
+        `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = $1
+        `,
+        [messagesTableName],
+      );
+
+      const existingColumns = columnCheck.rows.map((row) => row.column_name);
+
+      // Add new columns if they don't exist
+      if (!existingColumns.includes("parts")) {
+        try {
+          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN parts JSONB`);
+          this.debug("Added 'parts' column to messages table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      if (!existingColumns.includes("metadata")) {
+        try {
+          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN metadata JSONB`);
+          this.debug("Added 'metadata' column to messages table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      if (!existingColumns.includes("format_version")) {
+        try {
+          await client.query(
+            `ALTER TABLE ${messagesTableName} ADD COLUMN format_version INTEGER DEFAULT 2`,
+          );
+          this.debug("Added 'format_version' column to messages table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      if (!existingColumns.includes("user_id")) {
+        try {
+          await client.query(
+            `ALTER TABLE ${messagesTableName} ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default'`,
+          );
+          this.debug("Added 'user_id' column to messages table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      // Make content and type nullable for new format
+      if (existingColumns.includes("content")) {
+        const contentInfo = await client.query(
+          `
+          SELECT is_nullable
+          FROM information_schema.columns
+          WHERE table_name = $1 AND column_name = 'content'
+          `,
+          [messagesTableName],
+        );
+
+        if (contentInfo.rows[0]?.is_nullable === "NO") {
+          try {
+            await client.query(
+              `ALTER TABLE ${messagesTableName} ALTER COLUMN content DROP NOT NULL`,
+            );
+            this.debug("Made 'content' column nullable");
+          } catch (e) {
+            this.debug("Error making content nullable:", e);
+          }
+        }
+      }
+
+      if (existingColumns.includes("type")) {
+        const typeInfo = await client.query(
+          `
+          SELECT is_nullable
+          FROM information_schema.columns
+          WHERE table_name = $1 AND column_name = 'type'
+          `,
+          [messagesTableName],
+        );
+
+        if (typeInfo.rows[0]?.is_nullable === "NO") {
+          try {
+            await client.query(`ALTER TABLE ${messagesTableName} ALTER COLUMN type DROP NOT NULL`);
+            this.debug("Made 'type' column nullable");
+          } catch (e) {
+            this.debug("Error making type nullable:", e);
+          }
+        }
+      }
+
+      this.debug("UIMessage columns migration completed for messages table");
+    } catch (error) {
+      this.debug("Error in UIMessage columns migration (non-critical):", error);
+      // Don't throw - this is not critical for new installations
     } finally {
       client.release();
     }
@@ -992,28 +1117,40 @@ export class PostgresStorage implements Memory {
 
   /**
    * Add a message to the conversation history
+   * @param message UIMessage to add
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
    */
-  public async addMessage(message: MemoryMessage, conversationId = "default"): Promise<void> {
+  public async addMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
     await this.initialized;
 
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
 
-      // Insert the message without user_id (userId parameter is kept for compatibility but not used)
+      const partsString = safeStringify(message.parts || []);
+      const metadataString = safeStringify(message.metadata || {});
+
+      // Insert the message with UIMessage format
       await client.query(
         `
         INSERT INTO ${this.options.tablePrefix}_messages 
-        (conversation_id, message_id, role, content, type, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        (conversation_id, message_id, user_id, role, parts, metadata, format_version, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `,
         [
           conversationId,
           message.id || this.generateId(),
+          userId,
           message.role,
-          typeof message.content === "string" ? message.content : JSON.stringify(message.content),
-          message.type,
-          message.createdAt,
+          partsString,
+          metadataString,
+          2, // format_version for new UIMessage format
+          new Date().toISOString(),
         ],
       );
 
@@ -1062,72 +1199,76 @@ export class PostgresStorage implements Memory {
   }
 
   /**
-   * Get messages with filtering options
+   * Add multiple UIMessages to the conversation history
+   * @param messages Array of UIMessages to add
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
    */
-  public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
+  public async addMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    for (const message of messages) {
+      await this.addMessage(message, userId, conversationId);
+    }
+  }
+
+  /**
+   * Get messages with filtering options
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
+   * @param options Optional filtering options
+   * @returns Array of UIMessages
+   */
+  public async getMessages(
+    userId: string,
+    conversationId: string,
+    options?: { limit?: number; before?: Date; after?: Date; roles?: string[] },
+  ): Promise<UIMessage[]> {
     await this.initialized;
 
-    const {
-      userId = "default",
-      conversationId = "default",
-      limit = this.options.storageLimit,
-      before,
-      after,
-      role,
-      types,
-    } = options;
+    const { limit = this.options.storageLimit, before, after, roles } = options || {};
 
     const client = await this.pool.connect();
     try {
+      // Select all columns to handle both old and new schemas
       let sql = `
-        SELECT m.message_id, m.role, m.content, m.type, m.created_at
+        SELECT m.*
         FROM ${this.options.tablePrefix}_messages m
       `;
       const params: any[] = [];
       const conditions: string[] = [];
       let paramCount = 1;
 
-      // If userId is specified, we need to join with conversations table
-      if (userId !== "default") {
-        sql += ` INNER JOIN ${this.options.tablePrefix}_conversations c ON m.conversation_id = c.id`;
-        conditions.push(`c.user_id = $${paramCount}`);
-        params.push(userId);
-        paramCount++;
-      }
+      // Add user_id filter
+      conditions.push(`m.user_id = $${paramCount}`);
+      params.push(userId);
+      paramCount++;
 
       // Add conversation_id filter
-      if (conversationId !== "default") {
-        conditions.push(`m.conversation_id = $${paramCount}`);
-        params.push(conversationId);
-        paramCount++;
-      }
+      conditions.push(`m.conversation_id = $${paramCount}`);
+      params.push(conversationId);
+      paramCount++;
 
       // Add time-based filters
       if (before) {
         conditions.push(`m.created_at < $${paramCount}`);
-        params.push(new Date(before).toISOString());
+        params.push(before.toISOString());
         paramCount++;
       }
 
       if (after) {
         conditions.push(`m.created_at > $${paramCount}`);
-        params.push(new Date(after).toISOString());
+        params.push(after.toISOString());
         paramCount++;
       }
 
       // Add role filter
-      if (role) {
-        conditions.push(`m.role = $${paramCount}`);
-        params.push(role);
-        paramCount++;
-      }
-
-      // Add types filter
-      if (types) {
-        const placeholders = types.map((_, index) => `$${paramCount + index}`).join(", ");
-        conditions.push(`m.type IN (${placeholders})`);
-        params.push(...types);
-        paramCount += types.length;
+      if (roles && roles.length > 0) {
+        const placeholders = roles.map(() => `$${paramCount++}`).join(", ");
+        conditions.push(`m.role IN (${placeholders})`);
+        params.push(...roles);
       }
 
       // Add WHERE clause if we have conditions
@@ -1146,22 +1287,69 @@ export class PostgresStorage implements Memory {
 
       const result = await client.query(sql, params);
 
-      // Map the results
+      // Map the results to UIMessage format
       const messages = result.rows.map((row: any) => {
-        // Try to parse content if it's JSON, otherwise use as-is
+        const formatVersion = row.format_version as number;
+
+        // If format_version is 2, parse the new format
+        if (formatVersion === 2 || row.parts) {
+          const parts = row.parts || [];
+          const metadata = row.metadata || {};
+
+          return {
+            id: row.message_id,
+            role: row.role as "user" | "assistant" | "system",
+            parts,
+            metadata,
+          } as UIMessage;
+        }
+
+        // Legacy format - convert to UIMessage
         let content = row.content;
         const parsedContent = safeJsonParse(content);
         if (parsedContent !== null) {
           content = parsedContent;
         }
 
+        // Convert legacy format to UIMessage parts
+        const messageType = row.type as string;
+        const parts = [];
+
+        if (messageType === "text") {
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        } else if (messageType === "tool-call") {
+          parts.push({
+            type: "tool-call",
+            toolCallId: row.message_id,
+            toolName:
+              typeof content === "object" && content !== null && "name" in content
+                ? (content as any).name
+                : "unknown",
+            args: typeof content === "object" ? content : {},
+          });
+        } else if (messageType === "tool-result") {
+          parts.push({
+            type: "tool-result",
+            toolCallId: row.message_id,
+            result: content,
+          });
+        } else {
+          // Default to text part
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        }
+
         return {
           id: row.message_id,
-          role: row.role,
-          content,
-          type: row.type,
-          createdAt: row.created_at,
-        };
+          role: row.role as "user" | "assistant" | "system",
+          parts,
+          metadata: {},
+        } as UIMessage;
       });
 
       // If we used DESC order with limit, reverse to get chronological order
@@ -1181,10 +1369,8 @@ export class PostgresStorage implements Memory {
   /**
    * Clear messages from memory
    */
-  public async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
+  public async clearMessages(userId: string, conversationId?: string): Promise<void> {
     await this.initialized;
-
-    const { userId, conversationId } = options;
     const client = await this.pool.connect();
 
     try {
@@ -1196,21 +1382,17 @@ export class PostgresStorage implements Memory {
           `
           DELETE FROM ${this.options.tablePrefix}_messages 
           WHERE conversation_id = $1 
-          AND conversation_id IN (
-            SELECT id FROM ${this.options.tablePrefix}_conversations WHERE user_id = $2
-          )
+          AND user_id = $2
           `,
           [conversationId, userId],
         );
         this.debug(`Cleared messages for conversation ${conversationId} for user ${userId}`);
       } else {
-        // Clear all messages for the user across all their conversations
+        // Clear all messages for the user
         await client.query(
           `
           DELETE FROM ${this.options.tablePrefix}_messages 
-          WHERE conversation_id IN (
-            SELECT id FROM ${this.options.tablePrefix}_conversations WHERE user_id = $1
-          )
+          WHERE user_id = $1
           `,
           [userId],
         );
@@ -1478,13 +1660,13 @@ export class PostgresStorage implements Memory {
    *
    * @param conversationId The unique identifier of the conversation to retrieve messages from
    * @param options Optional pagination and filtering options
-   * @returns Promise that resolves to an array of messages in chronological order (oldest first)
+   * @returns Promise that resolves to an array of UIMessages in chronological order (oldest first)
    * @see {@link https://voltagent.dev/docs/agents/memory/postgres#conversation-messages | Getting Conversation Messages}
    */
   public async getConversationMessages(
     conversationId: string,
     options: { limit?: number; offset?: number } = {},
-  ): Promise<MemoryMessage[]> {
+  ): Promise<UIMessage[]> {
     await this.initialized;
 
     const { limit = 100, offset = 0 } = options;
@@ -1492,8 +1674,7 @@ export class PostgresStorage implements Memory {
 
     try {
       let sql = `
-        SELECT message_id, role, content, type, created_at
-        FROM ${this.options.tablePrefix}_messages
+        SELECT * FROM ${this.options.tablePrefix}_messages
         WHERE conversation_id = $1
         ORDER BY created_at ASC
       `;
@@ -1507,20 +1688,67 @@ export class PostgresStorage implements Memory {
       const result = await client.query(sql, params);
 
       return result.rows.map((row: any) => {
-        // Try to parse content if it's JSON, otherwise use as-is
+        const formatVersion = row.format_version as number;
+
+        // If format_version is 2, parse the new format
+        if (formatVersion === 2 || row.parts) {
+          const parts = row.parts || [];
+          const metadata = row.metadata || {};
+
+          return {
+            id: row.message_id,
+            role: row.role as "user" | "assistant" | "system",
+            parts,
+            metadata,
+          } as UIMessage;
+        }
+
+        // Legacy format - convert to UIMessage
         let content = row.content;
         const parsedContent = safeJsonParse(content);
         if (parsedContent !== null) {
           content = parsedContent;
         }
 
+        // Convert legacy format to UIMessage parts
+        const messageType = row.type as string;
+        const parts = [];
+
+        if (messageType === "text") {
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        } else if (messageType === "tool-call") {
+          parts.push({
+            type: "tool-call",
+            toolCallId: row.message_id,
+            toolName:
+              typeof content === "object" && content !== null && "name" in content
+                ? (content as any).name
+                : "unknown",
+            args: typeof content === "object" ? content : {},
+          });
+        } else if (messageType === "tool-result") {
+          parts.push({
+            type: "tool-result",
+            toolCallId: row.message_id,
+            result: content,
+          });
+        } else {
+          // Default to text part
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        }
+
         return {
           id: row.message_id,
-          role: row.role,
-          content,
-          type: row.type,
-          createdAt: row.created_at,
-        };
+          role: row.role as "user" | "assistant" | "system",
+          parts,
+          metadata: {},
+        } as UIMessage;
       });
     } catch (error) {
       this.debug("Error getting conversation messages:", error);

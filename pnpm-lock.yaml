@@ -2136,6 +2136,9 @@ importers:
 
   packages/postgres:
     dependencies:
+      '@voltagent/internal':
+        specifier: ^0.0.9
+        version: link:../internal
       pg:
         specifier: ^8.16.0
         version: 8.16.3
@@ -2152,6 +2155,9 @@ importers:
       '@voltagent/core':
         specifier: ^1.0.0-next.0
         version: link:../core
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)

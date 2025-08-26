@@ -1,4 +1,5 @@
-import type { Conversation, MemoryMessage } from "@voltagent/core";
+import type { Conversation } from "@voltagent/core";
+import type { UIMessage } from "ai";
 import { PostgresStorage } from ".";
 
 // Mock pg Pool
@@ -23,12 +24,16 @@ vi.spyOn(Math, "random").mockImplementation(() => {
 });
 
 // Test data helpers
-const createMessage = (overrides: Partial<MemoryMessage> = {}): MemoryMessage => ({
+const createMessage = (overrides: Partial<UIMessage> = {}): UIMessage => ({
   id: "test-message-id",
-  role: "user",
-  content: "Test message",
-  type: "text",
-  createdAt: new Date().toISOString(),
+  role: "user" as const,
+  parts: [
+    {
+      type: "text",
+      text: "Test message",
+    },
+  ],
+  metadata: {},
   ...overrides,
 });
 
@@ -198,17 +203,18 @@ describe("PostgresStorage", () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ count: 1 }] }); // For count query
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For COMMIT transaction
 
-      await storage.addMessage(message, "conversation1");
+      await storage.addMessage(message, "test-user", "conversation1");
 
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO"),
         expect.arrayContaining([
           "conversation1",
           message.id,
+          "test-user",
           message.role,
-          message.content,
-          message.type,
-          message.createdAt,
+          JSON.stringify(message.parts || []),
+          JSON.stringify(message.metadata || {}),
+          2,
         ]),
       );
     });
@@ -223,29 +229,29 @@ describe("PostgresStorage", () => {
           .map((msg) => ({
             message_id: msg.id,
             role: msg.role,
-            content: msg.content,
-            type: msg.type,
-            created_at: msg.createdAt,
+            parts: msg.parts,
+            metadata: msg.metadata,
+            format_version: 2,
+            user_id: "user1",
+            created_at: new Date().toISOString(),
           }))
           .reverse(),
       });
 
-      const messages = await storage.getMessages({
-        userId: "user1",
-        conversationId: "conversation1",
+      const messages = await storage.getMessages("user1", "conversation1", {
         limit: 10,
-        role: "user",
+        roles: ["user"],
       });
 
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining("SELECT"),
-        expect.arrayContaining(["user1", "conversation1", "user", 10]),
+        expect.arrayContaining(["user1", "conversation1"]),
       );
       expect(messages).toEqual(mockMessages);
     });
 
     it("should clear messages", async () => {
-      await storage.clearMessages({ userId: "user1", conversationId: "conversation1" });
+      await storage.clearMessages("user1", "conversation1");
 
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining("DELETE FROM"),
@@ -288,7 +294,7 @@ describe("PostgresStorage", () => {
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For cleanup query
       mockQuery.mockResolvedValueOnce({ rows: [] }); // For COMMIT transaction
 
-      await storage.addMessage(message, "conversation1");
+      await storage.addMessage(message, "test-user", "conversation1");
 
       // Verify that cleanup was called when limit was exceeded
       expect(mockQuery).toHaveBeenCalledWith(
@@ -298,23 +304,25 @@ describe("PostgresStorage", () => {
     });
   });
 
-  describe("Message Type Filtering", () => {
-    it("should filter messages by single type - text only", async () => {
+  describe("Message Filtering", () => {
+    it("should retrieve all messages when no filter", async () => {
       mockConnect.mockResolvedValueOnce({
         query: mockQuery.mockResolvedValueOnce({
           rows: [
             {
               message_id: "msg1",
               role: "user",
-              content: "User question",
-              type: "text",
+              parts: [{ type: "text", text: "User question" }],
+              metadata: {},
+              format_version: 2,
               created_at: "2023-01-01T12:00:00.000Z",
             },
             {
               message_id: "msg2",
               role: "assistant",
-              content: "Response",
-              type: "text",
+              parts: [{ type: "text", text: "Response" }],
+              metadata: {},
+              format_version: 2,
               created_at: "2023-01-01T12:00:01.000Z",
             },
           ],
@@ -322,49 +330,45 @@ describe("PostgresStorage", () => {
         release: vi.fn(),
       });
 
-      const messages = await storage.getMessages({
-        conversationId: "test-conv",
-        types: ["text"],
-      });
-
+      const messages = await storage.getMessages("test-user", "test-conv");
       expect(messages).toHaveLength(2);
-      expect(messages.every((m) => m.type === "text")).toBe(true);
+      expect(messages.every((m) => m.parts.length > 0)).toBe(true);
     });
 
-    it("should filter messages by single type - tool-call only", async () => {
+    it("should filter messages by role", async () => {
       mockConnect.mockResolvedValueOnce({
         query: mockQuery.mockResolvedValueOnce({
           rows: [
             {
-              message_id: "msg1",
+              message_id: "msg2",
               role: "assistant",
-              content: JSON.stringify({ tool: "calculator", args: { a: 1, b: 2 } }),
-              type: "tool-call",
-              created_at: "2023-01-01T12:00:00.000Z",
+              parts: [{ type: "text", text: "Response" }],
+              metadata: {},
+              format_version: 2,
+              created_at: "2023-01-01T12:00:01.000Z",
             },
           ],
         }),
         release: vi.fn(),
       });
 
-      const messages = await storage.getMessages({
-        conversationId: "test-conv",
-        types: ["tool-call"],
+      const messages = await storage.getMessages("test-user", "test-conv", {
+        roles: ["assistant"],
       });
-
       expect(messages).toHaveLength(1);
-      expect(messages[0].type).toBe("tool-call");
+      expect(messages[0].role).toBe("assistant");
     });
 
-    it("should filter messages by single type - tool-result only", async () => {
+    it("should handle limit option", async () => {
       mockConnect.mockResolvedValueOnce({
         query: mockQuery.mockResolvedValueOnce({
           rows: [
             {
               message_id: "msg1",
-              role: "tool",
-              content: JSON.stringify({ result: 3 }),
-              type: "tool-result",
+              role: "user",
+              parts: [{ type: "text", text: "User question" }],
+              metadata: {},
+              format_version: 2,
               created_at: "2023-01-01T12:00:00.000Z",
             },
           ],
@@ -372,142 +376,39 @@ describe("PostgresStorage", () => {
         release: vi.fn(),
       });
 
-      const messages = await storage.getMessages({
-        conversationId: "test-conv",
-        types: ["tool-result"],
+      const messages = await storage.getMessages("test-user", "test-conv", {
+        limit: 1,
       });
-
       expect(messages).toHaveLength(1);
-      expect(messages[0].type).toBe("tool-result");
     });
 
-    it("should filter messages by multiple types", async () => {
+    it("should return all messages when limit is undefined", async () => {
       mockConnect.mockResolvedValueOnce({
         query: mockQuery.mockResolvedValueOnce({
           rows: [
             {
               message_id: "msg1",
               role: "user",
-              content: "Question",
-              type: "text",
+              parts: [{ type: "text", text: "Question" }],
+              metadata: {},
+              format_version: 2,
               created_at: "2023-01-01T12:00:00.000Z",
             },
             {
               message_id: "msg2",
               role: "assistant",
-              content: JSON.stringify({ tool: "calculator" }),
-              type: "tool-call",
+              parts: [{ type: "text", text: "Answer" }],
+              metadata: {},
+              format_version: 2,
               created_at: "2023-01-01T12:00:01.000Z",
-            },
-            {
-              message_id: "msg3",
-              role: "assistant",
-              content: "Answer",
-              type: "text",
-              created_at: "2023-01-01T12:00:02.000Z",
             },
           ],
         }),
         release: vi.fn(),
       });
 
-      const messages = await storage.getMessages({
-        conversationId: "test-conv",
-        types: ["text", "tool-call"],
-      });
-
-      expect(messages).toHaveLength(3);
-      expect(messages.filter((m) => m.type === "text")).toHaveLength(2);
-      expect(messages.filter((m) => m.type === "tool-call")).toHaveLength(1);
-    });
-
-    it("should return no messages when types array is empty", async () => {
-      mockConnect.mockResolvedValueOnce({
-        query: mockQuery.mockResolvedValueOnce({
-          rows: [],
-        }),
-        release: vi.fn(),
-      });
-
-      const messages = await storage.getMessages({
-        conversationId: "test-conv",
-        types: [],
-      });
-
-      expect(messages).toHaveLength(0);
-    });
-
-    it("should return all messages when types is undefined", async () => {
-      mockConnect.mockResolvedValueOnce({
-        query: mockQuery.mockResolvedValueOnce({
-          rows: [
-            {
-              message_id: "msg1",
-              role: "user",
-              content: "Question",
-              type: "text",
-              created_at: "2023-01-01T12:00:00.000Z",
-            },
-            {
-              message_id: "msg2",
-              role: "assistant",
-              content: JSON.stringify({ tool: "calculator" }),
-              type: "tool-call",
-              created_at: "2023-01-01T12:00:01.000Z",
-            },
-            {
-              message_id: "msg3",
-              role: "tool",
-              content: JSON.stringify({ result: 3 }),
-              type: "tool-result",
-              created_at: "2023-01-01T12:00:02.000Z",
-            },
-          ],
-        }),
-        release: vi.fn(),
-      });
-
-      const messages = await storage.getMessages({
-        conversationId: "test-conv",
-      });
-
-      expect(messages).toHaveLength(3);
-    });
-
-    it("should combine type filtering with limit", async () => {
-      mockConnect.mockResolvedValueOnce({
-        query: mockQuery.mockResolvedValueOnce({
-          rows: [
-            {
-              message_id: "msg3",
-              role: "assistant",
-              content: "Latest text",
-              type: "text",
-              created_at: "2023-01-01T12:00:02.000Z",
-            },
-            {
-              message_id: "msg2",
-              role: "user",
-              content: "Second text",
-              type: "text",
-              created_at: "2023-01-01T12:00:01.000Z",
-            },
-          ], // Query returns DESC order (latest first)
-        }),
-        release: vi.fn(),
-      });
-
-      const messages = await storage.getMessages({
-        conversationId: "test-conv",
-        types: ["text"],
-        limit: 2,
-      });
-
-      expect(messages).toHaveLength(2);
-      expect(messages.every((m) => m.type === "text")).toBe(true);
-      // Should be in chronological order after reversal
-      expect(messages[0].content).toBe("Second text");
-      expect(messages[1].content).toBe("Latest text");
+      const messages = await storage.getMessages("test-user", "test-conv");
+      expect(messages.length).toBeGreaterThan(0);
     });
   });
 
@@ -695,9 +596,10 @@ describe("PostgresStorage", () => {
         rows: messages.map((msg) => ({
           message_id: msg.id,
           role: msg.role,
-          content: msg.content,
-          type: msg.type,
-          created_at: msg.createdAt,
+          parts: msg.parts,
+          metadata: msg.metadata,
+          format_version: 2,
+          created_at: new Date().toISOString(),
         })),
       });
 
@@ -1262,7 +1164,7 @@ describe("PostgresStorage", () => {
       const error = new Error("Database error");
       mockQuery.mockRejectedValueOnce(error);
 
-      await expect(storage.addMessage(createMessage(), "user1")).rejects.toThrow(
+      await expect(storage.addMessage(createMessage(), "user1", "conversation1")).rejects.toThrow(
         "Failed to add message to PostgreSQL database",
       );
     });
@@ -1278,7 +1180,7 @@ describe("PostgresStorage", () => {
       mockConnect.mockResolvedValueOnce(mockClient);
       mockQuery.mockRejectedValueOnce(new Error("Failed to add message to PostgreSQL database"));
 
-      await expect(storage.addMessage(createMessage(), "user1")).rejects.toThrow(
+      await expect(storage.addMessage(createMessage(), "user1", "conversation1")).rejects.toThrow(
         "Failed to add message to PostgreSQL database",
       );
     });

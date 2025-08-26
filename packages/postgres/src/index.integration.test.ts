@@ -1,4 +1,5 @@
-import type { Conversation, MemoryMessage } from "@voltagent/core";
+import type { Conversation } from "@voltagent/core";
+import type { UIMessage } from "ai";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PostgresStorage } from ".";
 
@@ -27,7 +28,7 @@ describe("PostgresStorage Integration Tests", () => {
   beforeEach(async () => {
     // Clean up data before each test
     try {
-      await storage.clearMessages({ userId: "test-user" });
+      await storage.clearMessages("test-user");
       const conversations = await storage.getConversations("test-resource");
       for (const conv of conversations) {
         await storage.deleteConversation(conv.id);
@@ -67,23 +68,27 @@ describe("PostgresStorage Integration Tests", () => {
 
       await storage.createConversation(conversation);
 
-      const message: MemoryMessage = {
+      const message: UIMessage = {
         id: "test-msg-1",
         role: "user",
-        content: "Hello, this is a test message",
-        type: "text",
-        createdAt: new Date().toISOString(),
+        parts: [
+          {
+            type: "text",
+            text: "Hello, this is a test message",
+          },
+        ],
+        metadata: {},
       };
 
-      await storage.addMessage(message, conversation.id);
+      await storage.addMessage(message, conversation.userId, conversation.id);
 
-      const messages = await storage.getMessages({
-        userId: conversation.userId,
-        conversationId: conversation.id,
-      });
+      const messages = await storage.getMessages(conversation.userId, conversation.id);
 
       expect(messages).toHaveLength(1);
-      expect(messages[0].content).toBe(message.content);
+      expect(messages[0].parts[0]).toEqual({
+        type: "text",
+        text: "Hello, this is a test message",
+      });
       expect(messages[0].role).toBe(message.role);
     });
 
@@ -135,21 +140,22 @@ describe("PostgresStorage Integration Tests", () => {
 
       // Add messages beyond the limit
       for (let i = 1; i <= 5; i++) {
-        const message: MemoryMessage = {
+        const message: UIMessage = {
           id: `msg-${i}`,
           role: "user",
-          content: `Message ${i}`,
-          type: "text",
-          createdAt: new Date().toISOString(),
+          parts: [
+            {
+              type: "text",
+              text: `Message ${i}`,
+            },
+          ],
+          metadata: {},
         };
-        await limitedStorage.addMessage(message, conversation.id);
+        await limitedStorage.addMessage(message, conversation.userId, conversation.id);
         await new Promise((resolve) => setTimeout(resolve, 10)); // Small delay for ordering
       }
 
-      const messages = await limitedStorage.getMessages({
-        userId: conversation.userId,
-        conversationId: conversation.id,
-      });
+      const messages = await limitedStorage.getMessages(conversation.userId, conversation.id);
 
       // Should only have 3 messages (the limit)
       expect(messages.length).toBeLessThanOrEqual(3);
@@ -178,13 +184,17 @@ describe("PostgresStorage Integration Tests", () => {
       const invalidMessage = {
         id: "test-msg-invalid",
         role: "user",
-        content: "Test message",
-        type: "text",
-        createdAt: new Date().toISOString(),
-      } as MemoryMessage;
+        parts: [
+          {
+            type: "text",
+            text: "Test message",
+          },
+        ],
+        metadata: {},
+      } as UIMessage;
 
       await expect(
-        storage.addMessage(invalidMessage, "non-existent-conversation"),
+        storage.addMessage(invalidMessage, "test-user", "non-existent-conversation"),
       ).rejects.toThrow();
     });
   });

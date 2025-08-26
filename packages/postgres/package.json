@@ -3,6 +3,7 @@
   "description": "VoltAgent PostgreSQL - PostgreSQL Memory provider integration for VoltAgent",
   "version": "1.0.0-next.0",
   "dependencies": {
+    "@voltagent/internal": "^0.0.9",
     "pg": "^8.16.0"
   },
   "devDependencies": {
@@ -10,6 +11,7 @@
     "@types/pg": "^8.15.2",
     "@vitest/coverage-v8": "^3.2.4",
     "@voltagent/core": "^1.0.0-next.0",
+    "ai": "^5.0.12",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"
@@ -33,7 +35,8 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@voltagent/core": "^1.0.0-next.0"
+    "@voltagent/core": "^1.0.0-next.0",
+    "ai": "^5.0.0"
   },
   "scripts": {
     "attw": "attw --pack",
