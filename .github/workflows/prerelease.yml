@@ -26,7 +26,6 @@ jobs:
           - sdk
           - supabase
           - vercel-ai-exporter
-          - vercel-ui
           - voice
       fail-fast: false
     name: Test ${{ matrix.package }}
