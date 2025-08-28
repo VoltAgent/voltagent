@@ -95,43 +95,45 @@ await agent.generateText({
 });
 ```
 
+```ts
 // New AgentContext structure used internally:
 interface AgentContext {
-context: Map<string | symbol, unknown>,
-operation: {
-id: string,
-userId?: string,
-conversationId?: string,
-parentAgentId?: string,
-parentHistoryId?: string
-},
-system: {
-logger: Logger,
-signal?: AbortSignal,
-startTime: string
+  context: Map<string | symbol, unknown>;
+  operation: {
+    id: string;
+    userId?: string;
+    conversationId?: string;
+    parentAgentId?: string;
+    parentHistoryId?: string;
+  };
+  system: {
+    logger: Logger;
+    signal?: AbortSignal;
+    startTime: string;
+  };
 }
-}
-
-````
+```
 
 ### Hook System Simplified
+
 Hooks are now defined directly without createHooks wrapper.
 
 **Before:**
+
 ```typescript
-import { createHooks } from '@voltagent/core';
+import { createHooks } from "@voltagent/core";
 
 const agent = new Agent({
   hooks: createHooks({
     onStart: async (context) => {},
-    onEnd: async (context, result) => {}
-  })
+    onEnd: async (context, result) => {},
+  }),
 });
-````
+```
 
 **After:**
 
-```typescript
+```ts
 const agent = new Agent({
   hooks: {
     onStart: async (context: AgentContext) => {},
