@@ -4,10 +4,10 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^1.0.0-next.0",
+    "@voltagent/core": "^1.0.0-next.1",
     "@voltagent/libsql": "^1.0.0-next.0",
     "@voltagent/logger": "^0.1.4",
-    "@voltagent/server-hono": "^1.0.0-next.0",
+    "@voltagent/server-hono": "^1.0.0-next.1",
     "@voltagent/vercel-ai": "^1.0.0-next.0",
     "@voltagent/voice": "^1.0.0-next.0",
     "zod": "^3.25.0"

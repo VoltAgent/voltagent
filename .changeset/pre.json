@@ -16,7 +16,20 @@
     "@voltagent/vercel-ai-exporter": "0.1.6",
     "@voltagent/voice": "0.2.4",
     "@voltagent/server-core": "1.0.0-next.0",
-    "@voltagent/server-hono": "1.0.0-next.0"
+    "@voltagent/server-hono": "1.0.0-next.0",
+    "voltagent-example-github-repo-analyzer": "0.1.0",
+    "voltagent-example-with-composio-mcp": "0.1.0",
+    "with-jwt-auth": "1.0.0",
+    "voltagent-example-with-mcp": "0.1.0",
+    "voltagent-example-with-nextjs": "0.1.0",
+    "voltagent-example-with-rag-chatbot": "0.0.1",
+    "voltagent-example-with-zapier-mcp": "1.0.0"
   },
-  "changesets": ["core-memory-storage-change", "libsql-initial-release", "major-version-bump"]
+  "changesets": [
+    "agent-ai-sdk-native",
+    "core-memory-storage-change",
+    "libsql-initial-release",
+    "major-version-bump",
+    "voltagent-server-architecture"
+  ]
 }
