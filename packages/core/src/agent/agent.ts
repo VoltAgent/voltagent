@@ -3,7 +3,11 @@
  * Refactored with better architecture and type safety
  */
 
-import type { SystemModelMessage } from "@ai-sdk/provider-utils";
+import type {
+  AssistantModelMessage,
+  SystemModelMessage,
+  ToolModelMessage,
+} from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
@@ -13,6 +17,7 @@ import type {
   GenerateObjectResult,
   GenerateTextResult,
   LanguageModel,
+  StepResult,
   ToolSet,
   UIMessage,
 } from "ai";
@@ -22,6 +27,8 @@ import {
   type FinishReason,
   type LanguageModelUsage,
   convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
   generateObject,
   generateText,
   stepCountIs,
@@ -52,6 +59,7 @@ import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool/manager";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
+import { convertResponseMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import { convertUsage } from "../utils/usage-converter";
 import type { Voice } from "../voice";
@@ -62,7 +70,6 @@ import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
 import type { BaseMessage, StepWithContent } from "./providers/base/types";
 import { SubAgentManager } from "./subagent";
-import { SubAgentEventCollector, createMergedFullStream } from "./subagent/merged-stream-wrapper";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
@@ -130,9 +137,6 @@ export interface AgentContext {
 
   // Internal operation context for compatibility
   operationContext?: OperationContext;
-
-  // Subagent event collector for stream merging
-  subagentEventCollector?: SubAgentEventCollector;
 }
 
 /**
@@ -563,6 +567,9 @@ export class Agent {
         onStepFinish: this.createStepHandler(context, options),
       });
 
+      // Save response messages to memory
+      await this.saveResponseMessagesToMemory(context, result.response?.messages);
+
       // Update history
       this.updateHistoryEntry(context, {
         output: result.text,
@@ -609,11 +616,14 @@ export class Agent {
         },
       );
 
-      // Return result with context
-      return {
-        ...result,
-        context: new Map(context.context),
-      };
+      // Return result with context - use Object.assign to properly copy all properties including getters
+      const returnValue = Object.assign(
+        Object.create(Object.getPrototypeOf(result)), // Preserve prototype chain
+        result, // Copy all enumerable properties
+        { context: new Map(context.context) }, // Add context
+      );
+
+      return returnValue;
     } catch (error) {
       return this.handleError(error as Error, context, options, startTime);
     }
@@ -629,11 +639,7 @@ export class Agent {
     const context = await this.createContext(input, options);
     const methodLogger = context.system.logger; // Extract logger with executionId
 
-    // Create subagent event collector for stream merging BEFORE prepareExecution
-    const subagentEventCollector = new SubAgentEventCollector();
-
-    // Add event collector to context so tools can access it
-    context.subagentEventCollector = subagentEventCollector;
+    // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
 
     const { messages, model, tools, maxSteps } = await this.prepareExecution(
       input,
@@ -736,6 +742,9 @@ export class Agent {
           // The onError callback should return void for AI SDK compatibility
         },
         onFinish: async (finalResult) => {
+          // Save response messages to memory
+          await this.saveResponseMessagesToMemory(context, finalResult.response?.messages);
+
           // Update history
           this.updateHistoryEntry(context, {
             output: finalResult.text,
@@ -758,25 +767,51 @@ export class Agent {
         },
       });
 
-      // Create merged fullStream that includes subagent events
-      const mergedFullStream = this.subAgentManager.hasSubAgents()
-        ? createMergedFullStream(result.fullStream, subagentEventCollector)
-        : result.fullStream;
-
       // Create a wrapper that includes context and delegates to the original result
       const resultWithContext: StreamTextResultWithContext = {
         // Delegate all properties and methods to the original result
         text: result.text,
         textStream: result.textStream,
-        fullStream: mergedFullStream, // Use merged stream
+        fullStream: result.fullStream,
         usage: result.usage,
         finishReason: result.finishReason,
         // Don't access experimental_partialOutputStream directly, use getter
         get experimental_partialOutputStream() {
           return result.experimental_partialOutputStream;
         },
+        // Override toUIMessageStreamResponse to use createUIMessageStream for merging
+        toUIMessageStreamResponse: (options) => {
+          // Only use custom stream if we have subagents and operation context
+          if (this.subAgentManager.hasSubAgents() && context.operationContext) {
+            // Use createUIMessageStream to enable stream merging
+            const mergedStream = createUIMessageStream({
+              execute: async ({ writer }) => {
+                // Put the writer in context for delegate_task to use
+                context.operationContext?.systemContext.set("uiStreamWriter", writer);
+
+                // Start with the parent agent's stream
+                const parentStream = result.toUIMessageStream(options);
+
+                // Merge the parent stream
+                writer.merge(parentStream);
+
+                // The delegate_task tool will use the writer to merge subagent streams
+              },
+              onError: (error) => String(error),
+            });
+
+            // Return the response with the merged stream
+            return createUIMessageStreamResponse({
+              stream: mergedStream,
+              ...options,
+            });
+          }
+
+          // Fall back to original method if no subagents
+          return result.toUIMessageStreamResponse.call(result, options as any);
+        },
+        // Keep other methods bound to the original result
         toUIMessageStream: result.toUIMessageStream.bind(result),
-        toUIMessageStreamResponse: result.toUIMessageStreamResponse.bind(result),
         pipeUIMessageStreamToResponse: result.pipeUIMessageStreamToResponse.bind(result),
         pipeTextStreamToResponse: result.pipeTextStreamToResponse.bind(result),
         toTextStreamResponse: result.toTextStreamResponse.bind(result),
@@ -1645,15 +1680,13 @@ export class Agent {
 
     // Add delegate tool if we have subagents
     if (this.subAgentManager.hasSubAgents()) {
-      // Get the subagent event collector from context if available
-      const eventCollector = context.subagentEventCollector;
-
       const delegateTool = this.subAgentManager.createDelegateTool({
         sourceAgent: this as any, // Type workaround
         currentHistoryEntryId: context.operationContext?.historyEntry.id,
         operationContext: context.operationContext,
         maxSteps: maxSteps,
-        onStreamEvent: eventCollector ? (event) => eventCollector.addEvent(event) : undefined,
+        conversationId: options?.conversationId,
+        userId: options?.userId,
       });
       baseTools.push(delegateTool);
     }
@@ -1896,98 +1929,73 @@ export class Agent {
    * Create step handler for memory and hooks
    */
   private createStepHandler(context: AgentContext, options?: BaseGenerationOptions) {
-    return async (event: any) => {
-      // Save to memory if operation context is available
-      if (context.operationContext) {
-        const stepHandler = this.memoryManager.createStepFinishHandler(
-          context.operationContext,
-          context.operation.userId,
-          context.operation.conversationId,
-        );
-
-        // Convert to StepWithContent format
-        if (event.finishReason === "stop" && event.text) {
-          const step: StepWithContent = {
-            id: crypto.randomUUID(),
-            type: "text",
-            content: event.text,
-            role: "assistant",
-            usage: convertUsage(event.usage),
-          };
-
-          // Log text generation step
-          context.system.logger.debug("Step: Text generated", {
-            event: LogEvents.AGENT_STEP_TEXT,
-            textPreview: event.text,
-            length: event.text.length,
-          });
-
-          await stepHandler(step);
-          this.addStepToHistory(step, context);
+    return async (event: StepResult<ToolSet>) => {
+      // Instead of saving immediately, collect steps in context for batch processing in onFinish
+      if (
+        context.operationContext &&
+        context.operation.userId &&
+        context.operation.conversationId &&
+        event.content &&
+        Array.isArray(event.content)
+      ) {
+        // Store the step content in context for later processing
+        if (!context.operationContext.systemContext.has("conversationSteps")) {
+          context.operationContext.systemContext.set("conversationSteps", []);
         }
+        const conversationSteps = context.operationContext.systemContext.get(
+          "conversationSteps",
+        ) as StepResult<ToolSet>[];
+        conversationSteps.push(event);
 
-        if (event.toolCalls && event.toolCalls.length > 0) {
-          for (const toolCall of event.toolCalls) {
-            const step: StepWithContent = {
-              id: toolCall.toolCallId,
-              type: "tool_call",
-              content: JSON.stringify(toolCall.args || {}),
-              role: "assistant",
-              name: toolCall.toolName,
-              arguments: toolCall.args || {},
-              usage: convertUsage(event.usage),
-            };
-
-            // Log tool call step
-            context.system.logger.debug(`Step: Calling tool '${toolCall.toolName}'`, {
+        // Log each content part
+        for (const part of event.content) {
+          if (part.type === "text") {
+            context.system.logger.debug("Step: Text generated", {
+              event: LogEvents.AGENT_STEP_TEXT,
+              textPreview: part.text.substring(0, 100),
+              length: part.text.length,
+            });
+          } else if (part.type === "reasoning") {
+            context.system.logger.debug("Step: Reasoning generated", {
+              event: LogEvents.AGENT_STEP_TEXT,
+              textPreview: part.text.substring(0, 100),
+              length: part.text.length,
+            });
+          } else if (part.type === "tool-call") {
+            context.system.logger.debug(`Step: Calling tool '${part.toolName}'`, {
               event: LogEvents.AGENT_STEP_TOOL_CALL,
-              toolName: toolCall.toolName,
-              toolCallId: toolCall.toolCallId,
-              arguments: toolCall.args,
+              toolName: part.toolName,
+              toolCallId: part.toolCallId,
+              arguments: part.input,
             });
 
             context.system.logger.debug(
-              buildAgentLogMessage(
-                this.name,
-                ActionType.TOOL_CALL,
-                `Executing ${toolCall.toolName}`,
-              ),
+              buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Executing ${part.toolName}`),
               {
                 event: LogEvents.TOOL_EXECUTION_STARTED,
-                toolName: toolCall.toolName,
-                toolCallId: toolCall.toolCallId,
-                args: toolCall.args,
+                toolName: part.toolName,
+                toolCallId: part.toolCallId,
+                args: part.input,
               },
             );
-
-            await stepHandler(step);
-            this.addStepToHistory(step, context);
-          }
-        }
-
-        if (event.toolResults && event.toolResults.length > 0) {
-          for (const toolResult of event.toolResults) {
-            const step: StepWithContent = {
-              id: toolResult.toolCallId,
-              type: "tool_result",
-              content: JSON.stringify(toolResult.result || {}),
-              role: "tool",
-              name: toolResult.toolName,
-              result: toolResult.result,
-              usage: convertUsage(event.usage),
-            };
-
-            // Log tool result step
-            context.system.logger.debug(`Step: Tool '${toolResult.toolName}' completed`, {
+          } else if (part.type === "tool-result") {
+            context.system.logger.debug(`Step: Tool '${part.toolName}' completed`, {
               event: LogEvents.AGENT_STEP_TOOL_RESULT,
-              toolName: toolResult.toolName,
-              toolCallId: toolResult.toolCallId,
-              result: toolResult.result,
-              hasError: Boolean(toolResult.result?.error),
+              toolName: part.toolName,
+              toolCallId: part.toolCallId,
+              result: part.output,
+              hasError: Boolean(
+                part.output && typeof part.output === "object" && "error" in part.output,
+              ),
             });
-
-            await stepHandler(step);
-            this.addStepToHistory(step, context);
+          } else if (part.type === "tool-error") {
+            context.system.logger.debug(`Step: Tool '${part.toolName}' error`, {
+              event: LogEvents.AGENT_STEP_TOOL_RESULT,
+              toolName: part.toolName,
+              toolCallId: part.toolCallId,
+              error: part.error,
+              hasError: true,
+            });
           }
         }
       }
@@ -1996,6 +2004,37 @@ export class Agent {
       const hooks = this.getMergedHooks(options);
       await hooks.onStepFinish?.(event);
     };
+  }
+
+  /**
+   * Save response messages as UIMessages to memory
+   * Converts and saves all messages from the response in batch
+   */
+  private async saveResponseMessagesToMemory(
+    context: AgentContext,
+    responseMessages: (AssistantModelMessage | ToolModelMessage)[] | undefined,
+  ): Promise<void> {
+    if (
+      !context.operationContext ||
+      !context.operation.userId ||
+      !context.operation.conversationId ||
+      !responseMessages
+    ) {
+      return;
+    }
+
+    // Convert all response messages to UIMessages
+    const uiMessages = await convertResponseMessagesToUIMessages(responseMessages);
+
+    // Save each UIMessage using the existing saveMessage method
+    for (const uiMessage of uiMessages) {
+      await this.memoryManager.saveMessage(
+        context.operationContext,
+        uiMessage,
+        context.operation.userId,
+        context.operation.conversationId,
+      );
+    }
   }
 
   /**

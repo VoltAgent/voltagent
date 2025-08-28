@@ -38,3 +38,25 @@ new VoltAgent({
   logger,
   server: honoServer({ port: 3141 }),
 });
+
+(async () => {
+  const response = await agent.streamText("istanbulun hava durumu nedir?");
+
+  for await (const chunk of response.fullStream) {
+    console.log("Subagent response:", (chunk as any).text);
+  }
+
+  for await (const chunk of response.toUIMessageStream({
+    onFinish: ({ messages }) => {
+      console.log("Save messages:", { messages });
+    },
+  })) {
+    console.log("Subagent response2:", { chunk });
+  }
+
+  const response2 = await agent.generateText("istanbulun hava durumu nedir?");
+
+  const hede = response2.text;
+
+  console.log(hede);
+})();

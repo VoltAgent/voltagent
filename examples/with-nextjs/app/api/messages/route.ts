@@ -6,18 +6,7 @@ export async function GET(request: Request) {
     const conversationId = searchParams.get("conversationId") || "1";
     const userId = searchParams.get("userId") || "1";
 
-    // Check if memory is available
-    if (!sharedMemory || !sharedMemory.getUIMessages) {
-      return Response.json({
-        data: [],
-      });
-    }
-
-    // Get messages in UIMessage format directly
-    const uiMessages = await sharedMemory.getUIMessages({
-      userId,
-      conversationId,
-    });
+    const uiMessages = await sharedMemory.getMessages(userId, conversationId);
 
     return Response.json({
       data: uiMessages || [],

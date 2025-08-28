@@ -1,6 +1,5 @@
 import type { Logger } from "@voltagent/internal";
 import type { UIMessage } from "ai";
-import type { StepWithContent } from "../../agent/providers";
 import type { OperationContext } from "../../agent/types";
 import { AgentEventEmitter } from "../../events";
 import type {
@@ -131,7 +130,6 @@ export class MemoryManager {
     message: UIMessage,
     userId?: string,
     conversationId?: string,
-    type: "text" | "tool-call" | "tool-result" = "text",
   ): Promise<void> {
     if (!this.conversationMemory || !userId) return;
 
@@ -151,7 +149,6 @@ export class MemoryManager {
         message,
         userId,
         conversationId,
-        type,
       },
       output: null,
       metadata: {
@@ -253,27 +250,114 @@ export class MemoryManager {
       return () => {};
     }
 
-    return async (step: StepWithContent): Promise<void> => {
-      // Convert step to UIMessage format
-      const role = step.role || "assistant";
-      const content =
-        typeof step.content === "string" ? step.content : JSON.stringify(step.content);
+    // Return a handler that accepts ContentPart from AI SDK
+    return async (contentPart: {
+      type: string;
+      text?: string;
+      toolCallId?: string;
+      toolName?: string;
+      args?: unknown;
+      input?: unknown;
+      result?: unknown;
+      output?: unknown;
+      error?: unknown;
+      file?: { mediaType?: string; url?: string; base64?: string };
+      sourceId?: string;
+      url?: string;
+      title?: string;
+      content?: unknown;
+      role?: string;
+    }): Promise<void> => {
+      // Convert ContentPart to UIMessage parts
+      const parts: Array<{
+        type: string;
+        text?: string;
+        state?: string;
+        toolCallId?: string;
+        input?: unknown;
+        output?: unknown;
+        mediaType?: string;
+        url?: string;
+        sourceId?: string;
+        title?: string;
+      }> = [];
 
-      // Map step type to memory message type
-      let messageType: "text" | "tool-call" | "tool-result" = "text";
-      if (step.type === "tool_call") {
-        messageType = "tool-call";
-      } else if (step.type === "tool_result") {
-        messageType = "tool-result";
+      // Handle different content part types from AI SDK
+      if (contentPart.type === "text" && contentPart.text) {
+        parts.push({
+          type: "text",
+          text: contentPart.text,
+          state: "done",
+        });
+      } else if (contentPart.type === "reasoning" && contentPart.text) {
+        parts.push({
+          type: "reasoning",
+          text: contentPart.text,
+          state: "done",
+        });
+      } else if (contentPart.type === "tool-call") {
+        // Convert to UI tool part format: tool-${toolName}
+        parts.push({
+          type: `tool-${contentPart.toolName}`,
+          toolCallId: contentPart.toolCallId,
+          state: "input-available",
+          input: contentPart.args || contentPart.input,
+        });
+      } else if (contentPart.type === "tool-result") {
+        parts.push({
+          type: `tool-${contentPart.toolName}`,
+          toolCallId: contentPart.toolCallId,
+          state: "output-available",
+          input: {}, // Will be filled from corresponding tool-call
+          output: contentPart.result || contentPart.output,
+        });
+      } else if (contentPart.type === "tool-error") {
+        // Handle tool errors as tool results with error in output
+        parts.push({
+          type: `tool-${contentPart.toolName}`,
+          toolCallId: contentPart.toolCallId,
+          state: "output-available",
+          input: {}, // Will be filled from corresponding tool-call
+          output: { error: contentPart.error },
+        });
+      } else if (contentPart.type === "file" && contentPart.file) {
+        const file = contentPart.file;
+        parts.push({
+          type: "file",
+          mediaType: file.mediaType || "application/octet-stream",
+          url: file.url || (file.base64 ? `data:${file.mediaType};base64,${file.base64}` : ""),
+        });
+      } else if (contentPart.type === "source") {
+        parts.push({
+          type: "source-url",
+          sourceId: contentPart.sourceId || crypto.randomUUID(),
+          url: contentPart.url || "",
+          title: contentPart.title,
+        });
+      } else {
+        // Fallback: treat as text if we have content
+        const content =
+          typeof contentPart.content === "string"
+            ? contentPart.content
+            : contentPart.text || JSON.stringify(contentPart.content || contentPart);
+        if (content) {
+          parts.push({ type: "text", text: content });
+        }
       }
 
-      const uiMessage: UIMessage = {
-        id: crypto.randomUUID(),
-        role: role as "user" | "assistant" | "system",
-        parts: [{ type: "text", text: content }],
-      };
+      // Only save if we have parts
+      if (parts.length > 0) {
+        const uiMessage: UIMessage = {
+          id: crypto.randomUUID(),
+          role: (contentPart.role || (contentPart.type === "tool-result" ? "tool" : "assistant")) as
+            | "user"
+            | "assistant"
+            | "system",
+          parts: parts as UIMessage["parts"],
+        };
 
-      await this.saveMessage(context, uiMessage, userId, conversationId, messageType);
+        await this.saveMessage(context, uiMessage, userId, conversationId);
+      }
     };
   }
 
@@ -499,11 +583,11 @@ export class MemoryManager {
           parts: [{ type: "text", text: input }],
         };
 
-        await this.saveMessage(context, userMessage, userId, conversationId, "text");
+        await this.saveMessage(context, userMessage, userId, conversationId);
       } else if (Array.isArray(input)) {
         // If input is UIMessage[], save all to memory
         for (const message of input) {
-          await this.saveMessage(context, message, userId, conversationId, "text");
+          await this.saveMessage(context, message, userId, conversationId);
         }
       }
     } catch (error) {

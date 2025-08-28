@@ -877,6 +877,9 @@ importers:
       '@ai-sdk/react':
         specifier: ^2.0.8
         version: 2.0.12(react@19.1.1)(zod@3.25.76)
+      '@libsql/client':
+        specifier: ^0.15.0
+        version: 0.15.10
       '@tailwindcss/postcss':
         specifier: ^4.1.4
         version: 4.1.11
@@ -886,6 +889,9 @@ importers:
       '@voltagent/core':
         specifier: ^1.0.0-next.0
         version: link:../../packages/core
+      '@voltagent/libsql':
+        specifier: ^1.0.0-next.0
+        version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^0.1.4
         version: link:../../packages/logger
@@ -893,9 +899,6 @@ importers:
         specifier: ^1.0.0-next.0
         version: link:../../packages/server-hono
       '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
-      '@voltagent/vercel-ui':
         specifier: ^1.0.0-next.0
         version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
       ai:
@@ -2358,43 +2361,6 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
-
-  packages/vercel-ui:
-    dependencies:
-      '@voltagent/internal':
-        specifier: ^0.0.9
-        version: link:../internal
-      ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
-      ts-pattern:
-        specifier: ^5.7.1
-        version: 5.8.0
-      type-fest:
-        specifier: ^4.41.0
-        version: 4.41.0
-    devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
-      '@vitest/coverage-v8':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
-      '@voltagent/core':
-        specifier: ^1.0.0-next.0
-        version: link:../core
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
-      zod:
-        specifier: ^3.25.0
-        version: 3.25.76
 
   packages/voice:
     dependencies:
@@ -7759,7 +7725,7 @@ packages:
       '@octokit/request-error': 3.0.3
       '@octokit/types': 9.3.2
       is-plain-object: 5.0.0
-      node-fetch: 2.6.7
+      node-fetch: 2.7.0
       universal-user-agent: 6.0.1
     transitivePeerDependencies:
       - encoding
@@ -9674,20 +9640,6 @@ packages:
     dependencies:
       '@ai-sdk/openai': 2.0.12(zod@3.25.76)
       '@voltagent/core': link:packages/core
-      ai: 5.0.12(zod@3.25.76)
-      ts-pattern: 5.8.0
-      type-fest: 4.41.0
-      zod: 3.25.76
-    dev: false
-
-  /@voltagent/vercel-ui@1.0.0(@voltagent/core@packages+core)(zod@3.25.76):
-    resolution: {integrity: sha512-jG+A9GPvAddWypIY2l9gMdGXQn8E3KcRREgCnN807Jtdb4x94Fx2Pkh84Jz8a9ppR12grokp3y5mnJzgSVGsUg==}
-    peerDependencies:
-      '@voltagent/core': ^0.1.71
-      zod: ^3.25.0
-    dependencies:
-      '@voltagent/core': link:packages/core
-      '@voltagent/internal': 0.0.9
       ai: 5.0.12(zod@3.25.76)
       ts-pattern: 5.8.0
       type-fest: 4.41.0

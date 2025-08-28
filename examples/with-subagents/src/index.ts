@@ -53,7 +53,8 @@ const supervisorAgent = new Agent({
   subAgents: [contentCreatorAgent, formatterAgent],
   supervisorConfig: {
     fullStreamEventForwarding: {
-      types: ["error"],
+      types: ["tool-call", "tool-result"],
+      addSubAgentPrefix: true,
     },
   },
   memory: memory,
@@ -63,22 +64,13 @@ const supervisorAgent = new Agent({
 new VoltAgent({
   agents: {
     supervisorAgent,
+    formatterAgent,
+    contentCreatorAgent,
   },
   logger,
   // Use the new honoServer factory with configuration
   server: honoServer(),
 });
-
-setTimeout(() => {
-  new VoltAgent({
-    agents: {
-      supervisorAgent,
-    },
-    logger,
-    // Use the new honoServer factory with configuration
-    server: honoServer(),
-  });
-}, 2000);
 
 /* logger.error("VoltAgent initialized with subagents");
 

@@ -1,67 +1,100 @@
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
-import { createPinoLogger } from "@voltagent/logger";
-import { z } from "zod";
-
 import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { z } from "zod";
 import { sharedMemory } from "./memory";
 
-// Create logger
-/* const logger = createPinoLogger({
-  name: "nextjs-example",
-  level: "info",
-});
- */
-// Define a calculator tool
-const calculatorTool = createTool({
-  name: "calculate",
-  description: "Perform a mathematical calculation",
+// Uppercase conversion tool
+const uppercaseTool = createTool({
+  name: "uppercase",
+  description: "Convert text to uppercase",
   parameters: z.object({
-    expression: z.string().describe("The mathematical expression to evaluate, e.g. (2 + 2) * 3"),
+    text: z.string().describe("Text to convert to uppercase"),
   }),
   execute: async (args) => {
-    try {
-      // Using Function is still not ideal for production but safer than direct eval
-      const result = new Function(`return ${args.expression}`)();
-      return { result };
-    } catch (e) {
-      // Properly use the error variable
-      const errorMessage = e instanceof Error ? e.message : String(e);
-      throw new Error(`Invalid expression: ${args.expression}. Error: ${errorMessage}`);
-    }
+    return { result: args.text.toUpperCase() };
   },
 });
 
-// New Agent implementation - uses AI SDK directly
-export const agentV2 = new Agent({
-  name: "MathAssistantV2",
+// Word count tool
+const wordCountTool = createTool({
+  name: "countWords",
+  description: "Count words in text",
+  parameters: z.object({
+    text: z.string().describe("Text to count words in"),
+  }),
+  execute: async (args) => {
+    const words = args.text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
+    return { count: words.length, words: words };
+  },
+});
+
+// Story writing tool
+const storyWriterTool = createTool({
+  name: "writeStory",
+  description: "Write a 50-word story about the given text",
+  parameters: z.object({
+    text: z.string().describe("Text to write a story about"),
+  }),
+  execute: async (args) => {
+    // The agent will handle the creative writing
+    return { topic: args.text };
+  },
+});
+
+// Uppercase agent
+const uppercaseAgent = new Agent({
+  name: "UppercaseAgent",
   instructions:
-    "You are a helpful assistant that can answer questions and perform calculations. Use the calculate tool when needed.",
+    "You are a text transformer. When given text, use the uppercase tool to convert it to uppercase and return the result.",
   model: openai("gpt-4o-mini"),
-  tools: [calculatorTool],
-  memory: sharedMemory,
-  maxSteps: 5,
-});
-
-// Sub-agent implementation
-export const subAgent = new Agent({
-  name: "MathAssistant",
-  instructions: "A helpful assistant that can answer questions and perform calculations",
-  model: openai("gpt-4o-mini"),
-  tools: [calculatorTool],
+  tools: [uppercaseTool],
   memory: sharedMemory,
 });
 
-export const agent = new Agent({
-  name: "Boss",
-  instructions: "A Supervisor that can delegate tasks to sub-agents",
+// Word count agent
+const wordCountAgent = new Agent({
+  name: "WordCountAgent",
+  instructions:
+    "You are a text analyzer. When given text, use the countWords tool to count the words and return the count.",
   model: openai("gpt-4o-mini"),
-  subAgents: [subAgent],
+  tools: [wordCountTool],
   memory: sharedMemory,
 });
 
+// Story writer agent
+const storyWriterAgent = new Agent({
+  name: "StoryWriterAgent",
+  instructions:
+    "You are a creative story writer. When given text, use the writeStory tool to acknowledge the topic, then write EXACTLY a 50-word story about or inspired by that text. Be creative and engaging. Make sure your story is exactly 50 words, no more, no less.",
+  model: openai("gpt-4o-mini"),
+  tools: [storyWriterTool],
+  memory: sharedMemory,
+});
+
+// Supervisor agent that delegates to sub-agents
+export const supervisorAgent = new Agent({
+  name: "Supervisor",
+  instructions:
+    "You are a text processing supervisor. When given any text input, you MUST delegate to ALL THREE agents: UppercaseAgent, WordCountAgent, AND StoryWriterAgent. Delegate to all of them to process the text in parallel. Then combine and present all three results to the user: the uppercase version, the word count, and the 50-word story.",
+  model: openai("gpt-4o-mini"),
+  subAgents: [uppercaseAgent, wordCountAgent, storyWriterAgent],
+  memory: sharedMemory,
+  supervisorConfig: {
+    fullStreamEventForwarding: {
+      types: ["tool-call", "tool-result", "tool-input-delta", "tool-input-start"],
+    },
+  },
+});
+
+// Create VoltAgent instance
 new VoltAgent({
   agents: {
-    agent,
+    supervisor: supervisorAgent,
   },
-  /* logger, */
 });
+
+// Export the supervisor as the main agent
+export const agent = supervisorAgent;

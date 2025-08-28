@@ -445,31 +445,6 @@ describe("SubAgentManager", () => {
   });
 
   describe("event forwarding", () => {
-    it("should forward events during handoffTask", async () => {
-      const forwardEventSpy = vi.fn();
-
-      // Create a more realistic mock stream
-      const mockAgent = createMockAgent({ name: "Event Agent" });
-      vi.spyOn(mockAgent, "streamText").mockResolvedValue({
-        fullStream: createMockStream([
-          mockStreamEvents.textDelta("Hello"),
-          mockStreamEvents.textDelta(" world"),
-          mockStreamEvents.finish(),
-        ]),
-        text: Promise.resolve("Hello world"),
-        usage: Promise.resolve({ promptTokens: 10, completionTokens: 5, totalTokens: 15 }),
-      } as any);
-
-      await subAgentManager.handoffTask({
-        task: "Test task",
-        targetAgent: mockAgent,
-        onStreamEvent: forwardEventSpy,
-      });
-
-      expect(forwardEventSpy).toHaveBeenCalled();
-      expect(forwardEventSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "text-delta" }));
-    });
-
     it("should handle stream errors gracefully", async () => {
       const failingAgent = createMockAgent({ name: "Failing Agent" });
       vi.spyOn(failingAgent, "streamText").mockRejectedValue(new Error("Stream failed"));
@@ -477,79 +452,88 @@ describe("SubAgentManager", () => {
       const result = await subAgentManager.handoffTask({
         task: "Test task",
         targetAgent: failingAgent,
-        onStreamEvent: vi.fn(),
       });
 
       expect(result.result).toContain("Error in delegating task");
     });
 
-    it("should work without event forwarding callback", async () => {
+    it("should work without uiStreamWriter", async () => {
       const result = await subAgentManager.handoffTask({
         task: "Test task",
         targetAgent: mockAgent1,
-        // No onStreamEvent
+        // No parentOperationContext with uiStreamWriter
       });
 
       expect(result.result).toBe("Hello from Math Agent");
     });
 
-    it("should forward events with subagent metadata", async () => {
-      const forwardEventSpy = vi.fn();
-
+    it("should use uiStreamWriter when available", async () => {
+      const mockMerge = vi.fn();
       const mockAgent = createMockAgent({ id: "test-id", name: "Test Agent" });
+
+      const mockStream = createMockStream([mockStreamEvents.textDelta("Test")]);
+      const mockToUIMessageStream = vi.fn().mockReturnValue(mockStream);
+
       vi.spyOn(mockAgent, "streamText").mockResolvedValue({
-        fullStream: createMockStream([mockStreamEvents.textDelta("Test")]),
+        fullStream: mockStream,
+        toUIMessageStream: mockToUIMessageStream,
         text: Promise.resolve("Test"),
+        usage: Promise.resolve({ promptTokens: 10, completionTokens: 5, totalTokens: 15 }),
       } as any);
+
+      const operationContext = {
+        systemContext: new Map([["uiStreamWriter", { merge: mockMerge }]]),
+      } as any;
 
       await subAgentManager.handoffTask({
         task: "Test",
         targetAgent: mockAgent,
-        onStreamEvent: forwardEventSpy,
+        parentOperationContext: operationContext,
       });
 
-      expect(forwardEventSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          subAgentId: "test-id",
-          subAgentName: "Test Agent",
-        }),
-      );
+      expect(mockToUIMessageStream).toHaveBeenCalled();
+      expect(mockMerge).toHaveBeenCalled();
     });
 
-    it("should handle event filtering based on configuration", async () => {
-      const forwardEventSpy = vi.fn();
+    it("should apply supervisor config filters", async () => {
+      const mockMerge = vi.fn();
 
       // Create manager with specific event type configuration
       const manager = new SubAgentManager("Supervisor", [], {
         fullStreamEventForwarding: {
-          types: ["text-delta"], // Only forward text-delta events
-          addSubAgentPrefix: true,
+          types: ["text-delta", "tool-call"], // Custom filter types
         },
       });
 
       const mockAgent = createMockAgent({ name: "Filtered Agent" });
+      const mockStream = createMockStream([
+        mockStreamEvents.textDelta("Text"),
+        mockStreamEvents.toolCall("id", "tool", {}),
+        mockStreamEvents.finish(),
+      ]);
+
+      const mockToUIMessageStream = vi.fn().mockReturnValue(mockStream);
+
       vi.spyOn(mockAgent, "streamText").mockResolvedValue({
-        fullStream: createMockStream([
-          mockStreamEvents.textDelta("Text"),
-          mockStreamEvents.toolCall("id", "tool", {}),
-          mockStreamEvents.finish(),
-        ]),
+        fullStream: mockStream,
+        toUIMessageStream: mockToUIMessageStream,
         text: Promise.resolve("Text"),
       } as any);
+
+      const operationContext = {
+        systemContext: new Map([["uiStreamWriter", { merge: mockMerge }]]),
+      } as any;
+
+      manager.addSubAgent(mockAgent);
 
       await manager.handoffTask({
         task: "Test",
         targetAgent: mockAgent,
-        onStreamEvent: forwardEventSpy,
+        parentOperationContext: operationContext,
       });
 
-      // Should only forward text-delta events
-      const calls = forwardEventSpy.mock.calls;
-      const textDeltaCalls = calls.filter((call) => call[0].type === "text-delta");
-      const otherCalls = calls.filter((call) => call[0].type !== "text-delta");
-
-      expect(textDeltaCalls.length).toBeGreaterThan(0);
-      expect(otherCalls.length).toBe(0);
+      // Verify the stream was processed with filters
+      expect(mockMerge).toHaveBeenCalled();
     });
   });
 

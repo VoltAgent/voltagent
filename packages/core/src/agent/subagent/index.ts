@@ -22,11 +22,12 @@ import type {
   SubAgentConfig,
 } from "./types";
 
-// Export stream merger utilities
-export { createMergedFullStream, SubAgentEventCollector } from "./merged-stream-wrapper";
-
 // Export helper function for creating subagent configs
 export { createSubagent } from "./types";
+
+// Import stream utilities
+import { createMetadataEnrichedStream } from "./stream-metadata-enricher";
+
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
  */
@@ -289,39 +290,6 @@ ${guidelinesText}
   }
 
   /**
-   * Forward stream events from subagent to parent
-   */
-  private async forwardStreamEvents(
-    stream: AsyncIterable<any>,
-    targetAgent: Agent,
-    onStreamEvent: (event: any) => void,
-    config?: { types?: string[]; addSubAgentMetadata?: boolean },
-  ): Promise<void> {
-    const allowedTypes = config?.types || ["tool-call", "tool-result", "text-delta"];
-    const addMetadata = config?.addSubAgentMetadata ?? true;
-
-    for await (const part of stream) {
-      // Check if event type should be forwarded
-      if (allowedTypes && !allowedTypes.includes(part.type)) {
-        continue;
-      }
-
-      // Add subagent metadata if configured
-      let event = part;
-      if (addMetadata) {
-        event = {
-          ...part,
-          subAgentId: targetAgent.id,
-          subAgentName: targetAgent.name,
-        };
-      }
-
-      // Forward the event
-      onStreamEvent(event);
-    }
-  }
-
-  /**
    * Hand off a task to another agent using AgentV2
    */
   public async handoffTask(options: {
@@ -336,7 +304,6 @@ ${guidelinesText}
     maxSteps?: number;
     context?: Map<string | symbol, unknown>;
     sharedContext?: UIMessage[];
-    onStreamEvent?: (event: any) => void; // Callback for stream events
   }): Promise<{
     result: string;
     messages: UIMessage[];
@@ -354,7 +321,6 @@ ${guidelinesText}
       maxSteps,
       context,
       sharedContext = [],
-      onStreamEvent,
     } = options;
 
     // Extract the actual agent
@@ -409,36 +375,37 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         // Direct agent - use streamText by default
         const response = await targetAgent.streamText(messages, baseOptions);
 
-        // Forward stream events if callback provided
-        if (onStreamEvent && response.fullStream) {
-          const forwardingConfig = {
-            types: this.supervisorConfig?.fullStreamEventForwarding?.types || [
-              "tool-call",
-              "tool-result",
-              "text-delta",
-            ],
-            addSubAgentMetadata:
-              this.supervisorConfig?.fullStreamEventForwarding?.addSubAgentPrefix ?? true,
-          };
+        // Get the UI stream writer from operationContext if available
+        const uiStreamWriter = parentOperationContext?.systemContext?.get("uiStreamWriter");
 
-          // Process stream in background while collecting result
-          const streamProcessing = this.forwardStreamEvents(
-            response.fullStream,
-            targetAgent,
-            onStreamEvent,
-            forwardingConfig,
+        // If we have a writer, merge the subagent's stream with metadata
+        if (uiStreamWriter && response.fullStream) {
+          // Convert the subagent's fullStream to UI message stream
+          // Don't use messageMetadata as it only works at message level
+          const subagentUIStream = response.toUIMessageStream({
+            sendStart: false,
+            originalMessages: messages,
+          });
+
+          // Wrap the stream with metadata enricher to add metadata to all parts
+          // Apply type filters from supervisor config
+          const enrichedStream = createMetadataEnrichedStream(
+            subagentUIStream,
+            {
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            },
+            this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
           );
 
-          // Get the final result
-          finalResult = await response.text;
-          usage = await response.usage;
-
-          // Wait for stream processing to complete
-          await streamProcessing;
-        } else {
-          finalResult = await response.text;
-          usage = await response.usage;
+          // Use the writer to merge the enriched stream
+          // This handles promise tracking and error handling automatically
+          uiStreamWriter.merge(enrichedStream);
         }
+
+        // Get the final result
+        finalResult = await response.text;
+        usage = await response.usage;
 
         const assistantMessage: UIMessage = {
           id: crypto.randomUUID(),
@@ -451,36 +418,34 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         const options: StreamTextOptions = { ...baseOptions, ...targetAgentConfig.options };
         const response = await targetAgent.streamText(messages, options);
 
-        // Forward stream events if callback provided
-        if (onStreamEvent && response.fullStream) {
-          const forwardingConfig = {
-            types: this.supervisorConfig?.fullStreamEventForwarding?.types || [
-              "tool-call",
-              "tool-result",
-              "text-delta",
-            ],
-            addSubAgentMetadata:
-              this.supervisorConfig?.fullStreamEventForwarding?.addSubAgentPrefix ?? true,
-          };
+        // Get the UI stream writer from operationContext if available
+        const uiStreamWriter = parentOperationContext?.systemContext?.get("uiStreamWriter");
 
-          // Process stream in background while collecting result
-          const streamProcessing = this.forwardStreamEvents(
-            response.fullStream,
-            targetAgent,
-            onStreamEvent,
-            forwardingConfig,
+        // If we have a writer, merge the subagent's stream with metadata
+        if (uiStreamWriter && response.fullStream) {
+          // Convert the subagent's fullStream to UI message stream
+          // Don't use messageMetadata as it only works at message level
+          const subagentUIStream = response.toUIMessageStream();
+
+          // Wrap the stream with metadata enricher to add metadata to all parts
+          // Apply type filters from supervisor config
+          const enrichedStream = createMetadataEnrichedStream(
+            subagentUIStream,
+            {
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            },
+            this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
           );
 
-          // Get the final result
-          finalResult = await response.text;
-          usage = await response.usage;
-
-          // Wait for stream processing to complete
-          await streamProcessing;
-        } else {
-          finalResult = await response.text;
-          usage = await response.usage;
+          // Use the writer to merge the enriched stream
+          // This handles promise tracking and error handling automatically
+          uiStreamWriter.merge(enrichedStream);
         }
+
+        // Get the final result
+        finalResult = await response.text;
+        usage = await response.usage;
 
         const assistantMessage: UIMessage = {
           id: crypto.randomUUID(),
@@ -626,10 +591,17 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     currentHistoryEntryId?: string;
     operationContext?: OperationContext;
     maxSteps?: number;
-    onStreamEvent?: (event: any) => void; // Callback for forwarding stream events
+    conversationId?: string;
+    userId?: string;
   }): Tool<any, any> {
-    const { sourceAgent, operationContext, currentHistoryEntryId, maxSteps, onStreamEvent } =
-      options;
+    const {
+      sourceAgent,
+      operationContext,
+      currentHistoryEntryId,
+      maxSteps,
+      conversationId,
+      userId,
+    } = options;
     return createTool({
       id: "delegate_task",
       name: "delegate_task",
@@ -687,14 +659,14 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
             sourceAgent,
             // Pass parent context for event propagation
             parentAgentId: sourceAgent?.id,
+            conversationId,
+            userId,
             // Get current history entry ID for parent context
             // This is passed from the Agent class via options when the tool is called
             parentHistoryEntryId: currentHistoryEntryId,
             parentOperationContext: operationContext,
             // Pass maxSteps from parent to subagents
             maxSteps,
-            // Pass stream event callback for forwarding
-            onStreamEvent,
           });
 
           // Return structured results with agent names and their responses
