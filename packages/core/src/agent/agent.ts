@@ -5,6 +5,7 @@
 
 import type {
   AssistantModelMessage,
+  ProviderOptions,
   SystemModelMessage,
   ToolModelMessage,
 } from "@ai-sdk/provider-utils";
@@ -297,6 +298,9 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   // Hooks (can override agent hooks)
   hooks?: AgentHooks;
 
+  // Provider-specific options
+  providerOptions?: ProviderOptions;
+
   // === Inherited from AI SDK CallSettings ===
   // maxOutputTokens, temperature, topP, topK,
   // presencePenalty, frequencyPenalty, stopSequences,
@@ -449,26 +453,6 @@ export class Agent {
   // ============================================================================
 
   /**
-   * Get conversation messages in AI SDK UIMessage format
-   * @param userId - User ID to filter messages
-   * @param conversationId - Conversation ID to filter messages
-   * @param limit - Maximum number of messages to return
-   * @returns Array of UIMessages for the conversation
-   */
-  async getUIMessages(
-    userId: string,
-    conversationId: string,
-    limit?: number,
-  ): Promise<import("ai").UIMessage[]> {
-    const memory = this.memoryManager.getMemory();
-    if (!memory) {
-      return [];
-    }
-
-    return memory.getMessages(userId, conversationId, { limit });
-  }
-
-  /**
    * Generate text response
    */
   async generateText(
@@ -548,6 +532,7 @@ export class Agent {
         contextLimit,
         hooks,
         maxSteps: userMaxSteps,
+        providerOptions,
         ...aiSDKOptions
       } = options || {};
 
@@ -562,6 +547,8 @@ export class Agent {
         stopWhen: stepCountIs(maxSteps),
         // User overrides from AI SDK options
         ...aiSDKOptions,
+        // Provider-specific options
+        providerOptions,
         // VoltAgent controlled (these should not be overridden)
         abortSignal: context.system.signal,
         onStepFinish: this.createStepHandler(context, options),
@@ -700,6 +687,7 @@ export class Agent {
         hooks,
         maxSteps: userMaxSteps,
         onFinish: userOnFinish,
+        providerOptions,
         ...aiSDKOptions
       } = options || {};
 
@@ -714,6 +702,8 @@ export class Agent {
         stopWhen: stepCountIs(maxSteps),
         // User overrides from AI SDK options
         ...aiSDKOptions,
+        // Provider-specific options
+        providerOptions,
         // VoltAgent controlled (these should not be overridden)
         abortSignal: context.system.signal,
         onStepFinish: this.createStepHandler(context, options),
@@ -861,6 +851,7 @@ export class Agent {
         contextLimit,
         hooks,
         maxSteps: userMaxSteps,
+        providerOptions,
         ...aiSDKOptions
       } = options || {};
 
@@ -875,6 +866,8 @@ export class Agent {
         maxRetries: 3,
         // User overrides from AI SDK options
         ...aiSDKOptions,
+        // Provider-specific options
+        providerOptions,
         // VoltAgent controlled
         abortSignal: context.system.signal,
       });
@@ -985,6 +978,7 @@ export class Agent {
         hooks,
         maxSteps: userMaxSteps,
         onFinish: userOnFinish,
+        providerOptions,
         ...aiSDKOptions
       } = options || {};
 
@@ -999,6 +993,8 @@ export class Agent {
         maxRetries: 3,
         // User overrides from AI SDK options
         ...aiSDKOptions,
+        // Provider-specific options
+        providerOptions,
         // VoltAgent controlled
         abortSignal: context.system.signal,
         onError: ({ error }) => {
