@@ -178,15 +178,23 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
         await this.workflowRegistry.suspendAllActiveWorkflows();
 
         this.logger.info("[VoltAgent] All workflows suspended, exiting...");
-        process.exit(0);
+        if (this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT")) {
+          process.exit(0);
+        }
       } catch (error) {
         this.logger.error("[VoltAgent] Error during shutdown:", { error });
-        process.exit(1);
+        if (this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT")) {
+          process.exit(1);
+        }
       }
     };
 
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
-    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.once("SIGTERM", () => shutdown("SIGTERM"));
+    process.once("SIGINT", () => shutdown("SIGINT"));
+  }
+
+  private isSoleSignalHandler(event: "SIGTERM" | "SIGINT"): boolean {
+    return process.listeners(event).length === 1;
   }
 
   /**
