@@ -1,5 +1,5 @@
 ---
-"@voltagent/core": minor
+"@voltagent/core": patch
 ---
 
 fix(core): improve graceful shutdown by checking sole SIGINT/SIGTERM handler
