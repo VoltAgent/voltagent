@@ -147,10 +147,10 @@ telemetry: {
 }
 ```
 
-<!-- ## Learn More
+## Learn More
 
 **📖 For complete documentation and detailed examples:**
-👉 **[VoltAgent Vercel AI SDK Integration Guide](https://voltagent.dev/voltops-llm-observability-docs/vercel-ai/)**
+👉 **[VoltAgent xsAI Integration Guide](https://voltagent.dev/voltops-llm-observability-docs/xsai/)**
 
 What you'll find in the guide:
 
@@ -158,7 +158,7 @@ What you'll find in the guide:
 - How to get API keys
 - Multi-agent workflow examples
 - Production best practices
-- Troubleshooting guide -->
+- Troubleshooting guide
 
 ## Requirements
 
