@@ -270,7 +270,7 @@ export class XSAIProvider implements LLMProvider<string> {
     const xsaiMessages = options.messages.map(this.toMessage);
     const xsaiTools = options.tools ? await this.convertTools(options.tools) : undefined;
 
-    const result = await streamText({
+    const result = streamText({
       apiKey: this.apiKey,
       messages: xsaiMessages,
       model: options.model,
