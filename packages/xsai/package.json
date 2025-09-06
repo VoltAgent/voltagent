@@ -6,7 +6,7 @@
     "@voltagent/core": "^0.1.84",
     "ts-pattern": "^5.7.1",
     "type-fest": "^4.41.0",
-    "xsai": "0.4.0-beta.1",
+    "xsai": "0.4.0-beta.3",
     "zod": "^3.25.0"
   },
   "devDependencies": {
