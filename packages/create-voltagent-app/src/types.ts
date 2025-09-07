@@ -80,4 +80,14 @@ export const AI_PROVIDER_CONFIG = {
       '\nconst ollama = createOllama({\n  baseURL: process.env.OLLAMA_HOST || "http://localhost:11434",\n});',
     apiKeyUrl: "https://ollama.com/download",
   },
+  cerebras: {
+    name: "Cerebras",
+    envVar: "CEREBRAS_API_KEY",
+    package: "@ai-sdk/cerebras",
+    packageVersion: "^2.0.14",
+    model: 'cerebras("gpt-oss-120b")',
+    modelName: "GPT-OSS-120B",
+    import: 'import { cerebras } from "@ai-sdk/cerebras";',
+    apiKeyUrl: "https://cloud.cerebras.ai/?redirect=/platform",
+  },
 } as const;
