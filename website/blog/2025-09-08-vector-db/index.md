@@ -3,7 +3,7 @@ title: Vector Databases and LLM's - Why They Need Each Other
 slug: vector-database
 authors: necatiozmen
 tags: [vector-database]
-description: Understanding how vector databases and LLMs work together, why they complement each other, and their real-world advantages in AI applications.
+description: Understanding how vector databases and LLMs work together, why they complement each other.
 image: https://cdn.voltagent.dev/2025-09-08-vector-db/social.png
 ---
 
