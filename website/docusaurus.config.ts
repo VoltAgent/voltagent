@@ -223,6 +223,13 @@ const config: Config = {
       },
     ],
     [
+      "./plugins/docusaurus-plugin-content-usecases",
+      {
+        id: "usecases",
+        contentPath: "src/components/usecases",
+      },
+    ],
+    [
       "./plugins/docusaurus-plugin-content-examples",
       {
         id: "examples",
