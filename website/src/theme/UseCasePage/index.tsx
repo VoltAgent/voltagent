@@ -25,11 +25,11 @@ import {
   ShieldCheckIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
-import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { DotPattern } from "@site/src/components/ui/dot-pattern";
 import Layout from "@theme/Layout";
+import Mermaid from "@theme/Mermaid";
 import { motion } from "framer-motion";
 import type React from "react";
-import { useState } from "react";
 import MermaidDiagram from "./MermaidDiagram";
 
 // Icon mapping
@@ -70,6 +70,7 @@ interface UseCasePageProps {
       primaryCTALink: string;
       secondaryCTA: string;
       secondaryCTALink: string;
+      mermaidDiagram?: string;
     };
     painPoints: string[];
     solutions: string[];
@@ -78,16 +79,16 @@ interface UseCasePageProps {
       description: string;
       icon: string;
     }>;
-    howItWorks: Array<{
+    exampleAgents?: Array<{
+      name: string;
+      description: string;
+    }>;
+    capabilities?: string[];
+    howItWorks?: Array<{
       step: number;
       title: string;
       description: string;
     }>;
-    faqs: Array<{
-      question: string;
-      answer: string;
-    }>;
-    trustedBy: string[];
   };
 }
 
@@ -96,7 +97,7 @@ const Section = ({
   children,
   className = "",
 }: { children: React.ReactNode; className?: string }) => (
-  <section className={`py-16 md:py-20 lg:py-24 ${className}`}>{children}</section>
+  <section className={`py-8 md:py-10 lg:py-16 ${className}`}>{children}</section>
 );
 
 const Container = ({
@@ -120,9 +121,10 @@ const Button = ({
   const baseClasses =
     "inline-flex items-center justify-center px-6 py-3 rounded-2xl font-semibold transition-all duration-200 no-underline";
   const variants = {
-    primary: "bg-[#00d992] text-[#080f11d9] hover:bg-[#00c182] shadow-lg hover:shadow-xl",
+    primary:
+      "bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/30 shadow-lg hover:shadow-xl",
     secondary:
-      "bg-transparent text-[#00d992] border-2 border-[#00d992] hover:bg-[#00d992] hover:text-[#080f11d9]",
+      "bg-transparent text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/20",
   };
 
   return (
@@ -132,54 +134,13 @@ const Button = ({
   );
 };
 
-const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div
-    className={`rounded-2xl border border-gray-800 bg-gray-900/50 p-6 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 ${className}`}
-  >
-    {children}
-  </div>
-);
-
 const Badge = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <span
-    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#00d992]/10 text-[#00d992] border border-[#00d992]/20 ${className}`}
+    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 ${className}`}
   >
     {children}
   </span>
 );
-
-const Accordion = ({ items }: { items: Array<{ question: string; answer: string }> }) => {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  return (
-    <div className="space-y-4">
-      {items.map((item, index) => (
-        <div
-          key={`faq-${item.question.substring(0, 30).replace(/\s+/g, "-")}`}
-          className="border border-gray-800 rounded-2xl overflow-hidden bg-gray-900/50"
-        >
-          <button
-            type="button"
-            className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-800/50 transition-colors"
-            onClick={() => setOpenIndex(openIndex === index ? null : index)}
-          >
-            <span className="font-semibold text-white">{item.question}</span>
-            {openIndex === index ? (
-              <ChevronUpIcon className="w-5 h-5 text-[#00d992]" />
-            ) : (
-              <ChevronDownIcon className="w-5 h-5 text-gray-400" />
-            )}
-          </button>
-          {openIndex === index && (
-            <div className="px-6 pb-4">
-              <p className="text-gray-400 leading-relaxed">{item.answer}</p>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-};
 
 export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element {
   if (!useCase) {
@@ -219,11 +180,11 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
       </Head>
 
       <main className="flex-1 bg-[#080f11d9]">
+        <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
         {/* Hero Section */}
         <Section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#00d992]/5 to-transparent" />
           <Container>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
               {/* Left side - Content */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
@@ -243,7 +204,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                             : "AI Agent Solution"}
                   </span>
                 </div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+                <h1 className="text-4xl md:text-5xl  font-bold text-white mb-6 leading-tight">
                   {useCase.hero.headline}
                 </h1>
                 <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
@@ -267,11 +228,11 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="relative"
               >
-                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 shadow-2xl">
+                <div>
                   <div className="text-center mb-4">
-                    <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                    {/* <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">
                       Architecture Flow
-                    </h3>
+                    </h3> */}
                   </div>
                   <MermaidDiagram slug={useCase.slug} />
                 </div>
@@ -280,91 +241,83 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
           </Container>
         </Section>
 
-        {/* Social Proof */}
-        <Section className="border-t border-b border-gray-800">
-          <Container>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-center"
-            >
-              <p className="text-sm uppercase tracking-wider text-gray-500 mb-6">
-                Trusted by modern engineering teams
-              </p>
-              <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
-                {useCase.trustedBy.map((company) => (
-                  <div key={company} className="text-gray-400 font-semibold">
-                    {company}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </Container>
-        </Section>
-
-        {/* Feature Highlights */}
+        {/* Features & Capabilities */}
         <Section>
           <Container>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {useCase.features.map((feature) => {
-                  const FeatureIcon = iconMap[feature.icon] || ServerStackIcon;
-                  return (
-                    <Card key={`feature-${feature.title.replace(/\s+/g, "-")}`}>
-                      <div className="mb-4">
-                        <FeatureIcon className="w-8 h-8 text-[#00d992]" />
+              {/* Capabilities and Features Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                {/* Capabilities List - Left Column */}
+                {useCase.capabilities && useCase.capabilities.length > 0 && (
+                  <div>
+                    <div className="h-full">
+                      <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                        <span className="text-main-emerald">What your</span>{" "}
+                        <span className="text-white">
+                          {(() => {
+                            const title = useCase.title.toLowerCase();
+                            if (title.includes("agent") || title.includes("assistant")) {
+                              return title;
+                            }
+                            if (title.includes("teams")) {
+                              return title.replace("teams", "agents");
+                            }
+                            return `${title} agents`;
+                          })()}
+                        </span>{" "}
+                        <span className="text-main-emerald">can do</span>
+                      </h2>
+                      <p className="text-gray-400 text-lg mb-8">
+                        Build TypeScript agents with these powerful capabilities:
+                      </p>
+                      <div className="space-y-4">
+                        {useCase.capabilities.map((capability) => (
+                          <div
+                            key={`capability-${capability.substring(0, 30).replace(/\s+/g, "-")}`}
+                            className="flex items-start"
+                          >
+                            <ArrowRightIcon className="w-5 h-5 text-emerald-400 mr-3 mt-0.5 flex-shrink-0" />
+                            <span className="text-gray-300 text-base">{capability}</span>
+                          </div>
+                        ))}
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                      <p className="text-gray-400 text-sm">{feature.description}</p>
-                    </Card>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </Container>
-        </Section>
+                    </div>
+                  </div>
+                )}
 
-        {/* Pain → Solution */}
-        <Section className="bg-gray-900/30">
-          <Container>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-6">The Problems</h2>
-                  <ul className="space-y-4">
-                    {useCase.painPoints.map((pain) => (
-                      <li
-                        key={`pain-${pain.substring(0, 30).replace(/\s+/g, "-")}`}
-                        className="flex items-start"
+                {/* Feature Cards - Right Column */}
+                <div className="space-y-4">
+                  {useCase.features.map((feature, index) => {
+                    const FeatureIcon = iconMap[feature.icon] || ServerStackIcon;
+                    return (
+                      <div
+                        key={`feature-${feature.title.replace(/\s+/g, "-")}`}
+                        className={`rounded-lg border border-solid ${
+                          index === 0
+                            ? "border-emerald-400 bg-emerald-400/5"
+                            : "border-[#ffffff]/10"
+                        } p-4 transition-all duration-200 ${
+                          index !== 0 ? "hover:border-emerald-400/50 hover:bg-gray-900/30" : ""
+                        }`}
                       >
-                        <span className="text-red-500 mr-3 mt-1">✕</span>
-                        <span className="text-gray-400">{pain}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-white mb-6">How VoltAgent Solves It</h2>
-                  <ul className="space-y-4">
-                    {useCase.solutions.map((solution) => (
-                      <li
-                        key={`solution-${solution.substring(0, 30).replace(/\s+/g, "-")}`}
-                        className="flex items-start"
-                      >
-                        <CheckCircleIcon className="w-5 h-5 text-[#00d992] mr-3 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-400">{solution}</span>
-                      </li>
-                    ))}
-                  </ul>
+                        <div className="flex items-start">
+                          <div className="mr-3 flex-shrink-0">
+                            <FeatureIcon className="w-5 h-5 text-[#00d992]" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-semibold text-white mb-1">
+                              {feature.title}
+                            </h3>
+                            <p className="text-gray-400 text-sm">{feature.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>
@@ -372,79 +325,325 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
         </Section>
 
         {/* How It Works */}
-        <Section>
+        <Section className="">
           <Container>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
-                How It Works
-              </h2>
-              <div className="relative">
-                <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#00d992] to-transparent transform -translate-y-1/2 hidden lg:block" />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                  {useCase.howItWorks.map((step) => (
-                    <div key={step.step} className="relative">
-                      <div className="text-center">
-                        <div className="w-12 h-12 bg-[#00d992] text-[#080f11d9] rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-4 relative z-10">
-                          {step.step}
+              {/* Show steps with connected design */}
+              <div className="relative mb-12">
+                {/* Show mermaid diagram if available */}
+                {useCase.hero.mermaidDiagram && (
+                  <div className="max-w-5xl mx-auto mb-16">
+                    <Mermaid value={useCase.hero.mermaidDiagram} />
+                  </div>
+                )}
+                {/* Desktop view with horizontal connection */}
+                <div className="hidden lg:block relative">
+                  <div className="grid grid-cols-4 gap-6">
+                    {(
+                      useCase.howItWorks || [
+                        {
+                          step: 1,
+                          title: "Build with VoltAgent",
+                          description: "Program your agent logic and workflows in TypeScript.",
+                        },
+                        {
+                          step: 2,
+                          title: "Connect data & tools",
+                          description:
+                            "Integrate APIs, databases, vector DBs (Chroma, Pinecone, Qdrant), and external systems.",
+                        },
+                        {
+                          step: 3,
+                          title: "Add memory & RAG",
+                          description:
+                            "Index your knowledge and enable retrieval + long-term context.",
+                        },
+                        {
+                          step: 4,
+                          title: "Observe in VoltOps",
+                          description:
+                            "Trace decisions, tool calls, tokens, and performance; refine safely.",
+                        },
+                      ]
+                    ).map((step, index, array) => (
+                      <div key={step.step} className="relative">
+                        {/* Connection line to next step */}
+                        {index < array.length - 1 && (
+                          <div className="absolute top-1/2 -right-6 w-6 h-px bg-emerald-500/20 z-10" />
+                        )}
+
+                        {/* Step box with number in top-right */}
+                        <div
+                          className={`relative border border-solid ${
+                            index === 0
+                              ? "border-emerald-400 bg-emerald-400/5"
+                              : "border-[#ffffff]/10"
+                          } rounded-lg p-4 h-full transition-all duration-200 ${
+                            index !== 0 ? "hover:border-emerald-400/50" : ""
+                          }`}
+                        >
+                          {/* Step number in top-right corner */}
+                          <div className="absolute bottom-2 right-2 w-7 h-7 z-50 bg-emerald-600/40 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center text-xs font-semibold">
+                            {step.step}
+                          </div>
+
+                          {/* Step content */}
+                          <div>
+                            <h3 className="font-semibold text-lg text-white  mb-2">{step.title}</h3>
+                            <p className="text-gray-400 text-sm leading-relaxed">
+                              {step.description}
+                            </p>
+                          </div>
                         </div>
-                        <h3 className="font-semibold text-white mb-2">{step.title}</h3>
-                        <p className="text-gray-400 text-sm">{step.description}</p>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tablet view (2 columns) */}
+                <div className="hidden md:block lg:hidden">
+                  <div className="grid grid-cols-2 gap-6">
+                    {(
+                      useCase.howItWorks || [
+                        {
+                          step: 1,
+                          title: "Build with VoltAgent",
+                          description: "Program your agent logic and workflows in TypeScript.",
+                        },
+                        {
+                          step: 2,
+                          title: "Connect data & tools",
+                          description:
+                            "Integrate APIs, databases, vector DBs (Chroma, Pinecone, Qdrant), and external systems.",
+                        },
+                        {
+                          step: 3,
+                          title: "Add memory & RAG",
+                          description:
+                            "Index your knowledge and enable retrieval + long-term context.",
+                        },
+                        {
+                          step: 4,
+                          title: "Observe in VoltOps",
+                          description:
+                            "Trace decisions, tool calls, tokens, and performance; refine safely.",
+                        },
+                      ]
+                    ).map((step, index) => (
+                      <div key={step.step} className="relative">
+                        {/* Connection line for first row to second row */}
+                        {index === 1 && (
+                          <div className="absolute -bottom-6 left-1/2 w-px h-6 bg-emerald-500/20 z-10" />
+                        )}
+
+                        {/* Step box with number in top-right */}
+                        <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-5 h-full hover:bg-gray-900/70 hover:border-emerald-500/30 transition-all duration-200">
+                          {/* Step number in top-right corner */}
+                          <div className="absolute -top-2 -right-2 w-7 h-7 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center text-xs font-semibold">
+                            {step.step}
+                          </div>
+
+                          <div>
+                            <h3 className="font-semibold text-white mb-2">{step.title}</h3>
+                            <p className="text-gray-400 text-sm">{step.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mobile view with vertical boxes */}
+                <div className="block md:hidden">
+                  <div className="space-y-6">
+                    {(
+                      useCase.howItWorks || [
+                        {
+                          step: 1,
+                          title: "Build with VoltAgent",
+                          description: "Program your agent logic and workflows in TypeScript.",
+                        },
+                        {
+                          step: 2,
+                          title: "Connect data & tools",
+                          description:
+                            "Integrate APIs, databases, vector DBs (Chroma, Pinecone, Qdrant), and external systems.",
+                        },
+                        {
+                          step: 3,
+                          title: "Add memory & RAG",
+                          description:
+                            "Index your knowledge and enable retrieval + long-term context.",
+                        },
+                        {
+                          step: 4,
+                          title: "Observe in VoltOps",
+                          description:
+                            "Trace decisions, tool calls, tokens, and performance; refine safely.",
+                        },
+                      ]
+                    ).map((step, index, array) => (
+                      <div key={step.step} className="relative">
+                        {/* Connection line to next step */}
+                        {index < array.length - 1 && (
+                          <div className="absolute -bottom-6 left-1/2 w-px h-6 bg-emerald-500/20 z-10" />
+                        )}
+
+                        {/* Step box with number in top-right */}
+                        <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-5 hover:bg-gray-900/70 hover:border-emerald-500/30 transition-all duration-200">
+                          {/* Step number in top-right corner */}
+                          <div className="absolute -top-2 -right-2 w-7 h-7 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center text-xs font-semibold">
+                            {step.step}
+                          </div>
+
+                          <div>
+                            <h3 className="font-semibold text-white mb-2">{step.title}</h3>
+                            <p className="text-gray-400 text-sm">{step.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>
           </Container>
         </Section>
 
-        {/* Compliance & Security */}
-        <Section className="bg-gray-900/30">
+        {/* Pain → Solution */}
+        <Section className="">
           <Container>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="text-center"
+              transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
-                Enterprise-Ready Security
-              </h2>
-              <div className="flex flex-wrap justify-center gap-4 mb-8">
-                <Badge>SOC2 Compliant</Badge>
-                <Badge>GDPR Ready</Badge>
-                <Badge>SSO/SAML</Badge>
-                <Badge>RBAC</Badge>
-                <Badge>Self-Hosted Option</Badge>
+              {/* Single card with Pain → Solution */}
+              <div className="border border-solid border-white/10 rounded-xl p-8">
+                <div className="relative">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-0">
+                    {/* Vertical divider line - only on desktop */}
+                    <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2">
+                      <div className="h-full bg-gradient-to-b from-transparent via-emerald-500/30 to-transparent" />
+                    </div>
+
+                    {/* Problems column */}
+                    <div className="lg:pr-12">
+                      <h2 className="text-2xl font-bold text-rose-500 mb-6 flex items-center">
+                        The Problems
+                      </h2>
+                      <ul className="space-y-4 pl-0">
+                        {useCase.painPoints.map((pain) => (
+                          <li
+                            key={`pain-${pain.substring(0, 30).replace(/\s+/g, "-")}`}
+                            className="flex items-start group"
+                          >
+                            <div className="w-2 h-2 rounded-full bg-rose-500 mr-3 mt-2 flex-shrink-0" />
+                            <span className="text-white group-hover:text-gray-300 transition-colors">
+                              {pain}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Solutions column */}
+                    <div className="lg:pl-12">
+                      <h2 className="text-2xl font-bold text-emerald-500 mb-6 flex items-center">
+                        How VoltAgent Solves It
+                      </h2>
+                      <ul className="space-y-4 pl-0">
+                        {useCase.solutions.map((solution) => (
+                          <li
+                            key={`solution-${solution.substring(0, 30).replace(/\s+/g, "-")}`}
+                            className="flex items-start group"
+                          >
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-3 mt-2 flex-shrink-0" />
+                            <span className="text-white group-hover:text-gray-300 transition-colors">
+                              {solution}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Mobile horizontal divider */}
+                  <div className="block lg:hidden my-6">
+                    <div className="flex items-center justify-center">
+                      <div className="h-px w-16 bg-gradient-to-r from-transparent to-emerald-500/30" />
+                      <ArrowRightIcon className="w-5 h-5 text-emerald-400 mx-2" />
+                      <div className="h-px w-16 bg-gradient-to-l from-transparent to-emerald-500/30" />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="text-gray-400 max-w-3xl mx-auto">
-                Your data stays in your control. VoltAgent supports self-hosting, single sign-on,
-                role-based access control, and meets enterprise compliance standards. All agent
-                interactions are encrypted and auditable.
-              </p>
             </motion.div>
           </Container>
         </Section>
 
-        {/* FAQ */}
-        <Section className="bg-gray-900/30">
+        {/* Example Agents & Security - Side by Side */}
+        <Section>
           <Container>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
-                Frequently Asked Questions
-              </h2>
-              <div className="max-w-3xl mx-auto">
-                <Accordion items={useCase.faqs} />
-              </div>
-            </motion.div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {/* Example Agents - Left Column */}
+              {useCase.exampleAgents && useCase.exampleAgents.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.35 }}
+                >
+                  <h2 className="text-2xl md:text-3xl font-bold text-main-emerald mb-4">
+                    Example Agents You Can Build
+                  </h2>
+                  <p className="text-gray-400 mb-6 text-sm">
+                    With VoltAgent's TypeScript framework, you have complete control to build agents
+                    tailored to your specific needs:
+                  </p>
+                  <div className="space-y-3">
+                    {useCase.exampleAgents.map((agent) => (
+                      <div
+                        key={`agent-${agent.name.replace(/\s+/g, "-")}`}
+                        className="flex items-start group hover:bg-emerald-500/5 rounded-lg p-2 transition-all duration-200"
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/60 mr-3 mt-2 flex-shrink-0 group-hover:bg-emerald-400" />
+                        <div className="flex-1">
+                          <span className="text-emerald-400 font-semibold mr-2">{agent.name}:</span>
+                          <span className="text-gray-400 text-sm">{agent.description}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Enterprise Security - Right Column */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+              >
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">
+                  Enterprise-Ready Security
+                </h2>
+                <div className="flex flex-wrap gap-3 mb-6">
+                  <Badge>SOC2 Compliant</Badge>
+                  <Badge>GDPR Ready</Badge>
+                  <Badge>SSO/SAML</Badge>
+                  <Badge>RBAC</Badge>
+                  <Badge>Self-Hosted Option</Badge>
+                </div>
+                <p className="text-gray-400 text-sm">
+                  Your data stays in your control. VoltAgent supports self-hosting, single sign-on,
+                  role-based access control, and meets enterprise compliance standards. All agent
+                  interactions are encrypted and auditable.
+                </p>
+              </motion.div>
+            </div>
           </Container>
         </Section>
 

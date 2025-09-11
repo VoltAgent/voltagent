@@ -211,30 +211,6 @@ export default function Navbar() {
                     </div>
                   </div>
                 </Link>
-                <Link to="/usecases/b2b-customer-support" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">
-                        B2B Customer Support
-                      </div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        Enterprise support automation
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/b2c-customer-service" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">
-                        B2C Customer Service
-                      </div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        Scale consumer interactions
-                      </div>
-                    </div>
-                  </div>
-                </Link>
                 <Link to="/usecases/documentation-teams" className="no-underline">
                   <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                     <div className="min-w-0">

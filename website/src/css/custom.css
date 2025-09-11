@@ -270,6 +270,20 @@ main.col.col--7 article.margin-bottom--xl {
   padding-bottom: 0 !important;
 }
 
+/* Remove Mermaid diagram background */
+.mermaid {
+  background: transparent !important;
+}
+
+.mermaid svg {
+  background: transparent !important;
+}
+
+/* Remove background from Mermaid container */
+[class*="mermaid"] {
+  background: transparent !important;
+}
+
 @media (max-width: 1024px) {
   article.margin-bottom--xl {
     padding-bottom: 3.5rem !important;

@@ -127,7 +127,35 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ slug }) => {
   const toolAction = getToolAction();
   const responseType = getResponseType();
 
-  const diagramValue = `sequenceDiagram
+  const diagramValue = `---
+config:
+  look: neo
+  theme: base
+  themeVariables:
+    primaryColor: "rgba(5, 150, 105, 0.2)"
+    primaryTextColor: "#34d399"
+    primaryBorderColor: "rgba(16, 185, 129, 0.2)"
+    lineColor: "rgba(16, 185, 129, 0.4)"
+    secondaryColor: "rgba(5, 150, 105, 0.1)"
+    tertiaryColor: "rgba(5, 150, 105, 0.05)"
+    background: "transparent"
+    mainBkg: "rgba(5, 150, 105, 0.2)"
+    secondBkg: "rgba(5, 150, 105, 0.1)"
+    actorBkg: "rgba(5, 150, 105, 0.2)"
+    actorBorder: "rgba(16, 185, 129, 0.2)"
+    actorTextColor: "#34d399"
+    signalColor: "rgba(16, 185, 129, 0.4)"
+    signalTextColor: "#34d399"
+    sequenceNumberColor: "#34d399"
+    labelBoxBkgColor: "rgba(107, 35, 35, 0.2)"
+    labelBoxBorderColor: "rgba(251, 146, 60, 0.3)"
+    labelTextColor: "#fb923c"
+    loopTextColor: "#34d399"
+    activationBorderColor: "rgba(16, 185, 129, 0.2)"
+    activationBkgColor: "rgba(5, 150, 105, 0.2)"
+---
+sequenceDiagram
+    autonumber
     participant User
     participant VoltAgent
     participant ${agentName}

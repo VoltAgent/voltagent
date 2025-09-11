@@ -8,89 +8,90 @@
     "navTitle": "AI Research Assistant",
     "navDescription": "Automate research with intelligent agents",
     "hero": {
-      "headline": "Build AI Research Assistants that Actually Understand Your Data",
-      "subtext": "VoltAgent powers intelligent research agents with built-in memory, RAG, and full observability—see every search, every decision, every source in real-time.",
+      "headline": "Build Your Own Research Agents, Not Someone Else's",
+      "subtext": "Build TypeScript agents that search, analyze, and synthesize data your way—with complete observability in VoltOps.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
-      "secondaryCTA": "See Demo",
-      "secondaryCTALink": "#demo"
+      "secondaryCTA": "View Examples",
+      "secondaryCTALink": "https://github.com/voltagent/voltagent/tree/main/examples",
+      "mermaidDiagram": "---\nconfig:\n  look: neo\n  theme: base\n  themeVariables:\n    primaryColor: \"rgba(5, 150, 105, 0.2)\"\n    primaryTextColor: \"#34d399\"\n    primaryBorderColor: \"rgba(16, 185, 129, 0.2)\"\n    lineColor: \"rgba(16, 185, 129, 0.4)\"\n    secondaryColor: \"rgba(5, 150, 105, 0.1)\"\n    tertiaryColor: \"rgba(5, 150, 105, 0.05)\"\n    background: \"transparent\"\n    mainBkg: \"rgba(5, 150, 105, 0.2)\"\n    secondBkg: \"rgba(5, 150, 105, 0.1)\"\n    actorBkg: \"rgba(5, 150, 105, 0.2)\"\n    actorBorder: \"rgba(16, 185, 129, 0.2)\"\n    actorTextColor: \"#34d399\"\n    signalColor: \"rgba(16, 185, 129, 0.4)\"\n    signalTextColor: \"#34d399\"\n    sequenceNumberColor: \"#34d399\"\n    labelBoxBkgColor: \"rgba(249, 115, 22, 0.2)\"\n    labelBoxBorderColor: \"rgba(251, 146, 60, 0.3)\"\n    labelTextColor: \"#fb923c\"\n    loopTextColor: \"#34d399\"\n    activationBorderColor: \"rgba(16, 185, 129, 0.2)\"\n    activationBkgColor: \"rgba(5, 150, 105, 0.2)\"\n---\nsequenceDiagram\n  autonumber\n  participant U as User\n  participant VA as VoltAgent\n  participant RA as Research Agent\n  participant T as Tools (Search/APIs/Web)\n  participant VDB as Vector DB\n  participant LLM as LLM\n  participant O as VoltOps\n\n  U->>VA: Research Query\n  VA->>RA: Initialize Research Agent\n  RA->>RA: Parse Query & Strategy\n  RA->>T: Search Multiple Sources\n  T-->>RA: Raw Data\n  RA->>VDB: Store & Index Results\n  VDB-->>RA: Relevant Context\n  RA->>LLM: Analyze & Synthesize\n  LLM-->>RA: Insights\n  RA->>O: Trace Decisions & Sources\n  RA-->>VA: Research Report\n  VA-->>U: Final Analysis"
     },
     "painPoints": [
-      "Manual research takes hours across multiple sources",
-      "Context lost between searches and sessions",
-      "No visibility into AI reasoning and decisions",
-      "Inconsistent research quality and coverage"
+      "Pre-built research tools don't understand your domain",
+      "No control over search strategies or data sources",
+      "Black-box AI with no visibility into decisions",
+      "Generic agents that can't adapt to your workflow"
     ],
     "solutions": [
-      "Automated multi-source research in parallel",
-      "Persistent memory across all sessions",
-      "Full trace of every decision and source",
-      "Consistent, repeatable research workflows"
+      "Build agents that understand your specific domain",
+      "Define custom search strategies and integrate any API",
+      "Complete observability with VoltOps tracing",
+      "Agents that evolve with your requirements"
     ],
     "features": [
       {
-        "title": "Build Custom Research Workflows",
-        "description": "Create multi-step research agents that search, analyze, and synthesize information from multiple sources automatically.",
+        "title": "Your Code, Your Agent",
+        "description": "Write TypeScript to define exactly how your agent searches, filters, and synthesizes. No black boxes, no vendor lock-in.",
+        "icon": "CodeBracketIcon"
+      },
+      {
+        "title": "Plug In Any Data Source",
+        "description": "Connect via API or custom tools; vector DBs included. Integrate proprietary or public data without waiting on vendors.",
         "icon": "ServerStackIcon"
       },
       {
-        "title": "Integrate Any Data Source",
-        "description": "Connect APIs, databases, documents, and web sources. Your agents can access any information your team needs.",
+        "title": "Stateful Memory System",
+        "description": "Agents maintain context across conversations. Use Chroma, Pinecone, or Qdrant for long-term memory.",
         "icon": "CircleStackIcon"
       },
       {
-        "title": "Memory That Learns",
-        "description": "Agents remember context across sessions, building knowledge over time with vector databases like Chroma or Pinecone.",
+        "title": "Debug Like Regular Code",
+        "description": "VoltOps shows every tool call, token usage, and decision path. Set breakpoints, inspect state, optimize performance.",
         "icon": "ChartBarIcon"
+      }
+    ],
+    "exampleAgents": [
+      {
+        "name": "Patent Research Agent",
+        "description": "Searches patent databases, cross-references claims, identifies prior art, and generates comprehensive reports."
       },
       {
-        "title": "Full Visibility & Control",
-        "description": "Track every decision, API call, and reasoning step with VoltOps observability. Debug and optimize with confidence.",
-        "icon": "CodeBracketIcon"
+        "name": "Market Intelligence Agent",
+        "description": "Monitors competitors, analyzes trends, aggregates news, and produces strategic insights from multiple sources."
+      },
+      {
+        "name": "Academic Literature Agent",
+        "description": "Finds relevant papers, extracts key findings, builds citation graphs, and summarizes research developments."
       }
+    ],
+    "capabilities": [
+      "Search across multiple data sources simultaneously",
+      "Generate comprehensive reports with citations",
+      "Extract insights from unstructured documents",
+      "Cross-reference findings and identify patterns",
+      "Synthesize complex information into actionable insights"
     ],
     "howItWorks": [
       {
         "step": 1,
-        "title": "Connect Your Data",
-        "description": "Link documentation, APIs, databases, and knowledge bases"
+        "title": "Build with VoltAgent",
+        "description": "Compose search → analyze → synthesize pipelines in TypeScript."
       },
       {
         "step": 2,
-        "title": "Create Research Agents",
-        "description": "Define specialized agents for different research tasks"
+        "title": "Connect data & tools",
+        "description": "Wire web scrapers, APIs, warehouses, and vector DBs."
       },
       {
         "step": 3,
-        "title": "Add Tools & Memory",
-        "description": "Integrate vector DBs, search tools, and persistent memory"
+        "title": "Add memory & citations",
+        "description": "Index papers/notes; ground outputs with sources and metadata."
       },
       {
         "step": 4,
-        "title": "Monitor in VoltOps",
-        "description": "Track performance, debug issues, and optimize workflows"
+        "title": "Observe in VoltOps",
+        "description": "Trace retrieval paths, token/latency, and tool usage; iterate fast."
       }
-    ],
-    "faqs": [
-      {
-        "question": "How is this different from ChatGPT or Claude?",
-        "answer": "VoltAgent provides a framework for building autonomous research agents with memory, tools, and observability. Unlike chat interfaces, these agents can execute complex multi-step research workflows, maintain context across sessions, and integrate with your existing data sources."
-      },
-      {
-        "question": "What data sources can it connect to?",
-        "answer": "VoltAgent supports any API, database, or document store. Built-in integrations include GitHub, Slack, PostgreSQL, MongoDB, and all major vector databases (Chroma, Pinecone, Qdrant). You can also add custom tools for proprietary systems."
-      },
-      {
-        "question": "How long does implementation take?",
-        "answer": "Basic research agents can be running in under 30 minutes. Production-ready systems with custom integrations typically take 1-2 weeks depending on complexity and data sources."
-      },
-      {
-        "question": "Can I see what the AI is doing?",
-        "answer": "Yes! VoltOps provides complete observability into every agent decision, tool call, and token usage. You can trace any research path, debug issues, and optimize performance with n8n-style visual workflows."
-      }
-    ],
-    "trustedBy": [
-      "Joggr", "MagicSchool AI", "Service Hero Marketing", "DEVPotenciados LATAM"
     ],
     "useCaseCategories": [
       {
@@ -132,98 +133,92 @@
     "category": "support",
     "icon": "ChatBubbleLeftRightIcon",
     "navTitle": "Customer Support Agent",
-    "navDescription": "Automate support with intelligent agents",
+    "navDescription": "Build custom support agents with TypeScript",
     "hero": {
-      "headline": "Build Support Agents that Actually Solve Customer Problems",
-      "subtext": "VoltAgent enables intelligent support automation with context awareness, ticket routing, and real-time escalation—all with complete visibility into every interaction.",
+      "headline": "Build Custom Support Agents in TypeScript",
+      "subtext": "Program support agents that match your exact workflows, connect to your stack, and stay fully observable in VoltOps.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
-      "secondaryCTA": "See Demo",
-      "secondaryCTALink": "#demo"
+      "secondaryCTA": "View Examples",
+      "secondaryCTALink": "https://github.com/voltagent/voltagent/tree/main/examples",
+      "mermaidDiagram": "---\nconfig:\n  look: neo\n  theme: base\n  themeVariables:\n    primaryColor: \"rgba(5, 150, 105, 0.2)\"\n    primaryTextColor: \"#34d399\"\n    primaryBorderColor: \"rgba(16, 185, 129, 0.2)\"\n    lineColor: \"rgba(16, 185, 129, 0.4)\"\n    secondaryColor: \"rgba(5, 150, 105, 0.1)\"\n    tertiaryColor: \"rgba(5, 150, 105, 0.05)\"\n    background: \"transparent\"\n    mainBkg: \"rgba(5, 150, 105, 0.2)\"\n    secondBkg: \"rgba(5, 150, 105, 0.1)\"\n    actorBkg: \"rgba(5, 150, 105, 0.2)\"\n    actorBorder: \"rgba(16, 185, 129, 0.2)\"\n    actorTextColor: \"#34d399\"\n    signalColor: \"rgba(16, 185, 129, 0.4)\"\n    signalTextColor: \"#34d399\"\n    sequenceNumberColor: \"#34d399\"\n    labelBoxBkgColor: \"rgba(249, 115, 22, 0.2)\"\n    labelBoxBorderColor: \"rgba(251, 146, 60, 0.3)\"\n    labelTextColor: \"#fb923c\"\n    loopTextColor: \"#34d399\"\n    activationBorderColor: \"rgba(16, 185, 129, 0.2)\"\n    activationBkgColor: \"rgba(5, 150, 105, 0.2)\"\n---\nsequenceDiagram\n  autonumber\n  participant U as User\n  participant CH as Channel (Chat/Email/Slack)\n  participant VA as VoltAgent\n  participant M as Memory (Vector DB / KB)\n  participant T as Tools (CRM/Billing/Logistics/APIs)\n  participant L as LLM\n  participant O as VoltOps\n\n  U->>CH: Message / Ticket\n  CH->>VA: Incoming request\n  VA->>VA: Route + Policy checks + Guardrails\n  VA->>M: Retrieve relevant KB / history\n  M-->>VA: Context\n  VA->>T: Tool calls (lookup order, create ticket, refund...)\n  T-->>VA: Results\n  VA->>L: Compose / Reason with context\n  L-->>VA: Draft answer / action plan\n  VA->>O: Trace decision + tools + tokens\n  VA-->>CH: Final response (+ actions)\n  CH-->>U: Resolution"
     },
     "painPoints": [
-      "High volume of repetitive support tickets",
-      "Slow response times during peak hours",
-      "Inconsistent support quality across agents",
-      "Lack of context from previous interactions"
+      "No-code chatbots break with complex business logic",
+      "SaaS platforms charge per conversation and limit customization",
+      "Black-box AI can't explain or justify answers",
+      "Generic bots don't understand your products or policies"
     ],
     "solutions": [
-      "Automated ticket triage and routing",
-      "24/7 instant response capabilities",
-      "Consistent, accurate support responses",
-      "Full conversation history and context"
+      "Write real support logic in TypeScript (triage, routing, escalation, SLAs)",
+      "Run in your own stack and control your cost profile",
+      "VoltOps gives end-to-end traces of every tool call and decision",
+      "Agents use your KB, policies, and systems—not generic prompts"
     ],
     "features": [
       {
-        "title": "Build Intelligent Support Agents",
-        "description": "Create agents that understand context, learn from past tickets, and provide personalized responses.",
-        "icon": "ArrowPathIcon"
+        "title": "Full Code Control",
+        "description": "Implement multi-step workflows, policy checks, and SLA logic in TypeScript—no flowchart limits.",
+        "icon": "CodeBracketIcon"
       },
       {
-        "title": "Connect Any Knowledge Source",
-        "description": "Integrate documentation, FAQs, product databases, and internal wikis to power accurate responses.",
-        "icon": "BookOpenIcon"
+        "title": "Integrate Any System",
+        "description": "Connect CRM, ticketing, billing, logistics, or internal APIs via code. No vendor waitlists.",
+        "icon": "ServerStackIcon"
       },
       {
-        "title": "Custom Escalation Logic",
-        "description": "Define rules for when agents should escalate to humans based on sentiment, complexity, or keywords.",
-        "icon": "FaceSmileIcon"
+        "title": "Memory & Policy Awareness",
+        "description": "Maintain conversation state, retrieve from KB/vector DBs, and enforce policies deterministically.",
+        "icon": "CircleStackIcon"
       },
       {
-        "title": "Omnichannel Integration",
-        "description": "Build agents that work across email, chat, Slack, Discord, or any API-enabled platform.",
-        "icon": "DevicePhoneMobileIcon"
+        "title": "VoltOps Observability",
+        "description": "Trace decisions, tokens, tool calls, and latency. Debug like regular code and ship with confidence.",
+        "icon": "ChartBarIcon"
       }
+    ],
+    "exampleAgents": [
+      {
+        "name": "Enterprise Technical Support Agent",
+        "description": "Diagnoses API errors, inspects logs, validates auth/quotas, and proposes code-level fixes with escalation rules."
+      },
+      {
+        "name": "E-commerce Service Agent",
+        "description": "Looks up orders, creates returns, checks inventory/shipments, and applies policy-based resolutions."
+      },
+      {
+        "name": "Multi-Tier Escalation Agent",
+        "description": "Routes by sentiment, priority, ACV, and SLA breach risk; hands off with structured context for humans."
+      }
+    ],
+    "capabilities": [
+      "Triage tickets across chat, email, Slack",
+      "Execute actions in CRMs, ticketing, billing, and logistics",
+      "Retrieve verified answers from KB and policies",
+      "Apply deterministic guardrails and audit every decision",
+      "Operate in multiple languages and channels"
     ],
     "howItWorks": [
       {
         "step": 1,
-        "title": "Connect Support Channels",
-        "description": "Integrate email, chat, Slack, and other communication platforms"
+        "title": "Build with VoltAgent",
+        "description": "Program your support workflows and policies in TypeScript."
       },
       {
         "step": 2,
-        "title": "Train on Your Data",
-        "description": "Import knowledge base, past tickets, and product documentation"
+        "title": "Connect data & tools",
+        "description": "Wire CRM, ticketing, billing, logistics, and vector DBs (Chroma/Pinecone/Qdrant)."
       },
       {
         "step": 3,
-        "title": "Configure Workflows",
-        "description": "Set up routing rules, escalation triggers, and response templates"
+        "title": "Add memory & RAG",
+        "description": "Index KB, past tickets, and product docs for grounded, consistent answers."
       },
       {
         "step": 4,
-        "title": "Monitor & Improve",
-        "description": "Track resolution rates, customer satisfaction, and optimize responses"
+        "title": "Observe in VoltOps",
+        "description": "Trace decisions, tool calls, tokens, and latency; run evals and apply guardrails."
       }
-    ],
-    "testimonial": {
-      "quote": "We reduced our average response time from 2 hours to 30 seconds while maintaining a 94% customer satisfaction score. The visibility into agent decisions helps us continuously improve.",
-      "author": "Michael Rodriguez",
-      "position": "VP of Customer Success",
-      "company": "SaaS Startup Inc",
-      "metrics": "2 hours → 30 seconds response time"
-    },
-    "faqs": [
-      {
-        "question": "Can it handle complex technical support issues?",
-        "answer": "Yes. VoltAgent can be configured with technical knowledge bases, API documentation, and debugging tools. It knows when to escalate complex issues to human experts while providing initial triage and data collection."
-      },
-      {
-        "question": "How does it integrate with our existing support tools?",
-        "answer": "VoltAgent has built-in integrations for Zendesk, Intercom, Freshdesk, and can connect to any system via API. It works alongside your existing workflow rather than replacing it."
-      },
-      {
-        "question": "What about data privacy and security?",
-        "answer": "Your data stays in your control. VoltAgent can be self-hosted, supports SSO/SAML, and is SOC2 compliant. All customer interactions are encrypted and can be configured to meet GDPR requirements."
-      },
-      {
-        "question": "How do we train it on our specific products?",
-        "answer": "Import your documentation, FAQs, and past support tickets. The agent learns from your knowledge base and can be fine-tuned with feedback from your support team."
-      }
-    ],
-    "trustedBy": [
-      "Service Hero Marketing", "Different", "MagicSchool AI", "Joggr"
     ]
   },
   {
@@ -235,96 +230,89 @@
     "navTitle": "Code Review Assistant",
     "navDescription": "Automated code reviews with AI insights",
     "hero": {
-      "headline": "Ship Better Code with AI-Powered Reviews",
-      "subtext": "VoltAgent automates code review workflows with security scanning, best practices enforcement, and intelligent suggestions—all integrated into your GitHub/GitLab workflow.",
+      "headline": "Build Code Review Agents That Know Your Codebase",
+      "subtext": "Program review agents that understand your architecture and standards—with full visibility in VoltOps.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
-      "secondaryCTA": "See Demo",
-      "secondaryCTALink": "#demo"
+      "secondaryCTA": "View Examples",
+      "secondaryCTALink": "https://github.com/voltagent/voltagent/tree/main/examples"
     },
     "painPoints": [
-      "Code reviews bottleneck deployment pipeline",
-      "Inconsistent review quality across team members",
-      "Security vulnerabilities slip through reviews",
-      "Junior developers need more guidance"
+      "Generic linters don't understand your architecture",
+      "Static analysis tools miss business logic issues",
+      "Pre-built bots can't enforce custom patterns",
+      "No way to codify your team's specific knowledge"
     ],
     "solutions": [
-      "Instant automated review on every PR",
-      "Consistent application of coding standards",
-      "Automated security and vulnerability scanning",
-      "Educational feedback for skill development"
+      "Build agents that understand your architecture",
+      "Implement custom checks for your business logic",
+      "Encode your team's patterns and best practices",
+      "Evolve review logic as your codebase grows"
     ],
     "features": [
       {
-        "title": "Create Custom Review Agents",
-        "description": "Build agents that understand your codebase, standards, and review patterns specific to your team.",
-        "icon": "CommandLineIcon"
+        "title": "Program Your Review Logic",
+        "description": "Write TypeScript to define exactly what to check, how to analyze code, and when to flag issues.",
+        "icon": "CodeBracketIcon"
       },
       {
-        "title": "Extensible Security Scanning",
-        "description": "Add custom security rules, integrate SAST tools, and define compliance checks for your industry.",
-        "icon": "ShieldCheckIcon"
+        "title": "Integrate Your Tools",
+        "description": "Connect to GitHub, GitLab, security scanners, or internal tools via APIs. Your agent, your integrations.",
+        "icon": "ServerStackIcon"
       },
       {
-        "title": "Your Standards, Automated",
-        "description": "Encode your team's best practices, style guides, and architectural patterns into intelligent agents.",
-        "icon": "AdjustmentsHorizontalIcon"
+        "title": "Context-Aware Analysis",
+        "description": "Agents can access git history, related PRs, documentation, and issue trackers for informed reviews.",
+        "icon": "CircleStackIcon"
       },
       {
-        "title": "Continuous Learning",
-        "description": "Agents improve from feedback, learning what matters to your team and adapting over time.",
-        "icon": "AcademicCapIcon"
+        "title": "Transparent Decisions",
+        "description": "VoltOps shows why your agent flagged issues. Debug false positives like fixing bugs in code.",
+        "icon": "ChartBarIcon"
       }
+    ],
+    "exampleAgents": [
+      {
+        "name": "Architecture Compliance Agent",
+        "description": "Validates that changes follow your microservices patterns, API contracts, and dependency rules."
+      },
+      {
+        "name": "Performance Review Agent",
+        "description": "Analyzes code for performance issues, suggests optimizations, and flags potential bottlenecks."
+      },
+      {
+        "name": "Security Audit Agent",
+        "description": "Scans for vulnerabilities, checks dependencies, validates auth patterns, and enforces security policies."
+      }
+    ],
+    "capabilities": [
+      "Analyze code for bugs and security vulnerabilities",
+      "Enforce coding standards and best practices",
+      "Suggest performance optimizations",
+      "Generate detailed review comments",
+      "Track technical debt and code quality metrics"
     ],
     "howItWorks": [
       {
         "step": 1,
-        "title": "Connect Repository",
-        "description": "Link GitHub/GitLab repos and configure PR triggers"
+        "title": "Build with VoltAgent",
+        "description": "Program review rules, heuristics, and auto-fix suggestions in TypeScript."
       },
       {
         "step": 2,
-        "title": "Define Standards",
-        "description": "Set coding standards, security rules, and review criteria"
+        "title": "Connect data & tools",
+        "description": "Link Git hosting, CI, security scanners, and documentation systems."
       },
       {
         "step": 3,
-        "title": "Automatic Reviews",
-        "description": "AI reviews every PR with detailed feedback and suggestions"
+        "title": "Add memory & context",
+        "description": "Index past PRs, team conventions, and architecture docs."
       },
       {
         "step": 4,
-        "title": "Track Metrics",
-        "description": "Monitor code quality trends and review effectiveness"
+        "title": "Observe in VoltOps",
+        "description": "Explain each finding, tune thresholds, and monitor false positives."
       }
-    ],
-    "testimonial": {
-      "quote": "Our merge time dropped by 40% while code quality actually improved. Junior developers love the instant feedback, and seniors can focus on architecture instead of syntax.",
-      "author": "Lisa Park",
-      "position": "Engineering Manager",
-      "company": "FinTech Solutions",
-      "metrics": "40% faster merge times"
-    },
-    "faqs": [
-      {
-        "question": "Does it replace human code reviewers?",
-        "answer": "No, it augments them. VoltAgent handles routine checks, style issues, and common bugs, letting human reviewers focus on architecture, business logic, and complex decisions."
-      },
-      {
-        "question": "What languages and frameworks does it support?",
-        "answer": "TypeScript, JavaScript, Python, Go, Rust, and Java are fully supported. The framework is extensible for any language with LSP support."
-      },
-      {
-        "question": "Can it learn our team's specific patterns?",
-        "answer": "Yes! It observes approved PRs and reviewer comments to learn your team's preferences and can be explicitly trained on your codebase patterns."
-      },
-      {
-        "question": "How does it handle false positives?",
-        "answer": "You can mark any suggestion as incorrect, and the agent learns from this feedback. Rules can be customized per repository or team."
-      }
-    ],
-    "trustedBy": [
-      "Joggr", "DEVPotenciados LATAM", "MagicSchool AI", "Different"
     ]
   },
   {
@@ -336,96 +324,89 @@
     "navTitle": "Sales Lead Qualifier",
     "navDescription": "Qualify and route leads automatically",
     "hero": {
-      "headline": "Qualify Leads 24/7 with Intelligent Sales Agents",
-      "subtext": "VoltAgent automates lead qualification with smart scoring, instant engagement, and CRM integration—ensuring your sales team only talks to qualified prospects.",
+      "headline": "Build Sales Agents That Match Your Process",
+      "subtext": "Create sales agents that qualify leads using your exact process and scoring—integrated with your CRM and analytics.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
-      "secondaryCTA": "See Demo",
-      "secondaryCTALink": "#demo"
+      "secondaryCTA": "View Examples",
+      "secondaryCTALink": "https://github.com/voltagent/voltagent/tree/main/examples"
     },
     "painPoints": [
-      "Sales team wastes time on unqualified leads",
-      "Slow response times lose hot prospects",
-      "Inconsistent qualification criteria across team",
-      "Manual data entry into CRM systems"
+      "Off-the-shelf tools don't match your sales process",
+      "No way to implement custom scoring logic",
+      "Pre-built bots can't handle complex qualifications",
+      "Black-box scoring with no transparency"
     ],
     "solutions": [
-      "Automated lead scoring and qualification",
-      "Instant engagement within 5 minutes",
-      "Standardized qualification framework",
-      "Automatic CRM updates and enrichment"
+      "Code agents that follow your exact sales process",
+      "Implement any scoring algorithm you need",
+      "Handle multi-step qualification workflows",
+      "Full visibility into every scoring decision"
     ],
     "features": [
       {
-        "title": "Build Custom Scoring Models",
-        "description": "Create AI agents that score leads based on your unique ICP, behaviors, and business rules.",
-        "icon": "ChartBarSquareIcon"
+        "title": "Code Your Qualification Logic",
+        "description": "Use TypeScript to define scoring rules, qualification criteria, and routing logic—no form builders.",
+        "icon": "CodeBracketIcon"
       },
       {
-        "title": "Automated Engagement Workflows",
-        "description": "Design multi-touch campaigns that adapt based on lead behavior and engagement patterns.",
-        "icon": "BoltIcon"
+        "title": "CRM Integration via API",
+        "description": "Sync with Salesforce, HubSpot, etc., via APIs. Update records, create tasks, and trigger workflows programmatically.",
+        "icon": "ServerStackIcon"
       },
       {
-        "title": "Connect Any CRM or Tool",
-        "description": "Integrate with Salesforce, HubSpot, or any API-enabled platform to sync data seamlessly.",
-        "icon": "CloudArrowUpIcon"
+        "title": "Multi-Source Enrichment",
+        "description": "Agents can query multiple data sources, aggregate signals, and build complete lead profiles.",
+        "icon": "CircleStackIcon"
       },
       {
-        "title": "Intelligent Data Enrichment",
-        "description": "Build agents that research leads, gather company info, and identify decision makers automatically.",
-        "icon": "MagnifyingGlassPlusIcon"
+        "title": "Audit Every Score",
+        "description": "VoltOps shows exactly why each lead received its score. Debug and refine qualification logic.",
+        "icon": "ChartBarIcon"
       }
+    ],
+    "exampleAgents": [
+      {
+        "name": "Enterprise Lead Qualifier",
+        "description": "Researches companies, identifies stakeholders, scores based on tech stack, and routes to appropriate SDR."
+      },
+      {
+        "name": "Product-Qualified Lead Agent",
+        "description": "Analyzes product usage, identifies expansion opportunities, and triggers sales outreach at the right moment."
+      },
+      {
+        "name": "Competitive Intelligence Agent",
+        "description": "Monitors when leads are evaluating competitors, enriches with battle cards, and alerts sales team."
+      }
+    ],
+    "capabilities": [
+      "Score leads based on custom criteria",
+      "Enrich contact data from multiple sources",
+      "Personalize outreach at scale",
+      "Route qualified leads to the right sales rep",
+      "Track engagement and buying signals"
     ],
     "howItWorks": [
       {
         "step": 1,
-        "title": "Capture Leads",
-        "description": "Connect forms, chatbots, and lead sources"
+        "title": "Build with VoltAgent",
+        "description": "Program ICP rules, scoring models, and routing in TypeScript."
       },
       {
         "step": 2,
-        "title": "Qualify Automatically",
-        "description": "AI assesses fit based on your ideal customer profile"
+        "title": "Connect data & tools",
+        "description": "Integrate CRM, enrichment APIs, product analytics, and comms channels."
       },
       {
         "step": 3,
-        "title": "Engage & Nurture",
-        "description": "Personalized outreach and follow-up sequences"
+        "title": "Add memory & history",
+        "description": "Index past interactions and firmographics for better decisions."
       },
       {
         "step": 4,
-        "title": "Route to Sales",
-        "description": "Hot leads go directly to the right sales rep"
+        "title": "Observe in VoltOps",
+        "description": "Explain every score, tune thresholds, and track conversion impact."
       }
-    ],
-    "testimonial": {
-      "quote": "We went from 20% to 65% qualified lead rate. Our sales team loves it because they only talk to prospects who are actually ready to buy.",
-      "author": "James Wilson",
-      "position": "Head of Sales",
-      "company": "B2B SaaS Co",
-      "metrics": "20% → 65% qualified lead rate"
-    },
-    "faqs": [
-      {
-        "question": "How does it determine lead quality?",
-        "answer": "The agent uses multiple signals including company size, industry, website behavior, email engagement, and custom criteria you define based on your ICP (Ideal Customer Profile)."
-      },
-      {
-        "question": "Can it handle complex B2B qualification?",
-        "answer": "Yes. It can research companies, identify decision makers, assess budget indicators, and even conduct initial discovery conversations via chat or email."
-      },
-      {
-        "question": "What CRM systems does it work with?",
-        "answer": "Native integrations with Salesforce, HubSpot, Pipedrive, and Zoho. Any CRM with an API can be connected via our webhook system."
-      },
-      {
-        "question": "How quickly can leads be engaged?",
-        "answer": "Typically within 1-5 minutes of form submission. The agent can send personalized emails, SMS, or initiate chat conversations immediately."
-      }
-    ],
-    "trustedBy": [
-      "Service Hero Marketing", "Different", "Joggr", "MagicSchool AI"
     ]
   },
   {
@@ -437,24 +418,45 @@
     "navTitle": "Manufacturing Ops",
     "navDescription": "AI agents for smart manufacturing",
     "hero": {
-      "headline": "Smarter Manufacturing Ops with AI Agents",
-      "subtext": "Build AI agents that monitor production lines, predict maintenance needs, optimize workflows, and ensure quality control—all with real-time visibility through VoltOps.",
+      "headline": "Build Your Own Manufacturing Intelligence System",
+      "subtext": "Build agents that monitor equipment, predict failures, and optimize production—tailored to your operations.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "See Demo",
       "secondaryCTALink": "#demo"
     },
+    "exampleAgents": [
+      {
+        "name": "Predictive Maintenance Agent",
+        "description": "Analyzes vibration sensors, temperature data, and historical patterns to predict equipment failures before they occur"
+      },
+      {
+        "name": "Quality Control Vision Agent",
+        "description": "Processes camera feeds to detect defects, measure tolerances, and ensure product quality in real-time"
+      },
+      {
+        "name": "Supply Chain Optimization Agent",
+        "description": "Monitors inventory levels, supplier performance, and demand forecasts to optimize procurement and reduce stockouts"
+      }
+    ],
+    "capabilities": [
+      "Monitor production lines in real-time",
+      "Predict equipment failures before they occur",
+      "Optimize resource allocation and scheduling",
+      "Track quality metrics and detect anomalies",
+      "Generate compliance reports automatically"
+    ],
     "painPoints": [
-      "Reactive maintenance causing downtime",
-      "Manual quality control missing defects",
-      "Inefficient resource allocation",
-      "Lack of real-time production insights"
+      "Off-the-shelf solutions don't understand your equipment",
+      "Vendor lock-in with proprietary IoT platforms",
+      "Black-box AI that can't explain production decisions",
+      "Generic models that miss industry-specific patterns"
     ],
     "solutions": [
-      "Predictive maintenance with AI monitoring",
-      "Automated quality assurance checks",
-      "Optimized resource scheduling",
-      "Real-time production analytics"
+      "Build agents tailored to your equipment and processes",
+      "Full visibility into AI decision-making with VoltOps",
+      "Custom integrations with your existing systems",
+      "Own your manufacturing intelligence IP"
     ],
     "features": [
       {
@@ -481,45 +483,24 @@
     "howItWorks": [
       {
         "step": 1,
-        "title": "Connect IoT & Systems",
-        "description": "Integrate sensors, PLCs, ERP, and MES systems"
+        "title": "Build with VoltAgent",
+        "description": "Program monitoring, prediction, and alerting logic in TypeScript."
       },
       {
         "step": 2,
-        "title": "Deploy Smart Agents",
-        "description": "Configure agents for monitoring and optimization"
+        "title": "Connect data & tools",
+        "description": "Integrate sensors/PLCs, MES/ERP, and data historians."
       },
       {
         "step": 3,
-        "title": "Automate Workflows",
-        "description": "Set triggers for maintenance, quality, and alerts"
+        "title": "Add memory & trends",
+        "description": "Index historical telemetry and maintenance logs for better signals."
       },
       {
         "step": 4,
-        "title": "Monitor Performance",
-        "description": "Track KPIs and optimize with VoltOps insights"
+        "title": "Observe in VoltOps",
+        "description": "Trace anomalies, MTBF trends, and response SLAs; iterate safely."
       }
-    ],
-    "faqs": [
-      {
-        "question": "What systems can the agents integrate with?",
-        "answer": "VoltAgent agents can connect to any system with an API including PLCs, SCADA systems, ERP platforms (SAP, Oracle), MES systems, IoT sensors, and custom databases."
-      },
-      {
-        "question": "How do agents handle real-time data?",
-        "answer": "Agents process streaming data from sensors and systems in real-time, using event-driven architecture to respond immediately to anomalies or threshold breaches."
-      },
-      {
-        "question": "Can agents work with legacy equipment?",
-        "answer": "Yes, through edge computing gateways and protocol converters, agents can interface with older equipment that uses industrial protocols like Modbus, OPC, or proprietary formats."
-      },
-      {
-        "question": "What about data security and compliance?",
-        "answer": "VoltAgent supports on-premise deployment, air-gapped networks, and meets industrial compliance standards including ISO 27001, with full audit trails through VoltOps."
-      }
-    ],
-    "trustedBy": [
-      "Manufacturing Leaders", "Global Logistics", "Industrial IoT", "Quality Systems"
     ]
   },
   {
@@ -531,24 +512,45 @@
     "navTitle": "Government AI",
     "navDescription": "AI agents for public services",
     "hero": {
-      "headline": "Accelerating AI for the Public Sector",
-      "subtext": "Build secure, compliant AI agents that modernize government services, automate citizen interactions, and improve public administration—all while maintaining transparency and accountability.",
+      "headline": "Build Transparent AI for Government Services",
+      "subtext": "Create transparent, auditable AI agents for public services—full control over compliance and data sovereignty.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "See Demo",
       "secondaryCTALink": "#demo"
     },
+    "exampleAgents": [
+      {
+        "name": "Permit Processing Agent",
+        "description": "Reviews applications, validates requirements, checks zoning laws, and provides status updates to citizens"
+      },
+      {
+        "name": "Public Information Agent",
+        "description": "Answers citizen queries about services, policies, and procedures in multiple languages with verified information"
+      },
+      {
+        "name": "Benefits Eligibility Agent",
+        "description": "Helps citizens understand and apply for eligible benefits by analyzing their situation against program requirements"
+      }
+    ],
+    "capabilities": [
+      "Process permits and applications automatically",
+      "Answer citizen inquiries in multiple languages",
+      "Route cases to appropriate departments",
+      "Track service delivery metrics",
+      "Maintain complete audit trails for transparency"
+    ],
     "painPoints": [
-      "Long wait times for citizen services",
-      "Manual processing of permits and applications",
-      "Difficulty accessing government information",
-      "Resource constraints limiting service delivery"
+      "Commercial AI lacks transparency for public accountability",
+      "Vendor solutions don't meet strict compliance requirements",
+      "Black-box systems incompatible with FOIA requests",
+      "Generic chatbots can't handle complex regulations"
     ],
     "solutions": [
-      "24/7 automated citizen assistance",
-      "Intelligent document processing",
-      "Multi-language support for diverse populations",
-      "Efficient resource allocation with AI"
+      "Build fully auditable agents with complete decision trails",
+      "Deploy on-premise for data sovereignty",
+      "Customize for your specific regulations and policies",
+      "Maintain complete control over citizen interactions"
     ],
     "features": [
       {
@@ -563,7 +565,7 @@
       },
       {
         "title": "Secure & Compliant Infrastructure",
-        "description": "On-premise deployment options with FedRAMP, HIPAA, and other compliance certifications.",
+        "description": "Options to deploy in environments aligned with FedRAMP/HIPAA requirements.",
         "icon": "LockClosedIcon"
       },
       {
@@ -575,45 +577,24 @@
     "howItWorks": [
       {
         "step": 1,
-        "title": "Deploy Securely",
-        "description": "Set up on-premise or GovCloud infrastructure"
+        "title": "Build with VoltAgent",
+        "description": "Program workflows for permits, inquiries, and services in TypeScript."
       },
       {
         "step": 2,
-        "title": "Configure Services",
-        "description": "Define workflows for permits, inquiries, and services"
+        "title": "Connect data & tools",
+        "description": "Integrate legacy databases, records systems, and secure file exchange."
       },
       {
         "step": 3,
-        "title": "Train on Policies",
-        "description": "Import regulations, procedures, and guidelines"
+        "title": "Add policy retrieval",
+        "description": "Index statutes, regulations, and procedures for grounded decisions."
       },
       {
         "step": 4,
-        "title": "Monitor Compliance",
-        "description": "Track decisions and maintain audit logs"
+        "title": "Observe in VoltOps",
+        "description": "Maintain audit logs, decision rationales, and redaction policies."
       }
-    ],
-    "faqs": [
-      {
-        "question": "How does it handle sensitive citizen data?",
-        "answer": "All data is encrypted at rest and in transit, with role-based access control, data residency options, and full compliance with privacy regulations like GDPR and CCPA."
-      },
-      {
-        "question": "Can it integrate with legacy government systems?",
-        "answer": "Yes, VoltAgent supports integration with legacy databases, mainframes, and government-specific platforms through APIs, batch processing, and secure file transfer protocols."
-      },
-      {
-        "question": "What about multi-language support?",
-        "answer": "Agents can communicate in 100+ languages, with automatic translation and culturally appropriate responses for diverse communities."
-      },
-      {
-        "question": "How is transparency ensured?",
-        "answer": "Every decision is logged with full context, reasoning paths are traceable through VoltOps, and all automated actions can be audited and reviewed."
-      }
-    ],
-    "trustedBy": [
-      "Federal Agencies", "State Governments", "Municipal Services", "Public Universities"
     ]
   },
   {
@@ -625,24 +606,45 @@
     "navTitle": "Higher Education",
     "navDescription": "AI agents for universities",
     "hero": {
-      "headline": "Accelerating AI for Higher Education",
-      "subtext": "Empower universities with AI agents that enhance student services, automate administrative tasks, personalize learning experiences, and support research—all while maintaining academic integrity.",
+      "headline": "Build Custom AI Agents for Your Institution",
+      "subtext": "Create educational agents tailored to your institution—control academic integrity and student data in TypeScript.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "See Demo",
       "secondaryCTALink": "#demo"
     },
+    "exampleAgents": [
+      {
+        "name": "Academic Advisor Agent",
+        "description": "Guides students through degree requirements, suggests courses based on goals, and tracks progress toward graduation"
+      },
+      {
+        "name": "Writing Tutor Agent",
+        "description": "Provides feedback on essays, helps with citations, and teaches writing skills while detecting plagiarism"
+      },
+      {
+        "name": "Research Assistant Agent",
+        "description": "Helps faculty and students find relevant papers, summarize literature, and identify research gaps"
+      }
+    ],
+    "capabilities": [
+      "Provide 24/7 academic advising and support",
+      "Personalize learning paths for each student",
+      "Automate grading with detailed feedback",
+      "Track student engagement and predict success",
+      "Support research with literature analysis"
+    ],
     "painPoints": [
-      "Overwhelmed student support services",
-      "Manual grading and feedback processes",
-      "Low student engagement and retention",
-      "Administrative inefficiencies"
+      "Generic AI tools don't understand your curriculum",
+      "Third-party services raise data privacy concerns",
+      "Off-the-shelf solutions can't enforce academic policies",
+      "Black-box AI incompatible with educational transparency"
     ],
     "solutions": [
-      "24/7 AI-powered student assistance",
-      "Automated grading with personalized feedback",
-      "Predictive analytics for student success",
-      "Streamlined administrative workflows"
+      "Build agents that understand your specific programs",
+      "Maintain FERPA compliance with on-premise deployment",
+      "Enforce your academic integrity policies in code",
+      "Create transparent, explainable educational AI"
     ],
     "features": [
       {
@@ -669,237 +671,28 @@
     "howItWorks": [
       {
         "step": 1,
-        "title": "Connect Campus Systems",
-        "description": "Integrate LMS, SIS, and other platforms"
+        "title": "Build with VoltAgent",
+        "description": "Program tutoring/advising workflows and safeguards in TypeScript."
       },
       {
         "step": 2,
-        "title": "Deploy AI Assistants",
-        "description": "Configure agents for different departments"
+        "title": "Connect data & tools",
+        "description": "Integrate LMS, SIS, repositories, and research databases."
       },
       {
         "step": 3,
-        "title": "Personalize Learning",
-        "description": "Adapt to individual student needs"
+        "title": "Add memory & policies",
+        "description": "Index curricula, rubrics, and policy documents for grounded guidance."
       },
       {
         "step": 4,
-        "title": "Track Impact",
-        "description": "Monitor engagement and outcomes"
+        "title": "Observe in VoltOps",
+        "description": "Audit interactions, enforce academic integrity, and monitor outcomes."
       }
-    ],
-    "faqs": [
-      {
-        "question": "How does it maintain academic integrity?",
-        "answer": "Agents include plagiarism detection, citation verification, and can distinguish between appropriate assistance and academic dishonesty, with full audit trails of all interactions."
-      },
-      {
-        "question": "Can it integrate with existing LMS platforms?",
-        "answer": "Yes, VoltAgent integrates with Canvas, Blackboard, Moodle, and other learning management systems through APIs and LTI standards."
-      },
-      {
-        "question": "What about student data privacy?",
-        "answer": "Full FERPA compliance with data encryption, access controls, and the option for on-premise deployment to keep all student data within institutional control."
-      },
-      {
-        "question": "How can it help with student retention?",
-        "answer": "Agents analyze engagement patterns, identify at-risk students early, and proactively offer support resources, improving retention rates by 15-30% on average."
-      }
-    ],
-    "trustedBy": [
-      "Leading Universities", "Community Colleges", "Online Education Platforms", "Research Institutions"
     ]
   },
   {
     "id": 8,
-    "slug": "b2b-customer-support",
-    "title": "B2B Customer Support",
-    "category": "support",
-    "icon": "UserGroupIcon",
-    "navTitle": "B2B Customer Support",
-    "navDescription": "Enterprise support automation",
-    "hero": {
-      "headline": "Transform B2B Support with Intelligent AI Agents",
-      "subtext": "Build AI agents that handle complex enterprise support cases, manage SLAs, coordinate with technical teams, and provide white-glove service at scale.",
-      "primaryCTA": "Start Building",
-      "primaryCTALink": "/docs/",
-      "secondaryCTA": "See Demo",
-      "secondaryCTALink": "#demo"
-    },
-    "painPoints": [
-      "Complex technical issues requiring deep expertise",
-      "Multiple stakeholders with different needs",
-      "Strict SLA requirements and escalation paths",
-      "High cost of enterprise support teams"
-    ],
-    "solutions": [
-      "AI agents with deep product knowledge",
-      "Multi-channel coordination and routing",
-      "Automated SLA tracking and escalation",
-      "24/7 enterprise-grade support coverage"
-    ],
-    "features": [
-      {
-        "title": "Enterprise-Grade AI Agents",
-        "description": "Deploy agents that understand complex B2B products, technical architectures, and enterprise workflows.",
-        "icon": "BuildingOfficeIcon"
-      },
-      {
-        "title": "Account-Based Intelligence",
-        "description": "Agents that know customer history, contracts, custom configurations, and organizational context.",
-        "icon": "BriefcaseIcon"
-      },
-      {
-        "title": "SLA & Escalation Management",
-        "description": "Automated priority routing, SLA tracking, and intelligent escalation based on contract terms.",
-        "icon": "ClockIcon"
-      },
-      {
-        "title": "Technical Integration Support",
-        "description": "Agents that can debug API issues, review logs, and provide technical implementation guidance.",
-        "icon": "CodeBracketIcon"
-      }
-    ],
-    "howItWorks": [
-      {
-        "step": 1,
-        "title": "Connect Enterprise Systems",
-        "description": "Integrate CRM, ticketing, and technical systems"
-      },
-      {
-        "step": 2,
-        "title": "Configure Account Context",
-        "description": "Import customer data, contracts, and configurations"
-      },
-      {
-        "step": 3,
-        "title": "Deploy Specialized Agents",
-        "description": "Launch technical, account, and escalation agents"
-      },
-      {
-        "step": 4,
-        "title": "Monitor Performance",
-        "description": "Track SLAs, CSAT, and resolution metrics"
-      }
-    ],
-    "faqs": [
-      {
-        "question": "How do agents handle technical troubleshooting?",
-        "answer": "Agents can access documentation, analyze logs, run diagnostics, and even execute safe troubleshooting scripts while maintaining security boundaries."
-      },
-      {
-        "question": "Can it manage multiple customer accounts?",
-        "answer": "Yes, agents maintain separate context for each account including custom configurations, SLAs, contact hierarchies, and historical issues."
-      },
-      {
-        "question": "What about compliance and data security?",
-        "answer": "Enterprise-grade security with SOC2, ISO 27001 compliance, data isolation per account, and full audit trails of all interactions."
-      },
-      {
-        "question": "How does escalation work?",
-        "answer": "Agents automatically escalate based on SLA timers, issue severity, customer tier, or specific keywords, routing to the right technical team instantly."
-      }
-    ],
-    "trustedBy": [
-      "Enterprise Software", "SaaS Platforms", "Cloud Providers", "Tech Companies"
-    ]
-  },
-  {
-    "id": 9,
-    "slug": "b2c-customer-service",
-    "title": "B2C Customer Service",
-    "category": "support",
-    "icon": "ShoppingBagIcon",
-    "navTitle": "B2C Customer Service",
-    "navDescription": "Scale consumer interactions",
-    "hero": {
-      "headline": "Scale B2C Customer Service with AI Agents",
-      "subtext": "Deploy AI agents that handle thousands of customer inquiries simultaneously, provide instant resolutions, and deliver personalized experiences at consumer scale.",
-      "primaryCTA": "Start Building",
-      "primaryCTALink": "/docs/",
-      "secondaryCTA": "See Demo",
-      "secondaryCTALink": "#demo"
-    },
-    "painPoints": [
-      "High volume of repetitive inquiries",
-      "Seasonal spikes overwhelming support teams",
-      "Long wait times frustrating customers",
-      "Inconsistent service quality across channels"
-    ],
-    "solutions": [
-      "Instant response to common questions",
-      "Unlimited scaling during peak times",
-      "24/7 availability across all channels",
-      "Consistent, personalized experiences"
-    ],
-    "features": [
-      {
-        "title": "High-Volume Processing",
-        "description": "Handle thousands of concurrent conversations with instant responses and zero wait times.",
-        "icon": "UsersIcon"
-      },
-      {
-        "title": "Omnichannel Presence",
-        "description": "Deploy across web chat, mobile, social media, SMS, and voice channels seamlessly.",
-        "icon": "DevicePhoneMobileIcon"
-      },
-      {
-        "title": "Order & Account Management",
-        "description": "Process returns, track orders, update accounts, and handle payments automatically.",
-        "icon": "ShoppingCartIcon"
-      },
-      {
-        "title": "Sentiment-Based Routing",
-        "description": "Detect frustrated customers and route to human agents with full context instantly.",
-        "icon": "HeartIcon"
-      }
-    ],
-    "howItWorks": [
-      {
-        "step": 1,
-        "title": "Connect Commerce Platform",
-        "description": "Integrate with Shopify, WooCommerce, or custom systems"
-      },
-      {
-        "step": 2,
-        "title": "Train on Your Catalog",
-        "description": "Import products, policies, and FAQs"
-      },
-      {
-        "step": 3,
-        "title": "Deploy Across Channels",
-        "description": "Launch on website, app, and social media"
-      },
-      {
-        "step": 4,
-        "title": "Optimize & Scale",
-        "description": "Monitor metrics and improve responses"
-      }
-    ],
-    "faqs": [
-      {
-        "question": "Can it handle order modifications and refunds?",
-        "answer": "Yes, agents can process returns, exchanges, cancellations, and refunds following your business rules and approval workflows."
-      },
-      {
-        "question": "How does it handle multiple languages?",
-        "answer": "Agents support 100+ languages with automatic detection and culturally appropriate responses for global customer bases."
-      },
-      {
-        "question": "What about peak season scaling?",
-        "answer": "Agents scale instantly to handle Black Friday, holiday rushes, or viral moments without any degradation in response time."
-      },
-      {
-        "question": "Can it integrate with loyalty programs?",
-        "answer": "Yes, agents can check points, apply rewards, tier benefits, and personalize responses based on customer loyalty status."
-      }
-    ],
-    "trustedBy": [
-      "E-commerce Brands", "Retail Chains", "Direct-to-Consumer", "Marketplaces"
-    ]
-  },
-  {
-    "id": 10,
     "slug": "documentation-teams",
     "title": "Documentation Teams",
     "category": "productivity",
@@ -907,24 +700,45 @@
     "navTitle": "Documentation Teams",
     "navDescription": "Automate technical writing",
     "hero": {
-      "headline": "Accelerate Documentation with AI Writing Agents",
-      "subtext": "Build AI agents that generate technical documentation, maintain knowledge bases, create tutorials, and keep everything up-to-date automatically.",
+      "headline": "Build Your Own Documentation Automation",
+      "subtext": "Build documentation agents that understand your codebase and follow your style guide—with TypeScript control.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "See Demo",
       "secondaryCTALink": "#demo"
     },
+    "exampleAgents": [
+      {
+        "name": "API Documentation Agent",
+        "description": "Generates OpenAPI specs, code examples, and integration guides directly from your source code"
+      },
+      {
+        "name": "Changelog Generator Agent",
+        "description": "Analyzes commits, PRs, and issues to create meaningful release notes and migration guides"
+      },
+      {
+        "name": "Tutorial Builder Agent",
+        "description": "Creates step-by-step guides with working code examples that are tested against your actual API"
+      }
+    ],
+    "capabilities": [
+      "Generate API documentation from code",
+      "Keep docs synchronized with product changes",
+      "Create tutorials and how-to guides",
+      "Maintain consistent style and terminology",
+      "Support multiple versions and languages"
+    ],
     "painPoints": [
-      "Documentation always behind product releases",
-      "Inconsistent writing styles across teams",
-      "Manual updates for every product change",
-      "Difficulty maintaining multiple doc versions"
+      "Generic AI tools produce bland, unhelpful docs",
+      "No control over documentation structure and format",
+      "Can't enforce your team's writing standards",
+      "Black-box generation with no customization"
     ],
     "solutions": [
-      "Auto-generate docs from code and APIs",
-      "Consistent style and terminology",
-      "Real-time updates with product changes",
-      "Automated versioning and localization"
+      "Build agents that follow your documentation standards",
+      "Generate docs that understand your architecture",
+      "Full control over output format and structure",
+      "Integrate with your existing docs pipeline"
     ],
     "features": [
       {
@@ -939,7 +753,7 @@
       },
       {
         "title": "Multi-Format Publishing",
-        "description": "Generate docs in Markdown, HTML, PDF, and integrate with docs platforms like GitBook or Docusaurus.",
+        "description": "Generate docs in Markdown, HTML, PDF, and integrate with platforms like GitBook or Docusaurus.",
         "icon": "DocumentDuplicateIcon"
       },
       {
@@ -951,49 +765,28 @@
     "howItWorks": [
       {
         "step": 1,
-        "title": "Connect Code Repos",
-        "description": "Link GitHub, GitLab, or Bitbucket repositories"
+        "title": "Build with VoltAgent",
+        "description": "Program generation/review pipelines and style enforcement in TypeScript."
       },
       {
         "step": 2,
-        "title": "Define Doc Structure",
-        "description": "Set templates, styles, and organization"
+        "title": "Connect data & tools",
+        "description": "Link repos, CI, design systems, and docs platforms."
       },
       {
         "step": 3,
-        "title": "Generate & Review",
-        "description": "AI creates drafts for human review"
+        "title": "Add memory & style",
+        "description": "Index existing docs, style guides, and code comments for consistency."
       },
       {
         "step": 4,
-        "title": "Publish & Maintain",
-        "description": "Deploy to platforms and auto-update"
+        "title": "Observe in VoltOps",
+        "description": "Trace generation steps and quality gates; keep outputs explainable."
       }
-    ],
-    "faqs": [
-      {
-        "question": "Can it understand our specific technical domain?",
-        "answer": "Yes, agents learn from your existing docs, code comments, and domain-specific terminology to maintain consistency and accuracy."
-      },
-      {
-        "question": "How does it handle code examples?",
-        "answer": "Agents generate working code examples, test them for correctness, and update them when APIs or libraries change."
-      },
-      {
-        "question": "What about screenshots and diagrams?",
-        "answer": "Agents can generate architecture diagrams, flowcharts, and even coordinate screenshot capture for UI documentation."
-      },
-      {
-        "question": "Can it maintain multiple doc versions?",
-        "answer": "Yes, agents manage versioned documentation for different releases, with automatic backporting of relevant updates."
-      }
-    ],
-    "trustedBy": [
-      "Developer Tools", "API Platforms", "Open Source Projects", "Technical Teams"
     ]
   },
   {
-    "id": 11,
+    "id": 9,
     "slug": "product-teams",
     "title": "Product Teams",
     "category": "productivity",
@@ -1001,24 +794,46 @@
     "navTitle": "Product Teams",
     "navDescription": "Accelerate product insights",
     "hero": {
-      "headline": "Supercharge Product Teams with AI Agents",
-      "subtext": "Deploy AI agents that analyze user feedback, generate product specs, prioritize features, and synthesize insights from multiple data sources.",
+      "headline": "Build Your Own Product Intelligence System",
+      "subtext": "Create product intelligence agents that understand your metrics and strategy—custom insights, not generic recommendations.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "See Demo",
       "secondaryCTALink": "#demo"
     },
+    "exampleAgents": [
+      {
+        "name": "User Feedback Analysis Agent",
+        "description": "Categorizes support tickets, reviews, and NPS responses to identify feature requests and pain points"
+      },
+      {
+        "name": "Competitive Intelligence Agent",
+        "description": "Monitors competitor releases, pricing changes, and user sentiment to inform product strategy"
+      },
+      {
+        "name": "Feature Prioritization Agent",
+        "description": "Scores features based on user demand, technical effort, and business impact using your criteria"
+      }
+    ],
+    "capabilities": [
+      "Analyze user feedback from all channels",
+      "Generate product specs and requirements",
+      "Prioritize features based on data",
+      "Track competitive intelligence",
+      "Measure feature adoption and success",
+      "Explainable insights with VoltOps traces"
+    ],
     "painPoints": [
-      "Overwhelming amount of user feedback",
-      "Manual analysis of usage data",
-      "Slow feature prioritization process",
-      "Disconnected insights across tools"
+      "Off-the-shelf analytics miss your unique context",
+      "Generic insights that don't match your strategy",
+      "No control over prioritization algorithms",
+      "Vendor tools that don't integrate with your stack"
     ],
     "solutions": [
-      "Automated feedback analysis and categorization",
-      "Real-time usage pattern insights",
-      "Data-driven feature prioritization",
-      "Unified insights from all sources"
+      "Build agents that understand your product philosophy",
+      "Custom scoring algorithms for your business model",
+      "Full transparency in prioritization decisions",
+      "Seamless integration with your product tools"
     ],
     "features": [
       {
@@ -1045,49 +860,28 @@
     "howItWorks": [
       {
         "step": 1,
-        "title": "Connect Data Sources",
-        "description": "Link analytics, feedback, and product tools"
+        "title": "Build with VoltAgent",
+        "description": "Program analysis, scoring, and reporting agents in TypeScript."
       },
       {
         "step": 2,
-        "title": "Deploy Analysis Agents",
-        "description": "Configure agents for different insights"
+        "title": "Connect data & tools",
+        "description": "Integrate analytics, feedback, and roadmap systems."
       },
       {
         "step": 3,
-        "title": "Generate Insights",
-        "description": "Get reports, specs, and recommendations"
+        "title": "Add memory & history",
+        "description": "Index past releases, customer segments, and experiments for context."
       },
       {
         "step": 4,
-        "title": "Track Impact",
-        "description": "Measure feature success and iterate"
+        "title": "Observe in VoltOps",
+        "description": "Explain every recommendation; track impact on activation, retention, and revenue."
       }
-    ],
-    "faqs": [
-      {
-        "question": "How does it prioritize features?",
-        "answer": "Agents analyze user feedback frequency, business impact, technical effort, and strategic alignment to score and rank features."
-      },
-      {
-        "question": "Can it integrate with our product tools?",
-        "answer": "Yes, agents connect with Jira, Linear, Productboard, Amplitude, Mixpanel, and other product management platforms."
-      },
-      {
-        "question": "What insights can it generate?",
-        "answer": "User journey maps, feature adoption reports, churn analysis, competitive positioning, and market opportunity assessments."
-      },
-      {
-        "question": "How does it handle qualitative feedback?",
-        "answer": "Using NLP, agents extract themes, sentiment, and specific feature requests from unstructured text across all channels."
-      }
-    ],
-    "trustedBy": [
-      "Product Teams", "SaaS Companies", "Mobile Apps", "Platform Builders"
     ]
   },
   {
-    "id": 12,
+    "id": 10,
     "slug": "marketing-teams",
     "title": "Marketing Teams",
     "category": "marketing",
@@ -1095,24 +889,45 @@
     "navTitle": "Marketing Teams",
     "navDescription": "Personalize at scale",
     "hero": {
-      "headline": "Scale Marketing Operations with AI Agents",
-      "subtext": "Build AI agents that create content, personalize campaigns, analyze performance, and optimize marketing workflows across all channels.",
+      "headline": "Build Your Own Marketing Automation Platform",
+      "subtext": "Build marketing agents that match your brand voice and optimize for your KPIs—with full control and transparency.",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "See Demo",
       "secondaryCTALink": "#demo"
     },
+    "exampleAgents": [
+      {
+        "name": "Content Generation Agent",
+        "description": "Creates blog posts, social media content, and email campaigns that match your brand voice and style guide"
+      },
+      {
+        "name": "Lead Scoring Agent",
+        "description": "Analyzes engagement patterns and firmographic data to identify and prioritize high-value prospects"
+      },
+      {
+        "name": "Campaign Optimization Agent",
+        "description": "A/B tests messaging, adjusts targeting, and reallocates budget based on real-time performance"
+      }
+    ],
+    "capabilities": [
+      "Generate content at scale in your brand voice",
+      "Personalize campaigns for each segment",
+      "Optimize ad spend and targeting automatically",
+      "Track attribution across all channels",
+      "Predict campaign performance and ROI"
+    ],
     "painPoints": [
-      "Content creation bottlenecks",
-      "Generic messaging lacking personalization",
-      "Manual campaign optimization",
-      "Fragmented marketing analytics"
+      "Generic AI content that sounds robotic",
+      "Marketing platforms with hidden algorithms",
+      "Per-campaign pricing that limits experimentation",
+      "Black-box optimization you can't understand or control"
     ],
     "solutions": [
-      "Automated content generation at scale",
-      "Hyper-personalized messaging",
-      "Real-time campaign optimization",
-      "Unified marketing intelligence"
+      "Build agents trained on your brand guidelines",
+      "Custom optimization logic for your funnel",
+      "Own your marketing automation IP",
+      "Full visibility into all decisions via VoltOps"
     ],
     "features": [
       {
@@ -1127,7 +942,7 @@
       },
       {
         "title": "Campaign Optimization",
-        "description": "A/B test automatically, adjust budgets, and optimize targeting in real-time.",
+        "description": "A/B test automatically, adjust budgets, and optimize targeting in real time.",
         "icon": "ChartBarIcon"
       },
       {
@@ -1139,45 +954,24 @@
     "howItWorks": [
       {
         "step": 1,
-        "title": "Connect Marketing Stack",
-        "description": "Integrate CRM, email, social, and analytics"
+        "title": "Build with VoltAgent",
+        "description": "Program generation, scoring, and optimization loops in TypeScript."
       },
       {
         "step": 2,
-        "title": "Define Brand Voice",
-        "description": "Train agents on guidelines and tone"
+        "title": "Connect data & tools",
+        "description": "Integrate CRM, ad platforms, email/SMS, and analytics."
       },
       {
         "step": 3,
-        "title": "Launch Campaigns",
-        "description": "Deploy multi-channel marketing agents"
+        "title": "Add memory & brand voice",
+        "description": "Index guidelines, tone, and approved messaging for consistency."
       },
       {
         "step": 4,
-        "title": "Optimize Performance",
-        "description": "Track ROI and refine strategies"
+        "title": "Observe in VoltOps",
+        "description": "Explain decisions, track ROI, and iterate with guardrails."
       }
-    ],
-    "faqs": [
-      {
-        "question": "How does it maintain brand consistency?",
-        "answer": "Agents are trained on your brand guidelines, tone of voice, and approved messaging to ensure all content aligns with brand standards."
-      },
-      {
-        "question": "Can it handle multiple campaigns simultaneously?",
-        "answer": "Yes, agents can manage hundreds of campaigns across different channels, audiences, and objectives concurrently."
-      },
-      {
-        "question": "What marketing platforms does it support?",
-        "answer": "HubSpot, Marketo, Salesforce, Google Ads, Meta Ads, LinkedIn, and any platform with API access."
-      },
-      {
-        "question": "How does personalization work?",
-        "answer": "Agents analyze user behavior, preferences, and context to create individualized content and experiences for each customer."
-      }
-    ],
-    "trustedBy": [
-      "Marketing Agencies", "E-commerce Brands", "B2B Companies", "Content Creators"
     ]
   }
 ]
