@@ -1,5 +1,52 @@
 # @voltagent/server-hono
 
+## 1.0.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Server Hono 1.x — pluggable HTTP server
+
+  Core no longer embeds an HTTP server. Use the Hono provider.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Basic setup
+
+  ```ts
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({ port: 3141, enableSwaggerUI: true }),
+  });
+  ```
+
+  ## Custom routes and auth
+
+  ```ts
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({
+      configureApp: (app) => {
+        app.get("/api/health", (c) => c.json({ status: "ok" }));
+      },
+      auth: jwtAuth({
+        secret: process.env.JWT_SECRET!,
+        publicRoutes: ["/health", "/metrics"],
+      }),
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93), [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93)]:
+  - @voltagent/core@1.0.0
+  - @voltagent/server-core@1.0.0
+
 ## 1.0.0-next.2
 
 ### Major Changes

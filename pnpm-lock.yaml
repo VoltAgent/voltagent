@@ -118,16 +118,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -155,16 +155,16 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -189,13 +189,13 @@ importers:
   examples/sdk-trace-example:
     dependencies:
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/sdk':
         specifier: ^0.1.6
         version: 0.1.6(@voltagent/logger@packages+logger)(zod@3.25.76)
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
     devDependencies:
       '@types/node':
@@ -220,16 +220,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -257,16 +257,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -303,16 +303,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -343,16 +343,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -380,16 +380,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -417,16 +417,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -454,16 +454,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -491,16 +491,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -620,16 +620,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -657,16 +657,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -694,16 +694,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -731,16 +731,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -765,16 +765,16 @@ importers:
         specifier: ^2.0.2
         version: 2.0.12(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -808,19 +808,19 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/langfuse-exporter
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -848,16 +848,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -894,16 +894,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -958,16 +958,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -998,16 +998,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1050,16 +1050,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1099,16 +1099,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/postgres':
-        specifier: ^1.0.0-next.1
+        specifier: ^1.0.0
         version: link:../../packages/postgres
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1139,16 +1139,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1179,16 +1179,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1216,13 +1216,13 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1250,16 +1250,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1287,16 +1287,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1327,16 +1327,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       '@voltagent/supabase':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/supabase
       ai:
         specifier: ^5.0.12
@@ -1364,16 +1364,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1401,16 +1401,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1438,16 +1438,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1475,16 +1475,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1512,16 +1512,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1549,19 +1549,19 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       '@voltagent/voice':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/voice
       ai:
         specifier: ^5.0.12
@@ -1589,19 +1589,19 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       '@voltagent/voice':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/voice
       ai:
         specifier: ^5.0.12
@@ -1635,19 +1635,19 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       '@voltagent/voice':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/voice
       ai:
         specifier: ^5.0.12
@@ -1681,16 +1681,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1718,16 +1718,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1755,16 +1755,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1792,16 +1792,16 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~1.0.0-next.2
+        specifier: ~1.0.0
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -2134,7 +2134,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../core
       tsup:
         specifier: ^8.5.0
@@ -2162,10 +2162,10 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../core
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../logger
       ai:
         specifier: ^5.0.12
@@ -2239,7 +2239,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../core
       ai:
         specifier: ^5.0.12
@@ -2257,7 +2257,7 @@ importers:
   packages/server-core:
     dependencies:
       '@voltagent/core':
-        specifier: 1.0.0-next.2
+        specifier: 1.0.0
         version: link:../core
       '@voltagent/internal':
         specifier: ^0.0.9
@@ -2309,13 +2309,13 @@ importers:
         specifier: ^0.19.6
         version: 0.19.10(hono@4.9.1)(zod@3.25.76)
       '@voltagent/core':
-        specifier: 1.0.0-next.2
+        specifier: 1.0.0
         version: link:../core
       '@voltagent/internal':
         specifier: ^0.0.9
         version: link:../internal
       '@voltagent/server-core':
-        specifier: 1.0.0-next.2
+        specifier: 1.0.0
         version: link:../server-core
       hono:
         specifier: ^4.7.7
@@ -2359,10 +2359,10 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.0.0-next.2
+        specifier: ^1.0.0
         version: link:../core
       '@voltagent/logger':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../logger
       ai:
         specifier: ^5.0.12
@@ -2399,7 +2399,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.0.0
         version: link:../core
       tsup:
         specifier: ^8.5.0
