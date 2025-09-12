@@ -13,8 +13,9 @@ import {
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@voltagent/internal";
-import type * as z from "zod";
+import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 import { getGlobalLogger } from "../../logger";
 import { type Tool, createTool } from "../../tool";
 import type {
@@ -326,7 +327,9 @@ export class MCPClient extends EventEmitter {
         inputSchema: unknown;
       }[]) {
         try {
-          const zodSchema = convertJsonSchemaToZod(
+          const zodSchema = ("toJSONSchema" in z
+            ? convertJsonSchemaToZod
+            : convertJsonSchemaToZodV3)(
             toolDef.inputSchema as Record<string, unknown>,
           ) as unknown as z.ZodType;
           const namespacedToolName = `${this.clientInfo.name}_${toolDef.name}`; // Use original separator

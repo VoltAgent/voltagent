@@ -37,7 +37,7 @@
   "module": "dist/index.js",
   "peerDependencies": {
     "@voltagent/core": "^1.0.0-next.0",
-    "zod": "^3.25.0"
+    "zod": "^3.25.0 || ^4.0.0"
   },
   "scripts": {
     "build": "tsup",
