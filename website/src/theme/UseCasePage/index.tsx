@@ -26,11 +26,11 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { DotPattern } from "@site/src/components/ui/dot-pattern";
+import { UseCaseAnimation } from "@site/src/components/usecase-animation";
 import Layout from "@theme/Layout";
 import Mermaid from "@theme/Mermaid";
 import { motion } from "framer-motion";
 import type React from "react";
-import MermaidDiagram from "./MermaidDiagram";
 
 // Icon mapping
 const iconMap = {
@@ -221,21 +221,14 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                 </div>
               </motion.div>
 
-              {/* Right side - Mermaid Diagram */}
+              {/* Right side - Interactive Animation */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="relative"
               >
-                <div>
-                  <div className="text-center mb-4">
-                    {/* <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">
-                      Architecture Flow
-                    </h3> */}
-                  </div>
-                  <MermaidDiagram slug={useCase.slug} />
-                </div>
+                <UseCaseAnimation slug={useCase.slug} />
               </motion.div>
             </div>
           </Container>

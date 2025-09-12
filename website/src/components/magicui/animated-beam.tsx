@@ -5,6 +5,85 @@ import { type RefObject, useEffect, useId, useState } from "react";
 
 import { cn } from "@site/src/utils/index";
 
+// Helper builders for beam paths and length (module scope for stable identity)
+const buildCurvedPath = (
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  curv: number,
+) => {
+  const midX = (startX + endX) / 2;
+  const controlY = startY - curv;
+  return `M ${startX},${startY} Q ${midX},${controlY} ${endX},${endY}`;
+};
+
+const buildAngularPath = (startX: number, startY: number, endX: number, endY: number) => {
+  const midX = (startX + endX) / 2;
+  const radius = 15;
+  const goingRight = endX > startX;
+  const goingDown = endY > startY;
+  let d = `M ${startX},${startY}`;
+  d += ` L ${goingRight ? midX - radius : midX + radius},${startY}`;
+  d += ` Q ${midX},${startY} ${midX},${goingDown ? startY + radius : startY - radius}`;
+  d += ` L ${midX},${goingDown ? endY - radius : endY + radius}`;
+  d += ` Q ${midX},${endY} ${goingRight ? midX + radius : midX - radius},${endY}`;
+  d += ` L ${endX},${endY}`;
+  return d;
+};
+
+const buildSteppedPath = (
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  vOff: number,
+) => {
+  const vOffset = vOff || (startY < endY ? -30 : 30);
+  const midY = startY + vOffset;
+  const radius = 10;
+  let d = `M ${startX},${startY}`;
+  if (vOffset > 0) {
+    d += ` L ${startX},${startY + radius}`;
+    d += ` Q ${startX},${midY - radius} ${startX + radius},${midY - radius}`;
+  } else {
+    d += ` L ${startX},${startY - radius}`;
+    d += ` Q ${startX},${midY + radius} ${startX + radius},${midY + radius}`;
+  }
+  d += ` L ${endX > startX ? endX - radius : endX + radius},${midY}`;
+  if (endY > midY) {
+    d += ` Q ${endX},${midY} ${endX},${midY + radius}`;
+    d += ` L ${endX},${endY}`;
+  } else {
+    d += ` Q ${endX},${midY} ${endX},${midY - radius}`;
+    d += ` L ${endX},${endY}`;
+  }
+  return d;
+};
+
+const approximatePathLength = (
+  type: "curved" | "angular" | "stepped",
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  vOff: number,
+) => {
+  if (type === "curved") {
+    const dx = endX - startX;
+    const dy = endY - startY;
+    return Math.sqrt(dx * dx + dy * dy) * 1.2;
+  }
+  if (type === "angular") {
+    const dx = Math.abs(endX - startX);
+    const dy = Math.abs(endY - startY);
+    return dx + dy + 30;
+  }
+  const dx = Math.abs(endX - startX);
+  const vOffset = Math.abs(vOff || 30);
+  return dx + Math.abs(startY - (startY + vOffset)) + Math.abs(startY + vOffset - endY) + 40;
+};
+
 export interface AnimatedBeamProps {
   className?: string;
   containerRef: RefObject<HTMLElement | null>; // Container ref
@@ -33,6 +112,9 @@ export interface AnimatedBeamProps {
   verticalOffset?: number; // New prop: vertical offset for stepped paths
   particleDirection?: "forward" | "backward"; // New prop: direction of particles
   particleCount?: number; // New prop: number of particles to show (1-3)
+  showPath?: boolean; // New prop: whether to render the path (base + main)
+  showGradient?: boolean; // New prop: whether to render the gradient beam
+  animateDraw?: boolean; // New prop: animate gradient beam drawing from start to end
 }
 
 export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
@@ -63,6 +145,9 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   verticalOffset = 0, // Default: 0 vertical offset
   particleDirection = "forward", // Default: forward direction
   particleCount = 1, // Default: 1 particle
+  showPath = true,
+  showGradient = true,
+  animateDraw = false,
 }) => {
   const id = useId();
   const particleId = useId();
@@ -71,6 +156,8 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   const [pathLength, setPathLength] = useState(0);
   const [showParticlesState, setShowParticlesState] = useState(showParticles);
   const [showSolidBeam, setShowSolidBeam] = useState(false);
+
+  // (helper functions moved to module scope above)
 
   // Calculate the gradient coordinates based on the reverse prop
   const gradientCoordinates = reverse
@@ -118,123 +205,31 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
         const endY = rectB.top - containerRect.top + rectB.height / 2 + endYOffset;
 
         let d = "";
-
-        if (pathType === "curved") {
-          // Calculate control points for a smoother curve
-          const midX = (startX + endX) / 2;
-          const controlY = startY - curvature;
-
-          d = `M ${startX},${startY} Q ${midX},${controlY} ${endX},${endY}`;
-        } else if (pathType === "angular") {
-          // L-shaped angular path with rounded corners
-          const midX = (startX + endX) / 2;
-          const radius = 15; // Corner radius
-
-          // Calculate direction to determine corner positions
-          const goingRight = endX > startX;
-          const goingDown = endY > startY;
-
-          // Start point
-          d = `M ${startX},${startY}`;
-
-          // First horizontal line
-          if (goingRight) {
-            d += ` L ${midX - radius},${startY}`;
-          } else {
-            d += ` L ${midX + radius},${startY}`;
-          }
-
-          // First corner
-          if (goingRight && goingDown) {
-            d += ` Q ${midX},${startY} ${midX},${startY + radius}`;
-          } else if (goingRight && !goingDown) {
-            d += ` Q ${midX},${startY} ${midX},${startY - radius}`;
-          } else if (!goingRight && goingDown) {
-            d += ` Q ${midX},${startY} ${midX},${startY + radius}`;
-          } else {
-            d += ` Q ${midX},${startY} ${midX},${startY - radius}`;
-          }
-
-          // Vertical line
-          if (goingDown) {
-            d += ` L ${midX},${endY - radius}`;
-          } else {
-            d += ` L ${midX},${endY + radius}`;
-          }
-
-          // Second corner
-          if (goingRight && goingDown) {
-            d += ` Q ${midX},${endY} ${midX + radius},${endY}`;
-          } else if (goingRight && !goingDown) {
-            d += ` Q ${midX},${endY} ${midX + radius},${endY}`;
-          } else if (!goingRight && goingDown) {
-            d += ` Q ${midX},${endY} ${midX - radius},${endY}`;
-          } else {
-            d += ` Q ${midX},${endY} ${midX - radius},${endY}`;
-          }
-
-          // Final horizontal line
-          d += ` L ${endX},${endY}`;
-        } else if (pathType === "stepped") {
-          // Stepped path with vertical offset and rounded corners
-          const vOffset = verticalOffset || (startY < endY ? -30 : 30);
-          const midY = startY + vOffset;
-          const radius = 10; // Corner radius
-
-          // Start point
-          d = `M ${startX},${startY}`;
-
-          // First vertical segment with rounded corner
-          if (vOffset > 0) {
-            d += ` L ${startX},${startY + radius}`;
-            d += ` Q ${startX},${midY - radius} ${startX + radius},${midY - radius}`;
-          } else {
-            d += ` L ${startX},${startY - radius}`;
-            d += ` Q ${startX},${midY + radius} ${startX + radius},${midY + radius}`;
-          }
-
-          // Horizontal segment
-          if (endX > startX) {
-            d += ` L ${endX - radius},${midY}`;
-          } else {
-            d += ` L ${endX + radius},${midY}`;
-          }
-
-          // Second vertical segment with rounded corner
-          if (endY > midY) {
-            d += ` Q ${endX},${midY} ${endX},${midY + radius}`;
-            d += ` L ${endX},${endY}`;
-          } else {
-            d += ` Q ${endX},${midY} ${endX},${midY - radius}`;
-            d += ` L ${endX},${endY}`;
-          }
+        switch (pathType) {
+          case "curved":
+            d = buildCurvedPath(startX, startY, endX, endY, curvature);
+            break;
+          case "angular":
+            d = buildAngularPath(startX, startY, endX, endY);
+            break;
+          case "stepped":
+            d = buildSteppedPath(startX, startY, endX, endY, verticalOffset);
+            break;
         }
 
         setPathD(d);
 
-        // Calculate path length for particle animation
-        if (showParticles) {
-          // For angular and stepped paths, we need a better approximation
-          if (pathType === "curved") {
-            const dx = endX - startX;
-            const dy = endY - startY;
-            // Approximate path length (this is not exact for curves but works for visualization)
-            const approxLength = Math.sqrt(dx * dx + dy * dy) * 1.2;
-            setPathLength(approxLength);
-          } else if (pathType === "angular") {
-            // For angular paths, calculate the sum of horizontal and vertical segments
-            const dx = Math.abs(endX - startX);
-            const dy = Math.abs(endY - startY);
-            const approxLength = dx + dy + 30; // Add a bit extra for the rounded corners
-            setPathLength(approxLength);
-          } else if (pathType === "stepped") {
-            // For stepped paths, calculate the sum of all segments
-            const dx = Math.abs(endX - startX);
-            const vOffset = Math.abs(verticalOffset || 30);
-            const approxLength =
-              dx + Math.abs(startY - (startY + vOffset)) + Math.abs(startY + vOffset - endY) + 40; // Add extra for corners
-            setPathLength(approxLength);
-          }
+        // Calculate path length for particle or draw animation
+        if (showParticles || animateDraw) {
+          const approxLength = approximatePathLength(
+            pathType,
+            startX,
+            startY,
+            endX,
+            endY,
+            verticalOffset,
+          );
+          setPathLength(approxLength);
         }
       }
     };
@@ -266,6 +261,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
     endXOffset,
     endYOffset,
     showParticles,
+    animateDraw,
     pathType,
     verticalOffset,
   ]);
@@ -281,28 +277,32 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
     >
       <title>Animated beam</title>
       {/* Base path with glow effect */}
-      <filter id={`glow-${id}`} x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="6" result="blur" />
-        <feComposite in="SourceGraphic" in2="blur" operator="over" />
-      </filter>
+      {showPath && (
+        <>
+          <filter id={`glow-${id}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
 
-      <path
-        d={pathD}
-        stroke={pathColor}
-        strokeWidth={pathWidth + 4}
-        strokeOpacity={0.1}
-        strokeLinecap="round"
-        filter={`url(#glow-${id})`}
-      />
+          <path
+            d={pathD}
+            stroke={pathColor}
+            strokeWidth={pathWidth + 4}
+            strokeOpacity={0.1}
+            strokeLinecap="round"
+            filter={`url(#glow-${id})`}
+          />
 
-      {/* Main path */}
-      <path
-        d={pathD}
-        stroke={pathColor}
-        strokeWidth={pathWidth}
-        strokeOpacity={pathOpacity}
-        strokeLinecap="round"
-      />
+          {/* Main path */}
+          <path
+            d={pathD}
+            stroke={pathColor}
+            strokeWidth={pathWidth}
+            strokeOpacity={pathOpacity}
+            strokeLinecap="round"
+          />
+        </>
+      )}
 
       {/* Solid beam that appears after particles stop */}
       {showSolidBeam && (
@@ -316,13 +316,26 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
       )}
 
       {/* Animated gradient path */}
-      <path
-        d={pathD}
-        strokeWidth={pathWidth}
-        stroke={`url(#${id})`}
-        strokeOpacity="1"
-        strokeLinecap="round"
-      />
+      {showGradient &&
+        (animateDraw && pathLength > 0 ? (
+          <motion.path
+            d={pathD}
+            strokeWidth={pathWidth}
+            stroke={`url(#${id})`}
+            strokeLinecap="round"
+            initial={{ strokeDasharray: pathLength, strokeDashoffset: pathLength }}
+            animate={{ strokeDashoffset: 0 }}
+            transition={{ delay, duration, ease: [0.16, 1, 0.3, 1] }}
+          />
+        ) : (
+          <path
+            d={pathD}
+            strokeWidth={pathWidth}
+            stroke={`url(#${id})`}
+            strokeOpacity="1"
+            strokeLinecap="round"
+          />
+        ))}
 
       {/* Particle animation */}
       {showParticlesState && pathLength > 0 && (
