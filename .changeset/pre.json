@@ -26,7 +26,9 @@
     "voltagent-example-with-zapier-mcp": "1.0.0"
   },
   "changesets": [
+    "deep-feet-clap",
     "docs-mcp-migration-link",
+    "few-keys-change",
     "v1-core",
     "v1-libsql",
     "v1-logger-otel",

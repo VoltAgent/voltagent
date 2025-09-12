@@ -7,7 +7,7 @@
     "@ai-sdk/amazon-bedrock": "^3.0.0",
     "@aws-sdk/credential-providers": "~3.799.0",
     "@voltagent/core": "~1.0.0-next.2",
-    "@voltagent/libsql": "^1.0.0-next.1",
+    "@voltagent/libsql": "^1.0.0-next.2",
     "@voltagent/logger": "^1.0.0-next.0",
     "@voltagent/server-hono": "^1.0.0-next.2",
     "ai": "^5.0.12",

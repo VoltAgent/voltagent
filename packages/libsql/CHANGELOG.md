@@ -1,5 +1,11 @@
 # @voltagent/libsql
 
+## 1.0.0-next.2
+
+### Patch Changes
+
+- [`c2a6ae1`](https://github.com/VoltAgent/voltagent/commit/c2a6ae125abf9c0b6642927ee78721c6a83dc0f8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency
+
 ## 1.0.0-next.1
 
 ### Major Changes

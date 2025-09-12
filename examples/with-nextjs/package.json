@@ -8,7 +8,7 @@
     "@tailwindcss/postcss": "^4.1.4",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^1.0.0-next.2",
-    "@voltagent/libsql": "^1.0.0-next.1",
+    "@voltagent/libsql": "^1.0.0-next.2",
     "@voltagent/logger": "^1.0.0-next.0",
     "@voltagent/server-hono": "^1.0.0-next.2",
     "ai": "^5.0.12",
