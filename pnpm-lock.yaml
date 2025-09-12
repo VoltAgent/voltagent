@@ -2091,8 +2091,11 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       zod-from-json-schema:
-        specifier: ^0.0.5
-        version: 0.0.5
+        specifier: ^0.5.0
+        version: 0.5.0
+      zod-from-json-schema-v3:
+        specifier: npm:zod-from-json-schema@^0.0.5
+        version: /zod-from-json-schema@0.0.5
     devDependencies:
       '@ai-sdk/provider-utils':
         specifier: ^3.0.0
@@ -2416,8 +2419,11 @@ importers:
         specifier: ^8.18.1
         version: 8.18.3
       zod-from-json-schema:
-        specifier: ^0.0.5
-        version: 0.0.5
+        specifier: ^0.5.0
+        version: 0.5.0
+      zod-from-json-schema-v3:
+        specifier: npm:zod-from-json-schema@^0.0.5
+        version: /zod-from-json-schema@0.0.5
     devDependencies:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
@@ -21316,6 +21322,12 @@ packages:
     resolution: {integrity: sha512-U+SIzUUT7P6w1UNAz81Sj0Vko77eQPkZ8LbJeXqQbwLmq1MZlrjB3Gj4LuebqJW25/CzS9WA8SjTgR5lvuv+zA==}
     dependencies:
       zod: 3.25.76
+    dev: false
+
+  /zod-from-json-schema@0.5.0:
+    resolution: {integrity: sha512-W1v1YIoimOJfvuorGGp1QroizLL3jEGELJtgrHiVg/ytxVZdh/BTTVyPypGB7YK30LHrCkkebbjuyHIjBGCEzw==}
+    dependencies:
+      zod: 4.0.17
     dev: false
 
   /zod-to-json-schema@3.24.6(zod@3.25.76):
