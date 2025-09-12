@@ -1,6 +1,6 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
-/* import { LangfuseExporter } from "@voltagent/langfuse-exporter"; */
+import { Agent, Memory, VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { createLangfuseSpanProcessor } from "@voltagent/langfuse-exporter";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -25,17 +25,23 @@ const agent = new Agent({
   }),
 });
 
+// Configure Observability with Langfuse
+const observability = new VoltAgentObservability({
+  spanProcessors: [
+    createLangfuseSpanProcessor({
+      publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+      secretKey: process.env.LANGFUSE_SECRET_KEY,
+      baseUrl: process.env.LANGFUSE_BASE_URL,
+      debug: true,
+    }),
+  ],
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-  /* telemetryExporter: [
-    new LangfuseExporter({
-      publicKey: process.env.LANGFUSE_PUBLIC_KEY,
-      secretKey: process.env.LANGFUSE_SECRET_KEY,
-      baseUrl: process.env.LANGFUSE_BASE_URL,
-    }),
-  ], */
+  observability,
 });

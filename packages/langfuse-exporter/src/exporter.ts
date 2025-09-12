@@ -31,11 +31,28 @@ function extractMetadata(attributes: any): Record<string, any> {
     "tool.call.id",
     "tool.name",
     "tool.error.message",
+    // Generic I/O commonly set by @voltagent/core trace-context
+    "input",
+    "output",
     // Keys potentially controlling trace structure (might be filtered later)
     "langfuseTraceId",
     "langfuseUpdateParent",
+    // Legacy/custom user/session keys
     "userId",
     "sessionId",
+    // Core conventions
+    "user.id",
+    "conversation.id",
+    "prompt.tags",
+    "entity.id",
+    "entity.type",
+    "entity.name",
+    "agent.state",
+    "operation.id",
+    // Usage fallbacks from @voltagent/core
+    "usage.prompt_tokens",
+    "usage.completion_tokens",
+    "usage.total_tokens",
     "tags",
     "enduser.id",
     "session.id",
@@ -149,12 +166,23 @@ export class LangfuseExporter implements SpanExporter {
       const attrs = span.attributes;
       // Use semantic conventions for user and session IDs
       if (userId === undefined && attrs["enduser.id"] != null) userId = String(attrs["enduser.id"]);
+      if (userId === undefined && attrs["user.id"] != null) userId = String(attrs["user.id"]);
       if (sessionId === undefined && attrs["session.id"] != null)
         sessionId = String(attrs["session.id"]);
+      if (sessionId === undefined && attrs["conversation.id"] != null)
+        sessionId = String(attrs["conversation.id"]);
       // Keep existing logic for other trace attributes
       if (tags === undefined && Array.isArray(attrs.tags)) tags = attrs.tags.map(String);
+      if (tags === undefined && typeof attrs["prompt.tags"] === "string") {
+        try {
+          const parsed = JSON.parse(String(attrs["prompt.tags"]));
+          if (Array.isArray(parsed)) tags = parsed.map(String);
+        } catch {}
+      }
       if (traceName === undefined && attrs["voltagent.agent.name"] != null)
         traceName = String(attrs["voltagent.agent.name"]);
+      if (traceName === undefined && attrs["entity.name"] != null)
+        traceName = String(attrs["entity.name"]);
       if (langfuseTraceId === undefined && attrs.langfuseTraceId != null)
         langfuseTraceId = String(attrs.langfuseTraceId);
       if (attrs.langfuseUpdateParent != null) updateParent = Boolean(attrs.langfuseUpdateParent);
@@ -181,8 +209,12 @@ export class LangfuseExporter implements SpanExporter {
       traceParams.userId = userId;
       traceParams.sessionId = sessionId;
       traceParams.tags = tags;
-      traceParams.input = safeJsonParse(String(rootSpan?.attributes["ai.prompt.messages"] ?? null));
-      traceParams.output = safeJsonParse(String(rootSpan?.attributes["ai.response.text"] ?? null));
+      traceParams.input = safeJsonParse(
+        String(rootSpan?.attributes["ai.prompt.messages"] ?? rootSpan?.attributes?.input ?? null),
+      );
+      traceParams.output = safeJsonParse(
+        String(rootSpan?.attributes["ai.response.text"] ?? rootSpan?.attributes?.output ?? null),
+      );
       // Add combined metadata from root span? Let's extract from root if available.
       traceParams.metadata = rootSpan ? extractMetadata(rootSpan.attributes) : undefined;
       traceParams.model = String(rootSpan?.attributes["ai.model.name"]) ?? undefined;
@@ -209,6 +241,10 @@ export class LangfuseExporter implements SpanExporter {
       attrs["gen_ai.usage.prompt_tokens"] != null ||
       attrs["gen_ai.usage.completion_tokens"] != null ||
       attrs["ai.usage.tokens"] != null ||
+      // Fallbacks used by @voltagent/core
+      attrs["usage.prompt_tokens"] != null ||
+      attrs["usage.completion_tokens"] != null ||
+      attrs["usage.total_tokens"] != null ||
       attrs["ai.model.name"] != null ||
       name.includes("llm") ||
       name.includes("generate") ||
@@ -228,11 +264,22 @@ export class LangfuseExporter implements SpanExporter {
       name: attributes["tool.name"] ? `tool: ${attributes["tool.name"]}` : span.name, // Use tool name if available
       startTime: this.hrTimeToDate(span.startTime),
       endTime: this.hrTimeToDate(span.endTime),
-      // Directly use attributes set by core agent - cast to string
-      input: safeJsonParse(String(attributes["tool.arguments"] ?? null)),
-      output: safeJsonParse(String(attributes["tool.result"] ?? null)),
+      // Prefer tool.* fields, fallback to generic input/output set by @voltagent/core
+      input: safeJsonParse(
+        String(
+          attributes["tool.arguments"] ??
+            attributes?.input ??
+            (attributes["ai.prompt.messages"] as any) ??
+            null,
+        ),
+      ),
+      output: safeJsonParse(
+        String(
+          attributes["tool.result"] ?? attributes?.output ?? attributes["ai.response.text"] ?? null,
+        ),
+      ),
       // Level can indicate success/error based on status code
-      level: "DEFAULT" as any,
+      level: (attributes["error.message"] ? "ERROR" : "DEFAULT") as any,
       statusMessage: span.status.message,
       metadata: extractMetadata(attributes), // Extract remaining attributes
     };
@@ -252,24 +299,36 @@ export class LangfuseExporter implements SpanExporter {
       total?: number;
       unit?: "TOKENS";
     } = {};
-    const inputTokens = attributes["gen_ai.usage.prompt_tokens"];
-    const outputTokens = attributes["gen_ai.usage.completion_tokens"];
-    const totalTokens = attributes["ai.usage.tokens"];
+    // Prefer gen_ai/ai.*; fallback to core usage.*
+    const inputTokens =
+      attributes["gen_ai.usage.prompt_tokens"] ?? attributes["usage.prompt_tokens"];
+    const outputTokens =
+      attributes["gen_ai.usage.completion_tokens"] ?? attributes["usage.completion_tokens"];
+    const totalTokens = attributes["ai.usage.tokens"] ?? attributes["usage.total_tokens"];
     if (inputTokens != null) usage.input = Number(inputTokens);
     if (outputTokens != null) usage.output = Number(outputTokens);
     if (totalTokens != null) usage.total = Number(totalTokens);
     if (usage.input != null || usage.output != null || usage.total != null) usage.unit = "TOKENS"; // Set unit if any token count exists
 
-    // Prioritize modelName from metadata, then fallback to standard OTEL attributes
+    // Model
     const model = String(attributes["ai.model.name"] ?? "unknown");
     const modelParameters: Record<string, any> = {};
-    // Extract known parameters directly
-    if (attributes["gen_ai.request.temperature"] != null)
+    // Extract known parameters directly (gen_ai.* first, then core ai.model.*)
+    if (attributes["gen_ai.request.temperature"] != null) {
       modelParameters.temperature = Number(attributes["gen_ai.request.temperature"]);
-    if (attributes["gen_ai.request.max_tokens"] != null)
+    } else if (attributes["ai.model.temperature"] != null) {
+      modelParameters.temperature = Number(attributes["ai.model.temperature"]);
+    }
+    if (attributes["gen_ai.request.max_tokens"] != null) {
       modelParameters.max_tokens = Number(attributes["gen_ai.request.max_tokens"]);
-    if (attributes["gen_ai.request.top_p"] != null)
+    } else if (attributes["ai.model.max_tokens"] != null) {
+      modelParameters.max_tokens = Number(attributes["ai.model.max_tokens"]);
+    }
+    if (attributes["gen_ai.request.top_p"] != null) {
       modelParameters.top_p = Number(attributes["gen_ai.request.top_p"]);
+    } else if (attributes["ai.model.top_p"] != null) {
+      modelParameters.top_p = Number(attributes["ai.model.top_p"]);
+    }
     const finishReason = String(
       attributes["ai.response.finishReason"] ?? attributes["gen_ai.finishReason"] ?? "",
     );
@@ -298,10 +357,10 @@ export class LangfuseExporter implements SpanExporter {
       model: model,
       modelParameters: Object.keys(modelParameters).length > 0 ? modelParameters : undefined,
       usage: usage.unit ? usage : undefined, // Only add usage if unit is set
-      // Directly use attributes set by core agent - cast to string before parsing
-      input: safeJsonParse(String(attributes["ai.prompt.messages"] ?? null)), // Cast to string
-      output: safeJsonParse(String(attributes["ai.response.text"] ?? null)), // Cast to string
-      level: (metadata.originalError ? "ERROR" : "DEFAULT") as
+      // Prefer ai.* fields; fallback to generic input/output set by @voltagent/core
+      input: safeJsonParse(String(attributes["ai.prompt.messages"] ?? attributes?.input ?? null)),
+      output: safeJsonParse(String(attributes["ai.response.text"] ?? attributes?.output ?? null)),
+      level: (metadata.originalError || attributes["error.message"] ? "ERROR" : "DEFAULT") as
         | "DEFAULT"
         | "ERROR"
         | "DEBUG"
