@@ -26,10 +26,13 @@
     "voltagent-example-with-zapier-mcp": "1.0.0"
   },
   "changesets": [
-    "agent-ai-sdk-native",
-    "core-memory-storage-change",
-    "libsql-initial-release",
-    "major-version-bump",
-    "voltagent-server-architecture"
+    "docs-mcp-migration-link",
+    "v1-core",
+    "v1-libsql",
+    "v1-logger-otel",
+    "v1-postgres",
+    "v1-server-core",
+    "v1-server-hono",
+    "v1-supabase"
   ]
 }

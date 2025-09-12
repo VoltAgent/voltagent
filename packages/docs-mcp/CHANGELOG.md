@@ -1,5 +1,11 @@
 # @voltagent/docs-mcp
 
+## 1.0.0-next.1
+
+### Minor Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: update docs & examples for V1
+
 ## 1.0.0-next.0
 
 ### Patch Changes
