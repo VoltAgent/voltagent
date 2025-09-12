@@ -11,7 +11,7 @@ What's new
   - Image support: `image` parts are mapped to UI `file` parts; URLs and `data:` URIs are preserved, raw/base64 strings become `data:<mediaType>;base64,...`.
   - File support: string data is auto-detected as URL (`http(s)://`, `data:`) or base64; binary is encoded to data URI.
   - Metadata: `providerOptions` on text/reasoning/image/file parts is preserved as `providerMetadata` on UI parts.
-  - Step boundaries: Inserts `step-start` after tool results when followed by assistant text (avoids ordering/duplication when converting UI→Model later, parity with Mastra).
+  - Step boundaries: Inserts `step-start` after tool results when followed by assistant text.
 - Workflow: `andAgent` step and `WorkflowInput` types now also accept `UIMessage[] | ModelMessage[]` in addition to `string`.
 
 Usage examples
