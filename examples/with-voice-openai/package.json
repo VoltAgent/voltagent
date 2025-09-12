@@ -12,7 +12,7 @@
     "ai": "^5.0.12",
     "dotenv": "^16.4.5",
     "openai": "^4.91.0",
-    "zod": "^3.25.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",

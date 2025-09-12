@@ -7,7 +7,7 @@
     "ai": "^5.0.12",
     "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.1",
-    "zod": "^3.25.0",
+    "zod": "^3.25.76",
     "zod-from-json-schema": "^0.0.5"
   },
   "devDependencies": {

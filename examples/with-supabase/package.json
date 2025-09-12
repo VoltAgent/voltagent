@@ -10,7 +10,7 @@
     "@voltagent/server-hono": "^1.0.0",
     "@voltagent/supabase": "^1.0.0",
     "ai": "^5.0.12",
-    "zod": "^3.25.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",

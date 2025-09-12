@@ -7,7 +7,7 @@
     "@voltagent/core": "workspace:*",
     "@voltagent/logger": "workspace:*",
     "@voltagent/vercel-ai": "workspace:*",
-    "zod": "^3.25.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

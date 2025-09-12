@@ -20,7 +20,7 @@
     "react-dom": "^19.0.0",
     "require-in-the-middle": "^7.5.2",
     "tailwindcss": "^4.1.4",
-    "zod": "^3.25.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",

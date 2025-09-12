@@ -9,7 +9,7 @@
     "@voltagent/internal": "^0.0.9",
     "@voltagent/server-core": "^1.0.0",
     "hono": "^4.7.7",
-    "zod": "^3.25.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
