@@ -123,6 +123,16 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
 
   // Center node pulse animation state
   const [centerPulse, setCenterPulse] = useState(false);
+  // Store inbound paths per node to reuse exactly for outbound
+  const inboundPathsRef = useRef<Record<string, string>>({});
+  const reverseQuadraticPath = (d: string) => {
+    const match = d.match(
+      /M\s*([-\d.]+),([-\d.]+)\s*Q\s*([-\d.]+),([-\d.]+)\s*([-\d.]+),([-\d.]+)/,
+    );
+    if (!match) return undefined;
+    const [, sx, sy, mx, my, ex, ey] = match;
+    return `M ${ex},${ey} Q ${mx},${my} ${sx},${sy}`;
+  };
 
   // Animation parameters
   const inboundDuration = 2.5; // Node to center duration
@@ -261,6 +271,9 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
             duration={inboundDuration}
             delay={0}
             particleDuration={inboundDuration}
+            onPathComputed={(d) => {
+              inboundPathsRef.current[nodeId] = d;
+            }}
           />
         );
       })}
@@ -270,17 +283,20 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
         const node = config.nodes.find((n) => n.id === nodeId);
         if (!node || !nodeRefs.current[nodeId]?.current) return null;
 
+        const inboundD = inboundPathsRef.current[nodeId];
+        const reversedD = inboundD ? reverseQuadraticPath(inboundD) : undefined;
+
         return (
           <AnimatedBeam
             key={`outbound-${nodeId}`}
             containerRef={containerRef}
             fromRef={centerRef}
             toRef={nodeRefs.current[nodeId]}
-            curvature={0}
+            curvature={80}
             gradientStartColor="#00d992"
             gradientStopColor="#00d992"
-            pathColor="rgba(0, 217, 146, 0.2)"
-            pathWidth={2}
+            pathColor="rgba(0, 217, 146, 0.35)"
+            pathWidth={3}
             pathType="curved"
             showParticles={true}
             particleSize={3}
@@ -294,6 +310,7 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
             duration={outboundDuration}
             delay={0}
             particleDuration={outboundDuration}
+            pathOverride={reversedD}
           />
         );
       })}

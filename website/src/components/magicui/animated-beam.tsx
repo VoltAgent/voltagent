@@ -115,6 +115,9 @@ export interface AnimatedBeamProps {
   showPath?: boolean; // New prop: whether to render the path (base + main)
   showGradient?: boolean; // New prop: whether to render the gradient beam
   animateDraw?: boolean; // New prop: animate gradient beam drawing from start to end
+  onPathComputed?: (d: string) => void; // Callback with computed path string
+  pathOverride?: string; // If provided, use this path string instead of computing
+  drawDirection?: "startToEnd" | "endToStart"; // Future use if we add reverse drawing
 }
 
 export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
@@ -148,6 +151,8 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   showPath = true,
   showGradient = true,
   animateDraw = false,
+  onPathComputed,
+  pathOverride,
 }) => {
   const id = useId();
   const particleId = useId();
@@ -204,20 +209,23 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
         const endX = rectB.left - containerRect.left + rectB.width / 2 + endXOffset;
         const endY = rectB.top - containerRect.top + rectB.height / 2 + endYOffset;
 
-        let d = "";
-        switch (pathType) {
-          case "curved":
-            d = buildCurvedPath(startX, startY, endX, endY, curvature);
-            break;
-          case "angular":
-            d = buildAngularPath(startX, startY, endX, endY);
-            break;
-          case "stepped":
-            d = buildSteppedPath(startX, startY, endX, endY, verticalOffset);
-            break;
+        let d = pathOverride || "";
+        if (!d) {
+          switch (pathType) {
+            case "curved":
+              d = buildCurvedPath(startX, startY, endX, endY, curvature);
+              break;
+            case "angular":
+              d = buildAngularPath(startX, startY, endX, endY);
+              break;
+            case "stepped":
+              d = buildSteppedPath(startX, startY, endX, endY, verticalOffset);
+              break;
+          }
         }
 
         setPathD(d);
+        if (onPathComputed) onPathComputed(d);
 
         // Calculate path length for particle or draw animation
         if (showParticles || animateDraw) {
@@ -264,6 +272,8 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
     animateDraw,
     pathType,
     verticalOffset,
+    onPathComputed,
+    pathOverride,
   ]);
 
   return (
