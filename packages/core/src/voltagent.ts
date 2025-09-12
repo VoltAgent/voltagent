@@ -96,7 +96,6 @@ export class VoltAgent {
         agentRegistry: this.registry,
         workflowRegistry: this.workflowRegistry,
         logger: this.logger,
-        // telemetryExporter removed - migrated to OpenTelemetry
         voltOpsClient: this.registry.getGlobalVoltOpsClient(),
         observability: this.observability,
       });

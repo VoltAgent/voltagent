@@ -53,8 +53,13 @@ class PortManager {
       });
 
       server.once("listening", () => {
+        // Close the server and wait for completion
         server.close(() => {
-          resolve(true);
+          // Server is now closed, but port might still be in TIME_WAIT
+          // Add a small delay to ensure OS has fully released the port
+          setTimeout(() => {
+            resolve(true);
+          }, 50); // Increased delay to be safer
         });
       });
 
