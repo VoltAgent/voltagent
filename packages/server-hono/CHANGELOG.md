@@ -1,5 +1,55 @@
 # @voltagent/server-hono
 
+## 1.0.1
+
+### Patch Changes
+
+- [#545](https://github.com/VoltAgent/voltagent/pull/545) [`5d7c8e7`](https://github.com/VoltAgent/voltagent/commit/5d7c8e7f3898fe84066d0dd9be7f573fca66f185) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve EADDRINUSE error on server startup by fixing race condition in port availability check - #544
+
+  Fixed a critical issue where users would encounter "EADDRINUSE: address already in use" errors when starting VoltAgent servers. The problem was caused by a race condition in the port availability check where the test server wasn't fully closed before the actual server tried to bind to the same port.
+
+  ## What was happening
+
+  When checking if a port was available, the port manager would:
+  1. Create a test server and bind to the port
+  2. On successful binding, immediately close the server
+  3. Return `true` indicating the port was available
+  4. But the test server wasn't fully closed yet when `serve()` tried to bind to the same port
+
+  ## The fix
+
+  Modified the port availability check in `port-manager.ts` to:
+  - Wait for the server's close callback before returning
+  - Add a small delay (50ms) to ensure the OS has fully released the port
+  - This prevents the race condition between test server closure and actual server startup
+
+  ## Changes
+  - **port-manager.ts**: Fixed race condition by properly waiting for test server to close
+  - **hono-server-provider.ts**: Added proper error handling for server startup failures
+
+  This ensures reliable server startup without port conflicts.
+
+- [#546](https://github.com/VoltAgent/voltagent/pull/546) [`f12f344`](https://github.com/VoltAgent/voltagent/commit/f12f34405edf0fcb417ed098deba62570260fb81) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: align Zod to ^3.25.76 and fix type mismatch with AI SDK
+
+  We aligned Zod versions across packages to `^3.25.76` to match AI SDK peer ranges and avoid multiple Zod instances at runtime.
+
+  Why this matters
+  - Fixes TypeScript narrowing issues in workflows when consuming `@voltagent/core` from npm with a different Zod instance (e.g., `ai` packages pulling newer Zod).
+  - Prevents errors like "Spread types may only be created from object types" where `data` failed to narrow because `z.ZodTypeAny` checks saw different Zod identities.
+
+  What changed
+  - `@voltagent/server-core`, `@voltagent/server-hono`: dependencies.zod → `^3.25.76`.
+  - `@voltagent/docs-mcp`, `@voltagent/core`: devDependencies.zod → `^3.25.76`.
+  - Examples and templates updated to use `^3.25.76` for consistency (non-publishable).
+
+  Notes for consumers
+  - Ensure a single Zod version is installed (consider a workspace override to pin Zod to `3.25.76`).
+  - This improves compatibility with `ai@5.x` packages that require `zod@^3.25.76 || ^4`.
+
+- Updated dependencies [[`5d7c8e7`](https://github.com/VoltAgent/voltagent/commit/5d7c8e7f3898fe84066d0dd9be7f573fca66f185), [`f12f344`](https://github.com/VoltAgent/voltagent/commit/f12f34405edf0fcb417ed098deba62570260fb81)]:
+  - @voltagent/server-core@1.0.1
+  - @voltagent/core@1.0.1
+
 ## 1.0.0
 
 ### Major Changes
