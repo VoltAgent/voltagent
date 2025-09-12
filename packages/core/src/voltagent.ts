@@ -124,14 +124,15 @@ export class VoltAgent {
    * Setup graceful shutdown handlers
    */
   private setupShutdownHandlers(): void {
-    const shutdown = async (signal: string) => {
-      this.logger.info(`[VoltAgent] Received ${signal}, starting graceful shutdown...`);
+    const handleSignal = async (signal: string) => {
+      this.logger.info(`[VoltAgent] Received ${signal}...`);
 
       try {
-        // Suspend all active workflows
-        await this.workflowRegistry.suspendAllActiveWorkflows();
+        // Use the public shutdown method for all cleanup
+        await this.shutdown();
 
-        this.logger.info("[VoltAgent] All workflows suspended, exiting...");
+        // Only call process.exit if we're the sole handler
+        // This allows other frameworks to perform their own cleanup
         if (this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT")) {
           process.exit(0);
         }
@@ -143,8 +144,9 @@ export class VoltAgent {
       }
     };
 
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
-    process.on("SIGINT", () => shutdown("SIGINT"));
+    // Use process.once to prevent duplicate handling
+    process.once("SIGTERM", () => handleSignal("SIGTERM"));
+    process.once("SIGINT", () => handleSignal("SIGINT"));
 
     // Handle unhandled promise rejections to prevent server crashes
     // This is particularly important for AI SDK's NoOutputGeneratedError
@@ -352,6 +354,38 @@ export class VoltAgent {
   public async shutdownTelemetry(): Promise<void> {
     if (this.observability) {
       await this.observability.shutdown();
+    }
+  }
+
+  /**
+   * Gracefully shutdown all VoltAgent resources
+   * This includes stopping the server, suspending workflows, and shutting down telemetry
+   * Useful for programmatic cleanup or when integrating with other frameworks
+   */
+  public async shutdown(): Promise<void> {
+    this.logger.info("[VoltAgent] Starting graceful shutdown...");
+
+    try {
+      // Stop the server first to prevent new requests
+      if (this.serverInstance?.isRunning()) {
+        this.logger.info("[VoltAgent] Stopping server...");
+        await this.stopServer();
+      }
+
+      // Suspend all active workflows
+      this.logger.info("[VoltAgent] Suspending active workflows...");
+      await this.workflowRegistry.suspendAllActiveWorkflows();
+
+      // Shutdown telemetry
+      if (this.observability) {
+        this.logger.info("[VoltAgent] Shutting down telemetry...");
+        await this.shutdownTelemetry();
+      }
+
+      this.logger.info("[VoltAgent] Graceful shutdown complete");
+    } catch (error) {
+      this.logger.error("[VoltAgent] Error during shutdown:", { error });
+      throw error;
     }
   }
 }

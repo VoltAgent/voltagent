@@ -202,6 +202,130 @@ configureApp: (app) => {
 };
 ```
 
+## Graceful Shutdown
+
+VoltAgent provides comprehensive shutdown handling to ensure clean resource cleanup and compatibility with other frameworks.
+
+### How Shutdown Works
+
+When VoltAgent receives a shutdown signal (SIGINT/SIGTERM):
+
+1. **Server stops first** - Prevents new requests from being accepted
+2. **Workflows suspend** - All active workflows are gracefully suspended
+3. **Telemetry shuts down** - Observability resources are properly closed
+4. **Process exits (conditionally)** - Only if VoltAgent is the sole signal handler
+
+### Automatic Shutdown Handling
+
+VoltAgent automatically registers SIGINT and SIGTERM handlers that clean up resources:
+
+```typescript
+const voltAgent = new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({ port: 3141 }),
+});
+
+// When you press Ctrl+C or the process receives SIGTERM:
+// 1. Server stops accepting new connections
+// 2. Active workflows are suspended
+// 3. Telemetry is flushed and closed
+// 4. Process exits (if no other handlers exist)
+```
+
+### Programmatic Shutdown
+
+Use the `shutdown()` method for manual resource cleanup:
+
+```typescript
+const voltAgent = new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({ port: 3141 }),
+});
+
+// Later in your application
+await voltAgent.shutdown();
+// All resources are now cleaned up
+```
+
+### Framework Integration
+
+VoltAgent respects other frameworks' shutdown handlers. When multiple handlers exist (e.g., from Adonis, NestJS, Express), VoltAgent:
+
+1. Performs its cleanup (server, workflows, telemetry)
+2. **Does not** call `process.exit()`
+3. Allows other handlers to complete their cleanup
+4. Lets the framework control the final exit
+
+Example with Express:
+
+```typescript
+import express from "express";
+import { VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+
+const app = express();
+const voltAgent = new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({ port: 3141 }),
+});
+
+// Express graceful shutdown
+process.on("SIGTERM", async () => {
+  console.log("Express: Closing server...");
+
+  // VoltAgent already cleaned up its resources
+  // Now Express can do its cleanup
+  server.close(() => {
+    console.log("Express: Server closed");
+    process.exit(0);
+  });
+});
+```
+
+### Server Provider Shutdown
+
+The `BaseServerProvider` handles common shutdown tasks:
+
+- Closes WebSocket connections
+- Stops the HTTP server
+- Releases allocated ports
+- Ensures all pending operations complete
+
+Custom server providers should implement proper cleanup:
+
+```typescript
+class CustomServerProvider extends BaseServerProvider {
+  protected async stopServer(): Promise<void> {
+    // Close all connections
+    await this.closeConnections();
+
+    // Stop the server
+    if (this.server) {
+      await new Promise((resolve) => {
+        this.server.close(resolve);
+      });
+    }
+
+    // Clean up any custom resources
+    await this.cleanupCustomResources();
+  }
+}
+```
+
+### Shutdown Order Matters
+
+Resources are cleaned up in a specific order to prevent issues:
+
+1. **Server first** - Stop accepting new work
+2. **Workflows second** - Suspend active operations
+3. **Telemetry last** - Ensure all events are recorded
+
+This order ensures that:
+
+- No new requests arrive during cleanup
+- Active operations can complete or suspend gracefully
+- All telemetry data is captured before shutdown
+
 ## Best Practices
 
 1. **Use the Official Implementation**: Start with `@voltagent/server-hono` unless you have specific requirements
@@ -209,6 +333,8 @@ configureApp: (app) => {
 3. **Follow Route Definitions**: Use the standardized route definitions for consistency
 4. **Handle Errors Properly**: Implement proper error handling in custom providers
 5. **Support Graceful Shutdown**: Always clean up resources properly
+6. **Test Shutdown Behavior**: Verify your application exits cleanly in different scenarios
+7. **Use `shutdown()` in Tests**: Ensure proper cleanup in test suites
 
 ## Next Steps
 
