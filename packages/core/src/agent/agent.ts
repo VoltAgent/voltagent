@@ -49,7 +49,10 @@ import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
-import { convertResponseMessagesToUIMessages } from "../utils/message-converter";
+import {
+  convertModelMessagesToUIMessages,
+  convertResponseMessagesToUIMessages,
+} from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import { convertUsage } from "../utils/usage-converter";
 import type { Voice } from "../voice";
@@ -336,7 +339,7 @@ export class Agent {
    * Generate text response
    */
   async generateText(
-    input: string | UIMessage[],
+    input: string | UIMessage[] | BaseMessage[],
     options?: GenerateTextOptions,
   ): Promise<GenerateTextResultWithContext> {
     const startTime = Date.now();
@@ -508,7 +511,7 @@ export class Agent {
    * Stream text response
    */
   async streamText(
-    input: string | UIMessage[],
+    input: string | UIMessage[] | BaseMessage[],
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
     const startTime = Date.now();
@@ -813,7 +816,7 @@ export class Agent {
    * Generate structured object
    */
   async generateObject<T extends z.ZodType>(
-    input: string | UIMessage[],
+    input: string | UIMessage[] | BaseMessage[],
     schema: T,
     options?: GenerateObjectOptions,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
@@ -991,7 +994,7 @@ export class Agent {
    * Stream structured object
    */
   async streamObject<T extends z.ZodType>(
-    input: string | UIMessage[],
+    input: string | UIMessage[] | BaseMessage[],
     schema: T,
     options?: StreamObjectOptions,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
@@ -1230,7 +1233,7 @@ export class Agent {
    * Common preparation for all execution methods
    */
   private async prepareExecution(
-    input: string | UIMessage[],
+    input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
     options?: BaseGenerationOptions,
   ): Promise<{
@@ -1273,7 +1276,7 @@ export class Agent {
    * Transitional helper to gradually adopt OperationContext across methods
    */
   private createOperationContext(
-    input: string | UIMessage[],
+    input: string | UIMessage[] | BaseMessage[],
     options?: BaseGenerationOptions,
   ): OperationContext {
     const operationId = crypto.randomUUID();
@@ -1424,30 +1427,40 @@ export class Agent {
   /**
    * Extract user query from input for semantic search
    */
-  private extractUserQuery(input: string | UIMessage[]): string | undefined {
+  private extractUserQuery(input: string | UIMessage[] | BaseMessage[]): string | undefined {
     if (typeof input === "string") {
       return input;
     }
+    if (!Array.isArray(input) || input.length === 0) return undefined;
 
-    // Filter user messages and get the last one
-    const userMessages = input.filter((msg) => msg.role === "user");
-    const lastUserMessage = userMessages.at(-1);
+    const isUI = (msg: any): msg is UIMessage => Array.isArray(msg?.parts);
 
-    // Prefer parts; fallback to content if available
-    if (lastUserMessage?.parts) {
+    const userMessages = (input as any[]).filter((msg) => msg.role === "user");
+    const lastUserMessage: any = userMessages.at(-1);
+
+    if (!lastUserMessage) return undefined;
+
+    if (isUI(lastUserMessage)) {
       const textParts = lastUserMessage.parts
-        .filter((part) => part.type === "text" && "text" in part)
-        .map((part) => (part as any).text)
-        .filter((text) => text)
-        .map((text) => text.trim());
+        .filter((part: any) => part.type === "text" && typeof part.text === "string")
+        .map((part: any) => part.text.trim())
+        .filter(Boolean);
       if (textParts.length > 0) return textParts.join(" ");
+      return undefined;
     }
 
-    if ((lastUserMessage as any)?.content && typeof (lastUserMessage as any).content === "string") {
-      const content = ((lastUserMessage as any).content as string).trim();
+    // ModelMessage path
+    if (typeof lastUserMessage.content === "string") {
+      const content = (lastUserMessage.content as string).trim();
       return content.length > 0 ? content : undefined;
     }
-
+    if (Array.isArray(lastUserMessage.content)) {
+      const textParts = (lastUserMessage.content as any[])
+        .filter((part: any) => part.type === "text" && typeof part.text === "string")
+        .map((part: any) => part.text.trim())
+        .filter(Boolean);
+      if (textParts.length > 0) return textParts.join(" ");
+    }
     return undefined;
   }
 
@@ -1455,7 +1468,7 @@ export class Agent {
    * Prepare messages with system prompt and memory
    */
   private async prepareMessages(
-    input: string | UIMessage[],
+    input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
     options?: BaseGenerationOptions,
   ): Promise<UIMessage[]> {
@@ -1554,9 +1567,17 @@ export class Agent {
               );
             }
             // Regular memory context
+            // Convert model messages to UI for memory context if needed
+            const inputForMemory =
+              typeof input === "string"
+                ? input
+                : Array.isArray(input) && (input as any[])[0]?.parts
+                  ? (input as UIMessage[])
+                  : convertModelMessagesToUIMessages(input as BaseMessage[]);
+
             const result = await this.memoryManager.prepareConversationContext(
               oc,
-              input,
+              inputForMemory,
               oc.userId,
               oc.conversationId,
               options?.contextLimit,
@@ -1587,7 +1608,13 @@ export class Agent {
           // so user messages are stored and embedded consistently.
           if (isSemanticSearch && oc.userId && oc.conversationId) {
             try {
-              this.memoryManager.queueSaveInput(oc, input, oc.userId, oc.conversationId);
+              const inputForMemory =
+                typeof input === "string"
+                  ? input
+                  : Array.isArray(input) && (input as any[])[0]?.parts
+                    ? (input as UIMessage[])
+                    : convertModelMessagesToUIMessages(input as BaseMessage[]);
+              this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
             } catch (_e) {
               // Non-fatal: background persistence should not block message preparation
             }
@@ -1608,8 +1635,13 @@ export class Agent {
         role: "user",
         parts: [{ type: "text", text: input }],
       });
-    } else {
-      messages.push(...input);
+    } else if (Array.isArray(input)) {
+      const first = (input as any[])[0];
+      if (first && Array.isArray(first.parts)) {
+        messages.push(...(input as UIMessage[]));
+      } else {
+        messages.push(...convertModelMessagesToUIMessages(input as BaseMessage[]));
+      }
     }
 
     // Allow hooks to modify messages
@@ -1626,7 +1658,7 @@ export class Agent {
    * Get system message with dynamic instructions and retriever context
    */
   private async getSystemMessage(
-    input: string | UIMessage[],
+    input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
     options?: BaseGenerationOptions,
   ): Promise<BaseMessage | BaseMessage[]> {
@@ -1864,7 +1896,7 @@ export class Agent {
    * Get retriever context
    */
   private async getRetrieverContext(
-    input: string | UIMessage[],
+    input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
   ): Promise<string | null> {
     if (!this.retriever) return null;
@@ -1892,8 +1924,13 @@ export class Agent {
     // Event tracking now handled by OpenTelemetry spans
 
     try {
-      // Convert UIMessage to ModelMessage for retriever if needed
-      const retrieverInput = typeof input === "string" ? input : convertToModelMessages(input);
+      // Prepare retriever input: pass through if ModelMessages, convert if UIMessage, or string
+      const retrieverInput =
+        typeof input === "string"
+          ? input
+          : Array.isArray(input) && (input as any[])[0]?.content !== undefined
+            ? (input as BaseMessage[])
+            : convertToModelMessages(input as UIMessage[]);
 
       // Execute retriever with the span context
       const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {

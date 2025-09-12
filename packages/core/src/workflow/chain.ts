@@ -1,5 +1,7 @@
+import type { ModelMessage } from "@ai-sdk/provider-utils";
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
@@ -131,7 +133,17 @@ export class WorkflowChain<
    * @returns A workflow step that executes the agent with the task
    */
   andAgent<SCHEMA extends z.ZodTypeAny>(
-    task: string | InternalWorkflowFunc<INPUT_SCHEMA, CURRENT_DATA, string, any, any>,
+    task:
+      | string
+      | UIMessage[]
+      | ModelMessage[]
+      | InternalWorkflowFunc<
+          INPUT_SCHEMA,
+          CURRENT_DATA,
+          string | UIMessage[] | ModelMessage[],
+          any,
+          any
+        >,
     agent: Agent,
     config: AgentConfig<SCHEMA>,
   ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>, SUSPEND_SCHEMA, RESUME_SCHEMA> {

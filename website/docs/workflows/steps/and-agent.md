@@ -47,11 +47,29 @@ const result = await workflow.run({ text: "I love this!" });
 ## Function Signature
 
 ```typescript
-// Simple prompt
+// Simple prompt (string)
 .andAgent("Summarize this", agent, { schema })
 
-// Dynamic prompt from data
+// Dynamic prompt from data (string)
 .andAgent(({ data }) => `Analyze: ${data.text}`, agent, { schema })
+
+// Advanced: pass ai-sdk v5 ModelMessage[] (multimodal)
+.andAgent(
+  ({ data }) => [
+    { role: 'user', content: [{ type: 'text', text: `Hello ${data.name}` }] },
+  ],
+  agent,
+  { schema }
+)
+
+// Advanced: pass UIMessage[]
+.andAgent(
+  ({ data }) => [
+    { id: crypto.randomUUID(), role: 'user', parts: [{ type: 'text', text: data.prompt }] },
+  ],
+  agent,
+  { schema }
+)
 ```
 
 ## Common Patterns

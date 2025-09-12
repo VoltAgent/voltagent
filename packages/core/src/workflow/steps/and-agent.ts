@@ -1,3 +1,4 @@
+import type { ModelMessage } from "@ai-sdk/provider-utils";
 import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { Agent, BaseGenerationOptions } from "../../agent/agent";
@@ -33,7 +34,11 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = BaseGenerationOptions & {
  * @returns A workflow step that executes the agent with the task
  */
 export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
-  task: UIMessage[] | string | InternalWorkflowFunc<INPUT, DATA, UIMessage[] | string, any, any>,
+  task:
+    | UIMessage[]
+    | ModelMessage[]
+    | string
+    | InternalWorkflowFunc<INPUT, DATA, UIMessage[] | ModelMessage[] | string, any, any>,
   agent: Agent,
   config: AgentConfig<SCHEMA>,
 ) {

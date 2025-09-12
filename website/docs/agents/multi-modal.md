@@ -2,12 +2,12 @@
 
 VoltAgent supports multi-modal interactions, allowing agents to process and understand inputs that combine different types of content, primarily text and images. This enables more complex and richer interactions, such as asking questions about an uploaded image or providing visual context alongside text prompts.
 
-## `BaseMessage` Content Structure
+## `BaseMessage` (AI SDK v5 ModelMessage) Content Structure
 
 The core of multi-modal input lies in the structure of the `content` field within a `BaseMessage` object. While simple text interactions might use a plain string for `content`, multi-modal inputs require `content` to be an **array** of specific content part objects.
 
 ```typescript
-import type { BaseMessage } from "@voltagent/core";
+import type { BaseMessage } from "@voltagent/core"; // maps to ai-sdk v5 ModelMessage
 
 // Basic Text Message
 const textMessage: BaseMessage = {
@@ -25,8 +25,8 @@ const multiModalMessage: BaseMessage = {
     },
     {
       type: "image",
-      image: "data:image/jpeg;base64,/9j/4AAQSk...", // Base64 string or Data URI
-      mimeType: "image/jpeg", // Optional but recommended
+      image: "data:image/jpeg;base64,/9j/4AAQSk...", // URL, Data URI, or Base64 payload
+      mediaType: "image/jpeg", // Optional but recommended
     },
   ],
 };
@@ -44,35 +44,31 @@ When `content` is an array, each element must be an object with a `type` field i
     { type: 'text', text: 'This is the text part.' }
     ```
 
-2.  **Image Part:**
+2.  **Image Part (v5):**
     - `type: 'image'`
-    - `image: string` - The image data, typically provided as a **Base64 encoded string** or a **Data URI** (e.g., `data:image/png;base64,...`).
-    - `mimeType?: string` - (Optional but Recommended) The MIME type of the image (e.g., `image/jpeg`, `image/png`, `image/webp`). Helps the provider interpret the data correctly.
+    - `image: string | URL | Uint8Array` - The image; can be an absolute URL, a **Data URI**, a **Base64 payload**, or binary.
+    - `mediaType?: string` - (Optional but Recommended) The media type (e.g., `image/jpeg`, `image/png`).
     - `alt?: string` - (Optional) Alternative text describing the image.
 
     ```typescript
     {
       type: 'image',
       image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...',
-      mimeType: 'image/png',
+      mediaType: 'image/png',
       alt: 'A cute cat sleeping'
     }
     ```
 
-3.  **File Part (Used less commonly for direct LLM input, but supported):**
+3.  **File Part (v5 UI semantics):**
     - `type: 'file'`
-    - `data: string` - Base64 encoded file data.
-    - `filename: string` - Original filename.
-    - `mimeType: string` - The MIME type of the file (e.g., `application/pdf`).
-    - `size?: number` - File size in bytes.
+    - `url: string` - Absolute URL or Data URI. If you only have Base64, use a Data URI: `data:<mediaType>;base64,<payload>`.
+    - `mediaType: string` - The media type of the file (e.g., `application/pdf`, `image/jpeg`).
 
     ```typescript
     {
       type: 'file',
-      data: 'JVBERi0xLjQKJ...',
-      filename: 'report.pdf',
-      mimeType: 'application/pdf',
-      size: 102400
+      url: 'data:application/pdf;base64,JVBERi0xLjQKJ...',
+      mediaType: 'application/pdf'
     }
     ```
 
@@ -93,7 +89,7 @@ const agent = new Agent({
   model: openai("gpt-4o-mini"), // or another vision-capable ai-sdk model
 });
 
-async function askAboutImage(imageUrlOrBase64: string, question: string) {
+async function askAboutImage(image: string, question: string) {
   const messages: BaseMessage[] = [
     {
       role: "user",
@@ -101,9 +97,9 @@ async function askAboutImage(imageUrlOrBase64: string, question: string) {
         { type: "text", text: question },
         {
           type: "image",
-          image: imageUrlOrBase64, // Can be Data URI or Base64 string
-          // Ensure you provide mimeType if not using a Data URI
-          // mimeType: 'image/jpeg'
+          image, // Can be absolute URL, Data URI or Base64 payload
+          // Provide mediaType if not using a Data URI
+          // mediaType: 'image/jpeg'
         },
       ],
     },

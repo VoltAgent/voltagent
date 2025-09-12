@@ -22,6 +22,7 @@ import { safeStringify } from "@voltagent/internal/utils";
 import type { UIMessage } from "ai";
 import type { VoltAgentObservability } from "../../observability";
 import type { BaseGenerationOptions } from "../agent";
+import type { BaseMessage } from "../providers/base/types";
 
 export interface TraceContextOptions {
   agentId: string;
@@ -31,7 +32,7 @@ export interface TraceContextOptions {
   operationId: string;
   parentSpan?: Span;
   parentAgentId?: string;
-  input?: string | UIMessage[];
+  input?: string | UIMessage[] | BaseMessage[];
 }
 
 export class AgentTraceContext {

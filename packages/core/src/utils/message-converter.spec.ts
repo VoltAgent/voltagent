@@ -3,8 +3,12 @@
  */
 
 import type { AssistantModelMessage, ToolModelMessage } from "@ai-sdk/provider-utils";
+import type { ModelMessage } from "@ai-sdk/provider-utils";
 import { describe, expect, it } from "vitest";
-import { convertResponseMessagesToUIMessages } from "./message-converter";
+import {
+  convertModelMessagesToUIMessages,
+  convertResponseMessagesToUIMessages,
+} from "./message-converter";
 
 describe("convertResponseMessagesToUIMessages", () => {
   it("should convert simple text assistant message", async () => {
@@ -406,5 +410,158 @@ describe("convertResponseMessagesToUIMessages", () => {
     const result = await convertResponseMessagesToUIMessages(messages);
 
     expect(result).toHaveLength(1);
+  });
+});
+
+describe("convertModelMessagesToUIMessages (AI SDK v5)", () => {
+  it("converts simple text user/assistant messages", () => {
+    const messages: ModelMessage[] = [
+      { role: "user", content: [{ type: "text", text: "Hello" }] },
+      { role: "assistant", content: [{ type: "text", text: "Hi there" }] },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(2);
+    expect(ui[0].role).toBe("user");
+    expect(ui[0].parts[0]).toEqual({ type: "text", text: "Hello" });
+    expect(ui[1].role).toBe("assistant");
+    expect(ui[1].parts[0]).toEqual({ type: "text", text: "Hi there" });
+  });
+
+  it("inserts step-start between tool-result and following text for assistant", () => {
+    const messages: ModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "t1",
+            toolName: "calc",
+            output: { result: 42 },
+          },
+          { type: "text", text: "Done." },
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].parts).toHaveLength(3);
+    expect(ui[0].parts[0]).toMatchObject({
+      type: "tool-calc",
+      state: "output-available",
+      toolCallId: "t1",
+      output: { result: 42 },
+    });
+    expect(ui[0].parts[1]).toEqual({ type: "step-start" });
+    expect(ui[0].parts[2]).toEqual({ type: "text", text: "Done." });
+  });
+
+  it("maps reasoning and file parts", () => {
+    const fileData = new Uint8Array([1, 2, 3]);
+    const messages: ModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          { type: "reasoning", text: "Thinking..." },
+          { type: "file", mediaType: "application/octet-stream", data: fileData },
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].parts[0]).toEqual({ type: "reasoning", text: "Thinking..." });
+    expect(ui[0].parts[1].type).toBe("file");
+    expect(ui[0].parts[1].mediaType).toBe("application/octet-stream");
+    expect(typeof (ui[0].parts[1] as any).url).toBe("string");
+  });
+
+  it("maps image parts to UI file parts (url)", () => {
+    const messages: ModelMessage[] = [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            image: "https://example.com/image.jpg",
+            mediaType: "image/jpeg",
+          } as any,
+          { type: "text", text: "What is in this image?" },
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].parts[0]).toEqual({
+      type: "file",
+      url: "https://example.com/image.jpg",
+      mediaType: "image/jpeg",
+    });
+    expect(ui[0].parts[1]).toEqual({ type: "text", text: "What is in this image?" });
+  });
+
+  it("detects file string URL vs base64 and carries providerOptions", () => {
+    const messages: ModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "file",
+            mediaType: "image/png",
+            data: "https://example.com/img.png",
+            providerOptions: { source: "cdn" },
+          } as any,
+          {
+            type: "file",
+            mediaType: "text/plain",
+            data: "SGVsbG8=", // base64 should become data URI
+            providerOptions: { source: "inline" },
+          } as any,
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].parts[0]).toEqual({
+      type: "file",
+      mediaType: "image/png",
+      url: "https://example.com/img.png",
+      providerMetadata: { source: "cdn" },
+    });
+    expect(ui[0].parts[1]).toMatchObject({
+      type: "file",
+      mediaType: "text/plain",
+      providerMetadata: { source: "inline" },
+    });
+    expect((ui[0].parts[1] as any).url).toMatch(/^data:text\/plain;base64,SGVsbG8=/);
+  });
+
+  it("flattens tool role messages to assistant with tool-result parts", () => {
+    const messages: ModelMessage[] = [
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "tool-1",
+            toolName: "search",
+            output: { hits: ["a", "b"] },
+          },
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].role).toBe("assistant");
+    expect(ui[0].parts[0]).toMatchObject({
+      type: "tool-search",
+      toolCallId: "tool-1",
+      state: "output-available",
+      output: { hits: ["a", "b"] },
+    });
   });
 });

@@ -3,6 +3,7 @@
  * Provides proper mocks that implement the Agent interface correctly
  */
 
+import type { ModelMessage } from "@ai-sdk/provider-utils";
 import type { Logger } from "@voltagent/internal";
 import type { FinishReason, LanguageModel, LanguageModelUsage, UIMessage } from "ai";
 import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
@@ -173,7 +174,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
   // Optionally stub individual methods if needed for specific test cases
   vi.spyOn(agent, "streamText").mockImplementation(
     async (
-      _input: string | UIMessage[],
+      _input: string | ModelMessage[] | UIMessage[],
       _options?: StreamTextOptions,
     ): Promise<StreamTextResultWithContext> => {
       const textContent = `Hello from ${agent.name}`;
@@ -223,7 +224,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
   // Stub generateText method with proper signature
   vi.spyOn(agent, "generateText").mockImplementation(
     async (
-      _input: string | UIMessage[],
+      _input: string | ModelMessage[] | UIMessage[],
       _options?: GenerateTextOptions,
     ): Promise<GenerateTextResultWithContext> => {
       // Use a minimal mock that satisfies the interface
@@ -272,7 +273,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
   // Stub streamObject method using AI SDK test utilities
   vi.spyOn(agent, "streamObject").mockImplementation(
     async <T extends z.ZodTypeAny>(
-      _input: string | UIMessage[],
+      _input: string | ModelMessage[] | UIMessage[],
       _schema: T,
       _options?: StreamObjectOptions,
     ): Promise<StreamObjectResultWithContext<z.infer<T>>> => {
@@ -324,7 +325,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
   // Stub generateObject method with proper signature
   vi.spyOn(agent, "generateObject").mockImplementation(
     async <T extends z.ZodTypeAny>(
-      _input: string | UIMessage[],
+      _input: string | ModelMessage[] | UIMessage[],
       _schema: T,
       _options?: GenerateObjectOptions,
     ): Promise<GenerateObjectResultWithContext<z.infer<T>>> => {

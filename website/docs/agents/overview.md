@@ -120,12 +120,30 @@ async function chat(input: string) {
 // Example usage that might trigger the weather tool
 await chat("What's the weather like in London?");
 
-// Example using generateText for a complete response
+// Example using generateText for a complete response (string input)
 const completeResponse = await agent.generateText("Explain machine learning briefly.");
 console.log("Complete Response:", completeResponse.text);
 // Additional metadata available (provider-dependent):
 // completeResponse.reasoning - Model's reasoning process (if available)
 // completeResponse.warnings - Any provider warnings
+
+// You can also pass ai-sdk v5 ModelMessage[] or UIMessage[] for multimodal inputs
+await agent.generateText([
+  {
+    role: "user",
+    content: [
+      {
+        type: "image",
+        image: "https://example.com/cat.jpg",
+        mediaType: "image/jpeg",
+      },
+      {
+        type: "text",
+        text: "What's in this image?",
+      },
+    ],
+  },
+]);
 ```
 
 #### Enhanced Streaming with `fullStream`

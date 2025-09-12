@@ -35,3 +35,22 @@ new VoltAgent({
   server: honoServer(),
   logger,
 });
+
+(async () => {
+  const result = await agent.generateText([
+    {
+      role: "user",
+      content: [
+        {
+          type: "image",
+          image: "https://avatars.githubusercontent.com/u/201282378?s=48&v=4",
+        },
+        {
+          type: "text",
+          text: "bu görselde ne var?",
+        },
+      ],
+    },
+  ]);
+  console.log(result.text);
+})();

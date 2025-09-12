@@ -1,5 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { UIMessage } from "ai";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
@@ -268,7 +269,7 @@ export type WorkflowHooks<DATA, RESULT> = {
 
 export type WorkflowInput<INPUT_SCHEMA extends InternalBaseWorkflowInputSchema> =
   TF.IsUnknown<INPUT_SCHEMA> extends true
-    ? BaseMessage | BaseMessage[] | string
+    ? BaseMessage | BaseMessage[] | UIMessage | UIMessage[] | string
     : INPUT_SCHEMA extends z.ZodTypeAny
       ? z.infer<INPUT_SCHEMA>
       : undefined;
