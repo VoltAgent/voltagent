@@ -133,7 +133,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -170,7 +170,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -235,7 +235,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -272,7 +272,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -321,7 +321,7 @@ importers:
         specifier: ^3.0.4
         version: 3.0.12
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -358,7 +358,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -395,7 +395,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -432,7 +432,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -469,7 +469,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -506,7 +506,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -595,7 +595,7 @@ importers:
         specifier: ^4.7.7
         version: 4.9.1
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
       zod-from-json-schema:
         specifier: ^0.4.2
@@ -635,7 +635,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -672,7 +672,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -709,7 +709,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -746,7 +746,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -783,7 +783,7 @@ importers:
         specifier: ^9.0.2
         version: 9.0.2
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/jsonwebtoken':
@@ -826,7 +826,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -863,7 +863,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -933,7 +933,7 @@ importers:
         specifier: ^4.1.4
         version: 4.1.11
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -973,7 +973,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1016,7 +1016,7 @@ importers:
         specifier: ^4.91.0
         version: 4.104.0(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1074,7 +1074,7 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1114,7 +1114,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1157,7 +1157,7 @@ importers:
         specifier: ^4.91.0
         version: 4.104.0(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1194,7 +1194,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1228,7 +1228,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1262,7 +1262,7 @@ importers:
         specifier: ^1.0.0
         version: link:../../packages/server-hono
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1299,7 +1299,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1336,7 +1336,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1376,7 +1376,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1413,7 +1413,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1450,7 +1450,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1487,7 +1487,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1524,7 +1524,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1561,7 +1561,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1594,6 +1594,61 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0
         version: link:../../packages/server-hono
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.19(zod@3.25.76)
+      consola:
+        specifier: ^3.4.2
+        version: 3.4.2
+      envalid:
+        specifier: ^8.1.0
+        version: 8.1.0
+      yargs:
+        specifier: ^18.0.0
+        version: 18.0.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@tsconfig/node24':
+        specifier: ^24.0.1
+        version: 24.0.1
+      '@types/yargs':
+        specifier: ^17.0.33
+        version: 17.0.33
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+      viteval:
+        specifier: ^0.1.7
+        version: 0.1.7(@types/node@24.2.1)(tsx@4.20.4)
+
+  examples/with-viteval/dist:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.2
+        version: 2.0.17(zod@3.25.76)
+      '@voltagent/cli':
+        specifier: ^0.1.10
+        version: link:../../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.0.0
+        version: link:../../../packages/core
+      '@voltagent/libsql':
+        specifier: ^1.0.0
+        version: link:../../../packages/libsql
+      '@voltagent/logger':
+        specifier: ^1.0.0
+        version: link:../../../packages/logger
+      '@voltagent/server-hono':
+        specifier: ^1.0.0
+        version: link:../../../packages/server-hono
       ai:
         specifier: ^5.0.12
         version: 5.0.19(zod@3.25.76)
@@ -1656,7 +1711,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1702,7 +1757,7 @@ importers:
         specifier: ^4.91.0
         version: 4.104.0(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1748,7 +1803,7 @@ importers:
         specifier: ^4.91.0
         version: 4.104.0(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1785,7 +1840,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1822,7 +1877,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1859,7 +1914,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -1896,7 +1951,7 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
@@ -2067,7 +2122,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
 
   packages/create-voltagent-app:
@@ -2177,7 +2232,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
 
   packages/internal:
@@ -2361,7 +2416,7 @@ importers:
         specifier: ^8.18.1
         version: 8.18.3
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
       zod-from-json-schema:
         specifier: ^0.0.5
@@ -2410,7 +2465,7 @@ importers:
         specifier: ^4.7.7
         version: 4.9.1
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@types/node':
