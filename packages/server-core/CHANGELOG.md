@@ -1,5 +1,11 @@
 # @voltagent/server-core
 
+## 1.0.3
+
+### Patch Changes
+
+- [`3177a60`](https://github.com/VoltAgent/voltagent/commit/3177a60a2632c200150e8a71d706b44df508cc66) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: version bump
+
 ## 2.0.0
 
 ### Patch Changes
