@@ -476,7 +476,6 @@ const Node = forwardRef<
   if (type === "input" || type === "output") {
     return (
       <div className="relative">
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
         <div
           ref={ref}
           className={clsx(
@@ -511,7 +510,6 @@ const Node = forwardRef<
       {label && type === "core" && (
         <span className="text-xs mb-2 font-medium text-gray-300">{label}</span>
       )}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
       <div
         ref={ref}
         className={clsx(
@@ -1018,6 +1016,18 @@ export function AgentsAnimation({ className }: { className?: string }) {
         >
           <Icons.tools className="h-4 w-4 text-[#00d992]" />
         </Node>
+      </div>
+
+      {/* Background glow effect */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Central green glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[20px] md:w-[450px] md:h-[20px] rounded-full bg-[#00d992]/20 blur-[120px]" />
+
+        {/* Secondary glow */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[20px] h-[200px] md:w-[100px] md:h-[20px] rounded-full bg-[#00d992]/15 blur-[100px]" />
+
+        {/* Tertiary glow */}
+        <div className="absolute top-2/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[15px] md:w-[250px] md:h-[100px] rounded-full bg-[#00d992]/10 blur-[80px]" />
       </div>
     </div>
   );

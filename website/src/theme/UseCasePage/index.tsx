@@ -27,6 +27,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { DotPattern } from "@site/src/components/ui/dot-pattern";
 import { UseCaseAnimation } from "@site/src/components/usecase-animation";
+import { UseCaseSupervisorFlow } from "@site/src/components/usecase-supervisor-flow";
 import Layout from "@theme/Layout";
 import Mermaid from "@theme/Mermaid";
 import { motion } from "framer-motion";
@@ -233,6 +234,28 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
             </div>
           </Container>
         </Section>
+
+        {/* Supervisor Flow (Hero altı) */}
+        {useCase.slug === "customer-support-agent" && (
+          <Section>
+            <Container>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                  How Supervisor Routes Support Requests
+                </h2>
+                <p className="text-gray-400 mb-6">
+                  User request flows to the Supervisor, then to specialized agents and tools
+                  (KB/CRM), with results written to memory and returned to the user.
+                </p>
+                <UseCaseSupervisorFlow slug={useCase.slug} />
+              </motion.div>
+            </Container>
+          </Section>
+        )}
 
         {/* Features & Capabilities */}
         <Section>
