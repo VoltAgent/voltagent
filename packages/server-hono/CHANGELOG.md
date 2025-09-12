@@ -1,5 +1,14 @@
 # @voltagent/server-hono
 
+## 1.0.2
+
+### Patch Changes
+
+- [`c27b260`](https://github.com/VoltAgent/voltagent/commit/c27b260bfca007da5201eb2967e089790cab3b97) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod dependency moved from dependencies to devDependencies
+
+- Updated dependencies [[`c27b260`](https://github.com/VoltAgent/voltagent/commit/c27b260bfca007da5201eb2967e089790cab3b97)]:
+  - @voltagent/server-core@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes
