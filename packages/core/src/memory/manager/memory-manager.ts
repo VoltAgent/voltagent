@@ -212,6 +212,9 @@ export class MemoryManager {
             conversationId,
             options.currentQuery,
             options.semanticLimit || limit,
+            options.semanticLimit,
+            options.semanticThreshold,
+            options.mergeStrategy,
             memoryLogger,
             options.traceContext,
             options.parentMemorySpan,
@@ -671,6 +674,9 @@ export class MemoryManager {
     conversationId: string,
     query: string,
     limit: number | undefined,
+    semanticLimit: number | undefined,
+    semanticThreshold: number | undefined,
+    mergeStrategy: "prepend" | "append" | "interleave" | undefined,
     logger: Logger,
     traceContext?: AgentTraceContext,
     parentMemorySpan?: Span,
@@ -736,6 +742,9 @@ export class MemoryManager {
               useSemanticSearch: true,
               currentQuery: query,
               logger: logger,
+              semanticLimit,
+              semanticThreshold,
+              mergeStrategy,
             });
           });
 
@@ -766,6 +775,9 @@ export class MemoryManager {
         useSemanticSearch: true,
         currentQuery: query,
         logger: logger,
+        semanticLimit,
+        semanticThreshold,
+        mergeStrategy,
       })) || []
     );
   }

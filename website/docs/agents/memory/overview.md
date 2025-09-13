@@ -175,7 +175,7 @@ const memory = new Memory({
 
 const agent = new Agent({ name: "Helper", model: openai("gpt-4o-mini"), memory });
 
-// Enable semantic search per-call (defaults to enabled if vector support is present)
+// Enable semantic search per-call (defaults shown; enabled auto when vectors present)
 const out = await agent.generateText("What did I say about pricing last week?", {
   userId: "u1",
   conversationId: "c1",
@@ -183,7 +183,7 @@ const out = await agent.generateText("What did I say about pricing last week?", 
     enabled: true,
     semanticLimit: 5,
     semanticThreshold: 0.7,
-    mergeStrategy: "prepend", // or 'append' | 'interleave'
+    mergeStrategy: "append", // default ('prepend' | 'append' | 'interleave')
   },
 });
 ```

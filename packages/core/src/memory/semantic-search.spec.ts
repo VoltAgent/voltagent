@@ -330,6 +330,77 @@ describe("Memory V2 - Semantic Search", () => {
       // Should return only recent messages
       expect(messages.length).toBeLessThanOrEqual(3);
     });
+
+    it("should preserve vector result order and default to append", async () => {
+      const userId = "user123";
+      const conversationId = "conv456";
+
+      // Force vector search order: msg3 first, then msg1
+      vi.spyOn(vector, "search").mockResolvedValueOnce([
+        {
+          id: "v1",
+          vector: [0, 0, 0],
+          score: 0.99,
+          metadata: { messageId: "msg3", conversationId, userId },
+        },
+        {
+          id: "v2",
+          vector: [0, 0, 0],
+          score: 0.98,
+          metadata: { messageId: "msg1", conversationId, userId },
+        },
+      ]);
+
+      const messages = await memory.getMessagesWithContext(userId, conversationId, {
+        limit: 1, // recent will include only the latest message (msg5)
+        useSemanticSearch: true,
+        currentQuery: "pets",
+      });
+
+      // With default mergeStrategy=append, recent comes first, semantic hits appended preserving order
+      expect(messages[0]?.id).toBe("msg5");
+      const ids = messages.map((m) => m.id);
+      const idxMsg3 = ids.indexOf("msg3");
+      const idxMsg1 = ids.indexOf("msg1");
+      expect(idxMsg3).toBeGreaterThan(0);
+      expect(idxMsg1).toBeGreaterThan(idxMsg3);
+    });
+
+    it("should support append strategy to place semantic messages after recent", async () => {
+      const userId = "user123";
+      const conversationId = "conv456";
+
+      // Force vector search order: msg2 first, then msg1
+      vi.spyOn(vector, "search").mockResolvedValueOnce([
+        {
+          id: "v1",
+          vector: [0, 0, 0],
+          score: 0.99,
+          metadata: { messageId: "msg2", conversationId, userId },
+        },
+        {
+          id: "v2",
+          vector: [0, 0, 0],
+          score: 0.98,
+          metadata: { messageId: "msg1", conversationId, userId },
+        },
+      ]);
+
+      const messages = await memory.getMessagesWithContext(userId, conversationId, {
+        limit: 1, // recent will include only the latest message (msg5)
+        useSemanticSearch: true,
+        currentQuery: "pets",
+        mergeStrategy: "append",
+      });
+
+      // With append, first should be the recent message (msg5)
+      expect(messages[0]?.id).toBe("msg5");
+      const ids = messages.map((m) => m.id);
+      const idxMsg2 = ids.indexOf("msg2");
+      const idxMsg1 = ids.indexOf("msg1");
+      expect(idxMsg2).toBeGreaterThan(0);
+      expect(idxMsg1).toBeGreaterThan(idxMsg2);
+    });
   });
 
   describe("Vector support detection", () => {

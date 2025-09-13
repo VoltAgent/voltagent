@@ -1518,8 +1518,8 @@ export class Agent {
 
       // Prepare memory read parameters
       const semanticLimit = options?.semanticMemory?.semanticLimit ?? 5;
-      const semanticThreshold = options?.semanticMemory?.semanticThreshold ?? 0.0;
-      const mergeStrategy = options?.semanticMemory?.mergeStrategy ?? "prepend";
+      const semanticThreshold = options?.semanticMemory?.semanticThreshold ?? 0.7;
+      const mergeStrategy = options?.semanticMemory?.mergeStrategy ?? "append";
       const isSemanticSearch = useSemanticSearch && currentQuery;
 
       const traceContext = oc.traceContext;
