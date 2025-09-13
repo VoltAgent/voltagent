@@ -101,6 +101,9 @@ GROQ_API_KEY=your-api-key-here
 # For Mistral
 MISTRAL_API_KEY=your-api-key-here
 
+# Cerebras
+CEREBRAS_API_KEY=your-api-key-here
+
 # For Ollama (no API key needed, runs locally)
 # Make sure Ollama is installed and running
 ```
