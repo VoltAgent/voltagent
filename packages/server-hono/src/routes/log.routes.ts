@@ -1,5 +1,5 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import { LOG_ROUTES } from "@voltagent/server-core";
+import { createRoute, z } from "../zod-openapi-compat";
 
 // Common Error Response Schema (reuse from main routes)
 const ErrorSchema = z.object({

@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import {
   AGENT_ROUTES,
   AgentListSchema,
@@ -24,6 +23,7 @@ import {
   WorkflowSuspendRequestSchema,
   WorkflowSuspendResponseSchema,
 } from "@voltagent/server-core";
+import { createRoute, z } from "../zod-openapi-compat";
 
 // Re-export schemas from server-core for backward compatibility
 export {

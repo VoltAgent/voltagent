@@ -1,5 +1,4 @@
 import { swaggerUI } from "@hono/swagger-ui";
-import { OpenAPIHono } from "@hono/zod-openapi";
 import type { ServerProviderDeps } from "@voltagent/core";
 import {
   getLandingPageHTML,
@@ -17,6 +16,7 @@ import {
   registerWorkflowRoutes,
 } from "./routes";
 import type { HonoServerConfig } from "./types";
+import { OpenAPIHono } from "./zod-openapi-compat";
 
 /**
  * Create Hono app with dependencies

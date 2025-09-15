@@ -1,5 +1,5 @@
-import type { OpenAPIHono } from "@hono/zod-openapi";
 import type { AuthProvider } from "@voltagent/server-core";
+import type { OpenAPIHono } from "./zod-openapi-compat";
 
 export interface HonoServerConfig {
   port?: number;
