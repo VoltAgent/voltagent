@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 1.1.5
+
+### Patch Changes
+
+- [#562](https://github.com/VoltAgent/voltagent/pull/562) [`2886b7a`](https://github.com/VoltAgent/voltagent/commit/2886b7aab5bda296cebc0b8b2bd56d684324d799) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: using `safeStringify` instead of `JSON.stringify`
+
+- [#561](https://github.com/VoltAgent/voltagent/pull/561) [`ca6a8ec`](https://github.com/VoltAgent/voltagent/commit/ca6a8ec9e45de4c262864e8819f45b1a83679592) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - chore: updated the underlying AgentError creation and types for improved upstream types & internal usage
+
 ## 1.1.4
 
 ### Patch Changes

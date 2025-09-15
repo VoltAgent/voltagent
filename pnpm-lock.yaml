@@ -118,10 +118,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -155,10 +155,10 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -220,10 +220,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -257,10 +257,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -303,10 +303,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -343,10 +343,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -380,10 +380,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -417,10 +417,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -454,10 +454,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -491,10 +491,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -620,10 +620,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -657,10 +657,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -694,10 +694,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -731,10 +731,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -808,13 +808,13 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^1.1.0
         version: link:../../packages/langfuse-exporter
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -848,10 +848,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -894,10 +894,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -958,10 +958,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -998,10 +998,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1050,10 +1050,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1099,13 +1099,13 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/postgres':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/postgres
       '@voltagent/server-hono':
         specifier: ^1.0.4
@@ -1139,10 +1139,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1179,10 +1179,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1216,7 +1216,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1250,10 +1250,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1284,10 +1284,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1321,10 +1321,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1361,7 +1361,7 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1398,10 +1398,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1435,10 +1435,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1472,10 +1472,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1509,10 +1509,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1546,10 +1546,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1583,10 +1583,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1638,10 +1638,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1678,10 +1678,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1724,10 +1724,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1770,10 +1770,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1807,10 +1807,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1844,10 +1844,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -1881,10 +1881,10 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~1.1.4
+        specifier: ~1.1.5
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -2252,7 +2252,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../core
       '@voltagent/logger':
         specifier: ^1.0.1
@@ -2329,7 +2329,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.4
+        specifier: ^1.1.5
         version: link:../core
       ai:
         specifier: ^5.0.12
