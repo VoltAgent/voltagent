@@ -1,5 +1,12 @@
 # @voltagent/server-core
 
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
 ## 1.0.4
 
 ### Patch Changes
