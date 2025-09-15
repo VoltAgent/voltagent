@@ -14,6 +14,7 @@ import {
   type VectorSearchOptions,
   cosineSimilarity,
 } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal";
 import { type Logger, createPinoLogger } from "@voltagent/logger";
 
 /**
@@ -267,7 +268,7 @@ export class LibSQLVectorAdapter implements VectorAdapter {
 
     const tableName = `${this.tablePrefix}_vectors`;
     const serializedVector = this.serializeVector(vector);
-    const metadataJson = metadata ? JSON.stringify(metadata) : null;
+    const metadataJson = metadata ? safeStringify(metadata) : null;
 
     await this.executeWithRetry(async () => {
       await this.client.execute({
@@ -320,7 +321,7 @@ export class LibSQLVectorAdapter implements VectorAdapter {
           }
 
           const serializedVector = this.serializeVector(item.vector);
-          const metadataJson = item.metadata ? JSON.stringify(item.metadata) : null;
+          const metadataJson = item.metadata ? safeStringify(item.metadata) : null;
           const content = item.content ?? null;
           stmts.push({
             sql: `INSERT OR REPLACE INTO ${tableName} (id, vector, dimensions, metadata, content, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,

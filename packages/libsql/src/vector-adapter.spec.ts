@@ -589,7 +589,7 @@ describe("LibSQLVectorAdapter", () => {
       // Empty vector
       await expect(adapter.store("test-1", [])).rejects.toThrow();
 
-      // Invalid metadata (circular reference would cause JSON.stringify to fail)
+      // Invalid metadata (circular reference would cause safeStringify to fail)
       const circular: any = { a: 1 };
       circular.self = circular;
 

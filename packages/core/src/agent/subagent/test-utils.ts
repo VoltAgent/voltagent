@@ -4,7 +4,7 @@
  */
 
 import type { ModelMessage } from "@ai-sdk/provider-utils";
-import type { Logger } from "@voltagent/internal";
+import { type Logger, safeStringify } from "@voltagent/internal";
 import type { FinishReason, LanguageModel, LanguageModelUsage, UIMessage } from "ai";
 import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
 import { vi } from "vitest";
@@ -278,7 +278,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
       _options?: StreamObjectOptions,
     ): Promise<StreamObjectResultWithContext<z.infer<T>>> => {
       const mockObject = { result: `Object from ${agent.name}` } as z.infer<T>;
-      const objectJson = JSON.stringify(mockObject);
+      const objectJson = safeStringify(mockObject);
 
       const stream = simulateReadableStream({
         chunks: [

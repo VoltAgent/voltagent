@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import type { Logger } from "@voltagent/internal";
+import { type Logger, safeStringify } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { z } from "zod";
 import type { UsageInfo } from "../agent/providers";
@@ -762,7 +762,7 @@ export function createWorkflow<
       suspendSchema: effectiveSuspendSchema,
       resumeSchema: effectiveResumeSchema,
     };
-    rootSpan.setAttribute("workflow.stateSnapshot", JSON.stringify(workflowState));
+    rootSpan.setAttribute("workflow.stateSnapshot", safeStringify(workflowState));
 
     return await traceContext.withSpan(rootSpan, async () => {
       // Create run logger with initial context and trace info

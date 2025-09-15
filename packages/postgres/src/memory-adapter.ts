@@ -14,6 +14,7 @@ import type {
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import { Pool, type PoolClient } from "pg";
 
@@ -274,8 +275,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           message.id || this.generateId(),
           userId,
           message.role,
-          JSON.stringify(message.parts),
-          message.metadata ? JSON.stringify(message.metadata) : null,
+          safeStringify(message.parts),
+          message.metadata ? safeStringify(message.metadata) : null,
           2, // format_version
           new Date().toISOString(),
         ],
@@ -325,8 +326,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
             message.id || this.generateId(),
             userId,
             message.role,
-            JSON.stringify(message.parts),
-            message.metadata ? JSON.stringify(message.metadata) : null,
+            safeStringify(message.parts),
+            message.metadata ? safeStringify(message.metadata) : null,
             2, // format_version
             now,
           ],
@@ -565,7 +566,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           input.resourceId,
           input.userId,
           input.title,
-          JSON.stringify(input.metadata || {}),
+          safeStringify(input.metadata || {}),
           now,
           now,
         ],
@@ -753,7 +754,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
       if (updates.metadata !== undefined) {
         fieldsToUpdate.push(`metadata = $${paramCount}`);
-        params.push(JSON.stringify(updates.metadata));
+        params.push(safeStringify(updates.metadata));
         paramCount++;
       }
 
@@ -1021,10 +1022,10 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           state.workflowId,
           state.workflowName,
           state.status,
-          state.suspension ? JSON.stringify(state.suspension) : null,
+          state.suspension ? safeStringify(state.suspension) : null,
           state.userId || null,
           state.conversationId || null,
-          state.metadata ? JSON.stringify(state.metadata) : null,
+          state.metadata ? safeStringify(state.metadata) : null,
           state.createdAt,
           state.updatedAt,
         ],

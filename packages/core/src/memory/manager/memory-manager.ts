@@ -5,7 +5,7 @@
 
 import crypto from "node:crypto";
 import type { Span } from "@opentelemetry/api";
-import type { Logger } from "@voltagent/internal";
+import { type Logger, safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import type { OperationContext } from "../../agent/types";
 import { LogEvents, getGlobalLogger } from "../../logger";
@@ -115,7 +115,7 @@ export class MemoryManager {
       label: message.role === "user" ? "Persist User Message" : "Persist Assistant Message",
       attributes: {
         "memory.operation": "write",
-        input: JSON.stringify(spanInput),
+        input: safeStringify(spanInput),
       },
     });
 
@@ -707,7 +707,7 @@ export class MemoryManager {
         {
           label: "Query Embedding",
           attributes: {
-            input: JSON.stringify(spanInput),
+            input: safeStringify(spanInput),
           },
         },
       );
@@ -730,7 +730,7 @@ export class MemoryManager {
               label: "Semantic Search",
               attributes: {
                 "vector.operation": "search",
-                input: JSON.stringify(spanInput),
+                input: safeStringify(spanInput),
               },
             },
           );

@@ -18,7 +18,7 @@ import {
   context,
   trace,
 } from "@opentelemetry/api";
-import { safeStringify } from "@voltagent/internal/utils";
+import { safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import type { VoltAgentObservability } from "../../observability";
 import type { BaseGenerationOptions } from "../agent";
@@ -402,7 +402,7 @@ export function addModelAttributesToSpan(
   }
 
   if (options?.stopSequences !== undefined && options.stopSequences.length > 0) {
-    span.setAttribute("ai.model.stop_sequences", JSON.stringify(options.stopSequences));
+    span.setAttribute("ai.model.stop_sequences", safeStringify(options.stopSequences));
   }
 
   if (options?.seed !== undefined) {

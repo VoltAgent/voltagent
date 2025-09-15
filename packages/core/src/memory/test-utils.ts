@@ -2,6 +2,7 @@
  * Test utilities for Memory V2 tests
  */
 
+import { safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import type { Conversation, CreateConversationInput } from "./types";
 
@@ -85,7 +86,7 @@ export function assertConversationsEqual(actual: Conversation, expected: Convers
   if (actual.userId !== expected.userId) throw new Error("User ID mismatch");
   if (actual.resourceId !== expected.resourceId) throw new Error("Resource ID mismatch");
   if (actual.title !== expected.title) throw new Error("Title mismatch");
-  if (JSON.stringify(actual.metadata) !== JSON.stringify(expected.metadata)) {
+  if (safeStringify(actual.metadata) !== safeStringify(expected.metadata)) {
     throw new Error("Metadata mismatch");
   }
 }
@@ -103,7 +104,7 @@ export function assertMessagesEqual(actual: UIMessage[], expected: UIMessage[]):
     const e = expected[i];
     if (a.id !== e.id) throw new Error(`Message ${i} ID mismatch`);
     if (a.role !== e.role) throw new Error(`Message ${i} role mismatch`);
-    if (JSON.stringify(a.parts) !== JSON.stringify(e.parts)) {
+    if (safeStringify(a.parts) !== safeStringify(e.parts)) {
       throw new Error(`Message ${i} parts mismatch`);
     }
   }

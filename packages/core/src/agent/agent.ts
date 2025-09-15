@@ -366,15 +366,15 @@ export class Agent {
       // Add context to span
       const contextMap = Object.fromEntries(oc.context.entries());
       if (Object.keys(contextMap).length > 0) {
-        rootSpan.setAttribute("agent.context", JSON.stringify(contextMap));
+        rootSpan.setAttribute("agent.context", safeStringify(contextMap));
       }
 
       // Add messages (serialize to JSON string)
-      rootSpan.setAttribute("agent.messages", JSON.stringify(messages));
+      rootSpan.setAttribute("agent.messages", safeStringify(messages));
 
       // Add agent state snapshot for remote observability
       const agentState = this.getFullState();
-      rootSpan.setAttribute("agent.stateSnapshot", JSON.stringify(agentState));
+      rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
 
       // Log generation start with only event-specific context
       methodLogger.debug(
@@ -545,15 +545,15 @@ export class Agent {
         // Add context to span
         const contextMap = Object.fromEntries(oc.context.entries());
         if (Object.keys(contextMap).length > 0) {
-          rootSpan.setAttribute("agent.context", JSON.stringify(contextMap));
+          rootSpan.setAttribute("agent.context", safeStringify(contextMap));
         }
 
         // Add messages (serialize to JSON string)
-        rootSpan.setAttribute("agent.messages", JSON.stringify(messages));
+        rootSpan.setAttribute("agent.messages", safeStringify(messages));
 
         // Add agent state snapshot for remote observability
         const agentState = this.getFullState();
-        rootSpan.setAttribute("agent.stateSnapshot", JSON.stringify(agentState));
+        rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
       }
 
       // Log stream start
@@ -844,15 +844,15 @@ export class Agent {
       // Add context to span
       const contextMap = Object.fromEntries(oc.context.entries());
       if (Object.keys(contextMap).length > 0) {
-        rootSpan.setAttribute("agent.context", JSON.stringify(contextMap));
+        rootSpan.setAttribute("agent.context", safeStringify(contextMap));
       }
 
       // Add messages (serialize to JSON string)
-      rootSpan.setAttribute("agent.messages", JSON.stringify(messages));
+      rootSpan.setAttribute("agent.messages", safeStringify(messages));
 
       // Add agent state snapshot for remote observability
       const agentState = this.getFullState();
-      rootSpan.setAttribute("agent.stateSnapshot", JSON.stringify(agentState));
+      rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
 
       // Log generation start (object)
       methodLogger.debug(
@@ -1023,15 +1023,15 @@ export class Agent {
       // Add context to span
       const contextMap = Object.fromEntries(oc.context.entries());
       if (Object.keys(contextMap).length > 0) {
-        rootSpan.setAttribute("agent.context", JSON.stringify(contextMap));
+        rootSpan.setAttribute("agent.context", safeStringify(contextMap));
       }
 
       // Add messages (serialize to JSON string)
-      rootSpan.setAttribute("agent.messages", JSON.stringify(messages));
+      rootSpan.setAttribute("agent.messages", safeStringify(messages));
 
       // Add agent state snapshot for remote observability
       const agentState = this.getFullState();
-      rootSpan.setAttribute("agent.stateSnapshot", JSON.stringify(agentState));
+      rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
 
       // Log stream object start
       methodLogger.debug(
@@ -1566,7 +1566,7 @@ export class Agent {
           attributes: {
             "memory.operation": "read",
             "memory.semantic": isSemanticSearch,
-            input: JSON.stringify(spanInput),
+            input: safeStringify(spanInput),
             ...(isSemanticSearch && {
               "memory.semantic.limit": semanticLimit,
               "memory.semantic.threshold": semanticThreshold,
@@ -1735,13 +1735,13 @@ export class Agent {
           rootSpan.setAttribute("prompt.version", metadata.version);
         }
         if (metadata.labels && metadata.labels.length > 0) {
-          rootSpan.setAttribute("prompt.labels", JSON.stringify(metadata.labels));
+          rootSpan.setAttribute("prompt.labels", safeStringify(metadata.labels));
         }
         if (metadata.tags && metadata.tags.length > 0) {
-          rootSpan.setAttribute("prompt.tags", JSON.stringify(metadata.tags));
+          rootSpan.setAttribute("prompt.tags", safeStringify(metadata.tags));
         }
         if (metadata.config) {
-          rootSpan.setAttribute("prompt.config", JSON.stringify(metadata.config));
+          rootSpan.setAttribute("prompt.config", safeStringify(metadata.config));
         }
       }
     }
@@ -1946,7 +1946,7 @@ export class Agent {
       label: this.retriever.tool.name || "Retriever",
       attributes: {
         "retriever.name": this.retriever.tool.name || "Retriever",
-        input: typeof input === "string" ? input : JSON.stringify(input),
+        input: typeof input === "string" ? input : safeStringify(input),
       },
     });
 
@@ -2182,7 +2182,7 @@ export class Agent {
 
                 // End OTEL span with success
                 if (toolSpan) {
-                  toolSpan.setAttribute("output", JSON.stringify(parseResult.data));
+                  toolSpan.setAttribute("output", safeStringify(parseResult.data));
                   toolSpan.setStatus({ code: SpanStatusCode.OK });
                   toolSpan.end();
                 }
@@ -2203,7 +2203,7 @@ export class Agent {
 
               // End OTEL span
               if (toolSpan) {
-                toolSpan.setAttribute("output", JSON.stringify(result));
+                toolSpan.setAttribute("output", safeStringify(result));
                 toolSpan.setStatus({ code: SpanStatusCode.OK });
                 toolSpan.end();
               }

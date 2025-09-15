@@ -3,6 +3,8 @@
  * Framework-agnostic SSE helpers for streaming responses
  */
 
+import { safeStringify } from "@voltagent/internal";
+
 /**
  * Format data for SSE transmission
  * @param data The data to send
@@ -22,7 +24,7 @@ export function formatSSE(data: any, event?: string, id?: string): string {
   }
 
   // Handle multiline data
-  const dataStr = typeof data === "string" ? data : JSON.stringify(data);
+  const dataStr = typeof data === "string" ? data : safeStringify(data);
   const lines = dataStr.split("\n");
 
   for (const line of lines) {
