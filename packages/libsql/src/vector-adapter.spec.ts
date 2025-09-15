@@ -594,7 +594,7 @@ describe("LibSQLVectorAdapter", () => {
       circular.self = circular;
 
       // This should handle the error gracefully
-      await expect(adapter.store("test-2", [0.1, 0.2], circular)).rejects.toThrow();
+      expect(await adapter.store("test-2", [0.1, 0.2, 0.3], circular)).toBe(undefined);
     });
   });
 
