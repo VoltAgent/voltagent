@@ -564,10 +564,14 @@ export class Memory {
       if (!parsed.success) {
         throw new Error(`Invalid working memory format: ${parsed.error.message}`);
       }
-      contentString = safeStringify(parsed.data, null, 2);
+      contentString = safeStringify(parsed.data, {
+        indentation: 2,
+      });
     } else if (typeof params.content === "object") {
       // No schema but object provided, convert to JSON
-      contentString = safeStringify(params.content, null, 2);
+      contentString = safeStringify(params.content, {
+        indentation: 2,
+      });
     } else {
       // String content (markdown or free-form)
       contentString = params.content as string;
