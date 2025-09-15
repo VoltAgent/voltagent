@@ -497,7 +497,7 @@ export class Agent {
         const returnValue = Object.assign(
           Object.create(Object.getPrototypeOf(result)), // Preserve prototype chain
           result, // Copy all enumerable properties
-          { context: new Map(oc.context) }, // Add context
+          { context: oc.context }, // Expose the same context instance
         );
 
         return returnValue;
@@ -802,7 +802,7 @@ export class Agent {
           pipeTextStreamToResponse: result.pipeTextStreamToResponse.bind(result),
           toTextStreamResponse: result.toTextStreamResponse.bind(result),
           // Add our custom context
-          context: new Map(oc.context),
+          context: oc.context,
         };
 
         return resultWithContext;
@@ -979,10 +979,10 @@ export class Agent {
           },
         );
 
-        // Return result with context for consistency
+        // Return result with same context reference for consistency
         return {
           ...result,
-          context: new Map(oc.context),
+          context: oc.context,
         };
       } catch (error) {
         return this.handleError(error as Error, oc, options, startTime);
@@ -1215,7 +1215,7 @@ export class Agent {
             result.pipeTextStreamToResponse(response, init),
           toTextStreamResponse: (init) => result.toTextStreamResponse(init),
           // Add our custom context
-          context: new Map(oc.context),
+          context: oc.context,
         } as StreamObjectResultWithContext<z.infer<T>>;
 
         return resultWithContext;
@@ -1282,12 +1282,41 @@ export class Agent {
     const operationId = crypto.randomUUID();
     const startTimeDate = new Date();
 
+    // Prefer reusing an existing context instance to preserve reference across calls/subagents
     const runtimeContext = toContextMap(options?.context);
-    const context = new Map([
-      ...(this.context?.entries() || []),
-      ...(runtimeContext?.entries() || []),
-      ...(options?.parentOperationContext?.context?.entries() || []),
-    ]);
+    const parentContext = options?.parentOperationContext?.context;
+
+    // Determine authoritative base context reference without cloning
+    let context: Map<string | symbol, unknown>;
+    if (parentContext) {
+      context = parentContext;
+      // Parent context should remain authoritative; only fill in missing keys from runtime then agent
+      if (runtimeContext) {
+        for (const [k, v] of runtimeContext.entries()) {
+          if (!context.has(k)) context.set(k, v);
+        }
+      }
+      if (this.context) {
+        for (const [k, v] of this.context.entries()) {
+          if (!context.has(k)) context.set(k, v);
+        }
+      }
+    } else if (runtimeContext) {
+      // Use the user-provided context instance directly
+      context = runtimeContext;
+      // Fill defaults from agent-level context without overriding user values
+      if (this.context) {
+        for (const [k, v] of this.context.entries()) {
+          if (!context.has(k)) context.set(k, v);
+        }
+      }
+    } else if (this.context) {
+      // Fall back to agent-level default context instance
+      context = this.context;
+    } else {
+      // No context provided anywhere; create a fresh one
+      context = new Map();
+    }
 
     const logger = this.getContextualLogger(options?.parentAgentId).child({
       operationId,
