@@ -85,14 +85,12 @@ First, create your VoltAgent agent:
 ```typescript
 // src/agents/support.ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 export const supportAgent = new Agent({
   name: "Customer Support",
   instructions:
     "You are a helpful customer support agent. Provide accurate and friendly assistance.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 ```

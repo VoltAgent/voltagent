@@ -7,7 +7,7 @@ slug: /agents/memory/overview
 
 Conversational AI agents often need to remember past interactions to maintain context, understand user preferences, and provide more coherent and personalized responses. Without memory, each interaction would be treated in isolation, leading to repetitive questions and unnatural conversations.
 
-VoltAgent 1.x provides a unified `Memory` class with pluggable storage adapters. It stores and retrieves conversation history, and optionally supports embedding-powered semantic search and structured working memory.
+VoltAgent provides a unified `Memory` class with pluggable storage adapters. It stores and retrieves conversation history, and optionally supports embedding-powered semantic search and structured working memory.
 
 ## Why Use Memory?
 
@@ -105,7 +105,7 @@ Example (JSON schema, user-scoped):
 ```ts
 import { z } from "zod";
 import { Agent, Memory } from "@voltagent/core";
-import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { openai } from "@ai-sdk/openai";
 
 const workingSchema = z.object({
@@ -119,7 +119,7 @@ const workingSchema = z.object({
 });
 
 const memory = new Memory({
-  storage: new PostgreSQLMemoryAdapter({ connection: process.env.DATABASE_URL! }),
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
   workingMemory: {
     enabled: true,
     scope: "user",
@@ -175,7 +175,7 @@ const memory = new Memory({
 
 const agent = new Agent({ name: "Helper", model: openai("gpt-4o-mini"), memory });
 
-// Enable semantic search per-call (defaults to enabled if vector support is present)
+// Enable semantic search per-call (defaults shown; enabled auto when vectors present)
 const out = await agent.generateText("What did I say about pricing last week?", {
   userId: "u1",
   conversationId: "c1",
@@ -183,7 +183,7 @@ const out = await agent.generateText("What did I say about pricing last week?", 
     enabled: true,
     semanticLimit: 5,
     semanticThreshold: 0.7,
-    mergeStrategy: "prepend", // or 'append' | 'interleave'
+    mergeStrategy: "append", // default ('prepend' | 'append' | 'interleave')
   },
 });
 ```
@@ -214,8 +214,6 @@ Programmatic search:
 
 - `memory.hasVectorSupport()` → boolean
 - `memory.searchSimilar(query, { limit?, threshold?, filter? }) → Promise<SearchResult[]>`
-
-## Memory Providers
 
 ## Memory Providers
 
@@ -464,6 +462,20 @@ export class MyStorageAdapter implements StorageAdapter {
     return [];
   }
 }
+
+// Usage example
+import { Agent, Memory } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new MyStorageAdapter(),
+});
+
+const agent = new Agent({
+  name: "Helper",
+  model: openai("gpt-4o-mini"),
+  memory,
+});
 ```
 
 ## Best Practices

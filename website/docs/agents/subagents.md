@@ -161,7 +161,6 @@ Control how your supervisor handles subagent failures with configurable error ha
 const supervisorAgent = new Agent({
   name: "Supervisor",
   instructions: "Coordinate between agents",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [dataProcessor, analyzer],
 

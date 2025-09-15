@@ -122,25 +122,6 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Providers",
-      items: [
-        "providers/overview",
-        {
-          type: "category",
-          label: "Legacy (deprecated)",
-          items: [
-            "providers/vercel-ai",
-            "providers/google-ai",
-            "providers/groq-ai",
-            "providers/xsai",
-            "providers/anthropic-ai",
-          ],
-        },
-        "providers/contributing",
-      ],
-    },
-    {
-      type: "category",
       label: "Utils",
       items: ["utils/create-prompt", "utils/message-helpers"],
     },

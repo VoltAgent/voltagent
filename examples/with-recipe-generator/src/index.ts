@@ -47,7 +47,6 @@ const agent = new Agent({
         - Serving size adjustments
         - Common mistakes to avoid
         - Pairing suggestions`,
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: await mcpConfig.getTools(),
 });

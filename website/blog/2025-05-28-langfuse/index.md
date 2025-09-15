@@ -239,37 +239,40 @@ Export capabilities let you integrate with other systems. CSV/JSON exports, API 
 
 ## VoltAgent + Langfuse Integration
 
-[VoltAgent + Langfuse integration](https://voltagent.dev/docs/observability/langfuse/) is super simple. As described in our docs, you just add the `@voltagent/langfuse-exporter` package and forward it to your VoltAgent.
+[VoltAgent + Langfuse integration](https://voltagent.dev/docs/observability/langfuse/) is super simple. As described in our docs, you just add the `@voltagent/langfuse-exporter` package and attach it to VoltAgent's observability via a SpanProcessor helper.
 
 ### Simple Setup
 
 ```typescript
-import { Agent, VoltAgent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, VoltAgent, VoltAgentObservability } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
-import { LangfuseExporter } from "@voltagent/langfuse-exporter";
-
-// Configure Langfuse exporter
-const langfuseExporter = new LangfuseExporter({
-  publicKey: process.env.LANGFUSE_PUBLIC_KEY, // Your Langfuse Public Key
-  secretKey: process.env.LANGFUSE_SECRET_KEY, // Your Langfuse Secret Key
-  baseUrl: process.env.LANGFUSE_BASE_URL, // Optional: Defaults to Langfuse Cloud URL
-});
+import { createLangfuseSpanProcessor } from "@voltagent/langfuse-exporter";
 
 // Define your agent
 const agent = new Agent({
   name: "my-voltagent-app",
   instructions: "A helpful assistant that answers questions without using tools",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
 });
 
-// Start VoltAgent with Langfuse exporter
+// Configure Observability with Langfuse processor
+const observability = new VoltAgentObservability({
+  spanProcessors: [
+    createLangfuseSpanProcessor({
+      publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+      secretKey: process.env.LANGFUSE_SECRET_KEY,
+      baseUrl: process.env.LANGFUSE_BASE_URL, // optional
+      debug: true, // optional
+    }),
+  ],
+  // Optional: disable VoltOps remote export to avoid duplicates
+  voltOpsSync: { sampling: { strategy: "never" } },
+});
+
+// Start VoltAgent with custom observability
 new VoltAgent({
-  agents: {
-    agent, // Register your agent
-  },
-  telemetryExporter: langfuseExporter, // Pass the exporter instance
+  agents: { agent },
+  observability,
 });
 ```
 

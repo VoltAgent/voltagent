@@ -34,7 +34,7 @@ const agent = new Agent({ name: "assistant", model: openai("gpt-4o-mini"), memor
 
 ### Call Options
 
-Enable semantic search per call using `semanticMemory`:
+Enable semantic search per call using `semanticMemory` (defaults shown below):
 
 ```ts
 const out = await agent.generateText("What did we decide about pricing?", {
@@ -42,9 +42,9 @@ const out = await agent.generateText("What did we decide about pricing?", {
   conversationId: "c1",
   semanticMemory: {
     enabled: true, // default: true when vector support is present
-    semanticLimit: 5, // number of similar messages to include
-    semanticThreshold: 0.7, // minimum similarity (0–1)
-    mergeStrategy: "prepend", // 'prepend' | 'append' | 'interleave'
+    semanticLimit: 5, // default
+    semanticThreshold: 0.7, // default
+    mergeStrategy: "append", // default ('prepend' | 'append' | 'interleave')
   },
 });
 ```
@@ -76,6 +76,11 @@ On read with semantic search enabled:
 The in‑memory vector adapter uses cosine similarity and supports a metadata `filter` on stored items.
 
 LibSQL vector adapter persists vectors as BLOBs with metadata and supports `limit`, `threshold`, and metadata `filter`. For tests, prefer `url: ":memory:"` (or `"file::memory:"`); for production, use a file path (e.g., `file:./.voltagent/memory.db`) or a remote Turso URL.
+
+Note on defaults:
+
+- Semantic memory auto‑enables when you pass `userId` and `conversationId` and your `Memory` has both an embedding and a vector adapter.
+- Default merge strategy is `append` to preserve recency first and attach semantically similar messages afterwards.
 
 ## Embedding Details
 

@@ -1,5 +1,108 @@
 # @voltagent/core
 
+## 1.1.3
+
+### Patch Changes
+
+- [#557](https://github.com/VoltAgent/voltagent/pull/557) [`4c2919e`](https://github.com/VoltAgent/voltagent/commit/4c2919e9d531681d72586505174ff3d688666e2b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix(core): preserve context Map instance across operations and subagents
+
+  ## What Changed
+  - Reuse the same `context` Map instance instead of cloning it on every call.
+  - `createOperationContext` no longer creates a fresh `new Map(...)` for user or parent context; it reuses the incoming Map to keep state alive.
+  - All results now expose the same context reference:
+    - `generateText`, `streamText`, `generateObject`, `streamObject` return `{ context: oc.context }` instead of `new Map(oc.context)`.
+  - Subagents invoked via `delegate_task` receive and update the same shared context through `parentOperationContext`.
+
+  ## Merge Precedence (no overwrites of parent)
+
+  `parentOperationContext.context` > `options.context` > agent default context. Only missing keys are filled from lower-precedence sources; parent context values are not overridden.
+
+  ## Why
+
+  Previously, context was effectively reset by cloning on each call, which broke continuity and sharing across subagents. This fix ensures a single source of truth for context throughout an operation chain.
+
+  ## Potential Impact
+  - If you relied on context being cloned (new Map identity per call), note that the instance is now shared. For isolation, pass `new Map(existingContext)` yourself when needed.
+
+  ## Affected Files
+  - `packages/core/src/agent/agent.ts` (createOperationContext; return shapes for generate/stream methods)
+
+## 1.1.2
+
+### Patch Changes
+
+- [#556](https://github.com/VoltAgent/voltagent/pull/556) [`3d3deb9`](https://github.com/VoltAgent/voltagent/commit/3d3deb98379066072392f29d08b43b431c0d3b9b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat(core): semantic memory defaults and retrieval fixes
+
+  ## Summary
+  - Default `semanticMemory.mergeStrategy` is now `"append"` (previously `"prepend"`).
+  - Default `semanticMemory.semanticThreshold` is `0.7`.
+  - Fix: propagate `semanticMemory` options end‑to‑end (Agent → MemoryManager → Memory).
+  - Fix: preserve vector result order when mapping `messageIds` → `UIMessage`.
+  - Docs: updated Semantic Search/Overview to reflect new defaults.
+  - Examples: long conversation demo with optional real LLM seeding.
+
+  ## Why
+
+  Appending semantic hits after the recent context reduces stale facts overriding recent ones (e.g., old name "Ömer" overshadowing newer "Ahmet"). Preserving vector result order ensures the most relevant semantic hits remain in ranked order.
+
+  ## Defaults
+
+  When `userId` + `conversationId` are provided and vectors are configured:
+  - `enabled: true`
+  - `semanticLimit: 5`
+  - `semanticThreshold: 0.7`
+  - `mergeStrategy: "append"`
+
+  ## Migration Notes
+
+  If you relied on the previous default `mergeStrategy: "prepend"`, explicitly set:
+
+  ```ts
+  await agent.generateText(input, {
+    userId,
+    conversationId,
+    semanticMemory: { mergeStrategy: "prepend" },
+  });
+  ```
+
+  Otherwise, no action is required.
+
+- [`9b08cff`](https://github.com/VoltAgent/voltagent/commit/9b08cff97c2e8616807a12e89bdbd3dceaf66d33) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: node:crypto import issue on workflow
+
+## 1.1.1
+
+### Patch Changes
+
+- [#552](https://github.com/VoltAgent/voltagent/pull/552) [`89f3f37`](https://github.com/VoltAgent/voltagent/commit/89f3f373a4efe97875c725a9be8374ed31c5bf40) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve shutdown handlers to properly stop server and clean up resources - #528
+
+  ## What Changed
+
+  Fixed the shutdown handler to properly stop the VoltAgent server and clean up all resources when receiving SIGINT/SIGTERM signals. This ensures the process can exit cleanly when multiple signal handlers exist from other frameworks.
+
+  ## The Problem (Before)
+
+  When multiple SIGINT/SIGTERM handlers existed (from frameworks like Adonis, NestJS, etc.), the VoltAgent server would remain open after shutdown, preventing the process from exiting cleanly. The previous fix only addressed the `process.exit()` issue but didn't actually stop the server.
+
+  ## The Solution (After)
+  - **Server Cleanup**: The shutdown handler now properly stops the server using `stopServer()`
+  - **Telemetry Shutdown**: Added telemetry/observability shutdown for complete cleanup
+  - **Public API**: Added a new `shutdown()` method for programmatic cleanup
+  - **Resource Order**: Resources are cleaned up in the correct order: server → workflows → telemetry
+  - **Framework Compatibility**: Still respects other frameworks' handlers using `isSoleSignalHandler` check
+
+  ## Usage
+
+  ```typescript
+  // Programmatic shutdown (new)
+  const voltAgent = new VoltAgent({ agents, server });
+  await voltAgent.shutdown(); // Cleanly stops server, workflows, and telemetry
+
+  // Automatic cleanup on SIGINT/SIGTERM still works
+  // Server is now properly stopped, allowing the process to exit
+  ```
+
+  This ensures VoltAgent plays nicely with other frameworks while properly cleaning up all resources during shutdown.
+
 ## 1.1.0
 
 ### Minor Changes

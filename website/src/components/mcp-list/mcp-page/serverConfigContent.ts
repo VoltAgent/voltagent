@@ -49,7 +49,7 @@ const allTools = await mcpConfig.getTools();
 const agent = new Agent({
   name: "MCP Agent",
   instructions: "An assistant that can use MCP tools configured at startup",
-  llm: new VercelAIProvider(),
+  
   model: openai("gpt-4o"),
   tools: allTools, // Add MCP tools during initialization
 });
@@ -153,7 +153,7 @@ const allTools = await mcpConfig.getTools();
 const agent = new Agent({
   name: "MCP Agent",
   instructions: "An assistant that can use MCP tools configured at startup",
-  llm: new VercelAIProvider(),
+  
   model: openai("gpt-4o"),
   tools: allTools, // Add MCP tools during initialization
 });

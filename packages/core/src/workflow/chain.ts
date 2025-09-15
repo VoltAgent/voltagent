@@ -53,7 +53,7 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
  *   purpose: "Process user data and generate personalized content",
  *   input: z.object({ userId: z.string(), userType: z.enum(["admin", "user"]) }),
  *   result: z.object({ processed: z.boolean(), content: z.string() }),
- *   memory: new LibSQLStorage({ url: "file:memory.db" }) // Optional workflow-specific memory
+ *   memory: new Memory({ storage: new LibSQLMemoryAdapter({ url: "file:memory.db" }) }) // Optional workflow-specific memory
  * })
  *   .andThen({
  *     id: "fetch-user",
@@ -83,7 +83,7 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
  * // Run with optional memory override
  * const result = await workflow.run(
  *   { userId: "123", userType: "admin" },
- *   { memory: new LibSQLStorage({ url: "file:memory.db" }) }
+ *   { memory: new Memory({ storage: new LibSQLMemoryAdapter({ url: "file:memory.db" }) }) }
  * );
  * ```
  */

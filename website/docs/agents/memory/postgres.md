@@ -129,19 +129,20 @@ conversations.forEach((conv) => {
 });
 ```
 
-### Advanced Query Builder
+### Pagination and Sorting
 
 ```typescript
-// Fluent query interface
-const recentChats = await storage
-  .getUserConversations("user-123")
-  .limit(20)
-  .orderBy("updated_at", "DESC")
-  .execute();
+// Recent chats with sorting
+const recentChats = await storage.queryConversations({
+  userId: "user-123",
+  limit: 20,
+  orderBy: "updated_at",
+  orderDirection: "DESC",
+});
 
-// Get paginated conversations
-const page1 = await storage.getPaginatedUserConversations("user-123", 1, 10);
-console.log(`Page 1 of ${page1.hasMore ? "many" : page1.conversations.length}`);
+// Offset-based pagination
+const page1 = await storage.queryConversations({ userId: "user-123", limit: 10, offset: 0 });
+const page2 = await storage.queryConversations({ userId: "user-123", limit: 10, offset: 10 });
 ```
 
 ## Querying Conversations
@@ -191,53 +192,38 @@ const allConversations = await storage.queryConversations({
 
 ## Getting Conversation Messages
 
-Retrieve messages for a specific conversation with pagination support:
+Retrieve messages for a specific conversation:
 
 ```typescript
-// Get all messages for a conversation
-const messages = await storage.getConversationMessages("conversation-456");
+// Get recent messages (chronological order)
+const messages = await storage.getMessages("user-123", "conversation-456", { limit: 50 });
 
-// Get messages with pagination
-const firstBatch = await storage.getConversationMessages("conversation-456", {
+// Time-based pagination
+const older = await storage.getMessages("user-123", "conversation-456", {
+  before: new Date("2024-01-01T00:00:00Z"),
   limit: 50,
-  offset: 0,
 });
-
-// Get next batch
-const nextBatch = await storage.getConversationMessages("conversation-456", {
-  limit: 50,
-  offset: 50,
-});
-
-// Process messages in batches for large conversations
-const batchSize = 100;
-let offset = 0;
-let hasMore = true;
-
-while (hasMore) {
-  const batch = await storage.getConversationMessages("conversation-456", {
-    limit: batchSize,
-    offset: offset,
-  });
-
-  // Process batch
-  processBatch(batch);
-
-  hasMore = batch.length === batchSize;
-  offset += batchSize;
-}
 ```
 
 **Message Query Options:**
 
 - `limit` (optional): Maximum number of messages to return (default: 100)
-- `offset` (optional): Number of messages to skip for pagination (default: 0)
+- `before` (optional): Only messages created before this date
+- `after` (optional): Only messages created after this date
+- `roles` (optional): Filter by roles, e.g., `["user", "assistant"]`
 
 Messages are returned in chronological order (oldest first) for natural conversation flow.
 
 ## Automatic Table Creation
 
-Unlike manual database setup, `PostgresStorage` **automatically creates** the necessary tables (`messages`, `conversations`, `agent_history`, `agent_history_steps`, `agent_history_timeline_events`, with the configured `tablePrefix`) and indexes in your PostgreSQL database if they don't already exist. This simplifies setup for both development and production.
+`PostgreSQLMemoryAdapter` **automatically creates** the necessary tables (with your `tablePrefix`) and indexes if they don't already exist:
+
+- `${tablePrefix}_users`
+- `${tablePrefix}_conversations`
+- `${tablePrefix}_messages`
+- `${tablePrefix}_workflow_states`
+
+This simplifies setup for both development and production.
 
 ## Production Considerations
 

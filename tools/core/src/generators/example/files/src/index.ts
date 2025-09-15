@@ -1,12 +1,11 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
 const agent = new Agent({
   name: "<%= name %> Agent",
   description: "<%= description %>",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -20,5 +19,6 @@ new VoltAgent({
   agents: {
     agent,
   },
+  server: honoServer(),
   logger,
 });

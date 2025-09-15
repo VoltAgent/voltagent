@@ -127,9 +127,9 @@ export const TextRequestSchema = z.object({
   input: z
     .union([
       z.string().describe("Direct text input"),
-      z.array(z.any()).describe("AI SDK UIMessage format: array of messages with parts"),
+      z.array(z.any()).describe("AI SDK message array (UIMessage or ModelMessage format)"),
     ])
-    .describe("Input text or messages array"),
+    .describe("Input text or messages array - accepts string, UIMessage[], or ModelMessage[]"),
   options: GenerateOptionsSchema.optional().describe("Optional generation parameters"),
 });
 
@@ -190,9 +190,9 @@ export const ObjectRequestSchema = z.object({
   input: z
     .union([
       z.string().describe("Direct text input"),
-      z.array(z.any()).describe("AI SDK UIMessage format: array of messages with parts"),
+      z.array(z.any()).describe("AI SDK message array (UIMessage or ModelMessage format)"),
     ])
-    .describe("Input text or messages array"),
+    .describe("Input text or messages array - accepts string, UIMessage[], or ModelMessage[]"),
   schema: BasicJsonSchema,
   options: GenerateOptionsSchema.optional().describe("Optional object generation parameters"),
 });

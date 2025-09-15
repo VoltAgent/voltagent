@@ -322,6 +322,8 @@ abortController.abort("User cancelled");
 
 ### Graceful Shutdown
 
+For individual agent operations:
+
 ```typescript
 async function processWithGracefulShutdown(agent: Agent, input: string) {
   const abortController = new AbortController();
@@ -346,6 +348,28 @@ async function processWithGracefulShutdown(agent: Agent, input: string) {
   }
 }
 ```
+
+For VoltAgent-level shutdown with server and resources:
+
+```typescript
+import { VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+
+const voltAgent = new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({ port: 3141 }),
+});
+
+// VoltAgent automatically handles SIGINT/SIGTERM
+// But you can also shutdown programmatically:
+process.on("SIGUSR2", async () => {
+  console.log("Custom shutdown signal received");
+  await voltAgent.shutdown(); // Stops server, workflows, and telemetry
+  process.exit(0);
+});
+```
+
+**Note**: VoltAgent automatically registers SIGINT/SIGTERM handlers that properly clean up the server, suspend workflows, and shutdown telemetry. See [Server Architecture - Graceful Shutdown](../api/server-architecture.md#graceful-shutdown) for details.
 
 ### Concurrent Operations with Cancellation
 

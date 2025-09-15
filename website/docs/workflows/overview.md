@@ -385,9 +385,9 @@ You can use several providers to store workflow history:
 - **Built-in Provider** (from `@voltagent/core`):
   - `InMemoryStorage`: The default provider, a non-persistent store ideal for development and stateless deployments.
 - **External Packages**:
-  - `@voltagent/libsql`: Provides `LibSQLStorage` for file-based SQLite database storage.
-  - `@voltagent/postgres`: Provides `PostgresStorage` for production environments.
-  - `@voltagent/supabase`: Provides `SupabaseStorage` for Supabase integration.
+  - `@voltagent/libsql`: Provides `LibSQLMemoryAdapter` for file-based SQLite/Turso-backed storage via the unified `Memory` API.
+  - `@voltagent/postgres`: Provides `PostgreSQLMemoryAdapter` for production environments.
+  - `@voltagent/supabase`: Provides `SupabaseMemoryAdapter` for Supabase integration.
 
 ```typescript
 import { createWorkflowChain } from "@voltagent/core";

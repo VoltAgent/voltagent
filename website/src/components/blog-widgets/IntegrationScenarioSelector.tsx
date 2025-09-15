@@ -14,12 +14,12 @@ const scenarioRecommendations: Record<ComplexityType, ScenarioRecommendation> = 
       "This is typically sufficient and quick for simple, one-off LLM calls tied to UI elements.",
   },
   "multi-turn-chat": {
-    approach: "Use VoltAgent with @voltagent/vercel-ai Provider",
+    approach: "Use VoltAgent with ai-sdk model",
     reasoning:
       "VoltAgent's Memory feature is ideal for maintaining consistency in multi-turn conversations. Vercel AI SDK's power is leveraged for LLM communication.",
   },
   "complex-orchestration": {
-    approach: "Use VoltAgent with @voltagent/vercel-ai Provider",
+    approach: "Use VoltAgent with ai-sdk model",
     reasoning:
       "For multiple LLM calls, external tool usage, and complex task workflows, VoltAgent's capabilities like Tools and Sub-Agents offer a powerful solution. Vercel AI SDK handles the LLM interactions.",
   },

@@ -72,7 +72,7 @@ export default function LivePreview() {
               "/index.ts": {
                 active: true,
                 code: `import { VoltAgent, Agent, createTool, createHooks } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai";
 import { fetchRepoContributorsTool } from "./tools";
 import { fetchRepoStarsTool } from "./tools";
@@ -81,7 +81,6 @@ import { fetchRepoStarsTool } from "./tools";
 const starsFetcherAgent = new Agent({
   name: "Stars Fetcher",
   description: "Fetches the number of stars for a GitHub repository using the GitHub API",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [fetchRepoStarsTool],
 });
@@ -90,7 +89,6 @@ const starsFetcherAgent = new Agent({
 const contributorsFetcherAgent = new Agent({
   name: "Contributors Fetcher",
   description: "Fetches the list of contributors for a GitHub repository using the GitHub API",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [fetchRepoContributorsTool],
 });
@@ -99,7 +97,6 @@ const contributorsFetcherAgent = new Agent({
 const analyzerAgent = new Agent({
   name: "Repo Analyzer",
   description: "Analyzes repository statistics and provides insights",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -113,7 +110,6 @@ const supervisorAgent = new Agent({
 
 Example input: https://github.com/voltagent/voltagent or voltagent/voltagent
 \`,
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [starsFetcherAgent, contributorsFetcherAgent, analyzerAgent],
 });
@@ -123,6 +119,7 @@ new VoltAgent({
   agents: {
     supervisorAgent,
   },
+  server: honoServer(),
 });
 
 `,
@@ -217,11 +214,12 @@ export const fetchRepoContributorsTool = createTool({
     "volt": "volt"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^1.0.0",
+    "ai": "^5.0.0",
+    "@ai-sdk/openai": "^2.0.0",
     "@octokit/rest": "^21.0.0",
-    "@voltagent/core": "^0.1.0",
-    "@voltagent/vercel-ai": "^0.1.0",
-    "zod": "^3.22.2"
+    "@voltagent/core": "^1.0.0",
+    "@voltagent/server-hono": "^1.0.0",
+    "zod": "^3.25.72"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",

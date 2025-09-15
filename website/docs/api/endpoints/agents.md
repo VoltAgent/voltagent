@@ -82,6 +82,7 @@ Generate a text response from an agent synchronously.
 **Request Body:**
 
 ```json
+// Example 1: Simple string input
 {
   "input": "What is the weather like today?",
   "options": {
@@ -105,13 +106,66 @@ Generate a text response from an agent synchronously.
     }
   }
 }
+
+// Example 2: UIMessage array format (with parts)
+{
+  "input": [
+    {
+      "role": "user",
+      "parts": [
+        { "type": "text", "text": "What is the weather?" }
+      ]
+    },
+    {
+      "role": "assistant",
+      "parts": [
+        { "type": "text", "text": "I can't access real-time weather data." }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        { "type": "text", "text": "Can you explain why?" }
+      ]
+    }
+  ],
+  "options": {
+    "temperature": 0.7
+  }
+}
+
+// Example 3: ModelMessage array format (with role/content)
+{
+  "input": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "What is the weather?"
+    },
+    {
+      "role": "assistant",
+      "content": "I can't access real-time weather data."
+    },
+    {
+      "role": "user",
+      "content": "Can you explain why?"
+    }
+  ],
+  "options": {
+    "temperature": 0.7
+  }
+}
 ```
 
 **Input Format:**
 
 - `input` can be either:
   - A string for simple text input
-  - An array of AI SDK UIMessage format for conversation history
+  - An array of AI SDK UIMessage format (messages with `parts`)
+  - An array of AI SDK ModelMessage format (messages with `role` and `content`)
 
 **Options:**
 | Field | Type | Default | Description |
@@ -171,7 +225,7 @@ Generate a text response and stream raw fullStream data via Server-Sent Events (
 
 **Endpoint:** `POST /agents/:id/stream`
 
-**Request Body:** Same as `/text` endpoint
+**Request Body:** Same as `/text` endpoint (supports string, UIMessage[], or ModelMessage[] input)
 
 **Response:** Server-Sent Events stream with raw fullStream data
 
@@ -253,7 +307,7 @@ Generate a text response and stream it as UI messages via Server-Sent Events (SS
 
 **Endpoint:** `POST /agents/:id/chat`
 
-**Request Body:** Same as `/text` endpoint
+**Request Body:** Same as `/text` endpoint (supports string, UIMessage[], or ModelMessage[] input)
 
 **Response:** Server-Sent Events stream in AI SDK UI message format
 
@@ -350,6 +404,7 @@ Generate a structured object that conforms to a JSON schema.
 **Request Body:**
 
 ```json
+// Input can be string, UIMessage[], or ModelMessage[]
 {
   "input": "Extract user info: John Doe, 30 years old, john@example.com",
   "schema": {

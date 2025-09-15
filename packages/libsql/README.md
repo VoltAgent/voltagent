@@ -95,10 +95,10 @@ This command guides you through setup.
 You'll see the starter code in `src/index.ts`, which now registers both an agent and a comprehensive workflow example found in `src/workflows/index.ts`.
 
 ```typescript
-import { VoltAgent, Agent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { VoltAgent, Agent, Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai";
 import { expenseApprovalWorkflow } from "./workflows";
 import { weatherTool } from "./tools";
@@ -109,17 +109,18 @@ const logger = createPinoLogger({
   level: "info",
 });
 
+// Optional persistent memory (remove to use default in-memory)
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+});
+
 // A simple, general-purpose agent for the project.
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that can check weather and help with various tasks",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db",
-    logger: logger.child({ component: "libsql" }),
-  }),
+  memory,
 });
 
 // Initialize VoltAgent with your agent(s) and workflow(s)
@@ -130,6 +131,7 @@ new VoltAgent({
   workflows: {
     expenseApprovalWorkflow,
   },
+  server: honoServer(),
   logger,
 });
 ```

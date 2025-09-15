@@ -118,7 +118,6 @@ export default function SubagentsTutorial() {
           <ColorModeProvider>
             <CodeBlock language="typescript" title="src/index.ts">
               {`import { VoltAgent, Agent, createTool } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -130,7 +129,7 @@ const writerAgent = new Agent({
   Keep stories between 2-3 paragraphs.
   Make them interesting and creative.
   Always include vivid descriptions and engaging characters.\`,
-  llm: new VercelAIProvider(),
+  
   model: openai("gpt-4o-mini"),
   tools: [
     createTool({
@@ -162,7 +161,7 @@ const translatorAgent = new Agent({
   - Italian (Italiano)
   
   Provide accurate, natural translations that maintain the story's tone and meaning.\`,
-  llm: new VercelAIProvider(),
+  
   model: openai("gpt-4o-mini"),
   tools: [
     createTool({
@@ -205,7 +204,7 @@ User: "Write a story about a magic cat"
 → Use translator agent for Japanese version
 → Use translator agent for Italian version
 → Present all versions to user\`,
-  llm: new VercelAIProvider(),
+  
   model: openai("gpt-4o-mini"),
   subAgents: [writerAgent, translatorAgent],
 });
@@ -584,7 +583,7 @@ const creativeDirector = new Agent({
 const managerAgent = new Agent({
   name: "project-manager",
   instructions: "Coordinate creative projects and manage team workflows",
-  llm: new VercelAIProvider(),
+  
   model: openai("gpt-4o-mini"),
   tools: [
     // This creates a tool that can delegate to writer

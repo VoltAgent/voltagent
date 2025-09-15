@@ -219,7 +219,7 @@ export class Memory {
 
       // Search for similar messages
       const semanticResults = await this.vector.search(queryVector, {
-        limit: options?.semanticLimit || 5,
+        limit: options?.semanticLimit ?? 5,
         filter: { userId, conversationId },
         threshold: options?.semanticThreshold,
       });
@@ -240,7 +240,7 @@ export class Memory {
       return this.mergeMessages(
         recentMessages,
         semanticMessages,
-        options?.mergeStrategy || "prepend",
+        options?.mergeStrategy ?? "append",
       );
     } catch (error) {
       // Log error but don't fail - return recent messages as fallback
@@ -257,10 +257,11 @@ export class Memory {
     conversationId: string,
     messageIds: string[],
   ): Promise<UIMessage[]> {
-    // Get all messages and filter by IDs
-    // This is a simple implementation - could be optimized with a dedicated storage method
+    // Get all messages once and map by id to preserve the order of messageIds
     const allMessages = await this.storage.getMessages(userId, conversationId);
-    return allMessages.filter((msg) => messageIds.includes(msg.id));
+    const byId = new Map(allMessages.map((m) => [m.id, m] as const));
+    const ordered = messageIds.map((id) => byId.get(id)).filter((m): m is UIMessage => Boolean(m));
+    return ordered;
   }
 
   /**
@@ -269,7 +270,7 @@ export class Memory {
   private mergeMessages(
     recentMessages: UIMessage[],
     semanticMessages: UIMessage[],
-    strategy: "prepend" | "append" | "interleave" = "prepend",
+    strategy: "prepend" | "append" | "interleave" = "append",
   ): UIMessage[] {
     // Create a Set of message IDs from recent messages
     const recentIds = new Set(recentMessages.map((m) => m.id));
@@ -823,6 +824,9 @@ Remember:
       currentQuery?: string;
       traceId?: string;
       logger?: Logger;
+      semanticLimit?: number;
+      semanticThreshold?: number;
+      mergeStrategy?: "prepend" | "append" | "interleave";
     },
   ): Promise<UIMessage[]> {
     const logger = options?.logger || this.logger;
@@ -839,9 +843,9 @@ Remember:
           options.currentQuery,
           {
             limit: options.limit,
-            semanticLimit: 5,
-            semanticThreshold: 0.7,
-            mergeStrategy: "prepend",
+            semanticLimit: options.semanticLimit ?? 5,
+            semanticThreshold: options.semanticThreshold ?? 0.7,
+            mergeStrategy: options.mergeStrategy ?? "append",
           },
         );
       } else {

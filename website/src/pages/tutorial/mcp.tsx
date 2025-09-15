@@ -168,7 +168,7 @@ export default function MCPTutorial() {
           <ColorModeProvider>
             <CodeBlock language="typescript" title="src/index.ts">
               {`import { VoltAgent, Agent, createTool, MCPConfiguration } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+// Removed legacy provider in 1.x; use ai-sdk model directly
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import path from "node:path";
@@ -221,7 +221,7 @@ const mcpConfig = new MCPConfiguration({
   - Manage data storage
   
   Always be helpful and provide clear information.\`,
-    llm: new VercelAIProvider(),
+    
     model: openai("gpt-4o-mini"),
     tools: [
       getWeatherTool,
@@ -375,7 +375,7 @@ const mcpConfig = new MCPConfiguration({
               title="Add HTTP MCP: Complete Agent with Both Local & Remote Tools"
             >
               {`import { VoltAgent, Agent, createTool, MCPConfiguration } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+// Removed legacy provider in 1.x; use ai-sdk model directly
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import path from "node:path";
@@ -453,7 +453,7 @@ const mcpConfig = new MCPConfiguration({
         
         You can combine ALL these capabilities in creative ways!
         Always explain what you're doing when using different tools.\`,
-      llm: new VercelAIProvider(),
+      
       model: openai("gpt-4o-mini"),
       tools: [
         getWeatherTool,  // Local weather tool

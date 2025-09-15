@@ -185,6 +185,34 @@ const config: Config = {
             to: "/",
             from: "/pricing/",
           },
+          {
+            to: "/docs/getting-started/providers-models/",
+            from: "/docs/providers/overview/",
+          },
+          {
+            to: "/docs/getting-started/providers-models/",
+            from: "/docs/providers/anthropic-ai/",
+          },
+          {
+            to: "/docs/getting-started/providers-models/",
+            from: "/docs/providers/google-ai/",
+          },
+          {
+            to: "/docs/getting-started/providers-models/",
+            from: "/docs/providers/groq-ai/",
+          },
+          {
+            to: "/docs/getting-started/providers-models/",
+            from: "/docs/providers/vercel-ai/",
+          },
+          {
+            to: "/docs/getting-started/providers-models/",
+            from: "/docs/providers/xsai/",
+          },
+          {
+            to: "/docs/getting-started/providers-models/",
+            from: "/docs/providers/contributing/",
+          },
         ],
       },
     ],

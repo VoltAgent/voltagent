@@ -95,20 +95,20 @@ const conversations = await memoryStorage.getConversationsByUserId("user-123", {
   orderDirection: "DESC",
 });
 
-// Query builder pattern for complex queries
-const recentConversations = await memoryStorage
-  .getUserConversations("user-123")
-  .limit(10)
-  .orderBy("updated_at", "DESC")
-  .execute();
+// Complex queries (filters, sort, pagination)
+const recentConversations = await memoryStorage.queryConversations({
+  userId: "user-123",
+  limit: 10,
+  orderBy: "updated_at",
+  orderDirection: "DESC",
+});
 
-// Pagination support
-const page1 = await memoryStorage.getPaginatedUserConversations("user-123", 1, 20);
-console.log(page1.conversations); // Array of conversations
-console.log(page1.hasMore); // Boolean indicating if more pages exist
+// Pagination via limit/offset
+const page1 = await memoryStorage.queryConversations({ userId: "user-123", limit: 20, offset: 0 });
+const page2 = await memoryStorage.queryConversations({ userId: "user-123", limit: 20, offset: 20 });
 
-// Get conversation with user validation
-const conversation = await memoryStorage.getUserConversation("conversation-id", "user-123");
+// Get a conversation by ID
+const conversation = await memoryStorage.getConversation("conversation-id");
 
 // Create and update conversations
 const newConversation = await memoryStorage.createConversation({
@@ -171,53 +171,40 @@ const allConversations = await memoryStorage.queryConversations({
 
 ## Getting Conversation Messages
 
-Retrieve messages for a specific conversation with pagination support:
+Retrieve messages for a specific conversation:
 
 ```typescript
-// Get all messages for a conversation
-const messages = await memoryStorage.getConversationMessages("conversation-456");
-
-// Get messages with pagination
-const firstBatch = await memoryStorage.getConversationMessages("conversation-456", {
+// Get recent messages (chronological order)
+const messages = await memoryStorage.getMessages("user-123", "conversation-456", {
   limit: 50,
-  offset: 0,
 });
 
-// Get next batch
-const nextBatch = await memoryStorage.getConversationMessages("conversation-456", {
+// Use time-based pagination when needed
+const older = await memoryStorage.getMessages("user-123", "conversation-456", {
+  before: new Date("2024-01-01T00:00:00Z"),
   limit: 50,
-  offset: 50,
 });
-
-// Process messages in batches for large conversations
-const batchSize = 100;
-let offset = 0;
-let hasMore = true;
-
-while (hasMore) {
-  const batch = await memoryStorage.getConversationMessages("conversation-456", {
-    limit: batchSize,
-    offset: offset,
-  });
-
-  // Process batch
-  processBatch(batch);
-
-  hasMore = batch.length === batchSize;
-  offset += batchSize;
-}
 ```
 
 **Message Query Options:**
 
 - `limit` (optional): Maximum number of messages to return (default: 100)
-- `offset` (optional): Number of messages to skip for pagination (default: 0)
+- `before` (optional): Only messages created before this date
+- `after` (optional): Only messages created after this date
+- `roles` (optional): Filter by roles, e.g., `["user", "assistant"]`
 
 Messages are returned in chronological order (oldest first) for natural conversation flow.
 
 ## Automatic Table Creation
 
-Unlike some other database providers, `LibSQLMemoryAdapter` **automatically creates** the necessary tables (`messages`, `conversations`, `agent_history`, etc., with the configured `tablePrefix`) in the target database if they don't already exist. This simplifies setup, especially for local development using SQLite files.
+`LibSQLMemoryAdapter` **automatically creates** the necessary tables with your configured prefix:
+
+- `${tablePrefix}_users`
+- `${tablePrefix}_conversations`
+- `${tablePrefix}_messages`
+- `${tablePrefix}_workflow_states`
+
+This simplifies setup, especially for local development using SQLite files.
 
 The provider also **automatically migrates** existing databases to new schemas when you update VoltAgent, ensuring backward compatibility.
 

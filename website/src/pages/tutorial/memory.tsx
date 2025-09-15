@@ -369,11 +369,13 @@ const response4 = await agent.generateText("Let's talk about something new.", {
 
           <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-6">
             <div className=" rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">LibSQLStorage (Default)</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">
+                LibSQLMemoryAdapter (SQLite/Turso)
+              </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-[#00d992] ">•</span>
-                  <span className="text-gray-300">Used automatically</span>
+                  <span className="text-gray-300">Optional persistent storage via adapter</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <span className="text-[#00d992] ">•</span>
@@ -391,7 +393,9 @@ const response4 = await agent.generateText("Let's talk about something new.", {
             </div>
 
             <div className=" rounded-lg p-6 border-solid border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">InMemoryStorage</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">
+                Default InMemory (no persistence)
+              </h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <span className="text-yellow-400 ">•</span>
@@ -461,7 +465,7 @@ const response4 = await agent.generateText("Let's talk about something new.", {
 const statelessAgent = new Agent({
   name: "Stateless Agent",
   instructions: "This agent remembers nothing.",
-  llm: new VercelAIProvider(),
+  
   model: openai("gpt-4o-mini"),
   memory: false // Memory disabled
 });`}
@@ -475,7 +479,7 @@ const statelessAgent = new Agent({
 const fastAgent = new Agent({
   name: "Fast Agent",
   instructions: "This agent stores memory in RAM.",
-  llm: new VercelAIProvider(),
+  
   model: openai("gpt-4o-mini"),
   memory: new InMemoryStorage()
 });`}
@@ -489,7 +493,7 @@ const fastAgent = new Agent({
 const productionAgent = new Agent({
   name: "Production Agent",
   instructions: "This agent stores memory in PostgreSQL.",
-  llm: new VercelAIProvider(),
+  
   model: openai("gpt-4o-mini"),
   memory: new PostgreSQLStorage({
     connectionString: process.env.DATABASE_URL

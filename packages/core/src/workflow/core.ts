@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { z } from "zod";

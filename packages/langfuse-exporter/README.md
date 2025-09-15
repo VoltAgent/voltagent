@@ -138,15 +138,13 @@ You'll see the starter code in `src/index.ts` to get you started with the VoltAg
 
 ```typescript
 import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai"; // Example provider
+import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai"; // Example model
 
 // Define a simple agent
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
-  // Note: You can swap VercelAIProvider and openai with other supported providers/models
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -155,6 +153,7 @@ new VoltAgent({
   agents: {
     agent,
   },
+  server: honoServer(),
 });
 ```
 

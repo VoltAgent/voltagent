@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/server-core",
   "description": "Framework-agnostic server core for VoltAgent",
-  "version": "2.0.0",
+  "version": "1.0.4",
   "dependencies": {
     "@voltagent/internal": "^0.0.9",
     "ai": "^5.0.12",
@@ -38,7 +38,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@voltagent/core": "1.1.0",
+    "@voltagent/core": "^1.1.0",
     "zod": "^3.25.0 || ^4.0.0"
   },
   "scripts": {
