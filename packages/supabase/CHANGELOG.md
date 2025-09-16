@@ -1,5 +1,12 @@
 # @voltagent/supabase
 
+## 1.0.2-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
 ## 1.0.1
 
 ### Patch Changes

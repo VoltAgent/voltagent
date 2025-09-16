@@ -4,6 +4,13 @@
 
 ### Patch Changes
 
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 0.1.7-next.0
+
+### Patch Changes
+
 - Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
   - @voltagent/core@1.0.0-next.0
 
