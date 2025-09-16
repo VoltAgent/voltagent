@@ -25,5 +25,5 @@
     "@voltagent/vercel-ai-exporter": "1.0.0",
     "@voltagent/voice": "1.0.0"
   },
-  "changesets": []
+  "changesets": ["thin-lions-win-2", "thin-lions-win"]
 }
