@@ -29,7 +29,6 @@ import { DotPattern } from "@site/src/components/ui/dot-pattern";
 import { UseCaseAnimation } from "@site/src/components/usecase-animation";
 import { ResponsiveSupervisorFlow } from "@site/src/components/usecase-supervisor-flow/responsive-wrapper";
 import Layout from "@theme/Layout";
-import Mermaid from "@theme/Mermaid";
 import { motion } from "framer-motion";
 import type React from "react";
 
@@ -71,7 +70,6 @@ interface UseCasePageProps {
       primaryCTALink: string;
       secondaryCTA: string;
       secondaryCTALink: string;
-      mermaidDiagram?: string;
     };
     painPoints: string[];
     solutions: string[];
@@ -142,6 +140,31 @@ const Badge = ({ children, className = "" }: { children: React.ReactNode; classN
     {children}
   </span>
 );
+
+// Default steps for how it works section
+const defaultHowItWorks = [
+  {
+    step: 1,
+    title: "Build with VoltAgent",
+    description: "Program your agent logic and workflows in TypeScript.",
+  },
+  {
+    step: 2,
+    title: "Connect data & tools",
+    description:
+      "Integrate APIs, databases, vector DBs (Chroma, Pinecone, Qdrant), and external systems.",
+  },
+  {
+    step: 3,
+    title: "Add memory & RAG",
+    description: "Index your knowledge and enable retrieval + long-term context.",
+  },
+  {
+    step: 4,
+    title: "Observe in VoltOps",
+    description: "Trace decisions, tool calls, tokens, and performance; refine safely.",
+  },
+];
 
 export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element {
   if (!useCase) {
@@ -257,6 +280,113 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
           </Section>
         )}
 
+        {/* How It Works */}
+        <Container>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            {/* Show steps with connected design */}
+            <div className="relative mb-24">
+              {/* Desktop view with horizontal connection */}
+              <div className="hidden lg:block relative">
+                <div className="grid grid-cols-4 gap-6">
+                  {(useCase.howItWorks || defaultHowItWorks).map((step, index, array) => (
+                    <div key={step.step} className="relative">
+                      {/* Connection line to next step */}
+                      {index < array.length - 1 && (
+                        <div className="absolute top-1/2 -right-6 w-6 h-px bg-emerald-500 z-10" />
+                      )}
+
+                      {/* Step box with number in top-left */}
+                      <div
+                        className={`relative border border-solid ${
+                          index === 0
+                            ? "border-emerald-400 bg-emerald-400/5"
+                            : "border-[#ffffff]/10"
+                        } rounded-lg p-4 h-full transition-all duration-200 ${
+                          index !== 0 ? "hover:border-emerald-400/50" : ""
+                        }`}
+                      >
+                        {/* Step number in top-left corner */}
+                        <div className="absolute -top-2 -left-2 w-10 h-10 flex items-center justify-center">
+                          <div className="relative w-8 h-8 bg-black border-2 border-solid border-emerald-500 rounded-full flex items-center justify-center text-emerald-400 font-bold text-sm">
+                            {step.step}
+                          </div>
+                        </div>
+
+                        {/* Step content with padding for number */}
+                        <div className="pt-3 pl-3">
+                          <h3 className="font-semibold text-lg text-white mb-2">{step.title}</h3>
+                          <p className="text-gray-400 mb-0 text-sm leading-relaxed">
+                            {step.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tablet view (2 columns) */}
+              <div className="hidden md:block lg:hidden">
+                <div className="grid grid-cols-2 gap-6">
+                  {(useCase.howItWorks || defaultHowItWorks).map((step, index) => (
+                    <div key={step.step} className="relative">
+                      {/* Connection line for first row to second row */}
+                      {index === 1 && (
+                        <div className="absolute -bottom-6 left-1/2 w-px h-6 bg-emerald-500/20 z-10" />
+                      )}
+
+                      {/* Step box with number in top-left */}
+                      <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-5 h-full hover:bg-gray-900/70 hover:border-emerald-500/30 transition-all duration-200">
+                        {/* Step number in top-left corner */}
+                        <div className="absolute -top-2 -left-2 w-10 h-10 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-emerald-500 rounded-full blur-md opacity-50" />
+                          <div className="relative w-8 h-8 bg-black border-2 border-emerald-400 rounded-full flex items-center justify-center text-emerald-400 font-bold text-sm">
+                            {step.step}
+                          </div>
+                        </div>
+
+                        <div className="pl-12">
+                          <h3 className="font-semibold text-white mb-2">{step.title}</h3>
+                          <p className="text-gray-400 text-sm">{step.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mobile view with vertical boxes */}
+              <div className="block md:hidden">
+                <div className="space-y-4">
+                  {(useCase.howItWorks || defaultHowItWorks).map((step) => (
+                    <div key={step.step} className="relative">
+                      {/* Step box with number in top-left */}
+                      <div className="relative bg-gray-900/30 border border-solid border-gray-800/50 rounded-lg p-4">
+                        {/* Step number in top-left corner */}
+                        <div className="absolute -top-2 -left-2 w-8 h-8 flex items-center justify-center">
+                          <div className="relative w-7 h-7 bg-black border border-solid border-emerald-500 rounded-full flex items-center justify-center text-emerald-400 font-semibold text-xs">
+                            {step.step}
+                          </div>
+                        </div>
+
+                        <div className="pl-6 pt-1">
+                          <h3 className="font-semibold text-white text-sm mb-1">{step.title}</h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            {step.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </Container>
         {/* Features & Capabilities */}
         <Section>
           <Container>
@@ -266,7 +396,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
               transition={{ duration: 0.5, delay: 0.15 }}
             >
               {/* Capabilities and Features Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 ">
                 {/* Capabilities List - Left Column */}
                 {useCase.capabilities && useCase.capabilities.length > 0 && (
                   <div>
@@ -340,196 +470,6 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
           </Container>
         </Section>
 
-        {/* How It Works */}
-        <Section className="">
-          <Container>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-            >
-              {/* Show steps with connected design */}
-              <div className="relative mb-12">
-                {/* Show mermaid diagram if available */}
-                {useCase.hero.mermaidDiagram && (
-                  <div className="max-w-5xl mx-auto mb-16">
-                    <Mermaid value={useCase.hero.mermaidDiagram} />
-                  </div>
-                )}
-                {/* Desktop view with horizontal connection */}
-                <div className="hidden lg:block relative">
-                  <div className="grid grid-cols-4 gap-6">
-                    {(
-                      useCase.howItWorks || [
-                        {
-                          step: 1,
-                          title: "Build with VoltAgent",
-                          description: "Program your agent logic and workflows in TypeScript.",
-                        },
-                        {
-                          step: 2,
-                          title: "Connect data & tools",
-                          description:
-                            "Integrate APIs, databases, vector DBs (Chroma, Pinecone, Qdrant), and external systems.",
-                        },
-                        {
-                          step: 3,
-                          title: "Add memory & RAG",
-                          description:
-                            "Index your knowledge and enable retrieval + long-term context.",
-                        },
-                        {
-                          step: 4,
-                          title: "Observe in VoltOps",
-                          description:
-                            "Trace decisions, tool calls, tokens, and performance; refine safely.",
-                        },
-                      ]
-                    ).map((step, index, array) => (
-                      <div key={step.step} className="relative">
-                        {/* Connection line to next step */}
-                        {index < array.length - 1 && (
-                          <div className="absolute top-1/2 -right-6 w-6 h-px bg-emerald-500/20 z-10" />
-                        )}
-
-                        {/* Step box with number in top-right */}
-                        <div
-                          className={`relative border border-solid ${
-                            index === 0
-                              ? "border-emerald-400 bg-emerald-400/5"
-                              : "border-[#ffffff]/10"
-                          } rounded-lg p-4 h-full transition-all duration-200 ${
-                            index !== 0 ? "hover:border-emerald-400/50" : ""
-                          }`}
-                        >
-                          {/* Step number in top-right corner */}
-                          <div className="absolute bottom-2 right-2 w-7 h-7 z-50 bg-emerald-600/40 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center text-xs font-semibold">
-                            {step.step}
-                          </div>
-
-                          {/* Step content */}
-                          <div>
-                            <h3 className="font-semibold text-lg text-white  mb-2">{step.title}</h3>
-                            <p className="text-gray-400 text-sm leading-relaxed">
-                              {step.description}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Tablet view (2 columns) */}
-                <div className="hidden md:block lg:hidden">
-                  <div className="grid grid-cols-2 gap-6">
-                    {(
-                      useCase.howItWorks || [
-                        {
-                          step: 1,
-                          title: "Build with VoltAgent",
-                          description: "Program your agent logic and workflows in TypeScript.",
-                        },
-                        {
-                          step: 2,
-                          title: "Connect data & tools",
-                          description:
-                            "Integrate APIs, databases, vector DBs (Chroma, Pinecone, Qdrant), and external systems.",
-                        },
-                        {
-                          step: 3,
-                          title: "Add memory & RAG",
-                          description:
-                            "Index your knowledge and enable retrieval + long-term context.",
-                        },
-                        {
-                          step: 4,
-                          title: "Observe in VoltOps",
-                          description:
-                            "Trace decisions, tool calls, tokens, and performance; refine safely.",
-                        },
-                      ]
-                    ).map((step, index) => (
-                      <div key={step.step} className="relative">
-                        {/* Connection line for first row to second row */}
-                        {index === 1 && (
-                          <div className="absolute -bottom-6 left-1/2 w-px h-6 bg-emerald-500/20 z-10" />
-                        )}
-
-                        {/* Step box with number in top-right */}
-                        <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-5 h-full hover:bg-gray-900/70 hover:border-emerald-500/30 transition-all duration-200">
-                          {/* Step number in top-right corner */}
-                          <div className="absolute -top-2 -right-2 w-7 h-7 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center text-xs font-semibold">
-                            {step.step}
-                          </div>
-
-                          <div>
-                            <h3 className="font-semibold text-white mb-2">{step.title}</h3>
-                            <p className="text-gray-400 text-sm">{step.description}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Mobile view with vertical boxes */}
-                <div className="block md:hidden">
-                  <div className="space-y-6">
-                    {(
-                      useCase.howItWorks || [
-                        {
-                          step: 1,
-                          title: "Build with VoltAgent",
-                          description: "Program your agent logic and workflows in TypeScript.",
-                        },
-                        {
-                          step: 2,
-                          title: "Connect data & tools",
-                          description:
-                            "Integrate APIs, databases, vector DBs (Chroma, Pinecone, Qdrant), and external systems.",
-                        },
-                        {
-                          step: 3,
-                          title: "Add memory & RAG",
-                          description:
-                            "Index your knowledge and enable retrieval + long-term context.",
-                        },
-                        {
-                          step: 4,
-                          title: "Observe in VoltOps",
-                          description:
-                            "Trace decisions, tool calls, tokens, and performance; refine safely.",
-                        },
-                      ]
-                    ).map((step, index, array) => (
-                      <div key={step.step} className="relative">
-                        {/* Connection line to next step */}
-                        {index < array.length - 1 && (
-                          <div className="absolute -bottom-6 left-1/2 w-px h-6 bg-emerald-500/20 z-10" />
-                        )}
-
-                        {/* Step box with number in top-right */}
-                        <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-5 hover:bg-gray-900/70 hover:border-emerald-500/30 transition-all duration-200">
-                          {/* Step number in top-right corner */}
-                          <div className="absolute -top-2 -right-2 w-7 h-7 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center text-xs font-semibold">
-                            {step.step}
-                          </div>
-
-                          <div>
-                            <h3 className="font-semibold text-white mb-2">{step.title}</h3>
-                            <p className="text-gray-400 text-sm">{step.description}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </Container>
-        </Section>
-
         {/* Pain → Solution */}
         <Section className="">
           <Container>
@@ -539,9 +479,9 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
               transition={{ duration: 0.5, delay: 0.4 }}
             >
               {/* Single card with Pain → Solution */}
-              <div className="border border-solid border-white/10 rounded-xl p-8">
+              <div className="border border-solid border-white/10 rounded-xl p-4 sm:p-6 lg:p-8">
                 <div className="relative">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-0">
                     {/* Vertical divider line - only on desktop */}
                     <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2">
                       <div className="h-full bg-gradient-to-b from-transparent via-emerald-500/30 to-transparent" />
@@ -549,17 +489,17 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
 
                     {/* Problems column */}
                     <div className="lg:pr-12">
-                      <h2 className="text-2xl font-bold text-rose-500 mb-6 flex items-center">
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-rose-500 mb-4 lg:mb-6 flex items-center">
                         The Problems
                       </h2>
-                      <ul className="space-y-4 pl-0">
+                      <ul className="space-y-3 lg:space-y-4 pl-0">
                         {useCase.painPoints.map((pain) => (
                           <li
                             key={`pain-${pain.substring(0, 30).replace(/\s+/g, "-")}`}
                             className="flex items-start group"
                           >
-                            <div className="w-2 h-2 rounded-full bg-rose-500 mr-3 mt-2 flex-shrink-0" />
-                            <span className="text-white group-hover:text-gray-300 transition-colors">
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-500 mr-2 sm:mr-3 mt-1.5 sm:mt-2 flex-shrink-0" />
+                            <span className="text-sm sm:text-base text-white group-hover:text-gray-300 transition-colors">
                               {pain}
                             </span>
                           </li>
@@ -567,33 +507,33 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                       </ul>
                     </div>
 
+                    {/* Mobile divider */}
+                    <div className="block lg:hidden my-6">
+                      <div className="flex items-center justify-center">
+                        <div className="h-px w-12 bg-gradient-to-r from-transparent to-emerald-500/30" />
+                        <ArrowRightIcon className="w-4 h-4 text-emerald-400 mx-2" />
+                        <div className="h-px w-12 bg-gradient-to-l from-transparent to-emerald-500/30" />
+                      </div>
+                    </div>
+
                     {/* Solutions column */}
                     <div className="lg:pl-12">
-                      <h2 className="text-2xl font-bold text-emerald-500 mb-6 flex items-center">
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-emerald-500 mb-4 lg:mb-6 flex items-center">
                         How VoltAgent Solves It
                       </h2>
-                      <ul className="space-y-4 pl-0">
+                      <ul className="space-y-3 lg:space-y-4 pl-0">
                         {useCase.solutions.map((solution) => (
                           <li
                             key={`solution-${solution.substring(0, 30).replace(/\s+/g, "-")}`}
                             className="flex items-start group"
                           >
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-3 mt-2 flex-shrink-0" />
-                            <span className="text-white group-hover:text-gray-300 transition-colors">
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 mr-2 sm:mr-3 mt-1.5 sm:mt-2 flex-shrink-0" />
+                            <span className="text-sm sm:text-base text-white group-hover:text-gray-300 transition-colors">
                               {solution}
                             </span>
                           </li>
                         ))}
                       </ul>
-                    </div>
-                  </div>
-
-                  {/* Mobile horizontal divider */}
-                  <div className="block lg:hidden my-6">
-                    <div className="flex items-center justify-center">
-                      <div className="h-px w-16 bg-gradient-to-r from-transparent to-emerald-500/30" />
-                      <ArrowRightIcon className="w-5 h-5 text-emerald-400 mx-2" />
-                      <div className="h-px w-16 bg-gradient-to-l from-transparent to-emerald-500/30" />
                     </div>
                   </div>
                 </div>
@@ -647,7 +587,6 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   Enterprise-Ready Security
                 </h2>
                 <div className="flex flex-wrap gap-3 mb-6">
-                  <Badge>SOC2 Compliant</Badge>
                   <Badge>GDPR Ready</Badge>
                   <Badge>SSO/SAML</Badge>
                   <Badge>RBAC</Badge>

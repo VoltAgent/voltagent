@@ -299,47 +299,37 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
           },
         );
         break;
-      case 3: // Agents converge -> Tools inner gap (curved, single pass)
-        // Converge three agent beams to midpoint
+      case 3: // Agents -> Tools (direct paths, no convergence)
+        // Direct paths from each agent to tools midpoint
         beams.push(
           {
             from: billingRightRef,
-            to: agentsMidpointRef,
-            curvature: -15,
-            pathType: "angular",
+            to: toolsMidpointRef,
+            curvature: -20,
+            pathType: "curved",
             color: "#06b6d4",
             particleDuration: 2.5,
             particleSpeed: 2.5,
           },
           {
             from: accountRightRef,
-            to: agentsMidpointRef,
+            to: toolsMidpointRef,
             curvature: 0,
-            pathType: "angular",
+            pathType: "curved",
             color: "#06b6d4",
             particleDuration: 2.5,
             particleSpeed: 2.5,
           },
           {
             from: bugRightRef,
-            to: agentsMidpointRef,
-            curvature: 15,
-            pathType: "angular",
+            to: toolsMidpointRef,
+            curvature: 20,
+            pathType: "curved",
             color: "#06b6d4",
             particleDuration: 2.5,
             particleSpeed: 2.5,
           },
         );
-        // Single merged beam from midpoint to tools inner edge
-        beams.push({
-          from: agentsMidpointRef,
-          to: toolsMidpointRef,
-          curvature: 0,
-          pathType: "angular",
-          color: "#06b6d4",
-          particleDuration: 2.5,
-          particleSpeed: 2.5,
-        });
         break;
       case 4: // Return: Tools inner gap -> middle agent right edge, then to Supervisor right edge (single merged route)
         beams.push({
@@ -502,7 +492,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
     <div
       ref={containerRef}
       className={clsx(
-        "relative w-full h-[500px] md:h-[550px] overflow-x-hidden overflow-y-hidden px-4 md:px-8",
+        "relative w-full h-[500px] md:h-[450px] overflow-x-hidden overflow-y-hidden px-4 md:px-8",
         "bg-gradient-to-br from-gray-950 via-gray-900 to-black rounded-xl",
         className,
       )}
@@ -514,15 +504,6 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
 
         {/* Secondary glow near agents */}
         <div className="absolute top-1/2 left-[65%] -translate-x-1/2 -translate-y-1/2 w-[300px] h-[250px] md:w-[350px] md:h-[100px] rounded-full bg-[#00d992]/15 blur-[100px]" />
-
-        {/* Dotted grid overlay */}
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: "radial-gradient(circle, #00d992 1px, transparent 1px)",
-            backgroundSize: "20px 20px",
-          }}
-        />
       </div>
 
       {/* Nodes */}
@@ -587,12 +568,13 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
         />
       </div>
 
-      {/* Sub-Agents Group Label */}
+      {/* Sub-Agents Group Label - Centered above the group */}
       <div
         className="absolute text-emerald-400 text-sm font-semibold tracking-wider uppercase"
         style={{
-          left: positions.billing.x,
-          top: positions.billing.y - positions.groupLabelOffset - 20,
+          left: positions.account.x,
+          top: positions.billing.y - positions.groupLabelOffset - 35,
+          transform: "translateX(-50%)",
         }}
       >
         Sub-Agents
@@ -625,12 +607,13 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
         </div>
       </div>
 
-      {/* Tools Group Label */}
+      {/* Tools Group Label - Centered above the group */}
       <div
         className="absolute text-cyan-400 text-sm font-semibold tracking-wider uppercase"
         style={{
-          left: positions.kb.x,
-          top: positions.kb.y - positions.groupLabelOffset - 15,
+          left: positions.toolsMidpoint.x,
+          top: positions.kb.y - positions.groupLabelOffset - 35,
+          transform: "translateX(-50%)",
         }}
       >
         Tools
@@ -712,12 +695,12 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
         </div>
       </div>
 
-      {/* Invisible midpoint between tools for beam targeting */}
+      {/* Invisible point at tools left edge for beam targeting */}
       <div
         ref={toolsMidpointRef}
         className="absolute w-1 h-1"
         style={{
-          left: positions.toolsMidpoint.x,
+          left: positions.toolsMidpoint.x - 55, // Positioned at left edge of tools
           top: positions.toolsMidpoint.y,
           transform: "translateY(-50%)",
         }}
