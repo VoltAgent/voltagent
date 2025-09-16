@@ -1,5 +1,3 @@
-"use client";
-
 import {
   BookOpenIcon,
   BugAntIcon,
@@ -90,12 +88,11 @@ function NodeCard({
     <div
       ref={refProp}
       className={clsx(
-        "relative px-3 py-2.5 rounded-lg border-1 border-dashed transition-all duration-300",
+        "relative px-3 py-2.5 rounded-lg border-1 border-dashed transition-shadow duration-300",
         "flex items-center gap-2.5 min-w-[140px] select-none",
         styles.border,
         styles.bg,
         styles.glow,
-        "hover:scale-[1.02]",
       )}
     >
       {/* Status indicator */}
@@ -103,7 +100,7 @@ function NodeCard({
         <div
           className={clsx(
             "absolute -top-1 -right-1 w-2 h-2 rounded-full",
-            status === "processing" ? "bg-yellow-400 animate-pulse" : "bg-green-400",
+            status === "processing" ? "bg-yellow-400" : "bg-green-400",
           )}
         />
       )}
@@ -136,6 +133,8 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
   const billingRightRef = useRef<HTMLDivElement>(null);
   const accountRightRef = useRef<HTMLDivElement>(null);
   const bugRightRef = useRef<HTMLDivElement>(null);
+  // Right edge ref for supervisor
+  const supervisorRightRef = useRef<HTMLDivElement>(null);
 
   const [animationStep, setAnimationStep] = useState(0);
   const [memorySyncActive, setMemorySyncActive] = useState(false);
@@ -150,24 +149,61 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
     memory: "idle",
   });
 
+  // Dynamic anchor offsets for Supervisor <-> Memory beam (attach to edges)
+  const [supMemAnchors, setSupMemAnchors] = useState<{ supBottom: number; memTop: number }>({
+    supBottom: 22,
+    memTop: -22,
+  });
+
+  // Container size for responsive, evenly spaced X positions
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const update = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setContainerSize({ width: rect.width, height: rect.height });
+
+      // Recalculate Supervisor/Memory anchor offsets based on actual node heights
+      if (supervisorRef.current && memoryRef.current) {
+        const supRect = supervisorRef.current.getBoundingClientRect();
+        const memRect = memoryRef.current.getBoundingClientRect();
+        const supBottom = Math.max(0, Math.round(supRect.height / 2) - 2);
+        const memTop = -Math.max(0, Math.round(memRect.height / 2) - 2);
+        setSupMemAnchors({ supBottom, memTop });
+      }
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   // Layout constants - equal spacing between all node groups to fill width
-  const layout = {
-    // Center line for User and Supervisor
-    centerY: isMobile ? 180 : 200,
+  const layout = useMemo(() => {
+    const w = Math.max(containerSize.width, 720); // minimum width to avoid overlap
+    const h = containerSize.height || (isMobile ? 360 : 460);
+    // Ensure centers never push cards outside: half card ~110 (desktop), ~90 (mobile)
+    const halfNode = isMobile ? 90 : 110;
+    const sidePadding = Math.max(halfNode + 16, 40);
+    const columns = 4; // User | Supervisor | Agents | Tools
+    const step = (w - sidePadding * 2) / (columns - 1);
 
-    // X positions - evenly distributed across the full width
-    userX: isMobile ? 20 : 40, // Near left edge
-    supervisorX: isMobile ? 150 : 280, // 1/4 of width
-    agentsX: isMobile ? 300 : 520, // Center-right
-    toolsX: isMobile ? 450 : 760, // Near right edge
-
-    // Memory position (centered under supervisor)
-    memoryGap: 150,
-
-    // Vertical spacing
-    agentSpacing: 70,
-    groupLabelOffset: 40, // Offset for group labels above nodes
-  };
+    return {
+      centerY: Math.round(h / 2),
+      userX: sidePadding + step * 0,
+      supervisorX: sidePadding + step * 1,
+      agentsX: sidePadding + step * 2,
+      toolsX: sidePadding + step * 3,
+      memoryGap: 150,
+      agentSpacing: 80,
+      groupLabelOffset: 40,
+    };
+  }, [containerSize.width, containerSize.height, isMobile]);
 
   // Calculate positions
   const positions = useMemo(() => {
@@ -196,8 +232,8 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
       bug: { x: agentsX, y: centerY + agentSpacing },
 
       // Far right - Tools column (2 tools vertically centered)
-      kb: { x: toolsX, y: centerY - 35 },
-      crm: { x: toolsX, y: centerY + 35 },
+      kb: { x: toolsX, y: centerY - 40 },
+      crm: { x: toolsX, y: centerY + 40 },
 
       // Midpoint between tools for beam targeting
       toolsMidpoint: { x: toolsX, y: centerY },
@@ -219,6 +255,12 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
       width?: number;
       curvature?: number;
       reverse?: boolean;
+      pathType?: "curved" | "angular" | "stepped";
+      startYOffset?: number;
+      endYOffset?: number;
+      particleDuration?: number;
+      particleSpeed?: number;
+      particleCountOverride?: number;
     }> = [];
 
     switch (animationStep) {
@@ -232,55 +274,111 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
           { from: supervisorRef, to: bugRef, curvature: 20 },
         );
         break;
-      case 3: // All Agents converge and go to Tools
-        // Three beams from agents converge at midpoint
-        beams.push({ from: billingRightRef, to: agentsMidpointRef, curvature: -15 });
-        beams.push({ from: accountRightRef, to: agentsMidpointRef, curvature: 0 });
-        beams.push({ from: bugRightRef, to: agentsMidpointRef, curvature: 15 });
-        // Single beam from convergence to tools
-        beams.push({ from: agentsMidpointRef, to: toolsMidpointRef, curvature: 0 });
-        break;
-      case 4: // All agents -> Supervisor (return)
+      case 3: // Agents converge -> Tools inner gap (curved, single pass)
+        // Converge three agent beams to midpoint
         beams.push(
-          { from: billingRef, to: supervisorRef, curvature: -20 },
-          { from: accountRef, to: supervisorRef, curvature: 0 },
-          { from: bugRef, to: supervisorRef, curvature: 20 },
+          {
+            from: billingRightRef,
+            to: agentsMidpointRef,
+            curvature: -15,
+            pathType: "curved",
+            color: "#06b6d4",
+            particleDuration: 2.5,
+            particleSpeed: 2.5,
+          },
+          {
+            from: accountRightRef,
+            to: agentsMidpointRef,
+            curvature: 0,
+            pathType: "curved",
+            color: "#06b6d4",
+            particleDuration: 2.5,
+            particleSpeed: 2.5,
+          },
+          {
+            from: bugRightRef,
+            to: agentsMidpointRef,
+            curvature: 15,
+            pathType: "curved",
+            color: "#06b6d4",
+            particleDuration: 2.5,
+            particleSpeed: 2.5,
+          },
         );
+        // Single merged beam from midpoint to tools inner edge
+        beams.push({
+          from: agentsMidpointRef,
+          to: toolsMidpointRef,
+          curvature: 0,
+          pathType: "curved",
+          color: "#06b6d4",
+          particleDuration: 2.5,
+          particleSpeed: 2.5,
+        });
         break;
-      case 5: // Supervisor -> Memory
-        beams.push({ from: supervisorRef, to: memoryRef, color: "#9333ea", curvature: 0 });
+      case 4: // Return: Tools inner gap -> middle agent right edge, then to Supervisor right edge (single merged route)
+        beams.push({
+          from: toolsMidpointRef,
+          to: accountRightRef,
+          curvature: 0,
+          pathType: "curved",
+          color: "#06b6d4",
+          particleDuration: 2.5,
+          particleSpeed: 2.5,
+        });
+        // Continue from middle agent to Supervisor right edge anchor
+        beams.push({
+          from: accountRightRef,
+          to: supervisorRightRef,
+          curvature: 0,
+          pathType: "curved",
+          particleDuration: 2.5,
+          particleSpeed: 2.5,
+        });
         break;
-      case 6: // Supervisor -> User (final response)
+      case 5: // Supervisor -> User (final response)
         beams.push({ from: supervisorRef, to: userRef, curvature: 0 });
         break;
     }
 
-    // Add continuous bidirectional memory sync beams (always active after step 2)
-    if (memorySyncActive && animationStep >= 2 && animationStep < 6) {
-      // Supervisor to Memory
-      beams.push({
-        from: supervisorRef,
-        to: memoryRef,
-        color: "#9333ea",
-        curvature: -15,
-        width: 1,
-      });
-      // Memory to Supervisor (simultaneous)
-      beams.push({
-        from: memoryRef,
-        to: supervisorRef,
-        color: "#a855f7",
-        curvature: 15,
-        width: 1,
-      });
+    // Add continuous bidirectional memory sync beams (only when memorySyncActive) using memory color
+    if (memorySyncActive) {
+      beams.push(
+        {
+          from: supervisorRef,
+          to: memoryRef,
+          color: "#a855f7",
+          pathType: "curved",
+          curvature: 0,
+          width: 2,
+          startYOffset: supMemAnchors.supBottom,
+          endYOffset: supMemAnchors.memTop,
+          particleDuration: 0,
+          particleSpeed: 2.5,
+          particleCountOverride: 2,
+        },
+        {
+          from: memoryRef,
+          to: supervisorRef,
+          color: "#a855f7",
+          pathType: "curved",
+          curvature: 0,
+          width: 2,
+          startYOffset: supMemAnchors.memTop,
+          endYOffset: supMemAnchors.supBottom,
+          particleDuration: 0,
+          particleSpeed: 2.5,
+          particleCountOverride: 2,
+        },
+      );
     }
 
     return beams;
-  }, [animationStep, memorySyncActive]);
+  }, [animationStep, memorySyncActive, supMemAnchors]);
 
-  // Enable memory sync when animation reaches step 2
+  // Enable memory sync after User->Supervisor completes (step 2) and disable when Supervisor->User starts (step 5)
   useEffect(() => {
-    if (animationStep >= 2 && animationStep < 6) {
+    if (animationStep >= 2 && animationStep < 5) {
       setMemorySyncActive(true);
     } else {
       setMemorySyncActive(false);
@@ -348,21 +446,16 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
       setAnimationStep(4);
       await new Promise((r) => setTimeout(r, 1500));
 
-      // Step 5: Supervisor -> Memory
+      // Step 5: Supervisor -> User (final response) and conclude tools' active effect
       setNodeStates((prev) => ({
         ...prev,
-        memory: "active",
-      }));
-      setAnimationStep(5);
-      await new Promise((r) => setTimeout(r, 1000));
-
-      // Step 6: Supervisor -> User (final response)
-      setNodeStates((prev) => ({
-        ...prev,
+        supervisor: "idle",
         memory: "idle",
+        kb: "idle",
+        crm: "idle",
         user: "active",
       }));
-      setAnimationStep(6);
+      setAnimationStep(5);
       await new Promise((r) => setTimeout(r, 1500));
 
       // Loop
@@ -377,7 +470,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
     <div
       ref={containerRef}
       className={clsx(
-        "relative w-full h-[500px] md:h-[550px] overflow-x-auto overflow-y-hidden",
+        "relative w-full h-[500px] md:h-[550px] overflow-x-hidden overflow-y-hidden px-4 md:px-8",
         "bg-gradient-to-br from-gray-950 via-gray-900 to-black rounded-xl",
         className,
       )}
@@ -403,7 +496,11 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
       {/* Nodes */}
       <div
         className="absolute"
-        style={{ left: positions.user.x, top: positions.user.y, transform: "translate(0, -50%)" }}
+        style={{
+          left: positions.user.x,
+          top: positions.user.y,
+          transform: "translate(-50%, -50%)",
+        }}
       >
         <NodeCard
           label="User"
@@ -420,22 +517,33 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
         style={{
           left: positions.supervisor.x,
           top: positions.supervisor.y,
-          transform: "translateY(-50%)",
+          transform: "translate(-50%, -50%)",
         }}
       >
-        <NodeCard
-          label="Supervisor"
-          sublabel="Customer Support System"
-          icon={CpuChipIcon}
-          refProp={supervisorRef}
-          variant="supervisor"
-          status={nodeStates.supervisor}
-        />
+        <div className="relative">
+          <NodeCard
+            label="Supervisor"
+            sublabel="Customer Support System"
+            icon={CpuChipIcon}
+            refProp={supervisorRef}
+            variant="supervisor"
+            status={nodeStates.supervisor}
+          />
+          <div
+            ref={supervisorRightRef}
+            className="absolute w-1 h-1"
+            style={{ right: 0, top: "50%", transform: "translateY(-50%)" }}
+          />
+        </div>
       </div>
 
       <div
         className="absolute"
-        style={{ left: positions.memory.x, top: positions.memory.y, transform: "translateY(-50%)" }}
+        style={{
+          left: positions.memory.x,
+          top: positions.memory.y,
+          transform: "translate(-50%, -50%)",
+        }}
       >
         <NodeCard
           label="Conversation Memory"
@@ -464,7 +572,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
         style={{
           left: positions.billing.x,
           top: positions.billing.y,
-          transform: "translateY(-50%)",
+          transform: "translate(-50%, -50%)",
         }}
       >
         <div className="relative">
@@ -480,7 +588,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
           <div
             ref={billingRightRef}
             className="absolute w-1 h-1"
-            style={{ right: -70, top: "50%", transform: "translateY(-50%)" }}
+            style={{ right: 0, top: "50%", transform: "translateY(-50%)" }}
           />
         </div>
       </div>
@@ -498,7 +606,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
 
       <div
         className="absolute"
-        style={{ left: positions.kb.x, top: positions.kb.y, transform: "translateY(-50%)" }}
+        style={{ left: positions.kb.x, top: positions.kb.y, transform: "translate(-50%, -50%)" }}
       >
         <NodeCard
           label="KB Search"
@@ -515,7 +623,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
         style={{
           left: positions.account.x,
           top: positions.account.y,
-          transform: "translateY(-50%)",
+          transform: "translate(-50%, -50%)",
         }}
       >
         <div className="relative">
@@ -531,14 +639,14 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
           <div
             ref={accountRightRef}
             className="absolute w-1 h-1"
-            style={{ right: -70, top: "50%", transform: "translateY(-50%)" }}
+            style={{ right: 0, top: "50%", transform: "translateY(-50%)" }}
           />
         </div>
       </div>
 
       <div
         className="absolute"
-        style={{ left: positions.crm.x, top: positions.crm.y, transform: "translateY(-50%)" }}
+        style={{ left: positions.crm.x, top: positions.crm.y, transform: "translate(-50%, -50%)" }}
       >
         <NodeCard
           label="CRM"
@@ -552,7 +660,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
 
       <div
         className="absolute"
-        style={{ left: positions.bug.x, top: positions.bug.y, transform: "translateY(-50%)" }}
+        style={{ left: positions.bug.x, top: positions.bug.y, transform: "translate(-50%, -50%)" }}
       >
         <div className="relative">
           <NodeCard
@@ -567,7 +675,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
           <div
             ref={bugRightRef}
             className="absolute w-1 h-1"
-            style={{ right: -70, top: "50%", transform: "translateY(-50%)" }}
+            style={{ right: 0, top: "50%", transform: "translateY(-50%)" }}
           />
         </div>
       </div>
@@ -595,51 +703,9 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
       />
 
       {/* Animated Beams */}
-      {activeBeams.map((beam) => {
-        // Create unique key based on beam properties
-        const fromNode =
-          beam.from === userRef
-            ? "user"
-            : beam.from === supervisorRef
-              ? "supervisor"
-              : beam.from === billingRef
-                ? "billing"
-                : beam.from === billingRightRef
-                  ? "billingR"
-                  : beam.from === accountRef
-                    ? "account"
-                    : beam.from === accountRightRef
-                      ? "accountR"
-                      : beam.from === bugRef
-                        ? "bug"
-                        : beam.from === bugRightRef
-                          ? "bugR"
-                          : beam.from === memoryRef
-                            ? "memory"
-                            : beam.from === agentsMidpointRef
-                              ? "agentsMid"
-                              : beam.from === toolsMidpointRef
-                                ? "toolsMid"
-                                : "unknown";
-        const toNode =
-          beam.to === userRef
-            ? "user"
-            : beam.to === supervisorRef
-              ? "supervisor"
-              : beam.to === billingRef
-                ? "billing"
-                : beam.to === accountRef
-                  ? "account"
-                  : beam.to === bugRef
-                    ? "bug"
-                    : beam.to === memoryRef
-                      ? "memory"
-                      : beam.to === agentsMidpointRef
-                        ? "agentsMid"
-                        : beam.to === toolsMidpointRef
-                          ? "toolsMid"
-                          : "unknown";
-        const beamKey = `${fromNode}-to-${toNode}-${beam.color || "default"}`;
+      {activeBeams.map((beam, index) => {
+        // Simple key generation using index and color
+        const beamKey = `beam-${index}-${beam.color || "default"}`;
         return (
           <AnimatedBeam
             key={beamKey}
@@ -648,18 +714,20 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
             toRef={beam.to}
             pathColor={beam.color ? `${beam.color}30` : "rgba(0, 217, 146, 0.2)"}
             pathWidth={beam.width || 2}
-            pathType="angular"
+            pathType={beam.pathType || "angular"}
             curvature={beam.curvature || 0}
             showParticles={true}
             particleColor={beam.color || "#00d992"}
-            particleSize={beam.color === "#9333ea" || beam.color === "#a855f7" ? 2 : 3}
-            particleCount={beam.color === "#9333ea" || beam.color === "#a855f7" ? 4 : 2}
-            particleSpeed={beam.color === "#9333ea" || beam.color === "#a855f7" ? 2.5 : 1.5}
+            particleSize={3}
+            particleCount={beam.particleCountOverride ?? 2}
+            particleSpeed={beam.particleSpeed ?? 2.5}
             particleDirection={beam.reverse ? "backward" : "forward"}
-            duration={beam.color === "#9333ea" || beam.color === "#a855f7" ? 2.5 : 1.5}
-            particleDuration={beam.color === "#9333ea" || beam.color === "#a855f7" ? 2.5 : 1.5}
+            duration={beam.particleSpeed ?? 2.5}
+            particleDuration={beam.particleDuration ?? beam.particleSpeed ?? 2.5}
             showPath={true}
             showGradient={false}
+            startYOffset={beam.startYOffset ?? 0}
+            endYOffset={beam.endYOffset ?? 0}
           />
         );
       })}
