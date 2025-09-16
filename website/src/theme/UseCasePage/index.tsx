@@ -27,7 +27,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { DotPattern } from "@site/src/components/ui/dot-pattern";
 import { UseCaseAnimation } from "@site/src/components/usecase-animation";
-import { UseCaseSupervisorFlow } from "@site/src/components/usecase-supervisor-flow";
+import { ResponsiveSupervisorFlow } from "@site/src/components/usecase-supervisor-flow/responsive-wrapper";
 import Layout from "@theme/Layout";
 import Mermaid from "@theme/Mermaid";
 import { motion } from "framer-motion";
@@ -251,7 +251,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   User request flows to the Supervisor, then to specialized agents and tools
                   (KB/CRM), with results written to memory and returned to the user.
                 </p>
-                <UseCaseSupervisorFlow slug={useCase.slug} />
+                <ResponsiveSupervisorFlow slug={useCase.slug} />
               </motion.div>
             </Container>
           </Section>

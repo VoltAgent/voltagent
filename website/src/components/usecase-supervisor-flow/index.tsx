@@ -265,13 +265,38 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
 
     switch (animationStep) {
       case 1: // User -> Supervisor
-        beams.push({ from: userRef, to: supervisorRef, curvature: 0 });
+        beams.push({
+          from: userRef,
+          to: supervisorRef,
+          curvature: 0,
+          particleDuration: 2.5,
+          particleSpeed: 2.5,
+          pathType: "curved",
+        });
         break;
       case 2: // Supervisor -> All 3 Agents (parallel)
         beams.push(
-          { from: supervisorRef, to: billingRef, curvature: -20 },
-          { from: supervisorRef, to: accountRef, curvature: 0 },
-          { from: supervisorRef, to: bugRef, curvature: 20 },
+          {
+            from: supervisorRef,
+            to: billingRef,
+            curvature: -20,
+            particleDuration: 2.5,
+            particleSpeed: 2.5,
+          },
+          {
+            from: supervisorRef,
+            to: accountRef,
+            curvature: 0,
+            particleDuration: 2.5,
+            particleSpeed: 2.5,
+          },
+          {
+            from: supervisorRef,
+            to: bugRef,
+            curvature: 20,
+            particleDuration: 2.5,
+            particleSpeed: 2.5,
+          },
         );
         break;
       case 3: // Agents converge -> Tools inner gap (curved, single pass)
@@ -281,7 +306,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
             from: billingRightRef,
             to: agentsMidpointRef,
             curvature: -15,
-            pathType: "curved",
+            pathType: "angular",
             color: "#06b6d4",
             particleDuration: 2.5,
             particleSpeed: 2.5,
@@ -290,7 +315,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
             from: accountRightRef,
             to: agentsMidpointRef,
             curvature: 0,
-            pathType: "curved",
+            pathType: "angular",
             color: "#06b6d4",
             particleDuration: 2.5,
             particleSpeed: 2.5,
@@ -299,7 +324,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
             from: bugRightRef,
             to: agentsMidpointRef,
             curvature: 15,
-            pathType: "curved",
+            pathType: "angular",
             color: "#06b6d4",
             particleDuration: 2.5,
             particleSpeed: 2.5,
@@ -310,7 +335,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
           from: agentsMidpointRef,
           to: toolsMidpointRef,
           curvature: 0,
-          pathType: "curved",
+          pathType: "angular",
           color: "#06b6d4",
           particleDuration: 2.5,
           particleSpeed: 2.5,
@@ -337,7 +362,14 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
         });
         break;
       case 5: // Supervisor -> User (final response)
-        beams.push({ from: supervisorRef, to: userRef, curvature: 0 });
+        beams.push({
+          from: supervisorRef,
+          to: userRef,
+          curvature: 0,
+          particleDuration: 2.5,
+          particleSpeed: 2.5,
+          pathType: "curved",
+        });
         break;
     }
 
