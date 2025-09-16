@@ -1,5 +1,7 @@
 # @voltagent/postgres
 
+## 1.0.3
+
 ## 1.0.3-next.0
 
 ### Patch Changes

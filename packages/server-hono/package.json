@@ -1,14 +1,14 @@
 {
   "name": "@voltagent/server-hono",
   "description": "Hono server implementation for VoltAgent",
-  "version": "1.0.5-next.2",
+  "version": "1.0.5",
   "dependencies": {
     "@hono/node-server": "^1.14.0",
     "@hono/swagger-ui": "^0.5.1",
     "@hono/zod-openapi": "^0.19.10",
     "@hono/zod-openapi-v4": "npm:@hono/zod-openapi@^1.1.0",
     "@voltagent/internal": "^0.0.10",
-    "@voltagent/server-core": "^1.0.7-next.1",
+    "@voltagent/server-core": "^1.0.7",
     "hono": "^4.7.7"
   },
   "devDependencies": {

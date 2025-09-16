@@ -1,5 +1,7 @@
 # @voltagent/langfuse-exporter
 
+## 1.1.1
+
 ## 1.1.1-next.0
 
 ### Patch Changes

@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/docs-mcp",
   "description": "VoltAgent docs-mcp - MCP Docs ",
-  "version": "1.0.2-next.1",
+  "version": "1.0.2",
   "bin": {
     "voltagent-docs-mcp": "dist/index.js"
   },

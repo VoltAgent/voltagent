@@ -1,5 +1,14 @@
 # with-jwt-auth
 
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc), [`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc), [`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc)]:
+  - @voltagent/server-hono@1.0.5
+  - @voltagent/core@1.1.7
+  - @voltagent/libsql@1.0.3
+
 ## 1.0.2-next.0
 
 ### Patch Changes
