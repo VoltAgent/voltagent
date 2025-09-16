@@ -21,6 +21,7 @@ import type {
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal";
 import { type Logger, createPinoLogger } from "@voltagent/logger";
 import type { UIMessage } from "ai";
 
@@ -484,8 +485,8 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
           message.id,
           userId,
           message.role,
-          JSON.stringify(message.parts),
-          message.metadata ? JSON.stringify(message.metadata) : null,
+          safeStringify(message.parts),
+          message.metadata ? safeStringify(message.metadata) : null,
           2, // format_version
           new Date().toISOString(),
         ],
@@ -523,8 +524,8 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
             message.id,
             userId,
             message.role,
-            JSON.stringify(message.parts),
-            message.metadata ? JSON.stringify(message.metadata) : null,
+            safeStringify(message.parts),
+            message.metadata ? safeStringify(message.metadata) : null,
             2, // format_version
             now,
           ],
@@ -707,7 +708,7 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
           input.resourceId,
           input.userId,
           input.title,
-          JSON.stringify(input.metadata || {}),
+          safeStringify(input.metadata || {}),
           now,
           now,
         ],
@@ -869,7 +870,7 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
 
     if (updates.metadata !== undefined) {
       fieldsToUpdate.push("metadata = ?");
-      args.push(JSON.stringify(updates.metadata));
+      args.push(safeStringify(updates.metadata));
     }
 
     args.push(id); // WHERE clause
@@ -979,13 +980,13 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
 
         await this.client.execute({
           sql: `UPDATE ${usersTable} SET metadata = ?, updated_at = ? WHERE id = ?`,
-          args: [JSON.stringify(metadata), now, params.userId],
+          args: [safeStringify(metadata), now, params.userId],
         });
       } else {
         // User doesn't exist, create new record
         await this.client.execute({
           sql: `INSERT INTO ${usersTable} (id, metadata, created_at, updated_at) VALUES (?, ?, ?, ?)`,
-          args: [params.userId, JSON.stringify({ workingMemory: params.content }), now, now],
+          args: [params.userId, safeStringify({ workingMemory: params.content }), now, now],
         });
       }
     }
@@ -1025,7 +1026,7 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
           delete metadata.workingMemory;
           await this.client.execute({
             sql: `UPDATE ${usersTable} SET metadata = ?, updated_at = ? WHERE id = ?`,
-            args: [JSON.stringify(metadata), new Date().toISOString(), params.userId],
+            args: [safeStringify(metadata), new Date().toISOString(), params.userId],
           });
         }
       }
@@ -1083,10 +1084,10 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
         state.workflowId,
         state.workflowName,
         state.status,
-        state.suspension ? JSON.stringify(state.suspension) : null,
+        state.suspension ? safeStringify(state.suspension) : null,
         state.userId || null,
         state.conversationId || null,
-        state.metadata ? JSON.stringify(state.metadata) : null,
+        state.metadata ? safeStringify(state.metadata) : null,
         state.createdAt.toISOString(),
         state.updatedAt.toISOString(),
       ],

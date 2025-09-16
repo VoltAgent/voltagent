@@ -6,6 +6,7 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import { WebSocketEventEmitter, WebSocketLogProcessor } from "@voltagent/core";
 import type { ObservabilityLogRecord, ObservabilityWebSocketEvent } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal";
 import type { IWebSocket } from "../types/websocket";
 
 // Store WebSocket connections with their filter criteria
@@ -44,7 +45,7 @@ export function setupObservabilityListeners(): void {
 
   // Subscribe to WebSocket events from OpenTelemetry spans
   emitter.on("websocket:event", (event: ObservabilityWebSocketEvent) => {
-    const message = JSON.stringify({
+    const message = safeStringify({
       type: "OBSERVABILITY_EVENT",
       success: true,
       data: event,
@@ -84,7 +85,7 @@ export function setupObservabilityListeners(): void {
 
   // Subscribe to log events from WebSocketLogProcessor
   logUnsubscribe = WebSocketLogProcessor.subscribe((logRecord: ObservabilityLogRecord) => {
-    const message = JSON.stringify({
+    const message = safeStringify({
       type: "OBSERVABILITY_LOG",
       success: true,
       data: logRecord,
@@ -155,7 +156,7 @@ export function handleObservabilityConnection(
 
   // Send initial connection success message with filter info
   ws.send(
-    JSON.stringify({
+    safeStringify({
       type: "CONNECTION_SUCCESS",
       success: true,
       data: {
@@ -177,12 +178,12 @@ export function handleObservabilityConnection(
       // Handle different message types
       switch (msg.type) {
         case "PING":
-          ws.send(JSON.stringify({ type: "PONG", success: true }));
+          ws.send(safeStringify({ type: "PONG", success: true }));
           break;
         case "SUBSCRIBE":
           // Could implement trace/span filtering here
           ws.send(
-            JSON.stringify({
+            safeStringify({
               type: "SUBSCRIPTION_SUCCESS",
               success: true,
               data: { subscribed: true },
@@ -192,7 +193,7 @@ export function handleObservabilityConnection(
       }
     } catch (_) {
       ws.send(
-        JSON.stringify({
+        safeStringify({
           type: "ERROR",
           success: false,
           error: "Invalid message format",

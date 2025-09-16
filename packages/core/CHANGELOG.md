@@ -1,5 +1,24 @@
 # @voltagent/core
 
+## 1.1.5
+
+### Patch Changes
+
+- [#562](https://github.com/VoltAgent/voltagent/pull/562) [`2886b7a`](https://github.com/VoltAgent/voltagent/commit/2886b7aab5bda296cebc0b8b2bd56d684324d799) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: using `safeStringify` instead of `JSON.stringify`
+
+- [#561](https://github.com/VoltAgent/voltagent/pull/561) [`ca6a8ec`](https://github.com/VoltAgent/voltagent/commit/ca6a8ec9e45de4c262864e8819f45b1a83679592) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - chore: updated the underlying AgentError creation and types for improved upstream types & internal usage
+
+## 1.1.4
+
+### Patch Changes
+
+- [#559](https://github.com/VoltAgent/voltagent/pull/559) [`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add deps that the core types rely on, i.e. `type-fest` or they are not installed by default by package managers
+
+- [`a0d9e84`](https://github.com/VoltAgent/voltagent/commit/a0d9e8404fe3e2cebfc146cd4622b607bd16b462) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency version
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
 ## 1.1.3
 
 ### Patch Changes

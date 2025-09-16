@@ -4,7 +4,7 @@
 
 import type { IncomingMessage } from "node:http";
 import type { ServerProviderDeps } from "@voltagent/core";
-import type { LogFilter, Logger } from "@voltagent/internal";
+import { type LogFilter, type Logger, safeStringify } from "@voltagent/internal";
 import type { IWebSocket } from "../types/websocket";
 import { LogStreamManager } from "./log-stream";
 import { handleObservabilityConnection } from "./observability-handler";
@@ -55,7 +55,7 @@ export async function handleWebSocketConnection(
 function handleTestConnection(ws: IWebSocket, logger: Logger): void {
   // Send a test message when connection is established
   ws.send(
-    JSON.stringify({
+    safeStringify({
       type: "CONNECTION_TEST",
       success: true,
       data: {
@@ -70,7 +70,7 @@ function handleTestConnection(ws: IWebSocket, logger: Logger): void {
       const data = JSON.parse(message.toString());
       // Echo the message back
       ws.send(
-        JSON.stringify({
+        safeStringify({
           type: "ECHO",
           success: true,
           data,

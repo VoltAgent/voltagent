@@ -1,7 +1,8 @@
 import type { UIMessage } from "ai";
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../agent";
-import type { AbortError, AgentOperationOutput, OperationContext, VoltAgentError } from "../types";
+import type { AbortError, VoltAgentError } from "../errors";
+import type { AgentOperationOutput, OperationContext } from "../types";
 
 // Argument Object Interfaces (old API restored, adapted for AI SDK types)
 export interface OnStartHookArgs {

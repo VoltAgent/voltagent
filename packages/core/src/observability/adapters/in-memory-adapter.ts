@@ -5,6 +5,7 @@
  * Provides fast access with automatic cleanup of old spans.
  */
 
+import { safeStringify } from "@voltagent/internal";
 import type {
   LogFilter,
   ObservabilityLogRecord,
@@ -326,7 +327,7 @@ export class InMemoryStorageAdapter implements ObservabilityStorageAdapter {
     if (filter.bodyContains) {
       const searchStr = filter.bodyContains;
       results = results.filter((log) => {
-        const bodyStr = typeof log.body === "string" ? log.body : JSON.stringify(log.body);
+        const bodyStr = typeof log.body === "string" ? log.body : safeStringify(log.body);
         return bodyStr.includes(searchStr);
       });
     }

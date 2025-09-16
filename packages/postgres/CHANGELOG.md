@@ -1,5 +1,18 @@
 # @voltagent/postgres
 
+## 1.0.2
+
+### Patch Changes
+
+- [#562](https://github.com/VoltAgent/voltagent/pull/562) [`2886b7a`](https://github.com/VoltAgent/voltagent/commit/2886b7aab5bda296cebc0b8b2bd56d684324d799) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: using `safeStringify` instead of `JSON.stringify`
+
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
 ## 1.0.0
 
 ### Major Changes

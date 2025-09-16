@@ -1,6 +1,6 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import { convertUsage } from "@voltagent/core";
-import type { Logger } from "@voltagent/internal";
+import { type Logger, safeStringify } from "@voltagent/internal";
 import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
@@ -117,7 +117,7 @@ export async function handleStreamText(
     const agent = deps.agentRegistry.getAgent(agentId);
     if (!agent) {
       return new Response(
-        JSON.stringify({
+        safeStringify({
           error: `Agent ${agentId} not found`,
           message: `Agent ${agentId} not found`,
         }),
@@ -145,13 +145,13 @@ export async function handleStreamText(
         try {
           for await (const part of fullStream) {
             // Send each part as a JSON-encoded SSE event
-            const data = `data: ${JSON.stringify(part)}\n\n`;
+            const data = `data: ${safeStringify(part)}\n\n`;
             controller.enqueue(encoder.encode(data));
           }
         } catch (error) {
           logger.error("Error in fullStream iteration", { error });
           // Send error event
-          const errorData = `data: ${JSON.stringify({ type: "error", error: error instanceof Error ? error.message : "Unknown error" })}\n\n`;
+          const errorData = `data: ${safeStringify({ type: "error", error: error instanceof Error ? error.message : "Unknown error" })}\n\n`;
           controller.enqueue(encoder.encode(errorData));
         } finally {
           controller.close();
@@ -173,7 +173,7 @@ export async function handleStreamText(
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
     return new Response(
-      JSON.stringify({
+      safeStringify({
         error: errorMessage,
         message: errorMessage,
       }),
@@ -202,7 +202,7 @@ export async function handleChatStream(
     const agent = deps.agentRegistry.getAgent(agentId);
     if (!agent) {
       return new Response(
-        JSON.stringify({
+        safeStringify({
           error: `Agent ${agentId} not found`,
           message: `Agent ${agentId} not found`,
         }),
@@ -231,7 +231,7 @@ export async function handleChatStream(
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
     return new Response(
-      JSON.stringify({
+      safeStringify({
         error: errorMessage,
         message: errorMessage,
       }),
@@ -303,7 +303,7 @@ export async function handleStreamObject(
     const agent = deps.agentRegistry.getAgent(agentId);
     if (!agent) {
       return new Response(
-        JSON.stringify({
+        safeStringify({
           error: `Agent ${agentId} not found`,
           message: `Agent ${agentId} not found`,
         }),
@@ -334,7 +334,7 @@ export async function handleStreamObject(
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
     return new Response(
-      JSON.stringify({
+      safeStringify({
         error: errorMessage,
         message: errorMessage,
       }),

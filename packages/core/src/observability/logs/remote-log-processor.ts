@@ -178,19 +178,10 @@ export class RemoteLogProcessor implements LogRecordProcessor {
           this.actualProcessor.onEmit(log);
         }
 
-        this.logger?.debug(`[RemoteLogExport] Processed ${this.pendingLogs.length} pending logs`);
-
         this.pendingLogs = [];
       }
 
       this.initialized = true;
-
-      this.logger?.debug("[RemoteLogExport] Successfully initialized remote log export", {
-        url: `${baseUrl}/api/public/otel/v1/logs`,
-        maxQueueSize: this.config.maxQueueSize ?? 2048,
-        maxExportBatchSize: this.config.maxExportBatchSize ?? 512,
-        scheduledDelayMillis: this.config.scheduledDelayMillis ?? 5000,
-      });
 
       return true;
     } catch (error) {

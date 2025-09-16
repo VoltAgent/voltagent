@@ -1,6 +1,6 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import { zodSchemaToJsonUI } from "@voltagent/core";
-import type { Logger } from "@voltagent/internal";
+import { type Logger, safeStringify } from "@voltagent/internal";
 import type { ApiResponse, ErrorResponse } from "../types";
 import { processWorkflowOptions } from "../utils/options";
 
@@ -285,7 +285,7 @@ export async function handleStreamWorkflow(
 
           // Stream events to client
           for await (const event of workflowStream) {
-            const sseEvent = `data: ${JSON.stringify(event)}\n\n`;
+            const sseEvent = `data: ${safeStringify(event)}\n\n`;
             controller.enqueue(encoder.encode(sseEvent));
           }
 
@@ -302,7 +302,7 @@ export async function handleStreamWorkflow(
             endAt: endAt instanceof Date ? endAt.toISOString() : endAt,
           };
 
-          const sseFinalEvent = `data: ${JSON.stringify(finalEvent)}\n\n`;
+          const sseFinalEvent = `data: ${safeStringify(finalEvent)}\n\n`;
           controller.enqueue(encoder.encode(sseFinalEvent));
 
           // Clean up active execution
@@ -317,7 +317,7 @@ export async function handleStreamWorkflow(
             type: "error",
             error: error instanceof Error ? error.message : "Stream failed",
           };
-          const sseError = `data: ${JSON.stringify(errorEvent)}\n\n`;
+          const sseError = `data: ${safeStringify(errorEvent)}\n\n`;
           controller.enqueue(encoder.encode(sseError));
           controller.close();
         }

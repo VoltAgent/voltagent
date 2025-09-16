@@ -1,3 +1,4 @@
+import { safeStringify } from "@voltagent/internal";
 import type { LanguageModelUsage } from "ai";
 import { MockLanguageModelV2 } from "ai/test";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -19,7 +20,7 @@ function createMockAgentWithUsage(usage: LanguageModelUsage, responseSchema?: Re
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(responseSchema || { result: "mocked" }),
+            text: safeStringify(responseSchema || { result: "mocked" }),
           },
         ],
         warnings: [],
@@ -322,7 +323,7 @@ describe("workflow usage tracking", () => {
           content: [
             {
               type: "text" as const,
-              text: JSON.stringify({ result: "no usage" }),
+              text: safeStringify({ result: "no usage" }),
             },
           ],
           warnings: [],
@@ -380,7 +381,7 @@ describe("workflow usage tracking", () => {
           content: [
             {
               type: "text" as const,
-              text: JSON.stringify({ result: "partial" }),
+              text: safeStringify({ result: "partial" }),
             },
           ],
           warnings: [],

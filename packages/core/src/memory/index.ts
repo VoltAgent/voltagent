@@ -2,7 +2,7 @@
  * Memory - Clean architecture for conversation memory and state management
  */
 
-import type { Logger } from "@voltagent/internal";
+import { type Logger, safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import type { z } from "zod";
 import { EmbeddingAdapterNotConfiguredError, VectorAdapterNotConfiguredError } from "./errors";
@@ -564,10 +564,14 @@ export class Memory {
       if (!parsed.success) {
         throw new Error(`Invalid working memory format: ${parsed.error.message}`);
       }
-      contentString = JSON.stringify(parsed.data, null, 2);
+      contentString = safeStringify(parsed.data, {
+        indentation: 2,
+      });
     } else if (typeof params.content === "object") {
       // No schema but object provided, convert to JSON
-      contentString = JSON.stringify(params.content, null, 2);
+      contentString = safeStringify(params.content, {
+        indentation: 2,
+      });
     } else {
       // String content (markdown or free-form)
       contentString = params.content as string;
