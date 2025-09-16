@@ -124,14 +124,14 @@ export function UseCaseAnimation({
   // Memoize config so effect doesn't restart on every render
   const config = useMemo(() => getUseCaseConfig(slug), [slug]);
   const nodeIds = useMemo(() => {
-    if (slug === "customer-support-agent" && businessTopics && systemCapabilities) {
+    if (businessTopics && systemCapabilities) {
       const ids = [];
       businessTopics.forEach((_, i) => ids.push(`business-${i}`));
       systemCapabilities.forEach((_, i) => ids.push(`system-${i}`));
       return ids;
     }
     return config.nodes.map((n) => n.id);
-  }, [config, slug, businessTopics, systemCapabilities]);
+  }, [config, businessTopics, systemCapabilities]);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Initialize refs for each node
@@ -252,15 +252,66 @@ export function UseCaseAnimation({
 
       {/* Peripheral Nodes in circular layout */}
       {(() => {
-        // For customer-support-agent, use data from JSON
-        if (slug === "customer-support-agent" && businessTopics && systemCapabilities) {
+        // Use data from JSON when available
+        if (businessTopics && systemCapabilities) {
           const iconMap = {
+            // Business topics
             Billing: CreditCardIcon,
-            "Account question": QuestionMarkCircleIcon,
-            Bug: BugAntIcon,
+            "Account Questions": QuestionMarkCircleIcon,
+            "Bug Reports": BugAntIcon,
+            "Lead Qualification": UserCircleIcon,
+            "Sales Research": BookOpenIcon,
+            Outreach: BoltIcon,
+            Invoicing: CreditCardIcon,
+            Expenses: CreditCardIcon,
+            Reporting: BookOpenIcon,
+            "Code Review": BugAntIcon,
+            "CI/CD": BoltIcon,
+            "On-Call Support": ExclamationTriangleIcon,
+            Campaigns: BoltIcon,
+            Content: BookOpenIcon,
+            Analytics: BookOpenIcon,
+            Contracts: BookOpenIcon,
+            Compliance: ExclamationTriangleIcon,
+            "Legal Review": BookOpenIcon,
+            Claims: CreditCardIcon,
+            Underwriting: BookOpenIcon,
+            "Policy Management": BookOpenIcon,
+            Maintenance: BoltIcon,
+            Monitoring: ExclamationTriangleIcon,
+            Safety: ExclamationTriangleIcon,
+            Tutoring: BookOpenIcon,
+            Advising: UserCircleIcon,
+            Administration: BookOpenIcon,
+            Permits: BookOpenIcon,
+            "Public Information": QuestionMarkCircleIcon,
+            Benefits: CreditCardIcon,
+            "API Docs": BookOpenIcon,
+            Changelogs: BookOpenIcon,
+            Tutorials: BookOpenIcon,
+            // System capabilities
             "Knowledge Base": BookOpenIcon,
             "CRM System": UserCircleIcon,
             Escalation: ExclamationTriangleIcon,
+            HRIS: UserCircleIcon,
+            "Policy Engine": ExclamationTriangleIcon,
+            "Enrichment APIs": BoltIcon,
+            "ERP/Accounting": CreditCardIcon,
+            Repos: BookOpenIcon,
+            "Issue Tracker": BugAntIcon,
+            "Observability Stack": ExclamationTriangleIcon,
+            "CRM/CDP": UserCircleIcon,
+            "Analytics Tools": BookOpenIcon,
+            "Content APIs": BookOpenIcon,
+            "Doc Systems": BookOpenIcon,
+            "Claims System": CreditCardIcon,
+            CRM: UserCircleIcon,
+            IoT: BoltIcon,
+            ERP: CreditCardIcon,
+            LMS: BookOpenIcon,
+            SIS: BookOpenIcon,
+            "Case Management": BookOpenIcon,
+            "Build System": BoltIcon,
           };
 
           // Create nodes from JSON data

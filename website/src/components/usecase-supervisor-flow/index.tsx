@@ -781,62 +781,7 @@ export function UseCaseSupervisorFlow({
         }}
       />
 
-      {/* Static beams - always visible paths */}
-      {/* User to Supervisor */}
-      <AnimatedBeam
-        containerRef={containerRef}
-        fromRef={userRef}
-        toRef={supervisorRef}
-        pathColor="rgba(0, 217, 146, 0.1)"
-        pathWidth={1}
-        showParticles={false}
-        showPath={true}
-        showGradient={false}
-      />
-
-      {/* Supervisor to Agents */}
-      {agents.map((agent) => (
-        <AnimatedBeam
-          key={`static-sup-${agent.id}`}
-          containerRef={containerRef}
-          fromRef={supervisorRef}
-          toRef={agentRefs.current[agent.id]}
-          pathColor="rgba(0, 217, 146, 0.1)"
-          pathWidth={1}
-          showParticles={false}
-          showPath={true}
-          showGradient={false}
-        />
-      ))}
-
-      {/* Agents to Tools midpoint */}
-      {agents.map((agent) => (
-        <AnimatedBeam
-          key={`static-agent-tool-${agent.id}`}
-          containerRef={containerRef}
-          fromRef={agentRightRefs.current[agent.id]}
-          toRef={toolsMidpointRef}
-          pathColor="rgba(6, 182, 212, 0.1)"
-          pathWidth={1}
-          showParticles={false}
-          showPath={true}
-          showGradient={false}
-        />
-      ))}
-
-      {/* Supervisor to Memory */}
-      <AnimatedBeam
-        containerRef={containerRef}
-        fromRef={supervisorRef}
-        toRef={memoryRef}
-        pathColor="rgba(147, 51, 234, 0.1)"
-        pathWidth={1}
-        showParticles={false}
-        showPath={true}
-        showGradient={false}
-        startYOffset={22}
-        endYOffset={-22}
-      />
+      {/* All paths are handled by animated beams during the animation sequence */}
 
       {/* Animated Beams */}
       {activeBeams.map((beam, index) => {
