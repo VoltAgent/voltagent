@@ -7,12 +7,21 @@
  *
  * - Zod v3: Uses @hono/zod-openapi (0.19.10)
  * - Zod v4: Uses @hono/zod-openapi-v4 (1.1.0+)
- *
- * For now, we're using the v3 compatible version (0.19.10) which supports
- * both Zod v3 and has loose compatibility with v4 (>=3.0.0)
  */
 
-// Re-export everything from the v3 compatible version
-// @hono/zod-openapi@0.19.10 has peerDeps: zod: '>=3.0.0' so it works with both v3 and v4
-export { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { z as zodBase } from "zod";
+
+// Detect Zod version by checking for toJSONSchema method (exists in v4, not in v3)
+const isZodV4 = "toJSONSchema" in zodBase;
+
+// Import both versions synchronously
+import * as v3Module from "@hono/zod-openapi";
+import * as v4Module from "@hono/zod-openapi-v4";
+
+// Select the appropriate module based on Zod version
+const selectedModule = isZodV4 ? v4Module : v3Module;
+
+export const OpenAPIHono = selectedModule.OpenAPIHono;
+export const createRoute = selectedModule.createRoute;
+export const z = selectedModule.z;
 export type { OpenAPIHono as OpenAPIHonoType } from "@hono/zod-openapi";

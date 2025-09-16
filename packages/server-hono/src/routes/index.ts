@@ -22,7 +22,7 @@ import {
   isErrorResponse,
   mapLogResponse,
 } from "@voltagent/server-core";
-import type { OpenAPIHono } from "../zod-openapi-compat";
+import type { OpenAPIHonoType } from "../zod-openapi-compat";
 import {
   chatRoute,
   executeWorkflowRoute,
@@ -41,7 +41,11 @@ import { getLogsRoute } from "./log.routes";
 /**
  * Register agent routes
  */
-export function registerAgentRoutes(app: OpenAPIHono, deps: ServerProviderDeps, logger: Logger) {
+export function registerAgentRoutes(
+  app: OpenAPIHonoType,
+  deps: ServerProviderDeps,
+  logger: Logger,
+) {
   // GET /agents - List all agents
   app.openapi(getAgentsRoute, async (c) => {
     const response = await handleGetAgents(deps, logger);
@@ -136,7 +140,11 @@ export function registerAgentRoutes(app: OpenAPIHono, deps: ServerProviderDeps, 
 /**
  * Register workflow routes
  */
-export function registerWorkflowRoutes(app: OpenAPIHono, deps: ServerProviderDeps, logger: Logger) {
+export function registerWorkflowRoutes(
+  app: OpenAPIHonoType,
+  deps: ServerProviderDeps,
+  logger: Logger,
+) {
   // GET /workflows - List all workflows
   app.openapi(getWorkflowsRoute, async (c) => {
     const response = await handleGetWorkflows(deps, logger);
@@ -227,7 +235,7 @@ export function registerWorkflowRoutes(app: OpenAPIHono, deps: ServerProviderDep
 /**
  * Register log routes
  */
-export function registerLogRoutes(app: OpenAPIHono, deps: ServerProviderDeps, logger: Logger) {
+export function registerLogRoutes(app: OpenAPIHonoType, deps: ServerProviderDeps, logger: Logger) {
   // GET /api/logs - Get logs with filters
   app.openapi(getLogsRoute, async (c) => {
     const query = c.req.query();
@@ -257,7 +265,11 @@ export function registerLogRoutes(app: OpenAPIHono, deps: ServerProviderDeps, lo
 /**
  * Register update routes
  */
-export function registerUpdateRoutes(app: OpenAPIHono, deps: ServerProviderDeps, logger: Logger) {
+export function registerUpdateRoutes(
+  app: OpenAPIHonoType,
+  deps: ServerProviderDeps,
+  logger: Logger,
+) {
   // GET /updates - Check for updates
   app.get("/updates", async (c) => {
     const response = await handleCheckUpdates(deps, logger);

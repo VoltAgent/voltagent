@@ -15,13 +15,13 @@ import {
   queryLogsHandler,
   setupObservabilityHandler,
 } from "@voltagent/server-core";
-import type { OpenAPIHono } from "../zod-openapi-compat";
+import type { OpenAPIHonoType } from "../zod-openapi-compat";
 
 /**
  * Register observability routes
  */
 export function registerObservabilityRoutes(
-  app: OpenAPIHono,
+  app: OpenAPIHonoType,
   deps: ServerProviderDeps,
   logger: Logger,
 ) {

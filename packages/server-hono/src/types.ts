@@ -1,5 +1,5 @@
 import type { AuthProvider } from "@voltagent/server-core";
-import type { OpenAPIHono } from "./zod-openapi-compat";
+import type { OpenAPIHonoType } from "./zod-openapi-compat";
 
 export interface HonoServerConfig {
   port?: number;
@@ -25,7 +25,7 @@ export interface HonoServerConfig {
    * }
    * ```
    */
-  configureApp?: (app: OpenAPIHono) => void | Promise<void>;
+  configureApp?: (app: OpenAPIHonoType) => void | Promise<void>;
 
   /**
    * Authentication provider for protecting agent/workflow execution endpoints

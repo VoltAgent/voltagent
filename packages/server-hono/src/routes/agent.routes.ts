@@ -1,8 +1,6 @@
 import {
   AGENT_ROUTES,
   AgentListSchema,
-  AgentParamsSchema,
-  AgentResponseSchema,
   ErrorSchema,
   ObjectRequestSchema,
   ObjectResponseSchema,
@@ -11,12 +9,9 @@ import {
   TextRequestSchema,
   TextResponseSchema,
   WORKFLOW_ROUTES,
-  WorkflowExecutionParamsSchema,
   WorkflowExecutionRequestSchema,
   WorkflowExecutionResponseSchema,
   WorkflowListSchema,
-  WorkflowParamsSchema,
-  WorkflowResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
   WorkflowStreamEventSchema,
@@ -90,10 +85,11 @@ export const textRoute = createRoute({
   method: AGENT_ROUTES.generateText.method,
   path: AGENT_ROUTES.generateText.path.replace(":id", "{id}"), // Convert path format
   request: {
-    params: AgentParamsSchema.extend({
-      id: AgentParamsSchema.shape.id.openapi({
+    params: z.object({
+      id: z.string().openapi({
         param: { name: "id", in: "path" },
         example: "my-agent-123",
+        description: "The ID of the agent",
       }),
     }),
     body: {
@@ -142,10 +138,11 @@ export const streamRoute = createRoute({
   method: AGENT_ROUTES.streamText.method,
   path: AGENT_ROUTES.streamText.path.replace(":id", "{id}"), // Convert path format
   request: {
-    params: AgentParamsSchema.extend({
-      id: AgentParamsSchema.shape.id.openapi({
+    params: z.object({
+      id: z.string().openapi({
         param: { name: "id", in: "path" },
         example: "my-agent-123",
+        description: "The ID of the agent",
       }),
     }),
     body: {
@@ -200,10 +197,11 @@ export const chatRoute = createRoute({
   method: AGENT_ROUTES.chatStream.method,
   path: AGENT_ROUTES.chatStream.path.replace(":id", "{id}"), // Convert path format
   request: {
-    params: AgentParamsSchema.extend({
-      id: AgentParamsSchema.shape.id.openapi({
+    params: z.object({
+      id: z.string().openapi({
         param: { name: "id", in: "path" },
         example: "my-agent-123",
+        description: "The ID of the agent",
       }),
     }),
     body: {
@@ -251,10 +249,11 @@ export const objectRoute = createRoute({
   method: AGENT_ROUTES.generateObject.method,
   path: AGENT_ROUTES.generateObject.path.replace(":id", "{id}"), // Convert path format
   request: {
-    params: AgentParamsSchema.extend({
-      id: AgentParamsSchema.shape.id.openapi({
+    params: z.object({
+      id: z.string().openapi({
         param: { name: "id", in: "path" },
         example: "my-agent-123",
+        description: "The ID of the agent",
       }),
     }),
     body: {
@@ -303,10 +302,11 @@ export const streamObjectRoute = createRoute({
   method: AGENT_ROUTES.streamObject.method,
   path: AGENT_ROUTES.streamObject.path.replace(":id", "{id}"), // Convert path format
   request: {
-    params: AgentParamsSchema.extend({
-      id: AgentParamsSchema.shape.id.openapi({
+    params: z.object({
+      id: z.string().openapi({
         param: { name: "id", in: "path" },
         example: "my-agent-123",
+        description: "The ID of the agent",
       }),
     }),
     body: {
@@ -391,10 +391,11 @@ export const streamWorkflowRoute = createRoute({
   method: WORKFLOW_ROUTES.streamWorkflow.method,
   path: WORKFLOW_ROUTES.streamWorkflow.path.replace(":id", "{id}"), // Convert path format
   request: {
-    params: WorkflowParamsSchema.extend({
-      id: WorkflowParamsSchema.shape.id.openapi({
+    params: z.object({
+      id: z.string().openapi({
         param: { name: "id", in: "path" },
         example: "my-workflow-123",
+        description: "The ID of the workflow",
       }),
     }),
     body: {
@@ -454,10 +455,11 @@ export const executeWorkflowRoute = createRoute({
   method: WORKFLOW_ROUTES.executeWorkflow.method,
   path: WORKFLOW_ROUTES.executeWorkflow.path.replace(":id", "{id}"), // Convert path format
   request: {
-    params: WorkflowParamsSchema.extend({
-      id: WorkflowParamsSchema.shape.id.openapi({
+    params: z.object({
+      id: z.string().openapi({
         param: { name: "id", in: "path" },
         example: "my-workflow-123",
+        description: "The ID of the workflow",
       }),
     }),
     body: {
@@ -511,14 +513,16 @@ export const suspendWorkflowRoute = createRoute({
     .replace(":id", "{id}")
     .replace(":executionId", "{executionId}"), // Convert path format
   request: {
-    params: WorkflowExecutionParamsSchema.extend({
-      id: WorkflowExecutionParamsSchema.shape.id.openapi({
+    params: z.object({
+      id: z.string().openapi({
         param: { name: "id", in: "path" },
         example: "my-workflow-123",
+        description: "The ID of the workflow",
       }),
-      executionId: WorkflowExecutionParamsSchema.shape.executionId.openapi({
+      executionId: z.string().openapi({
         param: { name: "executionId", in: "path" },
         example: "exec_1234567890_abc123",
+        description: "The ID of the execution to operate on",
       }),
     }),
     body: {
@@ -581,14 +585,16 @@ export const resumeWorkflowRoute = createRoute({
     .replace(":id", "{id}")
     .replace(":executionId", "{executionId}"), // Convert path format
   request: {
-    params: WorkflowExecutionParamsSchema.extend({
-      id: WorkflowExecutionParamsSchema.shape.id.openapi({
+    params: z.object({
+      id: z.string().openapi({
         param: { name: "id", in: "path" },
         example: "my-workflow-123",
+        description: "The ID of the workflow",
       }),
-      executionId: WorkflowExecutionParamsSchema.shape.executionId.openapi({
+      executionId: z.string().openapi({
         param: { name: "executionId", in: "path" },
         example: "exec_1234567890_abc123",
+        description: "The ID of the execution to operate on",
       }),
     }),
     body: {
