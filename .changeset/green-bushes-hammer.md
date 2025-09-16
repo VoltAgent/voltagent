@@ -16,7 +16,8 @@ VoltAgent now supports ai-sdk v5's experimental structured output features! You 
 ## Using Structured Output with `generateText`
 
 ```typescript
-import { Agent, Output } from "@voltagent/core";
+import { Agent } from "@voltagent/core";
+import { Output } from "ai";
 import { z } from "zod";
 
 // Define your schema
