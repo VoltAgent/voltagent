@@ -150,8 +150,7 @@ export function UseCaseAnimation({
     outbound: [],
   });
 
-  // Separate state for static paths that are always visible
-  const _staticPaths = nodeIds; // Static paths don't change, so no need for state
+  // Static paths are handled directly in render, no need for state
 
   // Center node pulse animation state
   const [centerPulse, setCenterPulse] = useState(false);
