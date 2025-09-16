@@ -150,7 +150,7 @@ dist
 .cursor/*
 !.cursor/rules/
 .cursor/rules/*
-!.cursor/rules/voltagent-*.mdc
+!.cursor/rules/agents.mdc
 
 # vite and vitest
 vite.config.*.timestamp*
@@ -164,7 +164,6 @@ vitest.config.*.timestamp*
 
 # claude
 .claude
-CLAUDE.md
 
 dev-debug.log
 node_modules/

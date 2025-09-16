@@ -24,6 +24,7 @@ import {
   type CallWarning,
   type FinishReason,
   type LanguageModelUsage,
+  type Output,
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
@@ -111,6 +112,7 @@ export interface StreamTextResultWithContext<
   readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
   readonly usage: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["usage"];
   readonly finishReason: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["finishReason"];
+  // Experimental partial output stream for streaming structured objects
   readonly experimental_partialOutputStream?: AIStreamTextResult<
     TOOLS,
     PARTIAL_OUTPUT
@@ -148,13 +150,13 @@ export interface StreamObjectResultWithContext<T> {
 /**
  * Extended GenerateTextResult that includes context
  */
-export interface GenerateTextResultWithContext<
+export type GenerateTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
   OUTPUT = any,
-> extends GenerateTextResult<TOOLS, OUTPUT> {
+> = GenerateTextResult<TOOLS, OUTPUT> & {
   // Additional context field
   context: Map<string | symbol, unknown>;
-}
+};
 
 /**
  * Extended GenerateObjectResult that includes context
@@ -209,6 +211,9 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
 
   // Provider-specific options
   providerOptions?: ProviderOptions;
+
+  // Experimental output (for structured generation)
+  experimental_output?: ReturnType<typeof Output.object> | ReturnType<typeof Output.text>;
 
   // === Inherited from AI SDK CallSettings ===
   // maxOutputTokens, temperature, topP, topK,
@@ -419,6 +424,7 @@ export class Agent {
           hooks,
           maxSteps: userMaxSteps,
           tools: userTools,
+          experimental_output,
           providerOptions,
           ...aiSDKOptions
         } = options || {};
@@ -434,6 +440,8 @@ export class Agent {
           stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
           // User overrides from AI SDK options
           ...aiSDKOptions,
+          // Experimental output if provided
+          experimental_output,
           // Provider-specific options
           providerOptions,
           // VoltAgent controlled (these should not be overridden)
@@ -589,6 +597,7 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
+          experimental_output,
           providerOptions,
           ...aiSDKOptions
         } = options || {};
@@ -604,6 +613,8 @@ export class Agent {
           stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
           // User overrides from AI SDK options
           ...aiSDKOptions,
+          // Experimental output if provided
+          experimental_output,
           // Provider-specific options
           providerOptions,
           // VoltAgent controlled (these should not be overridden)

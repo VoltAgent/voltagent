@@ -146,6 +146,61 @@ await agent.generateText([
 ]);
 ```
 
+#### Structured Output (Experimental)
+
+VoltAgent supports ai-sdk's experimental structured output features for type-safe responses:
+
+```ts
+import { Output } from "ai";
+import { z } from "zod";
+
+// Define your schema
+const RecipeSchema = z.object({
+  name: z.string(),
+  ingredients: z.array(z.string()),
+  steps: z.array(z.string()),
+  prepTime: z.number(),
+});
+
+// generateText returns the final structured output
+const result = await agent.generateText("Create a pasta recipe", {
+  experimental_output: Output.object({
+    schema: RecipeSchema,
+  }),
+});
+
+// Access the structured output
+console.log(result.experimental_output);
+
+// streamText uses experimental_partialOutputStream for streaming partial objects
+const stream = await agent.streamText("Create a detailed recipe", {
+  experimental_output: Output.object({
+    schema: RecipeSchema,
+  }),
+});
+
+// Stream partial objects as they're generated
+for await (const partial of stream.experimental_partialOutputStream ?? []) {
+  console.log(partial); // Partial recipe object that builds up over time
+}
+```
+
+You can also use `Output.text()` for constrained text generation:
+
+```ts
+// Generate text with specific constraints
+const result = await agent.generateText("Write a haiku about coding", {
+  experimental_output: Output.text({
+    maxLength: 100,
+    description: "A traditional haiku poem about programming",
+  }),
+});
+
+console.log(result.experimental_output); // The generated haiku text
+```
+
+> **Note:** `generateText` provides `experimental_output` with the final object, while `streamText` provides `experimental_partialOutputStream` for streaming partial objects.
+
 #### Enhanced Streaming with `fullStream`
 
 For more detailed streaming information including tool calls, reasoning steps, and completion status, you can use the `fullStream` property available in the response:
