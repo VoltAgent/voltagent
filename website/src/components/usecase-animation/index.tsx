@@ -121,6 +121,9 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
     outbound: [],
   });
 
+  // Separate state for static paths that are always visible
+  const staticPaths = nodeIds; // Static paths don't change, so no need for state
+
   // Center node pulse animation state
   const [centerPulse, setCenterPulse] = useState(false);
   // Store inbound paths per node to reuse exactly for outbound
@@ -145,14 +148,14 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
     const timers: NodeJS.Timeout[] = [];
 
     const runCycle = () => {
-      // Phase 1: Inbound beams (nodes to center)
+      // Phase 1: Start inbound particle animation
       setActiveBeams({ inbound: nodeIds, outbound: [] });
 
-      // Phase 2: When inbound ends, pulse and hold for a moment
+      // Phase 2: After inbound animation, pulse center
       const pulseTimer = setTimeout(() => {
         setCenterPulse(true);
 
-        // After hold, start outbound beams (keep inbound paths visible)
+        // After hold, start outbound particle animation
         const startOutboundTimer = setTimeout(() => {
           setActiveBeams({ inbound: nodeIds, outbound: nodeIds });
           setCenterPulse(false);
@@ -161,18 +164,21 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
       }, inboundDuration * 1000);
       timers.push(pulseTimer);
 
-      // Phase 3: Clear outbound and restart cycle
-      const clearTimer = setTimeout(
+      // Phase 3: After outbound completes, clear and restart
+      const restartTimer = setTimeout(
         () => {
+          // Clear all active beams to reset particle animations
           setActiveBeams({ inbound: [], outbound: [] });
-          const restartTimer = setTimeout(() => {
+
+          // Small delay before restarting the cycle
+          const delayedRestart = setTimeout(() => {
             runCycle();
           }, cycleDelay * 1000);
-          timers.push(restartTimer);
+          timers.push(delayedRestart);
         },
         (inboundDuration + holdDuration + outboundDuration) * 1000,
       );
-      timers.push(clearTimer);
+      timers.push(restartTimer);
     };
 
     runCycle();
@@ -243,6 +249,31 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
         );
       })}
 
+      {/* Static paths that are always visible */}
+      {staticPaths.map((nodeId) => {
+        const node = config.nodes.find((n) => n.id === nodeId);
+        if (!node || !nodeRefs.current[nodeId]?.current) return null;
+
+        return (
+          <AnimatedBeam
+            key={`static-${nodeId}`}
+            containerRef={containerRef}
+            fromRef={nodeRefs.current[nodeId]}
+            toRef={centerRef}
+            curvature={0}
+            pathColor="rgba(0, 217, 146, 0.15)"
+            pathWidth={2}
+            pathType="curved"
+            showParticles={false}
+            showPath={true}
+            showGradient={false}
+            onPathComputed={(d) => {
+              inboundPathsRef.current[nodeId] = d;
+            }}
+          />
+        );
+      })}
+
       {/* Animated Beams - Inbound (Nodes to Center) */}
       {activeBeams.inbound.map((nodeId) => {
         const node = config.nodes.find((n) => n.id === nodeId);
@@ -257,11 +288,11 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
             curvature={0}
             gradientStartColor="#00d992"
             gradientStopColor="#00d992"
-            pathColor="rgba(0, 217, 146, 0.2)"
+            pathColor="rgba(0, 217, 146, 0)"
             pathWidth={2}
             pathType="curved"
             showParticles={true}
-            showPath={true}
+            showPath={false}
             showGradient={false}
             particleSize={3}
             particleSpeed={inboundDuration}
@@ -271,9 +302,6 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
             duration={inboundDuration}
             delay={0}
             particleDuration={inboundDuration}
-            onPathComputed={(d) => {
-              inboundPathsRef.current[nodeId] = d;
-            }}
           />
         );
       })}
@@ -295,7 +323,7 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
             curvature={80}
             gradientStartColor="#00d992"
             gradientStopColor="#00d992"
-            pathColor="rgba(0, 217, 146, 0.35)"
+            pathColor="rgba(0, 217, 146, 0)"
             pathWidth={3}
             pathType="curved"
             showParticles={true}
@@ -304,9 +332,9 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
             particleColor="#00d992"
             particleCount={2}
             particleDirection="forward"
-            showPath={true}
-            showGradient={true}
-            animateDraw={true}
+            showPath={false}
+            showGradient={false}
+            animateDraw={false}
             duration={outboundDuration}
             delay={0}
             particleDuration={outboundDuration}
