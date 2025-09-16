@@ -127,7 +127,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -164,7 +164,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -195,7 +195,7 @@ importers:
         specifier: ^0.1.7-next.0
         version: 0.1.7-next.0(@ai-sdk/provider-utils@3.0.9)(@voltagent/logger@packages+logger)(ai@5.0.19)(zod@3.25.76)
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
     devDependencies:
       '@types/node':
@@ -229,7 +229,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -266,7 +266,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -312,7 +312,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -352,7 +352,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -389,7 +389,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -426,7 +426,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -463,7 +463,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -500,7 +500,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -629,7 +629,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -666,7 +666,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -703,7 +703,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -740,7 +740,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -820,7 +820,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -857,7 +857,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -903,7 +903,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -967,7 +967,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1007,7 +1007,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1059,7 +1059,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1108,7 +1108,7 @@ importers:
         specifier: ^1.0.3-next.0
         version: link:../../packages/postgres
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1148,7 +1148,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1188,7 +1188,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1222,7 +1222,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1259,7 +1259,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       zod:
         specifier: ^3.25.76
@@ -1293,7 +1293,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1330,7 +1330,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1367,7 +1367,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       '@voltagent/supabase':
         specifier: ^1.0.2-next.0
@@ -1407,7 +1407,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1444,7 +1444,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1481,7 +1481,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1518,7 +1518,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1555,7 +1555,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1592,7 +1592,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1647,7 +1647,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^1.0.1-next.0
@@ -1687,7 +1687,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^1.0.1-next.0
@@ -1733,7 +1733,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^1.0.1-next.0
@@ -1779,7 +1779,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1816,7 +1816,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1853,7 +1853,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1890,7 +1890,7 @@ importers:
         specifier: ^1.0.1
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5-next.1
+        specifier: ^1.0.5-next.2
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
