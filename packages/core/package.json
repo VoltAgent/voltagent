@@ -51,10 +51,10 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "zod": "^3.25.0 || ^4.0.0",
     "@ai-sdk/provider-utils": "3.x",
     "@voltagent/logger": "1.x",
-    "ai": "5.x"
+    "ai": "5.x",
+    "zod": "^3.25.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
     "@voltagent/logger": {
