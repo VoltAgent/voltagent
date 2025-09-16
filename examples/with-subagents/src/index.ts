@@ -5,9 +5,10 @@ import {
   InMemoryVectorAdapter,
   Memory,
   VoltAgent,
+  VoltAgentObservability,
   createTool,
 } from "@voltagent/core";
-import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -77,4 +78,7 @@ new VoltAgent({
   logger,
   // Use the new honoServer factory with configuration
   server: honoServer(),
+  observability: new VoltAgentObservability({
+    storage: new LibSQLObservabilityAdapter(),
+  }),
 });

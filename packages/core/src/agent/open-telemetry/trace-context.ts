@@ -52,10 +52,27 @@ export class AgentTraceContext {
     this.tracer = observability.getTracer();
 
     // Store common attributes once - these will be inherited by all child spans
+    const isSubagent = !!options.parentSpan;
+
     this.commonAttributes = {
-      "entity.id": options.agentId,
-      "entity.type": "agent",
-      "entity.name": options.agentName,
+      // Root entity attributes - only for root agents
+      ...(!isSubagent && {
+        "entity.id": options.agentId,
+        "entity.type": "agent",
+        "entity.name": options.agentName,
+      }),
+
+      // Subagent attributes - with different namespace
+      ...(isSubagent && {
+        "subagent.id": options.agentId,
+        "subagent.name": options.agentName,
+        "subagent.type": "agent",
+        // Keep parent's entity info for filtering - this ensures traces are associated with root agent
+        "entity.id": options.parentAgentId,
+        "entity.type": "agent",
+      }),
+
+      // Common attributes
       ...(options.userId && { "user.id": options.userId }),
       ...(options.conversationId && { "conversation.id": options.conversationId }),
       ...(options.parentAgentId && { "agent.parent.id": options.parentAgentId }),
@@ -79,13 +96,21 @@ export class AgentTraceContext {
       spanAttributes.input = inputStr;
     }
 
+    // If we have a parent span, this agent is being called as a subagent
+    // Create a more descriptive span name to show the hierarchy clearly
+    const spanName = options.parentSpan
+      ? `subagent:${options.agentName || operationName}`
+      : operationName;
+
     this.rootSpan = this.tracer.startSpan(
-      operationName,
+      spanName,
       {
         kind: SpanKind.INTERNAL,
         attributes: {
           ...spanAttributes,
           "agent.state": "running", // Track initial agent state
+          // Mark as subagent if we have a parent span
+          ...(options.parentSpan && { "agent.is_subagent": true }),
         },
       },
       parentContext,
