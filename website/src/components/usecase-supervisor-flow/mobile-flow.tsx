@@ -422,14 +422,6 @@ export function MobileFlow({ slug, className }: MobileFlowProps) {
       >
         <Background color="#1e293b" gap={20} size={1} />
       </ReactFlow>
-
-      {/* Group labels */}
-      <div className="absolute top-[30px] right-[160px] text-[9px] text-emerald-400 font-semibold uppercase tracking-wider">
-        Sub-Agents
-      </div>
-      <div className="absolute top-[30px] right-[50px] text-[9px] text-cyan-400 font-semibold uppercase tracking-wider">
-        Tools
-      </div>
     </div>
   );
 }
