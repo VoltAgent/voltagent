@@ -2405,7 +2405,7 @@ importers:
   packages/server-core:
     dependencies:
       '@voltagent/core':
-        specifier: ^1.1.0
+        specifier: ^1.x
         version: link:../core
       '@voltagent/internal':
         specifier: ^0.0.10
@@ -2463,7 +2463,7 @@ importers:
         specifier: npm:@hono/zod-openapi@^1.1.0
         version: /@hono/zod-openapi@1.1.0(hono@4.9.1)(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.1.0
+        specifier: ^1.x
         version: link:../core
       '@voltagent/internal':
         specifier: ^0.0.10

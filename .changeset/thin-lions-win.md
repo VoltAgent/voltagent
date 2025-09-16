@@ -1,6 +1,6 @@
 ---
-"@voltagent/core": patch
-"@voltagent/server-core": patch
+"@voltagent/core": minor
+"@voltagent/server-core": minor
 "@voltagent/server-hono": patch
 "@voltagent/docs-mcp": patch
 ---
