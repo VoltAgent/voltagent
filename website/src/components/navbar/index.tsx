@@ -2,16 +2,16 @@ import Link from "@docusaurus/Link";
 import { useLocation } from "@docusaurus/router";
 import {
   BookOpenIcon,
+  BriefcaseIcon,
   ChatBubbleLeftRightIcon,
-  CodeBracketSquareIcon,
+  CogIcon,
   CommandLineIcon,
   ComputerDesktopIcon,
-  MagnifyingGlassIcon,
+  CurrencyDollarIcon,
   PencilSquareIcon,
   ServerIcon,
   ShoppingCartIcon,
   UserGroupIcon,
-  UserIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon, ChevronDownIcon, StarIcon } from "@heroicons/react/24/solid";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
@@ -19,6 +19,7 @@ import React, { useState } from "react";
 import { DiscordLogo } from "../../../static/img/logos/discord";
 import { GitHubLogo } from "../../../static/img/logos/github";
 import { useGitHubStars } from "../../contexts/GitHubStarsContext";
+import useCasesData from "../usecases/usecases.json";
 import styles from "./styles.module.css";
 
 export default function Navbar() {
@@ -27,6 +28,15 @@ export default function Navbar() {
 
   const location = useLocation();
   const { stars, recent_stargazers, loading: isLoadingStars, error: starsError } = useGitHubStars();
+
+  // Icon mapping for use cases
+  const useCaseIcons = {
+    "hr-agent": UserGroupIcon,
+    "customer-support-agent": ChatBubbleLeftRightIcon,
+    "sales-teams": BriefcaseIcon,
+    "finance-agent": CurrencyDollarIcon,
+    "development-agent": CogIcon,
+  };
 
   const _isActive = (path: string) => {
     const currentPath = location.pathname.endsWith("/")
@@ -129,120 +139,36 @@ export default function Navbar() {
                 <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-emerald-400" />
               </div>
               <div className="absolute left-0 top-full mt-2 bg-gray-900 border border-solid border-gray-800 rounded-md shadow-xl w-[360px] max-h-[500px] overflow-y-auto opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
-                <Link to="/usecases/ai-research-assistant" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <MagnifyingGlassIcon className="w-5 h-5 mr-3 text-[#00d992] flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">
-                        AI Research Assistant
+                {useCasesData.map((useCase, index) => {
+                  const Icon = useCaseIcons[useCase.slug] || BoltIcon;
+                  const isFirst = index === 0;
+                  const isLast = index === useCasesData.length - 1;
+                  return (
+                    <Link
+                      key={useCase.slug}
+                      to={`/usecases/${useCase.slug}`}
+                      className="no-underline"
+                    >
+                      <div
+                        className={`p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 ${
+                          isFirst ? "rounded-t-md" : ""
+                        } ${
+                          isLast ? "rounded-b-md" : ""
+                        } border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400`}
+                      >
+                        <Icon className="w-5 h-5 mr-3 text-[#00d992] flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="text-sm font-['Inter'] font-semibold">
+                            {useCase.title}
+                          </div>
+                          <div className="text-xs text-gray-400 font-['Inter'] font-normal">
+                            {useCase.navDescription || "Automate with intelligent agents"}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        Automate research with intelligent agents
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/customer-support-agent" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <ChatBubbleLeftRightIcon className="w-5 h-5 mr-3 text-[#00d992] flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">
-                        Customer Support Agent
-                      </div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        Automate support with intelligent agents
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/code-review-assistant" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <CodeBracketSquareIcon className="w-5 h-5 mr-3 text-[#00d992] flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">
-                        Code Review Assistant
-                      </div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        Automated code reviews with AI insights
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/sales-lead-qualification" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <UserGroupIcon className="w-5 h-5 mr-3 text-[#00d992] flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">
-                        Sales Lead Qualifier
-                      </div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        Qualify and route leads automatically
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/manufacturing-ops" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">Manufacturing Ops</div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        AI agents for smart manufacturing
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/government-public-sector" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">Government AI</div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        AI agents for public services
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/higher-education" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">Higher Education</div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        AI agents for universities
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/documentation-teams" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">
-                        Documentation Teams
-                      </div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        Automate technical writing
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/product-teams" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">Product Teams</div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        Accelerate product insights
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/usecases/marketing-teams" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <div className="min-w-0">
-                      <div className="text-sm font-['Inter'] font-semibold">Marketing Teams</div>
-                      <div className="text-xs text-gray-400 font-['Inter'] font-normal">
-                        Personalize at scale
-                      </div>
-                    </div>
-                  </div>
-                </Link>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
@@ -516,58 +442,36 @@ export default function Navbar() {
               <ChevronDownIcon className="w-5 h-5 ml-1" />
             </button>
             <div id="mobile-usecases-menu" className="hidden mt-4 mb-2">
-              <Link to="/usecases/ai-research-assistant" className="no-underline">
-                <div className="p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center rounded-t-md transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                  <MagnifyingGlassIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
-                  <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      AI Research Assistant
+              {useCasesData.map((useCase, index) => {
+                const Icon = useCaseIcons[useCase.slug] || BoltIcon;
+                const isFirst = index === 0;
+                const isLast = index === useCasesData.length - 1;
+                return (
+                  <Link
+                    key={useCase.slug}
+                    to={`/usecases/${useCase.slug}`}
+                    className="no-underline"
+                  >
+                    <div
+                      className={`p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center ${
+                        isFirst ? "rounded-t-md" : ""
+                      } ${
+                        isLast ? "rounded-b-md" : ""
+                      } transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400`}
+                    >
+                      <Icon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
+                      <div className="min-w-0 font-['Inter']">
+                        <div className="text-sm font-semibold whitespace-nowrap">
+                          {useCase.title}
+                        </div>
+                        <div className="text-xs text-gray-400 whitespace-nowrap">
+                          {useCase.hero?.subtitle || "Automate with intelligent agents"}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-400 whitespace-nowrap">
-                      Automate research with intelligent agents
-                    </div>
-                  </div>
-                </div>
-              </Link>
-              <Link to="/usecases/customer-support-agent" className="no-underline">
-                <div className="p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                  <ChatBubbleLeftRightIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
-                  <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      Customer Support Agent
-                    </div>
-                    <div className="text-xs text-gray-400 whitespace-nowrap">
-                      Automate support with intelligent agents
-                    </div>
-                  </div>
-                </div>
-              </Link>
-              <Link to="/usecases/code-review-assistant" className="no-underline">
-                <div className="p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                  <CodeBracketSquareIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
-                  <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      Code Review Assistant
-                    </div>
-                    <div className="text-xs text-gray-400 whitespace-nowrap">
-                      Automated code reviews with AI insights
-                    </div>
-                  </div>
-                </div>
-              </Link>
-              <Link to="/usecases/sales-lead-qualification" className="no-underline">
-                <div className="p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center rounded-b-md transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                  <UserGroupIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
-                  <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      Sales Lead Qualifier
-                    </div>
-                    <div className="text-xs text-gray-400 whitespace-nowrap">
-                      Qualify and route leads automatically
-                    </div>
-                  </div>
-                </div>
-              </Link>
+                  </Link>
+                );
+              })}
             </div>
           </div>
           <div className={styles.mobileNavLink}>

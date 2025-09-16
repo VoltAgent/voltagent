@@ -1,6 +1,14 @@
 "use client";
 
-import { BoltIcon } from "@heroicons/react/24/outline";
+import {
+  BoltIcon,
+  BookOpenIcon,
+  BugAntIcon,
+  CreditCardIcon,
+  ExclamationTriangleIcon,
+  QuestionMarkCircleIcon,
+  UserCircleIcon,
+} from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import clsx from "clsx";
 import React, { forwardRef, useRef, useState, useEffect, useMemo } from "react";
@@ -97,9 +105,16 @@ Node.displayName = "Node";
 interface UseCaseAnimationProps {
   slug: string;
   className?: string;
+  businessTopics?: string[];
+  systemCapabilities?: string[];
 }
 
-export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
+export function UseCaseAnimation({
+  slug,
+  className,
+  businessTopics,
+  systemCapabilities,
+}: UseCaseAnimationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const centerRef = useRef<HTMLDivElement>(null);
 
@@ -108,13 +123,21 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
 
   // Memoize config so effect doesn't restart on every render
   const config = useMemo(() => getUseCaseConfig(slug), [slug]);
-  const nodeIds = useMemo(() => config.nodes.map((n) => n.id), [config]);
+  const nodeIds = useMemo(() => {
+    if (slug === "customer-support-agent" && businessTopics && systemCapabilities) {
+      const ids = [];
+      businessTopics.forEach((_, i) => ids.push(`business-${i}`));
+      systemCapabilities.forEach((_, i) => ids.push(`system-${i}`));
+      return ids;
+    }
+    return config.nodes.map((n) => n.id);
+  }, [config, slug, businessTopics, systemCapabilities]);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Initialize refs for each node
-  config.nodes.forEach((node) => {
-    if (!nodeRefs.current[node.id]) {
-      nodeRefs.current[node.id] = React.createRef<HTMLDivElement>();
+  nodeIds.forEach((nodeId) => {
+    if (!nodeRefs.current[nodeId]) {
+      nodeRefs.current[nodeId] = React.createRef<HTMLDivElement>();
     }
   });
 
@@ -128,7 +151,7 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
   });
 
   // Separate state for static paths that are always visible
-  const staticPaths = nodeIds; // Static paths don't change, so no need for state
+  const _staticPaths = nodeIds; // Static paths don't change, so no need for state
 
   // Center node pulse animation state
   const [centerPulse, setCenterPulse] = useState(false);
@@ -228,37 +251,87 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
       </div>
 
       {/* Peripheral Nodes in circular layout */}
-      {config.nodes.map((node, index) => {
-        const Icon = node.icon;
-        const angle = (2 * Math.PI * index) / config.nodes.length - Math.PI / 2;
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
+      {(() => {
+        // For customer-support-agent, use data from JSON
+        if (slug === "customer-support-agent" && businessTopics && systemCapabilities) {
+          const iconMap = {
+            Billing: CreditCardIcon,
+            "Account question": QuestionMarkCircleIcon,
+            Bug: BugAntIcon,
+            "Knowledge Base": BookOpenIcon,
+            "CRM System": UserCircleIcon,
+            Escalation: ExclamationTriangleIcon,
+          };
 
-        return (
-          <div
-            key={node.id}
-            className="absolute"
-            style={{
-              transform: `translate(${x}px, ${y}px)`,
-              zIndex: 10,
-            }}
-          >
-            <Node
-              ref={nodeRefs.current[node.id]}
-              label={node.label}
-              description={node.description}
-              nodeId={node.id}
+          // Create nodes from JSON data
+          const nodes = [
+            ...businessTopics.map((topic, i) => ({
+              id: `business-${i}`,
+              label: topic,
+              icon: iconMap[topic] || QuestionMarkCircleIcon,
+            })),
+            ...systemCapabilities.map((capability, i) => ({
+              id: `system-${i}`,
+              label: capability,
+              icon: iconMap[capability] || BookOpenIcon,
+            })),
+          ];
+
+          return nodes.map((node, index) => {
+            const Icon = node.icon;
+            const angle = (2 * Math.PI * index) / nodes.length - Math.PI / 2;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+
+            return (
+              <div
+                key={node.id}
+                className="absolute"
+                style={{
+                  transform: `translate(${x}px, ${y}px)`,
+                  zIndex: 10,
+                }}
+              >
+                <Node ref={nodeRefs.current[node.id]} label={node.label} nodeId={node.id}>
+                  <Icon className="h-4 w-4 text-[#00d992]" />
+                </Node>
+              </div>
+            );
+          });
+        }
+
+        // Default: use config for other cases
+        return config.nodes.map((node, index) => {
+          const Icon = node.icon;
+          const angle = (2 * Math.PI * index) / config.nodes.length - Math.PI / 2;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+
+          return (
+            <div
+              key={node.id}
+              className="absolute"
+              style={{
+                transform: `translate(${x}px, ${y}px)`,
+                zIndex: 10,
+              }}
             >
-              <Icon className="h-4 w-4 text-[#00d992]" />
-            </Node>
-          </div>
-        );
-      })}
+              <Node
+                ref={nodeRefs.current[node.id]}
+                label={node.label}
+                description={node.description}
+                nodeId={node.id}
+              >
+                <Icon className="h-4 w-4 text-[#00d992]" />
+              </Node>
+            </div>
+          );
+        });
+      })()}
 
       {/* Static paths that are always visible */}
-      {staticPaths.map((nodeId) => {
-        const node = config.nodes.find((n) => n.id === nodeId);
-        if (!node || !nodeRefs.current[nodeId]?.current) return null;
+      {nodeIds.map((nodeId) => {
+        if (!nodeRefs.current[nodeId]?.current) return null;
 
         return (
           <AnimatedBeam
@@ -282,8 +355,7 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
 
       {/* Animated Beams - Inbound (Nodes to Center) */}
       {activeBeams.inbound.map((nodeId) => {
-        const node = config.nodes.find((n) => n.id === nodeId);
-        if (!node || !nodeRefs.current[nodeId]?.current) return null;
+        if (!nodeRefs.current[nodeId]?.current) return null;
 
         return (
           <AnimatedBeam
@@ -314,8 +386,7 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
 
       {/* Animated Beams - Outbound (Center to Nodes) */}
       {activeBeams.outbound.map((nodeId) => {
-        const node = config.nodes.find((n) => n.id === nodeId);
-        if (!node || !nodeRefs.current[nodeId]?.current) return null;
+        if (!nodeRefs.current[nodeId]?.current) return null;
 
         const inboundD = inboundPathsRef.current[nodeId];
         const reversedD = inboundD ? reverseQuadraticPath(inboundD) : undefined;

@@ -9,12 +9,28 @@ const MobileFlow = lazy(() =>
   import("./mobile-flow").then((module) => ({ default: module.MobileFlow })),
 );
 
+interface AgentNode {
+  id: string;
+  label: string;
+  sublabel: string;
+  icon: string;
+}
+
+interface ToolNode {
+  id: string;
+  label: string;
+  sublabel: string;
+  icon: string;
+}
+
 interface ResponsiveFlowProps {
   slug: string;
   className?: string;
+  agents?: AgentNode[];
+  tools?: ToolNode[];
 }
 
-export function ResponsiveSupervisorFlow({ slug, className }: ResponsiveFlowProps) {
+export function ResponsiveSupervisorFlow({ slug, className, agents, tools }: ResponsiveFlowProps) {
   const isMobile = useMediaQuery("(max-width: 1023px)");
 
   // Loading fallback
@@ -29,9 +45,9 @@ export function ResponsiveSupervisorFlow({ slug, className }: ResponsiveFlowProp
   return (
     <Suspense fallback={<LoadingFallback />}>
       {isMobile ? (
-        <MobileFlow slug={slug} className={className} />
+        <MobileFlow slug={slug} className={className} agents={agents} tools={tools} />
       ) : (
-        <UseCaseSupervisorFlow slug={slug} className={className} />
+        <UseCaseSupervisorFlow className={className} agents={agents} tools={tools} />
       )}
     </Suspense>
   );

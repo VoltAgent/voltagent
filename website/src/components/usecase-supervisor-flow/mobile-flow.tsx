@@ -1,11 +1,26 @@
 import {
+  ArrowPathIcon,
+  ArrowTrendingUpIcon,
+  BanknotesIcon,
   BookOpenIcon,
+  BriefcaseIcon,
   BugAntIcon,
   BuildingLibraryIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentCheckIcon,
   ClipboardDocumentListIcon,
+  CodeBracketIcon,
+  CodeBracketSquareIcon,
   CpuChipIcon,
   CreditCardIcon,
+  CurrencyDollarIcon,
+  DocumentTextIcon,
   QuestionMarkCircleIcon,
+  ReceiptPercentIcon,
+  ServerStackIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
 import {
@@ -25,9 +40,25 @@ import clsx from "clsx";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 
+interface AgentNode {
+  id: string;
+  label: string;
+  sublabel: string;
+  icon: string;
+}
+
+interface ToolNode {
+  id: string;
+  label: string;
+  sublabel: string;
+  icon: string;
+}
+
 interface MobileFlowProps {
   slug: string;
   className?: string;
+  agents?: AgentNode[];
+  tools?: ToolNode[];
 }
 
 // Node styles optimized for mobile
@@ -233,8 +264,103 @@ const createEdge = (
   targetHandle,
 });
 
-export function MobileFlow({ slug, className }: MobileFlowProps) {
-  const [nodes, setNodes] = useNodesState(createInitialNodes());
+// Icon mapping
+const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+  ArrowPathIcon,
+  ArrowTrendingUpIcon,
+  BanknotesIcon,
+  BookOpenIcon,
+  BriefcaseIcon,
+  BugAntIcon,
+  BuildingLibraryIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentCheckIcon,
+  ClipboardDocumentListIcon,
+  CodeBracketIcon,
+  CodeBracketSquareIcon,
+  CpuChipIcon,
+  CreditCardIcon,
+  CurrencyDollarIcon,
+  DocumentTextIcon,
+  QuestionMarkCircleIcon,
+  ReceiptPercentIcon,
+  ServerStackIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+  UserIcon,
+};
+
+const getIcon = (iconName: string) => iconMap[iconName] || QuestionMarkCircleIcon;
+
+export function MobileFlow({ slug, className, agents = [], tools = [] }: MobileFlowProps) {
+  // Create dynamic initial nodes based on agents and tools
+  const createDynamicInitialNodes = (): Node[] => {
+    const staticNodes: Node[] = [
+      createNode(
+        "user",
+        mobilePositions.user,
+        <div className="flex flex-col items-center gap-0.5">
+          <UserIcon className="w-4 h-4" />
+          <span className="text-[10px]">User</span>
+        </div>,
+        nodeStyles.user,
+      ),
+      createNode(
+        "supervisor",
+        mobilePositions.supervisor,
+        <div className="flex flex-col items-center gap-0.5">
+          <CpuChipIcon className="w-4 h-4" />
+          <span className="text-[10px]">Supervisor</span>
+          <span className="text-[8px] opacity-70">System</span>
+        </div>,
+        nodeStyles.supervisor,
+      ),
+      createNode(
+        "memory",
+        mobilePositions.memory,
+        <div className="flex flex-col items-center gap-0.5">
+          <ClipboardDocumentListIcon className="w-4 h-4" />
+          <span className="text-[10px]">Memory</span>
+        </div>,
+        nodeStyles.memory,
+      ),
+    ];
+
+    // Add dynamic agent nodes
+    const agentNodes = agents.map((agent, index) => {
+      const Icon = getIcon(agent.icon);
+      const y = 110 + index * 40; // Vertical spacing
+      return createNode(
+        agent.id,
+        { x: 340, y },
+        <div className="flex items-center gap-1">
+          <Icon className="w-3 h-3" />
+          <span className="text-[9px]">{agent.label}</span>
+        </div>,
+        nodeStyles.agent,
+      );
+    });
+
+    // Add dynamic tool nodes
+    const toolNodes = tools.map((tool, index) => {
+      const Icon = getIcon(tool.icon);
+      const y = 130 + index * 40; // Vertical spacing
+      return createNode(
+        tool.id,
+        { x: 470, y },
+        <div className="flex items-center gap-1">
+          <Icon className="w-3 h-3" />
+          <span className="text-[9px]">{tool.label}</span>
+        </div>,
+        nodeStyles.tool,
+      );
+    });
+
+    return [...staticNodes, ...agentNodes, ...toolNodes];
+  };
+
+  const [nodes, setNodes] = useNodesState(createDynamicInitialNodes());
   const [edges, setEdges] = useEdgesState([]);
   const [_animationStep, setAnimationStep] = useState(0);
 

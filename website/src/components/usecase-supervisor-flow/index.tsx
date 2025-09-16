@@ -1,22 +1,51 @@
 import {
+  ArrowPathIcon,
+  ArrowTrendingUpIcon,
+  BanknotesIcon,
   BookOpenIcon,
+  BriefcaseIcon,
   BugAntIcon,
   BuildingLibraryIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentCheckIcon,
   ClipboardDocumentListIcon,
+  CodeBracketIcon,
+  CodeBracketSquareIcon,
   CpuChipIcon,
   CreditCardIcon,
+  CurrencyDollarIcon,
+  DocumentTextIcon,
   QuestionMarkCircleIcon,
+  ReceiptPercentIcon,
+  ServerStackIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import clsx from "clsx";
-import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatedBeam } from "../magicui/animated-beam";
 
+interface AgentNode {
+  id: string;
+  label: string;
+  sublabel: string;
+  icon: string;
+}
+
+interface ToolNode {
+  id: string;
+  label: string;
+  sublabel: string;
+  icon: string;
+}
+
 interface UseCaseSupervisorFlowProps {
-  slug: string;
   className?: string;
+  agents?: AgentNode[];
+  tools?: ToolNode[];
 }
 
 // Node component with consistent styling
@@ -114,40 +143,90 @@ function NodeCard({
   );
 }
 
-export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlowProps) {
+// Icon mapping
+const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+  ArrowPathIcon,
+  ArrowTrendingUpIcon,
+  BanknotesIcon,
+  BookOpenIcon,
+  BriefcaseIcon,
+  BugAntIcon,
+  BuildingLibraryIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentCheckIcon,
+  ClipboardDocumentListIcon,
+  CodeBracketIcon,
+  CodeBracketSquareIcon,
+  CpuChipIcon,
+  CreditCardIcon,
+  CurrencyDollarIcon,
+  DocumentTextIcon,
+  QuestionMarkCircleIcon,
+  ReceiptPercentIcon,
+  ServerStackIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+  UserIcon,
+};
+
+const getIcon = (iconName: string) => iconMap[iconName] || QuestionMarkCircleIcon;
+
+export function UseCaseSupervisorFlow({
+  className,
+  agents = [],
+  tools = [],
+}: UseCaseSupervisorFlowProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  // Node refs
+  // Fixed node refs
   const userRef = useRef<HTMLDivElement>(null);
   const supervisorRef = useRef<HTMLDivElement>(null);
-  const billingRef = useRef<HTMLDivElement>(null);
-  const accountRef = useRef<HTMLDivElement>(null);
-  const bugRef = useRef<HTMLDivElement>(null);
-  const kbRef = useRef<HTMLDivElement>(null);
-  const crmRef = useRef<HTMLDivElement>(null);
   const memoryRef = useRef<HTMLDivElement>(null);
   const toolsMidpointRef = useRef<HTMLDivElement>(null);
   const agentsMidpointRef = useRef<HTMLDivElement>(null);
-  // Right edge refs for sub-agents
-  const billingRightRef = useRef<HTMLDivElement>(null);
-  const accountRightRef = useRef<HTMLDivElement>(null);
-  const bugRightRef = useRef<HTMLDivElement>(null);
-  // Right edge ref for supervisor
   const supervisorRightRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic refs for agents and tools
+  const agentRefs = useRef<Record<string, React.RefObject<HTMLDivElement>>>({});
+  const agentRightRefs = useRef<Record<string, React.RefObject<HTMLDivElement>>>({});
+  const toolRefs = useRef<Record<string, React.RefObject<HTMLDivElement>>>({});
+
+  // Initialize dynamic refs
+  agents.forEach((agent) => {
+    if (!agentRefs.current[agent.id]) {
+      agentRefs.current[agent.id] = React.createRef<HTMLDivElement>();
+      agentRightRefs.current[agent.id] = React.createRef<HTMLDivElement>();
+    }
+  });
+
+  tools.forEach((tool) => {
+    if (!toolRefs.current[tool.id]) {
+      toolRefs.current[tool.id] = React.createRef<HTMLDivElement>();
+    }
+  });
 
   const [animationStep, setAnimationStep] = useState(0);
   const [memorySyncActive, setMemorySyncActive] = useState(false);
-  const [nodeStates, setNodeStates] = useState<Record<string, "idle" | "active" | "processing">>({
+
+  // Dynamic node states
+  const initialNodeStates: Record<string, "idle" | "active" | "processing"> = {
     user: "idle",
     supervisor: "idle",
-    billing: "idle",
-    account: "idle",
-    bug: "idle",
-    kb: "idle",
-    crm: "idle",
     memory: "idle",
+  };
+
+  agents.forEach((agent) => {
+    initialNodeStates[agent.id] = "idle";
   });
+
+  tools.forEach((tool) => {
+    initialNodeStates[tool.id] = "idle";
+  });
+
+  const [nodeStates, setNodeStates] =
+    useState<Record<string, "idle" | "active" | "processing">>(initialNodeStates);
 
   // Dynamic anchor offsets for Supervisor <-> Memory beam (attach to edges)
   const [supMemAnchors, setSupMemAnchors] = useState<{ supBottom: number; memTop: number }>({
@@ -218,6 +297,27 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
       groupLabelOffset,
     } = layout;
 
+    // Agent positions (vertical stack)
+    const agentCount = agents.length || 1;
+    const totalAgentHeight = agentSpacing * (agentCount - 1);
+    const agentPositions: Record<string, { x: number; y: number }> = {};
+
+    agents.forEach((agent, index) => {
+      const y = centerY - totalAgentHeight / 2 + index * agentSpacing;
+      agentPositions[agent.id] = { x: agentsX, y };
+    });
+
+    // Tool positions (vertical stack)
+    const toolCount = tools.length || 1;
+    const toolSpacing = 80;
+    const totalToolHeight = toolSpacing * (toolCount - 1);
+    const toolPositions: Record<string, { x: number; y: number }> = {};
+
+    tools.forEach((tool, index) => {
+      const y = centerY - totalToolHeight / 2 + index * toolSpacing;
+      toolPositions[tool.id] = { x: toolsX, y };
+    });
+
     return {
       // Left side
       user: { x: userX, y: centerY },
@@ -226,14 +326,9 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
       supervisor: { x: supervisorX, y: centerY },
       memory: { x: supervisorX, y: centerY + memoryGap },
 
-      // Right side - Agents column (3 agents vertically aligned)
-      billing: { x: agentsX, y: centerY - agentSpacing },
-      account: { x: agentsX, y: centerY },
-      bug: { x: agentsX, y: centerY + agentSpacing },
-
-      // Far right - Tools column (2 tools vertically centered)
-      kb: { x: toolsX, y: centerY - 40 },
-      crm: { x: toolsX, y: centerY + 40 },
+      // Dynamic agents and tools
+      agents: agentPositions,
+      tools: toolPositions,
 
       // Midpoint between tools for beam targeting
       toolsMidpoint: { x: toolsX, y: centerY },
@@ -243,8 +338,15 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
 
       // Group label positions
       groupLabelOffset,
+
+      // For backwards compatibility (will update later)
+      billing: agentPositions[agents[0]?.id] || { x: agentsX, y: centerY - agentSpacing },
+      account: agentPositions[agents[1]?.id] || { x: agentsX, y: centerY },
+      bug: agentPositions[agents[2]?.id] || { x: agentsX, y: centerY + agentSpacing },
+      kb: toolPositions[tools[0]?.id] || { x: toolsX, y: centerY - 40 },
+      crm: toolPositions[tools[1]?.id] || { x: toolsX, y: centerY + 40 },
     };
-  }, [layout]);
+  }, [layout, agents, tools]);
 
   // Active beams based on animation step
   const activeBeams = useMemo(() => {
@@ -274,83 +376,65 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
           pathType: "curved",
         });
         break;
-      case 2: // Supervisor -> All 3 Agents (parallel)
-        beams.push(
-          {
-            from: supervisorRef,
-            to: billingRef,
-            curvature: -20,
-            particleDuration: 2.5,
-            particleSpeed: 2.5,
-          },
-          {
-            from: supervisorRef,
-            to: accountRef,
-            curvature: 0,
-            particleDuration: 2.5,
-            particleSpeed: 2.5,
-          },
-          {
-            from: supervisorRef,
-            to: bugRef,
-            curvature: 20,
-            particleDuration: 2.5,
-            particleSpeed: 2.5,
-          },
-        );
+      case 2: // Supervisor -> All Agents (parallel)
+        agents.forEach((agent, index) => {
+          const ref = agentRefs.current[agent.id];
+          if (ref) {
+            beams.push({
+              from: supervisorRef,
+              to: ref,
+              curvature: index === 0 ? -20 : index === agents.length - 1 ? 20 : 0,
+              particleDuration: 2.5,
+              particleSpeed: 2.5,
+            });
+          }
+        });
         break;
       case 3: // Agents -> Tools (direct paths, no convergence)
-        // Direct paths from each agent to tools midpoint
-        beams.push(
-          {
-            from: billingRightRef,
-            to: toolsMidpointRef,
-            curvature: -20,
-            pathType: "curved",
-            color: "#06b6d4",
-            particleDuration: 2.5,
-            particleSpeed: 2.5,
-          },
-          {
-            from: accountRightRef,
-            to: toolsMidpointRef,
-            curvature: 0,
-            pathType: "curved",
-            color: "#06b6d4",
-            particleDuration: 2.5,
-            particleSpeed: 2.5,
-          },
-          {
-            from: bugRightRef,
-            to: toolsMidpointRef,
-            curvature: 20,
-            pathType: "curved",
-            color: "#06b6d4",
-            particleDuration: 2.5,
-            particleSpeed: 2.5,
-          },
-        );
-        break;
-      case 4: // Return: Tools inner gap -> middle agent right edge, then to Supervisor right edge (single merged route)
-        beams.push({
-          from: toolsMidpointRef,
-          to: accountRightRef,
-          curvature: 0,
-          pathType: "curved",
-          color: "#06b6d4",
-          particleDuration: 2.5,
-          particleSpeed: 2.5,
-        });
-        // Continue from middle agent to Supervisor right edge anchor
-        beams.push({
-          from: accountRightRef,
-          to: supervisorRightRef,
-          curvature: 0,
-          pathType: "curved",
-          particleDuration: 2.5,
-          particleSpeed: 2.5,
+        agents.forEach((agent, index) => {
+          const rightRef = agentRightRefs.current[agent.id];
+          if (rightRef) {
+            beams.push({
+              from: rightRef,
+              to: toolsMidpointRef,
+              curvature: index === 0 ? -20 : index === agents.length - 1 ? 20 : 0,
+              pathType: "curved",
+              color: "#06b6d4",
+              particleDuration: 2.5,
+              particleSpeed: 2.5,
+            });
+          }
         });
         break;
+      case 4: {
+        // Return: Tools -> middle agent -> Supervisor
+        // Get the middle agent (or first if odd number)
+        const middleAgentIndex = Math.floor(agents.length / 2);
+        const middleAgent = agents[middleAgentIndex];
+        if (middleAgent) {
+          const middleRightRef = agentRightRefs.current[middleAgent.id];
+          if (middleRightRef) {
+            beams.push({
+              from: toolsMidpointRef,
+              to: middleRightRef,
+              curvature: 0,
+              pathType: "curved",
+              color: "#06b6d4",
+              particleDuration: 2.5,
+              particleSpeed: 2.5,
+            });
+            beams.push({
+              from: middleRightRef,
+              to: supervisorRightRef,
+              curvature: 0,
+              pathType: "curved",
+              particleDuration: 2.5,
+              particleSpeed: 2.5,
+            });
+          }
+        }
+        break;
+      }
       case 5: // Supervisor -> User (final response)
         beams.push({
           from: supervisorRef,
@@ -396,7 +480,7 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
     }
 
     return beams;
-  }, [animationStep, memorySyncActive, supMemAnchors]);
+  }, [animationStep, memorySyncActive, supMemAnchors, agents]);
 
   // Enable memory sync after User->Supervisor completes (step 2) and disable when Supervisor->User starts (step 5)
   useEffect(() => {
@@ -409,21 +493,22 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
 
   // Animation sequence
   useEffect(() => {
-    if (slug !== "customer-support-agent") return;
-
     const runAnimation = async () => {
-      // Reset
-      setAnimationStep(0);
-      setNodeStates({
+      // Reset - create initial state dynamically
+      const resetState: Record<string, "idle" | "active" | "processing"> = {
         user: "idle",
         supervisor: "idle",
-        billing: "idle",
-        account: "idle",
-        bug: "idle",
-        kb: "idle",
-        crm: "idle",
         memory: "idle",
+      };
+      agents.forEach((agent) => {
+        resetState[agent.id] = "idle";
       });
+      tools.forEach((tool) => {
+        resetState[tool.id] = "idle";
+      });
+
+      setAnimationStep(0);
+      setNodeStates(resetState);
 
       await new Promise((r) => setTimeout(r, 500));
 
@@ -432,61 +517,71 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
       setAnimationStep(1);
       await new Promise((r) => setTimeout(r, 1500));
 
-      // Step 2: Supervisor -> All 3 Agents simultaneously
-      setNodeStates((prev) => ({
-        ...prev,
+      // Step 2: Supervisor -> All Agents simultaneously
+      const agentProcessingState: Record<string, "idle" | "active" | "processing"> = {
+        ...resetState,
         user: "idle",
         supervisor: "processing",
-        billing: "processing",
-        account: "processing",
-        bug: "processing",
-      }));
+      };
+      agents.forEach((agent) => {
+        agentProcessingState[agent.id] = "processing";
+      });
+      setNodeStates(agentProcessingState);
       setAnimationStep(2);
       await new Promise((r) => setTimeout(r, 1500));
 
       // Step 3: All Agents -> Tools (forward)
-      setNodeStates((prev) => ({
-        ...prev,
+      const toolsActiveState: Record<string, "idle" | "active" | "processing"> = {
+        ...agentProcessingState,
         supervisor: "idle",
-        billing: "processing",
-        account: "processing",
-        bug: "processing",
-        kb: "active",
-        crm: "active",
-      }));
+      };
+      tools.forEach((tool) => {
+        toolsActiveState[tool.id] = "active";
+      });
+      setNodeStates(toolsActiveState);
       setAnimationStep(3);
       await new Promise((r) => setTimeout(r, 1500));
 
-      // Step 4: All agents -> Supervisor
-      setNodeStates((prev) => ({
-        ...prev,
-        billing: "idle",
-        account: "idle",
-        bug: "idle",
-        supervisor: "active",
-      }));
+      // Step 4: Return path - Tools -> middle agent -> Supervisor
+      const returnState: Record<string, "idle" | "active" | "processing"> = {
+        ...resetState,
+        supervisor: "processing",
+      };
+      // Keep middle agent active
+      const middleAgentIndex = Math.floor(agents.length / 2);
+      if (agents[middleAgentIndex]) {
+        returnState[agents[middleAgentIndex].id] = "active";
+      }
+      setNodeStates(returnState);
       setAnimationStep(4);
       await new Promise((r) => setTimeout(r, 1500));
 
-      // Step 5: Supervisor -> User (final response) and conclude tools' active effect
+      // Step 5: Supervisor -> User (final response)
       setNodeStates((prev) => ({
         ...prev,
-        supervisor: "idle",
+        supervisor: "active",
+        user: "processing",
         memory: "idle",
-        kb: "idle",
-        crm: "idle",
-        user: "active",
+        ...(agents[middleAgentIndex] ? { [agents[middleAgentIndex].id]: "idle" } : {}),
       }));
       setAnimationStep(5);
       await new Promise((r) => setTimeout(r, 1500));
 
-      // Loop
+      // Final state
+      setNodeStates(resetState);
+      setAnimationStep(0);
+
+      // Wait then restart
       await new Promise((r) => setTimeout(r, 2000));
       runAnimation();
     };
 
-    runAnimation();
-  }, [slug]);
+    const timer = setTimeout(() => {
+      runAnimation();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [agents, tools]);
 
   return (
     <div
@@ -569,131 +664,100 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
       </div>
 
       {/* Sub-Agents Group Label - Centered above the group */}
-      <div
-        className="absolute text-emerald-400 text-sm font-semibold tracking-wider uppercase"
-        style={{
-          left: positions.account.x,
-          top: positions.billing.y - positions.groupLabelOffset - 35,
-          transform: "translateX(-50%)",
-        }}
-      >
-        Sub-Agents
-      </div>
-
-      {/* Right Grid - Agents */}
-      <div
-        className="absolute"
-        style={{
-          left: positions.billing.x,
-          top: positions.billing.y,
-          transform: "translate(-50%, -50%)",
-        }}
-      >
-        <div className="relative">
-          <NodeCard
-            label="Billing Agent"
-            sublabel="Payment"
-            icon={CreditCardIcon}
-            refProp={billingRef}
-            variant="agent"
-            status={nodeStates.billing}
-          />
-          {/* Right edge connection point */}
-          <div
-            ref={billingRightRef}
-            className="absolute w-1 h-1"
-            style={{ right: 0, top: "50%", transform: "translateY(-50%)" }}
-          />
+      {agents.length > 0 && (
+        <div
+          className="absolute text-emerald-400 text-sm font-semibold tracking-wider uppercase"
+          style={{
+            left: layout.agentsX,
+            top:
+              Math.min(...agents.map((a) => positions.agents[a.id].y)) -
+              positions.groupLabelOffset -
+              35,
+            transform: "translateX(-50%)",
+          }}
+        >
+          Sub-Agents
         </div>
-      </div>
+      )}
+
+      {/* Render Dynamic Agents */}
+      {agents.map((agent) => {
+        const Icon = getIcon(agent.icon);
+        const position = positions.agents[agent.id];
+
+        return (
+          <div
+            key={agent.id}
+            className="absolute"
+            style={{
+              left: position.x,
+              top: position.y,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <div className="relative">
+              <NodeCard
+                label={agent.label}
+                sublabel={agent.sublabel}
+                icon={Icon}
+                refProp={agentRefs.current[agent.id]}
+                variant="agent"
+                status={nodeStates[agent.id]}
+              />
+              {/* Right edge connection point */}
+              <div
+                ref={agentRightRefs.current[agent.id]}
+                className="absolute w-1 h-1"
+                style={{ right: 0, top: "50%", transform: "translateY(-50%)" }}
+              />
+            </div>
+          </div>
+        );
+      })}
 
       {/* Tools Group Label - Centered above the group */}
-      <div
-        className="absolute text-cyan-400 text-sm font-semibold tracking-wider uppercase"
-        style={{
-          left: positions.toolsMidpoint.x,
-          top: positions.kb.y - positions.groupLabelOffset - 35,
-          transform: "translateX(-50%)",
-        }}
-      >
-        Tools
-      </div>
-
-      <div
-        className="absolute"
-        style={{ left: positions.kb.x, top: positions.kb.y, transform: "translate(-50%, -50%)" }}
-      >
-        <NodeCard
-          label="KB Search"
-          sublabel="Knowledge"
-          icon={BookOpenIcon}
-          refProp={kbRef}
-          variant="tool"
-          status={nodeStates.kb}
-        />
-      </div>
-
-      <div
-        className="absolute"
-        style={{
-          left: positions.account.x,
-          top: positions.account.y,
-          transform: "translate(-50%, -50%)",
-        }}
-      >
-        <div className="relative">
-          <NodeCard
-            label="Account Agent"
-            sublabel="User Info"
-            icon={QuestionMarkCircleIcon}
-            refProp={accountRef}
-            variant="agent"
-            status={nodeStates.account}
-          />
-          {/* Right edge connection point */}
-          <div
-            ref={accountRightRef}
-            className="absolute w-1 h-1"
-            style={{ right: 0, top: "50%", transform: "translateY(-50%)" }}
-          />
+      {tools.length > 0 && (
+        <div
+          className="absolute text-cyan-400 text-sm font-semibold tracking-wider uppercase"
+          style={{
+            left: positions.toolsMidpoint.x,
+            top:
+              Math.min(...tools.map((t) => positions.tools[t.id].y)) -
+              positions.groupLabelOffset -
+              35,
+            transform: "translateX(-50%)",
+          }}
+        >
+          Tools
         </div>
-      </div>
+      )}
 
-      <div
-        className="absolute"
-        style={{ left: positions.crm.x, top: positions.crm.y, transform: "translate(-50%, -50%)" }}
-      >
-        <NodeCard
-          label="CRM"
-          sublabel="Customer Data"
-          icon={BuildingLibraryIcon}
-          refProp={crmRef}
-          variant="tool"
-          status={nodeStates.crm}
-        />
-      </div>
+      {/* Render Dynamic Tools */}
+      {tools.map((tool) => {
+        const Icon = getIcon(tool.icon);
+        const position = positions.tools[tool.id];
 
-      <div
-        className="absolute"
-        style={{ left: positions.bug.x, top: positions.bug.y, transform: "translate(-50%, -50%)" }}
-      >
-        <div className="relative">
-          <NodeCard
-            label="Bug Triager"
-            sublabel="Issues"
-            icon={BugAntIcon}
-            refProp={bugRef}
-            variant="agent"
-            status={nodeStates.bug}
-          />
-          {/* Right edge connection point */}
+        return (
           <div
-            ref={bugRightRef}
-            className="absolute w-1 h-1"
-            style={{ right: 0, top: "50%", transform: "translateY(-50%)" }}
-          />
-        </div>
-      </div>
+            key={tool.id}
+            className="absolute"
+            style={{
+              left: position.x,
+              top: position.y,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <NodeCard
+              label={tool.label}
+              sublabel={tool.sublabel}
+              icon={Icon}
+              refProp={toolRefs.current[tool.id]}
+              variant="tool"
+              status={nodeStates[tool.id]}
+            />
+          </div>
+        );
+      })}
 
       {/* Invisible point at tools left edge for beam targeting */}
       <div
@@ -715,6 +779,63 @@ export function UseCaseSupervisorFlow({ slug, className }: UseCaseSupervisorFlow
           top: positions.agentsMidpoint.y,
           transform: "translateY(-50%)",
         }}
+      />
+
+      {/* Static beams - always visible paths */}
+      {/* User to Supervisor */}
+      <AnimatedBeam
+        containerRef={containerRef}
+        fromRef={userRef}
+        toRef={supervisorRef}
+        pathColor="rgba(0, 217, 146, 0.1)"
+        pathWidth={1}
+        showParticles={false}
+        showPath={true}
+        showGradient={false}
+      />
+
+      {/* Supervisor to Agents */}
+      {agents.map((agent) => (
+        <AnimatedBeam
+          key={`static-sup-${agent.id}`}
+          containerRef={containerRef}
+          fromRef={supervisorRef}
+          toRef={agentRefs.current[agent.id]}
+          pathColor="rgba(0, 217, 146, 0.1)"
+          pathWidth={1}
+          showParticles={false}
+          showPath={true}
+          showGradient={false}
+        />
+      ))}
+
+      {/* Agents to Tools midpoint */}
+      {agents.map((agent) => (
+        <AnimatedBeam
+          key={`static-agent-tool-${agent.id}`}
+          containerRef={containerRef}
+          fromRef={agentRightRefs.current[agent.id]}
+          toRef={toolsMidpointRef}
+          pathColor="rgba(6, 182, 212, 0.1)"
+          pathWidth={1}
+          showParticles={false}
+          showPath={true}
+          showGradient={false}
+        />
+      ))}
+
+      {/* Supervisor to Memory */}
+      <AnimatedBeam
+        containerRef={containerRef}
+        fromRef={supervisorRef}
+        toRef={memoryRef}
+        pathColor="rgba(147, 51, 234, 0.1)"
+        pathWidth={1}
+        showParticles={false}
+        showPath={true}
+        showGradient={false}
+        startYOffset={22}
+        endYOffset={-22}
       />
 
       {/* Animated Beams */}

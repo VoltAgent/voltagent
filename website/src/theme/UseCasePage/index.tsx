@@ -68,6 +68,8 @@ interface UseCasePageProps {
       primaryCTALink: string;
       secondaryCTA: string;
       secondaryCTALink: string;
+      businessTopics?: string[];
+      systemCapabilities?: string[];
     };
     painPoints: string[];
     solutions: string[];
@@ -86,6 +88,23 @@ interface UseCasePageProps {
       title: string;
       description: string;
     }>;
+    supervisorFlow?: {
+      enabled: boolean;
+      title: string;
+      subtitle: string;
+      agents: Array<{
+        id: string;
+        label: string;
+        sublabel: string;
+        icon: string;
+      }>;
+      tools: Array<{
+        id: string;
+        label: string;
+        sublabel: string;
+        icon: string;
+      }>;
+    };
   };
 }
 
@@ -250,14 +269,18 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="relative"
               >
-                <UseCaseAnimation slug={useCase.slug} />
+                <UseCaseAnimation
+                  slug={useCase.slug}
+                  businessTopics={useCase.hero?.businessTopics}
+                  systemCapabilities={useCase.hero?.systemCapabilities}
+                />
               </motion.div>
             </div>
           </Container>
         </Section>
 
         {/* Supervisor Flow (Hero altı) */}
-        {useCase.slug === "customer-support-agent" && (
+        {useCase.supervisorFlow?.enabled && (
           <Section>
             <Container>
               <motion.div
@@ -266,13 +289,14 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-                  How Supervisor Routes Support Requests
+                  {useCase.supervisorFlow.title}
                 </h2>
-                <p className="text-gray-400 mb-6">
-                  User request flows to the Supervisor, then to specialized agents and tools
-                  (KB/CRM), with results written to memory and returned to the user.
-                </p>
-                <ResponsiveSupervisorFlow slug={useCase.slug} />
+                <p className="text-gray-400 mb-6">{useCase.supervisorFlow.subtitle}</p>
+                <ResponsiveSupervisorFlow
+                  slug={useCase.slug}
+                  agents={useCase.supervisorFlow.agents}
+                  tools={useCase.supervisorFlow.tools}
+                />
               </motion.div>
             </Container>
           </Section>
