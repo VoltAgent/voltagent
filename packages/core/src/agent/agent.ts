@@ -150,22 +150,13 @@ export interface StreamObjectResultWithContext<T> {
 /**
  * Extended GenerateTextResult that includes context
  */
-export interface GenerateTextResultWithContext<
+export type GenerateTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
   OUTPUT = any,
-> {
-  // All properties from GenerateTextResult
-  text: GenerateTextResult<TOOLS, OUTPUT>["text"];
-  response: GenerateTextResult<TOOLS, OUTPUT>["response"];
-  usage: GenerateTextResult<TOOLS, OUTPUT>["usage"];
-  finishReason: GenerateTextResult<TOOLS, OUTPUT>["finishReason"];
-  warnings?: GenerateTextResult<TOOLS, OUTPUT>["warnings"];
-  toolCalls?: GenerateTextResult<TOOLS, OUTPUT>["toolCalls"];
-  // Experimental output (optional)
-  experimental_output?: OUTPUT;
+> = GenerateTextResult<TOOLS, OUTPUT> & {
   // Additional context field
   context: Map<string | symbol, unknown>;
-}
+};
 
 /**
  * Extended GenerateObjectResult that includes context
