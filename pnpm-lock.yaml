@@ -1638,16 +1638,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../../packages/cli
       '@voltagent/core':
-        specifier: ^1.0.0
+        specifier: ^1.1.5
         version: link:../../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0
+        specifier: ^1.0.2
         version: link:../../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0
+        specifier: ^1.0.1
         version: link:../../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.0
+        specifier: ^1.0.4
         version: link:../../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1662,7 +1662,7 @@ importers:
         specifier: ^18.0.0
         version: 18.0.0
       zod:
-        specifier: ^3.25.0
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@tsconfig/node24':
