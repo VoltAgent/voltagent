@@ -32,7 +32,7 @@ const Node = forwardRef<
             "z-20 flex items-center justify-center rounded-full border-2 border-solid transition-all duration-300 relative overflow-visible",
             "border-[#00d992] bg-[#00d992]/10 shadow-[0_0_30px_rgba(0,217,146,0.3)]",
             "hover:scale-110",
-            isMobile ? "size-14" : "size-16",
+            isMobile ? "size-12" : "size-16",
             className,
           )}
           onMouseEnter={() => setIsHovered(true)}
@@ -47,7 +47,13 @@ const Node = forwardRef<
           )}
           <div className="relative z-10 flex items-center justify-center">{children}</div>
         </div>
-        {label && <span className="mt-3 text-sm font-semibold text-[#00d992]">{label}</span>}
+        {label && (
+          <span
+            className={clsx("mt-2 font-semibold text-[#00d992]", isMobile ? "text-xs" : "text-sm")}
+          >
+            {label}
+          </span>
+        )}
         {description && isHovered && (
           <div className="absolute top-full mt-2 z-50 w-48 rounded-md bg-[#0c2520] border border-solid border-[#113328] p-3 shadow-lg text-xs text-gray-300">
             {description}
@@ -214,7 +220,7 @@ export function UseCaseAnimation({ slug, className }: UseCaseAnimationProps) {
               className={clsx(
                 "text-[#00d992] transition-all duration-300",
                 centerPulse && "drop-shadow-[0_0_20px_rgba(0,217,146,0.8)]",
-                isMobile ? "h-7 w-7" : "h-9 w-9",
+                isMobile ? "h-5 w-5" : "h-9 w-9",
               )}
             />
           </Node>

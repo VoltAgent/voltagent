@@ -10,8 +10,6 @@ import {
   ChartBarIcon,
   ChartBarSquareIcon,
   ChatBubbleLeftRightIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
   CircleStackIcon,
   CloudArrowUpIcon,
   CodeBracketIcon,
