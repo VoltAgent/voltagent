@@ -1,6 +1,6 @@
 ---
-"@voltagent/server-hono": patch
-"@voltagent/docs-mcp": patch
+"@voltagent/core": patch
+"@voltagent/server-core": patch
 ---
 
 feat: add Zod v4 support (backwards-compatible with v3)
