@@ -18,7 +18,8 @@
     "ts-pattern": "^5.7.1",
     "type-fest": "^4.41.0",
     "uuid": "^9.0.1",
-    "zod-from-json-schema": "^0.0.5"
+    "zod-from-json-schema": "^0.5.0",
+    "zod-from-json-schema-v3": "npm:zod-from-json-schema@^0.0.5"
   },
   "devDependencies": {
     "@ai-sdk/provider-utils": "^3.0.0",
@@ -53,7 +54,7 @@
     "@ai-sdk/provider-utils": "3.x",
     "@voltagent/logger": "1.x",
     "ai": "5.x",
-    "zod": "^3.25.0"
+    "zod": "^3.25.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
     "@voltagent/logger": {

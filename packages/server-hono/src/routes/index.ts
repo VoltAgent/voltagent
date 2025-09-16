@@ -1,4 +1,3 @@
-import type { OpenAPIHono } from "@hono/zod-openapi";
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
@@ -23,6 +22,7 @@ import {
   isErrorResponse,
   mapLogResponse,
 } from "@voltagent/server-core";
+import type { OpenAPIHono } from "../zod-openapi-compat";
 import {
   chatRoute,
   executeWorkflowRoute,

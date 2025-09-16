@@ -1,7 +1,9 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import { convertUsage } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
+import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 import type { ApiResponse } from "../types";
 import { processAgentOptions } from "../utils/options";
 
@@ -266,8 +268,10 @@ export async function handleGenerateObject(
     const { input, schema: jsonSchema } = body;
     const options = processAgentOptions(body, signal);
 
-    // Convert JSON schema to Zod schema
-    const zodSchema = convertJsonSchemaToZod(jsonSchema);
+    // Convert JSON schema to Zod schema (supports zod v3 and v4)
+    const zodSchema = ("toJSONSchema" in z ? convertJsonSchemaToZod : convertJsonSchemaToZodV3)(
+      jsonSchema,
+    ) as any;
 
     const result = await agent.generateObject(input, zodSchema, options);
 
@@ -315,8 +319,10 @@ export async function handleStreamObject(
     const { input, schema: jsonSchema } = body;
     const options = processAgentOptions(body, signal);
 
-    // Convert JSON schema to Zod schema
-    const zodSchema = convertJsonSchemaToZod(jsonSchema);
+    // Convert JSON schema to Zod schema (supports zod v3 and v4)
+    const zodSchema = ("toJSONSchema" in z ? convertJsonSchemaToZod : convertJsonSchemaToZodV3)(
+      jsonSchema,
+    ) as any;
 
     const result = await agent.streamObject(input, zodSchema, options);
 
