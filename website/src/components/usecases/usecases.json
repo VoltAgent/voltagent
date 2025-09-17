@@ -43,7 +43,9 @@
       { "name": "Employee Onboarding Agent", "description": "Collects docs and assigns training." },
       { "name": "Payroll & Benefits Agent", "description": "Answers salary, PTO, and benefits questions." },
       { "name": "Compliance Monitoring Agent", "description": "Tracks labor laws and internal policies." },
-      { "name": "Exit & Offboarding Agent", "description": "Coordinates exit steps and access removal." }
+      { "name": "Exit & Offboarding Agent", "description": "Coordinates exit steps and access removal." },
+      { "name": "Performance Feedback Agent", "description": "Collects 360-degree feedback and generates insights." },
+      { "name": "Workforce Analytics Agent", "description": "Analyzes team dynamics and productivity patterns." }
     ],
     "capabilities": [
       "Manage recruiting pipelines and candidate tracking",
@@ -110,7 +112,7 @@
     "features": [
       { "title": "Full Code Control", "description": "Multi-step workflows and SLA logic in TypeScript.", "icon": "CodeBracketIcon" },
       { "title": "Integrate Any System", "description": "Connect CRM, ticketing, billing, logistics, or internal APIs.", "icon": "ServerStackIcon" },
-      { "title": "Memory & Policy Awareness", "description": "Stateful context, KB retrieval, and policy enforcement.", "icon": "CircleStackIcon" },
+      { "title": "Policy Awareness", "description": "Stateful context, KB retrieval, and policy enforcement.", "icon": "CircleStackIcon" },
       { "title": "VoltOps Observability", "description": "Trace decisions, tools, tokens, and latency.", "icon": "ChartBarIcon" },
       { "title": "Multi-Channel Support", "description": "Handle chat, email, voice, and social channels.", "icon": "DevicePhoneMobileIcon" },
       { "title": "Smart Escalation", "description": "Route complex issues based on sentiment and priority.", "icon": "ArrowUpIcon" }
@@ -121,9 +123,8 @@
       { "name": "Multi-Tier Escalation Agent", "description": "Routes by sentiment, priority, and SLA risk." },
       { "name": "Billing & Refunds Agent", "description": "Resolves payment issues and pro-rated refunds." },
       { "name": "Account & Access Agent", "description": "Handles roles, SSO/SAML, and security checks." },
-      { "name": "Knowledge Answering Agent", "description": "Retrieves verified KB answers with citations." },
-      { "name": "Bug Triage Agent", "description": "Extracts repro steps and files clean issues." },
-      { "name": "Proactive Retention Agent", "description": "Detects churn risk and triggers actions." }
+      { "name": "Product Knowledge Agent", "description": "Provides detailed product specs and troubleshooting." },
+      { "name": "Feedback Collection Agent", "description": "Gathers customer insights and satisfaction metrics." }
     ],
     "capabilities": [
       "Triage tickets across chat, email, and Slack",
@@ -201,7 +202,8 @@
       { "name": "Prospecting Outreach Agent", "description": "Drafts emails and logs results." },
       { "name": "Account Routing Agent", "description": "Routes by territory and segment." },
       { "name": "PQL/Usage Agent", "description": "Detects product-qualified signals." },
-      { "name": "Renewal & Expansion Agent", "description": "Surfaces upsell paths from usage and tickets." }
+      { "name": "Pipeline Analytics Agent", "description": "Forecasts revenue and identifies bottlenecks." },
+      { "name": "Demo Scheduling Agent", "description": "Coordinates product demos and follow-ups." }
     ],
     "capabilities": [
       "Score leads with custom ICP rules and signals",
@@ -279,7 +281,8 @@
       { "name": "Cash Reconciliation Agent", "description": "Matches bank transactions to ledger entries and invoices." },
       { "name": "Revenue Analytics Agent", "description": "Builds MRR/ARR, churn, and cohort views." },
       { "name": "Budget Variance Agent", "description": "Monitors budgets vs actuals and alerts owners." },
-      { "name": "Collections Agent", "description": "Sends reminders, proposes payment plans, and logs outcomes." }
+      { "name": "Tax Compliance Agent", "description": "Calculates tax liabilities and ensures filing compliance." },
+      { "name": "Financial Forecasting Agent", "description": "Projects cash flow and identifies funding needs." }
     ],
     "capabilities": [
       "Extract data from invoices, PDFs, and emails",
@@ -357,7 +360,8 @@
       { "name": "Security Scan Agent", "description": "Checks vulns, secrets, and auth flows across services." },
       { "name": "CI Gatekeeper Agent", "description": "Enforces test coverage, size limits, and release criteria." },
       { "name": "Issue Triage Agent", "description": "Deduplicates reports, extracts repro steps, and labels issues." },
-      { "name": "On-call Runbook Agent", "description": "Correlates logs, metrics, and deploys; suggests next actions." }
+      { "name": "Documentation Agent", "description": "Generates code comments and API documentation." },
+      { "name": "Dependency Update Agent", "description": "Monitors and updates outdated dependencies safely." }
     ],
     "capabilities": [
       "Analyze code diffs with architectural context",
@@ -434,7 +438,9 @@
       { "name": "Content Writer Agent", "description": "Generates brand-consistent blog, ad, and email copy." },
       { "name": "SEO Optimization Agent", "description": "Analyzes keywords, backlinks, and rankings." },
       { "name": "Attribution Agent", "description": "Builds reports on campaign ROI and touchpoints." },
-      { "name": "Social Engagement Agent", "description": "Schedules posts and replies to audience engagement." }
+      { "name": "Social Engagement Agent", "description": "Schedules posts and replies to audience engagement." },
+      { "name": "Lead Nurturing Agent", "description": "Manages drip campaigns and engagement tracking." },
+      { "name": "Brand Monitoring Agent", "description": "Tracks mentions and sentiment across channels." }
     ],
     "capabilities": [
       "Launch multi-channel campaigns automatically",
@@ -511,7 +517,9 @@
       { "name": "Compliance Check Agent", "description": "Flags GDPR, HIPAA, or SOX violations." },
       { "name": "IP Protection Agent", "description": "Checks ownership and licensing terms." },
       { "name": "Redline Drafting Agent", "description": "Suggests edits to draft safer agreements." },
-      { "name": "Litigation Risk Agent", "description": "Evaluates case law precedents and disputes." }
+      { "name": "Litigation Risk Agent", "description": "Evaluates case law precedents and disputes." },
+      { "name": "Discovery Document Agent", "description": "Organizes and analyzes documents for legal discovery." },
+      { "name": "Policy Update Agent", "description": "Tracks regulatory changes and updates policies." }
     ],
     "capabilities": [
       "Parse contracts and extract key clauses",
@@ -588,7 +596,9 @@
       { "name": "Underwriting Agent", "description": "Scores risks and applies underwriting rules." },
       { "name": "Policy Explainer Agent", "description": "Simplifies policies for customer understanding." },
       { "name": "Fraud Detection Agent", "description": "Flags suspicious claims and patterns." },
-      { "name": "Renewals Agent", "description": "Automates renewals and premium adjustments." }
+      { "name": "Renewals Agent", "description": "Automates renewals and premium adjustments." },
+      { "name": "Customer Retention Agent", "description": "Identifies at-risk policies and proposes retention offers." },
+      { "name": "Risk Assessment Agent", "description": "Evaluates new risks and adjusts coverage recommendations." }
     ],
     "capabilities": [
       "Process claims with automated validation",
@@ -665,7 +675,9 @@
       { "name": "Safety Compliance Agent", "description": "Enforces safety rules and standards." },
       { "name": "Maintenance Scheduler Agent", "description": "Plans preventive maintenance schedules." },
       { "name": "Root Cause Agent", "description": "Analyzes logs and IoT signals for cause." },
-      { "name": "Energy Optimization Agent", "description": "Suggests efficiency improvements." }
+      { "name": "Energy Optimization Agent", "description": "Suggests efficiency improvements." },
+      { "name": "Supply Chain Agent", "description": "Tracks inventory and manages supplier relationships." },
+      { "name": "Quality Control Agent", "description": "Monitors production quality and defect rates." }
     ],
     "capabilities": [
       "Ingest real-time IoT sensor data streams",
@@ -742,7 +754,9 @@
       { "name": "Course Advisor Agent", "description": "Checks prerequisites and plans course paths." },
       { "name": "FAQ & Helpdesk Agent", "description": "Answers common questions about policies and tools." },
       { "name": "Assignment Assistant Agent", "description": "Explains rubrics and helps with time planning." },
-      { "name": "Engagement Insights Agent", "description": "Surfaces risk signals and suggests outreach." }
+      { "name": "Engagement Insights Agent", "description": "Surfaces risk signals and suggests outreach." },
+      { "name": "Grading Assistant Agent", "description": "Provides rubric-based feedback and grading suggestions." },
+      { "name": "Curriculum Planner Agent", "description": "Designs course sequences and learning pathways." }
     ],
     "capabilities": [
       "Retrieve course content from the LMS",
@@ -819,7 +833,9 @@
       { "name": "Benefits Screener Agent", "description": "Assesses eligibility and suggests next steps." },
       { "name": "Citizen Info Agent", "description": "Answers policy questions with verified sources." },
       { "name": "Case Routing Agent", "description": "Assigns cases by department, priority, and SLA." },
-      { "name": "Compliance Reporter Agent", "description": "Generates audit-ready activity and outcome reports." }
+      { "name": "Compliance Reporter Agent", "description": "Generates audit-ready activity and outcome reports." },
+      { "name": "Grant Processing Agent", "description": "Evaluates grant applications and tracks disbursements." },
+      { "name": "Public Records Agent", "description": "Handles FOIA requests and document retrieval." }
     ],
     "capabilities": [
       "Validate permit applications and documents",
@@ -896,7 +912,9 @@
       { "name": "Changelog Agent", "description": "Creates release notes and highlights breaking changes." },
       { "name": "Tutorial Author Agent", "description": "Generates beginner-to-advanced walkthroughs." },
       { "name": "Doc Review Agent", "description": "Flags inconsistencies and missing sections." },
-      { "name": "Versioning Agent", "description": "Maintains multi-version docs with diffs." }
+      { "name": "Versioning Agent", "description": "Maintains multi-version docs with diffs." },
+      { "name": "SDK Generator Agent", "description": "Creates language-specific SDKs from API specs." },
+      { "name": "Migration Assistant Agent", "description": "Generates migration guides for version upgrades." }
     ],
     "capabilities": [
       "Parse repositories and OpenAPI specs",

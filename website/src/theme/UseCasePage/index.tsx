@@ -14,6 +14,7 @@ import {
   ChartBarIcon,
   ChartBarSquareIcon,
   ChatBubbleLeftRightIcon,
+  CheckCircleIcon,
   CircleStackIcon,
   ClockIcon,
   CloudArrowUpIcon,
@@ -27,6 +28,7 @@ import {
   FireIcon,
   FolderOpenIcon,
   HashtagIcon,
+  KeyIcon,
   LanguageIcon,
   MagnifyingGlassIcon,
   MagnifyingGlassPlusIcon,
@@ -184,14 +186,6 @@ const Button = ({
   );
 };
 
-const Badge = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <span
-    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 ${className}`}
-  >
-    {children}
-  </span>
-);
-
 // Default steps for how it works section
 const defaultHowItWorks = [
   {
@@ -306,8 +300,13 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
         </Section>
 
         {/* Features & Capabilities */}
-        <Section>
-          <Container>
+        <Section className="relative overflow-hidden">
+          {/* Background gradient effects */}
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-cyan-500/5" />
+          <div className="absolute top-20 right-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl " />
+          <div className="absolute bottom-20 left-1/3 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl  delay-1000" />
+
+          <Container className="relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -337,20 +336,28 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
               </div>
 
               {/* Capabilities and Features Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 ">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Capabilities List - Left Column */}
                 {useCase.capabilities && useCase.capabilities.length > 0 && (
                   <div>
                     <div className="h-full">
                       <div className="space-y-4">
-                        {useCase.capabilities.map((capability) => (
-                          <div
+                        {useCase.capabilities.map((capability, index) => (
+                          <motion.div
                             key={`capability-${capability.substring(0, 30).replace(/\s+/g, "-")}`}
-                            className="flex items-start"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: 0.2 + index * 0.05 }}
+                            className="flex items-start group"
                           >
-                            <ArrowRightIcon className="w-5 h-5 text-emerald-400 mr-3 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-300 text-base">{capability}</span>
-                          </div>
+                            <div className="relative mr-3 mt-0.5 flex-shrink-0">
+                              <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <ArrowRightIcon className="w-5 h-5 text-emerald-400 relative z-10" />
+                            </div>
+                            <span className="text-gray-300 text-base group-hover:text-gray-200 transition-colors duration-300">
+                              {capability}
+                            </span>
+                          </motion.div>
                         ))}
                       </div>
                     </div>
@@ -362,28 +369,42 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   {useCase.features.map((feature, index) => {
                     const FeatureIcon = iconMap[feature.icon] || ServerStackIcon;
                     return (
-                      <div
+                      <motion.div
                         key={`feature-${feature.title.replace(/\s+/g, "-")}`}
-                        className={`rounded-lg border border-solid ${
-                          index === 0
-                            ? "border-emerald-400 bg-emerald-400/5"
-                            : "border-[#ffffff]/10"
-                        } p-4 transition-all duration-200 ${
-                          index !== 0 ? "hover:border-emerald-400/50 hover:bg-gray-900/30" : ""
-                        } flex flex-col h-full`}
+                        initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                        transition={{
+                          duration: 0.5,
+                          delay: 0.2 + index * 0.08,
+                          type: "spring",
+                          stiffness: 100,
+                        }}
+                        className="group relative perspective-1000"
                       >
-                        <div className="flex items-start">
-                          <div className="mr-3 flex-shrink-0">
-                            <FeatureIcon className="w-5 h-5 text-[#00d992]" />
+                        <div className="relative h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-5 overflow-hidden">
+                          {/* Animated background pattern */}
+                          <div className="absolute inset-0 opacity-5">
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                backgroundImage:
+                                  "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
+                                backgroundSize: "20px 20px",
+                              }}
+                            />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="text-base font-semibold text-white mb-1">
+
+                          <div className="relative z-10">
+                            <h3 className="text-base  text-white mb-3 flex items-center">
+                              <FeatureIcon className="w-5 h-5 text-emerald-400 mr-2 flex-shrink-0" />
                               {feature.title}
                             </h3>
-                            <p className="text-gray-400 mb-0 text-sm">{feature.description}</p>
+                            <p className="text-gray-400 mb-0 text-sm leading-relaxed">
+                              {feature.description}
+                            </p>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
@@ -401,7 +422,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
                   {useCase.supervisorFlow.title}
                 </h2>
                 <p className="text-gray-400 mb-6">{useCase.supervisorFlow.subtitle}</p>
@@ -416,7 +437,8 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
         )}
 
         {/* How It Works */}
-        <Container>
+
+        <Container className="relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -428,38 +450,51 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
               <div className="hidden lg:block relative">
                 <div className="grid grid-cols-4 gap-6">
                   {(useCase.howItWorks || defaultHowItWorks).map((step, index, array) => (
-                    <div key={step.step} className="relative">
+                    <motion.div
+                      key={step.step}
+                      initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                      transition={{
+                        duration: 0.5,
+                        delay: 0.5 + index * 0.1,
+                        type: "spring",
+                        stiffness: 100,
+                      }}
+                      className="relative"
+                    >
                       {/* Connection line to next step */}
                       {index < array.length - 1 && (
-                        <div className="absolute top-1/2 -right-6 w-6 h-px bg-emerald-500 z-10" />
+                        <div className="absolute top-1/2 -right-6 w-6 h-px bg-gradient-to-r from-emerald-500/40 to-cyan-500/40 z-10" />
                       )}
 
-                      {/* Step box with number in top-left */}
-                      <div
-                        className={`relative border border-solid ${
-                          index === 0
-                            ? "border-emerald-400 bg-emerald-400/5"
-                            : "border-[#ffffff]/10"
-                        } rounded-lg p-4 h-full transition-all duration-200 ${
-                          index !== 0 ? "hover:border-emerald-400/50" : ""
-                        }`}
-                      >
-                        {/* Step number in top-left corner */}
-                        <div className="absolute -top-2 -left-2 w-10 h-10 flex items-center justify-center">
-                          <div className="relative w-8 h-8 bg-black border-2 border-solid border-emerald-500 rounded-full flex items-center justify-center text-emerald-400 font-bold text-sm">
-                            {step.step}
-                          </div>
+                      {/* Step box */}
+                      <div className="relative h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-5 overflow-hidden">
+                        {/* Animated background pattern */}
+                        <div className="absolute inset-0 opacity-5">
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              backgroundImage:
+                                "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
+                              backgroundSize: "20px 20px",
+                            }}
+                          />
                         </div>
 
-                        {/* Step content with padding for number */}
-                        <div className="pt-3 pl-3">
-                          <h3 className="font-semibold text-lg text-white mb-2">{step.title}</h3>
+                        {/* Step content */}
+                        <div className="relative z-10">
+                          <h3 className="font-bold text-base text-white mb-3 flex items-center">
+                            <span className="text-emerald-400 font-bold text-lg mr-2">
+                              {step.step}.
+                            </span>
+                            {step.title}
+                          </h3>
                           <p className="text-gray-400 mb-0 text-sm leading-relaxed">
                             {step.description}
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -468,28 +503,43 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
               <div className="hidden md:block lg:hidden">
                 <div className="grid grid-cols-2 gap-6">
                   {(useCase.howItWorks || defaultHowItWorks).map((step, index) => (
-                    <div key={step.step} className="relative">
-                      {/* Connection line for first row to second row */}
-                      {index === 1 && (
-                        <div className="absolute -bottom-6 left-1/2 w-px h-6 bg-emerald-500/20 z-10" />
-                      )}
-
-                      {/* Step box with number in top-left */}
-                      <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-5 h-full hover:bg-gray-900/70 hover:border-emerald-500/30 transition-all duration-200">
-                        {/* Step number in top-left corner */}
-                        <div className="absolute -top-2 -left-2 w-10 h-10 flex items-center justify-center">
-                          <div className="absolute inset-0 bg-emerald-500 rounded-full blur-md opacity-50" />
-                          <div className="relative w-8 h-8 bg-black border-2 border-emerald-400 rounded-full flex items-center justify-center text-emerald-400 font-bold text-sm">
-                            {step.step}
-                          </div>
+                    <motion.div
+                      key={step.step}
+                      initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                      transition={{
+                        duration: 0.5,
+                        delay: 0.5 + index * 0.1,
+                        type: "spring",
+                        stiffness: 100,
+                      }}
+                      className="relative"
+                    >
+                      {/* Step box */}
+                      <div className="relative h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-5 overflow-hidden">
+                        {/* Animated background pattern */}
+                        <div className="absolute inset-0 opacity-5">
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              backgroundImage:
+                                "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
+                              backgroundSize: "20px 20px",
+                            }}
+                          />
                         </div>
 
-                        <div className="pl-12">
-                          <h3 className="font-semibold text-white mb-2">{step.title}</h3>
+                        <div className="relative z-10">
+                          <h3 className="font-bold text-white mb-2 flex items-center">
+                            <span className="text-emerald-400 text-base font-bold mr-2">
+                              {step.step}.
+                            </span>
+                            {step.title}
+                          </h3>
                           <p className="text-gray-400 text-sm">{step.description}</p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -497,25 +547,49 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
               {/* Mobile view with vertical boxes */}
               <div className="block md:hidden">
                 <div className="space-y-4">
-                  {(useCase.howItWorks || defaultHowItWorks).map((step) => (
-                    <div key={step.step} className="relative">
-                      {/* Step box with number in top-left */}
-                      <div className="relative bg-gray-900/30 border border-solid border-gray-800/50 rounded-lg p-4">
-                        {/* Step number in top-left corner */}
-                        <div className="absolute -top-2 -left-2 w-8 h-8 flex items-center justify-center">
-                          <div className="relative w-7 h-7 bg-black border border-solid border-emerald-500 rounded-full flex items-center justify-center text-emerald-400 font-semibold text-xs">
-                            {step.step}
+                  {(useCase.howItWorks || defaultHowItWorks).map((step, index) => (
+                    <motion.div
+                      key={step.step}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: 0.5 + index * 0.08,
+                      }}
+                      className="relative"
+                    >
+                      {/* Step box */}
+                      <div className="relative bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-xl p-4 overflow-hidden">
+                        {/* Animated background pattern */}
+                        <div className="absolute inset-0 opacity-5">
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              backgroundImage:
+                                "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
+                              backgroundSize: "15px 15px",
+                            }}
+                          />
+                        </div>
+
+                        {/* Step number badge */}
+                        <div className="absolute -top-2 -left-2 w-10 h-10 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-sm" />
+                          <div className="relative w-8 h-8 bg-gradient-to-br from-gray-900 to-gray-950 border border-solid border-emerald-500/60 rounded-full flex items-center justify-center">
+                            <span className="text-emerald-400 font-semibold text-xs">
+                              {step.step}
+                            </span>
                           </div>
                         </div>
 
-                        <div className="pl-6 pt-1">
+                        <div className="relative z-10 pl-6 pt-1">
                           <h3 className="font-semibold text-white text-sm mb-1">{step.title}</h3>
                           <p className="text-gray-400 text-xs leading-relaxed">
                             {step.description}
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -523,163 +597,230 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
           </motion.div>
         </Container>
 
-        {/* Pain → Solution */}
-        <Section className="">
-          <Container>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              {/* Single card with Pain → Solution */}
-              <div className="border border-solid border-white/10 rounded-xl p-4 sm:p-6 lg:p-8">
-                <div className="relative">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-0">
-                    {/* Vertical divider line - only on desktop */}
-                    <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2">
-                      <div className="h-full bg-gradient-to-b from-transparent via-emerald-500/30 to-transparent" />
-                    </div>
+        {/* Example Agents - Full Width Section */}
+        {useCase.exampleAgents && useCase.exampleAgents.length > 0 && (
+          <Section className="relative overflow-hidden">
+            {/* Background gradient effects */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-cyan-500/5" />
+            <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
 
-                    {/* Problems column */}
-                    <div className="lg:pr-12">
-                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-rose-500 mb-4 lg:mb-6 flex items-center">
-                        The Problems
-                      </h2>
-                      <ul className="space-y-3 lg:space-y-4 pl-0">
-                        {useCase.painPoints.map((pain) => (
-                          <li
-                            key={`pain-${pain.substring(0, 30).replace(/\s+/g, "-")}`}
-                            className="flex items-start group"
-                          >
-                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-500 mr-2 sm:mr-3 mt-1.5 sm:mt-2 flex-shrink-0" />
-                            <span className="text-sm sm:text-base text-white group-hover:text-gray-300 transition-colors">
-                              {pain}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Mobile divider */}
-                    <div className="block lg:hidden my-6">
-                      <div className="flex items-center justify-center">
-                        <div className="h-px w-12 bg-gradient-to-r from-transparent to-emerald-500/30" />
-                        <ArrowRightIcon className="w-4 h-4 text-emerald-400 mx-2" />
-                        <div className="h-px w-12 bg-gradient-to-l from-transparent to-emerald-500/30" />
-                      </div>
-                    </div>
-
-                    {/* Solutions column */}
-                    <div className="lg:pl-12">
-                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-emerald-500 mb-4 lg:mb-6 flex items-center">
-                        How VoltAgent Solves It
-                      </h2>
-                      <ul className="space-y-3 lg:space-y-4 pl-0">
-                        {useCase.solutions.map((solution) => (
-                          <li
-                            key={`solution-${solution.substring(0, 30).replace(/\s+/g, "-")}`}
-                            className="flex items-start group"
-                          >
-                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 mr-2 sm:mr-3 mt-1.5 sm:mt-2 flex-shrink-0" />
-                            <span className="text-sm sm:text-base text-white group-hover:text-gray-300 transition-colors">
-                              {solution}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </Container>
-        </Section>
-
-        {/* Example Agents & Security - Side by Side */}
-        <Section>
-          <Container>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Example Agents - Left Column */}
-              {useCase.exampleAgents && useCase.exampleAgents.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.35 }}
-                >
-                  <h2 className="text-2xl md:text-3xl font-bold text-main-emerald mb-4">
-                    Example Agents You Can Build
-                  </h2>
-                  <p className="text-gray-400 mb-6 text-sm">
-                    With VoltAgent's TypeScript framework, you have complete control to build agents
-                    tailored to your specific needs:
-                  </p>
-                  <div className="space-y-3">
-                    {useCase.exampleAgents.map((agent) => (
-                      <div
-                        key={`agent-${agent.name.replace(/\s+/g, "-")}`}
-                        className="flex items-start group hover:bg-emerald-500/5 rounded-lg p-2 transition-all duration-200"
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/60 mr-3 mt-2 flex-shrink-0 group-hover:bg-emerald-400" />
-                        <div className="flex-1">
-                          <span className="text-emerald-400 font-semibold mr-2">{agent.name}:</span>
-                          <span className="text-gray-400 text-sm">{agent.description}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Enterprise Security - Right Column */}
+            <Container className="relative z-10">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
+                transition={{ duration: 0.5, delay: 0.35 }}
               >
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">
-                  Enterprise-Ready Security
-                </h2>
-                <div className="flex flex-wrap gap-3 mb-6">
-                  <Badge>GDPR Ready</Badge>
-                  <Badge>SSO/SAML</Badge>
-                  <Badge>RBAC</Badge>
-                  <Badge>Self-Hosted Option</Badge>
+                {/* Section Header */}
+                <div className="mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    <span className="text-main-emerald">AI Agent Ideas</span> You Can Build
+                  </h2>
+                  <p className="text-gray-400 text-lg">
+                    Here are examples of agents you can design with VoltAgent, tailored to your
+                    workflows and stack.
+                  </p>
                 </div>
-                <p className="text-gray-400 text-sm">
-                  Your data stays in your control. VoltAgent supports self-hosting, single sign-on,
-                  role-based access control, and meets enterprise compliance standards. All agent
-                  interactions are encrypted and auditable.
-                </p>
+
+                {/* Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {useCase.exampleAgents.map((agent, index) => {
+                    return (
+                      <motion.div
+                        key={`agent-${agent.name.replace(/\s+/g, "-")}`}
+                        initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                        transition={{
+                          duration: 0.5,
+                          delay: 0.35 + index * 0.08,
+                          type: "spring",
+                          stiffness: 100,
+                        }}
+                        className="group relative perspective-1000"
+                      >
+                        {/* Card content */}
+                        <div className="relative h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-6 overflow-hidden">
+                          {/* Animated background pattern */}
+                          <div className="absolute inset-0 opacity-10">
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                backgroundImage:
+                                  "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
+                                backgroundSize: "20px 20px",
+                              }}
+                            />
+                          </div>
+
+                          <div className="relative z-10">
+                            <h3 className="text-sm font-bold text-white mb-3">{agent.name}</h3>
+                            <p className="text-xs text-gray-400 leading-relaxed mb-0">
+                              {agent.description}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+
+                  {/* "+ more" card with enhanced design */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                    transition={{
+                      duration: 0.5,
+                      delay: 0.35 + useCase.exampleAgents.length * 0.08,
+                      type: "spring",
+                      stiffness: 100,
+                    }}
+                    className="group relative perspective-1000 cursor-pointer"
+                  >
+                    <div className="relative h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-6">
+                      <div className="relative z-10">
+                        <h3 className="text-sm font-bold text-emerald-400 mb-3 pr-8 flex items-center">
+                          <span className="text-lg font-bold text-emerald-400 mr-2">+</span>
+                          Build Custom Agents
+                        </h3>
+                        <p className="text-xs text-gray-500 leading-relaxed mb-0">
+                          Create specialized AI agents tailored to your unique workflows
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </Container>
+          </Section>
+        )}
+
+        {/* Enterprise Security & CTA Combined Section */}
+        <Section className="relative overflow-hidden">
+          {/* Background gradient effects */}
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-cyan-500/5" />
+          <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+
+          <Container className="relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+              {/* Enterprise Security - Left Side */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="relative"
+              >
+                <div className="h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-6 md:p-8 overflow-hidden">
+                  {/* Animated background pattern */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backgroundImage:
+                          "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
+                        backgroundSize: "20px 20px",
+                      }}
+                    />
+                  </div>
+
+                  <div className="relative z-10 h-full flex flex-col">
+                    <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-6 md:mb-8 flex items-center">
+                      <ShieldCheckIcon className="w-6 h-6 md:w-7 md:h-7 text-emerald-400 mr-2 md:mr-3" />
+                      <span className="leading-tight">Enterprise-Ready Security</span>
+                    </h2>
+
+                    <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
+                      {[
+                        { label: "GDPR Ready", Icon: ShieldCheckIcon },
+                        { label: "SSO/SAML", Icon: KeyIcon },
+                        { label: "RBAC", Icon: UserGroupIcon },
+                        { label: "Self-Hosted", Icon: ServerStackIcon },
+                      ].map((item, index) => (
+                        <motion.div
+                          key={item.label}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.7 + index * 0.1 }}
+                          className="flex items-center bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-solid border-emerald-500/30 rounded-lg px-3 py-2 md:px-4 md:py-3"
+                        >
+                          <item.Icon className="w-4 h-4 md:w-5 md:h-5 text-emerald-400 mr-2 md:mr-3 flex-shrink-0" />
+                          <span className="text-xs md:text-sm font-medium text-emerald-400">
+                            {item.label}
+                          </span>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    <p className="text-gray-400 text-sm md:text-base leading-relaxed mt-auto">
+                      Your data stays in your control with self-hosting and enterprise compliance.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Ready to Ship - Right Side */}
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                className="relative"
+              >
+                <div className="h-full bg-gradient-to-br from-emerald-500/10 via-gray-900/90 to-gray-950/90 backdrop-blur-xl border-2 border-solid border-emerald-400/40 rounded-2xl p-6 md:p-8 overflow-hidden">
+                  {/* Animated background pattern */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(45deg, transparent 30%, rgba(0, 217, 146, 0.1) 50%, transparent 70%)",
+                        backgroundSize: "200% 200%",
+                        animation: "gradient-shift 4s ease infinite",
+                      }}
+                    />
+                  </div>
+
+                  <div className="relative z-10 h-full flex flex-col">
+                    <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-6 md:mb-8 flex items-center">
+                      <BoltIcon className="w-6 h-6 md:w-7 md:h-7 text-emerald-400 mr-2 md:mr-3" />
+                      <span className="leading-tight">Ready to Ship Real Agents?</span>
+                    </h2>
+
+                    <div className="flex-1 flex flex-col justify-center">
+                      <p className="text-base md:text-lg text-gray-300 mb-6 md:mb-10">
+                        Join hundreds of teams building production AI agents with VoltAgent
+                      </p>
+
+                      <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-start mb-5 md:mb-6">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            href="/docs/getting-started"
+                            variant="primary"
+                            className="w-full sm:w-auto text-sm md:text-base"
+                          >
+                            Get Started
+                            <ArrowRightIcon className="w-4 h-4 md:w-5 md:h-5 ml-2" />
+                          </Button>
+                        </motion.div>
+
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            href="https://console.voltagent.dev/demo"
+                            variant="secondary"
+                            className="w-full sm:w-auto text-sm md:text-base"
+                          >
+                            Try Demo
+                          </Button>
+                        </motion.div>
+                      </div>
+
+                      <div className="flex items-center text-xs md:text-sm">
+                        <CheckCircleIcon className="w-4 h-4 text-emerald-400 mr-2" />
+                        <span className="text-gray-400">5 min setup</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             </div>
-          </Container>
-        </Section>
-
-        {/* Final CTA */}
-        <Section className="bg-gradient-to-r from-[#00d992]/10 to-transparent">
-          <Container>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.9 }}
-              className="text-center"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Ready to Ship Real Agents?
-              </h2>
-              <p className="text-lg text-gray-400 mb-8">
-                Join hundreds of teams building production AI agents with VoltAgent
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button href="/docs/getting-started" variant="primary">
-                  Get Started
-                  <ArrowRightIcon className="w-5 h-5 ml-2" />
-                </Button>
-                <Button href="https://console.voltagent.dev/demo" variant="secondary">
-                  Try Demo
-                </Button>
-              </div>
-            </motion.div>
           </Container>
         </Section>
       </main>
