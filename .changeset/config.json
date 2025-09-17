@@ -7,7 +7,7 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["!@voltagent/*", "!create-voltagent-app"],
+  "ignore": ["!@voltagent/*", "!create-voltagent-app", "voltagent-example-*"],
   "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
     "onlyUpdatePeerDependentsWhenOutOfRange": true
   }

@@ -14,7 +14,7 @@ You can access the hosted VoltOps Platform at:
 
 ### How it Works
 
-When you run a VoltAgent application locally with observability enabled, it exposes a local server (typically on port `3141`). The VoltOps Platform connects directly to this local server via your browser.
+When you run a VoltAgent application locally, it exposes a local server (typically on port `3141`). The VoltOps Platform connects directly to this local server via your browser.
 
 **Key Features (Local Debugging):**
 
@@ -47,97 +47,129 @@ When you run a VoltAgent application locally with observability enabled, it expo
 <!-- This GIF should show the VoltOps Platform interface successfully connecting to the localhost:3141 endpoint after the VoltAgent application starts. -->
 <!-- ![Connecting to Local Agent](placeholder-connect.gif) -->
 
-### Production Tracing with VoltOpsClient
+#### Storage: In‑Memory (default) vs LibSQL (persistent)
 
-While the VoltOps Platform is excellent for local development and real-time debugging, VoltAgent also provides a way to capture and persist observability data for your agents running in production environments. This is achieved using the `VoltOpsClient`.
+By default, observability traces and logs are kept in process memory only. This is ideal for local debugging sessions, but data is not persisted once the process exits.
 
-The `VoltOpsClient` is a unified client that provides both observability export and prompt management functionality. It allows you to:
+To persist observability data, provide a `storage` adapter to `VoltAgentObservability`. Use `@voltagent/libsql` for a simple, file‑backed SQLite database or a remote Turso LibSQL instance.
 
-- Monitor deployed agents in production
-- Analyze behavior over time with detailed tracing
-- Debug issues that occur in production environments
-- Store a history of agent interactions
-- Use dynamic prompts managed from the VoltOps dashboard
+Example (persist with LibSQL):
 
-To use the `VoltOpsClient`, you'll need to:
+```ts
+import { VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+import { createPinoLogger } from "@voltagent/logger";
+import { LibSQLObservabilityAdapter } from "@voltagent/libsql";
 
-1.  **Create a project:** Sign up or log in at [https://console.voltagent.dev/tracing-setup](https://console.voltagent.dev/tracing-setup) to create a new project. This will provide you with a Public Key and a Secret Key.
-2.  **Configure your VoltAgent application:** Add the `VoltOpsClient` to your `VoltAgent` configuration with your keys.
+// your agent instance
+import { agent } from "./agent"; // adjust path as needed
 
-![VoltAgent Client Configuration](https://cdn.voltagent.dev/docs/voltagent-console-team.gif)
-
-Here's an example of how to set up the `VoltOpsClient` in your TypeScript application:
-
-```typescript
-import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
-
-const agent = new Agent({
-  name: "My Production Agent",
-  instructions: "You are a helpful assistant designed for production.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-});
-
-const voltOpsPublicKey = process.env.VOLTAGENT_PUBLIC_KEY;
-const voltOpsSecretKey = process.env.VOLTAGENT_SECRET_KEY;
+const logger = createPinoLogger({ name: "my-voltagent-app", level: "info" });
 
 new VoltAgent({
-  agents: {
-    mainAgent: agent,
-  },
-  // highlight-start
-  voltOpsClient: new VoltOpsClient({
-    publicKey: voltOpsPublicKey,
-    secretKey: voltOpsSecretKey,
+  agents: { agent },
+  server: honoServer(),
+  logger,
+  observability: new VoltAgentObservability({
+    logger,
+    storage: new LibSQLObservabilityAdapter({
+      // Local file (default): creates ./.voltagent/observability.db if not present
+      // url: "file:./.voltagent/observability.db",
+      // Remote Turso example:
+      // url: "libsql://<your-db>.turso.io",
+      // authToken: process.env.TURSO_AUTH_TOKEN,
+    }),
   }),
-  // highlight-end
 });
-
-// Your agent is now configured for full observability in the VoltOps cloud
-// and can use dynamic prompts from the VoltOps dashboard.
 ```
 
-#### Advanced VoltOpsClient Configuration
+Notes:
 
-The `VoltOpsClient` offers several configuration options:
+- In‑memory storage remains the default when no `storage` is provided.
+- The LibSQL adapter works for both traces and logs. Real‑time WebSocket view remains available either way.
+- File‑backed mode uses SQLite via LibSQL; directories are created automatically for the default path.
 
-```typescript
-const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
-  secretKey: process.env.VOLTAGENT_SECRET_KEY,
-  baseUrl: "https://api.voltagent.dev", // Optional: Custom API endpoint
-  observability: true, // Enable/disable observability export
-  prompts: true, // Enable/disable prompt management
-  promptCache: {
-    enabled: true, // Enable prompt caching
-    ttl: 300, // Cache TTL in seconds (5 minutes)
-    maxSize: 100, // Maximum cache entries
+### Production Observability (Auto)
+
+VoltAgent now uses the new OpenTelemetry-based observability module and enables production export automatically when API keys are present in your environment. No code changes are required.
+
+- **Add keys to `.env`:**
+
+```bash
+# .env
+VOLTAGENT_PUBLIC_KEY=pk_...
+VOLTAGENT_SECRET_KEY=sk_...
+```
+
+- **Get keys quickly:** Visit [https://console.voltagent.dev/tracing-setup](https://console.voltagent.dev/tracing-setup) and use the auto-install to generate the snippet. Once added, production observability turns on automatically.
+
+- **What happens under the hood:**
+  - Built on OpenTelemetry (standard OTLP over HTTP).
+  - Remote export initializes lazily only when valid keys are detected.
+  - Smart batching with backpressure ensures minimal overhead for your requests.
+  - Local, real-time debugging via WebSocket stays available regardless of remote export.
+
+Nothing else is needed. Your traces and logs will stream to VoltOps securely when running in environments with keys configured.
+
+#### Environment Variables
+
+```bash
+VOLTAGENT_PUBLIC_KEY=your_public_key_here  # must start with pk_
+VOLTAGENT_SECRET_KEY=your_secret_key_here  # must start with sk_
+```
+
+If keys are missing or invalid, VoltAgent continues to run locally with full real-time debugging, but skips remote export.
+
+### Advanced: Override Observability Behavior
+
+The defaults work for most cases. If you want to fine-tune sampling or batching, provide a custom `VoltAgentObservability` when creating `VoltAgent`.
+
+```ts
+import { VoltAgent, Agent, VoltAgentObservability } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const observability = new VoltAgentObservability({
+  serviceName: "my-service", // Optional service metadata
+  voltOpsSync: {
+    // Sampling: always | never | ratio | parent
+    sampling: { strategy: "ratio", ratio: 0.25 }, // 25% sampling
+
+    // Smart batching & timeouts (OTLP Batch* defaults shown for reference)
+    maxQueueSize: 4096,
+    maxExportBatchSize: 512,
+    scheduledDelayMillis: 4000,
+    exportTimeoutMillis: 30000,
   },
-  fetch: customFetch, // Optional: Custom fetch implementation
 });
-```
 
-You can also configure `VoltOpsClient` per agent for more granular control:
-
-```typescript
-const specificAgent = new Agent({
-  name: "Specialized Agent",
-  instructions: "You are a specialized assistant.",
-  llm: new VercelAIProvider(),
+const agent = new Agent({
+  name: "My Agent",
+  instructions: "You are a helpful assistant.",
   model: openai("gpt-4o-mini"),
-  // highlight-start
-  voltOpsClient: new VoltOpsClient({
-    publicKey: process.env.SPECIALIZED_PUBLIC_KEY,
-    secretKey: process.env.SPECIALIZED_SECRET_KEY,
-    // This agent has its own VoltOps configuration
-  }),
-  // highlight-end
+});
+
+new VoltAgent({ agents: { main: agent }, observability });
+```
+
+Common overrides:
+
+- **Disable remote export:** Keep local console debugging only
+
+```ts
+new VoltAgentObservability({
+  voltOpsSync: { sampling: { strategy: "never" } },
 });
 ```
 
-This setup ensures that your agent's activities are securely transmitted and stored with full observability, providing valuable insights for production monitoring and analysis, plus the ability to use dynamic prompts managed from the VoltOps dashboard.
+- **Sample by parent:** Inherit sampling decision from the parent trace
+
+```ts
+new VoltAgentObservability({
+  voltOpsSync: { sampling: { strategy: "parent" } },
+});
+```
+
+These controls are OpenTelemetry-compliant and affect both traces and logs. Real-time local view and in-memory storage remain active either way.
 
 ### Exploring the Console Features
 
@@ -179,74 +211,33 @@ You can usually select individual steps in the execution trace to inspect the de
 
 The console provides feedback on its connection status to your local VoltAgent server (e.g., `http://localhost:3141`). Look for indicators (like the `ConnectionAlert` component) showing whether the connection is active or if there are issues. You might also find settings to change the target URL if your agent isn't running on the default `http://localhost:3141`.
 
-Remember, this connection is for local debugging. For sending data to the VoltAgent cloud for persistent storage and production monitoring, you should configure the `VoltOpsClient` in your application code.
+Remember, this connection is for local debugging. For production persistence and monitoring, just add `.env` keys and remote export auto-enables. `VoltOpsClient` is no longer required for observability and is only needed if you want dynamic prompt management.
 
-### Migration Guide: From telemetryExporter to VoltOpsClient
+### Migration Guide
 
-If you're currently using the deprecated `telemetryExporter` configuration, here's how to migrate to the new `VoltOpsClient`:
+If you used the deprecated `telemetryExporter` or configured observability via `VoltOpsClient`, migrate as follows:
 
-#### Before (Deprecated ❌)
+- **Before (Deprecated ❌):** `telemetryExporter` in `VoltAgent` options.
+- **Now (✅):** Remove exporter/client observability wiring. Add `.env` keys. Optional advanced overrides go through `VoltAgentObservability`.
 
-```typescript
-import { Agent, VoltAgent, VoltAgentExporter } from "@voltagent/core";
+Minimal example after migration:
 
-new VoltAgent({
-  agents: { mainAgent: agent },
-  // ❌ This approach is deprecated
-  telemetryExporter: new VoltAgentExporter({
-    publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
-    secretKey: process.env.VOLTAGENT_SECRET_KEY,
-    baseUrl: "https://api.voltagent.dev",
-  }),
-});
-```
-
-#### After (Current ✅)
-
-```typescript
-import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+```ts
+// .env contains VOLTAGENT_PUBLIC_KEY and VOLTAGENT_SECRET_KEY
+import { VoltAgent, Agent } from "@voltagent/core";
 
 new VoltAgent({
-  agents: { mainAgent: agent },
-  // ✅ Use VoltOpsClient instead
-  voltOpsClient: new VoltOpsClient({
-    publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
-    secretKey: process.env.VOLTAGENT_SECRET_KEY,
-    baseUrl: "https://api.voltagent.dev", // Optional, this is the default
-    observability: true, // Enable observability (default: true)
-    prompts: false, // Disable prompts if you don't need them
-  }),
+  agents: {
+    main: new Agent({
+      /* ... */
+    }),
+  },
 });
+// Remote export auto-enables when keys exist; no code changes needed
 ```
 
-#### Migration Steps
+Notes:
 
-1. **Replace the import:** Change `VoltAgentExporter` to `VoltOpsClient`
-2. **Update the configuration key:** Change `telemetryExporter` to `voltOpsClient`
-3. **Update the constructor:** Use `new VoltOpsClient()` instead of `new VoltAgentExporter()`
-4. **Optional configuration:** Add `observability: true` to explicitly enable observability if needed
-
-#### Why Migrate?
-
-- **Unified client:** VoltOpsClient handles both observability and prompt management
-- **Better performance:** Improved caching and connection management
-- **New features:** Access to dynamic prompts and enhanced observability
-- **Future-proof:** The `VoltAgentExporter` will be removed in future versions
-
-#### Environment Variables
-
-The environment variable names remain the same:
-
-```bash
-# .env file
-VOLTAGENT_PUBLIC_KEY=your_public_key_here
-VOLTAGENT_SECRET_KEY=your_secret_key_here
-```
-
-#### Troubleshooting
-
-**Common migration issues:**
-
-- **Import error:** Make sure you're importing `VoltOpsClient` instead of `VoltAgentExporter`
-- **Configuration error:** Ensure you're using `voltOpsClient` property instead of `telemetryExporter`
-- **Missing features:** If you only need observability, set `prompts: false` to disable prompt management
+- **OpenTelemetry base:** The new system uses OpenTelemetry under the hood and exports via OTLP HTTP.
+- **No extra usage overhead:** Export is lazy-initialized and batched; local debugging stays instant.
+- **Prompts still optional:** `VoltOpsClient` now focuses on prompt management. Use it only if you want dynamic prompts.

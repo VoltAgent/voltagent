@@ -5,8 +5,8 @@
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { type ToolExecuteOptions, createTool } from "@voltagent/core";
-import type { ToolExecutionContext } from "@voltagent/core";
+import { createTool } from "@voltagent/core";
+import type { OperationContext } from "@voltagent/core";
 import { z } from "zod";
 import { safeBrowserOperation } from "./browserBaseTools";
 
@@ -22,11 +22,7 @@ export const saveToFileTool = createTool({
     overwrite: z.boolean().optional().default(false).describe("Whether to overwrite existing file"),
     timeout: z.number().positive().optional().default(30000),
   }),
-  execute: async (args, options?: ToolExecuteOptions) => {
-    const context = options as ToolExecutionContext;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
-    }
+  execute: async (args, _oc?: OperationContext) => {
     try {
       const dirPath = path.dirname(args.filePath);
 
@@ -89,12 +85,11 @@ export const exportPdfTool = createTool({
     timeout: z.number().positive().optional().default(60000),
     // Add other Playwright PDF options as needed (scale, margins, etc.)
   }),
-  execute: async (args, options?: ToolExecuteOptions) => {
-    const context = options as ToolExecutionContext;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
+  execute: async (args, oc?: OperationContext) => {
+    if (!oc?.context) {
+      throw new Error("OperationContext is missing or invalid.");
     }
-    return safeBrowserOperation(context, async (page) => {
+    return safeBrowserOperation(oc, async (page) => {
       // Ensure the directory exists asynchronously
       const dir = path.dirname(args.filename);
       try {
@@ -140,12 +135,11 @@ export const extractDataTool = createTool({
       .optional()
       .describe("Optional CSS selector for the container element to extract from."),
   }),
-  execute: async (args, options?: ToolExecuteOptions) => {
-    const context = options as ToolExecutionContext;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
+  execute: async (args, oc?: OperationContext) => {
+    if (!oc?.context) {
+      throw new Error("OperationContext is missing or invalid.");
     }
-    return safeBrowserOperation(context, async (page) => {
+    return safeBrowserOperation(oc, async (page) => {
       const extractedData = await page.evaluate(
         (params) => {
           const { selectors, includeHtml } = params;

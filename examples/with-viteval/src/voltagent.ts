@@ -1,4 +1,6 @@
 import { VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+
 import { cleanEnv, str } from "envalid";
 import { generalAgent } from "#/agents/general";
 import { geographyAgent } from "#/agents/geography";
@@ -25,4 +27,5 @@ export const voltagent = new VoltAgent({
     publicKey: env.VOLTOPS_PUBLIC_KEY,
     secretKey: env.VOLTOPS_SECRET_KEY,
   }),
+  server: honoServer(),
 });

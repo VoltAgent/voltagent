@@ -2,24 +2,30 @@ import { PinoLoggerProvider } from "./providers";
 import type { LoggerProvider, LoggerWithProvider } from "./providers";
 import type { LogBuffer, LoggerOptions } from "./types";
 
-// Global logger provider instance
-let globalLoggerProvider: LoggerProvider | null = null;
-
 /**
- * Get or create the global logger provider
+ * Get (or auto-create if not exists) the global logger provider
  */
 export function getGlobalLoggerProvider(): LoggerProvider {
+  // @ts-expect-error - globalThis is not typed
+  const globalLoggerProvider = globalThis.___voltagent_logger_provider as
+    | LoggerProvider
+    | undefined;
+
   if (!globalLoggerProvider) {
-    globalLoggerProvider = new PinoLoggerProvider();
+    // @ts-expect-error - globalThis is not typed
+    globalThis.___voltagent_logger_provider = new PinoLoggerProvider();
   }
-  return globalLoggerProvider;
+
+  // @ts-expect-error - globalThis is not typed
+  return globalThis.___voltagent_logger_provider as LoggerProvider;
 }
 
 /**
- * Set a custom logger provider
+ * Set the global logger provider
  */
 export function setGlobalLoggerProvider(provider: LoggerProvider): void {
-  globalLoggerProvider = provider;
+  // @ts-expect-error - globalThis is not typed
+  globalThis.___voltagent_logger_provider = provider;
 }
 
 /**
@@ -48,8 +54,10 @@ export function createPinoLogger(
     undefined, // No longer using external buffer
     options?.pinoOptions,
   );
+
+  const globalLoggerProvider = getGlobalLoggerProvider();
   if (!globalLoggerProvider) {
-    globalLoggerProvider = provider;
+    setGlobalLoggerProvider(provider);
   }
   return provider.createLogger(options);
 }

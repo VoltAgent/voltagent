@@ -148,6 +148,10 @@ dist
 
 # Gatsby files
 .cache/
+
+# VoltAgent
+.voltagent
+
 # Comment in the public line in if your project uses Gatsby and not Next.js
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public
@@ -209,19 +213,13 @@ dist
     spinner.succeed(chalk.green("VoltAgent project created successfully! 📁"));
 
     // Install provider-specific dependency
-    if (options.aiProvider && options.aiProvider !== "ollama") {
+    if (options.aiProvider) {
       const providerConfig = AI_PROVIDER_CONFIG[options.aiProvider];
       await installProviderDependency(
         targetDir,
         providerConfig.package,
         providerConfig.packageVersion,
-      );
-    } else if (options.aiProvider === "ollama") {
-      const providerConfig = AI_PROVIDER_CONFIG.ollama;
-      await installProviderDependency(
-        targetDir,
-        providerConfig.package,
-        providerConfig.packageVersion,
+        providerConfig.extraPackages || [],
       );
     }
 

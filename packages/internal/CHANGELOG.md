@@ -1,5 +1,11 @@
 # @voltagent/internal
 
+## 0.0.10
+
+### Patch Changes
+
+- [#559](https://github.com/VoltAgent/voltagent/pull/559) [`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add deps that the core types rely on, i.e. `type-fest` or they are not installed by default by package managers
+
 ## 0.0.9
 
 ### Patch Changes

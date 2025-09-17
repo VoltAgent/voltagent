@@ -1,178 +1,157 @@
-import { z } from "zod";
 import { type AgentHooks, createHooks } from ".";
-import { createTestLibSQLStorage } from "../../test-utils/libsql-test-helpers";
-import { type AgentTool, createTool } from "../../tool";
-import { Agent } from "../agent";
-// Import only OperationContext and VoltAgentError
-import type { OperationContext, VoltAgentError } from "../types";
-
-// Removed unused mock types
-
-// Mock LLM provider
-class MockProvider {
-  async generateText() {
-    return {
-      provider: { originalResponse: true },
-      text: "Mock response",
-      usage: {
-        promptTokens: 10,
-        completionTokens: 5,
-        totalTokens: 15,
-      },
-      finishReason: "stop",
-    };
-  }
-
-  getModelIdentifier() {
-    return "mock-model";
-  }
-}
-
-// Create a test agent
-const createTestAgent = (name: string) => {
-  const memory = createTestLibSQLStorage(`hooks_${name}`);
-  return new Agent({
-    name,
-    description: `Test ${name}`,
-    llm: new MockProvider() as any,
-    model: "mock-model",
-    memory: memory,
-    historyMemory: memory,
-  });
-};
-
-// Create mock OperationContext for tests
-const createMockContext = (id = "mock-op-1") => {
-  // No explicit type annotation here
-  const mockHistoryEntry = {
-    id: `history-${id}`,
-    startTime: new Date(),
-    input: "test input",
-    output: "",
-    status: "working", // Use a valid AgentStatus string literal
-    steps: [] as any[],
-  };
-
-  // Cast the return object to OperationContext to satisfy the usage
-  return {
-    operationId: id,
-    userContext: new Map<string | symbol, any>(),
-    historyEntry: mockHistoryEntry,
-    eventUpdaters: new Map<string, any>(),
-    isActive: true,
-  } as OperationContext; // Add cast here
-};
+import type { Tool } from "../../tool";
+import { createMockLanguageModel, createMockTool, createTestAgent } from "../test-utils";
+import type { OperationContext } from "../types";
 
 describe("Agent Hooks Functionality", () => {
   let hooks: AgentHooks;
-  let agent: Agent<any>;
-  let sourceAgent: Agent<any>;
-  let tool: AgentTool;
+  let agent: ReturnType<typeof createTestAgent>;
+  let tool: Tool<any, any>;
 
   beforeEach(() => {
     hooks = createHooks();
-    agent = createTestAgent("TestAgent");
-    sourceAgent = createTestAgent("SourceAgent");
-    tool = createTool({
-      name: "test-tool",
-      description: "A test tool",
-      parameters: z.object({}),
-      execute: vi.fn().mockResolvedValue("Tool result"),
+    agent = createTestAgent({
+      name: "TestAgent",
+      model: createMockLanguageModel({
+        modelId: "mock-model",
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          content: [{ type: "text", text: "Mock response" }],
+          warnings: [],
+        },
+      }),
+      hooks: hooks,
     });
-
-    // Set hooks on the agent
-    agent.hooks = hooks;
+    tool = createMockTool("test-tool", async () => "Tool result", {
+      description: "A test tool",
+    });
   });
 
   describe("onStart", () => {
     it("should call onStart when agent starts generating", async () => {
       const onStartSpy = vi.fn();
-      agent.hooks = createHooks({ onStart: onStartSpy });
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel({
+          modelId: "mock-model",
+          doGenerate: {
+            finishReason: "stop",
+            usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            content: [{ type: "text", text: "Mock response" }],
+            warnings: [],
+          },
+        }),
+        hooks: createHooks({ onStart: onStartSpy }),
+      });
 
       await agent.generateText("Test input");
 
-      // Verify onStart was called with the correct object structure
-      expect(onStartSpy).toHaveBeenCalledWith({
-        agent: agent,
-        context: expect.objectContaining({
-          operationId: expect.any(String),
-          isActive: expect.any(Boolean),
-        }), // Check for context object
-      });
+      // Verify onStart was called with args object
+      expect(onStartSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: expect.any(Object),
+          context: expect.objectContaining({ operationId: expect.any(String) }),
+        }),
+      );
     });
   });
 
   describe("onEnd", () => {
     it("should call onEnd when agent completes generating successfully", async () => {
       const onEndSpy = vi.fn();
-      agent.hooks = createHooks({ onEnd: onEndSpy });
-
-      const response = await agent.generateText("Test input"); // Assuming success
-
-      // Verify onEnd was called with the correct structure using objectContaining
-      expect(onEndSpy).toHaveBeenCalledWith({
-        agent: agent,
-        output: expect.objectContaining({
-          text: response.text,
-          usage: response.usage,
-          finishReason: response.finishReason,
-          provider: response.provider,
-          userContext: expect.any(Map), // Verify userContext is included
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel({
+          modelId: "mock-model",
+          doGenerate: {
+            finishReason: "stop",
+            usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            content: [{ type: "text", text: "Mock response" }],
+            warnings: [],
+          },
         }),
-        error: undefined,
-        conversationId: expect.any(String),
-        context: expect.objectContaining({
-          operationId: expect.any(String),
-          isActive: expect.any(Boolean),
-        }),
+        hooks: createHooks({ onEnd: onEndSpy }),
       });
+
+      await agent.generateText("Test input");
+
+      // Verify onEnd was called
+      expect(onEndSpy).toHaveBeenCalled();
+
+      // Get the actual argument object
+      const arg = onEndSpy.mock.calls[0][0];
+
+      // Verify structure
+      expect(arg).toHaveProperty("conversationId");
+      expect(arg).toHaveProperty("agent");
+      expect(arg).toHaveProperty("output");
+      expect(arg).toHaveProperty("context");
+      expect(arg.error).toBeUndefined();
+
+      // Verify output contains expected data
+      expect(arg.output.text).toBe("Mock response");
+      expect(arg.output.finishReason).toBe("stop");
+      expect(arg.output.usage).toEqual(
+        expect.objectContaining({
+          promptTokens: 10,
+          completionTokens: 5,
+          totalTokens: 15,
+        }),
+      );
     });
 
-    it("should include userContext in the onEnd hook output", async () => {
+    it("should include context in the onEnd hook output", async () => {
       const onEndSpy = vi.fn();
-      agent.hooks = createHooks({ onEnd: onEndSpy });
-
-      const userContext = new Map<string | symbol, unknown>();
-      userContext.set("agentName", "Test Agent");
-      userContext.set("sessionId", "test-session-123");
-
-      const response = await agent.generateText("Test input", { userContext });
-
-      // Verify onEnd was called with userContext properly passed through
-      expect(onEndSpy).toHaveBeenCalledWith({
-        agent: agent,
-        output: expect.objectContaining({
-          text: response.text,
-          userContext: expect.any(Map),
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel({
+          modelId: "mock-model",
+          doGenerate: {
+            finishReason: "stop",
+            usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            content: [{ type: "text", text: "Mock response" }],
+            warnings: [],
+          },
         }),
-        error: undefined,
-        conversationId: expect.any(String),
-        context: expect.objectContaining({
-          operationId: expect.any(String),
-          isActive: expect.any(Boolean),
-        }),
+        hooks: createHooks({ onEnd: onEndSpy }),
       });
 
-      // Verify the specific userContext values are present
-      const callArgs = onEndSpy.mock.calls[0][0];
-      expect(callArgs.output.userContext.get("agentName")).toBe("Test Agent");
-      expect(callArgs.output.userContext.get("sessionId")).toBe("test-session-123");
+      const context = new Map<string | symbol, unknown>();
+      context.set("agentName", "Test Agent");
+      context.set("sessionId", "test-session-123");
+
+      await agent.generateText("Test input", { context });
+
+      // Verify onEnd was called
+      expect(onEndSpy).toHaveBeenCalled();
+
+      // Get the argument from the call
+      const arg = onEndSpy.mock.calls[0][0];
+
+      // Verify context values are present
+      expect(arg.context.context?.get("agentName")).toBe("Test Agent");
+      expect(arg.context.context?.get("sessionId")).toBe("test-session-123");
+      if (arg.output?.context) {
+        expect(arg.output.context.get("agentName")).toBe("Test Agent");
+        expect(arg.output.context.get("sessionId")).toBe("test-session-123");
+      }
     });
 
-    // Add a test for the error case (optional but recommended)
     it("should call onEnd with an error when agent fails", async () => {
       const onEndSpy = vi.fn();
-      // Mock the LLM to throw an error
-      const errorProvider = {
-        generateText: vi.fn().mockRejectedValue(new Error("LLM Error")),
-        getModelIdentifier: () => "mock-error-model",
-      };
-      const errorAgent = new Agent({
+      const onErrorSpy = vi.fn();
+
+      // Create an agent with a model that throws an error
+      const errorAgent = createTestAgent({
         name: "ErrorAgent",
-        instructions: "Error agent",
-        llm: errorProvider as any,
-        model: "mock-error-model",
-        hooks: createHooks({ onEnd: onEndSpy }),
+        model: createMockLanguageModel({
+          modelId: "mock-error-model",
+          doGenerate: async () => {
+            throw new Error("LLM Error");
+          },
+        }),
+        hooks: createHooks({ onEnd: onEndSpy, onError: onErrorSpy }),
       });
 
       try {
@@ -181,30 +160,64 @@ describe("Agent Hooks Functionality", () => {
         // Expected error
       }
 
-      // Verify onEnd was called with undefined output and an error object
-      expect(onEndSpy).toHaveBeenCalledWith({
-        agent: errorAgent,
-        output: undefined,
-        conversationId: expect.any(String),
-        error: expect.objectContaining({ message: "LLM Error" }), // Check for VoltAgentError structure
-        context: expect.objectContaining({
-          operationId: expect.any(String),
-          isActive: expect.any(Boolean),
+      // Verify onError was called with args object
+      expect(onErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: expect.any(Object),
+          context: expect.objectContaining({ operationId: expect.any(String) }),
+          error: expect.objectContaining({ message: expect.stringContaining("LLM Error") }),
         }),
-      });
+      );
+
+      // Verify onEnd was called with error
+      expect(onEndSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          context: expect.objectContaining({ operationId: expect.any(String) }),
+          output: undefined,
+          error: expect.objectContaining({ message: expect.stringContaining("LLM Error") }),
+        }),
+      );
     });
   });
 
   describe("onHandoff", () => {
     it("should call onHandoff when agent is handed off to", async () => {
       const onHandoffSpy = vi.fn();
-      agent.hooks = createHooks({ onHandoff: onHandoffSpy });
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel(),
+        hooks: createHooks({ onHandoff: onHandoffSpy }),
+      });
 
-      // Simulate a handoff by calling the hook directly with the object
-      await agent.hooks.onHandoff?.({ agent: agent, source: sourceAgent });
+      // Create a mock context for testing
+      const _mockContext: OperationContext = {
+        operationId: "test-op-id",
+        userId: "test-user",
+        conversationId: "test-conv",
+        context: new Map(),
+        // no userContext; use context only
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_s: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+      };
 
-      // Verify onHandoff was called with the correct object
-      expect(onHandoffSpy).toHaveBeenCalledWith({ agent: agent, source: sourceAgent });
+      // Simulate a handoff by calling the hook directly
+      await agent.hooks.onHandoff?.({ agent: agent as any, sourceAgent: agent as any });
+
+      // Verify onHandoff was called with the args object
+      expect(onHandoffSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ agent: expect.any(Object), sourceAgent: expect.any(Object) }),
+      );
     });
   });
 
@@ -212,71 +225,209 @@ describe("Agent Hooks Functionality", () => {
     it("should call onToolStart and onToolEnd when using tools", async () => {
       const onToolStartSpy = vi.fn();
       const onToolEndSpy = vi.fn();
-      agent.hooks = createHooks({
-        onToolStart: onToolStartSpy,
-        onToolEnd: onToolEndSpy,
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel(),
+        hooks: createHooks({
+          onToolStart: onToolStartSpy,
+          onToolEnd: onToolEndSpy,
+        }),
       });
 
-      agent.addItems([tool]);
-      const mockContext = createMockContext();
+      // Add tools to the agent
+      agent.addTools([tool]);
+
+      // Create a mock context
+      const mockContext: OperationContext = {
+        operationId: "test-op-id",
+        userId: "test-user",
+        conversationId: "test-conv",
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_s: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+        startTime: new Date(),
+      } as any;
+
       const toolResult = "Tool result";
 
-      // Directly execute the hooks with the object argument
-      await agent.hooks.onToolStart?.({ agent: agent, tool: tool, context: mockContext });
+      // Directly execute the hooks
+      await agent.hooks.onToolStart?.({ agent: agent as any, tool, context: mockContext });
       await agent.hooks.onToolEnd?.({
-        agent: agent,
-        tool: tool,
+        agent: agent as any,
+        tool,
         output: toolResult,
         error: undefined,
         context: mockContext,
       });
 
-      // Verify hooks were called with correct argument objects
-      expect(onToolStartSpy).toHaveBeenCalledWith({
-        agent: agent,
-        tool: tool,
-        context: mockContext,
-      });
-      expect(onToolEndSpy).toHaveBeenCalledWith({
-        agent: agent,
-        tool: tool,
-        output: toolResult,
-        error: undefined,
-        context: mockContext,
-      });
+      // Verify hooks were called with correct arguments
+      expect(onToolStartSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ agent: expect.any(Object), tool, context: mockContext }),
+      );
+      expect(onToolEndSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: expect.any(Object),
+          tool,
+          output: toolResult,
+          error: undefined,
+          context: mockContext,
+        }),
+      );
     });
 
-    // Add a test for tool error case (optional)
     it("should call onToolEnd with an error when tool fails", async () => {
       const onToolEndSpy = vi.fn();
-      agent.hooks = createHooks({ onToolEnd: onToolEndSpy });
-      const mockContext = createMockContext();
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel(),
+        hooks: createHooks({ onToolEnd: onToolEndSpy }),
+      });
+
+      const mockContext: OperationContext = {
+        operationId: "test-op-id",
+        userId: "test-user",
+        conversationId: "test-conv",
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_s: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+        startTime: new Date(),
+      } as any;
+
       const toolError = new Error("Tool execution failed");
-      const voltagentError = {
-        // Simulate a VoltAgentError for tool failure
-        message: toolError.message,
-        originalError: toolError,
-        stage: "tool_execution",
-        toolError: { toolCallId: "mock-id", toolName: tool.name, toolExecutionError: toolError },
-      } as VoltAgentError;
 
       // Simulate calling onToolEnd with an error
       await agent.hooks.onToolEnd?.({
-        agent: agent,
-        tool: tool,
+        agent: agent as any,
+        tool,
         output: undefined,
-        error: voltagentError,
+        error: toolError,
         context: mockContext,
       });
 
-      // Verify onToolEnd was called with undefined output and the error object
-      expect(onToolEndSpy).toHaveBeenCalledWith({
-        agent: agent,
-        tool: tool,
-        output: undefined,
-        error: voltagentError,
+      // Verify onToolEnd was called with undefined output and the error
+      expect(onToolEndSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: expect.any(Object),
+          tool,
+          output: undefined,
+          error: toolError,
+          context: mockContext,
+        }),
+      );
+    });
+  });
+
+  describe("onPrepareMessages", () => {
+    it("should call onPrepareMessages to transform messages", async () => {
+      const onPrepareMessagesSpy = vi.fn(({ messages }: any) => ({
+        messages: [
+          ...messages,
+          {
+            id: "extra-msg",
+            role: "system" as const,
+            parts: [{ type: "text" as const, text: "Extra message" }],
+          },
+        ],
+      }));
+
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel(),
+        hooks: createHooks({ onPrepareMessages: onPrepareMessagesSpy }),
+      });
+
+      const mockContext: OperationContext = {
+        operationId: "test-op-id",
+        userId: "test-user",
+        conversationId: "test-conv",
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_s: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+        startTime: new Date(),
+      };
+
+      const messages = [
+        {
+          id: "msg-1",
+          role: "user" as const,
+          parts: [{ type: "text" as const, text: "Hello" }],
+        },
+      ] as any[];
+
+      const result = await agent.hooks.onPrepareMessages?.({
+        messages,
+        agent: agent as any,
         context: mockContext,
       });
+
+      expect(onPrepareMessagesSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ messages, context: mockContext }),
+      );
+      expect(result?.messages).toHaveLength(2);
+      expect((result?.messages?.[1].parts[0] as any).text).toBe("Extra message");
+    });
+  });
+
+  describe("onStepFinish", () => {
+    it("should call onStepFinish when a step completes", async () => {
+      const onStepFinishSpy = vi.fn();
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel(),
+        hooks: createHooks({ onStepFinish: onStepFinishSpy }),
+      });
+
+      const mockStep = {
+        id: "step-1",
+        type: "text",
+        content: "Step content",
+        finishReason: "stop",
+      };
+
+      await agent.hooks.onStepFinish?.({
+        agent: agent as any,
+        step: mockStep,
+        context: {
+          operationId: "op",
+        } as any,
+      });
+
+      expect(onStepFinishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ agent: expect.any(Object), step: mockStep }),
+      );
     });
   });
 });

@@ -256,15 +256,7 @@ export default function ChatbotProblemTutorial() {
                           <span className="text-yellow-300"> "@voltagent/core"</span>
                           <span>;</span>
                           <br />
-                          <span className="text-blue-400">import</span>
-                          <span>
-                            {" "}
-                            {"{"} VercelAIProvider {"}"}{" "}
-                          </span>
-                          <span className="text-blue-400">from</span>
-                          <span className="text-yellow-300"> "@voltagent/vercel-ai"</span>
-                          <span>;</span>
-                          <br />
+
                           <span className="text-blue-400">import</span>
                           <span>
                             {" "}
@@ -405,7 +397,7 @@ export default function ChatbotProblemTutorial() {
                           <br />
                           <span className="ml-4">llm: </span>
                           <span className="text-blue-400">new</span>
-                          <span className="text-green-400"> VercelAIProvider</span>
+
                           <span>(),</span>
                           <br />
                           <span className="ml-4">model: </span>

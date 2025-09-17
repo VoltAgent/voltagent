@@ -5,7 +5,7 @@ slug: /agents/cancellation
 
 # Cancellation
 
-VoltAgent implements cancellation through the standard `AbortController` API, enabling you to stop operations at any point. This includes LLM generation, tool execution, and multi-agent workflows.
+VoltAgent implements cancellation through the standard `AbortController` API. You pass the `AbortSignal` (`abortController.signal`) to agent methods to stop LLM generation, tool execution, and multi-agent workflows.
 
 ## Basic Cancellation
 
@@ -13,13 +13,11 @@ The simplest cancellation pattern involves creating an `AbortController` and pas
 
 ```typescript
 import { Agent, isAbortError } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "A helpful assistant",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
 });
 
@@ -32,7 +30,7 @@ setTimeout(() => {
 
 try {
   const response = await agent.generateText("Write a detailed analysis...", {
-    abortController,
+    abortSignal: abortController.signal,
   });
   console.log(response.text);
 } catch (error) {
@@ -46,13 +44,12 @@ try {
 
 ## How Cancellation Works
 
-When you provide an `AbortController` to an agent method:
+When you provide an `AbortSignal` to an agent method:
 
-1. The controller's signal is stored in `operationContext.signal`
-2. This signal is passed to the LLM provider
-3. Tools receive access to both the signal and controller
-4. Subagents inherit the parent's abort controller
-5. All operations check the signal state before proceeding
+1. The signal is passed to the LLM provider
+2. Tools receive access to `operationContext.abortController` (internally created) and its signal
+3. Subagents inherit the parent's signal
+4. All operations check the signal state before proceeding
 
 The cancellation propagates through the entire operation chain, ensuring clean shutdown at every level.
 
@@ -69,7 +66,7 @@ document.getElementById("stop-btn")?.addEventListener("click", () => {
 });
 
 const response = await agent.streamText("Generate a long report...", {
-  abortController,
+  abortSignal: abortController.signal,
 });
 
 try {
@@ -87,7 +84,7 @@ With `fullStream`, you get more detailed cancellation feedback:
 
 ```typescript
 const response = await agent.streamText("Complex task...", {
-  abortController,
+  abortSignal: abortController.signal,
 });
 
 if (response.fullStream) {
@@ -158,21 +155,18 @@ In supervisor-subagent architectures, the abort signal automatically propagates 
 const researcher = new Agent({
   name: "Researcher",
   instructions: "Research topics thoroughly",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
 const writer = new Agent({
   name: "Writer",
   instructions: "Write detailed content",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
 const supervisor = new Agent({
   name: "Supervisor",
   instructions: "Coordinate research and writing",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   subAgents: [researcher, writer],
 });
@@ -210,7 +204,7 @@ const timeoutId = setTimeout(() => {
 
 try {
   const response = await agent.generateText("Complex analysis...", {
-    abortController,
+    abortSignal: abortController.signal,
   });
 
   // Clear timeout if operation completes successfully
@@ -237,7 +231,6 @@ import { createHooks, isAbortError } from "@voltagent/core";
 const agent = new Agent({
   name: "Assistant",
   instructions: "A helpful assistant",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   hooks: createHooks({
     onEnd: async ({ error, context }) => {
@@ -329,6 +322,8 @@ abortController.abort("User cancelled");
 
 ### Graceful Shutdown
 
+For individual agent operations:
+
 ```typescript
 async function processWithGracefulShutdown(agent: Agent, input: string) {
   const abortController = new AbortController();
@@ -353,6 +348,28 @@ async function processWithGracefulShutdown(agent: Agent, input: string) {
   }
 }
 ```
+
+For VoltAgent-level shutdown with server and resources:
+
+```typescript
+import { VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+
+const voltAgent = new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({ port: 3141 }),
+});
+
+// VoltAgent automatically handles SIGINT/SIGTERM
+// But you can also shutdown programmatically:
+process.on("SIGUSR2", async () => {
+  console.log("Custom shutdown signal received");
+  await voltAgent.shutdown(); // Stops server, workflows, and telemetry
+  process.exit(0);
+});
+```
+
+**Note**: VoltAgent automatically registers SIGINT/SIGTERM handlers that properly clean up the server, suspend workflows, and shutdown telemetry. See [Server Architecture - Graceful Shutdown](../api/server-architecture.md#graceful-shutdown) for details.
 
 ### Concurrent Operations with Cancellation
 

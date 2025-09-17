@@ -138,7 +138,6 @@ When the agent calls `think` or `analyze`, it uses parameters like:
 
 ```typescript
 import { Agent, createReasoningTools, type Toolkit } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Get toolkit, automatically adding instructions & examples to system prompt
@@ -146,14 +145,13 @@ const reasoningToolkit: Toolkit = createReasoningTools(); // Uses defaults
 
 const agent = new Agent({
   name: "ThinkingAgent",
-  description: `
+  instructions: `
     You are an AI assistant designed for complex problem-solving using structured reasoning.
     You MUST use the 'think' and 'analyze' tools internally to break down problems, plan steps,
     evaluate information, and decide on the best course of action before responding.
     Always think step-by-step.
   `,
-  // Agent description reinforced to use the tools
-  llm: new VercelAIProvider(),
+  // Reinforce tool usage in instructions; pass ai-sdk model directly
   model: openai("gpt-4o-mini"), // Ensure model supports tool use
   tools: [
     reasoningToolkit,

@@ -99,7 +99,7 @@ And that is where the alchemy of Multimodal RAG begins:
 Of course, every rose has a thorn, and every tech has a "but" or two. Constructing Multimodal RAG is not quite a walk in the park:
 
 - **Every Modality is an Individual Things:** Text analysis is one thing, interpreting an image or decoding a sound recording something else again. Every form of data has its quirks. Think about it, achieving that "vibe" in a holiday photo is different from being able to pick up a millimeter detail on an architect's plan, isn't it?
-- **Combining Different Worlds:** The integration of diverse data modalities presents a significant technical challenge. Effectively synthesizing semantic information from disparate sources—such as correlating graphical elements with their textual explanations—requires sophisticated algorithms that can create coherent, unified representations while preserving the unique contextual value of each modality.
+- **Combining Different Worlds:** The integration of diverse data modalities presents a significant technical challenge. Effectively synthesizing semantic information from disparate sources-such as correlating graphical elements with their textual explanations-requires sophisticated algorithms that can create coherent, unified representations while preserving the unique contextual value of each modality.
   :::
 
 ## So How Do the Pros Construct These Systems? Basic Strategies
@@ -129,7 +129,6 @@ For a Multimodal RAG system, generally, one must use the following on the pitch:
 Theory aside, if you ask, "How does this stuff actually work in real life?" it generally goes like this:
 
 1. **The Warm-Up (Data Preprocessing):**
-
    - **Extraction Operation:** Texts on one side, images on the other – they're separated from the documents we have (like those notorious PDFs).
    - **Who's Who? (Classification):** Images are taken into consideration and a categorization is created, e.g., "Is it a graph, or is it a picture of our friend Necati's holidays?"
    - **Giving Images a Voice (Summarization/Captioning):** Short descriptions are generated for images, e.g., "This image has X, doing Y." Especially for graphs, models like DePlot can translate the figures and lines to text.

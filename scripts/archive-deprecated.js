@@ -14,6 +14,9 @@ const DEPRECATED_PACKAGES = [
   "@voltagent/anthropic-ai",
   "@voltagent/google-ai",
   "@voltagent/groq-ai",
+  "@voltagent/vercel-ai",
+  "@voltagent/xsai",
+  "@voltagent/vercel-ui",
 ];
 
 const ARCHIVE_DIR = path.join(process.cwd(), "archive", "deprecated-providers");

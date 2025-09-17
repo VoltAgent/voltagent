@@ -42,7 +42,6 @@ Define a template with default variables.
 
 ```typescript
 import { createPrompt, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Define the prompt template and default variables
@@ -63,11 +62,11 @@ Task: summarize text
 
 const agent = new Agent({
   name: "Basic Assistant",
-  // Use the generated prompt in the description field
+  // Use the generated prompt in the instructions field
   // highlight-next-line
-  description: prompt1,
-  llm: new VercelAIProvider(), // Example provider
-  model: openai("gpt-4o-mini"), // Example model
+  instructions: prompt1,
+  // VoltAgent integrates directly with ai-sdk - just provide a model
+  model: openai("gpt-4o-mini"),
 });
 ```
 

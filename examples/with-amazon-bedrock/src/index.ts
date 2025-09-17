@@ -1,8 +1,9 @@
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Example tool to demonstrate capabilities
@@ -44,6 +45,12 @@ const bedrock = createAmazonBedrock({
 //   sessionToken: process.env.AWS_SESSION_TOKEN,
 // });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-amazon-bedrock",
+  level: "info",
+});
+
 // Configure the agent with Amazon Bedrock
 // Available models on Bedrock:
 // - Claude 3.5: "anthropic.claude-3-5-sonnet-20240620-v1:0", "anthropic.claude-3-5-haiku-20241022-v1:0"
@@ -53,22 +60,21 @@ const bedrock = createAmazonBedrock({
 // - Titan: "amazon.titan-text-premier-v1:0", "amazon.titan-text-express-v1"
 const agent = new Agent({
   name: "bedrock-assistant",
-  description: "An AI assistant powered by Amazon Bedrock",
-  llm: new VercelAIProvider(),
+  instructions: "An AI assistant powered by Amazon Bedrock",
   model: bedrock("anthropic.claude-opus-4-1-20250805-v1:0"),
   tools: [weatherTool],
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
 });
 
-// Create logger
-const logger = createPinoLogger({
-  name: "with-amazon-bedrock",
-  level: "info",
-});
-
-// Initialize VoltAgent
+// Initialize VoltAgent with server
 new VoltAgent({
   agents: {
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

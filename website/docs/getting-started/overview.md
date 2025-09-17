@@ -13,7 +13,7 @@ Instead of building everything from scratch, VoltAgent provides ready-made build
 - **Automate with Workflows**: Go beyond simple chatbots. VoltAgent includes a powerful workflow engine to create multi-step automations that can process data, call APIs, run tasks in parallel, and execute conditional logic.
 - **Add Special Features**: Need your AI to talk? Add the `@voltagent/voice` package. It's modular, like adding apps to your phone.
 - **Connect to Anything**: VoltAgent helps your AI connect to other websites, tools, or data sources, allowing it to perform real tasks.
-- **Memory**: It helps the AI remember past conversations and learn, making interactions more natural and helpful.
+- **Memory**: Unified `Memory` with default in‑memory storage, optional embeddings + vector search, and structured working memory.
 - **Works with Many AI Brains**: You're not locked into one AI provider. VoltAgent can work with popular AI models from OpenAI (like ChatGPT), Google, Anthropic, and others.
 - **Quick Start Tools (`create-voltagent-app`, `@voltagent/cli`)**: Helpers to get developers up and running with a new AI project quickly. The create-voltagent-app CLI provides an interactive setup with AI provider selection, automatic dependency installation, and IDE configuration.
 
@@ -27,15 +27,20 @@ import TabItem from '@theme/TabItem';
 
 ```tsx
 import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-
+import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "my-voltagent-app",
   instructions: "A helpful assistant that answers questions without using tools",
-  llm: new VercelAIProvider(),
+  // VoltAgent uses the AI SDK directly - pick any ai-sdk model
   model: openai("gpt-4o-mini"),
+});
+
+// Serve your agent over HTTP (default port 3141)
+new VoltAgent({
+  agents: { agent },
+  server: honoServer(),
 });
 ```
 
@@ -44,7 +49,6 @@ const agent = new Agent({
 
 ```typescript
 import { createWorkflowChain, andThen, andAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -52,7 +56,6 @@ import { z } from "zod";
 const agent = new Agent({
   name: "summarizer-agent",
   instructions: "You are an expert at summarizing text.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 

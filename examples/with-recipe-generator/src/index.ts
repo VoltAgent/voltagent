@@ -1,7 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
 const mcpConfig = new MCPConfiguration({
   servers: {
@@ -47,7 +47,6 @@ const agent = new Agent({
         - Serving size adjustments
         - Common mistakes to avoid
         - Pairing suggestions`,
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: await mcpConfig.getTools(),
 });
@@ -63,4 +62,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

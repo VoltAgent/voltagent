@@ -1,8 +1,9 @@
 import "dotenv/config";
-import { VoltAgent, VoltOpsClient, Agent } from "@voltagent/core";
+import { VoltAgent, VoltOpsClient, Agent, Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
+import { honoServer } from "@voltagent/server-hono";
 import { expenseApprovalWorkflow } from "./workflows";
 import { weatherTool } from "./tools";
 
@@ -12,12 +13,20 @@ const logger = createPinoLogger({
   level: "info",
 });
 
+// Configure persistent memory (LibSQL / SQLite)
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
+});
+
 const agent = new Agent({
   name: "{{projectName}}",
   instructions: "A helpful assistant that can check weather and help with various tasks",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
+  memory,
 });
 
 new VoltAgent({
@@ -27,6 +36,7 @@ new VoltAgent({
   workflows: {
     expenseApprovalWorkflow,
   },
+  server: honoServer(),
   logger,
   voltOpsClient: new VoltOpsClient({
     publicKey: process.env.VOLTAGENT_PUBLIC_KEY || "",

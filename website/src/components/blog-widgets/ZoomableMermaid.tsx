@@ -31,7 +31,6 @@ export default function ZoomableMermaid({ chart }: ZoomableMermaidProps): JSX.El
 
   return (
     <div className={styles.container}>
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
       <div
         className={`${styles.mermaidWrapper} ${isZoomed ? styles.zoomed : ""}`}
         onClick={() => setIsZoomed(!isZoomed)}
@@ -43,10 +42,7 @@ export default function ZoomableMermaid({ chart }: ZoomableMermaidProps): JSX.El
         />
         <div className={styles.zoomHint}>{isZoomed ? "Click to minimize" : "Click to zoom"}</div>
       </div>
-      {isZoomed && (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: ignore
-        <div className={styles.overlay} onClick={() => setIsZoomed(false)} />
-      )}
+      {isZoomed && <div className={styles.overlay} onClick={() => setIsZoomed(false)} />}
     </div>
   );
 }

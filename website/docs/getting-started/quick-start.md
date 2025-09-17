@@ -266,7 +266,7 @@ Create a basic TypeScript configuration file (tsconfig.json):
 npm install --save-dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
-npm install @voltagent/core @voltagent/vercel-ai @ai-sdk/openai zod@^3.25.0
+npm install @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
 ```
 
   </TabItem>
@@ -277,7 +277,7 @@ npm install @voltagent/core @voltagent/vercel-ai @ai-sdk/openai zod@^3.25.0
 yarn add --dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
-yarn add @voltagent/core @voltagent/vercel-ai @ai-sdk/openai zod@^3.25.0
+yarn add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
 ```
 
   </TabItem>
@@ -288,8 +288,7 @@ yarn add @voltagent/core @voltagent/vercel-ai @ai-sdk/openai zod@^3.25.0
 pnpm add --save-dev typescript tsx @types/node @voltagent/cli
 
 # Install dependencies
-# Note: @voltagent/cli was already included here in the original docs, kept for consistency.
-pnpm add @voltagent/core @voltagent/cli @voltagent/vercel-ai @ai-sdk/openai zod@^3.25.0
+pnpm add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
 ```
 
   </TabItem>
@@ -304,24 +303,37 @@ mkdir src
 Create a basic agent in `src/index.ts`:
 
 ```typescript
-import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai"; // Example provider
+import { VoltAgent, Agent, Memory } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono"; // HTTP server
+import { LibSQLMemoryAdapter } from "@voltagent/libsql"; // For persistent memory
 import { openai } from "@ai-sdk/openai"; // Example model
+import { createPinoLogger } from "@voltagent/logger";
+
+// Create logger (optional but recommended)
+const logger = createPinoLogger({
+  name: "my-agent",
+  level: "info",
+});
 
 // Define a simple agent
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
-  // Note: You can swap VercelAIProvider and openai with other supported providers/models
-  llm: new VercelAIProvider(),
+  // VoltAgent uses ai-sdk directly - pick any ai-sdk model
   model: openai("gpt-4o-mini"),
+  // Optional: Add persistent memory (remove this to use default in-memory storage)
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
 });
 
 // Initialize VoltAgent with your agent(s)
 new VoltAgent({
-  agents: {
-    agent,
-  },
+  agents: { agent },
+  server: honoServer(), // Default port: 3141
+  logger,
 });
 ```
 

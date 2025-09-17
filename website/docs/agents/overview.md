@@ -9,19 +9,16 @@ The `Agent` class is the fundamental building block of VoltAgent. It acts as the
 
 ## Creating an Agent
 
-At its core, an agent needs a name, instructions (which guides its behavior), an LLM Provider to handle communication with an AI model, and the specific model to use.
+At its core, an agent needs a name, instructions (which guide its behavior), and an ai-sdk model.
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai"; // Handles communication
-import { openai } from "@ai-sdk/openai"; // Defines the specific model source
+import { openai } from "@ai-sdk/openai"; // Choose your ai-sdk provider
 
 const agent = new Agent({
   name: "My Assistant",
   instructions: "A helpful and friendly assistant that can answer questions clearly and concisely.",
-  // The LLM Provider acts as the bridge to the AI service
-  llm: new VercelAIProvider(),
-  // The model specifies which AI model to use (e.g., from OpenAI via Vercel AI SDK)
+  // Choose any ai-sdk model
   model: openai("gpt-4o"),
 });
 ```
@@ -35,20 +32,20 @@ const agent = new Agent({
   // Required
   name: "MyAgent", // Agent identifier
   instructions: "You are a helpful assistant", // Behavior guidelines
-  llm: new VercelAIProvider(), // LLM provider instance
-  model: openai("gpt-4o"), // AI model to use
+  model: openai("gpt-4o"), // AI model to use (ai-sdk)
 
   // Optional
   id: "custom-id", // Unique ID (auto-generated if not provided)
   purpose: "Customer support agent", // Agent purpose for supervisor context
   tools: [weatherTool, searchTool], // Available tools
-  memory: new LibSQLStorage(), // Memory storage (or false to disable)
-  memoryOptions: { maxMessages: 100 }, // Memory configuration
-  userContext: new Map([
+  memory: memoryStorage, // Memory instance (or false to disable)
+  context: new Map([
     // Default context for all operations
     ["environment", "production"],
   ]),
   maxSteps: 10, // Maximum tool-use iterations
+  temperature: 0.7, // Default creativity (overridable per call)
+  maxOutputTokens: 512, // Default token limit (overridable per call)
   subAgents: [researchAgent], // Sub-agents for delegation
   supervisorConfig: {
     // Supervisor behavior config
@@ -74,6 +71,10 @@ const agent = new Agent({
 
 The primary ways to interact with an agent are through the `generate*` and `stream*` methods. These methods handle sending your input to the configured LLM, processing the response, and potentially orchestrating tool usage or memory retrieval based on the agent's configuration and the LLM's decisions.
 
+:::info Result Shape (ai-sdk v5)
+`generateText`, `streamText`, `generateObject`, and `streamObject` return the ai-sdk v5 result objects directly. VoltAgent only adds one extra property: `context: Map<string | symbol, unknown>`. All other fields and methods (including `fullStream`, `text`, `usage`, and response helpers) are identical to ai-sdk.
+:::
+
 ### Text Generation (`generateText`/`streamText`)
 
 Use these methods when you expect a primarily text-based response. The agent might still decide to use tools based on the prompt and its capabilities.
@@ -83,7 +84,6 @@ Use these methods when you expect a primarily text-based response. The agent mig
 
 ```ts
 import { Agent, createTool } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -102,7 +102,6 @@ const weatherTool = createTool({
 const agent = new Agent({
   name: "Chat Assistant",
   instructions: "A helpful assistant that can check the weather.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: [weatherTool],
 });
@@ -121,67 +120,107 @@ async function chat(input: string) {
 // Example usage that might trigger the weather tool
 await chat("What's the weather like in London?");
 
-// Example using generateText for a complete response
+// Example using generateText for a complete response (string input)
 const completeResponse = await agent.generateText("Explain machine learning briefly.");
 console.log("Complete Response:", completeResponse.text);
 // Additional metadata available (provider-dependent):
 // completeResponse.reasoning - Model's reasoning process (if available)
 // completeResponse.warnings - Any provider warnings
+
+// You can also pass ai-sdk v5 ModelMessage[] or UIMessage[] for multimodal inputs
+await agent.generateText([
+  {
+    role: "user",
+    content: [
+      {
+        type: "image",
+        image: "https://example.com/cat.jpg",
+        mediaType: "image/jpeg",
+      },
+      {
+        type: "text",
+        text: "What's in this image?",
+      },
+    ],
+  },
+]);
 ```
+
+#### Structured Output (Experimental)
+
+VoltAgent supports ai-sdk's experimental structured output features for type-safe responses:
+
+```ts
+import { Output } from "ai";
+import { z } from "zod";
+
+// Define your schema
+const RecipeSchema = z.object({
+  name: z.string(),
+  ingredients: z.array(z.string()),
+  steps: z.array(z.string()),
+  prepTime: z.number(),
+});
+
+// generateText returns the final structured output
+const result = await agent.generateText("Create a pasta recipe", {
+  experimental_output: Output.object({
+    schema: RecipeSchema,
+  }),
+});
+
+// Access the structured output
+console.log(result.experimental_output);
+
+// streamText uses experimental_partialOutputStream for streaming partial objects
+const stream = await agent.streamText("Create a detailed recipe", {
+  experimental_output: Output.object({
+    schema: RecipeSchema,
+  }),
+});
+
+// Stream partial objects as they're generated
+for await (const partial of stream.experimental_partialOutputStream ?? []) {
+  console.log(partial); // Partial recipe object that builds up over time
+}
+```
+
+You can also use `Output.text()` for constrained text generation:
+
+```ts
+// Generate text with specific constraints
+const result = await agent.generateText("Write a haiku about coding", {
+  experimental_output: Output.text({
+    maxLength: 100,
+    description: "A traditional haiku poem about programming",
+  }),
+});
+
+console.log(result.experimental_output); // The generated haiku text
+```
+
+> **Note:** `generateText` provides `experimental_output` with the final object, while `streamText` provides `experimental_partialOutputStream` for streaming partial objects.
 
 #### Enhanced Streaming with `fullStream`
 
 For more detailed streaming information including tool calls, reasoning steps, and completion status, you can use the `fullStream` property available in the response:
 
 ```ts
-// Example using fullStream for detailed streaming events
-async function enhancedChat(input: string) {
-  console.log(`User: ${input}`);
-  const response = await agent.streamText(input);
+// Example using fullStream for detailed streaming events (ai-sdk v5)
+const response = await agent.streamText("Write a short story about a cat and format it nicely");
 
-  // Check if fullStream is available (provider-dependent)
-  if (response.fullStream) {
-    for await (const chunk of response.fullStream) {
-      switch (chunk.type) {
-        case "text-delta":
-          // Output text as it's generated
-          process.stdout.write(chunk.textDelta);
-          break;
-        case "tool-call":
-          console.log(`\n🔧 Using tool: ${chunk.toolName}`);
-          break;
-        case "tool-result":
-          console.log(`✅ Tool completed: ${chunk.toolName}`);
-          break;
-        case "reasoning":
-          console.log(`🤔 AI thinking: ${chunk.reasoning}`);
-          break;
-        case "source":
-          console.log(`📚 Retrieved context: ${chunk.source}`);
-          break;
-        case "finish":
-          console.log(`\n✨ Done! Tokens used: ${chunk.usage?.totalTokens}`);
-          break;
-      }
-    }
-  } else {
-    // Fallback to standard textStream
-    for await (const chunk of response.textStream) {
-      process.stdout.write(chunk);
-    }
+for await (const chunk of response.fullStream) {
+  if (chunk.type === "text-delta") {
+    process.stdout.write(chunk.text);
+  } else if (chunk.type === "tool-call") {
+    console.log(`\n🔧 Using tool: ${chunk.toolName}`);
+  } else if (chunk.type === "tool-result") {
+    console.log(`✅ Tool completed: ${chunk.toolName}`);
+  } else if (chunk.type === "finish") {
+    console.log(`\n✨ Done! Tokens used: ${chunk.totalUsage.totalTokens}`);
   }
 }
-
-await enhancedChat("Write a short story about a cat and format it nicely");
 ```
-
-:::note fullStream Support
-
-Currently, `fullStream` is only supported by the `@voltagent/vercel-ai` provider. For other providers (Google AI, Groq, Anthropic, XsAI), the response will fall back to the standard `textStream`.
-
-We're actively looking for community contributions to add `fullStream` support to other providers! If you're interested in helping, please check out our [GitHub repository](https://github.com/VoltAgent/voltagent) or join our [Discord community](https://s.voltagent.dev/discord).
-
-:::
 
 #### Promise-based Properties in Streaming Responses
 
@@ -224,7 +263,7 @@ async function streamObjectWithPromises() {
 
   // Process partial updates
   console.log("Building object...");
-  for await (const partial of response.objectStream) {
+  for await (const partial of response.partialObjectStream) {
     console.log("Partial:", partial);
   }
 
@@ -237,16 +276,14 @@ async function streamObjectWithPromises() {
 }
 ```
 
-:::info Promise Properties Availability
+:::info Promise Properties
 
-Promise-based properties for streaming responses are currently only implemented in the `@voltagent/vercel-ai` provider. These properties are optional in the provider interface to maintain backward compatibility.
+The ai-sdk streaming result exposes promise-based convenience properties:
 
-**Available Promise properties:**
+- streamText: `text`, `finishReason`, `usage`
+- streamObject: `object`, `warnings`, `usage`
 
-- **streamText**: `text`, `finishReason`, `usage`, `reasoning`
-- **streamObject**: `object`, `usage`, `warnings`
-
-For providers that don't support these properties, you'll need to collect the values manually from the stream or use callbacks.
+These resolve when the stream completes, so you can process the stream and then await the final values.
 
 :::
 
@@ -261,7 +298,6 @@ When using `fullStream` with sub-agents, by default only `tool-call` and `tool-r
 const supervisorAgent = new Agent({
   name: "Supervisor",
   instructions: "You coordinate between agents",
-  llm: provider,
   subAgents: [writerAgent, editorAgent],
   // No configuration needed - defaults to ['tool-call', 'tool-result']
 });
@@ -286,12 +322,10 @@ To receive all sub-agent events (text deltas, reasoning, sources, etc.), configu
 const supervisorAgent = new Agent({
   name: "Supervisor",
   instructions: "You coordinate between agents",
-  llm: provider,
   subAgents: [writerAgent, editorAgent],
   supervisorConfig: {
     fullStreamEventForwarding: {
       types: ["tool-call", "tool-result", "text-delta", "reasoning", "source", "error", "finish"],
-      addSubAgentPrefix: true, // Adds agent name to tool names (default: true)
     },
   },
 });
@@ -328,7 +362,6 @@ supervisorConfig: {
   fullStreamEventForwarding: {
     // Only forward text and tool events, no reasoning or sources
     types: ['tool-call', 'tool-result', 'text-delta'],
-    addSubAgentPrefix: false // Don't add agent name prefix to tools
   }
 }
 ```
@@ -343,6 +376,16 @@ supervisorConfig: {
 - `error`: SubAgent errors
 - `finish`: SubAgent completion events
 
+Tip: If you prefer prefixed labels (e.g., `WriterAgent: search_tool`), use the stream metadata instead of a config flag:
+
+```ts
+for await (const chunk of response.fullStream!) {
+  if (chunk.subAgentName && chunk.type === "tool-call") {
+    console.log(`[${chunk.subAgentName}] Using: ${chunk.toolName}`);
+  }
+}
+```
+
 This configuration approach provides fine-grained control over which sub-agent events reach your application, allowing you to balance between information richness and stream performance.
 
 #### Markdown Formatting
@@ -353,13 +396,11 @@ By setting the `markdown` property to `true` in the agent's configuration, you i
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Markdown Assistant",
   instructions: "A helpful assistant that formats answers clearly.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   markdown: true, // Enable automatic Markdown formatting
 });
@@ -381,14 +422,12 @@ Use these methods when you need the LLM to generate output conforming to a speci
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const agent = new Agent({
   name: "Data Extractor",
   instructions: "Extracts structured data.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"), // Ensure model supports structured output/function calling
 });
 
@@ -413,7 +452,7 @@ const streamObjectResponse = await agent.streamObject(
   personSchema
 );
 
-for await (const partial of streamObjectResponse.objectStream) {
+for await (const partial of streamObjectResponse.partialObjectStream) {
   console.log("Received update:", partial); // Shows the object being built incrementally
 }
 
@@ -432,27 +471,44 @@ Enhance your agents with these powerful capabilities, which are integrated into 
 
 **Why?** To give your agent context of past interactions, enabling more natural, coherent, and personalized conversations.
 
-VoltAgent's memory management system allows agents to store and retrieve conversation history or state using configurable Memory Providers.
+- Storage: pluggable adapters (default is in-memory, no persistence)
+- Embedding + Vector: optional semantic search over past messages
+- Working Memory: optional structured context (via schema or template)
 
-```typescript
-// Example: Configuring memory (Provider details omitted for brevity)
-import { Agent, LibSQLStorage } from "@voltagent/core";
-// ... other imports
+```ts
+import { Agent, Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql"; // persistence (optional)
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 
-const memoryStorage = new LibSQLStorage({
-  /* ... provider config ... */
+// Optional: structured working memory
+const workingMemorySchema = z.object({ goals: z.array(z.string()).optional() });
+
+// Configure persistent memory with semantic search (optional)
+const memory = new Memory({
+  // Remove this to use default in-memory storage
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  // Optional: enable semantic search
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new InMemoryVectorAdapter(),
+  // Optional: working memory
+  workingMemory: { enabled: true, scope: "conversation", schema: workingMemorySchema },
 });
 
 const agent = new Agent({
   name: "Assistant with Memory",
-  // ... other config ...
-  memory: memoryStorage,
+  model: openai("gpt-4o-mini"),
+  memory, // defaults to in-memory if omitted
 });
 ```
 
-When memory is configured, the agent automatically retrieves relevant context before calling the LLM and saves new interactions afterwards.
+Notes:
 
-**[Learn more about Memory Management & Providers](./memory/overview.md)**
+- Default storage: in-memory (good for dev/tests, non-persistent)
+- Persistence options: `LibSQLMemoryAdapter` (@voltagent/libsql), `PostgreSQLMemoryAdapter` (@voltagent/postgres), `SupabaseMemoryAdapter` (@voltagent/supabase)
+- Embeddings: use `AiSdkEmbeddingAdapter` with your ai-sdk embedding model
+
+**[Learn more in Memory docs](./memory/overview.md)**
 
 ### Tools
 
@@ -462,7 +518,6 @@ When you call `generateText` or `streamText`, the LLM can decide to use one of t
 
 ```ts
 import { Agent, createTool } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -488,7 +543,6 @@ const weatherTool = createTool({
 const agent = new Agent({
   name: "Weather Assistant",
   instructions: "An assistant that can check the weather using available tools.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"), // Models supporting tool use are required
   tools: [weatherTool], // Provide the list of tools to the agent
 });
@@ -509,7 +563,6 @@ A coordinator agent uses a special `delegate_task` tool (added automatically whe
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Assume researchAgent and writingAgent are configured Agents
@@ -520,7 +573,6 @@ const writingAgent = new Agent({ name: "Writer" /* ... */ });
 const mainAgent = new Agent({
   name: "Coordinator",
   instructions: "Coordinates research and writing tasks by delegating to specialized sub-agents.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   // List the agents this one can delegate tasks to
   subAgents: [researchAgent, writingAgent],
@@ -549,7 +601,6 @@ import {
   type OnToolStartHookArgs,
   type OnToolEndHookArgs,
 } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const hooks = createHooks({
@@ -561,14 +612,25 @@ const hooks = createHooks({
   onEnd: async ({ agent, output, error, context }: OnEndHookArgs) => {
     if (error) {
       console.error(`Agent ${agent.name} finished with error:`, error);
-    } else if (output) {
-      // Output format depends on the method called (e.g., { text: ..., usage: ... } for generateText)
-      console.log(
-        `Agent ${agent.name} finished successfully. Final output:`,
-        output.text ?? output.object // Access 'text' or 'object' based on the operation type
-      );
     }
-    console.log("Finished context:", context);
+
+    if (!output) return; // operation failed or was aborted
+
+    // Log usage if available
+    if (output.usage) {
+      console.log(`Total tokens: ${output.usage.totalTokens}`);
+    }
+
+    // Handle text results
+    if ("text" in output && output.text) {
+      console.log("Final text:", output.text);
+      return;
+    }
+
+    // Handle object results
+    if ("object" in output && output.object) {
+      console.log("Final object keys:", Object.keys(output.object));
+    }
   },
   // Called before a tool is executed
   onToolStart: async ({ agent, tool, context }: OnToolStartHookArgs) => {
@@ -593,7 +655,6 @@ const hooks = createHooks({
 const agent = new Agent({
   name: "Observable Agent",
   instructions: "An agent with logging hooks.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   hooks, // Attach the defined hooks
 });
@@ -609,22 +670,20 @@ VoltAgent provides a three-tier prompt management system: Static Instructions (h
 
 ```ts
 import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Option 1: Static Instructions (simple, hardcoded)
 const staticAgent = new Agent({
   name: "Static Assistant",
   instructions: "You are a helpful customer support agent. Be polite and efficient.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
 // Option 2: Dynamic Instructions (runtime-based)
 const dynamicAgent = new Agent({
   name: "Dynamic Assistant",
-  instructions: async ({ userContext }) => {
-    const userTier = userContext.get("userTier") || "basic";
+  instructions: async ({ context }) => {
+    const userTier = context.get("userTier") || "basic";
 
     if (userTier === "premium") {
       return "You are a premium support agent. Provide detailed, thorough assistance.";
@@ -632,7 +691,6 @@ const dynamicAgent = new Agent({
       return "You are a support agent. Provide helpful but concise answers.";
     }
   },
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -654,7 +712,6 @@ const managedAgent = new Agent({
       },
     });
   },
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -674,16 +731,15 @@ Dynamic agents are perfect for multi-tenant applications, role-based access cont
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const dynamicAgent = new Agent({
   name: "Adaptive Assistant",
 
   // Dynamic instructions based on user context
-  instructions: ({ userContext }) => {
-    const role = (userContext.get("role") as string) || "user";
-    const language = (userContext.get("language") as string) || "English";
+  instructions: ({ context }) => {
+    const role = (context.get("role") as string) || "user";
+    const language = (context.get("language") as string) || "English";
 
     if (role === "admin") {
       return `You are an admin assistant with special privileges. Respond in ${language}.`;
@@ -693,8 +749,8 @@ const dynamicAgent = new Agent({
   },
 
   // Dynamic model based on subscription tier
-  model: ({ userContext }) => {
-    const tier = (userContext.get("tier") as string) || "free";
+  model: ({ context }) => {
+    const tier = (context.get("tier") as string) || "free";
 
     switch (tier) {
       case "premium":
@@ -705,51 +761,42 @@ const dynamicAgent = new Agent({
         return openai("gpt-3.5-turbo");
     }
   },
-
-  llm: new VercelAIProvider(),
 });
 
 // Use with context
-const userContext = new Map<string, unknown>();
-userContext.set("role", "admin");
-userContext.set("language", "Spanish");
-userContext.set("tier", "premium");
+const context = new Map<string, unknown>();
+context.set("role", "admin");
+context.set("language", "Spanish");
+context.set("tier", "premium");
 
 const response = await dynamicAgent.generateText("Help me manage the system settings", {
-  userContext: userContext,
+  context: context,
 });
 // The agent will respond in Spanish, with admin capabilities, using the premium model
 ```
 
 [Learn more about Dynamic Agents](./dynamic-agents.md)
 
-### Operation Context (`userContext`)
+### Operation Context (`context`)
 
 **Why?** To pass custom, request-specific data between different parts of an agent's execution flow (like hooks and tools) for a single operation, without affecting other concurrent or subsequent operations. Useful for tracing, logging, metrics, or passing temporary configuration.
 
-`userContext` is a `Map` accessible via the `OperationContext` object, which is passed to hooks and available in tool execution contexts. This context is isolated to each individual operation (`generateText`, `streamObject`, etc.).
+`context` is a `Map` accessible via the `OperationContext` object, which is passed to hooks and available in tool execution contexts. This context is isolated to each individual operation (`generateText`, `streamObject`, etc.).
 
 ```ts
-import {
-  Agent,
-  createHooks,
-  createTool,
-  type OperationContext,
-  type ToolExecutionContext,
-} from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, createHooks, createTool, type OperationContext } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const hooks = createHooks({
-  onStart: async (agent: Agent<any>, context: OperationContext) => {
+  onStart: async ({ context }) => {
     const requestId = `req-${Date.now()}`;
-    context.userContext.set("requestId", requestId); // Set data in context
-    console.log(`[${agent.name}] Operation started. RequestID: ${requestId}`);
+    context.context.set("requestId", requestId);
+    console.log(`[agent] Operation started. RequestID: ${requestId}`);
   },
-  onEnd: async (agent: Agent<any>, result: any, context: OperationContext) => {
-    const requestId = context.userContext.get("requestId"); // Get data from context
-    console.log(`[${agent.name}] Operation finished. RequestID: ${requestId}`);
+  onEnd: async ({ context }) => {
+    const requestId = context.context.get("requestId");
+    console.log(`[agent] Operation finished. RequestID: ${requestId}`);
   },
 });
 
@@ -757,8 +804,8 @@ const loggerTool = createTool({
   name: "context_aware_logger",
   description: "Logs a message using the request ID from context.",
   parameters: z.object({ message: z.string() }),
-  execute: async (params: { message: string }, options?: ToolExecutionContext) => {
-    const requestId = options?.operationContext?.userContext?.get("requestId") || "unknown";
+  execute: async (params: { message: string }, oc?: OperationContext) => {
+    const requestId = oc?.context?.get("requestId") || "unknown";
     const logMessage = `[ReqID: ${requestId}] Tool Log: ${params.message}`;
     console.log(logMessage);
     return `Logged: ${params.message}`;
@@ -767,8 +814,7 @@ const loggerTool = createTool({
 
 const agent = new Agent({
   name: "Context Agent",
-  instructions: "Uses userContext.",
-  llm: new VercelAIProvider(),
+  instructions: "Uses context.",
   model: openai("gpt-4o"),
   hooks: hooks,
   tools: [loggerTool],
@@ -778,7 +824,7 @@ await agent.generateText("Log this message: 'Processing user data.'");
 // The requestId set in onStart will be available in loggerTool and onEnd.
 ```
 
-[Learn more about Operation Context (userContext)](./context.md)
+[Learn more about Operation Context (context)](./context.md)
 
 ### Retriever
 
@@ -790,7 +836,6 @@ The retriever is automatically invoked before calling the LLM within `generate*`
 import { BaseRetriever } from "@voltagent/core";
 import type { BaseMessage } from "@voltagent/core";
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Create a simple retriever (replace with actual vector search in production)
@@ -824,7 +869,6 @@ class SimpleRetriever extends BaseRetriever {
 const agent = new Agent({
   name: "Knowledge Assistant",
   instructions: "An assistant that uses retrieved documents to answer questions.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   retriever: new SimpleRetriever(), // Add the retriever instance
 });
@@ -838,121 +882,69 @@ console.log(response.text);
 
 [Learn more about Retrievers](../rag/overview.md)
 
-### Providers
+### Models & Providers (ai-sdk)
 
-**Why?** To abstract the communication layer with different LLM backends (like OpenAI, Anthropic, Google Gemini, Cohere, local models via Ollama, etc.), allowing you to switch providers without rewriting your core agent logic.
-
-VoltAgent achieves this through `LLMProvider` implementations. You configure your `Agent` with a specific provider instance and the desired model compatible with that provider.
-
-Currently, VoltAgent offers built-in providers for various services and APIs:
-
-- **`@voltagent/vercel-ai`**: Uses the Vercel AI SDK to connect to a wide range of models (OpenAI, Anthropic, Google, Groq, etc.).
-- **`@voltagent/xsai`**: Connects to any OpenAI-compatible API (OpenAI, Groq, Together AI, local models, etc.).
-- **`@voltagent/google-ai`**: Uses the official Google AI SDK for Gemini and Vertex AI.
-- **`@voltagent/groq-ai`**: Connects specifically to the Groq API for fast inference.
-- **`@voltagent/anthropic-ai`**: Connects directly to Anthropic's AI models (Claude) using the official `anthropic-ai/sdk` SDK.
-
-We plan to add more official provider integrations in the future. Furthermore, developers can create their own custom providers by implementing the `LLMProvider` interface to connect VoltAgent to virtually any AI model or service.
+VoltAgent uses the ai-sdk directly. You select a provider package from ai-sdk and pass the model to `Agent` via the `model` prop. Switching providers is as simple as changing the model factory.
 
 ```ts
-// 1. Vercel AI Provider (integrates with various models via Vercel AI SDK)
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai"; // Model definition for OpenAI via Vercel
-import { anthropic } from "@ai-sdk/anthropic"; // Model definition for Anthropic via Vercel
+import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
 
-// Agent using OpenAI via Vercel
-const vercelOpenAIAgent = new Agent({
-  name: "Vercel OpenAI Assistant",
-  instructions: "Assistant using Vercel AI SDK with OpenAI.",
-  llm: new VercelAIProvider(), // The provider
-  model: openai("gpt-4o"), // The specific model
+const openaiAgent = new Agent({
+  name: "OpenAI Assistant",
+  instructions: "Assistant using OpenAI via ai-sdk",
+  model: openai("gpt-4o-mini"),
 });
 
-// Agent using Anthropic via Vercel
-const vercelAnthropicAgent = new Agent({
-  name: "Vercel Anthropic Assistant",
-  instructions: "Assistant using Vercel AI SDK with Anthropic.",
-  llm: new VercelAIProvider(), // Same provider
-  model: anthropic("claude-3-5-sonnet-20240620"), // Different model
+const anthropicAgent = new Agent({
+  name: "Anthropic Assistant",
+  instructions: "Assistant using Anthropic via ai-sdk",
+  model: anthropic("claude-3-5-sonnet"),
 });
 
-// 2. XsAI Provider (Example of a custom/alternative provider)
-import { XsAIProvider } from "@voltagent/xsai";
-
-// Agent using XsAI Provider (might use different model naming)
-const xsaiAgent = new Agent({
-  name: "XsAI Assistant",
-  instructions: "Assistant using XsAI Provider.",
-  llm: new XsAIProvider({ apiKey: process.env.OPENAI_API_KEY }), // Provider instance
-  model: "xsai-model-name", // Model identifier specific to this provider
-});
-
-// Use the agents (example)
-const response = await vercelOpenAIAgent.generateText("Hello OpenAI via Vercel!");
-console.log(response.text);
-
-const response2 = await xsaiAgent.generateText("Hello XsAI!");
-console.log(response2.text);
+// Use as usual
+const res = await openaiAgent.generateText("Hello");
 ```
 
-[**Learn more about available Providers and their specific configurations.**](../providers/overview.md)
+[See Getting Started: Providers & Models](../getting-started/providers-models.md)
 
-### Provider Options
+### Call Settings
 
-**Why?** To provide a standardized way to configure model behavior across different LLM providers, making it easier to adjust generation parameters without worrying about provider-specific implementation details.
-
-VoltAgent uses a standardized `ProviderOptions` type that abstracts common LLM configuration options like temperature, max tokens, and frequency penalties. These options are automatically mapped to each provider's specific format internally, giving you a consistent developer experience regardless of which provider you're using.
+Configure model behavior using ai-sdk call settings passed to agent methods. Common parameters include `temperature`, `maxOutputTokens`, `topP`, and stop sequences. For provider-specific options, use `providerOptions`.
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Configurable Assistant",
   instructions: "An assistant with configurable generation parameters",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
 });
 
 // Example: Configure common LLM parameters regardless of provider
 const response = await agent.generateText("Write a creative story about a robot.", {
-  provider: {
-    // Fine-tune generation behavior with standardized options
-    temperature: 0.8, // Higher creativity (0-1)
-    maxTokens: 500, // Limit response length
-    topP: 0.9, // Nucleus sampling parameter
-    frequencyPenalty: 0.5, // Reduce repetition
-    presencePenalty: 0.3, // Encourage topic diversity
-    seed: 12345, // Reproducible results
-    stopSequences: ["THE END"], // Stop generation at specific string
-
-    // Add provider callbacks for streaming
-    onStepFinish: async (step) => {
-      console.log("Step complete:", step.type);
-    },
-    onFinish: async (result) => {
-      console.log("Generation complete!");
-    },
-    onError: async (error) => {
-      console.error("Generation error:", error);
-    },
-
-    // Provider-specific options not covered by standard fields
-    extraOptions: {
-      someProviderSpecificOption: "value",
+  // ai-sdk call settings (common across providers)
+  temperature: 0.8,
+  maxOutputTokens: 500,
+  topP: 0.9,
+  presencePenalty: 0.3,
+  frequencyPenalty: 0.5,
+  stopSequences: ["THE END"],
+  seed: 12345,
+  // Provider-specific options
+  providerOptions: {
+    someProviderSpecificOption: {
+      foo: "bar",
     },
   },
 });
 
 // Alternative: Provide parameters for streamed responses
 const streamedResponse = await agent.streamText("Generate a business plan", {
-  provider: {
-    temperature: 0.3, // More focused, less creative
-    maxTokens: 2000, // Longer response limit
-    // ... other options as needed
-  },
+  temperature: 0.3,
+  maxOutputTokens: 2000,
 });
 ```
 
@@ -973,7 +965,6 @@ VoltAgent supports `maxSteps` configuration at both the agent level (applies to 
 
 ```ts
 import { Agent, createTool } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -990,7 +981,6 @@ const weatherTool = createTool({
 const agent = new Agent({
   name: "Weather Assistant",
   instructions: "Help users with weather information using available tools",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: [weatherTool],
   maxSteps: 5, // All operations will use max 5 steps
@@ -1027,41 +1017,57 @@ Without `maxSteps`, an agent might continue indefinitely if it keeps making tool
 
 #### maxSteps Priority
 
-The system follows this priority order:
+Effective value resolution:
 
-1. **Operation-level maxSteps** (highest priority) - specified in `generateText()`, `streamText()`, etc.
-2. **Agent-level maxSteps** - specified in agent constructor
-3. **Default calculation** - based on number of sub-agents (10 × sub-agents count, minimum 10)
-
-#### Default maxSteps Values
-
-VoltAgent provides sensible defaults that work well for most use cases:
+1. **Operation-level `maxSteps`** (highest): set per call on `generateText/streamText`.
+2. **Agent-level `maxSteps`**: set in the constructor.
+3. **Default**: 5 steps (if not specified anywhere).
 
 ```ts
-// Simple agent without sub-agents
-const simpleAgent = new Agent({
-  name: "Simple Assistant",
-  instructions: "A basic assistant",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
-  // Default: 10 steps (sufficient for most tool usage scenarios)
-});
+// Default behavior (no maxSteps set): 5 steps
+const simpleAgent = new Agent({ name: "Simple", model: openai("gpt-4o-mini") });
 
-// Agent with sub-agents - automatic scaling
-const supervisorAgent = new Agent({
-  name: "Supervisor",
-  instructions: "Coordinates specialized tasks",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
-  subAgents: [agent1, agent2, agent3], // 3 sub-agents
-  // Default: 10 × 3 = 30 steps (scales with complexity)
-});
+// Agent-level default for all calls
+const fixedAgent = new Agent({ name: "Fixed", model: openai("gpt-4o-mini"), maxSteps: 8 });
+
+// Per-call override
+await fixedAgent.generateText("...", { maxSteps: 3 });
 ```
 
-**Default Values:**
+#### How VoltAgent enforces steps
 
-- **Basic agents**: 10 steps (covers initial request + tool usage + response)
-- **Multi-agent workflows**: 10 × number of sub-agents (accommodates delegation overhead)
+Under the hood, VoltAgent uses ai-sdk's `stopWhen` with `stepCountIs(maxSteps)` when calling `generateText` and `streamText`. This guarantees the model stops once the step budget is reached, even when tools are in play.
+
+You can override this behavior per call by providing your own ai-sdk `stopWhen` predicate in the method options. VoltAgent applies sensible defaults, but if you pass `stopWhen`, it takes precedence.
+
+```ts
+import { stepCountIs, hasToolCall } from "@voltagent/core";
+
+// Explicitly enforce 2 steps
+await agent.streamText("...", { stopWhen: stepCountIs(2) });
+
+// Custom predicate: stop after 3 steps or after a specific tool call
+await agent.generateText("...", {
+  stopWhen: ({ steps }) => {
+    if (steps.length >= 3) return true;
+    const last = steps.at(-1);
+    return !!last?.toolCalls?.some((c) => c.toolName === "submit_form");
+  },
+});
+
+// Convenience: stop when a specific tool is called
+await agent.generateText("...", { stopWhen: hasToolCall("submit_form") });
+```
+
+Tip: To observe step boundaries, consume `fullStream` and watch for step-related events (e.g., `start-step`, `finish-step`) where supported by your model/provider.
+
+:::caution Overriding stopWhen
+
+- Overriding `stopWhen` disables VoltAgent's default step cap derived from `maxSteps`.
+- Early termination may cut off tool-call/result cycles and yield partial answers.
+- A lax predicate can allow unbounded loops if the model keeps emitting steps.
+- Prefer simple guards such as `stepCountIs(n)` or explicit checks on the last event.
+  :::
 
 **When Defaults Are Sufficient:**
 
@@ -1082,7 +1088,6 @@ const supervisorAgent = new Agent({
 const complexResearchAgent = new Agent({
   name: "Advanced Research Agent",
   instructions: "Conducts comprehensive research with iterative refinement",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: [webSearchTool, databaseTool, analysisTool],
   maxSteps: 50, // Custom limit for complex workflows
@@ -1092,7 +1097,6 @@ const complexResearchAgent = new Agent({
 const enterpriseWorkflow = new Agent({
   name: "Enterprise Coordinator",
   instructions: "Manages complex business processes",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   subAgents: [dataAgent, analysisAgent, reportAgent, reviewAgent],
   maxSteps: 100, // High limit for enterprise complexity
@@ -1107,13 +1111,11 @@ VoltAgent supports the standard `AbortController` API across all generation meth
 
 ```ts
 import { Agent, isAbortError } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Cancellable Assistant",
   instructions: "An assistant that supports operation cancellation",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
 });
 
@@ -1126,9 +1128,9 @@ setTimeout(() => {
 }, 5000);
 
 try {
-  // Pass the abortController to any generation method
+  // Pass the signal to any generation method
   const response = await agent.generateText("Write a very long story...", {
-    abortController, // The operation will be cancelled if timeout occurs
+    abortSignal: abortController.signal, // Cancels if timeout occurs
   });
   console.log(response.text);
 } catch (error) {
@@ -1187,7 +1189,7 @@ This means if you cancel an agent operation, any active tool executions will als
 - **Error Recovery**: Cancel related operations when one fails
 - **Batch Processing**: Cancel remaining operations when stopping a batch
 
-For detailed examples of implementing cancellable tools, including error handling and best practices, see the [Tools documentation on AbortSignal](./tools.md#cancellable-tools-with-abortsignal).
+For detailed examples of implementing cancellable tools, including error handling and best practices, see the [Tools documentation on AbortSignal](./tools.md#cancellable-tools-with-abortcontroller).
 
 ### MCP (Model Context Protocol)
 
@@ -1197,7 +1199,6 @@ Connect to external servers that adhere to the MCP specification to leverage the
 
 ```ts
 import { Agent, MCPConfiguration } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Set up MCP configuration pointing to your external server(s)
@@ -1218,7 +1219,6 @@ const mcpTools = await mcpConfig.getTools();
 const agent = new Agent({
   name: "MCP Agent",
   instructions: "Uses external model capabilities via MCP",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   // Add the tools fetched from the MCP server
   tools: mcpTools,
@@ -1240,7 +1240,6 @@ Integrate with voice providers like OpenAI or ElevenLabs. Use the provider direc
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 // Import voice providers
 import { OpenAIVoiceProvider, ElevenLabsVoiceProvider } from "@voltagent/voice";
@@ -1281,7 +1280,6 @@ await pipeline(elAudioStream, createWriteStream("elevenlabs_output.mp3"));
 const agent = new Agent({
   name: "Voice Assistant",
   instructions: "A helpful voice assistant",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   // Assign a voice provider instance to the agent's voice property
   voice: elevenLabsVoice, // Or use openaiVoice
@@ -1329,9 +1327,9 @@ try {
 
   // Processing the stream itself might encounter errors handled differently (see below)
   console.log("Stream processing started...");
-  for await (const delta of response.stream) {
+  for await (const delta of response.fullStream) {
     // ... handle deltas ...
-    process.stdout.write(delta.type === "text-delta" ? delta.textDelta : "");
+    process.stdout.write(delta);
   }
   // Note: If an error occurs *during* the stream, the loop might finish,
   // but the final history entry status will indicate an error.

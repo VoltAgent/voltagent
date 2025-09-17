@@ -227,19 +227,17 @@ The build process creates:
 
 ## 🔗 Integration with VoltAgent
 
-Once implemented, your provider can be used in VoltAgent applications:
+VoltAgent 1.x integrates directly with ai-sdk models. Use your ai-sdk provider’s model in the `Agent` configuration:
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { YourProviderProvider } from "@voltagent/your-provider";
+import { openai } from "@ai-sdk/openai"; // or anthropic/google/groq...
 
 const agent = new Agent({
   id: "my-agent",
   purpose: "Do agentic things",
   instructions: "You are an AI agent...",
-  llm: new YourProviderProvider({
-    // Your provider configuration
-  }),
+  model: openai("gpt-4o-mini"),
 });
 ```
 

@@ -1,17 +1,10 @@
-import { BatchSpanProcessor, type SpanExporter } from "@opentelemetry/sdk-trace-base";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { Agent } from "./agent/agent";
-import type { SubAgentConfig } from "./agent/subagent/types";
 import { getGlobalLogger } from "./logger";
-import { startServer } from "./server";
-import { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
-import type { ServerConfig } from "./server/api";
-import type { CustomEndpointDefinition } from "./server/custom-endpoints";
-import { AgentRegistry } from "./server/registry";
-import type { VoltAgentExporter } from "./telemetry/exporter";
-import type { ServerOptions, VoltAgentOptions } from "./types";
+import { VoltAgentObservability } from "./observability/voltagent-observability";
+import { AgentRegistry } from "./registries/agent-registry";
+import type { IServerProvider, VoltAgentOptions } from "./types";
 import { checkForUpdates } from "./utils/update";
 import { isValidVoltOpsKeys } from "./utils/voltops-validation";
 import { VoltOpsClient } from "./voltops/client";
@@ -19,20 +12,15 @@ import type { Workflow } from "./workflow";
 import type { WorkflowChain } from "./workflow/chain";
 import { WorkflowRegistry } from "./workflow/registry";
 
-let isTelemetryInitializedByVoltAgent = false;
-let registeredProvider: NodeTracerProvider | null = null;
-
 /**
  * Main VoltAgent class for managing agents and server
  */
 export class VoltAgent {
   private registry: AgentRegistry;
   private workflowRegistry: WorkflowRegistry;
-  private serverStarted = false;
-  private customEndpoints: CustomEndpointDefinition[] = [];
-  private serverConfig: ServerConfig = {};
-  private serverOptions: ServerOptions = {};
+  private serverInstance?: IServerProvider;
   private logger: Logger;
+  private observability?: VoltAgentObservability;
 
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
@@ -41,6 +29,18 @@ export class VoltAgent {
     // Initialize logger
     this.logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
 
+    // Initialize OpenTelemetry observability
+    // This enables tracing for all agents and workflows
+    // This is the SINGLE global provider for the entire application
+    this.observability =
+      options.observability ||
+      new VoltAgentObservability({
+        serviceName: "voltagent",
+      });
+
+    // Set global observability in registry for all agents to use
+    this.registry.setGlobalObservability(this.observability);
+
     // Setup graceful shutdown handlers
     this.setupShutdownHandlers();
 
@@ -48,11 +48,7 @@ export class VoltAgent {
     if (options.voltOpsClient) {
       this.registry.setGlobalVoltOpsClient(options.voltOpsClient);
 
-      // 🔥 CRITICAL FIX: Explicitly set global telemetry exporter for Agent access
-      if (options.voltOpsClient.observability) {
-        this.registry.setGlobalVoltAgentExporter(options.voltOpsClient.observability);
-        this.initializeGlobalTelemetry(options.voltOpsClient.observability);
-      }
+      // Note: VoltAgentObservability already handles OpenTelemetry initialization
     }
 
     // Handle global logger
@@ -61,40 +57,10 @@ export class VoltAgent {
       // Buffer management is now handled by LoggerProxy/BufferedLogger
     }
 
-    // DEPRECATED: Handle old telemetryExporter (for backward compatibility)
-    if (options.telemetryExporter) {
-      this.logger.warn(
-        `⚠️  DEPRECATION WARNING: 'telemetryExporter' parameter is deprecated!
-        
-🔄 MIGRATION REQUIRED:
-❌ OLD: telemetryExporter: new VoltAgentExporter({ ... })
-✅ NEW: voltOpsClient: new VoltOpsClient({ publicKey: "...", secretKey: "..." })
-
-📖 Complete migration guide:
-https://voltagent.dev/docs/observability/developer-console/#migration-guide-from-telemetryexporter-to-voltopsclient
-
-✨ Benefits of VoltOpsClient:
-• Unified observability + prompt management  
-• Dynamic prompts from console`,
-      );
-
-      // Find the VoltAgentExporter and set it globally
-      const exporters = Array.isArray(options.telemetryExporter)
-        ? options.telemetryExporter
-        : [options.telemetryExporter];
-      const voltExporter = exporters.find(
-        (exp): exp is VoltAgentExporter =>
-          typeof (exp as VoltAgentExporter).exportHistoryEntry === "function" &&
-          typeof (exp as VoltAgentExporter).publicKey === "string",
-      );
-      if (voltExporter) {
-        this.registry.setGlobalVoltAgentExporter(voltExporter);
-      }
-      this.initializeGlobalTelemetry(options.telemetryExporter);
-    }
+    // telemetryExporter removed - migrated to OpenTelemetry
 
     // Auto-configure VoltOpsClient from environment if not provided
-    if (!options.voltOpsClient && !options.telemetryExporter) {
+    if (!options.voltOpsClient) {
       const publicKey = process.env.VOLTAGENT_PUBLIC_KEY;
       const secretKey = process.env.VOLTAGENT_SECRET_KEY;
 
@@ -106,10 +72,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
           });
 
           this.registry.setGlobalVoltOpsClient(autoClient);
-          if (autoClient.observability) {
-            this.registry.setGlobalVoltAgentExporter(autoClient.observability);
-            this.initializeGlobalTelemetry(autoClient.observability);
-          }
+          // Note: VoltAgentObservability already handles OpenTelemetry initialization
 
           this.logger.debug("VoltOpsClient auto-configured from environment variables");
         } catch (error) {
@@ -127,24 +90,15 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       this.registerWorkflows(options.workflows);
     }
 
-    // Merge server options with backward compatibility
-    // New server object takes precedence over deprecated individual options
-    this.serverOptions = {
-      autoStart: options.server?.autoStart ?? options.autoStart ?? true,
-      port: options.server?.port ?? options.port,
-      enableSwaggerUI: options.server?.enableSwaggerUI ?? options.enableSwaggerUI,
-      customEndpoints: options.server?.customEndpoints ?? options.customEndpoints ?? [],
-    };
-
-    // Store custom endpoints for registration when the server starts
-    this.customEndpoints = [...(this.serverOptions.customEndpoints || [])];
-
-    // Store server configuration for startServer
-    if (this.serverOptions.enableSwaggerUI !== undefined) {
-      this.serverConfig.enableSwaggerUI = this.serverOptions.enableSwaggerUI;
-    }
-    if (this.serverOptions.port !== undefined) {
-      this.serverConfig.port = this.serverOptions.port;
+    // Handle server provider if provided
+    if (options.server) {
+      this.serverInstance = options.server({
+        agentRegistry: this.registry,
+        workflowRegistry: this.workflowRegistry,
+        logger: this.logger,
+        voltOpsClient: this.registry.getGlobalVoltOpsClient(),
+        observability: this.observability,
+      });
     }
 
     // Check dependencies if enabled (run in background)
@@ -157,8 +111,8 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       });
     }
 
-    // Auto-start server if enabled
-    if (this.serverOptions.autoStart !== false) {
+    // Auto-start server if provided
+    if (this.serverInstance) {
       this.startServer().catch((err) => {
         this.logger.error("Failed to start server:", err);
         process.exit(1);
@@ -170,14 +124,15 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    * Setup graceful shutdown handlers
    */
   private setupShutdownHandlers(): void {
-    const shutdown = async (signal: string) => {
-      this.logger.info(`[VoltAgent] Received ${signal}, starting graceful shutdown...`);
+    const handleSignal = async (signal: string) => {
+      this.logger.info(`[VoltAgent] Received ${signal}...`);
 
       try {
-        // Suspend all active workflows
-        await this.workflowRegistry.suspendAllActiveWorkflows();
+        // Use the public shutdown method for all cleanup
+        await this.shutdown();
 
-        this.logger.info("[VoltAgent] All workflows suspended, exiting...");
+        // Only call process.exit if we're the sole handler
+        // This allows other frameworks to perform their own cleanup
         if (this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT")) {
           process.exit(0);
         }
@@ -189,8 +144,20 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       }
     };
 
-    process.once("SIGTERM", () => shutdown("SIGTERM"));
-    process.once("SIGINT", () => shutdown("SIGINT"));
+    // Use process.once to prevent duplicate handling
+    process.once("SIGTERM", () => handleSignal("SIGTERM"));
+    process.once("SIGINT", () => handleSignal("SIGINT"));
+
+    // Handle unhandled promise rejections to prevent server crashes
+    // This is particularly important for AI SDK's NoOutputGeneratedError
+    process.on("unhandledRejection", (reason) => {
+      this.logger.error("[VoltAgent] Unhandled Promise Rejection:", {
+        reason: reason instanceof Error ? reason.message : reason,
+        stack: reason instanceof Error ? reason.stack : undefined,
+      });
+      // Don't crash the server, just log the error
+      // In production, you might want to send this to an error tracking service
+    });
   }
 
   private isSoleSignalHandler(event: "SIGTERM" | "SIGINT"): boolean {
@@ -235,42 +202,15 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   /**
    * Register an agent
    */
-  public registerAgent(agent: Agent<any>): void {
-    const globalExporter = this.registry.getGlobalVoltAgentExporter();
-    if (globalExporter && !agent.isTelemetryConfigured()) {
-      agent._INTERNAL_setVoltAgentExporter(globalExporter);
-    }
-
-    // Register the main agent
+  public registerAgent(agent: Agent): void {
+    // Register the agent
     this.registry.registerAgent(agent);
-
-    // Also register all subagents recursively
-    const subAgentConfigs = agent.getSubAgents();
-    if (subAgentConfigs && subAgentConfigs.length > 0) {
-      subAgentConfigs.forEach((subAgentConfig) => {
-        // Extract the actual agent from SubAgentConfig
-        const subAgent = this.extractAgentFromConfig(subAgentConfig);
-        this.registerAgent(subAgent);
-      });
-    }
-  }
-
-  /**
-   * Helper method to extract Agent instance from SubAgentConfig
-   */
-  private extractAgentFromConfig(config: SubAgentConfig): Agent<any> {
-    // If it's a SubAgentConfigObject, extract the agent
-    if (config && typeof config === "object" && "agent" in config && "method" in config) {
-      return config.agent;
-    }
-    // Otherwise, it's already an Agent instance
-    return config;
   }
 
   /**
    * Register multiple agents
    */
-  public registerAgents(agents: Record<string, Agent<any>>): void {
+  public registerAgents(agents: Record<string, Agent>): void {
     Object.values(agents).forEach((agent) => this.registerAgent(agent));
   }
 
@@ -278,19 +218,18 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    * Start the server
    */
   public async startServer(): Promise<void> {
-    if (this.serverStarted) {
+    if (!this.serverInstance) {
+      this.logger.warn("No server provider configured");
+      return;
+    }
+
+    if (this.serverInstance.isRunning()) {
       this.logger.info("Server is already running");
       return;
     }
 
     try {
-      // Register custom endpoints if any
-      if (this.customEndpoints.length > 0) {
-        registerCustomEndpoints(this.customEndpoints);
-      }
-
-      await startServer(this.serverConfig);
-      this.serverStarted = true;
+      await this.serverInstance.start();
     } catch (error) {
       this.logger.error(
         `Failed to start server: ${error instanceof Error ? error.message : String(error)}`,
@@ -300,48 +239,23 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   }
 
   /**
-   * Register a custom endpoint with the API server
-   * @param endpoint The custom endpoint definition
-   * @throws Error if the endpoint definition is invalid or registration fails
+   * Stop the server
    */
-  public registerCustomEndpoint(endpoint: CustomEndpointDefinition): void {
-    try {
-      // Add to the internal list
-      this.customEndpoints.push(endpoint);
-
-      // If server is already running, register the endpoint immediately
-      if (this.serverStarted) {
-        registerCustomEndpoint(endpoint);
-      }
-    } catch (error) {
-      this.logger.error(
-        `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      throw error;
+  public async stopServer(): Promise<void> {
+    if (!this.serverInstance) {
+      return;
     }
-  }
 
-  /**
-   * Register multiple custom endpoints with the API server
-   * @param endpoints Array of custom endpoint definitions
-   * @throws Error if any endpoint definition is invalid or registration fails
-   */
-  public registerCustomEndpoints(endpoints: CustomEndpointDefinition[]): void {
+    if (!this.serverInstance.isRunning()) {
+      return;
+    }
+
     try {
-      if (!endpoints || !Array.isArray(endpoints) || endpoints.length === 0) {
-        return;
-      }
-
-      // Add to the internal list
-      this.customEndpoints.push(...endpoints);
-
-      // If server is already running, register the endpoints immediately
-      if (this.serverStarted) {
-        registerCustomEndpoints(endpoints);
-      }
+      await this.serverInstance.stop();
+      this.logger.info("Server stopped");
     } catch (error) {
       this.logger.error(
-        `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to stop server: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
@@ -350,14 +264,14 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   /**
    * Get all registered agents
    */
-  public getAgents(): Agent<any>[] {
+  public getAgents(): Agent[] {
     return this.registry.getAllAgents();
   }
 
   /**
    * Get agent by ID
    */
-  public getAgent(id: string): Agent<any> | undefined {
+  public getAgent(id: string): Agent | undefined {
     return this.registry.getAgent(id);
   }
 
@@ -427,74 +341,51 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
     return this.workflowRegistry.getWorkflowCount();
   }
 
-  private initializeGlobalTelemetry(
-    exporterOrExporters: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[],
-  ): void {
-    if (isTelemetryInitializedByVoltAgent) {
-      this.logger.warn(
-        "Telemetry seems to be already initialized by a VoltAgent instance. Skipping re-initialization.",
-      );
-      return;
-    }
+  /**
+   * Get observability instance
+   */
+  public getObservability(): VoltAgentObservability | undefined {
+    return this.observability;
+  }
 
-    try {
-      const allExporters = Array.isArray(exporterOrExporters)
-        ? exporterOrExporters
-        : [exporterOrExporters];
-
-      // Filter out VoltAgentExporter instances for BatchSpanProcessor
-      const spanExporters = allExporters.filter(
-        (exp): exp is SpanExporter =>
-          (exp as SpanExporter).export !== undefined &&
-          (exp as SpanExporter).shutdown !== undefined,
-      );
-
-      if (spanExporters.length === 0) {
-        // We still mark telemetry as initialized by VoltAgent if any exporter (incl. VoltAgentExporter) was passed,
-        // to prevent multiple VoltAgent instances from trying to set up their own things.
-        // However, the registeredProvider will remain null if only VoltAgentExporters are present.
-        if (allExporters.length > 0) {
-          isTelemetryInitializedByVoltAgent = true;
-        }
-        return;
-      }
-
-      const spanProcessors = spanExporters.map((exporter) => {
-        return new BatchSpanProcessor(exporter);
-      });
-
-      const provider = new NodeTracerProvider({
-        spanProcessors: spanProcessors, // Use the filtered list
-      });
-
-      provider.register();
-      isTelemetryInitializedByVoltAgent = true;
-      registeredProvider = provider;
-
-      // Add automatic shutdown on SIGTERM
-      process.on("SIGTERM", () => {
-        this.shutdownTelemetry().catch((err) =>
-          this.logger.error("Error during SIGTERM telemetry shutdown:", { error: err }),
-        );
-      });
-    } catch (error) {
-      this.logger.error("Failed to initialize OpenTelemetry:", { error });
+  /**
+   * Shutdown telemetry (delegates to VoltAgentObservability)
+   */
+  public async shutdownTelemetry(): Promise<void> {
+    if (this.observability) {
+      await this.observability.shutdown();
     }
   }
 
-  public async shutdownTelemetry(): Promise<void> {
-    if (isTelemetryInitializedByVoltAgent && registeredProvider) {
-      try {
-        await registeredProvider.shutdown();
-        isTelemetryInitializedByVoltAgent = false;
-        registeredProvider = null;
-      } catch (error) {
-        this.logger.error("Error shutting down OpenTelemetry provider:", { error });
+  /**
+   * Gracefully shutdown all VoltAgent resources
+   * This includes stopping the server, suspending workflows, and shutting down telemetry
+   * Useful for programmatic cleanup or when integrating with other frameworks
+   */
+  public async shutdown(): Promise<void> {
+    this.logger.info("[VoltAgent] Starting graceful shutdown...");
+
+    try {
+      // Stop the server first to prevent new requests
+      if (this.serverInstance?.isRunning()) {
+        this.logger.info("[VoltAgent] Stopping server...");
+        await this.stopServer();
       }
-    } else {
-      this.logger.info(
-        "Telemetry provider was not initialized by this VoltAgent instance or already shut down.",
-      );
+
+      // Suspend all active workflows
+      this.logger.info("[VoltAgent] Suspending active workflows...");
+      await this.workflowRegistry.suspendAllActiveWorkflows();
+
+      // Shutdown telemetry
+      if (this.observability) {
+        this.logger.info("[VoltAgent] Shutting down telemetry...");
+        await this.shutdownTelemetry();
+      }
+
+      this.logger.info("[VoltAgent] Graceful shutdown complete");
+    } catch (error) {
+      this.logger.error("[VoltAgent] Error during shutdown:", { error });
+      throw error;
     }
   }
 }

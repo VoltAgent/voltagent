@@ -1,4 +1,5 @@
-import type { BaseMessage, MessageContent } from "../agent/providers/base/types";
+import type { UIMessage } from "ai";
+import type { MessageContent } from "../agent/providers/base/types";
 
 /**
  * Type guard to check if content is a string
@@ -110,26 +111,30 @@ export function transformTextContent(
   if (isStructuredContent(content)) {
     return content.map((part) => {
       if (part.type === "text") {
-        return { ...part, text: transformer(part.text) };
+        return { ...part, text: transformer((part as { type: "text"; text: string }).text) };
       }
       return part;
-    });
+    }) as MessageContent;
   }
 
   return content;
 }
 
 /**
- * Map message content with a transformer function
+ * Map UIMessage text parts with a transformer function
  */
-export function mapMessageContent<T extends BaseMessage>(
-  message: T,
+export function mapMessageContent(
+  message: UIMessage,
   transformer: (text: string) => string,
-): T {
-  return {
-    ...message,
-    content: transformTextContent(message.content, transformer),
-  };
+): UIMessage {
+  if (!Array.isArray((message as any).parts)) return message as UIMessage;
+  const parts = (message as any).parts.map((part: any) => {
+    if (part?.type === "text" && typeof part.text === "string") {
+      return { ...part, text: transformer(part.text) };
+    }
+    return part;
+  });
+  return { ...(message as any), parts } as UIMessage;
 }
 
 /**
@@ -143,9 +148,9 @@ export function filterContentParts(
     const filtered = content.filter(predicate);
     if (filtered.length === 0) return "";
     if (filtered.length === 1 && filtered[0].type === "text") {
-      return filtered[0].text;
+      return (filtered[0] as { type: "text"; text: string }).text;
     }
-    return filtered;
+    return filtered as MessageContent;
   }
   return content;
 }
@@ -245,40 +250,67 @@ export class MessageContentBuilder {
 }
 
 /**
- * Convenience function to add timestamp to user messages
+ * Convenience function to add timestamp to user messages (UIMessage only)
  */
-export function addTimestampToMessage(message: BaseMessage, timestamp?: string): BaseMessage {
+export function addTimestampToMessage(message: UIMessage, timestamp?: string): UIMessage {
   if (message.role !== "user") return message;
 
   const ts = timestamp || new Date().toLocaleTimeString();
 
-  return {
-    ...message,
-    content: transformTextContent(message.content, (text) => `[${ts}] ${text}`),
-  };
+  // Prefix all text parts with the timestamp
+  if (Array.isArray(message.parts)) {
+    const newParts = message.parts.map((part: any) => {
+      if (part?.type === "text" && typeof part.text === "string") {
+        return { ...part, text: `[${ts}] ${part.text}` };
+      }
+      return part;
+    });
+    return { ...(message as any), parts: newParts } as UIMessage;
+  }
+
+  // If parts are missing (unexpected), return unchanged
+  return message;
 }
 
 /**
- * Convenience function to prepend text to message content
+ * Convenience function to prepend text to UIMessage text parts
  */
-export function prependToMessage(message: BaseMessage, prefix: string): BaseMessage {
-  return mapMessageContent(message, (text) => `${prefix}${text}`);
+export function prependToMessage(message: UIMessage, prefix: string): UIMessage {
+  if (!Array.isArray((message as any).parts)) return message as UIMessage;
+  const parts = (message as any).parts.map((part: any) => {
+    if (part?.type === "text" && typeof part.text === "string") {
+      return { ...part, text: `${prefix}${part.text}` };
+    }
+    return part;
+  });
+  return { ...(message as any), parts } as UIMessage;
 }
 
 /**
- * Convenience function to append text to message content
+ * Convenience function to append text to UIMessage text parts
  */
-export function appendToMessage(message: BaseMessage, suffix: string): BaseMessage {
-  return mapMessageContent(message, (text) => `${text}${suffix}`);
+export function appendToMessage(message: UIMessage, suffix: string): UIMessage {
+  if (!Array.isArray((message as any).parts)) return message as UIMessage;
+  const parts = (message as any).parts.map((part: any) => {
+    if (part?.type === "text" && typeof part.text === "string") {
+      return { ...part, text: `${part.text}${suffix}` };
+    }
+    return part;
+  });
+  return { ...(message as any), parts } as UIMessage;
 }
 
 /**
- * Check if message has any content
+ * Check if UIMessage has any content
  */
-export function hasContent(message: BaseMessage): boolean {
-  const content = message.content;
-  if (isTextContent(content)) return content.length > 0;
-  if (isStructuredContent(content)) return content.length > 0;
+export function hasContent(message: UIMessage): boolean {
+  const parts = (message as any)?.parts;
+  if (!Array.isArray(parts) || parts.length === 0) return false;
+  // True if any non-empty text part or any non-text part exists
+  for (const part of parts) {
+    if (part?.type === "text" && typeof part.text === "string" && part.text.length > 0) return true;
+    if (part?.type !== "text") return true;
+  }
   return false;
 }
 
@@ -318,7 +350,7 @@ export const messageHelpers = {
   normalizeContent,
 
   // Convenience functions
-  addTimestampToMessage,
+  addTimestampToMessage: addTimestampToMessage as typeof addTimestampToMessage,
   prependToMessage,
   appendToMessage,
   hasContent,

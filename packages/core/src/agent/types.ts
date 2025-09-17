@@ -7,30 +7,94 @@ import type {
   ProviderTextResponse,
   ProviderTextStreamResponse,
 } from "../agent/providers/base/types";
+import type { StopWhen } from "../ai-types";
 
-import type { Memory, MemoryOptions } from "../memory/types";
-import type { VoltAgentExporter } from "../telemetry/exporter";
+import type { LanguageModel, TextStreamPart } from "ai";
+import type { Memory } from "../memory";
+import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit } from "../tool";
-import type { StreamEvent, StreamEventType } from "../utils/streams";
-import type { AgentHistoryEntry } from "./history";
+import type { StreamEvent } from "../utils/streams";
+import type { Voice } from "../voice/types";
+import type { VoltOpsClient } from "../voltops/client";
+import type { AbortError, VoltAgentError } from "./errors";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
-import type { ToolExecuteOptions } from "./providers/base/types";
 import type { UsageInfo } from "./providers/base/types";
 import type { SubAgentConfig } from "./subagent/types";
 
 import type { Logger } from "@voltagent/internal";
+import type { VoltAgentObservability } from "../observability";
 import type {
   DynamicValue,
   DynamicValueOptions,
   PromptContent,
   PromptHelper,
 } from "../voltops/types";
+import type { ContextInput } from "./agent";
 import type { AgentHooks } from "./hooks";
+import type { AgentTraceContext } from "./open-telemetry/trace-context";
 
 // Re-export for backward compatibility
 export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
+
+/**
+ * Tool representation for API responses
+ */
+export interface ApiToolInfo {
+  name: string;
+  description: string;
+  parameters?: any;
+}
+
+/**
+ * Tool with node_id for agent state
+ */
+export interface ToolWithNodeId extends BaseTool {
+  node_id: string;
+}
+
+/**
+ * SubAgent data structure for agent state
+ */
+export interface SubAgentStateData {
+  id: string;
+  name: string;
+  instructions?: string;
+  status: string;
+  model: string;
+  tools: ApiToolInfo[]; // API representation of tools
+  memory?: Record<string, unknown>;
+  node_id: string;
+  subAgents?: SubAgentStateData[];
+  methodConfig?: {
+    method: string;
+    schema?: string;
+    options?: string[];
+  };
+  [key: string]: unknown;
+}
+
+/**
+ * Full state of an agent including all properties
+ */
+export interface AgentFullState {
+  id: string;
+  name: string;
+  instructions?: string;
+  status: string;
+  model: string;
+  node_id: string;
+  tools: ToolWithNodeId[];
+  subAgents: SubAgentStateData[];
+  memory: Record<string, unknown> & { node_id: string };
+  retriever?: {
+    name: string;
+    description?: string;
+    status?: string;
+    node_id: string;
+  } | null;
+}
 
 /**
  * Enhanced dynamic value for instructions that supports prompt management
@@ -79,9 +143,6 @@ export type ProviderOptions = {
   // Callback when an error occurs during generation
   onError?: (error: unknown) => Promise<void>;
 
-  // Tool execution context passed down from the agent
-  toolExecutionContext?: ToolExecutionContext;
-
   [key: string]: unknown;
 };
 
@@ -89,21 +150,28 @@ export type ProviderOptions = {
  * Configuration for supervisor agents that have subagents
  */
 /**
+ * StreamEventType derived from AI SDK's TextStreamPart
+ * Includes all event types from AI SDK
+ */
+export type StreamEventType = TextStreamPart<any>["type"];
+
+/**
  * Configuration for forwarding events from subagents to the parent agent's stream
  */
 export type FullStreamEventForwardingConfig = {
   /**
    * Array of event types to forward from subagents
-   * Uses StreamEventType which includes: 'text-delta', 'reasoning', 'source', 'tool-call', 'tool-result', 'finish', 'error'
+   * Uses AI SDK's TextStreamPart types:
+   * - Text: 'text-start', 'text-end', 'text-delta'
+   * - Reasoning: 'reasoning-start', 'reasoning-end', 'reasoning-delta'
+   * - Tool: 'tool-input-start', 'tool-input-end', 'tool-input-delta',
+   *         'tool-call', 'tool-result', 'tool-error'
+   * - Other: 'source', 'file', 'start-step', 'finish-step',
+   *          'start', 'finish', 'abort', 'error', 'raw'
    * @default ['tool-call', 'tool-result']
-   * @example ['tool-call', 'tool-result', 'text-delta', 'reasoning', 'source']
+   * @example ['tool-call', 'tool-result', 'text-delta']
    */
   types?: StreamEventType[];
-  /**
-   * Whether to add the subagent name as a prefix to tool names in forwarded events
-   * @default true
-   */
-  addSubAgentPrefix?: boolean;
 };
 
 export type SupervisorConfig = {
@@ -127,8 +195,8 @@ export type SupervisorConfig = {
 
   /**
    * Configuration for forwarding events from subagents to the parent agent's full stream
-   * Controls which event types are forwarded and how they are formatted
-   * @default { types: ['tool-call', 'tool-result'], addSubAgentPrefix: true }
+   * Controls which event types are forwarded
+   * @default { types: ['tool-call', 'tool-result'] }
    */
   fullStreamEventForwarding?: FullStreamEventForwardingConfig;
 
@@ -154,119 +222,53 @@ export type SupervisorConfig = {
  * Agent configuration options
  */
 export type AgentOptions = {
-  /**
-   * Unique identifier for the agent
-   * If not provided, a UUID will be generated
-   */
+  // Identity
   id?: string;
-
-  /**
-   * Agent name
-   */
   name: string;
-
-  /**
-   * Agent purpose. This is the purpose of the agent, that will be used to generate the system message for the supervisor agent, if not provided, the agent will use the `instructions` field to generate the system message.
-   *
-   * @example 'An agent for customer support'
-   */
   purpose?: string;
 
-  /**
-   * Memory storage for the agent (optional)
-   * Set to false to explicitly disable memory
-   */
+  // Core AI
+  model: LanguageModel | DynamicValue<LanguageModel>;
+  instructions: InstructionsDynamicValue;
+
+  // Tools & Memory
+  tools?: (Tool<any, any> | Toolkit)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
+  toolkits?: Toolkit[];
   memory?: Memory | false;
 
-  /**
-   * Memory options for the agent
-   */
-  memoryOptions?: MemoryOptions;
+  // Retriever/RAG
+  retriever?: BaseRetriever;
 
-  /**
-   * Memory instance for storing execution history and telemetry.
-   * If not provided, defaults to LibSQLStorage.
-   * Use InMemoryStorage for environments without filesystem access (e.g., AWS Lambda).
-   * @since 0.1.55
-   */
-  historyMemory?: Memory;
-
-  /**
-   * Tools and/or Toolkits that the agent can use
-   * Can be static or dynamic based on user context
-   */
-  tools?: ToolsDynamicValue;
-
-  /**
-   * Maximum number of steps (turns) the agent can take before stopping
-   * This overrides any supervisor config maxSteps setting
-   */
-  maxSteps?: number;
-
-  /**
-   * Optional user-defined context to be passed around
-   */
-  userContext?: UserContext;
-
-  /**
-   * @deprecated Use `voltOpsClient` instead. Will be removed in a future version.
-   *
-   * Telemetry exporter for the agent - DEPRECATED
-   *
-   * 🔄 MIGRATION REQUIRED:
-   * ❌ OLD: telemetryExporter: new VoltAgentExporter({ ... })
-   * ✅ NEW: voltOpsClient: new VoltOpsClient({ publicKey: "...", secretKey: "..." })
-   *
-   * 📖 Migration guide: https://voltagent.dev/docs/observability/developer-console/#migration-guide-from-telemetryexporter-to-voltopsclient
-   *
-   * ✨ Benefits: Observability + prompt management + dynamic prompts from console
-   */
-  telemetryExporter?: VoltAgentExporter;
-
-  /**
-   * Sub-agents that this agent can delegate tasks to
-   */
+  // SubAgents
   subAgents?: SubAgentConfig[];
-
-  /**
-   * Configuration for supervisor behavior when subAgents are present
-   */
   supervisorConfig?: SupervisorConfig;
+  maxHistoryEntries?: number;
 
+  // Hooks
+  hooks?: AgentHooks;
+
+  // Configuration
+  temperature?: number;
+  maxOutputTokens?: number;
+  maxSteps?: number;
   /**
-   * Logger instance to use for this agent
-   * If not provided, will use the global logger or create a default one
+   * Default stop condition for step execution (ai-sdk `stopWhen`).
+   * Per-call `stopWhen` in method options overrides this.
    */
+  stopWhen?: StopWhen;
+  markdown?: boolean;
+
+  // Voice
+  voice?: Voice;
+
+  // System
   logger?: Logger;
-} & (
-  | {
-      /**
-       * @deprecated Use `instructions` instead.
-       * Agent description (deprecated, use instructions)
-       */
-      description: string;
-      /**
-       * Agent instructions. This is the preferred field.
-       * Can be static or dynamic based on user context.
-       * Enhanced to support prompt management via helper functions.
-       */
-      instructions?: InstructionsDynamicValue;
-    }
-  | {
-      /**
-       * @deprecated Use `instructions` instead.
-       * Agent description (deprecated, use instructions)
-       */
-      description?: undefined; // Ensure description is treated as absent
-      /**
-       * Agent instructions. This is the preferred field.
-       * Required if description is not provided.
-       * Can be static or dynamic based on user context.
-       * Enhanced to support prompt management via helper functions.
-       */
-      instructions: InstructionsDynamicValue;
-    }
-);
+  voltOpsClient?: VoltOpsClient;
+  observability?: VoltAgentObservability;
+
+  // User context
+  context?: ContextInput;
+};
 
 /**
  * System message response with optional prompt metadata
@@ -381,7 +383,7 @@ export interface CommonGenerateOptions {
   operationContext?: OperationContext;
 
   // Optional user-defined context to be passed from a parent operation
-  userContext?: UserContext;
+  context?: UserContext;
 
   // Optional hooks to be included only during the operation call and not persisted in the agent
   hooks?: AgentHooks;
@@ -398,14 +400,15 @@ export type InternalGenerateOptions = PublicGenerateOptions & {
   parentAgentId?: string;
 
   /**
-   * Parent history entry ID for delegation chains
-   */
-  parentHistoryEntryId?: string;
-
-  /**
    * Parent's operation context - if provided, steps will be added to parent's conversationSteps
    */
   parentOperationContext?: OperationContext;
+
+  /**
+   * Parent OpenTelemetry span for proper span hierarchy
+   * Used when agent is called from workflows or as a subagent
+   */
+  parentSpan?: Span;
 };
 
 /**
@@ -517,11 +520,6 @@ export type AgentHandoffOptions = {
   parentAgentId?: string;
 
   /**
-   * Parent history entry ID
-   */
-  parentHistoryEntryId?: string;
-
-  /**
    * Optional real-time event forwarder function
    * Used to forward SubAgent events to parent stream in real-time
    */
@@ -589,17 +587,20 @@ export interface AgentHandoffResult {
  * Context for a specific agent operation (e.g., one generateText call)
  */
 export type OperationContext = {
-  /** Unique identifier for the operation (maps to historyEntryId) */
+  /** Unique identifier for the operation */
   readonly operationId: string;
 
-  /** User-managed context map for this specific operation */
-  readonly userContext: Map<string | symbol, any>;
+  /** Optional user identifier associated with this operation */
+  userId?: string;
+
+  /** Optional conversation identifier associated with this operation */
+  conversationId?: string;
+
+  /** User-managed context map for this operation */
+  readonly context: Map<string | symbol, unknown>;
 
   /** System-managed context map for internal operation tracking */
-  readonly systemContext: Map<string | symbol, any>;
-
-  /** The history entry associated with this operation */
-  historyEntry: AgentHistoryEntry;
+  readonly systemContext: Map<string | symbol, unknown>;
 
   /** Whether this operation is still active */
   isActive: boolean;
@@ -607,46 +608,26 @@ export type OperationContext = {
   /** Parent agent ID if part of a delegation chain */
   parentAgentId?: string;
 
-  /** Parent history entry ID if part of a delegation chain */
-  parentHistoryEntryId?: string;
-
-  /** The root OpenTelemetry span for this operation */
-  otelSpan?: Span;
+  /** Trace context for managing span hierarchy and common attributes */
+  traceContext: AgentTraceContext;
 
   /** Execution-scoped logger with full context (userId, conversationId, executionId) */
   logger: Logger;
-
-  /** Map to store active OpenTelemetry spans for tool calls within this operation */
-  toolSpans?: Map<string, Span>; // Key: toolCallId
 
   /** Conversation steps for building full message history including tool calls/results */
   conversationSteps?: StepWithContent[];
 
   /** AbortController for cancelling the operation and accessing the signal */
-  abortController?: AbortController;
+  abortController: AbortController;
 
-  /**
-   * @deprecated Use abortController.signal instead. This field will be removed in a future version.
-   * AbortSignal for cancelling the operation
-   */
-  signal?: AbortSignal;
+  /** Start time of the operation (Date object) */
+  startTime: Date;
 
   /** Cancellation error to be thrown when operation is aborted */
   cancellationError?: AbortError;
 };
 
-/**
- * Tool execution context passed to tool.execute method
- * Includes operation-specific context and necessary identifiers
- * Extends base ToolExecuteOptions.
- */
-export type ToolExecutionContext = ToolExecuteOptions & {
-  /** ID of the agent executing the tool */
-  agentId: string;
-
-  /** History ID associated with the current operation */
-  historyEntryId: string;
-};
+// ToolExecutionContext removed in favor of passing OperationContext directly to tools
 
 /**
  * Specific information related to a tool execution error.
@@ -663,54 +644,6 @@ export interface ToolErrorInfo {
 
   /** The arguments passed to the tool when the error occurred (for debugging). */
   toolArguments?: unknown;
-}
-
-/**
- * Standardized error structure for Voltagent agent operations.
- * Providers should wrap their specific errors in this structure before
- * passing them to onError callbacks.
- */
-export interface VoltAgentError {
-  /** A clear, human-readable error message. This could be a general message or derived from toolError info. */
-  message: string;
-
-  /** The original error object thrown by the provider or underlying system (if available). */
-  originalError?: unknown;
-
-  /** Optional error code or identifier from the provider. */
-  code?: string | number;
-
-  /** Additional metadata related to the error (e.g., retry info, request ID). */
-  metadata?: Record<string, any>;
-
-  /** Information about the step or stage where the error occurred (optional, e.g., 'llm_request', 'tool_execution', 'response_parsing'). */
-  stage?: string;
-
-  /** If the error occurred during tool execution, this field contains the relevant details. Otherwise, it's undefined. */
-  toolError?: ToolErrorInfo;
-}
-
-/**
- * Error thrown when an operation is aborted via AbortController
- */
-export interface AbortError extends Error {
-  name: "AbortError";
-  /** The reason passed to abort() method */
-  reason?: unknown;
-}
-
-/**
- * Type guard to check if an error is an AbortError
- */
-export function isAbortError(error: unknown): error is AbortError {
-  return error instanceof Error && error.name === "AbortError";
-}
-
-/**
- * Type guard to check if an error is a VoltAgentError
- */
-export function isVoltAgentError(error: unknown): error is VoltAgentError {
-  return error !== null && typeof error === "object" && "message" in error && !isAbortError(error);
 }
 
 /**
@@ -742,7 +675,7 @@ export interface StreamTextFinishResult {
   warnings?: unknown[];
 
   /** User context containing any custom metadata from the operation. */
-  userContext?: UserContext;
+  context?: UserContext;
 }
 
 /**
@@ -772,7 +705,7 @@ export interface StreamObjectFinishResult<TObject> {
   finishReason?: string;
 
   /** User context containing any custom metadata from the operation. */
-  userContext?: UserContext;
+  context?: UserContext;
 }
 
 /**
@@ -798,7 +731,7 @@ export interface StandardizedTextResult {
   /** Warnings (if available from provider). */
   warnings?: unknown[];
   /** User context containing any custom metadata from the operation. */
-  userContext?: UserContext;
+  context?: UserContext;
 }
 
 /**
@@ -817,7 +750,7 @@ export interface StandardizedObjectResult<TObject> {
   /** Warnings (if available from provider). */
   warnings?: unknown[];
   /** User context containing any custom metadata from the operation. */
-  userContext?: UserContext;
+  context?: UserContext;
 }
 
 /**
@@ -844,24 +777,24 @@ type InferOriginalResponseFromProvider<
 
 export type GenerateTextResponse<TProvider extends { llm: LLMProvider<any> }> =
   InferGenerateTextResponseFromProvider<TProvider> & {
-    userContext: Map<string | symbol, unknown>;
+    context: Map<string | symbol, unknown>;
   };
 
 export type StreamTextResponse<TProvider extends { llm: LLMProvider<any> }> =
   InferStreamTextResponseFromProvider<TProvider> & {
-    userContext?: UserContext;
+    context?: UserContext;
   };
 
 export type GenerateObjectResponse<
   TProvider extends { llm: LLMProvider<any> },
   TSchema extends z.ZodType,
 > = InferGenerateObjectResponseFromProvider<TProvider, TSchema> & {
-  userContext: Map<string | symbol, unknown>;
+  context: Map<string | symbol, unknown>;
 };
 
 export type StreamObjectResponse<
   TProvider extends { llm: LLMProvider<any> },
   TSchema extends z.ZodType,
 > = InferStreamObjectResponseFromProvider<TProvider, TSchema> & {
-  userContext?: UserContext;
+  context?: UserContext;
 };

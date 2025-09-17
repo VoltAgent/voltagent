@@ -194,7 +194,6 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
         <div className="space-y-4">
           <div className="grid gap-4">
             {maturityLevels.map((level) => (
-              // biome-ignore lint/a11y/useKeyWithClickEvents: ignore
               <div
                 key={level.level}
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
@@ -332,7 +331,6 @@ export default function ObservabilityMaturityWidget(): JSX.Element {
             </div>
           </div>
 
-          {/* biome-ignore lint/a11y/useButtonType: ignore */}
           <button
             onClick={resetQuiz}
             className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"

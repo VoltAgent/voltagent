@@ -116,7 +116,7 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
     private stepId: string,
     private stepName: string,
     private stepIndex: number,
-    private userContext?: UserContext,
+    private context?: UserContext,
   ) {}
 
   /**
@@ -130,7 +130,7 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
       input: event.input,
       output: event.output,
       status: event.status || "running",
-      userContext: event.userContext || this.userContext,
+      context: event.context || this.context,
       timestamp: event.timestamp || new Date().toISOString(),
       stepIndex: event.stepIndex ?? this.stepIndex,
       metadata: event.metadata,

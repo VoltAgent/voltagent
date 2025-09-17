@@ -1,8 +1,31 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import {
+  Agent,
+  AiSdkEmbeddingAdapter,
+  InMemoryVectorAdapter,
+  Memory,
+  VoltAgent,
+  VoltAgentObservability,
+  createTool,
+} from "@voltagent/core";
+import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-subagents",
+  level: "info",
+});
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({
+    storageLimit: 100, // Keep last 100 messages per conversation
+  }),
+  embedding: new AiSdkEmbeddingAdapter(openai.textEmbeddingModel("text-embedding-3-small")),
+  vector: new InMemoryVectorAdapter(),
+});
 
 const uppercaseTool = createTool({
   name: "uppercase",
@@ -10,7 +33,7 @@ const uppercaseTool = createTool({
   parameters: z.object({
     text: z.string().describe("The text to convert to uppercase"),
   }),
-  execute: async ({ text }: { text: string }) => {
+  execute: async ({ text }: { text: string }, _oc) => {
     return { result: text.toUpperCase() };
   },
 });
@@ -18,38 +41,44 @@ const uppercaseTool = createTool({
 // Create two simple specialized subagents
 const contentCreatorAgent = new Agent({
   name: "ContentCreator",
-  description: "Creates short text content on requested topics",
-  llm: new VercelAIProvider(),
+  instructions: "Creates short text content on requested topics",
   model: openai("gpt-4o-mini"),
+  memory,
 });
 
 const formatterAgent = new Agent({
   name: "Formatter",
-  description: "Formats and styles text content",
-  llm: new VercelAIProvider(),
+  instructions: "Formats and styles text content",
   model: openai("gpt-4o-mini"),
   tools: [uppercaseTool],
+  memory,
 });
 
 // Create a simple supervisor agent
 const supervisorAgent = new Agent({
   name: "Supervisor",
-  description: "Coordinates between content creation and formatting agents",
-  llm: new VercelAIProvider(),
+  instructions: "Coordinates between content creation and formatting agents",
   model: openai("gpt-4o-mini"),
+  memory,
   subAgents: [contentCreatorAgent, formatterAgent],
+  supervisorConfig: {
+    fullStreamEventForwarding: {
+      types: ["tool-call", "tool-result"],
+    },
+  },
 });
 
-const logger = createPinoLogger({
-  name: "with-voltagent-exporter",
-  level: "info",
-});
-
+// Create VoltAgent with the new server provider pattern
 new VoltAgent({
   agents: {
     supervisorAgent,
+    formatterAgent,
+    contentCreatorAgent,
   },
   logger,
+  // Use the new honoServer factory with configuration
+  server: honoServer(),
+  observability: new VoltAgentObservability({
+    storage: new LibSQLObservabilityAdapter(),
+  }),
 });
-
-logger.error("VoltAgent initialized with subagents");

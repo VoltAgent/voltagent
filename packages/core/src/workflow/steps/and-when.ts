@@ -1,11 +1,3 @@
-import { getGlobalLogger } from "../../logger";
-import {
-  createStepContext,
-  createWorkflowStepErrorEvent,
-  createWorkflowStepStartEvent,
-  createWorkflowStepSuccessEvent,
-  publishWorkflowEvent,
-} from "../event-utils";
 import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepConditionalWhen, WorkflowStepConditionalWhenConfig } from "./types";
@@ -67,32 +59,7 @@ export function andWhen<INPUT, DATA, RESULT>({
         return data;
       }
 
-      // ✅ Serialize condition function for event tracking
-      const stepFunction = condition.toString();
-
-      // Create step context and publish start event
-      const stepContext = createStepContext(
-        state.workflowContext,
-        "conditional-when",
-        config.name || config.id,
-      );
-      const stepStartEvent = createWorkflowStepStartEvent(
-        stepContext,
-        state.workflowContext,
-        data, // ✅ Pass input data
-        {
-          stepFunction,
-          userContext: state.workflowContext.userContext,
-        },
-      );
-
-      try {
-        await publishWorkflowEvent(stepStartEvent, state.workflowContext);
-      } catch (eventError) {
-        getGlobalLogger()
-          .child({ component: "workflow", stepType: "when" })
-          .warn("Failed to publish workflow step start event:", { error: eventError });
-      }
+      // Step events removed - now handled by OpenTelemetry spans
 
       try {
         const conditionMet = await condition(context);
@@ -114,26 +81,7 @@ export function andWhen<INPUT, DATA, RESULT>({
           result = data;
         }
 
-        // Publish step success event with condition result
-        const stepSuccessEvent = createWorkflowStepSuccessEvent(
-          stepContext,
-          state.workflowContext,
-          { result, conditionMet },
-          stepStartEvent.id,
-          {
-            isSkipped: !conditionMet,
-            stepFunction,
-            userContext: state.workflowContext.userContext,
-          },
-        );
-
-        try {
-          await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
-        } catch (eventError) {
-          getGlobalLogger()
-            .child({ component: "workflow", stepType: "when" })
-            .warn("Failed to publish workflow step success event:", { error: eventError });
-        }
+        // Step events removed - now handled by OpenTelemetry spans
 
         return result;
       } catch (error) {
@@ -144,25 +92,7 @@ export function andWhen<INPUT, DATA, RESULT>({
           throw error;
         }
 
-        // Publish step error event for actual errors
-        const stepErrorEvent = createWorkflowStepErrorEvent(
-          stepContext,
-          state.workflowContext,
-          error,
-          stepStartEvent.id,
-          {
-            stepFunction,
-            userContext: state.workflowContext.userContext,
-          },
-        );
-
-        try {
-          await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
-        } catch (eventError) {
-          getGlobalLogger()
-            .child({ component: "workflow", stepType: "when" })
-            .warn("Failed to publish workflow step error event:", { error: eventError });
-        }
+        // Step events removed - now handled by OpenTelemetry spans
 
         throw error;
       }

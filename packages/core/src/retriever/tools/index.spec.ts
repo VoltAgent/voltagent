@@ -54,36 +54,45 @@ describe("createRetrieverTool", () => {
 
     // Assert
     expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
-      userContext: undefined,
+      context: undefined,
     });
     expect(mockRetriever.retrieve).toHaveBeenCalledTimes(1);
   });
 
-  it("should pass userContext from executeOptions to retriever", async () => {
+  it("should pass context from operation context to retriever", async () => {
     // Arrange
     const mockResults: string = "Test content with context";
     const mockRetriever = createMockRetriever(mockResults);
     const tool = createRetrieverTool(mockRetriever);
     const query = "test query";
 
-    // Mock userContext
-    const userContext = new Map<string | symbol, unknown>();
-    const executeOptions = {
-      operationContext: {
-        userContext,
-        operationId: "test-op",
-        historyEntry: {} as any,
-        isActive: true,
+    // Mock context
+    const context = new Map<string | symbol, unknown>();
+    const operationContext: any = {
+      operationId: "test-op",
+      context,
+      systemContext: new Map(),
+      isActive: true,
+      logger: console as any,
+      traceContext: {
+        getRootSpan: () => ({}),
+        withSpan: async (_s: any, fn: any) => await fn(),
+        createChildSpan: () => ({}),
+        end: () => {},
+        setOutput: () => {},
+        setInstructions: () => {},
+        endChildSpan: () => {},
       },
     };
 
     // Act
-    await tool.execute({ query }, executeOptions);
+    await tool.execute({ query }, operationContext);
 
     // Assert
-    expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
-      userContext,
-    });
+    expect(mockRetriever.retrieve).toHaveBeenCalledWith(
+      query,
+      expect.objectContaining({ context }),
+    );
   });
 
   it("should handle missing executeOptions gracefully", async () => {
@@ -98,7 +107,7 @@ describe("createRetrieverTool", () => {
 
     // Assert
     expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
-      userContext: undefined,
+      context: undefined,
     });
     expect(result).toBe("Test content");
   });

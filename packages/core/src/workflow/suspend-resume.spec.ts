@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { Memory } from "../memory";
+import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andAll, andThen, andWhen } from "./steps";
@@ -13,11 +14,19 @@ describe.sequential("workflow suspend/resume functionality", () => {
     // Clear registry before each test
     registry = WorkflowRegistry.getInstance();
     (registry as any).workflows.clear();
-    (registry as any).workflowHistoryManagers.clear();
+    (registry as any).activeExecutions.clear();
   });
 
+  // Helper function to create memory
+  const createTestStores = () => {
+    const memory = new Memory({
+      storage: new InMemoryStorageAdapter(),
+    });
+    return { memory };
+  };
+
   it("should suspend workflow when abort signal is triggered", async () => {
-    const memory = createTestLibSQLStorage("suspend_abort_signal");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -25,6 +34,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
         name: "Test Suspend Workflow",
         result: z.object({ result: z.string() }),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "step-1",
@@ -77,7 +87,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
   it("should resume suspended workflow from correct step", async () => {
     const stepExecutions: string[] = [];
-    const memory = createTestLibSQLStorage("resume_workflow");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -88,6 +98,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
           finalResult: z.string(),
         }),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "step-1",
@@ -154,7 +165,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
   it("should preserve workflow state across suspend/resume", async () => {
     let capturedState: any = null;
-    const memory = createTestLibSQLStorage("preserve_state");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -165,6 +176,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
           sum: z.number(),
         }),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "accumulate-1",
@@ -231,7 +243,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should handle suspension during parallel steps", async () => {
-    const memory = createTestLibSQLStorage("parallel_suspend");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -239,6 +251,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
         name: "Test Parallel Suspend",
         result: z.object({ results: z.array(z.string()) }),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andAll({
         id: "parallel-steps",
@@ -291,7 +304,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should handle suspension during conditional steps", async () => {
     let conditionChecked = false;
     let conditionalExecuted = false;
-    const memory = createTestLibSQLStorage("conditional_suspend");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -299,6 +312,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
         name: "Test Conditional Suspend",
         result: z.object({ executed: z.boolean() }),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andWhen({
         id: "check-condition",
@@ -350,7 +364,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should list all suspended workflows", async () => {
-    const memory = createTestLibSQLStorage("list_suspended");
+    const { memory } = createTestStores();
 
     const workflow1 = createWorkflow(
       {
@@ -358,6 +372,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
         name: "Suspended Workflow 1",
         result: z.string(),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "step-1",
@@ -383,6 +398,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
         name: "Suspended Workflow 2",
         result: z.string(),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "step-1",
@@ -406,8 +422,8 @@ describe.sequential("workflow suspend/resume functionality", () => {
     registry.registerWorkflow(workflow2);
 
     // Suspend both workflows
-    const controller1 = workflow1.createSuspendController?.();
-    const controller2 = workflow2.createSuspendController?.();
+    const controller1 = createSuspendController();
+    const controller2 = createSuspendController();
 
     const run1 = workflow1.run("test1", {
       suspendController: controller1,
@@ -440,7 +456,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should handle resume with no suspension metadata gracefully", async () => {
-    const memory = createTestLibSQLStorage("no_metadata");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -448,6 +464,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
         name: "Test No Metadata",
         result: z.string(),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "step",
@@ -460,12 +477,12 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
     // Try to resume non-existent execution
     await expect(registry.resumeSuspendedWorkflow(workflow.id, "non-existent-id")).rejects.toThrow(
-      "Execution not found",
+      "Workflow state not found",
     );
   });
 
   it("should not allow resuming non-suspended workflow", async () => {
-    const memory = createTestLibSQLStorage("non_suspended");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -473,6 +490,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
         name: "Test Completed",
         result: z.string(),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "step",
@@ -509,7 +527,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   });
 
   it("should handle suspension checkpoint data correctly", async () => {
-    const memory = createTestLibSQLStorage("checkpoint");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -520,11 +538,16 @@ describe.sequential("workflow suspend/resume functionality", () => {
           final: z.string(),
         }),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "step-1",
         name: "Step 1",
-        execute: async () => ({ step1: "data1" }),
+        execute: async () => {
+          // Add delay to ensure workflow is still running when suspend is called
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          return { step1: "data1" };
+        },
       }),
       andThen({
         id: "step-2",
@@ -534,10 +557,14 @@ describe.sequential("workflow suspend/resume functionality", () => {
       andThen({
         id: "step-3",
         name: "Step 3",
-        execute: async (data: any) => ({
-          checkpoint: data,
-          final: "done",
-        }),
+        execute: async (ctx: any) => {
+          // Extract step2 from the correct location (handles both normal and resume cases)
+          const step2Value = ctx.data?.step2 || ctx.step2;
+          return {
+            checkpoint: { step2: step2Value },
+            final: "done",
+          };
+        },
       }),
     );
 
@@ -566,11 +593,15 @@ describe.sequential("workflow suspend/resume functionality", () => {
     // Resume and verify checkpoint was used
     const resumed = await registry.resumeSuspendedWorkflow(workflow.id, suspended.executionId);
 
-    expect(resumed?.result.checkpoint).toEqual({ step2: "data2" });
+    expect(resumed).toBeDefined();
+    expect(resumed?.status).toBe("completed");
+    expect(resumed?.result).toBeDefined();
+    expect(resumed?.result?.checkpoint).toBeDefined();
+    expect(resumed?.result?.checkpoint?.step2).toBe("data2");
   });
 
   it("should allow suspending from within step execution via context", async () => {
-    const memory = createTestLibSQLStorage("suspend_api");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -615,7 +646,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
   it("should provide a working resume function on the execution result", async () => {
     let stepExecutions = 0;
-    const memory = createTestLibSQLStorage("resume_api");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -623,6 +654,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
         name: "Test Resume API",
         result: z.object({ count: z.number() }),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "step-1",
@@ -651,7 +683,8 @@ describe.sequential("workflow suspend/resume functionality", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Use the resume function directly from the result
-    const resumedResult = await result.resume();
+    const resumeController = createSuspendController();
+    const resumedResult = await result.resume(resumeController);
 
     expect(resumedResult.status).toBe("completed");
     expect(resumedResult.result?.count).toBe(2);
@@ -663,7 +696,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     // on a different "instance" (simulated by getting fresh registry reference)
 
     let executionCount = 0;
-    const memory = createTestLibSQLStorage("distributed");
+    const { memory } = createTestStores();
 
     const workflow = createWorkflow(
       {
@@ -671,6 +704,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
         name: "Test Distributed",
         result: z.string(),
         memory,
+        // telemetry, // Removed - migrated to OpenTelemetry
       },
       andThen({
         id: "step",
@@ -704,7 +738,8 @@ describe.sequential("workflow suspend/resume functionality", () => {
     };
 
     // Resume should work even with this "distributed" result
-    const resumed = await simulatedDistributedResult.resume();
+    const newController = createSuspendController();
+    const resumed = await simulatedDistributedResult.resume(newController);
     expect(resumed.status).toBe("completed");
     expect(resumed.result).toBe("resumed successfully");
   });

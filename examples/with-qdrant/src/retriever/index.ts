@@ -183,8 +183,8 @@ export class QdrantRetriever extends BaseRetriever {
     }
     // Perform semantic search using Qdrant
     const results = await retrieveDocuments(searchText, 3);
-    // Add references to userContext if available
-    if (options.userContext && results.length > 0) {
+    // Add references to context if available
+    if (options.context && results.length > 0) {
       const references = results.map((doc: any, index: number) => ({
         id: doc.id,
         title: doc.metadata.topic || `Document ${index + 1}`,
@@ -192,7 +192,7 @@ export class QdrantRetriever extends BaseRetriever {
         score: doc.score,
         category: doc.metadata.category,
       }));
-      options.userContext.set("references", references);
+      options.context.set("references", references);
     }
     // Return the concatenated content for the LLM
     if (results.length === 0) {

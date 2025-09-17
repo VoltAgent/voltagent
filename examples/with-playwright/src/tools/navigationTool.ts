@@ -14,8 +14,8 @@
  * - Consistent error reporting
  */
 
-import { type ToolExecuteOptions, createTool } from "@voltagent/core";
-import type { ToolExecutionContext } from "@voltagent/core";
+import { createTool } from "@voltagent/core";
+import type { OperationContext } from "@voltagent/core";
 import { z } from "zod";
 import { safeBrowserOperation } from "./browserBaseTools";
 import { resetBrowserState as resetBrowserStateInternal } from "./playwrightToolHandler";
@@ -38,13 +38,12 @@ export const navigationTool = createTool({
       .default("load")
       .describe("Navigation wait condition"),
   }),
-  execute: async (args, options) => {
-    const context = options;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
+  execute: async (args, oc?: OperationContext) => {
+    if (!oc?.context) {
+      throw new Error("OperationContext is missing or invalid.");
     }
 
-    return safeBrowserOperation(context, async (page) => {
+    return safeBrowserOperation(oc, async (page) => {
       const response = await page.goto(args.url, {
         timeout: args.timeout,
         waitUntil: args.waitUntil,
@@ -64,12 +63,11 @@ export const goBackTool = createTool({
   name: "goBack",
   description: "Navigate back in browser history",
   parameters: z.object({}),
-  execute: async (_args, options?: ToolExecuteOptions) => {
-    const context = options;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
+  execute: async (_args, oc?: OperationContext) => {
+    if (!oc?.context) {
+      throw new Error("OperationContext is missing or invalid.");
     }
-    return safeBrowserOperation(context, async (page) => {
+    return safeBrowserOperation(oc, async (page) => {
       await page.goBack();
       return { result: "Navigated back in browser history" };
     });
@@ -83,12 +81,11 @@ export const goForwardTool = createTool({
   name: "goForward",
   description: "Navigate forward in browser history",
   parameters: z.object({}),
-  execute: async (_args, options?: ToolExecuteOptions) => {
-    const context = options;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
+  execute: async (_args, oc?: OperationContext) => {
+    if (!oc?.context) {
+      throw new Error("OperationContext is missing or invalid.");
     }
-    return safeBrowserOperation(context, async (page) => {
+    return safeBrowserOperation(oc, async (page) => {
       await page.goForward();
       return { result: "Navigated forward in browser history" };
     });
@@ -102,12 +99,11 @@ export const refreshPageTool = createTool({
   name: "refreshPage",
   description: "Refresh the current page",
   parameters: z.object({}),
-  execute: async (_args, options?: ToolExecuteOptions) => {
-    const context = options;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
+  execute: async (_args, oc?: OperationContext) => {
+    if (!oc?.context) {
+      throw new Error("OperationContext is missing or invalid.");
     }
-    return safeBrowserOperation(context, async (page) => {
+    return safeBrowserOperation(oc, async (page) => {
       await page.reload();
       return { result: "Page refreshed successfully" };
     });
@@ -121,13 +117,12 @@ export const closeBrowserTool = createTool({
   name: "closeBrowser",
   description: "Close the current browser instance",
   parameters: z.object({}),
-  execute: async (_args, options?: ToolExecuteOptions) => {
-    const context = options;
-    if (!context?.operationContext) {
-      console.warn("Attempting to close browser with missing operationContext.");
+  execute: async (_args, oc?: OperationContext) => {
+    if (!oc) {
+      console.warn("Attempting to close browser with missing operation context.");
       return { result: "Browser context missing, nothing to close." };
     }
-    await resetBrowserStateInternal(context.operationContext);
+    await resetBrowserStateInternal(oc);
     return { result: "Browser closed." };
   },
 });

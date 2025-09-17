@@ -144,7 +144,7 @@ const auditHooks = {
     await auditLog.create({
       action: "workflow.started",
       workflowId: state.workflowId,
-      userId: state.userContext?.get("userId"),
+      userId: state.context?.get("userId"),
       timestamp: new Date(),
     });
   },

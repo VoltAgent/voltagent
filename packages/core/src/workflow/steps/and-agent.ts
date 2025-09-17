@@ -1,20 +1,12 @@
-import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { ModelMessage } from "@ai-sdk/provider-utils";
+import type { UIMessage } from "ai";
 import type { z } from "zod";
-import type { Agent } from "../../agent/agent";
-import type { BaseMessage } from "../../agent/providers";
-import type { PublicGenerateOptions } from "../../agent/types";
-import { getGlobalLogger } from "../../logger";
-import {
-  createStepContext,
-  createWorkflowStepErrorEvent,
-  createWorkflowStepStartEvent,
-  createWorkflowStepSuccessEvent,
-  publishWorkflowEvent,
-} from "../event-utils";
+import type { Agent, BaseGenerationOptions } from "../../agent/agent";
+import { convertUsage } from "../../utils/usage-converter";
 import type { InternalWorkflowFunc } from "../internal/types";
 import type { WorkflowStepAgent } from "./types";
 
-export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
+export type AgentConfig<SCHEMA extends z.ZodTypeAny> = BaseGenerationOptions & {
   schema: SCHEMA;
 };
 
@@ -43,10 +35,11 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = PublicGenerateOptions & {
  */
 export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
   task:
-    | BaseMessage[]
+    | UIMessage[]
+    | ModelMessage[]
     | string
-    | InternalWorkflowFunc<INPUT, DATA, BaseMessage[] | string, any, any>,
-  agent: Agent<{ llm: DangerouslyAllowAny }>,
+    | InternalWorkflowFunc<INPUT, DATA, UIMessage[] | ModelMessage[] | string, any, any>,
+  agent: Agent,
   config: AgentConfig<SCHEMA>,
 ) {
   return {
@@ -56,7 +49,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
     purpose: agent.purpose ?? null,
     agent,
     execute: async (context) => {
-      const { data, state } = context;
+      const { state } = context;
       const { schema, ...restConfig } = config;
       const finalTask = typeof task === "function" ? await task(context) : task;
 
@@ -65,85 +58,53 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
         // No workflow context, execute without events
         const result = await agent.generateObject(finalTask, config.schema, {
           ...restConfig,
-          userContext: restConfig.userContext ?? state.userContext,
+          context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,
           userId: restConfig.userId ?? state.userId,
+          // No parentSpan when there's no workflow context
         });
         // Accumulate usage if available (no workflow context)
         if (result.usage && state.usage) {
-          state.usage.promptTokens += result.usage.promptTokens || 0;
-          state.usage.completionTokens += result.usage.completionTokens || 0;
-          state.usage.totalTokens += result.usage.totalTokens || 0;
+          const convertedUsage = convertUsage(result.usage);
+          state.usage.promptTokens += convertedUsage?.promptTokens || 0;
+          state.usage.completionTokens += convertedUsage?.completionTokens || 0;
+          if (typeof state.usage.cachedInputTokens === "number") {
+            state.usage.cachedInputTokens += convertedUsage?.cachedInputTokens || 0;
+          }
+          if (typeof state.usage.reasoningTokens === "number") {
+            state.usage.reasoningTokens += convertedUsage?.reasoningTokens || 0;
+          }
+          state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
         return result.object;
       }
 
-      // ✅ Serialize task function or task string for event tracking
-      const stepFunction = typeof task === "function" ? task.toString() : undefined;
-      const taskString = typeof task === "string" ? task : undefined;
-
-      const stepContext = createStepContext(
-        state.workflowContext,
-        "agent",
-        agent.name || agent.id || "Agent",
-      ); // ✅ FIX: Use agent.id as fallback
-      const stepStartEvent = createWorkflowStepStartEvent(
-        stepContext,
-        state.workflowContext,
-        { data, task: finalTask }, // ✅ Pass input data with task
-        {
-          agentId: agent.id,
-          stepFunction,
-          taskString,
-          userContext: state.workflowContext.userContext,
-        },
-      );
-
-      try {
-        await publishWorkflowEvent(stepStartEvent, state.workflowContext);
-      } catch (eventError) {
-        getGlobalLogger()
-          .child({ component: "workflow", stepType: "agent" })
-          .warn("Failed to publish workflow step start event:", { error: eventError });
-      }
+      // Step start event removed - now handled by OpenTelemetry spans
 
       try {
         const result = await agent.generateObject(finalTask, config.schema, {
           ...restConfig,
-          userContext: restConfig.userContext ?? state.userContext,
+          context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,
           userId: restConfig.userId ?? state.userId,
-          // TODO: Pass workflow context as parent to agent for proper event hierarchy
-          // This requires extending PublicGenerateOptions to support parent context
+          // Pass the current step span as parent for proper span hierarchy
+          parentSpan: state.workflowContext?.currentStepSpan,
         });
 
-        // Publish step success event
-        const stepSuccessEvent = createWorkflowStepSuccessEvent(
-          stepContext,
-          state.workflowContext,
-          result.object,
-          stepStartEvent.id,
-          {
-            agentId: agent.id,
-            stepFunction,
-            taskString,
-            userContext: state.workflowContext.userContext,
-          },
-        );
-
-        try {
-          await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
-        } catch (eventError) {
-          getGlobalLogger()
-            .child({ component: "workflow", stepType: "agent" })
-            .warn("Failed to publish workflow step success event:", { error: eventError });
-        }
+        // Step success event removed - now handled by OpenTelemetry spans
 
         // Accumulate usage if available
         if (result.usage && state.usage) {
-          state.usage.promptTokens += result.usage.promptTokens || 0;
-          state.usage.completionTokens += result.usage.completionTokens || 0;
-          state.usage.totalTokens += result.usage.totalTokens || 0;
+          const convertedUsage = convertUsage(result.usage);
+          state.usage.promptTokens += convertedUsage?.promptTokens || 0;
+          state.usage.completionTokens += convertedUsage?.completionTokens || 0;
+          if (typeof state.usage.cachedInputTokens === "number") {
+            state.usage.cachedInputTokens += convertedUsage?.cachedInputTokens || 0;
+          }
+          if (typeof state.usage.reasoningTokens === "number") {
+            state.usage.reasoningTokens += convertedUsage?.reasoningTokens || 0;
+          }
+          state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
 
         return result.object;
@@ -155,27 +116,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           throw error;
         }
 
-        // Publish step error event for actual errors
-        const stepErrorEvent = createWorkflowStepErrorEvent(
-          stepContext,
-          state.workflowContext,
-          error,
-          stepStartEvent.id,
-          {
-            agentId: agent.id,
-            stepFunction,
-            taskString,
-            userContext: state.workflowContext.userContext,
-          },
-        );
-
-        try {
-          await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
-        } catch (eventError) {
-          getGlobalLogger()
-            .child({ component: "workflow", stepType: "agent" })
-            .warn("Failed to publish workflow step error event:", { error: eventError });
-        }
+        // Step error event removed - now handled by OpenTelemetry spans
 
         throw error;
       }

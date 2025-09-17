@@ -1,3 +1,4 @@
+import { safeStringify } from "@voltagent/internal";
 import { safeJsonParse, serializeValueForDebug } from "../serialization";
 
 describe("safeJsonParse", () => {
@@ -32,7 +33,7 @@ describe("safeJsonParse", () => {
       items: ["apple", "banana"],
       settings: { theme: "dark", notifications: true },
     };
-    const jsonString = JSON.stringify(complexObject);
+    const jsonString = safeStringify(complexObject);
     expect(safeJsonParse(jsonString)).toEqual(complexObject);
   });
 

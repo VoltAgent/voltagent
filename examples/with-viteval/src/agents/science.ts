@@ -1,6 +1,5 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 export interface ScienceInput {
   question: string;
@@ -39,6 +38,5 @@ Return your response in the following JSON format:
   "concepts": ["key concept 1", "key concept 2"],
   "confidence": 0.95
 }`,
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });

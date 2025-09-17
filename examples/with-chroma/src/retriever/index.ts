@@ -124,8 +124,8 @@ export class ChromaRetriever extends BaseRetriever {
     // Perform semantic search using Chroma
     const results = await retrieveDocuments(searchText, 3);
 
-    // Add references to userContext if available
-    if (options.userContext && results.length > 0) {
+    // Add references to context if available
+    if (options.context && results.length > 0) {
       const references = results.map((doc, index) => ({
         id: doc.id,
         title: doc.metadata.title || `Document ${index + 1}`,
@@ -133,7 +133,7 @@ export class ChromaRetriever extends BaseRetriever {
         distance: doc.distance,
       }));
 
-      options.userContext.set("references", references);
+      options.context.set("references", references);
     }
 
     // Return the concatenated content for the LLM

@@ -1,15 +1,21 @@
 import type { LogBuffer, Logger } from "@voltagent/internal";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AgentRegistry } from "../server/registry";
+import { AgentRegistry } from "../registries/agent-registry";
 import * as consoleLoggerModule from "./console-logger";
 import { getGlobalLogBuffer, getGlobalLogger } from "./index";
 
 // Mock the AgentRegistry
-vi.mock("../server/registry", () => ({
-  AgentRegistry: {
-    getInstance: vi.fn(),
-  },
-}));
+vi.mock("../registries/agent-registry", () => {
+  const mockRegistry = {
+    getGlobalLogger: vi.fn(),
+    setGlobalLogger: vi.fn(),
+  };
+  return {
+    AgentRegistry: {
+      getInstance: vi.fn(() => mockRegistry),
+    },
+  };
+});
 
 // Mock console-logger module
 vi.mock("./console-logger", () => ({
@@ -18,10 +24,6 @@ vi.mock("./console-logger", () => ({
 }));
 
 describe("getGlobalLogger", () => {
-  let mockRegistry: {
-    getGlobalLogger: ReturnType<typeof vi.fn>;
-    setGlobalLogger: ReturnType<typeof vi.fn>;
-  };
   let mockLogger: Logger;
 
   beforeEach(() => {
@@ -36,14 +38,8 @@ describe("getGlobalLogger", () => {
       child: vi.fn(),
     };
 
-    // Create mock registry
-    mockRegistry = {
-      getGlobalLogger: vi.fn(),
-      setGlobalLogger: vi.fn(),
-    };
-
-    // Setup AgentRegistry mock
-    vi.mocked(AgentRegistry.getInstance).mockReturnValue(mockRegistry as any);
+    // Clear previous mock calls
+    vi.clearAllMocks();
 
     // Setup createConsoleLogger mock
     vi.mocked(consoleLoggerModule.createConsoleLogger).mockReturnValue(mockLogger);
@@ -54,7 +50,8 @@ describe("getGlobalLogger", () => {
   });
 
   it("should return existing global logger from registry", () => {
-    mockRegistry.getGlobalLogger.mockReturnValue(mockLogger);
+    const mockRegistry = AgentRegistry.getInstance();
+    vi.mocked(mockRegistry.getGlobalLogger).mockReturnValue(mockLogger);
 
     const logger = getGlobalLogger();
 
@@ -65,7 +62,8 @@ describe("getGlobalLogger", () => {
   });
 
   it("should create and set default logger if none exists", () => {
-    mockRegistry.getGlobalLogger.mockReturnValue(null);
+    const mockRegistry = AgentRegistry.getInstance();
+    vi.mocked(mockRegistry.getGlobalLogger).mockReturnValue(undefined);
 
     const logger = getGlobalLogger();
 
@@ -76,8 +74,10 @@ describe("getGlobalLogger", () => {
   });
 
   it("should cache the created logger in registry", () => {
+    const mockRegistry = AgentRegistry.getInstance();
+
     // First call - no logger exists
-    mockRegistry.getGlobalLogger.mockReturnValue(null);
+    vi.mocked(mockRegistry.getGlobalLogger).mockReturnValue(undefined);
 
     const logger1 = getGlobalLogger();
 
@@ -85,7 +85,7 @@ describe("getGlobalLogger", () => {
     expect(mockRegistry.setGlobalLogger).toHaveBeenCalledTimes(1);
 
     // Setup for second call - logger now exists
-    mockRegistry.getGlobalLogger.mockReturnValue(mockLogger);
+    vi.mocked(mockRegistry.getGlobalLogger).mockReturnValue(mockLogger);
 
     const logger2 = getGlobalLogger();
 

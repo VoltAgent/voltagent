@@ -140,7 +140,7 @@ class APIRetriever extends BaseRetriever {
 
 ## Track Sources (Optional)
 
-Want to show users where the information came from? Use `userContext` to track sources:
+Want to show users where the information came from? Use `context` to track sources:
 
 ```ts
 class SourceTrackingRetriever extends BaseRetriever {
@@ -151,14 +151,14 @@ class SourceTrackingRetriever extends BaseRetriever {
     const results = await this.searchData(query);
 
     // Save sources for later reference
-    if (options.userContext && results.length > 0) {
+    if (options.context && results.length > 0) {
       const sources = results.map((r) => ({
         title: r.title,
         url: r.url,
         score: r.score,
       }));
 
-      options.userContext.set("sources", sources);
+      options.context.set("sources", sources);
     }
 
     return results.map((r) => r.content).join("\n\n");
@@ -170,7 +170,7 @@ const response = await agent.generateText("How do I deploy?");
 console.log("Answer:", response.text);
 
 // Check what sources were used
-const sources = response.userContext?.get("sources");
+const sources = response.context?.get("sources");
 sources?.forEach((s) => console.log(`Source: ${s.title} (${s.url})`));
 ```
 

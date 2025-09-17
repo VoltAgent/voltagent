@@ -1,7 +1,14 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, type Toolkit, VoltAgent, createReasoningTools } from "@voltagent/core";
+import { Agent, Memory, type Toolkit, VoltAgent, createReasoningTools } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-thinking-tool",
+  level: "info",
+});
 
 const reasoningToolkit: Toolkit = createReasoningTools({
   addInstructions: true,
@@ -9,7 +16,7 @@ const reasoningToolkit: Toolkit = createReasoningTools({
 
 const agent = new Agent({
   name: "ThinkingAssistant",
-  description: `
+  instructions: `
   You are an AI assistant designed for complex problem-solving and structured reasoning.
   You leverage internal 'think' and 'analyze' tools to methodically work through challenges.
 
@@ -20,16 +27,14 @@ const agent = new Agent({
 
   Your aim is to provide well-reasoned, accurate, and complete answers by thinking through the process internally.
   `,
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [reasoningToolkit],
   markdown: true,
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-thinking-tool",
-  level: "info",
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
 });
 
 new VoltAgent({
@@ -37,4 +42,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

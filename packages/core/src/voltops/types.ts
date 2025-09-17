@@ -6,7 +6,7 @@
  */
 
 import type { BaseMessage } from "../agent/providers/base/types";
-import type { VoltAgentExporter } from "../telemetry/exporter";
+// VoltAgentExporter removed - migrated to OpenTelemetry
 
 /**
  * Reference to a prompt in the VoltOps system
@@ -41,7 +41,7 @@ export type PromptHelper = {
  */
 export interface DynamicValueOptions {
   /** User context map */
-  userContext: Map<string | symbol, unknown>;
+  context: Map<string | symbol, unknown>;
   /** Prompt helper (available when VoltOpsClient is configured) */
   prompts: PromptHelper;
 }
@@ -95,8 +95,7 @@ export type VoltOpsClientOptions = {
   secretKey?: string;
   /** Custom fetch implementation (optional) */
   fetch?: typeof fetch;
-  /** Enable observability export (default: true) */
-  observability?: boolean;
+  // observability option removed - now handled by VoltAgentObservability
   /** Enable prompt management (default: true) */
   prompts?: boolean;
   /** Optional configuration for prompt caching */
@@ -181,19 +180,14 @@ export interface VoltOpsPromptManager {
 export interface VoltOpsClient {
   /** Prompt management functionality */
   prompts?: VoltOpsPromptManager;
-  /** Observability exporter (for backward compatibility) */
-  observability?: VoltAgentExporter;
+  // observability removed - now handled by VoltAgentObservability
   /** Configuration options */
   options: VoltOpsClientOptions & { baseUrl: string };
 
   /** Create a prompt helper for agent instructions */
   createPromptHelper(agentId: string, historyEntryId?: string): PromptHelper;
 
-  /** Backward compatibility methods */
-  exportHistoryEntry?: VoltAgentExporter["exportHistoryEntry"];
-  exportHistoryEntryAsync?: VoltAgentExporter["exportHistoryEntryAsync"];
-  exportTimelineEvent?: VoltAgentExporter["exportTimelineEvent"];
-  exportTimelineEventAsync?: VoltAgentExporter["exportTimelineEventAsync"];
+  // Backward compatibility methods removed - migrated to OpenTelemetry
 }
 
 /**

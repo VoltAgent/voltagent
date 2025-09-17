@@ -365,19 +365,19 @@ import { createHooks } from "@voltagent/core";
 const hooks = createHooks({
   onStart: async ({ agent, context }) => {
     const requestId = `req-${Date.now()}`;
-    context.userContext.set("requestId", requestId);
+    context.context.set("requestId", requestId);
     console.log(`[${agent.name}] Request started: ${requestId}`);
   },
   onToolStart: async ({ agent, tool, context }) => {
-    const reqId = context.userContext.get("requestId");
+    const reqId = context.context.get("requestId");
     console.log(`[${reqId}] Tool starting: ${tool.name}`);
   },
   onToolEnd: async ({ agent, tool, output, context }) => {
-    const reqId = context.userContext.get("requestId");
+    const reqId = context.context.get("requestId");
     console.log(`[${reqId}] Tool completed: ${tool.name}`, output);
   },
   onError: async ({ agent, error, context }) => {
-    const reqId = context.userContext.get("requestId");
+    const reqId = context.context.get("requestId");
     console.error(`[${reqId}] Error occurred:`, error);
     // Error tracking services integration
   },

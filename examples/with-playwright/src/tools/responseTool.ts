@@ -3,8 +3,8 @@
  * @description Tools for handling and asserting network responses
  */
 
-import { type ToolExecuteOptions, createTool } from "@voltagent/core";
-import type { ToolExecutionContext } from "@voltagent/core";
+import { createTool } from "@voltagent/core";
+import type { OperationContext } from "@voltagent/core";
 import { z } from "zod";
 import { safeBrowserOperation } from "./browserBaseTools";
 
@@ -26,12 +26,11 @@ export const expectResponseTool = createTool({
       .describe("Maximum time in milliseconds to wait for the response."),
     // status: z.number().optional().describe("Expected status code of the response."), // Predicate function is more flexible
   }),
-  execute: async (args, options?: ToolExecuteOptions) => {
-    const context = options as ToolExecutionContext;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
+  execute: async (args, oc?: OperationContext) => {
+    if (!oc?.context) {
+      throw new Error("OperationContext is missing or invalid.");
     }
-    return safeBrowserOperation(context, async (page) => {
+    return safeBrowserOperation(oc, async (page) => {
       try {
         const response = await page.waitForResponse(args.urlPattern, {
           timeout: args.timeout,
@@ -81,12 +80,11 @@ export const assertResponseTool = createTool({
       .default(5000)
       .describe("Timeout if waiting for a specific response."),
   }),
-  execute: async (args, options?: ToolExecuteOptions) => {
-    const context = options as ToolExecutionContext;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
+  execute: async (args, oc?: OperationContext) => {
+    if (!oc?.context) {
+      throw new Error("OperationContext is missing or invalid.");
     }
-    return safeBrowserOperation(context, async (page) => {
+    return safeBrowserOperation(oc, async (page) => {
       let targetResponse: any = null; // Consider using Playwright's Response type
 
       if (args.urlPattern) {

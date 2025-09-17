@@ -1,24 +1,11 @@
 import { createReadStream, createWriteStream } from "node:fs";
 import { join } from "node:path";
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { XSAIVoiceProvider } from "@voltagent/voice";
-
-const voiceProvider = new XSAIVoiceProvider({
-  apiKey: process.env.OPENAI_API_KEY || "",
-});
-
-const agent = new Agent({
-  name: "Voice Assistant",
-  description: "Speaks & listens via xsAI",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  voice: voiceProvider,
-});
-
-// Create the VoltAgent with our voice-enabled agent
 
 // Create logger
 const logger = createPinoLogger({
@@ -26,11 +13,29 @@ const logger = createPinoLogger({
   level: "info",
 });
 
+const voiceProvider = new XSAIVoiceProvider({
+  apiKey: process.env.OPENAI_API_KEY || "",
+});
+
+const agent = new Agent({
+  name: "Voice Assistant",
+  instructions: "Speaks & listens via xsAI",
+  model: openai("gpt-4o-mini"),
+  voice: voiceProvider,
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
+});
+
+// Create the VoltAgent with our voice-enabled agent
 new VoltAgent({
   agents: {
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });
 
 (async () => {

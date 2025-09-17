@@ -66,7 +66,6 @@ Here's the complete implementation that we'll break down step by step:
 import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration, VoltAgent, createWorkflowChain } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
 (async () => {
@@ -85,7 +84,6 @@ import { z } from "zod";
     name: "Assistant",
     instructions:
       "The user will ask you to help generate some search queries. Respond with only the suggested queries in plain text with no extra formatting, each on its own line. Use exa tools.",
-    llm: new VercelAIProvider(),
     model: openai("gpt-4o-mini"),
     tools: await mcpConfig.getTools(),
   });
@@ -94,7 +92,6 @@ import { z } from "zod";
     id: "writer",
     name: "Writer",
     instructions: "Write a report according to the user's instructions.",
-    llm: new VercelAIProvider(),
     model: openai("gpt-4o"),
     tools: await mcpConfig.getTools(),
     markdown: true,
@@ -196,7 +193,7 @@ const assistantAgent = new Agent({
   name: "Assistant",
   instructions:
     "The user will ask you to help generate some search queries. Respond with only the suggested queries in plain text with no extra formatting, each on its own line. Use exa tools.",
-  llm: new VercelAIProvider(),
+
   model: openai("gpt-4o-mini"),
   tools: await mcpConfig.getTools(),
 });
@@ -219,7 +216,7 @@ const writerAgent = new Agent({
   id: "writer",
   name: "Writer",
   instructions: "Write a report according to the user's instructions.",
-  llm: new VercelAIProvider(),
+
   model: openai("gpt-4o"),
   tools: await mcpConfig.getTools(),
   markdown: true,

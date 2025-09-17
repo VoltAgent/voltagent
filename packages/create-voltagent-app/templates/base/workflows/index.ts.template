@@ -1,6 +1,4 @@
 import { Agent, createWorkflowChain } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 // ==============================================================================

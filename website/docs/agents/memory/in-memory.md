@@ -5,7 +5,7 @@ slug: /agents/memory/in-memory
 
 # In-Memory Storage
 
-VoltAgent's core package (`@voltagent/core`) includes `InMemoryStorage`, a simple memory provider that stores conversation history directly in the application's memory.
+VoltAgent's core package (`@voltagent/core`) includes `InMemoryStorageAdapter`, a simple storage adapter (for the `Memory` class) that stores conversation history in application memory.
 
 ## Overview
 
@@ -16,28 +16,22 @@ VoltAgent's core package (`@voltagent/core`) includes `InMemoryStorage`, a simpl
 
 ## Configuration
 
-Initialize `InMemoryStorage` and pass it to your `Agent` configuration. It accepts optional configuration for limiting storage and enabling debugging.
+By default, agents use in-memory storage without any configuration. To customize (e.g., storage limits), configure it explicitly.
 
 ```typescript
-import { Agent, InMemoryStorage } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-// Initialize InMemoryStorage
-const memory = new InMemoryStorage({
-  // Optional: Limit the number of messages stored per conversation thread
-  storageLimit: 100, // Defaults to no limit if not specified
-
-  // Optional: Enable verbose debug logging from the memory provider
-  debug: true, // Defaults to false
+// Optional: Configure in-memory storage explicitly
+const memory = new Memory({
+  storage: new InMemoryStorageAdapter({ storageLimit: 100 }),
 });
 
 const agent = new Agent({
   name: "Ephemeral Agent",
   instructions: "An agent using in-memory storage (history resets on restart).",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  memory: memory, // Assign the InMemoryStorage instance
+  memory, // Optional; default is also in-memory
 });
 
 // Interactions with this agent will use the in-memory store.
@@ -46,10 +40,29 @@ const agent = new Agent({
 // await agent.generateText("Do you remember?", { userId: "user1", conversationId: "conv1" });
 ```
 
-**Configuration Options:**
+**Configuration Options (InMemoryStorageAdapter):**
 
-- `storageLimit` (number, optional): The maximum number of messages to retain per unique `userId`/`conversationId` pair. When the limit is reached, the oldest messages are discarded to make room for new ones. Defaults to `Infinity` (no limit).
-- `debug` (boolean, optional): Enables detailed logging from the `InMemoryStorage` provider to the console, useful for understanding memory operations during development. Defaults to `false`.
+- `storageLimit` (number, optional): The maximum number of messages to retain per unique `userId`/`conversationId`. Oldest messages are pruned when exceeded. Defaults to `100`.
+
+## Working Memory
+
+`InMemoryStorageAdapter` implements working memory storage for both conversation and user scopes using in‑process metadata fields. Enable it via `Memory({ workingMemory: { enabled: true, ... } })`. See: [Working Memory](./working-memory.md).
+
+## Semantic Search (Embeddings + Vectors)
+
+The in-memory storage can be combined with `AiSdkEmbeddingAdapter` and `InMemoryVectorAdapter` to enable semantic retrieval in development:
+
+```ts
+import { Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { InMemoryStorageAdapter } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new InMemoryStorageAdapter({ storageLimit: 100 }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new InMemoryVectorAdapter(),
+});
+```
 
 ## When to Use
 

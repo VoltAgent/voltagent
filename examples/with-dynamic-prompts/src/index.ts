@@ -1,7 +1,13 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { Agent, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
+
+const logger = createPinoLogger({
+  name: "with-dynamic-prompts",
+  level: "info",
+});
 
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTOPS_PUBLIC_KEY,
@@ -10,7 +16,6 @@ const voltOpsClient = new VoltOpsClient({
 
 const supportAgent = new Agent({
   name: "SupportAgent",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
@@ -22,11 +27,9 @@ const supportAgent = new Agent({
       },
     });
   },
-});
-
-const logger = createPinoLogger({
-  name: "with-dynamic-prompts",
-  level: "info",
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter(),
+  }),
 });
 
 new VoltAgent({
@@ -34,5 +37,6 @@ new VoltAgent({
     supportAgent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
   voltOpsClient: voltOpsClient,
 });

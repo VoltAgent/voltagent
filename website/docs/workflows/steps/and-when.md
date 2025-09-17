@@ -57,7 +57,7 @@ const workflow = createWorkflowChain({
 ```typescript
 .andWhen({
   id: "check-admin",
-  condition: ({ state }) => state.userContext?.get("role") === "admin",
+  condition: ({ state }) => state.context?.get("role") === "admin",
   step: andThen({
     id: "admin-action",
     execute: async ({ data }) => ({

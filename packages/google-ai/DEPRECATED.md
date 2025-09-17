@@ -15,10 +15,10 @@ Please migrate to using the [Vercel AI SDK's Google providers](https://ai-sdk.de
 npm uninstall @voltagent/google-ai
 
 # Install the recommended packages
-npm install @voltagent/vercel-ai @ai-sdk/google@1
+npm install ai @ai-sdk/google
 
 # For Vertex AI users
-npm install @voltagent/vercel-ai @ai-sdk/google-vertex
+npm install ai @ai-sdk/google-vertex
 ```
 
 2. **Update your code:**
@@ -38,37 +38,29 @@ const agent = new Agent({
 });
 
 // ✅ New (recommended) - Google AI
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { google } from "@ai-sdk/google";
-
-const provider = new VercelAIProvider();
 
 const agent = new Agent({
   name: "Gemini Agent",
-  llm: provider,
   model: google("gemini-2.0-flash-exp"),
 });
 
 // ✅ New (recommended) - Vertex AI
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { vertex } from "@ai-sdk/google-vertex";
-
-const provider = new VercelAIProvider();
 
 const agent = new Agent({
   name: "Vertex Gemini Agent",
-  llm: provider,
   model: vertex("gemini-2.0-flash-exp"),
 });
 ```
 
 ## Resources
 
-- 📚 **[Migration Guide](https://voltagent.dev/docs/providers/google-ai/)** - Complete migration documentation
+- 📚 **[Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)** - Complete migration documentation
 - 📖 **[Providers & Models Documentation](https://voltagent.dev/docs/getting-started/providers-models)** - Learn about the new provider system
 - 📦 **[Archived Code](../../archive/deprecated-providers/google-ai/)** - Original source code (read-only)
-- 🔗 **[Vercel AI SDK Google Provider](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai)** - Google AI documentation
-- 🔗 **[Vercel AI SDK Vertex Provider](https://ai-sdk.dev/providers/ai-sdk-providers/google-vertex)** - Vertex AI documentation
+- 🔗 **[ai-sdk Google Provider](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai)** - Google AI documentation
+- 🔗 **[ai-sdk Vertex Provider](https://ai-sdk.dev/providers/ai-sdk-providers/google-vertex)** - Vertex AI documentation
 
 ## Why This Change?
 

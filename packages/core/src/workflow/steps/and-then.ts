@@ -1,12 +1,4 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import { getGlobalLogger } from "../../logger";
-import {
-  createStepContext,
-  createWorkflowStepErrorEvent,
-  createWorkflowStepStartEvent,
-  createWorkflowStepSuccessEvent,
-  publishWorkflowEvent,
-} from "../event-utils";
 import type { WorkflowExecuteContext } from "../internal/types";
 import { defaultStepConfig } from "../internal/utils";
 import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
@@ -59,61 +51,18 @@ export function andThen<
     resumeSchema,
     originalExecute: execute, // ✅ Store original function for serialization
     execute: async (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>) => {
-      const { data, state } = context;
+      const { state } = context;
       // No workflow context, execute without events
       if (!state.workflowContext) {
         return await execute(context);
       }
 
-      // ✅ Serialize execute function for event tracking
-      const stepFunction = execute.toString();
-
-      // Create step context and publish start event
-      const stepContext = createStepContext(
-        state.workflowContext,
-        "func",
-        config.name || config.id,
-      );
-      const stepStartEvent = createWorkflowStepStartEvent(
-        stepContext,
-        state.workflowContext,
-        data, // ✅ Pass input data
-        {
-          stepFunction,
-          userContext: state.workflowContext.userContext,
-        },
-      );
-
-      try {
-        await publishWorkflowEvent(stepStartEvent, state.workflowContext);
-      } catch (eventError) {
-        getGlobalLogger()
-          .child({ component: "workflow", stepType: "then" })
-          .warn("Failed to publish workflow step start event:", { error: eventError });
-      }
+      // Step events removed - now handled by OpenTelemetry spans
 
       try {
         const result = await execute(context);
 
-        // Publish step success event
-        const stepSuccessEvent = createWorkflowStepSuccessEvent(
-          stepContext,
-          state.workflowContext,
-          result,
-          stepStartEvent.id,
-          {
-            stepFunction,
-            userContext: state.workflowContext.userContext,
-          },
-        );
-
-        try {
-          await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
-        } catch (eventError) {
-          getGlobalLogger()
-            .child({ component: "workflow", stepType: "then" })
-            .warn("Failed to publish workflow step success event:", { error: eventError });
-        }
+        // Step events removed - now handled by OpenTelemetry spans
 
         return result;
       } catch (error) {
@@ -124,25 +73,7 @@ export function andThen<
           throw error;
         }
 
-        // Publish step error event for actual errors
-        const stepErrorEvent = createWorkflowStepErrorEvent(
-          stepContext,
-          state.workflowContext,
-          error,
-          stepStartEvent.id,
-          {
-            stepFunction,
-            userContext: state.workflowContext.userContext,
-          },
-        );
-
-        try {
-          await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
-        } catch (eventError) {
-          getGlobalLogger()
-            .child({ component: "workflow", stepType: "then" })
-            .warn("Failed to publish workflow step error event:", { error: eventError });
-        }
+        // Step events removed - now handled by OpenTelemetry spans
 
         throw error;
       }

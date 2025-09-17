@@ -126,15 +126,7 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
                 <span className="text-yellow-300"> "@voltagent/core"</span>
                 <span>;</span>
                 <br />
-                <span className="text-blue-400">import</span>
-                <span>
-                  {" "}
-                  {"{"} VercelAIProvider {"}"}{" "}
-                </span>
-                <span className="text-blue-400">from</span>
-                <span className="text-yellow-300"> "@voltagent/vercel-ai"</span>
-                <span>;</span>
-                <br />
+
                 <span className="text-blue-400">import</span>
                 <span>
                   {" "}
@@ -187,11 +179,6 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
                 <span className="ml-4">description: </span>
                 <span className="text-yellow-300">"A simple agent that introduces itself"</span>
                 <span>,</span>
-                <br />
-                <span className="ml-4">llm: </span>
-                <span className="text-blue-400">new</span>
-                <span className="text-green-400"> VercelAIProvider</span>
-                <span>(),</span>
                 <br />
               </span>
 

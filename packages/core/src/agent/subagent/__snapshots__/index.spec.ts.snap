@@ -48,15 +48,16 @@ assistant: Response
 </agents_memory>"
 `;
 
-exports[`SubAgentManager > generateSupervisorSystemMessage > should match snapshot 1`] = `
+exports[`SubAgentManager > generateSupervisorSystemMessage > should generate consistent snapshot 1`] = `
 "You are a supervisor agent that coordinates between specialized agents:
 
 <specialized_agents>
-- Agent 1: First agent
+- Math Agent: You are a math expert
+- Writing Agent: You are a writing expert
 </specialized_agents>
 
 <instructions>
-Some base instructions
+You are a supervisor agent
 </instructions>
 
 <guidelines>
@@ -80,6 +81,6 @@ Some base instructions
 - NEVER output your thoughts before and after you invoke a tool or before you respond to the User.
 </guidelines>
 <agents_memory>
-No previous agent interactions available.
+Previous agent memory
 </agents_memory>"
 `;

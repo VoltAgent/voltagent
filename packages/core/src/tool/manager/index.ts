@@ -1,5 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import type { BaseTool, ToolExecuteOptions } from "../../agent/providers/base/types";
+import type { ApiToolInfo } from "../../agent/types";
 import { ActionType, LogEvents, buildToolLogMessage, getGlobalLogger } from "../../logger";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
 import { type AgentTool, createTool } from "../index";
@@ -272,7 +273,7 @@ export class ToolManager {
   /**
    * Get agent's tools (including those in toolkits) for API exposure.
    */
-  getToolsForApi() {
+  getToolsForApi(): ApiToolInfo[] {
     // Map the flattened list of tools for the API
     return this.getTools().map((tool) => ({
       name: tool.name,
@@ -370,7 +371,8 @@ export class ToolManager {
 
     try {
       // We assume the tool object retrieved by getToolByName has the correct execute signature
-      const result = await tool.execute(args, options);
+      const oc = options?.operationContext;
+      const result = await tool.execute(args, oc);
 
       const duration = Date.now() - startTime;
 

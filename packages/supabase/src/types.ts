@@ -2,32 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MemoryOptions } from "@voltagent/core";
 import type { Logger } from "@voltagent/logger";
 
-/**
- * The statistics for a workflow
- */
-export interface WorkflowStats {
-  /**
-   * The total number of executions
-   */
-  totalExecutions: number;
-  /**
-   * The number of successful executions
-   */
-  successfulExecutions: number;
-  /**
-   * The number of failed executions
-   */
-  failedExecutions: number;
-  /**
-   * The average execution time
-   */
-  averageExecutionTime: number;
-  /**
-   * The date of the last execution
-   */
-  lastExecutionTime?: Date;
-}
-
 export type SupabaseMemoryOptions =
   | SupabaseMemoryOptionsWithUrlAndKey
   | SupabaseMemoryOptionsWithClient;

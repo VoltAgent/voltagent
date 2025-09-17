@@ -1,10 +1,17 @@
 import { createReadStream, createWriteStream } from "node:fs";
 import path, { join } from "node:path";
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { OpenAIVoiceProvider } from "@voltagent/voice";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-voice-openai",
+  level: "info",
+});
 
 // Initialize voice provider
 const voiceProvider = new OpenAIVoiceProvider({
@@ -16,25 +23,23 @@ const voiceProvider = new OpenAIVoiceProvider({
 // Initialize agent with voice capabilities
 const agent = new Agent({
   name: "Voice Assistant",
-  description: "A helpful assistant that can speak and listen using OpenAI's voice API",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant that can speak and listen using OpenAI's voice API",
   model: openai("gpt-4o-mini"),
   voice: voiceProvider,
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
 });
 
 // Create the VoltAgent with our voice-enabled agent
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-voice-openai",
-  level: "info",
-});
-
 new VoltAgent({
   agents: {
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });
 
 (async () => {

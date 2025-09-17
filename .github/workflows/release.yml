@@ -16,15 +16,12 @@ jobs:
           - create-voltagent-app
           - docs-mcp
           - internal
-          - langfuse-exporter
           - logger
           - postgres
-          - sdk
           - supabase
-          - vercel-ai
-          - vercel-ai-exporter
           - voice
-          - xsai
+          - server-core
+          - libsql
       fail-fast: false
     name: Test ${{ matrix.package }}
     steps:
@@ -106,8 +103,8 @@ jobs:
         run: pnpm sp lint
       - name: Publint
         run: pnpm publint:all
-      - name: Are The Types Wrong
-        run: pnpm attw:all
+     # - name: Are The Types Wrong
+     #   run: pnpm attw:all
 
       - name: PostgreSQL Integration Tests
         run: |

@@ -66,8 +66,8 @@ export class SimpleRetriever extends BaseRetriever {
       return searchTerms.some((term) => content.includes(term));
     });
 
-    // Add references to userContext if available
-    if (options.userContext) {
+    // Add references to context if available
+    if (options.context) {
       const references = [
         {
           id: "doc-1",
@@ -86,7 +86,7 @@ export class SimpleRetriever extends BaseRetriever {
         },
       ];
 
-      options.userContext.set("references", references);
+      options.context.set("references", references);
     }
 
     // Return the concatenated content for the LLM

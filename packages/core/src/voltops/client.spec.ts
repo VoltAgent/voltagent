@@ -245,7 +245,6 @@ describe("VoltOpsClient", () => {
       };
 
       const client = new VoltOpsClient(invalidOptions);
-      expect(client.observability).toBeUndefined();
       expect(client.prompts).toBeUndefined();
     });
 
@@ -257,7 +256,6 @@ describe("VoltOpsClient", () => {
       };
 
       const client = new VoltOpsClient(invalidOptions);
-      expect(client.observability).toBeUndefined();
       expect(client.prompts).toBeUndefined();
     });
 
@@ -269,7 +267,6 @@ describe("VoltOpsClient", () => {
       };
 
       const client = new VoltOpsClient(validOptions);
-      expect(client.observability).toBeDefined();
       expect(client.prompts).toBeDefined();
     });
   });
@@ -394,7 +391,6 @@ describe("createVoltOpsClient", () => {
     expect(client.options.publicKey).toBe(options.publicKey);
     expect(client.options.secretKey).toBe(options.secretKey);
     expect(client.options.fetch).toBe(options.fetch);
-    expect(client.options.observability).toBe(true); // default
     expect(client.options.prompts).toBe(true); // default
   });
 

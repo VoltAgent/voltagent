@@ -7,12 +7,14 @@
 ```typescript
 import { createWorkflowChain, Agent } from "@voltagent/core";
 import { z } from "zod";
+import { openai } from "@ai-sdk/openai";
 
 // Create an agent
 const agent = new Agent({
   name: "Assistant",
-  llm: provider,
-  model: "gpt-4",
+  // Pass an ai-sdk model directly
+  model: openai("gpt-4o-mini"),
+  instructions: "Be concise and helpful",
 });
 
 // Use it in a workflow
@@ -45,11 +47,29 @@ const result = await workflow.run({ text: "I love this!" });
 ## Function Signature
 
 ```typescript
-// Simple prompt
+// Simple prompt (string)
 .andAgent("Summarize this", agent, { schema })
 
-// Dynamic prompt from data
+// Dynamic prompt from data (string)
 .andAgent(({ data }) => `Analyze: ${data.text}`, agent, { schema })
+
+// Advanced: pass ai-sdk v5 ModelMessage[] (multimodal)
+.andAgent(
+  ({ data }) => [
+    { role: 'user', content: [{ type: 'text', text: `Hello ${data.name}` }] },
+  ],
+  agent,
+  { schema }
+)
+
+// Advanced: pass UIMessage[]
+.andAgent(
+  ({ data }) => [
+    { id: crypto.randomUUID(), role: 'user', parts: [{ type: 'text', text: data.prompt }] },
+  ],
+  agent,
+  { schema }
+)
 ```
 
 ## Common Patterns

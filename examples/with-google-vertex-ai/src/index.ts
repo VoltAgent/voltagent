@@ -1,19 +1,23 @@
 import { vertex } from "@ai-sdk/google-vertex";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
-  name: "Google Vertex AI Agent",
-  description: "A helpful assistant powered by Google Gemini and Vertex AI",
-  llm: new VercelAIProvider(),
-  model: vertex("gemini-2.0-flash"),
-});
-
-// Create logger
 const logger = createPinoLogger({
   name: "with-google-vertex-ai",
   level: "info",
+});
+
+const agent = new Agent({
+  name: "Google Vertex AI Agent",
+  instructions: "A helpful assistant powered by Google Gemini and Vertex AI",
+  model: vertex("gemini-2.0-flash"),
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
 });
 
 new VoltAgent({
@@ -21,4 +25,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

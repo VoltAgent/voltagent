@@ -1,12 +1,4 @@
-import { getGlobalLogger } from "../../logger";
-import {
-  createParallelSubStepContext,
-  createStepContext,
-  createWorkflowStepErrorEvent,
-  createWorkflowStepStartEvent,
-  createWorkflowStepSuccessEvent,
-  publishWorkflowEvent,
-} from "../event-utils";
+import type { Span } from "@opentelemetry/api";
 import type {
   InternalAnyWorkflowStep,
   InternalInferWorkflowStepsResult,
@@ -86,73 +78,65 @@ export function andRace<
         return (await Promise.race(promises)) as INFERRED_RESULT;
       }
 
-      // Create step context and publish start event
-      const stepContext = createStepContext(
-        state.workflowContext,
-        "parallel-race",
-        config.name || config.id,
-      );
-      const stepStartEvent = createWorkflowStepStartEvent(
-        stepContext,
-        state.workflowContext,
-        data, // ✅ Pass input data
-        {
-          parallelIndex: 0,
-        },
-      );
+      // Step events removed - now handled by OpenTelemetry spans
 
       try {
-        await publishWorkflowEvent(stepStartEvent, state.workflowContext);
-      } catch (eventError) {
-        getGlobalLogger()
-          .child({ component: "workflow", stepType: "race" })
-          .warn("Failed to publish workflow step start event:", { error: eventError });
-      }
+        // Create child spans for parallel execution if traceContext is available
+        const traceContext = state.workflowContext?.traceContext;
+        const childSpans: Span[] = [];
 
-      try {
-        // 🏁 Enhanced: Track which step wins the race with execution times
+        if (traceContext) {
+          // Create a child span for each parallel step
+          steps.forEach((step, index) => {
+            const childSpan = traceContext.createStepSpan(
+              index,
+              "func", // Child steps in parallel-race are typically functions
+              step.name || step.id || `Race Step ${index + 1}`,
+              {
+                stepId: step.id,
+                parentStepId: config.id,
+                parallelIndex: index,
+                input: data,
+                attributes: {
+                  "workflow.step.parallel": true,
+                  "workflow.step.parent_type": "parallel-race",
+                },
+              },
+            );
+            childSpans.push(childSpan);
+          });
+        }
+
+        // Track which step wins the race with execution times
         const stepPromises = steps.map(async (step, index) => {
-          const subStepContext = createParallelSubStepContext(stepContext, index);
           const startTime = new Date();
+          const childSpan = childSpans[index];
 
-          // 🚀 Publish start event for each sub-step
-          const subStepStartEvent = createWorkflowStepStartEvent(
-            subStepContext,
-            state.workflowContext ??
-              (() => {
-                throw new Error("Workflow context is required");
-              })(),
-            data,
-            {
-              parallelIndex: index,
-            },
-          );
-
-          try {
-            const workflowContext = state.workflowContext;
-            if (workflowContext) {
-              await publishWorkflowEvent(subStepStartEvent, workflowContext);
-            }
-          } catch (eventError) {
-            getGlobalLogger()
-              .child({ component: "workflow", stepType: "race" })
-              .warn(`Failed to publish sub-step ${index} start event:`, { error: eventError });
-          }
+          // Step events removed - now handled by OpenTelemetry spans
 
           const subState = {
             ...state,
             workflowContext: undefined, // ❌ Remove workflow context to prevent individual event publishing
           };
 
+          // Execute within span context if available
+          const executeStep = async () => {
+            return matchStep(step).execute({ ...context, state: subState });
+          };
+
           // Return promise with index and timing to track winner and execution times
-          return matchStep(step)
-            .execute({ ...context, state: subState })
+          return (
+            childSpan && traceContext
+              ? traceContext.withSpan(childSpan, executeStep)
+              : executeStep()
+          )
             .then((result) => ({
               result,
               index,
               success: true,
               startTime: startTime.toISOString(),
               endTime: new Date().toISOString(),
+              childSpan, // Keep reference to span for later ending
             }))
             .catch((error) => ({
               error,
@@ -160,6 +144,7 @@ export function andRace<
               success: false,
               startTime: startTime.toISOString(),
               endTime: new Date().toISOString(),
+              childSpan, // Keep reference to span for later ending
             }));
         });
 
@@ -206,67 +191,39 @@ export function andRace<
           ).error;
         }
 
-        // 🏆 Publish success events for winner and skipped events for losers with timing
-        for (let i = 0; i < steps.length; i++) {
-          const subStepContext = createParallelSubStepContext(stepContext, i);
-          const isWinner = i === winner.index;
-          const stepTiming = stepTimings[i];
+        // End child spans with appropriate status
+        if (traceContext) {
+          for (let i = 0; i < stepTimings.length; i++) {
+            const stepResult = stepTimings[i] as any;
+            const childSpan = stepResult?.childSpan;
 
-          // Override sub-step context timing with actual execution times
-          if (stepTiming) {
-            subStepContext.startTime = new Date(stepTiming.startTime);
-          }
+            if (childSpan) {
+              const isWinner = i === winner.index;
 
-          const eventResult = isWinner ? finalResult : undefined;
-          const eventIsSkipped = !isWinner;
-
-          const subStepSuccessEvent = createWorkflowStepSuccessEvent(
-            subStepContext,
-            state.workflowContext,
-            eventResult,
-            stepStartEvent.id,
-            {
-              parallelIndex: i,
-              isSkipped: eventIsSkipped,
-            },
-          );
-
-          // ✅ Override timing in the event for accurate duration
-          if (stepTiming) {
-            subStepSuccessEvent.startTime = stepTiming.startTime;
-            subStepSuccessEvent.endTime = stepTiming.endTime;
-          }
-
-          try {
-            await publishWorkflowEvent(subStepSuccessEvent, state.workflowContext);
-          } catch (eventError) {
-            const eventType = isWinner ? "winner" : "loser";
-            getGlobalLogger()
-              .child({ component: "workflow", stepType: "race" })
-              .warn(`Failed to publish ${eventType} success event for sub-step ${i}:`, {
-                error: eventError,
-              });
+              if (stepResult.success) {
+                if (isWinner) {
+                  // Winner span - mark as completed
+                  traceContext.endStepSpan(childSpan, "completed", {
+                    output: stepResult.result,
+                  });
+                } else {
+                  // Non-winner spans - mark as skipped
+                  traceContext.endStepSpan(childSpan, "skipped", {
+                    output: stepResult.result,
+                    skippedReason: "Another step won the race",
+                  });
+                }
+              } else {
+                // Error span
+                traceContext.endStepSpan(childSpan, "error", {
+                  error: stepResult.error,
+                });
+              }
+            }
           }
         }
 
-        // Publish main step success event
-        const stepSuccessEvent = createWorkflowStepSuccessEvent(
-          stepContext,
-          state.workflowContext,
-          finalResult,
-          stepStartEvent.id,
-          {
-            parallelIndex: 0,
-          },
-        );
-
-        try {
-          await publishWorkflowEvent(stepSuccessEvent, state.workflowContext);
-        } catch (eventError) {
-          getGlobalLogger()
-            .child({ component: "workflow", stepType: "race" })
-            .warn("Failed to publish workflow step success event:", { error: eventError });
-        }
+        // Step events removed - now handled by OpenTelemetry spans
 
         return finalResult;
       } catch (error) {
@@ -277,24 +234,7 @@ export function andRace<
           throw error;
         }
 
-        // Publish step error event for actual errors
-        const stepErrorEvent = createWorkflowStepErrorEvent(
-          stepContext,
-          state.workflowContext,
-          error,
-          stepStartEvent.id,
-          {
-            parallelIndex: 0,
-          },
-        );
-
-        try {
-          await publishWorkflowEvent(stepErrorEvent, state.workflowContext);
-        } catch (eventError) {
-          getGlobalLogger()
-            .child({ component: "workflow", stepType: "race" })
-            .warn("Failed to publish workflow step error event:", { error: eventError });
-        }
+        // Step events removed - now handled by OpenTelemetry spans
 
         throw error;
       }

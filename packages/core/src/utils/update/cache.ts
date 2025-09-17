@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { safeStringify } from "@voltagent/internal/utils";
 import { LoggerProxy } from "../../logger";
@@ -20,17 +21,71 @@ export interface UpdateCache {
 }
 
 /**
+ * Get environment paths for VoltAgent (based on env-paths pattern)
+ * Following platform conventions for cache directories
+ */
+const getEnvPaths = (name: string) => {
+  const homedir = os.homedir();
+  const tmpdir = os.tmpdir();
+  const { env } = process;
+
+  if (process.platform === "darwin") {
+    // macOS
+    const library = path.join(homedir, "Library");
+    return {
+      cache: path.join(library, "Caches", name),
+      temp: path.join(tmpdir, name),
+    };
+  }
+
+  if (process.platform === "win32") {
+    // Windows
+    const localAppData = env.LOCALAPPDATA || path.join(homedir, "AppData", "Local");
+    return {
+      cache: path.join(localAppData, name, "Cache"),
+      temp: path.join(tmpdir, name),
+    };
+  }
+
+  // Linux and others (following XDG Base Directory spec)
+  const username = path.basename(homedir);
+  return {
+    cache: path.join(env.XDG_CACHE_HOME || path.join(homedir, ".cache"), name),
+    temp: path.join(tmpdir, username, name),
+  };
+};
+
+/**
+ * Get the system cache directory for VoltAgent
+ */
+const getSystemCacheDir = (): string => {
+  const paths = getEnvPaths("voltagent");
+  return paths.cache;
+};
+
+/**
  * Get the cache file path for the project
  */
 export const getCacheFilePath = (projectPath: string): string => {
-  return path.join(projectPath, ".voltagent", "cache", "update-check.json");
+  // Normalize the path to handle different representations
+  const normalizedPath = path.resolve(projectPath);
+
+  // Use SHA-256 for better future-proofing
+  const projectHash = crypto
+    .createHash("sha256")
+    .update(normalizedPath)
+    .digest("hex")
+    .substring(0, 12); // 12 chars is enough for uniqueness
+
+  const cacheDir = getSystemCacheDir();
+  return path.join(cacheDir, `update-check-${projectHash}.json`);
 };
 
 /**
  * Ensure the cache directory exists
  */
-export const ensureCacheDir = (projectPath: string): void => {
-  const cacheDir = path.join(projectPath, ".voltagent", "cache");
+export const ensureCacheDir = (): void => {
+  const cacheDir = getSystemCacheDir();
   if (!fs.existsSync(cacheDir)) {
     fs.mkdirSync(cacheDir, { recursive: true });
   }
@@ -77,7 +132,7 @@ export const readUpdateCache = async (projectPath: string): Promise<UpdateCache 
  */
 export const writeUpdateCache = async (projectPath: string, cache: UpdateCache): Promise<void> => {
   try {
-    ensureCacheDir(projectPath);
+    ensureCacheDir();
     const cacheFilePath = getCacheFilePath(projectPath);
 
     fs.writeFileSync(cacheFilePath, safeStringify(cache, { indentation: 2 }), "utf8");

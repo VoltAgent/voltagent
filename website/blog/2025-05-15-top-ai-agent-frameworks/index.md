@@ -81,7 +81,7 @@ I'm not here to claim VoltAgent is perfect for everyone. It's probably NOT your 
 
 Last month, a team used VoltAgent to build an agent that interfaces with their customer service system. It analyzes incoming tickets, retrieves relevant customer history, checks their internal knowledge base, and then either answers directly or routes to the right specialist with context. They built it in four weeks and it handles about 30% of their tickets fully autonomously now.
 
-This kind of integration—connecting to multiple systems, handling state correctly, and knowing when to route to humans—is exactly the sweet spot that led me to create VoltAgent in the first place.
+This kind of integration-connecting to multiple systems, handling state correctly, and knowing when to route to humans-is exactly the sweet spot that led me to create VoltAgent in the first place.
 
 **Give It a Try If:**
 
@@ -97,13 +97,13 @@ The [docs](https://voltagent.dev/docs/quick-start/) have plenty of examples to g
 
 ![langchain](https://cdn.voltagent.dev/2025-05-15-top-ai-agent-frameworks/langchain.png)
 
-Let's talk about **LangChain**. It's basically impossible to have a conversation about AI agents without someone bringing it up. I remember my first LangChain project—opened the docs, saw 5,000+ GitHub stars, and thought "this must be THE way to build with LLMs!" Fast-forward two weeks, and I was deep in the weeds learning all about Chain-of-Thought patterns, ReAct agents, and the dozens of other concepts the framework introduces.
+Let's talk about **LangChain**. It's basically impossible to have a conversation about AI agents without someone bringing it up. I remember my first LangChain project-opened the docs, saw 5,000+ GitHub stars, and thought "this must be THE way to build with LLMs!" Fast-forward two weeks, and I was deep in the weeds learning all about Chain-of-Thought patterns, ReAct agents, and the dozens of other concepts the framework introduces.
 
 LangChain deserves its spot on this list for sure. It's like that Swiss Army knife you got for Christmas. Packed with tons of tools, and while you might not use all of them, it's incredibly satisfying when you find exactly the right one for your specific challenge.
 
 **LangChain: What's Actually Going On Here?**
 
-The core idea is deceptively simple: take the basic things you do with LLMs (prompt, get response, use tools, etc.) and make them chainable components. The Python version came first, with TypeScript following later—and honestly, the difference in dev experience is notable depending which language you prefer (I've used both).
+The core idea is deceptively simple: take the basic things you do with LLMs (prompt, get response, use tools, etc.) and make them chainable components. The Python version came first, with TypeScript following later-and honestly, the difference in dev experience is notable depending which language you prefer (I've used both).
 
 LangChain gives you a giant box of:
 
@@ -113,7 +113,7 @@ LangChain gives you a giant box of:
 
 - **The Document Handling Stuff**: This is lowkey one of the most useful parts. LangChain has a bunch of tools for splitting, embedding, and retrieving documents. The text splitters alone saved me days of work.
 
-- **Agents**: This is where LangChain really shines. Agents are LLMs that can decide which tools to use. When you get the configuration right, it's magical—the agent figures out it needs to search something, then use a calculator, then format a response. Setting up the right tool combinations and prompts takes practice but can yield impressive results.
+- **Agents**: This is where LangChain really shines. Agents are LLMs that can decide which tools to use. When you get the configuration right, it's magical-the agent figures out it needs to search something, then use a calculator, then format a response. Setting up the right tool combinations and prompts takes practice but can yield impressive results.
 
 - **Memory**: Context windows cost $$$, so LangChain has various memory systems. Some are simple (save the last few exchanges), others are fancier (summarize old messages, track entities across conversations). Experimenting with different memory types for your specific use case can make a big difference.
 
@@ -125,7 +125,7 @@ LangChain offers several strengths that have made it a community favorite:
 
 - **Incredible Ecosystem**: Need to connect to literally any data source, vector DB, or external API? Someone's probably built a LangChain integration.
 
-- **Huge Community**: Stack Overflow, Discord, Reddit—all full of LangChain answers. When you get stuck (and you will), help is available.
+- **Huge Community**: Stack Overflow, Discord, Reddit-all full of LangChain answers. When you get stuck (and you will), help is available.
 
 **Learning Considerations**
 
@@ -133,7 +133,7 @@ LangChain does come with some learning considerations:
 
 - **The Ecosystem Evolves Quickly**: The ecosystem evolves incredibly fast, which is exciting but means you might find yourself checking GitHub for the latest patterns rather than relying on tutorials from a few months back.
 
-- **Worth Understanding the Internals**: As you dive deeper into complex projects, you'll probably want to understand what's happening under those abstractions—which honestly ends up making you a better developer in the long run. The learning investment pays dividends.
+- **Worth Understanding the Internals**: As you dive deeper into complex projects, you'll probably want to understand what's happening under those abstractions-which honestly ends up making you a better developer in the long run. The learning investment pays dividends.
 
 **When I Actually Recommend LangChain**:
 
@@ -171,11 +171,11 @@ I gave it a data analysis task, and then I just... watched. The manager asked fo
 
 AutoGen is Python-based (sorry JS folks), but what it does is unique:
 
-- **Agents Talk to Each Other**: This is the core idea. You create different agents and they literally send messages back and forth. Not in some abstract sense—they have actual conversations where they decide what to do. Sometimes they debate, sometimes they correct each other. It's freaky to watch.
+- **Agents Talk to Each Other**: This is the core idea. You create different agents and they literally send messages back and forth. Not in some abstract sense-they have actual conversations where they decide what to do. Sometimes they debate, sometimes they correct each other. It's freaky to watch.
 
 - **Agent Personalities Are a Thing**: Each agent gets a system prompt that defines their role and personality. I've found this makes a HUGE difference. My "code reviewer" agent with a "pedantic and security-focused" personality catches way more issues than one with a generic prompt.
 
-- **Code Execution Is Baked In**: AutoGen agents can write AND RUN code (Python, mainly). This is dangerous but incredibly powerful. An agent can generate data, analyze it, visualize it, and show you the results—all without you doing anything. Just, y'know... maybe don't give it access to your AWS credentials.
+- **Code Execution Is Baked In**: AutoGen agents can write AND RUN code (Python, mainly). This is dangerous but incredibly powerful. An agent can generate data, analyze it, visualize it, and show you the results-all without you doing anything. Just, y'know... maybe don't give it access to your AWS credentials.
 
 - **Human-in-the-Loop Is Easy**: Want to approve actions before they happen? Or jump into the conversation? Super simple. I've built systems where I'm basically a "supervisor" agent who occasionally steps in when the AI team gets stuck.
 

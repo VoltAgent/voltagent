@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 # Supabase Memory
 
-The `@voltagent/supabase` package provides a `SupabaseMemory` provider that uses a [Supabase](https://supabase.com) project (PostgreSQL database) for persistent storage of agent memory.
+The `@voltagent/supabase` package provides a `SupabaseMemoryAdapter` storage adapter for the `Memory` class that uses a [Supabase](https://supabase.com) project (PostgreSQL database) for persistent storage of conversation memory.
 
 This is a good choice if your application is already built on Supabase or if you require a robust, scalable PostgreSQL backend with managed features like authentication, real-time subscriptions, and storage.
 
@@ -44,251 +44,154 @@ pnpm add @voltagent/supabase @supabase/supabase-js
 
 ### Database Setup
 
-Unlike `LibSQLStorage`, `SupabaseMemory` **does not automatically create database tables**. You must run the following SQL commands in your Supabase project's SQL Editor (Dashboard -> SQL Editor -> New query) before using the provider.
-
-**Note:** These commands use the default table prefix `voltagent_memory`. If you provide a custom `tableName` option when initializing `SupabaseMemory` (e.g., `new SupabaseMemory({ ..., tableName: 'my_custom_prefix' })`), you **must** replace `voltagent_memory` with `my_custom_prefix` in the SQL commands below.
+Run the SQL below in the Supabase SQL Editor. Replace the `voltagent_memory` prefix if you configure a different `tableName`.
 
 <details>
-<summary>Click to view Database Setup SQL</summary>
+<summary>Fresh installation SQL</summary>
 
 ```sql
--- Conversations Table
+-- Base table names (change prefix if needed)
+-- conversations: voltagent_memory_conversations
+-- messages:      voltagent_memory_messages
+-- users:         voltagent_memory_users
+-- workflow:      voltagent_memory_workflow_states
+
+-- Users table (for user‑scoped working memory)
+CREATE TABLE IF NOT EXISTS voltagent_memory_users (
+  id TEXT PRIMARY KEY,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- Conversations table
 CREATE TABLE IF NOT EXISTS voltagent_memory_conversations (
-    id TEXT PRIMARY KEY,
-    resource_id TEXT NOT NULL,
-    user_id TEXT,  -- Associates conversation with user (nullable)
-    title TEXT,
-    metadata JSONB, -- Use JSONB for efficient querying
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+  id TEXT PRIMARY KEY,
+  resource_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  metadata JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- Index for faster lookup by resource_id
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_resource
-ON voltagent_memory_conversations(resource_id);
-
--- Index for faster lookup by user_id
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_user
-ON voltagent_memory_conversations(user_id);
-
--- Composite index for user_id + resource_id queries
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_user_resource
-ON voltagent_memory_conversations(user_id, resource_id);
-
--- Index for ordering by updated_at (most common query pattern)
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_updated_at
-ON voltagent_memory_conversations(updated_at DESC);
-
--- Messages Table
+-- Messages table (UIMessage format)
 CREATE TABLE IF NOT EXISTS voltagent_memory_messages (
-    conversation_id TEXT NOT NULL REFERENCES voltagent_memory_conversations(id) ON DELETE CASCADE,
-    message_id TEXT NOT NULL,
-    role TEXT NOT NULL,
-    content TEXT NOT NULL, -- Consider JSONB if content is often structured
-    type TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    -- Primary key: conversation_id + message_id ensures uniqueness within conversation
-    PRIMARY KEY (conversation_id, message_id)
+  conversation_id TEXT NOT NULL REFERENCES voltagent_memory_conversations(id) ON DELETE CASCADE,
+  message_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  role TEXT NOT NULL,
+  parts JSONB,
+  metadata JSONB,
+  format_version INTEGER DEFAULT 2,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  PRIMARY KEY (conversation_id, message_id)
 );
 
--- Index for faster message retrieval (most common query pattern)
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_lookup
-ON voltagent_memory_messages(conversation_id, created_at);
-
--- Index for message role filtering
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_role
-ON voltagent_memory_messages(conversation_id, role, created_at);
-
--- Agent History Table (New Structured Format)
-CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history (
-    id TEXT PRIMARY KEY,
-    agent_id TEXT NOT NULL,
-    timestamp TEXT NOT NULL,
-    status TEXT,
-    input JSONB,
-    output JSONB,
-    usage JSONB,
-    metadata JSONB,
-    user_id TEXT,
-    conversation_id TEXT,
-    -- Legacy columns for migration compatibility
-    key TEXT,
-    value JSONB
+-- Workflow states (for suspension/resume)
+CREATE TABLE IF NOT EXISTS voltagent_memory_workflow_states (
+  id TEXT PRIMARY KEY,
+  workflow_id TEXT NOT NULL,
+  workflow_name TEXT NOT NULL,
+  status TEXT NOT NULL,
+  suspension JSONB,
+  user_id TEXT,
+  conversation_id TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
 );
 
--- Indexes for agent history
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_id
-ON voltagent_memory_agent_history(id);
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_user_id
+  ON voltagent_memory_conversations(user_id);
 
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_agent_id
-ON voltagent_memory_agent_history(agent_id);
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_resource_id
+  ON voltagent_memory_conversations(resource_id);
 
--- Agent History Steps Table
-CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history_steps (
-    key TEXT PRIMARY KEY,
-    value JSONB NOT NULL, -- Store the step object as JSONB
-    -- Foreign key to history entry
-    history_id TEXT NOT NULL,
-    agent_id TEXT NOT NULL
-);
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_conversation_id
+  ON voltagent_memory_messages(conversation_id);
 
--- Indexes for faster lookup
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_steps_history_id
-ON voltagent_memory_agent_history_steps(history_id);
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_created_at
+  ON voltagent_memory_messages(created_at);
 
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_agent_history_steps_agent_id
-ON voltagent_memory_agent_history_steps(agent_id);
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_states_workflow_id
+  ON voltagent_memory_workflow_states(workflow_id);
 
--- Timeline Events Table (New)
-CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history_timeline_events (
-    id TEXT PRIMARY KEY,
-    history_id TEXT NOT NULL,
-    agent_id TEXT,
-    event_type TEXT NOT NULL,
-    event_name TEXT NOT NULL,
-    start_time TEXT NOT NULL,
-    end_time TEXT,
-    status TEXT,
-    status_message TEXT,
-    level TEXT DEFAULT 'INFO',
-    version TEXT,
-    parent_event_id TEXT,
-    tags JSONB,
-    input JSONB,
-    output JSONB,
-    error JSONB,
-    metadata JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Indexes for timeline events
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_history_id
-ON voltagent_memory_agent_history_timeline_events(history_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_agent_id
-ON voltagent_memory_agent_history_timeline_events(agent_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_event_type
-ON voltagent_memory_agent_history_timeline_events(event_type);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_event_name
-ON voltagent_memory_agent_history_timeline_events(event_name);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_parent_event_id
-ON voltagent_memory_agent_history_timeline_events(parent_event_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_timeline_events_status
-ON voltagent_memory_agent_history_timeline_events(status);
-
--- Workflow History Table
-CREATE TABLE IF NOT EXISTS voltagent_memory_workflow_history (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    workflow_id TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'cancelled')),
-    start_time TIMESTAMPTZ NOT NULL,
-    end_time TIMESTAMPTZ,
-    input JSONB,
-    output JSONB,
-    metadata JSONB,
-    user_id TEXT,
-    conversation_id TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
--- Workflow Steps Table
-CREATE TABLE IF NOT EXISTS voltagent_memory_workflow_steps (
-    id TEXT PRIMARY KEY,
-    workflow_history_id TEXT NOT NULL REFERENCES voltagent_memory_workflow_history(id) ON DELETE CASCADE,
-    step_index INTEGER NOT NULL,
-    step_type TEXT NOT NULL CHECK (step_type IN ('agent', 'func', 'conditional-when', 'parallel-all', 'parallel-race')),
-    step_name TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'error', 'skipped')),
-    start_time TIMESTAMPTZ NOT NULL,
-    end_time TIMESTAMPTZ,
-    input JSONB,
-    output JSONB,
-    error_message TEXT,
-    agent_execution_id TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
--- Workflow Timeline Events Table
-CREATE TABLE IF NOT EXISTS voltagent_memory_workflow_timeline_events (
-    id TEXT PRIMARY KEY,
-    workflow_history_id TEXT NOT NULL REFERENCES voltagent_memory_workflow_history(id) ON DELETE CASCADE,
-    event_id TEXT NOT NULL,
-    type TEXT NOT NULL,
-    name TEXT NOT NULL,
-    start_time TIMESTAMPTZ NOT NULL,
-    end_time TIMESTAMPTZ,
-    status TEXT,
-    level TEXT DEFAULT 'INFO',
-    input JSONB,
-    output JSONB,
-    metadata JSONB,
-    event_sequence INTEGER,
-    trace_id TEXT,
-    parent_event_id TEXT,
-    status_message TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
-);
-
--- Indexes for workflow tables
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_workflow_id
-ON voltagent_memory_workflow_history(workflow_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_status
-ON voltagent_memory_workflow_history(status);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_start_time
-ON voltagent_memory_workflow_history(start_time);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_user_id
-ON voltagent_memory_workflow_history(user_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_history_conversation_id
-ON voltagent_memory_workflow_history(conversation_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_steps_workflow_history_id
-ON voltagent_memory_workflow_steps(workflow_history_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_steps_step_index
-ON voltagent_memory_workflow_steps(workflow_history_id, step_index);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_timeline_events_workflow_history_id
-ON voltagent_memory_workflow_timeline_events(workflow_history_id);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_timeline_events_type
-ON voltagent_memory_workflow_timeline_events(type);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_timeline_events_start_time
-ON voltagent_memory_workflow_timeline_events(start_time);
-
-CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_timeline_events_sequence
-ON voltagent_memory_workflow_timeline_events(event_sequence);
-
--- Migration Flags Table (Prevents duplicate migrations)
-CREATE TABLE IF NOT EXISTS voltagent_memory_conversations_migration_flags (
-    id SERIAL PRIMARY KEY,
-    migration_type TEXT NOT NULL UNIQUE,
-    completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    migrated_count INTEGER DEFAULT 0,
-    metadata JSONB DEFAULT '{}'::jsonb
-);
-
--- Insert fresh installation flags to prevent future migrations
-INSERT INTO voltagent_memory_conversations_migration_flags (migration_type, migrated_count, metadata)
-VALUES
-    ('conversation_schema_migration', 0, '{"fresh_install": true}'::jsonb),
-    ('agent_history_migration', 0, '{"fresh_install": true}'::jsonb)
-ON CONFLICT (migration_type) DO NOTHING;
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_states_status
+  ON voltagent_memory_workflow_states(status);
 ```
 
-Alternatively, integrate these SQL statements into your Supabase migration workflow using the [Supabase CLI](https://supabase.com/docs/guides/cli).
+</details>
+
+<details>
+<summary>Migration from older schema to current</summary>
+
+```sql
+-- Tables
+-- conversations: voltagent_memory_conversations
+-- messages:      voltagent_memory_messages
+-- users:         voltagent_memory_users
+-- workflow:      voltagent_memory_workflow_states
+
+-- 1) Ensure conversations has required columns
+ALTER TABLE voltagent_memory_conversations
+  ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'default',
+  ADD COLUMN IF NOT EXISTS resource_id TEXT NOT NULL DEFAULT '';
+
+-- 2) Add V2 columns to messages
+ALTER TABLE voltagent_memory_messages
+  ADD COLUMN IF NOT EXISTS parts JSONB,
+  ADD COLUMN IF NOT EXISTS metadata JSONB,
+  ADD COLUMN IF NOT EXISTS format_version INTEGER DEFAULT 2,
+  ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'default';
+
+-- 3) Make legacy columns nullable if present
+ALTER TABLE voltagent_memory_messages
+  ALTER COLUMN content DROP NOT NULL,
+  ALTER COLUMN type DROP NOT NULL;
+
+-- 4) Create users table for user‑scoped working memory
+CREATE TABLE IF NOT EXISTS voltagent_memory_users (
+  id TEXT PRIMARY KEY,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- 5) Create workflow states table
+CREATE TABLE IF NOT EXISTS voltagent_memory_workflow_states (
+  id TEXT PRIMARY KEY,
+  workflow_id TEXT NOT NULL,
+  workflow_name TEXT NOT NULL,
+  status TEXT NOT NULL,
+  suspension JSONB,
+  user_id TEXT,
+  conversation_id TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+
+-- 6) Indexes
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_user_id
+  ON voltagent_memory_conversations(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_resource_id
+  ON voltagent_memory_conversations(resource_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_conversation_id
+  ON voltagent_memory_messages(conversation_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_created_at
+  ON voltagent_memory_messages(created_at);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_states_workflow_id
+  ON voltagent_memory_workflow_states(workflow_id);
+
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_workflow_states_status
+  ON voltagent_memory_workflow_states(status);
+```
 
 </details>
 
@@ -305,12 +208,11 @@ Store these credentials securely, typically as environment variables (e.g., `SUP
 
 ## Configuration
 
-Import `SupabaseMemory` and initialize it with your credentials:
+Import `SupabaseMemoryAdapter` and initialize it with your credentials:
 
 ```typescript
-import { Agent } from "@voltagent/core";
-import { SupabaseMemory } from "@voltagent/supabase";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, Memory } from "@voltagent/core";
+import { SupabaseMemoryAdapter } from "@voltagent/supabase";
 import { createPinoLogger } from "@voltagent/logger";
 import { openai } from "@ai-sdk/openai";
 
@@ -322,8 +224,8 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("Supabase URL and Key must be provided via environment variables.");
 }
 
-// Initialize SupabaseMemory
-const memory = new SupabaseMemory({
+// Initialize Supabase memory adapter
+const storage = new SupabaseMemoryAdapter({
   supabaseUrl,
   supabaseKey,
   // Optional: Specify a custom base table name prefix
@@ -341,7 +243,7 @@ const memory = new SupabaseMemory({
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseClient = createClient(supabaseUrl, supabaseKey);
-const memory = new SupabaseMemory({
+const storage = new SupabaseMemoryAdapter({
   client: supabaseClient,
   tableName: "voltagent_memory", // Optional
   storageLimit: 150, // Optional: Custom storage limit
@@ -352,9 +254,8 @@ const memory = new SupabaseMemory({
 const agent = new Agent({
   name: "Supabase Memory Agent",
   instructions: "An agent using Supabase for memory.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  memory: memory, // Assign the memory provider instance
+  memory: new Memory({ storage }),
 });
 ```
 
@@ -450,47 +351,25 @@ const allConversations = await memory.queryConversations({
 
 ## Getting Conversation Messages
 
-Retrieve messages for a specific conversation with pagination support:
+Retrieve messages for a specific conversation:
 
 ```typescript
-// Get all messages for a conversation
-const messages = await memory.getConversationMessages("conversation-456");
+// Get recent messages (chronological order)
+const messages = await memory.getMessages("user-123", "conversation-456", { limit: 50 });
 
-// Get messages with pagination
-const firstBatch = await memory.getConversationMessages("conversation-456", {
+// Time-based pagination
+const older = await memory.getMessages("user-123", "conversation-456", {
+  before: new Date("2024-01-01T00:00:00Z"),
   limit: 50,
-  offset: 0,
 });
-
-// Get next batch
-const nextBatch = await memory.getConversationMessages("conversation-456", {
-  limit: 50,
-  offset: 50,
-});
-
-// Process messages in batches for large conversations
-const batchSize = 100;
-let offset = 0;
-let hasMore = true;
-
-while (hasMore) {
-  const batch = await memory.getConversationMessages("conversation-456", {
-    limit: batchSize,
-    offset: offset,
-  });
-
-  // Process batch
-  processBatch(batch);
-
-  hasMore = batch.length === batchSize;
-  offset += batchSize;
-}
 ```
 
 **Message Query Options:**
 
 - `limit` (optional): Maximum number of messages to return (default: 100)
-- `offset` (optional): Number of messages to skip for pagination (default: 0)
+- `before` (optional): Only messages created before this date
+- `after` (optional): Only messages created after this date
+- `roles` (optional): Filter by roles, e.g., `["user", "assistant"]`
 
 Messages are returned in chronological order (oldest first) for natural conversation flow.
 
@@ -500,3 +379,36 @@ Messages are returned in chronological order (oldest first) for natural conversa
 - Projects requiring a scalable, managed PostgreSQL database.
 - Scenarios where leveraging Supabase features like Auth, Realtime, or Storage alongside agent memory is beneficial.
 - Production environments where robust data management and security policies (RLS) are essential.
+
+## Working Memory
+
+`SupabaseMemoryAdapter` implements working memory operations used by `Memory`:
+
+- Conversation-scoped working memory is stored under `conversations.metadata.workingMemory`.
+- User-scoped working memory is stored in the `${tableName}_users` table `metadata.workingMemory` field.
+
+Enable via `Memory({ workingMemory: { enabled: true, template | schema, scope } })`. See: [Working Memory](./working-memory.md).
+
+Programmatic APIs (via `Memory`):
+
+- `getWorkingMemory({ conversationId?, userId? })`
+- `updateWorkingMemory({ conversationId?, userId?, content })`
+- `clearWorkingMemory({ conversationId?, userId? })`
+
+## Semantic Search (Embeddings + Vectors)
+
+Vector search is configured on `Memory` independently of the storage adapter. To enable semantic retrieval with Supabase storage, attach an embedding adapter and a vector adapter:
+
+```ts
+import { Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { SupabaseMemoryAdapter } from "@voltagent/supabase";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new SupabaseMemoryAdapter({ supabaseUrl, supabaseKey }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new InMemoryVectorAdapter(),
+});
+```
+
+Use with agent calls by passing `semanticMemory` options. See: [Semantic Search](./semantic-search.md).

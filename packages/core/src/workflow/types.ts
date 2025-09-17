@@ -1,11 +1,13 @@
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { UIMessage } from "ai";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
 import type { UsageInfo } from "../agent/providers";
 import type { UserContext } from "../agent/types";
 import type { Memory } from "../memory";
+import type { VoltAgentObservability } from "../observability";
 import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
@@ -179,9 +181,9 @@ export interface WorkflowRunOptions {
   /**
    * The user context, this can be used to track the current user context in a workflow
    */
-  userContext?: UserContext;
+  context?: UserContext;
   /**
-   * Override workflow memory storage for this specific execution
+   * Override Memory V2 for this specific execution
    * Takes priority over workflow config memory and global memory
    */
   memory?: Memory;
@@ -267,7 +269,7 @@ export type WorkflowHooks<DATA, RESULT> = {
 
 export type WorkflowInput<INPUT_SCHEMA extends InternalBaseWorkflowInputSchema> =
   TF.IsUnknown<INPUT_SCHEMA> extends true
-    ? BaseMessage | BaseMessage[] | string
+    ? BaseMessage | BaseMessage[] | UIMessage | UIMessage[] | string
     : INPUT_SCHEMA extends z.ZodTypeAny
       ? z.infer<INPUT_SCHEMA>
       : undefined;
@@ -315,8 +317,8 @@ export type WorkflowConfig<
    */
   hooks?: WorkflowHooks<WorkflowInput<INPUT_SCHEMA>, WorkflowResult<RESULT_SCHEMA>>;
   /**
-   * Memory storage for this workflow
-   * Overrides global workflow memory from VoltAgent
+   * Memory V2 for workflow state persistence
+   * Stores suspension/checkpoint data
    */
   memory?: Memory;
   /**
@@ -324,6 +326,11 @@ export type WorkflowConfig<
    * If not provided, will use the global logger or create a default one
    */
   logger?: Logger;
+  /**
+   * Observability instance for OpenTelemetry integration
+   * If not provided, will use global observability or create a default one
+   */
+  observability?: VoltAgentObservability;
 };
 
 /**
@@ -365,9 +372,27 @@ export type Workflow<
    */
   resumeSchema?: RESUME_SCHEMA;
   /**
-   * Memory storage for this workflow (exposed for registry access)
+   * Memory V2 for this workflow (always created with default if not provided)
    */
-  memory?: Memory;
+  memory: Memory;
+  /**
+   * Observability instance for OpenTelemetry integration
+   */
+  observability?: VoltAgentObservability;
+  /**
+   * Get the full state of the workflow including all steps
+   * @returns The serialized workflow state
+   */
+  getFullState: () => {
+    id: string;
+    name: string;
+    purpose: string;
+    stepsCount: number;
+    steps: DangerouslyAllowAny[];
+    inputSchema?: DangerouslyAllowAny;
+    suspendSchema?: DangerouslyAllowAny;
+    resumeSchema?: DangerouslyAllowAny;
+  };
   /**
    * Execute the workflow with the given input
    * @param input - The input to the workflow
@@ -530,7 +555,7 @@ export interface WorkflowStreamEvent {
   /**
    * User context passed through the workflow
    */
-  userContext?: UserContext;
+  context?: UserContext;
   /**
    * Timestamp of the event
    */
@@ -616,7 +641,7 @@ export interface WorkflowStreamResponse<RESULT_SCHEMA extends z.ZodTypeAny> {
 export interface CreateWorkflowExecutionOptions {
   userId?: string;
   conversationId?: string;
-  userContext?: UserContext;
+  context?: UserContext;
   metadata?: Record<string, unknown>;
   executionId?: string;
 }

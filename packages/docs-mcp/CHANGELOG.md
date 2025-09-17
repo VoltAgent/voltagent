@@ -1,5 +1,117 @@
 # @voltagent/docs-mcp
 
+## 1.0.2
+
+### Patch Changes
+
+- [#571](https://github.com/VoltAgent/voltagent/pull/571) [`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+## 1.0.2-next.1
+
+### Patch Changes
+
+- [#551](https://github.com/VoltAgent/voltagent/pull/551) [`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+## 1.0.2-next.0
+
+### Patch Changes
+
+- [#551](https://github.com/VoltAgent/voltagent/pull/551) [`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 1.0.1
+
+### Patch Changes
+
+- [#546](https://github.com/VoltAgent/voltagent/pull/546) [`f12f344`](https://github.com/VoltAgent/voltagent/commit/f12f34405edf0fcb417ed098deba62570260fb81) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: align Zod to ^3.25.76 and fix type mismatch with AI SDK
+
+  We aligned Zod versions across packages to `^3.25.76` to match AI SDK peer ranges and avoid multiple Zod instances at runtime.
+
+  Why this matters
+  - Fixes TypeScript narrowing issues in workflows when consuming `@voltagent/core` from npm with a different Zod instance (e.g., `ai` packages pulling newer Zod).
+  - Prevents errors like "Spread types may only be created from object types" where `data` failed to narrow because `z.ZodTypeAny` checks saw different Zod identities.
+
+  What changed
+  - `@voltagent/server-core`, `@voltagent/server-hono`: dependencies.zod → `^3.25.76`.
+  - `@voltagent/docs-mcp`, `@voltagent/core`: devDependencies.zod → `^3.25.76`.
+  - Examples and templates updated to use `^3.25.76` for consistency (non-publishable).
+
+  Notes for consumers
+  - Ensure a single Zod version is installed (consider a workspace override to pin Zod to `3.25.76`).
+  - This improves compatibility with `ai@5.x` packages that require `zod@^3.25.76 || ^4`.
+
+## 1.0.0
+
+### Minor Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: update docs & examples for V1
+
+## 1.0.0-next.1
+
+### Minor Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: update docs & examples for V1
+
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
 ## 0.2.3
 
 ### Patch Changes

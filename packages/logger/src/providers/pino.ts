@@ -1,5 +1,6 @@
 import pino from "pino";
 import type { LoggerOptions as PinoLoggerOptions } from "pino";
+import pinoPretty from "pino-pretty";
 import { getDefaultLogFormat, getDefaultLogLevel, getDefaultRedactionPaths } from "../formatters";
 import type { LogBuffer, Logger, LoggerOptions } from "../types";
 import type { LoggerProvider, LoggerWithProvider } from "./interface";
@@ -20,8 +21,42 @@ export class PinoLoggerProvider implements LoggerProvider {
   }
 
   public createLogger(options?: LoggerOptions): LoggerWithProvider {
+    // If an OpenTelemetry LoggerProvider is already available globally,
+    // initialize the Pino bridge before creating the Pino instance to ensure
+    // instrumentation patches apply to this instance.
+    try {
+      const provider = (globalThis as any).___voltagent_otel_logger_provider;
+      const init = (globalThis as any).___voltagent_init_pino_otel_bridge;
+      if (provider && typeof init === "function") {
+        init(provider);
+      }
+    } catch {
+      // Best-effort only
+    }
+
     const pinoOptions = this.createPinoOptions(options);
-    const pinoInstance = pino(pinoOptions);
+    const format = options?.format || getDefaultLogFormat();
+    const pretty = options?.pretty ?? process.env.NODE_ENV !== "production";
+    const shouldUsePretty = format === "pretty" && pretty;
+
+    let stream: ReturnType<typeof pinoPretty> | undefined;
+    if (shouldUsePretty) {
+      // Create pretty stream directly (no worker threads)
+      stream = pinoPretty({
+        colorize: true,
+        translateTime: "yyyy-mm-dd HH:MM:ss.l o",
+        ignore: "pid,hostname,env,component",
+        messageFormat:
+          "{msg}{if userId} | user={userId}{end}{if conversationId} | conv={conversationId}{end}{if executionId} | exec={executionId}{end}",
+        errorLikeObjectKeys: ["err", "error", "exception"],
+        errorProps: "",
+        singleLine: !["debug", "trace"].includes(options?.level || getDefaultLogLevel()),
+        messageKey: "msg",
+      });
+    }
+
+    // Pass stream as second parameter to avoid worker threads
+    const pinoInstance = stream ? pino(pinoOptions, stream) : pino(pinoOptions);
 
     return this.wrapPinoInstance(pinoInstance);
   }
@@ -81,21 +116,19 @@ export class PinoLoggerProvider implements LoggerProvider {
   }
 
   public getLogBuffer(): LogBuffer {
-    // Buffer management is now handled by core package
+    // Buffer management is now handled by OpenTelemetry
     throw new Error(
-      "Buffer management has been moved to @voltagent/core. Loggers no longer manage their own buffers.",
+      "Buffer management has been replaced by OpenTelemetry Logs API. Use observability features instead.",
     );
   }
 
   public async flush(): Promise<void> {
-    // Pino logs synchronously by default, so no flush needed.
-    // This method exists for LoggerProvider interface compatibility
-    // and future async transport support.
+    // Pino logs are now handled by OpenTelemetry which manages its own flushing
     return Promise.resolve();
   }
 
   public async close(): Promise<void> {
-    // Nothing to close - buffer management is handled by core
+    // OpenTelemetry bridge shutdown is handled by VoltAgentObservability
     return Promise.resolve();
   }
 
@@ -103,10 +136,6 @@ export class PinoLoggerProvider implements LoggerProvider {
    * Create Pino-specific options from generic logger options
    */
   private createPinoOptions(options: LoggerOptions = {}): PinoLoggerOptions {
-    const format = options.format || getDefaultLogFormat();
-    const pretty = options.pretty ?? process.env.NODE_ENV !== "production";
-    const shouldUsePretty = format === "pretty" && pretty;
-
     const pinoOptions: PinoLoggerOptions = {
       level: options.level || getDefaultLogLevel(),
       name: options.name,
@@ -142,23 +171,8 @@ export class PinoLoggerProvider implements LoggerProvider {
       },
     };
 
-    // Add pretty transport only in development
-    if (shouldUsePretty) {
-      pinoOptions.transport = {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
-          translateTime: "yyyy-MM-dd HH:mm:ss.l o",
-          ignore: "pid,hostname,env,component",
-          messageFormat:
-            "{msg}{if userId} | user={userId}{end}{if conversationId} | conv={conversationId}{end}{if executionId} | exec={executionId}{end}",
-          errorLikeObjectKeys: ["err", "error", "exception"],
-          errorProps: "",
-          singleLine: !["debug", "trace"].includes(options.level || getDefaultLogLevel()),
-          messageKey: "msg",
-        },
-      };
-    }
+    // Note: Pretty formatting is now handled via stream in createLogger method
+    // to avoid worker thread issues in Next.js and other environments
 
     // Remove VoltAgent-specific options before passing to Pino
     const {
