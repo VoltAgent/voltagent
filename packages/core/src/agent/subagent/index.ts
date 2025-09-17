@@ -396,11 +396,8 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         // If we have a UI writer, merge the subagent's stream with metadata
         if (uiStreamWriter && response.fullStream) {
           // Convert the subagent's fullStream to UI message stream
-          // Don't use messageMetadata as it only works at message level
-          const subagentUIStream = response.toUIMessageStream({
-            sendStart: false,
-            originalMessages: messages,
-          });
+          // Include all messages to maintain tool call/result pairing
+          const subagentUIStream = response.toUIMessageStream();
 
           // Wrap the stream with metadata enricher to add metadata to all parts
           // Apply type filters from supervisor config
@@ -482,7 +479,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         // If we have a UI writer, merge the subagent's UI stream with metadata
         if (uiStreamWriter && response.fullStream) {
           // Convert the subagent's fullStream to UI message stream
-          // Don't use messageMetadata as it only works at message level
+          // Include original messages to maintain tool call/result pairing
           const subagentUIStream = response.toUIMessageStream();
 
           // Wrap the stream with metadata enricher to add metadata to all parts
