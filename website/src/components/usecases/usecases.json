@@ -31,21 +31,63 @@
       "Get full observability with VoltOps"
     ],
     "features": [
-      { "title": "Recruiting Automation", "description": "Intake, screening, and interview scheduling.", "icon": "BriefcaseIcon" },
-      { "title": "Onboarding Agents", "description": "Docs, training, and account setup guidance.", "icon": "ClipboardDocumentCheckIcon" },
-      { "title": "Employee Support", "description": "Answers payroll, PTO, and benefits questions.", "icon": "ChatBubbleLeftRightIcon" },
-      { "title": "Policy & Compliance", "description": "Track compliance and produce audit-ready reports.", "icon": "ShieldCheckIcon" },
-      { "title": "Performance Reviews", "description": "Automate review cycles and feedback collection.", "icon": "ChartBarIcon" },
-      { "title": "Team Analytics", "description": "Track retention, engagement, and productivity metrics.", "icon": "PresentationChartLineIcon" }
+      {
+        "title": "Recruiting Automation",
+        "description": "Intake, screening, and interview scheduling.",
+        "icon": "BriefcaseIcon"
+      },
+      {
+        "title": "Onboarding Agents",
+        "description": "Docs, training, and account setup guidance.",
+        "icon": "ClipboardDocumentCheckIcon"
+      },
+      {
+        "title": "Employee Support",
+        "description": "Answers payroll, PTO, and benefits questions.",
+        "icon": "ChatBubbleLeftRightIcon"
+      },
+      {
+        "title": "Policy & Compliance",
+        "description": "Track compliance and produce audit-ready reports.",
+        "icon": "ShieldCheckIcon"
+      },
+      {
+        "title": "Performance Reviews",
+        "description": "Automate review cycles and feedback collection.",
+        "icon": "ChartBarIcon"
+      },
+      {
+        "title": "Team Analytics",
+        "description": "Track retention, engagement, and productivity metrics.",
+        "icon": "PresentationChartLineIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "Recruiting Pipeline Agent", "description": "Manages applications and schedules interviews." },
+      {
+        "name": "Recruiting Pipeline Agent",
+        "description": "Manages applications and schedules interviews."
+      },
       { "name": "Employee Onboarding Agent", "description": "Collects docs and assigns training." },
-      { "name": "Payroll & Benefits Agent", "description": "Answers salary, PTO, and benefits questions." },
-      { "name": "Compliance Monitoring Agent", "description": "Tracks labor laws and internal policies." },
-      { "name": "Exit & Offboarding Agent", "description": "Coordinates exit steps and access removal." },
-      { "name": "Performance Feedback Agent", "description": "Collects 360-degree feedback and generates insights." },
-      { "name": "Workforce Analytics Agent", "description": "Analyzes team dynamics and productivity patterns." }
+      {
+        "name": "Payroll & Benefits Agent",
+        "description": "Answers salary, PTO, and benefits questions."
+      },
+      {
+        "name": "Compliance Monitoring Agent",
+        "description": "Tracks labor laws and internal policies."
+      },
+      {
+        "name": "Exit & Offboarding Agent",
+        "description": "Coordinates exit steps and access removal."
+      },
+      {
+        "name": "Performance Feedback Agent",
+        "description": "Collects 360-degree feedback and generates insights."
+      },
+      {
+        "name": "Workforce Analytics Agent",
+        "description": "Analyzes team dynamics and productivity patterns."
+      }
     ],
     "capabilities": [
       "Manage recruiting pipelines and candidate tracking",
@@ -58,23 +100,59 @@
       "Maintain secure employee data and audit trails"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Build your HR workflows and policies in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate HRIS, payroll, compliance systems, and vector DBs." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index employee docs, tickets, and policies for accurate answers." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace workflows, tool calls, and decisions with full visibility." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Build your HR workflows and policies in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate HRIS, payroll, compliance systems, and vector DBs."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index employee docs, tickets, and policies for accurate answers."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace workflows, tool calls, and decisions with full visibility."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor dispatches to sub-agents and HR systems; memory stores context.",
       "agents": [
-        { "id": "recruiting", "label": "Recruiting Agent", "sublabel": "Hiring", "icon": "BriefcaseIcon" },
-        { "id": "onboarding", "label": "Onboarding Agent", "sublabel": "Setup", "icon": "ClipboardDocumentCheckIcon" },
-        { "id": "benefits", "label": "Benefits Agent", "sublabel": "Payroll", "icon": "CurrencyDollarIcon" }
+        {
+          "id": "recruiting",
+          "label": "Recruiting Agent",
+          "sublabel": "Hiring",
+          "icon": "BriefcaseIcon"
+        },
+        {
+          "id": "onboarding",
+          "label": "Onboarding Agent",
+          "sublabel": "Setup",
+          "icon": "ClipboardDocumentCheckIcon"
+        },
+        {
+          "id": "benefits",
+          "label": "Benefits Agent",
+          "sublabel": "Payroll",
+          "icon": "CurrencyDollarIcon"
+        }
       ],
       "tools": [
         { "id": "hris", "label": "HRIS", "sublabel": "Employee Data", "icon": "ServerStackIcon" },
-        { "id": "policies", "label": "Policy Engine", "sublabel": "Compliance", "icon": "ShieldCheckIcon" }
+        {
+          "id": "policies",
+          "label": "Policy Engine",
+          "sublabel": "Compliance",
+          "icon": "ShieldCheckIcon"
+        }
       ]
     }
   },
@@ -110,21 +188,66 @@
       "Ground answers in your KB and policies"
     ],
     "features": [
-      { "title": "Full Code Control", "description": "Multi-step workflows and SLA logic in TypeScript.", "icon": "CodeBracketIcon" },
-      { "title": "Integrate Any System", "description": "Connect CRM, ticketing, billing, logistics, or internal APIs.", "icon": "ServerStackIcon" },
-      { "title": "Policy Awareness", "description": "Stateful context, KB retrieval, and policy enforcement.", "icon": "CircleStackIcon" },
-      { "title": "VoltOps Observability", "description": "Trace decisions, tools, tokens, and latency.", "icon": "ChartBarIcon" },
-      { "title": "Multi-Channel Support", "description": "Handle chat, email, voice, and social channels.", "icon": "DevicePhoneMobileIcon" },
-      { "title": "Smart Escalation", "description": "Route complex issues based on sentiment and priority.", "icon": "ArrowUpIcon" }
+      {
+        "title": "Full Code Control",
+        "description": "Multi-step workflows and SLA logic in TypeScript.",
+        "icon": "CodeBracketIcon"
+      },
+      {
+        "title": "Integrate Any System",
+        "description": "Connect CRM, ticketing, billing, logistics, or internal APIs.",
+        "icon": "ServerStackIcon"
+      },
+      {
+        "title": "Policy Awareness",
+        "description": "Stateful context, KB retrieval, and policy enforcement.",
+        "icon": "CircleStackIcon"
+      },
+      {
+        "title": "VoltOps Observability",
+        "description": "Trace decisions, tools, tokens, and latency.",
+        "icon": "ChartBarIcon"
+      },
+      {
+        "title": "Multi-Channel Support",
+        "description": "Handle chat, email, voice, and social channels.",
+        "icon": "DevicePhoneMobileIcon"
+      },
+      {
+        "title": "Smart Escalation",
+        "description": "Route complex issues based on sentiment and priority.",
+        "icon": "ArrowUpIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "Enterprise Technical Support Agent", "description": "Finds API errors, checks logs, and proposes fixes." },
-      { "name": "E-commerce Service Agent", "description": "Orders, returns, inventory, and shipping checks." },
-      { "name": "Multi-Tier Escalation Agent", "description": "Routes by sentiment, priority, and SLA risk." },
-      { "name": "Billing & Refunds Agent", "description": "Resolves payment issues and pro-rated refunds." },
-      { "name": "Account & Access Agent", "description": "Handles roles, SSO/SAML, and security checks." },
-      { "name": "Product Knowledge Agent", "description": "Provides detailed product specs and troubleshooting." },
-      { "name": "Feedback Collection Agent", "description": "Gathers customer insights and satisfaction metrics." }
+      {
+        "name": "Enterprise Technical Support Agent",
+        "description": "Finds API errors, checks logs, and proposes fixes."
+      },
+      {
+        "name": "E-commerce Service Agent",
+        "description": "Orders, returns, inventory, and shipping checks."
+      },
+      {
+        "name": "Multi-Tier Escalation Agent",
+        "description": "Routes by sentiment, priority, and SLA risk."
+      },
+      {
+        "name": "Billing & Refunds Agent",
+        "description": "Resolves payment issues and pro-rated refunds."
+      },
+      {
+        "name": "Account & Access Agent",
+        "description": "Handles roles, SSO/SAML, and security checks."
+      },
+      {
+        "name": "Product Knowledge Agent",
+        "description": "Provides detailed product specs and troubleshooting."
+      },
+      {
+        "name": "Feedback Collection Agent",
+        "description": "Gathers customer insights and satisfaction metrics."
+      }
     ],
     "capabilities": [
       "Triage tickets across chat, email, and Slack",
@@ -137,18 +260,44 @@
       "Maintain conversation context and audit trails"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Build your support workflows and policies in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Wire CRM, ticketing, billing, logistics, and vector DBs." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index KB, past tickets, and product docs." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace decisions, tools, tokens, and latency." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Build your support workflows and policies in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Wire CRM, ticketing, billing, logistics, and vector DBs."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index KB, past tickets, and product docs."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace decisions, tools, tokens, and latency."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor dispatches to billing, account, or bug agents; tools provide data; memory stores context.",
       "agents": [
-        { "id": "billing", "label": "Billing Agent", "sublabel": "Payment", "icon": "CreditCardIcon" },
-        { "id": "account", "label": "Account Agent", "sublabel": "User Info", "icon": "QuestionMarkCircleIcon" },
+        {
+          "id": "billing",
+          "label": "Billing Agent",
+          "sublabel": "Payment",
+          "icon": "CreditCardIcon"
+        },
+        {
+          "id": "account",
+          "label": "Account Agent",
+          "sublabel": "User Info",
+          "icon": "QuestionMarkCircleIcon"
+        },
         { "id": "bug", "label": "Bug Triager", "sublabel": "Issues", "icon": "BugAntIcon" }
       ],
       "tools": [
@@ -189,21 +338,54 @@
       "Use VoltOps to audit every score and route"
     ],
     "features": [
-      { "title": "Custom Scoring Logic", "description": "Define ICP rules and intent signals.", "icon": "ChartBarIcon" },
-      { "title": "Data Enrichment", "description": "Pull firmographic/technographic data from any API.", "icon": "ServerStackIcon" },
-      { "title": "Outbound Automations", "description": "Trigger sequences and hand off with context.", "icon": "PaperAirplaneIcon" },
-      { "title": "Full Observability", "description": "Trace why a lead was scored or routed.", "icon": "EyeIcon" },
-      { "title": "Territory Management", "description": "Auto-assign leads based on geography and segments.", "icon": "MapIcon" },
-      { "title": "Pipeline Forecasting", "description": "Predict revenue and identify bottlenecks.", "icon": "TrendingUpIcon" }
+      {
+        "title": "Custom Scoring Logic",
+        "description": "Define ICP rules and intent signals.",
+        "icon": "ChartBarIcon"
+      },
+      {
+        "title": "Data Enrichment",
+        "description": "Pull firmographic/technographic data from any API.",
+        "icon": "ServerStackIcon"
+      },
+      {
+        "title": "Outbound Automations",
+        "description": "Trigger sequences and hand off with context.",
+        "icon": "PaperAirplaneIcon"
+      },
+      {
+        "title": "Full Observability",
+        "description": "Trace why a lead was scored or routed.",
+        "icon": "EyeIcon"
+      },
+      {
+        "title": "Territory Management",
+        "description": "Auto-assign leads based on geography and segments.",
+        "icon": "MapIcon"
+      },
+      {
+        "title": "Pipeline Forecasting",
+        "description": "Predict revenue and identify bottlenecks.",
+        "icon": "TrendingUpIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "Lead Qualification Agent", "description": "Scores leads by ICP, intent, and engagement." },
+      {
+        "name": "Lead Qualification Agent",
+        "description": "Scores leads by ICP, intent, and engagement."
+      },
       { "name": "Company Research Agent", "description": "Finds tech stack and key contacts." },
       { "name": "Prospecting Outreach Agent", "description": "Drafts emails and logs results." },
       { "name": "Account Routing Agent", "description": "Routes by territory and segment." },
       { "name": "PQL/Usage Agent", "description": "Detects product-qualified signals." },
-      { "name": "Pipeline Analytics Agent", "description": "Forecasts revenue and identifies bottlenecks." },
-      { "name": "Demo Scheduling Agent", "description": "Coordinates product demos and follow-ups." }
+      {
+        "name": "Pipeline Analytics Agent",
+        "description": "Forecasts revenue and identifies bottlenecks."
+      },
+      {
+        "name": "Demo Scheduling Agent",
+        "description": "Coordinates product demos and follow-ups."
+      }
     ],
     "capabilities": [
       "Score leads with custom ICP rules and signals",
@@ -216,23 +398,54 @@
       "Sync all activities back to CRM automatically"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Implement scoring, research, and outreach logic in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate CRM, enrichment, email, and analytics." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index playbooks, personas, and case studies." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Audit scores, routes, and outcomes." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Implement scoring, research, and outreach logic in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate CRM, enrichment, email, and analytics."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index playbooks, personas, and case studies."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Audit scores, routes, and outcomes."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor orchestrates qualification, enrichment, and routing.",
       "agents": [
-        { "id": "qualifier", "label": "Lead Qualifier", "sublabel": "Scoring", "icon": "ChartBarIcon" },
-        { "id": "enrichment", "label": "Data Enricher", "sublabel": "Profile", "icon": "SparklesIcon" },
+        {
+          "id": "qualifier",
+          "label": "Lead Qualifier",
+          "sublabel": "Scoring",
+          "icon": "ChartBarIcon"
+        },
+        {
+          "id": "enrichment",
+          "label": "Data Enricher",
+          "sublabel": "Profile",
+          "icon": "SparklesIcon"
+        },
         { "id": "router", "label": "SDR Router", "sublabel": "Assignment", "icon": "ArrowPathIcon" }
       ],
       "tools": [
         { "id": "crm", "label": "CRM", "sublabel": "Salesforce", "icon": "ServerStackIcon" },
-        { "id": "outreach", "label": "Outreach", "sublabel": "Messaging", "icon": "ChatBubbleLeftRightIcon" }
+        {
+          "id": "outreach",
+          "label": "Outreach",
+          "sublabel": "Messaging",
+          "icon": "ChatBubbleLeftRightIcon"
+        }
       ]
     }
   },
@@ -268,21 +481,66 @@
       "Full audit trails and explanations with VoltOps"
     ],
     "features": [
-      { "title": "Invoice Automation", "description": "Extract, validate, and route invoices with custom rules.", "icon": "DocumentTextIcon" },
-      { "title": "Expense Review", "description": "Check receipts, enforce limits, and trigger approvals.", "icon": "ClipboardDocumentCheckIcon" },
-      { "title": "Reconciliation", "description": "Match transactions across bank, ERP, and billing systems.", "icon": "ArrowsRightLeftIcon" },
-      { "title": "Reporting & Audit", "description": "Generate reports and keep complete logs.", "icon": "DocumentMagnifyingGlassIcon" },
-      { "title": "Budget Monitoring", "description": "Track spending against budgets in real-time.", "icon": "CalculatorIcon" },
-      { "title": "Tax Compliance", "description": "Calculate taxes and ensure regulatory compliance.", "icon": "ReceiptPercentIcon" }
+      {
+        "title": "Invoice Automation",
+        "description": "Extract, validate, and route invoices with custom rules.",
+        "icon": "DocumentTextIcon"
+      },
+      {
+        "title": "Expense Review",
+        "description": "Check receipts, enforce limits, and trigger approvals.",
+        "icon": "ClipboardDocumentCheckIcon"
+      },
+      {
+        "title": "Reconciliation",
+        "description": "Match transactions across bank, ERP, and billing systems.",
+        "icon": "ArrowsRightLeftIcon"
+      },
+      {
+        "title": "Reporting & Audit",
+        "description": "Generate reports and keep complete logs.",
+        "icon": "DocumentMagnifyingGlassIcon"
+      },
+      {
+        "title": "Budget Monitoring",
+        "description": "Track spending against budgets in real-time.",
+        "icon": "CalculatorIcon"
+      },
+      {
+        "title": "Tax Compliance",
+        "description": "Calculate taxes and ensure regulatory compliance.",
+        "icon": "ReceiptPercentIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "AP Invoice Agent", "description": "Parses invoices, checks vendor terms, and posts to ERP." },
-      { "name": "Expense Policy Agent", "description": "Flags out-of-policy spend and requests corrections." },
-      { "name": "Cash Reconciliation Agent", "description": "Matches bank transactions to ledger entries and invoices." },
-      { "name": "Revenue Analytics Agent", "description": "Builds MRR/ARR, churn, and cohort views." },
-      { "name": "Budget Variance Agent", "description": "Monitors budgets vs actuals and alerts owners." },
-      { "name": "Tax Compliance Agent", "description": "Calculates tax liabilities and ensures filing compliance." },
-      { "name": "Financial Forecasting Agent", "description": "Projects cash flow and identifies funding needs." }
+      {
+        "name": "AP Invoice Agent",
+        "description": "Parses invoices, checks vendor terms, and posts to ERP."
+      },
+      {
+        "name": "Expense Policy Agent",
+        "description": "Flags out-of-policy spend and requests corrections."
+      },
+      {
+        "name": "Cash Reconciliation Agent",
+        "description": "Matches bank transactions to ledger entries and invoices."
+      },
+      {
+        "name": "Revenue Analytics Agent",
+        "description": "Builds MRR/ARR, churn, and cohort views."
+      },
+      {
+        "name": "Budget Variance Agent",
+        "description": "Monitors budgets vs actuals and alerts owners."
+      },
+      {
+        "name": "Tax Compliance Agent",
+        "description": "Calculates tax liabilities and ensures filing compliance."
+      },
+      {
+        "name": "Financial Forecasting Agent",
+        "description": "Projects cash flow and identifies funding needs."
+      }
     ],
     "capabilities": [
       "Extract data from invoices, PDFs, and emails",
@@ -295,23 +553,64 @@
       "Support multi-entity and multi-currency operations"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Define invoice, expense, and reporting flows in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate ERP, banking, billing, and payroll systems." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index policies, vendor terms, and past records." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Audit every action, approval, and data change end-to-end." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Define invoice, expense, and reporting flows in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate ERP, banking, billing, and payroll systems."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index policies, vendor terms, and past records."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Audit every action, approval, and data change end-to-end."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor dispatches to invoice, expense, and reporting agents; tools provide financial data.",
       "agents": [
-        { "id": "invoice", "label": "Invoice Agent", "sublabel": "Processing", "icon": "DocumentTextIcon" },
-        { "id": "expense", "label": "Expense Agent", "sublabel": "Approval", "icon": "ReceiptPercentIcon" },
-        { "id": "reporting", "label": "Reporting Agent", "sublabel": "Analytics", "icon": "ChartBarIcon" }
+        {
+          "id": "invoice",
+          "label": "Invoice Agent",
+          "sublabel": "Processing",
+          "icon": "DocumentTextIcon"
+        },
+        {
+          "id": "expense",
+          "label": "Expense Agent",
+          "sublabel": "Approval",
+          "icon": "ReceiptPercentIcon"
+        },
+        {
+          "id": "reporting",
+          "label": "Reporting Agent",
+          "sublabel": "Analytics",
+          "icon": "ChartBarIcon"
+        }
       ],
       "tools": [
-        { "id": "erp", "label": "ERP System", "sublabel": "Financial Data", "icon": "ServerStackIcon" },
-        { "id": "banking", "label": "Banking API", "sublabel": "Transactions", "icon": "BanknotesIcon" }
+        {
+          "id": "erp",
+          "label": "ERP System",
+          "sublabel": "Financial Data",
+          "icon": "ServerStackIcon"
+        },
+        {
+          "id": "banking",
+          "label": "Banking API",
+          "sublabel": "Transactions",
+          "icon": "BanknotesIcon"
+        }
       ]
     }
   },
@@ -347,21 +646,66 @@
       "Use VoltOps to debug false positives and latency"
     ],
     "features": [
-      { "title": "Code Review Intelligence", "description": "Check architecture rules, performance hotspots, and security patterns.", "icon": "ShieldCheckIcon" },
-      { "title": "CI/CD Automation", "description": "Gate merges, run tests, and promote releases with policy checks.", "icon": "Cog6ToothIcon" },
-      { "title": "On-call Assistant", "description": "Summarize incidents, fetch logs/metrics, and suggest runbooks.", "icon": "BellAlertIcon" },
-      { "title": "Traceable Decisions", "description": "Explain each finding and action through VoltOps traces.", "icon": "ChartBarIcon" },
-      { "title": "Tech Debt Tracking", "description": "Monitor code quality and prioritize refactoring.", "icon": "ExclamationTriangleIcon" },
-      { "title": "Dependency Analysis", "description": "Check for vulnerabilities and outdated packages.", "icon": "CubeTransparentIcon" }
+      {
+        "title": "Code Review Intelligence",
+        "description": "Check architecture rules, performance hotspots, and security patterns.",
+        "icon": "ShieldCheckIcon"
+      },
+      {
+        "title": "CI/CD Automation",
+        "description": "Gate merges, run tests, and promote releases with policy checks.",
+        "icon": "Cog6ToothIcon"
+      },
+      {
+        "title": "On-call Assistant",
+        "description": "Summarize incidents, fetch logs/metrics, and suggest runbooks.",
+        "icon": "BellAlertIcon"
+      },
+      {
+        "title": "Traceable Decisions",
+        "description": "Explain each finding and action through VoltOps traces.",
+        "icon": "ChartBarIcon"
+      },
+      {
+        "title": "Tech Debt Tracking",
+        "description": "Monitor code quality and prioritize refactoring.",
+        "icon": "ExclamationTriangleIcon"
+      },
+      {
+        "title": "Dependency Analysis",
+        "description": "Check for vulnerabilities and outdated packages.",
+        "icon": "CubeTransparentIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "Architecture Compliance Agent", "description": "Verifies boundaries, dependencies, and API contracts." },
-      { "name": "Performance Review Agent", "description": "Flags hotspots, proposes fixes, and tracks regressions." },
-      { "name": "Security Scan Agent", "description": "Checks vulns, secrets, and auth flows across services." },
-      { "name": "CI Gatekeeper Agent", "description": "Enforces test coverage, size limits, and release criteria." },
-      { "name": "Issue Triage Agent", "description": "Deduplicates reports, extracts repro steps, and labels issues." },
-      { "name": "Documentation Agent", "description": "Generates code comments and API documentation." },
-      { "name": "Dependency Update Agent", "description": "Monitors and updates outdated dependencies safely." }
+      {
+        "name": "Architecture Compliance Agent",
+        "description": "Verifies boundaries, dependencies, and API contracts."
+      },
+      {
+        "name": "Performance Review Agent",
+        "description": "Flags hotspots, proposes fixes, and tracks regressions."
+      },
+      {
+        "name": "Security Scan Agent",
+        "description": "Checks vulns, secrets, and auth flows across services."
+      },
+      {
+        "name": "CI Gatekeeper Agent",
+        "description": "Enforces test coverage, size limits, and release criteria."
+      },
+      {
+        "name": "Issue Triage Agent",
+        "description": "Deduplicates reports, extracts repro steps, and labels issues."
+      },
+      {
+        "name": "Documentation Agent",
+        "description": "Generates code comments and API documentation."
+      },
+      {
+        "name": "Dependency Update Agent",
+        "description": "Monitors and updates outdated dependencies safely."
+      }
     ],
     "capabilities": [
       "Analyze code diffs with architectural context",
@@ -374,19 +718,50 @@
       "Integrate with GitHub, GitLab, Jira, and more"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Write review, CI, and on-call logic in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Link repos, CI/CD, issue trackers, and observability." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index docs, ADRs, and runbooks for grounded guidance." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace findings, false positives, and SLO impact." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Write review, CI, and on-call logic in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Link repos, CI/CD, issue trackers, and observability."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index docs, ADRs, and runbooks for grounded guidance."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace findings, false positives, and SLO impact."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor coordinates review, security, and performance agents; tools supply CI and repo data.",
       "agents": [
-        { "id": "reviewer", "label": "Code Reviewer", "sublabel": "Analysis", "icon": "CodeBracketSquareIcon" },
-        { "id": "security", "label": "Security Scanner", "sublabel": "Vulnerabilities", "icon": "ShieldCheckIcon" },
-        { "id": "performance", "label": "Performance Agent", "sublabel": "Optimization", "icon": "ArrowTrendingUpIcon" }
+        {
+          "id": "reviewer",
+          "label": "Code Reviewer",
+          "sublabel": "Analysis",
+          "icon": "CodeBracketSquareIcon"
+        },
+        {
+          "id": "security",
+          "label": "Security Scanner",
+          "sublabel": "Vulnerabilities",
+          "icon": "ShieldCheckIcon"
+        },
+        {
+          "id": "performance",
+          "label": "Performance Agent",
+          "sublabel": "Optimization",
+          "icon": "ArrowTrendingUpIcon"
+        }
       ],
       "tools": [
         { "id": "ci", "label": "CI/CD", "sublabel": "Build Pipeline", "icon": "ServerStackIcon" },
@@ -426,21 +801,63 @@
       "Unify workflows across email, ads, and social"
     ],
     "features": [
-      { "title": "Campaign Builder", "description": "Create cross-channel campaigns with rules and triggers.", "icon": "CalendarDaysIcon" },
-      { "title": "Content Personalization", "description": "Tailor copy and creatives to audiences.", "icon": "SparklesIcon" },
-      { "title": "Attribution Analytics", "description": "Track ROI and multi-touch attribution across channels.", "icon": "ChartBarIcon" },
-      { "title": "A/B Testing", "description": "Run and evaluate experiments with VoltOps traces.", "icon": "BeakerIcon" },
-      { "title": "Lead Scoring", "description": "Identify high-value prospects with behavioral data.", "icon": "FireIcon" },
-      { "title": "Social Listening", "description": "Monitor brand mentions and engagement across platforms.", "icon": "HashtagIcon" }
+      {
+        "title": "Campaign Builder",
+        "description": "Create cross-channel campaigns with rules and triggers.",
+        "icon": "CalendarDaysIcon"
+      },
+      {
+        "title": "Content Personalization",
+        "description": "Tailor copy and creatives to audiences.",
+        "icon": "SparklesIcon"
+      },
+      {
+        "title": "Attribution Analytics",
+        "description": "Track ROI and multi-touch attribution across channels.",
+        "icon": "ChartBarIcon"
+      },
+      {
+        "title": "A/B Testing",
+        "description": "Run and evaluate experiments with VoltOps traces.",
+        "icon": "BeakerIcon"
+      },
+      {
+        "title": "Lead Scoring",
+        "description": "Identify high-value prospects with behavioral data.",
+        "icon": "FireIcon"
+      },
+      {
+        "title": "Social Listening",
+        "description": "Monitor brand mentions and engagement across platforms.",
+        "icon": "HashtagIcon"
+      }
     ],
     "exampleAgents": [
       { "name": "Ad Campaign Agent", "description": "Sets up targeting, budgets, and creatives." },
-      { "name": "Content Writer Agent", "description": "Generates brand-consistent blog, ad, and email copy." },
-      { "name": "SEO Optimization Agent", "description": "Analyzes keywords, backlinks, and rankings." },
-      { "name": "Attribution Agent", "description": "Builds reports on campaign ROI and touchpoints." },
-      { "name": "Social Engagement Agent", "description": "Schedules posts and replies to audience engagement." },
-      { "name": "Lead Nurturing Agent", "description": "Manages drip campaigns and engagement tracking." },
-      { "name": "Brand Monitoring Agent", "description": "Tracks mentions and sentiment across channels." }
+      {
+        "name": "Content Writer Agent",
+        "description": "Generates brand-consistent blog, ad, and email copy."
+      },
+      {
+        "name": "SEO Optimization Agent",
+        "description": "Analyzes keywords, backlinks, and rankings."
+      },
+      {
+        "name": "Attribution Agent",
+        "description": "Builds reports on campaign ROI and touchpoints."
+      },
+      {
+        "name": "Social Engagement Agent",
+        "description": "Schedules posts and replies to audience engagement."
+      },
+      {
+        "name": "Lead Nurturing Agent",
+        "description": "Manages drip campaigns and engagement tracking."
+      },
+      {
+        "name": "Brand Monitoring Agent",
+        "description": "Tracks mentions and sentiment across channels."
+      }
     ],
     "capabilities": [
       "Launch multi-channel campaigns automatically",
@@ -453,19 +870,50 @@
       "Automate SEO checks and optimization tasks"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Code campaign rules and workflows in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate CRM, ad platforms, CMS, and analytics." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index past campaigns, brand guidelines, and assets." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace campaigns, ROI, and attribution across systems." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Code campaign rules and workflows in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate CRM, ad platforms, CMS, and analytics."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index past campaigns, brand guidelines, and assets."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace campaigns, ROI, and attribution across systems."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor orchestrates campaign planning, content generation, and analytics agents.",
       "agents": [
-        { "id": "campaigns", "label": "Campaign Agent", "sublabel": "Planning", "icon": "CalendarDaysIcon" },
-        { "id": "content", "label": "Content Agent", "sublabel": "Creative", "icon": "SparklesIcon" },
-        { "id": "analytics", "label": "Analytics Agent", "sublabel": "Reporting", "icon": "ChartBarIcon" }
+        {
+          "id": "campaigns",
+          "label": "Campaign Agent",
+          "sublabel": "Planning",
+          "icon": "CalendarDaysIcon"
+        },
+        {
+          "id": "content",
+          "label": "Content Agent",
+          "sublabel": "Creative",
+          "icon": "SparklesIcon"
+        },
+        {
+          "id": "analytics",
+          "label": "Analytics Agent",
+          "sublabel": "Reporting",
+          "icon": "ChartBarIcon"
+        }
       ],
       "tools": [
         { "id": "crm", "label": "CRM", "sublabel": "Audience Data", "icon": "UserGroupIcon" },
@@ -505,21 +953,57 @@
       "Trace decisions and justifications with VoltOps"
     ],
     "features": [
-      { "title": "Contract Analysis", "description": "Identify risky clauses, missing terms, and compliance gaps.", "icon": "DocumentTextIcon" },
-      { "title": "Policy Enforcement", "description": "Check agreements against internal and regulatory policies.", "icon": "ShieldCheckIcon" },
-      { "title": "Redline Automation", "description": "Propose edits and generate comparison reports.", "icon": "PencilSquareIcon" },
-      { "title": "Audit Trails", "description": "Maintain logs of every check and recommendation.", "icon": "ClipboardDocumentCheckIcon" },
-      { "title": "Matter Management", "description": "Track deadlines, tasks, and document versions.", "icon": "FolderOpenIcon" },
-      { "title": "E-signature Integration", "description": "Route contracts for digital signatures automatically.", "icon": "PencilIcon" }
+      {
+        "title": "Contract Analysis",
+        "description": "Identify risky clauses, missing terms, and compliance gaps.",
+        "icon": "DocumentTextIcon"
+      },
+      {
+        "title": "Policy Enforcement",
+        "description": "Check agreements against internal and regulatory policies.",
+        "icon": "ShieldCheckIcon"
+      },
+      {
+        "title": "Redline Automation",
+        "description": "Propose edits and generate comparison reports.",
+        "icon": "PencilSquareIcon"
+      },
+      {
+        "title": "Audit Trails",
+        "description": "Maintain logs of every check and recommendation.",
+        "icon": "ClipboardDocumentCheckIcon"
+      },
+      {
+        "title": "Matter Management",
+        "description": "Track deadlines, tasks, and document versions.",
+        "icon": "FolderOpenIcon"
+      },
+      {
+        "title": "E-signature Integration",
+        "description": "Route contracts for digital signatures automatically.",
+        "icon": "PencilIcon"
+      }
     ],
     "exampleAgents": [
       { "name": "Contract Review Agent", "description": "Scans clauses for risks and deviations." },
       { "name": "Compliance Check Agent", "description": "Flags GDPR, HIPAA, or SOX violations." },
       { "name": "IP Protection Agent", "description": "Checks ownership and licensing terms." },
-      { "name": "Redline Drafting Agent", "description": "Suggests edits to draft safer agreements." },
-      { "name": "Litigation Risk Agent", "description": "Evaluates case law precedents and disputes." },
-      { "name": "Discovery Document Agent", "description": "Organizes and analyzes documents for legal discovery." },
-      { "name": "Policy Update Agent", "description": "Tracks regulatory changes and updates policies." }
+      {
+        "name": "Redline Drafting Agent",
+        "description": "Suggests edits to draft safer agreements."
+      },
+      {
+        "name": "Litigation Risk Agent",
+        "description": "Evaluates case law precedents and disputes."
+      },
+      {
+        "name": "Discovery Document Agent",
+        "description": "Organizes and analyzes documents for legal discovery."
+      },
+      {
+        "name": "Policy Update Agent",
+        "description": "Tracks regulatory changes and updates policies."
+      }
     ],
     "capabilities": [
       "Parse contracts and extract key clauses",
@@ -532,23 +1016,59 @@
       "Index case law and regulatory updates"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Define review and compliance checks in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate doc systems, policy engines, and KBs." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index contracts, laws, and prior cases for retrieval." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace decisions and explanations for compliance." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Define review and compliance checks in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate doc systems, policy engines, and KBs."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index contracts, laws, and prior cases for retrieval."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace decisions and explanations for compliance."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor orchestrates contract analysis, compliance, and redline agents.",
       "agents": [
-        { "id": "contract", "label": "Contract Agent", "sublabel": "Review", "icon": "DocumentTextIcon" },
-        { "id": "compliance", "label": "Compliance Agent", "sublabel": "Policy", "icon": "ShieldCheckIcon" },
-        { "id": "redline", "label": "Redline Agent", "sublabel": "Draft", "icon": "PencilSquareIcon" }
+        {
+          "id": "contract",
+          "label": "Contract Agent",
+          "sublabel": "Review",
+          "icon": "DocumentTextIcon"
+        },
+        {
+          "id": "compliance",
+          "label": "Compliance Agent",
+          "sublabel": "Policy",
+          "icon": "ShieldCheckIcon"
+        },
+        {
+          "id": "redline",
+          "label": "Redline Agent",
+          "sublabel": "Draft",
+          "icon": "PencilSquareIcon"
+        }
       ],
       "tools": [
         { "id": "docs", "label": "Doc System", "sublabel": "Contracts", "icon": "FolderIcon" },
-        { "id": "policies", "label": "Policy Engine", "sublabel": "Regulations", "icon": "ShieldCheckIcon" }
+        {
+          "id": "policies",
+          "label": "Policy Engine",
+          "sublabel": "Regulations",
+          "icon": "ShieldCheckIcon"
+        }
       ]
     }
   },
@@ -584,21 +1104,60 @@
       "Trace every claim and decision with VoltOps"
     ],
     "features": [
-      { "title": "Claims Automation", "description": "Classify, validate, and approve claims quickly.", "icon": "ClipboardDocumentCheckIcon" },
-      { "title": "Underwriting Rules", "description": "Apply consistent risk scoring and thresholds.", "icon": "ScaleIcon" },
-      { "title": "Policy Management", "description": "Generate, update, and explain policy terms.", "icon": "DocumentTextIcon" },
-      { "title": "Fraud Detection", "description": "Detect anomalies and prevent fraudulent claims.", "icon": "ExclamationTriangleIcon" },
-      { "title": "Customer Portal", "description": "Self-service claims submission and tracking.", "icon": "ComputerDesktopIcon" },
-      { "title": "Risk Assessment", "description": "Evaluate exposure and calculate premiums dynamically.", "icon": "CalculatorIcon" }
+      {
+        "title": "Claims Automation",
+        "description": "Classify, validate, and approve claims quickly.",
+        "icon": "ClipboardDocumentCheckIcon"
+      },
+      {
+        "title": "Underwriting Rules",
+        "description": "Apply consistent risk scoring and thresholds.",
+        "icon": "ScaleIcon"
+      },
+      {
+        "title": "Policy Management",
+        "description": "Generate, update, and explain policy terms.",
+        "icon": "DocumentTextIcon"
+      },
+      {
+        "title": "Fraud Detection",
+        "description": "Detect anomalies and prevent fraudulent claims.",
+        "icon": "ExclamationTriangleIcon"
+      },
+      {
+        "title": "Customer Portal",
+        "description": "Self-service claims submission and tracking.",
+        "icon": "ComputerDesktopIcon"
+      },
+      {
+        "title": "Risk Assessment",
+        "description": "Evaluate exposure and calculate premiums dynamically.",
+        "icon": "CalculatorIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "Claims Processing Agent", "description": "Validates claims against policies and docs." },
-      { "name": "Underwriting Agent", "description": "Scores risks and applies underwriting rules." },
-      { "name": "Policy Explainer Agent", "description": "Simplifies policies for customer understanding." },
+      {
+        "name": "Claims Processing Agent",
+        "description": "Validates claims against policies and docs."
+      },
+      {
+        "name": "Underwriting Agent",
+        "description": "Scores risks and applies underwriting rules."
+      },
+      {
+        "name": "Policy Explainer Agent",
+        "description": "Simplifies policies for customer understanding."
+      },
       { "name": "Fraud Detection Agent", "description": "Flags suspicious claims and patterns." },
       { "name": "Renewals Agent", "description": "Automates renewals and premium adjustments." },
-      { "name": "Customer Retention Agent", "description": "Identifies at-risk policies and proposes retention offers." },
-      { "name": "Risk Assessment Agent", "description": "Evaluates new risks and adjusts coverage recommendations." }
+      {
+        "name": "Customer Retention Agent",
+        "description": "Identifies at-risk policies and proposes retention offers."
+      },
+      {
+        "name": "Risk Assessment Agent",
+        "description": "Evaluates new risks and adjusts coverage recommendations."
+      }
     ],
     "capabilities": [
       "Process claims with automated validation",
@@ -611,23 +1170,64 @@
       "Integrate with third-party data providers"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Define claim and underwriting logic in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate claims systems, CRMs, and policy engines." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index past claims, policies, and outcomes." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace claims, fraud checks, and underwriting results." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Define claim and underwriting logic in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate claims systems, CRMs, and policy engines."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index past claims, policies, and outcomes."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace claims, fraud checks, and underwriting results."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor coordinates claims, underwriting, and fraud detection agents.",
       "agents": [
-        { "id": "claims", "label": "Claims Agent", "sublabel": "Processing", "icon": "ClipboardDocumentCheckIcon" },
-        { "id": "underwriting", "label": "Underwriting Agent", "sublabel": "Risk", "icon": "ScaleIcon" },
-        { "id": "fraud", "label": "Fraud Agent", "sublabel": "Detection", "icon": "ExclamationTriangleIcon" }
+        {
+          "id": "claims",
+          "label": "Claims Agent",
+          "sublabel": "Processing",
+          "icon": "ClipboardDocumentCheckIcon"
+        },
+        {
+          "id": "underwriting",
+          "label": "Underwriting Agent",
+          "sublabel": "Risk",
+          "icon": "ScaleIcon"
+        },
+        {
+          "id": "fraud",
+          "label": "Fraud Agent",
+          "sublabel": "Detection",
+          "icon": "ExclamationTriangleIcon"
+        }
       ],
       "tools": [
-        { "id": "claims-system", "label": "Claims System", "sublabel": "Cases", "icon": "FolderIcon" },
-        { "id": "policy-engine", "label": "Policy Engine", "sublabel": "Rules", "icon": "ShieldCheckIcon" }
+        {
+          "id": "claims-system",
+          "label": "Claims System",
+          "sublabel": "Cases",
+          "icon": "FolderIcon"
+        },
+        {
+          "id": "policy-engine",
+          "label": "Policy Engine",
+          "sublabel": "Rules",
+          "icon": "ShieldCheckIcon"
+        }
       ]
     }
   },
@@ -663,21 +1263,57 @@
       "Trace root causes with VoltOps observability"
     ],
     "features": [
-      { "title": "Predictive Maintenance", "description": "Use data to predict failures and schedule repairs.", "icon": "WrenchIcon" },
-      { "title": "IoT Monitoring", "description": "Streamline IoT data from multiple sensors.", "icon": "ServerStackIcon" },
-      { "title": "Safety Compliance", "description": "Automate OSHA and safety checks.", "icon": "ShieldCheckIcon" },
-      { "title": "Root Cause Analysis", "description": "Trace equipment failures with full logs.", "icon": "MagnifyingGlassIcon" },
-      { "title": "Energy Optimization", "description": "Monitor consumption and reduce operational costs.", "icon": "BoltIcon" },
-      { "title": "Quality Control", "description": "Detect defects with computer vision and ML.", "icon": "CameraIcon" }
+      {
+        "title": "Predictive Maintenance",
+        "description": "Use data to predict failures and schedule repairs.",
+        "icon": "WrenchIcon"
+      },
+      {
+        "title": "IoT Monitoring",
+        "description": "Streamline IoT data from multiple sensors.",
+        "icon": "ServerStackIcon"
+      },
+      {
+        "title": "Safety Compliance",
+        "description": "Automate OSHA and safety checks.",
+        "icon": "ShieldCheckIcon"
+      },
+      {
+        "title": "Root Cause Analysis",
+        "description": "Trace equipment failures with full logs.",
+        "icon": "MagnifyingGlassIcon"
+      },
+      {
+        "title": "Energy Optimization",
+        "description": "Monitor consumption and reduce operational costs.",
+        "icon": "BoltIcon"
+      },
+      {
+        "title": "Quality Control",
+        "description": "Detect defects with computer vision and ML.",
+        "icon": "CameraIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "Machine Health Agent", "description": "Monitors sensors for predictive failures." },
+      {
+        "name": "Machine Health Agent",
+        "description": "Monitors sensors for predictive failures."
+      },
       { "name": "Safety Compliance Agent", "description": "Enforces safety rules and standards." },
-      { "name": "Maintenance Scheduler Agent", "description": "Plans preventive maintenance schedules." },
+      {
+        "name": "Maintenance Scheduler Agent",
+        "description": "Plans preventive maintenance schedules."
+      },
       { "name": "Root Cause Agent", "description": "Analyzes logs and IoT signals for cause." },
       { "name": "Energy Optimization Agent", "description": "Suggests efficiency improvements." },
-      { "name": "Supply Chain Agent", "description": "Tracks inventory and manages supplier relationships." },
-      { "name": "Quality Control Agent", "description": "Monitors production quality and defect rates." }
+      {
+        "name": "Supply Chain Agent",
+        "description": "Tracks inventory and manages supplier relationships."
+      },
+      {
+        "name": "Quality Control Agent",
+        "description": "Monitors production quality and defect rates."
+      }
     ],
     "capabilities": [
       "Ingest real-time IoT sensor data streams",
@@ -690,19 +1326,50 @@
       "Integrate with SCADA, MES, and ERP systems"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Implement predictive maintenance in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate IoT platforms, ERP, and safety systems." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index logs, failures, and maintenance records." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace failures, predictions, and safety compliance." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Implement predictive maintenance in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate IoT platforms, ERP, and safety systems."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index logs, failures, and maintenance records."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace failures, predictions, and safety compliance."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor coordinates machine monitoring, safety, and scheduling agents.",
       "agents": [
-        { "id": "health", "label": "Machine Health Agent", "sublabel": "Monitoring", "icon": "WrenchIcon" },
-        { "id": "safety", "label": "Safety Agent", "sublabel": "Compliance", "icon": "ShieldCheckIcon" },
-        { "id": "scheduler", "label": "Maintenance Agent", "sublabel": "Planning", "icon": "CalendarIcon" }
+        {
+          "id": "health",
+          "label": "Machine Health Agent",
+          "sublabel": "Monitoring",
+          "icon": "WrenchIcon"
+        },
+        {
+          "id": "safety",
+          "label": "Safety Agent",
+          "sublabel": "Compliance",
+          "icon": "ShieldCheckIcon"
+        },
+        {
+          "id": "scheduler",
+          "label": "Maintenance Agent",
+          "sublabel": "Planning",
+          "icon": "CalendarIcon"
+        }
       ],
       "tools": [
         { "id": "iot", "label": "IoT Platform", "sublabel": "Sensors", "icon": "ServerStackIcon" },
@@ -742,21 +1409,66 @@
       "Use VoltOps to trace guidance and outcomes"
     ],
     "features": [
-      { "title": "Personalized Tutoring", "description": "Explain concepts, suggest practice, and reference materials.", "icon": "LightBulbIcon" },
-      { "title": "Academic Advising", "description": "Recommend courses and track degree progress.", "icon": "ClipboardDocumentCheckIcon" },
-      { "title": "Admin Automation", "description": "Handle enrollment, deadlines, and forms with policy checks.", "icon": "DocumentTextIcon" },
-      { "title": "Learning Analytics", "description": "Summarize engagement and flag at-risk students.", "icon": "ChartBarIcon" },
-      { "title": "Assignment Help", "description": "Guide students through homework without giving answers.", "icon": "PencilIcon" },
-      { "title": "Parent Portal", "description": "Share progress updates and attendance reports.", "icon": "UsersIcon" }
+      {
+        "title": "Personalized Tutoring",
+        "description": "Explain concepts, suggest practice, and reference materials.",
+        "icon": "LightBulbIcon"
+      },
+      {
+        "title": "Academic Advising",
+        "description": "Recommend courses and track degree progress.",
+        "icon": "ClipboardDocumentCheckIcon"
+      },
+      {
+        "title": "Admin Automation",
+        "description": "Handle enrollment, deadlines, and forms with policy checks.",
+        "icon": "DocumentTextIcon"
+      },
+      {
+        "title": "Learning Analytics",
+        "description": "Summarize engagement and flag at-risk students.",
+        "icon": "ChartBarIcon"
+      },
+      {
+        "title": "Assignment Help",
+        "description": "Guide students through homework without giving answers.",
+        "icon": "PencilIcon"
+      },
+      {
+        "title": "Parent Portal",
+        "description": "Share progress updates and attendance reports.",
+        "icon": "UsersIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "Writing Tutor Agent", "description": "Gives feedback on drafts and citation guidance." },
-      { "name": "Course Advisor Agent", "description": "Checks prerequisites and plans course paths." },
-      { "name": "FAQ & Helpdesk Agent", "description": "Answers common questions about policies and tools." },
-      { "name": "Assignment Assistant Agent", "description": "Explains rubrics and helps with time planning." },
-      { "name": "Engagement Insights Agent", "description": "Surfaces risk signals and suggests outreach." },
-      { "name": "Grading Assistant Agent", "description": "Provides rubric-based feedback and grading suggestions." },
-      { "name": "Curriculum Planner Agent", "description": "Designs course sequences and learning pathways." }
+      {
+        "name": "Writing Tutor Agent",
+        "description": "Gives feedback on drafts and citation guidance."
+      },
+      {
+        "name": "Course Advisor Agent",
+        "description": "Checks prerequisites and plans course paths."
+      },
+      {
+        "name": "FAQ & Helpdesk Agent",
+        "description": "Answers common questions about policies and tools."
+      },
+      {
+        "name": "Assignment Assistant Agent",
+        "description": "Explains rubrics and helps with time planning."
+      },
+      {
+        "name": "Engagement Insights Agent",
+        "description": "Surfaces risk signals and suggests outreach."
+      },
+      {
+        "name": "Grading Assistant Agent",
+        "description": "Provides rubric-based feedback and grading suggestions."
+      },
+      {
+        "name": "Curriculum Planner Agent",
+        "description": "Designs course sequences and learning pathways."
+      }
     ],
     "capabilities": [
       "Retrieve course content from the LMS",
@@ -769,10 +1481,26 @@
       "Keep audit trails for academic integrity"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Implement tutoring and advising logic in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate LMS, SIS, calendar, and comms tools." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index syllabi, policies, and past Q&A." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace suggestions, sources, and outcomes." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Implement tutoring and advising logic in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate LMS, SIS, calendar, and comms tools."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index syllabi, policies, and past Q&A."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace suggestions, sources, and outcomes."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
@@ -780,12 +1508,27 @@
       "subtitle": "Supervisor dispatches to tutoring, advising, and admin agents, pulling context from LMS/SIS.",
       "agents": [
         { "id": "tutor", "label": "Tutor Agent", "sublabel": "Learning", "icon": "LightBulbIcon" },
-        { "id": "advisor", "label": "Advisor Agent", "sublabel": "Degree Plan", "icon": "AcademicCapIcon" },
-        { "id": "admin", "label": "Admin Agent", "sublabel": "Enrollment", "icon": "ClipboardDocumentCheckIcon" }
+        {
+          "id": "advisor",
+          "label": "Advisor Agent",
+          "sublabel": "Degree Plan",
+          "icon": "AcademicCapIcon"
+        },
+        {
+          "id": "admin",
+          "label": "Admin Agent",
+          "sublabel": "Enrollment",
+          "icon": "ClipboardDocumentCheckIcon"
+        }
       ],
       "tools": [
         { "id": "lms", "label": "LMS", "sublabel": "Courses", "icon": "BookOpenIcon" },
-        { "id": "sis", "label": "SIS", "sublabel": "Student Records", "icon": "BuildingLibraryIcon" }
+        {
+          "id": "sis",
+          "label": "SIS",
+          "sublabel": "Student Records",
+          "icon": "BuildingLibraryIcon"
+        }
       ]
     }
   },
@@ -821,21 +1564,66 @@
       "Integrate with legacy case systems and data registries"
     ],
     "features": [
-      { "title": "Permit Processing", "description": "Validate forms, check zoning/rules, and route for review.", "icon": "ClipboardDocumentCheckIcon" },
-      { "title": "Benefits Eligibility", "description": "Evaluate program rules and request missing info.", "icon": "ScaleIcon" },
-      { "title": "Public Info Desk", "description": "Answer policy and service questions with citations.", "icon": "ChatBubbleLeftRightIcon" },
-      { "title": "Audit & Compliance", "description": "Keep explainable logs for FOIA and audits.", "icon": "DocumentMagnifyingGlassIcon" },
-      { "title": "Multi-language Support", "description": "Serve diverse communities in their preferred language.", "icon": "LanguageIcon" },
-      { "title": "Case Tracking", "description": "Real-time status updates and estimated timelines.", "icon": "ClockIcon" }
+      {
+        "title": "Permit Processing",
+        "description": "Validate forms, check zoning/rules, and route for review.",
+        "icon": "ClipboardDocumentCheckIcon"
+      },
+      {
+        "title": "Benefits Eligibility",
+        "description": "Evaluate program rules and request missing info.",
+        "icon": "ScaleIcon"
+      },
+      {
+        "title": "Public Info Desk",
+        "description": "Answer policy and service questions with citations.",
+        "icon": "ChatBubbleLeftRightIcon"
+      },
+      {
+        "title": "Audit & Compliance",
+        "description": "Keep explainable logs for FOIA and audits.",
+        "icon": "DocumentMagnifyingGlassIcon"
+      },
+      {
+        "title": "Multi-language Support",
+        "description": "Serve diverse communities in their preferred language.",
+        "icon": "LanguageIcon"
+      },
+      {
+        "title": "Case Tracking",
+        "description": "Real-time status updates and estimated timelines.",
+        "icon": "ClockIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "Permit Intake Agent", "description": "Screens applications and checks required documents." },
-      { "name": "Benefits Screener Agent", "description": "Assesses eligibility and suggests next steps." },
-      { "name": "Citizen Info Agent", "description": "Answers policy questions with verified sources." },
-      { "name": "Case Routing Agent", "description": "Assigns cases by department, priority, and SLA." },
-      { "name": "Compliance Reporter Agent", "description": "Generates audit-ready activity and outcome reports." },
-      { "name": "Grant Processing Agent", "description": "Evaluates grant applications and tracks disbursements." },
-      { "name": "Public Records Agent", "description": "Handles FOIA requests and document retrieval." }
+      {
+        "name": "Permit Intake Agent",
+        "description": "Screens applications and checks required documents."
+      },
+      {
+        "name": "Benefits Screener Agent",
+        "description": "Assesses eligibility and suggests next steps."
+      },
+      {
+        "name": "Citizen Info Agent",
+        "description": "Answers policy questions with verified sources."
+      },
+      {
+        "name": "Case Routing Agent",
+        "description": "Assigns cases by department, priority, and SLA."
+      },
+      {
+        "name": "Compliance Reporter Agent",
+        "description": "Generates audit-ready activity and outcome reports."
+      },
+      {
+        "name": "Grant Processing Agent",
+        "description": "Evaluates grant applications and tracks disbursements."
+      },
+      {
+        "name": "Public Records Agent",
+        "description": "Handles FOIA requests and document retrieval."
+      }
     ],
     "capabilities": [
       "Validate permit applications and documents",
@@ -848,23 +1636,59 @@
       "Maintain data privacy and retention policies"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Define intake, eligibility, and routing logic in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate case systems, registries, and knowledge bases." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index policies, procedures, and prior rulings for retrieval." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace decisions, timelines, and outcomes for accountability." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Define intake, eligibility, and routing logic in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate case systems, registries, and knowledge bases."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index policies, procedures, and prior rulings for retrieval."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace decisions, timelines, and outcomes for accountability."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor dispatches to permit, benefits, and information agents with policy-aware checks.",
       "agents": [
-        { "id": "permit", "label": "Permit Agent", "sublabel": "Applications", "icon": "ClipboardDocumentCheckIcon" },
-        { "id": "benefits", "label": "Benefits Agent", "sublabel": "Eligibility", "icon": "ScaleIcon" },
-        { "id": "info", "label": "Information Agent", "sublabel": "Public FAQs", "icon": "ChatBubbleLeftRightIcon" }
+        {
+          "id": "permit",
+          "label": "Permit Agent",
+          "sublabel": "Applications",
+          "icon": "ClipboardDocumentCheckIcon"
+        },
+        {
+          "id": "benefits",
+          "label": "Benefits Agent",
+          "sublabel": "Eligibility",
+          "icon": "ScaleIcon"
+        },
+        {
+          "id": "info",
+          "label": "Information Agent",
+          "sublabel": "Public FAQs",
+          "icon": "ChatBubbleLeftRightIcon"
+        }
       ],
       "tools": [
         { "id": "case", "label": "Case System", "sublabel": "Records", "icon": "FolderIcon" },
-        { "id": "policies", "label": "Policy Engine", "sublabel": "Rules", "icon": "ShieldCheckIcon" }
+        {
+          "id": "policies",
+          "label": "Policy Engine",
+          "sublabel": "Rules",
+          "icon": "ShieldCheckIcon"
+        }
       ]
     }
   },
@@ -900,21 +1724,60 @@
       "Publish to Markdown, sites, and PDFs from one flow"
     ],
     "features": [
-      { "title": "Code-to-Docs", "description": "Create API references and guides from code and specs.", "icon": "CodeBracketIcon" },
-      { "title": "Release Notes", "description": "Summarize PRs/issues into clear changelogs.", "icon": "MegaphoneIcon" },
-      { "title": "Tutorial Builder", "description": "Generate step-by-step guides with runnable examples.", "icon": "AcademicCapIcon" },
-      { "title": "Quality Gates", "description": "Check style, accuracy, and links in CI.", "icon": "ShieldCheckIcon" },
-      { "title": "Version Control", "description": "Manage docs across multiple product versions.", "icon": "ArrowPathIcon" },
-      { "title": "Search Optimization", "description": "Generate SEO-friendly content and metadata.", "icon": "MagnifyingGlassIcon" }
+      {
+        "title": "Code-to-Docs",
+        "description": "Create API references and guides from code and specs.",
+        "icon": "CodeBracketIcon"
+      },
+      {
+        "title": "Release Notes",
+        "description": "Summarize PRs/issues into clear changelogs.",
+        "icon": "MegaphoneIcon"
+      },
+      {
+        "title": "Tutorial Builder",
+        "description": "Generate step-by-step guides with runnable examples.",
+        "icon": "AcademicCapIcon"
+      },
+      {
+        "title": "Quality Gates",
+        "description": "Check style, accuracy, and links in CI.",
+        "icon": "ShieldCheckIcon"
+      },
+      {
+        "title": "Version Control",
+        "description": "Manage docs across multiple product versions.",
+        "icon": "ArrowPathIcon"
+      },
+      {
+        "title": "Search Optimization",
+        "description": "Generate SEO-friendly content and metadata.",
+        "icon": "MagnifyingGlassIcon"
+      }
     ],
     "exampleAgents": [
-      { "name": "API Reference Agent", "description": "Builds and updates endpoint docs with examples." },
-      { "name": "Changelog Agent", "description": "Creates release notes and highlights breaking changes." },
-      { "name": "Tutorial Author Agent", "description": "Generates beginner-to-advanced walkthroughs." },
+      {
+        "name": "API Reference Agent",
+        "description": "Builds and updates endpoint docs with examples."
+      },
+      {
+        "name": "Changelog Agent",
+        "description": "Creates release notes and highlights breaking changes."
+      },
+      {
+        "name": "Tutorial Author Agent",
+        "description": "Generates beginner-to-advanced walkthroughs."
+      },
       { "name": "Doc Review Agent", "description": "Flags inconsistencies and missing sections." },
       { "name": "Versioning Agent", "description": "Maintains multi-version docs with diffs." },
-      { "name": "SDK Generator Agent", "description": "Creates language-specific SDKs from API specs." },
-      { "name": "Migration Assistant Agent", "description": "Generates migration guides for version upgrades." }
+      {
+        "name": "SDK Generator Agent",
+        "description": "Creates language-specific SDKs from API specs."
+      },
+      {
+        "name": "Migration Assistant Agent",
+        "description": "Generates migration guides for version upgrades."
+      }
     ],
     "capabilities": [
       "Parse repositories and OpenAPI specs",
@@ -927,28 +1790,60 @@
       "Keep audit trails of changes in VoltOps"
     ],
     "howItWorks": [
-      { "step": 1, "title": "Build with VoltAgent", "description": "Implement doc generation and checks in TypeScript." },
-      { "step": 2, "title": "Connect Data & Tools", "description": "Integrate repos, CI, package registry, and CMS." },
-      { "step": 3, "title": "Add Memory & RAG", "description": "Index existing docs, style guides, and examples." },
-      { "step": 4, "title": "Observe in VoltOps", "description": "Trace doc diffs, sources, and publishing events." }
+      {
+        "step": 1,
+        "title": "Build with VoltAgent",
+        "description": "Implement doc generation and checks in TypeScript."
+      },
+      {
+        "step": 2,
+        "title": "Connect Data & Tools",
+        "description": "Integrate repos, CI, package registry, and CMS."
+      },
+      {
+        "step": 3,
+        "title": "Add Memory & RAG",
+        "description": "Index existing docs, style guides, and examples."
+      },
+      {
+        "step": 4,
+        "title": "Observe in VoltOps",
+        "description": "Trace doc diffs, sources, and publishing events."
+      }
     ],
     "supervisorFlow": {
       "enabled": true,
       "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor coordinates API reference, changelog, and tutorial agents tied to repos and CI.",
       "agents": [
-        { "id": "api-docs", "label": "API Docs Agent", "sublabel": "Reference", "icon": "CodeBracketIcon" },
-        { "id": "changelog", "label": "Changelog Agent", "sublabel": "Releases", "icon": "MegaphoneIcon" },
-        { "id": "tutorials", "label": "Tutorial Agent", "sublabel": "Guides", "icon": "AcademicCapIcon" }
+        {
+          "id": "api-docs",
+          "label": "API Docs Agent",
+          "sublabel": "Reference",
+          "icon": "CodeBracketIcon"
+        },
+        {
+          "id": "changelog",
+          "label": "Changelog Agent",
+          "sublabel": "Releases",
+          "icon": "MegaphoneIcon"
+        },
+        {
+          "id": "tutorials",
+          "label": "Tutorial Agent",
+          "sublabel": "Guides",
+          "icon": "AcademicCapIcon"
+        }
       ],
       "tools": [
-        { "id": "repo", "label": "Repository", "sublabel": "Source", "icon": "CodeBracketSquareIcon" },
+        {
+          "id": "repo",
+          "label": "Repository",
+          "sublabel": "Source",
+          "icon": "CodeBracketSquareIcon"
+        },
         { "id": "ci", "label": "Build System", "sublabel": "Checks", "icon": "ServerStackIcon" }
       ]
     }
   }
-
-] 
-
-  
-
+]

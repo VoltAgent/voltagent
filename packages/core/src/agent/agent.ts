@@ -1,10 +1,5 @@
 import * as crypto from "node:crypto";
-import type {
-  AssistantModelMessage,
-  ProviderOptions,
-  SystemModelMessage,
-  ToolModelMessage,
-} from "@ai-sdk/provider-utils";
+import type { ModelMessage, ProviderOptions, SystemModelMessage } from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
 import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
@@ -45,10 +40,7 @@ import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
-import {
-  convertModelMessagesToUIMessages,
-  convertResponseMessagesToUIMessages,
-} from "../utils/message-converter";
+import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import { convertUsage } from "../utils/usage-converter";
 import type { Voice } from "../voice";
@@ -62,6 +54,8 @@ import type { BaseMessage, StepWithContent } from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
+import { ConversationBuffer } from "./conversation-buffer";
+import { MemoryPersistQueue } from "./memory-persist-queue";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
@@ -74,6 +68,9 @@ import type {
   OperationContext,
   SupervisorConfig,
 } from "./types";
+
+const BUFFER_CONTEXT_KEY = Symbol("conversationBuffer");
+const QUEUE_CONTEXT_KEY = Symbol("memoryPersistQueue");
 
 // ============================================================================
 // Types
@@ -349,6 +346,8 @@ export class Agent {
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
+      const buffer = this.getConversationBuffer(oc);
+      const persistQueue = this.getMemoryPersistQueue(oc);
       const { messages, model, tools, maxSteps } = await this.prepareExecution(input, oc, options);
 
       const modelName = this.getModelName();
@@ -449,14 +448,8 @@ export class Agent {
           onStepFinish: this.createStepHandler(oc, options),
         });
 
-        // Save response messages to memory
-        await this.saveResponseMessagesToMemory(oc, result.response?.messages);
+        await persistQueue.flush(buffer, oc);
 
-        // History update removed - using OpenTelemetry only
-
-        // Event tracking now handled by OpenTelemetry spans
-
-        // Call hooks with standardized output
         await this.getMergedHooks(options).onEnd?.({
           conversationId: oc.conversationId || "",
           agent: this,
@@ -505,6 +498,7 @@ export class Agent {
 
         return returnValue;
       } catch (error) {
+        await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
       }
     });
@@ -524,6 +518,8 @@ export class Agent {
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
       const methodLogger = oc.logger; // Extract logger with executionId
+      const buffer = this.getConversationBuffer(oc);
+      const persistQueue = this.getMemoryPersistQueue(oc);
 
       // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
 
@@ -650,8 +646,7 @@ export class Agent {
             // The onError callback should return void for AI SDK compatibility
           },
           onFinish: async (finalResult) => {
-            // Save response messages to memory
-            await this.saveResponseMessagesToMemory(oc, finalResult.response?.messages);
+            await persistQueue.flush(buffer, oc);
 
             // History update removed - using OpenTelemetry only
 
@@ -813,6 +808,7 @@ export class Agent {
 
         return resultWithContext;
       } catch (error) {
+        await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, 0);
       }
     });
@@ -991,6 +987,7 @@ export class Agent {
           context: oc.context,
         };
       } catch (error) {
+        await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
       }
     });
@@ -1226,6 +1223,7 @@ export class Agent {
 
         return resultWithContext;
       } catch (error) {
+        await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, 0);
       }
     });
@@ -1253,7 +1251,8 @@ export class Agent {
     const agentToolList = await this.resolveValue(this.tools, oc);
 
     // Prepare messages (system + memory + input) as UIMessages
-    const uiMessages = await this.prepareMessages(input, oc, options);
+    const buffer = this.getConversationBuffer(oc);
+    const uiMessages = await this.prepareMessages(input, oc, options, buffer);
 
     // Convert UIMessages to ModelMessages for the LLM
     const messages = convertToModelMessages(uiMessages);
@@ -1357,10 +1356,17 @@ export class Agent {
       });
     }
 
+    const systemContext = new Map<string | symbol, unknown>();
+    systemContext.set(BUFFER_CONTEXT_KEY, new ConversationBuffer(undefined, logger));
+    systemContext.set(
+      QUEUE_CONTEXT_KEY,
+      new MemoryPersistQueue(this.memoryManager, { debounceMs: 200, logger }),
+    );
+
     return {
       operationId,
       context,
-      systemContext: new Map(),
+      systemContext,
       isActive: true,
       logger,
       conversationSteps: options?.parentOperationContext?.conversationSteps || [],
@@ -1371,6 +1377,44 @@ export class Agent {
       traceContext,
       startTime: startTimeDate,
     };
+  }
+
+  private getConversationBuffer(oc: OperationContext): ConversationBuffer {
+    let buffer = oc.systemContext.get(BUFFER_CONTEXT_KEY) as ConversationBuffer | undefined;
+    if (!buffer) {
+      buffer = new ConversationBuffer();
+      oc.systemContext.set(BUFFER_CONTEXT_KEY, buffer);
+    }
+    return buffer;
+  }
+
+  private getMemoryPersistQueue(oc: OperationContext): MemoryPersistQueue {
+    let queue = oc.systemContext.get(QUEUE_CONTEXT_KEY) as MemoryPersistQueue | undefined;
+    if (!queue) {
+      queue = new MemoryPersistQueue(this.memoryManager, { logger: oc.logger });
+      oc.systemContext.set(QUEUE_CONTEXT_KEY, queue);
+    }
+    return queue;
+  }
+
+  private async flushPendingMessagesOnError(oc: OperationContext): Promise<void> {
+    const buffer = this.getConversationBuffer(oc);
+    const queue = this.getMemoryPersistQueue(oc);
+
+    if (!buffer || !queue) {
+      return;
+    }
+
+    try {
+      await queue.flush(buffer, oc);
+    } catch (error) {
+      oc.logger.debug("Failed to flush pending conversation messages after error", {
+        error,
+        conversationId: oc.conversationId,
+        userId: oc.userId,
+      });
+      throw error;
+    }
   }
 
   /**
@@ -1505,7 +1549,8 @@ export class Agent {
   private async prepareMessages(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
-    options?: BaseGenerationOptions,
+    options: BaseGenerationOptions | undefined,
+    buffer: ConversationBuffer,
   ): Promise<UIMessage[]> {
     const messages: UIMessage[] = [];
 
@@ -1585,7 +1630,7 @@ export class Agent {
           const memoryResult = await traceContext.withSpan(memoryReadSpan, async () => {
             if (isSemanticSearch) {
               // Semantic search
-              return await this.memoryManager.getMessages(
+              const memMessages = await this.memoryManager.getMessages(
                 oc,
                 oc.userId,
                 oc.conversationId,
@@ -1600,6 +1645,8 @@ export class Agent {
                   parentMemorySpan: memoryReadSpan,
                 },
               );
+              buffer.ingestUIMessages(memMessages, true);
+              return memMessages;
             }
             // Regular memory context
             // Convert model messages to UI for memory context if needed
@@ -1620,6 +1667,8 @@ export class Agent {
 
             // Update conversation ID
             oc.conversationId = result.conversationId;
+
+            buffer.ingestUIMessages(result.messages, true);
 
             return result.messages;
           });
@@ -2273,6 +2322,8 @@ export class Agent {
    * Create step handler for memory and hooks
    */
   private createStepHandler(oc: OperationContext, options?: BaseGenerationOptions) {
+    const buffer = this.getConversationBuffer(oc);
+
     return async (event: StepResult<ToolSet>) => {
       // Instead of saving immediately, collect steps in context for batch processing in onFinish
       if (event.content && Array.isArray(event.content)) {
@@ -2338,29 +2389,15 @@ export class Agent {
         }
       }
 
+      const responseMessages = event.response?.messages as ModelMessage[] | undefined;
+      if (responseMessages && responseMessages.length > 0) {
+        buffer.addModelMessages(responseMessages, "response");
+      }
+
       // Call hooks
       const hooks = this.getMergedHooks(options);
       await hooks.onStepFinish?.({ agent: this, step: event, context: oc });
     };
-  }
-
-  /**
-   * Save response messages as UIMessages to memory
-   * Converts and saves all messages from the response in batch
-   */
-  private async saveResponseMessagesToMemory(
-    oc: OperationContext,
-    responseMessages: (AssistantModelMessage | ToolModelMessage)[] | undefined,
-  ): Promise<void> {
-    if (!oc.userId || !oc.conversationId || !responseMessages) {
-      return;
-    }
-
-    // Convert all response messages to UIMessages and save
-    const uiMessages = await convertResponseMessagesToUIMessages(responseMessages);
-    for (const uiMessage of uiMessages) {
-      await this.memoryManager.saveMessage(oc, uiMessage, oc.userId, oc.conversationId);
-    }
   }
 
   /**

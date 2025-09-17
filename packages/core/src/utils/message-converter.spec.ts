@@ -156,6 +156,7 @@ describe("convertResponseMessagesToUIMessages", () => {
       state: "output-available",
       input: { operation: "add", a: 1, b: 2 },
       output: { result: 3 },
+      providerExecuted: false,
     });
   });
 
@@ -298,7 +299,7 @@ describe("convertResponseMessagesToUIMessages", () => {
 
     // First assistant message with text and tool
     expect(result[0].role).toBe("assistant");
-    expect(result[0].parts).toHaveLength(3);
+    expect(result[0].parts).toHaveLength(4);
     expect(result[0].parts[0]).toEqual({
       type: "text",
       text: "Let me calculate that for you.",
@@ -309,10 +310,11 @@ describe("convertResponseMessagesToUIMessages", () => {
       state: "output-available",
       input: { operation: "multiply", a: 5, b: 7 },
       output: { result: 35 },
+      providerExecuted: false,
     });
-
+    expect(result[0].parts[2]).toEqual({ type: "step-start" });
     // Text from second assistant message
-    expect(result[0].parts[2]).toEqual({
+    expect(result[0].parts[3]).toEqual({
       type: "text",
       text: "The result is 35.",
     });
@@ -367,6 +369,7 @@ describe("convertResponseMessagesToUIMessages", () => {
       state: "output-available",
       input: { query: "weather" },
       output: { results: ["sunny", "warm"] },
+      providerExecuted: false,
     });
 
     expect(result[0].parts[1]).toEqual({
@@ -375,6 +378,7 @@ describe("convertResponseMessagesToUIMessages", () => {
       state: "output-available",
       input: { operation: "add", a: 10, b: 20 },
       output: { result: 30 },
+      providerExecuted: false,
     });
   });
 
@@ -610,7 +614,7 @@ describe("convertModelMessagesToUIMessages (AI SDK v5)", () => {
 
     expect(toolCallPart).toBeDefined();
     expect(toolCallPart.state).toBe("output-available");
-    expect(toolCallPart.providerExecuted).toBeUndefined(); // Should not be set for tool role messages
+    expect(toolCallPart.providerExecuted).toBe(false); // Tool role messages reflect client execution
 
     // Now simulate loading these messages from memory and converting for the next API call
     const conversationHistory: UIMessage[] = [

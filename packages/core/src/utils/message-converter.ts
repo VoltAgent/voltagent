@@ -29,10 +29,7 @@ export async function convertResponseMessagesToUIMessages(
     if (message.role === "assistant" && message.content) {
       if (typeof message.content === "string") {
         if (message.content.trim()) {
-          uiMessage.parts.push({
-            type: "text",
-            text: message.content,
-          });
+          pushTextPart(uiMessage.parts, message.content);
         }
         continue;
       }
@@ -41,13 +38,7 @@ export async function convertResponseMessagesToUIMessages(
         switch (contentPart.type) {
           case "text": {
             if (contentPart.text && contentPart.text.length > 0) {
-              uiMessage.parts.push({
-                type: "text",
-                text: contentPart.text,
-                ...(contentPart.providerOptions
-                  ? { providerMetadata: contentPart.providerOptions as any }
-                  : {}),
-              });
+              pushTextPart(uiMessage.parts, contentPart.text, contentPart.providerOptions);
             }
             break;
           }
@@ -126,7 +117,7 @@ export async function convertResponseMessagesToUIMessages(
         if (existing) {
           existing.state = "output-available";
           existing.output = toolResult.output;
-          // Don't set providerExecuted - tool role messages indicate client execution
+          existing.providerExecuted = false;
         } else {
           const resultPart = {
             type: `tool-${toolResult.toolName}` as const,
@@ -134,7 +125,7 @@ export async function convertResponseMessagesToUIMessages(
             state: "output-available" as const,
             input: {},
             output: toolResult.output,
-            // Don't set providerExecuted - tool role messages indicate client execution
+            providerExecuted: false,
           };
           uiMessage.parts.push(resultPart as any);
           toolPartsById.set(toolResult.toolCallId, resultPart);
@@ -144,6 +135,28 @@ export async function convertResponseMessagesToUIMessages(
   }
 
   return uiMessage.parts.length > 0 ? [uiMessage] : [];
+}
+
+function pushTextPart(
+  parts: UIMessage["parts"],
+  text: string,
+  providerOptions?: Record<string, unknown>,
+) {
+  const prev = parts.at(-1) as any;
+  if (
+    prev &&
+    typeof prev?.type === "string" &&
+    prev.type.startsWith("tool-") &&
+    prev.state === "output-available"
+  ) {
+    parts.push({ type: "step-start" } as any);
+  }
+
+  parts.push({
+    type: "text",
+    text,
+    ...(providerOptions ? { providerMetadata: providerOptions as any } : {}),
+  });
 }
 
 /**
@@ -171,7 +184,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
                   state: "output-available" as const,
                   input: {},
                   output: part.output,
-                  // Don't set providerExecuted - tool role messages indicate client execution
+                  providerExecuted: false,
                 } as any,
               ],
             });

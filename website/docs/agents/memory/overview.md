@@ -18,7 +18,7 @@ VoltAgent provides a unified `Memory` class with pluggable storage adapters. It 
 
 ## Default Memory Behavior
 
-By default, agents use in-memory storage (no persistence) with zero configuration. If you don't provide a `memory` option, VoltAgent automatically uses an in-memory adapter that:
+By default, agents use in-memory storage (no persistence) with zero configuration. If you don't provide a `memory` option, VoltAgent falls back to an in-memory adapter that:
 
 1.  Stores conversation history in application memory.
 2.  Maintains context during the application runtime.
@@ -92,8 +92,8 @@ const agent = new Agent({
   memory,
 });
 
-// When you call the agent with user/conversation IDs, the agent injects
-// working memory instructions into the system prompt automatically
+// When the agent runs with user/conversation IDs, it appends
+// working-memory instructions to the system prompt before the LLM call
 const res = await agent.generateText("Let's plan this week", {
   userId: "u1",
   conversationId: "c1",
@@ -139,7 +139,7 @@ Programmatic API:
 - `memory.getWorkingMemoryTemplate() → string | null`
 - `memory.getWorkingMemorySchema() → z.ZodObject | null`
 
-Built-in tools (added automatically when working memory is enabled):
+Tools registered when working memory is configured:
 
 - `get_working_memory()` → returns the current content string
 - `update_working_memory(content)` → updates content (typed to schema if configured)
@@ -151,7 +151,11 @@ Agent prompt integration:
 
 ## Semantic Search (Embeddings + Vectors)
 
-To enable semantic retrieval of past messages, configure both an embedding adapter and a vector adapter. Memory will automatically embed text parts of messages and store vectors with metadata.
+To enable semantic retrieval of past messages, configure both an embedding adapter and a vector adapter. Memory embeds text parts of messages and stores vectors with metadata.
+
+## Message Persistence Pipeline
+
+VoltAgent batches every step into a single assistant response (tool call, tool result, follow-up text) before writing to memory. Saves are debounced for performance, and the agent flushes the queue when a request finishes—even on errors. The most recent step stays recorded if the loop stops midway, so conversation history remains consistent across restarts.
 
 Adapters:
 
@@ -231,13 +235,13 @@ Optional components:
 
 ## How Memory Works with Agents
 
-When you configure an `Agent` with a memory provider instance (or use the default), VoltAgent's internal `MemoryManager` automatically handles:
+When you configure an `Agent` with a memory provider instance (or use the default), VoltAgent's internal `MemoryManager` performs the following steps:
 
 1.  **Retrieval:** Before generating a response (e.g., during `agent.generateText()`), the manager fetches relevant conversation history or state from the memory provider based on the provided `userId` and `conversationId`.
 2.  **Injection:** This retrieved context is typically formatted and added to the prompt sent to the LLM, giving it the necessary background information.
 3.  **Saving:** After an interaction completes, the new messages (user input and agent response) are saved back to the memory provider, associated with the same `userId` and `conversationId`.
 
-This process happens seamlessly behind the scenes when using the agent's core interaction methods (`generateText`, `streamText`, `generateObject`, `streamObject`).
+These steps run whenever you call the agent's core interaction methods (`generateText`, `streamText`, `generateObject`, `streamObject`).
 
 ## User and Conversation Identification
 
@@ -310,7 +314,7 @@ const agent = new Agent({
 
 ### How User and Conversation IDs Work
 
-- **`userId`**: A unique string identifying the end-user. This ensures memory isolation between different users. If omitted, it defaults to the string `"default"`.
+- **`userId`**: A unique string identifying the end-user. Memory entries are segregated per user. If omitted, it defaults to the string `"default"`.
 - **`conversationId`**: A unique string identifying a specific conversation thread for a user. This allows a single user to have multiple parallel conversations.
   - **If provided:** The agent retrieves and saves messages associated with this specific thread.
   - **If omitted:** A **new random UUID is generated for each request**, effectively starting a new, separate conversation every time. This is useful for one-off tasks or ensuring a clean slate for each interaction when context isn't needed.
@@ -319,12 +323,12 @@ const agent = new Agent({
 
 1.  **Context Retrieval**: Before calling the LLM, the `MemoryManager` retrieves previous messages associated with the given `userId` and `conversationId` from the memory provider.
 2.  **Message Storage**: After the interaction, new user input and agent responses are stored using the same `userId` and `conversationId`.
-3.  **Continuity**: Providing the same `userId` and `conversationId` across multiple requests ensures the agent remembers the context of that specific thread.
+3.  **Continuity**: Providing the same `userId` and `conversationId` across multiple requests keeps the context of that specific thread.
 4.  **New Conversations**: Omitting `conversationId` guarantees a fresh conversation context for each request.
 
 ```ts
 // To start a NEW conversation each time (or for single-turn interactions):
-// Omit conversationId; a new one is generated automatically.
+// Omit conversationId; VoltAgent generates a new one for each call.
 const response1 = await agent.generateText("Help with account setup", { userId: "user-123" });
 const response2 = await agent.generateText("Question about billing issue", { userId: "user-123" }); // Starts another new conversation
 
@@ -344,10 +348,10 @@ const responseB = await agent.generateText("I tried restarting it, still no luck
 
 ## Context Management
 
-When interacting with an agent that has memory enabled, the `MemoryManager` automatically retrieves recent messages for the given `userId` and `conversationId` and includes them as context in the prompt sent to the LLM.
+When interacting with an agent that has memory enabled, the `MemoryManager` retrieves recent messages for the given `userId` and `conversationId` and includes them as context in the prompt sent to the LLM.
 
 ```ts
-// The agent automatically retrieves history for user-123/chat-session-xyz
+// The agent retrieves history for user-123/chat-session-xyz
 // and includes up to N recent messages (determined by the provider/manager) in the LLM prompt.
 const response = await agent.generateText("What was the first thing I asked you?", {
   userId: "user-123",

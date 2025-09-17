@@ -22,7 +22,7 @@ voltagent/
 Core packages, AI provider integrations, and utilities:
 
 - **cli** - VoltAgent CLI for project scaffolding and management
-- **core** - Main VoltAgent framework with agent orchestration, memory management, tools, and observability
+- **core** - Main VoltAgent framework with agent orchestration, memory management, tools, and observability. Includes the `ConversationBuffer` (merges model/tool messages into UI messages for persistence) and `MemoryPersistQueue` (debounced memory write pipeline).
 - **create-voltagent-app** - Project initialization tool
 - **docs-mcp** - Model Context Protocol documentation server
 - **internal** - Internal utilities and shared types used across packages
