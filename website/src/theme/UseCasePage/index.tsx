@@ -276,7 +276,6 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
               style={{
                 background:
                   "radial-gradient(circle at 20% 50%, rgba(0, 217, 146, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 50%), radial-gradient(circle at 40% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%)",
-                animation: "gradientShift 20s ease-in-out infinite",
               }}
             />
           </div>
@@ -343,7 +342,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
             >
               {/* Section Heading */}
               <div className="mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight">
                   <span className="text-white">What your</span>{" "}
                   <span className="text-main-emerald">
                     {(() => {
@@ -359,7 +358,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   </span>{" "}
                   <span className="text-white">can do</span>
                 </h2>
-                <p className="text-gray-400 mb-0 text-lg">
+                <p className="max-w-3xl landing-md:text-xl landing-xs:text-md text-gray-400 mb-0">
                   Design AI agents that match your workflows with VoltAgent
                 </p>
               </div>
@@ -451,10 +450,12 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight">
                   {useCase.supervisorFlow.title}
                 </h2>
-                <p className="text-gray-400 mb-6">{useCase.supervisorFlow.subtitle}</p>
+                <p className="max-w-3xl landing-md:text-xl landing-xs:text-md text-gray-400 mb-6">
+                  {useCase.supervisorFlow.subtitle}
+                </p>
                 <ResponsiveSupervisorFlow
                   slug={useCase.slug}
                   agents={useCase.supervisorFlow.agents}
@@ -637,10 +638,10 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
               >
                 {/* Section Header */}
                 <div className="mb-12">
-                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                  <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight">
                     <span className="text-main-emerald">AI Agent Ideas</span> You Can Build
                   </h2>
-                  <p className="text-gray-400 text-lg">
+                  <p className="max-w-3xl landing-md:text-xl landing-xs:text-md text-gray-400">
                     Here are examples of agents you can design with VoltAgent, tailored to your
                     workflows and stack.
                   </p>
@@ -742,7 +743,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   </div>
 
                   <div className="relative z-10 h-full flex flex-col">
-                    <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-6 md:mb-8 flex items-center">
+                    <h2 className="mt-1 landing-xs:text-2xl landing-md:text-3xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight flex items-center">
                       <ShieldCheckIcon className="w-6 h-6 md:w-7 md:h-7 text-emerald-400 mr-2 md:mr-3" />
                       <span className="leading-tight">Enterprise-Ready Security</span>
                     </h2>
@@ -769,7 +770,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                       ))}
                     </div>
 
-                    <p className="text-gray-400 text-sm md:text-base leading-relaxed mt-auto">
+                    <p className="max-w-3xl landing-md:text-xl landing-xs:text-md text-gray-400 leading-relaxed mt-auto">
                       Your data stays in your control with self-hosting and enterprise compliance.
                     </p>
                   </div>
@@ -798,13 +799,13 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   </div>
 
                   <div className="relative z-10 h-full flex flex-col">
-                    <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-6 md:mb-8 flex items-center">
+                    <h2 className="mt-1 landing-xs:text-2xl landing-md:text-3xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight flex items-center">
                       <BoltIcon className="w-6 h-6 md:w-7 md:h-7 text-emerald-400 mr-2 md:mr-3" />
                       <span className="leading-tight">Ready to Ship Real Agents?</span>
                     </h2>
 
                     <div className="flex-1 flex flex-col justify-center">
-                      <p className="text-base md:text-lg text-gray-300 mb-6 md:mb-10">
+                      <p className="max-w-3xl landing-md:text-xl landing-xs:text-md text-gray-400 mb-6 md:mb-10">
                         Join hundreds of teams building production AI agents with VoltAgent
                       </p>
 
