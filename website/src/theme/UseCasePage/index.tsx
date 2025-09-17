@@ -5,23 +5,39 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowPathIcon,
   ArrowRightIcon,
+  ArrowTrendingUpIcon,
+  ArrowUpIcon,
   BoltIcon,
   BookOpenIcon,
+  CalculatorIcon,
+  CameraIcon,
   ChartBarIcon,
   ChartBarSquareIcon,
   ChatBubbleLeftRightIcon,
   CircleStackIcon,
+  ClockIcon,
   CloudArrowUpIcon,
   CodeBracketIcon,
   CodeBracketSquareIcon,
   CommandLineIcon,
+  ComputerDesktopIcon,
+  CubeTransparentIcon,
   DevicePhoneMobileIcon,
   FaceSmileIcon,
+  FireIcon,
+  FolderOpenIcon,
+  HashtagIcon,
+  LanguageIcon,
   MagnifyingGlassIcon,
   MagnifyingGlassPlusIcon,
+  MapIcon,
+  PencilIcon,
+  PresentationChartLineIcon,
+  ReceiptPercentIcon,
   ServerStackIcon,
   ShieldCheckIcon,
   UserGroupIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 import { DotPattern } from "@site/src/components/ui/dot-pattern";
 import { UseCaseAnimation } from "@site/src/components/usecase-animation";
@@ -41,6 +57,7 @@ const iconMap = {
   ChartBarIcon,
   CodeBracketIcon,
   ArrowPathIcon,
+  ArrowUpIcon,
   BookOpenIcon,
   FaceSmileIcon,
   DevicePhoneMobileIcon,
@@ -52,6 +69,22 @@ const iconMap = {
   BoltIcon,
   CloudArrowUpIcon,
   MagnifyingGlassPlusIcon,
+  PresentationChartLineIcon,
+  MapIcon,
+  CalculatorIcon,
+  ReceiptPercentIcon,
+  CubeTransparentIcon,
+  FireIcon,
+  HashtagIcon,
+  FolderOpenIcon,
+  PencilIcon,
+  ComputerDesktopIcon,
+  CameraIcon,
+  UsersIcon,
+  LanguageIcon,
+  ClockIcon,
+  ArrowTrendingUpIcon,
+  TrendingUpIcon: ArrowTrendingUpIcon,
 };
 
 interface UseCasePageProps {
@@ -68,6 +101,7 @@ interface UseCasePageProps {
       primaryCTALink: string;
       secondaryCTA: string;
       secondaryCTALink: string;
+      heroTag?: string;
       businessTopics?: string[];
       systemCapabilities?: string[];
     };
@@ -234,15 +268,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
               >
                 <div className="mb-4">
                   <span className="text-[#00d992] font-semibold text-lg">
-                    {useCase.slug === "ai-research-assistant"
-                      ? "AI Agent for Research & Analysis"
-                      : useCase.slug === "customer-support-agent"
-                        ? "AI Agent for Customer Support"
-                        : useCase.slug === "code-review-assistant"
-                          ? "AI Agent for Code Review"
-                          : useCase.slug === "sales-lead-qualification"
-                            ? "AI Agent for Sales Automation"
-                            : "AI Agent Solution"}
+                    {useCase.hero.heroTag || "AI Agent Solution"}
                   </span>
                 </div>
                 <h1 className="text-4xl md:text-5xl  font-bold text-white mb-6 leading-tight">
@@ -276,6 +302,93 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                 />
               </motion.div>
             </div>
+          </Container>
+        </Section>
+
+        {/* Features & Capabilities */}
+        <Section>
+          <Container>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+            >
+              {/* Section Heading */}
+              <div className="mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  <span className="text-white">What your</span>{" "}
+                  <span className="text-main-emerald">
+                    {(() => {
+                      const title = useCase.title.toLowerCase();
+                      if (title.includes("agent") || title.includes("assistant")) {
+                        return title;
+                      }
+                      if (title.includes("teams")) {
+                        return title.replace("teams", "agents");
+                      }
+                      return `${title} agents`;
+                    })()}
+                  </span>{" "}
+                  <span className="text-white">can do</span>
+                </h2>
+                <p className="text-gray-400 mb-0 text-lg">
+                  Design AI agents that match your workflows with VoltAgent
+                </p>
+              </div>
+
+              {/* Capabilities and Features Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 ">
+                {/* Capabilities List - Left Column */}
+                {useCase.capabilities && useCase.capabilities.length > 0 && (
+                  <div>
+                    <div className="h-full">
+                      <div className="space-y-4">
+                        {useCase.capabilities.map((capability) => (
+                          <div
+                            key={`capability-${capability.substring(0, 30).replace(/\s+/g, "-")}`}
+                            className="flex items-start"
+                          >
+                            <ArrowRightIcon className="w-5 h-5 text-emerald-400 mr-3 mt-0.5 flex-shrink-0" />
+                            <span className="text-gray-300 text-base">{capability}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Feature Cards - Right Column with 2x3 Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {useCase.features.map((feature, index) => {
+                    const FeatureIcon = iconMap[feature.icon] || ServerStackIcon;
+                    return (
+                      <div
+                        key={`feature-${feature.title.replace(/\s+/g, "-")}`}
+                        className={`rounded-lg border border-solid ${
+                          index === 0
+                            ? "border-emerald-400 bg-emerald-400/5"
+                            : "border-[#ffffff]/10"
+                        } p-4 transition-all duration-200 ${
+                          index !== 0 ? "hover:border-emerald-400/50 hover:bg-gray-900/30" : ""
+                        } flex flex-col h-full`}
+                      >
+                        <div className="flex items-start">
+                          <div className="mr-3 flex-shrink-0">
+                            <FeatureIcon className="w-5 h-5 text-[#00d992]" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-base font-semibold text-white mb-1">
+                              {feature.title}
+                            </h3>
+                            <p className="text-gray-400 mb-0 text-sm">{feature.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
           </Container>
         </Section>
 
@@ -409,88 +522,6 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
             </div>
           </motion.div>
         </Container>
-        {/* Features & Capabilities */}
-        <Section>
-          <Container>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-            >
-              {/* Capabilities and Features Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 ">
-                {/* Capabilities List - Left Column */}
-                {useCase.capabilities && useCase.capabilities.length > 0 && (
-                  <div>
-                    <div className="h-full">
-                      <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                        <span className="text-main-emerald">What your</span>{" "}
-                        <span className="text-white">
-                          {(() => {
-                            const title = useCase.title.toLowerCase();
-                            if (title.includes("agent") || title.includes("assistant")) {
-                              return title;
-                            }
-                            if (title.includes("teams")) {
-                              return title.replace("teams", "agents");
-                            }
-                            return `${title} agents`;
-                          })()}
-                        </span>{" "}
-                        <span className="text-main-emerald">can do</span>
-                      </h2>
-                      <p className="text-gray-400 text-lg mb-8">
-                        Build TypeScript agents with these powerful capabilities:
-                      </p>
-                      <div className="space-y-4">
-                        {useCase.capabilities.map((capability) => (
-                          <div
-                            key={`capability-${capability.substring(0, 30).replace(/\s+/g, "-")}`}
-                            className="flex items-start"
-                          >
-                            <ArrowRightIcon className="w-5 h-5 text-emerald-400 mr-3 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-300 text-base">{capability}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Feature Cards - Right Column */}
-                <div className="space-y-4">
-                  {useCase.features.map((feature, index) => {
-                    const FeatureIcon = iconMap[feature.icon] || ServerStackIcon;
-                    return (
-                      <div
-                        key={`feature-${feature.title.replace(/\s+/g, "-")}`}
-                        className={`rounded-lg border border-solid ${
-                          index === 0
-                            ? "border-emerald-400 bg-emerald-400/5"
-                            : "border-[#ffffff]/10"
-                        } p-4 transition-all duration-200 ${
-                          index !== 0 ? "hover:border-emerald-400/50 hover:bg-gray-900/30" : ""
-                        }`}
-                      >
-                        <div className="flex items-start">
-                          <div className="mr-3 flex-shrink-0">
-                            <FeatureIcon className="w-5 h-5 text-[#00d992]" />
-                          </div>
-                          <div>
-                            <h3 className="text-base font-semibold text-white mb-1">
-                              {feature.title}
-                            </h3>
-                            <p className="text-gray-400 text-sm">{feature.description}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          </Container>
-        </Section>
 
         {/* Pain → Solution */}
         <Section className="">

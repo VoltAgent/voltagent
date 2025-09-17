@@ -9,7 +9,8 @@
     "navDescription": "Build HR agents to streamline recruiting, onboarding, and employee support",
     "hero": {
       "headline": "Build Custom HR Agents in TypeScript",
-      "subtext": "Automate HR workflows from recruiting to offboarding. Connect to your HR stack and keep everything observable in VoltOps.",
+      "subtext": "Transform recruiting, onboarding, and employee support with agents that understand your policies.",
+      "heroTag": "AI Agent for HR & People Ops",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -33,7 +34,9 @@
       { "title": "Recruiting Automation", "description": "Intake, screening, and interview scheduling.", "icon": "BriefcaseIcon" },
       { "title": "Onboarding Agents", "description": "Docs, training, and account setup guidance.", "icon": "ClipboardDocumentCheckIcon" },
       { "title": "Employee Support", "description": "Answers payroll, PTO, and benefits questions.", "icon": "ChatBubbleLeftRightIcon" },
-      { "title": "Policy & Compliance", "description": "Track compliance and produce audit-ready reports.", "icon": "ShieldCheckIcon" }
+      { "title": "Policy & Compliance", "description": "Track compliance and produce audit-ready reports.", "icon": "ShieldCheckIcon" },
+      { "title": "Performance Reviews", "description": "Automate review cycles and feedback collection.", "icon": "ChartBarIcon" },
+      { "title": "Team Analytics", "description": "Track retention, engagement, and productivity metrics.", "icon": "PresentationChartLineIcon" }
     ],
     "exampleAgents": [
       { "name": "Recruiting Pipeline Agent", "description": "Manages applications and schedules interviews." },
@@ -43,22 +46,14 @@
       { "name": "Exit & Offboarding Agent", "description": "Coordinates exit steps and access removal." }
     ],
     "capabilities": [
-      "Manage recruiting pipelines",
-      "Automate onboarding tasks",
-      "Retrieve HR policies and docs",
+      "Manage recruiting pipelines and candidate tracking",
+      "Automate onboarding and offboarding workflows",
       "Answer payroll, benefits, and PTO questions",
-      "Support Slack, email, and portal",
-      "Maintain long-term employee context",
-      "Automate performance review cycles",
-      "Track compliance and generate reports",
-      "Produce HR analytics (attrition, hiring time)",
-      "Detect churn risk and suggest retention actions",
-      "Route sensitive issues securely",
+      "Track compliance and generate HR reports",
+      "Detect employee churn risk and suggest retention",
       "Handle multi-region policy differences",
-      "Recommend training and track completion",
-      "Manage internal mobility",
-      "Coordinate offboarding workflows",
-      "Enforce role-based access and security"
+      "Automate performance review cycles",
+      "Maintain secure employee data and audit trails"
     ],
     "howItWorks": [
       { "step": 1, "title": "Build with VoltAgent", "description": "Build your HR workflows and policies in TypeScript." },
@@ -68,7 +63,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How HR Supervisor Routes Employee Requests",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor dispatches to sub-agents and HR systems; memory stores context.",
       "agents": [
         { "id": "recruiting", "label": "Recruiting Agent", "sublabel": "Hiring", "icon": "BriefcaseIcon" },
@@ -91,7 +86,8 @@
     "navDescription": "Build custom support agents with TypeScript",
     "hero": {
       "headline": "Build Custom Support Agents in TypeScript",
-      "subtext": "Build agents that match your workflows and solve real customer issues. Connect to your stack and keep everything observable in VoltOps.",
+      "subtext": "Build agents that match your workflows and solve real customer issues.",
+      "heroTag": "AI Agent for Customer Support",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -115,7 +111,9 @@
       { "title": "Full Code Control", "description": "Multi-step workflows and SLA logic in TypeScript.", "icon": "CodeBracketIcon" },
       { "title": "Integrate Any System", "description": "Connect CRM, ticketing, billing, logistics, or internal APIs.", "icon": "ServerStackIcon" },
       { "title": "Memory & Policy Awareness", "description": "Stateful context, KB retrieval, and policy enforcement.", "icon": "CircleStackIcon" },
-      { "title": "VoltOps Observability", "description": "Trace decisions, tools, tokens, and latency.", "icon": "ChartBarIcon" }
+      { "title": "VoltOps Observability", "description": "Trace decisions, tools, tokens, and latency.", "icon": "ChartBarIcon" },
+      { "title": "Multi-Channel Support", "description": "Handle chat, email, voice, and social channels.", "icon": "DevicePhoneMobileIcon" },
+      { "title": "Smart Escalation", "description": "Route complex issues based on sentiment and priority.", "icon": "ArrowUpIcon" }
     ],
     "exampleAgents": [
       { "name": "Enterprise Technical Support Agent", "description": "Finds API errors, checks logs, and proposes fixes." },
@@ -129,10 +127,13 @@
     ],
     "capabilities": [
       "Triage tickets across chat, email, and Slack",
-      "Execute actions in CRM, ticketing, billing, and logistics",
-      "Retrieve verified answers from KB and policies",
-      "Apply guardrails and keep audit trails",
-      "Operate in multiple languages and channels"
+      "Execute actions in CRM, ticketing, and billing systems",
+      "Retrieve verified answers from knowledge base",
+      "Handle escalations based on sentiment and priority",
+      "Track SLAs and response times automatically",
+      "Generate support metrics and quality reports",
+      "Operate in multiple languages and channels",
+      "Maintain conversation context and audit trails"
     ],
     "howItWorks": [
       { "step": 1, "title": "Build with VoltAgent", "description": "Build your support workflows and policies in TypeScript." },
@@ -142,7 +143,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Supervisor Routes Support Requests",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor dispatches to billing, account, or bug agents; tools provide data; memory stores context.",
       "agents": [
         { "id": "billing", "label": "Billing Agent", "sublabel": "Payment", "icon": "CreditCardIcon" },
@@ -165,7 +166,8 @@
     "navDescription": "Qualify leads and automate sales workflows",
     "hero": {
       "headline": "Build Custom Sales Agents in TypeScript",
-      "subtext": "Automate lead qualification, research, and outreach with agents you control. Connect to your CRM and track everything in VoltOps.",
+      "subtext": "Qualify leads, enrich data, and personalize outreach with intelligent sales agents.",
+      "heroTag": "AI Agent for Sales Teams",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -189,7 +191,9 @@
       { "title": "Custom Scoring Logic", "description": "Define ICP rules and intent signals.", "icon": "ChartBarIcon" },
       { "title": "Data Enrichment", "description": "Pull firmographic/technographic data from any API.", "icon": "ServerStackIcon" },
       { "title": "Outbound Automations", "description": "Trigger sequences and hand off with context.", "icon": "PaperAirplaneIcon" },
-      { "title": "Full Observability", "description": "Trace why a lead was scored or routed.", "icon": "EyeIcon" }
+      { "title": "Full Observability", "description": "Trace why a lead was scored or routed.", "icon": "EyeIcon" },
+      { "title": "Territory Management", "description": "Auto-assign leads based on geography and segments.", "icon": "MapIcon" },
+      { "title": "Pipeline Forecasting", "description": "Predict revenue and identify bottlenecks.", "icon": "TrendingUpIcon" }
     ],
     "exampleAgents": [
       { "name": "Lead Qualification Agent", "description": "Scores leads by ICP, intent, and engagement." },
@@ -200,18 +204,14 @@
       { "name": "Renewal & Expansion Agent", "description": "Surfaces upsell paths from usage and tickets." }
     ],
     "capabilities": [
-      "Score leads with custom rules and ML signals",
-      "Enrich contacts from multiple sources",
-      "Generate tailored outreach and follow-ups",
-      "Route accounts by region or priority",
-      "Sync activities and fields back to CRM",
-      "Track conversion metrics and bottlenecks",
+      "Score leads with custom ICP rules and signals",
+      "Enrich contacts from multiple data sources",
+      "Generate personalized outreach sequences",
+      "Route accounts by territory and priority",
       "Detect buying signals from product usage",
+      "Track conversion metrics and pipeline health",
       "Coordinate handoffs with full context",
-      "Guardrail compliance for messaging and privacy",
-      "Run A/B tests on sequences and scoring",
-      "Support multi-language outreach",
-      "Explain each score with VoltOps traces"
+      "Sync all activities back to CRM automatically"
     ],
     "howItWorks": [
       { "step": 1, "title": "Build with VoltAgent", "description": "Implement scoring, research, and outreach logic in TypeScript." },
@@ -221,7 +221,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Sales Supervisor Routes Lead Requests",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor orchestrates qualification, enrichment, and routing.",
       "agents": [
         { "id": "qualifier", "label": "Lead Qualifier", "sublabel": "Scoring", "icon": "ChartBarIcon" },
@@ -244,7 +244,8 @@
     "navDescription": "Automate finance ops with reliable agents",
     "hero": {
       "headline": "Build Finance Ops Agents in TypeScript",
-      "subtext": "Automate invoices, expenses, and reporting with policy-aware agents. Connect to ERP/accounting tools and trace everything in VoltOps.",
+      "subtext": "Process invoices, manage expenses, and generate reports with policy-aware financial agents.",
+      "heroTag": "AI Agent for Finance Operations",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -268,7 +269,9 @@
       { "title": "Invoice Automation", "description": "Extract, validate, and route invoices with custom rules.", "icon": "DocumentTextIcon" },
       { "title": "Expense Review", "description": "Check receipts, enforce limits, and trigger approvals.", "icon": "ClipboardDocumentCheckIcon" },
       { "title": "Reconciliation", "description": "Match transactions across bank, ERP, and billing systems.", "icon": "ArrowsRightLeftIcon" },
-      { "title": "Reporting & Audit", "description": "Generate reports and keep complete logs.", "icon": "DocumentMagnifyingGlassIcon" }
+      { "title": "Reporting & Audit", "description": "Generate reports and keep complete logs.", "icon": "DocumentMagnifyingGlassIcon" },
+      { "title": "Budget Monitoring", "description": "Track spending against budgets in real-time.", "icon": "CalculatorIcon" },
+      { "title": "Tax Compliance", "description": "Calculate taxes and ensure regulatory compliance.", "icon": "ReceiptPercentIcon" }
     ],
     "exampleAgents": [
       { "name": "AP Invoice Agent", "description": "Parses invoices, checks vendor terms, and posts to ERP." },
@@ -279,18 +282,14 @@
       { "name": "Collections Agent", "description": "Sends reminders, proposes payment plans, and logs outcomes." }
     ],
     "capabilities": [
-      "Extract data from PDFs, emails, and portals",
-      "Validate vendors, POs, and tax fields",
-      "Enforce approval chains and spend limits",
-      "Post journal entries to ERP",
+      "Extract data from invoices, PDFs, and emails",
+      "Validate vendors and enforce approval chains",
+      "Post journal entries to ERP automatically",
       "Match payments and resolve discrepancies",
-      "Generate monthly/quarterly reports",
-      "Monitor KPIs like DSO and burn rate",
-      "Detect anomalies and possible fraud",
-      "Integrate with payroll and billing",
-      "Maintain audit-ready logs",
-      "Support multi-entity and multi-currency",
-      "Apply retention and redaction policies"
+      "Generate financial reports and forecasts",
+      "Monitor KPIs like DSO, burn rate, and cash flow",
+      "Detect anomalies and flag potential fraud",
+      "Support multi-entity and multi-currency operations"
     ],
     "howItWorks": [
       { "step": 1, "title": "Build with VoltAgent", "description": "Define invoice, expense, and reporting flows in TypeScript." },
@@ -300,7 +299,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Finance Supervisor Routes Financial Requests",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor dispatches to invoice, expense, and reporting agents; tools provide financial data.",
       "agents": [
         { "id": "invoice", "label": "Invoice Agent", "sublabel": "Processing", "icon": "DocumentTextIcon" },
@@ -323,7 +322,8 @@
     "navDescription": "Build agents that understand your codebase",
     "hero": {
       "headline": "Build Dev Agents That Know Your Stack",
-      "subtext": "Automate code reviews, CI/CD, and on-call help with agents that plug into your repos and tools. Full observability with VoltOps.",
+      "subtext": "Enhance code reviews, streamline CI/CD, and support on-call teams with context-aware dev agents.",
+      "heroTag": "AI Agent for Development Teams",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -347,7 +347,9 @@
       { "title": "Code Review Intelligence", "description": "Check architecture rules, performance hotspots, and security patterns.", "icon": "ShieldCheckIcon" },
       { "title": "CI/CD Automation", "description": "Gate merges, run tests, and promote releases with policy checks.", "icon": "Cog6ToothIcon" },
       { "title": "On-call Assistant", "description": "Summarize incidents, fetch logs/metrics, and suggest runbooks.", "icon": "BellAlertIcon" },
-      { "title": "Traceable Decisions", "description": "Explain each finding and action through VoltOps traces.", "icon": "ChartBarIcon" }
+      { "title": "Traceable Decisions", "description": "Explain each finding and action through VoltOps traces.", "icon": "ChartBarIcon" },
+      { "title": "Tech Debt Tracking", "description": "Monitor code quality and prioritize refactoring.", "icon": "ExclamationTriangleIcon" },
+      { "title": "Dependency Analysis", "description": "Check for vulnerabilities and outdated packages.", "icon": "CubeTransparentIcon" }
     ],
     "exampleAgents": [
       { "name": "Architecture Compliance Agent", "description": "Verifies boundaries, dependencies, and API contracts." },
@@ -358,17 +360,13 @@
       { "name": "On-call Runbook Agent", "description": "Correlates logs, metrics, and deploys; suggests next actions." }
     ],
     "capabilities": [
-      "Analyze diffs with repo and history context",
-      "Enforce architectural and security policies",
+      "Analyze code diffs with architectural context",
+      "Enforce security and quality policies",
       "Generate actionable review comments",
-      "Gate merges with CI checks and thresholds",
-      "Monitor builds, tests, and deployment health",
-      "Correlate logs, traces, and metrics for incidents",
-      "Suggest fixes and link to runbooks",
-      "Create and update issues with structured data",
-      "Track technical debt and quality trends",
+      "Gate merges with CI/CD thresholds",
+      "Correlate logs and metrics for incident response",
+      "Track technical debt and code quality trends",
       "Support multi-language and monorepo setups",
-      "Explain every flag with reasoning in VoltOps",
       "Integrate with GitHub, GitLab, Jira, and more"
     ],
     "howItWorks": [
@@ -379,7 +377,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Development Supervisor Routes Code Requests",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor coordinates review, security, and performance agents; tools supply CI and repo data.",
       "agents": [
         { "id": "reviewer", "label": "Code Reviewer", "sublabel": "Analysis", "icon": "CodeBracketSquareIcon" },
@@ -402,7 +400,8 @@
     "navDescription": "Automate campaign planning, content, and analytics",
     "hero": {
       "headline": "Build Marketing Agents That Drive Growth",
-      "subtext": "Automate campaign creation, content personalization, and analytics. Plug into your MarTech stack and keep everything observable in VoltOps.",
+      "subtext": "Create campaigns, personalize content, and track performance with data-driven marketing agents.",
+      "heroTag": "AI Agent for Marketing",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -426,7 +425,9 @@
       { "title": "Campaign Builder", "description": "Create cross-channel campaigns with rules and triggers.", "icon": "CalendarDaysIcon" },
       { "title": "Content Personalization", "description": "Tailor copy and creatives to audiences.", "icon": "SparklesIcon" },
       { "title": "Attribution Analytics", "description": "Track ROI and multi-touch attribution across channels.", "icon": "ChartBarIcon" },
-      { "title": "A/B Testing", "description": "Run and evaluate experiments with VoltOps traces.", "icon": "BeakerIcon" }
+      { "title": "A/B Testing", "description": "Run and evaluate experiments with VoltOps traces.", "icon": "BeakerIcon" },
+      { "title": "Lead Scoring", "description": "Identify high-value prospects with behavioral data.", "icon": "FireIcon" },
+      { "title": "Social Listening", "description": "Monitor brand mentions and engagement across platforms.", "icon": "HashtagIcon" }
     ],
     "exampleAgents": [
       { "name": "Ad Campaign Agent", "description": "Sets up targeting, budgets, and creatives." },
@@ -453,7 +454,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Marketing Supervisor Routes Campaigns",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor orchestrates campaign planning, content generation, and analytics agents.",
       "agents": [
         { "id": "campaigns", "label": "Campaign Agent", "sublabel": "Planning", "icon": "CalendarDaysIcon" },
@@ -476,7 +477,8 @@
     "navDescription": "Automate contract review and compliance checks",
     "hero": {
       "headline": "Build Legal Agents in TypeScript",
-      "subtext": "Automate contract review, compliance, and legal workflows. Connect to your document systems and keep every decision auditable in VoltOps.",
+      "subtext": "Review contracts, ensure compliance, and streamline legal workflows with specialized agents.",
+      "heroTag": "AI Agent for Legal Operations",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -500,7 +502,9 @@
       { "title": "Contract Analysis", "description": "Identify risky clauses, missing terms, and compliance gaps.", "icon": "DocumentTextIcon" },
       { "title": "Policy Enforcement", "description": "Check agreements against internal and regulatory policies.", "icon": "ShieldCheckIcon" },
       { "title": "Redline Automation", "description": "Propose edits and generate comparison reports.", "icon": "PencilSquareIcon" },
-      { "title": "Audit Trails", "description": "Maintain logs of every check and recommendation.", "icon": "ClipboardDocumentCheckIcon" }
+      { "title": "Audit Trails", "description": "Maintain logs of every check and recommendation.", "icon": "ClipboardDocumentCheckIcon" },
+      { "title": "Matter Management", "description": "Track deadlines, tasks, and document versions.", "icon": "FolderOpenIcon" },
+      { "title": "E-signature Integration", "description": "Route contracts for digital signatures automatically.", "icon": "PencilIcon" }
     ],
     "exampleAgents": [
       { "name": "Contract Review Agent", "description": "Scans clauses for risks and deviations." },
@@ -510,13 +514,14 @@
       { "name": "Litigation Risk Agent", "description": "Evaluates case law precedents and disputes." }
     ],
     "capabilities": [
-      "Parse legal docs with structured outputs",
-      "Flag compliance risks early",
-      "Compare against policy templates",
-      "Generate redlines and revisions",
-      "Explain decisions with audit logs",
-      "Support multiple jurisdictions",
-      "Index case law, policies, and past contracts"
+      "Parse contracts and extract key clauses",
+      "Flag compliance risks against policies",
+      "Compare agreements to standard templates",
+      "Generate redlines and track changes",
+      "Support multiple jurisdictions and languages",
+      "Maintain matter timelines and deadlines",
+      "Create audit trails for all decisions",
+      "Index case law and regulatory updates"
     ],
     "howItWorks": [
       { "step": 1, "title": "Build with VoltAgent", "description": "Define review and compliance checks in TypeScript." },
@@ -526,7 +531,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Legal Supervisor Routes Contract Reviews",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor orchestrates contract analysis, compliance, and redline agents.",
       "agents": [
         { "id": "contract", "label": "Contract Agent", "sublabel": "Review", "icon": "DocumentTextIcon" },
@@ -549,7 +554,8 @@
     "navDescription": "Automate claims, underwriting, and policy management",
     "hero": {
       "headline": "Build Insurance Agents in TypeScript",
-      "subtext": "Automate claims processing, underwriting, and policy management. Connect to insurance systems and trace decisions with VoltOps.",
+      "subtext": "Process claims faster, improve underwriting, and manage policies with intelligent insurance agents.",
+      "heroTag": "AI Agent for Insurance",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -573,7 +579,9 @@
       { "title": "Claims Automation", "description": "Classify, validate, and approve claims quickly.", "icon": "ClipboardDocumentCheckIcon" },
       { "title": "Underwriting Rules", "description": "Apply consistent risk scoring and thresholds.", "icon": "ScaleIcon" },
       { "title": "Policy Management", "description": "Generate, update, and explain policy terms.", "icon": "DocumentTextIcon" },
-      { "title": "Fraud Detection", "description": "Detect anomalies and prevent fraudulent claims.", "icon": "ExclamationTriangleIcon" }
+      { "title": "Fraud Detection", "description": "Detect anomalies and prevent fraudulent claims.", "icon": "ExclamationTriangleIcon" },
+      { "title": "Customer Portal", "description": "Self-service claims submission and tracking.", "icon": "ComputerDesktopIcon" },
+      { "title": "Risk Assessment", "description": "Evaluate exposure and calculate premiums dynamically.", "icon": "CalculatorIcon" }
     ],
     "exampleAgents": [
       { "name": "Claims Processing Agent", "description": "Validates claims against policies and docs." },
@@ -583,12 +591,14 @@
       { "name": "Renewals Agent", "description": "Automates renewals and premium adjustments." }
     ],
     "capabilities": [
-      "Process claims automatically",
-      "Validate docs and eligibility",
-      "Score risks with underwriting rules",
-      "Explain policy details to customers",
-      "Detect anomalies and fraud",
-      "Audit every claim and underwriting step"
+      "Process claims with automated validation",
+      "Score risks using underwriting rules",
+      "Detect fraud patterns and anomalies",
+      "Explain policy coverage to customers",
+      "Calculate premiums and deductibles",
+      "Track claim status and settlements",
+      "Generate compliance reports for regulators",
+      "Integrate with third-party data providers"
     ],
     "howItWorks": [
       { "step": 1, "title": "Build with VoltAgent", "description": "Define claim and underwriting logic in TypeScript." },
@@ -598,7 +608,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Insurance Supervisor Routes Requests",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor coordinates claims, underwriting, and fraud detection agents.",
       "agents": [
         { "id": "claims", "label": "Claims Agent", "sublabel": "Processing", "icon": "ClipboardDocumentCheckIcon" },
@@ -621,7 +631,8 @@
     "navDescription": "Automate monitoring, maintenance, and safety checks",
     "hero": {
       "headline": "Build Industrial Agents in TypeScript",
-      "subtext": "Automate predictive maintenance, monitoring, and safety workflows. Connect to IoT and ERP systems with observability in VoltOps.",
+      "subtext": "Predict maintenance needs, monitor operations, and ensure safety with smart industrial agents.",
+      "heroTag": "AI Agent for Industrial Ops",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -645,7 +656,9 @@
       { "title": "Predictive Maintenance", "description": "Use data to predict failures and schedule repairs.", "icon": "WrenchIcon" },
       { "title": "IoT Monitoring", "description": "Streamline IoT data from multiple sensors.", "icon": "ServerStackIcon" },
       { "title": "Safety Compliance", "description": "Automate OSHA and safety checks.", "icon": "ShieldCheckIcon" },
-      { "title": "Root Cause Analysis", "description": "Trace equipment failures with full logs.", "icon": "MagnifyingGlassIcon" }
+      { "title": "Root Cause Analysis", "description": "Trace equipment failures with full logs.", "icon": "MagnifyingGlassIcon" },
+      { "title": "Energy Optimization", "description": "Monitor consumption and reduce operational costs.", "icon": "BoltIcon" },
+      { "title": "Quality Control", "description": "Detect defects with computer vision and ML.", "icon": "CameraIcon" }
     ],
     "exampleAgents": [
       { "name": "Machine Health Agent", "description": "Monitors sensors for predictive failures." },
@@ -655,12 +668,14 @@
       { "name": "Energy Optimization Agent", "description": "Suggests efficiency improvements." }
     ],
     "capabilities": [
-      "Ingest IoT data streams",
-      "Detect anomalies and failure signals",
-      "Schedule predictive maintenance",
-      "Enforce safety and compliance rules",
-      "Trace failures with full logs",
-      "Integrate with ERP and maintenance systems"
+      "Ingest real-time IoT sensor data streams",
+      "Detect anomalies and predict failures",
+      "Schedule predictive maintenance tasks",
+      "Monitor safety compliance and incidents",
+      "Optimize production line efficiency",
+      "Track inventory and supply chain status",
+      "Generate OEE and downtime reports",
+      "Integrate with SCADA, MES, and ERP systems"
     ],
     "howItWorks": [
       { "step": 1, "title": "Build with VoltAgent", "description": "Implement predictive maintenance in TypeScript." },
@@ -670,7 +685,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Industrial Supervisor Routes Maintenance",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor coordinates machine monitoring, safety, and scheduling agents.",
       "agents": [
         { "id": "health", "label": "Machine Health Agent", "sublabel": "Monitoring", "icon": "WrenchIcon" },
@@ -693,7 +708,8 @@
     "navDescription": "Automate learning, tutoring, and student support",
     "hero": {
       "headline": "Build Education Agents in TypeScript",
-      "subtext": "Automate tutoring, learning analytics, and student support. Connect to LMS and student systems with VoltOps observability.",
+      "subtext": "Personalize tutoring, track learning progress, and support students with adaptive education agents.",
+      "heroTag": "AI Agent for Education",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -717,7 +733,9 @@
       { "title": "Personalized Tutoring", "description": "Explain concepts, suggest practice, and reference materials.", "icon": "LightBulbIcon" },
       { "title": "Academic Advising", "description": "Recommend courses and track degree progress.", "icon": "ClipboardDocumentCheckIcon" },
       { "title": "Admin Automation", "description": "Handle enrollment, deadlines, and forms with policy checks.", "icon": "DocumentTextIcon" },
-      { "title": "Learning Analytics", "description": "Summarize engagement and flag at-risk students.", "icon": "ChartBarIcon" }
+      { "title": "Learning Analytics", "description": "Summarize engagement and flag at-risk students.", "icon": "ChartBarIcon" },
+      { "title": "Assignment Help", "description": "Guide students through homework without giving answers.", "icon": "PencilIcon" },
+      { "title": "Parent Portal", "description": "Share progress updates and attendance reports.", "icon": "UsersIcon" }
     ],
     "exampleAgents": [
       { "name": "Writing Tutor Agent", "description": "Gives feedback on drafts and citation guidance." },
@@ -744,7 +762,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Education Supervisor Routes Student Requests",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor dispatches to tutoring, advising, and admin agents, pulling context from LMS/SIS.",
       "agents": [
         { "id": "tutor", "label": "Tutor Agent", "sublabel": "Learning", "icon": "LightBulbIcon" },
@@ -767,7 +785,8 @@
     "navDescription": "Automate public service workflows with auditability",
     "hero": {
       "headline": "Build Government Agents in TypeScript",
-      "subtext": "Automate permits, benefits, and public information with transparent, auditable agents. Connect to case systems and keep every action observable in VoltOps.",
+      "subtext": "Process permits, evaluate benefits, and serve citizens with transparent public service agents.",
+      "heroTag": "AI Agent for Government Services",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -791,7 +810,9 @@
       { "title": "Permit Processing", "description": "Validate forms, check zoning/rules, and route for review.", "icon": "ClipboardDocumentCheckIcon" },
       { "title": "Benefits Eligibility", "description": "Evaluate program rules and request missing info.", "icon": "ScaleIcon" },
       { "title": "Public Info Desk", "description": "Answer policy and service questions with citations.", "icon": "ChatBubbleLeftRightIcon" },
-      { "title": "Audit & Compliance", "description": "Keep explainable logs for FOIA and audits.", "icon": "DocumentMagnifyingGlassIcon" }
+      { "title": "Audit & Compliance", "description": "Keep explainable logs for FOIA and audits.", "icon": "DocumentMagnifyingGlassIcon" },
+      { "title": "Multi-language Support", "description": "Serve diverse communities in their preferred language.", "icon": "LanguageIcon" },
+      { "title": "Case Tracking", "description": "Real-time status updates and estimated timelines.", "icon": "ClockIcon" }
     ],
     "exampleAgents": [
       { "name": "Permit Intake Agent", "description": "Screens applications and checks required documents." },
@@ -801,12 +822,14 @@
       { "name": "Compliance Reporter Agent", "description": "Generates audit-ready activity and outcome reports." }
     ],
     "capabilities": [
-      "Validate applications and forms",
-      "Evaluate eligibility rules with a policy engine",
+      "Validate permit applications and documents",
+      "Evaluate benefits eligibility automatically",
       "Answer citizen questions in multiple languages",
-      "Route and track cases with SLAs",
-      "Integrate with registries and legacy systems",
-      "Maintain full audit trails and data retention rules"
+      "Route cases by department and priority",
+      "Track case status with SLA monitoring",
+      "Generate compliance and audit reports",
+      "Integrate with legacy government systems",
+      "Maintain data privacy and retention policies"
     ],
     "howItWorks": [
       { "step": 1, "title": "Build with VoltAgent", "description": "Define intake, eligibility, and routing logic in TypeScript." },
@@ -816,7 +839,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Government Supervisor Routes Citizen Requests",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor dispatches to permit, benefits, and information agents with policy-aware checks.",
       "agents": [
         { "id": "permit", "label": "Permit Agent", "sublabel": "Applications", "icon": "ClipboardDocumentCheckIcon" },
@@ -839,7 +862,8 @@
     "navDescription": "Automate API docs, changelogs, and tutorials",
     "hero": {
       "headline": "Build Documentation Agents in TypeScript",
-      "subtext": "Generate and maintain API docs, changelogs, and tutorials directly from code and specs. Plug into repos and CI; trace everything in VoltOps.",
+      "subtext": "Generate API docs, track changes, and create tutorials directly from your codebase.",
+      "heroTag": "AI Agent for Documentation",
       "primaryCTA": "Start Building",
       "primaryCTALink": "/docs/",
       "secondaryCTA": "View Examples",
@@ -863,7 +887,9 @@
       { "title": "Code-to-Docs", "description": "Create API references and guides from code and specs.", "icon": "CodeBracketIcon" },
       { "title": "Release Notes", "description": "Summarize PRs/issues into clear changelogs.", "icon": "MegaphoneIcon" },
       { "title": "Tutorial Builder", "description": "Generate step-by-step guides with runnable examples.", "icon": "AcademicCapIcon" },
-      { "title": "Quality Gates", "description": "Check style, accuracy, and links in CI.", "icon": "ShieldCheckIcon" }
+      { "title": "Quality Gates", "description": "Check style, accuracy, and links in CI.", "icon": "ShieldCheckIcon" },
+      { "title": "Version Control", "description": "Manage docs across multiple product versions.", "icon": "ArrowPathIcon" },
+      { "title": "Search Optimization", "description": "Generate SEO-friendly content and metadata.", "icon": "MagnifyingGlassIcon" }
     ],
     "exampleAgents": [
       { "name": "API Reference Agent", "description": "Builds and updates endpoint docs with examples." },
@@ -890,7 +916,7 @@
     ],
     "supervisorFlow": {
       "enabled": true,
-      "title": "How Docs Supervisor Orchestrates Documentation",
+      "title": "Coordinate AI Agents and Workflows",
       "subtitle": "Supervisor coordinates API reference, changelog, and tutorial agents tied to repos and CI.",
       "agents": [
         { "id": "api-docs", "label": "API Docs Agent", "sublabel": "Reference", "icon": "CodeBracketIcon" },
