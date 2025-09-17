@@ -248,10 +248,44 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
         <meta name="twitter:description" content={seoDescription} />
       </Head>
 
-      <main className="flex-1 bg-[#080f11d9]">
+      <main className="flex-1 bg-[#080f11d9] relative overflow-hidden">
+        {/* Global Background Effects */}
+        <div className="fixed inset-0 pointer-events-none">
+          {/* Base gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/3 via-transparent to-cyan-500/3" />
+
+          {/* Animated gradient orbs */}
+          <div className="absolute top-[10%] left-[15%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] animate-pulse" />
+          <div
+            className="absolute top-[50%] right-[10%] w-[400px] h-[400px] bg-cyan-500/8 rounded-full blur-[100px] animate-pulse"
+            style={{ animationDelay: "2s" }}
+          />
+          <div
+            className="absolute bottom-[20%] left-[25%] w-[450px] h-[450px] bg-emerald-400/8 rounded-full blur-[110px] animate-pulse"
+            style={{ animationDelay: "4s" }}
+          />
+          <div
+            className="absolute top-[30%] left-[60%] w-[350px] h-[350px] bg-cyan-400/6 rounded-full blur-[90px] animate-pulse"
+            style={{ animationDelay: "3s" }}
+          />
+
+          {/* Moving gradient effect */}
+          <div className="absolute inset-0 opacity-30">
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at 20% 50%, rgba(0, 217, 146, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 50%), radial-gradient(circle at 40% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%)",
+                animation: "gradientShift 20s ease-in-out infinite",
+              }}
+            />
+          </div>
+        </div>
+
         <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
+
         {/* Hero Section */}
-        <Section className="relative overflow-hidden">
+        <Section className="relative">
           <Container>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
               {/* Left side - Content */}
@@ -300,12 +334,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
         </Section>
 
         {/* Features & Capabilities */}
-        <Section className="relative overflow-hidden">
-          {/* Background gradient effects */}
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-cyan-500/5" />
-          <div className="absolute top-20 right-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl " />
-          <div className="absolute bottom-20 left-1/3 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl  delay-1000" />
-
+        <Section className="relative">
           <Container className="relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -599,12 +628,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
 
         {/* Example Agents - Full Width Section */}
         {useCase.exampleAgents && useCase.exampleAgents.length > 0 && (
-          <Section className="relative overflow-hidden">
-            {/* Background gradient effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-cyan-500/5" />
-            <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-
+          <Section className="relative">
             <Container className="relative z-10">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -694,12 +718,7 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
         )}
 
         {/* Enterprise Security & CTA Combined Section */}
-        <Section className="relative overflow-hidden">
-          {/* Background gradient effects */}
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-cyan-500/5" />
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
-
+        <Section className="relative">
           <Container className="relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
               {/* Enterprise Security - Left Side */}
@@ -823,6 +842,24 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
             </div>
           </Container>
         </Section>
+
+        {/* Global CSS for animations */}
+        <style jsx global>{`
+          @keyframes gradientShift {
+            0%, 100% {
+              transform: translate(0, 0) rotate(0deg);
+            }
+            25% {
+              transform: translate(-5%, 5%) rotate(1deg);
+            }
+            50% {
+              transform: translate(5%, -5%) rotate(-1deg);
+            }
+            75% {
+              transform: translate(-3%, -3%) rotate(0.5deg);
+            }
+          }
+        `}</style>
       </main>
     </Layout>
   );
