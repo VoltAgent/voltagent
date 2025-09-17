@@ -1,5 +1,31 @@
 # @voltagent/core
 
+## 1.1.9
+
+### Patch Changes
+
+- [#577](https://github.com/VoltAgent/voltagent/pull/577) [`749bbdf`](https://github.com/VoltAgent/voltagent/commit/749bbdfc12a42242ebc3b93e0fea5b439e5b84bf) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve subagent tool call/result pairing issue with Claude/Bedrock
+
+  Fixed a critical issue where subagents performing tool calls would break the conversation flow with Claude/Bedrock models. The error "tool_use ids were found without tool_result blocks" occurred because the tool result messages were not being properly included when converting subagent responses to UI message streams.
+
+  ## The Problem
+
+  When a subagent executed a tool call, the parent agent would receive incomplete message history:
+  - Direct agents: Called `toUIMessageStream` with `sendStart: false` and `originalMessages`, which only included the initial task message
+  - StreamText configs: Called `toUIMessageStream` without any parameters
+  - Both approaches failed to include the complete tool call/result sequence
+
+  ## The Solution
+  - Removed explicit parameters from `toUIMessageStream` calls in both direct agent and streamText configuration paths
+  - Let the AI SDK handle the default behavior for proper message inclusion
+  - This ensures tool_use and tool_result messages remain properly paired in the conversation
+
+  ## Impact
+  - Fixes "No output generated" errors when subagents use tools
+  - Resolves conversation breakage after subagent tool calls
+  - Maintains proper message history for Claude/Bedrock compatibility
+  - No breaking changes - the fix simplifies the internal implementation
+
 ## 1.1.8
 
 ### Patch Changes
