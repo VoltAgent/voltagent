@@ -36,6 +36,7 @@ export const PROTECTED_ROUTES = [
   // Agent execution endpoints
   "POST /agents/:id/text", // generateText
   "POST /agents/:id/stream", // streamText
+  "POST /agents/:id/chat", // chatStream
   "POST /agents/:id/object", // generateObject
   "POST /agents/:id/stream-object", // streamObject
 
