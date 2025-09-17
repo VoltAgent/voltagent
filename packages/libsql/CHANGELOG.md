@@ -1,5 +1,11 @@
 # @voltagent/libsql
 
+## 1.0.5
+
+### Patch Changes
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
 ## 1.0.4
 
 ### Patch Changes

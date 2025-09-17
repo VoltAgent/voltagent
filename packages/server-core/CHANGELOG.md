@@ -1,5 +1,19 @@
 # @voltagent/server-core
 
+## 1.0.8
+
+### Patch Changes
+
+- [#581](https://github.com/VoltAgent/voltagent/pull/581) [`05ddac1`](https://github.com/VoltAgent/voltagent/commit/05ddac1ac9404cd6062d2e448b0ce4df90ecd748) Thanks [@wayneg123](https://github.com/wayneg123)! - fix(server-core): add missing /chat endpoint to protected routes for JWT auth
+
+  The /agents/:id/chat endpoint was missing from PROTECTED_ROUTES, causing it to bypass JWT authentication while other execution endpoints (/text, /stream, /object, /stream-object) correctly required authentication.
+
+  This fix ensures all agent execution endpoints consistently require JWT authentication when jwtAuth is configured.
+
+  Fixes authentication bypass vulnerability on chat endpoint.
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
 ## 1.0.7
 
 ### Patch Changes

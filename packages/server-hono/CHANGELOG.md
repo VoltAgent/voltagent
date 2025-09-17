@@ -1,5 +1,14 @@
 # @voltagent/server-hono
 
+## 1.0.6
+
+### Patch Changes
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
+- Updated dependencies [[`05ddac1`](https://github.com/VoltAgent/voltagent/commit/05ddac1ac9404cd6062d2e448b0ce4df90ecd748), [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6)]:
+  - @voltagent/server-core@1.0.8
+
 ## 1.0.5
 
 ### Patch Changes
