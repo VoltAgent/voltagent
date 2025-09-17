@@ -16,52 +16,85 @@ import { AnimatedBeam } from "../magicui/animated-beam";
 import { getUseCaseConfig } from "./configs";
 
 // Node component similar to agents-animation
-const Node = forwardRef<
-  HTMLDivElement,
-  {
-    className?: string;
-    children?: React.ReactNode;
-    label?: string;
-    description?: string;
-    type?: "center" | "peripheral";
-    nodeId?: string;
-    processing?: boolean;
-  }
->(({ className, children, label, description, type = "peripheral", processing = false }, ref) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 768px)");
+const Node = React.memo(
+  forwardRef<
+    HTMLDivElement,
+    {
+      className?: string;
+      children?: React.ReactNode;
+      label?: string;
+      description?: string;
+      type?: "center" | "peripheral";
+      nodeId?: string;
+      processing?: boolean;
+    }
+  >(({ className, children, label, description, type = "peripheral", processing = false }, ref) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const isMobile = useMediaQuery("(max-width: 768px)");
 
-  if (type === "center") {
+    if (type === "center") {
+      return (
+        <div className="flex flex-col items-center relative">
+          <div
+            ref={ref}
+            className={clsx(
+              "z-20 flex items-center justify-center rounded-full border-2 border-solid transition-all duration-300 relative overflow-visible",
+              "border-[#00d992] bg-[#00d992]/10 shadow-[0_0_30px_rgba(0,217,146,0.3)]",
+              "hover:scale-110",
+              isMobile ? "size-12" : "size-16",
+              className,
+            )}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            {/* Processing blink (no scale) */}
+            {processing && (
+              <>
+                <div className="pointer-events-none absolute inset-0 rounded-full bg-[#00d992] blur-md opacity-30 animate-[pulse_0.5s_ease-in-out_infinite]" />
+                <div className="pointer-events-none absolute -inset-1 rounded-full border border-[#00d992]/40 animate-[pulse_0.5s_ease-in-out_infinite]" />
+              </>
+            )}
+            <div className="relative z-10 flex items-center justify-center">{children}</div>
+          </div>
+          {label && (
+            <span
+              className={clsx(
+                "mt-2 font-semibold text-[#00d992]",
+                isMobile ? "text-xs" : "text-sm",
+              )}
+            >
+              {label}
+            </span>
+          )}
+          {description && isHovered && (
+            <div className="absolute top-full mt-2 z-50 w-48 rounded-md bg-[#0c2520] border border-solid border-[#113328] p-3 shadow-lg text-xs text-gray-300">
+              {description}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Peripheral node with rectangular design
     return (
-      <div className="flex flex-col items-center relative">
+      <div className="relative">
         <div
           ref={ref}
           className={clsx(
-            "z-20 flex items-center justify-center rounded-full border-2 border-solid transition-all duration-300 relative overflow-visible",
-            "border-[#00d992] bg-[#00d992]/10 shadow-[0_0_30px_rgba(0,217,146,0.3)]",
-            "hover:scale-110",
-            isMobile ? "size-12" : "size-16",
+            "z-10 flex items-center gap-2 rounded-md backdrop-blur-sm border border-dashed transition-all duration-300",
+            "border-[#4f5d75] border-opacity-40",
+            "hover:scale-105 hover:bg-[#113328]/30 hover:border-[#00d992]/40",
+            "px-3 py-2",
+            isMobile ? "min-w-[100px]" : "min-w-[120px]",
             className,
           )}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          {/* Processing blink (no scale) */}
-          {processing && (
-            <>
-              <div className="pointer-events-none absolute inset-0 rounded-full bg-[#00d992] blur-md opacity-30 animate-[pulse_0.5s_ease-in-out_infinite]" />
-              <div className="pointer-events-none absolute -inset-1 rounded-full border border-[#00d992]/40 animate-[pulse_0.5s_ease-in-out_infinite]" />
-            </>
-          )}
-          <div className="relative z-10 flex items-center justify-center">{children}</div>
+          <div className="flex items-center justify-center size-5">{children}</div>
+          <span className="text-xs font-medium text-gray-300 whitespace-nowrap">{label}</span>
         </div>
-        {label && (
-          <span
-            className={clsx("mt-2 font-semibold text-[#00d992]", isMobile ? "text-xs" : "text-sm")}
-          >
-            {label}
-          </span>
-        )}
+
         {description && isHovered && (
           <div className="absolute top-full mt-2 z-50 w-48 rounded-md bg-[#0c2520] border border-solid border-[#113328] p-3 shadow-lg text-xs text-gray-300">
             {description}
@@ -69,36 +102,8 @@ const Node = forwardRef<
         )}
       </div>
     );
-  }
-
-  // Peripheral node with rectangular design
-  return (
-    <div className="relative">
-      <div
-        ref={ref}
-        className={clsx(
-          "z-10 flex items-center gap-2 rounded-md backdrop-blur-sm border border-dashed transition-all duration-300",
-          "border-[#4f5d75] border-opacity-40",
-          "hover:scale-105 hover:bg-[#113328]/30 hover:border-[#00d992]/40",
-          "px-3 py-2",
-          isMobile ? "min-w-[100px]" : "min-w-[120px]",
-          className,
-        )}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div className="flex items-center justify-center size-5">{children}</div>
-        <span className="text-xs font-medium text-gray-300 whitespace-nowrap">{label}</span>
-      </div>
-
-      {description && isHovered && (
-        <div className="absolute top-full mt-2 z-50 w-48 rounded-md bg-[#0c2520] border border-solid border-[#113328] p-3 shadow-lg text-xs text-gray-300">
-          {description}
-        </div>
-      )}
-    </div>
-  );
-});
+  }),
+);
 
 Node.displayName = "Node";
 
@@ -109,7 +114,7 @@ interface UseCaseAnimationProps {
   systemCapabilities?: string[];
 }
 
-export function UseCaseAnimation({
+export const UseCaseAnimation = React.memo(function UseCaseAnimation({
   slug,
   className,
   businessTopics,
@@ -171,8 +176,33 @@ export function UseCaseAnimation({
   const holdDuration = 0.5; // Wait at center before fanning out
   const cycleDelay = 0.2; // Very small delay before next cycle for smooth loop
 
+  // Track visibility
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Set up IntersectionObserver
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 },
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
+  }, []);
+
   // Create continuous bidirectional animation sequence (self-scheduling)
   useEffect(() => {
+    if (!isVisible) return; // Don't run animations when not visible
+
     const timers: NodeJS.Timeout[] = [];
 
     const runCycle = () => {
@@ -214,7 +244,7 @@ export function UseCaseAnimation({
     return () => {
       timers.forEach((t) => clearTimeout(t));
     };
-  }, [nodeIds]);
+  }, [nodeIds, isVisible]);
 
   // Calculate responsive radius
   const radius = isMobile ? 120 : 180;
@@ -476,4 +506,4 @@ export function UseCaseAnimation({
       </div>
     </div>
   );
-}
+});
