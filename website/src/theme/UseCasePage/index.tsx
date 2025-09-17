@@ -164,11 +164,13 @@ const Button = ({
   children,
   href,
   className = "",
+  target,
 }: {
   variant?: "primary" | "secondary";
   children: React.ReactNode;
   href: string;
   className?: string;
+  target?: string;
 }) => {
   const baseClasses =
     "inline-flex items-center justify-center px-6 py-3 rounded-2xl font-semibold transition-all duration-200 no-underline";
@@ -180,7 +182,12 @@ const Button = ({
   };
 
   return (
-    <Link href={href} className={`${baseClasses} ${variants[variant]} ${className}`}>
+    <Link
+      href={href}
+      className={`${baseClasses} ${variants[variant]} ${className}`}
+      target={target}
+      rel={target === "_blank" ? "noopener noreferrer" : undefined}
+    >
       {children}
     </Link>
   );
@@ -305,11 +312,11 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   {useCase.hero.subtext}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button href={useCase.hero.primaryCTALink} variant="primary">
+                  <Button href={useCase.hero.primaryCTALink} variant="primary" target="_blank">
                     {useCase.hero.primaryCTA}
                     <ArrowRightIcon className="w-5 h-5 ml-2" />
                   </Button>
-                  <Button href={useCase.hero.secondaryCTALink} variant="secondary">
+                  <Button href={useCase.hero.secondaryCTALink} variant="secondary" target="_blank">
                     {useCase.hero.secondaryCTA}
                   </Button>
                 </div>
@@ -767,22 +774,13 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                       <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-start mb-5 md:mb-6">
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           <Button
-                            href="/docs/getting-started"
+                            href="/docs/quick-start/"
                             variant="primary"
                             className="w-full sm:w-auto text-sm md:text-base"
+                            target="_blank"
                           >
                             Get Started
                             <ArrowRightIcon className="w-4 h-4 md:w-5 md:h-5 ml-2" />
-                          </Button>
-                        </motion.div>
-
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            href="https://console.voltagent.dev/demo"
-                            variant="secondary"
-                            className="w-full sm:w-auto text-sm md:text-base"
-                          >
-                            Try Demo
                           </Button>
                         </motion.div>
                       </div>

@@ -169,7 +169,7 @@ export default function Navbar() {
                     return (
                       <Link
                         key={useCase.slug}
-                        to={`/usecases/${useCase.slug}`}
+                        to={`/use-cases/${useCase.slug}`}
                         className="no-underline"
                       >
                         <div className="group p-2 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10">
@@ -483,7 +483,7 @@ export default function Navbar() {
                 return (
                   <Link
                     key={useCase.slug}
-                    to={`/usecases/${useCase.slug}`}
+                    to={`/use-cases/${useCase.slug}`}
                     className="no-underline"
                   >
                     <div

@@ -14,7 +14,7 @@ function loadUseCases(contentPath) {
     id: useCase.id,
     metadata: {
       ...useCase,
-      permalink: `/usecases/${useCase.slug}`,
+      permalink: `/use-cases/${useCase.slug}`,
     },
   }));
 }
