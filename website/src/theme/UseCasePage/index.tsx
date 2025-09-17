@@ -642,29 +642,31 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   })}
 
                   {/* "+ more" card with enhanced design */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 30, rotateX: -15 }}
-                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                    transition={{
-                      duration: 0.5,
-                      delay: 0.35 + useCase.exampleAgents.length * 0.08,
-                      type: "spring",
-                      stiffness: 100,
-                    }}
-                    className="group relative perspective-1000 cursor-pointer"
-                  >
-                    <div className="relative h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-6">
-                      <div className="relative z-10">
-                        <h3 className="text-sm font-bold text-emerald-400 mb-3 pr-8 flex items-center">
-                          <span className="text-lg font-bold text-emerald-400 mr-2">+</span>
-                          Build Custom Agents
-                        </h3>
-                        <p className="text-xs text-gray-500 leading-relaxed mb-0">
-                          Create specialized AI agents tailored to your unique workflows
-                        </p>
+                  <Link to="/tutorial/introduction" className="no-underline hover:no-underline">
+                    <motion.div
+                      initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                      transition={{
+                        duration: 0.5,
+                        delay: 0.35 + useCase.exampleAgents.length * 0.08,
+                        type: "spring",
+                        stiffness: 100,
+                      }}
+                      className="group relative perspective-1000 cursor-pointer"
+                    >
+                      <div className="relative h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-6 hover:bg-gradient-to-br hover:from-gray-900/95 hover:to-gray-950/95 transition-all">
+                        <div className="relative z-10">
+                          <h3 className="text-sm font-bold text-emerald-400 mb-3 pr-8 flex items-center">
+                            <span className="text-lg font-bold text-emerald-400 mr-2">+</span>
+                            Build Custom Agents
+                          </h3>
+                          <p className="text-xs text-gray-500 leading-relaxed mb-0">
+                            Create specialized AI agents tailored to your unique workflows
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  </Link>
                 </div>
               </motion.div>
             </Container>
@@ -696,8 +698,8 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   </div>
 
                   <div className="relative z-10 h-full flex flex-col">
-                    <h2 className="mt-1 landing-xs:text-2xl landing-md:text-3xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight flex items-center">
-                      <ShieldCheckIcon className="w-6 h-6 md:w-7 md:h-7 text-emerald-400 mr-2 md:mr-3" />
+                    <h2 className="mt-1 text-lg landing-md:text-3xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight flex items-center">
+                      <ShieldCheckIcon className="w-5 h-5 md:w-7 md:h-7 text-emerald-400 mr-2 md:mr-3" />
                       <span className="leading-tight">Enterprise-Ready Security</span>
                     </h2>
 
@@ -752,8 +754,8 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   </div>
 
                   <div className="relative z-10 h-full flex flex-col">
-                    <h2 className="mt-1 landing-xs:text-2xl landing-md:text-3xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight flex items-center">
-                      <BoltIcon className="w-6 h-6 md:w-7 md:h-7 text-emerald-400 mr-2 md:mr-3" />
+                    <h2 className="mt-1 text-lg landing-md:text-3xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight flex items-center">
+                      <BoltIcon className="w-5 h-5 md:w-7 md:h-7 text-emerald-400 mr-2 md:mr-3" />
                       <span className="leading-tight">Ready to Ship Real Agents?</span>
                     </h2>
 
