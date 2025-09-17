@@ -7,7 +7,7 @@
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^1.1.8",
     "@voltagent/logger": "^1.0.1",
-    "@voltagent/postgres": "^1.0.3",
+    "@voltagent/postgres": "^1.0.4",
     "@voltagent/server-hono": "^1.0.5",
     "ai": "^5.0.12",
     "zod": "^3.25.76"

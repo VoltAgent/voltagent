@@ -1,5 +1,11 @@
 # @voltagent/postgres
 
+## 1.0.4
+
+### Patch Changes
+
+- [`e268f61`](https://github.com/VoltAgent/voltagent/commit/e268f61dff91691000675222093165e1349831dc) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: add debug logs
+
 ## 1.0.3
 
 ## 1.0.3-next.0

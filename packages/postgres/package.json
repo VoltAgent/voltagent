@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/postgres",
   "description": "VoltAgent PostgreSQL - PostgreSQL Memory provider integration for VoltAgent",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "dependencies": {
     "@voltagent/internal": "^0.0.10",
     "pg": "^8.16.0"
