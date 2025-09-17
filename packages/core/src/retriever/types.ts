@@ -38,7 +38,7 @@ export interface RetrieveOptions {
    * User-managed context map for this specific retrieval operation
    * Can be used to store metadata, results, or any custom data
    */
-  userContext?: Map<string | symbol, unknown>;
+  context?: Map<string | symbol, unknown>;
 
   /**
    * Optional logger instance for this retrieval operation.

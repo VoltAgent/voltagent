@@ -18,12 +18,10 @@ VoltAgent provides a three-tier prompt management system that scales from simple
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const weatherAgent = new Agent({
   name: "WeatherAgent",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions:
     "You are a customer support agent. Help users with their questions politely and efficiently.",
@@ -62,17 +60,16 @@ Simple string-based instructions that remain constant throughout your agent's li
 | Perfect for getting started | Hard to update in production |
 | Immediate deployment        | No analytics or monitoring   |
 
-## 2. Dynamic Instructions with UserContext
+## 2. Dynamic Instructions with Context
 
 **Function-based instructions with userTier:**
 
 ```typescript
 const supportAgent = new Agent({
   name: "SupportAgent",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  instructions: async ({ userContext }) => {
-    const userTier = userContext.get("userTier") || "basic";
+  instructions: async ({ context }) => {
+    const userTier = context.get("userTier") || "basic";
 
     if (userTier === "premium") {
       return "You are a premium customer support agent. Provide detailed explanations, offer multiple solutions, and prioritize this customer's requests. Be thorough and professional.";
@@ -83,7 +80,7 @@ const supportAgent = new Agent({
 });
 ```
 
-**Using the agent with userContext:**
+**Using the agent with context:**
 
 ```typescript
 // Premium user gets different treatment
@@ -91,7 +88,7 @@ const premiumContext = new Map();
 premiumContext.set("userTier", "premium");
 
 const premiumResponse = await supportAgent.generateText("I need help with my order", {
-  userContext: premiumContext,
+  context: premiumContext,
 });
 
 // Basic user gets standard support
@@ -99,7 +96,7 @@ const basicContext = new Map();
 basicContext.set("userTier", "basic");
 
 const basicResponse = await supportAgent.generateText("I need help with my order", {
-  userContext: basicContext,
+  context: basicContext,
 });
 ```
 
@@ -166,7 +163,6 @@ Let's create a customer support prompt step by step:
 1. **Navigate to Prompts**: Go to [`https://console.voltagent.dev/prompts`](https://console.voltagent.dev/prompts)
 2. **Click "Create Prompt"** button in the top right
 3. **Fill in the prompt details**:
-
    - **Name**: `customer-support-prompt`
    - **Description**: `Customer support agent prompt for handling user inquiries`
    - **Type**: Select `Text` (we'll explore chat type later)
@@ -204,7 +200,6 @@ Now let's integrate this prompt into your VoltAgent application:
 
 ```typescript
 import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const voltOpsClient = new VoltOpsClient({
@@ -219,7 +214,6 @@ const voltOpsClient = new VoltOpsClient({
 
 const supportAgent = new Agent({
   name: "SupportAgent",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
@@ -252,7 +246,6 @@ You can also pass the VoltOpsClient directly to individual agents:
 ```typescript
 const supportAgent = new Agent({
   name: "SupportAgent",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
@@ -488,7 +481,6 @@ For more complex conversational agents, you can use chat-type prompts that defin
 ```typescript
 const chatAgent = new Agent({
   name: "ChatSupportAgent",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
@@ -640,10 +632,10 @@ await Promise.all(criticalPrompts.map((name) => prompts.getPrompt({ promptName: 
 **Input sanitization for template variables:**
 
 ```typescript
-instructions: async ({ prompts, userContext }) => {
+instructions: async ({ prompts, context }) => {
   // Sanitize user input
   const sanitizedUserName =
-    userContext
+    context
       .get("userName")
       ?.replace(/[<>]/g, "") // Remove potential HTML
       ?.substring(0, 50) || "Guest"; // Limit length
@@ -689,7 +681,7 @@ Template error: Variable 'userName' not found
 return await prompts.getPrompt({
   promptName: "greeting-prompt",
   variables: {
-    userName: userContext.get('userName') || 'Guest', // Provide default
+    userName: context.get('userName') || 'Guest', // Provide default
     currentTime: new Date().toISOString()
   }
 });
@@ -779,8 +771,8 @@ const agent = new Agent({
 ```typescript
 // Use Dynamic Instructions
 const agent = new Agent({
-  instructions: async ({ userContext }) => {
-    const tier = userContext.get("tier");
+  instructions: async ({ context }) => {
+    const tier = context.get("tier");
     return tier === "premium"
       ? "You are a dedicated premium support agent with deep technical expertise."
       : "You are a helpful support agent providing efficient solutions.";

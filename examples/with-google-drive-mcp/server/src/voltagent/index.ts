@@ -1,15 +1,8 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-
-export const agent = new Agent({
-  name: "Base Agent",
-  description: "You are a helpful assistant that can search Google Drive.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  markdown: true,
-});
+import { honoServer } from "@voltagent/server-hono";
 
 // Create logger
 const logger = createPinoLogger({
@@ -17,9 +10,22 @@ const logger = createPinoLogger({
   level: "info",
 });
 
+export const agent = new Agent({
+  name: "Base Agent",
+  instructions: "You are a helpful assistant that can search Google Drive.",
+  model: openai("gpt-4o-mini"),
+  markdown: true,
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
+});
+
 new VoltAgent({
   agents: {
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

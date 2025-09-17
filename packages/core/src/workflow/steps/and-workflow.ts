@@ -48,7 +48,7 @@ export function andWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA = any, RESUME_DATA
         executionId: context.state.executionId,
         conversationId: context.state.conversationId,
         userId: context.state.userId,
-        userContext: context.state.userContext,
+        context: context.state.context,
       });
       return result;
     },

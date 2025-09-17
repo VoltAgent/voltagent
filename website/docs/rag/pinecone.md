@@ -279,8 +279,8 @@ export class PineconeRetriever extends BaseRetriever {
     // Perform semantic search
     const results = await retrieveDocuments(searchText, 3);
 
-    // Add references to userContext for tracking
-    if (options.userContext && results.length > 0) {
+    // Add references to context for tracking
+    if (options.context && results.length > 0) {
       const references = results.map((doc: any, index: number) => ({
         id: doc.id,
         title: doc.metadata.topic || `Document ${index + 1}`,
@@ -289,7 +289,7 @@ export class PineconeRetriever extends BaseRetriever {
         category: doc.metadata.category,
       }));
 
-      options.userContext.set("references", references);
+      options.context.set("references", references);
     }
 
     // Format results for the LLM
@@ -324,15 +324,14 @@ Now create agents using different retrieval patterns in `src/index.ts`:
 ```typescript
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { retriever } from "./retriever/index.js";
 
 // Agent 1: Automatic retrieval on every interaction
 const agentWithRetriever = new Agent({
   name: "Assistant with Retriever",
-  description:
+  instructions:
     "A helpful assistant that automatically searches the Pinecone knowledge base for relevant information",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   retriever: retriever,
 });
@@ -340,8 +339,7 @@ const agentWithRetriever = new Agent({
 // Agent 2: LLM decides when to search
 const agentWithTools = new Agent({
   name: "Assistant with Tools",
-  description: "A helpful assistant that can search the knowledge base when needed",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant that can search the knowledge base when needed",
   model: openai("gpt-4o-mini"),
   tools: [retriever.tool],
 });
@@ -351,6 +349,7 @@ new VoltAgent({
     agentWithRetriever,
     agentWithTools,
   },
+  server: honoServer(),
 });
 ```
 
@@ -393,7 +392,7 @@ const response = await agent.generateText("What is Pinecone?");
 console.log("Answer:", response.text);
 
 // Check what sources were used
-const references = response.userContext?.get("references");
+const references = response.context?.get("references");
 if (references) {
   console.log("Used sources:", references);
   references.forEach((ref) => {

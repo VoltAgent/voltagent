@@ -7,7 +7,7 @@ import { andThen } from "./steps";
 
 describe("workflow chain - type inference", () => {
   // Mock agent for testing - we just need the type, not a real instance
-  const mockAgent = {} as Agent<any>;
+  const mockAgent = {} as Agent;
 
   describe("Basic Type Inference", () => {
     it("should infer data flow through workflow chain", () => {

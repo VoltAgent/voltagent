@@ -26,6 +26,7 @@ export const AI_PROVIDER_CONFIG = {
     model: 'openai("gpt-4o-mini")',
     modelName: "GPT-4o-mini",
     import: 'import { openai } from "@ai-sdk/openai";',
+    extraPackages: ["ai@^5"],
     apiKeyUrl: "https://platform.openai.com/api-keys",
   },
   anthropic: {
@@ -36,6 +37,7 @@ export const AI_PROVIDER_CONFIG = {
     model: 'anthropic("claude-3-5-sonnet-20241022")',
     modelName: "Claude 3.5 Sonnet",
     import: 'import { anthropic } from "@ai-sdk/anthropic";',
+    extraPackages: ["ai@^5"],
     apiKeyUrl: "https://console.anthropic.com/settings/keys",
   },
   google: {
@@ -46,6 +48,7 @@ export const AI_PROVIDER_CONFIG = {
     model: 'google("gemini-2.0-flash-exp")',
     modelName: "Gemini 2.0 Flash",
     import: 'import { google } from "@ai-sdk/google";',
+    extraPackages: ["ai@^5"],
     apiKeyUrl: "https://aistudio.google.com/app/apikey",
   },
   groq: {
@@ -56,6 +59,7 @@ export const AI_PROVIDER_CONFIG = {
     model: 'groq("llama-3.3-70b-versatile")',
     modelName: "Llama 3.3 70B",
     import: 'import { groq } from "@ai-sdk/groq";',
+    extraPackages: ["ai@^5"],
     apiKeyUrl: "https://console.groq.com/keys",
   },
   mistral: {
@@ -66,6 +70,7 @@ export const AI_PROVIDER_CONFIG = {
     model: 'mistral("mistral-large-latest")',
     modelName: "Mistral Large 2",
     import: 'import { mistral } from "@ai-sdk/mistral";',
+    extraPackages: ["ai@^5"],
     apiKeyUrl: "https://console.mistral.ai/api-keys",
   },
   ollama: {
@@ -78,6 +83,7 @@ export const AI_PROVIDER_CONFIG = {
     import: 'import { createOllama } from "ollama-ai-provider";',
     extraCode:
       '\nconst ollama = createOllama({\n  baseURL: process.env.OLLAMA_HOST || "http://localhost:11434",\n});',
+    extraPackages: ["ai@^5"],
     apiKeyUrl: "https://ollama.com/download",
   },
 } as const;

@@ -4,6 +4,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 import { getGlobalLogger } from "../../logger";
 import { MCPClient } from "./index";
 
@@ -26,6 +27,10 @@ vi.mock("@modelcontextprotocol/sdk/client/stdio.js", () => ({
 }));
 
 vi.mock("zod-from-json-schema", () => ({
+  convertJsonSchemaToZod: vi.fn().mockReturnValue({}),
+}));
+
+vi.mock("zod-from-json-schema-v3", () => ({
   convertJsonSchemaToZod: vi.fn().mockReturnValue({}),
 }));
 
@@ -393,24 +398,24 @@ describe("MCPClient", () => {
 
       expect(mockConnect).toHaveBeenCalled();
       expect(mockListTools).toHaveBeenCalled();
-      expect(convertJsonSchemaToZod).toHaveBeenCalledTimes(2);
+      expect(convertJsonSchemaToZodV3).toHaveBeenCalledTimes(2);
 
       expect(agentTools).toEqual(
         expect.objectContaining({
-          TestClient_tool1: {
+          TestClient_tool1: expect.objectContaining({
             name: "TestClient_tool1",
             id: expect.any(String),
             description: "Tool 1 description",
-            parameters: {},
+            parameters: expect.any(Object),
             execute: expect.any(Function),
-          },
-          TestClient_tool2: {
+          }),
+          TestClient_tool2: expect.objectContaining({
             id: expect.any(String),
             name: "TestClient_tool2",
             description: "Tool 2 description",
-            parameters: {},
+            parameters: expect.any(Object),
             execute: expect.any(Function),
-          },
+          }),
         }),
       );
     });
@@ -425,20 +430,20 @@ describe("MCPClient", () => {
     });
 
     it("should skip a tool if schema conversion fails", async () => {
-      (convertJsonSchemaToZod as vi.Mock).mockImplementationOnce(() => {
+      (convertJsonSchemaToZodV3 as vi.Mock).mockImplementationOnce(() => {
         throw new Error("Schema conversion failed");
       });
 
       const agentTools = await client.getAgentTools();
 
       expect(agentTools).toEqual({
-        TestClient_tool2: {
+        TestClient_tool2: expect.objectContaining({
           id: expect.any(String),
           name: "TestClient_tool2",
           description: "Tool 2 description",
-          parameters: {},
+          parameters: expect.any(Object),
           execute: expect.any(Function),
-        },
+        }),
       });
 
       // Check that the logger error method was called

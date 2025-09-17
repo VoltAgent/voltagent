@@ -14,7 +14,7 @@ interface WorkflowStreamEvent {
   input?: Record<string, any>; // Input data for the step
   output?: Record<string, any>; // Output data from the step
   status: "pending" | "running" | "success" | "error" | "suspended";
-  userContext?: UserContext; // User context from workflow
+  context?: Record<string, any>; // Context from workflow
   timestamp: string; // ISO 8601 timestamp
   stepIndex?: number; // Current step index
   stepType?: string; // Type of step (agent, func, etc.)

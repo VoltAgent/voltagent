@@ -1,32 +1,11 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 // Import the retrieval tool
 import { retriever } from "./retriever/index.js";
-
-// Create the agent with retrieval tool
-const agent = new Agent({
-  name: "Assistant with Retrieval",
-  description:
-    "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  retriever: retriever,
-});
-
-// Create the agent with retrieval tool
-const agentWithTools = new Agent({
-  name: "Assistant with Retrieval and Tools",
-  description:
-    "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  tools: [retriever.tool],
-});
-
-// Initialize the VoltAgent
 
 // Create logger
 const logger = createPinoLogger({
@@ -34,10 +13,36 @@ const logger = createPinoLogger({
   level: "info",
 });
 
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({}),
+});
+
+// Create the agent with retrieval tool
+const agent = new Agent({
+  name: "Assistant with Retrieval",
+  instructions:
+    "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
+  model: openai("gpt-4o-mini"),
+  retriever: retriever,
+  memory,
+});
+
+// Create the agent with retrieval tool
+const agentWithTools = new Agent({
+  name: "Assistant with Retrieval and Tools",
+  instructions:
+    "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
+  model: openai("gpt-4o-mini"),
+  tools: [retriever.tool],
+  memory,
+});
+
+// Initialize the VoltAgent
 new VoltAgent({
   agents: {
     agent,
     agentWithTools,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

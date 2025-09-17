@@ -1,7 +1,8 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 const greetingTool = createTool({
@@ -27,38 +28,42 @@ const adminTool = createTool({
   },
 });
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-dynamic-parameters",
+  level: "info",
+});
+
 const dynamicAgent = new Agent({
   name: "Simple Dynamic Agent",
-  instructions: ({ userContext }) => {
-    const role = (userContext.get("role") as string) || "user";
-    const language = (userContext.get("language") as string) || "English";
+  instructions: ({ context }) => {
+    const role = (context.get("role") as string) || "user";
+    const language = (context.get("language") as string) || "English";
 
     if (role === "admin") {
       return `You are an admin assistant. Respond in ${language}. You have special privileges.`;
     }
     return `You are a helpful assistant. Respond in ${language}. You help with basic questions.`;
   },
-  model: ({ userContext }) => {
-    const tier = (userContext.get("tier") as string) || "free";
+  model: ({ context }) => {
+    const tier = (context.get("tier") as string) || "free";
     if (tier === "premium") {
       return openai("gpt-4o-mini");
     }
     return openai("gpt-3.5-turbo");
   },
-  tools: ({ userContext }) => {
-    const role = (userContext.get("role") as string) || "user";
+  tools: ({ context }) => {
+    const role = (context.get("role") as string) || "user";
     if (role === "admin") {
       return [adminTool];
     }
     return [greetingTool];
   },
-  llm: new VercelAIProvider(),
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-dynamic-parameters",
-  level: "info",
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
 });
 
 new VoltAgent({
@@ -66,4 +71,5 @@ new VoltAgent({
     dynamicAgent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

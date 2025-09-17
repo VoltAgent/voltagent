@@ -1,8 +1,15 @@
 import { anthropic } from "@ai-sdk/anthropic";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-anthropic",
+  level: "info",
+});
 
 const weatherTool = createTool({
   name: "get_current_weather",
@@ -20,16 +27,14 @@ const weatherTool = createTool({
 
 const agent = new Agent({
   name: "weather-agent",
-  description: "A helpful weather assistant that answers questions with weather tools",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful weather assistant that answers questions with weather tools",
   model: anthropic("claude-opus-4-1"),
   tools: [weatherTool],
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-anthropic",
-  level: "info",
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
 });
 
 new VoltAgent({
@@ -37,4 +42,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

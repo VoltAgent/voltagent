@@ -1,8 +1,8 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { SupabaseMemory } from "@voltagent/supabase"; // Import SupabaseMemory
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
+import { SupabaseMemoryAdapter } from "@voltagent/supabase"; // Import SupabaseMemory
 
 // Get Supabase credentials from environment variables
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -15,15 +15,16 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 // Initialize SupabaseMemory
-const memory = new SupabaseMemory({
-  supabaseUrl,
-  supabaseKey,
+const memory = new Memory({
+  storage: new SupabaseMemoryAdapter({
+    supabaseUrl,
+    supabaseKey,
+  }),
 });
 
 const agent = new Agent({
   name: "Asistant",
-  description: "A helpful assistant that answers questions without using tools",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant that answers questions without using tools",
   model: openai("gpt-4o-mini"),
   memory: memory, // Pass the SupabaseMemory instance
 });
@@ -39,4 +40,5 @@ new VoltAgent({
     agent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

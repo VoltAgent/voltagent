@@ -24,7 +24,7 @@ export function convertWorkflowStateToParam<INPUT>(
     executionId: state.executionId,
     conversationId: state.conversationId,
     userId: state.userId,
-    userContext: state.userContext,
+    context: state.context,
     active: state.active,
     startAt: state.startAt,
     endAt: state.endAt,

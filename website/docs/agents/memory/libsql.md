@@ -5,7 +5,7 @@ slug: /agents/memory/libsql
 
 # LibSQL / Turso / SQLite Memory
 
-VoltAgent's core package (`@voltagent/core`) includes a built-in memory provider, `LibSQLStorage`, which uses [LibSQL](https://github.com/tursodatabase/libsql) for persistent storage. LibSQL is an open-source fork of SQLite.
+VoltAgent provides a separate package (`@voltagent/libsql`) that includes `LibSQLMemoryAdapter`, a storage adapter for the `Memory` class using [LibSQL](https://github.com/tursodatabase/libsql) for persistent storage.
 
 This provider is versatile and can connect to:
 
@@ -15,43 +15,57 @@ This provider is versatile and can connect to:
 
 ## Setup
 
-`LibSQLStorage` is part of `@voltagent/core`, so no separate installation is needed beyond the core package.
+Install the LibSQL package:
+
+```bash
+npm install @voltagent/libsql
+# or
+yarn add @voltagent/libsql
+# or
+pnpm add @voltagent/libsql
+```
 
 If you plan to use Turso, you might need the Turso CLI for setup: `npm install -g @tursodatabase/cli`
 
 ## Configuration
 
-Initialize `LibSQLStorage` and pass it to your `Agent` configuration:
+Initialize `LibSQLMemoryAdapter` and pass it to the `Memory` instance used by your `Agent`:
 
 ```typescript
-import { Agent, LibSQLStorage } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { openai } from "@ai-sdk/openai";
+import { createPinoLogger } from "@voltagent/logger";
 
-// Configure LibSQLStorage
-const memoryStorage = new LibSQLStorage({
+// Create logger
+const logger = createPinoLogger({
+  name: "my-app",
+  level: "info",
+});
+
+// Configure LibSQL memory adapter
+const memoryStorage = new LibSQLMemoryAdapter({
   // Required: Connection URL
-  url: process.env.DATABASE_URL || "file:./voltagent-memory.db", // Example: Env var for Turso, fallback to local file
+  url: process.env.DATABASE_URL || "file:./.voltagent/memory.db", // Example: Env var for Turso, fallback to local file
 
   // Required for Turso / Remote sqld (if not using TLS or auth is needed)
   authToken: process.env.DATABASE_AUTH_TOKEN,
+
+  // Optional: Logger for debugging
+  logger: logger.child({ component: "libsql" }),
 
   // Optional: Prefix for database table names
   tablePrefix: "my_agent_memory", // Defaults to 'voltagent_memory'
 
   // Optional: Storage limit (max number of messages per user/conversation)
   // storageLimit: 100, // Defaults to 100
-
-  // Optional: Enable debug logging for the storage provider
-  // debug: true, // Defaults to false
 });
 
 const agent = new Agent({
   name: "LibSQL Memory Agent",
   instructions: "An agent using LibSQL for memory.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  memory: memoryStorage,
+  memory: new Memory({ storage: memoryStorage }),
 });
 ```
 
@@ -67,7 +81,7 @@ const agent = new Agent({
 - `authToken` (string, optional): Required for authenticated connections to Turso or remote `sqld` instances.
 - `tablePrefix` (string, optional): A prefix added to all database tables created by this provider (e.g., `my_prefix_messages`, `my_prefix_conversations`). Defaults to `voltagent_memory`.
 - `storageLimit` (number, optional): The maximum number of messages to retain per user/conversation thread. Older messages are automatically pruned when the limit is exceeded. Defaults to `100`.
-- `debug` (boolean, optional): Enables detailed logging from the storage provider to the console. Defaults to `false`.
+- `logger` (Logger, optional): A logger instance for debugging output. Typically created with `logger.child({ component: "libsql" })`.
 
 ## Conversation Management
 
@@ -81,20 +95,20 @@ const conversations = await memoryStorage.getConversationsByUserId("user-123", {
   orderDirection: "DESC",
 });
 
-// Query builder pattern for complex queries
-const recentConversations = await memoryStorage
-  .getUserConversations("user-123")
-  .limit(10)
-  .orderBy("updated_at", "DESC")
-  .execute();
+// Complex queries (filters, sort, pagination)
+const recentConversations = await memoryStorage.queryConversations({
+  userId: "user-123",
+  limit: 10,
+  orderBy: "updated_at",
+  orderDirection: "DESC",
+});
 
-// Pagination support
-const page1 = await memoryStorage.getPaginatedUserConversations("user-123", 1, 20);
-console.log(page1.conversations); // Array of conversations
-console.log(page1.hasMore); // Boolean indicating if more pages exist
+// Pagination via limit/offset
+const page1 = await memoryStorage.queryConversations({ userId: "user-123", limit: 20, offset: 0 });
+const page2 = await memoryStorage.queryConversations({ userId: "user-123", limit: 20, offset: 20 });
 
-// Get conversation with user validation
-const conversation = await memoryStorage.getUserConversation("conversation-id", "user-123");
+// Get a conversation by ID
+const conversation = await memoryStorage.getConversation("conversation-id");
 
 // Create and update conversations
 const newConversation = await memoryStorage.createConversation({
@@ -157,55 +171,86 @@ const allConversations = await memoryStorage.queryConversations({
 
 ## Getting Conversation Messages
 
-Retrieve messages for a specific conversation with pagination support:
+Retrieve messages for a specific conversation:
 
 ```typescript
-// Get all messages for a conversation
-const messages = await memoryStorage.getConversationMessages("conversation-456");
-
-// Get messages with pagination
-const firstBatch = await memoryStorage.getConversationMessages("conversation-456", {
+// Get recent messages (chronological order)
+const messages = await memoryStorage.getMessages("user-123", "conversation-456", {
   limit: 50,
-  offset: 0,
 });
 
-// Get next batch
-const nextBatch = await memoryStorage.getConversationMessages("conversation-456", {
+// Use time-based pagination when needed
+const older = await memoryStorage.getMessages("user-123", "conversation-456", {
+  before: new Date("2024-01-01T00:00:00Z"),
   limit: 50,
-  offset: 50,
 });
-
-// Process messages in batches for large conversations
-const batchSize = 100;
-let offset = 0;
-let hasMore = true;
-
-while (hasMore) {
-  const batch = await memoryStorage.getConversationMessages("conversation-456", {
-    limit: batchSize,
-    offset: offset,
-  });
-
-  // Process batch
-  processBatch(batch);
-
-  hasMore = batch.length === batchSize;
-  offset += batchSize;
-}
 ```
 
 **Message Query Options:**
 
 - `limit` (optional): Maximum number of messages to return (default: 100)
-- `offset` (optional): Number of messages to skip for pagination (default: 0)
+- `before` (optional): Only messages created before this date
+- `after` (optional): Only messages created after this date
+- `roles` (optional): Filter by roles, e.g., `["user", "assistant"]`
 
 Messages are returned in chronological order (oldest first) for natural conversation flow.
 
 ## Automatic Table Creation
 
-Unlike some other database providers, `LibSQLStorage` **automatically creates** the necessary tables (`messages`, `conversations`, `agent_history`, etc., with the configured `tablePrefix`) in the target database if they don't already exist. This simplifies setup, especially for local development using SQLite files.
+`LibSQLMemoryAdapter` **automatically creates** the necessary tables with your configured prefix:
+
+- `${tablePrefix}_users`
+- `${tablePrefix}_conversations`
+- `${tablePrefix}_messages`
+- `${tablePrefix}_workflow_states`
+
+This simplifies setup, especially for local development using SQLite files.
 
 The provider also **automatically migrates** existing databases to new schemas when you update VoltAgent, ensuring backward compatibility.
+
+## Working Memory
+
+`LibSQLMemoryAdapter` implements working memory operations used by `Memory`:
+
+- Conversation-scoped working memory is stored under `conversations.metadata.workingMemory`.
+- User-scoped working memory is stored under `users.metadata.workingMemory`.
+
+Enable via `Memory({ workingMemory: { enabled: true, template | schema, scope } })`. See: [Working Memory](./working-memory.md).
+
+Programmatic APIs (via `Memory`):
+
+- `getWorkingMemory({ conversationId?, userId? })`
+- `updateWorkingMemory({ conversationId?, userId?, content })`
+- `clearWorkingMemory({ conversationId?, userId? })`
+
+## Semantic Search (Embeddings + Vectors)
+
+Vector search is configured on `Memory` independently of the storage adapter. To persist vectors with LibSQL, use `LibSQLVectorAdapter`:
+
+```ts
+import { Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
+});
+```
+
+Tips:
+
+- For tests/ephemeral runs use `url: ":memory:"` (or `"file::memory:"`).
+- Do not pass `mode=memory` in the URL; LibSQL client doesn’t support it; use `:memory:`.
+- For production persistence use a file path (e.g., `file:./.voltagent/memory.db`) or a remote Turso URL.
+
+Use with agent calls by passing `semanticMemory` options. See: [Semantic Search](./semantic-search.md).
+
+## Notes
+
+- LibSQL is ideal for local development (SQLite file) and Turso deployments.
+- Default memory is in-memory; configure LibSQL explicitly for persistence.
 
 ## Use Cases
 

@@ -1,3 +1,4 @@
+import type { UIMessage } from "ai";
 import { describe, expect, it } from "vitest";
 import type { BaseMessage, MessageContent } from "../agent/providers/base/types";
 import {
@@ -128,12 +129,21 @@ describe("Message Helpers", () => {
     });
 
     it("should map message content", () => {
-      const message: BaseMessage = {
+      const message: UIMessage = {
+        id: "m-map",
         role: "user",
-        content: "hello",
-      };
+        parts: [
+          { type: "text", text: "hello" },
+          { type: "image", image: "data" } as any,
+          { type: "text", text: "world" },
+        ],
+        metadata: {},
+      } as UIMessage;
       const result = mapMessageContent(message, (text) => text.toUpperCase());
-      expect(result.content).toBe("HELLO");
+      const parts = result.parts as any[];
+      expect(parts[0].text).toBe("HELLO");
+      expect(parts[1]).toMatchObject({ type: "image", image: "data" });
+      expect(parts[2].text).toBe("WORLD");
     });
 
     it("should filter content parts", () => {
@@ -175,46 +185,70 @@ describe("Message Helpers", () => {
 
   describe("Convenience Functions", () => {
     it("should add timestamp to user messages", () => {
-      const message: BaseMessage = {
+      const message: UIMessage = {
+        id: "m1",
         role: "user",
-        content: "hello",
-      };
+        parts: [{ type: "text", text: "hello" }],
+        metadata: {},
+      } as UIMessage;
       const result = addTimestampToMessage(message, "10:30:00");
-      expect(result.content).toBe("[10:30:00] hello");
+      const textPart = result.parts.find((p) => p.type === "text") as any;
+      expect(textPart.text).toBe("[10:30:00] hello");
     });
 
     it("should not add timestamp to non-user messages", () => {
-      const message: BaseMessage = {
+      const message: UIMessage = {
+        id: "m2",
         role: "assistant",
-        content: "hello",
-      };
+        parts: [{ type: "text", text: "hello" }],
+        metadata: {},
+      } as UIMessage;
       const result = addTimestampToMessage(message, "10:30:00");
-      expect(result.content).toBe("hello");
+      const textPart = result.parts.find((p) => p.type === "text") as any;
+      expect(textPart.text).toBe("hello");
     });
 
     it("should prepend text to message", () => {
-      const message: BaseMessage = {
+      const message: UIMessage = {
+        id: "m3",
         role: "user",
-        content: "world",
-      };
+        parts: [{ type: "text", text: "world" }],
+        metadata: {},
+      } as UIMessage;
       const result = prependToMessage(message, "hello ");
-      expect(result.content).toBe("hello world");
+      const textPart = result.parts.find((p) => p.type === "text") as any;
+      expect(textPart.text).toBe("hello world");
     });
 
     it("should append text to message", () => {
-      const message: BaseMessage = {
+      const message: UIMessage = {
+        id: "m4",
         role: "user",
-        content: "hello",
-      };
+        parts: [{ type: "text", text: "hello" }],
+        metadata: {},
+      } as UIMessage;
       const result = appendToMessage(message, " world");
-      expect(result.content).toBe("hello world");
+      const textPart = result.parts.find((p) => p.type === "text") as any;
+      expect(textPart.text).toBe("hello world");
     });
 
     it("should check if message has content", () => {
-      expect(hasContent({ role: "user", content: "hello" })).toBe(true);
-      expect(hasContent({ role: "user", content: "" })).toBe(false);
-      expect(hasContent({ role: "user", content: [] })).toBe(false);
-      expect(hasContent({ role: "user", content: [{ type: "text", text: "hello" }] })).toBe(true);
+      const withText: UIMessage = {
+        id: "m5",
+        role: "user",
+        parts: [{ type: "text", text: "hello" }],
+        metadata: {},
+      } as UIMessage;
+      const emptyText: UIMessage = {
+        id: "m6",
+        role: "user",
+        parts: [{ type: "text", text: "" }],
+        metadata: {},
+      } as UIMessage;
+      const empty: UIMessage = { id: "m7", role: "user", parts: [], metadata: {} } as UIMessage;
+      expect(hasContent(withText)).toBe(true);
+      expect(hasContent(emptyText)).toBe(false);
+      expect(hasContent(empty)).toBe(false);
     });
 
     it("should get content length", () => {

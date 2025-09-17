@@ -21,7 +21,6 @@ A tool requires:
 ```typescript
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Define a simple weather tool
@@ -44,7 +43,6 @@ const getWeatherTool = createTool({
 const agent = new Agent({
   name: "WeatherAgent",
   instructions: "An agent that can fetch weather information.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [getWeatherTool], // Add the tool to the agent
 });
@@ -176,15 +174,14 @@ import { Agent, createTool, createToolkit, type Toolkit } from "@voltagent/core"
 // ... import other tools and toolkits ...
 
 const agent = new Agent({
-    name: "MultiToolAgent",
-    instructions: "An agent with various tools and toolkits.",
-    llm: /* ... */,
-    model: /* ... */,
-    tools: [
-        getWeatherTool,      // Add an individual tool
-        myCalculatorToolkit, // Add a toolkit
-        // ... other tools or toolkits
-    ],
+  name: "MultiToolAgent",
+  instructions: "An agent with various tools and toolkits.",
+  model: openai("gpt-4o-mini"),
+  tools: [
+    getWeatherTool, // Add an individual tool
+    myCalculatorToolkit, // Add a toolkit
+    // ... other tools or toolkits
+  ],
 });
 ```
 

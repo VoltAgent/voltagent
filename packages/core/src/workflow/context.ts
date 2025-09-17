@@ -1,6 +1,8 @@
+import type { Span } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import type { Memory } from "../memory";
-import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry, WorkflowStreamWriter } from "./types";
+import type { WorkflowTraceContext } from "./open-telemetry/trace-context";
+import type { WorkflowStreamWriter } from "./types";
 
 /**
  * Context information for a workflow execution
@@ -22,7 +24,7 @@ export interface WorkflowExecutionContext {
   /**
    * User-defined context passed around during execution
    */
-  userContext: Map<string | symbol, unknown>;
+  context: Map<string | symbol, unknown>;
   /**
    * Whether the workflow is still actively running
    */
@@ -43,10 +45,6 @@ export interface WorkflowExecutionContext {
    * AbortSignal for cancelling the workflow
    */
   signal?: AbortSignal;
-  /**
-   * History entry for this execution (if available)
-   */
-  historyEntry?: WorkflowHistoryEntry;
   /**
    * Memory storage instance for this workflow execution
    * Can be workflow-specific or global
@@ -72,6 +70,17 @@ export interface WorkflowExecutionContext {
    * Always available - uses NoOpWorkflowStreamWriter when not streaming
    */
   streamWriter: WorkflowStreamWriter;
+  /**
+   * OpenTelemetry trace context for observability
+   * Manages span hierarchy and attributes for the workflow execution
+   */
+  traceContext?: WorkflowTraceContext;
+
+  /**
+   * Current step span for passing to agents called within workflow steps
+   * This enables agent spans to appear as children of workflow step spans
+   */
+  currentStepSpan?: Span;
 }
 
 /**
@@ -88,6 +97,3 @@ export interface WorkflowStepContext {
   parallelIndex?: number;
   startTime: Date;
 }
-
-export type { WorkflowHistoryEntry };
-export type { WorkflowStepHistoryEntry };

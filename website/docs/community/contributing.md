@@ -18,7 +18,7 @@ As a backend framework, we particularly welcome contributions in areas such as:
 
 - **Core Framework:** Improving the fundamental APIs, performance optimizations, middleware enhancements, and overall developer experience.
 - **CLI Tooling:** Adding new commands, improving existing ones, and enhancing the scaffolding process.
-- **AI/Voice Integration:** Contributing to the `@voltagent/xsai` and `@voltagent/voice` packages, improving integrations, or adding new capabilities.
+- **AI/Voice Integration:** Contributing to the `@voltagent/voice` package and improving ai-sdk provider usage across examples and guides.
 - **Integrations:** Developing adapters for databases, external services, or other tools.
 - **Examples & Use Cases:** Creating realistic examples demonstrating VoltAgent's features.
 - **Bug Fixes & Performance Improvements:** Addressing existing issues and optimizing code across all packages.
@@ -30,9 +30,12 @@ VoltAgent is a monorepo containing several key packages:
 
 - `@voltagent/core`: The heart of the framework, containing the main APIs, request/response handling, middleware pipeline, etc. Contributions here often involve core feature development or architectural improvements.
 - `@voltagent/voice`: Handles voice input/output capabilities. Contributions could involve new STT/TTS integrations or improving voice interaction logic.
-- `@voltagent/anthropic-ai`: Provides integration with Anthropic's Claude AI models. Contributions could include improving model interactions, adding new Claude capabilities, or optimizing prompt handling.
-- `@voltagent/xsai`: Focuses on integrating AI functionalities (e.g., LLMs, vector stores). Contributions might include new AI service integrations or improving existing ones.
-- `@voltagent/vercel-ai`: Specific integrations for Vercel AI SDK.
+- `@voltagent/server-hono`: Recommended HTTP server provider for VoltAgent (Hono-based).
+- `@voltagent/libsql`: LibSQL/Turso/SQLite memory adapter for persistent memory.
+- `@voltagent/postgres`: PostgreSQL memory adapter for persistent memory.
+- `@voltagent/supabase`: Supabase memory adapter for persistent memory.
+- `@voltagent/langfuse-exporter`: Langfuse OpenTelemetry exporter integration.
+- `@voltagent/anthropic-ai`, `@voltagent/google-ai`, `@voltagent/groq-ai`: Legacy provider packages (deprecated in favor of ai-sdk providers).
 - `@voltagent/cli`: The command-line interface for creating and managing VoltAgent projects. Contributions typically involve adding/improving commands or developer workflows.
 - `@voltagent/create-voltagent-app`: The scaffolding tool used by `npm create voltagent-app@latest`.
 

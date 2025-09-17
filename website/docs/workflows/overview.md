@@ -58,13 +58,11 @@ Now, let's enhance our workflow. We'll add an AI agent to analyze the sentiment 
 ```typescript
 import { createWorkflowChain, Agent } from "@voltagent/core";
 import { z } from "zod";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Define an AI agent to use in our workflow
 const agent = new Agent({
   name: "Analyzer",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: "You are a text analyzer.",
 });
@@ -104,12 +102,10 @@ Finally, let's add a step that only runs if a condition is met. We'll check if t
 ```typescript
 import { createWorkflowChain, Agent, andThen } from "@voltagent/core";
 import { z } from "zod";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Analyzer",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: "You are a text analyzer.",
 });
@@ -290,14 +286,14 @@ const result = await workflow.run(
   {
     userId: "user-abc-123",
     conversationId: "conv-xyz-456",
-    userContext: new Map([["plan", "premium"]]),
+    context: new Map([["plan", "premium"]]),
   }
 );
 ```
 
 **2. Access and Modify State in Steps**
 
-The `execute` function can accept a second argument containing the execution state. You can also modify the `userContext` map, and the changes will be available in subsequent steps.
+The `execute` function can accept a second argument containing the execution state. You can also modify the `context` map, and the changes will be available in subsequent steps.
 
 ```typescript
 import { createWorkflowChain } from "@voltagent/core";
@@ -313,13 +309,13 @@ const workflow = createWorkflowChain({
     id: "check-initial-plan",
     execute: async (data, state) => {
       const userId = state.userId;
-      const plan = state.userContext.get("plan");
+      const plan = state.context.get("plan");
 
       console.log(`Step 1: User ${userId} is on the ${plan} plan.`);
 
-      // Modify userContext for subsequent steps
+      // Modify context for subsequent steps
       if (plan === "premium") {
-        state.userContext.set("permissions", "unlimited");
+        state.context.set("permissions", "unlimited");
         console.log(`Step 1: Granted 'unlimited' permissions.`);
       }
 
@@ -329,7 +325,7 @@ const workflow = createWorkflowChain({
   .andThen({
     id: "use-modified-state",
     execute: async (data, state) => {
-      const permissions = state.userContext.get("permissions");
+      const permissions = state.context.get("permissions");
       console.log(`Step 2: User now has '${permissions}' permissions.`);
 
       // Return the final result
@@ -345,7 +341,7 @@ await workflow.run(
   { name: "Alex" },
   {
     userId: "user-alex-789",
-    userContext: new Map([["plan", "premium"]]),
+    context: new Map([["plan", "premium"]]),
   }
 );
 
@@ -380,18 +376,18 @@ This allows the agent to maintain a persistent, contextual conversation with eac
 
 One of the most powerful features of VoltAgent is its built-in observability layer. Every workflow automatically records its execution history, a detailed trace of every step, its inputs, outputs, status, and timing. This history is crucial for debugging and can be visualized in real-time using the [**VoltOps Console**](https://console.voltagent.dev/).
 
-This execution history is stored using a **memory provider**. By default, VoltAgent uses a file-based `LibSQL` database (`memory.db` in your project's root).
+This execution history is stored using a **memory provider**. By default, VoltAgent uses `InMemoryStorage` for in-memory storage during development.
 
-The `memory` property in the `createWorkflowChain` configuration allows you to **override this default storage mechanism**. This is useful when moving to production or if you want to use a different storage solution.
-w
+The `memory` property in the `createWorkflowChain` configuration allows you to **override this default storage mechanism**. This is useful when moving to production or if you want persistent storage.
+
 You can use several providers to store workflow history:
 
-- **Built-in Providers** (from `@voltagent/core`):
-  - `LibSQLStorage`: The default provider, which uses a file-based SQLite database (`memory.db`).
-  - `InMemoryStorage`: A non-persistent store, ideal for tests where history does not need to be saved.
+- **Built-in Provider** (from `@voltagent/core`):
+  - `InMemoryStorage`: The default provider, a non-persistent store ideal for development and stateless deployments.
 - **External Packages**:
-  - `@voltagent/postgres`: Provides `PostgresStorage` for production environments.
-  - `@voltagent/supabase`: Provides `SupabaseStorage` for Supabase integration.
+  - `@voltagent/libsql`: Provides `LibSQLMemoryAdapter` for file-based SQLite/Turso-backed storage via the unified `Memory` API.
+  - `@voltagent/postgres`: Provides `PostgreSQLMemoryAdapter` for production environments.
+  - `@voltagent/supabase`: Provides `SupabaseMemoryAdapter` for Supabase integration.
 
 ```typescript
 import { createWorkflowChain } from "@voltagent/core";

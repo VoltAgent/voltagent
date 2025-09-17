@@ -273,19 +273,19 @@ One of my favorite features is also the visual console for debugging. I saw this
 const hooks = createHooks({
   onStart: async ({ agent, context }) => {
     const requestId = `req-${Date.now()}`;
-    context.userContext.set("requestId", requestId);
+    context.context.set("requestId", requestId);
     console.log(`[${agent.name}] Started: ${requestId}`);
   },
   onToolStart: async ({ agent, tool, context }) => {
-    const reqId = context.userContext.get("requestId");
+    const reqId = context.context.get("requestId");
     console.log(`[${reqId}] Tool starting: ${tool.name}`);
   },
   onToolEnd: async ({ agent, tool, output, context }) => {
-    const reqId = context.userContext.get("requestId");
+    const reqId = context.context.get("requestId");
     console.log(`[${reqId}] Tool finished: ${tool.name}`, output);
   },
   onEnd: async ({ agent, output, context }) => {
-    const reqId = context.userContext.get("requestId");
+    const reqId = context.context.get("requestId");
     console.log(`[${reqId}] Operation complete`);
   },
 });

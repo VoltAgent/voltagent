@@ -21,7 +21,6 @@ import {
   type AgentTool,
   type AgentOperationOutput, // Unified success output type
   type VoltAgentError, // Standardized error type
-  type ChatMessage, // Vercel AI SDK compatible message format
   type OnStartHookArgs, // Argument types for hooks
   type OnEndHookArgs,
   type OnPrepareMessagesHookArgs,
@@ -29,7 +28,6 @@ import {
   type OnToolEndHookArgs,
   type OnHandoffHookArgs,
 } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Define a collection of hooks using the helper
@@ -62,19 +60,12 @@ const myAgentHooks = createHooks({
    * Called after the agent finishes processing a request, successfully or with an error.
    */
   onEnd: async (args: OnEndHookArgs) => {
-    const { agent, output, error, messages, context } = args;
+    const { agent, output, error, context } = args;
     if (error) {
       console.error(`[Hook] Agent ${agent.name} finished with error:`, error.message);
-      console.log(`[Hook] User input was:`, messages[0]?.content);
-      // Log detailed error info
       console.error(`[Hook] Error Details:`, JSON.stringify(error, null, 2));
     } else if (output) {
       console.log(`[Hook] Agent ${agent.name} finished successfully.`);
-      console.log(`[Hook] Conversation turn:`, {
-        userInput: messages[0]?.content,
-        assistantResponse: messages[1]?.content,
-      });
-
       // Example: Log usage or analyze the result based on output type
       if ("usage" in output && output.usage) {
         console.log(`[Hook] Token Usage: ${output.usage.totalTokens}`);
@@ -123,13 +114,13 @@ const myAgentHooks = createHooks({
 });
 
 // Define a placeholder provider for the example
-const provider = new VercelAIProvider();
+// Choose an ai-sdk provider and model in your Agent via the `model` option
 
 // Assign the hooks when creating an agent
 const agentWithHooks = new Agent({
   name: "My Agent with Hooks",
   instructions: "An assistant demonstrating hooks",
-  llm: provider,
+  model: openai("gpt-4o-mini"),
   model: openai("gpt-4o"),
   // Pass the hooks object during initialization
   hooks: myAgentHooks,
@@ -139,7 +130,7 @@ const agentWithHooks = new Agent({
 const agentWithInlineHooks = new Agent({
   name: "Inline Hooks Agent",
   instructions: "Another assistant",
-  llm: provider,
+  model: openai("gpt-4o-mini"),
   model: openai("gpt-4o"),
   hooks: {
     onStart: async ({ agent, context }) => {
@@ -166,7 +157,7 @@ This will NOT override the hooks passed to the agent during initialization.
 const agent = new Agent({
   name: "My Agent with Hooks",
   instructions: "An assistant demonstrating hooks",
-  llm: provider,
+  model: openai("gpt-4o-mini"),
   model: openai("gpt-4o"),
   hooks: myAgentHooks,
 });
@@ -186,7 +177,7 @@ An example of this is you may want to only store the conversation history for a 
 const agent = new Agent({
   name: "Translation Agent",
   instructions: "A translation agent that translates text from English to French",
-  llm: provider,
+  model: openai("gpt-4o-mini"),
   model: openai("gpt-4o"),
 });
 
@@ -233,7 +224,7 @@ onStart: async ({ agent, context }) => {
 ### `onPrepareMessages`
 
 - **Triggered:** After messages are loaded from memory but before they are sent to the LLM.
-- **Argument Object (`OnPrepareMessagesHookArgs`):** `{ messages: BaseMessage[], context: OperationContext }`
+- **Argument Object (`OnPrepareMessagesHookArgs`):** `{ messages: UIMessage[], context: OperationContext }`
 - **Use Cases:** Transform messages (add timestamps, context), filter sensitive data (PII, credentials), inject dynamic system prompts, remove duplicate messages, add user-specific context.
 - **Return:** `{ messages: BaseMessage[] }` with transformed messages, or nothing to keep original messages.
 - **Note:** This hook runs on every LLM call and receives all messages including system prompt and memory messages.
@@ -379,7 +370,7 @@ Here's an example using `onPrepareMessages` with message helpers to enhance mess
 
 ```ts
 import { Agent, createHooks, messageHelpers } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
 import { openai } from "@ai-sdk/openai";
 
 const enhancedHooks = createHooks({
@@ -405,10 +396,10 @@ const enhancedHooks = createHooks({
     });
 
     // Add dynamic context based on user
-    if (context.userContext?.userId) {
+    if (context.context?.get && context.context.get("userId")) {
       const systemContext = {
         role: "system" as const,
-        content: `User ID: ${context.userContext.userId}. Provide personalized responses.`,
+        content: `User ID: ${context.context.get("userId")}. Provide personalized responses.`,
       };
       enhanced.unshift(systemContext);
     }
@@ -428,7 +419,7 @@ const enhancedHooks = createHooks({
 const agent = new Agent({
   name: "Privacy-Aware Assistant",
   instructions: "A helpful assistant that protects user privacy",
-  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
   model: openai("gpt-4o-mini"),
   hooks: enhancedHooks,
 });
@@ -437,96 +428,29 @@ const agent = new Agent({
 // LLM receives: "[10:30:45] My SSN is [SSN-REDACTED]"
 ```
 
-### Vercel UI Integration Example
+### Using output in onEnd
 
-Here's an example of how you can use the `@voltagent/vercel-ui` package to convert the `OperationContext` to a list of messages that can be used with the Vercel AI SDK:
-
-```ts
-import { convertToUIMessages } from "@voltagent/vercel-ui";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { Agent } from "@voltagent/core";
-
-const agent = new Agent({
-  id: "assistant",
-  name: "Assistant",
-  purpose: "A helpful assistant that can answer questions and help with tasks.",
-  instructions: "You are a helpful assistant that can answer questions and help with tasks.",
-  model: "gpt-4.1-mini",
-  llm: new VercelAIProvider(),
-  hooks: {
-    onEnd: async (result) => {
-      await chatStore.save({
-        conversationId: result.conversationId,
-        messages: convertToUIMessages(result.operationContext),
-      });
-    },
-  },
-});
-
-const result = await agent.generateText("Hello, how are you?");
-
-// You can now fetch the messages from your custom chat store and return to the UI to provide a
-// history of the conversation.
-
-app.get("/api/chats/:id", async ({ req }) => {
-  const conversation = await chatStore.read(req.param("id"));
-  return Response.json(conversation.messages);
-});
-```
-
-### Full Conversation Flow Example
-
-Here's an example showing how the `messages` parameter includes complete conversation flow with tool interactions:
+`output` is a union describing the successful result of the operation. You can check for `text` or `object` fields:
 
 ```ts
-const conversationHooks = createHooks({
-  onEnd: async ({ agent, output, error, messages, context }) => {
-    // Example messages array for a successful operation with tool usage (ChatMessage format):
-    // [
-    //   {
-    //     id: "msg_1",
-    //     role: "user",
-    //     content: "What's the weather in San Francisco?",
-    //     createdAt: new Date()
-    //   },
-    //   {
-    //     id: "msg_2",
-    //     role: "assistant",
-    //     content: "The weather in San Francisco is 8°C and rainy with 86% humidity.",
-    //     createdAt: new Date(),
-    //     toolInvocations: [
-    //       {
-    //         toolCallId: "call_mmZhyZwnheCjZQCRxFPR14pF",
-    //         toolName: "getWeather",
-    //         args: { location: "San Francisco" },
-    //         result: {
-    //           weather: { location: "San Francisco", temperature: 8, condition: "Rainy", humidity: 86, windSpeed: 14 },
-    //           message: "Current weather in San Francisco: 8°C and rainy with 86% humidity."
-    //         },
-    //         state: "result",
-    //         step: 0
-    //       }
-    //     ]
-    //   }
-    // ]
+const hooks = createHooks({
+  onEnd: async ({ output }) => {
+    if (!output) return; // operation failed or was aborted
 
-    if (!error && output) {
-      // Store complete conversation including tool interactions
-      await storeConversation({
-        operationId: context.operationId,
-        messages: messages, // Full conversation flow
-        usage: output.usage,
-        timestamp: new Date(),
-      });
+    // Log usage if available
+    if (output.usage) {
+      console.log(`Total tokens: ${output.usage.totalTokens}`);
+    }
 
-      // Check if tools were used
-      const toolInteractions = messages.flatMap((m) => m.toolInvocations || []);
-      if (toolInteractions.length > 0) {
-        console.log(`Operation used ${toolInteractions.length} tool(s)`);
-        toolInteractions.forEach((tool, i) => {
-          console.log(`  Tool ${i + 1}: ${tool.toolName} (${tool.state})`);
-        });
-      }
+    // Handle text results
+    if ("text" in output && output.text) {
+      console.log("Final text:", output.text);
+      return;
+    }
+
+    // Handle object results
+    if ("object" in output && output.object) {
+      console.log("Final object keys:", Object.keys(output.object));
     }
   },
 });

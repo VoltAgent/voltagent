@@ -13,7 +13,7 @@
 import type { OperationContext } from "@voltagent/core";
 import { type Browser, type Page, chromium, firefox, webkit } from "playwright";
 
-// Define keys for storing browser/page in userContext
+// Define keys for storing browser/page in context
 const BROWSER_INSTANCE_KEY = Symbol("playwrightBrowserInstance");
 const PAGE_INSTANCE_KEY = Symbol("playwrightPageInstance");
 const INITIALIZING_KEY = Symbol("playwrightInitializing");
@@ -26,7 +26,7 @@ const INITIALIZING_KEY = Symbol("playwrightInitializing");
 export async function ensureBrowser(
   context: OperationContext,
 ): Promise<{ browser: Browser; page: Page }> {
-  const userCtx = context.userContext;
+  const userCtx = context.context;
 
   // Use context-specific lock
   if (userCtx.get(INITIALIZING_KEY)) {
@@ -102,7 +102,7 @@ export async function ensureBrowser(
  * Function to reset/close browser state for a specific operation context
  */
 export async function resetBrowserState(context: OperationContext): Promise<void> {
-  const userCtx = context.userContext;
+  const userCtx = context.context;
   const browser = userCtx.get(BROWSER_INSTANCE_KEY) as Browser | undefined;
 
   console.log(`[${context.operationId}] Resetting browser state for context...`);

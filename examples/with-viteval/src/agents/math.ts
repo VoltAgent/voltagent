@@ -1,6 +1,5 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, createTool } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
 export interface MathInput {
@@ -48,7 +47,6 @@ Return your response in JSON format:
   "explanation": "detailed explanation",
   "steps": ["step 1", "step 2", ...]
 }`,
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [calculatorTool],
 });

@@ -1,7 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration, VoltAgent, createWorkflowChain } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 (async () => {
@@ -20,7 +20,6 @@ import { z } from "zod";
     name: "Assistant",
     instructions:
       "The user will ask you to help generate some search queries. Respond with only the suggested queries in plain text with no extra formatting, each on its own line. Use exa tools.",
-    llm: new VercelAIProvider(),
     model: openai("gpt-4o-mini"),
     tools: await mcpConfig.getTools(),
   });
@@ -29,7 +28,6 @@ import { z } from "zod";
     id: "writer",
     name: "Writer",
     instructions: "Write a report according to the user's instructions.",
-    llm: new VercelAIProvider(),
     model: openai("gpt-4o"),
     tools: await mcpConfig.getTools(),
     markdown: true,
@@ -91,6 +89,7 @@ Please generate a list of 3 search queries that would be useful for writing a re
     workflows: {
       assistant: workflow,
     },
+    server: honoServer(),
     logger,
   });
 })();

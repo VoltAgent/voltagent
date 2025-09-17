@@ -63,8 +63,8 @@ Contains metadata about the current workflow execution:
     console.log(state.input);          // Original workflow input
     console.log(state.startAt);        // When it started
 
-    // userContext is a Map for custom data
-    const userRole = state.userContext?.get("role");
+    // context is a Map for custom data
+    const userRole = state.context?.get("role");
 
     return data;
   }

@@ -5,8 +5,8 @@
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { type ToolExecuteOptions, createTool } from "@voltagent/core";
-import type { ToolExecutionContext } from "@voltagent/core";
+import { createTool } from "@voltagent/core";
+import type { OperationContext } from "@voltagent/core";
 import { z } from "zod";
 import { safeBrowserOperation } from "./browserBaseTools";
 
@@ -42,12 +42,11 @@ export const screenshotTool = createTool({
       .default(30000)
       .describe("Maximum time in milliseconds for the screenshot operation."),
   }),
-  execute: async (args, options?: ToolExecuteOptions) => {
-    const context = options as ToolExecutionContext;
-    if (!context?.operationContext?.userContext) {
-      throw new Error("ToolExecutionContext is missing or invalid.");
+  execute: async (args, oc?: OperationContext) => {
+    if (!oc?.context) {
+      throw new Error("OperationContext is missing or invalid.");
     }
-    return safeBrowserOperation(context, async (page) => {
+    return safeBrowserOperation(oc, async (page) => {
       const screenshotOptions: Parameters<typeof page.screenshot>[0] = {
         fullPage: args.fullPage,
         quality: args.quality,

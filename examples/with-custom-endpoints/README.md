@@ -44,7 +44,7 @@ Learn how to extend the VoltAgent API server with your own custom REST endpoints
 
 ## VoltAgent Custom Endpoints: Extend Your API Server
 
-This example shows how to create custom API endpoints with VoltAgent using **two different registration methods**. You can extend the built-in VoltAgent API server with your own business logic, data endpoints, or integration points.
+This example shows how to create custom API endpoints with VoltAgent's server-hono package. You can extend the VoltAgent API server with your own business logic, data endpoints, or integration points.
 
 ## Try Example
 
@@ -56,38 +56,49 @@ npm create voltagent-app@latest -- --example with-custom-endpoints
 
 This example includes 4 simple endpoints:
 
-- `GET /api/health` - Health check (registered via function call)
-- `GET /api/hello/:name` - Personalized greeting (registered via function call)
-- `POST /api/calculate` - Simple calculator (registered via constructor)
-- `DELETE /api/delete-all` - Delete all data (registered via constructor)
+- `GET /api/health` - Health check
+- `GET /api/hello/:name` - Personalized greeting with URL parameters
+- `POST /api/calculate` - Simple calculator with JSON body
+- `DELETE /api/delete-all` - Delete all data example
 
-## Registration Methods
+## How to Register Custom Endpoints
 
-### Method 1: Function Call Registration
-
-```typescript
-registerCustomEndpoints(endpoints);
-```
-
-- Useful when you want to register endpoints before creating VoltAgent
-- Good for conditional endpoint registration
-- Can be called multiple times
-
-### Method 2: Constructor Registration
+Custom endpoints are registered through the `configureApp` callback, which gives you full access to the Hono app instance:
 
 ```typescript
+import { honoServer } from "@voltagent/server-hono";
+
 new VoltAgent({
   agents: { agent },
-  customEndpoints: endpoints,
+  server: honoServer({
+    port: 3141,
+    configureApp: (app) => {
+      // Add custom routes with full Hono API
+      app.get("/api/health", (c) => c.json({ status: "ok" }));
+
+      // Use route parameters
+      app.get("/api/user/:id", (c) => {
+        const id = c.req.param("id");
+        return c.json({ userId: id });
+      });
+
+      // Add middleware
+      app.use("/api/admin/*", authMiddleware);
+
+      // Use route groups
+      const api = app.basePath("/api/v2");
+      api.get("/users", getUsersHandler);
+    },
+  }),
 });
 ```
 
-- Most common and convenient method
-- Register endpoints when creating VoltAgent instance
+With `configureApp`, you get:
 
-### Using Both Methods
-
-Both methods work together! You can use them simultaneously and all endpoints will be properly registered and displayed in the server startup banner.
+- Full access to Hono's routing API
+- Type-safe route handlers with proper IntelliSense
+- Ability to use middleware and route groups
+- Support for all Hono features (OpenAPI, validation, etc.)
 
 ## Setup
 
@@ -125,6 +136,9 @@ curl -X POST http://localhost:3141/api/calculate \
 
 # Delete all data
 curl -X DELETE http://localhost:3141/api/delete-all
+
+# Admin stats (middleware logs the access)
+curl http://localhost:3141/api/admin/stats
 ```
 
 ## Chat with Agent
@@ -137,10 +151,10 @@ curl -X POST http://localhost:3141/agents/agent/text \
 
 ## How it Works
 
-1. **Method 1**: Use `registerCustomEndpoints(endpoints)` to register endpoints via function call
-2. **Method 2**: Pass `customEndpoints` array to VoltAgent constructor
-3. Both methods can be used together - all endpoints will be registered
-4. Each endpoint contains a `path`, `method`, and `handler`
-5. The handler function receives the HTTP request and returns a response
+1. Pass a `configureApp` callback to the `honoServer` configuration
+2. The callback receives the Hono app instance as a parameter
+3. Use Hono's native API to register routes, middleware, and plugins
+4. The server calls your `configureApp` function after registering built-in routes
+5. Your custom routes are now part of the API server
 
 That's it! 🎉

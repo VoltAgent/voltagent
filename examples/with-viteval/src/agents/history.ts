@@ -1,6 +1,5 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 export interface HistoryInput {
   question: string;
@@ -39,6 +38,5 @@ Return your response in the following JSON format:
   "location": "relevant location if applicable",
   "confidence": 0.95
 }`,
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });

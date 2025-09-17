@@ -1,5 +1,4 @@
 import { execSync, spawn } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
 import { createSpinner } from "./animation";
 import fileManager from "./file-manager";
@@ -37,10 +36,12 @@ export const createBaseDependencyInstaller = async (
       volt: "volt",
     },
     dependencies: {
-      "@voltagent/core": "^0.1.63",
-      "@voltagent/vercel-ai": "^1.0.0",
-      "@voltagent/cli": "^0.1.9",
-      "@voltagent/logger": "^0.1.0",
+      "@voltagent/core": "^1.0.0",
+      "@voltagent/server-hono": "^1.0.0",
+      "@voltagent/libsql": "^1.0.0",
+      ai: "^5.0.12",
+      "@voltagent/cli": "^0.1.10",
+      "@voltagent/logger": "^1.0.0",
       dotenv: "^16.4.7",
       zod: "^3.25.76",
     },
@@ -137,24 +138,28 @@ export const installProviderDependency = async (
   targetDir: string,
   providerPackage: string,
   providerVersion: string,
+  extraPackages: readonly string[] = [],
 ): Promise<void> => {
-  const spinner = createSpinner(`Installing ${providerPackage}`);
+  const displayName = [`${providerPackage}@${providerVersion}`, ...extraPackages].join(", ");
+  const spinner = createSpinner(`Installing ${displayName}`);
   spinner.start();
 
   try {
-    execSync(`npm install ${providerPackage}@${providerVersion} --loglevel=error`, {
+    const toInstall = [`${providerPackage}@${providerVersion}`, ...extraPackages].join(" ");
+
+    execSync(`npm install ${toInstall} --loglevel=error`, {
       cwd: targetDir,
       stdio: ["ignore", "ignore", "pipe"], // Only capture stderr
     });
     spinner.stop();
-    logger.success(`Provider dependency ${providerPackage} installed! 🎯`);
+    logger.success(`Installed: ${displayName} 🎯`);
   } catch (error) {
     spinner.stop();
-    logger.error(`Failed to install ${providerPackage}`);
+    logger.error(`Failed to install ${displayName}`);
     // Show error details if available
     if (error instanceof Error && "stderr" in error) {
       console.error((error as any).stderr?.toString());
     }
-    logger.warning("You can install the provider package manually later.");
+    logger.warning("You can install the provider packages manually later.");
   }
 };

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ToolExecuteOptions } from "../../agent/providers/base/types";
 
 /**
  * Enum defining the next action to take after a reasoning step.
@@ -35,7 +34,5 @@ export type ReasoningStep = z.infer<typeof ReasoningStepSchema>;
 /**
  * Options specific to reasoning tool execution, extending base ToolExecuteOptions.
  */
-export interface ReasoningToolExecuteOptions extends ToolExecuteOptions {
-  agentId: string;
-  historyEntryId: string;
-}
+// Deprecated: Reasoning tool options are now read from OperationContext.systemContext
+// Keys used: 'agentId', 'historyEntryId'

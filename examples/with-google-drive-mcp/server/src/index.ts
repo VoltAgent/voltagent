@@ -1,7 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { serve } from "@hono/node-server";
 import { createTool } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";

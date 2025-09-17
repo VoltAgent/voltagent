@@ -1,6 +1,7 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, Tool, VoltAgent, messageHelpers } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, Memory, Tool, VoltAgent, messageHelpers } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Simple tool for demonstration
@@ -23,10 +24,14 @@ const weatherTool = new Tool({
 // Create agent with all hooks
 const agent = new Agent({
   name: "HooksDemo",
-  description: "Agent demonstrating all available hooks",
-  llm: new VercelAIProvider(),
+  instructions: "Agent demonstrating all available hooks",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
 
   hooks: {
     // Called when the agent starts processing
@@ -96,9 +101,9 @@ const agent = new Agent({
     },
 
     // Called when an agent hands off to another agent (in multi-agent scenarios)
-    onHandoff: async ({ agent, source }) => {
+    onHandoff: async ({ agent, sourceAgent }) => {
       console.log("\n🤝 [onHandoff] Agent handoff");
-      console.log(`   From: ${source.name}`);
+      console.log(`   From: ${sourceAgent.name}`);
       console.log(`   To: ${agent.name}`);
     },
   },
@@ -108,4 +113,5 @@ new VoltAgent({
   agents: {
     agent,
   },
+  server: honoServer({ port: 3141 }),
 });

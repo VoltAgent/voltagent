@@ -351,15 +351,7 @@ export default function TutorialIntroduction() {
                           <span className="text-yellow-300"> "@voltagent/core"</span>
                           <span>;</span>
                           <br />
-                          <span className="text-blue-400">import</span>
-                          <span>
-                            {" "}
-                            {"{"} VercelAIProvider {"}"}{" "}
-                          </span>
-                          <span className="text-blue-400">from</span>
-                          <span className="text-yellow-300"> "@voltagent/vercel-ai"</span>
-                          <span>;</span>
-                          <br />
+
                           <span className="text-blue-400">import</span>
                           <span>
                             {" "}
@@ -399,11 +391,6 @@ export default function TutorialIntroduction() {
                             "A helpful assistant that answers questions without using tools"
                           </span>
                           <span>,</span>
-                          <br />
-                          <span className="ml-4">llm: </span>
-                          <span className="text-blue-400">new</span>
-                          <span className="text-green-400"> VercelAIProvider</span>
-                          <span>(),</span>
                           <br />
                         </span>
 
@@ -457,7 +444,6 @@ export default function TutorialIntroduction() {
                 <div className="flex w-[45%] flex-col gap-4">
                   {/* Card 1 - Agent Creation */}
                   <div className="relative h-full">
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
                       className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "agent"
@@ -484,7 +470,6 @@ export default function TutorialIntroduction() {
 
                   {/* Card 2 - Naming */}
                   <div className="relative h-full">
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
                       className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "name"
@@ -511,7 +496,6 @@ export default function TutorialIntroduction() {
 
                   {/* Card 3 - Behavior */}
                   <div className="relative h-full">
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
                       className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "behavior"

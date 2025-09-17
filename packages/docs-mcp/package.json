@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/docs-mcp",
   "description": "VoltAgent docs-mcp - MCP Docs ",
-  "version": "0.2.3",
+  "version": "1.0.2",
   "bin": {
     "voltagent-docs-mcp": "dist/index.js"
   },
@@ -9,11 +9,11 @@
     "@modelcontextprotocol/sdk": "^1.12.1"
   },
   "devDependencies": {
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.2.1",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4",
-    "zod": "^3.25.0"
+    "zod": "^3.25.76"
   },
   "exports": {
     ".": {
@@ -36,8 +36,8 @@
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "peerDependencies": {
-    "@voltagent/core": "^0.1.71",
-    "zod": "^3.25.0"
+    "@voltagent/core": "^1.1.7-next.0",
+    "zod": "^3.25.0 || ^4.0.0"
   },
   "scripts": {
     "build": "tsup",

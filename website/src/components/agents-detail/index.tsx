@@ -47,7 +47,6 @@ export function AgentsDetail() {
 
               {/* Feature 4 - Tools */}
               <div className="relative">
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "tools"
@@ -71,7 +70,6 @@ export function AgentsDetail() {
               </div>
 
               <div className="relative">
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "api"
@@ -96,7 +94,6 @@ export function AgentsDetail() {
 
               {/* Feature 3 - Prompt */}
               <div className="relative">
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "prompt"
@@ -121,7 +118,6 @@ export function AgentsDetail() {
 
               {/* Feature 2 - Memory */}
               <div className="relative">
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "memory"

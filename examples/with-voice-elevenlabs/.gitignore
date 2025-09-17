@@ -1,4 +1,5 @@
 node_modules/
 dist/
 .env
-output.mp3 
+output.mp3
+.voltagent 

@@ -29,6 +29,9 @@ lerna-debug.log*
 *.tsbuildinfo
 .cache
 
+# VoltAgent
+.voltagent/
+
 # Editor directories and files
 .idea
 .vscode/*

@@ -38,13 +38,11 @@ VoltAgent works seamlessly with Viteval:
 ```typescript
 // In your agent file (e.g., src/agents/support.ts)
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 export const supportAgent = new Agent({
   name: "Support Agent",
   instructions: "Help customers with their questions",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 

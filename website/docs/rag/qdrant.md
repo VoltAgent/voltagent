@@ -105,7 +105,7 @@ You'll see:
 💡 The Tools Agent will automatically search when needed!
 
 📋 Sources tracking: Both agents track which documents were used
-   Check userContext.get('references') to see sources with IDs and scores
+   Check context.get('references') to see sources with IDs and scores
 📋 Creating new collection "voltagent-knowledge-base"...
 
 
@@ -305,8 +305,8 @@ export class QdrantRetriever extends BaseRetriever {
     }
     // Perform semantic search using Qdrant
     const results = await retrieveDocuments(searchText, 3);
-    // Add references to userContext if available
-    if (options.userContext && results.length > 0) {
+    // Add references to context if available
+    if (options.context && results.length > 0) {
       const references = results.map((doc: any, index: number) => ({
         id: doc.id,
         title: doc.metadata.topic || `Document ${index + 1}`,
@@ -314,7 +314,7 @@ export class QdrantRetriever extends BaseRetriever {
         score: doc.score,
         category: doc.metadata.category,
       }));
-      options.userContext.set("references", references);
+      options.context.set("references", references);
     }
     // Return the concatenated content for the LLM
     if (results.length === 0) {
@@ -341,16 +341,15 @@ Now create agents using different retrieval patterns in `src/index.ts`:
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
 import { retriever } from "./retriever/index.js";
 
 // Agent 1: Using retriever directly
 const agentWithRetriever = new Agent({
   name: "Assistant with Retriever",
-  description:
+  instructions:
     "A helpful assistant that can retrieve information from the Qdrant knowledge base using semantic search to provide better answers. I automatically search for relevant information when needed.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   retriever: retriever,
 });
@@ -358,9 +357,8 @@ const agentWithRetriever = new Agent({
 // Agent 2: Using retriever as tool
 const agentWithTools = new Agent({
   name: "Assistant with Tools",
-  description:
+  instructions:
     "A helpful assistant that can search the Qdrant knowledge base using tools. The agent will decide when to search for information based on user questions.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [retriever.tool],
 });
@@ -376,6 +374,7 @@ new VoltAgent({
     agentWithRetriever,
     agentWithTools,
   },
+  server: honoServer(), // Default port: 3141; enable Swagger via options if needed
   logger,
 });
 ```

@@ -2,12 +2,13 @@
   "name": "voltagent-example-<%= name %>",
   "author": "",
   "dependencies": {
+    "ai": "^5.0.0",
     "@ai-sdk/openai": "^2.0.2",
     "@voltagent/cli": "workspace:*",
     "@voltagent/core": "workspace:*",
     "@voltagent/logger": "workspace:*",
-    "@voltagent/vercel-ai": "workspace:*",
-    "zod": "^3.25.0"
+    "@voltagent/server-hono": "workspace:*",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

@@ -8,9 +8,8 @@
 import { type Logger, LoggerProxy } from "../logger";
 import { LogEvents } from "../logger/events";
 import { ResourceType, buildLogContext, buildVoltOpsLogMessage } from "../logger/message-builder";
-import { AgentRegistry } from "../server/registry";
-import type { VoltAgentExporter } from "../telemetry/exporter";
-import { VoltAgentExporter as VoltAgentExporterClass } from "../telemetry/exporter";
+import { AgentRegistry } from "../registries/agent-registry";
+// VoltAgentExporter removed - migrated to OpenTelemetry
 import { VoltOpsPromptManagerImpl } from "./prompt-manager";
 import type {
   VoltOpsClient as IVoltOpsClient,
@@ -26,7 +25,7 @@ import type {
  */
 export class VoltOpsClient implements IVoltOpsClient {
   public readonly options: VoltOpsClientOptions & { baseUrl: string };
-  public readonly observability?: VoltAgentExporter;
+  // observability removed - now handled by VoltAgentObservability
   public readonly prompts?: VoltOpsPromptManager;
   private readonly logger: Logger;
 
@@ -39,7 +38,7 @@ export class VoltOpsClient implements IVoltOpsClient {
     };
 
     this.options = {
-      observability: true,
+      // observability removed - now handled by VoltAgentObservability
       prompts: true,
       ...options,
       baseUrl: options.baseUrl || "https://api.voltagent.dev",
@@ -62,19 +61,7 @@ export class VoltOpsClient implements IVoltOpsClient {
 
     // Only initialize services if we have valid keys
     if (hasValidKeys) {
-      // Initialize observability exporter if enabled
-      if (this.options.observability !== false) {
-        try {
-          this.observability = new VoltAgentExporterClass({
-            baseUrl: this.options.baseUrl,
-            publicKey: this.options.publicKey || "",
-            secretKey: this.options.secretKey || "",
-            fetch: this.options.fetch,
-          });
-        } catch (error) {
-          this.logger.error("Failed to initialize observability exporter", { error });
-        }
-      }
+      // Observability is now handled by VoltAgentObservability, not VoltOpsClient
 
       // Initialize prompt manager if enabled
       if (this.options.prompts !== false) {
@@ -91,7 +78,7 @@ export class VoltOpsClient implements IVoltOpsClient {
       buildVoltOpsLogMessage("client", "initialized", "VoltOps client initialized"),
       buildLogContext(ResourceType.VOLTOPS, "client", "initialized", {
         event: LogEvents.VOLTOPS_CLIENT_INITIALIZED,
-        observabilityEnabled: this.options.observability !== false,
+        // observability now handled by VoltAgentObservability
         promptsEnabled: this.options.prompts !== false,
         baseUrl: this.options.baseUrl,
         cacheEnabled: this.options.promptCache?.enabled ?? true,
@@ -125,30 +112,14 @@ export class VoltOpsClient implements IVoltOpsClient {
     };
   }
 
-  // ========== Backward Compatibility Methods ==========
-  // These methods delegate to the observability exporter for seamless migration
-
-  public get exportHistoryEntry() {
-    return this.observability?.exportHistoryEntry?.bind(this.observability);
-  }
-
-  public get exportHistoryEntryAsync() {
-    return this.observability?.exportHistoryEntryAsync?.bind(this.observability);
-  }
-
-  public get exportTimelineEvent() {
-    return this.observability?.exportTimelineEvent?.bind(this.observability);
-  }
-
-  public get exportTimelineEventAsync() {
-    return this.observability?.exportTimelineEventAsync?.bind(this.observability);
-  }
+  // Backward compatibility methods removed - observability now handled by VoltAgentObservability
 
   /**
    * Check if observability is enabled and configured
+   * @deprecated Observability is now handled by VoltAgentObservability
    */
   public isObservabilityEnabled(): boolean {
-    return this.observability !== undefined;
+    return false; // Always false since VoltOpsClient no longer handles observability
   }
 
   /**
@@ -173,12 +144,23 @@ export class VoltOpsClient implements IVoltOpsClient {
   }
 
   /**
-   * Get observability exporter for backward compatibility
-   * @deprecated Use observability property directly
+   * Get the API base URL
    */
-  public getObservabilityExporter(): VoltAgentExporter | undefined {
-    return this.observability;
+  public getApiUrl(): string {
+    return this.options.baseUrl;
   }
+
+  /**
+   * Get authentication headers for API requests
+   */
+  public getAuthHeaders(): Record<string, string> {
+    return {
+      "X-Public-Key": this.options.publicKey || "",
+      "X-Secret-Key": this.options.secretKey || "",
+    };
+  }
+
+  // getObservabilityExporter removed - observability now handled by VoltAgentObservability
 
   /**
    * Get prompt manager for direct access

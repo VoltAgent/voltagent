@@ -74,7 +74,7 @@ Result? Customer satisfaction improved, our workload reduced. Win-win situation.
 
 So what's going on inside an LLM agent? As it happens, it's very similar to the way the human brain operates.
 
-First, there's the **LLM brain** — GPT, Claude, Gemini, whatever. That's the core of the agent. The part that thinks, gets it, makes decisions. But on its own, it's really not very useful because it can only generate text.
+First, there's the **LLM brain** - GPT, Claude, Gemini, whatever. That's the core of the agent. The part that thinks, gets it, makes decisions. But on its own, it's really not very useful because it can only generate text.
 
 That is where **tools** come in. These are the feet and hands of the agent. API calls, database calls, file access, web scraping, computation. The agent interacts with the real world through these tools. "Let me call this API to see the weather" for example.
 
@@ -122,8 +122,8 @@ Seriously, to start with it was _hell_. I had the following issues:
 
 You usually have two options:
 
-1. **Rebuild everything from scratch** — Full control, but slow and complex
-2. **Use no-code tools** — Easy starting point, but limited and rigid
+1. **Rebuild everything from scratch** - Full control, but slow and complex
+2. **Use no-code tools** - Easy starting point, but limited and rigid
 
 Fortunately, there is something better today.
 
@@ -137,9 +137,9 @@ VoltAgent is our developer-focused AI agent toolkit. We designed it to provide t
 
 **Modular Architecture:**
 
-- `@voltagent/core` — Core engine
-- `@voltagent/voice` — Voice capability
-- `@voltagent/vercel-ai` — Vercel AI support
+- `@voltagent/core` - Core engine
+- `@voltagent/voice` - Voice capability
+- `@voltagent/vercel-ai` - Vercel AI support
 - Add whatever modules you require, leave out what you don't
 
 **Provider Independent:**

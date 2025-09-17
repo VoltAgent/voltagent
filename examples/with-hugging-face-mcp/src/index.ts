@@ -1,10 +1,16 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
 async function main() {
   try {
+    const logger = createPinoLogger({
+      name: "with-hugging-face-mcp",
+      level: "info",
+    });
+
     const mcpConfig = new MCPConfiguration({
       servers: {
         "hf-mcp-server": {
@@ -21,14 +27,12 @@ async function main() {
       name: "Hugging Face MCP Agent",
       instructions: "You are a helpful assistant with access to Hugging Face MCP tools.",
       tools: await mcpConfig.getTools(),
-      llm: new VercelAIProvider(),
       model: openai("gpt-4o-mini"),
-    });
-
-    // Create logger
-    const logger = createPinoLogger({
-      name: "with-hugging-face-mcp",
-      level: "info",
+      memory: new Memory({
+        storage: new LibSQLMemoryAdapter({
+          url: "file:./.voltagent/memory.db",
+        }),
+      }),
     });
 
     new VoltAgent({
@@ -36,6 +40,7 @@ async function main() {
         agent,
       },
       logger,
+      server: honoServer({ port: 3141 }),
     });
   } catch (error) {
     console.error("Failed to initialize VoltAgent:", error);

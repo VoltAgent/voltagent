@@ -8,61 +8,14 @@ import TabItem from '@theme/TabItem';
 
 # Providers & Models
 
-VoltAgent leverages the [Vercel AI SDK](https://ai-sdk.dev) to provide seamless integration with a wide range of AI providers and models. The AI SDK offers a standardized approach to interacting with LLMs through a unified interface that allows you to switch between providers with ease.
+VoltAgent is built directly on top of the [Vercel AI SDK](https://ai-sdk.dev). You choose an ai-sdk provider package (OpenAI, Anthropic, Google, Mistral, Groq, Ollama, etc.) and pass the resulting `LanguageModel` to your `Agent` via the `model` prop.
 
-## Recommended Approach
-
-We strongly recommend using the Vercel AI SDK providers directly with VoltAgent's `@voltagent/vercel-ai` provider. This gives you access to:
-
-- **30+ AI providers** with consistent APIs
-- **Automatic updates** with the latest models
-- **Built-in support** for streaming, tool calling, and structured outputs
-- **Community-driven** provider ecosystem
-
-### Custom Providers
-
-While the Vercel AI SDK covers most use cases, VoltAgent also supports **custom provider implementation** for advanced scenarios. You can create your own provider by implementing the `LLMProvider` interface.
-
-**When to use custom providers:**
-
-- Integration with proprietary or internal LLM services
-- Advanced control over request/response handling
-- Special authentication mechanisms
-- Custom retry logic or rate limiting
-- Integration with legacy systems
-
-**For most use cases**, the Vercel AI SDK providers are sufficient and recommended as they offer:
-
-- Battle-tested implementations
-- Regular updates and improvements
-- Wide community support
-- Consistent API across all providers
-
-> **Tip:** Before implementing a custom provider, check if your use case can be covered by the 30+ providers available through Vercel AI SDK, including OpenAI-compatible providers that work with custom endpoints.
+- No extra VoltAgent provider package is required.
+- Full compatibility with ai-sdk’s streaming, tool calling, and structured outputs.
 
 ## Installation
 
-First, install the Vercel AI provider for VoltAgent:
-
-<Tabs>
-  <TabItem value="npm" label="npm">
-    ```bash
-    npm install @voltagent/vercel-ai
-    ```
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-    ```bash
-    yarn add @voltagent/vercel-ai
-    ```
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-    ```bash
-    pnpm add @voltagent/vercel-ai
-    ```
-  </TabItem>
-</Tabs>
-
-Then install the specific AI SDK provider you want to use:
+Install the ai-sdk provider(s) you want to use:
 
 <Tabs>
   <TabItem value="npm" label="npm">
@@ -110,16 +63,12 @@ Then install the specific AI SDK provider you want to use:
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
-
-const provider = new VercelAIProvider();
 
 const agent = new Agent({
   name: "my-agent",
   instructions: "You are a helpful assistant",
-  llm: provider,
-  model: openai("gpt-4-turbo"),
+  model: openai("gpt-4o-mini"),
 });
 ```
 
@@ -289,13 +238,12 @@ const agent = new Agent({
 ### After (Recommended):
 
 ```typescript
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent } from "@voltagent/core";
 import { anthropic } from "@ai-sdk/anthropic";
 
-const provider = new VercelAIProvider();
 const agent = new Agent({
-  llm: provider,
-  model: anthropic("claude-opus-4-1"),
+  model: anthropic("claude-3-5-sonnet"),
+  instructions: "You are a helpful assistant",
 });
 ```
 

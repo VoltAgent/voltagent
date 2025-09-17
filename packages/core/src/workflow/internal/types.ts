@@ -1,5 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny, PlainObject } from "@voltagent/internal/types";
+import type { UIMessage } from "ai";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
@@ -11,7 +12,13 @@ import type { WorkflowState } from "./state";
  * The base input type for the workflow
  * @private - INTERNAL USE ONLY
  */
-export type InternalBaseWorkflowInputSchema = z.ZodTypeAny | BaseMessage | BaseMessage[] | string;
+export type InternalBaseWorkflowInputSchema =
+  | z.ZodTypeAny
+  | BaseMessage
+  | BaseMessage[]
+  | UIMessage
+  | UIMessage[]
+  | string;
 
 /**
  * The state parameter for the workflow, used to pass the state to a step or other function (i.e. hooks)
@@ -146,9 +153,9 @@ export type InternalInferWorkflowStepsResult<
 };
 
 export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
-  ? BaseMessage | BaseMessage[] | string
+  ? BaseMessage | BaseMessage[] | UIMessage | UIMessage[] | string
   : TF.IsAny<T> extends true
-    ? BaseMessage | BaseMessage[] | string
+    ? BaseMessage | BaseMessage[] | UIMessage | UIMessage[] | string
     : T extends z.ZodType
       ? z.infer<T>
       : T;

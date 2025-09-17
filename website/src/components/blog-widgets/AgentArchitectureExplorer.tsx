@@ -6,14 +6,14 @@ const architectureData = [
     name: "🧠 LLM Brain",
     description: "The core reasoning engine that thinks, understands, and makes decisions",
     details:
-      "This is the heart of your agent — GPT, Claude, Gemini, or any other language model. It processes natural language, understands context, and generates responses. However, on its own, it can only work with text and has no access to real-world data or the ability to perform actions.",
+      "This is the heart of your agent - GPT, Claude, Gemini, or any other language model. It processes natural language, understands context, and generates responses. However, on its own, it can only work with text and has no access to real-world data or the ability to perform actions.",
     examples:
       "• Analyzing user requests\n• Planning multi-step solutions\n• Generating natural language responses\n• Making decisions based on context",
   },
   {
     id: "tools",
     name: "🔧 Tools",
-    description: "The hands and feet of the agent — APIs, databases, and external services",
+    description: "The hands and feet of the agent - APIs, databases, and external services",
     details:
       "Tools give your agent superpowers beyond text generation. They're functions that can interact with the real world: calling APIs, querying databases, performing calculations, sending emails, or even controlling other software. The LLM decides when and how to use these tools.",
     examples:
@@ -33,7 +33,7 @@ const architectureData = [
     name: "🎼 Orchestration",
     description: "The conductor that coordinates everything and manages the workflow",
     details:
-      "This is the most complex part — the system that decides what to do next, when to use tools, how to handle errors, and how to combine different components. It's like a conductor orchestrating a symphony, making sure everything works together smoothly.",
+      "This is the most complex part - the system that decides what to do next, when to use tools, how to handle errors, and how to combine different components. It's like a conductor orchestrating a symphony, making sure everything works together smoothly.",
     examples:
       "• Workflow planning\n• Tool selection logic\n• Error handling\n• Response formatting\n• Context management\n• Decision trees",
   },

@@ -101,6 +101,52 @@ When you don't provide a logger to VoltAgent, it uses a built-in `ConsoleLogger`
 
 💡 **Tip**: Always use `createPinoLogger` for production applications to get proper formatting, performance, and transport options.
 
+## Sync Logs with VoltOps (Cloud)
+
+VoltAgent’s logging is OpenTelemetry-based and can be exported to VoltOps automatically for production monitoring with no code changes.
+
+- Add these to your `.env` and run your app:
+
+```bash
+VOLTAGENT_PUBLIC_KEY=pk_...
+VOLTAGENT_SECRET_KEY=sk_...
+```
+
+- Get keys quickly: open https://console.voltagent.dev/tracing-setup and use auto‑install.
+
+What happens under the hood:
+
+- Built on OpenTelemetry Logs; exports via OTLP HTTP.
+- Auto‑enables when valid keys are present; otherwise remains local only.
+- Smart batching and lazy initialization minimize overhead; real‑time local logging remains available via WebSocket.
+
+Advanced control (optional): You can tune sampling and batching through `VoltAgentObservability` and it applies to both traces and logs:
+
+```ts
+import { VoltAgent, VoltAgentObservability } from "@voltagent/core";
+
+const observability = new VoltAgentObservability({
+  voltOpsSync: {
+    // Sampling strategies: "always" | "never" | "ratio" | "parent"
+    sampling: { strategy: "ratio", ratio: 0.25 },
+    // Batching controls
+    maxQueueSize: 4096,
+    maxExportBatchSize: 512,
+    scheduledDelayMillis: 4000,
+    exportTimeoutMillis: 30000,
+  },
+});
+
+new VoltAgent({
+  agents: {
+    /* ... */
+  },
+  observability,
+});
+```
+
+Tip: To disable cloud export and keep logs local to the console only, set `sampling: { strategy: "never" }`.
+
 ## Using Pino Logger with Advanced Features
 
 For advanced use cases, you can use `createPinoLogger` which provides access to all Pino features including custom transports:
@@ -147,8 +193,7 @@ import { createPinoLogger } from "@voltagent/logger";
 
 const agent = new Agent({
   name: "CustomerSupport",
-  llm: anthropic,
-  model: "claude-3-sonnet",
+  model: anthropic("claude-3-5-sonnet"),
   instructions: "You are a helpful customer support agent",
 
   // This agent needs more detailed logs
@@ -487,7 +532,7 @@ GET http://localhost:3141/api/logs?level=error&since=2024-01-20T10:00:00Z
 
 When using VoltOps Platform, logs are automatically streamed to the web interface with advanced filtering and real-time updates.
 
-🎯 **Important**: VoltOps Console receives **ALL logs** regardless of your local transport configuration. Even if you configure file-only transport, your logs will still appear in VoltOps Console UI!
+🎯 **Important**: VoltOps Console (local UI) receives **ALL logs** regardless of your local transport configuration. Even if you configure file-only transport, your logs will still appear in the Console UI. For production cloud sync, see "Sync Logs with VoltOps (Cloud)" above.
 
 ```javascript
 // Example: File-only transport locally

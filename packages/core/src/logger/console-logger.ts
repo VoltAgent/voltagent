@@ -4,6 +4,7 @@
  */
 
 import { EventEmitter } from "node:events";
+import { logs } from "@opentelemetry/api-logs";
 import type { LogBuffer, LogEntry, LogFilter, LogFn, Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
 
@@ -34,16 +35,60 @@ export class ConsoleLogger implements Logger {
     return `[${timestamp}] ${level.toUpperCase()}${contextStr}: ${msg}${objStr}`;
   }
 
+  private emitOtelLog(level: string, msg: string, obj?: object): void {
+    // Check if OpenTelemetry LoggerProvider is available via globalThis
+    const loggerProvider = (globalThis as any).___voltagent_otel_logger_provider;
+    if (!loggerProvider) return;
+
+    try {
+      const otelLogger = logs.getLogger("voltagent-console", "1.0.0");
+
+      // Map severity to OpenTelemetry severity number
+      const severityMap: Record<string, number> = {
+        trace: 1,
+        debug: 5,
+        info: 9,
+        warn: 13,
+        error: 17,
+        fatal: 21,
+      };
+
+      const severityNumber = severityMap[level] || 9;
+
+      // Emit the log record
+      otelLogger.emit({
+        severityNumber,
+        severityText: level.toUpperCase(),
+        body: msg,
+        attributes: {
+          ...this.context,
+          ...obj,
+        },
+      });
+    } catch {
+      // Silently ignore errors in OpenTelemetry emission
+    }
+  }
+
   private createLogFn(level: string, consoleFn: (...args: any[]) => void): LogFn {
     return (msgOrObj: string | object, ...args: any[]): void => {
       if (!this.shouldLog(level)) return;
 
+      let msg: string;
+      let obj: object | undefined;
+
       if (typeof msgOrObj === "string") {
-        consoleFn(this.formatMessage(level, msgOrObj, args[0]));
+        msg = msgOrObj;
+        obj = args[0];
+        consoleFn(this.formatMessage(level, msg, obj));
       } else {
-        const msg = args[0] || "";
-        consoleFn(this.formatMessage(level, msg, msgOrObj));
+        msg = args[0] || "";
+        obj = msgOrObj;
+        consoleFn(this.formatMessage(level, msg, obj));
       }
+
+      // Emit via OpenTelemetry if available
+      this.emitOtelLog(level, msg, obj);
     };
   }
 

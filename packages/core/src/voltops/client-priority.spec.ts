@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Agent } from "../agent/agent";
 import { LoggerProxy, getGlobalLogger } from "../logger";
-import { AgentRegistry } from "../server/registry";
+import { AgentRegistry } from "../registries/agent-registry";
 import { VoltOpsClient } from "./client";
 import type { PromptContent, PromptHelper, VoltOpsClientOptions } from "./types";
 
@@ -294,18 +294,28 @@ describe("VoltOpsClient Priority Hierarchy", () => {
       });
 
       // Test resolveInstructions (private method, tested through getSystemMessage)
-      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage({
-        input: "test input",
-        historyEntryId: "test-id",
-        contextMessages: [],
-        operationContext: {
-          operationId: "test-op",
-          userContext: new Map(),
-          historyEntry: { id: "test-id" } as any,
-          isActive: true,
-          conversationSteps: [],
+      // Create proper OperationContext structure
+      const oc = {
+        operationId: "test-op",
+        userId: "test-user",
+        conversationId: "test-conv",
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        logger: mockLoggerInstance as any,
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_span: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
         },
-      });
+        startTime: new Date(),
+      };
+
+      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage("test input", oc);
 
       // Verify createPromptHelperWithFallback was called with agent-specific client
       expect(createPromptHelperSpy).toHaveBeenCalledWith(
@@ -321,7 +331,8 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       // Verify global client was not used
       expect(mockGlobalGetPrompt).not.toHaveBeenCalled();
-      expect(systemMessageResponse.systemMessages).toBeDefined();
+      // Verify that getSystemMessage returned a response
+      expect(systemMessageResponse).toBeDefined();
 
       // Cleanup
       createPromptHelperSpy.mockRestore();
@@ -359,18 +370,28 @@ describe("VoltOpsClient Priority Hierarchy", () => {
         // No voltOpsClient specified - should use global
       });
 
-      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage({
-        input: "test input",
-        historyEntryId: "test-id",
-        contextMessages: [],
-        operationContext: {
-          operationId: "test-op",
-          userContext: new Map(),
-          historyEntry: { id: "test-id" } as any,
-          isActive: true,
-          conversationSteps: [],
-        },
-      });
+      // Create proper OperationContext structure
+      const oc = {
+        operationId: "test-op",
+        userId: "test-user",
+        conversationId: "test-conv",
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        logger: mockLoggerInstance as any,
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_span: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+        startTime: new Date(),
+      } as any;
+
+      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage("test input", oc);
 
       // Verify createPromptHelperWithFallback was called without agent client
       expect(createPromptHelperSpy).toHaveBeenCalledWith(
@@ -382,7 +403,8 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       // Verify global client was used
       expect(mockGlobalGetPrompt).toHaveBeenCalledTimes(1);
-      expect(systemMessageResponse.systemMessages).toBeDefined();
+      // Verify that getSystemMessage returned a response
+      expect(systemMessageResponse).toBeDefined();
 
       // Cleanup
       createPromptHelperSpy.mockRestore();

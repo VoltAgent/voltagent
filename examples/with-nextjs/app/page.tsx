@@ -14,18 +14,23 @@ export default function Home() {
         />
       </div>
 
-      {/* Removed gradient overlay */}
-
-      <main className="relative w-full max-w-2xl z-10">
+      <main className="relative w-full z-10 max-w-4xl mx-auto">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-[#00d992] mb-1">VoltAgent</h1>
-          <p className="text-gray-400">AI-powered calculation made simple</p>
+          <h1 className="text-4xl font-bold text-[#00d992] mb-2">VoltAgent</h1>
+          <p className="text-gray-400 text-lg">Supervisor Agent with Sub-Agents</p>
+          <p className="text-gray-500 text-sm mt-2">
+            Watch how the supervisor delegates tasks to specialized agents
+          </p>
         </div>
 
         <CalculatorChat />
 
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>Built with Next.js and VoltAgent</p>
+          <p className="mt-2 text-xs text-gray-600">
+            The supervisor agent delegates mathematical tasks to MathExpert and general queries to
+            GeneralAssistant
+          </p>
         </div>
       </main>
     </div>

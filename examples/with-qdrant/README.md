@@ -43,4 +43,4 @@ Try asking questions like:
 ## Notes
 
 - The retriever will automatically populate the Qdrant collection with sample documents if empty.
-- Both agents track which documents were used for answers. Check `userContext.get('references')` for source IDs and scores.
+- Both agents track which documents were used for answers. Check `context.get('references')` for source IDs and scores.

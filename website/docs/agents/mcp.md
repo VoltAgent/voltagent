@@ -166,7 +166,7 @@ Provide the tools via the `tools` array in the `Agent` constructor. These tools 
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
 import { openai } from "@ai-sdk/openai";
 // Assume mcpConfig is configured and allTools fetched as shown above
 
@@ -175,7 +175,6 @@ const allTools = await mcpConfig.getTools();
 const agent = new Agent({
   name: "MCP Aware Agent",
   instructions: "An assistant that can use MCP tools configured at startup",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: allTools, // Add MCP tools during initialization
 });

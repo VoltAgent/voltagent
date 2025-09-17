@@ -51,34 +51,28 @@ Okay, so it helps you see inside the LLM. Sounds good. But what does that _reall
 Alright, convinced? Ready to get this "observability" thing sorted? The next question is, what exactly should you be keeping an eye on? It can seem like a lot, but here are the main parts:
 
 1.  **Prompt & Input Tracking: Know Your Starting Point**
-
     - What kind of prompts are people (or your system) actually sending? You'd be surprised!
     - Are there patterns? What makes a prompt successful? What makes one fail badly?
     - And importantly, is anyone trying to be sneaky and trick your LLM with "prompt injection"? You need to log them to understand them.
 
 2.  **Output & Response Monitoring: What's It Actually Saying?**
-
     - Definitely log the text the LLM generates.
     - But also, how good _is_ it? Think about relevance, if it makes sense (coherence), and super importantly, if it's saying anything problematic – like toxic language or generating incorrect information (often called "hallucinations").
 
 3.  **Following the Breadcrumbs (Especially for Agents/Chains):** If your LLM isn't working alone – maybe it's part of an agent that uses tools or follows a chain of thought – you'll want to see those intermediate steps.
-
     - Which tools did it decide to use? And why?
     - What was its internal "reasoning" process (as much as we can see it)?
 
 4.  **Performance Check-Up: The Vital Signs**
-
     - **Latency:** How long are users waiting for a response? Too long, and they're gone.
     - **Throughput:** How many requests can your setup handle? Planning for scale is key.
     - **Token Counts:** How many tokens are being used for inputs and outputs? This one's important for cost!
 
 5.  **Counting the Beans: Cost Tracking** Seriously, keep an eye on those API bills.
-
     - How much is each request, or each user, or each feature _really_ costing?
     - Can you spot any features that are surprisingly expensive?
 
 6.  **Listen to Your Users: The Feedback Loop** Your users are an incredible source of truth. Make it easy for them to tell you what they think.
-
     - Simple thumbs up/down on responses can be very valuable.
     - What are they saying about the AI's helpfulness in general? Are they getting what they need?
 
@@ -121,7 +115,7 @@ Speaking of specialized platforms, it's insightful to see how observability can 
 
 Our biggest frustration? It was just so darn hard to understand _why_ our agents made certain decisions. What steps did they take? Which tools did they pick, and when? And when an error inevitably popped up, figuring out exactly what went wrong felt like detective work without enough clues. Standard logs helped a bit, but they just weren't cutting it as interactions got more complicated.
 
-We got a lot of inspiration from the visual debugging power of tools like n8n. We thought, "Why can't we have something that clear for AI agents?" So, we decided to build observability right into the core experience. The key differentiator for VoltAgent became our **[VoltOps LLM Observability Platform](https://console.voltagent.dev/)**. This console isn't just another dashboard; it lets you visualize the _entire_ lifecycle of your agents—we're talking LLM interactions, tool usage, state changes, even their internal reasoning—all laid out on an **n8n-style canvas**.
+We got a lot of inspiration from the visual debugging power of tools like n8n. We thought, "Why can't we have something that clear for AI agents?" So, we decided to build observability right into the core experience. The key differentiator for VoltAgent became our **[VoltOps LLM Observability Platform](https://console.voltagent.dev/)**. This console isn't just another dashboard; it lets you visualize the _entire_ lifecycle of your agents-we're talking LLM interactions, tool usage, state changes, even their internal reasoning-all laid out on an **n8n-style canvas**.
 
 ![VoltOps LLM Observability Platform Demo](https://cdn.voltagent.dev/readme/demo.gif)
 

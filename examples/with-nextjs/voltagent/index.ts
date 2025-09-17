@@ -1,89 +1,112 @@
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
-import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { z } from "zod";
-
 import { openai } from "@ai-sdk/openai";
-
-// Define a calculator tool
-const calculatorTool = createTool({
-  name: "calculate",
-  description: "Perform a mathematical calculation",
+import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+import { z } from "zod";
+import { sharedMemory } from "./memory";
+// Uppercase conversion tool
+const uppercaseTool = createTool({
+  name: "uppercase",
+  description: "Convert text to uppercase",
   parameters: z.object({
-    expression: z.string().describe("The mathematical expression to evaluate, e.g. (2 + 2) * 3"),
+    text: z.string().describe("Text to convert to uppercase"),
   }),
   execute: async (args) => {
-    try {
-      // Using Function is still not ideal for production but safer than direct eval
-      const result = new Function(`return ${args.expression}`)();
-      return { result };
-    } catch (e) {
-      // Properly use the error variable
-      const errorMessage = e instanceof Error ? e.message : String(e);
-      throw new Error(`Invalid expression: ${args.expression}. Error: ${errorMessage}`);
-    }
+    return { result: args.text.toUpperCase() };
   },
 });
 
-// Define a date/time tool
-const dateTimeTool = createTool({
-  name: "getDateTime",
-  description: "Get current date and time",
+// Word count tool
+const wordCountTool = createTool({
+  name: "countWords",
+  description: "Count words in text",
   parameters: z.object({
-    format: z.string().optional().describe("Date format (e.g., 'short', 'long')"),
+    text: z.string().describe("Text to count words in"),
   }),
   execute: async (args) => {
-    const now = new Date();
-    if (args.format === "short") {
-      return { datetime: now.toLocaleDateString() };
-    }
-    return { datetime: now.toLocaleString() };
+    const words = args.text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
+    return { count: words.length, words: words };
   },
 });
 
-// First subagent - Math specialist
-export const mathAgent = new Agent({
-  name: "MathAssistant",
-  description: "A specialist in mathematical calculations and number operations",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
-  tools: [calculatorTool],
+// Story writing tool
+const storyWriterTool = createTool({
+  name: "writeStory",
+  description: "Write a 50-word story about the given text",
+  parameters: z.object({
+    text: z.string().describe("Text to write a story about"),
+  }),
+  execute: async (args) => {
+    // The agent will handle the creative writing
+    return { topic: args.text };
+  },
 });
 
-// Second subagent - DateTime specialist
-export const dateTimeAgent = new Agent({
-  name: "DateTimeAssistant",
-  description: "A specialist in date and time operations",
-  llm: new VercelAIProvider(),
+// Uppercase agent
+const uppercaseAgent = new Agent({
+  name: "UppercaseAgent",
+  instructions:
+    "You are a text transformer. When given text, use the uppercase tool to convert it to uppercase and return the result.",
   model: openai("gpt-4o-mini"),
-  tools: [dateTimeTool],
+  tools: [uppercaseTool],
+  memory: sharedMemory,
 });
 
-// Supervisor agent with multiple subagents
-export const agent = new Agent({
+// Word count agent
+const wordCountAgent = new Agent({
+  name: "WordCountAgent",
+  instructions:
+    "You are a text analyzer. When given text, use the countWords tool to count the words and return the count.",
+  model: openai("gpt-4o-mini"),
+  tools: [wordCountTool],
+  memory: sharedMemory,
+});
+
+// Story writer agent
+const storyWriterAgent = new Agent({
+  name: "StoryWriterAgent",
+  instructions:
+    "You are a creative story writer. When given text, use the writeStory tool to acknowledge the topic, then write EXACTLY a 50-word story about or inspired by that text. Be creative and engaging. Make sure your story is exactly 50 words, no more, no less.",
+  model: openai("gpt-4o-mini"),
+  tools: [storyWriterTool],
+  memory: sharedMemory,
+});
+
+// Supervisor agent that delegates to sub-agents
+export const supervisorAgent = new Agent({
   name: "Supervisor",
-  description: "A Supervisor that can delegate tasks to specialized sub-agents",
-  llm: new VercelAIProvider(),
+  instructions:
+    "You are a text processing supervisor. When given any text input, you MUST delegate to ALL THREE agents: UppercaseAgent, WordCountAgent, AND StoryWriterAgent. Delegate to all of them to process the text in parallel. Then combine and present all three results to the user: the uppercase version, the word count, and the 50-word story.",
   model: openai("gpt-4o-mini"),
-  subAgents: [mathAgent, dateTimeAgent],
-  // Enable text-delta streaming for subagents
-  supervisorConfig: {
-    fullStreamEventForwarding: {
-      types: ["text-delta", "tool-call", "tool-result"],
-      addSubAgentPrefix: true,
-    },
-  },
+  subAgents: [uppercaseAgent, wordCountAgent, storyWriterAgent],
+  memory: sharedMemory,
 });
 
-// Create logger
-/* const logger = createPinoLogger({
-  name: "nextjs-example",
-  level: "info",
-}); */
+// Type declaration for global augmentation
+declare global {
+  var voltAgentInstance: VoltAgent | undefined;
+}
 
-new VoltAgent({
-  agents: {
-    agent,
-  },
-  /* logger, */
-});
+// Singleton initialization function
+function getVoltAgentInstance() {
+  if (!globalThis.voltAgentInstance) {
+    globalThis.voltAgentInstance = new VoltAgent({
+      agents: {
+        supervisorAgent,
+        storyWriterAgent,
+        wordCountAgent,
+        uppercaseAgent,
+      },
+      server: honoServer(),
+    });
+  }
+  return globalThis.voltAgentInstance;
+}
+
+// Initialize the singleton
+export const voltAgent = getVoltAgentInstance();
+
+// Export the supervisor as the main agent
+export const agent = supervisorAgent;

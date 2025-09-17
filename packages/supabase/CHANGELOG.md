@@ -1,5 +1,125 @@
 # @voltagent/supabase
 
+## 1.0.2
+
+## 1.0.2-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 1.0.1
+
+### Patch Changes
+
+- [`a0d9e84`](https://github.com/VoltAgent/voltagent/commit/a0d9e8404fe3e2cebfc146cd4622b607bd16b462) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency version
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
+## 1.0.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Supabase 1.x — Memory Adapter
+
+  Supabase storage now implements the Memory V2 adapter pattern.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Migrate
+
+  Before (0.1.x):
+
+  ```ts
+  import { SupabaseMemory } from "@voltagent/supabase";
+
+  const agent = new Agent({
+    // ...
+    memory: new SupabaseMemory({ url: process.env.SUPABASE_URL!, key: process.env.SUPABASE_KEY! }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { SupabaseMemoryAdapter } from "@voltagent/supabase";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new SupabaseMemoryAdapter({
+        url: process.env.SUPABASE_URL!,
+        key: process.env.SUPABASE_KEY!,
+      }),
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- [`c2a6ae1`](https://github.com/VoltAgent/voltagent/commit/c2a6ae125abf9c0b6642927ee78721c6a83dc0f8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency
+
+## 1.0.0-next.2
+
+### Patch Changes
+
+- [`c2a6ae1`](https://github.com/VoltAgent/voltagent/commit/c2a6ae125abf9c0b6642927ee78721c6a83dc0f8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency
+
+## 1.0.0-next.1
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Supabase 1.x — Memory Adapter
+
+  Supabase storage now implements the Memory V2 adapter pattern.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Migrate
+
+  Before (0.1.x):
+
+  ```ts
+  import { SupabaseMemory } from "@voltagent/supabase";
+
+  const agent = new Agent({
+    // ...
+    memory: new SupabaseMemory({ url: process.env.SUPABASE_URL!, key: process.env.SUPABASE_KEY! }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { SupabaseMemoryAdapter } from "@voltagent/supabase";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new SupabaseMemoryAdapter({
+        url: process.env.SUPABASE_URL!,
+        key: process.env.SUPABASE_KEY!,
+      }),
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93)]:
+  - @voltagent/logger@1.0.0-next.0
+
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
 ## 0.1.20
 
 ### Patch Changes

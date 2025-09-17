@@ -15,7 +15,7 @@ Please migrate to using the [Vercel AI SDK's Groq provider](https://ai-sdk.dev/p
 npm uninstall @voltagent/groq-ai
 
 # Install the recommended packages
-npm install @voltagent/vercel-ai @ai-sdk/groq@1
+npm install ai @ai-sdk/groq
 ```
 
 2. **Update your code:**
@@ -35,24 +35,20 @@ const agent = new Agent({
 });
 
 // ✅ New (recommended)
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { groq } from "@ai-sdk/groq";
-
-const provider = new VercelAIProvider();
 
 const agent = new Agent({
   name: "Groq Agent",
-  llm: provider,
   model: groq("llama-3.3-70b-versatile"),
 });
 ```
 
 ## Resources
 
-- 📚 **[Migration Guide](https://voltagent.dev/docs/providers/groq-ai/)** - Complete migration documentation
+- 📚 **[Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)** - Complete migration documentation
 - 📖 **[Providers & Models Documentation](https://voltagent.dev/docs/getting-started/providers-models)** - Learn about the new provider system
 - 📦 **[Archived Code](../../archive/deprecated-providers/groq-ai/)** - Original source code (read-only)
-- 🔗 **[Vercel AI SDK Groq Provider](https://ai-sdk.dev/providers/ai-sdk-providers/groq)** - Official documentation
+- 🔗 **[ai-sdk Groq Provider](https://ai-sdk.dev/providers/ai-sdk-providers/groq)** - Official documentation
 
 ## Why This Change?
 

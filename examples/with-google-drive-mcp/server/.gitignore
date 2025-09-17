@@ -1,3 +1,6 @@
 node_modules
 dist
-.env 
+.env
+memory.db
+memory.db-shm
+memory.db-wal 

@@ -1,10 +1,16 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
 (async () => {
   try {
+    const logger = createPinoLogger({
+      name: "with-composio-mcp",
+      level: "info",
+    });
+
     const mcpConfig = new MCPConfiguration({
       servers: {
         composio: {
@@ -16,16 +22,14 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
 
     const agent = new Agent({
       name: "Composio MCP Agent",
-      description: "A helpful assistant using a lightweight provider",
+      instructions: "A helpful assistant using a lightweight provider",
       tools: await mcpConfig.getTools(),
-      llm: new VercelAIProvider(),
       model: openai("gpt-4o-mini"),
-    });
-
-    // Create logger
-    const logger = createPinoLogger({
-      name: "with-composio-mcp",
-      level: "info",
+      memory: new Memory({
+        storage: new LibSQLMemoryAdapter({
+          url: "file:./.voltagent/memory.db",
+        }),
+      }),
     });
 
     new VoltAgent({
@@ -33,6 +37,7 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
         agent,
       },
       logger,
+      server: honoServer({ port: 3141 }),
     });
   } catch (error) {
     console.error("Failed to initialize VoltAgent:", error);

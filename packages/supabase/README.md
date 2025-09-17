@@ -65,6 +65,7 @@ This memory provider requires specific tables to exist in your Supabase database
 CREATE TABLE IF NOT EXISTS voltagent_memory_conversations (
     id TEXT PRIMARY KEY,
     resource_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     title TEXT,
     metadata JSONB, -- Use JSONB for efficient querying
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
@@ -75,23 +76,30 @@ CREATE TABLE IF NOT EXISTS voltagent_memory_conversations (
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_resource
 ON voltagent_memory_conversations(resource_id);
 
--- Messages Table
+-- Index for user-specific queries
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_conversations_user
+ON voltagent_memory_conversations(user_id);
+
+-- Messages Table (UIMessage format)
 CREATE TABLE IF NOT EXISTS voltagent_memory_messages (
-    user_id TEXT NOT NULL,
-    -- Add foreign key reference and cascade delete
     conversation_id TEXT NOT NULL REFERENCES voltagent_memory_conversations(id) ON DELETE CASCADE,
     message_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
     role TEXT NOT NULL,
-    content TEXT NOT NULL, -- Consider JSONB if content is often structured
-    type TEXT NOT NULL,
+    parts TEXT NOT NULL,    -- JSON array of message parts (text, tool-call, tool-result, etc.)
+    metadata TEXT,           -- JSON metadata for the message
+    format_version INTEGER DEFAULT 2, -- Format version indicator (2 = UIMessage)
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-    -- Composite primary key to ensure message uniqueness within a conversation
-    PRIMARY KEY (user_id, conversation_id, message_id)
+    PRIMARY KEY (conversation_id, message_id)
 );
 
 -- Index for faster message retrieval
 CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_lookup
-ON voltagent_memory_messages(user_id, conversation_id, created_at);
+ON voltagent_memory_messages(conversation_id, created_at);
+
+-- Index for user-specific queries
+CREATE INDEX IF NOT EXISTS idx_voltagent_memory_messages_user
+ON voltagent_memory_messages(user_id);
 
 -- Agent History Table (New Structured Format)
 CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history (
@@ -317,15 +325,13 @@ You'll see the starter code in `src/index.ts` to get you started with the VoltAg
 
 ```typescript
 import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai"; // Example provider
+import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai"; // Example model
 
 // Define a simple agent
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
-  // Note: You can swap VercelAIProvider and openai with other supported providers/models
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -334,6 +340,7 @@ new VoltAgent({
   agents: {
     agent,
   },
+  server: honoServer(),
 });
 ```
 

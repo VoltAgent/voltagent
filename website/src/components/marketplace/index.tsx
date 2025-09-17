@@ -175,7 +175,7 @@ export const Marketplace = () => {
               </p>
               <p className="mb-4 text-base sm:text-lg text-[#dcdcdc]">
                 We're inviting the VoltAgent community to share feedback on the marketplace as we
-                build it. We're open to all suggestions — what could be improved, what to add, or
+                build it. We're open to all suggestions - what could be improved, what to add, or
                 what to avoid.
               </p>
             </div>

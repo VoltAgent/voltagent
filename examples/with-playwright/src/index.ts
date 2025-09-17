@@ -1,7 +1,8 @@
 import { mistral } from "@ai-sdk/mistral";
-import VoltAgent, { Agent, type OperationContext, type AgentHooks } from "@voltagent/core";
+import VoltAgent, { Agent, Memory, type OperationContext, type AgentHooks } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import {
   assertResponseTool,
   checkTool,
@@ -30,11 +31,23 @@ import {
 } from "./tools";
 import { resetBrowserState as resetBrowserStateInternal } from "./tools/playwrightToolHandler";
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-playwright",
+  level: "info",
+});
+
+// Create Memory with LibSQL adapter for persistent memory
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({
+    url: "file:./.voltagent/memory.db",
+  }),
+});
+
 // Create a specialized agent for browsing
 export const browserAgent = new Agent({
   name: "Browser Agent",
-  description: "You are an AI agent specialized in web automation with Playwright.",
-  llm: new VercelAIProvider(),
+  instructions: "You are an AI agent specialized in web automation with Playwright.",
   model: mistral("mistral-large-latest"),
 
   hooks: {
@@ -83,12 +96,7 @@ export const browserAgent = new Agent({
     getVisibleHtmlTool,
     listInteractiveElementsTool,
   ],
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-playwright",
-  level: "info",
+  memory,
 });
 
 new VoltAgent({
@@ -96,4 +104,5 @@ new VoltAgent({
     agent: browserAgent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

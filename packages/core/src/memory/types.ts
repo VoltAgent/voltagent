@@ -1,58 +1,22 @@
-import type { BaseMessage } from "../agent/providers/base/types";
-import type { NewTimelineEvent } from "../events/types";
-import type { WorkflowHistoryEntry, WorkflowStepHistoryEntry } from "../workflow/context";
-import type { WorkflowStats, WorkflowTimelineEvent } from "../workflow/types";
+/**
+ * Memory V2 Type Definitions
+ * Clean separation between conversation memory and telemetry
+ */
+
+import type { UIMessage } from "ai";
+import type { z } from "zod";
+
+// ============================================================================
+// Core Types (Re-exported from existing memory system)
+// ============================================================================
 
 /**
- * Memory options
+ * Extended UIMessage type with storage metadata
  */
-export type MemoryOptions = {
-  /**
-   * Maximum number of messages to store in the database
-   * @default 100
-   */
-  storageLimit?: number;
-};
-
-/**
- * Options for filtering messages when retrieving from memory
- */
-export type MessageFilterOptions = {
-  /**
-   * User identifier
-   */
-  userId?: string;
-
-  /**
-   * Conversation identifier
-   */
-  conversationId?: string;
-
-  /**
-   * Maximum number of messages to retrieve
-   */
-  limit?: number;
-
-  /**
-   * Only retrieve messages before this timestamp
-   */
-  before?: number;
-
-  /**
-   * Only retrieve messages after this timestamp
-   */
-  after?: number;
-
-  /**
-   * Only retrieve messages with this role
-   */
-  role?: BaseMessage["role"];
-
-  /**
-   * Only retrieve messages with these types
-   * If not specified, all message types are returned
-   */
-  types?: Array<"text" | "tool-call" | "tool-result">;
+export type StoredUIMessage = UIMessage & {
+  createdAt: Date;
+  userId: string;
+  conversationId: string;
 };
 
 /**
@@ -92,189 +56,313 @@ export type ConversationQueryOptions = {
 };
 
 /**
- * Memory interface for storing and retrieving messages
+ * Options for getting messages
  */
-export type Memory = {
+export type GetMessagesOptions = {
+  limit?: number;
+  before?: Date;
+  after?: Date;
+  roles?: string[];
+};
+
+/**
+ * Memory options for MemoryManager
+ */
+export type MemoryOptions = {
   /**
-   * Add a message to memory
+   * Maximum number of messages to store in the database
+   * @default 100
    */
-  addMessage(message: BaseMessage, conversationId?: string): Promise<void>;
+  storageLimit?: number;
+};
+
+// ============================================================================
+// Workflow State Types
+// ============================================================================
+
+/**
+ * Workflow state entry for suspension and resumption
+ * Stores only the essential state needed to resume a workflow
+ */
+export interface WorkflowStateEntry {
+  /** Unique execution ID */
+  id: string;
+  /** Workflow definition ID */
+  workflowId: string;
+  /** Workflow name for reference */
+  workflowName: string;
+  /** Current status */
+  status: "running" | "suspended" | "completed" | "error";
+  /** Original input to the workflow */
+  input?: unknown;
+  /** Execution context */
+  context?: Array<[string | symbol, unknown]>;
+  /** Suspension metadata including checkpoint data */
+  suspension?: {
+    suspendedAt: Date;
+    reason?: string;
+    stepIndex: number;
+    lastEventSequence?: number;
+    checkpoint?: {
+      stepExecutionState?: any;
+      completedStepsData?: any[];
+    };
+    suspendData?: any;
+  };
+  /** User ID if applicable */
+  userId?: string;
+  /** Conversation ID if applicable */
+  conversationId?: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+  /** Timestamps */
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ============================================================================
+// Working Memory Types
+// ============================================================================
+
+/**
+ * Working memory scope - conversation or user level
+ */
+export type WorkingMemoryScope = "conversation" | "user";
+
+/**
+ * Working memory configuration
+ * Auto-detects format: schema → JSON, template → markdown
+ */
+export type WorkingMemoryConfig = {
+  enabled: boolean;
+  scope?: WorkingMemoryScope; // default: 'conversation'
+} & (
+  | { template: string; schema?: never } // Markdown template
+  | { schema: z.ZodObject<any>; template?: never } // Zod schema for JSON
+  | { template?: never; schema?: never } // No template/schema, free-form
+);
+
+// ============================================================================
+// Memory V2 Specific Types
+// ============================================================================
+
+/**
+ * Memory V2 configuration options
+ */
+export interface MemoryConfig {
+  /**
+   * Storage adapter for conversations and messages
+   */
+  storage: StorageAdapter;
 
   /**
-   * Get messages from memory
+   * Optional embedding adapter for semantic operations
    */
-  getMessages(options: MessageFilterOptions): Promise<BaseMessage[]>;
+  embedding?: EmbeddingAdapter;
 
   /**
-   * Clear messages from memory
+   * Optional vector adapter for similarity search
    */
-  clearMessages(options: { userId: string; conversationId?: string }): Promise<void>;
+  vector?: VectorAdapter;
 
   /**
-   * Create a new conversation
+   * Enable caching for embeddings
+   * @default false
    */
-  createConversation(conversation: CreateConversationInput): Promise<Conversation>;
+  enableCache?: boolean;
 
   /**
-   * Get a conversation by ID
+   * Maximum number of embeddings to cache
+   * @default 1000
    */
+  cacheSize?: number;
+
+  /**
+   * Cache TTL in milliseconds
+   * @default 3600000 (1 hour)
+   */
+  cacheTTL?: number;
+
+  /**
+   * Maximum number of messages to store per conversation
+   * @default 100
+   */
+  storageLimit?: number;
+
+  /**
+   * Working memory configuration
+   * Enables agents to maintain important context
+   */
+  workingMemory?: WorkingMemoryConfig;
+}
+
+// ============================================================================
+// Vector Search Types
+// ============================================================================
+
+/**
+ * Document type for RAG operations
+ */
+export interface Document {
+  id: string;
+  content: string;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Search options for semantic search
+ */
+export interface SearchOptions {
+  limit?: number;
+  threshold?: number;
+  filter?: Record<string, unknown>;
+}
+
+/**
+ * Search result from vector operations
+ */
+export interface SearchResult {
+  id: string;
+  score: number;
+  content?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Vector item for batch operations
+ */
+export interface VectorItem {
+  id: string;
+  vector: number[];
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================================================
+// Adapter Interfaces
+// ============================================================================
+
+/**
+ * Storage Adapter Interface
+ * Handles persistence of conversations and messages
+ */
+export interface StorageAdapter {
+  // Message operations
+  addMessage(message: UIMessage, userId: string, conversationId: string): Promise<void>;
+  addMessages(messages: UIMessage[], userId: string, conversationId: string): Promise<void>;
+  getMessages(
+    userId: string,
+    conversationId: string,
+    options?: GetMessagesOptions,
+  ): Promise<UIMessage[]>;
+  clearMessages(userId: string, conversationId?: string): Promise<void>;
+
+  // Conversation operations
+  createConversation(input: CreateConversationInput): Promise<Conversation>;
   getConversation(id: string): Promise<Conversation | null>;
-
-  /**
-   * Get conversations for a resource
-   */
   getConversations(resourceId: string): Promise<Conversation[]>;
-
-  /**
-   * Get conversations by user ID with query options
-   */
   getConversationsByUserId(
     userId: string,
     options?: Omit<ConversationQueryOptions, "userId">,
   ): Promise<Conversation[]>;
-
-  /**
-   * Get conversations with advanced query options
-   */
   queryConversations(options: ConversationQueryOptions): Promise<Conversation[]>;
-
-  /**
-   * Get all messages for a specific conversation
-   */
-  getConversationMessages(
-    conversationId: string,
-    options?: { limit?: number; offset?: number },
-  ): Promise<MemoryMessage[]>;
-
-  /**
-   * Update a conversation
-   */
   updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
   ): Promise<Conversation>;
-
-  /**
-   * Delete a conversation
-   */
   deleteConversation(id: string): Promise<void>;
 
-  /**
-   * Add or update a history entry
-   * @param key Entry ID
-   * @param value Entry data
-   * @param agentId Agent ID for filtering
-   */
-  addHistoryEntry(key: string, value: any, agentId: string): Promise<void>;
+  // Working Memory operations
+  getWorkingMemory(params: {
+    conversationId?: string;
+    userId?: string;
+    scope: WorkingMemoryScope;
+  }): Promise<string | null>;
 
-  /**
-   * Update an existing history entry
-   * @param key Entry ID
-   * @param value Updated entry data
-   * @param agentId Agent ID for filtering
-   */
-  updateHistoryEntry(key: string, value: any, agentId: string): Promise<void>;
+  setWorkingMemory(params: {
+    conversationId?: string;
+    userId?: string;
+    content: string;
+    scope: WorkingMemoryScope;
+  }): Promise<void>;
 
-  /**
-   * Add a history step
-   * @param key Step ID
-   * @param value Step data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  addHistoryStep(key: string, value: any, historyId: string, agentId: string): Promise<void>;
+  deleteWorkingMemory(params: {
+    conversationId?: string;
+    userId?: string;
+    scope: WorkingMemoryScope;
+  }): Promise<void>;
 
-  /**
-   * Update a history step
-   * @param key Step ID
-   * @param value Updated step data
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  updateHistoryStep(key: string, value: any, historyId: string, agentId: string): Promise<void>;
-
-  /**
-   * Get a history entry by ID
-   * @param key Entry ID
-   * @returns The history entry or undefined if not found
-   */
-  getHistoryEntry(key: string): Promise<any | undefined>;
-
-  /**
-   * Get a history step by ID
-   * @param key Step ID
-   * @returns The history step or undefined if not found
-   */
-  getHistoryStep(key: string): Promise<any | undefined>;
-
-  /**
-   * Get all history entries for an agent with pagination
-   * @param agentId Agent ID
-   * @param page Page number (0-based)
-   * @param limit Number of entries per page
-   * @returns Object with entries array and total count
-   */
-  getAllHistoryEntriesByAgent(
-    agentId: string,
-    page: number,
-    limit: number,
-  ): Promise<{
-    entries: any[];
-    total: number;
-  }>;
-
-  /**
-   * Add a timeline event
-   * This is part of the new immutable event system.
-   * @param key Event ID (UUID)
-   * @param value Timeline event data with immutable structure
-   * @param historyId Related history entry ID
-   * @param agentId Agent ID for filtering
-   */
-  addTimelineEvent(
-    key: string,
-    value: NewTimelineEvent,
-    historyId: string,
-    agentId: string,
-  ): Promise<void>;
-
-  // Workflow History Operations
-  storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void>;
-  getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null>;
-  getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]>;
-  updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void>;
-  deleteWorkflowHistory(id: string): Promise<void>;
-
-  // Workflow Steps Operations
-  storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void>;
-  getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null>;
-  getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]>;
-  updateWorkflowStep(id: string, updates: Partial<WorkflowStepHistoryEntry>): Promise<void>;
-  deleteWorkflowStep(id: string): Promise<void>;
-
-  // Workflow Timeline Events Operations
-  storeWorkflowTimelineEvent(event: WorkflowTimelineEvent): Promise<void>;
-  getWorkflowTimelineEvent(id: string): Promise<WorkflowTimelineEvent | null>;
-  getWorkflowTimelineEvents(workflowHistoryId: string): Promise<WorkflowTimelineEvent[]>;
-  deleteWorkflowTimelineEvent(id: string): Promise<void>;
-
-  // Query Operations
-  getAllWorkflowIds(): Promise<string[]>;
-  getWorkflowStats(workflowId: string): Promise<WorkflowStats>;
-
-  // Bulk Operations
-  getWorkflowHistoryWithStepsAndEvents(id: string): Promise<WorkflowHistoryEntry | null>;
-  deleteWorkflowHistoryWithRelated(id: string): Promise<void>;
-
-  // Cleanup Operations
-  cleanupOldWorkflowHistories(workflowId: string, maxEntries: number): Promise<number>;
-};
+  // Workflow State operations
+  getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null>;
+  setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void>;
+  updateWorkflowState(executionId: string, updates: Partial<WorkflowStateEntry>): Promise<void>;
+  getSuspendedWorkflowStates(workflowId: string): Promise<WorkflowStateEntry[]>;
+}
 
 /**
- * Memory-specific message type
+ * Embedding Adapter Interface
+ * Handles text to vector conversions
  */
-export type MemoryMessage = BaseMessage & {
-  id: string; // Unique identifier for the message
-  type: "text" | "tool-call" | "tool-result"; // Type of the message
-  createdAt: string; // ISO date when the message was created
-};
+export interface EmbeddingAdapter {
+  /**
+   * Embed a single text
+   */
+  embed(text: string): Promise<number[]>;
+
+  /**
+   * Embed multiple texts in batch
+   */
+  embedBatch(texts: string[]): Promise<number[][]>;
+
+  /**
+   * Get embedding dimensions
+   */
+  getDimensions(): number;
+
+  /**
+   * Get model name
+   */
+  getModelName(): string;
+}
+
+/**
+ * Vector Adapter Interface
+ * Handles vector storage and similarity search
+ */
+export interface VectorAdapter {
+  /**
+   * Store a single vector
+   */
+  store(id: string, vector: number[], metadata?: Record<string, unknown>): Promise<void>;
+
+  /**
+   * Store multiple vectors in batch
+   */
+  storeBatch(items: VectorItem[]): Promise<void>;
+
+  /**
+   * Search for similar vectors
+   */
+  search(
+    vector: number[],
+    options?: {
+      limit?: number;
+      filter?: Record<string, unknown>;
+      threshold?: number;
+    },
+  ): Promise<SearchResult[]>;
+
+  /**
+   * Delete a vector by ID
+   */
+  delete(id: string): Promise<void>;
+
+  /**
+   * Delete multiple vectors by IDs
+   */
+  deleteBatch(ids: string[]): Promise<void>;
+
+  /**
+   * Clear all vectors
+   */
+  clear(): Promise<void>;
+}

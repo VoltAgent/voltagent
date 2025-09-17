@@ -7,7 +7,7 @@ slug: /agents/memory/overview
 
 Conversational AI agents often need to remember past interactions to maintain context, understand user preferences, and provide more coherent and personalized responses. Without memory, each interaction would be treated in isolation, leading to repetitive questions and unnatural conversations.
 
-VoltAgent incorporates a flexible memory management system that allows agents to store and retrieve information from past interactions using **Memory Providers**.
+VoltAgent provides a unified `Memory` class with pluggable storage adapters. It stores and retrieves conversation history, and optionally supports embedding-powered semantic search and structured working memory.
 
 ## Why Use Memory?
 
@@ -16,29 +16,15 @@ VoltAgent incorporates a flexible memory management system that allows agents to
 - **Coherence:** Ensures conversations flow naturally without the agent constantly losing track of the topic.
 - **Long-Term State:** Can be used to store summaries or key information extracted from conversations over extended periods.
 
-## Default Memory Behavior (Zero-Config Persistence)
+## Default Memory Behavior
 
-By default, VoltAgent agents use **`LibSQLStorage`** for **zero-configuration local persistence**. If you don't explicitly provide a `memory` option when creating an `Agent`, VoltAgent automatically does the following:
+By default, agents use in-memory storage (no persistence) with zero configuration. If you don't provide a `memory` option, VoltAgent automatically uses an in-memory adapter that:
 
-1.  Creates a `.voltagent` folder in your project root (if it doesn't exist).
-2.  Initializes `LibSQLStorage` pointing to a SQLite database file at `.voltagent/memory.db`.
-3.  Uses this local database to store and retrieve conversation history.
+1.  Stores conversation history in application memory.
+2.  Maintains context during the application runtime.
+3.  Loses data when the application restarts (suitable for development and stateless deployments).
 
-```ts
-import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
-
-const agent = new Agent({
-  name: "My Assistant",
-  instructions: "This agent automatically uses local file memory.",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
-  // No memory provider specified - uses default LibSQLStorage to .voltagent/memory.db
-});
-```
-
-This makes it easy to get started with stateful agents locally without any manual memory setup.
+For persistent storage across restarts, configure `Memory` with a storage adapter such as `LibSQLMemoryAdapter`, `PostgreSQLMemoryAdapter`, or `SupabaseMemoryAdapter`. See the specific adapter docs for details.
 
 ## Disabling Memory
 
@@ -48,9 +34,8 @@ You can completely disable memory persistence and retrieval by setting the `memo
 const agent = new Agent({
   name: "Stateless Assistant",
   instructions: "This agent has no memory.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  memory: false, // Memory completely disabled
+  memory: false, // disable memory entirely
 });
 ```
 
@@ -58,62 +43,191 @@ When memory is disabled, the agent won't store or retrieve any conversation hist
 
 ## Separate Conversation and History Memory
 
-_Available as of version `0.1.56`_
+VoltAgent manages conversation memory via the `memory` option. Observability (execution logs) is handled via OpenTelemetry and VoltOps integrations, and is not tied to conversation storage.
 
-VoltAgent uses two types of memory internally:
+## Working Memory
 
-- **Conversation Memory**: Stores chat messages for conversation continuity (configured via the `memory` option)
-- **History Memory**: Stores execution telemetry, timeline events, and debugging information (configured via the `historyMemory` option)
+Working memory lets the agent persist concise, important context across turns (conversation-scoped by default, optionally user-scoped). Configuration is part of the `Memory` constructor via `workingMemory`.
 
-By default, history memory uses the same storage instance as conversation memory. This means if you configure `InMemoryStorage` for conversations, history will also use `InMemoryStorage` automatically:
+Supported modes:
+
+- Template (Markdown): `workingMemory: { enabled: true, template: string }`
+- JSON schema (Zod): `workingMemory: { enabled: true, schema: z.object({...}) }`
+- Free-form: `workingMemory: { enabled: true }`
+
+Scope:
+
+- `scope?: 'conversation' | 'user'` (defaults to `conversation`)
+
+Example (template-based, conversation-scoped):
 
 ```ts
-import { Agent, InMemoryStorage } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { openai } from "@ai-sdk/openai";
 
-// Default behavior: history automatically uses same storage as conversation
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  workingMemory: {
+    enabled: true,
+    template: `
+# Profile
+- Name:
+- Role:
+
+# Goals
+-
+
+# Preferences
+-
+`,
+    // scope: 'conversation' // default
+  },
+});
+
 const agent = new Agent({
-  name: "Serverless Assistant",
-  instructions: "Assistant that works in read-only environments",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
-  memory: new InMemoryStorage({ storageLimit: 100 }), // Both conversation and history use this
-  // historyMemory not specified - automatically uses same as memory
+  name: "Assistant",
+  instructions: "Use working memory to maintain key facts.",
+  model: openai("gpt-4o-mini"),
+  memory,
+});
+
+// When you call the agent with user/conversation IDs, the agent injects
+// working memory instructions into the system prompt automatically
+const res = await agent.generateText("Let's plan this week", {
+  userId: "u1",
+  conversationId: "c1",
 });
 ```
 
-**When to use separate memory configurations:**
-
-- **Serverless/Read-only environments**: Use `InMemoryStorage` for both when filesystem access is restricted
-- **Different storage requirements**: Use `InMemoryStorage` for conversation memory and `LibSQLStorage` for persistent history
-- **Compliance**: Separate user data (conversations) from system data (execution logs) for regulatory requirements
+Example (JSON schema, user-scoped):
 
 ```ts
-// Example: In-memory for conversations, persistent for history
-import { InMemoryStorage, LibSQLStorage } from "@voltagent/core";
+import { z } from "zod";
+import { Agent, Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+import { openai } from "@ai-sdk/openai";
 
-const agent = new Agent({
-  name: "Hybrid Memory Assistant",
-  // ... other config ...
-  memory: new InMemoryStorage({ storageLimit: 50 }), // Fast access for conversations
-  historyMemory: new LibSQLStorage({ url: "file:history.db" }), // Persistent execution logs
+const workingSchema = z.object({
+  userProfile: z
+    .object({
+      name: z.string().optional(),
+      timezone: z.string().optional(),
+    })
+    .optional(),
+  tasks: z.array(z.string()).optional(),
+});
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  workingMemory: {
+    enabled: true,
+    scope: "user",
+    schema: workingSchema,
+  },
+});
+
+const agent = new Agent({ name: "Planner", model: openai("gpt-4o-mini"), memory });
+```
+
+Programmatic API:
+
+- `memory.getWorkingMemory({ conversationId?, userId? }) → Promise<string | null>`
+- `memory.updateWorkingMemory({ conversationId?, userId?, content })` where `content` is a string or an object matching the schema when configured (validated internally). Stores as string (Markdown or JSON) under the hood.
+- `memory.clearWorkingMemory({ conversationId?, userId? })`
+- `memory.getWorkingMemoryFormat() → 'markdown' | 'json' | null`
+- `memory.getWorkingMemoryTemplate() → string | null`
+- `memory.getWorkingMemorySchema() → z.ZodObject | null`
+
+Built-in tools (added automatically when working memory is enabled):
+
+- `get_working_memory()` → returns the current content string
+- `update_working_memory(content)` → updates content (typed to schema if configured)
+- `clear_working_memory()` → clears content
+
+Agent prompt integration:
+
+- On each call with `userId` and `conversationId`, the agent appends a working-memory instruction block to the system prompt (including template/schema and current content if present).
+
+## Semantic Search (Embeddings + Vectors)
+
+To enable semantic retrieval of past messages, configure both an embedding adapter and a vector adapter. Memory will automatically embed text parts of messages and store vectors with metadata.
+
+Adapters:
+
+- `AiSdkEmbeddingAdapter` (wraps ai-sdk embedding models)
+- `InMemoryVectorAdapter` (lightweight dev vector store)
+- `LibSQLVectorAdapter` from `@voltagent/libsql` (persistent vectors via LibSQL/Turso/SQLite)
+
+Example (dev vector store):
+
+```ts
+import { Agent, Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new InMemoryVectorAdapter(),
+  enableCache: true, // optional embedding cache
+});
+
+const agent = new Agent({ name: "Helper", model: openai("gpt-4o-mini"), memory });
+
+// Enable semantic search per-call (defaults shown; enabled auto when vectors present)
+const out = await agent.generateText("What did I say about pricing last week?", {
+  userId: "u1",
+  conversationId: "c1",
+  semanticMemory: {
+    enabled: true,
+    semanticLimit: 5,
+    semanticThreshold: 0.7,
+    mergeStrategy: "append", // default ('prepend' | 'append' | 'interleave')
+  },
 });
 ```
 
-**Default behavior**: If you don't specify `historyMemory`, it uses the same storage instance as `memory`. If conversation memory is disabled (`memory: false`), history memory defaults to `LibSQLStorage`.
+Example (persistent vectors with LibSQL):
+
+```ts
+import { Agent, Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
+});
+
+// For ephemeral tests, use in‑memory DB:
+// new LibSQLVectorAdapter({ url: ":memory:" }) // or "file::memory:"
+```
+
+How it works:
+
+- On save, Memory embeds text parts of messages and stores vectors with metadata `{ messageId, conversationId, userId, role, createdAt }` and ID pattern `msg_${conversationId}_${message.id}`.
+- On read with semantic search enabled, Memory searches similar messages and merges them with recent messages using the configured strategy.
+
+Programmatic search:
+
+- `memory.hasVectorSupport()` → boolean
+- `memory.searchSimilar(query, { limit?, threshold?, filter? }) → Promise<SearchResult[]>`
 
 ## Memory Providers
 
-VoltAgent achieves memory persistence through swappable **Memory Providers**. These are classes that implement the `Memory` interface defined in `@voltagent/core`. They handle the actual storage and retrieval logic, allowing you to choose the backend that best suits your needs.
+VoltAgent achieves persistence via swappable storage adapters you pass to `new Memory({ storage: ... })`:
 
-VoltAgent includes built-in providers and supports custom implementations:
+- **[`LibSQLMemoryAdapter`](./libsql.md):** From `@voltagent/libsql` (LibSQL/Turso/SQLite)
+- **[`PostgreSQLMemoryAdapter`](./postgres.md):** From `@voltagent/postgres`
+- **[`SupabaseMemoryAdapter`](./supabase.md):** From `@voltagent/supabase`
+- **[`InMemoryStorageAdapter`](./in-memory.md):** Default in-memory adapter (no persistence)
 
-- **[`LibSQLStorage`](./libsql.md):** (Default Provider) Uses LibSQL (including Turso and local SQLite files) for persistence. Ideal for easy setup, local development, and serverless deployments compatible with SQLite.
-- **[`@voltagent/postgres`](./postgres.md):** Uses PostgreSQL for persistence. Ideal for production applications requiring enterprise-grade database storage, complex queries, or integration with existing PostgreSQL infrastructure.
-- **[`@voltagent/supabase`](./supabase.md):** Uses Supabase (PostgreSQL) for persistence. Suitable for applications already using Supabase or requiring a robust, scalable PostgreSQL backend.
-- **[`InMemoryStorage`](./in-memory.md):** Stores conversation history only in the application's memory. Useful for testing, development, or stateless scenarios. Data is lost on application restart.
-- **[Custom Providers](#implementing-custom-memory-providers):** You can implement the `Memory` interface to connect to any database or storage system (e.g., Redis, MongoDB, DynamoDB, etc.).
+Optional components:
+
+- Embeddings via `AiSdkEmbeddingAdapter` (choose any ai-sdk embedding model)
+- Vector store via `InMemoryVectorAdapter` (or custom)
 
 ## How Memory Works with Agents
 
@@ -127,7 +241,7 @@ This process happens seamlessly behind the scenes when using the agent's core in
 
 ## User and Conversation Identification
 
-To separate conversations for different users or different chat sessions within the same application, you **must** provide `userId` and `conversationId` in the options when calling agent methods directly in your code. If you are interacting with the agent via the [Core API](../../api/overview.md), you can pass these same identifiers within the `options` object in your request body. See the [API examples](../../api/overview.md#basic-example-using-curl) for details on the API usage.
+To separate conversations for different users or different chat sessions within the same application, you **must** provide `userId` and `conversationId` in the options when calling agent methods directly in your code. If you are interacting with the agent via the [Core API](../../api/overview.md), you can pass these same identifiers within the `options` object in your request body. See the [API examples](../../api/endpoints/agents.md#generate-text) for details on the API usage.
 
 When calling agent methods directly:
 
@@ -139,6 +253,60 @@ const response = await agent.generateText("Hello, how can you help me?", {
 ```
 
 These identifiers work consistently across all agent generation methods (`generateText`, `streamText`, `generateObject`, `streamObject`).
+
+## Examples
+
+### Default (in-memory)
+
+```ts
+import { Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "My Assistant",
+  instructions: "Uses default in-memory storage.",
+  model: openai("gpt-4o-mini"),
+});
+```
+
+### Persistent (LibSQL)
+
+```ts
+import { Agent, Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "Persistent Assistant",
+  instructions: "Uses LibSQL for memory.",
+  model: openai("gpt-4o-mini"),
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  }),
+});
+```
+
+### Semantic Search + Working Memory
+
+```ts
+import { Agent, Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new InMemoryVectorAdapter(),
+  workingMemory: { enabled: true },
+});
+
+const agent = new Agent({
+  name: "Smart Memory Assistant",
+  instructions: "Retrieves with semantic search and tracks working memory.",
+  model: openai("gpt-4o-mini"),
+  memory,
+});
+```
 
 ### How User and Conversation IDs Work
 
@@ -196,196 +364,123 @@ How many messages are retrieved is often determined by the `storageLimit` config
 
 ## Implementing Custom Memory Providers
 
-For specialized storage needs (e.g., using Redis, MongoDB, a different SQL database, or applying custom logic like summarization before storage), you can implement a custom memory provider.
+To use a custom database or storage system, implement the `StorageAdapter` interface (`@voltagent/core` → `memory/types`). Observability is separate. The adapter only persists conversation messages, working memory, and workflow state for suspension/resume. Embedding and vector search are separate adapters.
 
-Your custom class must implement the `Memory` interface defined in `@voltagent/core`. This typically involves providing implementations for methods handling messages, conversations, and agent history entries (like runs, events, steps).
+Required methods (summary):
 
-Refer to the `Memory` type definition in `@voltagent/core/memory` for the full interface details. Key methods include:
+- Messages: `addMessage`, `addMessages`, `getMessages`, `clearMessages`
+- Conversations: `createConversation`, `getConversation`, `getConversations`, `getConversationsByUserId`, `queryConversations`, `updateConversation`, `deleteConversation`
+- Working memory: `getWorkingMemory`, `setWorkingMemory`, `deleteWorkingMemory`
+- Workflow state: `getWorkflowState`, `setWorkflowState`, `updateWorkflowState`, `getSuspendedWorkflowStates`
 
-**Message Management:**
+Implementation notes:
 
-- `addMessage(...)`: Stores a new message.
-- `getMessages(...)`: Retrieves messages for a conversation.
-- `clearMessages(...)`: Deletes messages for a specific conversation.
+- Store `UIMessage` values as data. Return messages in chronological order (oldest first).
+- Support `storageLimit`. When the limit is exceeded, prune the oldest messages.
+- Working memory content is a string. When a schema is configured, `Memory` converts the provided object to a JSON string before calling the adapter.
 
-**Conversation Management:**
-
-- `createConversation(...)`, `getConversation(...)`, `getConversations(...)`: Basic conversation operations.
-- `getConversationsByUserId(...)`: Get conversations for a specific user with query options.
-- `queryConversations(...)`: Advanced conversation querying with filtering and pagination.
-- `getConversationMessages(...)`: Get messages for a specific conversation with pagination.
-- `updateConversation(...)`, `deleteConversation(...)`: Update and delete conversations.
-
-**Agent History Management:**
-
-- `addHistoryEntry(...)`, `updateHistoryEntry(...)`, `getHistoryEntry(...)`: Manage agent run history entries.
-- `getAllHistoryEntriesByAgent(...)`: Get all history entries for an agent.
-- `addHistoryStep(...)`, `updateHistoryStep(...)`, `getHistoryStep(...)`: Manage steps within a history entry.
-- `addTimelineEvent(...)`: Add immutable timeline events for detailed execution tracking.
-
-**Workflow History Management:**
-
-- `storeWorkflowHistory(...)`: Stores a record of a complete workflow execution.
-- `getWorkflowHistory(...)`, `getWorkflowHistoryByWorkflowId(...)`: Retrieves workflow history records.
-- `updateWorkflowHistory(...)`, `deleteWorkflowHistory(...)`: Updates and deletes workflow history records.
-- `storeWorkflowStep(...)`, `getWorkflowSteps(...)`: Stores and retrieves the individual steps of a workflow run.
-- `updateWorkflowStep(...)`, `deleteWorkflowStep(...)`: Updates and deletes individual steps.
-- `storeWorkflowTimelineEvent(...)`, `getWorkflowTimelineEvents(...)`: Stores and retrieves fine-grained timeline events for detailed workflow observability.
+Skeleton:
 
 ```ts
 import type {
-  Memory,
-  MemoryMessage,
+  StorageAdapter,
+  UIMessage,
   Conversation,
   CreateConversationInput,
-  MessageFilterOptions,
-  NewTimelineEvent,
-  WorkflowHistoryEntry,
-  WorkflowStepHistoryEntry,
-  ConversationQueryOptions /*...other types*/,
+  ConversationQueryOptions,
+  WorkflowStateEntry,
+  WorkingMemoryScope,
 } from "@voltagent/core";
 
-// Example Structure
-export class MyCustomStorage implements Memory {
-  private dbClient: any; // Your database client instance
-
-  constructor(/* connection options */) {
-    // Initialize client
+export class MyStorageAdapter implements StorageAdapter {
+  // Messages
+  async addMessage(msg: UIMessage, userId: string, conversationId: string): Promise<void> {}
+  async addMessages(msgs: UIMessage[], userId: string, conversationId: string): Promise<void> {}
+  async getMessages(
+    userId: string,
+    conversationId: string,
+    options?: { limit?: number; before?: Date; after?: Date; roles?: string[] }
+  ): Promise<UIMessage[]> {
+    return [];
   }
+  async clearMessages(userId: string, conversationId?: string): Promise<void> {}
 
-  async addMessage(message: MemoryMessage, userId: string, conversationId: string): Promise<void> {
-    const key = `memory:${userId}:${conversationId}`;
-    // Logic to store message in your DB
-  }
-
-  async getMessages(options: MessageFilterOptions): Promise<MemoryMessage[]> {
-    const key = `memory:${options.userId}:${options.conversationId}`;
-    // Logic to retrieve messages from your DB, applying limit
-    return []; // Return retrieved messages
-  }
-
-  // ... implement all other methods from the Memory interface ...
-
-  async createConversation(conversation: CreateConversationInput): Promise<Conversation> {
-    /* ... */ throw new Error("Not implemented");
+  // Conversations
+  async createConversation(input: CreateConversationInput): Promise<Conversation> {
+    throw new Error("Not implemented");
   }
   async getConversation(id: string): Promise<Conversation | null> {
-    /* ... */ throw new Error("Not implemented");
+    return null;
   }
   async getConversations(resourceId: string): Promise<Conversation[]> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async updateConversation(
-    id: string,
-    updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>
-  ): Promise<Conversation> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async deleteConversation(id: string): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async clearMessages(options: {
-    userId: string;
-    conversationId?: string | undefined;
-  }): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async addHistoryEntry(key: string, value: any, agentId: string): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async updateHistoryEntry(key: string, value: any, agentId: string): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async addTimelineEvent(
-    key: string,
-    value: NewTimelineEvent,
-    historyId: string,
-    agentId: string
-  ): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async addHistoryStep(key: string, value: any, historyId: string, agentId: string): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async updateHistoryStep(
-    key: string,
-    value: any,
-    historyId: string,
-    agentId: string
-  ): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async getHistoryEntry(key: string): Promise<any> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async getHistoryStep(key: string): Promise<any> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async getAllHistoryEntriesByAgent(agentId: string): Promise<any[]> {
-    /* ... */ throw new Error("Not implemented");
+    return [];
   }
   async getConversationsByUserId(
     userId: string,
     options?: Omit<ConversationQueryOptions, "userId">
   ): Promise<Conversation[]> {
-    /* ... */ throw new Error("Not implemented");
+    return [];
   }
   async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
-    /* ... */ throw new Error("Not implemented");
+    return [];
   }
-  async getConversationMessages(
-    conversationId: string,
-    options?: { limit?: number; offset?: number }
-  ): Promise<MemoryMessage[]> {
-    /* ... */ throw new Error("Not implemented");
+  async updateConversation(
+    id: string,
+    updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>
+  ): Promise<Conversation> {
+    throw new Error("Not implemented");
   }
+  async deleteConversation(id: string): Promise<void> {}
 
-  // --- Workflow Methods ---
-  async storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
+  // Working memory
+  async getWorkingMemory(params: {
+    conversationId?: string;
+    userId?: string;
+    scope: WorkingMemoryScope;
+  }): Promise<string | null> {
+    return null;
   }
-  async getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null> {
-    /* ... */ throw new Error("Not implemented");
+  async setWorkingMemory(params: {
+    conversationId?: string;
+    userId?: string;
+    content: string;
+    scope: WorkingMemoryScope;
+  }): Promise<void> {}
+  async deleteWorkingMemory(params: {
+    conversationId?: string;
+    userId?: string;
+    scope: WorkingMemoryScope;
+  }): Promise<void> {}
+
+  // Workflow state
+  async getWorkflowState(id: string): Promise<WorkflowStateEntry | null> {
+    return null;
   }
-  async getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async updateWorkflowHistory(id: string, updates: Partial<WorkflowHistoryEntry>): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async deleteWorkflowHistory(id: string): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async updateWorkflowStep(id: string, updates: Partial<WorkflowStepHistoryEntry>): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async deleteWorkflowStep(id: string): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async storeWorkflowTimelineEvent(event: any): Promise<void> {
-    /* ... */ throw new Error("Not implemented");
-  }
-  async getWorkflowTimelineEvents(workflowHistoryId: string): Promise<any[]> {
-    /* ... */ throw new Error("Not implemented");
+  async setWorkflowState(id: string, state: WorkflowStateEntry): Promise<void> {}
+  async updateWorkflowState(id: string, updates: Partial<WorkflowStateEntry>): Promise<void> {}
+  async getSuspendedWorkflowStates(workflowId: string): Promise<WorkflowStateEntry[]> {
+    return [];
   }
 }
 
-// Use your custom memory provider
+// Usage example
+import { Agent, Memory } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new MyStorageAdapter(),
+});
+
 const agent = new Agent({
-  // ... other options
-  memory: new MyCustomStorage(/* ... */),
+  name: "Helper",
+  model: openai("gpt-4o-mini"),
+  memory,
 });
 ```
 
 ## Best Practices
 
-1.  **Choose the Right Provider**: Use `InMemoryStorage` for development/testing. Use `LibSQLStorage` (local/Turso) or a database-backed provider (like `@voltagent/supabase` or custom) for production persistence.
+1.  **Choose the Right Adapter**: Use `InMemoryStorageAdapter` for development/testing or stateless deployments. Use `LibSQLMemoryAdapter` from `@voltagent/libsql` (local/Turso) or a database-backed adapter (like `PostgreSQLMemoryAdapter` in `@voltagent/postgres` or `SupabaseMemoryAdapter` in `@voltagent/supabase`) for production persistence.
 2.  **User Privacy**: Be mindful of storing conversation data. Implement clear data retention policies and provide mechanisms for users to manage or delete their history (e.g., using `deleteConversation` or custom logic) if required by privacy regulations.
 3.  **Context Management**: While `contextLimit` is less directly used now, be aware of the `storageLimit` on your memory provider, as this often dictates the maximum history retrieved.
 4.  **Memory Efficiency**: For high-volume applications using persistent storage, monitor database size and performance. Consider setting appropriate `storageLimit` values on your memory provider to prevent unbounded growth and ensure efficient retrieval.

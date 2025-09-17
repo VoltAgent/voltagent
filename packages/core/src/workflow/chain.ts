@@ -1,5 +1,7 @@
+import type { ModelMessage } from "@ai-sdk/provider-utils";
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
@@ -51,7 +53,7 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
  *   purpose: "Process user data and generate personalized content",
  *   input: z.object({ userId: z.string(), userType: z.enum(["admin", "user"]) }),
  *   result: z.object({ processed: z.boolean(), content: z.string() }),
- *   memory: new LibSQLStorage({ url: "file:memory.db" }) // Optional workflow-specific memory
+ *   memory: new Memory({ storage: new LibSQLMemoryAdapter({ url: "file:memory.db" }) }) // Optional workflow-specific memory
  * })
  *   .andThen({
  *     id: "fetch-user",
@@ -81,7 +83,7 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
  * // Run with optional memory override
  * const result = await workflow.run(
  *   { userId: "123", userType: "admin" },
- *   { memory: new LibSQLStorage({ url: "file:memory.db" }) }
+ *   { memory: new Memory({ storage: new LibSQLMemoryAdapter({ url: "file:memory.db" }) }) }
  * );
  * ```
  */
@@ -131,8 +133,18 @@ export class WorkflowChain<
    * @returns A workflow step that executes the agent with the task
    */
   andAgent<SCHEMA extends z.ZodTypeAny>(
-    task: string | InternalWorkflowFunc<INPUT_SCHEMA, CURRENT_DATA, string, any, any>,
-    agent: Agent<{ llm: DangerouslyAllowAny }>,
+    task:
+      | string
+      | UIMessage[]
+      | ModelMessage[]
+      | InternalWorkflowFunc<
+          INPUT_SCHEMA,
+          CURRENT_DATA,
+          string | UIMessage[] | ModelMessage[],
+          any,
+          any
+        >,
+    agent: Agent,
     config: AgentConfig<SCHEMA>,
   ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>, SUSPEND_SCHEMA, RESUME_SCHEMA> {
     const step = andAgent(task, agent, config) as unknown as WorkflowStep<

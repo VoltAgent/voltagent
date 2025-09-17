@@ -100,15 +100,13 @@ VoltAgent フレームワークを開始するための初期コードが `src/i
 
 ```typescript
 import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai"; // サンプルプロバイダー
+import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai"; // サンプルモデル
 
 // シンプルなエージェントを定義
 const agent = new Agent({
   name: "my-agent",
   instructions: "ツールを使用せずに質問に答える有用なアシスタント",
-  // 注意：VercelAIProvider と openai を他のサポートされているプロバイダー/モデルに交換できます
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -117,6 +115,7 @@ new VoltAgent({
   agents: {
     agent,
   },
+  server: honoServer(),
 });
 ```
 

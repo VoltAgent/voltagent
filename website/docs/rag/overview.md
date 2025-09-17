@@ -129,9 +129,9 @@ class MyRetriever extends BaseRetriever {
     const query = typeof input === "string" ? input : input[input.length - 1].content;
     const results = await this.searchMyData(query);
 
-    // Track sources using userContext
-    if (options.userContext) {
-      options.userContext.set(
+    // Track sources using context
+    if (options.context) {
+      options.context.set(
         "sources",
         results.map((r) => r.source)
       );

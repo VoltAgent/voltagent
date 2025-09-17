@@ -4,7 +4,10 @@ title: Message Helpers
 
 # Message Helpers
 
-Message helpers are utility functions for working with `BaseMessage` content in VoltAgent. Message content can be either a string or an array of content parts (text, image, or file), and these helpers provide type-safe operations for both formats.
+Message helpers are utility functions for working with message content in VoltAgent.
+
+- Content-level helpers operate on `MessageContent` (string or array of parts like text/image/file).
+- Message-level helpers operate on `UIMessage` (ai-sdk UI message format used by Agent hooks and generation).
 
 ## Import
 
@@ -198,36 +201,25 @@ console.log(upper2);
 
 ### `mapMessageContent()`
 
-Transforms text content within a complete message object.
+Transforms all text parts within a `UIMessage`.
 
 ```typescript
 import { mapMessageContent } from "@voltagent/core/utils";
-import type { BaseMessage } from "@voltagent/core";
+import type { UIMessage } from "ai";
 
-const message: BaseMessage = {
+const message: UIMessage = {
+  id: "m1",
   role: "user",
-  content: "hello world",
-};
-
-const loudMessage = mapMessageContent(message, (text) => text.toUpperCase());
-console.log(loudMessage);
-// { role: "user", content: "HELLO WORLD" }
-
-// Works with structured content too
-const complexMessage: BaseMessage = {
-  role: "assistant",
-  content: [
-    { type: "text", text: "The answer is" },
-    { type: "text", text: "42" },
+  parts: [
+    { type: "text", text: "hello" },
+    { type: "image", image: "graph.png" },
+    { type: "text", text: "world" },
   ],
-};
+  metadata: {},
+} as UIMessage;
 
-const emphasized = mapMessageContent(complexMessage, (text) => `**${text}**`);
-console.log(emphasized.content);
-// [
-//   { type: "text", text: "**The answer is**" },
-//   { type: "text", text: "**42**" }
-// ]
+const emphasized = mapMessageContent(message, (text) => `**${text}**`);
+// Text parts become **hello** and **world**; image part is unchanged
 ```
 
 ### `filterContentParts()`
@@ -370,64 +362,68 @@ Pre-built functions for common operations.
 
 ### `addTimestampToMessage()`
 
-Adds timestamps to user messages.
+Adds a timestamp prefix to all text parts of user `UIMessage`s.
 
 ```typescript
 import { addTimestampToMessage } from "@voltagent/core/utils";
-import type { BaseMessage } from "@voltagent/core";
+import type { UIMessage } from "ai";
 
-const userMessage: BaseMessage = {
+const userMessage: UIMessage = {
+  id: "u1",
   role: "user",
-  content: "What's the weather?",
-};
+  parts: [{ type: "text", text: "What's the weather?" }],
+  metadata: {},
+} as UIMessage;
 
 // With custom timestamp
 const stamped1 = addTimestampToMessage(userMessage, "10:30:00");
-console.log(stamped1.content); // "[10:30:00] What's the weather?"
+// First text part becomes: "[10:30:00] What's the weather?"
 
 // With automatic timestamp
 const stamped2 = addTimestampToMessage(userMessage);
-console.log(stamped2.content); // "[14:23:45] What's the weather?" (current time)
+// Uses current time
 
 // Non-user messages are unchanged
-const assistantMessage: BaseMessage = {
+const assistantMessage: UIMessage = {
+  id: "a1",
   role: "assistant",
-  content: "The weather is sunny",
-};
+  parts: [{ type: "text", text: "The weather is sunny" }],
+  metadata: {},
+} as UIMessage;
 const unchanged = addTimestampToMessage(assistantMessage);
-console.log(unchanged.content); // "The weather is sunny"
 ```
 
 ### `prependToMessage()` and `appendToMessage()`
 
-Add text to the beginning or end of message content.
+Add text to the beginning or end of all text parts in a `UIMessage`.
 
 ```typescript
 import { prependToMessage, appendToMessage } from "@voltagent/core/utils";
-import type { BaseMessage } from "@voltagent/core";
+import type { UIMessage } from "ai";
 
-const message: BaseMessage = {
+const message: UIMessage = {
+  id: "m2",
   role: "user",
-  content: "Execute this",
-};
+  parts: [{ type: "text", text: "Execute this" }],
+  metadata: {},
+} as UIMessage;
 
 const withPrefix = prependToMessage(message, "URGENT: ");
-console.log(withPrefix.content); // "URGENT: Execute this"
-
 const withSuffix = appendToMessage(message, " immediately!");
-console.log(withSuffix.content); // "Execute this immediately!"
 
-// Works with structured content
-const structured: BaseMessage = {
+// Works with multi-part content too
+const structured: UIMessage = {
+  id: "m3",
   role: "assistant",
-  content: [
+  parts: [
     { type: "text", text: "Result" },
     { type: "image", image: "graph.png" },
   ],
-};
+  metadata: {},
+} as UIMessage;
 
 const prefixed = prependToMessage(structured, "Final ");
-console.log(prefixed.content[0]); // { type: "text", text: "Final Result" }
+// First text part becomes: { type: "text", text: "Final Result" }
 ```
 
 ### `hasContent()` and `getContentLength()`
@@ -436,16 +432,19 @@ Utility functions for content inspection.
 
 ```typescript
 import { hasContent, getContentLength } from "@voltagent/core/utils";
-import type { BaseMessage } from "@voltagent/core";
+import type { UIMessage } from "ai";
 
-// Check if message has content
-const empty: BaseMessage = { role: "user", content: "" };
-const withText: BaseMessage = { role: "user", content: "Hello" };
-const emptyArray: BaseMessage = { role: "user", content: [] };
+// Check if UIMessage has content
+const empty: UIMessage = { id: "e1", role: "user", parts: [], metadata: {} } as UIMessage;
+const withText: UIMessage = {
+  id: "e2",
+  role: "user",
+  parts: [{ type: "text", text: "Hello" }],
+  metadata: {},
+} as UIMessage;
 
 console.log(hasContent(empty)); // false
 console.log(hasContent(withText)); // true
-console.log(hasContent(emptyArray)); // false
 
 // Get content length
 console.log(getContentLength("Hello")); // 5 (string length)
@@ -464,13 +463,12 @@ Message helpers integrate with agent hooks for message transformation.
 
 ```typescript
 import { Agent, messageHelpers } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
-  description: "A helpful assistant",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant",
+  // Direct ai-sdk model; no custom provider needed
   model: openai("gpt-4o-mini"),
 
   hooks: {
@@ -515,10 +513,7 @@ function transformTextContent(
   transformer: (text: string) => string
 ): MessageContent;
 
-function mapMessageContent<T extends BaseMessage>(
-  message: T,
-  transformer: (text: string) => string
-): T;
+function mapMessageContent(message: UIMessage, transformer: (text: string) => string): UIMessage;
 
 function filterContentParts(
   content: MessageContent,
@@ -551,10 +546,10 @@ class MessageContentBuilder {
 ### Convenience Functions
 
 ```typescript
-function addTimestampToMessage(message: BaseMessage, timestamp?: string): BaseMessage;
-function prependToMessage(message: BaseMessage, prefix: string): BaseMessage;
-function appendToMessage(message: BaseMessage, suffix: string): BaseMessage;
-function hasContent(message: BaseMessage): boolean;
+function addTimestampToMessage(message: UIMessage, timestamp?: string): UIMessage;
+function prependToMessage(message: UIMessage, prefix: string): UIMessage;
+function appendToMessage(message: UIMessage, suffix: string): UIMessage;
+function hasContent(message: UIMessage): boolean;
 function getContentLength(content: MessageContent): number;
 ```
 

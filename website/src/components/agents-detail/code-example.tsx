@@ -20,13 +20,6 @@ export const CodeExample = ({
         <span className="text-main-emerald">'@voltagent/core'</span>
         <br />
         <span className="text-blue-400">import</span>{" "}
-        <span className="text-gray-300">{"{ VercelAIProvider }"}</span>{" "}
-        <span className="text-blue-400">from</span>{" "}
-        {/* TODO: Corrected package name based on other examples and project structure */}
-        <span className="text-main-emerald">'@voltagent/vercel-ai'</span>
-        <br />
-        <br />
-        <span className="text-blue-400">import</span>{" "}
         <span className="text-gray-300">{"{ openai }"}</span>{" "}
         <span className="text-blue-400">from</span>{" "}
         <span className="text-main-emerald">'@ai-sdk/openai'</span>
@@ -45,10 +38,6 @@ export const CodeExample = ({
         <span className="text-gray-500">=</span> <span className="text-blue-400">new Agent</span>
         <span className="text-gray-300">({"{"}</span>
         <br />
-        <span className="text-gray-300"> provider: </span>
-        <span className="text-gray-300">new VercelAIProvider()</span>
-        <span className="text-gray-300">,</span>
-        <br />
         <span className="text-gray-300"> model: </span>
         <span className="text-main-emerald">openai("gpt-4o-mini")</span>
         <span className="text-gray-300">,</span>
@@ -63,10 +52,6 @@ export const CodeExample = ({
         <span className="text-gray-500">=</span> <span className="text-blue-400">new Agent</span>
         <span className="text-gray-300">({"{"}</span>
         <br />
-        <span className="text-gray-300"> provider: </span>
-        <span className="text-gray-300">new VercelAIProvider()</span>
-        <span className="text-gray-300">,</span>
-        <br />
         <span className="text-gray-300"> model: </span>
         <span className="text-main-emerald">anthropic('claude-3-haiku-20240307')</span>
         <span className="text-gray-300">,</span>
@@ -76,16 +61,15 @@ export const CodeExample = ({
     ),
     memory: (
       <>
-        <span className="text-blue-400">import</span> {/* TODO: Corrected package name */}
-        <span className="text-gray-300">{"{ Agent, LibSQLStorage }"}</span>{" "}
+        <span className="text-blue-400">import</span> {/* Updated for Memory API */}
+        <span className="text-gray-300">{"{ Agent, Memory }"}</span>{" "}
         <span className="text-blue-400">from</span>{" "}
         <span className="text-main-emerald">'@voltagent/core'</span>
         <br />
-        {/* TODO: Need provider/model for Agent */}
         <span className="text-blue-400">import</span>{" "}
-        <span className="text-gray-300">{"{ VercelAIProvider }"}</span>{" "}
+        <span className="text-gray-300">{"{ LibSQLMemoryAdapter }"}</span>{" "}
         <span className="text-blue-400">from</span>{" "}
-        <span className="text-main-emerald">'@voltagent/vercel-ai'</span>
+        <span className="text-main-emerald">'@voltagent/libsql'</span>
         <br />
         <span className="text-blue-400">import</span>{" "}
         <span className="text-gray-300">{"{ openai }"}</span>{" "}
@@ -96,12 +80,14 @@ export const CodeExample = ({
         <span className="text-gray-300">{/* Create memory system for long-term recall */}</span>
         <br />
         <span className="text-purple-400">const</span> <span className="text-gray-300">memory</span>{" "}
-        <span className="text-gray-500">=</span>{" "}
-        <span className="text-blue-400">new LibSQLStorage</span>
+        <span className="text-gray-500">=</span> <span className="text-blue-400">new Memory</span>
         <span className="text-gray-300">({"{"}</span>
         <br />
-        <span className="text-gray-300"> url: </span>
+        <span className="text-gray-300"> storage: </span>
+        <span className="text-blue-400">new LibSQLMemoryAdapter</span>
+        <span className="text-gray-300">({"{"} url: </span>
         <span className="text-main-emerald">'file:memory.db'</span>
+        <span className="text-gray-300"> {"}"})</span>
         <span className="text-gray-300">,</span>
         <br />
         <span className="text-gray-300">{"});"}</span>
@@ -110,9 +96,6 @@ export const CodeExample = ({
         <span className="text-purple-400">const</span> <span className="text-gray-300">agent</span>{" "}
         <span className="text-gray-500">=</span> <span className="text-blue-400">new Agent</span>
         <span className="text-gray-300">({"{"}</span>
-        <br />
-        <span className="text-gray-300"> provider: new VercelAIProvider(), </span>
-        {/* Added provider */}
         <br />
         <span className="text-gray-300"> model: openai("gpt-4o-mini"), </span>
         {/* Added model */}
@@ -137,11 +120,6 @@ export const CodeExample = ({
         <span className="text-gray-300">{"{ Agent, createPrompt }"}</span>{" "}
         <span className="text-blue-400">from</span> {/* Updated package name */}
         <span className="text-main-emerald">'@voltagent/core'</span>
-        <br />
-        <span className="text-blue-400">import</span>{" "}
-        <span className="text-gray-300">{"{ VercelAIProvider }"}</span>{" "}
-        <span className="text-blue-400">from</span>{" "}
-        <span className="text-main-emerald">'@voltagent/vercel-ai'</span>
         <br />
         <span className="text-blue-400">import</span>{" "}
         <span className="text-gray-300">{"{ openai }"}</span>{" "}
@@ -174,9 +152,6 @@ export const CodeExample = ({
         {/* Use Agent constructor */}
         <span className="text-gray-300">({"{"}</span>
         <br />
-        <span className="text-gray-300"> provider: new VercelAIProvider(), </span>
-        {/* Added provider */}
-        <br />
         <span className="text-gray-300"> model: openai("gpt-4o-mini"), </span>
         {/* Added model */}
         <br />
@@ -207,11 +182,6 @@ export const CodeExample = ({
         <span className="text-gray-300">{"{ Agent, createTool }"}</span>{" "}
         <span className="text-blue-400">from</span>{" "}
         <span className="text-main-emerald">'@voltagent/core'</span>
-        <br />
-        <span className="text-blue-400">import</span>{" "}
-        <span className="text-gray-300">{"{ VercelAIProvider }"}</span>{" "}
-        <span className="text-blue-400">from</span>{" "}
-        <span className="text-main-emerald">'@voltagent/vercel-ai'</span>
         <br />
         <span className="text-blue-400">import</span>{" "}
         <span className="text-gray-300">{"{ openai }"}</span>{" "}
@@ -266,9 +236,6 @@ export const CodeExample = ({
         <span className="text-purple-400">const</span> <span className="text-gray-300">agent</span>{" "}
         <span className="text-gray-500">=</span> <span className="text-blue-400">new Agent</span>
         <span className="text-gray-300">({"{"}</span>
-        <br />
-        <span className="text-gray-300"> provider: new VercelAIProvider(), </span>
-        {/* Added provider */}
         <br />
         <span className="text-gray-300"> model: openai("gpt-4o-mini"), </span>
         {/* Added model */}

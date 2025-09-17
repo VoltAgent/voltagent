@@ -1,14 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import type { ToolExecuteOptions } from "../../agent/providers/base/types";
+import type { OperationContext } from "../../agent/types";
 import { getGlobalLogger } from "../../logger";
 import { createTool } from "../index";
-import {
-  NextAction,
-  type ReasoningStep,
-  ReasoningStepSchema,
-  type ReasoningToolExecuteOptions,
-} from "./types";
+import { NextAction, type ReasoningStep, ReasoningStepSchema } from "./types";
 
 const thinkParametersSchema = z.object({
   title: z.string().describe("A concise title for this thinking step"),
@@ -31,13 +26,12 @@ export const thinkTool = createTool({
   description:
     "Use this tool as a scratchpad to reason about the task and work through it step-by-step. Helps break down problems and track reasoning. Use it BEFORE making other tool calls or generating the final response.",
   parameters: thinkParametersSchema,
-  execute: async (args, options?: ToolExecuteOptions): Promise<string> => {
+  execute: async (args, oc?: OperationContext): Promise<string> => {
     const { title, thought, action, confidence } = args;
-    const reasoningOptions = options as ReasoningToolExecuteOptions | undefined;
-    const { agentId, historyEntryId } = reasoningOptions || {};
-    const logger =
-      options?.operationContext?.logger ||
-      getGlobalLogger().child({ component: "reasoning-tools" });
+    const system = oc?.systemContext;
+    const agentId = (system?.get("agentId") as string | undefined) || undefined;
+    const historyEntryId = (system?.get("historyEntryId") as string | undefined) || undefined;
+    const logger = oc?.logger || getGlobalLogger().child({ component: "reasoning-tools" });
 
     if (!agentId || !historyEntryId) {
       logger.error("Think tool requires agentId and historyEntryId in options");
@@ -96,13 +90,12 @@ export const analyzeTool = createTool({
   description:
     "Use this tool to analyze the results from a previous reasoning step or tool call and determine the next action.",
   parameters: analyzeParametersSchema,
-  execute: async (args, options?: ToolExecuteOptions): Promise<string> => {
+  execute: async (args, oc?: OperationContext): Promise<string> => {
     const { title, result, analysis, next_action, confidence } = args;
-    const reasoningOptions = options as ReasoningToolExecuteOptions | undefined;
-    const { agentId, historyEntryId } = reasoningOptions || {};
-    const logger =
-      options?.operationContext?.logger ||
-      getGlobalLogger().child({ component: "reasoning-tools" });
+    const system = oc?.systemContext;
+    const agentId = (system?.get("agentId") as string | undefined) || undefined;
+    const historyEntryId = (system?.get("historyEntryId") as string | undefined) || undefined;
+    const logger = oc?.logger || getGlobalLogger().child({ component: "reasoning-tools" });
 
     if (!agentId || !historyEntryId) {
       logger.error("Analyze tool requires agentId and historyEntryId in options");

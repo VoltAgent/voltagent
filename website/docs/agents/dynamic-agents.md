@@ -25,16 +25,15 @@ Here's a simple example of a dynamic agent that changes its behavior based on us
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const dynamicAgent = new Agent({
   name: "Adaptive Assistant",
 
   // Dynamic instructions based on user context
-  instructions: ({ userContext }) => {
-    const role = (userContext.get("role") as string) || "user";
-    const language = (userContext.get("language") as string) || "English";
+  instructions: ({ context }) => {
+    const role = (context.get("role") as string) || "user";
+    const language = (context.get("language") as string) || "English";
 
     if (role === "admin") {
       return `You are an admin assistant with special privileges. Respond in ${language}.`;
@@ -43,7 +42,6 @@ const dynamicAgent = new Agent({
     }
   },
 
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
 });
 ```
@@ -60,9 +58,9 @@ Dynamic agents support three main dynamic properties:
 const agent = new Agent({
   name: "Multilingual Support Agent",
 
-  instructions: ({ userContext }) => {
-    const language = (userContext.get("language") as string) || "English";
-    const supportTier = (userContext.get("supportTier") as string) || "basic";
+  instructions: ({ context }) => {
+    const language = (context.get("language") as string) || "English";
+    const supportTier = (context.get("supportTier") as string) || "basic";
 
     let baseInstructions = `You are a customer support agent. Respond in ${language}.`;
 
@@ -75,7 +73,6 @@ const agent = new Agent({
     return baseInstructions;
   },
 
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
 });
 ```
@@ -90,8 +87,8 @@ const agent = new Agent({
   instructions: "You are a helpful assistant.",
 
   // Different models for different subscription tiers
-  model: ({ userContext }) => {
-    const tier = (userContext.get("tier") as string) || "free";
+  model: ({ context }) => {
+    const tier = (context.get("tier") as string) || "free";
 
     switch (tier) {
       case "premium":
@@ -102,8 +99,6 @@ const agent = new Agent({
         return openai("gpt-3.5-turbo");
     }
   },
-
-  llm: new VercelAIProvider(),
 });
 ```
 
@@ -144,8 +139,8 @@ const agent = new Agent({
   instructions: "You are an assistant with role-based capabilities.",
 
   // Different tools based on user role
-  tools: ({ userContext }) => {
-    const role = (userContext.get("role") as string) || "user";
+  tools: ({ context }) => {
+    const role = (context.get("role") as string) || "user";
 
     if (role === "admin") {
       return [basicTool, adminTool]; // Admins get both tools
@@ -154,26 +149,25 @@ const agent = new Agent({
     }
   },
 
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
 });
 ```
 
 ## Using Dynamic Agents
 
-To use a dynamic agent, pass the `userContext` when calling generation methods:
+To use a dynamic agent, pass the `context` when calling generation methods:
 
 ```ts
-// Create user context with relevant information
-const userContext = new Map<string, unknown>();
-userContext.set("role", "admin");
-userContext.set("language", "Spanish");
-userContext.set("tier", "premium");
-userContext.set("company", "TechCorp");
+// Create context with relevant information
+const context = new Map<string, unknown>();
+context.set("role", "admin");
+context.set("language", "Spanish");
+context.set("tier", "premium");
+context.set("company", "TechCorp");
 
 // Generate response with context
 const response = await dynamicAgent.generateText("Help me manage the system settings", {
-  userContext: userContext,
+  context,
 });
 
 console.log(response.text);
@@ -185,7 +179,7 @@ You can also use it with streaming:
 
 ```ts
 const streamResponse = await dynamicAgent.streamText("What products are available?", {
-  userContext: new Map([
+  context: new Map([
     ["role", "customer"],
     ["language", "French"],
     ["tier", "basic"],
@@ -199,17 +193,17 @@ for await (const chunk of streamResponse.textStream) {
 
 ## REST API Usage
 
-Dynamic agents can also be used via the VoltAgent REST API by passing `userContext` in the request options. This is perfect for web frontends, mobile apps, or any system that needs to interact with dynamic agents over HTTP.
+Dynamic agents can also be used via the VoltAgent REST API by passing `context` in the request options. This is perfect for web frontends, mobile apps, or any system that needs to interact with dynamic agents over HTTP.
 
 ### API Request Format
 
-Pass the `userContext` object within the `options` field of your API request:
+Pass the `context` object within the `options` field of your API request:
 
 ```json
 {
   "input": "Your message to the agent",
   "options": {
-    "userContext": {
+    "context": {
       "role": "admin",
       "language": "Spanish",
       "tier": "premium"
@@ -231,7 +225,7 @@ curl -X POST http://localhost:3141/agents/YOUR_AGENT_NAME/text \
      -d '{
        "input": "I need to update system settings",
        "options": {
-         "userContext": {
+         "context": {
            "role": "admin",
            "language": "Spanish",
            "tier": "enterprise"
@@ -249,7 +243,7 @@ curl -N -X POST http://localhost:3141/agents/YOUR_AGENT_NAME/stream \
      -d '{
        "input": "Write a summary of our quarterly results",
        "options": {
-         "userContext": {
+         "context": {
            "role": "manager",
            "department": "finance",
            "accessLevel": "confidential",
@@ -263,7 +257,7 @@ curl -N -X POST http://localhost:3141/agents/YOUR_AGENT_NAME/stream \
 
 **Using Dynamic Agents with VoltOps Dashboard**
 
-VoltOps provides a user-friendly interface for testing and monitoring dynamic agents. You can easily pass different userContext values and see how your agent adapts in real-time.
+VoltOps provides a user-friendly interface for testing and monitoring dynamic agents. You can easily pass different context values and see how your agent adapts in real-time.
 
 <!-- GIF PLACEHOLDER: VoltOps Dynamic Agents Demo -->
 
@@ -271,7 +265,7 @@ VoltOps provides a user-friendly interface for testing and monitoring dynamic ag
 
 The VoltOps interface allows you to:
 
-- Set userContext values through a visual form
+- Set context values through a visual form
 - Test different user roles and configurations
 - Monitor how dynamic properties change based on context
 - Debug and optimize your dynamic agent logic
@@ -280,13 +274,13 @@ The VoltOps interface allows you to:
 
 ### Context Validation
 
-Always validate and provide defaults for userContext values:
+Always validate and provide defaults for context values:
 
 ```ts
-instructions: ({ userContext }) => {
+instructions: ({ context }) => {
   // Always provide defaults and validate types
-  const role = (userContext.get("role") as string) || "user";
-  const language = (userContext.get("language") as string) || "English";
+  const role = (context.get("role") as string) || "user";
+  const language = (context.get("language") as string) || "English";
 
   // Validate known values
   const validRoles = ["admin", "support", "customer"];
@@ -302,15 +296,15 @@ Dynamic functions are called for every request, so keep them lightweight:
 
 ```ts
 // ✅ Good - Simple and fast
-model: ({ userContext }) => {
-  const tier = userContext.get('tier') as string;
+model: ({ context }) => {
+  const tier = context.get('tier') as string;
   return tier === 'premium' ? openai('gpt-4o') : openai('gpt-3.5-turbo');
 },
 
 // ❌ Avoid - Heavy computation in dynamic functions
-model: async ({ userContext }) => {
+model: async ({ context }) => {
   // Don't make API calls or heavy computations here
-  const userProfile = await fetchUserFromDatabase(userContext.get('userId'));
+  const userProfile = await fetchUserFromDatabase(context.get('userId'));
   return determineModelFromProfile(userProfile); // This will slow down every request
 }
 ```
@@ -320,8 +314,8 @@ model: async ({ userContext }) => {
 Be careful with user-provided context values:
 
 ```ts
-instructions: ({ userContext }) => {
-  const role = userContext.get("role") as string;
+instructions: ({ context }) => {
+  const role = context.get("role") as string;
 
   // ✅ Use allowlists for security-sensitive operations
   const allowedRoles = ["admin", "support", "customer"];
@@ -362,18 +356,18 @@ const agent = new Agent({
   instructions: "You are a helpful assistant.",
 
   // But dynamic model when user context is provided
-  model: ({ userContext }) => {
+  model: ({ context }) => {
     // If no tier specified, use default static model
-    if (!userContext.has("tier")) {
+    if (!context.has("tier")) {
       return openai("gpt-4o-mini"); // Default model
     }
 
     // Otherwise, choose based on tier
-    const tier = userContext.get("tier") as string;
+    const tier = context.get("tier") as string;
     return tier === "premium" ? openai("gpt-4o") : openai("gpt-3.5-turbo");
   },
 
-  llm: new VercelAIProvider(),
+  // model is selected dynamically above
 });
 ```
 
@@ -384,13 +378,13 @@ Pass context between related operations:
 ```ts
 // Main agent with context
 const parentResponse = await dynamicAgent.generateText("Create a summary", {
-  userContext: myContext,
+  context: myContext,
 });
 
 // Sub-agent inherits the same context
 const detailResponse = await detailAgent.generateText(
   "Provide more details",
-  { userContext: myContext } // Same context for consistency
+  { context: myContext } // Same context for consistency
 );
 ```
 
@@ -399,9 +393,9 @@ const detailResponse = await detailAgent.generateText(
 Handle errors gracefully in dynamic functions:
 
 ```ts
-model: ({ userContext }) => {
+model: ({ context }) => {
   try {
-    const tier = userContext.get("tier") as string;
+    const tier = context.get("tier") as string;
 
     if (tier === "premium") {
       return openai("gpt-4o");

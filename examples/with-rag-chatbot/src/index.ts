@@ -1,7 +1,8 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, type BaseMessage, BaseRetriever, VoltAgent } from "@voltagent/core";
+import { Agent, type BaseMessage, BaseRetriever, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
 // --- Simple Knowledge Base Retriever ---
 
@@ -49,26 +50,30 @@ class KnowledgeBaseRetriever extends BaseRetriever {
 
 // --- Agent Definition ---
 
+// Create logger
+const logger = createPinoLogger({
+  name: "with-rag-chatbot",
+  level: "info",
+});
+
 // Instantiate the retriever
 const knowledgeRetriever = new KnowledgeBaseRetriever();
 
 // Define the agent that uses the retriever directly
 const ragAgent = new Agent({
   name: "RAG Chatbot",
-  description: "A chatbot that answers questions based on its internal knowledge base.",
-  llm: new VercelAIProvider(), // Using Vercel AI SDK Provider
+  instructions: "A chatbot that answers questions based on its internal knowledge base.",
   model: openai("gpt-4o-mini"), // Using OpenAI model via Vercel
   // Attach the retriever directly
   retriever: knowledgeRetriever,
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
+  }),
 });
 
 // --- VoltAgent Initialization ---
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-rag-chatbot",
-  level: "info",
-});
 
 new VoltAgent({
   agents: {
@@ -76,4 +81,5 @@ new VoltAgent({
     ragAgent,
   },
   logger,
+  server: honoServer({ port: 3141 }),
 });

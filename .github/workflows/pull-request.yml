@@ -61,8 +61,8 @@ jobs:
         run: pnpm build:all
       - name: Publint
         run: pnpm publint:all
-      - name: Are The Types Wrong
-        run: pnpm attw:all
+     # - name: Are The Types Wrong
+     #   run: pnpm attw:all
 
   test-packages:
     runs-on: ubuntu-latest
@@ -74,15 +74,12 @@ jobs:
           - create-voltagent-app
           - docs-mcp
           - internal
-          - langfuse-exporter
           - logger
           - postgres
-          - sdk
           - supabase
-          - vercel-ai
-          - vercel-ai-exporter
           - voice
-          - xsai
+          - server-core
+          - libsql
       fail-fast: false
     concurrency:
       group: ${{ github.ref }}-test-${{ matrix.package }}

@@ -45,13 +45,12 @@ console.log("👋 Ready to build your first AI agent?");
       "src/index.js": {
         code: `import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
 // Create your first AI agent
 const agent = new Agent({
   name: "Tutorial Agent", 
   instructions: "You are a helpful assistant that explains VoltAgent concepts clearly.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -60,6 +59,7 @@ new VoltAgent({
   agents: {
     tutorialAgent: agent,
   },
+  server: honoServer(),
 });
 
 // Generate a response
@@ -89,7 +89,7 @@ askAgent();`,
       "src/index.js": {
         code: `import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Create a weather tool
@@ -116,13 +116,13 @@ const weatherTool = {
 const agent = new Agent({
   name: "Weather Agent",
   instructions: "You are a helpful weather assistant. Use the weather tool to provide accurate information.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
 });
 
 new VoltAgent({
   agents: { weatherAgent: agent },
+  server: honoServer(),
 });
 
 // Test the agent with tools
@@ -151,21 +151,20 @@ testWithTools();`,
     files: {
       "src/index.js": {
         code: `import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { InMemoryMemory } from "@voltagent/core";
+import { Agent, VoltAgent, Memory } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
 
 // Create agent with memory
 const agent = new Agent({
   name: "Memory Agent",
   instructions: "You are a helpful assistant with excellent memory. Remember user preferences and past conversations.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  memory: new InMemoryMemory(),
+  memory: new Memory(),
 });
 
 new VoltAgent({
   agents: { memoryAgent: agent },
+  server: honoServer(),
 });
 
 // Simulate a conversation with memory
@@ -213,14 +212,13 @@ conversationDemo();`,
       "src/index.js": {
         code: `import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Create a specialized research sub-agent
 const researchAgent = new Agent({
   name: "Research Agent",
   instructions: "You are a research specialist. Provide detailed, well-researched information on any topic.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -228,7 +226,6 @@ const researchAgent = new Agent({
 const writerAgent = new Agent({
   name: "Writer Agent",
   instructions: "You are a skilled writer. Create engaging, well-structured content based on research.",
-  llm: new VercelAIProvider(), 
   model: openai("gpt-4o-mini"),
 });
 
@@ -236,7 +233,6 @@ const writerAgent = new Agent({
 const supervisorAgent = new Agent({
   name: "Supervisor Agent",
   instructions: "You coordinate between research and writing agents to create comprehensive content.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [researchAgent, writerAgent],
 });
@@ -247,6 +243,7 @@ new VoltAgent({
     researcher: researchAgent, 
     writer: writerAgent,
   },
+  server: honoServer(),
 });
 
 // Demonstrate sub-agent coordination

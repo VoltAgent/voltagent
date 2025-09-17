@@ -1,8 +1,17 @@
 import pino from "pino";
+import pinoPretty from "pino-pretty";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InMemoryLogBuffer } from "../buffer";
 import type { LogBuffer, LoggerOptions } from "../types";
 import { PinoLoggerProvider } from "./pino";
+
+// Mock pino-pretty
+vi.mock("pino-pretty", () => ({
+  default: vi.fn().mockReturnValue({
+    write: vi.fn(),
+    pipe: vi.fn(),
+  }),
+}));
 
 // Mock pino
 vi.mock("pino", () => {
@@ -174,14 +183,22 @@ describe("PinoLoggerProvider", () => {
 
       provider.createLogger({ format: "pretty" });
 
+      // Should call pino-pretty to create stream
+      expect(pinoPretty).toHaveBeenCalledWith(
+        expect.objectContaining({
+          colorize: true,
+          translateTime: "yyyy-mm-dd HH:MM:ss.l o",
+          ignore: "pid,hostname,env,component",
+        }),
+      );
+
+      // Should pass stream as second parameter to pino
       expect(pino).toHaveBeenCalledWith(
         expect.objectContaining({
-          transport: {
-            target: "pino-pretty",
-            options: expect.objectContaining({
-              colorize: true,
-            }),
-          },
+          level: "info",
+        }),
+        expect.objectContaining({
+          write: expect.any(Function),
         }),
       );
     });

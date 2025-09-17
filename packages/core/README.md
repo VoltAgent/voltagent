@@ -95,18 +95,32 @@ This command guides you through setup.
 You'll see the starter code in `src/index.ts`, which now registers both an agent and a comprehensive workflow example found in `src/workflows/index.ts`.
 
 ```typescript
-import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { VoltAgent, Agent, Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai";
-import { comprehensiveWorkflow } from "./workflows";
+import { expenseApprovalWorkflow } from "./workflows";
+import { weatherTool } from "./tools";
+
+// Create a logger instance
+const logger = createPinoLogger({
+  name: "my-agent-app",
+  level: "info",
+});
+
+// Optional persistent memory (remove to use default in-memory)
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+});
 
 // A simple, general-purpose agent for the project.
 const agent = new Agent({
   name: "my-agent",
-  instructions: "A helpful assistant that answers questions without using tools",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant that can check weather and help with various tasks",
   model: openai("gpt-4o-mini"),
-  tools: [],
+  tools: [weatherTool],
+  memory,
 });
 
 // Initialize VoltAgent with your agent(s) and workflow(s)
@@ -115,8 +129,10 @@ new VoltAgent({
     agent,
   },
   workflows: {
-    comprehensiveWorkflow,
+    expenseApprovalWorkflow,
   },
+  server: honoServer(),
+  logger,
 });
 ```
 
@@ -150,16 +166,21 @@ Your agent is now running! To interact with it:
 
 ### Running Your First Workflow
 
-Your new project also includes a powerful workflow engine. You can test the pre-built `comprehensiveWorkflow` directly from the VoltOps console:
+Your new project also includes a powerful workflow engine. You can test the pre-built `expenseApprovalWorkflow` directly from the VoltOps console:
 
 ![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
 
 1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
 2.  **Select Your Project:** Use the project selector to choose your project (e.g., "my-agent-app").
-3.  **Find and Run:** You will see **"Comprehensive Workflow Example"** listed. Click it, then click the **"Run"** button.
-4.  **Provide Input:** The workflow expects a JSON object with a `text` key. Try it with a negative sentiment to see the conditional logic in action:
+3.  **Find and Run:** You will see **"Expense Approval Workflow"** listed. Click it, then click the **"Run"** button.
+4.  **Provide Input:** The workflow expects a JSON object with expense details. Try a small expense for automatic approval:
     ```json
-    { "text": "I am very disappointed with this product, it is terrible." }
+    {
+      "employeeId": "EMP-123",
+      "amount": 250,
+      "category": "office-supplies",
+      "description": "New laptop mouse and keyboard"
+    }
     ```
 5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
 

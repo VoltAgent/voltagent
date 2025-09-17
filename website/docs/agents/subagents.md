@@ -23,7 +23,6 @@ First, create the specialized agents that will serve as subagents:
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Create a specialized agent for writing stories
@@ -31,7 +30,6 @@ const storyAgent = new Agent({
   name: "Story Agent",
   purpose: "A story writer agent that creates original, engaging short stories.",
   instructions: "You are a creative story writer. Create original, engaging short stories.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -40,7 +38,6 @@ const translatorAgent = new Agent({
   name: "Translator Agent",
   purpose: "A translator agent that translates text accurately.",
   instructions: "You are a skilled translator. Translate text accurately.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 ```
@@ -51,14 +48,12 @@ Create a supervisor agent that will coordinate between subagents. Simply pass th
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Create a supervisor agent with specialized agents as subagents
 const supervisorAgent = new Agent({
   name: "Supervisor Agent",
   instructions: "You manage a workflow between specialized agents.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   // Specify subagents during initialization
   subAgents: [storyAgent, translatorAgent],
@@ -68,7 +63,7 @@ const supervisorAgent = new Agent({
 :::tip Advanced SubAgent Configuration
 The basic example above uses the default `streamText` method for subagents. For more control over how subagents execute tasks, you can specify different methods like `generateText`, `generateObject`, or `streamObject` with custom schemas and options.
 
-**Learn more:** [Advanced SubAgent Configuration](#advanced-subagent-configuration)
+**Learn more:** [Advanced SubAgent Configuration](#advanced-configuration)
 :::
 
 ## Customizing Supervisor Behavior
@@ -87,13 +82,11 @@ The `supervisorConfig` option is only available when `subAgents` are provided. T
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const supervisorAgent = new Agent({
   name: "Content Supervisor",
   instructions: "Coordinate content creation workflow",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [writerAgent, editorAgent],
 
@@ -120,7 +113,6 @@ Control which events from subagents are forwarded to the parent stream. By defau
 const supervisorAgent = new Agent({
   name: "Content Supervisor",
   instructions: "Coordinate content creation workflow",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [writerAgent, editorAgent],
 
@@ -130,11 +122,6 @@ const supervisorAgent = new Agent({
       // Default: ['tool-call', 'tool-result']
       // Enable all event types for complete visibility
       types: ["tool-call", "tool-result", "text-delta", "reasoning", "source", "error", "finish"],
-
-      // Add subagent name as prefix to tool names (default: true)
-      // When true: "WriterAgent: search_tool"
-      // When false: "search_tool"
-      addSubAgentPrefix: true,
     },
   },
 });
@@ -158,10 +145,9 @@ fullStreamEventForwarding: {
   types: ['tool-call', 'tool-result', 'text-delta', 'reasoning', 'source', 'error', 'finish'],
 }
 
-// Clean tool names - No agent prefix
+// Clean tool names - No agent prefix (add prefix manually when consuming events if desired)
 fullStreamEventForwarding: {
   types: ['tool-call', 'tool-result'],
-  addSubAgentPrefix: false,
 }
 ```
 
@@ -175,7 +161,6 @@ Control how your supervisor handles subagent failures with configurable error ha
 const supervisorAgent = new Agent({
   name: "Supervisor",
   instructions: "Coordinate between agents",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [dataProcessor, analyzer],
 
@@ -313,14 +298,18 @@ const result = await supervisorAgent.streamText("Create and edit content", {
   fullStream: true, // Enable full streaming to get all event types
 });
 
-// Process different event types
+// Process different event types; add your own prefix using sub-agent metadata if desired
 for await (const event of result.fullStream) {
   switch (event.type) {
     case "tool-call":
-      console.log(`Tool called: ${event.data.toolName}`);
+      console.log(
+        `${event.subAgentName ? `[${event.subAgentName}] ` : ""}Tool called: ${event.data.toolName}`
+      );
       break;
     case "tool-result":
-      console.log(`Tool result: ${event.data.result}`);
+      console.log(
+        `${event.subAgentName ? `[${event.subAgentName}] ` : ""}Tool result: ${event.data.result}`
+      );
       break;
     case "text-delta":
       // Only appears if included in types array
@@ -375,7 +364,6 @@ For complete control over the supervisor's behavior, you can provide a custom `s
 const supervisorAgent = new Agent({
   name: "Custom Supervisor",
   instructions: "This will be ignored when systemMessage is provided",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [writerAgent, editorAgent],
 
@@ -436,7 +424,6 @@ supervisorConfig: {
 supervisorConfig: {
   fullStreamEventForwarding: {
     types: ['tool-call', 'tool-result', 'text-delta'], // Control which events to forward
-    addSubAgentPrefix: false // Remove agent name prefix from tools
   }
 }
 ```
@@ -480,7 +467,7 @@ This tool is the primary interface for delegation.
 - **Execution**:
   - The tool finds the corresponding subagent instances based on the provided names.
   - It calls the `handoffTask` (or `handoffToMultiple`) method internally, which sends the task description and context to the target subagent(s).
-  - Crucially, it passes the supervisor's agent ID (`parentAgentId`) and the current history entry ID (`parentHistoryEntryId`) to the subagent's execution context. This is key for [Observability](#observability-and-event-tracking).
+  - Crucially, it passes the supervisor's agent ID (`parentAgentId`) and the current history entry ID (`parentHistoryEntryId`) to the subagent's execution context. This is key for [Observability](#observability).
 - **Returns**: An array of objects, where each object contains the result from a delegated agent:
   ```ts
   [
@@ -502,21 +489,18 @@ This tool is the primary interface for delegation.
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Create specialists
 const writer = new Agent({
   name: "Writer",
   instructions: "Write creative stories",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
 const translator = new Agent({
   name: "Translator",
   instructions: "Translate text accurately",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -524,7 +508,6 @@ const translator = new Agent({
 const supervisor = new Agent({
   name: "Supervisor",
   instructions: "Coordinate story writing and translation",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   subAgents: [writer, translator],
 });
@@ -553,8 +536,8 @@ const supervisor = new Agent({
   name: "Supervisor",
   subAgents: [writer, translator],
   hooks: {
-    onHandoff: ({ agent, source }) => {
-      console.log(`${source.name} → ${agent.name}`);
+    onHandoff: ({ agent, sourceAgent }) => {
+      console.log(`${sourceAgent.name} → ${agent.name}`);
     },
   },
 });
@@ -567,14 +550,14 @@ SubAgents automatically inherit the supervisor's context:
 ```ts
 // Supervisor passes context
 const response = await supervisor.streamText("Task", {
-  userContext: new Map([["projectId", "123"]]),
+  context: new Map([["projectId", "123"]]),
 });
 
 // SubAgent receives it automatically
 const subAgent = new Agent({
   hooks: {
-    onStart: ({ context }) => {
-      const projectId = context.userContext.get("projectId"); // "123"
+    onStart: (context) => {
+      const projectId = context.context.get("projectId"); // "123"
     },
   },
 });

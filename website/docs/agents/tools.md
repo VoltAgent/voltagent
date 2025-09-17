@@ -50,13 +50,11 @@ To use a tool with an agent, simply include it in the agent's configuration. Whe
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Calculator Assistant",
-  description: "An assistant that can perform calculations",
-  llm: new VercelAIProvider(),
+  instructions: "An assistant that can perform calculations",
   model: openai("gpt-4o"),
   tools: [calculatorTool],
 });
@@ -72,7 +70,6 @@ Agents become more powerful when they can use multiple tools together. Here's an
 
 ```ts
 import { Agent, createTool } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -118,8 +115,7 @@ const weatherTool = createTool({
 // Create an agent with multiple tools
 const multiToolAgent = new Agent({
   name: "Multi-Tool Assistant",
-  description: "An assistant that can check weather and perform calculations",
-  llm: new VercelAIProvider(),
+  instructions: "An assistant that can check weather and perform calculations",
   model: openai("gpt-4o"),
   tools: [calculatorTool, weatherTool],
 });
@@ -179,7 +175,6 @@ The `onToolStart` hook is called just before a tool is executed, and `onToolEnd`
 
 ```ts
 import { Agent, createHooks, isAbortError } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Define the hooks using createHooks
@@ -208,7 +203,6 @@ const hooks = createHooks({
 const agent = new Agent({
   name: "Assistant with Tool Hooks",
   instructions: "An assistant that logs tool execution",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: [calculatorTool],
   hooks: hooks,
@@ -373,9 +367,9 @@ const abortController = new AbortController();
 setTimeout(() => abortController.abort("Operation timeout"), 30000);
 
 try {
-  // Pass the abortController to the agent
+  // Pass the signal to the agent (recommended)
   const response = await agent.generateText("Search for the latest AI developments", {
-    abortController, // The agent will pass this to any tools it uses
+    abortSignal: abortController.signal, // Agent propagates an internal controller to tools
   });
   console.log(response.text);
 } catch (error) {
@@ -451,14 +445,13 @@ You can add tools to an agent after it's been created:
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
 import { openai } from "@ai-sdk/openai";
 
 // Create an agent without tools initially
 const agent = new Agent({
   name: "Dynamic Assistant",
-  description: "An assistant that can gain new abilities",
-  llm: new VercelAIProvider(),
+  instructions: "An assistant that can gain new abilities",
   model: openai("gpt-4o"),
 });
 
@@ -484,7 +477,6 @@ You can connect to external MCP-compatible servers and use their tools with your
 
 ```ts
 import { Agent, MCPConfiguration } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Set up MCP configuration with multiple servers
@@ -517,7 +509,6 @@ const allMcpTools = await mcpConfig.getTools();
 const agentWithBrowserTools = new Agent({
   name: "Browser Agent",
   description: "Assistant using only browser tools via MCP",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: browserToolsOnly, // Use the specific toolset
 });
@@ -526,7 +517,6 @@ const agentWithBrowserTools = new Agent({
 const agentWithAllMcpTools = new Agent({
   name: "MCP-Enhanced Assistant",
   description: "Assistant with access to all configured MCP tools",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   tools: allMcpTools, // Use the combined list
 });

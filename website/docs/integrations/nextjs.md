@@ -30,17 +30,16 @@ Follow the prompts, selecting TypeScript and App Router.
 
 ## Install VoltAgent Dependencies
 
-Install the necessary VoltAgent packages and the Vercel AI SDK provider:
+Install the necessary VoltAgent packages and the ai-sdk provider:
 
 ```bash
-npm install @voltagent/core @voltagent/vercel-ai @voltagent/cli @ai-sdk/openai zod@^3.25.0
+npm install @voltagent/core @voltagent/cli @ai-sdk/openai zod@^3.25.0
 ```
 
 - `@voltagent/core`: The core VoltAgent library.
-- `@voltagent/vercel-ai`: Integrates VoltAgent with the Vercel AI SDK.
-- `@ai-sdk/openai`: The AI SDK provider for OpenAI (or your preferred LLM provider).
-- `@voltagent/cli`: The command-line interface for VoltAgent tasks (e.g., managing updates).
-- `zod`: Required by the Vercel AI SDK for schema validation.
+- `@ai-sdk/openai`: The ai-sdk provider for OpenAI (or your preferred provider).
+- `@voltagent/cli`: The command-line interface for VoltAgent tasks.
+- `zod`: Used when working with structured outputs.
 
 ## Configure `next.config.js`
 
@@ -66,21 +65,16 @@ export default nextConfig;
 
 ## Initialize VoltAgent
 
-Create a file to initialize the VoltAgent agent, for example, `voltagent/index.ts` in your project root:
+Create a file to initialize an Agent, for example, `voltagent/index.ts` in your project root:
 
 ```typescript title="voltagent/index.ts"
-import { VoltAgent } from "@voltagent/core";
-import { VercelAIManager } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai"; // Or your preferred provider
+import { Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai"; // Or your preferred ai-sdk provider
 
-export const agent = new VoltAgent({
-  provider: "vercel-ai", // Specify the Vercel AI provider
-  manager: new VercelAIManager({
-    model: openai("gpt-4o"), // Configure your desired model
-  }),
-  functions: [
-    // Add any VoltAgent functions/tools here if needed
-  ],
+export const agent = new Agent({
+  name: "nextjs-agent",
+  instructions: "You are a helpful assistant",
+  model: openai("gpt-4o"),
 });
 ```
 

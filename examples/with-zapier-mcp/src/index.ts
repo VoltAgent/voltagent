@@ -1,7 +1,8 @@
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { honoServer } from "@voltagent/server-hono";
 
 const bedrock = createAmazonBedrock({
   region: "us-east-1",
@@ -12,6 +13,13 @@ const bedrock = createAmazonBedrock({
 
 async function main() {
   try {
+    const logger = createPinoLogger({
+      name: "with-zapier-mcp",
+      level: "info",
+    });
+
+    // Memory will be inline in Agent constructor
+
     const zapierMcpConfig = new MCPConfiguration({
       servers: {
         zapier: {
@@ -26,17 +34,15 @@ async function main() {
     const agent = new Agent({
       id: "zapier-mcp",
       name: "Zapier MCP Agent",
-      description: "A helpful assistant using a lightweight provider",
+      instructions: "A helpful assistant using a lightweight provider",
       tools: zapierTools,
-      llm: new VercelAIProvider(),
       model: bedrock("amazon.nova-lite-v1:0"),
       markdown: true,
-    });
-
-    // Create logger
-    const logger = createPinoLogger({
-      name: "with-zapier-mcp",
-      level: "info",
+      memory: new Memory({
+        storage: new LibSQLMemoryAdapter({
+          url: "file:./.voltagent/memory.db",
+        }),
+      }),
     });
 
     new VoltAgent({
@@ -44,6 +50,7 @@ async function main() {
         agent,
       },
       logger,
+      server: honoServer({ port: 3141 }),
     });
   } catch (error) {
     console.error("Failed to initialize VoltAgent:", error);

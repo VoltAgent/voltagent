@@ -98,15 +98,13 @@ npm create voltagent-app@latest
 
 ```typescript
 import { VoltAgent, Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai"; // 示例提供商
+import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai"; // 示例模型
 
 // 定義一個簡單的智能體
 const agent = new Agent({
   name: "my-agent",
   instructions: "一個有用的助手，無需使用工具即可回答問題",
-  // 注意：您可以將 VercelAIProvider 和 openai 替換為其他支援的提供商/模型
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
 });
 
@@ -115,6 +113,7 @@ new VoltAgent({
   agents: {
     agent,
   },
+  server: honoServer(),
 });
 ```
 

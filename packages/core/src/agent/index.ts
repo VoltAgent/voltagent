@@ -1,2 +1,2 @@
 export { Agent } from "./agent";
-export type { SupervisorConfig } from "./types";
+export type { AgentHooks } from "./hooks";
