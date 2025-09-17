@@ -592,15 +592,6 @@ export function UseCaseSupervisorFlow({
         className,
       )}
     >
-      {/* Background glow effect */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Central green glow */}
-        <div className="absolute top-1/2 left-[45%] -translate-x-1/2 -translate-y-1/2 w-[400px] h-[300px] md:w-[500px] md:h-[100px] rounded-full bg-[#00d992]/20 blur-[120px]" />
-
-        {/* Secondary glow near agents */}
-        <div className="absolute top-1/2 left-[65%] -translate-x-1/2 -translate-y-1/2 w-[300px] h-[250px] md:w-[350px] md:h-[100px] rounded-full bg-[#00d992]/15 blur-[100px]" />
-      </div>
-
       {/* Nodes */}
       <div
         className="absolute"

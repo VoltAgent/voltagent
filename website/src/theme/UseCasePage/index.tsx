@@ -347,13 +347,33 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                   <span className="text-main-emerald">
                     {(() => {
                       const title = useCase.title.toLowerCase();
+
+                      // Function to capitalize abbreviations
+                      const capitalizeAbbreviations = (text: string) => {
+                        return text
+                          .replace(/\bhr\b/gi, "HR")
+                          .replace(/\bit\b/gi, "IT")
+                          .replace(/\bai\b/gi, "AI")
+                          .replace(/\bapi\b/gi, "API")
+                          .replace(/\bcrm\b/gi, "CRM")
+                          .replace(/\berp\b/gi, "ERP")
+                          .replace(/\bseo\b/gi, "SEO")
+                          .replace(/\bpr\b/gi, "PR")
+                          .replace(/\bqa\b/gi, "QA")
+                          .replace(/\bui\b/gi, "UI")
+                          .replace(/\bux\b/gi, "UX");
+                      };
+
+                      let result: string;
                       if (title.includes("agent") || title.includes("assistant")) {
-                        return title;
+                        result = title;
+                      } else if (title.includes("teams")) {
+                        result = title.replace("teams", "agents");
+                      } else {
+                        result = `${title} agents`;
                       }
-                      if (title.includes("teams")) {
-                        return title.replace("teams", "agents");
-                      }
-                      return `${title} agents`;
+
+                      return capitalizeAbbreviations(result);
                     })()}
                   </span>{" "}
                   <span className="text-white">can do</span>
@@ -467,62 +487,36 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
         )}
 
         {/* How It Works */}
-
-        <Container className="relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            {/* Show steps with connected design */}
-            <div className="relative mb-24">
-              {/* Desktop view with horizontal connection */}
+        <Section className="relative">
+          <Container className="relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              {/* Desktop view with clean design */}
               <div className="hidden lg:block relative">
-                <div className="grid grid-cols-4 gap-6">
-                  {(useCase.howItWorks || defaultHowItWorks).map((step, index, array) => (
+                <div className="grid grid-cols-4 gap-8">
+                  {(useCase.howItWorks || defaultHowItWorks).map((step, index) => (
                     <motion.div
                       key={step.step}
-                      initial={{ opacity: 0, y: 30, rotateX: -15 }}
-                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{
                         duration: 0.5,
                         delay: 0.5 + index * 0.1,
-                        type: "spring",
-                        stiffness: 100,
                       }}
                       className="relative"
                     >
-                      {/* Connection line to next step */}
-                      {index < array.length - 1 && (
-                        <div className="absolute top-1/2 -right-6 w-6 h-px bg-gradient-to-r from-emerald-500/40 to-cyan-500/40 z-10" />
-                      )}
-
-                      {/* Step box */}
-                      <div className="relative h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-5 overflow-hidden">
-                        {/* Animated background pattern */}
-                        <div className="absolute inset-0 opacity-5">
-                          <div
-                            className="absolute inset-0"
-                            style={{
-                              backgroundImage:
-                                "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
-                              backgroundSize: "20px 20px",
-                            }}
-                          />
-                        </div>
-
-                        {/* Step content */}
-                        <div className="relative z-10">
-                          <h3 className="font-bold text-base text-white mb-3 flex items-center">
-                            <span className="text-emerald-400 font-bold text-lg mr-2">
-                              {step.step}.
-                            </span>
-                            {step.title}
-                          </h3>
-                          <p className="text-gray-400 mb-0 text-sm leading-relaxed">
-                            {step.description}
-                          </p>
-                        </div>
+                      {/* Step content */}
+                      <div className="relative">
+                        <h3 className="text-lg font-bold text-white mb-2 flex items-center">
+                          <span className="text-emerald-400 font-bold mr-2">{step.step}.</span>
+                          {step.title}
+                        </h3>
+                        {/* Underline accent */}
+                        <div className="w-full h-[1px] bg-emerald-500/30 mb-4" />
+                        <p className="text-gray-400 text-sm leading-relaxed">{step.description}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -531,52 +525,34 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
 
               {/* Tablet view (2 columns) */}
               <div className="hidden md:block lg:hidden">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-8">
                   {(useCase.howItWorks || defaultHowItWorks).map((step, index) => (
                     <motion.div
                       key={step.step}
-                      initial={{ opacity: 0, y: 30, rotateX: -15 }}
-                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{
                         duration: 0.5,
                         delay: 0.5 + index * 0.1,
-                        type: "spring",
-                        stiffness: 100,
                       }}
                       className="relative"
                     >
-                      {/* Step box */}
-                      <div className="relative h-full bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-2xl p-5 overflow-hidden">
-                        {/* Animated background pattern */}
-                        <div className="absolute inset-0 opacity-5">
-                          <div
-                            className="absolute inset-0"
-                            style={{
-                              backgroundImage:
-                                "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
-                              backgroundSize: "20px 20px",
-                            }}
-                          />
-                        </div>
-
-                        <div className="relative z-10">
-                          <h3 className="font-bold text-white mb-2 flex items-center">
-                            <span className="text-emerald-400 text-base font-bold mr-2">
-                              {step.step}.
-                            </span>
-                            {step.title}
-                          </h3>
-                          <p className="text-gray-400 text-sm">{step.description}</p>
-                        </div>
+                      <div className="relative">
+                        <h3 className="font-bold text-white mb-2 flex items-center">
+                          <span className="text-emerald-400 font-bold mr-2">{step.step}.</span>
+                          {step.title}
+                        </h3>
+                        <div className="w-full h-[1px] bg-emerald-500/30 mb-3" />
+                        <p className="text-gray-400 text-sm">{step.description}</p>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               </div>
 
-              {/* Mobile view with vertical boxes */}
+              {/* Mobile view */}
               <div className="block md:hidden">
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {(useCase.howItWorks || defaultHowItWorks).map((step, index) => (
                     <motion.div
                       key={step.step}
@@ -588,44 +564,21 @@ export default function UseCasePage({ useCase }: UseCasePageProps): JSX.Element 
                       }}
                       className="relative"
                     >
-                      {/* Step box */}
-                      <div className="relative bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/30 rounded-xl p-4 overflow-hidden">
-                        {/* Animated background pattern */}
-                        <div className="absolute inset-0 opacity-5">
-                          <div
-                            className="absolute inset-0"
-                            style={{
-                              backgroundImage:
-                                "radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)",
-                              backgroundSize: "15px 15px",
-                            }}
-                          />
-                        </div>
-
-                        {/* Step number badge */}
-                        <div className="absolute -top-2 -left-2 w-10 h-10 flex items-center justify-center">
-                          <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-sm" />
-                          <div className="relative w-8 h-8 bg-gradient-to-br from-gray-900 to-gray-950 border border-solid border-emerald-500/60 rounded-full flex items-center justify-center">
-                            <span className="text-emerald-400 font-semibold text-xs">
-                              {step.step}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="relative z-10 pl-6 pt-1">
-                          <h3 className="font-semibold text-white text-sm mb-1">{step.title}</h3>
-                          <p className="text-gray-400 text-xs leading-relaxed">
-                            {step.description}
-                          </p>
-                        </div>
+                      <div className="relative">
+                        <h3 className="font-semibold text-white text-base mb-2 flex items-center">
+                          <span className="text-emerald-400 font-bold mr-2">{step.step}.</span>
+                          {step.title}
+                        </h3>
+                        <div className="w-full h-[1px] bg-emerald-500/30 mb-3" />
+                        <p className="text-gray-400 text-sm leading-relaxed">{step.description}</p>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               </div>
-            </div>
-          </motion.div>
-        </Container>
+            </motion.div>
+          </Container>
+        </Section>
 
         {/* Example Agents - Full Width Section */}
         {useCase.exampleAgents && useCase.exampleAgents.length > 0 && (
