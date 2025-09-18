@@ -1,2 +1,4 @@
-// Export all tools from this directory
-export { weatherTool } from "./weather";
+// Export all tools from this directory using path aliases for Node compatibility
+import { weatherTool } from "#tools/weather";
+
+export { weatherTool };

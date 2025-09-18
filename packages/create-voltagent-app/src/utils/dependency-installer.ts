@@ -35,6 +35,12 @@ export const createBaseDependencyInstaller = async (
       typecheck: "tsc --noEmit",
       volt: "volt",
     },
+    imports: {
+      "#workflows": "./dist/workflows/index.js",
+      "#workflows/*": "./dist/workflows/*.js",
+      "#tools": "./dist/tools/index.js",
+      "#tools/*": "./dist/tools/*.js",
+    },
     dependencies: {
       "@voltagent/core": "^1.0.0",
       "@voltagent/server-hono": "^1.0.0",
