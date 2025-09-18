@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.1.11
+
+### Patch Changes
+
+- [#584](https://github.com/VoltAgent/voltagent/pull/584) [`00838b0`](https://github.com/VoltAgent/voltagent/commit/00838b0f4f75f03fad606589a6159121be0b40ba) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: add ConversationBuffer + MemoryPersistQueue so tool calls, results, and assistant text persist as a single step and flush on errors
+
 ## 1.1.10
 
 ### Patch Changes

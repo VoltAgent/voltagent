@@ -1,5 +1,11 @@
 # @voltagent/postgres
 
+## 1.0.6
+
+### Patch Changes
+
+- [`90ea801`](https://github.com/VoltAgent/voltagent/commit/90ea80121e73e890bb5cea1f970d50d78cd50680) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: migration issue
+
 ## 1.0.5
 
 ### Patch Changes
