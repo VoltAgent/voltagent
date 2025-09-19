@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 # Quick Start
 
-There are two ways to create a VoltAgent application: Automatic setup or manual setup. While both work, the automatic setup provides the smoothest experience, especially for new users.
+There are two ways to create a VoltAgent application: Automatic setup or manual setup. While both work, the automatic setup provides the smoothest experience, especially for new users. Be sure your environment is running **Node.js 20.19 or newer** so the generated tsdown build works without ESM resolution issues.
 
 ### Automatic Setup (Recommended)
 
@@ -72,10 +72,12 @@ The CLI will guide you through the setup process:
 
 The tool will automatically:
 
-- Create project files and structure
+- Create project files and structure (including a `tsdown.config.ts` build configuration)
 - Generate a `.env` file with your API key (if provided)
 - Initialize a git repository
-- Install dependencies Once the setup is complete, navigate to your project directory:
+- Install dependencies
+
+Once the setup is complete, navigate to your project directory:
 
 ```bash
 cd my-voltagent-app
@@ -167,6 +169,39 @@ You should receive a response from your AI agent in the chat window. This confir
 
 The `dev` script uses `tsx watch`, so it will automatically restart if you make changes to your code in the `src` directory. Press `Ctrl+C` in the terminal to stop the agent.
 
+### Build for Production
+
+When you're ready to deploy, bundle the app and run the compiled JavaScript with Node:
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npm run build
+npm start
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn build
+yarn start
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm build
+pnpm start
+```
+
+  </TabItem>
+</Tabs>
+
+The `build` script invokes **tsdown**, which bundles your TypeScript entrypoint (and any sibling directories such as `./workflows` or `./tools`) into `dist/index.js`. This extra step keeps the Node ESM loader from throwing `ERR_UNSUPPORTED_DIR_IMPORT` while preserving extensionless imports during development.
+
 ### Explore and Run Your Workflow from the Console
 
 Your new project isn't just an agent; it's a powerful automation engine. We've included an expense approval workflow example to get you started, and you can run it directly from the VoltOps console.
@@ -256,6 +291,18 @@ Create a basic TypeScript configuration file (tsconfig.json):
 }
 ```
 
+Add a `tsdown.config.ts` alongside `tsconfig.json` so production builds bundle correctly:
+
+```typescript
+import { defineConfig } from "tsdown";
+
+export default defineConfig({
+  entry: ["./src/index.ts"],
+  sourcemap: true,
+  outDir: "dist",
+});
+```
+
 #### Install Dependencies
 
 <Tabs>
@@ -263,7 +310,7 @@ Create a basic TypeScript configuration file (tsconfig.json):
 
 ```bash
 # Install development dependencies
-npm install --save-dev typescript tsx @types/node @voltagent/cli
+npm install --save-dev typescript tsx tsdown @types/node @voltagent/cli
 
 # Install dependencies
 npm install @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
@@ -274,7 +321,7 @@ npm install @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/
 
 ```bash
 # Install development dependencies
-yarn add --dev typescript tsx @types/node @voltagent/cli
+yarn add --dev typescript tsx tsdown @types/node @voltagent/cli
 
 # Install dependencies
 yarn add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
@@ -285,7 +332,7 @@ yarn add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/log
 
 ```bash
 # Install development dependencies
-pnpm add --save-dev typescript tsx @types/node @voltagent/cli
+pnpm add --save-dev typescript tsx tsdown @types/node @voltagent/cli
 
 # Install dependencies
 pnpm add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
@@ -349,12 +396,14 @@ Add the following to your package.json:
 ```json
 "type": "module",
 "scripts": {
-  "build": "tsc",
+  "build": "tsdown",
   "dev": "tsx watch --env-file=.env ./src",
   "start": "node dist/index.js",
   "volt": "volt" // Requires @voltagent/cli
 }
 ```
+
+`npm run build` (or `yarn build` / `pnpm build`) bundles your sources with tsdown before handing the output to Node via `npm start`.
 
 Your project structure should now look like this:
 
@@ -365,6 +414,7 @@ my-voltagent-project/
 │   └── index.ts
 ├── package.json
 ├── tsconfig.json
+├── tsdown.config.ts
 ├── .env
 └── .voltagent/ (created automatically when you run the agent)
 ```

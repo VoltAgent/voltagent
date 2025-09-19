@@ -705,7 +705,10 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       parameters: z.object({
         task: z.string().describe("The task to delegate"),
         targetAgents: z.array(z.string()).describe("List of agent names to delegate the task to"),
-        context: z.record(z.unknown()).optional().describe("Additional context for the task"),
+        context: z
+          .record(z.string(), z.any())
+          .optional()
+          .describe("Additional context for the task"),
       }),
       execute: async ({ task, targetAgents, context = {} }, currentOperationContext) => {
         // Fall back to the original operation context if not available

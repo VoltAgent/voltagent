@@ -4,7 +4,7 @@
   "dependencies": {
     "@ai-sdk/groq": "^2.0.18",
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^1.1.11",
+    "@voltagent/core": "^1.1.12",
     "@voltagent/libsql": "^1.0.5",
     "@voltagent/logger": "^1.0.1",
     "@voltagent/server-hono": "^1.0.6",
