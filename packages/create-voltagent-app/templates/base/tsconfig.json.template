@@ -1,20 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "outDir": "dist",
-    "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "#workflows": ["src/workflows/index.ts"],
-      "#workflows/*": ["src/workflows/*.ts"],
-      "#tools": ["src/tools/index.ts"],
-      "#tools/*": ["src/tools/*.ts"]
-    }
+    "skipLibCheck": true
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

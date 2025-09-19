@@ -12,6 +12,10 @@ export const getBaseTemplates = (): TemplateFile[] => {
       targetPath: "tsconfig.json",
     },
     {
+      sourcePath: path.join(TEMPLATES_DIR, "base/tsdown.config.ts.template"),
+      targetPath: "tsdown.config.ts",
+    },
+    {
       sourcePath: path.join(TEMPLATES_DIR, "base/README.md.template"),
       targetPath: "README.md",
       transform: (content: string, options: ProjectOptions) => {

@@ -28,18 +28,12 @@ export const createBaseDependencyInstaller = async (
     type: "module",
     scripts: {
       dev: "tsx watch --env-file=.env ./src",
-      build: "tsc",
+      build: "tsdown",
       start: "node dist/index.js",
       lint: "biome check ./src",
       "lint:fix": "biome check --write ./src",
       typecheck: "tsc --noEmit",
       volt: "volt",
-    },
-    imports: {
-      "#workflows": "./dist/workflows/index.js",
-      "#workflows/*": "./dist/workflows/*.js",
-      "#tools": "./dist/tools/index.js",
-      "#tools/*": "./dist/tools/*.js",
     },
     dependencies: {
       "@voltagent/core": "^1.0.0",
@@ -54,11 +48,12 @@ export const createBaseDependencyInstaller = async (
     devDependencies: {
       "@biomejs/biome": "^1.9.4",
       "@types/node": "^22.10.5",
+      tsdown: "^0.15.2",
       tsx: "^4.19.2",
       typescript: "^5.7.3",
     },
     engines: {
-      node: ">=20.0.0",
+      node: ">=20.19.0",
     },
   };
 
