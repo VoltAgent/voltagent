@@ -1,5 +1,11 @@
 # create-voltagent-app
 
+## 0.2.10
+
+### Patch Changes
+
+- [#587](https://github.com/VoltAgent/voltagent/pull/587) [`28d4268`](https://github.com/VoltAgent/voltagent/commit/28d42689e1f2c0f1304f0f934bd09ba510e493bc) Thanks [@wayneg123](https://github.com/wayneg123)! - Switch the app template to bundle with tsdown so the production build runs under Node ESM without manual .js extensions or bespoke import mappers.
+
 ## 0.2.9
 
 ### Patch Changes
