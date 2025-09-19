@@ -15,7 +15,7 @@ If you prefer to start directly with the completed example project, you can crea
 npm create voltagent-app@latest -- --example with-nextjs
 ```
 
-This command will scaffold the entire Next.js example project described in this guide.
+This command will scaffold an entire Next.js example for you. You can also peek at the full source code right here: [examples/with-nextjs](https://github.com/VoltAgent/voltagent/tree/main/examples/with-nextjs).
 
 ## Create a New Next.js Project
 
@@ -30,157 +30,250 @@ Follow the prompts, selecting TypeScript and App Router.
 
 ## Install VoltAgent Dependencies
 
-Install the necessary VoltAgent packages and the ai-sdk provider:
+Install the necessary VoltAgent packages and dependencies:
 
 ```bash
-npm install @voltagent/core @voltagent/cli @ai-sdk/openai zod@^3.25.0
+npm install @voltagent/core @ai-sdk/openai @ai-sdk/react ai zod@^3.25.0
 ```
 
 - `@voltagent/core`: The core VoltAgent library.
 - `@ai-sdk/openai`: The ai-sdk provider for OpenAI (or your preferred provider).
-- `@voltagent/cli`: The command-line interface for VoltAgent tasks.
+- `@ai-sdk/react`: React hooks for AI SDK integration.
+- `ai`: Core AI SDK library for streaming and chat functionality.
 - `zod`: Used when working with structured outputs.
 
-## Configure `next.config.js`
+## Configure `next.config.ts`
 
-Next.js might try to bundle server-side packages by default. To prevent issues with VoltAgent, you need to mark its packages as external in your `next.config.mjs` (or `.js` / `.ts`) file:
+Next.js might try to bundle server-side packages by default. To prevent issues with certain packages, you need to mark them as external in your `next.config.ts` file:
 
-```typescript title="next.config.mjs // or next.config.ts"
+```typescript title="next.config.ts"
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    // Mark VoltAgent packages as external
-    serverComponentsExternalPackages: ["@voltagent/*"],
-    // If using other packages that need to run externally (like npm-check-updates in the example)
-    // add them here too.
-    // serverComponentsExternalPackages: ["@voltagent/*", "another-package"],
-  },
+  serverExternalPackages: [
+    // Externalize only what's needed at runtime.
+    // LibSQL client is safe to externalize; native platform packages are optional.
+    "@libsql/client",
+  ],
 };
 
 export default nextConfig;
 ```
 
-**Note:** The property was `serverExternalPackages` in older Next.js versions, but changed to `experimental.serverComponentsExternalPackages`. Ensure you use the correct one for your Next.js version.
+**Note:** The property used to be `experimental.serverComponentsExternalPackages` in older Next.js versions, but is now `serverExternalPackages`. Ensure you use the correct one for your Next.js version.
 
-## Initialize VoltAgent
+## Environment Variables
 
-Create a file to initialize an Agent, for example, `voltagent/index.ts` in your project root:
-
-```typescript title="voltagent/index.ts"
-import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai"; // Or your preferred ai-sdk provider
-
-export const agent = new Agent({
-  name: "nextjs-agent",
-  instructions: "You are a helpful assistant",
-  model: openai("gpt-4o"),
-});
-```
-
-Remember to set up your environment variables (e.g., `OPENAI_API_KEY`) in a `.env.local` file.
-Create a `.env.local` file in your project root if it doesn't exist, and add your necessary API keys:
+Set up your environment variables (e.g., `OPENAI_API_KEY`) in a `.env.local` file:
 
 ```env title=".env.local"
 OPENAI_API_KEY="your-openai-api-key-here"
 # Add other environment variables if needed
 ```
 
-## Create a Server Action
+## Create API Route
 
-Define a Server Action to interact with the VoltAgent agent. Create `app/actions.ts`:
+Create the main chat API route with the agent and singleton defined inline in `app/api/chat/route.ts`:
+
+```typescript title="app/api/chat/route.ts"
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+import { z } from "zod";
+
+// Simple calculator tool
+const calculatorTool = createTool({
+  name: "calculate",
+  description: "Perform basic mathematical calculations",
+  parameters: z.object({
+    expression: z
+      .string()
+      .describe("Mathematical expression to evaluate (e.g., '2 + 2', '10 * 5')"),
+  }),
+  execute: async (args) => {
+    try {
+      // Simple evaluation - in production, use a proper math parser
+      const result = eval(args.expression);
+      return { result, expression: args.expression };
+    } catch {
+      return { error: "Invalid mathematical expression", expression: args.expression };
+    }
+  },
+});
+
+// Main agent
+export const agent = new Agent({
+  name: "CalculatorAgent",
+  instructions:
+    "You are a helpful calculator assistant. When users ask you to calculate something, use the calculate tool to perform the math and then explain the result clearly.",
+  model: openai("gpt-4o-mini"),
+  tools: [calculatorTool],
+});
+
+// VoltAgent singleton (augments global scope during dev to avoid re-instantiation)
+declare global {
+  var voltAgentInstance: VoltAgent | undefined;
+}
+
+function getVoltAgentInstance() {
+  if (!globalThis.voltAgentInstance) {
+    globalThis.voltAgentInstance = new VoltAgent({
+      agents: {
+        agent,
+      },
+      server: honoServer(),
+    });
+  }
+  return globalThis.voltAgentInstance;
+}
+
+export const voltAgent = getVoltAgentInstance();
+
+export async function POST(req: Request) {
+  try {
+    const { messages } = await req.json();
+    const lastMessage = messages[messages.length - 1];
+
+    const result = await agent.streamText([lastMessage]);
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+```
+
+## Build the Chat UI Component (Client Component)
+
+Create a client component in `app/components/chat.tsx`:
+
+```typescript title="app/components/chat.tsx"
+"use client";
+
+import { useChat } from "@ai-sdk/react";
+import { useEffect, useRef } from "react";
+
+export function Chat() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    api: "/api/chat",
+  });
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  return (
+    <div>
+      <div>
+        <h2>VoltAgent Calculator</h2>
+        <p>Ask me to calculate anything!</p>
+      </div>
+
+      {/* Messages */}
+      <div>
+        {messages.map((message) => (
+          <div key={message.id}>
+            <strong>{message.role === "user" ? "You" : "Agent"}:</strong>
+            <div>{message.content}</div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div>
+        <form onSubmit={handleSubmit}>
+          <input
+            value={input}
+            onChange={handleInputChange}
+            disabled={isLoading}
+            placeholder="Ask me to calculate something..."
+          />
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Thinking..." : "Send"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+```
+
+## Optional: Server Action Example
+
+Create a server action in `app/actions.ts`:
 
 ```typescript title="app/actions.ts"
 "use server";
 
-import { agent } from "@/voltagent"; // Adjust path if needed
+import { agent } from "@/voltagent";
 
-export async function calculateExpression(expression: string) {
+export async function calculate(formData: FormData) {
+  const expression = String(formData.get("expression") || "");
   const result = await agent.generateText(
-    `Calculate ${expression}. Only respond with the numeric result.`
+    `Calculate ${expression}. Only return the numeric result.`
   );
-
   return result.text;
 }
 ```
 
-## Build the UI Component
+Use it from a simple server component form in `app/server-action-example.tsx`:
 
-Create a client component to take user input and display the result. Create `app/components/calculator.tsx`:
+```typescript title="app/server-action-example.tsx"
+import { calculate } from "@/app/actions";
 
-```typescript title="app/components/calculator.tsx"
-"use client";
-
-import { useState } from "react";
-import { calculateExpression } from "../actions";
-
-export function Calculator() {
-  const [result, setResult] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [expression, setExpression] = useState("");
-
-  async function handleSubmit(formData: FormData) {
-    const expr = formData.get("expression") as string;
-    if (!expr.trim()) return;
-
-    setLoading(true);
-    try {
-      const calcResult = await calculateExpression(expr);
-      setResult(calcResult);
-      setExpression(expr);
-    } catch (error) {
-      console.error("Calculation error:", error);
-      setResult("Error calculating expression");
-    } finally {
-      setLoading(false);
-    }
-  }
-
+export default function ServerActionExample() {
   return (
-    <div>
-      <h2>AI Calculator</h2>
-      <form action={handleSubmit}>
-        <label htmlFor="expression">Enter calculation:</label>
-        <input
-          id="expression"
-          name="expression"
-          type="text"
-          placeholder="E.g. (5 + 3) * 2"
-          required
-        />
-        <button type="submit" disabled={loading}>
-          {loading ? "Calculating..." : "Calculate"}
-        </button>
-      </form>
-
-      {result && (
-        <div>
-          <h3>Result:</h3>
-          <p>{expression} = {result}</p>
-        </div>
-      )}
-    </div>
+    <form action={calculate}>
+      <input name="expression" placeholder="e.g. (5 + 3) * 2" />
+      <button type="submit">Calculate</button>
+    </form>
   );
 }
 ```
 
 _(Styling omitted for brevity. Refer to the example project for full styling)_
 
-## Use the Component
+## Create the Main Page
 
-Finally, import and use the `Calculator` component in your main page (`app/page.tsx`):
+Update your main page to use the chat component in `app/page.tsx`:
 
 ```typescript title="app/page.tsx"
-import { Calculator } from "./components/calculator";
+import { Chat } from "./components/chat";
 
-export default function HomePage() {
+export default function Home() {
   return (
-    <main>
-      <h1>VoltAgent Next.js Example</h1>
-      <Calculator />
-    </main>
+    <div>
+      <div>
+        <h1>VoltAgent Next.js Example</h1>
+        <p>A simple calculator agent with tools</p>
+      </div>
+
+      // highlight-next-line
+      <Chat />
+
+      <div>
+        <p>This example demonstrates VoltAgent with a custom tool for calculations.</p>
+      </div>
+    </div>
   );
 }
 ```
 
-Now you can run your Next.js development server (`npm run dev`) and test the AI calculator! This demonstrates a basic integration of VoltAgent within a Next.js application using Server Actions.
+## Run the Application
+
+Now you can run your Next.js development server:
+
+```bash
+npm run dev
+```
+
+This creates a simple but powerful VoltAgent application with:
+
+- **Single agent** with a custom calculator tool
+- **Streaming chat interface** with real-time updates
+- **Tool integration** showing how agents use tools
+
+The agent will use the calculator tool when users ask for mathematical calculations, demonstrating how VoltAgent integrates tools seamlessly into conversations.
