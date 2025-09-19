@@ -686,6 +686,238 @@ export function getAllRoutesArray(): RouteDefinition[] {
 }
 
 /**
+ * MCP route definitions
+ */
+export const MCP_ROUTES = {
+  listServers: {
+    method: "get" as const,
+    path: "/mcp/servers",
+    summary: "List MCP servers",
+    description:
+      "Return metadata for all MCP servers currently registered with the running VoltAgent instance.",
+    tags: ["MCP"],
+    operationId: "listMcpServers",
+    responses: {
+      200: {
+        description: "Successfully retrieved the list of MCP servers",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve MCP servers",
+        contentType: "application/json",
+      },
+    },
+  },
+  getServer: {
+    method: "get" as const,
+    path: "/mcp/servers/:serverId",
+    summary: "Get MCP server metadata",
+    description: "Return metadata for a specific MCP server by ID.",
+    tags: ["MCP"],
+    operationId: "getMcpServer",
+    responses: {
+      200: {
+        description: "Successfully retrieved MCP server metadata",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested MCP server does not exist",
+        contentType: "application/json",
+      },
+    },
+  },
+  listTools: {
+    method: "get" as const,
+    path: "/mcp/servers/:serverId/tools",
+    summary: "List MCP server tools",
+    description:
+      "Return the tools exposed by a specific MCP server, including metadata for UI rendering.",
+    tags: ["MCP"],
+    operationId: "listMcpServerTools",
+    responses: {
+      200: {
+        description: "Successfully retrieved tool metadata",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested MCP server does not exist or has no tools",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve MCP tools",
+        contentType: "application/json",
+      },
+    },
+  },
+  invokeTool: {
+    method: "post" as const,
+    path: "/mcp/servers/:serverId/tools/:toolName",
+    summary: "Invoke MCP tool",
+    description: "Execute a single MCP tool exposed by the given server with provided arguments.",
+    tags: ["MCP"],
+    operationId: "invokeMcpTool",
+    responses: {
+      200: {
+        description: "Tool executed successfully",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested MCP server or tool does not exist",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Tool execution failed",
+        contentType: "application/json",
+      },
+    },
+  },
+  setLogLevel: {
+    method: "post" as const,
+    path: "/mcp/servers/:serverId/logging/level",
+    summary: "Update MCP logging level",
+    description:
+      "Update the logging level of an MCP server when the logging capability is enabled.",
+    tags: ["MCP"],
+    operationId: "setMcpLogLevel",
+    responses: {
+      200: {
+        description: "Logging level updated",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested MCP server does not support logging capability",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to update logging level",
+        contentType: "application/json",
+      },
+    },
+  },
+  listPrompts: {
+    method: "get" as const,
+    path: "/mcp/servers/:serverId/prompts",
+    summary: "List MCP prompts",
+    description:
+      "Return all prompts exposed by an MCP server when the prompts capability is enabled.",
+    tags: ["MCP"],
+    operationId: "listMcpPrompts",
+    responses: {
+      200: {
+        description: "Successfully retrieved MCP prompts",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested MCP server does not expose prompts",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve MCP prompts",
+        contentType: "application/json",
+      },
+    },
+  },
+  getPrompt: {
+    method: "get" as const,
+    path: "/mcp/servers/:serverId/prompts/:promptName",
+    summary: "Get MCP prompt",
+    description:
+      "Retrieve a fully resolved prompt by name from an MCP server, optionally templated with arguments.",
+    tags: ["MCP"],
+    operationId: "getMcpPrompt",
+    responses: {
+      200: {
+        description: "Successfully retrieved MCP prompt",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid prompt arguments",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested MCP server does not expose prompts",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve MCP prompt",
+        contentType: "application/json",
+      },
+    },
+  },
+  listResources: {
+    method: "get" as const,
+    path: "/mcp/servers/:serverId/resources",
+    summary: "List MCP resources",
+    description:
+      "Return all static or dynamic resources available from an MCP server when the resources capability is enabled.",
+    tags: ["MCP"],
+    operationId: "listMcpResources",
+    responses: {
+      200: {
+        description: "Successfully retrieved MCP resources",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested MCP server does not expose resources",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve MCP resources",
+        contentType: "application/json",
+      },
+    },
+  },
+  readResource: {
+    method: "get" as const,
+    path: "/mcp/servers/:serverId/resources/contents",
+    summary: "Read MCP resource",
+    description: "Fetch the contents of a resource by URI from an MCP server.",
+    tags: ["MCP"],
+    operationId: "readMcpResource",
+    responses: {
+      200: {
+        description: "Successfully retrieved MCP resource contents",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Missing or invalid resource URI",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested MCP server does not expose resources",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve MCP resource contents",
+        contentType: "application/json",
+      },
+    },
+  },
+  listResourceTemplates: {
+    method: "get" as const,
+    path: "/mcp/servers/:serverId/resource-templates",
+    summary: "List MCP resource templates",
+    description: "Return resource templates exposed by an MCP server when supported.",
+    tags: ["MCP"],
+    operationId: "listMcpResourceTemplates",
+    responses: {
+      200: {
+        description: "Successfully retrieved MCP resource templates",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested MCP server does not expose resource templates",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve MCP resource templates",
+        contentType: "application/json",
+      },
+    },
+  },
+} satisfies Record<string, RouteDefinition>;
+
+/**
  * Helper to get routes by tag
  */
 export function getRoutesByTag(tag: string): RouteDefinition[] {

@@ -4,6 +4,15 @@
 
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type {
+  MCPElicitationAdapter,
+  MCPLoggingAdapter,
+  MCPPromptsAdapter,
+  MCPResourcesAdapter,
+  MCPServer,
+  MCPServerFactory,
+  MCPServerRegistry,
+} from "@voltagent/mcp-server";
 import type { Agent } from "./agent/agent";
 import type { AgentStatus } from "./agent/types";
 import type { VoltAgentObservability } from "./observability/voltagent-observability";
@@ -70,6 +79,9 @@ export interface ServerProviderDeps {
   // telemetryExporter?: VoltAgentExporter; // Removed - migrated to OpenTelemetry
   voltOpsClient?: VoltOpsClient;
   observability?: VoltAgentObservability;
+  mcp?: {
+    registry: MCPServerRegistry;
+  };
 }
 
 /**
@@ -158,6 +170,18 @@ export type VoltAgentOptions = {
    * If not provided, a default logger will be created
    */
   logger?: Logger;
+
+  /**
+   * Optional collection of MCP servers to register alongside the primary server.
+   * Enables exposing multiple VoltAgent surfaces through separate MCP endpoints.
+   */
+  mcpServers?: Record<string, MCPServer | MCPServerFactory>;
+  mcpOptions?: {
+    logging?: MCPLoggingAdapter;
+    prompts?: MCPPromptsAdapter;
+    resources?: MCPResourcesAdapter;
+    elicitation?: MCPElicitationAdapter;
+  };
 
   // telemetryExporter removed - migrated to OpenTelemetry
 

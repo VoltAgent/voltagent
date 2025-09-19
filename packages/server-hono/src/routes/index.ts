@@ -37,6 +37,7 @@ import {
   textRoute,
 } from "./agent.routes";
 import { getLogsRoute } from "./log.routes";
+export { registerMcpRoutes } from "./mcp.routes";
 
 /**
  * Register agent routes

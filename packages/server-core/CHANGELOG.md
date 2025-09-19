@@ -110,7 +110,7 @@
   - **UIMessage[]**: AI SDK UIMessage format with `parts` structure
   - **ModelMessage[]**: AI SDK ModelMessage format with `role` and `content` structure
 
-  The change adopts a flexible validation approach similar to Mastra, where the server handlers pass input directly to agents which handle the conversion. API schemas and documentation have been updated to reflect this support.
+  The change adopts a flexible validation, where the server handlers pass input directly to agents which handle the conversion. API schemas and documentation have been updated to reflect this support.
 
   Example:
 

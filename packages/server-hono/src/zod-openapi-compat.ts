@@ -18,10 +18,20 @@ const isZodV4 = "toJSONSchema" in zodBase;
 import * as v3Module from "@hono/zod-openapi";
 import * as v4Module from "@hono/zod-openapi-v4";
 
-// Select the appropriate module based on Zod version
-const selectedModule = isZodV4 ? v4Module : v3Module;
+type OpenAPIHonoCtor = typeof v3Module.OpenAPIHono;
+type CreateRouteFn = typeof v3Module.createRoute;
+type ZExport = typeof v3Module.z;
+
+interface CompatibleModule {
+  OpenAPIHono: OpenAPIHonoCtor;
+  createRoute: CreateRouteFn;
+  z: ZExport;
+}
+
+// Select the appropriate module based on Zod version but retain v3 typings for compatibility
+const selectedModule = (isZodV4 ? v4Module : v3Module) as CompatibleModule;
 
 export const OpenAPIHono = selectedModule.OpenAPIHono;
 export const createRoute = selectedModule.createRoute;
 export const z = selectedModule.z;
-export type { OpenAPIHono as OpenAPIHonoType } from "@hono/zod-openapi";
+export type OpenAPIHonoType = InstanceType<OpenAPIHonoCtor>;

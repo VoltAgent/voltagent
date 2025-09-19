@@ -1,22 +1,13 @@
 {
-  "name": "@voltagent/server-hono",
-  "description": "Hono server implementation for VoltAgent",
-  "version": "1.0.6",
+  "name": "@voltagent/mcp-server",
+  "description": "VoltAgent MCP server implementation for exposing agents, tools, and workflows via the Model Context Protocol.",
+  "version": "1.0.0",
   "dependencies": {
-    "@hono/node-server": "^1.14.0",
-    "@hono/swagger-ui": "^0.5.1",
-    "@hono/zod-openapi": "^0.19.10",
-    "@hono/zod-openapi-v4": "npm:@hono/zod-openapi@^1.1.0",
-    "@voltagent/core": "^1.1.10",
-    "@voltagent/mcp-server": "^1.0.0",
-    "@voltagent/internal": "^0.0.10",
-    "@voltagent/server-core": "^1.0.8",
-    "fetch-to-node": "^2.1.0",
-    "hono": "^4.7.7"
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@voltagent/internal": "^0.0.10"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
-    "@types/ws": "^8.18.1",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4",

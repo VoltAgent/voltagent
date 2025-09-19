@@ -9,6 +9,10 @@ export * from "./schemas/agent.schemas";
 // Export routes
 export * from "./routes/definitions";
 
+// Export MCP helpers
+export * from "./mcp";
+export * from "./mcp/handlers";
+
 // Export handlers
 export * from "./handlers/agent.handlers";
 export * from "./handlers/agent-additional.handlers";

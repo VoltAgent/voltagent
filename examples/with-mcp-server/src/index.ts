@@ -1,0 +1,151 @@
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent, createTool, createWorkflowChain } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
+import { MCPServer } from "@voltagent/mcp-server";
+import { honoServer } from "@voltagent/server-hono";
+import { z } from "zod";
+
+const logger = createPinoLogger({
+  name: "with-mcp-server",
+  level: "debug",
+});
+
+const currentTimeTool = createTool({
+  name: "current_time",
+  description: "Returns the current time as ISO and localized strings.",
+  parameters: z.object({
+    locale: z.string().optional().describe("Locale passed to Intl.DateTimeFormat"),
+    timeZone: z.string().optional().describe("IANA timezone identifier"),
+  }),
+  outputSchema: z.object({
+    iso: z.string(),
+    display: z.string(),
+  }),
+  async execute({ locale, timeZone }) {
+    const date = new Date();
+    const formatter = Intl.DateTimeFormat(locale ?? "en-US", {
+      timeZone,
+      dateStyle: "full",
+      timeStyle: "long",
+    });
+
+    return {
+      iso: date.toISOString(),
+      display: formatter.format(date),
+    };
+  },
+});
+
+const assistant = new Agent({
+  name: "AssistantAgent",
+  instructions:
+    "You are a helpful assistant. Use the `current_time` tool when the user wants to know the time.",
+  model: openai("gpt-4o-mini"),
+  tools: [currentTimeTool],
+});
+
+const expenseApprovalWorkflow = createWorkflowChain({
+  id: "expense-approval",
+  name: "Expense Approval Workflow",
+  purpose: "Process expense reports with manager approval for high amounts",
+  input: z.object({
+    employeeId: z.string(),
+    amount: z.number(),
+    category: z.string(),
+    description: z.string(),
+  }),
+  result: z.object({
+    status: z.enum(["approved", "rejected"]),
+    approvedBy: z.string(),
+    finalAmount: z.number(),
+  }),
+})
+  // Step 1: Validate expense and check if approval needed
+  .andThen({
+    id: "check-approval-needed",
+    // Define what data we expect when resuming this step
+    resumeSchema: z.object({
+      approved: z.boolean(),
+      managerId: z.string(),
+      comments: z.string().optional(),
+      adjustedAmount: z.number().optional(),
+    }),
+    execute: async ({ data, suspend, resumeData }) => {
+      // If we're resuming with manager's decision
+      if (resumeData) {
+        console.log(`Manager ${resumeData.managerId} made decision`);
+        return {
+          ...data,
+          approved: resumeData.approved,
+          approvedBy: resumeData.managerId,
+          finalAmount: resumeData.adjustedAmount || data.amount,
+          managerComments: resumeData.comments,
+        };
+      }
+
+      // Check if manager approval is needed (expenses over $500)
+      if (data.amount > 500) {
+        console.log(`Expense of $${data.amount} requires manager approval`);
+
+        // Suspend workflow and wait for manager input
+        await suspend("Manager approval required", {
+          employeeId: data.employeeId,
+          requestedAmount: data.amount,
+          category: data.category,
+        });
+      }
+
+      // Auto-approve small expenses
+      return {
+        ...data,
+        approved: true,
+        approvedBy: "system",
+        finalAmount: data.amount,
+      };
+    },
+  })
+
+  // Step 2: Process the final decision
+  .andThen({
+    id: "process-decision",
+    execute: async ({ data }) => {
+      if (data.approved) {
+        console.log(`Expense approved for $${data.finalAmount}`);
+      } else {
+        console.log("Expense rejected");
+      }
+
+      return {
+        status: data.approved ? "approved" : "rejected",
+        approvedBy: data.approvedBy,
+        finalAmount: data.finalAmount,
+      };
+    },
+  });
+
+const mcpServer = new MCPServer({
+  name: "voltagent-example",
+  version: "0.1.0",
+  description: "VoltAgent MCP stdio example",
+  protocols: {
+    stdio: true,
+    http: false,
+    sse: false,
+  },
+  filterTools: ({ items }) => {
+    return items;
+  },
+  // Add the workflow to the MCP server
+  workflows: { expenseApprovalWorkflow },
+});
+
+new VoltAgent({
+  agents: {
+    assistant,
+  },
+  mcpServers: {
+    mcpServer,
+  },
+  server: honoServer({ port: 3141 }),
+  logger,
+});

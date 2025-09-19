@@ -1,9 +1,17 @@
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type {
+  MCPServer,
+  MCPServerDeps,
+  MCPServerFactory,
+  MCPServerLike,
+} from "@voltagent/mcp-server";
+import { MCPServerRegistry } from "@voltagent/mcp-server";
 import type { Agent } from "./agent/agent";
 import { getGlobalLogger } from "./logger";
 import { VoltAgentObservability } from "./observability/voltagent-observability";
 import { AgentRegistry } from "./registries/agent-registry";
+import type { Tool } from "./tool";
 import type { IServerProvider, VoltAgentOptions } from "./types";
 import { checkForUpdates } from "./utils/update";
 import { isValidVoltOpsKeys } from "./utils/voltops-validation";
@@ -21,10 +29,13 @@ export class VoltAgent {
   private serverInstance?: IServerProvider;
   private logger: Logger;
   private observability?: VoltAgentObservability;
-
+  private readonly mcpServers = new Set<MCPServerLike>();
+  private readonly mcpServerRegistry = new MCPServerRegistry();
+  private readonly mcpOptions?: VoltAgentOptions["mcpOptions"];
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
+    this.mcpOptions = options.mcpOptions;
 
     // Initialize logger
     this.logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
@@ -98,7 +109,16 @@ export class VoltAgent {
         logger: this.logger,
         voltOpsClient: this.registry.getGlobalVoltOpsClient(),
         observability: this.observability,
+        mcp: {
+          registry: this.mcpServerRegistry,
+        },
       });
+    }
+
+    if (options.mcpServers) {
+      for (const entry of Object.values(options.mcpServers)) {
+        this.initializeMCPServer(entry);
+      }
     }
 
     // Check dependencies if enabled (run in background)
@@ -230,6 +250,7 @@ export class VoltAgent {
 
     try {
       await this.serverInstance.start();
+      await this.startConfiguredMcpTransports();
     } catch (error) {
       this.logger.error(
         `Failed to start server: ${error instanceof Error ? error.message : String(error)}`,
@@ -382,10 +403,98 @@ export class VoltAgent {
         await this.shutdownTelemetry();
       }
 
+      await this.shutdownMcpServers();
+
       this.logger.info("[VoltAgent] Graceful shutdown complete");
     } catch (error) {
       this.logger.error("[VoltAgent] Error during shutdown:", { error });
       throw error;
     }
+  }
+
+  private initializeMCPServer(mcpServer: MCPServer | MCPServerFactory): MCPServerLike {
+    const instance: MCPServerLike = typeof mcpServer === "function" ? mcpServer() : mcpServer;
+
+    this.mcpServerRegistry.register(instance, this.getMCPDependencies(), {
+      startTransports: this.serverInstance?.isRunning() ?? false,
+    });
+
+    this.mcpServers.add(instance);
+
+    return instance;
+  }
+
+  private async startConfiguredMcpTransports(): Promise<void> {
+    const startTasks: Promise<void>[] = [];
+    for (const server of this.mcpServers) {
+      if (typeof server.startConfiguredTransports === "function") {
+        startTasks.push(server.startConfiguredTransports());
+      }
+    }
+
+    if (startTasks.length > 0) {
+      await Promise.all(startTasks);
+    }
+  }
+
+  public getMCPDependencies(): MCPServerDeps {
+    return {
+      // TODO: fix any types
+      agentRegistry: {
+        getAllAgents: () => this.registry.getAllAgents() as any,
+        getAgent: (id: string) => this.registry.getAgent(id) as any,
+      },
+      workflowRegistry: {
+        getWorkflow: (id: string) => this.workflowRegistry.getWorkflow(id) as any,
+        getAllWorkflows: () => this.workflowRegistry.getAllWorkflows() as any,
+        getWorkflowsForApi: () => this.workflowRegistry.getWorkflowsForApi(),
+        resumeSuspendedWorkflow: (
+          workflowId: string,
+          executionId: string,
+          resumeData?: unknown,
+          resumeStepId?: string,
+        ) =>
+          this.workflowRegistry.resumeSuspendedWorkflow(
+            workflowId,
+            executionId,
+            resumeData,
+            resumeStepId,
+          ),
+      },
+      getTools: () => this.collectAllTools() as any,
+      logging: this.mcpOptions?.logging,
+      prompts: this.mcpOptions?.prompts,
+      resources: this.mcpOptions?.resources,
+      elicitation: this.mcpOptions?.elicitation,
+    } as MCPServerDeps;
+  }
+
+  public getServerInstance(): IServerProvider | undefined {
+    return this.serverInstance;
+  }
+
+  private async shutdownMcpServers(): Promise<void> {
+    if (this.mcpServers.size === 0) {
+      return;
+    }
+
+    this.logger.info("[VoltAgent] Shutting down MCP server transports...");
+
+    for (const server of Array.from(this.mcpServers)) {
+      try {
+        await server.close?.();
+      } finally {
+        this.mcpServerRegistry.unregister(server);
+        this.mcpServers.delete(server);
+      }
+    }
+  }
+
+  private collectAllTools(): Tool[] {
+    const tools: Tool[] = [];
+    for (const agent of this.registry.getAllAgents()) {
+      tools.push(...agent.getTools());
+    }
+    return tools;
   }
 }
