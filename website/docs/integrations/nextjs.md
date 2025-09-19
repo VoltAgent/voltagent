@@ -33,7 +33,7 @@ Follow the prompts, selecting TypeScript and App Router.
 Install the necessary VoltAgent packages and dependencies:
 
 ```bash
-npm install @voltagent/core @ai-sdk/openai @ai-sdk/react ai zod@^3.25.0
+npm install @voltagent/core @ai-sdk/openai @ai-sdk/react ai zod@^3.25.76
 ```
 
 - `@voltagent/core`: The core VoltAgent library.
