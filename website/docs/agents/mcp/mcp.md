@@ -1,5 +1,5 @@
 ---
-title: Model Context Protocol (MCP)
+title: MCP Client
 slug: /agents/mcp
 ---
 
