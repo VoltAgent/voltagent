@@ -1,14 +1,5 @@
 {
   "name": "voltagent-example-with-a2a-server",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src",
-    "start": "node dist/index.js",
-    "volt": "volt",
-    "test:smoke": "node ./scripts/smoke-test.mjs"
-  },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
     "@voltagent/a2a-server": "^1.0.0",
@@ -23,5 +14,14 @@
     "@types/node": "^24.2.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
-  }
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "test:smoke": "node ./scripts/smoke-test.mjs",
+    "volt": "volt"
+  },
+  "type": "module"
 }

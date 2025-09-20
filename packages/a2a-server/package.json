@@ -13,9 +13,6 @@
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"
   },
-  "peerDependencies": {
-    "@voltagent/core": "^1.0.0"
-  },
   "exports": {
     ".": {
       "import": {
@@ -34,11 +31,14 @@
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "peerDependencies": {
+    "@voltagent/core": "^1.0.0"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
-  }
+  },
+  "types": "dist/index.d.ts"
 }
