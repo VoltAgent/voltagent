@@ -1,3 +1,4 @@
+import type { VoltAgentTextStreamPart } from "../agent/subagent/types";
 import type { UserContext } from "../agent/types";
 import type { WorkflowStreamEvent, WorkflowStreamWriter } from "./types";
 
@@ -92,7 +93,7 @@ export class NoOpWorkflowStreamWriter implements WorkflowStreamWriter {
   }
 
   async pipeFrom(
-    _fullStream: AsyncIterable<any>,
+    _fullStream: AsyncIterable<VoltAgentTextStreamPart<any>>,
     _options?: {
       prefix?: string;
       agentId?: string;
@@ -142,7 +143,7 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
    * Pipe events from an agent's fullStream to the workflow stream
    */
   async pipeFrom(
-    fullStream: AsyncIterable<any>,
+    fullStream: AsyncIterable<VoltAgentTextStreamPart<any>>,
     options?: {
       prefix?: string;
       agentId?: string;
@@ -161,30 +162,32 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
       this.write({
         type: `${prefix}${part.type}`,
         from: options?.agentId || part.subAgentId || part.subAgentName || this.stepName,
-        // Use proper WorkflowStreamEvent fields
-        input: part.type === "tool-call" ? part.args : undefined,
+        // Map input field based on event type
+        input: part.type === "tool-call" && "input" in part ? part.input : undefined,
+        // Map output field based on event type
         output:
-          part.type === "text-delta"
-            ? part.textDelta
-            : part.type === "tool-result"
-              ? part.result
+          part.type === "text-delta" && "text" in part
+            ? part.text
+            : part.type === "tool-result" && "output" in part
+              ? part.output
               : undefined,
+        // Build metadata based on event type
         metadata: {
           originalType: part.type,
-          // Only include relevant metadata per type
           ...(part.type === "tool-call" && {
-            toolName: part.toolName,
-            toolCallId: part.toolCallId,
+            toolName: "toolName" in part ? part.toolName : undefined,
+            toolCallId: "toolCallId" in part ? part.toolCallId : undefined,
           }),
           ...(part.type === "tool-result" && {
-            toolName: part.toolName,
-            toolCallId: part.toolCallId,
+            toolName: "toolName" in part ? part.toolName : undefined,
+            toolCallId: "toolCallId" in part ? part.toolCallId : undefined,
           }),
-          ...(part.type === "finish" && {
-            finishReason: part.finishReason,
-            usage: part.usage,
-          }),
-          ...(part.type === "error" && { error: part.error }),
+          ...(part.type === "finish" &&
+            "totalUsage" in part && {
+              finishReason: "finishReason" in part ? part.finishReason : undefined,
+              usage: part.totalUsage,
+            }),
+          ...(part.type === "error" && "error" in part && { error: part.error }),
         },
       });
     }
