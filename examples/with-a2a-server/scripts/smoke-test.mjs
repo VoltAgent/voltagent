@@ -262,6 +262,7 @@ async function run() {
 
   console.log("🧪 Verifying cancellation propagation with stub agent...\n");
   const stubAgent = {
+    id: "stub-agent",
     purpose: "Stub agent used for cancellation testing",
     async generateText() {
       await delay(10);

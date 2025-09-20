@@ -200,11 +200,17 @@ export abstract class BaseServerProvider implements IServerProvider {
       });
     };
 
-    if (this.deps.mcp?.registry) {
+    const mcpRegistry = this.deps.mcp?.registry;
+    const registeredMcpServers =
+      mcpRegistry && typeof mcpRegistry.list === "function" ? mcpRegistry.list() : [];
+    if (registeredMcpServers.length > 0) {
       addRoutes(MCP_ROUTES, "MCP Endpoints");
     }
 
-    if (this.deps.a2a?.registry) {
+    const a2aRegistry = this.deps.a2a?.registry;
+    const registeredA2AServers =
+      a2aRegistry && typeof a2aRegistry.list === "function" ? a2aRegistry.list() : [];
+    if (registeredA2AServers.length > 0) {
       addRoutes(A2A_ROUTES, "A2A Endpoints");
     }
 
