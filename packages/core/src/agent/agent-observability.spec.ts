@@ -162,6 +162,7 @@ describe("Agent with Observability", () => {
             {
               type: "finish",
               finishReason: "stop",
+              usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
               totalUsage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
             },
           ],
