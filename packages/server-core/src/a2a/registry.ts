@@ -5,12 +5,12 @@ export interface A2AServerLookupResult {
   metadata?: A2AServerMetadata;
 }
 
-export function listA2AServers(registry: A2AServerRegistry): A2AServerMetadata[] {
+export function listA2AServers(registry: A2AServerRegistry<A2AServerLike>): A2AServerMetadata[] {
   return registry.listMetadata();
 }
 
 export function lookupA2AServer(
-  registry: A2AServerRegistry,
+  registry: A2AServerRegistry<A2AServerLike>,
   serverId: string,
 ): A2AServerLookupResult {
   const server = registry.getServer(serverId);

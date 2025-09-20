@@ -1,5 +1,6 @@
 import type {
   A2ARequestContext,
+  A2AServerLike,
   A2AServerRegistry,
   AgentCard,
   JsonRpcHandlerResult,
@@ -23,7 +24,7 @@ export function parseJsonRpcRequest(payload: unknown): JsonRpcRequest {
 }
 
 export function resolveAgentCard(
-  registry: A2AServerRegistry,
+  registry: A2AServerRegistry<A2AServerLike>,
   serverId: string,
   agentId: string,
   context: A2ARequestContext = {},
@@ -37,7 +38,7 @@ export function resolveAgentCard(
 }
 
 export async function executeA2ARequest(params: {
-  registry: A2AServerRegistry;
+  registry: A2AServerRegistry<A2AServerLike>;
   serverId: string;
   request: JsonRpcRequest;
   context?: A2ARequestContext;

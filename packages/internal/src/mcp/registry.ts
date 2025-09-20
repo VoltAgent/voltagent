@@ -47,12 +47,9 @@ export class MCPServerRegistry<TServer extends MCPServerLike = MCPServerLike> {
       this.metadataById.delete(serverId);
     }
 
-    const closeResult = server.close?.();
-    if (closeResult && typeof (closeResult as Promise<unknown>).then === "function") {
-      (closeResult as Promise<unknown>).catch(() => {
-        /* noop */
-      });
-    }
+    void server.close?.().catch(() => {
+      /* noop */
+    });
   }
 
   getServer(id: string): TServer | undefined {
