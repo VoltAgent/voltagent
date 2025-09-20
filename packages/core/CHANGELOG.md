@@ -1,5 +1,36 @@
 # @voltagent/core
 
+## 1.1.14
+
+### Patch Changes
+
+- [#598](https://github.com/VoltAgent/voltagent/pull/598) [`783d334`](https://github.com/VoltAgent/voltagent/commit/783d334a1d9252eb227ef2e1d69d3e939765a13f) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve workflow stream text-delta empty output and improve type safety
+
+  ## The Problem
+
+  When forwarding agent.streamText() results to workflow streams via writer.pipeFrom(), text-delta events had empty output fields. This was caused by incorrect field mapping - the code was accessing `part.textDelta` but AI SDK v5 uses `part.text` for text-delta events.
+
+  ## The Solution
+
+  Fixed field mappings to match AI SDK v5 conventions:
+  - text-delta: `textDelta` → `text`
+  - tool-call: `args` → `input`
+  - tool-result: `result` → `output`
+  - finish: `usage` → `totalUsage`
+
+  Also improved type safety by:
+  - Using `VoltAgentTextStreamPart` type instead of `any` for fullStream parameter
+  - Proper type guards with `in` operator to check field existence
+  - Eliminated need for `as any` casts
+
+  ## Impact
+  - Fixes "output field is undefined" for text-delta events in workflow streams
+  - Provides proper TypeScript type checking for stream parts
+  - Ensures compatibility with AI SDK v5 field conventions
+  - Better IDE support and compile-time error detection
+
+- [#600](https://github.com/VoltAgent/voltagent/pull/600) [`31ded11`](https://github.com/VoltAgent/voltagent/commit/31ded113253dd73c28a797f185b2ea0595160cf7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add missing export `MCPConfiguration`
+
 ## 1.1.13
 
 ### Patch Changes
