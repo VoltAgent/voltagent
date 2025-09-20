@@ -739,14 +739,6 @@ export class MCPServer {
     return this.deps;
   }
 
-  private collectToolsFromAgents(agents: Agent[]): Tool[] {
-    const tools: Tool[] = [];
-    for (const agent of agents) {
-      tools.push(...agent.getTools());
-    }
-    return tools;
-  }
-
   private normalizeConfiguredAgents(agents: Record<string, Agent>): Agent[] {
     const map = new Map<string, Agent>();
     for (const agent of Object.values(agents)) {
@@ -886,7 +878,15 @@ export class MCPServer {
       }
     }
     const combinedAgents = Array.from(agentMap.values());
-    const filteredAgents = this.getAgentFilter()({ items: combinedAgents, context });
+    const topLevelAgents = combinedAgents.filter((agent) => {
+      if (!agent.id || !deps.getParentAgentIds) {
+        return true;
+      }
+      const parents = deps.getParentAgentIds(agent.id);
+      return !parents || parents.length === 0;
+    });
+
+    const filteredAgents = this.getAgentFilter()({ items: topLevelAgents, context });
 
     const registeredWorkflows = deps.workflowRegistry.getAllWorkflows();
     const workflowSource = new Map<string, RegisteredWorkflow>();
@@ -930,24 +930,7 @@ export class MCPServer {
       }
     }
 
-    const collectedTools = this.collectToolsFromAgents(filteredAgents);
     const toolById = new Map<string, Tool>();
-
-    for (const tool of collectedTools) {
-      const key = tool.id ?? tool.name;
-      if (key && !toolById.has(key)) {
-        toolById.set(key, tool);
-      }
-    }
-
-    if (deps.getTools) {
-      for (const tool of deps.getTools()) {
-        const key = tool.id ?? tool.name;
-        if (key && !toolById.has(key)) {
-          toolById.set(key, tool);
-        }
-      }
-    }
 
     for (const tool of this.configuredTools) {
       const key = tool.id ?? tool.name;

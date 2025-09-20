@@ -17,6 +17,16 @@ interface AgentCallArgs {
 }
 
 function toMcpTool(agent: Agent, name: string): MCPTool {
+  const purpose = typeof agent.purpose === "string" ? agent.purpose.trim() : undefined;
+  const instructions =
+    typeof agent.instructions === "string" ? agent.instructions.trim() : undefined;
+  const description =
+    purpose && purpose.length > 0
+      ? purpose
+      : instructions && instructions.length > 0
+        ? instructions
+        : `VoltAgent agent ${agent.name}`;
+
   const inputSchema = {
     type: "object",
     properties: {
@@ -49,7 +59,7 @@ function toMcpTool(agent: Agent, name: string): MCPTool {
   return {
     name,
     title: agent.name,
-    description: agent.purpose ?? `VoltAgent agent ${agent.name}`,
+    description,
     inputSchema: inputSchema as MCPTool["inputSchema"],
     annotations: {
       title: agent.name,

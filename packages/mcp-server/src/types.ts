@@ -121,13 +121,13 @@ export interface MCPServerConfig {
   version: string;
   description?: string;
   protocols?: ProtocolConfig;
-  filterTools?: FilterFunction<VoltTool>;
+  filterTools?: FilterFunction<VoltTool<any, any>>;
   filterAgents?: FilterFunction<Agent>;
   filterWorkflows?: FilterFunction<WorkflowSummary>;
   capabilities?: MCPServerCapabilitiesConfig;
   agents?: Record<string, Agent>;
   workflows?: Record<string, MCPWorkflowConfigEntry>;
-  tools?: Record<string, VoltTool>;
+  tools?: Record<string, VoltTool<any, any>>;
   releaseDate?: string;
   packages?: MCPServerPackageInfo[];
   remotes?: MCPServerRemoteInfo[];
@@ -208,7 +208,7 @@ export interface MCPServerDeps extends BaseMCPServerDeps {
       error?: unknown;
     } | null>;
   };
-  getTools?: () => VoltTool[];
+  getParentAgentIds?: (agentId: string) => string[];
   logging?: MCPLoggingAdapter;
   prompts?: MCPPromptsAdapter;
   resources?: MCPResourcesAdapter;

@@ -42,6 +42,8 @@ export const mcpServer = new MCPServer({
 });
 ```
 
+> 📘 **Tip:** When you expose agents through MCP, their `purpose` field becomes the tool description shown in clients. Keep it short and user-facing (fallback is the agent instructions if `purpose` is empty).
+
 This minimal configuration:
 
 - Names the server `voltagent-example` (used in URLs and IDE listings).
@@ -112,7 +114,9 @@ const statusTool = createTool({
 
 const supportAgent = new Agent({
   name: "Support Agent",
-  instructions: "Route customer tickets to the correct queue.",
+  purpose: "Route customer tickets to the correct queue.",
+  instructions:
+    "Use internal knowledge to triage customer tickets and respond with routing guidance.",
   model: openai("gpt-4o-mini"),
   tools: [statusTool],
 });

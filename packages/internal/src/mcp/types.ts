@@ -15,7 +15,7 @@ export interface MCPServerDeps {
     getAllAgents(): unknown[];
   };
   workflowRegistry?: Record<string, unknown>;
-  getTools?: () => unknown[];
+  getParentAgentIds?: (agentId: string) => string[];
   logging?: unknown;
   prompts?: unknown;
   resources?: unknown;

@@ -77,6 +77,26 @@ const approvalTool = createTool({
   },
 });
 
+const storyWriter = new Agent({
+  name: "StoryWriterAgent",
+  instructions: "You are a creative story writer.",
+  model: openai("gpt-4o-mini"),
+});
+
+const translatorAgent = new Agent({
+  name: "TranslatorAgent",
+  instructions: "You are a skilled translator.",
+  model: openai("gpt-4o-mini"),
+});
+
+const supervisorAgent = new Agent({
+  name: "SupervisorAgent",
+  instructions:
+    "You are a supervisor agent that delegates tasks to specialized agents. Use the `StoryWriterAgent` agent for creative writing tasks and the `TranslatorAgent` agent for translation tasks. Always choose the most appropriate agent for the given task.",
+  model: openai("gpt-4o-mini"),
+  subAgents: [storyWriter, translatorAgent],
+});
+
 const assistant = new Agent({
   name: "AssistantAgent",
   instructions:
@@ -171,7 +191,7 @@ const mcpServer = new MCPServer({
   protocols: {
     stdio: true,
     http: true,
-    sse: false,
+    sse: true,
   },
   filterTools: ({ items }) => {
     return items;
@@ -248,6 +268,9 @@ const mcpServer = new MCPServer({
 
 new VoltAgent({
   agents: {
+    supervisorAgent,
+    translatorAgent,
+    storyWriter,
     assistant,
   },
   mcpServers: {

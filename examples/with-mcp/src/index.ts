@@ -16,7 +16,7 @@ const mcpConfig = new MCPConfiguration({
     filesystem: {
       type: "stdio",
       command: "npx",
-      args: ["-y", "@modelcontextprotocol/server-filesystem", path.resolve("./data")],
+      args: ["-y", "mcp-remote", "http://localhost:3141/mcp/voltagent-example/mcp"],
     },
   },
 });

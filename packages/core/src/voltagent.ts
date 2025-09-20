@@ -8,7 +8,6 @@ import type { Agent } from "./agent/agent";
 import { getGlobalLogger } from "./logger";
 import { VoltAgentObservability } from "./observability/voltagent-observability";
 import { AgentRegistry } from "./registries/agent-registry";
-import type { Tool } from "./tool";
 import type { IServerProvider, VoltAgentOptions } from "./types";
 import { checkForUpdates } from "./utils/update";
 import { isValidVoltOpsKeys } from "./utils/voltops-validation";
@@ -463,6 +462,7 @@ export class VoltAgent {
         getAllAgents: () => this.registry.getAllAgents() as any,
         getAgent: (id: string) => this.registry.getAgent(id) as any,
       },
+      getParentAgentIds: (agentId: string) => this.registry.getParentAgentIds(agentId),
       workflowRegistry: {
         getWorkflow: (id: string) => this.workflowRegistry.getWorkflow(id) as any,
         getAllWorkflows: () => this.workflowRegistry.getAllWorkflows() as any,
@@ -480,7 +480,6 @@ export class VoltAgent {
             resumeStepId,
           ),
       },
-      getTools: () => this.collectAllTools() as any,
     } as MCPServerDeps;
   }
 
@@ -523,13 +522,5 @@ export class VoltAgent {
       this.a2aServerRegistry.unregister(server);
       this.a2aServers.delete(server);
     }
-  }
-
-  private collectAllTools(): Tool[] {
-    const tools: Tool[] = [];
-    for (const agent of this.registry.getAllAgents()) {
-      tools.push(...agent.getTools());
-    }
-    return tools;
   }
 }

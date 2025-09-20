@@ -1,5 +1,10 @@
 import type { MCPServerDeps, MCPServerLike, MCPServerMetadata } from "./types";
 
+export interface RegisterOptions {
+  startTransports?: boolean;
+  transportOptions?: Record<string, unknown>;
+}
+
 export class MCPServerRegistry<TServer extends MCPServerLike = MCPServerLike> {
   private readonly servers = new Set<TServer>();
   private readonly idByServer = new Map<TServer, string>();
