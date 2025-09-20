@@ -3,16 +3,11 @@
  */
 
 import type { Logger } from "@voltagent/internal";
+import type { A2AServerFactory, A2AServerLike } from "@voltagent/internal/a2a";
+import type { A2AServerRegistry } from "@voltagent/internal/a2a";
+import type { MCPServerFactory, MCPServerLike } from "@voltagent/internal/mcp";
+import type { MCPServerRegistry } from "@voltagent/internal/mcp";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type {
-  MCPElicitationAdapter,
-  MCPLoggingAdapter,
-  MCPPromptsAdapter,
-  MCPResourcesAdapter,
-  MCPServer,
-  MCPServerFactory,
-  MCPServerRegistry,
-} from "@voltagent/mcp-server";
 import type { Agent } from "./agent/agent";
 import type { AgentStatus } from "./agent/types";
 import type { VoltAgentObservability } from "./observability/voltagent-observability";
@@ -21,6 +16,28 @@ import type { VoltOpsClient } from "./voltops/client";
 import type { WorkflowChain } from "./workflow/chain";
 import type { RegisteredWorkflow } from "./workflow/registry";
 import type { Workflow, WorkflowSuspendController } from "./workflow/types";
+
+export interface MCPLoggingAdapter {
+  setLevel?(level: string): Promise<void> | void;
+  getLevel?(): Promise<string | undefined> | string | undefined;
+}
+
+export interface MCPPromptsAdapter {
+  listPrompts(): Promise<unknown[]>;
+  getPrompt(params: unknown): Promise<unknown>;
+}
+
+export interface MCPResourcesAdapter {
+  listResources(): Promise<unknown>;
+  readResource(uri: string): Promise<unknown>;
+  listResourceTemplates?(): Promise<unknown>;
+  subscribe?(params: unknown, headers?: Record<string, string>): Promise<void> | void;
+  unsubscribe?(params: unknown): Promise<void> | void;
+}
+
+export interface MCPElicitationAdapter {
+  sendRequest(request: unknown): Promise<unknown>;
+}
 
 // Re-export VoltOps types for convenience
 export type {
@@ -81,6 +98,9 @@ export interface ServerProviderDeps {
   observability?: VoltAgentObservability;
   mcp?: {
     registry: MCPServerRegistry;
+  };
+  a2a?: {
+    registry: A2AServerRegistry;
   };
 }
 
@@ -175,13 +195,12 @@ export type VoltAgentOptions = {
    * Optional collection of MCP servers to register alongside the primary server.
    * Enables exposing multiple VoltAgent surfaces through separate MCP endpoints.
    */
-  mcpServers?: Record<string, MCPServer | MCPServerFactory>;
-  mcpOptions?: {
-    logging?: MCPLoggingAdapter;
-    prompts?: MCPPromptsAdapter;
-    resources?: MCPResourcesAdapter;
-    elicitation?: MCPElicitationAdapter;
-  };
+  mcpServers?: Record<string, MCPServerLike | MCPServerFactory>;
+
+  /**
+   * Optional collection of A2A servers to expose agents via the Agent-to-Agent protocol.
+   */
+  a2aServers?: Record<string, A2AServerLike | A2AServerFactory>;
 
   // telemetryExporter removed - migrated to OpenTelemetry
 

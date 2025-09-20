@@ -45,6 +45,7 @@ const sidebars: SidebarsConfig = {
           label: "MCP",
           items: ["agents/mcp/mcp", "agents/mcp/mcp-server"],
         },
+        "agents/a2a/a2a-server",
         "agents/hooks",
         "agents/multi-modal",
         "agents/providers",

@@ -5,6 +5,7 @@
   "dependencies": {
     "@voltagent/internal": "^0.0.10",
     "@voltagent/mcp-server": "^1.0.0",
+    "@voltagent/a2a-server": "^1.0.0",
     "ai": "^5.0.12",
     "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.1",

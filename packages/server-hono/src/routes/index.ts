@@ -38,6 +38,7 @@ import {
 } from "./agent.routes";
 import { getLogsRoute } from "./log.routes";
 export { registerMcpRoutes } from "./mcp.routes";
+export { registerA2ARoutes } from "./a2a.routes";
 
 /**
  * Register agent routes

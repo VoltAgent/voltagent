@@ -36,12 +36,53 @@ const currentTimeTool = createTool({
   },
 });
 
+const approvalTool = createTool({
+  name: "confirm_action",
+  description: "Ask the operator to approve a potentially risky action.",
+  parameters: z.object({
+    summary: z.string().describe("Short description of the action that needs confirmation"),
+  }),
+  async execute({ summary }, operationContext) {
+    const request = operationContext?.elicitation;
+    if (!request) {
+      throw new Error("Elicitation bridge unavailable; cannot request confirmation");
+    }
+
+    const response = await request({
+      message: `Please approve the following action: ${summary}`,
+      schema: {
+        type: "object",
+        properties: {
+          confirmed: {
+            type: "boolean",
+            description: "Set to true if the action should proceed",
+          },
+          approver: {
+            type: "string",
+            description: "Name of the operator giving approval",
+          },
+        },
+        required: ["confirmed", "approver"],
+      },
+    });
+
+    const content = (
+      response as { content?: { confirmed?: boolean; approver?: string } } | undefined
+    )?.content;
+
+    return {
+      confirmed: content?.confirmed ?? false,
+      approver: content?.approver ?? "unknown",
+    };
+  },
+});
+
 const assistant = new Agent({
   name: "AssistantAgent",
   instructions:
     "You are a helpful assistant. Use the `current_time` tool when the user wants to know the time.",
   model: openai("gpt-4o-mini"),
-  tools: [currentTimeTool],
+  tools: [currentTimeTool, approvalTool],
 });
 
 const expenseApprovalWorkflow = createWorkflowChain({
@@ -129,7 +170,7 @@ const mcpServer = new MCPServer({
   description: "VoltAgent MCP stdio example",
   protocols: {
     stdio: true,
-    http: false,
+    http: true,
     sse: false,
   },
   filterTools: ({ items }) => {
@@ -137,6 +178,72 @@ const mcpServer = new MCPServer({
   },
   // Add the workflow to the MCP server
   workflows: { expenseApprovalWorkflow },
+  adapters: {
+    prompts: {
+      async listPrompts() {
+        return [
+          {
+            name: "expense-triage",
+            description: "Summaries the expense request before approval",
+            arguments: [],
+          },
+        ];
+      },
+      async getPrompt({ name }) {
+        if (name !== "expense-triage") {
+          throw new Error(`Unknown prompt '${name}'`);
+        }
+
+        return {
+          description: "Summaries the current expense request for an approver.",
+          messages: [
+            {
+              role: "user",
+              content: {
+                type: "text",
+                text: "Provide a short summary of the expense request including amount and category.",
+              },
+            },
+          ],
+        };
+      },
+    },
+    resources: {
+      async listResources() {
+        return [
+          {
+            uri: "volt://docs/expense-policy",
+            name: "Expense Policy",
+            description: "High-level policy reminder for managers approving expenses.",
+            mimeType: "text/markdown",
+          },
+        ];
+      },
+      async readResource(uri) {
+        if (uri !== "volt://docs/expense-policy") {
+          throw new Error(`Unknown resource '${uri}'`);
+        }
+        return {
+          uri,
+          mimeType: "text/markdown",
+          text: "# Expense Policy\n\nExpenses above $500 require explicit manager approval.",
+        };
+      },
+    },
+    elicitation: {
+      async sendRequest(request) {
+        console.log("Elicitation request received", request);
+        // In a real integration you would ask a human. For the example we auto-approve.
+        return {
+          action: "accept",
+          content: {
+            confirmed: true,
+            approver: "demo-operator",
+          },
+        };
+      },
+    },
+  },
 });
 
 new VoltAgent({

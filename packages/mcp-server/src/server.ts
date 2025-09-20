@@ -8,6 +8,8 @@ import type { StreamableHTTPServerTransportOptions } from "@modelcontextprotocol
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type {
   CallToolResult,
+  ElicitRequest,
+  ElicitResult,
   GetPromptRequest,
   GetPromptResult,
   Tool as MCPToolDefinition,
@@ -19,6 +21,7 @@ import type {
 } from "@modelcontextprotocol/sdk/types.js";
 import {
   CallToolRequestSchema,
+  ElicitRequestSchema,
   GetPromptRequestSchema,
   ListPromptsRequestSchema,
   ListResourceTemplatesRequestSchema,
@@ -36,6 +39,8 @@ import { safeStringify } from "@voltagent/internal/utils";
 import { AgentAdapter } from "./adapters/agent";
 import { ToolAdapter } from "./adapters/tool";
 import { WorkflowAdapter } from "./adapters/workflow";
+import { PromptBridge } from "./capabilities/prompts";
+import { ResourceBridge } from "./capabilities/resources";
 import type { FilterContext, WorkflowSummary } from "./filters";
 import { passthroughFilter } from "./filters";
 import type {
@@ -45,8 +50,13 @@ import type {
 } from "./transports/registry";
 import { transportRegistry as defaultTransportRegistry } from "./transports/registry";
 import type {
+  CapabilityRecord,
   MCPAgentMetadata,
+  MCPElicitationAdapter,
   MCPListedTool,
+  MCPLoggingAdapter,
+  MCPPromptsAdapter,
+  MCPResourcesAdapter,
   MCPServerCapabilitiesConfig,
   MCPServerConfig,
   MCPServerDeps,
@@ -54,13 +64,12 @@ import type {
   MCPServerPackageInfo,
   MCPServerRemoteInfo,
   MCPServerSSERequestOptions,
-  MCPStaticPromptConfig,
-  MCPStaticResourceConfig,
   MCPStreamableHTTPRequestOptions,
   MCPToolMetadata,
   MCPToolOrigin,
   MCPWorkflowConfigEntry,
   ProtocolConfig,
+  ProtocolRecord,
 } from "./types";
 import "./transports";
 import { ExternalSseTransport, type SseBridge } from "./transports/external-sse";
@@ -69,7 +78,10 @@ interface RegisteredToolEntry {
   name: string;
   definition: MCPToolDefinition;
   origin: MCPToolOrigin;
-  execute: (args: unknown) => Promise<CallToolResult>;
+  execute: (
+    args: unknown,
+    requestElicitation?: (request: ElicitRequest["params"]) => Promise<ElicitResult>,
+  ) => Promise<CallToolResult>;
 }
 
 type TransportName = keyof ProtocolConfig;
@@ -95,8 +107,8 @@ export class MCPServer {
   private readonly serverId: string;
   private readonly metadata: MCPServerMetadata;
   private capabilityConfig: MCPServerCapabilitiesConfig;
-  private readonly staticPrompts: MCPStaticPromptConfig[];
-  private readonly staticResources: MCPStaticResourceConfig[];
+  private readonly promptBridge: PromptBridge;
+  private readonly resourceBridge: ResourceBridge;
   private readonly configuredAgents: Agent[];
   private readonly configuredAgentMetadata: MCPAgentMetadata[];
   private readonly configuredWorkflows: RegisteredWorkflow[];
@@ -108,6 +120,14 @@ export class MCPServer {
   private readonly releaseDate?: string;
   private readonly packagesInfo?: MCPServerPackageInfo[];
   private readonly remotesInfo?: MCPServerRemoteInfo[];
+  private readonly elicitationHandlers = new WeakMap<
+    Server,
+    (request: ElicitRequest["params"]) => Promise<ElicitResult>
+  >();
+  private loggingAdapter?: MCPLoggingAdapter;
+  private promptsAdapter?: MCPPromptsAdapter;
+  private resourcesAdapter?: MCPResourcesAdapter;
+  private elicitationAdapter?: MCPElicitationAdapter;
 
   constructor(
     private readonly config: MCPServerConfig,
@@ -121,12 +141,12 @@ export class MCPServer {
     this.transportRegistry = transportRegistry;
     this.capabilityConfig = {
       logging: config.capabilities?.logging ?? false,
-      prompts: config.capabilities?.prompts ?? (config.promptsData?.length ?? 0) > 0,
-      resources: config.capabilities?.resources ?? (config.resourcesData?.length ?? 0) > 0,
+      prompts: config.capabilities?.prompts ?? Boolean(config.adapters?.prompts),
+      resources: config.capabilities?.resources ?? Boolean(config.adapters?.resources),
       elicitation: config.capabilities?.elicitation ?? false,
     };
-    this.staticPrompts = config.promptsData ? [...config.promptsData] : [];
-    this.staticResources = config.resourcesData ? [...config.resourcesData] : [];
+    this.promptBridge = new PromptBridge();
+    this.resourceBridge = new ResourceBridge();
     this.configuredAgents = this.normalizeConfiguredAgents(config.agents ?? {});
     this.configuredAgentMetadata = this.configuredAgents.map((agent) =>
       this.toAgentMetadata(agent),
@@ -155,15 +175,21 @@ export class MCPServer {
       sse: config.protocols?.sse ?? true,
     };
 
+    const metadataProtocols = {
+      ...protocolsConfig,
+    } as ProtocolRecord;
+
+    const metadataCapabilities = {
+      ...this.capabilityConfig,
+    } as CapabilityRecord;
+
     this.metadata = {
       id: this.serverId,
       name: config.name,
       version: config.version,
       description: config.description,
-      protocols: { ...protocolsConfig },
-      capabilities: { ...this.capabilityConfig },
-      promptsData: this.staticPrompts.length ? [...this.staticPrompts] : undefined,
-      resourcesData: this.staticResources.length ? [...this.staticResources] : undefined,
+      protocols: metadataProtocols,
+      capabilities: metadataCapabilities,
       agents: this.configuredAgentMetadata.length ? [...this.configuredAgentMetadata] : undefined,
       workflows: this.configuredWorkflowSummaries.length
         ? [...this.configuredWorkflowSummaries]
@@ -178,29 +204,45 @@ export class MCPServer {
   initialize(deps: MCPServerDeps): void {
     this.deps = deps;
 
-    if (deps.logging?.setLevel && this.capabilityConfig.logging !== false) {
+    const configAdapters = this.config.adapters ?? {};
+    this.loggingAdapter = configAdapters.logging ?? deps.logging;
+    this.promptsAdapter = configAdapters.prompts ?? deps.prompts;
+    this.resourcesAdapter = configAdapters.resources ?? deps.resources;
+    this.elicitationAdapter = configAdapters.elicitation ?? deps.elicitation;
+
+    this.promptBridge.attach({
+      adapter: this.promptsAdapter,
+      server: this.mcpServer,
+    });
+
+    this.resourceBridge.attach({
+      adapter: this.resourcesAdapter,
+      server: this.mcpServer,
+    });
+
+    if (this.loggingAdapter?.setLevel && this.capabilityConfig.logging !== false) {
       this.capabilityConfig.logging = true;
     }
 
-    if (
-      (deps.prompts?.getPrompt || deps.prompts?.listPrompts) &&
-      this.capabilityConfig.prompts !== false
-    ) {
+    if (this.promptBridge.enabled && this.capabilityConfig.prompts !== false) {
       this.capabilityConfig.prompts = true;
     }
 
-    if (
-      (deps.resources?.listResources || deps.resources?.readResource) &&
-      this.capabilityConfig.resources !== false
-    ) {
+    if (this.resourceBridge.enabled && this.capabilityConfig.resources !== false) {
       this.capabilityConfig.resources = true;
     }
 
-    if (deps.elicitation?.sendRequest && this.capabilityConfig.elicitation !== false) {
+    if (this.elicitationAdapter?.sendRequest && this.capabilityConfig.elicitation !== false) {
       this.capabilityConfig.elicitation = true;
     }
 
-    this.metadata.capabilities = { ...this.capabilityConfig };
+    if (this.capabilityConfig.elicitation) {
+      this.elicitationHandlers.set(this.mcpServer, this.buildElicitationHandler(this.mcpServer));
+    }
+
+    this.metadata.capabilities = {
+      ...this.capabilityConfig,
+    } as CapabilityRecord;
     this.metadata.agents = this.configuredAgentMetadata.length
       ? [...this.configuredAgentMetadata]
       : undefined;
@@ -939,6 +981,7 @@ export class MCPServer {
     serverInstance: Server,
     registry: Map<string, RegisteredToolEntry>,
   ): void {
+    const elicitationHandler = this.elicitationHandlers.get(serverInstance);
     const definitions = Array.from(registry.values()).map((entry) => entry.definition);
 
     serverInstance.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -953,7 +996,7 @@ export class MCPServer {
       }
 
       const args = request.params.arguments ?? {};
-      return entry.execute(args);
+      return entry.execute(args, elicitationHandler);
     });
   }
 
@@ -963,16 +1006,27 @@ export class MCPServer {
     }
     const capabilities: ServerCapabilities = { tools: {} };
 
+    if (this.promptBridge.enabled) {
+      this.promptBridge.registerServer(serverInstance);
+    }
+
+    if (this.resourceBridge.enabled) {
+      this.resourceBridge.registerServer(serverInstance);
+    }
+
     if (this.capabilityConfig.logging) {
       capabilities.logging = {};
     }
 
     if (this.capabilityConfig.prompts) {
-      capabilities.prompts = {};
+      capabilities.prompts = { listChanged: true };
     }
 
     if (this.capabilityConfig.resources) {
-      capabilities.resources = { subscribe: false, listChanged: false };
+      capabilities.resources = {
+        subscribe: this.resourceBridge.supportsNotifications,
+        listChanged: this.resourceBridge.supportsNotifications,
+      };
     }
 
     if (this.capabilityConfig.elicitation) {
@@ -994,44 +1048,63 @@ export class MCPServer {
 
     if (this.capabilityConfig.prompts) {
       serverInstance.setRequestHandler(ListPromptsRequestSchema, async () => ({
-        prompts: await this.listPrompts(),
+        prompts: await this.promptBridge.listPrompts(),
       }));
 
       serverInstance.setRequestHandler(GetPromptRequestSchema, async (request) => {
-        return this.getPrompt(request.params);
+        return this.promptBridge.getPrompt(request.params);
       });
     }
 
     if (this.capabilityConfig.resources) {
       serverInstance.setRequestHandler(ListResourcesRequestSchema, async () => ({
-        resources: await this.listResources(),
+        resources: await this.resourceBridge.listResources(),
       }));
 
       serverInstance.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-        const contents = await this.readResource(request.params.uri);
+        const contents = await this.resourceBridge.readResource(request.params.uri);
         return {
           contents: Array.isArray(contents) ? contents : [contents],
         };
       });
 
       serverInstance.setRequestHandler(ListResourceTemplatesRequestSchema, async () => ({
-        resourceTemplates: await this.listResourceTemplates(),
+        resourceTemplates: await this.resourceBridge.listTemplates(),
       }));
 
       serverInstance.setRequestHandler(SubscribeRequestSchema, async (request) => {
-        if (this.deps?.resources?.subscribe) {
-          await this.deps.resources.subscribe({ uri: request.params.uri });
-        }
+        await this.resourceBridge.handleSubscribe(request.params.uri);
         return {};
       });
 
       serverInstance.setRequestHandler(UnsubscribeRequestSchema, async (request) => {
-        if (this.deps?.resources?.unsubscribe) {
-          await this.deps.resources.unsubscribe({ uri: request.params.uri });
-        }
+        await this.resourceBridge.handleUnsubscribe(request.params.uri);
         return {};
       });
     }
+
+    if (this.capabilityConfig.elicitation) {
+      this.registerElicitationHandler(serverInstance);
+    }
+  }
+
+  private registerElicitationHandler(serverInstance: Server): void {
+    if (this.elicitationHandlers.has(serverInstance)) {
+      return;
+    }
+
+    const handler = this.buildElicitationHandler(serverInstance);
+
+    this.elicitationHandlers.set(serverInstance, handler);
+
+    serverInstance.setRequestHandler(ElicitRequestSchema, async (request) => {
+      const handlerFn = this.elicitationHandlers.get(serverInstance);
+      if (!handlerFn) {
+        throw new Error("Elicitation handler not configured");
+      }
+      const response = await handlerFn(request.params);
+      return response;
+    });
   }
 
   private createServerForContext(context: FilterContext): Server {
@@ -1045,7 +1118,31 @@ export class MCPServer {
     this.registerCapabilityHandlers(serverInstance);
     this.registerToolHandlers(serverInstance, registry);
 
+    if (this.capabilityConfig.elicitation) {
+      const handler = this.buildElicitationHandler(serverInstance);
+
+      this.elicitationHandlers.set(serverInstance, handler);
+
+      serverInstance.setRequestHandler(ElicitRequestSchema, async (request) => {
+        const handlerFn = this.elicitationHandlers.get(serverInstance);
+        if (!handlerFn) {
+          throw new Error("Elicitation handler not configured");
+        }
+        return handlerFn(request.params);
+      });
+    }
+
     return serverInstance;
+  }
+
+  private buildElicitationHandler(serverInstance: Server) {
+    return async (request: ElicitRequest["params"]): Promise<ElicitResult> => {
+      if (this.elicitationAdapter?.sendRequest) {
+        return this.elicitationAdapter.sendRequest(request);
+      }
+      const response = await serverInstance.elicitInput(request);
+      return response as ElicitResult;
+    };
   }
 
   private createToolEntries(tools: Tool[], usedNames: Set<string>): RegisteredToolEntry[] {
@@ -1056,7 +1153,10 @@ export class MCPServer {
         name,
         definition,
         origin: "tool",
-        execute: (args: unknown) => ToolAdapter.executeTool(tool, args),
+        execute: (args: unknown, requestElicitation) =>
+          ToolAdapter.executeTool(tool, args, {
+            requestElicitation,
+          }),
       };
     });
   }
@@ -1070,7 +1170,8 @@ export class MCPServer {
         name,
         definition,
         origin: "agent",
-        execute: (args: unknown) => AgentAdapter.executeAgent(agent, args),
+        execute: (args: unknown, requestElicitation) =>
+          AgentAdapter.executeAgent(agent, args, requestElicitation),
       };
     });
   }
@@ -1091,7 +1192,8 @@ export class MCPServer {
         name: runName,
         definition: runDefinition,
         origin: "workflow",
-        execute: (args: unknown) => WorkflowAdapter.executeWorkflow(registered, args),
+        execute: (args: unknown, requestElicitation) =>
+          WorkflowAdapter.executeWorkflow(registered, args, requestElicitation),
       });
 
       const resumeName = this.createUniqueName(
@@ -1150,8 +1252,6 @@ export class MCPServer {
       ...this.metadata,
       protocols: { ...this.metadata.protocols },
       capabilities: this.metadata.capabilities ? { ...this.metadata.capabilities } : undefined,
-      promptsData: this.metadata.promptsData ? [...this.metadata.promptsData] : undefined,
-      resourcesData: this.metadata.resourcesData ? [...this.metadata.resourcesData] : undefined,
       agents: this.metadata.agents
         ? this.metadata.agents.map((agent) => ({ ...agent }))
         : undefined,
@@ -1169,76 +1269,40 @@ export class MCPServer {
   }
 
   public async setLogLevel(level: string): Promise<void> {
-    if (this.deps?.logging?.setLevel) {
-      await this.deps.logging.setLevel(level);
+    if (this.loggingAdapter?.setLevel) {
+      await this.loggingAdapter.setLevel(level);
     }
   }
 
   public async listPrompts(): Promise<Prompt[]> {
-    if (this.deps?.prompts?.listPrompts) {
-      return this.deps.prompts.listPrompts();
-    }
-
-    return this.staticPrompts.map((prompt) => ({
-      name: prompt.name,
-      description: prompt.description,
-      arguments: [],
-    }));
+    return this.promptBridge.listPrompts();
   }
 
   public async getPrompt(params: GetPromptRequest["params"]): Promise<GetPromptResult> {
-    if (this.deps?.prompts?.getPrompt) {
-      return this.deps.prompts.getPrompt(params);
-    }
-
-    const matched = this.staticPrompts.find((prompt) => prompt.name === params.name);
-    if (!matched) {
-      throw new Error(`Prompt '${params.name}' not found`);
-    }
-
-    return {
-      description: matched.description,
-      messages: matched.messages,
-    };
+    return this.promptBridge.getPrompt(params);
   }
 
   public async listResources(): Promise<Resource[]> {
-    if (this.deps?.resources?.listResources) {
-      return this.deps.resources.listResources();
-    }
-
-    return this.staticResources.map((resource) => ({
-      uri: resource.uri,
-      name: resource.name ?? resource.uri,
-      description: resource.description,
-      mimeType: resource.mimeType,
-    }));
+    return this.resourceBridge.listResources();
   }
 
   public async readResource(uri: string): Promise<ResourceContents | ResourceContents[]> {
-    if (this.deps?.resources?.readResource) {
-      return this.deps.resources.readResource(uri);
-    }
-
-    const resource = this.staticResources.find((entry) => entry.uri === uri);
-    if (!resource) {
-      throw new Error(`Resource '${uri}' not found`);
-    }
-
-    const contents: ResourceContents = {
-      uri: resource.uri,
-      mimeType: resource.mimeType,
-      ...(resource.text ? { text: resource.text } : {}),
-      ...(resource.blobBase64 ? { blob: resource.blobBase64 } : {}),
-    };
-
-    return contents;
+    return this.resourceBridge.readResource(uri);
   }
 
   public async listResourceTemplates(): Promise<ResourceTemplate[]> {
-    if (this.deps?.resources?.listResourceTemplates) {
-      return this.deps.resources.listResourceTemplates();
-    }
-    return [];
+    return this.resourceBridge.listTemplates();
+  }
+
+  public async notifyPromptListChanged(): Promise<void> {
+    await this.promptBridge.notifyChanged();
+  }
+
+  public async notifyResourceListChanged(): Promise<void> {
+    await this.resourceBridge.notifyListChanged();
+  }
+
+  public async notifyResourceUpdated(uri: string): Promise<void> {
+    await this.resourceBridge.notifyUpdated(uri);
   }
 }

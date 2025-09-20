@@ -1,12 +1,17 @@
-import type { CallToolResult, Tool as MCPTool } from "@modelcontextprotocol/sdk/types.js";
+import type {
+  CallToolResult,
+  ElicitRequest,
+  Tool as MCPTool,
+} from "@modelcontextprotocol/sdk/types.js";
 import type { RegisteredWorkflow } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
+import type { ElicitationRequestHandler } from "../constants";
 import type { MCPServerDeps } from "../types";
 import { type JsonSchemaObject, toJsonSchema } from "../utils/json-schema";
 
 interface WorkflowCallArgs {
   input?: unknown;
-  options?: Record<string, unknown>;
+  options?: Record<string, unknown> | Map<string | symbol, unknown>;
 }
 
 function toMcpTool(workflow: RegisteredWorkflow, name: string): MCPTool {
@@ -65,6 +70,7 @@ function toMcpTool(workflow: RegisteredWorkflow, name: string): MCPTool {
 async function executeWorkflow(
   workflow: RegisteredWorkflow,
   args: unknown,
+  requestElicitation?: ElicitationRequestHandler,
 ): Promise<CallToolResult> {
   const parsed = parseArgs(args);
   const requiresInput = Boolean(workflow.workflow.inputSchema);
@@ -72,7 +78,21 @@ async function executeWorkflow(
     throw new Error("Workflow call requires an 'input' payload matching the workflow schema");
   }
 
-  const execution = await workflow.workflow.run(parsed.input as never, parsed.options as never);
+  let runOptions = parsed.options;
+
+  if (requestElicitation) {
+    const handler = (request: unknown) => requestElicitation(request as ElicitRequest["params"]);
+
+    if (runOptions instanceof Map) {
+      runOptions.set("elicitation", handler);
+    } else if (runOptions) {
+      (runOptions as Record<string, unknown>).elicitation = handler;
+    } else {
+      runOptions = { elicitation: handler };
+    }
+  }
+
+  const execution = await workflow.workflow.run(parsed.input as never, runOptions as never);
   const payload = serializeExecution(execution);
 
   return {
@@ -99,9 +119,15 @@ function parseArgs(args: unknown): WorkflowCallArgs {
   };
 }
 
-function parseOptions(input: unknown): Record<string, unknown> | undefined {
+function parseOptions(
+  input: unknown,
+): Record<string, unknown> | Map<string | symbol, unknown> | undefined {
   if (!input || typeof input !== "object") {
     return undefined;
+  }
+
+  if (input instanceof Map) {
+    return input as Map<string | symbol, unknown>;
   }
 
   const record = input as Record<string, unknown>;

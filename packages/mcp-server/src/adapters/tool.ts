@@ -1,7 +1,12 @@
 import type { CallToolResult, Tool as MCPTool } from "@modelcontextprotocol/sdk/types.js";
-import type { Tool } from "@voltagent/core";
+import type { OperationContext, Tool } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
+import { type ElicitationRequestHandler, createStubOperationContext } from "../constants";
 import { toJsonSchema } from "../utils/json-schema";
+
+interface ExecuteToolOptions {
+  requestElicitation?: ElicitationRequestHandler;
+}
 
 function toMcpTool(tool: Tool, name: string, title?: string): MCPTool {
   const inputSchema = toJsonSchema(tool.parameters) as MCPTool["inputSchema"];
@@ -23,8 +28,18 @@ function toMcpTool(tool: Tool, name: string, title?: string): MCPTool {
   };
 }
 
-async function executeTool(tool: Tool, args: unknown): Promise<CallToolResult> {
-  const result = await tool.execute(args as Record<string, unknown>);
+async function executeTool(
+  tool: Tool,
+  args: unknown,
+  options?: ExecuteToolOptions,
+): Promise<CallToolResult> {
+  let operationContext: OperationContext | undefined;
+
+  if (options?.requestElicitation) {
+    operationContext = createStubOperationContext(options.requestElicitation);
+  }
+
+  const result = await tool.execute(args as Record<string, unknown>, operationContext);
   const text = typeof result === "string" ? result : safeStringify(result, { indentation: 2 });
 
   return {

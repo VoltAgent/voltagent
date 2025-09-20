@@ -162,4 +162,92 @@ export const mcpServer = new MCPServer({
 
 Filters receive the list of components sourced from the VoltAgent registries (plus any configured additions) and must return the array you want to expose. They are intended for pruning or sorting, use the `agents`/`workflows`/`tools` fields when you need to introduce brand-new entries.
 
-That’s it! Your VoltAgent stack now speaks MCP. Start the agent, open VoltOps Console (or your preferred MCP client), and you’ll see the server listed with its tools, prompts, and workflows ready to debug.
+## 6. Optional: stream prompts and resources
+
+MCP clients can ask a server for structured prompt templates (`prompts/list`, `prompts/get`) and arbitrary resources (`resources/list`, `resources/read`). VoltAgent lets you seed static content and/or forward to a dynamic source via the new `adapters` field:
+
+```ts title="src/mcp/server.ts"
+import { MCPServer } from "@voltagent/mcp-server";
+
+// Replace these placeholders with your own services or data sources
+const voltOps = {
+  prompts: {
+    list: async () => [
+      {
+        name: "triage",
+        description: "Short ticket triage message",
+        arguments: [],
+      },
+    ],
+    get: async (name: string, version?: string) => ({
+      description: `Prompt ${name}`,
+      messages: [{ role: "user", content: { type: "text", text: "Summarise ticket {{id}}" } }],
+      version,
+    }),
+  },
+};
+
+const knowledgeBase = {
+  list: async () => [
+    {
+      uri: "volt://docs/runbook",
+      name: "On-call runbook",
+      description: "Operational checklist",
+      mimeType: "text/markdown",
+    },
+  ],
+  read: async (uri: string) => ({
+    uri,
+    mimeType: "text/markdown",
+    text: "# On-call runbook\n...",
+  }),
+};
+
+export const mcpServer = new MCPServer({
+  name: "voltagent-example",
+  version: "0.1.0",
+  description: "VoltAgent MCP with prompts/resources",
+  adapters: {
+    prompts: {
+      listPrompts: async () => voltOps.prompts.list(),
+      getPrompt: async (params) => voltOps.prompts.get(params.name, params.version),
+    },
+    resources: {
+      listResources: async () => knowledgeBase.list(),
+      readResource: async (uri) => knowledgeBase.read(uri),
+    },
+  },
+});
+```
+
+- The `adapters` block forwards MCP requests to any backend (VoltOps Prompt Manager, a documentation service, your own REST API).
+- When you change external data, call `await mcpServer.notifyPromptListChanged()` or `await mcpServer.notifyResourceListChanged()` so connected IDEs receive the standard `list_changed` notifications. If you update a specific resource at runtime, invoke `await mcpServer.notifyResourceUpdated("volt://docs/runbook")` to push an incremental update only to subscribers.
+- If an adapter provides a `sendRequest` method, MCP clients can make `elicitation/create` calls. VoltAgent forwards these requests to the adapter so you can collect data from the user and return an `ElicitResult`. Tools can consume the bridge via `operationContext.elicitation`:
+
+```ts
+const confirmAction = createTool({
+  name: "confirm-action",
+  description: "Ask the operator to approve a risky step",
+  parameters: z.object({ description: z.string() }),
+  async execute(args, operationContext) {
+    const handler = operationContext?.elicitation;
+
+    if (!handler) {
+      throw new Error("Elicitation bridge unavailable");
+    }
+
+    return handler({
+      schema: {
+        type: "object",
+        properties: {
+          confirmed: { type: "boolean" },
+        },
+        required: ["confirmed"],
+      },
+      message: `Approve the following action: ${args.description}`,
+    });
+  },
+});
+```
+
+That’s it! Your VoltAgent stack now speaks MCP. Start the agent, open VoltOps Console (or your preferred MCP client), and you’ll see the server listed with its tools, prompts, resources, and workflows ready to debug.

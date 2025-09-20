@@ -13,6 +13,11 @@ export * from "./routes/definitions";
 export * from "./mcp";
 export * from "./mcp/handlers";
 
+// Export A2A helpers
+export * from "./a2a/registry";
+export * from "./a2a/routes";
+export * from "./a2a/handlers";
+
 // Export handlers
 export * from "./handlers/agent.handlers";
 export * from "./handlers/agent-additional.handlers";

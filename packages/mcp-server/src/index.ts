@@ -1,4 +1,7 @@
 export * from "./adapters";
+export * from "./capabilities/prompts";
+export * from "./capabilities/resources";
+export * from "./constants";
 export * from "./filters";
 export * from "./registry";
 export * from "./server";

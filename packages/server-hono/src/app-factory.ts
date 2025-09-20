@@ -9,6 +9,7 @@ import {
 import { cors } from "hono/cors";
 import { createAuthMiddleware } from "./auth/middleware";
 import {
+  registerA2ARoutes,
   registerAgentRoutes,
   registerLogRoutes,
   registerMcpRoutes,
@@ -61,6 +62,7 @@ export async function createApp(
   registerObservabilityRoutes(app as any, deps, logger);
   // Cast preserves compatibility when multiple copies of core types exist at build time.
   registerMcpRoutes(app as any, deps as any, logger);
+  registerA2ARoutes(app as any, deps as any, logger);
 
   // Allow user to configure the app with custom routes and middleware
   if (config.configureApp) {

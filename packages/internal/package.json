@@ -43,6 +43,26 @@
         "default": "./dist/utils/index.js"
       }
     },
+    "./a2a": {
+      "import": {
+        "types": "./dist/main/index.d.mts",
+        "default": "./dist/main/index.mjs"
+      },
+      "require": {
+        "types": "./dist/main/index.d.ts",
+        "default": "./dist/main/index.js"
+      }
+    },
+    "./mcp": {
+      "import": {
+        "types": "./dist/main/index.d.mts",
+        "default": "./dist/main/index.mjs"
+      },
+      "require": {
+        "types": "./dist/main/index.d.ts",
+        "default": "./dist/main/index.js"
+      }
+    },
     "./types": {
       "types": "./dist/types/index.d.ts"
     }
@@ -76,6 +96,12 @@
       ],
       "utils": [
         "dist/utils/index.d.ts"
+      ],
+      "a2a": [
+        "dist/main/index.d.ts"
+      ],
+      "mcp": [
+        "dist/main/index.d.ts"
       ],
       "types": [
         "dist/types/index.d.ts"

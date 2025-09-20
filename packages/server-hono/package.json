@@ -9,6 +9,7 @@
     "@hono/zod-openapi-v4": "npm:@hono/zod-openapi@^1.1.0",
     "@voltagent/core": "^1.1.10",
     "@voltagent/mcp-server": "^1.0.0",
+    "@voltagent/a2a-server": "^1.0.0",
     "@voltagent/internal": "^0.0.10",
     "@voltagent/server-core": "^1.0.8",
     "fetch-to-node": "^2.1.0",

@@ -173,6 +173,7 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   userId?: string;
   conversationId?: string;
   context?: ContextInput;
+  elicitation?: (request: unknown) => Promise<unknown>;
 
   // Parent tracking
   parentAgentId?: string;
@@ -1363,6 +1364,8 @@ export class Agent {
       new MemoryPersistQueue(this.memoryManager, { debounceMs: 200, logger }),
     );
 
+    const elicitationHandler = options?.elicitation ?? options?.parentOperationContext?.elicitation;
+
     return {
       operationId,
       context,
@@ -1376,6 +1379,7 @@ export class Agent {
       parentAgentId: options?.parentAgentId,
       traceContext,
       startTime: startTimeDate,
+      elicitation: elicitationHandler,
     };
   }
 

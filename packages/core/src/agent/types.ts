@@ -608,6 +608,9 @@ export type OperationContext = {
   /** Parent agent ID if part of a delegation chain */
   parentAgentId?: string;
 
+  /** Optional elicitation bridge for requesting user input */
+  elicitation?: (request: unknown) => Promise<unknown>;
+
   /** Trace context for managing span hierarchy and common attributes */
   traceContext: AgentTraceContext;
 

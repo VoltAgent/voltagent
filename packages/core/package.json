@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "@ai-sdk/provider-utils": "^3.0.0",
-    "@voltagent/mcp-server": "^1.0.0",
     "@types/node": "^24.2.1",
     "@types/uuid": "^10.0.0",
     "@vitest/coverage-v8": "^3.2.4",
@@ -53,16 +52,12 @@
   "module": "dist/index.mjs",
   "peerDependencies": {
     "@ai-sdk/provider-utils": "3.x",
-    "@voltagent/mcp-server": "^1.0.0",
     "@voltagent/logger": "1.x",
     "ai": "5.x",
     "zod": "^3.25.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
     "@voltagent/logger": {
-      "optional": true
-    },
-    "@voltagent/mcp-server": {
       "optional": true
     }
   },

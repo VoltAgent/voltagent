@@ -1,12 +1,9 @@
 import type { Logger } from "@voltagent/internal";
+import type { A2AServerDeps, A2AServerFactory, A2AServerLike } from "@voltagent/internal/a2a";
+import { A2AServerRegistry } from "@voltagent/internal/a2a";
+import type { MCPServerDeps, MCPServerFactory, MCPServerLike } from "@voltagent/internal/mcp";
+import { MCPServerRegistry } from "@voltagent/internal/mcp";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type {
-  MCPServer,
-  MCPServerDeps,
-  MCPServerFactory,
-  MCPServerLike,
-} from "@voltagent/mcp-server";
-import { MCPServerRegistry } from "@voltagent/mcp-server";
 import type { Agent } from "./agent/agent";
 import { getGlobalLogger } from "./logger";
 import { VoltAgentObservability } from "./observability/voltagent-observability";
@@ -31,11 +28,11 @@ export class VoltAgent {
   private observability?: VoltAgentObservability;
   private readonly mcpServers = new Set<MCPServerLike>();
   private readonly mcpServerRegistry = new MCPServerRegistry();
-  private readonly mcpOptions?: VoltAgentOptions["mcpOptions"];
+  private readonly a2aServers = new Set<A2AServerLike>();
+  private readonly a2aServerRegistry = new A2AServerRegistry();
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
-    this.mcpOptions = options.mcpOptions;
 
     // Initialize logger
     this.logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
@@ -112,12 +109,21 @@ export class VoltAgent {
         mcp: {
           registry: this.mcpServerRegistry,
         },
+        a2a: {
+          registry: this.a2aServerRegistry,
+        },
       });
     }
 
     if (options.mcpServers) {
       for (const entry of Object.values(options.mcpServers)) {
         this.initializeMCPServer(entry);
+      }
+    }
+
+    if (options.a2aServers) {
+      for (const entry of Object.values(options.a2aServers)) {
+        this.initializeA2AServer(entry);
       }
     }
 
@@ -403,6 +409,7 @@ export class VoltAgent {
         await this.shutdownTelemetry();
       }
 
+      await this.shutdownA2AServers();
       await this.shutdownMcpServers();
 
       this.logger.info("[VoltAgent] Graceful shutdown complete");
@@ -412,7 +419,7 @@ export class VoltAgent {
     }
   }
 
-  private initializeMCPServer(mcpServer: MCPServer | MCPServerFactory): MCPServerLike {
+  private initializeMCPServer(mcpServer: MCPServerLike | MCPServerFactory): MCPServerLike {
     const instance: MCPServerLike = typeof mcpServer === "function" ? mcpServer() : mcpServer;
 
     this.mcpServerRegistry.register(instance, this.getMCPDependencies(), {
@@ -424,11 +431,23 @@ export class VoltAgent {
     return instance;
   }
 
+  private initializeA2AServer(server: A2AServerLike | A2AServerFactory): A2AServerLike {
+    const instance: A2AServerLike = typeof server === "function" ? server() : server;
+
+    this.a2aServerRegistry.register(instance, this.getA2ADependencies());
+    this.a2aServers.add(instance);
+
+    return instance;
+  }
+
   private async startConfiguredMcpTransports(): Promise<void> {
     const startTasks: Promise<void>[] = [];
     for (const server of this.mcpServers) {
       if (typeof server.startConfiguredTransports === "function") {
-        startTasks.push(server.startConfiguredTransports());
+        const result = server.startConfiguredTransports();
+        if (result && typeof (result as Promise<void>).then === "function") {
+          startTasks.push(result as Promise<void>);
+        }
       }
     }
 
@@ -462,11 +481,16 @@ export class VoltAgent {
           ),
       },
       getTools: () => this.collectAllTools() as any,
-      logging: this.mcpOptions?.logging,
-      prompts: this.mcpOptions?.prompts,
-      resources: this.mcpOptions?.resources,
-      elicitation: this.mcpOptions?.elicitation,
     } as MCPServerDeps;
+  }
+
+  private getA2ADependencies(): A2AServerDeps {
+    return {
+      agentRegistry: {
+        getAgent: (id: string) => this.registry.getAgent(id) as any,
+        getAllAgents: () => this.registry.getAllAgents() as any,
+      },
+    } as A2AServerDeps;
   }
 
   public getServerInstance(): IServerProvider | undefined {
@@ -487,6 +511,17 @@ export class VoltAgent {
         this.mcpServerRegistry.unregister(server);
         this.mcpServers.delete(server);
       }
+    }
+  }
+
+  private async shutdownA2AServers(): Promise<void> {
+    if (this.a2aServers.size === 0) {
+      return;
+    }
+
+    for (const server of Array.from(this.a2aServers)) {
+      this.a2aServerRegistry.unregister(server);
+      this.a2aServers.delete(server);
     }
   }
 

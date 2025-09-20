@@ -15,6 +15,12 @@ import type {
   ResourceTemplate,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { Agent, RegisteredWorkflow, Tool as VoltTool, Workflow } from "@voltagent/core";
+import type {
+  MCPServerDeps as BaseMCPServerDeps,
+  MCPServerFactory as BaseMCPServerFactory,
+  MCPServerLike as BaseMCPServerLike,
+  MCPServerMetadata as BaseMCPServerMetadata,
+} from "@voltagent/internal/mcp";
 import type { FilterContext, FilterFunction, WorkflowSummary } from "./filters";
 import type { SseBridge } from "./transports/external-sse";
 
@@ -119,25 +125,29 @@ export interface MCPServerConfig {
   filterAgents?: FilterFunction<Agent>;
   filterWorkflows?: FilterFunction<WorkflowSummary>;
   capabilities?: MCPServerCapabilitiesConfig;
-  promptsData?: MCPStaticPromptConfig[];
-  resourcesData?: MCPStaticResourceConfig[];
   agents?: Record<string, Agent>;
   workflows?: Record<string, MCPWorkflowConfigEntry>;
   tools?: Record<string, VoltTool>;
   releaseDate?: string;
   packages?: MCPServerPackageInfo[];
   remotes?: MCPServerRemoteInfo[];
+  adapters?: MCPServerDynamicAdapters;
 }
 
-export interface MCPServerMetadata {
-  id: string;
-  name: string;
-  version: string;
-  description?: string;
-  protocols: ProtocolConfig;
-  capabilities?: MCPServerCapabilitiesConfig;
-  promptsData?: MCPStaticPromptConfig[];
-  resourcesData?: MCPStaticResourceConfig[];
+export interface MCPServerDynamicAdapters {
+  logging?: MCPLoggingAdapter;
+  prompts?: MCPPromptsAdapter;
+  resources?: MCPResourcesAdapter;
+  elicitation?: MCPElicitationAdapter;
+}
+
+export type ProtocolRecord = ProtocolConfig & Record<string, unknown>;
+export type CapabilityRecord = MCPServerCapabilitiesConfig & Record<string, unknown>;
+
+export interface MCPServerMetadata
+  extends Omit<BaseMCPServerMetadata, "protocols" | "capabilities" | "packages" | "remotes"> {
+  protocols?: ProtocolRecord;
+  capabilities?: CapabilityRecord;
   agents?: MCPAgentMetadata[];
   workflows?: WorkflowSummary[];
   tools?: MCPToolMetadata[];
@@ -173,7 +183,7 @@ export interface MCPServerSSERequestOptions {
   contextOverrides?: Partial<Omit<FilterContext, "transport">>;
 }
 
-export interface MCPServerDeps {
+export interface MCPServerDeps extends BaseMCPServerDeps {
   agentRegistry: {
     getAllAgents(): Agent[];
     getAgent(id: string): Agent | undefined;
@@ -205,15 +215,13 @@ export interface MCPServerDeps {
   elicitation?: MCPElicitationAdapter;
 }
 
-export type MCPServerFactory = () => MCPServerLike;
-
-export interface MCPServerLike {
+export interface MCPServerLike extends BaseMCPServerLike {
   initialize(deps: MCPServerDeps): void;
   startConfiguredTransports?(options?: Record<string, unknown>): Promise<void>;
   startTransport?(name: keyof ProtocolConfig, options?: Record<string, unknown>): Promise<void>;
   stopTransport?(name: keyof ProtocolConfig): Promise<void>;
   close?(): Promise<void>;
-  getMetadata?(): MCPServerMetadata;
+  getMetadata?(): Partial<MCPServerMetadata> & { id?: string };
   hasProtocol?(name: keyof ProtocolConfig): boolean;
   handleStreamableHttpRequest?(options: MCPStreamableHTTPRequestOptions): Promise<void>;
   handleSseRequest?(options: MCPServerSSERequestOptions): Promise<void>;
@@ -229,6 +237,9 @@ export interface MCPServerLike {
   listResources?(): Promise<Resource[]>;
   readResource?(uri: string): Promise<ResourceContents | ResourceContents[]>;
   listResourceTemplates?(): Promise<ResourceTemplate[]>;
+  notifyPromptListChanged?(): Promise<void>;
+  notifyResourceListChanged?(): Promise<void>;
+  notifyResourceUpdated?(uri: string): Promise<void>;
   createExternalSseSession?(
     bridge: SseBridge,
     messagePath: string,
@@ -241,6 +252,8 @@ export interface MCPServerLike {
   ): Promise<void>;
   closeExternalSseSession?(sessionId: string): Promise<void>;
 }
+
+export type MCPServerFactory = BaseMCPServerFactory<MCPServerLike>;
 
 export type {
   CallToolResult,
