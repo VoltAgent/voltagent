@@ -20,9 +20,11 @@ import type { Logger } from "@voltagent/internal";
 export interface ObservabilityConfig {
   serviceName?: string;
   serviceVersion?: string;
+  instrumentationScopeName?: string;
   storage?: ObservabilityStorageAdapter;
   logger?: Logger;
   resourceAttributes?: Record<string, any>;
+  spanFilters?: SpanFilterConfig;
   voltOpsSync?: {
     sampling?: {
       strategy?: "always" | "never" | "ratio" | "parent"; // Default: 'always' (no sampling)
@@ -36,6 +38,24 @@ export interface ObservabilityConfig {
   };
   spanProcessors?: SpanProcessor[];
   logProcessors?: LogRecordProcessor[];
+}
+
+/**
+ * Span filter configuration
+ */
+export interface SpanFilterConfig {
+  enabled?: boolean;
+  /**
+   * Restrict span processing to spans originating from these tracer
+   * instrumentation scope names. Defaults to the internal VoltAgent tracer
+   * when omitted.
+   */
+  instrumentationScopeNames?: string[];
+  /**
+   * Restrict span processing to the provided `service.name` values. If empty
+   * or undefined, this constraint is ignored.
+   */
+  serviceNames?: string[];
 }
 
 /**
