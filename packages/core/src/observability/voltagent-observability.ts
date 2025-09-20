@@ -21,6 +21,7 @@ import { RemoteLogProcessor, StorageLogProcessor, WebSocketLogProcessor } from "
 import { LazyRemoteExportProcessor } from "./processors/lazy-remote-export-processor";
 import { LocalStorageSpanProcessor } from "./processors/local-storage-span-processor";
 import { SamplingWrapperProcessor } from "./processors/sampling-wrapper-processor";
+import { type SpanFilterOptions, SpanFilterProcessor } from "./processors/span-filter-processor";
 import { WebSocketSpanProcessor } from "./processors/websocket-span-processor";
 import type { ObservabilityConfig, ObservabilityStorageAdapter } from "./types";
 
@@ -36,10 +37,31 @@ export class VoltAgentObservability {
   private localStorageProcessor?: LocalStorageSpanProcessor;
   private config: ObservabilityConfig;
   private logger: Logger;
+  private spanFilterOptions?: SpanFilterOptions;
+  private instrumentationScopeName: string;
 
   constructor(config: ObservabilityConfig = {}) {
     this.config = config;
     this.logger = getGlobalLogger();
+    this.instrumentationScopeName = config.instrumentationScopeName || "@voltagent/core";
+    this.spanFilterOptions = this.resolveSpanFilterOptions();
+
+    if (this.spanFilterOptions) {
+      const scopes = this.spanFilterOptions.allowedInstrumentationScopes ?? [];
+      const services = this.spanFilterOptions.allowedServiceNames ?? [];
+      const parts = [] as string[];
+      if (scopes.length > 0) {
+        parts.push(`instrumentation scopes [${scopes.join(", ")}]`);
+      }
+      if (services.length > 0) {
+        parts.push(`service.name values [${services.join(", ")}]`);
+      }
+      this.logger.trace(
+        `[VoltAgent] Observability span filtering active for ${parts.join(" and ")}`,
+      );
+    } else {
+      this.logger.trace("[VoltAgent] Observability span filtering disabled");
+    }
 
     // Initialize storage
     this.storage =
@@ -71,10 +93,7 @@ export class VoltAgentObservability {
     this.provider.register();
 
     // Get tracer
-    this.tracer = trace.getTracer(
-      config.serviceName || "voltagent",
-      config.serviceVersion || "1.0.0",
-    );
+    this.tracer = trace.getTracer(this.instrumentationScopeName, config.serviceVersion || "1.0.0");
 
     // Setup log processors
     const logProcessors = this.setupLogProcessors();
@@ -111,11 +130,11 @@ export class VoltAgentObservability {
 
     // Add WebSocket processor (always enabled)
     this.websocketProcessor = new WebSocketSpanProcessor(true);
-    processors.push(this.websocketProcessor);
+    processors.push(this.applySpanFilter(this.websocketProcessor));
 
     // Add local storage processor
     this.localStorageProcessor = new LocalStorageSpanProcessor(this.storage);
-    processors.push(this.localStorageProcessor);
+    processors.push(this.applySpanFilter(this.localStorageProcessor));
 
     // Add lazy remote export to VoltOps (enabled by default)
     // This processor will initialize itself when VoltOpsClient becomes available
@@ -137,7 +156,7 @@ export class VoltAgentObservability {
           ? lazyProcessor
           : new SamplingWrapperProcessor(lazyProcessor, this.config.voltOpsSync?.sampling);
 
-      processors.push(finalProcessor);
+      processors.push(this.applySpanFilter(finalProcessor));
 
       this.logger.debug(
         `[VoltAgent] VoltOps sync enabled with ${samplingStrategy} sampling strategy`,
@@ -151,10 +170,54 @@ export class VoltAgentObservability {
 
     // Add custom processors
     if (this.config.spanProcessors) {
-      processors.push(...this.config.spanProcessors);
+      processors.push(
+        ...this.config.spanProcessors.map((processor) => this.applySpanFilter(processor)),
+      );
     }
 
     return processors;
+  }
+
+  private applySpanFilter(processor: SpanProcessor): SpanProcessor {
+    if (!this.spanFilterOptions) {
+      return processor;
+    }
+
+    // Avoid wrapping a SpanFilterProcessor multiple times
+    if (processor instanceof SpanFilterProcessor) {
+      return processor;
+    }
+
+    return new SpanFilterProcessor(processor, this.spanFilterOptions);
+  }
+
+  private resolveSpanFilterOptions(): SpanFilterOptions | undefined {
+    const filterConfig = this.config.spanFilters;
+
+    if (filterConfig?.enabled === false) {
+      return undefined;
+    }
+
+    const instrumentationScopes = filterConfig?.instrumentationScopeNames ?? [
+      this.instrumentationScopeName,
+    ];
+    const serviceNames = filterConfig?.serviceNames;
+
+    const options: SpanFilterOptions = {};
+
+    if (instrumentationScopes && instrumentationScopes.length > 0) {
+      options.allowedInstrumentationScopes = instrumentationScopes;
+    }
+
+    if (serviceNames && serviceNames.length > 0) {
+      options.allowedServiceNames = serviceNames;
+    }
+
+    if (!options.allowedInstrumentationScopes && !options.allowedServiceNames) {
+      return undefined;
+    }
+
+    return options;
   }
 
   /**

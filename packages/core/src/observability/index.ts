@@ -15,6 +15,7 @@ export {
 } from "./processors/websocket-span-processor";
 export { LocalStorageSpanProcessor } from "./processors/local-storage-span-processor";
 export { LazyRemoteExportProcessor } from "./processors/lazy-remote-export-processor";
+export { SpanFilterProcessor } from "./processors/span-filter-processor";
 export { InMemoryStorageAdapter } from "./adapters/in-memory-adapter";
 
 // Export log processors
@@ -28,6 +29,7 @@ export type {
   ObservabilityWebSocketEvent,
   ObservabilityStorageAdapter,
   ObservabilityConfig,
+  SpanFilterConfig,
   SpanAttributes,
   SpanEvent,
   SpanLink,
