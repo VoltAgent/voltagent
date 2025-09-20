@@ -535,4 +535,4 @@ MCP enables your agents to:
 - Use API gateways that implement the MCP protocol
 - Tap into ecosystems of MCP-compatible tools
 
-For in-depth details on setting up and using the Model Context Protocol with your agents, see the [MCP documentation](./mcp.md).
+For in-depth details on setting up and using the Model Context Protocol with your agents, see the [MCP documentation](./mcp/mcp.md).

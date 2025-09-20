@@ -1230,7 +1230,7 @@ console.log(response.text);
 // The agent can now potentially call tools hosted on 'myModelServer'.
 ```
 
-[Learn more about MCP](./mcp.md)
+[Learn more about MCP](./mcp/mcp.md)
 
 ### Voice
 

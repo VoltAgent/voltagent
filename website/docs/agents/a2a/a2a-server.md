@@ -226,5 +226,3 @@ The test sends a `message/send`, streams a `message/stream`, and exercises `task
 - **404 for discovery card**: ensure the agent ID you request matches the key inside `VoltAgent({ agents: { ... } })`.
 - **Unexpected JSON in SSE**: confirm you are stripping the `\x1E` prefix before parsing the JSON payload.
 - **Cancellation not propagating**: verify you call `tasks/cancel` with the task ID from the stream and that your TaskStore preserves the `activeCancellations` set.
-
-Need to dive deeper into the protocol? See the [A2A overview](./a2a.md) for further context and links.
