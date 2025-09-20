@@ -163,13 +163,16 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
         type: `${prefix}${part.type}`,
         from: options?.agentId || part.subAgentId || part.subAgentName || this.stepName,
         // Map input field based on event type
-        input: part.type === "tool-call" && "input" in part ? part.input : undefined,
+        input:
+          part.type === "tool-call" && "args" in part
+            ? (part.args as Record<string, any>)
+            : undefined,
         // Map output field based on event type
         output:
-          part.type === "text-delta" && "text" in part
-            ? part.text
-            : part.type === "tool-result" && "output" in part
-              ? part.output
+          part.type === "text-delta" && "textDelta" in part
+            ? (part.textDelta as any)
+            : part.type === "tool-result" && "result" in part
+              ? (part.result as Record<string, any>)
               : undefined,
         // Build metadata based on event type
         metadata: {
@@ -183,9 +186,9 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
             toolCallId: "toolCallId" in part ? part.toolCallId : undefined,
           }),
           ...(part.type === "finish" &&
-            "totalUsage" in part && {
+            "usage" in part && {
               finishReason: "finishReason" in part ? part.finishReason : undefined,
-              usage: part.totalUsage,
+              usage: part.usage,
             }),
           ...(part.type === "error" && "error" in part && { error: part.error }),
         },
