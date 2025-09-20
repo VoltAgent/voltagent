@@ -155,15 +155,14 @@ describe("Agent with Observability", () => {
         stream: simulateReadableStream({
           chunks: [
             { type: "text-start", id: "text-1" },
-            { type: "text-delta", id: "text-1", delta: "Hello" },
-            { type: "text-delta", id: "text-1", delta: ", " },
-            { type: "text-delta", id: "text-1", delta: "world!" },
+            { type: "text-delta", id: "text-1", delta: "Hello", text: "Hello" },
+            { type: "text-delta", id: "text-1", delta: ", ", text: ", " },
+            { type: "text-delta", id: "text-1", delta: "world!", text: "world!" },
             { type: "text-end", id: "text-1" },
             {
               type: "finish",
               finishReason: "stop",
-              logprobs: undefined,
-              usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
+              totalUsage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
             },
           ],
         }),

@@ -151,10 +151,30 @@ describe("WorkflowStreamWriterImpl", () => {
 
       // Mock agent fullStream
       const mockFullStream = async function* () {
-        yield { type: "text-delta", text: "Hello" };
-        yield { type: "tool-call", toolName: "search", args: { query: "test" } };
-        yield { type: "tool-result", toolName: "search", result: { found: true } };
-        yield { type: "finish", finishReason: "stop", usage: { totalTokens: 100 } };
+        yield {
+          type: "text-delta" as const,
+          id: "text-1",
+          delta: "Hello",
+          text: "Hello",
+        };
+        yield {
+          type: "tool-call" as const,
+          toolCallId: "call-1",
+          toolName: "search",
+          input: { query: "test" },
+        };
+        yield {
+          type: "tool-result" as const,
+          toolCallId: "call-1",
+          toolName: "search",
+          input: { query: "test" },
+          output: { found: true },
+        };
+        yield {
+          type: "finish" as const,
+          finishReason: "stop",
+          totalUsage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
+        };
       };
 
       await writer.pipeFrom(mockFullStream());
@@ -167,7 +187,7 @@ describe("WorkflowStreamWriterImpl", () => {
         expect.objectContaining({
           type: "text-delta",
           output: "Hello",
-          metadata: { originalType: "text-delta" },
+          metadata: expect.objectContaining({ originalType: "text-delta" }),
         }),
       );
 
@@ -177,10 +197,7 @@ describe("WorkflowStreamWriterImpl", () => {
         expect.objectContaining({
           type: "tool-call",
           input: { query: "test" },
-          metadata: expect.objectContaining({
-            originalType: "tool-call",
-            toolName: "search",
-          }),
+          metadata: expect.objectContaining({ originalType: "tool-call", toolName: "search" }),
         }),
       );
 
@@ -190,10 +207,7 @@ describe("WorkflowStreamWriterImpl", () => {
         expect.objectContaining({
           type: "tool-result",
           output: { found: true },
-          metadata: expect.objectContaining({
-            originalType: "tool-result",
-            toolName: "search",
-          }),
+          metadata: expect.objectContaining({ originalType: "tool-result", toolName: "search" }),
         }),
       );
 
@@ -205,7 +219,7 @@ describe("WorkflowStreamWriterImpl", () => {
           metadata: expect.objectContaining({
             originalType: "finish",
             finishReason: "stop",
-            usage: { totalTokens: 100 },
+            usage: { promptTokens: 40, completionTokens: 60, totalTokens: 100 },
           }),
         }),
       );
@@ -218,7 +232,12 @@ describe("WorkflowStreamWriterImpl", () => {
       const emitSpy = vi.spyOn(controller, "emit");
 
       const mockFullStream = async function* () {
-        yield { type: "text-delta", textDelta: "Hello" };
+        yield {
+          type: "text-delta" as const,
+          id: "text-1",
+          delta: "Hello",
+          text: "Hello",
+        };
       };
 
       await writer.pipeFrom(mockFullStream(), { prefix: "agent-" });
@@ -237,9 +256,23 @@ describe("WorkflowStreamWriterImpl", () => {
       const emitSpy = vi.spyOn(controller, "emit");
 
       const mockFullStream = async function* () {
-        yield { type: "text-delta", textDelta: "Hello" };
-        yield { type: "finish", finishReason: "stop" };
-        yield { type: "tool-call", toolName: "search", args: {} };
+        yield {
+          type: "text-delta" as const,
+          id: "text-1",
+          delta: "Hello",
+          text: "Hello",
+        };
+        yield {
+          type: "finish" as const,
+          finishReason: "stop",
+          totalUsage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        };
+        yield {
+          type: "tool-call" as const,
+          toolCallId: "call-1",
+          toolName: "search",
+          input: {},
+        };
       };
 
       await writer.pipeFrom(mockFullStream(), {
@@ -257,7 +290,7 @@ describe("WorkflowStreamWriterImpl", () => {
       const emitSpy = vi.spyOn(controller, "emit");
 
       const mockFullStream = async function* () {
-        yield { type: "text-delta", textDelta: "Hello" };
+        yield { type: "text-delta" as const, id: "text-1", text: "Hello" };
       };
 
       await writer.pipeFrom(mockFullStream(), { agentId: "CustomAgent" });
@@ -276,7 +309,13 @@ describe("WorkflowStreamWriterImpl", () => {
       const emitSpy = vi.spyOn(controller, "emit");
 
       const mockFullStream = async function* () {
-        yield { type: "text-delta", textDelta: "Hello", subAgentId: "SubAgent1" };
+        yield {
+          type: "text-delta" as const,
+          id: "text-1",
+          delta: "Hello",
+          text: "Hello",
+          subAgentId: "SubAgent1",
+        };
       };
 
       await writer.pipeFrom(mockFullStream());

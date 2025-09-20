@@ -44,15 +44,15 @@ export function createMockLanguageModel(_name = "mock-model"): LanguageModel {
       stream: simulateReadableStream({
         chunks: [
           { type: "text-start", id: "text-1" },
-          { type: "text-delta", id: "text-1", delta: "Mock " },
-          { type: "text-delta", id: "text-1", delta: "stream " },
-          { type: "text-delta", id: "text-1", delta: "response" },
+          { type: "text-delta", id: "text-1", delta: "Mock ", text: "Mock " },
+          { type: "text-delta", id: "text-1", delta: "stream ", text: "stream " },
+          { type: "text-delta", id: "text-1", delta: "response", text: "response" },
           { type: "text-end", id: "text-1" },
           {
             type: "finish",
             finishReason: "stop",
-            logprobs: undefined,
             usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
           },
         ],
       }),
@@ -153,13 +153,19 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
       stream: simulateReadableStream({
         chunks: [
           { type: "text-start", id: "text-1" },
-          { type: "text-delta", id: "text-1", delta: "Hello from " },
-          { type: "text-delta", id: "text-1", delta: options.name || "Mock Agent" },
+          { type: "text-delta", id: "text-1", delta: "Hello from ", text: "Hello from " },
+          {
+            type: "text-delta",
+            id: "text-1",
+            delta: options.name || "Mock Agent",
+            text: options.name || "Mock Agent",
+          },
           { type: "text-end", id: "text-1" },
           {
             type: "finish",
             finishReason: "stop",
             usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
           },
         ],
       }),
@@ -181,14 +187,15 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
       const stream = simulateReadableStream({
         chunks: [
           { type: "text-start", id: "text-1" },
-          { type: "text-delta", id: "text-1", delta: "Hello " },
-          { type: "text-delta", id: "text-1", delta: "from " },
-          { type: "text-delta", id: "text-1", delta: agent.name },
+          { type: "text-delta", id: "text-1", delta: "Hello ", text: "Hello " },
+          { type: "text-delta", id: "text-1", delta: "from ", text: "from " },
+          { type: "text-delta", id: "text-1", delta: agent.name, text: agent.name },
           { type: "text-end", id: "text-1" },
           {
             type: "finish",
             finishReason: "stop",
             usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
           },
         ],
       });
@@ -283,12 +290,13 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
       const stream = simulateReadableStream({
         chunks: [
           { type: "text-start", id: "text-1" },
-          { type: "text-delta", id: "text-1", delta: objectJson },
+          { type: "text-delta", id: "text-1", delta: objectJson, text: objectJson },
           { type: "text-end", id: "text-1" },
           {
             type: "finish",
             finishReason: "stop",
             usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
           },
         ],
       });
@@ -383,48 +391,64 @@ export function createTestMessages(
  * Mock stream event types
  */
 interface MockStreamEvents {
-  textDelta: (text: string) => { type: "text-delta"; textDelta: string };
+  textDelta: (
+    text: string,
+    id?: string,
+  ) => { type: "text-delta"; id: string; delta: string; text: string };
   toolCall: (
     id: string,
     name: string,
-    args: unknown,
-  ) => { type: "tool-call"; toolCallId: string; toolName: string; args: unknown };
+    input: unknown,
+  ) => { type: "tool-call"; toolCallId: string; toolName: string; input: unknown };
   toolResult: (
     id: string,
     name: string,
-    result: unknown,
-  ) => { type: "tool-result"; toolCallId: string; toolName: string; result: unknown };
+    output: unknown,
+    input?: unknown,
+  ) => {
+    type: "tool-result";
+    toolCallId: string;
+    toolName: string;
+    input: unknown;
+    output: unknown;
+  };
   finish: (reason?: FinishReason) => {
     type: "finish";
     finishReason: FinishReason;
-    usage: LanguageModelUsage;
+    totalUsage: LanguageModelUsage;
   };
-  error: (error: string) => { type: "error"; error: string };
+  error: (error: unknown) => { type: "error"; error: unknown };
 }
 
 /**
  * Mock stream events for testing event forwarding
  */
 export const mockStreamEvents: MockStreamEvents = {
-  textDelta: (text: string) => ({ type: "text-delta" as const, textDelta: text }),
-  toolCall: (id: string, name: string, args: unknown) => ({
+  textDelta: (text: string, id = "text-1") => ({
+    type: "text-delta" as const,
+    id,
+    delta: text,
+    text,
+  }),
+  toolCall: (id: string, name: string, input: unknown) => ({
     type: "tool-call" as const,
     toolCallId: id,
     toolName: name,
-    args,
+    input,
   }),
-  toolResult: (id: string, name: string, result: unknown) => ({
+  toolResult: (id: string, name: string, output: unknown, input?: unknown) => ({
     type: "tool-result" as const,
     toolCallId: id,
     toolName: name,
-    result,
+    input: input ?? undefined,
+    output,
   }),
   finish: (reason: FinishReason = "stop") => ({
     type: "finish" as const,
     finishReason: reason,
-    usage: createMockUsage(),
+    totalUsage: createMockUsage(),
   }),
-  error: (error: string) => ({
+  error: (error: unknown) => ({
     type: "error" as const,
     error,
   }),

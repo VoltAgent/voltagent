@@ -67,8 +67,14 @@ export function createMockLanguageModel(config?: {
     },
     doStream: config?.doStream || {
       stream: convertArrayToReadableStream([
-        { type: "text-delta", textDelta: "Mock " },
-        { type: "text-delta", textDelta: "stream" },
+        { type: "text-delta" as const, id: "text-1", delta: "Mock ", text: "Mock " },
+        { type: "text-delta" as const, id: "text-1", delta: "stream", text: "stream" },
+        {
+          type: "finish",
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+        },
       ]),
       rawCall: { rawPrompt: null, rawSettings: {} },
       usage: Promise.resolve(defaultMockResponse.usage),
@@ -242,9 +248,15 @@ export function createMockStreamTextResult(overrides?: any) {
     text: Promise.resolve(textContent),
     textStream: convertArrayToAsyncIterable(textContent.split(" ")),
     fullStream: convertArrayToAsyncIterable([
-      { type: "text-delta", textDelta: "Mock " },
-      { type: "text-delta", textDelta: "streamed " },
-      { type: "text-delta", textDelta: "text" },
+      { type: "text-delta" as const, id: "text-1", delta: "Mock ", text: "Mock " },
+      { type: "text-delta" as const, id: "text-1", delta: "streamed ", text: "streamed " },
+      { type: "text-delta" as const, id: "text-1", delta: "text", text: "text" },
+      {
+        type: "finish" as const,
+        finishReason: "stop",
+        usage: overrides?.usage || defaultMockResponse.usage,
+        totalUsage: overrides?.totalUsage || defaultMockResponse.usage,
+      },
     ]),
     usage: Promise.resolve(overrides?.usage || defaultMockResponse.usage),
     finishReason: Promise.resolve(overrides?.finishReason || "stop"),

@@ -543,11 +543,11 @@ export interface WorkflowStreamEvent {
   /**
    * Input data for the step/event
    */
-  input?: Record<string, DangerouslyAllowAny>;
+  input?: DangerouslyAllowAny;
   /**
    * Output data from the step/event
    */
-  output?: Record<string, DangerouslyAllowAny>;
+  output?: DangerouslyAllowAny;
   /**
    * Current status of the step/event
    */

@@ -263,8 +263,18 @@ describe("Agent", () => {
           yield "response";
         })(),
         fullStream: (async function* () {
-          yield { type: "text-delta", textDelta: "Streamed " };
-          yield { type: "text-delta", textDelta: "response" };
+          yield {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "Streamed ",
+            text: "Streamed ",
+          };
+          yield {
+            type: "text-delta" as const,
+            id: "text-1",
+            delta: "response",
+            text: "response",
+          };
         })(),
         usage: Promise.resolve({
           inputTokens: 10,
