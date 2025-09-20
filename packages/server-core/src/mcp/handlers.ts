@@ -1,3 +1,4 @@
+import type { MCPServerRegistry } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import type {
   CallToolResult,
@@ -6,12 +7,11 @@ import type {
   GetPromptResult,
   MCPListedTool,
   MCPServerMetadata,
-  MCPServerRegistry,
   Prompt,
   Resource,
   ResourceContents,
   ResourceTemplate,
-} from "@voltagent/mcp-server";
+} from "./types";
 
 import type { ApiResponse } from "../types";
 import { listMcpServers, lookupMcpServer } from "./registry";

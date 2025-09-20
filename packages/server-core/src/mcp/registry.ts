@@ -1,4 +1,6 @@
-import type { MCPServerLike, MCPServerMetadata, MCPServerRegistry } from "@voltagent/mcp-server";
+import type { MCPServerRegistry } from "@voltagent/core";
+
+import type { MCPServerLike, MCPServerMetadata } from "./types";
 
 export interface McpServerLookupResult {
   server?: MCPServerLike;

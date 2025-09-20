@@ -13,13 +13,16 @@ export interface PortConfig {
 /**
  * Options for server startup display
  */
+export interface ServerEndpointSummary {
+  path: string;
+  method: string;
+  description?: string;
+  group?: string;
+}
+
 export interface ServerStartupOptions {
   enableSwaggerUI?: boolean;
-  customEndpoints?: Array<{
-    path: string;
-    method: string;
-    description?: string;
-  }>;
+  customEndpoints?: ServerEndpointSummary[];
 }
 
 /**

@@ -7,6 +7,7 @@ import type { Server } from "node:http";
 import type { IServerProvider, ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import type { WebSocketServer } from "ws";
+import { A2A_ROUTES, MCP_ROUTES } from "../routes/definitions";
 import { portManager } from "../utils/port-manager";
 import { printServerStartup } from "../utils/server-utils";
 import { createWebSocketServer, setupWebSocketUpgrade } from "../websocket/setup";
@@ -86,8 +87,11 @@ export abstract class BaseServerProvider implements IServerProvider {
       this.running = true;
 
       // Print startup message
+      const customEndpoints = this.collectFeatureEndpoints();
+
       printServerStartup(port, {
         enableSwaggerUI: this.config.enableSwaggerUI,
+        customEndpoints: customEndpoints.length > 0 ? customEndpoints : undefined,
       });
 
       return { port };
@@ -172,5 +176,38 @@ export abstract class BaseServerProvider implements IServerProvider {
         process.exit(0);
       });
     });
+  }
+
+  private collectFeatureEndpoints(): Array<{ method: string; path: string; group?: string }> {
+    const endpoints: Array<{ method: string; path: string; group?: string }> = [];
+    const seen = new Set<string>();
+
+    const addRoutes = (
+      routes: Record<string, { method: string; path: string; tags?: string[] }>,
+      groupLabel: string,
+    ) => {
+      Object.values(routes).forEach((route) => {
+        const key = `${route.method.toUpperCase()} ${route.path}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          const prettyPath = route.path.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
+          endpoints.push({
+            method: route.method.toUpperCase(),
+            path: prettyPath,
+            group: groupLabel,
+          });
+        }
+      });
+    };
+
+    if (this.deps.mcp?.registry) {
+      addRoutes(MCP_ROUTES, "MCP Endpoints");
+    }
+
+    if (this.deps.a2a?.registry) {
+      addRoutes(A2A_ROUTES, "A2A Endpoints");
+    }
+
+    return endpoints;
   }
 }

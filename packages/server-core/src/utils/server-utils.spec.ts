@@ -118,7 +118,8 @@ describe("Server Utils", () => {
       });
 
       const calls = consoleLogSpy.mock.calls.flat().join("\n");
-      expect(calls).toContain("Custom Endpoints:");
+      expect(calls).toContain("Registered Endpoints:");
+      expect(calls).toContain("Custom Endpoints");
       expect(calls).toContain("GET");
       expect(calls).toContain("/api/custom");
       expect(calls).toContain("POST");
@@ -135,7 +136,7 @@ describe("Server Utils", () => {
 
       // Check all sections are present
       expect(calls).toContain("VOLTAGENT SERVER STARTED");
-      expect(calls).toContain("Custom Endpoints:");
+      expect(calls).toContain("Registered Endpoints:");
       expect(calls).toContain("Swagger UI:");
       expect(calls).toContain("VoltOps Console:");
       expect(calls).toContain("http://localhost:3000");
@@ -146,7 +147,7 @@ describe("Server Utils", () => {
 
       const calls = consoleLogSpy.mock.calls.flat().join("\n");
       // Should not display custom endpoints section when empty
-      expect(calls).not.toContain("Custom Endpoints:");
+      expect(calls).not.toContain("Registered Endpoints:");
     });
 
     it("should group multiple endpoints by method", () => {
@@ -165,6 +166,19 @@ describe("Server Utils", () => {
       expect(calls).toContain("/api/users");
       expect(calls).toContain("/api/posts");
       expect(calls).toContain("POST");
+    });
+
+    it("should display feature groups when provided", () => {
+      printServerStartup(3000, {
+        customEndpoints: [
+          { method: "get", path: "/mcp/servers", group: "MCP Endpoints" },
+          { method: "post", path: "/a2a/:id", group: "A2A Endpoints" },
+        ],
+      });
+
+      const calls = consoleLogSpy.mock.calls.flat().join("\n");
+      expect(calls).toContain("MCP Endpoints");
+      expect(calls).toContain("A2A Endpoints");
     });
   });
 

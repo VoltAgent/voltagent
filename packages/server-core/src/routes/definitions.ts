@@ -917,6 +917,54 @@ export const MCP_ROUTES = {
   },
 } satisfies Record<string, RouteDefinition>;
 
+export const A2A_ROUTES = {
+  agentCard: {
+    method: "get" as const,
+    path: "/.well-known/:serverId/agent-card.json",
+    summary: "Get A2A agent card",
+    description: "Return the agent card JSON document for the specified A2A server.",
+    tags: ["A2A"],
+    operationId: "getA2AAgentCard",
+    responses: {
+      200: {
+        description: "Agent card retrieved successfully",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested A2A server not found",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request parameters",
+        contentType: "application/json",
+      },
+    },
+  },
+  jsonRpc: {
+    method: "post" as const,
+    path: "/a2a/:serverId",
+    summary: "Dispatch A2A JSON-RPC request",
+    description:
+      "Forward a JSON-RPC message (message/send, message/stream, tasks/get, tasks/cancel) to the specified A2A server.",
+    tags: ["A2A"],
+    operationId: "executeA2ARequest",
+    responses: {
+      200: {
+        description: "Request accepted or completed",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid JSON-RPC payload",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Requested A2A server not found",
+        contentType: "application/json",
+      },
+    },
+  },
+} satisfies Record<string, RouteDefinition>;
+
 /**
  * Helper to get routes by tag
  */

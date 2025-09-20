@@ -2,6 +2,8 @@
  * Shared server utilities for all server implementations
  */
 
+import type { ServerEndpointSummary, ServerStartupOptions } from "../types/server";
+
 // Terminal color codes for console output
 export const colors = {
   reset: "\x1b[0m",
@@ -59,13 +61,7 @@ export const preferredPorts = [
 /**
  * Print server startup message with formatted console output
  */
-export function printServerStartup(
-  port: number,
-  options: {
-    enableSwaggerUI?: boolean;
-    customEndpoints?: Array<{ path: string; method: string }>;
-  } = {},
-) {
+export function printServerStartup(port: number, options: ServerStartupOptions = {}) {
   const divider = `${colors.cyan}${"═".repeat(50)}${colors.reset}`;
   const isProduction = process.env.NODE_ENV === "production";
   const shouldEnableSwaggerUI = options.enableSwaggerUI ?? !isProduction;
@@ -90,29 +86,43 @@ export function printServerStartup(
   if (options.customEndpoints && options.customEndpoints.length > 0) {
     console.log();
     console.log(
-      `${colors.green}  ✓ ${colors.bright}Custom Endpoints: ${colors.reset}${colors.dim}${options.customEndpoints.length} registered${colors.reset}`,
+      `${colors.green}  ✓ ${colors.bright}Registered Endpoints: ${colors.reset}${colors.dim}${options.customEndpoints.length} total${colors.reset}`,
     );
 
-    // Group endpoints by method for compact display
-    const methodGroups: Record<string, string[]> = {};
+    const groupMap = new Map<string, ServerEndpointSummary[]>();
     options.customEndpoints.forEach((endpoint) => {
-      const method = endpoint.method.toUpperCase();
-      if (!methodGroups[method]) {
-        methodGroups[method] = [];
+      const groupLabel = endpoint.group?.trim() || "Custom Endpoints";
+      if (!groupMap.has(groupLabel)) {
+        groupMap.set(groupLabel, []);
       }
-      methodGroups[method].push(endpoint.path);
+      groupMap.get(groupLabel)?.push(endpoint);
     });
 
-    // Display endpoints in a compact format
     const methodOrder = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"];
-    methodOrder.forEach((method) => {
-      if (methodGroups[method]) {
-        methodGroups[method].forEach((path) => {
-          console.log(
-            `${colors.dim}    ${method.padEnd(6)} ${colors.reset}${colors.white}${path}${colors.reset}`,
-          );
-        });
-      }
+
+    groupMap.forEach((endpoints, groupLabel) => {
+      console.log();
+      console.log(`${colors.bright}${colors.white}    ${groupLabel}${colors.reset}`);
+
+      const methodGroups: Record<string, string[]> = {};
+      endpoints.forEach((endpoint) => {
+        const method = (endpoint.method ?? "").toUpperCase();
+        const normalizedMethod = method.length > 0 ? method : "GET";
+        if (!methodGroups[normalizedMethod]) {
+          methodGroups[normalizedMethod] = [];
+        }
+        methodGroups[normalizedMethod].push(endpoint.path);
+      });
+
+      methodOrder.forEach((method) => {
+        if (methodGroups[method]) {
+          methodGroups[method].forEach((path) => {
+            console.log(
+              `${colors.dim}      ${method.padEnd(6)} ${colors.reset}${colors.white}${path}${colors.reset}`,
+            );
+          });
+        }
+      });
     });
   }
 

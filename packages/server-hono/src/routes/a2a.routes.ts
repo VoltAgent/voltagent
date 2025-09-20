@@ -1,7 +1,12 @@
 import { type A2ARequestContext, normalizeError } from "@voltagent/a2a-server";
 import type { ServerProviderDeps } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
-import { executeA2ARequest, parseJsonRpcRequest, resolveAgentCard } from "@voltagent/server-core";
+import {
+  A2A_ROUTES,
+  executeA2ARequest,
+  parseJsonRpcRequest,
+  resolveAgentCard,
+} from "@voltagent/server-core";
 import type { OpenAPIHonoType } from "../zod-openapi-compat";
 
 function parseContextCandidate(candidate: unknown): A2ARequestContext | undefined {
@@ -61,7 +66,7 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
     return;
   }
 
-  app.get("/.well-known/:serverId/agent-card.json", (c) => {
+  app.openapi(A2A_ROUTES.agentCard, (c) => {
     const serverId = c.req.param("serverId");
     try {
       const card = resolveAgentCard(registry, serverId, serverId, {});
@@ -73,7 +78,7 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
     }
   });
 
-  app.post("/a2a/:serverId", async (c) => {
+  app.openapi(A2A_ROUTES.jsonRpc, async (c) => {
     const serverId = c.req.param("serverId");
     // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
     let request;

@@ -2565,6 +2565,9 @@ importers:
 
   packages/server-core:
     dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.12.1
+        version: 1.17.2
       '@voltagent/internal':
         specifier: ^0.0.10
         version: link:../internal
@@ -2593,15 +2596,9 @@ importers:
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
-      '@voltagent/a2a-server':
-        specifier: ^1.0.0
-        version: link:../a2a-server
       '@voltagent/core':
         specifier: ^1.0.0
         version: link:../core
-      '@voltagent/mcp-server':
-        specifier: ^1.0.0
-        version: link:../mcp-server
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)

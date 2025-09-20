@@ -5,6 +5,7 @@ import {
   DEFAULT_MCP_MESSAGES_SEGMENT,
   DEFAULT_MCP_ROUTE_PREFIX,
   DEFAULT_MCP_SSE_SEGMENT,
+  MCP_ROUTES,
   MCP_SESSION_QUERY_PARAM,
   type McpInvokeToolRequest,
   type McpSetLogLevelRequest,
@@ -19,7 +20,6 @@ import {
   handleListMcpServerTools,
   handleListMcpServers,
   handleSetMcpLogLevel,
-  listMcpServers,
   lookupMcpServer,
 } from "@voltagent/server-core";
 import { toFetchResponse, toReqRes } from "fetch-to-node";
@@ -41,24 +41,24 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return;
   }
 
-  app.get("/mcp/servers", (c) => {
+  app.openapi(MCP_ROUTES.listServers, (c) => {
     const response = handleListMcpServers(registry);
     return c.json(response, response.success ? 200 : 500);
   });
 
-  app.get("/mcp/servers/:serverId", (c) => {
+  app.openapi(MCP_ROUTES.getServer, (c) => {
     const serverId = c.req.param("serverId");
     const response = handleGetMcpServer(registry, serverId);
     return c.json(response, response.success ? 200 : 404);
   });
 
-  app.get("/mcp/servers/:serverId/tools", (c) => {
+  app.openapi(MCP_ROUTES.listTools, (c) => {
     const serverId = c.req.param("serverId");
     const response = handleListMcpServerTools(registry, logger, serverId);
     return c.json(response, response.success ? 200 : 404);
   });
 
-  app.post("/mcp/servers/:serverId/tools/:toolName", async (c) => {
+  app.openapi(MCP_ROUTES.invokeTool, async (c) => {
     const serverId = c.req.param("serverId");
     const toolName = c.req.param("toolName");
     let body: McpInvokeToolRequest = {};
@@ -78,7 +78,7 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.post("/mcp/servers/:serverId/logging/level", async (c) => {
+  app.openapi(MCP_ROUTES.setLogLevel, async (c) => {
     const serverId = c.req.param("serverId");
     let body: McpSetLogLevelRequest | undefined;
 
@@ -104,7 +104,7 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.get("/mcp/servers/:serverId/prompts", async (c) => {
+  app.openapi(MCP_ROUTES.listPrompts, async (c) => {
     const serverId = c.req.param("serverId");
     const response = await handleListMcpPrompts(registry, logger, serverId);
     const status = response.success
@@ -116,7 +116,7 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.get("/mcp/servers/:serverId/prompts/:promptName", async (c) => {
+  app.openapi(MCP_ROUTES.getPrompt, async (c) => {
     const serverId = c.req.param("serverId");
     const promptName = c.req.param("promptName");
     const rawArguments = c.req.query("arguments");
@@ -164,7 +164,7 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.get("/mcp/servers/:serverId/resources", async (c) => {
+  app.openapi(MCP_ROUTES.listResources, async (c) => {
     const serverId = c.req.param("serverId");
     const response = await handleListMcpResources(registry, logger, serverId);
     const status = response.success
@@ -176,7 +176,7 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.get("/mcp/servers/:serverId/resources/contents", async (c) => {
+  app.openapi(MCP_ROUTES.readResource, async (c) => {
     const serverId = c.req.param("serverId");
     const resourceUri = c.req.query("uri") ?? undefined;
 
@@ -195,7 +195,7 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.get("/mcp/servers/:serverId/resource-templates", async (c) => {
+  app.openapi(MCP_ROUTES.listResourceTemplates, async (c) => {
     const serverId = c.req.param("serverId");
     const response = await handleListMcpResourceTemplates(registry, logger, serverId);
     const status = response.success
@@ -205,22 +205,6 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
         : 500;
 
     return c.json(response, status);
-  });
-
-  app.get(`${DEFAULT_MCP_ROUTE_PREFIX}/servers`, (c) => {
-    const servers = listMcpServers(registry);
-    return c.json({ servers });
-  });
-
-  app.get(`${DEFAULT_MCP_ROUTE_PREFIX}/servers/:serverId`, (c) => {
-    const serverId = c.req.param("serverId");
-    const { metadata: serverMetadata } = lookupMcpServer(registry, serverId);
-
-    if (!serverMetadata) {
-      return c.json({ error: `MCP server '${serverId}' not found` }, 404);
-    }
-
-    return c.json(serverMetadata);
   });
 
   app.all(`${DEFAULT_MCP_ROUTE_PREFIX}/:serverId/${DEFAULT_MCP_HTTP_SEGMENT}`, async (c) => {

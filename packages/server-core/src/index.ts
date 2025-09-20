@@ -17,6 +17,7 @@ export * from "./mcp/handlers";
 export * from "./a2a/registry";
 export * from "./a2a/routes";
 export * from "./a2a/handlers";
+export * from "./a2a/types";
 
 // Export handlers
 export * from "./handlers/agent.handlers";
