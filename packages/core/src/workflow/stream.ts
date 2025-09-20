@@ -169,8 +169,8 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
             : undefined,
         // Map output field based on event type
         output:
-          part.type === "text-delta" && "textDelta" in part
-            ? (part.textDelta as any)
+          part.type === "text-delta" && "text" in part
+            ? (part.text as any)
             : part.type === "tool-result" && "result" in part
               ? (part.result as Record<string, any>)
               : undefined,

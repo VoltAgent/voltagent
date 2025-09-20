@@ -151,7 +151,7 @@ describe("WorkflowStreamWriterImpl", () => {
 
       // Mock agent fullStream
       const mockFullStream = async function* () {
-        yield { type: "text-delta", textDelta: "Hello" };
+        yield { type: "text-delta", text: "Hello" };
         yield { type: "tool-call", toolName: "search", args: { query: "test" } };
         yield { type: "tool-result", toolName: "search", result: { found: true } };
         yield { type: "finish", finishReason: "stop", usage: { totalTokens: 100 } };
