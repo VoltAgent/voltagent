@@ -118,16 +118,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -155,16 +155,16 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -189,13 +189,13 @@ importers:
   examples/sdk-trace-example:
     dependencies:
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/sdk':
         specifier: ^0.1.6
         version: 0.1.6(@voltagent/logger@packages+logger)(zod@3.25.76)
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
     devDependencies:
       '@types/node':
@@ -214,19 +214,19 @@ importers:
         specifier: ^2.0.2
         version: 2.0.17(zod@3.25.76)
       '@voltagent/a2a-server':
-        specifier: ^1.0.0
+        specifier: ^1.0.1
         version: link:../../packages/a2a-server
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../../packages/internal
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -257,16 +257,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -294,16 +294,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -340,16 +340,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -371,40 +371,6 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
-  examples/with-cloudflare-deployment:
-    dependencies:
-      '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
-      '@voltagent/core':
-        specifier: ^1.1.11
-        version: link:../../packages/core
-      '@voltagent/logger':
-        specifier: ^1.0.1
-        version: link:../../packages/logger
-      '@voltagent/server-hono':
-        specifier: ^1.0.6
-        version: link:../../packages/server-hono
-      ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^4.20250119.0
-        version: 4.20250813.0
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      wrangler:
-        specifier: ^3.38.0
-        version: 3.114.14(@cloudflare/workers-types@4.20250813.0)
-
   examples/with-composio-mcp:
     dependencies:
       '@ai-sdk/openai':
@@ -414,16 +380,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -451,16 +417,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -488,16 +454,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -525,16 +491,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -562,16 +528,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -691,16 +657,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -728,16 +694,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -765,16 +731,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -802,16 +768,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -879,19 +845,19 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^1.1.2
         version: link:../../packages/langfuse-exporter
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -919,16 +885,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -953,16 +919,16 @@ importers:
         specifier: ^2.0.2
         version: 2.0.17(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.1.11
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/mcp-server':
-        specifier: ^1.0.0
+        specifier: ^1.0.1
         version: link:../../packages/mcp-server
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -999,16 +965,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1063,16 +1029,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1103,16 +1069,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1155,16 +1121,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1204,16 +1170,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/postgres':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/postgres
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1244,16 +1210,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1284,16 +1250,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1321,13 +1287,13 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1355,16 +1321,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       zod:
         specifier: ^3.25.76
@@ -1389,16 +1355,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1426,16 +1392,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1466,16 +1432,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       '@voltagent/supabase':
-        specifier: ^1.0.3
+        specifier: ^1.0.4
         version: link:../../packages/supabase
       ai:
         specifier: ^5.0.12
@@ -1503,16 +1469,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1540,16 +1506,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1577,16 +1543,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1614,16 +1580,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1651,16 +1617,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1688,16 +1654,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1734,61 +1700,6 @@ importers:
         specifier: ^0.5.3
         version: 0.5.3(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@types/node@24.2.1)(@types/react@19.1.10)(@vitejs/plugin-react@4.7.0)(tsx@4.20.4)(vite@6.3.5)
 
-  examples/with-viteval/dist:
-    dependencies:
-      '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
-      '@voltagent/cli':
-        specifier: ^0.1.10
-        version: link:../../../packages/cli
-      '@voltagent/core':
-        specifier: ^1.1.5
-        version: link:../../../packages/core
-      '@voltagent/libsql':
-        specifier: ^1.0.2
-        version: link:../../../packages/libsql
-      '@voltagent/logger':
-        specifier: ^1.0.1
-        version: link:../../../packages/logger
-      '@voltagent/server-hono':
-        specifier: ^1.0.4
-        version: link:../../../packages/server-hono
-      ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
-      consola:
-        specifier: ^3.4.2
-        version: 3.4.2
-      envalid:
-        specifier: ^8.1.0
-        version: 8.1.0
-      yargs:
-        specifier: ^18.0.0
-        version: 18.0.0
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
-    devDependencies:
-      '@tsconfig/node24':
-        specifier: ^24.0.1
-        version: 24.0.1
-      '@types/yargs':
-        specifier: ^17.0.33
-        version: 17.0.33
-      dotenv:
-        specifier: ^16.4.5
-        version: 16.6.1
-      tsx:
-        specifier: ^4.19.3
-        version: 4.20.4
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      viteval:
-        specifier: ^0.1.7
-        version: 0.1.9(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@types/node@24.2.1)(@vitejs/plugin-react@4.7.0)(tsx@4.20.4)(vite@6.3.5)
-
   examples/with-voice-elevenlabs:
     dependencies:
       '@ai-sdk/openai':
@@ -1798,16 +1709,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^1.0.2
@@ -1838,16 +1749,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^1.0.2
@@ -1884,16 +1795,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^1.0.2
@@ -1930,16 +1841,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -1967,16 +1878,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -2004,16 +1915,16 @@ importers:
         specifier: ^0.1.10
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.12
+        specifier: ^1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -2041,16 +1952,16 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~1.1.12
+        specifier: ~1.1.13
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.5
+        specifier: ^1.0.6
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.6
+        specifier: ^1.0.7
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.12
@@ -2075,7 +1986,7 @@ importers:
         specifier: ^0.2.5
         version: 0.2.5
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../internal
       zod:
         specifier: ^3.25.76
@@ -2085,7 +1996,7 @@ importers:
         specifier: ^24.2.1
         version: 24.2.1
       '@voltagent/core':
-        specifier: ^1.0.0
+        specifier: ^1.1.13
         version: link:../core
       tsup:
         specifier: ^8.5.0
@@ -2212,7 +2123,7 @@ importers:
         specifier: ^1.28.0
         version: 1.36.0
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../internal
       '@voltagent/logger':
         specifier: 1.x
@@ -2433,7 +2344,7 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../internal
     devDependencies:
       '@types/node':
@@ -2443,10 +2354,10 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.10
+        specifier: ^1.1.13
         version: link:../core
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../logger
       ai:
         specifier: ^5.0.12
@@ -2476,7 +2387,7 @@ importers:
         specifier: ^0.204.0
         version: 0.204.0(@opentelemetry/api@1.9.0)
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../internal
       pino:
         specifier: ^9.7.0
@@ -2507,14 +2418,14 @@ importers:
         specifier: ^1.12.1
         version: 1.17.2
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../internal
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
         version: 24.2.1
       '@voltagent/core':
-        specifier: ^1.0.0
+        specifier: ^1.1.13
         version: link:../core
       tsup:
         specifier: ^8.5.0
@@ -2532,7 +2443,7 @@ importers:
   packages/postgres:
     dependencies:
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../internal
       pg:
         specifier: ^8.16.0
@@ -2548,7 +2459,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.11
+        specifier: ^1.1.13
         version: link:../core
       ai:
         specifier: ^5.0.12
@@ -2569,7 +2480,7 @@ importers:
         specifier: ^1.12.1
         version: 1.17.2
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../internal
       ai:
         specifier: ^5.0.12
@@ -2597,7 +2508,7 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
       '@voltagent/core':
-        specifier: ^1.0.0
+        specifier: ^1.1.13
         version: link:../core
       tsup:
         specifier: ^8.5.0
@@ -2627,19 +2538,19 @@ importers:
         specifier: npm:@hono/zod-openapi@^1.1.0
         version: /@hono/zod-openapi@1.1.0(hono@4.9.1)(zod@3.25.76)
       '@voltagent/a2a-server':
-        specifier: ^1.0.0
+        specifier: ^1.0.1
         version: link:../a2a-server
       '@voltagent/core':
-        specifier: ^1.1.10
+        specifier: ^1.1.13
         version: link:../core
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../internal
       '@voltagent/mcp-server':
-        specifier: ^1.0.0
+        specifier: ^1.0.1
         version: link:../mcp-server
       '@voltagent/server-core':
-        specifier: ^1.0.8
+        specifier: ^1.0.9
         version: link:../server-core
       fetch-to-node:
         specifier: ^2.1.0
@@ -2673,7 +2584,7 @@ importers:
         specifier: ^2.49.4
         version: 2.55.0
       '@voltagent/internal':
-        specifier: ^0.0.10
+        specifier: ^0.0.11
         version: link:../internal
       ts-pattern:
         specifier: ^5.7.1
@@ -2686,10 +2597,10 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.10
+        specifier: ^1.1.13
         version: link:../core
       '@voltagent/logger':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../logger
       ai:
         specifier: ^5.0.12
@@ -2717,7 +2628,7 @@ importers:
         version: 1.59.0
       openai:
         specifier: ^4.91.0
-        version: 4.104.0(zod@4.1.8)
+        version: 4.104.0(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -5163,13 +5074,6 @@ packages:
       - zod
     dev: false
 
-  /@cloudflare/kv-asset-handler@0.3.4:
-    resolution: {integrity: sha512-YLPHc8yASwjNkmcDMQMY35yiWjoKAKnhUbPRszBRS0YgH+IXtsMp61j+yTcnCE3oO2DgP0U3iejLC8FTtKDC8Q==}
-    engines: {node: '>=16.13'}
-    dependencies:
-      mime: 3.0.0
-    dev: true
-
   /@cloudflare/kv-asset-handler@0.4.0:
     resolution: {integrity: sha512-+tv3z+SPp+gqTIcImN9o0hqE9xyfQjI1XD9pL6NuKjua9B1y7mNYv0S9cP+QEbA4ppVgGZEmKOvHX5G5Ei1CVA==}
     engines: {node: '>=18.0.0'}
@@ -5177,66 +5081,9 @@ packages:
       mime: 3.0.0
     dev: true
 
-  /@cloudflare/unenv-preset@2.0.2(unenv@2.0.0-rc.14)(workerd@1.20250718.0):
-    resolution: {integrity: sha512-nyzYnlZjjV5xT3LizahG1Iu6mnrCaxglJ04rZLpDwlDVDZ7v46lNsfxhV3A/xtfgQuSHmLnc6SVI+KwBpc3Lwg==}
-    peerDependencies:
-      unenv: 2.0.0-rc.14
-      workerd: ^1.20250124.0
-    peerDependenciesMeta:
-      workerd:
-        optional: true
-    dependencies:
-      unenv: 2.0.0-rc.14
-      workerd: 1.20250718.0
-    dev: true
-
-  /@cloudflare/workerd-darwin-64@1.20250718.0:
-    resolution: {integrity: sha512-FHf4t7zbVN8yyXgQ/r/GqLPaYZSGUVzeR7RnL28Mwj2djyw2ZergvytVc7fdGcczl6PQh+VKGfZCfUqpJlbi9g==}
-    engines: {node: '>=16'}
-    cpu: [x64]
-    os: [darwin]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@cloudflare/workerd-darwin-arm64@1.20250718.0:
-    resolution: {integrity: sha512-fUiyUJYyqqp4NqJ0YgGtp4WJh/II/YZsUnEb6vVy5Oeas8lUOxnN+ZOJ8N/6/5LQCVAtYCChRiIrBbfhTn5Z8Q==}
-    engines: {node: '>=16'}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@cloudflare/workerd-linux-64@1.20250718.0:
-    resolution: {integrity: sha512-5+eb3rtJMiEwp08Kryqzzu8d1rUcK+gdE442auo5eniMpT170Dz0QxBrqkg2Z48SFUPYbj+6uknuA5tzdRSUSg==}
-    engines: {node: '>=16'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@cloudflare/workerd-linux-arm64@1.20250718.0:
-    resolution: {integrity: sha512-Aa2M/DVBEBQDdATMbn217zCSFKE+ud/teS+fFS+OQqKABLn0azO2qq6ANAHYOIE6Q3Sq4CxDIQr8lGdaJHwUog==}
-    engines: {node: '>=16'}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@cloudflare/workerd-windows-64@1.20250718.0:
-    resolution: {integrity: sha512-dY16RXKffmugnc67LTbyjdDHZn5NoTF1yHEf2fN4+OaOnoGSp3N1x77QubTDwqZ9zECWxgQfDLjddcH8dWeFhg==}
-    engines: {node: '>=16'}
-    cpu: [x64]
-    os: [win32]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@cloudflare/workers-types@4.20250813.0:
     resolution: {integrity: sha512-RFFjomDndGR+p7ug1HWDlW21qOJyRZbmI99dUtuR9tmwJbSZhUUnSFmzok9lBYVfkMMrO1O5vmB+IlgiecgLEA==}
+    dev: false
 
   /@colors/colors@1.5.0:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -5440,24 +5287,6 @@ packages:
       tslib: 2.8.1
     dev: true
 
-  /@esbuild-plugins/node-globals-polyfill@0.2.3(esbuild@0.17.19):
-    resolution: {integrity: sha512-r3MIryXDeXDOZh7ih1l/yE9ZLORCd5e8vWg02azWRGj5SPTuoh69A2AIyn0Z31V/kHBfZ4HgWJ+OK3GTTwLmnw==}
-    peerDependencies:
-      esbuild: '*'
-    dependencies:
-      esbuild: 0.17.19
-    dev: true
-
-  /@esbuild-plugins/node-modules-polyfill@0.2.2(esbuild@0.17.19):
-    resolution: {integrity: sha512-LXV7QsWJxRuMYvKbiznh+U1ilIop3g2TeKRzUxOG5X3YITc8JyyTa90BmLwqqv0YnX4v32CSlG+vsziZp9dMvA==}
-    peerDependencies:
-      esbuild: '*'
-    dependencies:
-      esbuild: 0.17.19
-      escape-string-regexp: 4.0.0
-      rollup-plugin-node-polyfills: 0.2.1
-    dev: true
-
   /@esbuild-plugins/node-resolve@0.2.2(esbuild@0.25.9):
     resolution: {integrity: sha512-+t5FdX3ATQlb53UFDBRb4nqjYBz492bIrnVWvpQHpzZlu9BQL5HasMZhqc409ygUwOWCXZhrWr6NyZ6T6Y+cxw==}
     peerDependencies:
@@ -5489,15 +5318,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/android-arm64@0.17.19:
-    resolution: {integrity: sha512-KBMWvEZooR7+kzY0BtbTQn0OAYY7CsiydT63pVEaPtVYF0hXbUaOyZog37DKxK7NF3XacBJOpYT4adIJh+avxA==}
-    engines: {node: '>=12'}
-    cpu: [arm64]
-    os: [android]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/android-arm64@0.21.5:
     resolution: {integrity: sha512-c0uX9VAUBQ7dTDCjq+wdyGLowMdtR/GoC2U5IYk/7D1H1JYC0qseD7+11iMP2mRLN9RcCMRcjC4YMclCzGwS/A==}
     engines: {node: '>=12'}
@@ -5513,15 +5333,6 @@ packages:
     cpu: [arm64]
     os: [android]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/android-arm@0.17.19:
-    resolution: {integrity: sha512-rIKddzqhmav7MSmoFCmDIb6e2W57geRsM94gV2l38fzhXMwq7hZoClug9USI2pFRGL06f4IOPHHpFNOkWieR8A==}
-    engines: {node: '>=12'}
-    cpu: [arm]
-    os: [android]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/android-arm@0.21.5:
@@ -5541,15 +5352,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/android-x64@0.17.19:
-    resolution: {integrity: sha512-uUTTc4xGNDT7YSArp/zbtmbhO0uEEK9/ETW29Wk1thYUJBz3IVnvgEiEwEa9IeLyvnpKrWK64Utw2bgUmDveww==}
-    engines: {node: '>=12'}
-    cpu: [x64]
-    os: [android]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/android-x64@0.21.5:
     resolution: {integrity: sha512-D7aPRUUNHRBwHxzxRvp856rjUHRFW1SdQATKXH2hqA0kAZb1hKmi02OpYRacl0TxIGz/ZmXWlbZgjwWYaCakTA==}
     engines: {node: '>=12'}
@@ -5565,15 +5367,6 @@ packages:
     cpu: [x64]
     os: [android]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/darwin-arm64@0.17.19:
-    resolution: {integrity: sha512-80wEoCfF/hFKM6WE1FyBHc9SfUblloAWx6FJkFWTWiCoht9Mc0ARGEM47e67W9rI09YoUxJL68WHfDRYEAvOhg==}
-    engines: {node: '>=12'}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/darwin-arm64@0.21.5:
@@ -5593,15 +5386,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/darwin-x64@0.17.19:
-    resolution: {integrity: sha512-IJM4JJsLhRYr9xdtLytPLSH9k/oxR3boaUIYiHkAawtwNOXKE8KoU8tMvryogdcT8AU+Bflmh81Xn6Q0vTZbQw==}
-    engines: {node: '>=12'}
-    cpu: [x64]
-    os: [darwin]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/darwin-x64@0.21.5:
     resolution: {integrity: sha512-se/JjF8NlmKVG4kNIuyWMV/22ZaerB+qaSi5MdrXtd6R08kvs2qCN4C09miupktDitvh8jRFflwGFBQcxZRjbw==}
     engines: {node: '>=12'}
@@ -5617,15 +5401,6 @@ packages:
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/freebsd-arm64@0.17.19:
-    resolution: {integrity: sha512-pBwbc7DufluUeGdjSU5Si+P3SoMF5DQ/F/UmTSb8HXO80ZEAJmrykPyzo1IfNbAoaqw48YRpv8shwd1NoI0jcQ==}
-    engines: {node: '>=12'}
-    cpu: [arm64]
-    os: [freebsd]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/freebsd-arm64@0.21.5:
@@ -5645,15 +5420,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/freebsd-x64@0.17.19:
-    resolution: {integrity: sha512-4lu+n8Wk0XlajEhbEffdy2xy53dpR06SlzvhGByyg36qJw6Kpfk7cp45DR/62aPH9mtJRmIyrXAS5UWBrJT6TQ==}
-    engines: {node: '>=12'}
-    cpu: [x64]
-    os: [freebsd]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/freebsd-x64@0.21.5:
     resolution: {integrity: sha512-J95kNBj1zkbMXtHVH29bBriQygMXqoVQOQYA+ISs0/2l3T9/kj42ow2mpqerRBxDJnmkUDCaQT/dfNXWX/ZZCQ==}
     engines: {node: '>=12'}
@@ -5669,15 +5435,6 @@ packages:
     cpu: [x64]
     os: [freebsd]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/linux-arm64@0.17.19:
-    resolution: {integrity: sha512-ct1Tg3WGwd3P+oZYqic+YZF4snNl2bsnMKRkb3ozHmnM0dGWuxcPTTntAF6bOP0Sp4x0PjSF+4uHQ1xvxfRKqg==}
-    engines: {node: '>=12'}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/linux-arm64@0.21.5:
@@ -5697,15 +5454,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/linux-arm@0.17.19:
-    resolution: {integrity: sha512-cdmT3KxjlOQ/gZ2cjfrQOtmhG4HJs6hhvm3mWSRDPtZ/lP5oe8FWceS10JaSJC13GBd4eH/haHnqf7hhGNLerA==}
-    engines: {node: '>=12'}
-    cpu: [arm]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/linux-arm@0.21.5:
     resolution: {integrity: sha512-bPb5AHZtbeNGjCKVZ9UGqGwo8EUu4cLq68E95A53KlxAPRmUyYv2D6F0uUI65XisGOL1hBP5mTronbgo+0bFcA==}
     engines: {node: '>=12'}
@@ -5721,15 +5469,6 @@ packages:
     cpu: [arm]
     os: [linux]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/linux-ia32@0.17.19:
-    resolution: {integrity: sha512-w4IRhSy1VbsNxHRQpeGCHEmibqdTUx61Vc38APcsRbuVgK0OPEnQ0YD39Brymn96mOx48Y2laBQGqgZ0j9w6SQ==}
-    engines: {node: '>=12'}
-    cpu: [ia32]
-    os: [linux]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/linux-ia32@0.21.5:
@@ -5749,15 +5488,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/linux-loong64@0.17.19:
-    resolution: {integrity: sha512-2iAngUbBPMq439a+z//gE+9WBldoMp1s5GWsUSgqHLzLJ9WoZLZhpwWuym0u0u/4XmZ3gpHmzV84PonE+9IIdQ==}
-    engines: {node: '>=12'}
-    cpu: [loong64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/linux-loong64@0.21.5:
     resolution: {integrity: sha512-uHf1BmMG8qEvzdrzAqg2SIG/02+4/DHB6a9Kbya0XDvwDEKCoC8ZRWI5JJvNdUjtciBGFQ5PuBlpEOXQj+JQSg==}
     engines: {node: '>=12'}
@@ -5773,15 +5503,6 @@ packages:
     cpu: [loong64]
     os: [linux]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/linux-mips64el@0.17.19:
-    resolution: {integrity: sha512-LKJltc4LVdMKHsrFe4MGNPp0hqDFA1Wpt3jE1gEyM3nKUvOiO//9PheZZHfYRfYl6AwdTH4aTcXSqBerX0ml4A==}
-    engines: {node: '>=12'}
-    cpu: [mips64el]
-    os: [linux]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/linux-mips64el@0.21.5:
@@ -5801,15 +5522,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/linux-ppc64@0.17.19:
-    resolution: {integrity: sha512-/c/DGybs95WXNS8y3Ti/ytqETiW7EU44MEKuCAcpPto3YjQbyK3IQVKfF6nbghD7EcLUGl0NbiL5Rt5DMhn5tg==}
-    engines: {node: '>=12'}
-    cpu: [ppc64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/linux-ppc64@0.21.5:
     resolution: {integrity: sha512-1hHV/Z4OEfMwpLO8rp7CvlhBDnjsC3CttJXIhBi+5Aj5r+MBvy4egg7wCbe//hSsT+RvDAG7s81tAvpL2XAE4w==}
     engines: {node: '>=12'}
@@ -5825,15 +5537,6 @@ packages:
     cpu: [ppc64]
     os: [linux]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/linux-riscv64@0.17.19:
-    resolution: {integrity: sha512-FC3nUAWhvFoutlhAkgHf8f5HwFWUL6bYdvLc/TTuxKlvLi3+pPzdZiFKSWz/PF30TB1K19SuCxDTI5KcqASJqA==}
-    engines: {node: '>=12'}
-    cpu: [riscv64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/linux-riscv64@0.21.5:
@@ -5853,15 +5556,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/linux-s390x@0.17.19:
-    resolution: {integrity: sha512-IbFsFbxMWLuKEbH+7sTkKzL6NJmG2vRyy6K7JJo55w+8xDk7RElYn6xvXtDW8HCfoKBFK69f3pgBJSUSQPr+4Q==}
-    engines: {node: '>=12'}
-    cpu: [s390x]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/linux-s390x@0.21.5:
     resolution: {integrity: sha512-zus5sxzqBJD3eXxwvjN1yQkRepANgxE9lgOW2qLnmr8ikMTphkjgXu1HR01K4FJg8h1kEEDAqDcZQtbrRnB41A==}
     engines: {node: '>=12'}
@@ -5877,15 +5571,6 @@ packages:
     cpu: [s390x]
     os: [linux]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/linux-x64@0.17.19:
-    resolution: {integrity: sha512-68ngA9lg2H6zkZcyp22tsVt38mlhWde8l3eJLWkyLrp4HwMUr3c1s/M2t7+kHIhvMjglIBrFpncX1SzMckomGw==}
-    engines: {node: '>=12'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/linux-x64@0.21.5:
@@ -5913,15 +5598,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/netbsd-x64@0.17.19:
-    resolution: {integrity: sha512-CwFq42rXCR8TYIjIfpXCbRX0rp1jo6cPIUPSaWwzbVI4aOfX96OXY8M6KNmtPcg7QjYeDmN+DD0Wp3LaBOLf4Q==}
-    engines: {node: '>=12'}
-    cpu: [x64]
-    os: [netbsd]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/netbsd-x64@0.21.5:
     resolution: {integrity: sha512-Woi2MXzXjMULccIwMnLciyZH4nCIMpWQAs049KEeMvOcNADVxo0UBIQPfSmxB3CWKedngg7sWZdLvLczpe0tLg==}
     engines: {node: '>=12'}
@@ -5945,15 +5621,6 @@ packages:
     cpu: [arm64]
     os: [openbsd]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/openbsd-x64@0.17.19:
-    resolution: {integrity: sha512-cnq5brJYrSZ2CF6c35eCmviIN3k3RczmHz8eYaVlNasVqsNY+JKohZU5MKmaOI+KkllCdzOKKdPs762VCPC20g==}
-    engines: {node: '>=12'}
-    cpu: [x64]
-    os: [openbsd]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/openbsd-x64@0.21.5:
@@ -5981,15 +5648,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/sunos-x64@0.17.19:
-    resolution: {integrity: sha512-vCRT7yP3zX+bKWFeP/zdS6SqdWB8OIpaRq/mbXQxTGHnIxspRtigpkUcDMlSCOejlHowLqII7K2JKevwyRP2rg==}
-    engines: {node: '>=12'}
-    cpu: [x64]
-    os: [sunos]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/sunos-x64@0.21.5:
     resolution: {integrity: sha512-6+gjmFpfy0BHU5Tpptkuh8+uw3mnrvgs+dSPQXQOv3ekbordwnzTVEb4qnIvQcYXq6gzkyTnoZ9dZG+D4garKg==}
     engines: {node: '>=12'}
@@ -6005,15 +5663,6 @@ packages:
     cpu: [x64]
     os: [sunos]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/win32-arm64@0.17.19:
-    resolution: {integrity: sha512-yYx+8jwowUstVdorcMdNlzklLYhPxjniHWFKgRqH7IFlUEa0Umu3KuYplf1HUZZ422e3NU9F4LGb+4O0Kdcaag==}
-    engines: {node: '>=12'}
-    cpu: [arm64]
-    os: [win32]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/win32-arm64@0.21.5:
@@ -6033,15 +5682,6 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@esbuild/win32-ia32@0.17.19:
-    resolution: {integrity: sha512-eggDKanJszUtCdlVs0RB+h35wNlb5v4TWEkq4vZcmVt5u/HiDZrTXe2bWFQUez3RgNHwx/x4sk5++4NSSicKkw==}
-    engines: {node: '>=12'}
-    cpu: [ia32]
-    os: [win32]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@esbuild/win32-ia32@0.21.5:
     resolution: {integrity: sha512-SWXFF1CL2RVNMaVs+BBClwtfZSvDgtL//G/smwAc5oVK/UPu2Gu9tIaRgFmYFFKrmg3SyAjSrElf0TiJ1v8fYA==}
     engines: {node: '>=12'}
@@ -6057,15 +5697,6 @@ packages:
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
-    optional: true
-
-  /@esbuild/win32-x64@0.17.19:
-    resolution: {integrity: sha512-lAhycmKnVOuRYNtRtatQR1LPQf2oYCkRGkSFnseDAKPl8lu5SOsK/e1sXe5a0Pc5kHIHe6P2I/ilntNv2xf3cA==}
-    engines: {node: '>=12'}
-    cpu: [x64]
-    os: [win32]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@esbuild/win32-x64@0.21.5:
@@ -6161,6 +5792,7 @@ packages:
   /@fastify/busboy@2.1.1:
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
     engines: {node: '>=14'}
+    dev: false
 
   /@floating-ui/core@1.7.3:
     resolution: {integrity: sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==}
@@ -6366,17 +5998,6 @@ packages:
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
     dev: true
 
-  /@img/sharp-darwin-arm64@0.33.5:
-    resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    optionalDependencies:
-      '@img/sharp-libvips-darwin-arm64': 1.0.4
-    dev: true
-    optional: true
-
   /@img/sharp-darwin-arm64@0.34.3:
     resolution: {integrity: sha512-ryFMfvxxpQRsgZJqBd4wsttYQbCxsJksrv9Lw/v798JcQ8+w84mBWuXwl+TT0WJ/WrYOLaYpwQXi3sA9nTIaIg==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
@@ -6386,17 +6007,6 @@ packages:
     optionalDependencies:
       '@img/sharp-libvips-darwin-arm64': 1.2.0
     dev: false
-    optional: true
-
-  /@img/sharp-darwin-x64@0.33.5:
-    resolution: {integrity: sha512-fyHac4jIc1ANYGRDxtiqelIbdWkIuQaI84Mv45KvGRRxSAa7o7d1ZKAOBaYbnepLC1WqxfpimdeWfvqqSGwR2Q==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [x64]
-    os: [darwin]
-    requiresBuild: true
-    optionalDependencies:
-      '@img/sharp-libvips-darwin-x64': 1.0.4
-    dev: true
     optional: true
 
   /@img/sharp-darwin-x64@0.34.3:
@@ -6410,28 +6020,12 @@ packages:
     dev: false
     optional: true
 
-  /@img/sharp-libvips-darwin-arm64@1.0.4:
-    resolution: {integrity: sha512-XblONe153h0O2zuFfTAbQYAX2JhYmDHeWikp1LM9Hul9gVPjFY427k6dFEcOL72O01QxQsWi761svJ/ev9xEDg==}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@img/sharp-libvips-darwin-arm64@1.2.0:
     resolution: {integrity: sha512-sBZmpwmxqwlqG9ueWFXtockhsxefaV6O84BMOrhtg/YqbTaRdqDE7hxraVE3y6gVM4eExmfzW4a8el9ArLeEiQ==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: false
-    optional: true
-
-  /@img/sharp-libvips-darwin-x64@1.0.4:
-    resolution: {integrity: sha512-xnGR8YuZYfJGmWPvmlunFaWJsb9T/AO2ykoP3Fz/0X5XV2aoYBPkX6xqCQvUTKKiLddarLaxpzNe+b1hjeWHAQ==}
-    cpu: [x64]
-    os: [darwin]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@img/sharp-libvips-darwin-x64@1.2.0:
@@ -6442,28 +6036,12 @@ packages:
     dev: false
     optional: true
 
-  /@img/sharp-libvips-linux-arm64@1.0.4:
-    resolution: {integrity: sha512-9B+taZ8DlyyqzZQnoeIvDVR/2F4EbMepXMc/NdVbkzsJbzkUjhXv/70GQJ7tdLA4YJgNP25zukcxpX2/SueNrA==}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@img/sharp-libvips-linux-arm64@1.2.0:
     resolution: {integrity: sha512-RXwd0CgG+uPRX5YYrkzKyalt2OJYRiJQ8ED/fi1tq9WQW2jsQIn0tqrlR5l5dr/rjqq6AHAxURhj2DVjyQWSOA==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     dev: false
-    optional: true
-
-  /@img/sharp-libvips-linux-arm@1.0.5:
-    resolution: {integrity: sha512-gvcC4ACAOPRNATg/ov8/MnbxFDJqf/pDePbBnuBDcjsI8PssmjoKMAz4LtLaVi+OnSb5FK/yIOamqDwGmXW32g==}
-    cpu: [arm]
-    os: [linux]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@img/sharp-libvips-linux-arm@1.2.0:
@@ -6482,28 +6060,12 @@ packages:
     dev: false
     optional: true
 
-  /@img/sharp-libvips-linux-s390x@1.0.4:
-    resolution: {integrity: sha512-u7Wz6ntiSSgGSGcjZ55im6uvTrOxSIS8/dgoVMoiGE9I6JAfU50yH5BoDlYA1tcuGS7g/QNtetJnxA6QEsCVTA==}
-    cpu: [s390x]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@img/sharp-libvips-linux-s390x@1.2.0:
     resolution: {integrity: sha512-eMKfzDxLGT8mnmPJTNMcjfO33fLiTDsrMlUVcp6b96ETbnJmd4uvZxVJSKPQfS+odwfVaGifhsB07J1LynFehw==}
     cpu: [s390x]
     os: [linux]
     requiresBuild: true
     dev: false
-    optional: true
-
-  /@img/sharp-libvips-linux-x64@1.0.4:
-    resolution: {integrity: sha512-MmWmQ3iPFZr0Iev+BAgVMb3ZyC4KeFc3jFxnNbEPas60e1cIfevbtuyf9nDGIzOaW9PdnDciJm+wFFaTlj5xYw==}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@img/sharp-libvips-linux-x64@1.2.0:
@@ -6514,14 +6076,6 @@ packages:
     dev: false
     optional: true
 
-  /@img/sharp-libvips-linuxmusl-arm64@1.0.4:
-    resolution: {integrity: sha512-9Ti+BbTYDcsbp4wfYib8Ctm1ilkugkA/uscUn6UXK1ldpC1JjiXbLfFZtRlBhjPZ5o1NCLiDbg8fhUPKStHoTA==}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@img/sharp-libvips-linuxmusl-arm64@1.2.0:
     resolution: {integrity: sha512-UG+LqQJbf5VJ8NWJ5Z3tdIe/HXjuIdo4JeVNADXBFuG7z9zjoegpzzGIyV5zQKi4zaJjnAd2+g2nna8TZvuW9Q==}
     cpu: [arm64]
@@ -6530,31 +6084,12 @@ packages:
     dev: false
     optional: true
 
-  /@img/sharp-libvips-linuxmusl-x64@1.0.4:
-    resolution: {integrity: sha512-viYN1KX9m+/hGkJtvYYp+CCLgnJXwiQB39damAO7WMdKWlIhmYTfHjwSbQeUK/20vY154mwezd9HflVFM1wVSw==}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@img/sharp-libvips-linuxmusl-x64@1.2.0:
     resolution: {integrity: sha512-SRYOLR7CXPgNze8akZwjoGBoN1ThNZoqpOgfnOxmWsklTGVfJiGJoC/Lod7aNMGA1jSsKWM1+HRX43OP6p9+6Q==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: false
-    optional: true
-
-  /@img/sharp-linux-arm64@0.33.5:
-    resolution: {integrity: sha512-JMVv+AMRyGOHtO1RFBiJy/MBsgz0x4AWrT6QoEVVTyh1E39TrCUpTRI7mx9VksGX4awWASxqCYLCV4wBZHAYxA==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    optionalDependencies:
-      '@img/sharp-libvips-linux-arm64': 1.0.4
-    dev: true
     optional: true
 
   /@img/sharp-linux-arm64@0.34.3:
@@ -6566,17 +6101,6 @@ packages:
     optionalDependencies:
       '@img/sharp-libvips-linux-arm64': 1.2.0
     dev: false
-    optional: true
-
-  /@img/sharp-linux-arm@0.33.5:
-    resolution: {integrity: sha512-JTS1eldqZbJxjvKaAkxhZmBqPRGmxgu+qFKSInv8moZ2AmT5Yib3EQ1c6gp493HvrvV8QgdOXdyaIBrhvFhBMQ==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [arm]
-    os: [linux]
-    requiresBuild: true
-    optionalDependencies:
-      '@img/sharp-libvips-linux-arm': 1.0.5
-    dev: true
     optional: true
 
   /@img/sharp-linux-arm@0.34.3:
@@ -6601,17 +6125,6 @@ packages:
     dev: false
     optional: true
 
-  /@img/sharp-linux-s390x@0.33.5:
-    resolution: {integrity: sha512-y/5PCd+mP4CA/sPDKl2961b+C9d+vPAveS33s6Z3zfASk2j5upL6fXVPZi7ztePZ5CuH+1kW8JtvxgbuXHRa4Q==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [s390x]
-    os: [linux]
-    requiresBuild: true
-    optionalDependencies:
-      '@img/sharp-libvips-linux-s390x': 1.0.4
-    dev: true
-    optional: true
-
   /@img/sharp-linux-s390x@0.34.3:
     resolution: {integrity: sha512-3gahT+A6c4cdc2edhsLHmIOXMb17ltffJlxR0aC2VPZfwKoTGZec6u5GrFgdR7ciJSsHT27BD3TIuGcuRT0KmQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
@@ -6621,17 +6134,6 @@ packages:
     optionalDependencies:
       '@img/sharp-libvips-linux-s390x': 1.2.0
     dev: false
-    optional: true
-
-  /@img/sharp-linux-x64@0.33.5:
-    resolution: {integrity: sha512-opC+Ok5pRNAzuvq1AG0ar+1owsu842/Ab+4qvU879ippJBHvyY5n2mxF1izXqkPYlGuP/M556uh53jRLJmzTWA==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    optionalDependencies:
-      '@img/sharp-libvips-linux-x64': 1.0.4
-    dev: true
     optional: true
 
   /@img/sharp-linux-x64@0.34.3:
@@ -6645,17 +6147,6 @@ packages:
     dev: false
     optional: true
 
-  /@img/sharp-linuxmusl-arm64@0.33.5:
-    resolution: {integrity: sha512-XrHMZwGQGvJg2V/oRSUfSAfjfPxO+4DkiRh6p2AFjLQztWUuY/o8Mq0eMQVIY7HJ1CDQUJlxGGZRw1a5bqmd1g==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    optionalDependencies:
-      '@img/sharp-libvips-linuxmusl-arm64': 1.0.4
-    dev: true
-    optional: true
-
   /@img/sharp-linuxmusl-arm64@0.34.3:
     resolution: {integrity: sha512-vAjbHDlr4izEiXM1OTggpCcPg9tn4YriK5vAjowJsHwdBIdx0fYRsURkxLG2RLm9gyBq66gwtWI8Gx0/ov+JKQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
@@ -6667,17 +6158,6 @@ packages:
     dev: false
     optional: true
 
-  /@img/sharp-linuxmusl-x64@0.33.5:
-    resolution: {integrity: sha512-WT+d/cgqKkkKySYmqoZ8y3pxx7lx9vVejxW/W4DOFMYVSkErR+w7mf2u8m/y4+xHe7yY9DAXQMWQhpnMuFfScw==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    optionalDependencies:
-      '@img/sharp-libvips-linuxmusl-x64': 1.0.4
-    dev: true
-    optional: true
-
   /@img/sharp-linuxmusl-x64@0.34.3:
     resolution: {integrity: sha512-gCWUn9547K5bwvOn9l5XGAEjVTTRji4aPTqLzGXHvIr6bIDZKNTA34seMPgM0WmSf+RYBH411VavCejp3PkOeQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
@@ -6687,16 +6167,6 @@ packages:
     optionalDependencies:
       '@img/sharp-libvips-linuxmusl-x64': 1.2.0
     dev: false
-    optional: true
-
-  /@img/sharp-wasm32@0.33.5:
-    resolution: {integrity: sha512-ykUW4LVGaMcU9lu9thv85CbRMAwfeadCJHRsg2GmeRa/cJxsVY9Rbd57JcMxBkKHag5U/x7TSBpScF4U8ElVzg==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [wasm32]
-    requiresBuild: true
-    dependencies:
-      '@emnapi/runtime': 1.4.5
-    dev: true
     optional: true
 
   /@img/sharp-wasm32@0.34.3:
@@ -6718,15 +6188,6 @@ packages:
     dev: false
     optional: true
 
-  /@img/sharp-win32-ia32@0.33.5:
-    resolution: {integrity: sha512-T36PblLaTwuVJ/zw/LaH0PdZkRz5rd3SmMHX8GSmR7vtNSP5Z6bQkExdSK7xGWyxLw4sUknBuugTelgw2faBbQ==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [ia32]
-    os: [win32]
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /@img/sharp-win32-ia32@0.34.3:
     resolution: {integrity: sha512-xuCdhH44WxuXgOM714hn4amodJMZl3OEvf0GVTm0BEyMeA2to+8HEdRPShH0SLYptJY1uBw+SCFP9WVQi1Q/cw==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
@@ -6734,15 +6195,6 @@ packages:
     os: [win32]
     requiresBuild: true
     dev: false
-    optional: true
-
-  /@img/sharp-win32-x64@0.33.5:
-    resolution: {integrity: sha512-MpY/o8/8kj+EcnxwvrP4aTJSWw/aZ7JIGR4aBeZkZw5B7/Jn+tY9/VNwtcoGmdT7GfggGIU4kygOMSbYnOrAbg==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    cpu: [x64]
-    os: [win32]
-    requiresBuild: true
-    dev: true
     optional: true
 
   /@img/sharp-win32-x64@0.34.3:
@@ -12350,75 +11802,6 @@ packages:
       tinyrainbow: 2.0.0
     dev: true
 
-  /@viteval/cli@0.2.4(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@types/node@24.2.1)(@vitejs/plugin-react@4.7.0)(tsx@4.20.4)(vite@6.3.5):
-    resolution: {integrity: sha512-if8W31fZc5XKZp8qEjwc05x+pbLpT90ULmApeJHtdsSmWOr8Km0f81nQL7xpGNRJmKTNPq5iXmBshc/wDkpZHQ==}
-    hasBin: true
-    dependencies:
-      '@opentf/cli-pbar': 0.7.2
-      '@viteval/core': 0.1.8(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
-      '@viteval/internal': 0.0.4
-      '@viteval/ui': 0.0.1(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@vitejs/plugin-react@4.7.0)(vite@6.3.5)
-      c12: 3.2.0(magicast@0.3.5)
-      chalk: 5.6.2
-      consola: 3.4.2
-      find-up: 7.0.0
-      glob: 11.0.3
-      jiti: 2.5.1
-      ora: 8.2.0
-      ts-pattern: 5.8.0
-      type-fest: 4.41.0
-      yargs: 18.0.0
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@deno/kv'
-      - '@electric-sql/pglite'
-      - '@libsql/client'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@rsbuild/core'
-      - '@tanstack/query-core'
-      - '@tanstack/react-query'
-      - '@tanstack/router-core'
-      - '@types/node'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/blob'
-      - '@vercel/functions'
-      - '@vercel/kv'
-      - '@vitejs/plugin-react'
-      - aws4fetch
-      - better-sqlite3
-      - drizzle-orm
-      - encoding
-      - idb-keyval
-      - less
-      - lightningcss
-      - magicast
-      - mysql2
-      - rolldown
-      - sass
-      - sass-embedded
-      - sqlite3
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - uploadthing
-      - vite
-      - vite-plugin-solid
-      - webpack
-      - ws
-      - xml2js
-      - yaml
-    dev: true
-
   /@viteval/cli@0.5.3(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@types/node@24.2.1)(@types/react@19.1.10)(@vitejs/plugin-react@4.7.0)(tsx@4.20.4)(vite@6.3.5):
     resolution: {integrity: sha512-S6PUAaUNAHJ4xEb7Pkev1wAyi0dG8OaT/EHmN24gQOJmxvbW5JSXEYbcpCqDxB0LkuRfiKhxcOM+6m/7NWePCw==}
     hasBin: true
@@ -12490,41 +11873,6 @@ packages:
       - yaml
     dev: true
 
-  /@viteval/core@0.1.8(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4):
-    resolution: {integrity: sha512-DPYn5Tj1ex3ktD+7p1CzEjl9e2J16z3RVYmE1Ci8S+ja2XdE5lDfqwJEKNaAyO9NCCVEJn3H1GE+DAFEZ8UzoA==}
-    dependencies:
-      '@vitest/runner': 3.2.4
-      '@viteval/internal': 0.0.4
-      ajv: 8.17.1
-      autoevals: 0.0.130
-      chalk: 5.6.2
-      compute-cosine-similarity: 1.1.0
-      find-up: 7.0.0
-      js-levenshtein: 1.1.6
-      js-yaml: 4.1.0
-      linear-sum-assignment: 1.0.7
-      mustache: 4.2.0
-      openai: 4.104.0(zod@4.1.8)
-      ts-pattern: 5.8.0
-      vite-node: 3.2.4(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
-      zod: 4.1.8
-    transitivePeerDependencies:
-      - '@types/node'
-      - encoding
-      - jiti
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - ws
-      - yaml
-    dev: true
-
   /@viteval/core@0.5.3(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4):
     resolution: {integrity: sha512-v3+Z2Icx0QeTqbIPBlc7JcSjIzAwg1BMGPVhS3n9dC0yAf0w1sBMnfSjwefXE2exbRXpAWzMzc44wXyg17Rabg==}
     dependencies:
@@ -12560,71 +11908,8 @@ packages:
       - yaml
     dev: true
 
-  /@viteval/internal@0.0.4:
-    resolution: {integrity: sha512-T1Gi3fJGUGsiZYD9ngA/bmZ4mwb4AjnPnbKdLQduG82XP0D2qBy4Rhp9HGLTieZxkIdZir1Fyii0N2sX5I/Vtg==}
-    dev: true
-
   /@viteval/internal@0.5.3:
     resolution: {integrity: sha512-7Lq4nY/Km5GFUd8DmvvcoMhqxUcrTQhMorbZzk66UfkU3pp1g/FD5ImES1G1ll7QL/3Y0xEav+O/kDR5BJxtWQ==}
-    dev: true
-
-  /@viteval/ui@0.0.1(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@vitejs/plugin-react@4.7.0)(vite@6.3.5):
-    resolution: {integrity: sha512-keEv64lqtKww0Ny+Ywhdz4ZAQV9nGvHN0Ci+fkr/HGnLvHiikhuAzYSW/zkB8HhO7fElBfpCx/Lv8lT1RRGzJw==}
-    dependencies:
-      '@iconify-json/mdi': 1.2.3
-      '@iconify/react': 6.0.2(react@19.1.1)
-      '@radix-ui/react-slot': 1.2.3(@types/react@19.1.10)(react@19.1.1)
-      '@tanstack/react-router': 1.131.44(react-dom@19.1.1)(react@19.1.1)
-      '@tanstack/react-router-ssr-query': 1.131.44(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/react-router@1.131.44)(@tanstack/router-core@1.131.44)(react-dom@19.1.1)(react@19.1.1)
-      '@tanstack/react-start': 1.131.44(@tanstack/react-router@1.131.44)(@vitejs/plugin-react@4.7.0)(react-dom@19.1.1)(react@19.1.1)(vite@6.3.5)
-      '@tanstack/router-plugin': 1.131.44(@tanstack/react-router@1.131.44)(vite@6.3.5)
-      '@viteval/internal': 0.0.4
-      class-variance-authority: 0.7.1
-      clsx: 2.1.1
-      lucide-react: 0.542.0(react@19.1.1)
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      tailwind-merge: 3.3.1
-      tailwindcss: 4.1.13
-      tw-animate-css: 1.3.8
-      zod: 4.1.8
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@deno/kv'
-      - '@electric-sql/pglite'
-      - '@libsql/client'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@rsbuild/core'
-      - '@tanstack/query-core'
-      - '@tanstack/react-query'
-      - '@tanstack/router-core'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/blob'
-      - '@vercel/functions'
-      - '@vercel/kv'
-      - '@vitejs/plugin-react'
-      - aws4fetch
-      - better-sqlite3
-      - drizzle-orm
-      - encoding
-      - idb-keyval
-      - mysql2
-      - rolldown
-      - sqlite3
-      - supports-color
-      - uploadthing
-      - vite
-      - vite-plugin-solid
-      - webpack
-      - xml2js
     dev: true
 
   /@viteval/ui@0.5.3(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@types/react@19.1.10)(@vitejs/plugin-react@4.7.0)(vite@6.3.5):
@@ -12862,22 +12147,11 @@ packages:
       acorn: 8.15.0
     dev: true
 
-  /acorn-walk@8.3.2:
-    resolution: {integrity: sha512-cjkyv4OtNCIeqhHrfS81QWXoCBPExR/J62oyEqepVw8WaQeSqpW2uhuLPh1m9eWhDuOo/jUXVTlifvesOWp/4A==}
-    engines: {node: '>=0.4.0'}
-    dev: true
-
   /acorn-walk@8.3.4:
     resolution: {integrity: sha512-ueEepnujpqee2o5aIYnvHU6C0A42MNdsIDeqy5BydrkuC5R1ZuUFnm27EeFJGoEHJQgn3uleRvmTXaJgfXbt4g==}
     engines: {node: '>=0.4.0'}
     dependencies:
       acorn: 8.15.0
-    dev: true
-
-  /acorn@8.14.0:
-    resolution: {integrity: sha512-cl669nCJTZBsL97OF4kUQm5g5hC2uihk0NxY3WENAC0TYdILVkAyHymAntgxGkl7K+t0cXIrH5siy5S4XkFycA==}
-    engines: {node: '>=0.4.0'}
-    hasBin: true
     dev: true
 
   /acorn@8.15.0:
@@ -13130,12 +12404,6 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /as-table@1.0.55:
-    resolution: {integrity: sha512-xvsWESUJn0JN421Xb9MQw6AsMHRCUknCe0Wjlxvjud80mU4E6hQf1A6NzQKcYNmYw62MfzEtXc+badstZP3JpQ==}
-    dependencies:
-      printable-characters: 1.0.42
-    dev: true
-
   /asn1@0.2.6:
     resolution: {integrity: sha512-ix/FxPn0MDjeyJ7i/yoHGFt/EX6LyNbxSEhPPXODPL+KB0VPk86UYfL0lMdy+KCnv+fmvIzySwaK5COwqVbWTQ==}
     dependencies:
@@ -13184,23 +12452,6 @@ packages:
     resolution: {integrity: sha512-Xcz9l0z7y9yQ9rdDaxlmaI4uJHf/T8g9hOEzJcsEqX2SjCj4J20uK7+ldkDHMbpJDK76wF7xEIgxc/vSlsfw5w==}
     engines: {node: '>=10.12.0'}
     dev: false
-
-  /autoevals@0.0.130:
-    resolution: {integrity: sha512-JS0T/YCEH13AAOGiWWGJDkIPP8LsDmRBYr3EazTukHxvd0nidOW7fGj0qVPFx2bARrSNO9AfCR6xoTP/5m3Bmw==}
-    dependencies:
-      ajv: 8.17.1
-      compute-cosine-similarity: 1.1.0
-      js-levenshtein: 1.1.6
-      js-yaml: 4.1.0
-      linear-sum-assignment: 1.0.7
-      mustache: 4.2.0
-      openai: 4.104.0(zod@3.25.76)
-      zod: 3.25.76
-      zod-to-json-schema: 3.24.6(zod@3.25.76)
-    transitivePeerDependencies:
-      - encoding
-      - ws
-    dev: true
 
   /autoevals@0.0.131:
     resolution: {integrity: sha512-F+3lraja+Ms7n1M2cpWl65N7AYx4sPocRW454H5HlSGabYMfuFOUxw8IXmEYDkQ38BxtZ0Wd5ZAQj9RF59YJWw==}
@@ -13532,10 +12783,6 @@ packages:
       buffer: 5.7.1
       inherits: 2.0.4
       readable-stream: 3.6.2
-
-  /blake3-wasm@2.1.5:
-    resolution: {integrity: sha512-F1+K8EbfOZE49dtoPtmxUQrpXaBIl3ICvasLh+nJta0xkz+9kF/7uet9fLnwKqhDrmj6g+6K3Tw9yQPUg2ka5g==}
-    dev: true
 
   /body-parser@1.20.3:
     resolution: {integrity: sha512-7rAxByjUMqQ3/bHJy7D6OGXvx/MMc4IqBn/X0fcM1QUcAItpZrBEYhWGem+tzXH90c+G01ypMcYJBO9Y30203g==}
@@ -14332,6 +13579,7 @@ packages:
     dependencies:
       color-name: 1.1.4
       simple-swizzle: 0.2.2
+    dev: false
 
   /color-support@1.1.3:
     resolution: {integrity: sha512-qiBjkpbMLO/HL68y+lh4q0/O1MZFj2RX6X/KmMa3+gJD3z+WwI1ZzDHysvqHGS3mP6mznPckpXmw1nI9cJjyRg==}
@@ -14344,6 +13592,7 @@ packages:
     dependencies:
       color-convert: 2.0.1
       color-string: 1.9.1
+    dev: false
 
   /colorette@2.0.20:
     resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
@@ -14881,10 +14130,6 @@ packages:
   /dargs@7.0.0:
     resolution: {integrity: sha512-2iy1EkLdlBzQGvbweYRFxmFath8+K7+AKB0TlhHWkNuH+TmovaMH/Wp7V7R4u7f4SnX3OgLsU9t1NI9ioDnUpg==}
     engines: {node: '>=8'}
-    dev: true
-
-  /data-uri-to-buffer@2.0.2:
-    resolution: {integrity: sha512-ND9qDTLc6diwj+Xe5cdAgVTbLVdXbtxTJRXRhli8Mowuaan+0EJOtdqJ0QCHNSSPyoXGx9HX2/VMnKeC34AChA==}
     dev: true
 
   /data-uri-to-buffer@4.0.1:
@@ -15536,36 +14781,6 @@ packages:
     resolution: {integrity: sha512-Um/+FxMr9CISWh0bi5Zv0iOD+4cFh5qLeks1qhAopKVAJw3drgKbKySikp7wGhDL0HPeaja0P5ULZrxLkniUVg==}
     dev: false
 
-  /esbuild@0.17.19:
-    resolution: {integrity: sha512-XQ0jAPFkK/u3LcVRcvVHQcTIqD6E2H1fvZMA5dQPSOWb3suUbWbfbRf94pjc0bNzRYLfIrDRQXr7X+LHIm5oHw==}
-    engines: {node: '>=12'}
-    hasBin: true
-    requiresBuild: true
-    optionalDependencies:
-      '@esbuild/android-arm': 0.17.19
-      '@esbuild/android-arm64': 0.17.19
-      '@esbuild/android-x64': 0.17.19
-      '@esbuild/darwin-arm64': 0.17.19
-      '@esbuild/darwin-x64': 0.17.19
-      '@esbuild/freebsd-arm64': 0.17.19
-      '@esbuild/freebsd-x64': 0.17.19
-      '@esbuild/linux-arm': 0.17.19
-      '@esbuild/linux-arm64': 0.17.19
-      '@esbuild/linux-ia32': 0.17.19
-      '@esbuild/linux-loong64': 0.17.19
-      '@esbuild/linux-mips64el': 0.17.19
-      '@esbuild/linux-ppc64': 0.17.19
-      '@esbuild/linux-riscv64': 0.17.19
-      '@esbuild/linux-s390x': 0.17.19
-      '@esbuild/linux-x64': 0.17.19
-      '@esbuild/netbsd-x64': 0.17.19
-      '@esbuild/openbsd-x64': 0.17.19
-      '@esbuild/sunos-x64': 0.17.19
-      '@esbuild/win32-arm64': 0.17.19
-      '@esbuild/win32-ia32': 0.17.19
-      '@esbuild/win32-x64': 0.17.19
-    dev: true
-
   /esbuild@0.21.5:
     resolution: {integrity: sha512-mg3OPMV4hXywwpoDxu3Qda5xCKQi+vCTZq8S9J/EpkhB2HzKXq4SNFZE3+NK93JYxc8VMSep+lOUSC/RVKaBqw==}
     engines: {node: '>=12'}
@@ -15764,10 +14979,6 @@ packages:
   /estree-util-is-identifier-name@3.0.0:
     resolution: {integrity: sha512-hFtqIDZTIUZ9BXLb8y4pYGyk6+wekIivNVTcmvk8NoOh+VeRn5y6cEHzbURrWbfp1fIqdVipilzj+lfaadNZmg==}
 
-  /estree-walker@0.6.1:
-    resolution: {integrity: sha512-SqmZANLWS0mnatqbSfRP5g8OXZC12Fgg1IwNtLsyHDzJizORW4khDfjPqJZsemPWBB2uqykUah5YpQ6epsqC/w==}
-    dev: true
-
   /estree-walker@2.0.2:
     resolution: {integrity: sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w==}
     dev: true
@@ -15880,11 +15091,6 @@ packages:
     engines: {node: '>=4'}
     dependencies:
       pify: 2.3.0
-    dev: true
-
-  /exit-hook@2.2.1:
-    resolution: {integrity: sha512-eNTPlAD67BmP31LDINZ3U7HSF8l57TxOY2PmBJ1shpCvpnxBF93mWCE8YHBnXs8qiUZJc9WDcWIeC3a2HIAMfw==}
-    engines: {node: '>=6'}
     dev: true
 
   /exit@0.1.2:
@@ -16549,13 +15755,6 @@ packages:
       dunder-proto: 1.0.1
       es-object-atoms: 1.1.1
 
-  /get-source@2.0.12:
-    resolution: {integrity: sha512-X5+4+iD+HoSeEED+uwrQ07BOQr0kEDFMVqqpBuI+RaZBpBpHCuXxo70bjar6f0b0u/DQJsJ7ssurpP0V60Az+w==}
-    dependencies:
-      data-uri-to-buffer: 2.0.2
-      source-map: 0.6.1
-    dev: true
-
   /get-stream@3.0.0:
     resolution: {integrity: sha512-GlhdIUuVakc8SJ6kK0zAFbiGzRFzNnY4jUuEbV9UROo4Y+0Ny4fjvcZFVTeDA4odpFyOQzaw6hXukJSq/f28sQ==}
     engines: {node: '>=4'}
@@ -16675,10 +15874,6 @@ packages:
     engines: {node: '>=10.13.0'}
     dependencies:
       is-glob: 4.0.3
-    dev: true
-
-  /glob-to-regexp@0.4.1:
-    resolution: {integrity: sha512-lkX1HJXwyMcprw/5YUZc2s7DrpAiHB21/V+E1rHUrVNokkvB6bqMzT0VfV6/86ZNabt1k14YOIaT7nDvOX3Iiw==}
     dev: true
 
   /glob@10.4.5:
@@ -17486,6 +16681,7 @@ packages:
   /is-arrayish@0.3.2:
     resolution: {integrity: sha512-eVRqCvVlZbuw3GrM63ovNSNAeA1K16kaR/LRY/92w0zxQ5/1YzwblUX652i4Xs9RwAGjW9d9y6X88t8OaAJfWQ==}
     requiresBuild: true
+    dev: false
 
   /is-binary-path@2.1.0:
     resolution: {integrity: sha512-ZMERYes6pDydyuGidse7OsHxtbI7WVeUEozgR/g7rd0xUimYNlvZRE/K2MgZTjWy725IfelLeVcEM97mmtRGXw==}
@@ -19284,12 +18480,6 @@ packages:
       react: 19.1.1
     dev: true
 
-  /magic-string@0.25.9:
-    resolution: {integrity: sha512-RmF0AsMzgt25qzqqLc1+MbHmhdx0ojF2Fvs4XnOqz2ZOBXzzkEwc/dJQZCYHAn7v1jbVOjAZfK8msRn4BxO4VQ==}
-    dependencies:
-      sourcemap-codec: 1.4.8
-    dev: true
-
   /magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
     dependencies:
@@ -19811,27 +19001,6 @@ packages:
   /min-indent@1.0.1:
     resolution: {integrity: sha512-I9jwMn07Sy/IwOj3zVkVik2JTvgpaykDZEigL6Rx6N9LbMywwUSMtxET+7lVoDLLd3O3IXwJwvuuns8UB/HeAg==}
     engines: {node: '>=4'}
-    dev: true
-
-  /miniflare@3.20250718.1:
-    resolution: {integrity: sha512-9QAOHVKIVHmnQ1dJT9Fls8aVA8R5JjEizzV889Dinq/+bEPltqIepCvm9Z+fbNUgLvV7D/H1NUk8VdlLRgp9Wg==}
-    engines: {node: '>=16.13'}
-    hasBin: true
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      acorn: 8.14.0
-      acorn-walk: 8.3.2
-      exit-hook: 2.2.1
-      glob-to-regexp: 0.4.1
-      stoppable: 1.1.0
-      undici: 5.29.0
-      workerd: 1.20250718.0
-      ws: 8.18.0
-      youch: 3.3.4
-      zod: 3.22.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: true
 
   /minimatch@10.0.3:
@@ -20961,29 +20130,6 @@ packages:
     transitivePeerDependencies:
       - encoding
 
-  /openai@4.104.0(zod@4.1.8):
-    resolution: {integrity: sha512-p99EFNsA/yX6UhVO93f5kJsDRLAg+CTA2RBqdHK4RtK8u5IJw32Hyb2dTGKbnnFmnuoBv5r7Z2CURI9sGZpSuA==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.23.8
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-    dependencies:
-      '@types/node': 18.19.122
-      '@types/node-fetch': 2.6.13
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-      zod: 4.1.8
-    transitivePeerDependencies:
-      - encoding
-
   /openai@5.20.3(zod@3.25.76):
     resolution: {integrity: sha512-8V0KgAcPFppDIP8uMBOkhRrhDBuxNQYQxb9IovP4NN4VyaYGISAzYexyYYuAwVul2HB75Wpib0xDboYJqRMNow==}
     hasBin: true
@@ -21460,10 +20606,6 @@ packages:
     resolution: {integrity: sha512-RA1GjUVMnvYFxuqovrEqZoxxW5NUZqbwKtYz/Tt7nXerk0LbLblQmrsgdeOxV5SFHf0UDggjS/bSeOZwt1pmEQ==}
     dev: false
 
-  /path-to-regexp@6.3.0:
-    resolution: {integrity: sha512-Yhpw4T9C6hPpgPeA28us07OJeqZ5EzQTkbfwuhsUg0c237RomFoETJgmp2sa3F/41gfLE6G5cqcYwznmeEeOlQ==}
-    dev: true
-
   /path-to-regexp@8.2.0:
     resolution: {integrity: sha512-TdrF7fW9Rphjq4RjrW0Kp2AW0Ahwu9sRGTkS6bvDi0SCwZlEZYmcfDbEsTz8RVk0EHIS/Vd1bv3JhG+1xZuAyQ==}
     engines: {node: '>=16'}
@@ -21842,10 +20984,6 @@ packages:
       '@jest/schemas': 29.6.3
       ansi-styles: 5.2.0
       react-is: 18.3.1
-    dev: true
-
-  /printable-characters@1.0.42:
-    resolution: {integrity: sha512-dKp+C4iXWK4vVYZmYSd0KBH5F/h1HoZRsbJ82AVKRO3PEo8L4lBS/vLwhVtpwwuYcoIsVY+1JYKR268yn480uQ==}
     dev: true
 
   /prismjs@1.27.0:
@@ -22645,21 +21783,6 @@ packages:
       sprintf-js: 1.1.3
     dev: false
 
-  /rollup-plugin-inject@3.0.2:
-    resolution: {integrity: sha512-ptg9PQwzs3orn4jkgXJ74bfs5vYz1NCZlSQMBUA0wKcGp5i5pA1AO3fOUEte8enhGUC+iapTCzEWw2jEFFUO/w==}
-    deprecated: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-inject.
-    dependencies:
-      estree-walker: 0.6.1
-      magic-string: 0.25.9
-      rollup-pluginutils: 2.8.2
-    dev: true
-
-  /rollup-plugin-node-polyfills@0.2.1:
-    resolution: {integrity: sha512-4kCrKPTJ6sK4/gLL/U5QzVT8cxJcofO0OU74tnB19F40cmuAKSzH5/siithxlofFEjwvw1YAhPmbvGNA6jEroA==}
-    dependencies:
-      rollup-plugin-inject: 3.0.2
-    dev: true
-
   /rollup-plugin-visualizer@6.0.3(rollup@4.50.2):
     resolution: {integrity: sha512-ZU41GwrkDcCpVoffviuM9Clwjy5fcUxlz0oMoTXTYsK+tcIFzbdacnrr2n8TXcHxbGKKXtOdjxM2HUS4HjkwIw==}
     engines: {node: '>=18'}
@@ -22678,12 +21801,6 @@ packages:
       rollup: 4.50.2
       source-map: 0.7.6
       yargs: 17.7.2
-    dev: true
-
-  /rollup-pluginutils@2.8.2:
-    resolution: {integrity: sha512-EEp9NhnUkwY8aif6bxgovPHMoMoNr2FulJziTndpt5H9RdwC47GSGuII9XxpSdzVGM0GWrNPHV6ie1LTNJPaLQ==}
-    dependencies:
-      estree-walker: 0.6.1
     dev: true
 
   /rollup@4.46.2:
@@ -22995,37 +22112,6 @@ packages:
       kind-of: 6.0.3
     dev: true
 
-  /sharp@0.33.5:
-    resolution: {integrity: sha512-haPVm1EkS9pgvHrQ/F3Xy+hgcuMV0Wm9vfIBSiwZ05k+xgb0PkBQpGsAA/oWdDobNaZTH5ppvHtzCFbnSEwHVw==}
-    engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
-    requiresBuild: true
-    dependencies:
-      color: 4.2.3
-      detect-libc: 2.0.4
-      semver: 7.7.2
-    optionalDependencies:
-      '@img/sharp-darwin-arm64': 0.33.5
-      '@img/sharp-darwin-x64': 0.33.5
-      '@img/sharp-libvips-darwin-arm64': 1.0.4
-      '@img/sharp-libvips-darwin-x64': 1.0.4
-      '@img/sharp-libvips-linux-arm': 1.0.5
-      '@img/sharp-libvips-linux-arm64': 1.0.4
-      '@img/sharp-libvips-linux-s390x': 1.0.4
-      '@img/sharp-libvips-linux-x64': 1.0.4
-      '@img/sharp-libvips-linuxmusl-arm64': 1.0.4
-      '@img/sharp-libvips-linuxmusl-x64': 1.0.4
-      '@img/sharp-linux-arm': 0.33.5
-      '@img/sharp-linux-arm64': 0.33.5
-      '@img/sharp-linux-s390x': 0.33.5
-      '@img/sharp-linux-x64': 0.33.5
-      '@img/sharp-linuxmusl-arm64': 0.33.5
-      '@img/sharp-linuxmusl-x64': 0.33.5
-      '@img/sharp-wasm32': 0.33.5
-      '@img/sharp-win32-ia32': 0.33.5
-      '@img/sharp-win32-x64': 0.33.5
-    dev: true
-    optional: true
-
   /sharp@0.34.3:
     resolution: {integrity: sha512-eX2IQ6nFohW4DbvHIOLRB3MHFpYqaqvXd3Tp5e/T/dSH83fxaNJQRvDMhASmkNTsNTVF2/OOopzRCt7xokgPfg==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
@@ -23147,6 +22233,7 @@ packages:
     requiresBuild: true
     dependencies:
       is-arrayish: 0.3.2
+    dev: false
 
   /simple-wcswidth@1.1.2:
     resolution: {integrity: sha512-j7piyCjAeTDSjzTSQ7DokZtMNwNlEAyxqSZeCS+CXH7fJ4jx3FuJ/mTW3mE+6JLs4VJBbcll0Kjn+KXI5t21Iw==}
@@ -23305,11 +22392,6 @@ packages:
       whatwg-url: 7.1.0
     dev: true
 
-  /sourcemap-codec@1.4.8:
-    resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
-    deprecated: Please use @jridgewell/sourcemap-codec instead
-    dev: true
-
   /space-separated-tokens@1.1.5:
     resolution: {integrity: sha512-q/JSVd1Lptzhf5bkYm4ob4iWPjx0KiRe3sRFBNrVqbJkFaBm5vbbowy1mymoPNLRa52+oadOhJ+K49wsSeSjTA==}
     dev: true
@@ -23418,13 +22500,6 @@ packages:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
     dev: true
 
-  /stacktracey@2.1.8:
-    resolution: {integrity: sha512-Kpij9riA+UNg7TnphqjH7/CzctQ/owJGNbFkfEeve4Z4uxT5+JapVLFXcsurIfN34gnTWZNJ/f7NMG0E8JDzTw==}
-    dependencies:
-      as-table: 1.0.55
-      get-source: 2.0.12
-    dev: true
-
   /standard-as-callback@2.1.0:
     resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
     dev: true
@@ -23444,11 +22519,6 @@ packages:
   /stdin-discarder@0.2.2:
     resolution: {integrity: sha512-UhDfHmA92YAlNnCfhmq0VeNL5bDbiZGg7sZ2IvPsXubGkiNa9EC+tUTsjBRsYUAz87btI6/1wf4XoVvQ3uRnmQ==}
     engines: {node: '>=18'}
-    dev: true
-
-  /stoppable@1.1.0:
-    resolution: {integrity: sha512-KXDYZ9dszj6bzvnEMRYvxgeTHU74QBFL54XKtP3nyMuJ81CFYtABZ3bAzL2EdFUaEwJOBOgENyFj3R7oTzDyyw==}
-    engines: {node: '>=4', npm: '>=6'}
     dev: true
 
   /streamsearch@1.1.0:
@@ -24434,6 +23504,7 @@ packages:
     engines: {node: '>=14.0'}
     dependencies:
       '@fastify/busboy': 2.1.1
+    dev: false
 
   /undici@6.21.3:
     resolution: {integrity: sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw==}
@@ -24453,16 +23524,6 @@ packages:
       mime: 3.0.0
       node-fetch-native: 1.6.7
       pathe: 1.1.2
-    dev: true
-
-  /unenv@2.0.0-rc.14:
-    resolution: {integrity: sha512-od496pShMen7nOy5VmVJCnq8rptd45vh6Nx/r2iPbrba6pa6p+tS2ywuIHRZ/OBvSbQZB0kWvpO9XBNVFXHD3Q==}
-    dependencies:
-      defu: 6.1.4
-      exsolve: 1.0.7
-      ohash: 2.0.11
-      pathe: 2.0.3
-      ufo: 1.6.1
     dev: true
 
   /unenv@2.0.0-rc.21:
@@ -25159,64 +24220,6 @@ packages:
       - yaml
     dev: true
 
-  /viteval@0.1.9(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@types/node@24.2.1)(@vitejs/plugin-react@4.7.0)(tsx@4.20.4)(vite@6.3.5):
-    resolution: {integrity: sha512-Auc7RGngDD7FU2XNPk6OCEe2gqChejhDLg57l/GSCknnafm1DyomyxAf0glSO0nE1go52raZodMWQevhRbrrwA==}
-    hasBin: true
-    dependencies:
-      '@viteval/cli': 0.2.4(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@types/node@24.2.1)(@vitejs/plugin-react@4.7.0)(tsx@4.20.4)(vite@6.3.5)
-      '@viteval/core': 0.1.8(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@deno/kv'
-      - '@electric-sql/pglite'
-      - '@libsql/client'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@rsbuild/core'
-      - '@tanstack/query-core'
-      - '@tanstack/react-query'
-      - '@tanstack/router-core'
-      - '@types/node'
-      - '@types/react'
-      - '@upstash/redis'
-      - '@vercel/blob'
-      - '@vercel/functions'
-      - '@vercel/kv'
-      - '@vitejs/plugin-react'
-      - aws4fetch
-      - better-sqlite3
-      - drizzle-orm
-      - encoding
-      - idb-keyval
-      - jiti
-      - less
-      - lightningcss
-      - magicast
-      - mysql2
-      - rolldown
-      - sass
-      - sass-embedded
-      - sqlite3
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - uploadthing
-      - vite
-      - vite-plugin-solid
-      - webpack
-      - ws
-      - xml2js
-      - yaml
-    dev: true
-
   /viteval@0.5.3(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@types/node@24.2.1)(@types/react@19.1.10)(@vitejs/plugin-react@4.7.0)(tsx@4.20.4)(vite@6.3.5):
     resolution: {integrity: sha512-phDrceVUtOje90Oy0v0jeSuAC1FxGrho34KGUntUs9ZG5nJe+CZt59YykasOPdLv0HA5oQgRAkOY2xUvwmaRag==}
     hasBin: true
@@ -25430,48 +24433,6 @@ packages:
     resolution: {integrity: sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q==}
     dev: true
 
-  /workerd@1.20250718.0:
-    resolution: {integrity: sha512-kqkIJP/eOfDlUyBzU7joBg+tl8aB25gEAGqDap+nFWb+WHhnooxjGHgxPBy3ipw2hnShPFNOQt5lFRxbwALirg==}
-    engines: {node: '>=16'}
-    hasBin: true
-    requiresBuild: true
-    optionalDependencies:
-      '@cloudflare/workerd-darwin-64': 1.20250718.0
-      '@cloudflare/workerd-darwin-arm64': 1.20250718.0
-      '@cloudflare/workerd-linux-64': 1.20250718.0
-      '@cloudflare/workerd-linux-arm64': 1.20250718.0
-      '@cloudflare/workerd-windows-64': 1.20250718.0
-    dev: true
-
-  /wrangler@3.114.14(@cloudflare/workers-types@4.20250813.0):
-    resolution: {integrity: sha512-zytHJn5+S47sqgUHi71ieSSP44yj9mKsj0sTUCsY+Tw5zbH8EzB1d9JbRk2KHg7HFM1WpoTI7518EExPGenAmg==}
-    engines: {node: '>=16.17.0'}
-    hasBin: true
-    peerDependencies:
-      '@cloudflare/workers-types': ^4.20250408.0
-    peerDependenciesMeta:
-      '@cloudflare/workers-types':
-        optional: true
-    dependencies:
-      '@cloudflare/kv-asset-handler': 0.3.4
-      '@cloudflare/unenv-preset': 2.0.2(unenv@2.0.0-rc.14)(workerd@1.20250718.0)
-      '@cloudflare/workers-types': 4.20250813.0
-      '@esbuild-plugins/node-globals-polyfill': 0.2.3(esbuild@0.17.19)
-      '@esbuild-plugins/node-modules-polyfill': 0.2.2(esbuild@0.17.19)
-      blake3-wasm: 2.1.5
-      esbuild: 0.17.19
-      miniflare: 3.20250718.1
-      path-to-regexp: 6.3.0
-      unenv: 2.0.0-rc.14
-      workerd: 1.20250718.0
-    optionalDependencies:
-      fsevents: 2.3.3
-      sharp: 0.33.5
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: true
-
   /wrap-ansi@6.2.0:
     resolution: {integrity: sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA==}
     engines: {node: '>=8'}
@@ -25559,19 +24520,6 @@ packages:
       sort-keys: 2.0.0
       type-fest: 0.4.1
       write-json-file: 3.2.0
-    dev: true
-
-  /ws@8.18.0:
-    resolution: {integrity: sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
     dev: true
 
   /ws@8.18.3:
@@ -25725,14 +24673,6 @@ packages:
       error-stack-parser-es: 1.0.5
     dev: true
 
-  /youch@3.3.4:
-    resolution: {integrity: sha512-UeVBXie8cA35DS6+nBkls68xaBBXCye0CNznrhszZjTbRVnJKQuNsyLKBTTL4ln1o1rh2PKtv35twV7irj5SEg==}
-    dependencies:
-      cookie: 0.7.2
-      mustache: 4.2.0
-      stacktracey: 2.1.8
-    dev: true
-
   /youch@4.1.0-beta.11:
     resolution: {integrity: sha512-sQi6PERyO/mT8w564ojOVeAlYTtVQmC2GaktQAf+IdI75/GKIggosBuvyVXvEV+FATAT6RbLdIjFoiIId4ozoQ==}
     dependencies:
@@ -25784,10 +24724,6 @@ packages:
     dependencies:
       zod: 3.25.76
     dev: false
-
-  /zod@3.22.3:
-    resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
-    dev: true
 
   /zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}

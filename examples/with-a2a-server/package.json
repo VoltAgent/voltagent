@@ -2,11 +2,11 @@
   "name": "voltagent-example-with-a2a-server",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
-    "@voltagent/a2a-server": "^1.0.0",
-    "@voltagent/core": "^1.1.12",
-    "@voltagent/internal": "^0.0.10",
-    "@voltagent/logger": "^1.0.1",
-    "@voltagent/server-hono": "^1.0.6",
+    "@voltagent/a2a-server": "^1.0.1",
+    "@voltagent/core": "^1.1.13",
+    "@voltagent/internal": "^0.0.11",
+    "@voltagent/logger": "^1.0.2",
+    "@voltagent/server-hono": "^1.0.7",
     "ai": "^5.0.12",
     "zod": "^3.25.76"
   },
