@@ -131,6 +131,7 @@ export * from "./utils";
 export { zodSchemaToJsonUI } from "./utils/toolParser";
 export * from "./retriever";
 export * from "./mcp";
+export * from "./a2a";
 export { AgentRegistry } from "./registries/agent-registry";
 export { WorkflowRegistry } from "./workflow/registry";
 export * from "./utils/update";

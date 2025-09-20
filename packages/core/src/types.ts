@@ -4,12 +4,12 @@
 
 import type { Logger } from "@voltagent/internal";
 import type { A2AServerFactory, A2AServerLike } from "@voltagent/internal/a2a";
-import type { A2AServerRegistry } from "@voltagent/internal/a2a";
 import type { MCPServerFactory, MCPServerLike } from "@voltagent/internal/mcp";
-import type { MCPServerRegistry } from "@voltagent/internal/mcp";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
 import type { AgentStatus } from "./agent/types";
+import type { MCPServerRegistry } from "./mcp";
 import type { VoltAgentObservability } from "./observability/voltagent-observability";
 import type { ToolStatusInfo } from "./tool";
 import type { VoltOpsClient } from "./voltops/client";

@@ -1,1 +1,1 @@
-export { A2AServerRegistry } from "@voltagent/internal/a2a";
+export { A2AServerRegistry } from "@voltagent/core";

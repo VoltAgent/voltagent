@@ -8,6 +8,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@voltagent/core": "^1.0.0",
     "@types/node": "^24.2.1",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",

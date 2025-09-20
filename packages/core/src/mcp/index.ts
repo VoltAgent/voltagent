@@ -1,3 +1,1 @@
-export * from "./types";
-export * from "./client";
-export * from "./registry";
+export { MCPServerRegistry, type RegisterOptions } from "./registry";

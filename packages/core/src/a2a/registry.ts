@@ -1,4 +1,4 @@
-import type { A2AServerDeps, A2AServerLike, A2AServerMetadata } from "./types";
+import type { A2AServerDeps, A2AServerLike, A2AServerMetadata } from "@voltagent/internal/a2a";
 
 export class A2AServerRegistry<TServer extends A2AServerLike = A2AServerLike> {
   private readonly servers = new Set<TServer>();

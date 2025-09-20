@@ -41,11 +41,6 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return;
   }
 
-  const initialMetadata = listMcpServers(registry);
-  if (initialMetadata.length === 0) {
-    logger.debug("No MCP servers registered yet; MCP routes will activate when servers are added");
-  }
-
   app.get("/mcp/servers", (c) => {
     const response = handleListMcpServers(registry);
     return c.json(response, response.success ? 200 : 500);

@@ -1,4 +1,4 @@
-import type { MCPServerDeps, MCPServerLike, MCPServerMetadata } from "./types";
+import type { MCPServerDeps, MCPServerLike, MCPServerMetadata } from "@voltagent/internal/mcp";
 
 export interface RegisterOptions {
   startTransports?: boolean;

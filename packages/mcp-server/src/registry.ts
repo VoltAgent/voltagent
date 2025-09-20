@@ -1,1 +1,1 @@
-export { MCPServerRegistry } from "@voltagent/internal/mcp";
+export { MCPServerRegistry } from "@voltagent/core";
