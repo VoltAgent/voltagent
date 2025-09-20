@@ -53,7 +53,8 @@
       "**/*.module.css",
       "**/.docusaurus/**",
       "**/generated/**",
-      "**/package.json"
+      "**/package.json",
+      "website/src/data/tweets.json"
     ]
   },
   "overrides": [
