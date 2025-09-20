@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.1.15
+
+### Patch Changes
+
+- [#602](https://github.com/VoltAgent/voltagent/pull/602) [`14932b6`](https://github.com/VoltAgent/voltagent/commit/14932b69cce36abefcea2200e912bc2614216e1f) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: only process VoltAgent spans by default and expose spanFilters config
+
 ## 1.1.14
 
 ### Patch Changes

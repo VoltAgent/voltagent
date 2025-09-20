@@ -4,7 +4,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
     "@voltagent/cli": "^0.1.10",
-    "@voltagent/core": "^1.1.14",
+    "@voltagent/core": "^1.1.15",
     "@voltagent/langfuse-exporter": "^1.1.2",
     "@voltagent/libsql": "^1.0.6",
     "@voltagent/logger": "^1.0.2",
