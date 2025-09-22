@@ -1460,6 +1460,40 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-tavily-search:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.32
+        version: 2.0.32(zod@3.25.76)
+      '@voltagent/cli':
+        specifier: ^0.1.10
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.0.0
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^1.0.0
+        version: link:../../packages/logger
+      '@voltagent/server-hono':
+        specifier: ^1.0.0
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^5.0.48
+        version: 5.0.48(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.17.1
+      tsx:
+        specifier: ^4.19.2
+        version: 4.20.4
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.2
+
   examples/with-thinking-tool:
     dependencies:
       '@ai-sdk/openai':
