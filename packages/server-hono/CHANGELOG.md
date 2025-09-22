@@ -1,5 +1,34 @@
 # @voltagent/server-hono
 
+## 1.0.11
+
+### Patch Changes
+
+- [#609](https://github.com/VoltAgent/voltagent/pull/609) [`942663f`](https://github.com/VoltAgent/voltagent/commit/942663f74dca0df70cdac323102acb18c050fa65) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow cancellation support, including cancellation metadata, default controller updates, and a new API endpoint for cancelling executions - #608
+
+  ## Usage Example
+
+  ```ts
+  import { createSuspendController } from "@voltagent/core";
+
+  const controller = createSuspendController();
+  const stream = workflow.stream(input, { suspendController: controller });
+
+  // Cancel from application code
+  controller.cancel("User stopped the workflow");
+
+  // Or via HTTP
+  await fetch(`/api/workflows/${workflowId}/executions/${executionId}/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason: "User stopped the workflow" }),
+  });
+  ```
+
+- Updated dependencies [[`942663f`](https://github.com/VoltAgent/voltagent/commit/942663f74dca0df70cdac323102acb18c050fa65)]:
+  - @voltagent/core@1.1.16
+  - @voltagent/server-core@1.0.10
+
 ## 1.0.10
 
 ### Patch Changes
