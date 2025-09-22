@@ -252,7 +252,7 @@ export const WorkflowStreamEventSchema = z.object({
   from: z.string().describe("Source of the event"),
   input: z.any().optional(),
   output: z.any().optional(),
-  status: z.enum(["pending", "running", "success", "error", "suspended"]),
+  status: z.enum(["pending", "running", "success", "error", "suspended", "cancelled"]),
   timestamp: z.string(),
   stepIndex: z.number().optional(),
   metadata: z.record(z.any()).optional(),
@@ -275,6 +275,22 @@ export const WorkflowSuspendResponseSchema = z.object({
       }),
     })
     .describe("Workflow suspension result"),
+});
+
+export const WorkflowCancelRequestSchema = z.object({
+  reason: z.string().optional().describe("Reason for cancellation"),
+});
+
+export const WorkflowCancelResponseSchema = z.object({
+  success: z.literal(true),
+  data: z
+    .object({
+      executionId: z.string(),
+      status: z.literal("cancelled"),
+      cancelledAt: z.string(),
+      reason: z.string().optional(),
+    })
+    .describe("Workflow cancellation result"),
 });
 
 export const WorkflowResumeRequestSchema = z

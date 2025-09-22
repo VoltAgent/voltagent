@@ -359,6 +359,33 @@ export const WORKFLOW_ROUTES = {
       },
     },
   },
+  cancelWorkflow: {
+    method: "post" as const,
+    path: "/workflows/:id/executions/:executionId/cancel",
+    summary: "Cancel workflow execution",
+    description:
+      "Cancel a running workflow execution immediately. The workflow stops execution and the state is marked as cancelled. Cancelled workflows cannot be resumed.",
+    tags: ["Workflow Management"],
+    operationId: "cancelWorkflow",
+    responses: {
+      200: {
+        description: "Successfully cancelled workflow execution",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Workflow or execution not found",
+        contentType: "application/json",
+      },
+      409: {
+        description: "Workflow execution already completed or not cancellable",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to cancel workflow due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   resumeWorkflow: {
     method: "post" as const,
     path: "/workflows/:id/executions/:executionId/resume",

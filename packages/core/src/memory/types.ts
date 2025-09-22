@@ -92,7 +92,7 @@ export interface WorkflowStateEntry {
   /** Workflow name for reference */
   workflowName: string;
   /** Current status */
-  status: "running" | "suspended" | "completed" | "error";
+  status: "running" | "suspended" | "completed" | "cancelled" | "error";
   /** Original input to the workflow */
   input?: unknown;
   /** Execution context */

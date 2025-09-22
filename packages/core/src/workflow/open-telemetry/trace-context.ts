@@ -253,6 +253,20 @@ export class WorkflowTraceContext {
   }
 
   /**
+   * Record a cancellation event on the workflow
+   */
+  recordCancellation(reason?: string): void {
+    this.rootSpan.addEvent("workflow.cancelled", {
+      ...(reason ? { "cancellation.reason": reason } : {}),
+    });
+
+    this.rootSpan.setStatus({
+      code: SpanStatusCode.OK,
+      message: reason ? `Workflow cancelled: ${reason}` : "Workflow cancelled",
+    });
+  }
+
+  /**
    * Record a resume event on the workflow
    */
   recordResume(stepIndex: number, resumeData?: any): void {
@@ -297,7 +311,7 @@ export class WorkflowTraceContext {
   /**
    * End the root span with a status
    */
-  end(status: "completed" | "suspended" | "error", error?: Error | any): void {
+  end(status: "completed" | "suspended" | "cancelled" | "error", error?: Error | any): void {
     // Set the final workflow state
     this.rootSpan.setAttribute("workflow.state", status);
 
@@ -307,6 +321,11 @@ export class WorkflowTraceContext {
       this.rootSpan.setStatus({
         code: SpanStatusCode.OK,
         message: "Workflow suspended",
+      });
+    } else if (status === "cancelled") {
+      this.rootSpan.setStatus({
+        code: SpanStatusCode.OK,
+        message: "Workflow cancelled",
       });
     } else {
       this.rootSpan.setStatus({
@@ -338,13 +357,14 @@ export class WorkflowTraceContext {
    */
   endStepSpan(
     span: Span,
-    status: "completed" | "skipped" | "suspended" | "error",
+    status: "completed" | "skipped" | "suspended" | "cancelled" | "error",
     options?: {
       output?: any;
       error?: Error | any;
       attributes?: Record<string, any>;
       skippedReason?: string;
       suspensionReason?: string;
+      cancellationReason?: string;
     },
   ): void {
     // Set the final state of the step
@@ -379,6 +399,15 @@ export class WorkflowTraceContext {
       span.setAttribute("workflow.step.suspended", true);
       if (options?.suspensionReason) {
         span.setAttribute("workflow.step.suspension_reason", options.suspensionReason);
+      }
+    } else if (status === "cancelled") {
+      span.setStatus({
+        code: SpanStatusCode.OK,
+        message: options?.cancellationReason || "Step cancelled",
+      });
+      span.setAttribute("workflow.step.cancelled", true);
+      if (options?.cancellationReason) {
+        span.setAttribute("workflow.step.cancellation_reason", options.cancellationReason);
       }
     } else {
       span.setStatus({

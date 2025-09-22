@@ -24,7 +24,7 @@ Let's build a workflow from scratch. We'll start with a simple function, add AI,
 First, create a workflow that takes a name and returns a greeting. This is the simplest form of a workflow: a single step that processes some data.
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
+import { VoltAgent, createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
 // Define the workflow's shape: its inputs and final output
@@ -45,6 +45,8 @@ const workflow = createWorkflowChain({
   });
 
 // Run it!
+new VoltAgent({ workflows: { workflow } });
+
 const result = await workflow.run({ name: "World" });
 
 console.log(result.result);
@@ -56,7 +58,7 @@ console.log(result.result);
 Now, let's enhance our workflow. We'll add an AI agent to analyze the sentiment of the greeting message. Notice how we add new imports, define an agent, and chain the `.andAgent()` step.
 
 ```typescript
-import { createWorkflowChain, Agent } from "@voltagent/core";
+import { VoltAgent, createWorkflowChain, Agent } from "@voltagent/core";
 import { z } from "zod";
 import { openai } from "@ai-sdk/openai";
 
@@ -84,11 +86,17 @@ const workflow = createWorkflowChain({
     },
   })
   // Add the new AI step to the chain
-  .andAgent(({ data }) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
-    schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
-  });
+  .andAgent(
+    async ({ data }) => `Analyze the sentiment of this greeting: "${data.greeting}"`,
+    agent,
+    {
+      schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
+    }
+  );
 
 // Run the enhanced workflow
+new VoltAgent({ workflows: { workflow } });
+
 const result = await workflow.run({ name: "World" });
 
 console.log(result.result);
@@ -100,7 +108,7 @@ console.log(result.result);
 Finally, let's add a step that only runs if a condition is met. We'll check if the input name is long and add a flag. The `.andWhen()` step is perfect for this. We also update the final `result` schema to include the new optional field.
 
 ```typescript
-import { createWorkflowChain, Agent, andThen } from "@voltagent/core";
+import { VoltAgent, createWorkflowChain, Agent, andThen } from "@voltagent/core";
 import { z } from "zod";
 import { openai } from "@ai-sdk/openai";
 
@@ -127,9 +135,13 @@ const workflow = createWorkflowChain({
       return { greeting: `Hello, ${data.name}!` };
     },
   })
-  .andAgent(({ data }) => `Analyze the sentiment of this greeting: "${data.greeting}"`, agent, {
-    schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
-  })
+  .andAgent(
+    async ({ data }) => `Analyze the sentiment of this greeting: "${data.greeting}"`,
+    agent,
+    {
+      schema: z.object({ sentiment: z.string().describe("e.g., positive, neutral, negative") }),
+    }
+  )
   // Add a conditional step
   .andWhen({
     id: "check-name-length",
@@ -141,6 +153,8 @@ const workflow = createWorkflowChain({
   });
 
 // Run with a long name to trigger the conditional step
+new VoltAgent({ workflows: { workflow } });
+
 const longNameResult = await workflow.run({ name: "Alexanderson" });
 console.log(longNameResult.result);
 // Output: { greeting: 'Hello, Alexanderson!', sentiment: 'positive', isLongName: true }
@@ -245,7 +259,7 @@ The `WorkflowChain` builder has a `.toWorkflow()` method that converts your blue
 This is powerful for creating modular and testable code.
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
+import { VoltAgent, createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
 // 1. Define the chain (the builder)
@@ -263,6 +277,8 @@ const greeterChain = createWorkflowChain({
 const runnableGreeter = greeterChain.toWorkflow();
 
 // 3. Now you can run it as many times as you want
+new VoltAgent({ workflows: { runnableGreeter } });
+
 const result1 = await runnableGreeter.run({ name: "Alice" });
 console.log(result1.result); // { greeting: 'Hello, Alice!' }
 
@@ -296,7 +312,7 @@ const result = await workflow.run(
 The `execute` function can accept a second argument containing the execution state. You can also modify the `context` map, and the changes will be available in subsequent steps.
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
+import { VoltAgent, createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
 const workflow = createWorkflowChain({
@@ -337,6 +353,8 @@ const workflow = createWorkflowChain({
   });
 
 // Run it with an initial state
+new VoltAgent({ workflows: { workflow } });
+
 await workflow.run(
   { name: "Alex" },
   {
@@ -360,7 +378,7 @@ This allows the agent to maintain a persistent, contextual conversation with eac
 ```typescript
 // ... inside a workflow chain
 .andAgent(
-  (data) => `Based on our previous discussion, what should we do next?`,
+  async (data) => `Based on our previous discussion, what should we do next?`,
   agent,
   {
     schema: z.object({ nextStep: z.string() }),

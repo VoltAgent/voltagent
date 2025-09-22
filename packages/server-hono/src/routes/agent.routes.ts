@@ -9,6 +9,8 @@ import {
   TextRequestSchema,
   TextResponseSchema,
   WORKFLOW_ROUTES,
+  WorkflowCancelRequestSchema,
+  WorkflowCancelResponseSchema,
   WorkflowExecutionRequestSchema,
   WorkflowExecutionResponseSchema,
   WorkflowListSchema,
@@ -48,6 +50,8 @@ export {
   WorkflowStreamEventSchema,
   WorkflowSuspendRequestSchema,
   WorkflowSuspendResponseSchema,
+  WorkflowCancelRequestSchema,
+  WorkflowCancelResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
 } from "@voltagent/server-core";
@@ -404,6 +408,7 @@ Event types include:
 - step-start: Step execution started
 - step-complete: Step completed successfully
 - workflow-suspended: Workflow suspended, awaiting resume
+- workflow-cancelled: Workflow cancelled by client request
 - workflow-complete: Workflow completed successfully
 - workflow-error: Workflow encountered an error
 - Custom events from step writers`,
@@ -546,6 +551,70 @@ export const suspendWorkflowRoute = createRoute({
   tags: [...WORKFLOW_ROUTES.suspendWorkflow.tags],
   summary: WORKFLOW_ROUTES.suspendWorkflow.summary,
   description: WORKFLOW_ROUTES.suspendWorkflow.description,
+});
+
+// Cancel workflow route
+export const cancelWorkflowRoute = createRoute({
+  method: WORKFLOW_ROUTES.cancelWorkflow.method,
+  path: WORKFLOW_ROUTES.cancelWorkflow.path
+    .replace(":id", "{id}")
+    .replace(":executionId", "{executionId}"),
+  request: {
+    params: z.object({
+      id: workflowIdParam(),
+      executionId: executionIdParam(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: WorkflowCancelRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: WorkflowCancelResponseSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.cancelWorkflow.responses?.[200]?.description ||
+        "Successful workflow cancellation",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.cancelWorkflow.responses?.[404]?.description ||
+        "Workflow execution not found",
+    },
+    409: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.cancelWorkflow.responses?.[409]?.description ||
+        "Workflow execution not cancellable",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: WORKFLOW_ROUTES.cancelWorkflow.responses?.[500]?.description || "Server error",
+    },
+  },
+  tags: [...WORKFLOW_ROUTES.cancelWorkflow.tags],
+  summary: WORKFLOW_ROUTES.cancelWorkflow.summary,
+  description: WORKFLOW_ROUTES.cancelWorkflow.description,
 });
 
 // Resume workflow route

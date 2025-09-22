@@ -21,8 +21,10 @@ import {
   WorkflowStreamController,
   WorkflowStreamWriterImpl,
 } from "./stream";
+import { createSuspendController as createDefaultSuspendController } from "./suspend-controller";
 import type {
   Workflow,
+  WorkflowCancellationMetadata,
   WorkflowConfig,
   WorkflowExecutionResult,
   WorkflowInput,
@@ -934,6 +936,115 @@ export function createWorkflow<
             continue;
           }
 
+          const stepName = step.name || step.id || `Step ${index + 1}`;
+
+          executionContext.currentStepIndex = index;
+
+          const activeController = workflowRegistry.activeExecutions.get(executionId);
+
+          const completeCancellation = async (
+            span: ReturnType<typeof traceContext.createStepSpan>,
+            reason: string,
+          ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+            stateManager.cancel(reason);
+
+            traceContext.endStepSpan(span, "cancelled", {
+              output: stateManager.state.data,
+              cancellationReason: reason,
+            });
+
+            const stepData = executionContext.stepData.get(step.id);
+            if (stepData) {
+              stepData.output = stateManager.state.data;
+            }
+
+            streamController?.emit({
+              type: "step-complete",
+              executionId,
+              from: stepName,
+              input: stateManager.state.data,
+              output: undefined,
+              status: "cancelled",
+              context: options?.context,
+              timestamp: new Date().toISOString(),
+              stepIndex: index,
+              stepType: step.type,
+              metadata: { reason },
+            });
+
+            await hooks?.onStepEnd?.(stateManager.state);
+
+            traceContext.recordCancellation(reason);
+            traceContext.end("cancelled");
+
+            workflowRegistry.activeExecutions.delete(executionId);
+
+            try {
+              await effectiveMemory.updateWorkflowState(executionId, {
+                status: "cancelled",
+                metadata: {
+                  ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
+                  cancellationReason: reason,
+                },
+                updatedAt: new Date(),
+              });
+            } catch (memoryError) {
+              runLogger.warn("Failed to update workflow state to cancelled in Memory V2:", {
+                error: memoryError,
+              });
+            }
+
+            streamController?.emit({
+              type: "workflow-cancelled",
+              executionId,
+              from: name,
+              status: "cancelled",
+              context: options?.context,
+              timestamp: new Date().toISOString(),
+              metadata: { reason },
+            });
+
+            streamController?.close();
+
+            runLogger.debug(
+              `Workflow cancelled | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"}`,
+              {
+                stepIndex: index,
+                reason,
+              },
+            );
+
+            await hooks?.onEnd?.(stateManager.state);
+
+            return createWorkflowExecutionResult(
+              id,
+              executionId,
+              stateManager.state.startAt,
+              new Date(),
+              "cancelled",
+              null,
+              stateManager.state.usage,
+              undefined,
+              stateManager.state.cancellation,
+              undefined,
+              effectiveResumeSchema,
+            );
+          };
+
+          const resolveCancellationReason = (abortValue?: unknown): string => {
+            const reasonFromSignal =
+              typeof abortValue === "string" && abortValue !== "cancelled" ? abortValue : undefined;
+
+            return (
+              options?.suspendController?.getCancelReason?.() ??
+              activeController?.getCancelReason?.() ??
+              reasonFromSignal ??
+              options?.suspendController?.getReason?.() ??
+              activeController?.getReason?.() ??
+              "Workflow cancelled"
+            );
+          };
+
           // Check for suspension signal before each step
           const checkSignal = options?.suspendController?.signal;
           runLogger.trace(`Checking suspension signal at step ${index}`, {
@@ -944,6 +1055,34 @@ export function createWorkflow<
 
           const signal = options?.suspendController?.signal;
           if (signal?.aborted) {
+            const abortReason = (signal as AbortSignal & { reason?: unknown }).reason;
+            const abortType =
+              typeof abortReason === "object" && abortReason !== null && "type" in abortReason
+                ? (abortReason as { type?: string }).type
+                : abortReason;
+            const isCancelled =
+              options?.suspendController?.isCancelled?.() === true ||
+              activeController?.isCancelled?.() === true ||
+              abortType === "cancelled";
+
+            if (isCancelled) {
+              const cancellationReason = resolveCancellationReason(abortReason);
+
+              runLogger.debug(
+                `Cancellation signal detected at step ${index} for execution ${executionId}`,
+              );
+
+              const cancelSpan = traceContext.createStepSpan(index, step.type, stepName, {
+                stepId: step.id,
+                input: stateManager.state.data,
+                attributes: {
+                  "workflow.step.function": step.execute?.name,
+                },
+              });
+
+              return completeCancellation(cancelSpan, cancellationReason);
+            }
+
             runLogger.debug(
               `Suspension signal detected at step ${index} for execution ${executionId}`,
             );
@@ -955,14 +1094,11 @@ export function createWorkflow<
             if (options?.suspendController?.getReason()) {
               reason = options.suspendController.getReason() || "User requested suspension";
               runLogger.trace(`Using reason from suspension controller: ${reason}`);
-            } else {
-              // Fallback to registry's active executions
-              const activeController = workflowRegistry.activeExecutions.get(executionId);
-              if (activeController?.getReason()) {
-                reason = activeController.getReason() || "User requested suspension";
-                runLogger.debug(`Using reason from registry: ${reason}`);
-              }
+            } else if (activeController?.getReason()) {
+              reason = activeController.getReason() || "User requested suspension";
+              runLogger.debug(`Using reason from registry: ${reason}`);
             }
+
             runLogger.trace(`Final suspension reason: ${reason}`);
             const checkpoint = {
               stepExecutionState: stateManager.state.data,
@@ -985,7 +1121,6 @@ export function createWorkflow<
             }
 
             // Update workflow execution status to suspended
-            // Telemetry tracking removed - now handled by OpenTelemetry spans
             runLogger.trace(`Workflow execution suspended: ${executionId}`);
 
             // Record suspension in trace
@@ -1019,25 +1154,19 @@ export function createWorkflow<
               null,
               stateManager.state.usage,
               stateManager.state.suspension,
+              stateManager.state.cancellation,
               undefined,
               effectiveResumeSchema,
             );
           }
 
-          executionContext.currentStepIndex = index;
-
-          const stepSpan = traceContext.createStepSpan(
-            index,
-            step.type,
-            step.name || step.id || `Step ${index + 1}`,
-            {
-              stepId: step.id,
-              input: stateManager.state.data,
-              attributes: {
-                "workflow.step.function": step.execute?.name,
-              },
+          const stepSpan = traceContext.createStepSpan(index, step.type, stepName, {
+            stepId: step.id,
+            input: stateManager.state.data,
+            attributes: {
+              "workflow.step.function": step.execute?.name,
             },
-          );
+          });
 
           // Create stream writer for this step - real one for streaming, no-op for regular execution
           const stepWriter = streamController
@@ -1077,7 +1206,6 @@ export function createWorkflow<
           });
 
           // Log step start with context
-          const stepName = step.name || step.id || `Step ${index + 1}`;
           runLogger.debug(`Step ${index + 1} starting: ${stepName} | type=${step.type}`, {
             stepIndex: index,
             stepType: step.type,
@@ -1222,6 +1350,11 @@ export function createWorkflow<
 
             await hooks?.onStepEnd?.(stateManager.state);
           } catch (stepError) {
+            if (stepError instanceof Error && stepError.message === "WORKFLOW_CANCELLED") {
+              const cancellationReason = resolveCancellationReason();
+              return completeCancellation(stepSpan, cancellationReason);
+            }
+
             // Check if this is a suspension, not an error
             if (stepError instanceof Error && stepError.message === "WORKFLOW_SUSPENDED") {
               runLogger.debug(`Step ${index} suspended during execution`);
@@ -1313,6 +1446,7 @@ export function createWorkflow<
                 null,
                 stateManager.state.usage,
                 stateManager.state.suspension,
+                stateManager.state.cancellation,
                 undefined,
                 effectiveResumeSchema,
               );
@@ -1379,11 +1513,70 @@ export function createWorkflow<
           finalState.result as z.infer<RESULT_SCHEMA>,
           stateManager.state.usage,
           undefined,
+          stateManager.state.cancellation,
           undefined,
           effectiveResumeSchema,
         );
       } catch (error) {
-        // Check if this is a suspension, not an error
+        // Check if this is a cancellation or suspension, not an error
+        if (error instanceof Error && error.message === "WORKFLOW_CANCELLED") {
+          const cancellationReason =
+            options?.suspendController?.getCancelReason?.() ??
+            workflowRegistry.activeExecutions.get(executionId)?.getCancelReason?.() ??
+            options?.suspendController?.getReason?.() ??
+            workflowRegistry.activeExecutions.get(executionId)?.getReason?.() ??
+            "Workflow cancelled";
+
+          stateManager.cancel(cancellationReason);
+
+          traceContext.recordCancellation(cancellationReason);
+          traceContext.end("cancelled");
+
+          workflowRegistry.activeExecutions.delete(executionId);
+
+          streamController?.emit({
+            type: "workflow-cancelled",
+            executionId,
+            from: name,
+            status: "cancelled",
+            context: options?.context,
+            timestamp: new Date().toISOString(),
+            metadata: cancellationReason ? { reason: cancellationReason } : undefined,
+          });
+
+          streamController?.close();
+
+          try {
+            await effectiveMemory.updateWorkflowState(executionId, {
+              status: "cancelled",
+              metadata: {
+                ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
+                cancellationReason,
+              },
+              updatedAt: new Date(),
+            });
+          } catch (memoryError) {
+            runLogger.warn("Failed to update workflow state to cancelled in Memory V2:", {
+              error: memoryError,
+            });
+          }
+
+          await hooks?.onEnd?.(stateManager.state);
+
+          return createWorkflowExecutionResult(
+            id,
+            executionId,
+            stateManager.state.startAt,
+            new Date(),
+            "cancelled",
+            null,
+            stateManager.state.usage,
+            undefined,
+            undefined,
+            effectiveResumeSchema,
+          );
+        }
+
         if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
           runLogger.debug("Workflow suspended (caught at top level)");
           // Record suspension in trace
@@ -1406,6 +1599,7 @@ export function createWorkflow<
             null,
             stateManager.state.usage,
             stateManager.state.suspension,
+            stateManager.state.cancellation,
             undefined,
             effectiveResumeSchema,
           );
@@ -1468,6 +1662,7 @@ export function createWorkflow<
           null,
           stateManager.state.usage,
           undefined,
+          stateManager.state.cancellation,
           error,
           effectiveResumeSchema,
         );
@@ -1499,22 +1694,7 @@ export function createWorkflow<
         resumeSchema: effectiveResumeSchema,
       };
     },
-    createSuspendController: () => {
-      const abortController = new AbortController();
-      let suspensionReason: string | undefined;
-      let suspended = false;
-
-      return {
-        signal: abortController.signal,
-        suspend: (reason?: string) => {
-          suspensionReason = reason;
-          suspended = true;
-          abortController.abort();
-        },
-        isSuspended: () => suspended,
-        getReason: () => suspensionReason,
-      };
-    },
+    createSuspendController: () => createDefaultSuspendController(),
     run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
       // Simply call executeInternal which handles everything without stream
       return executeInternal(input, options);
@@ -1523,6 +1703,16 @@ export function createWorkflow<
       // Create stream controller for this execution
       const streamController = new WorkflowStreamController();
       const executionId = options?.executionId || crypto.randomUUID();
+
+      // Use provided suspend controller or create a default one
+      const suspendController = options?.suspendController ?? createDefaultSuspendController();
+
+      // Ensure suspend controller is passed to execution internals alongside exec ID
+      const executionOptions: WorkflowRunOptions = {
+        ...options,
+        executionId,
+        suspendController,
+      };
 
       // Save the original input for resume
       const originalInput = input;
@@ -1540,7 +1730,7 @@ export function createWorkflow<
       // Start execution in background
       const executeWithStream = async () => {
         // Pass our stream controller to executeInternal so it emits events to our stream
-        const result = await executeInternal(input, options, streamController);
+        const result = await executeInternal(input, executionOptions, streamController);
         return result;
       };
 
@@ -1572,9 +1762,10 @@ export function createWorkflow<
         status: resultPromise.then((r) => r.status),
         result: resultPromise.then((r) => r.result),
         suspension: resultPromise.then((r) => r.suspension),
+        cancellation: resultPromise.then((r) => r.cancellation),
         error: resultPromise.then((r) => r.error),
         usage: resultPromise.then((r) => r.usage),
-        resume: async (input: z.infer<RESUME_SCHEMA>) => {
+        resume: async (input: z.infer<RESUME_SCHEMA>, opts?: { stepId?: string }) => {
           const execResult = await resultPromise;
           if (execResult.status !== "suspended") {
             throw new Error(`Cannot resume workflow in ${execResult.status} state`);
@@ -1600,15 +1791,27 @@ export function createWorkflow<
               throw new Error("No suspension metadata found");
             }
 
+            let resumeStepIndex = execResult.suspension.suspendedStepIndex;
+            if (opts?.stepId) {
+              const overrideIndex = (steps as BaseStep[]).findIndex(
+                (step) => step.id === opts.stepId,
+              );
+              if (overrideIndex === -1) {
+                throw new Error(`Step '${opts.stepId}' not found in workflow '${id}'`);
+              }
+              resumeStepIndex = overrideIndex;
+            }
+
             // Create resume options to continue from where we left off
             const resumeOptions: WorkflowRunOptions = {
               executionId: execResult.executionId,
               resumeFrom: {
                 executionId: execResult.executionId,
                 checkpoint: execResult.suspension.checkpoint,
-                resumeStepIndex: execResult.suspension.suspendedStepIndex,
+                resumeStepIndex,
                 resumeData: input,
               },
+              suspendController,
             };
 
             // Re-execute with streaming from the suspension point
@@ -1647,6 +1850,7 @@ export function createWorkflow<
             status: resumedPromise.then((r) => r.status),
             result: resumedPromise.then((r) => r.result),
             suspension: resumedPromise.then((r) => r.suspension),
+            cancellation: resumedPromise.then((r) => r.cancellation),
             error: resumedPromise.then((r) => r.error),
             usage: resumedPromise.then((r) => r.usage),
             resume: async (input2: z.infer<RESUME_SCHEMA>, opts?: { stepId?: string }) => {
@@ -1658,12 +1862,24 @@ export function createWorkflow<
               // Recursively call resume on the stream result (which will use the same stream controller)
               return streamResult.resume(input2, opts);
             },
+            suspend: (reason?: string) => {
+              suspendController.suspend(reason);
+            },
+            cancel: (reason?: string) => {
+              suspendController.cancel(reason);
+            },
             abort: () => streamController.abort(),
             // Continue using the same stream iterator
             [Symbol.asyncIterator]: () => streamController.getStream(),
           };
 
           return resumedStreamResult;
+        },
+        suspend: (reason?: string) => {
+          suspendController.suspend(reason);
+        },
+        cancel: (reason?: string) => {
+          suspendController.cancel(reason);
         },
         abort: () => {
           streamController.abort();
@@ -1694,10 +1910,11 @@ function createWorkflowExecutionResult<
   executionId: string,
   startAt: Date,
   endAt: Date,
-  status: "completed" | "suspended" | "error",
+  status: "completed" | "suspended" | "cancelled" | "error",
   result: z.infer<RESULT_SCHEMA> | null,
   usage: UsageInfo,
-  suspension?: any,
+  suspension?: WorkflowSuspensionMetadata,
+  cancellation?: WorkflowCancellationMetadata,
   error?: unknown,
   resumeSchema?: RESUME_SCHEMA,
 ): WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA> {
@@ -1727,10 +1944,11 @@ function createWorkflowExecutionResult<
         resumeResult.executionId,
         resumeResult.startAt,
         resumeResult.endAt,
-        resumeResult.status as "completed" | "suspended" | "error",
+        resumeResult.status as "completed" | "suspended" | "cancelled" | "error",
         resumeResult.result,
         resumeResult.usage,
         resumeResult.suspension,
+        resumeResult.cancellation,
         resumeResult.error,
         resumeSchema,
       );
@@ -1750,6 +1968,7 @@ function createWorkflowExecutionResult<
     result,
     usage,
     suspension,
+    cancellation,
     error,
     resume: resumeFn as any, // Type is handled by the interface
   };
@@ -1771,9 +1990,23 @@ async function executeWithSignalCheck<T>(
 
   // Create a promise that rejects when signal is aborted
   const abortPromise = new Promise<never>((_, reject) => {
+    const getAbortError = () => {
+      const reason = (signal as AbortSignal & { reason?: unknown }).reason;
+      if (reason && typeof reason === "object" && reason !== null && "type" in reason) {
+        const typedReason = reason as { type?: string };
+        if (typedReason.type === "cancelled") {
+          return new Error("WORKFLOW_CANCELLED");
+        }
+      }
+      if (reason === "cancelled") {
+        return new Error("WORKFLOW_CANCELLED");
+      }
+      return new Error("WORKFLOW_SUSPENDED");
+    };
+
     const checkSignal = () => {
       if (signal.aborted) {
-        reject(new Error("WORKFLOW_SUSPENDED"));
+        reject(getAbortError());
       }
     };
 
@@ -1788,7 +2021,7 @@ async function executeWithSignalCheck<T>(
       "abort",
       () => {
         clearInterval(intervalId);
-        reject(new Error("WORKFLOW_SUSPENDED"));
+        reject(getAbortError());
       },
       { once: true },
     );

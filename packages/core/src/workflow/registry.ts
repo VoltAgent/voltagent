@@ -1,8 +1,7 @@
 import { EventEmitter } from "node:events";
-import type { UsageInfo } from "../agent/providers";
 import { LoggerProxy } from "../logger";
 import { serializeWorkflowStep } from "./core";
-import type { Workflow, WorkflowSuspendController } from "./types";
+import type { Workflow, WorkflowExecutionResult, WorkflowSuspendController } from "./types";
 
 /**
  * Workflow registration information
@@ -139,16 +138,7 @@ export class WorkflowRegistry extends EventEmitter {
     executionId: string,
     resumeData?: any,
     resumeStepId?: string,
-  ): Promise<{
-    executionId: string;
-    startAt: Date;
-    endAt: Date;
-    status: "completed" | "suspended" | "error";
-    result: any;
-    usage: UsageInfo;
-    suspension?: any;
-    error?: unknown;
-  } | null> {
+  ): Promise<WorkflowExecutionResult<any, any> | null> {
     this.logger.debug(`Attempting to resume workflow ${workflowId} execution ${executionId}`);
 
     const registeredWorkflow = this.getWorkflow(workflowId);

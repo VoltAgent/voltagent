@@ -1,6 +1,7 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
+  handleCancelWorkflow,
   handleChatStream,
   handleCheckUpdates,
   handleExecuteWorkflow,
@@ -24,6 +25,7 @@ import {
 } from "@voltagent/server-core";
 import type { OpenAPIHonoType } from "../zod-openapi-compat";
 import {
+  cancelWorkflowRoute,
   chatRoute,
   executeWorkflowRoute,
   getAgentsRoute,
@@ -239,6 +241,26 @@ export function registerWorkflowRoutes(
     const response = await handleSuspendWorkflow(executionId, body, deps, logger);
     if (!response.success) {
       return c.json(response, 500);
+    }
+    return c.json(response, 200);
+  });
+
+  // Cancel workflow execution
+  app.openapi(cancelWorkflowRoute, async (c) => {
+    const executionId = c.req.param("executionId");
+    if (!executionId) {
+      throw new Error("Missing execution id parameter");
+    }
+    const body = await c.req.json();
+    const response = await handleCancelWorkflow(executionId, body, deps, logger);
+    if (!response.success) {
+      const errorMessage = response.error || "";
+      const status = errorMessage.includes("not found")
+        ? 404
+        : errorMessage.includes("not cancellable")
+          ? 409
+          : 500;
+      return c.json(response, status);
     }
     return c.json(response, 200);
   });

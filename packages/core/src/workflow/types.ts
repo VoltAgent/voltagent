@@ -32,6 +32,13 @@ export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> 
   };
 }
 
+export interface WorkflowCancellationMetadata {
+  /** Timestamp when the workflow was cancelled */
+  cancelledAt: Date;
+  /** Reason for cancellation */
+  reason?: string;
+}
+
 /**
  * Custom abort controller for workflow suspension with reason tracking
  */
@@ -45,13 +52,25 @@ export interface WorkflowSuspendController {
    */
   suspend: (reason?: string) => void;
   /**
+   * Cancel the workflow with a reason
+   */
+  cancel: (reason?: string) => void;
+  /**
    * Check if the workflow has been suspended
    */
   isSuspended: () => boolean;
   /**
-   * Get the suspension reason
+   * Check if the workflow has been cancelled
+   */
+  isCancelled: () => boolean;
+  /**
+   * Get the suspension or cancellation reason
    */
   getReason: () => string | undefined;
+  /**
+   * Get the cancellation reason if cancellation was requested
+   */
+  getCancelReason: () => string | undefined;
 }
 
 /**
@@ -82,7 +101,12 @@ export interface WorkflowExecutionResultBase<
   /**
    * Current status of the workflow execution
    */
-  status: "completed" | "suspended" | "error" | Promise<"completed" | "suspended" | "error">;
+  status:
+    | "completed"
+    | "suspended"
+    | "cancelled"
+    | "error"
+    | Promise<"completed" | "suspended" | "cancelled" | "error">;
   /**
    * The result data if workflow completed successfully
    */
@@ -91,6 +115,10 @@ export interface WorkflowExecutionResultBase<
    * Suspension metadata if workflow was suspended
    */
   suspension?: WorkflowSuspensionMetadata | Promise<WorkflowSuspensionMetadata | undefined>;
+  /**
+   * Cancellation metadata if workflow was cancelled
+   */
+  cancellation?: WorkflowCancellationMetadata | Promise<WorkflowCancellationMetadata | undefined>;
   /**
    * Error information if workflow failed
    */
@@ -110,9 +138,10 @@ export interface WorkflowExecutionResult<
 > extends WorkflowExecutionResultBase<RESULT_SCHEMA, RESUME_SCHEMA> {
   // Override with concrete types (not promises)
   endAt: Date;
-  status: "completed" | "suspended" | "error";
+  status: "completed" | "suspended" | "cancelled" | "error";
   result: z.infer<RESULT_SCHEMA> | null;
   suspension?: WorkflowSuspensionMetadata;
+  cancellation?: WorkflowCancellationMetadata;
   error?: unknown;
   usage: UsageInfo;
   /**
@@ -138,9 +167,10 @@ export interface WorkflowStreamResult<
     AsyncIterable<WorkflowStreamEvent> {
   // Override with promise types for async execution
   endAt: Promise<Date>;
-  status: Promise<"completed" | "suspended" | "error">;
+  status: Promise<"completed" | "suspended" | "cancelled" | "error">;
   result: Promise<z.infer<RESULT_SCHEMA> | null>;
   suspension: Promise<WorkflowSuspensionMetadata | undefined>;
+  cancellation: Promise<WorkflowCancellationMetadata | undefined>;
   error: Promise<unknown | undefined>;
   usage: Promise<UsageInfo>;
   /**
@@ -153,6 +183,14 @@ export interface WorkflowStreamResult<
     input: z.infer<RESUME_SCHEMA>,
     options?: { stepId?: string },
   ) => Promise<WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  /**
+   * Request workflow suspension
+   */
+  suspend: (reason?: string) => void;
+  /**
+   * Cancel the workflow execution
+   */
+  cancel: (reason?: string) => void;
   /**
    * Abort the workflow execution
    */
@@ -551,7 +589,7 @@ export interface WorkflowStreamEvent {
   /**
    * Current status of the step/event
    */
-  status: "pending" | "running" | "success" | "error" | "suspended";
+  status: "pending" | "running" | "success" | "error" | "suspended" | "cancelled";
   /**
    * User context passed through the workflow
    */

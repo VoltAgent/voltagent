@@ -420,6 +420,8 @@ For now, use the programmatic API directly if you need continuous streaming acro
 
 ### Suspend/Resume Event Flow
 
+> **Important:** Register your workflow with `new VoltAgent({ workflows: { ... } })` so suspend/resume streaming works with the registry and REST endpoints.
+
 ```typescript
 // Example workflow with suspension
 const workflow = createWorkflowChain(config)
