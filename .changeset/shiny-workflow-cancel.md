@@ -1,7 +1,7 @@
 ---
-"@voltagent/core": minor
-"@voltagent/server-core": minor
-"@voltagent/server-hono": minor
+"@voltagent/core": patch
+"@voltagent/server-core": patch
+"@voltagent/server-hono": patch
 ---
 
 feat: add workflow cancellation support, including cancellation metadata, default controller updates, and a new API endpoint for cancelling executions - #608
