@@ -87,7 +87,7 @@ export const textRoute = createRoute({
   request: {
     params: z.object({
       id: z.string().openapi({
-        param: { name: "id", in: "path" },
+        param: { name: "id", in: "path", required: true },
         example: "my-agent-123",
         description: "The ID of the agent",
       }),
@@ -140,7 +140,7 @@ export const streamRoute = createRoute({
   request: {
     params: z.object({
       id: z.string().openapi({
-        param: { name: "id", in: "path" },
+        param: { name: "id", in: "path", required: true },
         example: "my-agent-123",
         description: "The ID of the agent",
       }),
@@ -199,7 +199,7 @@ export const chatRoute = createRoute({
   request: {
     params: z.object({
       id: z.string().openapi({
-        param: { name: "id", in: "path" },
+        param: { name: "id", in: "path", required: true },
         example: "my-agent-123",
         description: "The ID of the agent",
       }),
@@ -251,7 +251,7 @@ export const objectRoute = createRoute({
   request: {
     params: z.object({
       id: z.string().openapi({
-        param: { name: "id", in: "path" },
+        param: { name: "id", in: "path", required: true },
         example: "my-agent-123",
         description: "The ID of the agent",
       }),
@@ -304,7 +304,7 @@ export const streamObjectRoute = createRoute({
   request: {
     params: z.object({
       id: z.string().openapi({
-        param: { name: "id", in: "path" },
+        param: { name: "id", in: "path", required: true },
         example: "my-agent-123",
         description: "The ID of the agent",
       }),
@@ -393,7 +393,7 @@ export const streamWorkflowRoute = createRoute({
   request: {
     params: z.object({
       id: z.string().openapi({
-        param: { name: "id", in: "path" },
+        param: { name: "id", in: "path", required: true },
         example: "my-workflow-123",
         description: "The ID of the workflow",
       }),
@@ -457,7 +457,7 @@ export const executeWorkflowRoute = createRoute({
   request: {
     params: z.object({
       id: z.string().openapi({
-        param: { name: "id", in: "path" },
+        param: { name: "id", in: "path", required: true },
         example: "my-workflow-123",
         description: "The ID of the workflow",
       }),
@@ -515,12 +515,12 @@ export const suspendWorkflowRoute = createRoute({
   request: {
     params: z.object({
       id: z.string().openapi({
-        param: { name: "id", in: "path" },
+        param: { name: "id", in: "path", required: true },
         example: "my-workflow-123",
         description: "The ID of the workflow",
       }),
       executionId: z.string().openapi({
-        param: { name: "executionId", in: "path" },
+        param: { name: "executionId", in: "path", required: true },
         example: "exec_1234567890_abc123",
         description: "The ID of the execution to operate on",
       }),
@@ -587,12 +587,12 @@ export const resumeWorkflowRoute = createRoute({
   request: {
     params: z.object({
       id: z.string().openapi({
-        param: { name: "id", in: "path" },
+        param: { name: "id", in: "path", required: true },
         example: "my-workflow-123",
         description: "The ID of the workflow",
       }),
       executionId: z.string().openapi({
-        param: { name: "executionId", in: "path" },
+        param: { name: "executionId", in: "path", required: true },
         example: "exec_1234567890_abc123",
         description: "The ID of the execution to operate on",
       }),
