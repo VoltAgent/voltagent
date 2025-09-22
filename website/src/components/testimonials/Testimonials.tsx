@@ -1,4 +1,5 @@
-import tweetsData from "@site/src/data/tweets.json";
+// @ts-ignore
+import tweetsData from "@site/.docusaurus/fetch-tweets-plugin/default/tweets.json";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArticleCard } from "./ArticleCard";
 import { DiscordMessage } from "./DiscordMessage";
@@ -131,15 +132,6 @@ const linkedInPosts = [
     content:
       "If you are building AI Agents or Agentic flows and your language of choice is TypeScript you 1000% need to checkout this framework 👇 VoltAgent - an open-source TypeScript framework for building and orchestrating AI agents with built-in visual observability and debugging capabilities. Backed by a solid team (Omer Aplak & Necati Ozmen) consisting of the former CTO/founder and head of growth at refine.dev.",
     url: "https://www.linkedin.com/feed/update/urn:li:activity:7341479739112509441/",
-  },
-  {
-    id: "linkedin-6",
-    profileImage: "https://cdn.voltagent.dev/website/testimonials/linkedin-user/voltagent.jpeg",
-    name: "VoltAgent",
-    title: "Open Source AI Agent Framework",
-    content:
-      "VoltAgent is an open-source framework for building and orchestrating AI agents with TypeScript. It's designed to be flexible, extensible, and easy to use.",
-    url: "https://www.linkedin.com/company/volt-agent/",
   },
 ];
 
@@ -277,6 +269,13 @@ const articles = [
 ];
 
 export function Testimonials() {
+  // Check if tweets data is loaded
+  useEffect(() => {
+    console.log("Tweet data loaded:", tweetsData);
+    console.log("Type of tweetsData:", typeof tweetsData);
+    console.log("Tweet IDs:", Object.keys(tweetsData || {}));
+  }, []);
+
   // Animation control states for each row
   const [isTweetsRowPaused, setIsTweetsRowPaused] = useState(false);
   const [isDiscordRowPaused, setIsDiscordRowPaused] = useState(false);
@@ -479,7 +478,7 @@ export function Testimonials() {
                 {seamlessMixedContent.map((item, index) => (
                   <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
                     {item.type === "tweet" ? (
-                      <StaticTweet tweet={tweetsData[item.id]} />
+                      <StaticTweet tweet={tweetsData?.[item.id]} />
                     ) : (
                       <LinkedInPost
                         profileImage={item.data.profileImage}

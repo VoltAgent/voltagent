@@ -1,5 +1,11 @@
 # @voltagent/server-hono
 
+## 1.0.8
+
+### Patch Changes
+
+- [`e4d51da`](https://github.com/VoltAgent/voltagent/commit/e4d51da4161b69cbe0ac737aeca6842a48a4568c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent Swagger/OpenAPI from registering MCP and A2A endpoints when no servers are configured, avoiding `/doc` errors in projects that omit those optional packages.
+
 ## 1.0.7
 
 ### Patch Changes

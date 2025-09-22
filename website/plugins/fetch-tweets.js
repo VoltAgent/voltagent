@@ -54,22 +54,52 @@ const sanitizeUser = (user) =>
 
 const sanitizeEntities = (entities) => {
   if (!entities) {
-    return undefined;
+    // Return a properly structured empty entities object
+    return {
+      hashtags: [],
+      urls: [],
+      user_mentions: [],
+      symbols: [],
+      media: [],
+    };
   }
 
-  return compactObject({
-    hashtags: sanitizeArray(entities.hashtags, (item) => pick(item, ["indices", "text"])),
-    urls: sanitizeArray(entities.urls, (item) =>
-      pick(item, ["indices", "url", "display_url", "expanded_url"]),
-    ),
-    user_mentions: sanitizeArray(entities.user_mentions, (item) =>
-      pick(item, ["indices", "id_str", "name", "screen_name"]),
-    ),
-    symbols: sanitizeArray(entities.symbols, (item) => pick(item, ["indices", "text"])),
-    media: sanitizeArray(entities.media, (item) =>
-      pick(item, ["indices", "url", "display_url", "expanded_url"]),
-    ),
-  });
+  // Ensure each entity type has indices field
+  const ensureIndices = (item) => {
+    if (!item.indices) {
+      // Create default indices if missing
+      return { ...item, indices: [0, 0] };
+    }
+    return item;
+  };
+
+  return {
+    hashtags:
+      sanitizeArray(entities.hashtags, (item) => {
+        const withIndices = ensureIndices(item);
+        return pick(withIndices, ["indices", "text"]);
+      }) || [],
+    urls:
+      sanitizeArray(entities.urls, (item) => {
+        const withIndices = ensureIndices(item);
+        return pick(withIndices, ["indices", "url", "display_url", "expanded_url"]);
+      }) || [],
+    user_mentions:
+      sanitizeArray(entities.user_mentions, (item) => {
+        const withIndices = ensureIndices(item);
+        return pick(withIndices, ["indices", "id_str", "name", "screen_name"]);
+      }) || [],
+    symbols:
+      sanitizeArray(entities.symbols, (item) => {
+        const withIndices = ensureIndices(item);
+        return pick(withIndices, ["indices", "text"]);
+      }) || [],
+    media:
+      sanitizeArray(entities.media, (item) => {
+        const withIndices = ensureIndices(item);
+        return pick(withIndices, ["indices", "url", "display_url", "expanded_url"]);
+      }) || [],
+  };
 };
 
 const sanitizePhoto = (photo) =>

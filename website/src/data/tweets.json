@@ -9,6 +9,13 @@
       0,
       44
     ],
+    "entities": {
+      "hashtags": [],
+      "urls": [],
+      "user_mentions": [],
+      "symbols": [],
+      "media": []
+    },
     "user": {
       "id_str": "791392986",
       "name": "Siim Haugas",
@@ -28,6 +35,10 @@
         281
       ],
       "entities": {
+        "hashtags": [],
+        "urls": [],
+        "user_mentions": [],
+        "symbols": [],
         "media": [
           {
             "indices": [
@@ -71,6 +82,8 @@
       94
     ],
     "entities": {
+      "hashtags": [],
+      "urls": [],
       "user_mentions": [
         {
           "indices": [
@@ -118,6 +131,7 @@
           "screen_name": "supermemoryai"
         }
       ],
+      "symbols": [],
       "media": [
         {
           "indices": [
@@ -164,6 +178,8 @@
       326
     ],
     "entities": {
+      "hashtags": [],
+      "urls": [],
       "user_mentions": [
         {
           "indices": [
@@ -201,7 +217,9 @@
           "name": "Mastra",
           "screen_name": "mastra_ai"
         }
-      ]
+      ],
+      "symbols": [],
+      "media": []
     },
     "user": {
       "id_str": "1636783451591561217",
@@ -226,6 +244,8 @@
       177
     ],
     "entities": {
+      "hashtags": [],
+      "urls": [],
       "user_mentions": [
         {
           "indices": [
@@ -237,6 +257,7 @@
           "screen_name": "voltagent_dev"
         }
       ],
+      "symbols": [],
       "media": [
         {
           "indices": [
@@ -283,6 +304,7 @@
       258
     ],
     "entities": {
+      "hashtags": [],
       "urls": [
         {
           "indices": [
@@ -313,7 +335,9 @@
           "name": "Peaka",
           "screen_name": "peakacom"
         }
-      ]
+      ],
+      "symbols": [],
+      "media": []
     },
     "user": {
       "id_str": "1301806903308189696",
@@ -350,6 +374,7 @@
       246
     ],
     "entities": {
+      "hashtags": [],
       "urls": [
         {
           "indices": [
@@ -368,10 +393,12 @@
             9
           ],
           "id_str": "19107253",
-          "name": "Tom Siwik",
+          "name": "Tanny Siwik",
           "screen_name": "tomsiwik"
         }
-      ]
+      ],
+      "symbols": [],
+      "media": []
     },
     "user": {
       "id_str": "791392986",
@@ -396,6 +423,8 @@
       161
     ],
     "entities": {
+      "hashtags": [],
+      "urls": [],
       "user_mentions": [
         {
           "indices": [
@@ -407,6 +436,7 @@
           "screen_name": "voltagent_dev"
         }
       ],
+      "symbols": [],
       "media": [
         {
           "indices": [
@@ -461,6 +491,8 @@
       275
     ],
     "entities": {
+      "hashtags": [],
+      "urls": [],
       "user_mentions": [
         {
           "indices": [
@@ -489,7 +521,9 @@
           "name": "Omer Aplak",
           "screen_name": "omerfarukaplak"
         }
-      ]
+      ],
+      "symbols": [],
+      "media": []
     },
     "user": {
       "id_str": "71525162",
@@ -538,7 +572,10 @@
           "display_url": "qiita.com/youtoy/items/6…",
           "expanded_url": "https://qiita.com/youtoy/items/6990e175e92c54265580"
         }
-      ]
+      ],
+      "user_mentions": [],
+      "symbols": [],
+      "media": []
     },
     "user": {
       "id_str": "62238122",
@@ -575,6 +612,7 @@
       90
     ],
     "entities": {
+      "hashtags": [],
       "urls": [
         {
           "indices": [
@@ -585,7 +623,10 @@
           "display_url": "youtu.be/5WARn6C9ITM?si…",
           "expanded_url": "https://youtu.be/5WARn6C9ITM?si=rBDflUMGFNeyrorH"
         }
-      ]
+      ],
+      "user_mentions": [],
+      "symbols": [],
+      "media": []
     },
     "user": {
       "id_str": "1865265023335182337",
@@ -608,6 +649,8 @@
       147
     ],
     "entities": {
+      "hashtags": [],
+      "urls": [],
       "user_mentions": [
         {
           "indices": [
@@ -627,7 +670,9 @@
           "name": "voltagent",
           "screen_name": "voltagent_dev"
         }
-      ]
+      ],
+      "symbols": [],
+      "media": []
     },
     "user": {
       "id_str": "691253",
@@ -652,6 +697,10 @@
       86
     ],
     "entities": {
+      "hashtags": [],
+      "urls": [],
+      "user_mentions": [],
+      "symbols": [],
       "media": [
         {
           "indices": [
@@ -698,6 +747,7 @@
       157
     ],
     "entities": {
+      "hashtags": [],
       "urls": [
         {
           "indices": [
@@ -708,7 +758,10 @@
           "display_url": "voltagent.dev",
           "expanded_url": "https://voltagent.dev/"
         }
-      ]
+      ],
+      "user_mentions": [],
+      "symbols": [],
+      "media": []
     },
     "user": {
       "id_str": "79119874",
@@ -745,6 +798,7 @@
       225
     ],
     "entities": {
+      "hashtags": [],
       "urls": [
         {
           "indices": [
@@ -767,6 +821,7 @@
           "screen_name": "voltagent_dev"
         }
       ],
+      "symbols": [],
       "media": [
         {
           "indices": [
@@ -825,6 +880,7 @@
       131
     ],
     "entities": {
+      "hashtags": [],
       "urls": [
         {
           "indices": [
@@ -836,6 +892,8 @@
           "expanded_url": "https://github.com/VoltAgent/voltagent"
         }
       ],
+      "user_mentions": [],
+      "symbols": [],
       "media": [
         {
           "indices": [
@@ -881,6 +939,13 @@
       0,
       45
     ],
+    "entities": {
+      "hashtags": [],
+      "urls": [],
+      "user_mentions": [],
+      "symbols": [],
+      "media": []
+    },
     "user": {
       "id_str": "1865265023335182337",
       "name": "まさお@AI駆動開発",

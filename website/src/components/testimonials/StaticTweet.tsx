@@ -7,7 +7,10 @@ interface StaticTweetProps {
 }
 
 export function StaticTweet({ tweet, className }: StaticTweetProps) {
+  console.log("StaticTweet received tweet:", tweet);
+
   if (!tweet) {
+    console.log("Tweet is null/undefined, showing TweetNotFound");
     return <TweetNotFound />;
   }
 

@@ -66,6 +66,13 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
     return;
   }
 
+  const registeredServers = typeof registry.list === "function" ? registry.list() : [];
+
+  if (registeredServers.length === 0) {
+    logger.debug("No A2A servers registered; skipping A2A routes");
+    return;
+  }
+
   app.openapi(A2A_ROUTES.agentCard, (c) => {
     const serverId = c.req.param("serverId");
     try {

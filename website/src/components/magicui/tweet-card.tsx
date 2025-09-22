@@ -1,10 +1,5 @@
 import { Suspense } from "react";
-import {
-  type EnrichedTweet,
-  type TweetProps,
-  type TwitterComponents,
-  enrichTweet,
-} from "react-tweet";
+import type { EnrichedTweet, TweetProps, TwitterComponents } from "react-tweet";
 import { type Tweet, getTweet } from "react-tweet/api";
 
 import { cn } from "@site/src/utils/index";
@@ -78,42 +73,62 @@ export const TweetNotFound = ({
   </div>
 );
 
-export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
-  <div className="flex flex-row justify-between tracking-tight">
-    <div className="flex items-center space-x-2 ">
-      <img
-        title={`Profile picture of ${tweet.user.name}`}
-        alt={tweet.user.screen_name}
-        height={48}
-        width={48}
-        src={tweet.user.profile_image_url_https}
-        className="overflow-hidden rounded-full border border-transparent"
-      />
-      <div>
-        <span className="flex items-center no-decoration no-underline text-[#dcdcdc] whitespace-nowrap font-semibold">
-          {truncate(tweet.user.name, 12)}
-          {tweet.user.verified ||
-            (tweet.user.is_blue_verified && (
-              <Verified className="ml-1 inline size-4 text-blue-500" />
-            ))}
-        </span>
-        <div className="flex items-center space-x-1">
-          <span
-            rel="noreferrer"
-            className="text-sm text-gray-500 transition-all no-underline duration-75"
-          >
-            @{truncate(tweet.user.screen_name, 12)}
+export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => {
+  if (!tweet || !tweet.user) {
+    return null;
+  }
+
+  const tweetUrl =
+    tweet.url || `https://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`;
+
+  return (
+    <div className="flex flex-row justify-between tracking-tight">
+      <div className="flex items-center space-x-2 ">
+        <img
+          title={`Profile picture of ${tweet.user.name}`}
+          alt={tweet.user.screen_name}
+          height={48}
+          width={48}
+          src={tweet.user.profile_image_url_https}
+          className="overflow-hidden rounded-full border border-transparent"
+        />
+        <div>
+          <span className="flex items-center no-decoration no-underline text-[#dcdcdc] whitespace-nowrap font-semibold">
+            {truncate(tweet.user.name, 12)}
+            {tweet.user.verified ||
+              (tweet.user.is_blue_verified && (
+                <Verified className="ml-1 inline size-4 text-blue-500" />
+              ))}
           </span>
+          <div className="flex items-center space-x-1">
+            <span
+              rel="noreferrer"
+              className="text-sm text-gray-500 transition-all no-underline duration-75"
+            >
+              @{truncate(tweet.user.screen_name, 12)}
+            </span>
+          </div>
         </div>
       </div>
+      <a href={tweetUrl} target="_blank" rel="noreferrer">
+        <XLogo className="w-5 h-5 text-white" />
+      </a>
     </div>
-    <a href={tweet.url} target="_blank" rel="noreferrer">
-      <XLogo className="w-5 h-5 text-white" />
-    </a>
-  </div>
-);
+  );
+};
 
 export const TweetBody = ({ tweet }: { tweet: EnrichedTweet }) => {
+  // Check if entities is iterable, fallback to text if not
+  if (!tweet.entities || !Array.isArray(tweet.entities)) {
+    const text = tweet.text || "";
+    const truncatedText = truncate(text, 150);
+    return (
+      <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter">
+        <span className="text-sm font-normal no-underline">{truncatedText}</span>
+      </div>
+    );
+  }
+
   // Truncate the full tweet text to 165 characters
   const fullText = tweet.entities.map((entity) => entity.text).join("");
   const shouldTruncate = fullText.length > 150;
@@ -214,29 +229,70 @@ export const MagicTweet = ({
   components?: TwitterComponents;
   className?: string;
 }) => {
-  const enrichedTweet = enrichTweet(tweet);
-  return (
-    <a
-      href={enrichedTweet.url}
-      target="_blank"
-      className="no-underline no-decoration"
-      rel="noreferrer"
-    >
-      <div
-        className={cn(
-          "relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid hover:border-emerald-500 transition-colors duration-200 h-[210px]",
-          className,
-        )}
-        {...props}
-      >
-        <TweetHeader tweet={enrichedTweet} />
-        <div className="flex-1 overflow-hidden">
-          <TweetBody tweet={enrichedTweet} />
+  try {
+    console.log("MagicTweet received tweet:", tweet);
+
+    if (!tweet || !tweet.id_str || !tweet.user) {
+      console.log("Tweet missing required fields, showing TweetNotFound");
+      return <TweetNotFound className={className} {...props} />;
+    }
+
+    // Skip enrichTweet and use tweet data directly
+    const tweetUrl = `https://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`;
+
+    return (
+      <a href={tweetUrl} target="_blank" className="no-underline no-decoration" rel="noreferrer">
+        <div
+          className={cn(
+            "relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid hover:border-emerald-500 transition-colors duration-200 h-[210px]",
+            className,
+          )}
+          {...props}
+        >
+          <div className="flex flex-row justify-between tracking-tight">
+            <div className="flex items-center space-x-2 ">
+              <img
+                title={`Profile picture of ${tweet.user.name}`}
+                alt={tweet.user.screen_name}
+                height={48}
+                width={48}
+                src={tweet.user.profile_image_url_https}
+                className="overflow-hidden rounded-full border border-transparent"
+              />
+              <div>
+                <span className="flex items-center no-decoration no-underline text-[#dcdcdc] whitespace-nowrap font-semibold">
+                  {truncate(tweet.user.name, 12)}
+                  {(tweet.user.verified || tweet.user.is_blue_verified) && (
+                    <Verified className="ml-1 inline size-4 text-blue-500" />
+                  )}
+                </span>
+                <div className="flex items-center space-x-1">
+                  <span
+                    rel="noreferrer"
+                    className="text-sm text-gray-500 transition-all no-underline duration-75"
+                  >
+                    @{truncate(tweet.user.screen_name, 12)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <a href={tweetUrl} target="_blank" rel="noreferrer">
+              <XLogo className="w-5 h-5 text-white" />
+            </a>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter">
+              <span className="text-sm font-normal no-underline">{truncate(tweet.text, 150)}</span>
+            </div>
+          </div>
+          {/*  <TweetMedia tweet={enrichedTweet} /> */}
         </div>
-        {/*  <TweetMedia tweet={enrichedTweet} /> */}
-      </div>
-    </a>
-  );
+      </a>
+    );
+  } catch (error) {
+    console.error("Error in MagicTweet:", error, "Tweet data:", tweet);
+    return <TweetNotFound className={className} {...props} />;
+  }
 };
 
 /**
