@@ -1,5 +1,11 @@
 # @voltagent/server-hono
 
+## 1.0.10
+
+### Patch Changes
+
+- [`8997e35`](https://github.com/VoltAgent/voltagent/commit/8997e3572113ebdab21ce4ccd7a15c4333f7e915) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod@4 compability
+
 ## 1.0.9
 
 ### Patch Changes
