@@ -1,0 +1,35 @@
+{
+  "name": "voltagent-example-with-tavily-search",
+  "version": "0.1.0",
+  "description": "A VoltAgent application with Tavily search integration",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env ./src",
+    "build": "tsdown",
+    "start": "node dist/index.js",
+    "lint": "biome check ./src",
+    "lint:fix": "biome check --write ./src",
+    "typecheck": "tsc --noEmit",
+    "volt": "volt"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.32",
+    "@voltagent/cli": "^0.1.10",
+    "@voltagent/core": "^1.0.0",
+    "@voltagent/logger": "^1.0.0",
+    "@voltagent/server-hono": "^1.0.0",
+    "ai": "^5.0.48",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.10.5",
+    "tsdown": "^0.15.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "private": true
+}
