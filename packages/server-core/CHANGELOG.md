@@ -1,5 +1,11 @@
 # @voltagent/server-core
 
+## 1.0.11
+
+### Patch Changes
+
+- [`c738241`](https://github.com/VoltAgent/voltagent/commit/c738241fea017eeb3c6e3ceb27436ab2f027c48d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod@4 swagger doc issue
+
 ## 1.0.10
 
 ### Patch Changes
