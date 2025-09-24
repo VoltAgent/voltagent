@@ -1,5 +1,15 @@
 # @voltagent/core
 
+## 1.1.18
+
+### Patch Changes
+
+- [`8a99f4f`](https://github.com/VoltAgent/voltagent/commit/8a99f4fb9365da3b80a0d4e5b6df4bd50ac19288) Thanks [@omeraplak](https://github.com/omeraplak)! - - refine message normalization and persistence pipeline
+  - rely on AI SDK reasoning metadata directly
+  - drop synthetic tool-result injection and trust AI SDK stream output
+
+- [`bbd6c17`](https://github.com/VoltAgent/voltagent/commit/bbd6c176b2bed532a4f03b5f8f7011806aa746c2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: reasoning parts - #614
+
 ## 1.1.17
 
 ### Patch Changes
