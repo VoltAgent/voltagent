@@ -56,6 +56,7 @@ import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import { ConversationBuffer } from "./conversation-buffer";
 import { MemoryPersistQueue } from "./memory-persist-queue";
+import { sanitizeMessagesForModel } from "./message-normalizer";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
@@ -1256,7 +1257,8 @@ export class Agent {
     const uiMessages = await this.prepareMessages(input, oc, options, buffer);
 
     // Convert UIMessages to ModelMessages for the LLM
-    const messages = convertToModelMessages(uiMessages);
+    const messagesForModel = sanitizeMessagesForModel(uiMessages);
+    const messages = convertToModelMessages(messagesForModel);
 
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();

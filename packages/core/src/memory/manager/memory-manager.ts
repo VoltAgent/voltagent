@@ -16,7 +16,6 @@ import { BackgroundQueue } from "../../utils/queue/queue";
 import { Memory } from "../../memory";
 import { InMemoryStorageAdapter } from "../../memory/adapters/storage/in-memory";
 
-import { sanitizeMessageForPersistence } from "../../agent/message-normalizer";
 // Import AgentTraceContext for proper span hierarchy
 import type { AgentTraceContext } from "../../agent/open-telemetry/trace-context";
 
@@ -109,22 +108,11 @@ export class MemoryManager {
       operation: "write",
     });
 
-    const sanitizedMessage = sanitizeMessageForPersistence(message);
-    if (!sanitizedMessage) {
-      memoryLogger.debug("[Memory] Skipped persisting empty message after sanitization", {
-        event: LogEvents.MEMORY_OPERATION_COMPLETED,
-        operation: "write",
-        reason: "sanitized-empty",
-      });
-      return;
-    }
-
     // Event tracking with OpenTelemetry spans
     const trace = context.traceContext;
-    const spanInput = { userId, conversationId, message: sanitizedMessage };
+    const spanInput = { userId, conversationId, message };
     const writeSpan = trace.createChildSpan("memory.write", "memory", {
-      label:
-        sanitizedMessage.role === "user" ? "Persist User Message" : "Persist Assistant Message",
+      label: message.role === "user" ? "Persist User Message" : "Persist Assistant Message",
       attributes: {
         "memory.operation": "write",
         input: safeStringify(spanInput),
@@ -148,14 +136,9 @@ export class MemoryManager {
           }
 
           // Add message to conversation using Memory V2's saveMessageWithContext
-          await this.conversationMemory?.saveMessageWithContext(
-            sanitizedMessage,
-            userId,
-            conversationId,
-            {
-              logger: memoryLogger,
-            },
-          );
+          await this.conversationMemory?.saveMessageWithContext(message, userId, conversationId, {
+            logger: memoryLogger,
+          });
         }
       });
 

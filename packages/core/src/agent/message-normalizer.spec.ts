@@ -1,10 +1,7 @@
 import type { UIMessage } from "ai";
 import { describe, expect, it } from "vitest";
 
-import {
-  sanitizeMessageForPersistence,
-  sanitizeMessagesForPersistence,
-} from "./message-normalizer";
+import { sanitizeMessageForModel, sanitizeMessagesForModel } from "./message-normalizer";
 
 const baseMessage = (
   parts: UIMessage["parts"],
@@ -19,7 +16,7 @@ describe("message-normalizer", () => {
   it("removes working-memory tool calls and drops empty messages", () => {
     const message = baseMessage([
       {
-        type: "tool-update_working_memory",
+        type: "tool-updateWorkingMemory",
         toolCallId: "tool-1",
         state: "input-available",
         input: { content: "irrelevant" },
@@ -30,7 +27,7 @@ describe("message-normalizer", () => {
       } as any,
     ]);
 
-    const sanitized = sanitizeMessageForPersistence(message);
+    const sanitized = sanitizeMessageForModel(message);
 
     expect(sanitized).toBeNull();
     // Ensure the original message is untouched
@@ -51,7 +48,7 @@ describe("message-normalizer", () => {
       } as any,
     ]);
 
-    const sanitized = sanitizeMessageForPersistence(message);
+    const sanitized = sanitizeMessageForModel(message);
     expect(sanitized).not.toBeNull();
     const part = (sanitized as UIMessage).parts[0] as any;
 
@@ -67,6 +64,20 @@ describe("message-normalizer", () => {
     expect(part.providerMetadata).toBeUndefined();
   });
 
+  it("removes provider metadata from text parts", () => {
+    const message = baseMessage([
+      {
+        type: "text",
+        text: "hello",
+        providerMetadata: { internal: true },
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    expect((sanitized as UIMessage).parts[0]).toEqual({ type: "text", text: "hello" });
+  });
+
   it("retains incomplete tool calls so follow-up results can merge later", () => {
     const message = baseMessage([
       {
@@ -77,7 +88,7 @@ describe("message-normalizer", () => {
       } as any,
     ]);
 
-    const sanitized = sanitizeMessageForPersistence(message);
+    const sanitized = sanitizeMessageForModel(message);
     expect(sanitized).not.toBeNull();
     expect((sanitized as UIMessage).parts).toHaveLength(1);
     expect(((sanitized as UIMessage).parts[0] as any).state).toBe("input-available");
@@ -90,7 +101,7 @@ describe("message-normalizer", () => {
       { type: "text", text: "final" } as any,
     ]);
 
-    const sanitized = sanitizeMessageForPersistence(message);
+    const sanitized = sanitizeMessageForModel(message);
     expect(sanitized).not.toBeNull();
     expect((sanitized as UIMessage).parts).toEqual([{ type: "text", text: "final" }]);
   });
@@ -101,7 +112,7 @@ describe("message-normalizer", () => {
       { type: "text", text: "Answer" } as any,
     ]);
 
-    const sanitized = sanitizeMessageForPersistence(message);
+    const sanitized = sanitizeMessageForModel(message);
     expect(sanitized).not.toBeNull();
     expect((sanitized as UIMessage).parts).toHaveLength(1);
     expect(((sanitized as UIMessage).parts[0] as any).type).toBe("text");
@@ -111,7 +122,7 @@ describe("message-normalizer", () => {
     const messages: UIMessage[] = [
       baseMessage([
         {
-          type: "tool-update_working_memory",
+          type: "tool-updateWorkingMemory",
           toolCallId: "tool-1",
           state: "input-available",
           input: { content: "secret" },
@@ -120,7 +131,7 @@ describe("message-normalizer", () => {
       baseMessage([{ type: "text", text: "visible" } as any]),
     ];
 
-    const sanitized = sanitizeMessagesForPersistence(messages);
+    const sanitized = sanitizeMessagesForModel(messages);
 
     expect(sanitized).toHaveLength(1);
     expect(sanitized[0].parts[0]).toEqual({ type: "text", text: "visible" });

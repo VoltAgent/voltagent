@@ -2,7 +2,6 @@ import type { Logger } from "@voltagent/internal";
 
 import type { MemoryManager } from "../memory/manager/memory-manager";
 import type { ConversationBuffer } from "./conversation-buffer";
-import { sanitizeMessagesForPersistence } from "./message-normalizer";
 import type { OperationContext } from "./types";
 
 interface QueueEntry {
@@ -90,27 +89,15 @@ export class MemoryPersistQueue {
       return;
     }
 
-    const sanitized = sanitizeMessagesForPersistence(pending);
-
-    if (sanitized.length === 0) {
-      this.logger?.debug?.("[MemoryPersistQueue] sanitized-all", {
-        conversationId: oc.conversationId,
-        userId: oc.userId,
-        dropped: pending.length,
-      });
-      return;
-    }
-
     const payload = {
       conversationId: oc.conversationId,
       userId: oc.userId,
-      count: sanitized.length,
-      dropped: pending.length - sanitized.length,
-      ids: sanitized.map((msg) => msg.id),
+      count: pending.length,
+      ids: pending.map((msg) => msg.id),
     };
     this.logger?.debug?.("[MemoryPersistQueue] persisting", payload);
 
-    for (const message of sanitized) {
+    for (const message of pending) {
       try {
         await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
       } catch (error) {

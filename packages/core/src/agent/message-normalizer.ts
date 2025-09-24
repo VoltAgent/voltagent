@@ -4,6 +4,9 @@ const WORKING_MEMORY_TOOL_NAMES = new Set([
   "update_working_memory",
   "get_working_memory",
   "clear_working_memory",
+  "updateWorkingMemory",
+  "getWorkingMemory",
+  "clearWorkingMemory",
 ]);
 
 type ToolLikePart = UIMessagePart<any, any> & {
@@ -39,7 +42,6 @@ const safeClone = <T>(value: T): T => {
   try {
     return JSON.parse(JSON.stringify(value)) as T;
   } catch (_error) {
-    // Fallback to shallow copy when deep cloning fails (e.g. unsupported data types)
     if (Array.isArray(value)) {
       return value.slice() as T;
     }
@@ -53,16 +55,10 @@ const normalizeText = (part: TextLikePart) => {
     return null;
   }
 
-  const normalized: Record<string, unknown> = {
+  return {
     type: "text",
     text,
-  };
-
-  if (isObject((part as any).providerMetadata)) {
-    normalized.providerMetadata = safeClone((part as any).providerMetadata);
-  }
-
-  return normalized as UIMessagePart<any, any>;
+  } as UIMessagePart<any, any>;
 };
 
 const normalizeReasoning = (part: TextLikePart) => {
@@ -81,9 +77,6 @@ const normalizeReasoning = (part: TextLikePart) => {
   }
   if ((part as any).reasoningConfidence !== undefined) {
     normalized.reasoningConfidence = (part as any).reasoningConfidence;
-  }
-  if (isObject((part as any).providerMetadata)) {
-    normalized.providerMetadata = safeClone((part as any).providerMetadata);
   }
 
   return normalized as UIMessagePart<any, any>;
@@ -126,6 +119,51 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
   return normalized as UIMessagePart<any, any>;
 };
 
+export const sanitizeMessagesForModel = (messages: UIMessage[]): UIMessage[] =>
+  messages
+    .map((message) => sanitizeMessageForModel(message))
+    .filter((message): message is UIMessage => Boolean(message));
+
+export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null => {
+  const sanitizedParts: UIMessagePart<any, any>[] = [];
+
+  for (const part of message.parts) {
+    const normalized = normalizeGenericPart(part);
+    if (!normalized) {
+      continue;
+    }
+    sanitizedParts.push(normalized);
+  }
+
+  const pruned = collapseRedundantStepStarts(pruneEmptyToolRuns(sanitizedParts));
+
+  const effectiveParts = pruned.filter((part) => {
+    if (part.type === "text") {
+      return typeof (part as any).text === "string" && (part as any).text.trim().length > 0;
+    }
+    if (part.type === "reasoning") {
+      return typeof (part as any).text === "string" && (part as any).text.trim().length > 0;
+    }
+    if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+      return Boolean((part as any).toolCallId);
+    }
+    if (part.type === "file") {
+      return Boolean((part as any).url);
+    }
+    return true;
+  });
+
+  if (!effectiveParts.length) {
+    return null;
+  }
+
+  return {
+    ...message,
+    parts: effectiveParts,
+    ...(message.metadata ? { metadata: safeClone(message.metadata) } : {}),
+  };
+};
+
 const normalizeGenericPart = (part: UIMessagePart<any, any>): UIMessagePart<any, any> | null => {
   switch (part.type) {
     case "text":
@@ -139,9 +177,6 @@ const normalizeGenericPart = (part: UIMessagePart<any, any>): UIMessagePart<any,
         return null;
       }
       const cloned = safeClone(part as any);
-      if (cloned.providerMetadata) {
-        cloned.providerMetadata = safeClone(cloned.providerMetadata);
-      }
       return cloned as UIMessagePart<any, any>;
     }
     default:
@@ -186,55 +221,3 @@ const collapseRedundantStepStarts = (
   }
   return result;
 };
-
-const sanitizeMessage = (message: UIMessage): UIMessage | null => {
-  const sanitizedParts: UIMessagePart<any, any>[] = [];
-
-  for (const part of message.parts) {
-    const normalized = normalizeGenericPart(part);
-    if (!normalized) {
-      continue;
-    }
-    sanitizedParts.push(normalized);
-  }
-
-  const pruned = collapseRedundantStepStarts(pruneEmptyToolRuns(sanitizedParts));
-
-  const effectiveParts = pruned.filter((part) => {
-    if (part.type === "text") {
-      return typeof (part as any).text === "string" && (part as any).text.trim().length > 0;
-    }
-    if (part.type === "reasoning") {
-      return typeof (part as any).text === "string" && (part as any).text.trim().length > 0;
-    }
-    if (typeof part.type === "string" && part.type.startsWith("tool-")) {
-      return Boolean((part as any).toolCallId);
-    }
-    if (part.type === "file") {
-      return Boolean((part as any).url);
-    }
-    return true;
-  });
-
-  if (!effectiveParts.length) {
-    return null;
-  }
-
-  const clonedMetadata = isObject(message.metadata)
-    ? safeClone(message.metadata)
-    : message.metadata;
-
-  return {
-    ...message,
-    parts: effectiveParts,
-    ...(clonedMetadata ? { metadata: clonedMetadata } : {}),
-  };
-};
-
-export const sanitizeMessagesForPersistence = (messages: UIMessage[]): UIMessage[] =>
-  messages
-    .map((message) => sanitizeMessage(message))
-    .filter((message): message is UIMessage => Boolean(message));
-
-export const sanitizeMessageForPersistence = (message: UIMessage): UIMessage | null =>
-  sanitizeMessage(message);
