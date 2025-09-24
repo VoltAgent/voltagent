@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.1.17
+
+### Patch Changes
+
+- [`78b2298`](https://github.com/VoltAgent/voltagent/commit/78b2298c561e86bbef61f783b0fee83667c25d8a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: `tool_use` ids were found without `tool_result` blocks immediately after
+
 ## 1.1.16
 
 ### Patch Changes
