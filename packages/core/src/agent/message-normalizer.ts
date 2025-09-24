@@ -4,9 +4,6 @@ const WORKING_MEMORY_TOOL_NAMES = new Set([
   "update_working_memory",
   "get_working_memory",
   "clear_working_memory",
-  "updateWorkingMemory",
-  "getWorkingMemory",
-  "clearWorkingMemory",
 ]);
 
 type ToolLikePart = UIMessagePart<any, any> & {

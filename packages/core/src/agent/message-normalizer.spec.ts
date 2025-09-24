@@ -16,7 +16,7 @@ describe("message-normalizer", () => {
   it("removes working-memory tool calls and drops empty messages", () => {
     const message = baseMessage([
       {
-        type: "tool-updateWorkingMemory",
+        type: "tool-update_working_memory",
         toolCallId: "tool-1",
         state: "input-available",
         input: { content: "irrelevant" },
@@ -122,7 +122,7 @@ describe("message-normalizer", () => {
     const messages: UIMessage[] = [
       baseMessage([
         {
-          type: "tool-updateWorkingMemory",
+          type: "tool-update_working_memory",
           toolCallId: "tool-1",
           state: "input-available",
           input: { content: "secret" },
