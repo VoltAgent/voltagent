@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.1.19
+
+### Patch Changes
+
+- [#617](https://github.com/VoltAgent/voltagent/pull/617) [`02a78af`](https://github.com/VoltAgent/voltagent/commit/02a78afed1870fe00968a60f44db912df7fbabe6) Thanks [@omeraplak](https://github.com/omeraplak)! - - preserve raw UI messages in storage, sanitize only before LLM invocation
+
 ## 1.1.18
 
 ### Patch Changes
