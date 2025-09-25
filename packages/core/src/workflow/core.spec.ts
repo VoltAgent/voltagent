@@ -1,3 +1,4 @@
+import type { UIMessageChunk } from "ai";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
@@ -153,5 +154,55 @@ describe.sequential("workflow streaming", () => {
       completionTokens: 0,
       totalTokens: 0,
     });
+  });
+
+  it("should produce UI message stream response from workflow stream", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const workflow = createWorkflow(
+      {
+        id: "ui-stream-test",
+        name: "UI Stream Test",
+        input: z.object({ n: z.number() }),
+        result: z.object({ out: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "add-one",
+        name: "Add One",
+        execute: async ({ data }) => {
+          return { out: data.n + 1 };
+        },
+      }),
+    );
+
+    const resp = workflow.stream({ n: 41 }).toUIMessageStreamResponse() as { body: ReadableStream };
+    // Read the SSE body to completion and assert it contains expected chunks
+    const reader = resp.body.getReader();
+
+    const decoder = new TextDecoder();
+    // Parse SSE 'data:' lines into JSON to ensure they are valid UIMessage chunks
+    const parsedChunks: UIMessageChunk[] = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      // UI Messages start with "data:" prefix
+      const chunk = decoder.decode(value).replace("data:", "");
+      try {
+        parsedChunks.push(JSON.parse(chunk));
+      } catch (_) {}
+    }
+
+    expect(parsedChunks.length).toBeGreaterThan(0);
+
+    const allowedTypes = [
+      "data-workflow-start",
+      "data-workflow-complete",
+      "data-step-start",
+      "data-step-complete",
+    ];
+    for (const chunk of parsedChunks) {
+      expect(allowedTypes.includes(chunk.type)).toBe(true);
+    }
   });
 });

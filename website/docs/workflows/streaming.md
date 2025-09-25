@@ -31,6 +31,7 @@ Workflows emit these event types during execution:
 | -------------------- | ---------- | ------------------------------ |
 | `workflow-start`     | Workflow   | Before first step executes     |
 | `workflow-complete`  | Workflow   | After final step completes     |
+| `workflow-cancelled` | Workflow   | When workflow is cancelled     |
 | `workflow-error`     | Workflow   | When workflow fails            |
 | `workflow-suspended` | Workflow   | When workflow suspends         |
 | `step-start`         | Step       | Before step executes           |
@@ -645,6 +646,31 @@ async function executeWithLiveUpdates(workflow, input, ws) {
   }
 
   return await stream.result;
+}
+```
+
+## Streaming to the AI SDK `useChat` hook
+
+Workflows can stream as **AI SDK–compatible `UIMessage` chunks**, which can be consumed directly by [`useChat`](https://sdk.vercel.ai/docs/api-reference/use-chat).
+
+All workflow events are converted into `data-*` messages, for example:
+
+- `workflow-start` → `data-workflow-start`
+- `workflow-complete` → `data-workflow-complete`
+
+### Backend
+
+```ts
+import { workflow } from "./workflow";
+
+export async function POST(req: Request) {
+  const streamResult = workflow.stream({
+    text: req.text,
+    conversationId,
+    userId,
+  });
+
+  return streamResult.toUIMessageStreamResponse();
 }
 ```
 

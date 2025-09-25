@@ -159,6 +159,8 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
         continue;
       }
 
+      const type: WorkflowStreamEvent["type"] =
+        `${prefix}${part.type}` as WorkflowStreamEvent["type"];
       // Convert StreamPart to WorkflowStreamEvent with proper field mapping
       const metadata: Record<string, DangerouslyAllowAny> = {
         originalType: part.type,
@@ -319,7 +321,7 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
       }
 
       this.write({
-        type: `${prefix}${part.type}`,
+        type,
         from: options?.agentId || part.subAgentId || part.subAgentName || this.stepName,
         input,
         output,

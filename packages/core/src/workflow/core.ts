@@ -11,7 +11,11 @@ import { AgentRegistry } from "../registries/agent-registry";
 import type { WorkflowExecutionContext } from "./context";
 import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
-import { convertWorkflowStateToParam, createStepExecutionContext } from "./internal/utils";
+import {
+  convertWorkflowStateToParam,
+  createStepExecutionContext,
+  eventToUIMessageStreamResponse,
+} from "./internal/utils";
 import { WorkflowTraceContext } from "./open-telemetry/trace-context";
 import { WorkflowRegistry } from "./registry";
 import type { WorkflowStep } from "./steps";
@@ -1765,6 +1769,8 @@ export function createWorkflow<
         cancellation: resultPromise.then((r) => r.cancellation),
         error: resultPromise.then((r) => r.error),
         usage: resultPromise.then((r) => r.usage),
+        toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
+
         resume: async (input: z.infer<RESUME_SCHEMA>, opts?: { stepId?: string }) => {
           const execResult = await resultPromise;
           if (execResult.status !== "suspended") {
@@ -1869,6 +1875,7 @@ export function createWorkflow<
               suspendController.cancel(reason);
             },
             abort: () => streamController.abort(),
+            toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),
             // Continue using the same stream iterator
             [Symbol.asyncIterator]: () => streamController.getStream(),
           };

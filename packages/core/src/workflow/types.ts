@@ -1,6 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { UIMessage } from "ai";
+import type { StreamTextResult, UIMessage } from "ai";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
@@ -173,6 +173,7 @@ export interface WorkflowStreamResult<
   cancellation: Promise<WorkflowCancellationMetadata | undefined>;
   error: Promise<unknown | undefined>;
   usage: Promise<UsageInfo>;
+  toUIMessageStreamResponse: StreamTextResult<any, any>["toUIMessageStreamResponse"];
   /**
    * Resume a suspended workflow execution
    * @param input - Optional new input data for resuming (validated against resumeSchema if provided)
@@ -569,7 +570,14 @@ export interface WorkflowStreamEvent {
   /**
    * Type of the event (e.g., "step-start", "step-complete", "custom", "agent-stream")
    */
-  type: string;
+  type:
+    | "workflow-start"
+    | "workflow-suspended"
+    | "workflow-complete"
+    | "workflow-cancelled"
+    | "workflow-error"
+    | "step-start"
+    | "step-complete";
   /**
    * Unique execution ID for this workflow run
    */
