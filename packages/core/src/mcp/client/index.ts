@@ -1,4 +1,3 @@
-import { EventEmitter } from "node:events";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import {
@@ -18,6 +17,7 @@ import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 import { getGlobalLogger } from "../../logger";
 import { type Tool, createTool } from "../../tool";
+import { SimpleEventEmitter } from "../../utils/simple-event-emitter";
 import type {
   ClientInfo,
   HTTPServerConfig,
@@ -36,7 +36,7 @@ import type {
  * Wraps the official MCP SDK client to provide a higher-level interface.
  * Internal implementation differs from original source.
  */
-export class MCPClient extends EventEmitter {
+export class MCPClient extends SimpleEventEmitter {
   /**
    * Underlying MCP client instance from the SDK.
    */

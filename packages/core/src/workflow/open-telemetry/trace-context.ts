@@ -23,6 +23,24 @@ import { safeStringify } from "@voltagent/internal/utils";
 import type { VoltAgentObservability } from "../../observability";
 import type { WorkflowRunOptions } from "../types";
 
+type SpanBridge = {
+  ___voltagent_push_span?: (span: Span) => void;
+  ___voltagent_pop_span?: (span: Span) => void;
+};
+
+const spanBridge = globalThis as typeof globalThis & SpanBridge;
+
+const pushActiveSpan = (span: Span) => {
+  spanBridge.___voltagent_push_span?.(span);
+};
+
+const popActiveSpan = (span: Span) => {
+  spanBridge.___voltagent_pop_span?.(span);
+};
+
+const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
+  typeof value === "object" && value !== null && typeof (value as any).then === "function";
+
 export interface WorkflowTraceContextOptions {
   workflowId: string;
   workflowName: string;
@@ -126,6 +144,7 @@ export class WorkflowTraceContext {
 
     // Set active context with root span
     this.activeContext = trace.setSpan(context.active(), this.rootSpan);
+    pushActiveSpan(this.rootSpan);
   }
 
   /**
@@ -281,7 +300,20 @@ export class WorkflowTraceContext {
    */
   async withSpan<T>(span: Span, fn: () => T | Promise<T>): Promise<T> {
     const spanContext = trace.setSpan(this.activeContext, span);
-    return context.with(spanContext, fn);
+    pushActiveSpan(span);
+    try {
+      const result = context.with(spanContext, fn);
+      if (isPromiseLike(result)) {
+        return (result as unknown as Promise<T>).finally(() => {
+          popActiveSpan(span);
+        }) as T;
+      }
+      popActiveSpan(span);
+      return result as T;
+    } catch (error) {
+      popActiveSpan(span);
+      throw error;
+    }
   }
 
   /**
@@ -350,6 +382,7 @@ export class WorkflowTraceContext {
       }
     }
     this.rootSpan.end();
+    popActiveSpan(this.rootSpan);
   }
 
   /**

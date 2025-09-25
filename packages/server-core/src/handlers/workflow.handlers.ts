@@ -1,5 +1,5 @@
-import type { ServerProviderDeps } from "@voltagent/core";
-import { zodSchemaToJsonUI } from "@voltagent/core";
+import type { ServerProviderDeps } from "@voltagent/core/edge";
+import { zodSchemaToJsonUI } from "@voltagent/core/edge";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { ApiResponse, ErrorResponse } from "../types";
 import { processWorkflowOptions } from "../utils/options";

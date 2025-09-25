@@ -3,12 +3,12 @@
  * Preserves all existing logging and business logic
  */
 
-import crypto from "node:crypto";
 import type { Span } from "@opentelemetry/api";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import type { OperationContext } from "../../agent/types";
 import { LogEvents, getGlobalLogger } from "../../logger";
+import { randomUUID } from "../../utils/id";
 import { NodeType, createNodeId } from "../../utils/node-utils";
 import { BackgroundQueue } from "../../utils/queue/queue";
 
@@ -359,7 +359,7 @@ export class MemoryManager {
     contextLimit = 10,
   ): Promise<{ messages: UIMessage[]; conversationId: string }> {
     // Use the provided conversationId or generate a new one
-    const conversationId = conversationIdParam || crypto.randomUUID();
+    const conversationId = conversationIdParam || randomUUID();
 
     if (contextLimit === 0) {
       return { messages: [], conversationId };
@@ -512,7 +512,7 @@ export class MemoryManager {
       if (typeof input === "string") {
         // The user message with content
         const userMessage: UIMessage = {
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           role: "user",
           parts: [{ type: "text", text: input }],
         };

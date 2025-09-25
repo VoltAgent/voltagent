@@ -10,7 +10,7 @@ import type { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
 import type { AgentStatus } from "./agent/types";
 import type { MCPServerRegistry } from "./mcp";
-import type { VoltAgentObservability } from "./observability/voltagent-observability";
+import type { VoltAgentObservability } from "./observability";
 import type { ToolStatusInfo } from "./tool";
 import type { VoltOpsClient } from "./voltops/client";
 import type { WorkflowChain } from "./workflow/chain";
@@ -63,6 +63,25 @@ export interface IServerProvider {
   isRunning(): boolean;
 }
 
+export type EdgeRequestHandler = (req: Request, ...args: unknown[]) => Promise<Response>;
+
+export type CloudflareFetchHandler = (
+  req: Request,
+  env: Record<string, unknown>,
+  ctx: unknown,
+) => Promise<Response>;
+
+export interface IEdgeProvider {
+  handleRequest(request: Request): Promise<Response>;
+  toCloudflareWorker(): { fetch: CloudflareFetchHandler };
+  toVercelEdge(): EdgeRequestHandler;
+  toNetlifyEdge(): EdgeRequestHandler;
+  toDeno(): EdgeRequestHandler;
+  auto(): { fetch: CloudflareFetchHandler } | EdgeRequestHandler;
+}
+
+export type EdgeProviderFactory = (deps: ServerProviderDeps) => IEdgeProvider;
+
 /**
  * Server provider dependencies
  */
@@ -102,6 +121,7 @@ export interface ServerProviderDeps {
   a2a?: {
     registry: A2AServerRegistry;
   };
+  ensureEnvironment?: (env?: Record<string, unknown>) => void;
 }
 
 /**
@@ -171,6 +191,12 @@ export type VoltAgentOptions = {
    * Example: honoServer({ port: 3141, enableSwaggerUI: true })
    */
   server?: ServerProviderFactory;
+
+  /**
+   * Edge provider factory function for edge runtimes
+   * Example: edgeHono({ corsOrigin: '*' })
+   */
+  edge?: EdgeProviderFactory;
 
   /**
    * Unified VoltOps client for telemetry and prompt management

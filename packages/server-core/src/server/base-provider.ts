@@ -4,7 +4,7 @@
  */
 
 import type { Server } from "node:http";
-import type { IServerProvider, ServerProviderDeps } from "@voltagent/core";
+import type { IServerProvider, ServerProviderDeps } from "@voltagent/core/edge";
 import type { Logger } from "@voltagent/internal";
 import type { WebSocketServer } from "ws";
 import { A2A_ROUTES, MCP_ROUTES } from "../routes/definitions";

@@ -5,7 +5,7 @@
 
 import type { IncomingMessage } from "node:http";
 import type { Socket } from "node:net";
-import type { ServerProviderDeps } from "@voltagent/core";
+import type { ServerProviderDeps } from "@voltagent/core/edge";
 import type { Logger } from "@voltagent/internal";
 import { WebSocketServer } from "ws";
 import { handleWebSocketConnection } from "./handlers";

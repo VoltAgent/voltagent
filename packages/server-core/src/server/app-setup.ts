@@ -3,8 +3,8 @@
  * Framework-agnostic application configuration helpers
  */
 
-import type { ServerProviderDeps } from "@voltagent/core";
-import { getGlobalLogger } from "@voltagent/core";
+import type { ServerProviderDeps } from "@voltagent/core/edge";
+import { getGlobalLogger } from "@voltagent/core/edge";
 import type { Logger } from "@voltagent/internal";
 
 /**

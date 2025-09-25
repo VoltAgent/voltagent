@@ -11,7 +11,6 @@ import {
   type LogRecordProcessor,
   type SdkLogRecord,
 } from "@opentelemetry/sdk-logs";
-import type { Logger } from "@voltagent/internal";
 import { AgentRegistry } from "../../registries/agent-registry";
 
 export interface RemoteLogExportConfig {
@@ -19,7 +18,6 @@ export interface RemoteLogExportConfig {
   maxExportBatchSize?: number;
   scheduledDelayMillis?: number;
   exportTimeoutMillis?: number;
-  logger?: Logger;
   samplingConfig?: {
     strategy?: "always" | "never" | "ratio" | "parent";
     ratio?: number;
@@ -38,11 +36,9 @@ export class RemoteLogProcessor implements LogRecordProcessor {
   private pendingLogs: SdkLogRecord[] = [];
   private initialized = false;
   private initCheckInterval?: NodeJS.Timeout;
-  private logger?: Logger;
 
   constructor(config: RemoteLogExportConfig = {}) {
     this.config = config;
-    this.logger = config.logger;
 
     // Start checking for VoltOpsClient availability
     this.startInitializationCheck();
@@ -129,9 +125,7 @@ export class RemoteLogProcessor implements LogRecordProcessor {
           this.initCheckInterval = undefined;
         }
 
-        if (!this.initialized) {
-          this.logger?.debug("[RemoteLogExport] Gave up waiting for VoltOpsClient after 5 seconds");
-        }
+        // If still uninitialized, give up silently
       }
     }, 100);
   }
@@ -184,8 +178,7 @@ export class RemoteLogProcessor implements LogRecordProcessor {
       this.initialized = true;
 
       return true;
-    } catch (error) {
-      this.logger?.debug("[RemoteLogExport] Failed to initialize remote log export", { error });
+    } catch (_) {
       return false;
     }
   }

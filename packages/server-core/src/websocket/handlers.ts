@@ -3,7 +3,7 @@
  */
 
 import type { IncomingMessage } from "node:http";
-import type { ServerProviderDeps } from "@voltagent/core";
+import type { ServerProviderDeps } from "@voltagent/core/edge";
 import { type LogFilter, type Logger, safeStringify } from "@voltagent/internal";
 import type { IWebSocket } from "../types/websocket";
 import { LogStreamManager } from "./log-stream";

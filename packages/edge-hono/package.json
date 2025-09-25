@@ -1,0 +1,39 @@
+{
+  "name": "@voltagent/edge-hono",
+  "version": "1.0.0",
+  "description": "Edge runtime provider for VoltAgent using Hono",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@voltagent/core": "^1.0.0",
+    "@voltagent/server-core": "^1.0.0",
+    "hono": "^4.0.0"
+  },
+  "dependencies": {
+    "@voltagent/internal": "^0.0.11"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  },
+  "license": "MIT"
+}

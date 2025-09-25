@@ -2,9 +2,10 @@
  * Message converter utility functions for converting between AI SDK message types
  */
 
-import * as crypto from "node:crypto";
 import type { AssistantModelMessage, ModelMessage, ToolModelMessage } from "@ai-sdk/provider-utils";
 import type { UIMessage } from "ai";
+import { bytesToBase64 } from "./base64";
+import { randomUUID } from "./id";
 
 /**
  * Convert response messages to UIMessages for batch saving
@@ -17,7 +18,7 @@ export async function convertResponseMessagesToUIMessages(
   // mirroring AI SDK's stream behavior (single response message with combined parts).
 
   const uiMessage: UIMessage = {
-    id: crypto.randomUUID(),
+    id: randomUUID(),
     role: "assistant",
     parts: [],
   };
@@ -103,7 +104,7 @@ export async function convertResponseMessagesToUIMessages(
             } else if (typeof contentPart.data === "string") {
               url = `data:${contentPart.mediaType};base64,${contentPart.data}`;
             } else {
-              const base64 = Buffer.from(contentPart.data as Uint8Array).toString("base64");
+              const base64 = bytesToBase64(contentPart.data as Uint8Array);
               url = `data:${contentPart.mediaType};base64,${base64}`;
             }
             uiMessage.parts.push({
@@ -179,7 +180,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
         for (const part of message.content) {
           if (part.type === "tool-result") {
             uiMessages.push({
-              id: crypto.randomUUID(),
+              id: randomUUID(),
               role: "assistant",
               parts: [
                 {
@@ -199,7 +200,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
     }
 
     const ui: UIMessage = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       role: message.role as any,
       parts: [],
     };
@@ -288,7 +289,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
           } else {
             // Assume binary (Uint8Array or ArrayBufferView)
             const uint8 = img as Uint8Array;
-            const base64 = Buffer.from(uint8).toString("base64");
+            const base64 = bytesToBase64(uint8);
             url = `data:${mediaType};base64,${base64}`;
           }
           ui.parts.push({
@@ -313,7 +314,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
               url = `data:${contentPart.mediaType};base64,${contentPart.data}`;
             }
           } else {
-            const base64 = Buffer.from(contentPart.data as Uint8Array).toString("base64");
+            const base64 = bytesToBase64(contentPart.data as Uint8Array);
             url = `data:${contentPart.mediaType};base64,${base64}`;
           }
           ui.parts.push({

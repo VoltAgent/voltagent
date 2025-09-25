@@ -1,5 +1,5 @@
-import type { ServerProviderDeps } from "@voltagent/core";
-import { getGlobalLogBuffer } from "@voltagent/core";
+import type { ServerProviderDeps } from "@voltagent/core/edge";
+import { getGlobalLogBuffer } from "@voltagent/core/edge";
 import type { LogEntry, LogFilter, LogLevel, Logger } from "@voltagent/internal";
 import type { ApiResponse } from "../types";
 

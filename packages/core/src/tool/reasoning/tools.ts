@@ -22,6 +22,7 @@ const thinkParametersSchema = z.object({
 });
 
 export const thinkTool = createTool({
+  id: "reasoning-think",
   name: "think",
   description:
     "Use this tool as a scratchpad to reason about the task and work through it step-by-step. Helps break down problems and track reasoning. Use it BEFORE making other tool calls or generating the final response.",
@@ -86,6 +87,7 @@ const analyzeParametersSchema = z.object({
 });
 
 export const analyzeTool = createTool({
+  id: "reasoning-analyze",
   name: "analyze",
   description:
     "Use this tool to analyze the results from a previous reasoning step or tool call and determine the next action.",

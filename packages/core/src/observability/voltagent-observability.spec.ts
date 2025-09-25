@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { VoltAgentObservability } from "./voltagent-observability";
+import { VoltAgentObservability as NodeVoltAgentObservability } from "./node/volt-agent-observability";
 
 describe("VoltAgentObservability", () => {
   let observability: VoltAgentObservability | undefined;
@@ -12,13 +12,13 @@ describe("VoltAgentObservability", () => {
   });
 
   it("uses the VoltAgent instrumentation scope by default", () => {
-    observability = new VoltAgentObservability();
+    observability = new NodeVoltAgentObservability();
     const tracer = observability.getTracer() as any;
     expect(tracer.instrumentationScope?.name).toBe("@voltagent/core");
   });
 
   it("allows overriding the instrumentation scope name", () => {
-    observability = new VoltAgentObservability({ instrumentationScopeName: "custom-scope" });
+    observability = new NodeVoltAgentObservability({ instrumentationScopeName: "custom-scope" });
     const tracer = observability.getTracer() as any;
     expect(tracer.instrumentationScope?.name).toBe("custom-scope");
   });

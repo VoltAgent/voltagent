@@ -1,8 +1,8 @@
-import crypto from "node:crypto";
 import type { ModelMessage } from "@ai-sdk/provider-utils";
 import type { Logger } from "@voltagent/internal";
 import type { UIMessage, UIMessagePart } from "ai";
 
+import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 
 type MessageSource = "user" | "system" | "memory" | "response";
@@ -299,7 +299,7 @@ export class ConversationBuffer {
 
   private ensureMessageId(message: UIMessage): void {
     if (!message.id) {
-      message.id = crypto.randomUUID();
+      message.id = randomUUID();
     }
   }
 

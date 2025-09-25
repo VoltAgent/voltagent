@@ -26,6 +26,7 @@ export * from "./handlers/workflow.handlers";
 export * from "./handlers/log.handlers";
 export * from "./handlers/update.handlers";
 export * from "./handlers/observability.handlers";
+export { setupObservabilityHandler } from "./handlers/observability-setup.handler";
 
 // Export auth
 export * from "./auth";

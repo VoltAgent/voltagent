@@ -11,6 +11,10 @@ export default defineConfig({
   outDir: "dist",
   minify: false,
   dts: true,
+  loader: {
+    ".toml": "text",
+    ".template": "text",
+  },
   esbuildPlugins: [markAsExternalPlugin],
   esbuildOptions(options) {
     options.keepNames = true;

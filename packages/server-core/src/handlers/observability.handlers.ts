@@ -3,8 +3,6 @@
  * Provides access to OpenTelemetry traces and spans
  */
 
-import { promises as fs } from "node:fs";
-import * as path from "node:path";
 import type { ServerProviderDeps } from "@voltagent/core";
 import { buildSpanTree } from "@voltagent/core";
 
@@ -349,117 +347,6 @@ export async function queryLogsHandler(query: any, deps: ServerProviderDeps): Pr
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to query logs",
-    };
-  }
-}
-
-/**
- * Setup observability by updating .env file with VoltAgent keys
- */
-export async function setupObservabilityHandler(
-  body: { publicKey?: string; secretKey?: string },
-  deps: ServerProviderDeps,
-): Promise<any> {
-  try {
-    const { publicKey, secretKey } = body;
-
-    if (!publicKey || !secretKey) {
-      return {
-        success: false,
-        error: "Missing publicKey or secretKey",
-      };
-    }
-
-    // Get logger from deps
-    const logger = deps.logger || console;
-
-    // Update .env file
-    const envPath = path.join(process.cwd(), ".env");
-
-    try {
-      // Read existing .env content
-      let envContent = "";
-      try {
-        envContent = await fs.readFile(envPath, "utf-8");
-      } catch (_error) {
-        // If .env doesn't exist, we'll create it
-        logger.debug(".env file not found, will create new one");
-      }
-
-      // Update or add keys
-      const lines = envContent.split("\n");
-      let publicKeyUpdated = false;
-      let secretKeyUpdated = false;
-
-      const updatedLines = lines.map((line) => {
-        const trimmedLine = line.trim();
-
-        // Update existing or commented public key
-        if (
-          trimmedLine.startsWith("VOLTAGENT_PUBLIC_KEY=") ||
-          trimmedLine.startsWith("# VOLTAGENT_PUBLIC_KEY=") ||
-          trimmedLine.startsWith("#VOLTAGENT_PUBLIC_KEY=")
-        ) {
-          publicKeyUpdated = true;
-          return `VOLTAGENT_PUBLIC_KEY=${publicKey}`;
-        }
-
-        // Update existing or commented secret key
-        if (
-          trimmedLine.startsWith("VOLTAGENT_SECRET_KEY=") ||
-          trimmedLine.startsWith("# VOLTAGENT_SECRET_KEY=") ||
-          trimmedLine.startsWith("#VOLTAGENT_SECRET_KEY=")
-        ) {
-          secretKeyUpdated = true;
-          return `VOLTAGENT_SECRET_KEY=${secretKey}`;
-        }
-
-        return line;
-      });
-
-      envContent = updatedLines.join("\n");
-
-      // If keys weren't found, add them at the end
-      if (!publicKeyUpdated || !secretKeyUpdated) {
-        if (!envContent.endsWith("\n") && envContent.length > 0) {
-          envContent += "\n";
-        }
-
-        if (!publicKeyUpdated && !secretKeyUpdated) {
-          envContent += `
-# VoltAgent Observability
-VOLTAGENT_PUBLIC_KEY=${publicKey}
-VOLTAGENT_SECRET_KEY=${secretKey}
-`;
-        } else if (!publicKeyUpdated) {
-          envContent += `VOLTAGENT_PUBLIC_KEY=${publicKey}\n`;
-        } else if (!secretKeyUpdated) {
-          envContent += `VOLTAGENT_SECRET_KEY=${secretKey}\n`;
-        }
-      }
-
-      // Write updated content
-      await fs.writeFile(envPath, envContent);
-
-      logger.info(
-        "Observability configuration updated in .env file. Please restart your application.",
-      );
-
-      return {
-        success: true,
-        message: "Observability configured successfully. Please restart your application.",
-      };
-    } catch (error) {
-      logger.error("Failed to update .env file:", { error });
-      return {
-        success: false,
-        error: "Failed to update .env file",
-      };
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to setup observability",
     };
   }
 }

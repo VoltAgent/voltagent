@@ -5,22 +5,21 @@
  * for real-time observability in the Console UI.
  */
 
-import { EventEmitter } from "node:events";
 import type { Context, Span } from "@opentelemetry/api";
 import { trace } from "@opentelemetry/api";
 import type { ReadableSpan, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { SimpleEventEmitter } from "../../utils/simple-event-emitter";
 import { readableSpanToObservabilitySpan } from "../types";
 import type { ObservabilityWebSocketEvent } from "../types";
 
 /**
  * Singleton EventEmitter for WebSocket broadcasting
  */
-export class WebSocketEventEmitter extends EventEmitter {
+export class WebSocketEventEmitter extends SimpleEventEmitter {
   private static instance: WebSocketEventEmitter;
 
   private constructor() {
     super();
-    this.setMaxListeners(100);
   }
 
   static getInstance(): WebSocketEventEmitter {
