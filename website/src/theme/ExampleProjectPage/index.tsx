@@ -112,6 +112,7 @@ export default function ExampleProjectPage({
       Warning,
       details: DetailsComponent,
     }),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     [DetailsComponent],
   );
 

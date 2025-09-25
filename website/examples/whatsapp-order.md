@@ -499,7 +499,7 @@ import { handleWhatsAppMessage, handleWhatsAppVerification } from "./webhooks/wh
 
 // Create a logger instance
 const logger = createPinoLogger({
-  name: "with-whatsup",
+  name: "with-whatsapp",
   level: "info",
 });
 
@@ -534,7 +534,7 @@ const memory = new Memory({
 });
 
 const agent = new Agent({
-  name: "with-whatsup",
+  name: "with-whatsapp",
   instructions: `You are a WhatsApp ordering bot. Your task is to take food orders from customers.
 
 Order Flow:
@@ -669,7 +669,7 @@ Create the intelligent agent with instructions and tools:
 
 ```typescript
 const agent = new Agent({
-  name: "with-whatsup",
+  name: "with-whatsapp",
   instructions: `You are a WhatsApp ordering bot. Your task is to take food orders from customers.
 
 Order Flow:
