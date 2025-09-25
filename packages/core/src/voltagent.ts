@@ -13,7 +13,7 @@ import {
 } from "./observability";
 import { AgentRegistry } from "./registries/agent-registry";
 import type { IEdgeProvider, IServerProvider, VoltAgentOptions } from "./types";
-import { isEdgeRuntime, mergeProcessEnv } from "./utils/runtime";
+import { isEdgeRuntime } from "./utils/runtime";
 import { isValidVoltOpsKeys } from "./utils/voltops-validation";
 import { VoltOpsClient } from "./voltops/client";
 import type { Workflow } from "./workflow";
@@ -38,8 +38,8 @@ export class VoltAgent {
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
-    this.ensureEnvironmentBinding = (env?: Record<string, unknown>) => {
-      this.ensureEnvironment(env);
+    this.ensureEnvironmentBinding = () => {
+      this.ensureEnvironment();
     };
 
     // Initialize logger
@@ -165,11 +165,7 @@ export class VoltAgent {
     return this.edgeProvider;
   }
 
-  private ensureEnvironment(env?: Record<string, unknown>): void {
-    if (env) {
-      mergeProcessEnv(env);
-    }
-
+  private ensureEnvironment(): void {
     this.autoConfigureVoltOpsClientFromEnv();
     this.syncEdgeObservabilityRemote();
   }

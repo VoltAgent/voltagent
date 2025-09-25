@@ -1,4 +1,4 @@
-import { type IEdgeProvider, type ServerProviderDeps, mergeProcessEnv } from "@voltagent/core";
+import type { IEdgeProvider, ServerProviderDeps } from "@voltagent/core";
 import type { Hono } from "hono";
 import { createEdgeApp } from "./app-factory";
 import type { EdgeConfig, EdgeRuntime } from "./types";
@@ -29,8 +29,6 @@ export class HonoEdgeProvider implements IEdgeProvider {
   private async ensureEnvironmentTarget(target?: Record<string, unknown>): Promise<void> {
     if (this.deps.ensureEnvironment) {
       await Promise.resolve(this.deps.ensureEnvironment(target));
-    } else {
-      mergeProcessEnv(target);
     }
   }
 

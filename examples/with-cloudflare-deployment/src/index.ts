@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool, mergeProcessEnv } from "@voltagent/core";
+import { Agent, MCPConfiguration, VoltAgent, createTool } from "@voltagent/core";
 import { edgeHono } from "@voltagent/edge-hono";
 import { weatherTool } from "./tools";
 
@@ -24,8 +24,7 @@ const agent = new Agent({
 
 let cachedVoltAgent: VoltAgent | undefined;
 
-function getVoltAgent(env: Env): VoltAgent {
-  mergeProcessEnv(env as unknown as Record<string, unknown>);
+function getVoltAgent(): VoltAgent {
   if (cachedVoltAgent) {
     return cachedVoltAgent;
   }
@@ -40,7 +39,7 @@ function getVoltAgent(env: Env): VoltAgent {
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const voltAgent = getVoltAgent(env);
+    const voltAgent = getVoltAgent();
 
     const cloudflareWorker = voltAgent.edge().toCloudflareWorker();
     const runtimeEnv = env as unknown as Record<string, unknown>;

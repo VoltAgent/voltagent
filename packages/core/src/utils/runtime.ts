@@ -52,31 +52,3 @@ export const getEnvVar = (key: string): string | undefined => {
   const value = env[key];
   return typeof value === "string" && value.length > 0 ? value : undefined;
 };
-
-export const mergeProcessEnv = (source?: Record<string, unknown>): void => {
-  if (!source) {
-    return;
-  }
-
-  const entries = Object.entries(source).filter(([, value]) => typeof value === "string") as Array<
-    [string, string]
-  >;
-
-  if (entries.length === 0) {
-    return;
-  }
-
-  const globalRef = globalThis as typeof globalThis & {
-    process?: { env?: Record<string, string> };
-  };
-
-  const processRef = globalRef.process ?? { env: {} };
-  const currentEnv = processRef.env ?? {};
-
-  for (const [key, value] of entries) {
-    currentEnv[key] = value;
-  }
-
-  processRef.env = currentEnv;
-  globalRef.process = processRef;
-};

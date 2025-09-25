@@ -4,4 +4,8 @@ main = "dist/index.js"
 compatibility_date = "2025-01-01"
 account_id = ""
 workers_dev = true
-compatibility_flags = ["nodejs_compat", "no_handle_cross_request_promise_resolution"]
+compatibility_flags = [
+  "nodejs_compat",
+  "nodejs_compat_populate_process_env",
+  "no_handle_cross_request_promise_resolution",
+]

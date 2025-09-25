@@ -46,7 +46,7 @@ Store them using `wrangler secret put`, or add them under `vars` / `env.producti
 Edge mode uses the `edge` option instead of a Node server. Below is a minimal TypeScript file you can adapt:
 
 ```ts title="src/index.ts"
-import { VoltAgent, Agent, mergeProcessEnv } from "@voltagent/core";
+import { VoltAgent, Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
 import { edgeHono } from "@voltagent/edge-hono";
 import { openai } from "@ai-sdk/openai";
 import { weatherTool } from "./tools";
@@ -57,17 +57,23 @@ type Env = {
   VOLTAGENT_SECRET_KEY?: string;
 };
 
+const memory = new Memory({
+  storage: new InMemoryStorageAdapter({
+    storageLimit: 50,
+  }),
+});
+
 const agent = new Agent({
   name: "edge-assistant",
   instructions: "Answer user questions quickly.",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
+  memory,
 });
 
 let cachedAgent: VoltAgent | undefined;
 
-function getAgent(env: Env) {
-  mergeProcessEnv(env as Record<string, unknown>);
+function getAgent() {
   if (!cachedAgent) {
     cachedAgent = new VoltAgent({
       agents: { agent },
@@ -79,7 +85,7 @@ function getAgent(env: Env) {
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    const voltAgent = getAgent(env);
+    const voltAgent = getAgent();
     const worker = voltAgent.edge().toCloudflareWorker();
     return worker.fetch(request, env as Record<string, unknown>, ctx);
   },
@@ -95,10 +101,15 @@ name = "voltagent-worker"
 main = "dist/index.js"
 compatibility_date = "2025-01-01"
 workers_dev = true
-compatibility_flags = ["nodejs_compat", "no_handle_cross_request_promise_resolution"]
+compatibility_flags = [
+  "nodejs_compat",
+  "nodejs_compat_populate_process_env",
+  "no_handle_cross_request_promise_resolution",
+]
 ```
 
 - `nodejs_compat` enables the Node APIs that VoltAgent relies on.
+- `nodejs_compat_populate_process_env` mirrors Cloudflare env bindings into `process.env`, so VoltAgent can read secrets without extra setup.
 - `no_handle_cross_request_promise_resolution` silences noise from background exports and aligns with the way we call `waitUntil`.
 
 If you ship TypeScript, add a build script like `tsc --project tsconfig.json`, or use Wrangler’s `--bundle` support.
@@ -129,5 +140,88 @@ curl https://<your-worker>.workers.dev/
 - In-memory span/log storage is active by default. You can fetch traces through the `/observability` REST endpoints.
 - If VoltOps credentials are present, the worker exports telemetry via OTLP fetch calls. These calls run through `waitUntil`, so they do not block your responses.
 - VoltOps Console falls back to HTTP polling. There is no WebSocket streaming on edge yet.
+
+## Feature limitations on Edge
+
+- **MCP client/server** are not available on edge runtimes today. The current MCP implementation depends on Node.js stdio/network APIs. Run MCP providers on a Node deployment instead.
+- **libSQL memory adapter** is not supported in Workers. The libSQL driver requires Node sockets. Use the bundled `InMemoryStorageAdapter` or connect to an external database (PostgreSQL/Supabase) via their HTTP clients.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+### Memory configuration examples
+
+<Tabs>
+  <TabItem value="in-memory" label="In-memory (default)" default>
+
+```ts
+import { Memory, InMemoryStorageAdapter } from "@voltagent/core";
+
+const memory = new Memory({
+  storage: new InMemoryStorageAdapter({
+    storageLimit: 50,
+  }),
+});
+
+const agent = new Agent({
+  name: "edge-assistant",
+  instructions: "Answer user questions quickly.",
+  model: openai("gpt-4o-mini"),
+  tools: [weatherTool],
+  memory,
+});
+```
+
+  </TabItem>
+  <TabItem value="postgres" label="PostgreSQL">
+
+```ts
+import { Memory } from "@voltagent/core";
+import { PostgresMemoryAdapter, PostgresVectorAdapter } from "@voltagent/postgres";
+
+const memory = new Memory({
+  storage: new PostgresMemoryAdapter({
+    connectionString: env.POSTGRES_URL,
+  }),
+  vector: new PostgresVectorAdapter({
+    connectionString: env.POSTGRES_URL,
+  }),
+  // embedding adapter (e.g. AiSdkEmbeddingAdapter) stays the same
+});
+
+const agent = new Agent({
+  name: "edge-assistant",
+  instructions: "Answer user questions quickly.",
+  model: openai("gpt-4o-mini"),
+  tools: [weatherTool],
+  memory,
+});
+```
+
+  </TabItem>
+  <TabItem value="supabase" label="Supabase">
+
+```ts
+import { Memory } from "@voltagent/core";
+import { SupabaseMemoryAdapter } from "@voltagent/supabase";
+
+const memory = new Memory({
+  storage: new SupabaseMemoryAdapter({
+    url: env.SUPABASE_URL,
+    serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
+  }),
+});
+
+const agent = new Agent({
+  name: "edge-assistant",
+  instructions: "Answer user questions quickly.",
+  model: openai("gpt-4o-mini"),
+  tools: [weatherTool],
+  memory,
+});
+```
+
+  </TabItem>
+</Tabs>
 
 Monitor your deployment with `wrangler tail` and adjust the worker as needed. After these steps your VoltAgent app is live on Cloudflare Workers.
