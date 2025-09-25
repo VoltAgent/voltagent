@@ -1,7 +1,7 @@
 ---
 id: 3
-slug: whatsapp-order
-title: WhatsApp Order Bot
+slug: whatsapp-ai-agent
+title: WhatsApp Order Agent
 description: Learn how to build an intelligent WhatsApp chatbot for food ordering with VoltAgent.
 ---
 
@@ -198,7 +198,7 @@ Let's implement each tool:
 Our first tool retrieves available menu items from the database:
 
 <details>
-<summary>View Tool 1 implementation</summary>
+<summary>View Tool 1 Code</summary>
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -250,7 +250,7 @@ export const listMenuItemsTool = createTool({
 The second tool processes and saves customer orders to the database:
 
 <details>
-<summary>View Tool 2 implementation</summary>
+<summary>View Tool 2 Code</summary>
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -348,7 +348,7 @@ export const createOrderTool = createTool({
 The third tool allows customers to check the status of their orders:
 
 <details>
-<summary>View Tool 3 implementation</summary>
+<summary>View Tool 3 Code</summary>
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -484,7 +484,7 @@ export const checkOrderStatusTool = createTool({
 Now let's build the complete `src/index.ts` file that brings everything together:
 
 <details>
-<summary>View full application setup</summary>
+<summary>View Full Application Code</summary>
 
 ```typescript
 import "dotenv/config";
@@ -753,7 +753,7 @@ Work through the [WhatsApp Cloud API onboarding guide](https://developers.facebo
 Now let's create the complete WhatsApp webhook handlers in `src/webhooks/whatsapp.ts`:
 
 <details>
-<summary>View WhatsApp webhook handlers</summary>
+<summary>View WhatsApp Webhook Code</summary>
 
 ```typescript
 import { Context } from "hono";
@@ -991,12 +991,3 @@ Now that you have a working WhatsApp order bot, consider these enhancements:
 8. **Loyalty program**: Points and rewards for repeat customers
 9. **Group ordering**: Handle multiple people ordering together
 10. **Restaurant notifications**: Alert restaurant staff of new orders
-
-#### Learn More
-
-- [VoltAgent Documentation](https://voltagent.dev/docs/) - Complete framework reference
-- [Working Memory Guide](https://voltagent.dev/docs/agents/memory/#working-memory) - Deep dive into state management
-- [Tool Creation](https://voltagent.dev/docs/tools/overview/) - Building custom tools
-- [WhatsApp Business API](https://developers.facebook.com/docs/whatsapp/cloud-api) - Official WhatsApp documentation
-- [Supabase Documentation](https://supabase.com/docs) - Database and authentication guides
-- [Examples Repository](https://github.com/VoltAgent/voltagent/tree/main/examples) - More VoltAgent examples

@@ -58,7 +58,7 @@ export function Callout({ title, type = "info", children }: CalloutProps) {
           </span>
         ) : null}
       </div>
-      <div className="text-sm leading-relaxed text-white/80">{children}</div>
+      <div className="text-sm leading-relaxed text-white/80 [&_p]:mb-0">{children}</div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { MDXProvider } from "@mdx-js/react";
 import Layout from "@theme/Layout";
 import MDXComponents from "@theme/MDXComponents";
@@ -82,6 +82,27 @@ export default function ExampleProjectPage({
   const seoTitle = `${example.title} - VoltAgent Example | TypeScript AI Framework`;
   const seoDescription = `${example.description} - Learn how to build this with VoltAgent. Complete code example with installation and usage instructions.`;
 
+  const DetailsComponent = ({ children, ...props }: any) => {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [summary, ...content] = React.Children.toArray(children);
+
+    return (
+      <details
+        {...props}
+        open={isOpen}
+        onToggle={(e) => setIsOpen((e.target as HTMLDetailsElement).open)}
+      >
+        <summary className="flex items-center gap-2 py-2 text-sm font-medium text-emerald-400 no-underline hover:text-emerald-300 cursor-pointer outline-none list-none marker:hidden">
+          <ChevronRightIcon
+            className={clsx("h-4 w-4 transition-transform duration-200", isOpen && "rotate-90")}
+          />
+          {summary?.props?.children || summary}
+        </summary>
+        <div className="mt-4">{content}</div>
+      </details>
+    );
+  };
+
   const mdxComponents = React.useMemo(
     () => ({
       ...MDXComponents,
@@ -89,8 +110,9 @@ export default function ExampleProjectPage({
       Info,
       Success,
       Warning,
+      details: DetailsComponent,
     }),
-    [],
+    [DetailsComponent],
   );
 
   const tocItems = React.useMemo(() => {
@@ -107,7 +129,7 @@ export default function ExampleProjectPage({
 
   const renderToc = (items: TocItem[], depth = 0): React.ReactNode => (
     <ul
-      className={clsx("space-y-0.5 text-sm", {
+      className={clsx("space-y-0.5 mb-0 text-sm", {
         "mt-1.5 pl-3": depth > 0,
       })}
     >
@@ -223,57 +245,22 @@ export default function ExampleProjectPage({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="flex flex-col gap-10 lg:flex-row"
+              className="flex justify-center"
             >
-              <div className="flex-1 space-y-6 text-gray-300 [&_strong]:text-white [&_a]:text-[#00d992] [&_a:hover]:text-[#00c182] [&_code]:text-[#00d992] [&_blockquote]:border-l-4 [&_blockquote]:border-[#00d992] [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:italic [&_h2]:text-emerald-400 [&_h3]:text-emerald-400 [&_h4]:text-emerald-400 [&_h5]:text-emerald-400 [&_h6]:text-emerald-400">
-                <MDXProvider components={mdxComponents}>{React.createElement(content)}</MDXProvider>
-              </div>
-              {tocItems.length > 0 ? (
-                <nav className="sticky top-24 hidden w-full max-w-xs shrink-0 self-start rounded-2xl border  border-solid border-emerald-500/15 bg-gradient-to-br from-slate-950/80 via-slate-950/60 to-emerald-950/50 p-5 text-slate-200/80 shadow-lg shadow-black/20 backdrop-blur lg:block">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-200/90">
-                    On this page
-                  </p>
-                  {renderToc(tocItems)}
-                </nav>
-              ) : null}
-            </motion.div>
-
-            {/* Call to Action */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-12"
-            >
-              <div
-                className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-6"
-                style={{
-                  backdropFilter: "blur(4px)",
-                  WebkitBackdropFilter: "blur(4px)",
-                }}
-              >
-                <h3 className="text-lg font-bold text-[#00d992] mb-3">
-                  Ready to Build Your Own AI Agent?
-                </h3>
-                <p className="text-gray-400 mb-4 text-sm">
-                  Start building powerful AI agents with VoltAgent's TypeScript-native framework.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <a
-                    href="/docs/"
-                    className="flex-1 text-center px-4 py-2 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 font-semibold rounded-lg transition-colors hover:bg-emerald-400/20 no-underline text-sm"
-                  >
-                    View Documentation
-                  </a>
-                  <a
-                    href="https://github.com/voltagent/voltagent"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 text-center px-4 py-2 bg-gray-800/50 text-gray-300 border-solid border-gray-600 font-semibold rounded-lg transition-colors hover:bg-gray-700/50 no-underline text-sm"
-                  >
-                    View on GitHub
-                  </a>
+              <div className="flex w-full max-w-6xl gap-10">
+                <div className="flex-1 min-w-0 space-y-6 text-gray-300 [&_strong]:text-white [&_a]:text-[#00d992] [&_a:hover]:text-[#00c182] [&_code]:text-[#00d992] [&_blockquote]:border-l-4 [&_blockquote]:border-[#00d992] [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:italic [&_h2]:text-emerald-400 [&_h3]:text-emerald-400 [&_h4]:text-emerald-400 [&_h5]:text-emerald-400 [&_h6]:text-emerald-400 [&_details]:my-6 [&_details>summary::-webkit-details-marker]:hidden [&_pre]:overflow-x-auto [&_pre]:max-w-full">
+                  <MDXProvider components={mdxComponents}>
+                    {React.createElement(content)}
+                  </MDXProvider>
                 </div>
+                {tocItems.length > 0 ? (
+                  <nav className="sticky top-24 hidden w-64 shrink-0 self-start rounded-2xl border border-solid border-emerald-500/15 bg-gradient-to-br from-slate-950/80 via-slate-950/60 to-emerald-950/50 p-5 text-slate-200/80 shadow-lg shadow-black/20 backdrop-blur xl:block">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-200/90">
+                      On this page
+                    </p>
+                    {renderToc(tocItems)}
+                  </nav>
+                ) : null}
               </div>
             </motion.div>
           </div>
