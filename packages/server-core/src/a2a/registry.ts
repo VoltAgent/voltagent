@@ -1,4 +1,4 @@
-import type { A2AServerRegistry } from "@voltagent/core/edge";
+import type { A2AServerRegistry } from "@voltagent/core";
 import type { A2AServerMetadata } from "@voltagent/internal/a2a";
 
 import type { A2AServerLikeWithHandlers } from "./types";

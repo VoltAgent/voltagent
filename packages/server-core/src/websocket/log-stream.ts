@@ -2,7 +2,7 @@
  * Framework-agnostic log stream manager for real-time log streaming
  */
 
-import { getGlobalLogBuffer, getGlobalLogger } from "@voltagent/core/edge";
+import { getGlobalLogBuffer, getGlobalLogger } from "@voltagent/core";
 import type { LogEntry, LogFilter, Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
 import type { IWebSocket, LogStreamClient } from "../types/websocket";

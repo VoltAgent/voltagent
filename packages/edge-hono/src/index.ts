@@ -1,4 +1,4 @@
-import type { ServerProviderDeps } from "@voltagent/core/edge";
+import type { ServerProviderDeps } from "@voltagent/core";
 import { HonoEdgeProvider } from "./edge-provider";
 import type { EdgeConfig } from "./types";
 

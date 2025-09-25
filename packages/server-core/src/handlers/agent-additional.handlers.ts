@@ -1,4 +1,4 @@
-import type { ServerProviderDeps } from "@voltagent/core/edge";
+import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import type { ApiResponse } from "../types";
 

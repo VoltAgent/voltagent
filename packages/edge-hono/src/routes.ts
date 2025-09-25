@@ -1,4 +1,4 @@
-import type { ServerProviderDeps } from "@voltagent/core/edge";
+import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal";
 import {
@@ -37,7 +37,7 @@ import {
   mapLogResponse,
   parseJsonRpcRequest,
   resolveAgentCard,
-} from "@voltagent/server-core/edge";
+} from "@voltagent/server-core";
 import type { Hono } from "hono";
 
 function parseJsonSafe<T>(raw: string, logger: Logger): T | undefined {

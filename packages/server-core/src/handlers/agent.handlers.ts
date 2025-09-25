@@ -1,5 +1,5 @@
-import type { ServerProviderDeps } from "@voltagent/core/edge";
-import { convertUsage } from "@voltagent/core/edge";
+import type { ServerProviderDeps } from "@voltagent/core";
+import { convertUsage } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";

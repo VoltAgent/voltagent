@@ -1,6 +1,6 @@
-import type { ServerProviderDeps } from "@voltagent/core/edge";
+import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
-import { getOrCreateLogger } from "@voltagent/server-core/edge";
+import { getOrCreateLogger } from "@voltagent/server-core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {

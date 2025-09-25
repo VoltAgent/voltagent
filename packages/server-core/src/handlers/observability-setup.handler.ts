@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
-import type { ServerProviderDeps } from "@voltagent/core/edge";
+import type { ServerProviderDeps } from "@voltagent/core";
 
 export async function setupObservabilityHandler(
   body: { publicKey?: string; secretKey?: string },

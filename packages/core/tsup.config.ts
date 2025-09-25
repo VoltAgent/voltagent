@@ -2,7 +2,7 @@ import { defineConfig } from "tsup";
 import { markAsExternalPlugin } from "../shared/tsup-plugins/mark-as-external";
 
 export default defineConfig({
-  entry: ["src/index.ts", "src/edge.ts"],
+  entry: ["src/index.ts"],
   format: ["cjs", "esm"],
   splitting: false,
   sourcemap: true,

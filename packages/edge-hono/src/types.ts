@@ -1,4 +1,4 @@
-import type { ServerProviderDeps } from "@voltagent/core/edge";
+import type { ServerProviderDeps } from "@voltagent/core";
 import type { Hono } from "hono";
 
 export type EdgeRuntime = "cloudflare" | "vercel" | "netlify" | "deno" | "unknown";
