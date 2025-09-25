@@ -1,8 +1,9 @@
 const path = require("node:path");
 const fs = require("node:fs").promises;
 const matter = require("gray-matter");
+const { aliasedSitePath } = require("@docusaurus/utils");
 
-async function loadExamples(contentPath) {
+async function loadExamples(contentPath, siteDir) {
   try {
     const files = await fs.readdir(contentPath);
     const mdFiles = files.filter((file) => file.endsWith(".md") || file.endsWith(".mdx"));
@@ -11,16 +12,16 @@ async function loadExamples(contentPath) {
       mdFiles.map(async (file) => {
         const filePath = path.join(contentPath, file);
         const content = await fs.readFile(filePath, "utf8");
-        const { data: frontMatter, content: markdownContent } = matter(content);
+        const { data: frontMatter } = matter(content);
 
         return {
           id: frontMatter.id || file.replace(/\.mdx?$/, ""),
-          content: markdownContent,
           metadata: {
             ...frontMatter,
             permalink: `/examples/agents/${frontMatter.slug || file.replace(/\.mdx?$/, "")}`,
             fileName: file,
           },
+          source: aliasedSitePath(filePath, siteDir),
         };
       }),
     );
@@ -33,7 +34,7 @@ async function loadExamples(contentPath) {
 }
 
 async function examplesPluginExtended(context, options) {
-  const { siteDir } = context;
+  const { siteDir, siteConfig } = context;
   const { contentPath = "examples" } = options;
 
   const contentDir = path.resolve(siteDir, contentPath);
@@ -42,7 +43,7 @@ async function examplesPluginExtended(context, options) {
     name: "docusaurus-plugin-content-examples",
 
     async loadContent() {
-      const examples = await loadExamples(contentDir);
+      const examples = await loadExamples(contentDir, siteDir);
       return {
         examples,
       };
@@ -59,7 +60,6 @@ async function examplesPluginExtended(context, options) {
         JSON.stringify(
           publishedExamples.map((e) => ({
             ...e.metadata,
-            content: e.content,
           })),
           null,
           2,
@@ -78,11 +78,11 @@ async function examplesPluginExtended(context, options) {
       // Create individual example pages using slug
       await Promise.all(
         examples.map(async (example) => {
-          const { metadata, content } = example;
+          const { metadata, source } = example;
 
           const exampleDataPath = await createData(
             `example-${example.id}.json`,
-            JSON.stringify({ ...metadata, content }, null, 2),
+            JSON.stringify({ ...metadata }, null, 2),
           );
 
           addRoute({
@@ -91,10 +91,38 @@ async function examplesPluginExtended(context, options) {
             exact: true,
             modules: {
               example: exampleDataPath,
+              content: source,
             },
           });
         }),
       );
+    },
+
+    configureWebpack() {
+      const staticDirs = (siteConfig.staticDirectories || []).map((dir) =>
+        path.resolve(siteDir, dir),
+      );
+
+      return {
+        module: {
+          rules: [
+            {
+              test: /\.mdx?$/i,
+              include: [contentDir],
+              use: [
+                {
+                  loader: require.resolve("@docusaurus/mdx-loader"),
+                  options: {
+                    siteDir,
+                    staticDirs,
+                    markdownConfig: siteConfig.markdown,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      };
     },
 
     getPathsToWatch() {

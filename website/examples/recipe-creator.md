@@ -5,7 +5,7 @@ title: AI Recipe Generator Agent
 description: Intelligent recipe recommendation system with MCP.
 ---
 
-::youtube{url="https://youtu.be/KjV1c6AhlfY" title="AI Recipe Generator Agent Demo"}
+<YouTubeEmbed url="https://youtu.be/KjV1c6AhlfY" title="AI Recipe Generator Agent Demo" />
 
 Build an intelligent AI agent for recipe recommendations that creates personalized cooking suggestions based on available ingredients, dietary preferences, and time constraints. This example demonstrates how to build an AI agent using VoltAgent framework with MCP (Model Context Protocol) integration to access external data sources like Exa for comprehensive culinary information.
 
