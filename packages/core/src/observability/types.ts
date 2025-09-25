@@ -33,7 +33,11 @@ export interface ObservabilityConfig {
     scheduledDelayMillis?: number; // Default: 5000ms
     exportTimeoutMillis?: number; // Default: 30000ms
   };
-  edgeRemote?: EdgeRemoteExportConfig;
+  serverlessRemote?: ServerlessRemoteExportConfig;
+  /**
+   * @deprecated Use {@link serverlessRemote} instead.
+   */
+  edgeRemote?: ServerlessRemoteExportConfig;
   spanProcessors?: SpanProcessor[];
   logProcessors?: LogRecordProcessor[];
 }
@@ -43,21 +47,31 @@ export interface ObservabilitySamplingConfig {
   ratio?: number;
 }
 
-export interface EdgeRemoteEndpointConfig {
+export interface ServerlessRemoteEndpointConfig {
   url: string;
   headers?: Record<string, string>;
   method?: string;
 }
 
-export interface EdgeRemoteExportConfig {
-  traces?: EdgeRemoteEndpointConfig;
-  logs?: EdgeRemoteEndpointConfig;
+export interface ServerlessRemoteExportConfig {
+  traces?: ServerlessRemoteEndpointConfig;
+  logs?: ServerlessRemoteEndpointConfig;
   sampling?: ObservabilitySamplingConfig;
   maxQueueSize?: number;
   maxExportBatchSize?: number;
   scheduledDelayMillis?: number;
   exportTimeoutMillis?: number;
 }
+
+/**
+ * @deprecated Use {@link ServerlessRemoteEndpointConfig} instead.
+ */
+export type EdgeRemoteEndpointConfig = ServerlessRemoteEndpointConfig;
+
+/**
+ * @deprecated Use {@link ServerlessRemoteExportConfig} instead.
+ */
+export type EdgeRemoteExportConfig = ServerlessRemoteExportConfig;
 
 /**
  * Span filter configuration

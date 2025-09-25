@@ -19,3 +19,10 @@ export type { HonoServerConfig } from "./types";
 
 // Export auth utilities
 export { jwtAuth } from "./auth";
+
+export {
+  createNetlifyFunctionHandler,
+  type NetlifyFunctionEvent,
+  type NetlifyFunctionHandler,
+  type NetlifyFunctionResult,
+} from "./netlify-function";

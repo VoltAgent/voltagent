@@ -1,9 +1,9 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Hono } from "hono";
 
-export type EdgeRuntime = "cloudflare" | "vercel" | "netlify" | "deno" | "unknown";
+export type ServerlessRuntime = "cloudflare" | "vercel" | "deno" | "unknown";
 
-export interface EdgeConfig {
+export interface ServerlessConfig {
   corsOrigin?: string | string[];
   corsAllowMethods?: string[];
   corsAllowHeaders?: string[];

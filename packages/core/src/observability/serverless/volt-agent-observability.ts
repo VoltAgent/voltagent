@@ -1,7 +1,7 @@
 /**
- * VoltAgentObservability (Edge runtime)
+ * VoltAgentObservability (serverless runtime)
  *
- * Simplified observability pipeline for Workers/edge runtimes. Uses
+ * Simplified observability pipeline for Workers/serverless runtimes. Uses
  * BasicTracerProvider and fetch-friendly processors only.
  */
 
@@ -32,11 +32,11 @@ import { SamplingWrapperProcessor } from "../processors/sampling-wrapper-process
 import { type SpanFilterOptions, SpanFilterProcessor } from "../processors/span-filter-processor";
 import { WebSocketSpanProcessor } from "../processors/websocket-span-processor";
 import type {
-  EdgeRemoteEndpointConfig,
-  EdgeRemoteExportConfig,
   ObservabilityConfig,
   ObservabilitySamplingConfig,
   ObservabilityStorageAdapter,
+  ServerlessRemoteEndpointConfig,
+  ServerlessRemoteExportConfig,
 } from "../types";
 
 const textDecoder = typeof TextDecoder !== "undefined" ? new TextDecoder() : undefined;
@@ -59,7 +59,7 @@ type ObservabilityGlobals = typeof globalThis & {
   ___voltagent_wait_until?: (promise: Promise<unknown>) => void;
 };
 
-export class EdgeVoltAgentObservability {
+export class ServerlessVoltAgentObservability {
   private provider: BasicTracerProvider;
   private loggerProvider: LoggerProvider;
   private tracer: Tracer;
@@ -74,6 +74,12 @@ export class EdgeVoltAgentObservability {
 
   constructor(config: ObservabilityConfig = {}) {
     this.config = { ...config };
+    if (this.config.edgeRemote && !this.config.serverlessRemote) {
+      this.config.serverlessRemote = this.config.edgeRemote;
+    }
+    if (this.config.serverlessRemote && !this.config.edgeRemote) {
+      this.config.edgeRemote = this.config.serverlessRemote;
+    }
     this.instrumentationScopeName = config.instrumentationScopeName || "@voltagent/core";
     this.spanFilterOptions = this.resolveSpanFilterOptions();
 
@@ -89,7 +95,7 @@ export class EdgeVoltAgentObservability {
 
     this.resource = defaultResource().merge(
       resourceFromAttributes({
-        [ATTR_SERVICE_NAME]: config.serviceName || "voltagent-edge",
+        [ATTR_SERVICE_NAME]: config.serviceName || "voltagent-serverless",
         [ATTR_SERVICE_VERSION]: config.serviceVersion || "1.0.0",
         ...config.resourceAttributes,
       }),
@@ -137,8 +143,8 @@ export class EdgeVoltAgentObservability {
       processors.push(this.applySpanFilter(localStorageProcessor));
     }
 
-    if (this.config.edgeRemote) {
-      const remoteProcessor = createRemoteSpanProcessor(this.config.edgeRemote);
+    if (this.config.serverlessRemote) {
+      const remoteProcessor = createRemoteSpanProcessor(this.config.serverlessRemote);
       if (remoteProcessor) {
         processors.push(this.applySpanFilter(remoteProcessor));
       }
@@ -199,8 +205,8 @@ export class EdgeVoltAgentObservability {
     }
     processors.push(new WebSocketLogProcessor());
 
-    if (this.config.edgeRemote) {
-      const remoteProcessor = createRemoteLogProcessor(this.config.edgeRemote);
+    if (this.config.serverlessRemote) {
+      const remoteProcessor = createRemoteLogProcessor(this.config.serverlessRemote);
       if (remoteProcessor) {
         processors.push(remoteProcessor);
       }
@@ -404,11 +410,11 @@ export class EdgeVoltAgentObservability {
     return this.provider;
   }
 
-  getContext() {
+  getContext(): typeof context {
     return context;
   }
 
-  getTraceAPI() {
+  getTraceAPI(): typeof trace {
     return trace;
   }
 
@@ -420,7 +426,8 @@ export class EdgeVoltAgentObservability {
     return SpanStatusCode;
   }
 
-  updateEdgeRemote(config: EdgeRemoteExportConfig): void {
+  updateServerlessRemote(config: ServerlessRemoteExportConfig): void {
+    this.config.serverlessRemote = config;
     this.config.edgeRemote = config;
     const previousProvider = this.provider;
     const previousLoggerProvider = this.loggerProvider;
@@ -437,6 +444,13 @@ export class EdgeVoltAgentObservability {
     void previousLoggerProvider.shutdown().catch(() => {});
   }
 
+  /**
+   * @deprecated Use {@link updateServerlessRemote} instead.
+   */
+  updateEdgeRemote(config: ServerlessRemoteExportConfig): void {
+    this.updateServerlessRemote(config);
+  }
+
   private pushSpan(span: Span): void {
     this.spanStack.push(span);
   }
@@ -451,9 +465,11 @@ export class EdgeVoltAgentObservability {
   }
 }
 
-export { EdgeVoltAgentObservability as default };
+export { ServerlessVoltAgentObservability as default };
 
-function createRemoteSpanProcessor(config: EdgeRemoteExportConfig): SpanProcessor | undefined {
+function createRemoteSpanProcessor(
+  config: ServerlessRemoteExportConfig,
+): SpanProcessor | undefined {
   if (!config.traces?.url) {
     return undefined;
   }
@@ -472,7 +488,9 @@ function createRemoteSpanProcessor(config: EdgeRemoteExportConfig): SpanProcesso
   return processor;
 }
 
-function createRemoteLogProcessor(config: EdgeRemoteExportConfig): LogRecordProcessor | undefined {
+function createRemoteLogProcessor(
+  config: ServerlessRemoteExportConfig,
+): LogRecordProcessor | undefined {
   if (!config.logs?.url) {
     return undefined;
   }
@@ -483,7 +501,7 @@ function createRemoteLogProcessor(config: EdgeRemoteExportConfig): LogRecordProc
 }
 
 class FetchTraceExporter {
-  constructor(private endpoint: EdgeRemoteEndpointConfig) {}
+  constructor(private endpoint: ServerlessRemoteEndpointConfig) {}
 
   export(items: ReadableSpan[], resultCallback: (result: any) => void): void {
     if (!this.endpoint.url) {
@@ -519,7 +537,7 @@ class FetchTraceExporter {
             return;
           } catch (error) {
             if (attempt >= DEFAULT_MAX_ATTEMPTS) {
-              console.error("[EdgeTraceExporter] export error", error);
+              console.error("[ServerlessTraceExporter] export error", error);
               resultCallback({
                 code: ExportResultCode.FAILED,
                 error: error instanceof Error ? error : new Error(String(error)),
@@ -527,7 +545,7 @@ class FetchTraceExporter {
               return;
             }
 
-            console.warn("[EdgeTraceExporter] retrying export", {
+            console.warn("[ServerlessTraceExporter] retrying export", {
               attempt,
               delayMs,
               error: error instanceof Error ? error.message : String(error),
@@ -558,7 +576,7 @@ class FetchTraceExporter {
 }
 
 class FetchLogExporter {
-  constructor(private endpoint: EdgeRemoteEndpointConfig) {}
+  constructor(private endpoint: ServerlessRemoteEndpointConfig) {}
 
   export(items: ReadableLogRecord[], resultCallback: (result: any) => void): void {
     if (!this.endpoint.url) {
@@ -594,7 +612,7 @@ class FetchLogExporter {
             return;
           } catch (error) {
             if (attempt >= DEFAULT_MAX_ATTEMPTS) {
-              console.error("[EdgeLogExporter] export error", error);
+              console.error("[ServerlessLogExporter] export error", error);
               resultCallback({
                 code: ExportResultCode.FAILED,
                 error: error instanceof Error ? error : new Error(String(error)),
@@ -602,7 +620,7 @@ class FetchLogExporter {
               return;
             }
 
-            console.warn("[EdgeLogExporter] retrying export", {
+            console.warn("[ServerlessLogExporter] retrying export", {
               attempt,
               delayMs,
               error: error instanceof Error ? error.message : String(error),

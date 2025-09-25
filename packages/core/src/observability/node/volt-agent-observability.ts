@@ -380,11 +380,11 @@ export class VoltAgentObservability {
     return this.provider;
   }
 
-  getContext() {
+  getContext(): typeof context {
     return context;
   }
 
-  getTraceAPI() {
+  getTraceAPI(): typeof trace {
     return trace;
   }
 

@@ -63,7 +63,7 @@ export interface IServerProvider {
   isRunning(): boolean;
 }
 
-export type EdgeRequestHandler = (req: Request, ...args: unknown[]) => Promise<Response>;
+export type ServerlessRequestHandler = (req: Request, ...args: unknown[]) => Promise<Response>;
 
 export type CloudflareFetchHandler = (
   req: Request,
@@ -71,16 +71,15 @@ export type CloudflareFetchHandler = (
   ctx: unknown,
 ) => Promise<Response>;
 
-export interface IEdgeProvider {
+export interface IServerlessProvider {
   handleRequest(request: Request): Promise<Response>;
   toCloudflareWorker(): { fetch: CloudflareFetchHandler };
-  toVercelEdge(): EdgeRequestHandler;
-  toNetlifyEdge(): EdgeRequestHandler;
-  toDeno(): EdgeRequestHandler;
-  auto(): { fetch: CloudflareFetchHandler } | EdgeRequestHandler;
+  toVercelEdge(): ServerlessRequestHandler;
+  toDeno(): ServerlessRequestHandler;
+  auto(): { fetch: CloudflareFetchHandler } | ServerlessRequestHandler;
 }
 
-export type EdgeProviderFactory = (deps: ServerProviderDeps) => IEdgeProvider;
+export type ServerlessProviderFactory = (deps: ServerProviderDeps) => IServerlessProvider;
 
 /**
  * Server provider dependencies
@@ -193,10 +192,10 @@ export type VoltAgentOptions = {
   server?: ServerProviderFactory;
 
   /**
-   * Edge provider factory function for edge runtimes
-   * Example: edgeHono({ corsOrigin: '*' })
+   * Serverless provider factory function for fetch-based runtimes
+   * Example: serverlessHono({ corsOrigin: '*' })
    */
-  edge?: EdgeProviderFactory;
+  serverless?: ServerlessProviderFactory;
 
   /**
    * Unified VoltOps client for telemetry and prompt management

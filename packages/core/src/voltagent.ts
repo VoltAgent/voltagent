@@ -7,13 +7,13 @@ import type { Agent } from "./agent/agent";
 import { getGlobalLogger } from "./logger";
 import { MCPServerRegistry } from "./mcp";
 import {
-  EdgeVoltAgentObservability,
+  ServerlessVoltAgentObservability,
   type VoltAgentObservability,
   createVoltAgentObservability,
 } from "./observability";
 import { AgentRegistry } from "./registries/agent-registry";
-import type { IEdgeProvider, IServerProvider, VoltAgentOptions } from "./types";
-import { isEdgeRuntime } from "./utils/runtime";
+import type { IServerProvider, IServerlessProvider, VoltAgentOptions } from "./types";
+import { isServerlessRuntime } from "./utils/runtime";
 import { isValidVoltOpsKeys } from "./utils/voltops-validation";
 import { VoltOpsClient } from "./voltops/client";
 import type { Workflow } from "./workflow";
@@ -27,7 +27,7 @@ export class VoltAgent {
   private registry: AgentRegistry;
   private workflowRegistry: WorkflowRegistry;
   private serverInstance?: IServerProvider;
-  private edgeProvider?: IEdgeProvider;
+  private serverlessProvider?: IServerlessProvider;
   private logger: Logger;
   private observability?: VoltAgentObservability;
   private readonly mcpServers = new Set<MCPServerLike>();
@@ -107,8 +107,8 @@ export class VoltAgent {
       });
     }
 
-    if (options.edge) {
-      this.edgeProvider = options.edge({
+    if (options.serverless) {
+      this.serverlessProvider = options.serverless({
         agentRegistry: this.registry,
         workflowRegistry: this.workflowRegistry,
         logger: this.logger,
@@ -157,17 +157,17 @@ export class VoltAgent {
     }
   }
 
-  edge(): IEdgeProvider {
-    if (!this.edgeProvider) {
-      throw new Error("No edge provider configured. Pass edge option to VoltAgent");
+  serverless(): IServerlessProvider {
+    if (!this.serverlessProvider) {
+      throw new Error("No serverless provider configured. Pass serverless option to VoltAgent");
     }
 
-    return this.edgeProvider;
+    return this.serverlessProvider;
   }
 
   private ensureEnvironment(): void {
     this.autoConfigureVoltOpsClientFromEnv();
-    this.syncEdgeObservabilityRemote();
+    this.syncServerlessObservabilityRemote();
   }
 
   private autoConfigureVoltOpsClientFromEnv(): void {
@@ -200,8 +200,8 @@ export class VoltAgent {
     }
   }
 
-  private syncEdgeObservabilityRemote(): void {
-    if (!(this.observability instanceof EdgeVoltAgentObservability)) {
+  private syncServerlessObservabilityRemote(): void {
+    if (!(this.observability instanceof ServerlessVoltAgentObservability)) {
       return;
     }
 
@@ -213,7 +213,7 @@ export class VoltAgent {
     const baseUrl = voltOpsClient.getApiUrl().replace(/\/$/, "");
     const headers = voltOpsClient.getAuthHeaders();
 
-    this.observability.updateEdgeRemote({
+    this.observability.updateServerlessRemote({
       traces: {
         url: `${baseUrl}/api/public/otel/v1/traces`,
         headers,
@@ -287,7 +287,7 @@ export class VoltAgent {
    * Check for dependency updates
    */
   private async checkDependencies(): Promise<void> {
-    if (typeof process === "undefined" || isEdgeRuntime() || !process.versions?.node) {
+    if (typeof process === "undefined" || isServerlessRuntime() || !process.versions?.node) {
       return;
     }
 

@@ -65,7 +65,7 @@ async function handleVercelDeploy() {
   console.log("\nNext steps:");
   console.log('  1. Build your project: "pnpm build"');
   console.log(
-    '  2. Ensure you have an edge function file (example: api/voltagent.ts) that exports "voltAgent.edge().toVercelEdge()".',
+    '  2. Ensure you have a serverless entry (example: api/voltagent.ts) that exports "voltAgent.serverless().toVercelEdge()".',
   );
   console.log('  3. Authenticate if needed: "pnpm vercel login" (or "vercel login")');
   console.log('  4. Deploy: "pnpm vercel deploy" (or "vercel deploy")');
@@ -91,21 +91,21 @@ async function handleNetlifyDeploy() {
   console.log("\nNext steps:");
   console.log('  1. Build your project: "pnpm build"');
   console.log(
-    '  2. Add an edge function file (example: netlify/edge-functions/voltagent.ts) that exports "voltAgent.edge().toNetlifyEdge()".',
+    '  2. Add a function file (example: netlify/functions/voltagent.ts) that exports "createNetlifyFunctionHandler(getVoltAgent())".',
   );
   console.log('  3. Authenticate if needed: "pnpm netlify login" (or "netlify login")');
   console.log('  4. Deploy: "pnpm netlify deploy --prod" (or "netlify deploy --prod")');
   console.log(
     "\nNote: Update netlify.toml to match your project (custom paths, environment variables, etc.).",
   );
-  console.log("Need help? Netlify Edge docs: https://docs.netlify.com/edge-functions/overview/");
+  console.log("Need help? Netlify Functions docs: https://docs.netlify.com/functions/overview/");
   console.log("Join the VoltAgent Discord: https://s.voltagent.dev/discord\n");
 }
 
 export const registerDeployCommand = (program: Command) => {
   program
     .command("deploy")
-    .description("Prepare deployment configuration for supported edge platforms.")
+    .description("Prepare deployment configuration for supported serverless runtimes.")
     .option("-t, --target <target>", "Target platform")
     .action(async (options: { target?: string }) => {
       let target = options.target as SupportedTarget | undefined;

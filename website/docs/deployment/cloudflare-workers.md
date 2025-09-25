@@ -3,7 +3,7 @@ title: Cloudflare Workers
 description: Deploying VoltAgent to Cloudflare Workers in a few steps.
 ---
 
-This guide shows how to run VoltAgent on Cloudflare Workers. We cover both the VoltAgent CLI flow and manual setup.
+This guide shows how to run VoltAgent on Cloudflare Workers. Workers are an edge runtime, but inside VoltAgent we refer to this mode as the **serverless** runtime because the same provider also powers Vercel Edge, Deno Deploy, and similar fetch-based platforms. We cover both the VoltAgent CLI flow and manual setup.
 
 ## Prerequisites
 
@@ -21,13 +21,13 @@ This guide shows how to run VoltAgent on Cloudflare Workers. We cover both the V
 npm run volt deploy --target cloudflare
 ```
 
-The CLI writes a sample `wrangler.toml`, an edge entry file, and notes on required env vars. It works with empty or existing projects.
+The CLI writes a sample `wrangler.toml`, a serverless entry file, and notes on required env vars. It works with empty or existing projects.
 
 ### Option B: Manual setup
 
 1. Install and log in with `wrangler` (`wrangler login`).
 2. Create a `wrangler.toml` in your project folder (see example below).
-3. Add an edge entry file that bootstraps VoltAgent with `edgeHono()`.
+3. Add a serverless entry file that bootstraps VoltAgent with `serverlessHono()`.
 
 ## 2. Environment variables
 
@@ -41,13 +41,13 @@ VOLTAGENT_SECRET_KEY=sk_...
 
 Store them using `wrangler secret put`, or add them under `vars` / `env.production` inside `wrangler.toml`.
 
-## 3. Edge entry file
+## 3. Serverless entry file
 
-Edge mode uses the `edge` option instead of a Node server. Below is a minimal TypeScript file you can adapt:
+Serverless mode uses the `serverless` option instead of a Node server. Below is a minimal TypeScript file you can adapt:
 
 ```ts title="src/index.ts"
 import { VoltAgent, Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
-import { edgeHono } from "@voltagent/edge-hono";
+import { serverlessHono } from "@voltagent/serverless-hono";
 import { openai } from "@ai-sdk/openai";
 import { weatherTool } from "./tools";
 
@@ -65,7 +65,7 @@ const memory = new Memory({
 });
 
 const agent = new Agent({
-  name: "edge-assistant",
+  name: "serverless-assistant",
   instructions: "Answer user questions quickly.",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
@@ -74,13 +74,13 @@ const agent = new Agent({
 
 const voltAgent = new VoltAgent({
   agents: { agent },
-  edge: edgeHono(),
+  serverless: serverlessHono(),
 });
 
-export default voltAgent.edge().toCloudflareWorker();
+export default voltAgent.serverless().toCloudflareWorker();
 ```
 
-> Tip: On the edge runtime, WebSocket streaming is not available. VoltOps Console uses HTTP polling instead.
+> Tip: On the serverless runtime, WebSocket streaming is not available. VoltOps Console uses HTTP polling instead.
 
 ## 4. `wrangler.toml`
 
@@ -127,11 +127,11 @@ curl https://<your-worker>.workers.dev/
 
 - In-memory span/log storage is active by default. You can fetch traces through the `/observability` REST endpoints.
 - If VoltOps credentials are present, the worker exports telemetry via OTLP fetch calls. These calls run through `waitUntil`, so they do not block your responses.
-- VoltOps Console falls back to HTTP polling. There is no WebSocket streaming on edge yet.
+- VoltOps Console falls back to HTTP polling. There is no WebSocket streaming on the serverless runtime yet.
 
-## Feature limitations on Edge
+## Feature limitations on serverless (edge)
 
-- **MCP client/server** are not available on edge runtimes today. The current MCP implementation depends on Node.js stdio/network APIs. Run MCP providers on a Node deployment instead.
+- **MCP client/server** are not available on serverless runtimes today. The current MCP implementation depends on Node.js stdio/network APIs. Run MCP providers on a Node deployment instead.
 - **libSQL memory adapter** is not supported in Workers. The libSQL driver requires Node sockets. Use the bundled `InMemoryStorageAdapter` or connect to an external database (PostgreSQL/Supabase) via their HTTP clients.
 
 import Tabs from '@theme/Tabs';
@@ -152,7 +152,7 @@ const memory = new Memory({
 });
 
 const agent = new Agent({
-  name: "edge-assistant",
+  name: "serverless-assistant",
   instructions: "Answer user questions quickly.",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
@@ -178,7 +178,7 @@ const memory = new Memory({
 });
 
 const agent = new Agent({
-  name: "edge-assistant",
+  name: "serverless-assistant",
   instructions: "Answer user questions quickly.",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
@@ -201,7 +201,7 @@ const memory = new Memory({
 });
 
 const agent = new Agent({
-  name: "edge-assistant",
+  name: "serverless-assistant",
   instructions: "Answer user questions quickly.",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],

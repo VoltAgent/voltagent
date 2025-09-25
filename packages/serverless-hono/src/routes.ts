@@ -1,4 +1,4 @@
-import type { ServerProviderDeps } from "@voltagent/core";
+import type { A2AServerRegistry, ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal";
 import {
@@ -9,6 +9,11 @@ import {
   getTraceByIdHandler,
   getTracesHandler,
   queryLogsHandler,
+} from "@voltagent/server-core";
+import type {
+  A2AServerLikeWithHandlers,
+  JsonRpcRequest,
+  JsonRpcResponse,
 } from "@voltagent/server-core";
 import {
   type A2ARequestContext,
@@ -282,7 +287,7 @@ export function registerObservabilityRoutes(app: Hono, deps: ServerProviderDeps,
     c.json(
       {
         success: false,
-        error: "Observability setup is not available in the edge runtime.",
+        error: "Observability setup is not available in the serverless runtime.",
       },
       501,
     ),
@@ -290,55 +295,55 @@ export function registerObservabilityRoutes(app: Hono, deps: ServerProviderDeps,
 
   app.get(OBSERVABILITY_ROUTES.getTraces.path, async (c) => {
     const query = c.req.query();
-    logger.debug("[edge] GET /observability/traces", { query });
+    logger.debug("[serverless] GET /observability/traces", { query });
     const result = await getTracesHandler(deps, query);
     return c.json(result, result.success ? 200 : 500);
   });
 
   app.get(OBSERVABILITY_ROUTES.getTraceById.path, async (c) => {
     const traceId = c.req.param("traceId");
-    logger.debug("[edge] GET /observability/traces/:traceId", { traceId });
+    logger.debug("[serverless] GET /observability/traces/:traceId", { traceId });
     const result = await getTraceByIdHandler(traceId, deps);
     return c.json(result, result.success ? 200 : 404);
   });
 
   app.get(OBSERVABILITY_ROUTES.getSpanById.path, async (c) => {
     const spanId = c.req.param("spanId");
-    logger.debug("[edge] GET /observability/spans/:spanId", { spanId });
+    logger.debug("[serverless] GET /observability/spans/:spanId", { spanId });
     const result = await getSpanByIdHandler(spanId, deps);
     return c.json(result, result.success ? 200 : 404);
   });
 
   app.get(OBSERVABILITY_ROUTES.getObservabilityStatus.path, async (c) => {
-    logger.debug("[edge] GET /observability/status");
+    logger.debug("[serverless] GET /observability/status");
     const result = await getObservabilityStatusHandler(deps);
     return c.json(result, result.success ? 200 : 500);
   });
 
   app.get(OBSERVABILITY_ROUTES.getLogsByTraceId.path, async (c) => {
     const traceId = c.req.param("traceId");
-    logger.debug("[edge] GET /observability/traces/:traceId/logs", { traceId });
+    logger.debug("[serverless] GET /observability/traces/:traceId/logs", { traceId });
     const result = await getLogsByTraceIdHandler(traceId, deps);
     return c.json(result, result.success ? 200 : 404);
   });
 
   app.get(OBSERVABILITY_ROUTES.getLogsBySpanId.path, async (c) => {
     const spanId = c.req.param("spanId");
-    logger.debug("[edge] GET /observability/spans/:spanId/logs", { spanId });
+    logger.debug("[serverless] GET /observability/spans/:spanId/logs", { spanId });
     const result = await getLogsBySpanIdHandler(spanId, deps);
     return c.json(result, result.success ? 200 : 404);
   });
 
   app.get(OBSERVABILITY_ROUTES.queryLogs.path, async (c) => {
     const query = c.req.query();
-    logger.debug("[edge] GET /observability/logs", { query });
+    logger.debug("[serverless] GET /observability/logs", { query });
     const result = await queryLogsHandler(query, deps);
     return c.json(result, result.success ? 200 : 400);
   });
 }
 
 export function registerA2ARoutes(app: Hono, deps: ServerProviderDeps, logger: Logger) {
-  const registry = deps.a2a?.registry;
+  const registry = deps.a2a?.registry as A2AServerRegistry<A2AServerLikeWithHandlers> | undefined;
 
   if (!registry) {
     logger.debug("A2A server registry not available on server deps; skipping A2A routes");
@@ -347,6 +352,9 @@ export function registerA2ARoutes(app: Hono, deps: ServerProviderDeps, logger: L
 
   app.get(A2A_ROUTES.agentCard.path, (c) => {
     const serverId = c.req.param("serverId");
+    if (!serverId) {
+      return c.json({ success: false, error: "Missing serverId parameter" }, 400);
+    }
     try {
       const card = resolveAgentCard(registry, serverId, serverId, {});
       return c.json(card, 200);
@@ -361,6 +369,12 @@ export function registerA2ARoutes(app: Hono, deps: ServerProviderDeps, logger: L
 
   app.post(A2A_ROUTES.jsonRpc.path, async (c) => {
     const serverId = c.req.param("serverId");
+    if (!serverId) {
+      return c.json(
+        { jsonrpc: "2.0", error: { code: -32600, message: "Missing serverId" }, id: null },
+        400,
+      );
+    }
     type JsonRpcPayload = ReturnType<typeof parseJsonRpcRequest>;
     let request: JsonRpcPayload | undefined;
     let context: A2ARequestContext | undefined;
@@ -420,7 +434,7 @@ export function registerA2ARoutes(app: Hono, deps: ServerProviderDeps, logger: L
         if (!cleanedUp && typeof stream.return === "function") {
           cleanedUp = true;
           try {
-            await stream.return();
+            await stream.return(undefined as any);
           } catch {
             // ignore completion errors
           }
@@ -477,6 +491,7 @@ export function registerA2ARoutes(app: Hono, deps: ServerProviderDeps, logger: L
       });
     }
 
-    return c.json(response, response.error ? 400 : 200);
+    const jsonResponse = response as JsonRpcResponse;
+    return c.json(jsonResponse, jsonResponse.error ? 400 : 200);
   });
 }

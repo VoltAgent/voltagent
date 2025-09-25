@@ -10,33 +10,39 @@
 
 import { getGlobalLogger } from "../logger";
 import { AgentRegistry } from "../registries/agent-registry";
-import { isEdgeRuntime } from "../utils/runtime";
-import { EdgeVoltAgentObservability } from "./edge/volt-agent-observability";
+import { isServerlessRuntime } from "../utils/runtime";
 import { VoltAgentObservability as NodeVoltAgentObservability } from "./node/volt-agent-observability";
+import { ServerlessVoltAgentObservability } from "./serverless/volt-agent-observability";
 import type { ObservabilityConfig } from "./types";
 
-export { EdgeVoltAgentObservability, NodeVoltAgentObservability };
+export { ServerlessVoltAgentObservability, NodeVoltAgentObservability };
 
-export type VoltAgentObservability = NodeVoltAgentObservability | EdgeVoltAgentObservability;
+export type VoltAgentObservability = NodeVoltAgentObservability | ServerlessVoltAgentObservability;
 
 export const createVoltAgentObservability = (config?: ObservabilityConfig) => {
   const baseConfig: ObservabilityConfig = { ...config };
 
-  if (isEdgeRuntime()) {
-    const logger = getGlobalLogger().child({ component: "observability", runtime: "edge" });
-    if (!baseConfig.edgeRemote) {
+  if (isServerlessRuntime()) {
+    if (baseConfig.serverlessRemote && !baseConfig.edgeRemote) {
+      baseConfig.edgeRemote = baseConfig.serverlessRemote;
+    }
+    if (baseConfig.edgeRemote && !baseConfig.serverlessRemote) {
+      baseConfig.serverlessRemote = baseConfig.edgeRemote;
+    }
+    const logger = getGlobalLogger().child({ component: "observability", runtime: "serverless" });
+    if (!baseConfig.serverlessRemote) {
       const voltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
       if (voltOpsClient) {
         const baseUrl = voltOpsClient.getApiUrl().replace(/\/$/, "");
         const headers = voltOpsClient.getAuthHeaders();
         logger.info(
-          "[createVoltAgentObservability] Auto-configured edgeRemote from VoltOpsClient",
+          "[createVoltAgentObservability] Auto-configured serverless remote from VoltOpsClient",
           {
             baseUrl,
             hasPublicKey: Boolean(headers["X-Public-Key"] || headers["x-public-key"]),
           },
         );
-        baseConfig.edgeRemote = {
+        baseConfig.serverlessRemote = {
           traces: {
             url: `${baseUrl}/api/public/otel/v1/traces`,
             headers,
@@ -51,18 +57,19 @@ export const createVoltAgentObservability = (config?: ObservabilityConfig) => {
           scheduledDelayMillis: baseConfig.voltOpsSync?.scheduledDelayMillis,
           exportTimeoutMillis: baseConfig.voltOpsSync?.exportTimeoutMillis,
         };
+        baseConfig.edgeRemote = baseConfig.serverlessRemote;
       } else {
         logger.debug(
-          "[createVoltAgentObservability] VoltOpsClient not set; edgeRemote remains undefined",
+          "[createVoltAgentObservability] VoltOpsClient not set; serverlessRemote remains undefined",
         );
       }
     } else {
-      logger.info("[createVoltAgentObservability] edgeRemote provided explicitly", {
-        hasTracesEndpoint: Boolean(baseConfig.edgeRemote.traces?.url),
-        hasLogsEndpoint: Boolean(baseConfig.edgeRemote.logs?.url),
+      logger.info("[createVoltAgentObservability] serverlessRemote provided explicitly", {
+        hasTracesEndpoint: Boolean(baseConfig.serverlessRemote.traces?.url),
+        hasLogsEndpoint: Boolean(baseConfig.serverlessRemote.logs?.url),
       });
     }
-    return new EdgeVoltAgentObservability(baseConfig);
+    return new ServerlessVoltAgentObservability(baseConfig);
   }
 
   return new NodeVoltAgentObservability(baseConfig);
@@ -88,6 +95,10 @@ export type {
   ObservabilityWebSocketEvent,
   ObservabilityStorageAdapter,
   ObservabilityConfig,
+  ServerlessRemoteExportConfig,
+  ServerlessRemoteEndpointConfig,
+  EdgeRemoteExportConfig,
+  EdgeRemoteEndpointConfig,
   SpanFilterConfig,
   SpanAttributes,
   SpanEvent,

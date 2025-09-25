@@ -10,9 +10,9 @@ import {
   registerObservabilityRoutes,
   registerWorkflowRoutes,
 } from "./routes";
-import type { EdgeConfig } from "./types";
+import type { ServerlessConfig } from "./types";
 
-function resolveCorsConfig(config?: EdgeConfig) {
+function resolveCorsConfig(config?: ServerlessConfig) {
   const origin = config?.corsOrigin ?? "*";
   const allowMethods = config?.corsAllowMethods ?? [
     "GET",
@@ -31,17 +31,17 @@ function resolveCorsConfig(config?: EdgeConfig) {
   };
 }
 
-export async function createEdgeApp(deps: ServerProviderDeps, config?: EdgeConfig) {
+export async function createServerlessApp(deps: ServerProviderDeps, config?: ServerlessConfig) {
   const app = new Hono();
-  const logger: Logger = getOrCreateLogger(deps, "edge-server");
+  const logger: Logger = getOrCreateLogger(deps, "serverless");
 
   const corsConfig = resolveCorsConfig(config);
   app.use("*", cors(corsConfig));
 
   app.get("/", (c) =>
     c.json({
-      name: "VoltAgent Edge",
-      message: "VoltAgent edge runtime is running",
+      name: "VoltAgent Serverless",
+      message: "VoltAgent serverless runtime is running",
     }),
   );
 
@@ -51,7 +51,7 @@ export async function createEdgeApp(deps: ServerProviderDeps, config?: EdgeConfi
       {
         success: false,
         error:
-          "WebSocket streaming is not implemented in the edge runtime yet. Falling back to HTTP polling.",
+          "WebSocket streaming is not implemented in the serverless runtime yet. Falling back to HTTP polling.",
       },
       200,
     ),

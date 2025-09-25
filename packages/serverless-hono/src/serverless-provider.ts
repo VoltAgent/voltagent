@@ -1,25 +1,25 @@
-import type { IEdgeProvider, ServerProviderDeps } from "@voltagent/core";
+import type { IServerlessProvider, ServerProviderDeps } from "@voltagent/core";
 import type { Hono } from "hono";
-import { createEdgeApp } from "./app-factory";
-import type { EdgeConfig, EdgeRuntime } from "./types";
-import { detectEdgeRuntime } from "./utils/runtime-detection";
+import { createServerlessApp } from "./app-factory";
+import type { ServerlessConfig, ServerlessRuntime } from "./types";
+import { detectServerlessRuntime } from "./utils/runtime-detection";
 
 type VoltAgentGlobal = typeof globalThis & {
   ___voltagent_wait_until?: (promise: Promise<unknown>) => void;
 };
-export class HonoEdgeProvider implements IEdgeProvider {
+export class HonoServerlessProvider implements IServerlessProvider {
   private readonly deps: ServerProviderDeps;
-  private readonly config?: EdgeConfig;
+  private readonly config?: ServerlessConfig;
   private readonly appPromise: Promise<Hono>;
 
-  constructor(deps: ServerProviderDeps, config?: EdgeConfig) {
+  constructor(deps: ServerProviderDeps, config?: ServerlessConfig) {
     this.deps = deps;
     this.config = config;
     this.appPromise = this.initializeApp();
   }
 
   private async initializeApp(): Promise<Hono> {
-    return createEdgeApp(this.deps, this.config);
+    return createServerlessApp(this.deps, this.config);
   }
 
   private async getApp(): Promise<Hono> {
@@ -88,14 +88,6 @@ export class HonoEdgeProvider implements IEdgeProvider {
     };
   }
 
-  toNetlifyEdge(): (request: Request, context: unknown) => Promise<Response> {
-    return async (request: Request, context: unknown) => {
-      await this.ensureEnvironmentTarget({ context } as Record<string, unknown>);
-      const app = await this.getApp();
-      return app.fetch(request, { context } as Record<string, unknown>);
-    };
-  }
-
   toDeno(): (request: Request, info?: unknown) => Promise<Response> {
     return async (request: Request, info?: unknown) => {
       await this.ensureEnvironmentTarget(info as Record<string, unknown> | undefined);
@@ -107,15 +99,13 @@ export class HonoEdgeProvider implements IEdgeProvider {
   auto():
     | { fetch: (req: Request, env: Record<string, unknown>, ctx: unknown) => Promise<Response> }
     | ((req: Request, ctx?: unknown) => Promise<Response>) {
-    const runtime: EdgeRuntime = detectEdgeRuntime();
+    const runtime: ServerlessRuntime = detectServerlessRuntime();
 
     switch (runtime) {
       case "cloudflare":
         return this.toCloudflareWorker();
       case "vercel":
         return this.toVercelEdge();
-      case "netlify":
-        return this.toNetlifyEdge();
       case "deno":
         return this.toDeno();
       default:

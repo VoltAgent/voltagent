@@ -1,4 +1,4 @@
-export const isEdgeRuntime = (): boolean => {
+export const isServerlessRuntime = (): boolean => {
   if (typeof globalThis === "undefined") {
     return false;
   }

@@ -143,10 +143,10 @@ export type { UsageInfo, StreamPart } from "./agent/providers";
 export type {
   VoltAgentOptions,
   IServerProvider,
-  IEdgeProvider,
+  IServerlessProvider,
   ServerProviderDeps,
   ServerProviderFactory,
-  EdgeProviderFactory,
+  ServerlessProviderFactory,
   ServerAgentResponse,
   ServerWorkflowResponse,
   ServerApiResponse,
