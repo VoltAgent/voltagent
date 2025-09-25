@@ -40,9 +40,6 @@ export class ConsoleLogger implements Logger {
     // Check if OpenTelemetry LoggerProvider is available via globalThis
     const loggerProvider = (globalThis as any).___voltagent_otel_logger_provider;
     if (!loggerProvider) {
-      console.warn(
-        "[ConsoleLogger] OpenTelemetry logger provider not registered; skipping OTEL emit",
-      );
       return;
     }
 
@@ -73,11 +70,6 @@ export class ConsoleLogger implements Logger {
       const activeSpan = trace.getActiveSpan() ?? globalSpanGetter?.();
       const activeContext = context.active();
       const logContext = activeSpan ? trace.setSpan(activeContext, activeSpan) : activeContext;
-
-      console.info("[ConsoleLogger] Emitting OTEL log", {
-        level,
-        hasActiveSpan: Boolean(activeSpan),
-      });
 
       otelLogger.emit({
         severityNumber,

@@ -499,7 +499,6 @@ class FetchTraceExporter {
             });
             return;
           }
-          console.info("[EdgeTraceExporter] export success", { count: items.length });
           resultCallback({ code: ExportResultCode.SUCCESS });
         })
         .catch((error) => {
