@@ -9,4 +9,10 @@ export function serverlessHono(config?: ServerlessConfig) {
 export { HonoServerlessProvider } from "./serverless-provider";
 export type { ServerlessConfig, ServerlessRuntime } from "./types";
 export { detectServerlessRuntime } from "./utils/runtime-detection";
+export {
+  createNetlifyFunctionHandler,
+  type NetlifyFunctionEvent,
+  type NetlifyFunctionHandler,
+  type NetlifyFunctionResult,
+} from "./netlify-function";
 export default serverlessHono;

@@ -101,10 +101,10 @@ with-netlify-functions/
 
 ## Notes
 
-- Import `createNetlifyFunctionHandler` from `@voltagent/server-hono` to wire VoltAgent into Netlify with one line:
+- Import `createNetlifyFunctionHandler` from `@voltagent/serverless-hono` to wire VoltAgent into Netlify with one line:
 
   ```ts
-  import { createNetlifyFunctionHandler } from "@voltagent/server-hono";
+  import { createNetlifyFunctionHandler } from "@voltagent/serverless-hono";
   import { getVoltAgent } from "../src/index";
 
   export const handler = createNetlifyFunctionHandler(getVoltAgent());

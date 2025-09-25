@@ -1,4 +1,4 @@
-import { createNetlifyFunctionHandler } from "@voltagent/server-hono";
+import { createNetlifyFunctionHandler } from "@voltagent/serverless-hono";
 import { getVoltAgent } from "../../src/index";
 
 const voltAgent = getVoltAgent();

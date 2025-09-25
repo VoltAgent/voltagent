@@ -67,10 +67,10 @@ export function getVoltAgent() {
 
 ## 4. Netlify function handler
 
-Use the helper exported from `@voltagent/server-hono` to convert Lambda events into Fetch requests automatically.
+Use the helper exported from `@voltagent/serverless-hono` to convert Lambda events into Fetch requests automatically.
 
 ```ts title="netlify/functions/voltagent.ts"
-import { createNetlifyFunctionHandler } from "@voltagent/server-hono";
+import { createNetlifyFunctionHandler } from "@voltagent/serverless-hono";
 import { getVoltAgent } from "../src/index";
 
 const voltAgent = getVoltAgent();
