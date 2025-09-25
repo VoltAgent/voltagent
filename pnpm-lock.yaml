@@ -367,7 +367,7 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
-  examples/with-cloudflare-deployment:
+  examples/with-cloudflare-workers:
     dependencies:
       '@ai-sdk/openai':
         specifier: ^2.0.2
@@ -14390,6 +14390,7 @@ packages:
 
   /color-string@1.9.1:
     resolution: {integrity: sha512-shrVawQFojnZv6xM40anx4CkoDP+fZsw/ZerEMsW/pyzsRbElpsL/DBVW7q3ExxwusdNXI3lXpuhEZkzs8p5Eg==}
+    requiresBuild: true
     dependencies:
       color-name: 1.1.4
       simple-swizzle: 0.2.2
