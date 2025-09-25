@@ -45,6 +45,18 @@ export async function createEdgeApp(deps: ServerProviderDeps, config?: EdgeConfi
     }),
   );
 
+  // Provide a friendly response for WebSocket probes (Console UI polls /ws)
+  app.get("/ws", (c) =>
+    c.json(
+      {
+        success: false,
+        error:
+          "WebSocket streaming is not implemented in the edge runtime yet. Falling back to HTTP polling.",
+      },
+      200,
+    ),
+  );
+
   registerAgentRoutes(app, deps, logger);
   registerWorkflowRoutes(app, deps, logger);
   registerLogRoutes(app, deps, logger);

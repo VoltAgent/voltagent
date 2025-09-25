@@ -32,12 +32,12 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "volt": "volt",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
     "dev": "tsc && wrangler dev",
     "preview": "tsc && wrangler dev --local",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "volt": "volt"
   },
   "type": "module"
 }

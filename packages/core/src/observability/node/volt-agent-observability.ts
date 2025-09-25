@@ -235,7 +235,6 @@ export class VoltAgentObservability {
           maxExportBatchSize: this.config.voltOpsSync?.maxExportBatchSize,
           scheduledDelayMillis: this.config.voltOpsSync?.scheduledDelayMillis,
           exportTimeoutMillis: this.config.voltOpsSync?.exportTimeoutMillis,
-          logger: this.logger,
           samplingConfig: this.config.voltOpsSync?.sampling,
         }),
       );

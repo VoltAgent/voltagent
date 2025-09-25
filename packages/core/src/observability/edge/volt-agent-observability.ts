@@ -25,7 +25,7 @@ import {
 import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 
-import { NullStorageAdapter } from "../adapters/null-adapter";
+import { InMemoryStorageAdapter } from "../adapters/in-memory-adapter";
 import { StorageLogProcessor, WebSocketLogProcessor } from "../logs";
 import { LocalStorageSpanProcessor } from "../processors/local-storage-span-processor";
 import { SamplingWrapperProcessor } from "../processors/sampling-wrapper-processor";
@@ -44,12 +44,19 @@ const textDecoder = typeof TextDecoder !== "undefined" ? new TextDecoder() : und
 const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
   typeof value === "object" && value !== null && typeof (value as any).then === "function";
 
+const DEFAULT_MAX_ATTEMPTS = 3;
+const INITIAL_RETRY_DELAY_MS = 500;
+const RETRY_BACKOFF_FACTOR = 2;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 type ObservabilityGlobals = typeof globalThis & {
   ___voltagent_otel_logger_provider?: LoggerProvider;
   ___voltagent_otel_api?: { trace: typeof trace; context: typeof context };
   ___voltagent_get_active_span?: () => Span | undefined;
   ___voltagent_push_span?: (span: Span) => void;
   ___voltagent_pop_span?: (span: Span) => void;
+  ___voltagent_wait_until?: (promise: Promise<unknown>) => void;
 };
 
 export class EdgeVoltAgentObservability {
@@ -66,11 +73,19 @@ export class EdgeVoltAgentObservability {
   private spanStack: Span[] = [];
 
   constructor(config: ObservabilityConfig = {}) {
-    this.config = config;
+    this.config = { ...config };
     this.instrumentationScopeName = config.instrumentationScopeName || "@voltagent/core";
     this.spanFilterOptions = this.resolveSpanFilterOptions();
 
-    this.storage = config.storage ?? new NullStorageAdapter();
+    const defaultStorage =
+      this.config.storage ??
+      new InMemoryStorageAdapter({
+        maxSpans: 5000,
+        maxLogs: 10000,
+      });
+
+    this.storage = defaultStorage;
+    this.config.storage = defaultStorage;
 
     this.resource = defaultResource().merge(
       resourceFromAttributes({
@@ -208,6 +223,7 @@ export class EdgeVoltAgentObservability {
       resource: this.resource,
       spanProcessors,
     });
+
     trace.setGlobalTracerProvider(provider);
 
     const tracer = provider.getTracer(
@@ -479,35 +495,56 @@ class FetchTraceExporter {
       const payloadBytes = JsonTraceSerializer.serializeRequest(items);
       const body = (textDecoder ?? new TextDecoder()).decode(payloadBytes);
 
-      void fetch(this.endpoint.url, {
-        method: this.endpoint.method ?? "POST",
-        headers: {
-          "content-type": "application/json",
-          ...this.endpoint.headers,
-        },
-        body,
-      })
-        .then((response) => {
-          if (!response.ok) {
-            console.error("[EdgeTraceExporter] export failed", {
-              status: response.status,
-              statusText: response.statusText,
+      const performExport = async () => {
+        let attempt = 0;
+        let delayMs = INITIAL_RETRY_DELAY_MS;
+
+        while (attempt < DEFAULT_MAX_ATTEMPTS) {
+          attempt += 1;
+          try {
+            const response = await fetch(this.endpoint.url, {
+              method: this.endpoint.method ?? "POST",
+              headers: {
+                "content-type": "application/json",
+                ...this.endpoint.headers,
+              },
+              body,
             });
-            resultCallback({
-              code: ExportResultCode.FAILED,
-              error: new Error(`HTTP ${response.status}`),
-            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            resultCallback({ code: ExportResultCode.SUCCESS });
             return;
+          } catch (error) {
+            if (attempt >= DEFAULT_MAX_ATTEMPTS) {
+              console.error("[EdgeTraceExporter] export error", error);
+              resultCallback({
+                code: ExportResultCode.FAILED,
+                error: error instanceof Error ? error : new Error(String(error)),
+              });
+              return;
+            }
+
+            console.warn("[EdgeTraceExporter] retrying export", {
+              attempt,
+              delayMs,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            await sleep(delayMs);
+            delayMs *= RETRY_BACKOFF_FACTOR;
           }
-          resultCallback({ code: ExportResultCode.SUCCESS });
-        })
-        .catch((error) => {
-          console.error("[EdgeTraceExporter] export error", error);
-          resultCallback({
-            code: ExportResultCode.FAILED,
-            error: error instanceof Error ? error : new Error(String(error)),
-          });
-        });
+        }
+      };
+
+      const promise = performExport();
+      const waitUntil = (globalThis as ObservabilityGlobals).___voltagent_wait_until;
+      if (waitUntil) {
+        waitUntil(promise);
+      } else {
+        void promise.catch(() => {});
+      }
     } catch (error) {
       resultCallback({
         code: ExportResultCode.FAILED,
@@ -533,35 +570,56 @@ class FetchLogExporter {
       const payloadBytes = JsonLogsSerializer.serializeRequest(items);
       const body = (textDecoder ?? new TextDecoder()).decode(payloadBytes);
 
-      void fetch(this.endpoint.url, {
-        method: this.endpoint.method ?? "POST",
-        headers: {
-          "content-type": "application/json",
-          ...this.endpoint.headers,
-        },
-        body,
-      })
-        .then((response) => {
-          if (!response.ok) {
-            console.error("[EdgeLogExporter] export failed", {
-              status: response.status,
-              statusText: response.statusText,
+      const performExport = async () => {
+        let attempt = 0;
+        let delayMs = INITIAL_RETRY_DELAY_MS;
+
+        while (attempt < DEFAULT_MAX_ATTEMPTS) {
+          attempt += 1;
+          try {
+            const response = await fetch(this.endpoint.url, {
+              method: this.endpoint.method ?? "POST",
+              headers: {
+                "content-type": "application/json",
+                ...this.endpoint.headers,
+              },
+              body,
             });
-            resultCallback({
-              code: ExportResultCode.FAILED,
-              error: new Error(`HTTP ${response.status}`),
-            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            resultCallback({ code: ExportResultCode.SUCCESS });
             return;
+          } catch (error) {
+            if (attempt >= DEFAULT_MAX_ATTEMPTS) {
+              console.error("[EdgeLogExporter] export error", error);
+              resultCallback({
+                code: ExportResultCode.FAILED,
+                error: error instanceof Error ? error : new Error(String(error)),
+              });
+              return;
+            }
+
+            console.warn("[EdgeLogExporter] retrying export", {
+              attempt,
+              delayMs,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            await sleep(delayMs);
+            delayMs *= RETRY_BACKOFF_FACTOR;
           }
-          resultCallback({ code: ExportResultCode.SUCCESS });
-        })
-        .catch((error) => {
-          console.error("[EdgeLogExporter] export error", error);
-          resultCallback({
-            code: ExportResultCode.FAILED,
-            error: error instanceof Error ? error : new Error(String(error)),
-          });
-        });
+        }
+      };
+
+      const promise = performExport();
+      const waitUntil = (globalThis as ObservabilityGlobals).___voltagent_wait_until;
+      if (waitUntil) {
+        waitUntil(promise);
+      } else {
+        void promise.catch(() => {});
+      }
     } catch (error) {
       resultCallback({
         code: ExportResultCode.FAILED,

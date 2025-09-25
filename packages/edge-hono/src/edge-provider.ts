@@ -1,8 +1,12 @@
-import { type IEdgeProvider, type ServerProviderDeps, mergeProcessEnv } from "@voltagent/core/edge";
+import { type IEdgeProvider, type ServerProviderDeps, mergeProcessEnv } from "@voltagent/core";
 import type { Hono } from "hono";
 import { createEdgeApp } from "./app-factory";
 import type { EdgeConfig, EdgeRuntime } from "./types";
 import { detectEdgeRuntime } from "./utils/runtime-detection";
+
+type VoltAgentGlobal = typeof globalThis & {
+  ___voltagent_wait_until?: (promise: Promise<unknown>) => void;
+};
 export class HonoEdgeProvider implements IEdgeProvider {
   private readonly deps: ServerProviderDeps;
   private readonly config?: EdgeConfig;
@@ -22,7 +26,16 @@ export class HonoEdgeProvider implements IEdgeProvider {
     return this.appPromise;
   }
 
+  private async ensureEnvironmentTarget(target?: Record<string, unknown>): Promise<void> {
+    if (this.deps.ensureEnvironment) {
+      await Promise.resolve(this.deps.ensureEnvironment(target));
+    } else {
+      mergeProcessEnv(target);
+    }
+  }
+
   async handleRequest(request: Request): Promise<Response> {
+    await this.ensureEnvironmentTarget();
     const app = await this.getApp();
     return app.fetch(request);
   }
@@ -34,24 +47,44 @@ export class HonoEdgeProvider implements IEdgeProvider {
         env: Record<string, unknown>,
         executionCtx: unknown,
       ): Promise<Response> => {
-        if (this.deps.ensureEnvironment) {
-          this.deps.ensureEnvironment(env);
-        } else {
-          mergeProcessEnv(env);
+        const waitUntil =
+          executionCtx && typeof (executionCtx as any)?.waitUntil === "function"
+            ? (executionCtx as any).waitUntil.bind(executionCtx)
+            : undefined;
+
+        const globals = globalThis as VoltAgentGlobal;
+        const previousWaitUntil = globals.___voltagent_wait_until;
+
+        if (waitUntil) {
+          globals.___voltagent_wait_until = (promise) => {
+            try {
+              waitUntil(promise);
+            } catch {
+              void promise;
+            }
+          };
         }
-        const app = await this.getApp();
-        return app.fetch(request, env as Record<string, unknown>, executionCtx as any);
+
+        try {
+          await this.ensureEnvironmentTarget(env);
+          const app = await this.getApp();
+          return await app.fetch(request, env as Record<string, unknown>, executionCtx as any);
+        } finally {
+          if (waitUntil) {
+            if (previousWaitUntil) {
+              globals.___voltagent_wait_until = previousWaitUntil;
+            } else {
+              globals.___voltagent_wait_until = undefined;
+            }
+          }
+        }
       },
     };
   }
 
   toVercelEdge(): (request: Request, context?: unknown) => Promise<Response> {
     return async (request: Request, context?: unknown) => {
-      if (this.deps.ensureEnvironment) {
-        this.deps.ensureEnvironment(context as Record<string, unknown> | undefined);
-      } else {
-        mergeProcessEnv(context as Record<string, unknown> | undefined);
-      }
+      await this.ensureEnvironmentTarget(context as Record<string, unknown> | undefined);
       const app = await this.getApp();
       return app.fetch(request, context as Record<string, unknown> | undefined);
     };
@@ -59,11 +92,7 @@ export class HonoEdgeProvider implements IEdgeProvider {
 
   toNetlifyEdge(): (request: Request, context: unknown) => Promise<Response> {
     return async (request: Request, context: unknown) => {
-      if (this.deps.ensureEnvironment) {
-        this.deps.ensureEnvironment({ context } as Record<string, unknown>);
-      } else {
-        mergeProcessEnv({ context } as Record<string, unknown>);
-      }
+      await this.ensureEnvironmentTarget({ context } as Record<string, unknown>);
       const app = await this.getApp();
       return app.fetch(request, { context } as Record<string, unknown>);
     };
@@ -71,11 +100,7 @@ export class HonoEdgeProvider implements IEdgeProvider {
 
   toDeno(): (request: Request, info?: unknown) => Promise<Response> {
     return async (request: Request, info?: unknown) => {
-      if (this.deps.ensureEnvironment) {
-        this.deps.ensureEnvironment(info as Record<string, unknown> | undefined);
-      } else {
-        mergeProcessEnv(info as Record<string, unknown> | undefined);
-      }
+      await this.ensureEnvironmentTarget(info as Record<string, unknown> | undefined);
       const app = await this.getApp();
       return app.fetch(request, info as Record<string, unknown> | undefined);
     };
