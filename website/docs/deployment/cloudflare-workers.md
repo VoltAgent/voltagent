@@ -57,6 +57,7 @@ type Env = {
   VOLTAGENT_SECRET_KEY?: string;
 };
 
+// LibSQL is not supported on Cloudflare Workers. Use InMemory or Postgres/Supabase instead.
 const memory = new Memory({
   storage: new InMemoryStorageAdapter({
     storageLimit: 50,
@@ -71,25 +72,12 @@ const agent = new Agent({
   memory,
 });
 
-let cachedAgent: VoltAgent | undefined;
+const voltAgent = new VoltAgent({
+  agents: { agent },
+  edge: edgeHono(),
+});
 
-function getAgent() {
-  if (!cachedAgent) {
-    cachedAgent = new VoltAgent({
-      agents: { agent },
-      edge: edgeHono(),
-    });
-  }
-  return cachedAgent;
-}
-
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    const voltAgent = getAgent();
-    const worker = voltAgent.edge().toCloudflareWorker();
-    return worker.fetch(request, env as Record<string, unknown>, ctx);
-  },
-};
+export default voltAgent.edge().toCloudflareWorker();
 ```
 
 > Tip: On the edge runtime, WebSocket streaming is not available. VoltOps Console uses HTTP polling instead.
