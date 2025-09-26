@@ -306,7 +306,11 @@ export class VoltAgent {
   /**
    * Register multiple agents
    */
-  public registerAgents(agents: Record<string, Agent>): void {
+  public registerAgents(agents?: Record<string, Agent>): void {
+    if (!agents) {
+      return;
+    }
+
     Object.values(agents).forEach((agent) => this.registerAgent(agent));
   }
 

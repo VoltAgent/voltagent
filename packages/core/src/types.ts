@@ -169,7 +169,10 @@ export interface ServerApiResponse<T> {
  * VoltAgent constructor options
  */
 export type VoltAgentOptions = {
-  agents: Record<string, Agent>;
+  /**
+   * Optional agents to register when bootstrapping VoltAgent
+   */
+  agents?: Record<string, Agent>;
   /**
    * Optional workflows to register with VoltAgent
    * Can be either Workflow instances or WorkflowChain instances
