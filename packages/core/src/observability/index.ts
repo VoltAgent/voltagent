@@ -16,6 +16,7 @@ import { ServerlessVoltAgentObservability } from "./serverless/volt-agent-observ
 import type { ObservabilityConfig } from "./types";
 
 export { ServerlessVoltAgentObservability, NodeVoltAgentObservability };
+export const VoltAgentObservability = NodeVoltAgentObservability;
 
 export type VoltAgentObservability = NodeVoltAgentObservability | ServerlessVoltAgentObservability;
 
