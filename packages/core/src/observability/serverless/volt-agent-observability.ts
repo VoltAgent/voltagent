@@ -74,12 +74,6 @@ export class ServerlessVoltAgentObservability {
 
   constructor(config: ObservabilityConfig = {}) {
     this.config = { ...config };
-    if (this.config.edgeRemote && !this.config.serverlessRemote) {
-      this.config.serverlessRemote = this.config.edgeRemote;
-    }
-    if (this.config.serverlessRemote && !this.config.edgeRemote) {
-      this.config.edgeRemote = this.config.serverlessRemote;
-    }
     this.instrumentationScopeName = config.instrumentationScopeName || "@voltagent/core";
     this.spanFilterOptions = this.resolveSpanFilterOptions();
 
@@ -428,7 +422,6 @@ export class ServerlessVoltAgentObservability {
 
   updateServerlessRemote(config: ServerlessRemoteExportConfig): void {
     this.config.serverlessRemote = config;
-    this.config.edgeRemote = config;
     const previousProvider = this.provider;
     const previousLoggerProvider = this.loggerProvider;
 
@@ -442,13 +435,6 @@ export class ServerlessVoltAgentObservability {
 
     void previousProvider.shutdown().catch(() => {});
     void previousLoggerProvider.shutdown().catch(() => {});
-  }
-
-  /**
-   * @deprecated Use {@link updateServerlessRemote} instead.
-   */
-  updateEdgeRemote(config: ServerlessRemoteExportConfig): void {
-    this.updateServerlessRemote(config);
   }
 
   private pushSpan(span: Span): void {

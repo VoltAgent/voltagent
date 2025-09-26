@@ -23,12 +23,6 @@ export const createVoltAgentObservability = (config?: ObservabilityConfig) => {
   const baseConfig: ObservabilityConfig = { ...config };
 
   if (isServerlessRuntime()) {
-    if (baseConfig.serverlessRemote && !baseConfig.edgeRemote) {
-      baseConfig.edgeRemote = baseConfig.serverlessRemote;
-    }
-    if (baseConfig.edgeRemote && !baseConfig.serverlessRemote) {
-      baseConfig.serverlessRemote = baseConfig.edgeRemote;
-    }
     const logger = getGlobalLogger().child({ component: "observability", runtime: "serverless" });
     if (!baseConfig.serverlessRemote) {
       const voltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
@@ -57,7 +51,6 @@ export const createVoltAgentObservability = (config?: ObservabilityConfig) => {
           scheduledDelayMillis: baseConfig.voltOpsSync?.scheduledDelayMillis,
           exportTimeoutMillis: baseConfig.voltOpsSync?.exportTimeoutMillis,
         };
-        baseConfig.edgeRemote = baseConfig.serverlessRemote;
       } else {
         logger.debug(
           "[createVoltAgentObservability] VoltOpsClient not set; serverlessRemote remains undefined",
@@ -82,7 +75,6 @@ export { LocalStorageSpanProcessor } from "./processors/local-storage-span-proce
 export { LazyRemoteExportProcessor } from "./processors/lazy-remote-export-processor";
 export { SpanFilterProcessor } from "./processors/span-filter-processor";
 export { InMemoryStorageAdapter } from "./adapters/in-memory-adapter";
-export { NullStorageAdapter } from "./adapters/null-adapter";
 
 // Export log processors
 export { StorageLogProcessor, WebSocketLogProcessor, RemoteLogProcessor } from "./logs";
@@ -97,8 +89,6 @@ export type {
   ObservabilityConfig,
   ServerlessRemoteExportConfig,
   ServerlessRemoteEndpointConfig,
-  EdgeRemoteExportConfig,
-  EdgeRemoteEndpointConfig,
   SpanFilterConfig,
   SpanAttributes,
   SpanEvent,

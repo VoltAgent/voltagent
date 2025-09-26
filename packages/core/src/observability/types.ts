@@ -34,10 +34,6 @@ export interface ObservabilityConfig {
     exportTimeoutMillis?: number; // Default: 30000ms
   };
   serverlessRemote?: ServerlessRemoteExportConfig;
-  /**
-   * @deprecated Use {@link serverlessRemote} instead.
-   */
-  edgeRemote?: ServerlessRemoteExportConfig;
   spanProcessors?: SpanProcessor[];
   logProcessors?: LogRecordProcessor[];
 }
@@ -62,16 +58,6 @@ export interface ServerlessRemoteExportConfig {
   scheduledDelayMillis?: number;
   exportTimeoutMillis?: number;
 }
-
-/**
- * @deprecated Use {@link ServerlessRemoteEndpointConfig} instead.
- */
-export type EdgeRemoteEndpointConfig = ServerlessRemoteEndpointConfig;
-
-/**
- * @deprecated Use {@link ServerlessRemoteExportConfig} instead.
- */
-export type EdgeRemoteExportConfig = ServerlessRemoteExportConfig;
 
 /**
  * Span filter configuration
