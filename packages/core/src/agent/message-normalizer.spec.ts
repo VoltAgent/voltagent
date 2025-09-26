@@ -64,7 +64,7 @@ describe("message-normalizer", () => {
     expect(part.providerMetadata).toBeUndefined();
   });
 
-  it("removes provider metadata from text parts", () => {
+  it("preserves provider metadata on text parts", () => {
     const message = baseMessage([
       {
         type: "text",
@@ -75,7 +75,27 @@ describe("message-normalizer", () => {
 
     const sanitized = sanitizeMessageForModel(message);
     expect(sanitized).not.toBeNull();
-    expect((sanitized as UIMessage).parts[0]).toEqual({ type: "text", text: "hello" });
+    expect((sanitized as UIMessage).parts[0]).toEqual({
+      type: "text",
+      text: "hello",
+      providerMetadata: { internal: true },
+    });
+  });
+
+  it("strips provider metadata from reasoning parts to avoid GPT-5 regression", () => {
+    const message = baseMessage([
+      {
+        type: "reasoning",
+        text: "step",
+        providerMetadata: { openai: { reasoning_trace_id: "rs_123" } },
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const part = (sanitized as UIMessage).parts[0] as any;
+    expect(part).toMatchObject({ type: "reasoning", text: "step" });
+    expect(part.providerMetadata).toBeUndefined();
   });
 
   it("retains incomplete tool calls so follow-up results can merge later", () => {

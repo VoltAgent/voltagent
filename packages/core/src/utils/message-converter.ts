@@ -208,7 +208,11 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
     // String content becomes a single text part
     if (typeof message.content === "string") {
       if (message.content.trim().length > 0) {
-        ui.parts.push({ type: "text", text: message.content });
+        ui.parts.push({
+          type: "text",
+          text: message.content,
+          ...(message.providerOptions ? { providerMetadata: message.providerOptions as any } : {}),
+        });
       }
       uiMessages.push(ui);
       continue;

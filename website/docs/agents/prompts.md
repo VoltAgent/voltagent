@@ -12,9 +12,9 @@ VoltAgent provides a three-tier prompt management system that scales from simple
 | **Dynamic Instructions** | Context-aware apps       | 5 minutes  | 2-5 developers  | High        |
 | **VoltOps Management**   | Production teams         | 15 minutes | 3+ team members | Enterprise  |
 
-## 1. Basic Static Instructions
+## Static Instructions
 
-**Basic agent setup:**
+### Simple Text Instructions
 
 ```typescript
 import { Agent } from "@voltagent/core";
@@ -25,6 +25,57 @@ const weatherAgent = new Agent({
   model: openai("gpt-4o-mini"),
   instructions:
     "You are a customer support agent. Help users with their questions politely and efficiently.",
+});
+```
+
+### Chat Instruction Objects
+
+```typescript
+import { Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const chatAgent = new Agent({
+  name: "ChatAgent",
+  model: openai("gpt-4o-mini"),
+  instructions: () => {
+    return {
+      type: "chat",
+      messages: [
+        {
+          role: "system",
+          content: "some system prompt",
+        },
+      ],
+    };
+  },
+});
+```
+
+#### Provider Metadata Example
+
+```typescript
+import { Agent } from "@voltagent/core";
+import { anthropic } from "@ai-sdk/anthropic";
+
+const cachedSystemAgent = new Agent({
+  name: "CacheableSystem",
+  model: anthropic("claude-3-7-sonnet-20250219"),
+  instructions: () => {
+    return {
+      type: "chat",
+      messages: [
+        {
+          role: "system",
+          content: "some system prompt",
+          providerOptions: {
+            anthropic: {
+              cacheControl: { type: "ephemeral", ttl: "5m" },
+            },
+          },
+        },
+      ],
+    };
+  },
 });
 ```
 

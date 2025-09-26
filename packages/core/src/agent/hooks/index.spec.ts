@@ -401,6 +401,54 @@ describe("Agent Hooks Functionality", () => {
     });
   });
 
+  describe("onPrepareModelMessages", () => {
+    it("should call onPrepareModelMessages to transform model messages", async () => {
+      const onPrepareModelMessagesSpy = vi.fn(({ modelMessages }: any) => ({
+        modelMessages: [
+          ...modelMessages,
+          {
+            role: "system",
+            content: [{ type: "text", text: "Injected" }],
+          },
+        ],
+      }));
+
+      agent = createTestAgent({
+        name: "TestAgent",
+        model: createMockLanguageModel(),
+        hooks: createHooks({ onPrepareModelMessages: onPrepareModelMessagesSpy }),
+      });
+
+      const mockContext: OperationContext = {
+        operationId: "test-op-id",
+        context: new Map(),
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+      } as any;
+
+      const modelMessages = [
+        {
+          role: "user",
+          content: [{ type: "text", text: "Hello" }],
+        },
+      ] as any[];
+
+      const result = await agent.hooks.onPrepareModelMessages?.({
+        modelMessages,
+        uiMessages: [],
+        agent: agent as any,
+        context: mockContext,
+      });
+
+      expect(onPrepareModelMessagesSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ modelMessages, uiMessages: [], context: mockContext }),
+      );
+      expect(result?.modelMessages).toHaveLength(2);
+    });
+  });
+
   describe("onStepFinish", () => {
     it("should call onStepFinish when a step completes", async () => {
       const onStepFinishSpy = vi.fn();

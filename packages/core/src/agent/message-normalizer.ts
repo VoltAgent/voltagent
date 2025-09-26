@@ -52,10 +52,20 @@ const normalizeText = (part: TextLikePart) => {
     return null;
   }
 
-  return {
+  const normalized: Record<string, unknown> = {
     type: "text",
     text,
-  } as UIMessagePart<any, any>;
+  };
+
+  if ((part as any).providerMetadata) {
+    normalized.providerMetadata = safeClone((part as any).providerMetadata);
+  }
+
+  if ((part as any).state) {
+    normalized.state = (part as any).state;
+  }
+
+  return normalized as UIMessagePart<any, any>;
 };
 
 const normalizeReasoning = (part: TextLikePart) => {
@@ -75,6 +85,8 @@ const normalizeReasoning = (part: TextLikePart) => {
   if ((part as any).reasoningConfidence !== undefined) {
     normalized.reasoningConfidence = (part as any).reasoningConfidence;
   }
+  // NOTE: provider metadata attached to reasoning parts caused GPT-5 to reject
+  // subsequent requests (missing required reasoning item). We intentionally drop it here.
 
   return normalized as UIMessagePart<any, any>;
 };

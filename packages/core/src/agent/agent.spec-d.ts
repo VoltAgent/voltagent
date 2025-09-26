@@ -1,3 +1,4 @@
+import type { ModelMessage } from "@ai-sdk/provider-utils";
 import type { LanguageModel, UIMessage } from "ai";
 import { MockLanguageModelV2 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
@@ -559,8 +560,9 @@ describe("Agent Type System", () => {
 
     it("should validate onPrepareMessages hook", () => {
       const hooks: AgentHooks = {
-        onPrepareMessages: async ({ messages, context }) => {
+        onPrepareMessages: async ({ messages, rawMessages, context }) => {
           expectTypeOf(messages).toMatchTypeOf<UIMessage[]>();
+          expectTypeOf(rawMessages).toMatchTypeOf<UIMessage[] | undefined>();
           expectTypeOf(context).toMatchTypeOf<OperationContext>();
           return { messages };
         },
@@ -570,8 +572,30 @@ describe("Agent Type System", () => {
 
       // Sync version
       const syncHooks: AgentHooks = {
-        onPrepareMessages: ({ messages }) => ({
+        onPrepareMessages: ({ messages, rawMessages }) => ({
           messages: messages.filter((m) => m.role !== "system"),
+          rawMessages,
+        }),
+      };
+
+      expectTypeOf(syncHooks).toMatchTypeOf<AgentHooks>();
+    });
+
+    it("should validate onPrepareModelMessages hook", () => {
+      const hooks: AgentHooks = {
+        onPrepareModelMessages: async ({ modelMessages, uiMessages, context }) => {
+          expectTypeOf(modelMessages).toMatchTypeOf<ModelMessage[]>();
+          expectTypeOf(uiMessages).toMatchTypeOf<UIMessage[]>();
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          return { modelMessages };
+        },
+      };
+
+      expectTypeOf(hooks).toMatchTypeOf<AgentHooks>();
+
+      const syncHooks: AgentHooks = {
+        onPrepareModelMessages: ({ modelMessages }) => ({
+          modelMessages: modelMessages.slice(0, 1),
         }),
       };
 

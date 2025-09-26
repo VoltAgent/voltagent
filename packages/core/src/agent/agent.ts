@@ -1270,8 +1270,19 @@ export class Agent {
     const uiMessages = await this.prepareMessages(input, oc, options, buffer);
 
     // Convert UIMessages to ModelMessages for the LLM
-    const sanitizedUIMessages = sanitizeMessagesForModel(uiMessages);
-    const messages = convertToModelMessages(sanitizedUIMessages);
+    const hooks = this.getMergedHooks(options);
+    let messages = convertToModelMessages(uiMessages);
+    if (hooks.onPrepareModelMessages) {
+      const result = await hooks.onPrepareModelMessages({
+        modelMessages: messages,
+        uiMessages,
+        agent: this,
+        context: oc,
+      });
+      if (result?.modelMessages) {
+        messages = result.modelMessages;
+      }
+    }
 
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
@@ -1286,7 +1297,7 @@ export class Agent {
 
     return {
       messages,
-      uiMessages: sanitizedUIMessages,
+      uiMessages,
       model,
       tools,
       maxSteps,
@@ -1577,31 +1588,45 @@ export class Agent {
     // Get system message with retriever context and working memory
     const systemMessage = await this.getSystemMessage(input, oc, options);
     if (systemMessage) {
-      // Convert system message to UIMessage format
-      const systemUIMessage: UIMessage = {
-        id: randomUUID(),
-        role: "system",
-        parts: [
-          {
-            type: "text",
-            text:
-              typeof systemMessage === "string"
-                ? systemMessage
-                : Array.isArray(systemMessage)
-                  ? systemMessage
-                      .map((m) => (typeof m.content === "string" ? m.content : ""))
-                      .join("\n")
-                  : typeof systemMessage.content === "string"
-                    ? systemMessage.content
-                    : "",
-          },
-        ],
-      };
-      messages.push(systemUIMessage);
+      const systemMessagesAsUI: UIMessage[] = (() => {
+        if (typeof systemMessage === "string") {
+          return [
+            {
+              id: randomUUID(),
+              role: "system",
+              parts: [
+                {
+                  type: "text",
+                  text: systemMessage,
+                },
+              ],
+            },
+          ];
+        }
 
-      // Add system instructions to telemetry
-      if (systemUIMessage.parts[0]?.type === "text") {
-        oc.traceContext.setInstructions(systemUIMessage.parts[0].text);
+        if (Array.isArray(systemMessage)) {
+          return convertModelMessagesToUIMessages(systemMessage);
+        }
+
+        return convertModelMessagesToUIMessages([systemMessage]);
+      })();
+
+      for (const systemUIMessage of systemMessagesAsUI) {
+        messages.push(systemUIMessage);
+      }
+
+      const instructionText = systemMessagesAsUI
+        .flatMap((msg) =>
+          msg.parts.flatMap((part) =>
+            part.type === "text" && typeof (part as any).text === "string"
+              ? [(part as any).text as string]
+              : [],
+          ),
+        )
+        .join("\n\n");
+
+      if (instructionText) {
+        oc.traceContext.setInstructions(instructionText);
       }
     }
 
@@ -1750,14 +1775,22 @@ export class Agent {
       }
     }
 
-    // Allow hooks to modify messages
+    // Sanitize messages before passing them to the model-layer hooks
+    const sanitizedMessages = sanitizeMessagesForModel(messages);
+
+    // Allow hooks to modify sanitized messages (while exposing the raw set when needed)
     const hooks = this.getMergedHooks(options);
     if (hooks.onPrepareMessages) {
-      const result = await hooks.onPrepareMessages({ messages, agent: this, context: oc });
-      return result?.messages || messages;
+      const result = await hooks.onPrepareMessages({
+        messages: sanitizedMessages,
+        rawMessages: messages,
+        agent: this,
+        context: oc,
+      });
+      return result?.messages || sanitizedMessages;
     }
 
-    return messages;
+    return sanitizedMessages;
   }
 
   /**
@@ -2499,6 +2532,8 @@ export class Agent {
         await this.hooks.onStepFinish?.(...args);
       },
       onPrepareMessages: options.hooks?.onPrepareMessages || this.hooks.onPrepareMessages,
+      onPrepareModelMessages:
+        options.hooks?.onPrepareModelMessages || this.hooks.onPrepareModelMessages,
     };
   }
 

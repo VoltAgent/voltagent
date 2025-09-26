@@ -3,6 +3,7 @@
  * Using AI SDK's native test helpers with minimal mocking
  */
 
+import type { ModelMessage } from "@ai-sdk/provider-utils";
 import * as ai from "ai";
 import type { UIMessage } from "ai";
 import { MockLanguageModelV2 } from "ai/test";
@@ -14,15 +15,18 @@ import { Tool } from "../tool";
 import { Agent } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
 
-// Mock the AI SDK functions
-vi.mock("ai", () => ({
-  generateText: vi.fn(),
-  streamText: vi.fn(),
-  generateObject: vi.fn(),
-  streamObject: vi.fn(),
-  convertToModelMessages: vi.fn((messages) => messages),
-  stepCountIs: vi.fn(() => vi.fn(() => false)),
-}));
+// Mock the AI SDK functions while preserving core converters
+vi.mock("ai", async () => {
+  const actual = await vi.importActual<typeof import("ai")>("ai");
+  return {
+    ...actual,
+    generateText: vi.fn(),
+    streamText: vi.fn(),
+    generateObject: vi.fn(),
+    streamObject: vi.fn(),
+    stepCountIs: vi.fn(() => vi.fn(() => false)),
+  };
+});
 
 describe("Agent", () => {
   let mockModel: MockLanguageModelV2;
@@ -246,6 +250,205 @@ describe("Agent", () => {
       expect(result.context).toBeDefined();
       expect(result.context.get("userId")).toBe("user123");
       expect(result.context.get("sessionId")).toBe("session456");
+    });
+
+    it("should sanitize messages before invoking onPrepareMessages hook", async () => {
+      const onPrepareMessagesSpy = vi.fn(({ messages }) => ({ messages }));
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+        hooks: {
+          onPrepareMessages: onPrepareMessagesSpy,
+        },
+      });
+
+      const blankMessage: UIMessage = {
+        id: "blank",
+        role: "user",
+        parts: [{ type: "text", text: "   " }],
+      };
+
+      const mockResponse = {
+        text: "Sanitized response",
+        content: [{ type: "text", text: "Sanitized response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      await agent.generateText([blankMessage]);
+
+      expect(onPrepareMessagesSpy).toHaveBeenCalledTimes(1);
+      const hookArgs = onPrepareMessagesSpy.mock.calls[0][0] as {
+        messages: UIMessage[];
+        rawMessages?: UIMessage[];
+      };
+
+      expect(hookArgs.rawMessages).toBeDefined();
+      expect(hookArgs.rawMessages).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: blankMessage.id })]),
+      );
+
+      expect(hookArgs.messages.some((message) => message.id === blankMessage.id)).toBe(false);
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(Array.isArray(callArgs.messages)).toBe(true);
+      expect(callArgs.messages?.[0]).toMatchObject({ role: "system" });
+      expect((callArgs.messages?.[0] as any).parts).toBeUndefined();
+    });
+
+    it("should retain provider options from system instructions", async () => {
+      const cacheControl = { type: "ephemeral", ttl: "5m" };
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: {
+          type: "chat",
+          messages: [
+            {
+              role: "system",
+              content: "cached system prompt",
+              providerOptions: {
+                anthropic: {
+                  cacheControl,
+                },
+              },
+            },
+          ],
+        },
+        model: mockModel as any,
+      });
+
+      const mockResponse = {
+        text: "Response",
+        content: [{ type: "text", text: "Response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      await agent.generateText("test");
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs.messages?.[0]).toMatchObject({
+        role: "system",
+        providerOptions: {
+          anthropic: {
+            cacheControl,
+          },
+        },
+      });
+    });
+
+    it("should allow onPrepareModelMessages hook to adjust final model messages", async () => {
+      const injectedModelMessage = {
+        role: "system",
+        content: [{ type: "text", text: "Injected" }],
+      } as unknown as ModelMessage;
+
+      const onPrepareModelMessagesSpy = vi.fn(
+        ({ modelMessages }: { modelMessages: ModelMessage[] }) => ({
+          modelMessages: [...modelMessages, injectedModelMessage],
+        }),
+      );
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+        hooks: {
+          onPrepareModelMessages: onPrepareModelMessagesSpy,
+        },
+      });
+
+      const initialMessage: UIMessage = {
+        id: "m-1",
+        role: "user",
+        parts: [{ type: "text", text: "Hello" }],
+      };
+
+      const mockResponse = {
+        text: "Response",
+        content: [{ type: "text", text: "Response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      await agent.generateText([initialMessage]);
+
+      expect(onPrepareModelMessagesSpy).toHaveBeenCalledTimes(1);
+      const hookArgs = onPrepareModelMessagesSpy.mock.calls[0][0] as {
+        modelMessages: ModelMessage[];
+        uiMessages: UIMessage[];
+      };
+
+      expect(hookArgs.uiMessages).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: initialMessage.id })]),
+      );
+      expect(hookArgs.modelMessages).toEqual(
+        expect.arrayContaining([expect.objectContaining({ role: initialMessage.role })]),
+      );
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs.messages).toContain(injectedModelMessage);
     });
   });
 

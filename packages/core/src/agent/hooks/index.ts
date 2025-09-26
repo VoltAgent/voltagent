@@ -1,3 +1,4 @@
+import type { ModelMessage } from "@ai-sdk/provider-utils";
 import type { UIMessage } from "ai";
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../agent";
@@ -47,6 +48,8 @@ export interface OnToolEndHookArgs {
 export interface OnPrepareMessagesHookArgs {
   /** The messages that will be sent to the LLM (AI SDK UIMessage). */
   messages: UIMessage[];
+  /** The raw messages before sanitization (for advanced transformations). */
+  rawMessages?: UIMessage[];
   /** The agent instance making the LLM call. */
   agent: Agent;
   /** The operation context containing metadata about the current operation. */
@@ -56,6 +59,22 @@ export interface OnPrepareMessagesHookArgs {
 export interface OnPrepareMessagesHookResult {
   /** The transformed messages to send to the LLM. */
   messages?: UIMessage[];
+}
+
+export interface OnPrepareModelMessagesHookArgs {
+  /** The finalized model messages that will be sent to the provider. */
+  modelMessages: ModelMessage[];
+  /** The sanitized UI messages that produced the model messages. */
+  uiMessages: UIMessage[];
+  /** The agent instance making the LLM call. */
+  agent: Agent;
+  /** The operation context containing metadata about the current operation. */
+  context: OperationContext;
+}
+
+export interface OnPrepareModelMessagesHookResult {
+  /** The transformed model messages to send to the provider. */
+  modelMessages?: ModelMessage[];
 }
 
 export interface OnErrorHookArgs {
@@ -79,6 +98,9 @@ export type AgentHookOnToolEnd = (args: OnToolEndHookArgs) => Promise<void> | vo
 export type AgentHookOnPrepareMessages = (
   args: OnPrepareMessagesHookArgs,
 ) => Promise<OnPrepareMessagesHookResult> | OnPrepareMessagesHookResult;
+export type AgentHookOnPrepareModelMessages = (
+  args: OnPrepareModelMessagesHookArgs,
+) => Promise<OnPrepareModelMessagesHookResult> | OnPrepareModelMessagesHookResult;
 export type AgentHookOnError = (args: OnErrorHookArgs) => Promise<void> | void;
 export type AgentHookOnStepFinish = (args: OnStepFinishHookArgs) => Promise<void> | void;
 
@@ -92,6 +114,7 @@ export type AgentHooks = {
   onToolStart?: AgentHookOnToolStart;
   onToolEnd?: AgentHookOnToolEnd;
   onPrepareMessages?: AgentHookOnPrepareMessages;
+  onPrepareModelMessages?: AgentHookOnPrepareModelMessages;
   // Additional (kept for convenience)
   onError?: AgentHookOnError;
   onStepFinish?: AgentHookOnStepFinish;
@@ -107,6 +130,7 @@ const defaultHooks: Required<AgentHooks> = {
   onToolStart: async (_args: OnToolStartHookArgs) => {},
   onToolEnd: async (_args: OnToolEndHookArgs) => {},
   onPrepareMessages: async (_args: OnPrepareMessagesHookArgs) => ({}),
+  onPrepareModelMessages: async (_args: OnPrepareModelMessagesHookArgs) => ({}),
   onError: async (_args: OnErrorHookArgs) => {},
   onStepFinish: async (_args: OnStepFinishHookArgs) => {},
 };
@@ -122,6 +146,7 @@ export function createHooks(hooks: Partial<AgentHooks> = {}): AgentHooks {
     onToolStart: hooks.onToolStart || defaultHooks.onToolStart,
     onToolEnd: hooks.onToolEnd || defaultHooks.onToolEnd,
     onPrepareMessages: hooks.onPrepareMessages || defaultHooks.onPrepareMessages,
+    onPrepareModelMessages: hooks.onPrepareModelMessages || defaultHooks.onPrepareModelMessages,
     onError: hooks.onError || defaultHooks.onError,
     onStepFinish: hooks.onStepFinish || defaultHooks.onStepFinish,
   };

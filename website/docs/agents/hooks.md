@@ -5,9 +5,7 @@ slug: /agents/hooks
 
 # Hooks
 
-Hooks provide points within the agent's execution lifecycle where you can inject custom logic. They allow you to run code before an agent starts processing, after it finishes, before and after it uses a tool, or when tasks are handed off between agents in a multi-agent system.
-
-This is useful for logging, monitoring, adding validation, managing resources, or modifying behavior.
+Hooks provide guardrails and extension points across the agent pipeline. As a developer you can intercept state before a call starts, reshape messages right before the LLM sees them, watch tool invocations, or react when a run finishes. Each hook gives you a predictable place to add observability, enforce policy, or tailor behaviour without forking the core runtime.
 
 ## Creating and Using Hooks
 
@@ -19,11 +17,12 @@ import {
   createHooks,
   messageHelpers,
   type AgentTool,
-  type AgentOperationOutput, // Unified success output type
-  type VoltAgentError, // Standardized error type
-  type OnStartHookArgs, // Argument types for hooks
+  type AgentOperationOutput,
+  type VoltAgentError,
+  type OnStartHookArgs,
   type OnEndHookArgs,
   type OnPrepareMessagesHookArgs,
+  type OnPrepareModelMessagesHookArgs,
   type OnToolStartHookArgs,
   type OnToolEndHookArgs,
   type OnHandoffHookArgs,
@@ -42,18 +41,46 @@ const myAgentHooks = createHooks({
   },
 
   /**
-   * Called before messages are sent to the LLM. Allows transformation of messages.
+   * Runs after VoltAgent sanitizes UI messages but before the LLM sees them.
+   * `rawMessages` exposes the unsanitized list if you need to diff or reuse metadata.
    */
   onPrepareMessages: async (args: OnPrepareMessagesHookArgs) => {
-    const { messages, context } = args;
-    console.log(`[Hook] Preparing ${messages.length} messages for LLM`);
+    const { messages, rawMessages, context } = args;
+    console.log(`Preparing ${messages.length} sanitized messages for LLM`);
 
-    // Example: Add timestamps to user messages
+    // Example: copy over any safe metadata stripped during sanitization
     const timestamp = new Date().toLocaleTimeString();
     const enhanced = messages.map((msg) => messageHelpers.addTimestampToMessage(msg, timestamp));
 
-    // Return transformed messages (or nothing to keep original)
+    if (rawMessages) {
+      // Inspect raw content for audit without mutating the sanitized payload
+      console.debug(`First raw message parts:`, rawMessages[0]?.parts);
+    }
+
     return { messages: enhanced };
+  },
+
+  /**
+   * Runs once UI messages are converted into provider-specific ModelMessage objects.
+   */
+  onPrepareModelMessages: async (args: OnPrepareModelMessagesHookArgs) => {
+    const { modelMessages, uiMessages } = args;
+    console.log(`Model payload contains ${modelMessages.length} messages`);
+
+    // Example: inject a final system reminder computed from the UI layer
+    if (!modelMessages.some((msg) => msg.role === "system")) {
+      return {
+        modelMessages: [
+          {
+            role: "system",
+            content: [{ type: "text", text: "Operate within safety budget" }],
+          },
+          ...modelMessages,
+        ],
+      };
+    }
+
+    return {};
   },
 
   /**
@@ -120,7 +147,6 @@ const myAgentHooks = createHooks({
 const agentWithHooks = new Agent({
   name: "My Agent with Hooks",
   instructions: "An assistant demonstrating hooks",
-  model: openai("gpt-4o-mini"),
   model: openai("gpt-4o"),
   // Pass the hooks object during initialization
   hooks: myAgentHooks,
@@ -130,7 +156,6 @@ const agentWithHooks = new Agent({
 const agentWithInlineHooks = new Agent({
   name: "Inline Hooks Agent",
   instructions: "Another assistant",
-  model: openai("gpt-4o-mini"),
   model: openai("gpt-4o"),
   hooks: {
     onStart: async ({ agent, context }) => {
@@ -157,7 +182,6 @@ This will NOT override the hooks passed to the agent during initialization.
 const agent = new Agent({
   name: "My Agent with Hooks",
   instructions: "An assistant demonstrating hooks",
-  model: openai("gpt-4o-mini"),
   model: openai("gpt-4o"),
   hooks: myAgentHooks,
 });
@@ -177,7 +201,6 @@ An example of this is you may want to only store the conversation history for a 
 const agent = new Agent({
   name: "Translation Agent",
   instructions: "A translation agent that translates text from English to French",
-  model: openai("gpt-4o-mini"),
   model: openai("gpt-4o"),
 });
 
@@ -208,6 +231,15 @@ app.post("/api/translate/chat", async (req, res) => {
 
 All hooks receive a single argument object containing relevant information.
 
+### Choosing the right message hook
+
+| Hook                     | Stage                                                              | When to use                                                                                                                             |
+| ------------------------ | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `onPrepareMessages`      | Operates on sanitized `UIMessage[]` built from memory + user input | Ideal when you need helper-friendly transforms (timestamps, filters) or access to the unsanitized list via `rawMessages` for analytics. |
+| `onPrepareModelMessages` | Runs after `convertToModelMessages` on `ModelMessage[]`            | Use for provider quirks, payload compression, or last-minute system directives that rely on protocol-level structure.                   |
+
+Most teams keep general business logic in `onPrepareMessages` and reserve `onPrepareModelMessages` for provider-specific adjustments. Both hooks can be combined; VoltAgent applies them in that order.
+
 ### `onStart`
 
 - **Triggered:** Before the agent begins processing a request (`generateText`, `streamText`, etc.).
@@ -223,31 +255,45 @@ onStart: async ({ agent, context }) => {
 
 ### `onPrepareMessages`
 
-- **Triggered:** After messages are loaded from memory but before they are sent to the LLM.
-- **Argument Object (`OnPrepareMessagesHookArgs`):** `{ messages: UIMessage[], context: OperationContext }`
-- **Use Cases:** Transform messages (add timestamps, context), filter sensitive data (PII, credentials), inject dynamic system prompts, remove duplicate messages, add user-specific context.
-- **Return:** `{ messages: BaseMessage[] }` with transformed messages, or nothing to keep original messages.
-- **Note:** This hook runs on every LLM call and receives all messages including system prompt and memory messages.
+- **Triggered:** After VoltAgent assembles conversation history and sanitizes UI messages but before they are converted to provider-specific payloads.
+- **Argument Object (`OnPrepareMessagesHookArgs`):** `{ messages: UIMessage[], rawMessages?: UIMessage[], context: OperationContext, agent: Agent }`
+- **Use Cases:** Transform the sanitized payload (timestamps, sentiment tags), redact sensitive content, or read `rawMessages` to restore metadata that sanitization removed intentionally (file handles, custom fields) without pushing it to the LLM.
+- **Return:** `{ messages: UIMessage[] }` to replace the sanitized list, or nothing to keep the sanitized version.
+- **Notes:**
+  - `messages` are guaranteed safe for the LLM (no blank text parts, no working-memory tool chatter).
+  - `rawMessages` preserves the full structure before sanitization, which is useful for logging, comparisons, or reconstructing metadata needed elsewhere.
 
 ```ts
-// Example: Add timestamps and filter sensitive data
-onPrepareMessages: async ({ messages, context }) => {
-  const timestamp = new Date().toLocaleTimeString();
+onPrepareMessages: async ({ messages, rawMessages }) => {
+  const tagged = messages.map((msg) =>
+    messageHelpers.addTimestampToMessage(msg, new Date().toISOString())
+  );
 
-  // Transform messages using message helpers
-  const enhanced = messages.map((msg) => {
-    // Add timestamp to user messages
-    let transformed = messageHelpers.addTimestampToMessage(msg, timestamp);
+  if (rawMessages) {
+    auditTrail.write(rawMessages); // your own analytics sink
+  }
 
-    // Filter sensitive data from all messages
-    transformed = messageHelpers.mapMessageContent(transformed, (text) =>
-      text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, "[SSN-REDACTED]")
-    );
+  return { messages: tagged };
+};
+```
 
-    return transformed;
-  });
+### `onPrepareModelMessages`
 
-  return { messages: enhanced };
+- **Triggered:** After UI messages are converted with `convertToModelMessages`, right before the provider receives them.
+- **Argument Object (`OnPrepareModelMessagesHookArgs`):** `{ modelMessages: ModelMessage[], uiMessages: UIMessage[], context: OperationContext, agent: Agent }`
+- **Use Cases:** Apply provider-specific tweaks (e.g., convert markdown to plain text for a brittle model), inject final system reminders, collapse conversation for cost savings, or append structured metadata understood by downstream infrastructure.
+- **Return:** `{ modelMessages: ModelMessage[] }` with a replacement list, or nothing to ship the original conversion output.
+- **Tip:** Combine this hook with `onPrepareMessages`—sanitize/augment in UI space, then do any provider quirks here so the two responsibilities stay separate.
+
+```ts
+onPrepareModelMessages: async ({ modelMessages }) => {
+  // Force the last message to include a "speak clearly" reminder for voice models
+  const last = modelMessages.at(-1);
+  if (last && last.role === "user" && Array.isArray(last.content)) {
+    last.content.push({ type: "text", text: "Please answer succinctly." });
+  }
+
+  return { modelMessages };
 };
 ```
 
