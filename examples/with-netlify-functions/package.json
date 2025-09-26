@@ -21,9 +21,9 @@
   "keywords": [
     "agent",
     "ai",
+    "functions",
     "netlify",
     "serverless",
-    "functions",
     "voltagent"
   ],
   "license": "MIT",
