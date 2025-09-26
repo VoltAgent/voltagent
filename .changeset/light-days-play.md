@@ -1,5 +1,5 @@
 ---
-"@voltagent/docs-mcp": patch"@voltagent/docs-mcp": patch
+"@voltagent/docs-mcp": patch
 ---
 
 fix(docs-mcp): update JSON Schema target to draft-7 for tool compatibilityfix(docs): update JSON Schema target to draft-7 for tool compatibility
