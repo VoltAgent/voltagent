@@ -1,4 +1,4 @@
-# Suspend & Resume
+# Suspend & Resume & Cancellation
 
 > Pause workflows and continue them later. Perfect for human approvals, external events, or any async operation that takes time.
 
@@ -7,10 +7,10 @@
 The simplest suspend & resume example:
 
 ```typescript
-import { createWorkflowChain } from "@voltagent/core";
+import VoltAgent, { createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
-const simpleApproval = createWorkflowChain({
+const simpleApprovalChain = createWorkflowChain({
   id: "simple-approval",
   name: "Simple Approval",
   input: z.object({ item: z.string() }),
@@ -28,6 +28,15 @@ const simpleApproval = createWorkflowChain({
   },
 });
 
+const simpleApproval = simpleApprovalChain.toWorkflow();
+
+// Suspend/Resume relies on workflow registration.
+// Make sure your workflow is passed to a `VoltAgent` instance
+// so the runtime can track and resume executions:
+new VoltAgent({
+  workflows: { simpleApproval },
+});
+
 // Run the workflow - it will suspend
 const execution = await simpleApproval.run({ item: "New laptop" });
 console.log(execution.status); // "suspended"
@@ -36,6 +45,8 @@ console.log(execution.status); // "suspended"
 const result = await execution.resume({ approved: true });
 console.log(result.result); // { approved: true }
 ```
+
+> ℹ️ `createWorkflowChain` returns a builder. Convert it once via `.toWorkflow()` and keep using that workflow instance (registered with `VoltAgent`) so suspend/resume has access to the stored execution state.
 
 ## How It Works
 
@@ -432,6 +443,59 @@ if (execution.status === "suspended") {
   const result = await execution.resume();
 }
 ```
+
+### Cancelling Workflows
+
+Sometimes you want to stop the workflow entirely instead of resuming it later. You now have two ergonomic options when working with streamed executions, plus a matching REST endpoint.
+
+#### Option 1: Cancel directly from the stream handle
+
+```typescript
+import { createSuspendController } from "@voltagent/core";
+
+const controller = createSuspendController();
+
+const execution = simpleApproval.stream({ item: "New laptop" }, { suspendController: controller });
+
+// Cancel from application logic (e.g. user presses "Stop")
+execution.cancel("No longer needed");
+
+const status = await execution.status;
+if (status === "cancelled") {
+  console.log("Workflow stopped by user");
+}
+```
+
+Need to pause instead of cancelling? Call `execution.suspend("Hold for manager review")` on the same handle before calling `cancel`.
+
+Because `execution.cancel()` forwards to the same `suspendController`, you can keep passing that controller into subsequent resumes, server handlers, or observability tooling.
+
+#### Option 2: Cancel via the suspend controller
+
+```typescript
+const controller = createSuspendController();
+const stream = workflow.stream(input, { suspendController: controller });
+
+controller.cancel("User requested stop");
+
+const status = await stream.status;
+if (status === "cancelled") {
+  console.log("Workflow stopped by user");
+}
+```
+
+#### REST API
+
+```bash
+curl -X POST \
+  "https://your-app/api/workflows/<workflowId>/executions/<executionId>/cancel" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "User requested stop"
+  }'
+```
+
+Send an optional `reason` to capture more context in suspension logs and telemetry.
 
 ### UI Integration Example
 

@@ -5,6 +5,7 @@ import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { createWorkflowChain } from "./chain";
 import { WorkflowRegistry } from "./registry";
 import { WorkflowStreamController, WorkflowStreamWriterImpl } from "./stream";
+import { createSuspendController } from "./suspend-controller";
 import type { WorkflowStreamEvent } from "./types";
 
 describe("WorkflowStreamController", () => {
@@ -541,5 +542,78 @@ describe("Workflow Stream Integration", () => {
     expect(processedEvents).toContain("workflow-complete");
     expect(errors).toHaveLength(1);
     expect(errors[0].message).toBe("Simulated processing error");
+  });
+
+  it("should cancel workflow execution via stream cancel", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const workflow = createWorkflowChain({
+      id: "cancel-stream",
+      name: "Cancel Stream",
+      input: z.object({ value: z.number() }),
+      result: z.object({ result: z.number() }),
+      memory,
+    }).andThen({
+      id: "long-running-step",
+      execute: async ({ data }) => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return { result: data.value * 2 };
+      },
+    });
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow.toWorkflow());
+
+    const stream = workflow.stream({ value: 21 });
+    const events: WorkflowStreamEvent[] = [];
+
+    const consumePromise = (async () => {
+      for await (const event of stream) {
+        events.push(event);
+      }
+    })();
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    stream.cancel("Testing cancel");
+
+    await consumePromise;
+
+    expect(await stream.status).toBe("cancelled");
+    expect(await stream.result).toBeNull();
+
+    const cancellation = await stream.cancellation;
+    expect(cancellation?.reason).toBe("Testing cancel");
+
+    expect(events.some((event) => event.type === "workflow-cancelled")).toBe(true);
+  });
+
+  it("should trigger provided suspend controller when cancelling stream", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const workflow = createWorkflowChain({
+      id: "cancel-with-controller",
+      name: "Cancel With Controller",
+      input: z.object({ value: z.number() }),
+      result: z.object({ result: z.number() }),
+      memory,
+    }).andThen({
+      id: "long-running-step",
+      execute: async ({ data }) => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return { result: data.value };
+      },
+    });
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow.toWorkflow());
+
+    const controller = createSuspendController();
+    const stream = workflow.stream({ value: 5 }, { suspendController: controller });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    stream.cancel("Stop from controller");
+
+    expect(controller.isCancelled()).toBe(true);
+    expect(controller.getCancelReason()).toBe("Stop from controller");
+
+    await stream.status;
   });
 });

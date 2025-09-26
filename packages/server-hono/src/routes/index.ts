@@ -1,6 +1,7 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
+  handleCancelWorkflow,
   handleChatStream,
   handleCheckUpdates,
   handleExecuteWorkflow,
@@ -24,6 +25,7 @@ import {
 } from "@voltagent/server-core";
 import type { OpenAPIHonoType } from "../zod-openapi-compat";
 import {
+  cancelWorkflowRoute,
   chatRoute,
   executeWorkflowRoute,
   getAgentsRoute,
@@ -60,6 +62,9 @@ export function registerAgentRoutes(
   // GET /agents/:id - Get agent by ID
   app.get("/agents/:id", async (c) => {
     const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
     const response = await handleGetAgent(agentId, deps, logger);
     if (!response.success) {
       return c.json(response, 500);
@@ -70,6 +75,9 @@ export function registerAgentRoutes(
   // POST /agents/:id/text - Generate text (AI SDK compatible)
   app.openapi(textRoute, async (c) => {
     const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
     const body = await c.req.json();
     const signal = c.req.raw.signal;
     const response = await handleGenerateText(agentId, body, deps, logger, signal);
@@ -82,6 +90,9 @@ export function registerAgentRoutes(
   // POST /agents/:id/stream - Stream text (raw fullStream SSE)
   app.openapi(streamRoute, async (c) => {
     const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
     const body = await c.req.json();
     const signal = c.req.raw.signal;
     const response = await handleStreamText(agentId, body, deps, logger, signal);
@@ -93,6 +104,9 @@ export function registerAgentRoutes(
   // POST /agents/:id/chat - Stream chat messages (UI message stream SSE)
   app.openapi(chatRoute, async (c) => {
     const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
     const body = await c.req.json();
     const signal = c.req.raw.signal;
     const response = await handleChatStream(agentId, body, deps, logger, signal);
@@ -104,6 +118,9 @@ export function registerAgentRoutes(
   // POST /agents/:id/object - Generate object
   app.openapi(objectRoute, async (c) => {
     const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
     const body = await c.req.json();
     const signal = c.req.raw.signal;
     const response = await handleGenerateObject(agentId, body, deps, logger, signal);
@@ -116,6 +133,9 @@ export function registerAgentRoutes(
   // POST /agents/:id/stream-object - Stream object
   app.openapi(streamObjectRoute, async (c) => {
     const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
     const body = await c.req.json();
     const signal = c.req.raw.signal;
     const response = await handleStreamObject(agentId, body, deps, logger, signal);
@@ -127,6 +147,9 @@ export function registerAgentRoutes(
   // GET /agents/:id/history - Get agent history with pagination
   app.get("/agents/:id/history", async (c) => {
     const agentId = c.req.param("id");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
     const page = Number.parseInt(c.req.query("page") || "0", 10);
     const limit = Number.parseInt(c.req.query("limit") || "10", 10);
     const response = await handleGetAgentHistory(agentId, page, limit, deps, logger);
@@ -159,6 +182,9 @@ export function registerWorkflowRoutes(
   // GET /workflows/:id - Get workflow by ID
   app.get("/workflows/:id", async (c) => {
     const workflowId = c.req.param("id");
+    if (!workflowId) {
+      throw new Error("Missing workflow id parameter");
+    }
     const response = await handleGetWorkflow(workflowId, deps, logger);
     if (!response.success) {
       return c.json(response, 500);
@@ -169,6 +195,9 @@ export function registerWorkflowRoutes(
   // Execute workflow
   app.openapi(executeWorkflowRoute, async (c) => {
     const workflowId = c.req.param("id");
+    if (!workflowId) {
+      throw new Error("Missing workflow id parameter");
+    }
     const body = await c.req.json();
     const response = await handleExecuteWorkflow(workflowId, body, deps, logger);
     if (!response.success) {
@@ -180,6 +209,9 @@ export function registerWorkflowRoutes(
   // Stream workflow execution
   app.openapi(streamWorkflowRoute, async (c) => {
     const workflowId = c.req.param("id");
+    if (!workflowId) {
+      throw new Error("Missing workflow id parameter");
+    }
     const body = await c.req.json();
     const response = await handleStreamWorkflow(workflowId, body, deps, logger);
 
@@ -202,6 +234,9 @@ export function registerWorkflowRoutes(
   // Suspend workflow execution
   app.openapi(suspendWorkflowRoute, async (c) => {
     const executionId = c.req.param("executionId");
+    if (!executionId) {
+      throw new Error("Missing execution id parameter");
+    }
     const body = await c.req.json();
     const response = await handleSuspendWorkflow(executionId, body, deps, logger);
     if (!response.success) {
@@ -210,10 +245,33 @@ export function registerWorkflowRoutes(
     return c.json(response, 200);
   });
 
+  // Cancel workflow execution
+  app.openapi(cancelWorkflowRoute, async (c) => {
+    const executionId = c.req.param("executionId");
+    if (!executionId) {
+      throw new Error("Missing execution id parameter");
+    }
+    const body = await c.req.json();
+    const response = await handleCancelWorkflow(executionId, body, deps, logger);
+    if (!response.success) {
+      const errorMessage = response.error || "";
+      const status = errorMessage.includes("not found")
+        ? 404
+        : errorMessage.includes("not cancellable")
+          ? 409
+          : 500;
+      return c.json(response, status);
+    }
+    return c.json(response, 200);
+  });
+
   // Resume workflow execution
   app.openapi(resumeWorkflowRoute, async (c) => {
     const workflowId = c.req.param("id");
     const executionId = c.req.param("executionId");
+    if (!workflowId || !executionId) {
+      throw new Error("Missing workflow or execution id parameter");
+    }
     const body = await c.req.json();
     const response = await handleResumeWorkflow(workflowId, executionId, body, deps, logger);
     if (!response.success) {
@@ -226,6 +284,9 @@ export function registerWorkflowRoutes(
   app.get("/workflows/:id/executions/:executionId/state", async (c) => {
     const workflowId = c.req.param("id");
     const executionId = c.req.param("executionId");
+    if (!workflowId || !executionId) {
+      throw new Error("Missing workflow or execution id parameter");
+    }
     const response = await handleGetWorkflowState(workflowId, executionId, deps, logger);
     if (!response.success) {
       return c.json(response, response.error?.includes("not found") ? 404 : 500);
@@ -255,12 +316,12 @@ export function registerLogRoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
     const response = await handleGetLogs(options, deps, logger);
 
     if (!response.success) {
-      return c.json(response, 500);
+      return c.json(response as any, 500);
     }
 
     // Map the response to match the OpenAPI schema
     const mappedResponse = mapLogResponse(response);
-    return c.json(mappedResponse, 200);
+    return c.json(mappedResponse as any, 200);
   });
 }
 

@@ -9,6 +9,8 @@ import {
   TextRequestSchema,
   TextResponseSchema,
   WORKFLOW_ROUTES,
+  WorkflowCancelRequestSchema,
+  WorkflowCancelResponseSchema,
   WorkflowExecutionRequestSchema,
   WorkflowExecutionResponseSchema,
   WorkflowListSchema,
@@ -19,6 +21,12 @@ import {
   WorkflowSuspendResponseSchema,
 } from "@voltagent/server-core";
 import { createRoute, z } from "../zod-openapi-compat";
+import { createPathParam } from "./path-params";
+
+const agentIdParam = () => createPathParam("id", "The ID of the agent", "my-agent-123");
+const workflowIdParam = () => createPathParam("id", "The ID of the workflow", "my-workflow-123");
+const executionIdParam = () =>
+  createPathParam("executionId", "The ID of the execution to operate on", "exec_1234567890_abc123");
 
 // Re-export schemas from server-core for backward compatibility
 export {
@@ -42,6 +50,8 @@ export {
   WorkflowStreamEventSchema,
   WorkflowSuspendRequestSchema,
   WorkflowSuspendResponseSchema,
+  WorkflowCancelRequestSchema,
+  WorkflowCancelResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
 } from "@voltagent/server-core";
@@ -86,11 +96,7 @@ export const textRoute = createRoute({
   path: AGENT_ROUTES.generateText.path.replace(":id", "{id}"), // Convert path format
   request: {
     params: z.object({
-      id: z.string().openapi({
-        param: { name: "id", in: "path" },
-        example: "my-agent-123",
-        description: "The ID of the agent",
-      }),
+      id: agentIdParam(),
     }),
     body: {
       content: {
@@ -139,11 +145,7 @@ export const streamRoute = createRoute({
   path: AGENT_ROUTES.streamText.path.replace(":id", "{id}"), // Convert path format
   request: {
     params: z.object({
-      id: z.string().openapi({
-        param: { name: "id", in: "path" },
-        example: "my-agent-123",
-        description: "The ID of the agent",
-      }),
+      id: agentIdParam(),
     }),
     body: {
       content: {
@@ -198,11 +200,7 @@ export const chatRoute = createRoute({
   path: AGENT_ROUTES.chatStream.path.replace(":id", "{id}"), // Convert path format
   request: {
     params: z.object({
-      id: z.string().openapi({
-        param: { name: "id", in: "path" },
-        example: "my-agent-123",
-        description: "The ID of the agent",
-      }),
+      id: agentIdParam(),
     }),
     body: {
       content: {
@@ -250,11 +248,7 @@ export const objectRoute = createRoute({
   path: AGENT_ROUTES.generateObject.path.replace(":id", "{id}"), // Convert path format
   request: {
     params: z.object({
-      id: z.string().openapi({
-        param: { name: "id", in: "path" },
-        example: "my-agent-123",
-        description: "The ID of the agent",
-      }),
+      id: agentIdParam(),
     }),
     body: {
       content: {
@@ -303,11 +297,7 @@ export const streamObjectRoute = createRoute({
   path: AGENT_ROUTES.streamObject.path.replace(":id", "{id}"), // Convert path format
   request: {
     params: z.object({
-      id: z.string().openapi({
-        param: { name: "id", in: "path" },
-        example: "my-agent-123",
-        description: "The ID of the agent",
-      }),
+      id: agentIdParam(),
     }),
     body: {
       content: {
@@ -392,11 +382,7 @@ export const streamWorkflowRoute = createRoute({
   path: WORKFLOW_ROUTES.streamWorkflow.path.replace(":id", "{id}"), // Convert path format
   request: {
     params: z.object({
-      id: z.string().openapi({
-        param: { name: "id", in: "path" },
-        example: "my-workflow-123",
-        description: "The ID of the workflow",
-      }),
+      id: workflowIdParam(),
     }),
     body: {
       content: {
@@ -422,6 +408,7 @@ Event types include:
 - step-start: Step execution started
 - step-complete: Step completed successfully
 - workflow-suspended: Workflow suspended, awaiting resume
+- workflow-cancelled: Workflow cancelled by client request
 - workflow-complete: Workflow completed successfully
 - workflow-error: Workflow encountered an error
 - Custom events from step writers`,
@@ -456,11 +443,7 @@ export const executeWorkflowRoute = createRoute({
   path: WORKFLOW_ROUTES.executeWorkflow.path.replace(":id", "{id}"), // Convert path format
   request: {
     params: z.object({
-      id: z.string().openapi({
-        param: { name: "id", in: "path" },
-        example: "my-workflow-123",
-        description: "The ID of the workflow",
-      }),
+      id: workflowIdParam(),
     }),
     body: {
       content: {
@@ -514,16 +497,8 @@ export const suspendWorkflowRoute = createRoute({
     .replace(":executionId", "{executionId}"), // Convert path format
   request: {
     params: z.object({
-      id: z.string().openapi({
-        param: { name: "id", in: "path" },
-        example: "my-workflow-123",
-        description: "The ID of the workflow",
-      }),
-      executionId: z.string().openapi({
-        param: { name: "executionId", in: "path" },
-        example: "exec_1234567890_abc123",
-        description: "The ID of the execution to operate on",
-      }),
+      id: workflowIdParam(),
+      executionId: executionIdParam(),
     }),
     body: {
       content: {
@@ -578,6 +553,70 @@ export const suspendWorkflowRoute = createRoute({
   description: WORKFLOW_ROUTES.suspendWorkflow.description,
 });
 
+// Cancel workflow route
+export const cancelWorkflowRoute = createRoute({
+  method: WORKFLOW_ROUTES.cancelWorkflow.method,
+  path: WORKFLOW_ROUTES.cancelWorkflow.path
+    .replace(":id", "{id}")
+    .replace(":executionId", "{executionId}"),
+  request: {
+    params: z.object({
+      id: workflowIdParam(),
+      executionId: executionIdParam(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: WorkflowCancelRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: WorkflowCancelResponseSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.cancelWorkflow.responses?.[200]?.description ||
+        "Successful workflow cancellation",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.cancelWorkflow.responses?.[404]?.description ||
+        "Workflow execution not found",
+    },
+    409: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.cancelWorkflow.responses?.[409]?.description ||
+        "Workflow execution not cancellable",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: WORKFLOW_ROUTES.cancelWorkflow.responses?.[500]?.description || "Server error",
+    },
+  },
+  tags: [...WORKFLOW_ROUTES.cancelWorkflow.tags],
+  summary: WORKFLOW_ROUTES.cancelWorkflow.summary,
+  description: WORKFLOW_ROUTES.cancelWorkflow.description,
+});
+
 // Resume workflow route
 export const resumeWorkflowRoute = createRoute({
   method: WORKFLOW_ROUTES.resumeWorkflow.method,
@@ -586,16 +625,8 @@ export const resumeWorkflowRoute = createRoute({
     .replace(":executionId", "{executionId}"), // Convert path format
   request: {
     params: z.object({
-      id: z.string().openapi({
-        param: { name: "id", in: "path" },
-        example: "my-workflow-123",
-        description: "The ID of the workflow",
-      }),
-      executionId: z.string().openapi({
-        param: { name: "executionId", in: "path" },
-        example: "exec_1234567890_abc123",
-        description: "The ID of the execution to operate on",
-      }),
+      id: workflowIdParam(),
+      executionId: executionIdParam(),
     }),
     body: {
       content: {

@@ -1,8 +1,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Tool } from "@voltagent/core";
 import { z } from "zod";
+
+// Simple Tool interface for MCP
+interface MCPTool<T = any> {
+  name: string;
+  description: string;
+  parameters: z.ZodSchema<T>;
+  execute: (args: T) => Promise<any>;
+}
+
+// Helper to create tools
+function createMCPTool<T>(config: MCPTool<T>): MCPTool<T> {
+  return config;
+}
 
 // Get package root directory - compatible with both ESM and CJS
 function getDirname(): string {
@@ -63,7 +75,7 @@ export function getVoltAgentPaths(): {
 }
 
 // Tool to search VoltAgent documentation
-export const searchDocumentationTool = new Tool({
+export const searchDocumentationTool = createMCPTool({
   name: "search_voltagent_docs",
   description:
     "Search through VoltAgent documentation by topic or keyword. Returns relevant documentation content.",
@@ -101,7 +113,7 @@ export const searchDocumentationTool = new Tool({
 });
 
 // Tool to get specific documentation content
-export const getDocumentationTool = new Tool({
+export const getDocumentationTool = createMCPTool({
   name: "get_voltagent_doc",
   description: "Get the full content of a specific VoltAgent documentation file.",
   parameters: z.object({
@@ -144,7 +156,7 @@ export const getDocumentationTool = new Tool({
 });
 
 // Tool to list available documentation files
-export const listDocumentationTool = new Tool({
+export const listDocumentationTool = createMCPTool({
   name: "list_voltagent_docs",
   description: "List all available VoltAgent documentation files and their structure.",
   parameters: z.object({
@@ -176,7 +188,7 @@ export const listDocumentationTool = new Tool({
 });
 
 // Tool to search VoltAgent examples
-export const searchExamplesTool = new Tool({
+export const searchExamplesTool = createMCPTool({
   name: "search_voltagent_examples",
   description: "Search through VoltAgent examples by name, description, or technology used.",
   parameters: z.object({
@@ -212,7 +224,7 @@ export const searchExamplesTool = new Tool({
 });
 
 // Tool to get specific example content
-export const getExampleTool = new Tool({
+export const getExampleTool = createMCPTool({
   name: "get_voltagent_example",
   description: "Get the complete content and files of a specific VoltAgent example.",
   parameters: z.object({
@@ -245,7 +257,7 @@ export const getExampleTool = new Tool({
 });
 
 // Tool to list all available examples
-export const listExamplesTool = new Tool({
+export const listExamplesTool = createMCPTool({
   name: "list_voltagent_examples",
   description:
     "List all available VoltAgent examples with their descriptions and technologies used.",
@@ -277,7 +289,7 @@ export const listExamplesTool = new Tool({
 });
 
 // Tool to list all available changelog files
-export const listChangelogsTool = new Tool({
+export const listChangelogsTool = createMCPTool({
   name: "list_voltagent_changelogs",
   description:
     "List all available VoltAgent package changelogs to check for bug fixes and updates.",
@@ -301,7 +313,7 @@ export const listChangelogsTool = new Tool({
 });
 
 // Tool to get specific package changelog
-export const getChangelogTool = new Tool({
+export const getChangelogTool = createMCPTool({
   name: "get_voltagent_changelog",
   description:
     "Get the changelog content for a specific VoltAgent package to check for bug fixes and recent updates.",
@@ -349,7 +361,7 @@ export const getChangelogTool = new Tool({
 });
 
 // Tool to search across all changelogs for specific issues or keywords
-export const searchChangelogsTool = new Tool({
+export const searchChangelogsTool = createMCPTool({
   name: "search_voltagent_changelogs",
   description:
     "Search across all VoltAgent package changelogs for specific bug fixes, features, or keywords.",

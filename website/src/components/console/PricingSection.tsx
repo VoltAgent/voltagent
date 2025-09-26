@@ -55,7 +55,7 @@ const PricingSection = ({
     },
     {
       name: "Pro",
-      price: "$500",
+      price: "$250",
       period: "/month",
       description: "Ideal for larger teams with advanced needs",
       features: [

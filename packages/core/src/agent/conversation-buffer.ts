@@ -19,7 +19,6 @@ export class ConversationBuffer {
   private messages: UIMessage[] = [];
   private pendingMessageIds = new Set<string>();
   private toolPartIndex = new Map<string, { messageIndex: number; partIndex: number }>();
-  private partSignatureIndex = new Map<string, Set<string>>();
   private activeAssistantMessageId?: string;
 
   constructor(
@@ -115,7 +114,6 @@ export class ConversationBuffer {
     this.ensureMessageId(hydrated);
     this.messages.push(hydrated);
     this.registerToolParts(this.messages.length - 1);
-    this.registerPartSignatures(this.messages.length - 1);
 
     if (!options.markAsSaved) {
       this.pendingMessageIds.add(hydrated.id);
@@ -143,8 +141,6 @@ export class ConversationBuffer {
     }
 
     const target = this.messages[lastAssistantIndex];
-    const signatures = this.ensureSignatureSet(target.id);
-    const originalLength = target.parts.length;
 
     if (message.metadata) {
       target.metadata = {
@@ -153,11 +149,76 @@ export class ConversationBuffer {
       } as UIMessage["metadata"];
     }
 
-    message.parts.forEach((part) =>
-      this.mergeAssistantPart(target, lastAssistantIndex, part, signatures),
-    );
+    const targetCounts = this.buildSignatureCounts(target.parts);
+    const incomingConsumed = new Map<string, number>();
+    let modified = false;
 
-    if (target.parts.length !== originalLength) {
+    const structuredCloneImpl = (globalThis as any).structuredClone as
+      | (<T>(value: T) => T)
+      | undefined;
+
+    const cloneValue = <T>(value: T): T => {
+      if (typeof structuredCloneImpl === "function") {
+        return structuredCloneImpl(value);
+      }
+      return JSON.parse(JSON.stringify(value)) as T;
+    };
+
+    const clonePart = <T extends UIMessagePart<any, any>>(part: T): T => cloneValue(part);
+
+    const lastAssistantMessageIndex = lastAssistantIndex;
+
+    for (const part of message.parts) {
+      const toolMergeResult = this.tryMergeToolPart(
+        target,
+        lastAssistantMessageIndex,
+        part,
+        targetCounts,
+        clonePart,
+      );
+      if (toolMergeResult !== "none") {
+        modified = true;
+        continue;
+      }
+
+      if (part.type === "step-start") {
+        continue;
+      }
+
+      const signature = this.getPartSignature(part);
+      const consumed = (incomingConsumed.get(signature) ?? 0) + 1;
+      incomingConsumed.set(signature, consumed);
+
+      const currentCount = targetCounts.get(signature) ?? 0;
+
+      if (currentCount >= consumed) {
+        const updated = this.updateExistingPartWithLatestData(
+          target,
+          signature,
+          consumed - 1,
+          part,
+          cloneValue,
+        );
+        if (updated) {
+          modified = true;
+        }
+        continue;
+      }
+
+      if (part.type === "text") {
+        const inserted = this.ensureStepStartBeforeText(target, targetCounts);
+        if (inserted) {
+          modified = true;
+        }
+      }
+
+      const clonedPart = clonePart(part);
+      target.parts.push(clonedPart);
+      this.incrementSignatureCount(targetCounts, signature);
+      modified = true;
+    }
+
+    if (modified) {
       this.pendingMessageIds.add(target.id);
       this.registerToolParts(lastAssistantIndex);
     }
@@ -197,117 +258,12 @@ export class ConversationBuffer {
     this.mergeAssistantMessage(message);
   }
 
-  private mergeAssistantPart(
-    target: UIMessage,
-    messageIndex: number,
-    part: UIMessagePart<any, any>,
-    signatures: Set<string>,
-  ): void {
-    if (typeof part.type === "string" && part.type.startsWith("tool-")) {
-      const toolCallId = (part as any).toolCallId as string | undefined;
-      if (!toolCallId) {
-        this.appendPartIfNew(target, part, signatures);
-        return;
-      }
-
-      const existing = this.toolPartIndex.get(toolCallId);
-      if (existing && this.messages[existing.messageIndex]) {
-        const existingMessage = this.messages[existing.messageIndex];
-        const existingPart = existingMessage.parts[existing.partIndex] as any;
-
-        if (existingPart) {
-          existingPart.state = (part as any).state ?? existingPart.state;
-          if ("input" in part) existingPart.input = (part as any).input;
-          if ("output" in part) existingPart.output = (part as any).output;
-          if ((part as any).providerExecuted !== undefined) {
-            existingPart.providerExecuted = (part as any).providerExecuted;
-          }
-          if ((part as any).callProviderMetadata) {
-            existingPart.callProviderMetadata = (part as any).callProviderMetadata;
-          }
-          this.pendingMessageIds.add(existingMessage.id);
-          signatures.add(this.getPartSignature(existingPart));
-          return;
-        }
-      }
-
-      this.appendPartIfNew(target, part, signatures);
-      this.toolPartIndex.set(toolCallId, {
-        messageIndex,
-        partIndex: target.parts.length - 1,
-      });
-      return;
-    }
-
-    if (part.type === "step-start") {
-      const prev = target.parts.at(-1);
-      if (!prev || prev.type === "step-start") {
-        return;
-      }
-      this.appendPartIfNew(target, part, signatures);
-      return;
-    }
-
-    if (part.type === "text") {
-      const prev = target.parts.at(-1) as UIMessagePart<any, any> | undefined;
-      if (prev?.type === "text") {
-        const sameText = prev.text === part.text;
-        const sameMetadata =
-          JSON.stringify((prev as any).providerMetadata ?? null) ===
-          JSON.stringify((part as any).providerMetadata ?? null);
-        if (sameText && sameMetadata) {
-          this.log("skip-duplicate-text", { messageId: target.id, text: part.text });
-          return;
-        }
-      }
-      if (
-        prev &&
-        typeof prev.type === "string" &&
-        prev.type.startsWith("tool-") &&
-        typeof (prev as any).state === "string" &&
-        (prev as any).state === "output-available"
-      ) {
-        this.appendPartIfNew(target, { type: "step-start" } as any, signatures);
-        this.log("insert-step-start", {
-          messageId: target.id,
-          toolCallId: (prev as any).toolCallId,
-        });
-      }
-    }
-
-    this.appendPartIfNew(target, part, signatures);
-  }
-
-  private appendPartIfNew(
-    message: UIMessage,
-    part: UIMessagePart<any, any>,
-    signatures: Set<string>,
-  ): void {
-    const signature = this.getPartSignature(part);
-    if (signatures.has(signature)) {
-      this.log("skip-duplicate-part", {
-        messageId: message.id,
-        partType: (part as any).type,
-      });
-      return;
-    }
-
-    message.parts.push(part);
-    signatures.add(signature);
-    this.log("append-part", {
-      messageId: message.id,
-      partType: (part as any).type,
-      toolCallId: (part as any).toolCallId,
-    });
-  }
-
   private appendNewMessage(message: UIMessage, source: MessageSource): void {
     const cloned = this.cloneMessage(message);
     this.ensureMessageId(cloned);
     this.messages.push(cloned);
     this.pendingMessageIds.add(cloned.id);
     this.registerToolParts(this.messages.length - 1);
-    this.registerPartSignatures(this.messages.length - 1);
     this.log("append-message", { messageId: cloned.id, role: cloned.role, source });
 
     if (source === "memory") {
@@ -332,24 +288,6 @@ export class ConversationBuffer {
     }
   }
 
-  private registerPartSignatures(messageIndex: number): void {
-    const message = this.messages[messageIndex];
-    const signatureSet = this.ensureSignatureSet(message.id);
-    signatureSet.clear();
-    for (const part of message.parts) {
-      signatureSet.add(this.getPartSignature(part));
-    }
-  }
-
-  private ensureSignatureSet(messageId: string): Set<string> {
-    let set = this.partSignatureIndex.get(messageId);
-    if (!set) {
-      set = new Set<string>();
-      this.partSignatureIndex.set(messageId, set);
-    }
-    return set;
-  }
-
   private findLastAssistantIndex(): number {
     for (let i = this.messages.length - 1; i >= 0; i--) {
       if (this.messages[i].role === "assistant") {
@@ -371,6 +309,129 @@ export class ConversationBuffer {
       parts: message.parts.map((part) => ({ ...part })),
       metadata: message.metadata ? { ...message.metadata } : undefined,
     } as UIMessage;
+  }
+
+  private buildSignatureCounts(parts: UIMessagePart<any, any>[]): Map<string, number> {
+    const counts = new Map<string, number>();
+    for (const part of parts) {
+      const signature = this.getPartSignature(part);
+      counts.set(signature, (counts.get(signature) ?? 0) + 1);
+    }
+    return counts;
+  }
+
+  private incrementSignatureCount(counts: Map<string, number>, signature: string): void {
+    counts.set(signature, (counts.get(signature) ?? 0) + 1);
+  }
+
+  private ensureStepStartBeforeText(target: UIMessage, targetCounts: Map<string, number>): boolean {
+    const prev = target.parts.at(-1) as UIMessagePart<any, any> | undefined;
+    if (
+      prev &&
+      typeof prev.type === "string" &&
+      prev.type.startsWith("tool-") &&
+      (prev as any).state === "output-available"
+    ) {
+      const alreadyStepStart = target.parts.at(-1)?.type === "step-start";
+      if (!alreadyStepStart) {
+        const step = { type: "step-start" } as UIMessagePart<any, any>;
+        target.parts.push(step);
+        this.incrementSignatureCount(targetCounts, this.getPartSignature(step));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private tryMergeToolPart(
+    target: UIMessage,
+    messageIndex: number,
+    part: UIMessagePart<any, any>,
+    targetCounts: Map<string, number>,
+    clonePart: <T extends UIMessagePart<any, any>>(value: T) => T,
+  ): "none" | "updated" | "appended" {
+    if (typeof part.type !== "string" || !part.type.startsWith("tool-")) {
+      return "none";
+    }
+
+    const toolCallId = (part as any).toolCallId as string | undefined;
+    if (!toolCallId) {
+      return "none";
+    }
+
+    const existing = this.toolPartIndex.get(toolCallId);
+    if (existing && this.messages[existing.messageIndex]) {
+      const existingMessage = this.messages[existing.messageIndex];
+      const existingPart = existingMessage.parts[existing.partIndex] as any;
+
+      if (existingPart) {
+        existingPart.state = (part as any).state ?? existingPart.state;
+        if ("input" in part) existingPart.input = (part as any).input;
+        if ("output" in part) existingPart.output = (part as any).output;
+        if ((part as any).providerExecuted !== undefined) {
+          existingPart.providerExecuted = (part as any).providerExecuted;
+        }
+        if ((part as any).isError !== undefined) {
+          existingPart.isError = (part as any).isError;
+        }
+        if ((part as any).errorText !== undefined) {
+          existingPart.errorText = (part as any).errorText;
+        }
+        if ((part as any).callProviderMetadata) {
+          existingPart.callProviderMetadata = (part as any).callProviderMetadata;
+        }
+        return "updated";
+      }
+    }
+
+    const clonedPart = clonePart(part);
+    target.parts.push(clonedPart);
+    this.toolPartIndex.set(toolCallId, {
+      messageIndex,
+      partIndex: target.parts.length - 1,
+    });
+    this.incrementSignatureCount(targetCounts, this.getPartSignature(clonedPart));
+    return "appended";
+  }
+
+  private updateExistingPartWithLatestData(
+    target: UIMessage,
+    signature: string,
+    occurrenceIndex: number,
+    incomingPart: UIMessagePart<any, any>,
+    cloneValue: <T>(value: T) => T,
+  ): boolean {
+    let updated = false;
+    let seen = 0;
+    for (const part of target.parts) {
+      if (this.getPartSignature(part) !== signature) continue;
+      if (seen === occurrenceIndex) {
+        if (incomingPart.type === "text" && (incomingPart as any).providerMetadata) {
+          const targetPart = part as any;
+          targetPart.providerMetadata = {
+            ...(targetPart.providerMetadata || {}),
+            ...cloneValue((incomingPart as any).providerMetadata),
+          };
+          updated = true;
+        } else if (incomingPart.type === "reasoning") {
+          const targetPart = part as any;
+          if (typeof incomingPart.text === "string" && incomingPart.text.trim()) {
+            targetPart.text = incomingPart.text;
+            updated = true;
+          }
+          if ((incomingPart as any).providerMetadata) {
+            targetPart.providerMetadata = {
+              ...(targetPart.providerMetadata || {}),
+              ...cloneValue((incomingPart as any).providerMetadata),
+            };
+            updated = true;
+          }
+        }
+        return updated;
+      }
+      seen += 1;
+    }
+    return updated;
   }
 
   private getPartSignature(part: UIMessagePart<any, any>): string {

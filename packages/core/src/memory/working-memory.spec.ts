@@ -417,6 +417,705 @@ describe("Memory V2 - Working Memory", () => {
     });
   });
 
+  describe("Working Memory Update Modes", () => {
+    describe("Replace Mode (Default)", () => {
+      beforeEach(() => {
+        storage = new InMemoryStorageAdapter();
+        memory = new Memory({
+          storage,
+          workingMemory: {
+            enabled: true,
+            scope: "conversation",
+          },
+        });
+      });
+
+      it("should replace existing content by default", async () => {
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial content
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "Initial content",
+        });
+
+        // Update without specifying mode (should replace)
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "New content",
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toBe("New content");
+      });
+
+      it("should replace when mode is explicitly 'replace'", async () => {
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial content
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "Initial content",
+        });
+
+        // Update with replace mode
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "Replaced content",
+          options: { mode: "replace" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toBe("Replaced content");
+      });
+
+      it("should replace JSON content completely", async () => {
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        storage = new InMemoryStorageAdapter();
+        memory = new Memory({
+          storage,
+          workingMemory: {
+            enabled: true,
+            scope: "conversation",
+            schema: z.object({
+              preferences: z.array(z.string()),
+              settings: z.object({
+                theme: z.string(),
+              }),
+            }),
+          },
+        });
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial JSON
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            preferences: ["old1", "old2"],
+            settings: { theme: "dark" },
+          },
+        });
+
+        // Replace with new JSON
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            preferences: ["new1"],
+            settings: { theme: "light" },
+          },
+          options: { mode: "replace" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toBeTruthy();
+        const parsed = JSON.parse(result ?? "{}");
+        expect(parsed.preferences).toEqual(["new1"]);
+        expect(parsed.settings.theme).toBe("light");
+      });
+    });
+
+    describe("Append Mode for JSON", () => {
+      beforeEach(() => {
+        storage = new InMemoryStorageAdapter();
+        memory = new Memory({
+          storage,
+          workingMemory: {
+            enabled: true,
+            scope: "conversation",
+            schema: z.object({
+              preferences: z.array(z.string()).optional(),
+              context: z.string().optional(),
+              settings: z
+                .object({
+                  theme: z.string().optional(),
+                  language: z.string().optional(),
+                })
+                .optional(),
+              tags: z.array(z.string()).optional(),
+            }),
+          },
+        });
+      });
+
+      it("should deep merge JSON objects", async () => {
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial JSON
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            context: "Initial context",
+            settings: {
+              theme: "dark",
+            },
+          },
+        });
+
+        // Append new data
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            preferences: ["verbose"],
+            settings: {
+              language: "en",
+            },
+          },
+          options: { mode: "append" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toBeTruthy();
+        const parsed = JSON.parse(result ?? "{}");
+        expect(parsed.context).toBe("Initial context");
+        expect(parsed.preferences).toEqual(["verbose"]);
+        expect(parsed.settings.theme).toBe("dark");
+        expect(parsed.settings.language).toBe("en");
+      });
+
+      it("should deduplicate arrays when appending", async () => {
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial JSON with array
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            tags: ["javascript", "typescript"],
+          },
+        });
+
+        // Append with overlapping array items
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            tags: ["typescript", "react", "nodejs"],
+          },
+          options: { mode: "append" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toBeTruthy();
+        const parsed = JSON.parse(result ?? "{}");
+        // Should contain unique values only
+        expect(parsed.tags).toContain("javascript");
+        expect(parsed.tags).toContain("typescript");
+        expect(parsed.tags).toContain("react");
+        expect(parsed.tags).toContain("nodejs");
+        expect(parsed.tags.length).toBe(4);
+      });
+
+      it("should replace primitive values in append mode", async () => {
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial JSON
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            context: "Initial context",
+            settings: {
+              theme: "dark",
+            },
+          },
+        });
+
+        // Append with updated primitive
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            context: "Updated context",
+          },
+          options: { mode: "append" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toBeTruthy();
+        const parsed = JSON.parse(result ?? "{}");
+        expect(parsed.context).toBe("Updated context"); // Primitive replaced
+        expect(parsed.settings.theme).toBe("dark"); // Unchanged
+      });
+
+      it("should handle deeply nested merges", async () => {
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        storage = new InMemoryStorageAdapter();
+        memory = new Memory({
+          storage,
+          workingMemory: {
+            enabled: true,
+            scope: "conversation",
+            schema: z.object({
+              user: z
+                .object({
+                  profile: z
+                    .object({
+                      preferences: z
+                        .object({
+                          notifications: z
+                            .object({
+                              email: z.boolean().optional(),
+                              push: z.boolean().optional(),
+                            })
+                            .optional(),
+                        })
+                        .optional(),
+                    })
+                    .optional(),
+                })
+                .optional(),
+            }),
+          },
+        });
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial nested structure
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            user: {
+              profile: {
+                preferences: {
+                  notifications: {
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        // Append to nested structure
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: {
+            user: {
+              profile: {
+                preferences: {
+                  notifications: {
+                    push: false,
+                  },
+                },
+              },
+            },
+          },
+          options: { mode: "append" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toBeTruthy();
+        const parsed = JSON.parse(result ?? "{}");
+        expect(parsed.user.profile.preferences.notifications.email).toBe(true);
+        expect(parsed.user.profile.preferences.notifications.push).toBe(false);
+      });
+    });
+
+    describe("Append Mode for Markdown", () => {
+      beforeEach(() => {
+        storage = new InMemoryStorageAdapter();
+        memory = new Memory({
+          storage,
+          workingMemory: {
+            enabled: true,
+            scope: "conversation",
+            template: "## Context\n{context}\n## Notes\n{notes}",
+          },
+        });
+      });
+
+      it("should append markdown content with line breaks", async () => {
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial markdown
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "## Context\nUser is working on a React project",
+        });
+
+        // Append more content
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "## Notes\n- Prefers functional components",
+          options: { mode: "append" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toBe(
+          "## Context\nUser is working on a React project\n\n## Notes\n- Prefers functional components",
+        );
+      });
+
+      it("should handle multiple appends", async () => {
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Initial content
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "## Session 1\nInitial notes",
+        });
+
+        // First append
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "## Session 2\nMore information",
+          options: { mode: "append" },
+        });
+
+        // Second append
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "## Session 3\nFinal thoughts",
+          options: { mode: "append" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toContain("## Session 1\nInitial notes");
+        expect(result).toContain("## Session 2\nMore information");
+        expect(result).toContain("## Session 3\nFinal thoughts");
+        // Check proper spacing
+        const sections = result?.split("\n\n");
+        expect(sections?.length).toBe(3);
+      });
+    });
+
+    describe("Edge Cases and Error Handling", () => {
+      beforeEach(() => {
+        storage = new InMemoryStorageAdapter();
+      });
+
+      it("should handle append when no existing content exists", async () => {
+        memory = new Memory({
+          storage,
+          workingMemory: {
+            enabled: true,
+            scope: "conversation",
+          },
+        });
+
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Append to non-existent content
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: "First content",
+          options: { mode: "append" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        // Should behave like replace when nothing exists
+        expect(result).toBe("First content");
+      });
+
+      it("should fallback to replace if JSON parse fails in append mode", async () => {
+        memory = new Memory({
+          storage,
+          workingMemory: {
+            enabled: true,
+            scope: "conversation",
+            schema: z.object({
+              data: z.string(),
+            }),
+          },
+        });
+
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set invalid JSON string
+        await storage.setWorkingMemory({
+          conversationId,
+          userId,
+          content: "not-valid-json",
+          scope: "conversation",
+        });
+
+        // Try to append valid JSON
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: { data: "valid" },
+          options: { mode: "append" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        // Should have replaced with valid content
+        expect(result).toBeTruthy();
+        const parsed = JSON.parse(result ?? "{}");
+        expect(parsed.data).toBe("valid");
+      });
+
+      it("should handle string content for JSON schema in append", async () => {
+        memory = new Memory({
+          storage,
+          workingMemory: {
+            enabled: true,
+            scope: "conversation",
+            schema: z.object({
+              notes: z.array(z.string()),
+            }),
+          },
+        });
+
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial JSON
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: '{"notes": ["note1"]}',
+        });
+
+        // Append as string
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: '{"notes": ["note2"]}',
+          options: { mode: "append" },
+        });
+
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+
+        expect(result).toBeTruthy();
+        const parsed = JSON.parse(result ?? "{}");
+        expect(parsed.notes).toContain("note1");
+        expect(parsed.notes).toContain("note2");
+        expect(parsed.notes.length).toBe(2);
+      });
+
+      it("should validate schema after append for JSON", async () => {
+        memory = new Memory({
+          storage,
+          workingMemory: {
+            enabled: true,
+            scope: "conversation",
+            schema: z.object({
+              count: z.number().max(10),
+            }),
+          },
+        });
+
+        const conversationId = "conv-123";
+        const userId = "user-123";
+
+        // Create conversation
+        await memory.createConversation({
+          id: conversationId,
+          userId,
+          resourceId: "resource-123",
+          title: "Test Conversation",
+          metadata: {},
+        });
+
+        // Set initial valid content
+        await memory.updateWorkingMemory({
+          conversationId,
+          userId,
+          content: { count: 5 },
+        });
+
+        // Try to append content that would make it invalid
+        await expect(
+          memory.updateWorkingMemory({
+            conversationId,
+            userId,
+            content: { count: 15 }, // This would exceed max
+            options: { mode: "append" },
+          }),
+        ).rejects.toThrow("Invalid working memory format");
+
+        // Original content should remain
+        const result = await memory.getWorkingMemory({
+          conversationId,
+          userId,
+        });
+        const parsed = JSON.parse(result ?? "{}");
+        expect(parsed.count).toBe(5);
+      });
+    });
+  });
+
   describe("Working Memory with Messages Integration", () => {
     beforeEach(() => {
       storage = new InMemoryStorageAdapter();

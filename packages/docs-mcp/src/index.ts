@@ -1,5 +1,5 @@
+import { z } from "zod";
 import { voltAgentDocsTools } from "./tools";
-import { zodToJsonSchema } from "./utils";
 
 // Start MCP Server
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -10,7 +10,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 const mcpTools = voltAgentDocsTools.map((tool) => ({
   name: tool.name,
   description: tool.description,
-  inputSchema: zodToJsonSchema(tool.parameters),
+  inputSchema: z.toJSONSchema(tool.parameters),
 }));
 
 console.error("=== VoltAgent Docs MCP Server Starting ===");

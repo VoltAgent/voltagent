@@ -50,6 +50,10 @@ export async function convertResponseMessagesToUIMessages(
                 ...(contentPart.providerOptions
                   ? { providerMetadata: contentPart.providerOptions as any }
                   : {}),
+                ...((contentPart as any).id ? { reasoningId: (contentPart as any).id } : {}),
+                ...((contentPart as any).confidence
+                  ? { reasoningConfidence: (contentPart as any).confidence }
+                  : {}),
               });
             }
             break;
@@ -231,6 +235,10 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
               text: contentPart.text,
               ...(contentPart.providerOptions
                 ? { providerMetadata: contentPart.providerOptions as any }
+                : {}),
+              ...((contentPart as any).id ? { reasoningId: (contentPart as any).id } : {}),
+              ...((contentPart as any).confidence
+                ? { reasoningConfidence: (contentPart as any).confidence }
                 : {}),
             });
           }

@@ -359,7 +359,7 @@ export async function handleSuspendWorkflow(
     if (!suspendController) {
       return {
         success: false,
-        error: "No active execution found or workflow already completed",
+        error: "Workflow execution not found or already completed",
       };
     }
 
@@ -388,6 +388,75 @@ export async function handleSuspendWorkflow(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to suspend workflow",
+    };
+  }
+}
+
+/**
+ * Handler for cancelling a workflow
+ * Returns cancellation result
+ */
+export async function handleCancelWorkflow(
+  executionId: string,
+  body: any,
+  deps: ServerProviderDeps,
+  logger: Logger,
+): Promise<ApiResponse> {
+  try {
+    const { reason } = body || {};
+
+    if (!deps.workflowRegistry.activeExecutions) {
+      return {
+        success: false,
+        error: "Workflow cancellation not supported",
+      };
+    }
+
+    const suspendController = deps.workflowRegistry.activeExecutions.get(executionId);
+
+    if (!suspendController) {
+      return {
+        success: false,
+        error: "No active execution found or workflow already completed",
+      };
+    }
+
+    if (suspendController.isCancelled?.()) {
+      return {
+        success: true,
+        data: {
+          executionId,
+          status: "cancelled" as const,
+          cancelledAt: new Date().toISOString(),
+          reason: suspendController.getCancelReason?.(),
+        },
+      };
+    }
+
+    const cancellationReason = reason || "API request";
+
+    suspendController.cancel(cancellationReason);
+
+    // Remove from active executions immediately to prevent duplicate cancellations
+    deps.workflowRegistry.activeExecutions.delete(executionId);
+
+    // Wait a moment to allow cancellation to propagate
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    return {
+      success: true,
+      data: {
+        executionId,
+        status: "cancelled" as const,
+        cancelledAt: new Date().toISOString(),
+        reason: cancellationReason,
+      },
+    };
+  } catch (error) {
+    logger.error("Failed to cancel workflow", { error });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to cancel workflow",
     };
   }
 }

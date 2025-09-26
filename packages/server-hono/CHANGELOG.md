@@ -1,5 +1,67 @@
 # @voltagent/server-hono
 
+## 1.0.13
+
+### Patch Changes
+
+- [`d000689`](https://github.com/VoltAgent/voltagent/commit/d00068907428c407757e35f426746924e1617b61) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod@4 and zod@3 compability
+
+## 1.0.12
+
+### Patch Changes
+
+- [`c738241`](https://github.com/VoltAgent/voltagent/commit/c738241fea017eeb3c6e3ceb27436ab2f027c48d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod@4 swagger doc issue
+
+- Updated dependencies [[`c738241`](https://github.com/VoltAgent/voltagent/commit/c738241fea017eeb3c6e3ceb27436ab2f027c48d)]:
+  - @voltagent/server-core@1.0.11
+
+## 1.0.11
+
+### Patch Changes
+
+- [#609](https://github.com/VoltAgent/voltagent/pull/609) [`942663f`](https://github.com/VoltAgent/voltagent/commit/942663f74dca0df70cdac323102acb18c050fa65) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow cancellation support, including cancellation metadata, default controller updates, and a new API endpoint for cancelling executions - #608
+
+  ## Usage Example
+
+  ```ts
+  import { createSuspendController } from "@voltagent/core";
+
+  const controller = createSuspendController();
+  const stream = workflow.stream(input, { suspendController: controller });
+
+  // Cancel from application code
+  controller.cancel("User stopped the workflow");
+
+  // Or via HTTP
+  await fetch(`/api/workflows/${workflowId}/executions/${executionId}/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason: "User stopped the workflow" }),
+  });
+  ```
+
+- Updated dependencies [[`942663f`](https://github.com/VoltAgent/voltagent/commit/942663f74dca0df70cdac323102acb18c050fa65)]:
+  - @voltagent/core@1.1.16
+  - @voltagent/server-core@1.0.10
+
+## 1.0.10
+
+### Patch Changes
+
+- [`8997e35`](https://github.com/VoltAgent/voltagent/commit/8997e3572113ebdab21ce4ccd7a15c4333f7e915) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod@4 compability
+
+## 1.0.9
+
+### Patch Changes
+
+- [`325bc30`](https://github.com/VoltAgent/voltagent/commit/325bc303bd8e99b8f3e8ecd6ea011dcff3500809) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent Swagger/OpenAPI from registering MCP and A2A endpoints when no servers are configured and ensure path parameters declare required metadata, avoiding `/doc` errors in projects that omit those optional packages.
+
+## 1.0.8
+
+### Patch Changes
+
+- [`e4d51da`](https://github.com/VoltAgent/voltagent/commit/e4d51da4161b69cbe0ac737aeca6842a48a4568c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent Swagger/OpenAPI from registering MCP and A2A endpoints when no servers are configured, avoiding `/doc` errors in projects that omit those optional packages.
+
 ## 1.0.7
 
 ### Patch Changes

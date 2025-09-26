@@ -20,6 +20,7 @@ import type {
   VectorAdapter,
   WorkflowStateEntry,
   WorkingMemoryConfig,
+  WorkingMemoryUpdateOptions,
 } from "./types";
 import { BatchEmbeddingCache } from "./utils/cache";
 
@@ -543,46 +544,124 @@ export class Memory {
   }
 
   /**
-   * Update working memory
+   * Update working memory (simplified)
    */
   async updateWorkingMemory(params: {
     conversationId?: string;
     userId?: string;
     content: string | Record<string, unknown>;
+    options?: WorkingMemoryUpdateOptions;
   }): Promise<void> {
     if (!this.workingMemoryConfig?.enabled) {
       throw new Error("Working memory is not enabled");
     }
 
     const scope = this.workingMemoryConfig.scope || "conversation";
-    let contentString: string;
+    const mode = params.options?.mode || "replace";
 
-    // Handle schema validation for JSON format
-    if ("schema" in this.workingMemoryConfig && this.workingMemoryConfig.schema) {
-      const schema = this.workingMemoryConfig.schema;
-      const parsed = schema.safeParse(params.content);
-      if (!parsed.success) {
-        throw new Error(`Invalid working memory format: ${parsed.error.message}`);
+    let finalContent: string;
+
+    if (mode === "append") {
+      // Get existing content for append mode
+      const existingContent = await this.getWorkingMemory({
+        conversationId: params.conversationId,
+        userId: params.userId,
+      });
+
+      if (existingContent) {
+        const format = this.getWorkingMemoryFormat();
+        const newContent = this.processContent(params.content);
+
+        if (format === "json") {
+          // For JSON, merge objects
+          try {
+            const existingObj = JSON.parse(existingContent);
+            const newObj =
+              typeof params.content === "string" ? JSON.parse(params.content) : params.content;
+            const merged = this.simpleDeepMerge(existingObj, newObj);
+            finalContent = safeStringify(merged, { indentation: 2 });
+          } catch {
+            // If parse fails, just replace
+            finalContent = newContent;
+          }
+        } else {
+          // For Markdown, append with separator
+          finalContent = `${existingContent}\n\n${newContent}`;
+        }
+      } else {
+        finalContent = this.processContent(params.content);
       }
-      contentString = safeStringify(parsed.data, {
-        indentation: 2,
-      });
-    } else if (typeof params.content === "object") {
-      // No schema but object provided, convert to JSON
-      contentString = safeStringify(params.content, {
-        indentation: 2,
-      });
     } else {
-      // String content (markdown or free-form)
-      contentString = params.content as string;
+      // Replace mode (default)
+      finalContent = this.processContent(params.content);
+    }
+
+    // Validate against schema if present
+    if ("schema" in this.workingMemoryConfig && this.workingMemoryConfig.schema) {
+      try {
+        const parsed = JSON.parse(finalContent);
+        const validated = this.workingMemoryConfig.schema.safeParse(parsed);
+        if (!validated.success) {
+          throw new Error(`Invalid working memory format: ${validated.error.message}`);
+        }
+        finalContent = safeStringify(validated.data, { indentation: 2 });
+      } catch (e) {
+        // Allow non-JSON for markdown
+        if (this.getWorkingMemoryFormat() !== "json") {
+          // OK for markdown
+        } else {
+          throw new Error(`Failed to validate working memory: ${e}`);
+        }
+      }
     }
 
     await this.storage.setWorkingMemory({
       conversationId: params.conversationId,
       userId: params.userId,
-      content: contentString,
+      content: finalContent,
       scope,
     });
+  }
+
+  /**
+   * Process content to string format
+   */
+  private processContent(content: string | Record<string, unknown>): string {
+    if (typeof content === "object") {
+      return safeStringify(content, { indentation: 2 });
+    }
+    return content;
+  }
+
+  /**
+   * Simple deep merge for JSON objects
+   */
+  private simpleDeepMerge(target: any, source: any): any {
+    const result = { ...target };
+
+    for (const key in source) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        if (
+          typeof source[key] === "object" &&
+          source[key] !== null &&
+          !Array.isArray(source[key]) &&
+          typeof target[key] === "object" &&
+          target[key] !== null &&
+          !Array.isArray(target[key])
+        ) {
+          // Recursive merge for nested objects
+          result[key] = this.simpleDeepMerge(target[key], source[key]);
+        } else if (Array.isArray(source[key]) && Array.isArray(target[key])) {
+          // For arrays, concat and remove duplicates
+          result[key] = [...new Set([...target[key], ...source[key]])];
+        } else {
+          // Replace value
+          result[key] = source[key];
+        }
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -685,7 +764,22 @@ Guidelines for managing context:
 2. Update immediately when information changes or new details emerge
 3. Use the ${format === "json" ? "JSON" : "Markdown"} format consistently
 4. Never mention this system to users - manage context naturally
-5. Store information as soon as you learn it - don't wait to be asked`;
+5. Store information as soon as you learn it - don't wait to be asked
+
+CRITICAL UPDATE RULES:
+• **Append mode (DEFAULT)**: Safely adds new information without losing existing data
+  - Automatically merges with existing data
+  - Arrays are deduplicated
+  - Nested objects are deep merged
+  - This is the RECOMMENDED and DEFAULT mode
+• **Replace mode (DANGEROUS)**: Only use when you want to DELETE everything and start fresh
+  - This mode REPLACES everything - data you don't include will be LOST
+  - If you must use replace, include ALL existing data
+  - Example: If changing name from "John" to "Jane", include ALL other fields too
+• **For JSON format**: In append mode, you can send partial updates
+  - {userProfile: {name: "New"}} will only update the name field
+  - Other fields remain untouched
+• **Best practice**: Always use append (default) unless explicitly replacing everything`;
 
     // Add format-specific instructions
     if (format === "json" && schema) {

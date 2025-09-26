@@ -8,6 +8,28 @@ import {
   resolveAgentCard,
 } from "@voltagent/server-core";
 import type { OpenAPIHonoType } from "../zod-openapi-compat";
+import { z } from "../zod-openapi-compat";
+import { createPathParam, requirePathParam } from "./path-params";
+
+const agentCardRoute = {
+  ...A2A_ROUTES.agentCard,
+  path: A2A_ROUTES.agentCard.path.replace(/:([A-Za-z0-9_]+)/g, "{$1}"),
+  request: {
+    params: z.object({
+      serverId: createPathParam("serverId", "The ID of the A2A server", "server-123"),
+    }),
+  },
+};
+
+const jsonRpcRoute = {
+  ...A2A_ROUTES.jsonRpc,
+  path: A2A_ROUTES.jsonRpc.path.replace(/:([A-Za-z0-9_]+)/g, "{$1}"),
+  request: {
+    params: z.object({
+      serverId: createPathParam("serverId", "The ID of the A2A server", "server-123"),
+    }),
+  },
+};
 
 function parseContextCandidate(candidate: unknown): A2ARequestContext | undefined {
   if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
@@ -66,10 +88,19 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
     return;
   }
 
-  app.openapi(A2A_ROUTES.agentCard, (c) => {
-    const serverId = c.req.param("serverId");
+  const registeredServers = typeof registry.list === "function" ? registry.list() : [];
+
+  if (registeredServers.length === 0) {
+    logger.debug("No A2A servers registered; skipping A2A routes");
+    return;
+  }
+
+  const typedRegistry = registry as Parameters<typeof resolveAgentCard>[0];
+
+  app.openapi(agentCardRoute as any, (c) => {
+    const serverId = requirePathParam(c, "serverId");
     try {
-      const card = resolveAgentCard(registry, serverId, serverId, {});
+      const card = resolveAgentCard(typedRegistry, serverId, serverId, {});
       return c.json(card, 200);
     } catch (error) {
       const response = normalizeError(null, error);
@@ -78,8 +109,8 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
     }
   });
 
-  app.openapi(A2A_ROUTES.jsonRpc, async (c) => {
-    const serverId = c.req.param("serverId");
+  app.openapi(jsonRpcRoute as any, async (c) => {
+    const serverId = requirePathParam(c, "serverId");
     // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
     let request;
     let context: A2ARequestContext | undefined;
@@ -114,7 +145,7 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
     }
 
     const response = await executeA2ARequest({
-      registry,
+      registry: typedRegistry,
       serverId,
       request,
       context,
@@ -136,7 +167,7 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
         if (!cleanedUp && typeof stream.return === "function") {
           cleanedUp = true;
           try {
-            await stream.return();
+            await stream.return(undefined);
           } catch {
             // Swallow generator completion errors
           }
@@ -191,6 +222,7 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
       });
     }
 
-    return c.json(response, response.error ? 400 : 200);
+    const jsonResponse = response as any;
+    return c.json(jsonResponse, jsonResponse?.error ? 400 : 200);
   });
 }

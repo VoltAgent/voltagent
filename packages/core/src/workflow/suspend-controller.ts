@@ -25,18 +25,38 @@ import type { WorkflowSuspendController } from "./types";
 export function createSuspendController(): WorkflowSuspendController {
   const abortController = new AbortController();
   let suspensionReason: string | undefined;
+  let cancellationReason: string | undefined;
   let suspended = false;
+  let cancelled = false;
+
+  const triggerAbort = (type: "suspended" | "cancelled") => {
+    if (!abortController.signal.aborted) {
+      abortController.abort({
+        type,
+        reason: type === "cancelled" ? cancellationReason : suspensionReason,
+      });
+    }
+  };
 
   return {
     signal: abortController.signal,
     suspend: (reason?: string) => {
-      if (!suspended) {
+      if (!suspended && !cancelled) {
         suspensionReason = reason;
         suspended = true;
-        abortController.abort();
+        triggerAbort("suspended");
+      }
+    },
+    cancel: (reason?: string) => {
+      if (!cancelled) {
+        cancellationReason = reason;
+        cancelled = true;
+        triggerAbort("cancelled");
       }
     },
     isSuspended: () => suspended,
-    getReason: () => suspensionReason,
+    isCancelled: () => cancelled,
+    getReason: () => (cancelled ? cancellationReason : suspensionReason),
+    getCancelReason: () => cancellationReason,
   };
 }

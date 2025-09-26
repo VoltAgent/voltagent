@@ -12,6 +12,7 @@ import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { Tool } from "../tool";
 import { Agent } from "./agent";
+import { ConversationBuffer } from "./conversation-buffer";
 
 // Mock the AI SDK functions
 vi.mock("ai", () => ({

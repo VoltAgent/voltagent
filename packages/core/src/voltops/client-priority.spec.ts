@@ -295,6 +295,8 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       // Test resolveInstructions (private method, tested through getSystemMessage)
       // Create proper OperationContext structure
+      const mockRootSpan = { setAttribute: vi.fn() };
+
       const oc = {
         operationId: "test-op",
         userId: "test-user",
@@ -304,7 +306,7 @@ describe("VoltOpsClient Priority Hierarchy", () => {
         isActive: true,
         logger: mockLoggerInstance as any,
         traceContext: {
-          getRootSpan: () => ({}) as any,
+          getRootSpan: () => mockRootSpan,
           withSpan: async (_span: any, fn: any) => await fn(),
           createChildSpan: () => ({}) as any,
           end: () => {},
@@ -371,6 +373,8 @@ describe("VoltOpsClient Priority Hierarchy", () => {
       });
 
       // Create proper OperationContext structure
+      const mockRootSpan = { setAttribute: vi.fn() };
+
       const oc = {
         operationId: "test-op",
         userId: "test-user",
@@ -380,7 +384,7 @@ describe("VoltOpsClient Priority Hierarchy", () => {
         isActive: true,
         logger: mockLoggerInstance as any,
         traceContext: {
-          getRootSpan: () => ({}) as any,
+          getRootSpan: () => mockRootSpan,
           withSpan: async (_span: any, fn: any) => await fn(),
           createChildSpan: () => ({}) as any,
           end: () => {},

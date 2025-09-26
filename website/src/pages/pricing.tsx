@@ -36,7 +36,7 @@ export default function Pricing(): JSX.Element {
       answer: (
         <span>
           VoltOps Core plan includes 5,000 traces per month for $50, and Pro plan includes 20,000
-          traces per month for $500. If you exceed these limits, you'll be charged $10 for every
+          traces per month for $250. If you exceed these limits, you'll be charged $10 for every
           additional 5,000 traces.{" "}
           <button
             type="button"

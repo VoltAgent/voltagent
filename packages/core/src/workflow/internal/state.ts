@@ -4,10 +4,20 @@ import { v4 as uuid } from "uuid";
 import type { UsageInfo } from "../../agent/providers";
 import type { UserContext } from "../../agent/types";
 import { getGlobalLogger } from "../../logger";
-import type { WorkflowRunOptions, WorkflowSuspensionMetadata } from "../types";
+import type {
+  WorkflowCancellationMetadata,
+  WorkflowRunOptions,
+  WorkflowSuspensionMetadata,
+} from "../types";
 import type { InternalExtractWorkflowInputData } from "./types";
 
-export type WorkflowStateStatus = "pending" | "running" | "completed" | "failed" | "suspended";
+export type WorkflowStateStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "suspended"
+  | "cancelled";
 
 export type WorkflowState<INPUT, RESULT> = {
   executionId: string;
@@ -27,6 +37,8 @@ export type WorkflowState<INPUT, RESULT> = {
   error: Error | null;
   /** suspension metadata when workflow is suspended */
   suspension?: WorkflowSuspensionMetadata;
+  /** cancellation metadata when workflow is cancelled */
+  cancellation?: WorkflowCancellationMetadata;
   /** accumulated usage from andAgent calls */
   usage: UsageInfo;
 };
@@ -78,6 +90,10 @@ export interface WorkflowStateManager<DATA, RESULT> {
     suspendedStepIndex?: number,
     lastEventSequence?: number,
   ) => WorkflowSuspensionMetadata;
+  /**
+   * Cancel the workflow execution
+   */
+  cancel: (reason?: string) => void;
 }
 
 /**
@@ -200,6 +216,20 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
       .child({ component: "workflow", context: "WorkflowStateManager" })
       .debug(`Workflow suspended with status: ${this.#state.status}`, suspensionMetadata);
     return suspensionMetadata;
+  }
+
+  cancel(reason?: string) {
+    assertCanMutate(this.#state);
+    const cancelledAt = new Date();
+    this.#internalUpdate({
+      endAt: cancelledAt,
+      status: "cancelled",
+      cancellation: {
+        reason,
+        cancelledAt,
+      },
+      suspension: undefined,
+    });
   }
 
   #internalUpdate(stateUpdate: Partial<WorkflowState<DATA, RESULT>>) {

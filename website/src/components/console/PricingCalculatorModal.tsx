@@ -125,7 +125,7 @@ const PricingCalculatorModal = ({ isOpen, onClose }: PricingCalculatorModalProps
                   : "border-gray-700 bg-gray-800/50 text-gray-300 hover:border-gray-600"
               }`}
             >
-              Pro ($500)
+              Pro ($250)
             </button>
           </div>
         </div>

@@ -1,5 +1,52 @@
 # @voltagent/core
 
+## 1.1.19
+
+### Patch Changes
+
+- [#617](https://github.com/VoltAgent/voltagent/pull/617) [`02a78af`](https://github.com/VoltAgent/voltagent/commit/02a78afed1870fe00968a60f44db912df7fbabe6) Thanks [@omeraplak](https://github.com/omeraplak)! - - preserve raw UI messages in storage, sanitize only before LLM invocation
+
+## 1.1.18
+
+### Patch Changes
+
+- [`8a99f4f`](https://github.com/VoltAgent/voltagent/commit/8a99f4fb9365da3b80a0d4e5b6df4bd50ac19288) Thanks [@omeraplak](https://github.com/omeraplak)! - - refine message normalization and persistence pipeline
+  - rely on AI SDK reasoning metadata directly
+  - drop synthetic tool-result injection and trust AI SDK stream output
+
+- [`bbd6c17`](https://github.com/VoltAgent/voltagent/commit/bbd6c176b2bed532a4f03b5f8f7011806aa746c2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: reasoning parts - #614
+
+## 1.1.17
+
+### Patch Changes
+
+- [`78b2298`](https://github.com/VoltAgent/voltagent/commit/78b2298c561e86bbef61f783b0fee83667c25d8a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: `tool_use` ids were found without `tool_result` blocks immediately after
+
+## 1.1.16
+
+### Patch Changes
+
+- [#609](https://github.com/VoltAgent/voltagent/pull/609) [`942663f`](https://github.com/VoltAgent/voltagent/commit/942663f74dca0df70cdac323102acb18c050fa65) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow cancellation support, including cancellation metadata, default controller updates, and a new API endpoint for cancelling executions - #608
+
+  ## Usage Example
+
+  ```ts
+  import { createSuspendController } from "@voltagent/core";
+
+  const controller = createSuspendController();
+  const stream = workflow.stream(input, { suspendController: controller });
+
+  // Cancel from application code
+  controller.cancel("User stopped the workflow");
+
+  // Or via HTTP
+  await fetch(`/api/workflows/${workflowId}/executions/${executionId}/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason: "User stopped the workflow" }),
+  });
+  ```
+
 ## 1.1.15
 
 ### Patch Changes

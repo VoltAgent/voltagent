@@ -644,6 +644,112 @@ describe.sequential("workflow suspend/resume functionality", () => {
     expect(typeof result.resume).toBe("function");
   });
 
+  it("should allow cancelling a running workflow", async () => {
+    const { memory } = createTestStores();
+
+    const workflow = createWorkflow(
+      {
+        id: "test-cancel-api",
+        name: "Test Cancel API",
+        result: z.object({ result: z.string().nullable() }),
+        memory,
+      },
+      andThen({
+        id: "step-1",
+        name: "Step 1",
+        execute: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          return { result: "should not finish" };
+        },
+      }),
+    );
+
+    registry.registerWorkflow(workflow);
+
+    const controller = workflow.createSuspendController?.();
+    expect(controller).toBeDefined();
+
+    const runPromise = workflow.run("test input", {
+      suspendController: controller,
+    });
+
+    setTimeout(() => {
+      controller?.cancel("User requested cancellation");
+    }, 50);
+
+    const result = await runPromise;
+
+    expect(result.status).toBe("cancelled");
+    expect(result.result).toBeNull();
+    expect(controller?.isCancelled()).toBe(true);
+
+    const storedState = await memory.getWorkflowState(result.executionId);
+    expect(storedState?.status).toBe("cancelled");
+  });
+
+  it("should emit cancelled step event and end span when cancelling via controller", async () => {
+    const { memory } = createTestStores();
+
+    const workflow = createWorkflow(
+      {
+        id: "test-cancel-stream",
+        name: "Test Cancel Stream",
+        input: z.object({ value: z.string() }),
+        result: z.object({ value: z.string(), result: z.string().nullable() }),
+        memory,
+      },
+      andThen({
+        id: "step-1",
+        name: "Step 1",
+        execute: async ({ data }) => {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          return { ...data, result: "completed" };
+        },
+      }),
+    );
+
+    registry.registerWorkflow(workflow);
+
+    const controller = workflow.createSuspendController?.();
+    expect(controller).toBeDefined();
+
+    const stream = workflow.stream(
+      { value: "test" },
+      {
+        suspendController: controller,
+      },
+    );
+
+    const events: Array<{ type: string; status?: string }> = [];
+    const consumePromise = (async () => {
+      for await (const event of stream) {
+        events.push(event as any);
+      }
+    })();
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    controller?.cancel("Stop");
+
+    expect(await stream.status).toBe("cancelled");
+    await consumePromise;
+
+    const cancelledStepEvent = events.find(
+      (event) => event.type === "step-complete" && event.status === "cancelled",
+    );
+
+    expect(cancelledStepEvent).toBeDefined();
+
+    const workflowCancelledEvent = events.find((event) => event.type === "workflow-cancelled");
+    expect(workflowCancelledEvent).toBeDefined();
+
+    const executionId =
+      (workflowCancelledEvent as any)?.executionId ?? stream.executionId ?? undefined;
+    expect(executionId).toBeDefined();
+
+    const storedState = await memory.getWorkflowState(executionId as string);
+    expect(storedState?.status).toBe("cancelled");
+  });
+
   it("should provide a working resume function on the execution result", async () => {
     let stepExecutions = 0;
     const { memory } = createTestStores();

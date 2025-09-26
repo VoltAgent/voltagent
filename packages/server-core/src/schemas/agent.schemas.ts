@@ -63,7 +63,7 @@ export const GenerateOptionsSchema = z
     conversationId: z.string().optional().describe("Optional conversation ID for context tracking"),
     context: z
       .record(z.string(), z.unknown())
-      .optional()
+      .nullish()
       .describe("User context for dynamic agent behavior"),
     contextLimit: z
       .number()
@@ -117,7 +117,7 @@ export const GenerateOptionsSchema = z
     stopSequences: z.array(z.string()).optional().describe("Stop sequences to end generation"),
     providerOptions: z
       .record(z.string(), z.unknown())
-      .optional()
+      .nullish()
       .describe("Provider-specific options for AI SDK providers (e.g., OpenAI's reasoningEffort)"),
   })
   .passthrough();
@@ -171,12 +171,8 @@ export const BasicJsonSchema = z
   .object({
     type: z.literal("object"),
     properties: z
-      .record(
-        z.object({
-          type: z.enum(["string", "number", "boolean", "object", "array", "null", "any"]),
-        }),
-      )
-      .optional()
+      .record(z.string(), z.unknown())
+      .nullish()
       .describe("A dictionary defining each property of the object and its type"),
     required: z
       .array(z.string())
@@ -252,10 +248,10 @@ export const WorkflowStreamEventSchema = z.object({
   from: z.string().describe("Source of the event"),
   input: z.any().optional(),
   output: z.any().optional(),
-  status: z.enum(["pending", "running", "success", "error", "suspended"]),
+  status: z.enum(["pending", "running", "success", "error", "suspended", "cancelled"]),
   timestamp: z.string(),
   stepIndex: z.number().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).nullish(),
   error: z.any().optional(),
 });
 
@@ -275,6 +271,22 @@ export const WorkflowSuspendResponseSchema = z.object({
       }),
     })
     .describe("Workflow suspension result"),
+});
+
+export const WorkflowCancelRequestSchema = z.object({
+  reason: z.string().optional().describe("Reason for cancellation"),
+});
+
+export const WorkflowCancelResponseSchema = z.object({
+  success: z.literal(true),
+  data: z
+    .object({
+      executionId: z.string(),
+      status: z.literal("cancelled"),
+      cancelledAt: z.string(),
+      reason: z.string().optional(),
+    })
+    .describe("Workflow cancellation result"),
 });
 
 export const WorkflowResumeRequestSchema = z

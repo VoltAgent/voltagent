@@ -92,8 +92,13 @@ export function createMockWorkflow(id = "test-workflow", name = "Test Workflow")
       endAt: Promise.resolve(new Date()),
     }),
     createSuspendController: vi.fn().mockReturnValue({
-      signal: new AbortSignal(),
+      signal: new AbortController().signal,
       suspend: vi.fn(),
+      cancel: vi.fn(),
+      isSuspended: vi.fn().mockReturnValue(false),
+      isCancelled: vi.fn().mockReturnValue(false),
+      getReason: vi.fn(),
+      getCancelReason: vi.fn(),
     }),
   };
 }

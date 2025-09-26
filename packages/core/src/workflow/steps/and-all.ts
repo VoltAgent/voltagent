@@ -226,7 +226,10 @@ export function andAll<
         return finalResults;
       } catch (error) {
         // Check if this is a suspension, not an error
-        if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
+        if (
+          error instanceof Error &&
+          (error.message === "WORKFLOW_SUSPENDED" || error.message === "WORKFLOW_CANCELLED")
+        ) {
           // For suspension, we don't publish an error event
           // The workflow core will handle publishing the suspend event
           throw error;

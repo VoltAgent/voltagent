@@ -1,5 +1,13 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import {
+  type UIDataTypes,
+  type UIMessageChunk,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+} from "ai";
 import type { WorkflowExecutionContext } from "../context";
+import type { WorkflowStreamController } from "../stream";
+import type { WorkflowStreamEvent } from "../types";
 import type { WorkflowState } from "./state";
 import type {
   InternalExtractWorkflowInputData,
@@ -74,5 +82,32 @@ export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DAT
     resumeData,
     logger: executionContext.logger,
     writer: executionContext.streamWriter,
+  };
+}
+
+export const convertWorkflowStreamEventToUIMessage = (
+  message: WorkflowStreamEvent,
+): UIMessageChunk<unknown, UIDataTypes> => {
+  const { type, ...dataChunk } = message;
+
+  return { type: `data-${type}`, data: { ...dataChunk } };
+};
+
+export function eventToUIMessageStreamResponse(streamController: WorkflowStreamController) {
+  return (options?: any) => {
+    const uiStream = createUIMessageStream({
+      execute: async ({ writer }) => {
+        for await (const event of streamController.getStream()) {
+          const chunk = convertWorkflowStreamEventToUIMessage(event);
+          writer.write(chunk);
+        }
+      },
+      onError: (error) => String(error),
+    });
+
+    return createUIMessageStreamResponse({
+      stream: uiStream,
+      ...(options || {}),
+    });
   };
 }

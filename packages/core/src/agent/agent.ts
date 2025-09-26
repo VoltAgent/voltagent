@@ -32,7 +32,7 @@ import {
 import { z } from "zod";
 import { LogEvents, LoggerProxy } from "../logger";
 import { ActionType, buildAgentLogMessage } from "../logger/message-builder";
-import type { Memory } from "../memory";
+import type { Memory, MemoryUpdateMode } from "../memory";
 import { MemoryManager } from "../memory/manager/memory-manager";
 import { VoltAgentObservability } from "../observability";
 import { AgentRegistry } from "../registries/agent-registry";
@@ -56,6 +56,7 @@ import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import { ConversationBuffer } from "./conversation-buffer";
 import { MemoryPersistQueue } from "./memory-persist-queue";
+import { sanitizeMessagesForModel } from "./message-normalizer";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
@@ -349,7 +350,11 @@ export class Agent {
     return await oc.traceContext.withSpan(rootSpan, async () => {
       const buffer = this.getConversationBuffer(oc);
       const persistQueue = this.getMemoryPersistQueue(oc);
-      const { messages, model, tools, maxSteps } = await this.prepareExecution(input, oc, options);
+      const { messages, uiMessages, model, tools, maxSteps } = await this.prepareExecution(
+        input,
+        oc,
+        options,
+      );
 
       const modelName = this.getModelName();
       const contextLimit = options?.contextLimit;
@@ -371,6 +376,7 @@ export class Agent {
 
       // Add messages (serialize to JSON string)
       rootSpan.setAttribute("agent.messages", safeStringify(messages));
+      rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
 
       // Add agent state snapshot for remote observability
       const agentState = this.getFullState();
@@ -524,7 +530,11 @@ export class Agent {
 
       // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
 
-      const { messages, model, tools, maxSteps } = await this.prepareExecution(input, oc, options);
+      const { messages, uiMessages, model, tools, maxSteps } = await this.prepareExecution(
+        input,
+        oc,
+        options,
+      );
 
       const modelName = this.getModelName();
       const contextLimit = options?.contextLimit;
@@ -550,6 +560,7 @@ export class Agent {
 
         // Add messages (serialize to JSON string)
         rootSpan.setAttribute("agent.messages", safeStringify(messages));
+        rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
 
         // Add agent state snapshot for remote observability
         const agentState = this.getFullState();
@@ -830,7 +841,7 @@ export class Agent {
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
-      const { messages, model } = await this.prepareExecution(input, oc, options);
+      const { messages, uiMessages, model } = await this.prepareExecution(input, oc, options);
 
       const modelName = this.getModelName();
       const schemaName = schema.description || "unknown";
@@ -852,6 +863,7 @@ export class Agent {
 
       // Add messages (serialize to JSON string)
       rootSpan.setAttribute("agent.messages", safeStringify(messages));
+      rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
 
       // Add agent state snapshot for remote observability
       const agentState = this.getFullState();
@@ -1010,7 +1022,7 @@ export class Agent {
     return await oc.traceContext.withSpan(rootSpan, async () => {
       const methodLogger = oc.logger; // Extract logger with executionId
 
-      const { messages, model } = await this.prepareExecution(input, oc, options);
+      const { messages, uiMessages, model } = await this.prepareExecution(input, oc, options);
 
       const modelName = this.getModelName();
       const schemaName = schema.description || "unknown";
@@ -1032,6 +1044,7 @@ export class Agent {
 
       // Add messages (serialize to JSON string)
       rootSpan.setAttribute("agent.messages", safeStringify(messages));
+      rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
 
       // Add agent state snapshot for remote observability
       const agentState = this.getFullState();
@@ -1243,6 +1256,7 @@ export class Agent {
     options?: BaseGenerationOptions,
   ): Promise<{
     messages: BaseMessage[];
+    uiMessages: UIMessage[];
     model: LanguageModel;
     tools: Record<string, any>;
     maxSteps: number;
@@ -1256,7 +1270,8 @@ export class Agent {
     const uiMessages = await this.prepareMessages(input, oc, options, buffer);
 
     // Convert UIMessages to ModelMessages for the LLM
-    const messages = convertToModelMessages(uiMessages);
+    const sanitizedUIMessages = sanitizeMessagesForModel(uiMessages);
+    const messages = convertToModelMessages(sanitizedUIMessages);
 
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
@@ -1269,7 +1284,13 @@ export class Agent {
     // Prepare tools with execution context
     const tools = await this.prepareTools(mergedTools, oc, maxSteps, options);
 
-    return { messages, model, tools, maxSteps };
+    return {
+      messages,
+      uiMessages: sanitizedUIMessages,
+      model,
+      tools,
+      maxSteps,
+    };
   }
 
   /**
@@ -1677,10 +1698,12 @@ export class Agent {
             return result.messages;
           });
 
+          const retrievedMessagesCount = Array.isArray(memoryResult) ? memoryResult.length : 0;
+
           traceContext.endChildSpan(memoryReadSpan, "completed", {
             output: memoryResult,
             attributes: {
-              "memory.message_count": Array.isArray(memoryResult) ? memoryResult.length : 0,
+              "memory.message_count": retrievedMessagesCount,
             },
           });
 
@@ -1826,7 +1849,36 @@ export class Agent {
         if (workingMemoryInstructions) {
           workingMemoryContext = `\n\n${workingMemoryInstructions}`;
         }
+
+        // Add working memory attributes to span for observability
+        if (oc.traceContext) {
+          const rootSpan = oc.traceContext.getRootSpan();
+
+          // Get the raw working memory content
+          const workingMemoryContent = await memory.getWorkingMemory({
+            conversationId: options.conversationId,
+            userId: options.userId,
+          });
+
+          if (workingMemoryContent) {
+            rootSpan.setAttribute("agent.workingMemory.content", workingMemoryContent);
+            rootSpan.setAttribute("agent.workingMemory.enabled", true);
+
+            // Detect format
+            const format = memory.getWorkingMemoryFormat ? memory.getWorkingMemoryFormat() : null;
+            rootSpan.setAttribute("agent.workingMemory.format", format || "text");
+
+            // Add timestamp
+            rootSpan.setAttribute("agent.workingMemory.lastUpdated", new Date().toISOString());
+          } else {
+            rootSpan.setAttribute("agent.workingMemory.enabled", true);
+          }
+        }
       }
+    } else if (oc.traceContext) {
+      // Working memory not supported/configured
+      const rootSpan = oc.traceContext.getRootSpan();
+      rootSpan.setAttribute("agent.workingMemory.enabled", false);
     }
 
     // Handle different instruction types
@@ -2830,22 +2882,49 @@ export class Agent {
     const schema = memory.getWorkingMemorySchema();
     const template = memory.getWorkingMemoryTemplate();
 
+    // Build parameters based on schema
+    const baseParams = schema
+      ? { content: schema }
+      : { content: z.string().describe("The content to store in working memory") };
+
+    const modeParam = {
+      mode: z
+        .enum(["replace", "append"])
+        .default("append")
+        .describe(
+          "How to update: 'append' (default - safely merge with existing) or 'replace' (complete overwrite - DELETES other fields!)",
+        ),
+    };
+
     tools.push(
       createTool({
         name: "update_working_memory",
         description: template
-          ? `Update the working memory. Template: ${template}`
-          : "Update the working memory with important context that should be remembered",
-        parameters: schema
-          ? z.object({ content: schema })
-          : z.object({ content: z.string().describe("The content to store in working memory") }),
-        execute: async ({ content }) => {
+          ? `Update working memory. Default mode is 'append' which safely merges new data. Only use 'replace' if you want to COMPLETELY OVERWRITE all data. Current data is in <current_context>. Template: ${template}`
+          : `Update working memory with important context. Default mode is 'append' which safely merges new data. Only use 'replace' if you want to COMPLETELY OVERWRITE all data. Current data is in <current_context>.`,
+        parameters: z.object({ ...baseParams, ...modeParam }),
+        execute: async ({ content, mode }, oc) => {
           await memory.updateWorkingMemory({
             conversationId: options?.conversationId,
             userId: options?.userId,
             content,
+            options: {
+              mode: mode as MemoryUpdateMode | undefined,
+            },
           });
-          return "Working memory updated successfully.";
+
+          // Update root span with final content
+          if (oc?.traceContext) {
+            const finalContent = await memory.getWorkingMemory({
+              conversationId: options?.conversationId,
+              userId: options?.userId,
+            });
+            const rootSpan = oc.traceContext.getRootSpan();
+            rootSpan.setAttribute("agent.workingMemory.finalContent", finalContent || "");
+            rootSpan.setAttribute("agent.workingMemory.lastUpdateTime", new Date().toISOString());
+          }
+
+          return `Working memory ${mode === "replace" ? "replaced" : "updated (appended)"} successfully.`;
         },
       }),
     );
@@ -2856,11 +2935,19 @@ export class Agent {
         name: "clear_working_memory",
         description: "Clear the working memory content",
         parameters: z.object({}),
-        execute: async () => {
+        execute: async (_, oc) => {
           await memory.clearWorkingMemory({
             conversationId: options?.conversationId,
             userId: options?.userId,
           });
+
+          // Update root span to indicate cleared state
+          if (oc?.traceContext) {
+            const rootSpan = oc.traceContext.getRootSpan();
+            rootSpan.setAttribute("agent.workingMemory.finalContent", "");
+            rootSpan.setAttribute("agent.workingMemory.lastUpdateTime", new Date().toISOString());
+          }
+
           return "Working memory cleared.";
         },
       }),

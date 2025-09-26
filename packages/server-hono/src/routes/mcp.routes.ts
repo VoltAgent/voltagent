@@ -25,13 +25,100 @@ import {
 import { toFetchResponse, toReqRes } from "fetch-to-node";
 import { streamSSE } from "hono/streaming";
 import { HonoSseBridge } from "../mcp/hono-sse-bridge";
+import { z } from "../zod-openapi-compat";
 import type { OpenAPIHonoType } from "../zod-openapi-compat";
+import { createPathParam, requirePathParam } from "./path-params";
 
 interface McpDeps {
   mcp?: {
     registry: MCPServerRegistry;
   };
 }
+
+const toOpenApiPath = (path: string) => path.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
+
+const serverIdParam = () => createPathParam("serverId", "The ID of the MCP server", "server-123");
+const toolNameParam = () => createPathParam("toolName", "The name of the MCP tool", "summarize");
+const promptNameParam = () =>
+  createPathParam("promptName", "The name of the MCP prompt", "list-open-issues");
+
+const getServerRoute = {
+  ...MCP_ROUTES.getServer,
+  path: toOpenApiPath(MCP_ROUTES.getServer.path),
+  request: {
+    params: z.object({ serverId: serverIdParam() }),
+  },
+};
+
+const listToolsRoute = {
+  ...MCP_ROUTES.listTools,
+  path: toOpenApiPath(MCP_ROUTES.listTools.path),
+  request: {
+    params: z.object({ serverId: serverIdParam() }),
+  },
+};
+
+const invokeToolRoute = {
+  ...MCP_ROUTES.invokeTool,
+  path: toOpenApiPath(MCP_ROUTES.invokeTool.path),
+  request: {
+    params: z.object({
+      serverId: serverIdParam(),
+      toolName: toolNameParam(),
+    }),
+  },
+};
+
+const setLogLevelRoute = {
+  ...MCP_ROUTES.setLogLevel,
+  path: toOpenApiPath(MCP_ROUTES.setLogLevel.path),
+  request: {
+    params: z.object({ serverId: serverIdParam() }),
+  },
+};
+
+const listPromptsRoute = {
+  ...MCP_ROUTES.listPrompts,
+  path: toOpenApiPath(MCP_ROUTES.listPrompts.path),
+  request: {
+    params: z.object({ serverId: serverIdParam() }),
+  },
+};
+
+const getPromptRoute = {
+  ...MCP_ROUTES.getPrompt,
+  path: toOpenApiPath(MCP_ROUTES.getPrompt.path),
+  request: {
+    params: z.object({
+      serverId: serverIdParam(),
+      promptName: promptNameParam(),
+    }),
+  },
+};
+
+const listResourcesRoute = {
+  ...MCP_ROUTES.listResources,
+  path: toOpenApiPath(MCP_ROUTES.listResources.path),
+  request: {
+    params: z.object({ serverId: serverIdParam() }),
+  },
+};
+
+const readResourceRoute = {
+  ...MCP_ROUTES.readResource,
+  path: toOpenApiPath(MCP_ROUTES.readResource.path),
+  request: {
+    params: z.object({ serverId: serverIdParam() }),
+  },
+};
+
+const listResourceTemplatesRoute = {
+  ...MCP_ROUTES.listResourceTemplates,
+  path: toOpenApiPath(MCP_ROUTES.listResourceTemplates.path),
+  request: {
+    params: z.object({ serverId: serverIdParam() }),
+  },
+};
 
 export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: Logger) {
   const registry = deps.mcp?.registry;
@@ -41,26 +128,33 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return;
   }
 
+  const registeredServers = typeof registry.list === "function" ? registry.list() : [];
+
+  if (registeredServers.length === 0) {
+    logger.debug("No MCP servers registered; skipping MCP routes");
+    return;
+  }
+
   app.openapi(MCP_ROUTES.listServers, (c) => {
     const response = handleListMcpServers(registry);
     return c.json(response, response.success ? 200 : 500);
   });
 
-  app.openapi(MCP_ROUTES.getServer, (c) => {
-    const serverId = c.req.param("serverId");
+  app.openapi(getServerRoute as any, (c) => {
+    const serverId = requirePathParam(c, "serverId");
     const response = handleGetMcpServer(registry, serverId);
     return c.json(response, response.success ? 200 : 404);
   });
 
-  app.openapi(MCP_ROUTES.listTools, (c) => {
-    const serverId = c.req.param("serverId");
+  app.openapi(listToolsRoute as any, (c) => {
+    const serverId = requirePathParam(c, "serverId");
     const response = handleListMcpServerTools(registry, logger, serverId);
     return c.json(response, response.success ? 200 : 404);
   });
 
-  app.openapi(MCP_ROUTES.invokeTool, async (c) => {
-    const serverId = c.req.param("serverId");
-    const toolName = c.req.param("toolName");
+  app.openapi(invokeToolRoute as any, async (c) => {
+    const serverId = requirePathParam(c, "serverId");
+    const toolName = requirePathParam(c, "toolName");
     let body: McpInvokeToolRequest = {};
 
     try {
@@ -78,8 +172,8 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.openapi(MCP_ROUTES.setLogLevel, async (c) => {
-    const serverId = c.req.param("serverId");
+  app.openapi(setLogLevelRoute as any, async (c) => {
+    const serverId = requirePathParam(c, "serverId");
     let body: McpSetLogLevelRequest | undefined;
 
     try {
@@ -104,8 +198,8 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.openapi(MCP_ROUTES.listPrompts, async (c) => {
-    const serverId = c.req.param("serverId");
+  app.openapi(listPromptsRoute as any, async (c) => {
+    const serverId = requirePathParam(c, "serverId");
     const response = await handleListMcpPrompts(registry, logger, serverId);
     const status = response.success
       ? 200
@@ -116,9 +210,9 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.openapi(MCP_ROUTES.getPrompt, async (c) => {
-    const serverId = c.req.param("serverId");
-    const promptName = c.req.param("promptName");
+  app.openapi(getPromptRoute as any, async (c) => {
+    const serverId = requirePathParam(c, "serverId");
+    const promptName = requirePathParam(c, "promptName");
     const rawArguments = c.req.query("arguments");
     let promptArguments: Record<string, string> | undefined;
 
@@ -164,8 +258,8 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.openapi(MCP_ROUTES.listResources, async (c) => {
-    const serverId = c.req.param("serverId");
+  app.openapi(listResourcesRoute as any, async (c) => {
+    const serverId = requirePathParam(c, "serverId");
     const response = await handleListMcpResources(registry, logger, serverId);
     const status = response.success
       ? 200
@@ -176,8 +270,8 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.openapi(MCP_ROUTES.readResource, async (c) => {
-    const serverId = c.req.param("serverId");
+  app.openapi(readResourceRoute as any, async (c) => {
+    const serverId = requirePathParam(c, "serverId");
     const resourceUri = c.req.query("uri") ?? undefined;
 
     if (!resourceUri) {
@@ -195,8 +289,8 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
     return c.json(response, status);
   });
 
-  app.openapi(MCP_ROUTES.listResourceTemplates, async (c) => {
-    const serverId = c.req.param("serverId");
+  app.openapi(listResourceTemplatesRoute as any, async (c) => {
+    const serverId = requirePathParam(c, "serverId");
     const response = await handleListMcpResourceTemplates(registry, logger, serverId);
     const status = response.success
       ? 200
@@ -208,19 +302,24 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
   });
 
   app.all(`${DEFAULT_MCP_ROUTE_PREFIX}/:serverId/${DEFAULT_MCP_HTTP_SEGMENT}`, async (c) => {
-    const serverId = c.req.param("serverId");
+    const serverId = requirePathParam(c, "serverId");
     const { server, metadata } = lookupMcpServer(registry, serverId);
+    const typedServer = server as any;
 
-    const httpEnabled = metadata?.protocols?.http ?? server?.hasProtocol?.("http") ?? true;
+    const httpEnabled = metadata?.protocols?.http ?? typedServer?.hasProtocol?.("http") ?? true;
 
-    if (!httpEnabled || !server || typeof server.handleStreamableHttpRequest !== "function") {
+    if (
+      !httpEnabled ||
+      !typedServer ||
+      typeof typedServer.handleStreamableHttpRequest !== "function"
+    ) {
       return c.json({ error: `MCP server '${serverId}' not available for HTTP transport` }, 404);
     }
 
     const { req, res } = toReqRes(c.req.raw);
     const sessionId =
       c.req.header("mcp-session-id") ?? c.req.query(MCP_SESSION_QUERY_PARAM) ?? undefined;
-    const handleStreamableHttpRequest = server.handleStreamableHttpRequest.bind(server);
+    const handleStreamableHttpRequest = typedServer.handleStreamableHttpRequest.bind(typedServer);
     const { httpPath } = buildMcpRoutePaths(serverId);
 
     try {
@@ -243,23 +342,24 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
   });
 
   app.get(`${DEFAULT_MCP_ROUTE_PREFIX}/:serverId/${DEFAULT_MCP_SSE_SEGMENT}`, async (c) => {
-    const serverId = c.req.param("serverId");
+    const serverId = requirePathParam(c, "serverId");
     const { server, metadata } = lookupMcpServer(registry, serverId);
+    const typedServer = server as any;
     const { messagePath, ssePath } = buildMcpRoutePaths(serverId);
 
-    const sseEnabled = metadata?.protocols?.sse ?? server?.hasProtocol?.("sse") ?? true;
+    const sseEnabled = metadata?.protocols?.sse ?? typedServer?.hasProtocol?.("sse") ?? true;
 
-    if (!sseEnabled || !server) {
+    if (!sseEnabled || !typedServer) {
       return c.json({ error: `MCP server '${serverId}' not available for SSE transport` }, 404);
     }
 
     const createExternalSseSession =
-      typeof server.createExternalSseSession === "function"
-        ? server.createExternalSseSession.bind(server)
+      typeof typedServer.createExternalSseSession === "function"
+        ? typedServer.createExternalSseSession.bind(typedServer)
         : undefined;
     const closeExternalSseSession =
-      typeof server.closeExternalSseSession === "function"
-        ? server.closeExternalSseSession.bind(server)
+      typeof typedServer.closeExternalSseSession === "function"
+        ? typedServer.closeExternalSseSession.bind(typedServer)
         : undefined;
 
     if (!createExternalSseSession) {
@@ -288,19 +388,20 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
   });
 
   app.post(`${DEFAULT_MCP_ROUTE_PREFIX}/:serverId/${DEFAULT_MCP_MESSAGES_SEGMENT}`, async (c) => {
-    const serverId = c.req.param("serverId");
+    const serverId = requirePathParam(c, "serverId");
     const { server, metadata } = lookupMcpServer(registry, serverId);
+    const typedServer = server as any;
     const { messagePath } = buildMcpRoutePaths(serverId);
 
-    const sseEnabled = metadata?.protocols?.sse ?? server?.hasProtocol?.("sse") ?? true;
+    const sseEnabled = metadata?.protocols?.sse ?? typedServer?.hasProtocol?.("sse") ?? true;
 
-    if (!sseEnabled || !server) {
+    if (!sseEnabled || !typedServer) {
       return c.json({ error: `MCP server '${serverId}' not available for SSE transport` }, 404);
     }
 
     const handleExternalSseMessage =
-      typeof server.handleExternalSseMessage === "function"
-        ? server.handleExternalSseMessage.bind(server)
+      typeof typedServer.handleExternalSseMessage === "function"
+        ? typedServer.handleExternalSseMessage.bind(typedServer)
         : undefined;
 
     const sessionId = c.req.query(MCP_SESSION_QUERY_PARAM);
