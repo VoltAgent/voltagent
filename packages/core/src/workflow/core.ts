@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { z } from "zod";
@@ -6,8 +5,9 @@ import type { UsageInfo } from "../agent/providers";
 import { LoggerProxy } from "../logger";
 import { Memory as MemoryV2 } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
-import { VoltAgentObservability } from "../observability";
+import { type VoltAgentObservability, createVoltAgentObservability } from "../observability";
 import { AgentRegistry } from "../registries/agent-registry";
+import { randomUUID } from "../utils/id";
 import type { WorkflowExecutionContext } from "./context";
 import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
@@ -670,6 +670,8 @@ export function createWorkflow<
   });
 
   // Get observability instance (use provided, global, or create default)
+  let cachedObservability: VoltAgentObservability | undefined;
+
   const getObservability = (): VoltAgentObservability => {
     // Priority 1: Workflow's own observability
     if (workflowObservability) {
@@ -680,10 +682,12 @@ export function createWorkflow<
     if (globalObservability) {
       return globalObservability;
     }
-    // Priority 3: Create default instance for standalone workflow usage
-    return new VoltAgentObservability({
-      serviceName: `workflow-${name}`,
-    });
+    if (!cachedObservability) {
+      cachedObservability = createVoltAgentObservability({
+        serviceName: `workflow-${name}`,
+      });
+    }
+    return cachedObservability;
   };
 
   // Set default schemas if not provided
@@ -704,7 +708,7 @@ export function createWorkflow<
     if (options?.resumeFrom?.executionId) {
       executionId = options.resumeFrom.executionId;
     } else {
-      executionId = options?.executionId || crypto.randomUUID();
+      executionId = options?.executionId || randomUUID();
     }
 
     // Only create stream controller if one is provided (for streaming execution)

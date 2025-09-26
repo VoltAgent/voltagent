@@ -24,6 +24,24 @@ import type { VoltAgentObservability } from "../../observability";
 import type { BaseGenerationOptions } from "../agent";
 import type { BaseMessage } from "../providers/base/types";
 
+type SpanBridge = {
+  ___voltagent_push_span?: (span: Span) => void;
+  ___voltagent_pop_span?: (span: Span) => void;
+};
+
+const spanBridge = globalThis as typeof globalThis & SpanBridge;
+
+const pushActiveSpan = (span: Span) => {
+  spanBridge.___voltagent_push_span?.(span);
+};
+
+const popActiveSpan = (span: Span) => {
+  spanBridge.___voltagent_pop_span?.(span);
+};
+
+const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
+  typeof value === "object" && value !== null && typeof (value as any).then === "function";
+
 export interface TraceContextOptions {
   agentId: string;
   agentName?: string;
@@ -40,15 +58,12 @@ export class AgentTraceContext {
   private tracer: Tracer;
   private commonAttributes: Record<string, any>;
   private activeContext: Context;
-  // @ts-ignore
-  private observability: VoltAgentObservability;
 
   constructor(
     observability: VoltAgentObservability,
     operationName: string,
     options: TraceContextOptions,
   ) {
-    this.observability = observability;
     this.tracer = observability.getTracer();
 
     // Store common attributes once - these will be inherited by all child spans
@@ -118,6 +133,8 @@ export class AgentTraceContext {
 
     // Set active context with root span
     this.activeContext = trace.setSpan(context.active(), this.rootSpan);
+
+    pushActiveSpan(this.rootSpan);
   }
 
   /**
@@ -179,7 +196,20 @@ export class AgentTraceContext {
    */
   async withSpan<T>(span: Span, fn: () => T | Promise<T>): Promise<T> {
     const spanContext = trace.setSpan(this.activeContext, span);
-    return context.with(spanContext, fn);
+    pushActiveSpan(span);
+    try {
+      const result = context.with(spanContext, fn);
+      if (isPromiseLike(result)) {
+        return (result as unknown as Promise<T>).finally(() => {
+          popActiveSpan(span);
+        }) as T;
+      }
+      popActiveSpan(span);
+      return result as T;
+    } catch (error) {
+      popActiveSpan(span);
+      throw error;
+    }
   }
 
   /**
@@ -306,6 +336,7 @@ export class AgentTraceContext {
       }
     }
     this.rootSpan.end();
+    popActiveSpan(this.rootSpan);
   }
 
   /**

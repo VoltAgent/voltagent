@@ -6,10 +6,14 @@ import { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
 import { getGlobalLogger } from "./logger";
 import { MCPServerRegistry } from "./mcp";
-import { VoltAgentObservability } from "./observability/voltagent-observability";
+import {
+  ServerlessVoltAgentObservability,
+  type VoltAgentObservability,
+  createVoltAgentObservability,
+} from "./observability";
 import { AgentRegistry } from "./registries/agent-registry";
-import type { IServerProvider, VoltAgentOptions } from "./types";
-import { checkForUpdates } from "./utils/update";
+import type { IServerProvider, IServerlessProvider, VoltAgentOptions } from "./types";
+import { isServerlessRuntime } from "./utils/runtime";
 import { isValidVoltOpsKeys } from "./utils/voltops-validation";
 import { VoltOpsClient } from "./voltops/client";
 import type { Workflow } from "./workflow";
@@ -23,39 +27,29 @@ export class VoltAgent {
   private registry: AgentRegistry;
   private workflowRegistry: WorkflowRegistry;
   private serverInstance?: IServerProvider;
+  private serverlessProvider?: IServerlessProvider;
   private logger: Logger;
   private observability?: VoltAgentObservability;
   private readonly mcpServers = new Set<MCPServerLike>();
   private readonly mcpServerRegistry = new MCPServerRegistry();
   private readonly a2aServers = new Set<A2AServerLike>();
   private readonly a2aServerRegistry = new A2AServerRegistry();
+  private readonly ensureEnvironmentBinding: (env?: Record<string, unknown>) => void;
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
+    this.ensureEnvironmentBinding = () => {
+      this.ensureEnvironment();
+    };
 
     // Initialize logger
     this.logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
 
-    // Initialize OpenTelemetry observability
-    // This enables tracing for all agents and workflows
-    // This is the SINGLE global provider for the entire application
-    this.observability =
-      options.observability ||
-      new VoltAgentObservability({
-        serviceName: "voltagent",
-      });
-
-    // Set global observability in registry for all agents to use
-    this.registry.setGlobalObservability(this.observability);
-
-    // Setup graceful shutdown handlers
-    this.setupShutdownHandlers();
-
-    // NEW: Handle unified VoltOps client
+    // Handle unified VoltOps client before observability so factories can reuse it
     if (options.voltOpsClient) {
       this.registry.setGlobalVoltOpsClient(options.voltOpsClient);
 
-      // Note: VoltAgentObservability already handles OpenTelemetry initialization
+      // Note: VoltAgentObservability already handles OpenTelemetry initialization when provided
     }
 
     // Handle global logger
@@ -66,28 +60,26 @@ export class VoltAgent {
 
     // telemetryExporter removed - migrated to OpenTelemetry
 
-    // Auto-configure VoltOpsClient from environment if not provided
-    if (!options.voltOpsClient) {
-      const publicKey = process.env.VOLTAGENT_PUBLIC_KEY;
-      const secretKey = process.env.VOLTAGENT_SECRET_KEY;
+    // Initialize OpenTelemetry observability
+    // This enables tracing for all agents and workflows
+    // This is the SINGLE global provider for the entire application
+    const observabilityOption = options.observability;
+    this.observability = observabilityOption
+      ? observabilityOption
+      : createVoltAgentObservability({
+          serviceName: "voltagent",
+        });
 
-      if (publicKey && secretKey && isValidVoltOpsKeys(publicKey, secretKey)) {
-        try {
-          const autoClient = new VoltOpsClient({
-            publicKey,
-            secretKey,
-          });
-
-          this.registry.setGlobalVoltOpsClient(autoClient);
-          // Note: VoltAgentObservability already handles OpenTelemetry initialization
-
-          this.logger.debug("VoltOpsClient auto-configured from environment variables");
-        } catch (error) {
-          // Silent fail - don't break the app
-          this.logger.debug("Could not auto-configure VoltOpsClient", { error });
-        }
-      }
+    if (this.observability) {
+      // Set global observability in registry for all agents to use
+      this.registry.setGlobalObservability(this.observability);
     }
+
+    // Ensure any existing environment variables are reflected in runtime configuration
+    this.ensureEnvironment();
+
+    // Setup graceful shutdown handlers
+    this.setupShutdownHandlers();
 
     // ✅ NOW register agents - they can access global telemetry exporter
     this.registerAgents(options.agents);
@@ -111,6 +103,24 @@ export class VoltAgent {
         a2a: {
           registry: this.a2aServerRegistry,
         },
+        ensureEnvironment: this.ensureEnvironmentBinding,
+      });
+    }
+
+    if (options.serverless) {
+      this.serverlessProvider = options.serverless({
+        agentRegistry: this.registry,
+        workflowRegistry: this.workflowRegistry,
+        logger: this.logger,
+        voltOpsClient: this.registry.getGlobalVoltOpsClient(),
+        observability: this.observability,
+        mcp: {
+          registry: this.mcpServerRegistry,
+        },
+        a2a: {
+          registry: this.a2aServerRegistry,
+        },
+        ensureEnvironment: this.ensureEnvironmentBinding,
       });
     }
 
@@ -140,15 +150,89 @@ export class VoltAgent {
     if (this.serverInstance) {
       this.startServer().catch((err) => {
         this.logger.error("Failed to start server:", err);
-        process.exit(1);
+        if (typeof process !== "undefined" && typeof process.exit === "function") {
+          process.exit(1);
+        }
       });
     }
+  }
+
+  serverless(): IServerlessProvider {
+    if (!this.serverlessProvider) {
+      throw new Error("No serverless provider configured. Pass serverless option to VoltAgent");
+    }
+
+    return this.serverlessProvider;
+  }
+
+  private ensureEnvironment(): void {
+    this.autoConfigureVoltOpsClientFromEnv();
+    this.syncServerlessObservabilityRemote();
+  }
+
+  private autoConfigureVoltOpsClientFromEnv(): void {
+    if (this.registry.getGlobalVoltOpsClient()) {
+      return;
+    }
+
+    if (typeof process === "undefined" || !process?.env) {
+      return;
+    }
+
+    const publicKey = process.env.VOLTAGENT_PUBLIC_KEY;
+    const secretKey = process.env.VOLTAGENT_SECRET_KEY;
+
+    if (!publicKey || !secretKey || !isValidVoltOpsKeys(publicKey, secretKey)) {
+      return;
+    }
+
+    try {
+      const autoClient = new VoltOpsClient({
+        publicKey,
+        secretKey,
+      });
+
+      this.registry.setGlobalVoltOpsClient(autoClient);
+      this.logger.debug("VoltOpsClient auto-configured from environment variables");
+    } catch (error) {
+      // Silent fail - don't break the app
+      this.logger.debug("Could not auto-configure VoltOpsClient", { error });
+    }
+  }
+
+  private syncServerlessObservabilityRemote(): void {
+    if (!(this.observability instanceof ServerlessVoltAgentObservability)) {
+      return;
+    }
+
+    const voltOpsClient = this.registry.getGlobalVoltOpsClient();
+    if (!voltOpsClient) {
+      return;
+    }
+
+    const baseUrl = voltOpsClient.getApiUrl().replace(/\/$/, "");
+    const headers = voltOpsClient.getAuthHeaders();
+
+    this.observability.updateServerlessRemote({
+      traces: {
+        url: `${baseUrl}/api/public/otel/v1/traces`,
+        headers,
+      },
+      logs: {
+        url: `${baseUrl}/api/public/otel/v1/logs`,
+        headers,
+      },
+    });
   }
 
   /**
    * Setup graceful shutdown handlers
    */
   private setupShutdownHandlers(): void {
+    if (typeof process === "undefined" || typeof process.on !== "function") {
+      return;
+    }
+
     const handleSignal = async (signal: string) => {
       this.logger.info(`[VoltAgent] Received ${signal}...`);
 
@@ -158,12 +242,18 @@ export class VoltAgent {
 
         // Only call process.exit if we're the sole handler
         // This allows other frameworks to perform their own cleanup
-        if (this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT")) {
+        if (
+          this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT") &&
+          typeof process.exit === "function"
+        ) {
           process.exit(0);
         }
       } catch (error) {
         this.logger.error("[VoltAgent] Error during shutdown:", { error });
-        if (this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT")) {
+        if (
+          this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT") &&
+          typeof process.exit === "function"
+        ) {
           process.exit(1);
         }
       }
@@ -186,6 +276,10 @@ export class VoltAgent {
   }
 
   private isSoleSignalHandler(event: "SIGTERM" | "SIGINT"): boolean {
+    if (typeof process === "undefined" || typeof process.listeners !== "function") {
+      return false;
+    }
+
     return process.listeners(event).length === 1;
   }
 
@@ -193,35 +287,12 @@ export class VoltAgent {
    * Check for dependency updates
    */
   private async checkDependencies(): Promise<void> {
-    try {
-      // Quick cache check first
-      const cachedResult = await checkForUpdates(undefined, {
-        filter: "@voltagent",
-        useCache: true,
-      });
-
-      // Show cached results if available
-      if (cachedResult?.hasUpdates) {
-        this.logger.trace("\n");
-        this.logger.trace(cachedResult.message);
-        this.logger.trace("Run 'npm run volt update' to update VoltAgent packages");
-      }
-
-      // Schedule background update after 100ms
-      setTimeout(async () => {
-        try {
-          await checkForUpdates(undefined, {
-            filter: "@voltagent",
-            useCache: true,
-            forceRefresh: true,
-          });
-        } catch (_error) {
-          // Silently ignore background update errors
-        }
-      }, 100);
-    } catch (_error) {
-      // Silently ignore all errors
+    if (typeof process === "undefined" || isServerlessRuntime() || !process.versions?.node) {
+      return;
     }
+
+    // Dependency checks rely on Node-specific tooling; intentionally disabled in edge builds.
+    // Consumers can run `pnpm test:all` or `pnpm lint` in Node environments to surface issues.
   }
 
   /**

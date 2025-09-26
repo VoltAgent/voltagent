@@ -18,11 +18,7 @@ import {
   type SpanProcessor,
   TraceIdRatioBasedSampler,
 } from "@opentelemetry/sdk-trace-base";
-
-export interface SamplingConfig {
-  strategy?: "always" | "never" | "ratio" | "parent";
-  ratio?: number;
-}
+import type { ObservabilitySamplingConfig } from "../types";
 
 /**
  * A SpanProcessor that wraps another processor and applies sampling
@@ -33,7 +29,7 @@ export class SamplingWrapperProcessor implements SpanProcessor {
 
   constructor(
     private wrappedProcessor: SpanProcessor,
-    samplingConfig?: SamplingConfig,
+    samplingConfig?: ObservabilitySamplingConfig,
   ) {
     // Initialize sampler based on strategy
     const strategy = samplingConfig?.strategy || "always";

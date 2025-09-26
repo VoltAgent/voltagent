@@ -142,6 +142,15 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Deployment",
+      items: [
+        "deployment/overview",
+        "deployment/cloudflare-workers",
+        "deployment/netlify-functions",
+      ],
+    },
+    {
+      type: "category",
       label: "Evals",
       items: ["evals/overview", "evals/quick-start"],
     },

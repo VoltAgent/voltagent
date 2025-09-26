@@ -3,10 +3,11 @@
  * Used when @voltagent/logger is not available
  */
 
-import { EventEmitter } from "node:events";
-import { logs } from "@opentelemetry/api-logs";
+import { context, trace } from "@opentelemetry/api";
 import type { LogBuffer, LogEntry, LogFilter, LogFn, Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
+import { getEnvVar } from "../utils/runtime";
+import { SimpleEventEmitter } from "../utils/simple-event-emitter";
 
 /**
  * Simple console logger that implements the Logger interface
@@ -38,10 +39,14 @@ export class ConsoleLogger implements Logger {
   private emitOtelLog(level: string, msg: string, obj?: object): void {
     // Check if OpenTelemetry LoggerProvider is available via globalThis
     const loggerProvider = (globalThis as any).___voltagent_otel_logger_provider;
-    if (!loggerProvider) return;
+    if (!loggerProvider) {
+      return;
+    }
 
     try {
-      const otelLogger = logs.getLogger("voltagent-console", "1.0.0");
+      const otelLogger = loggerProvider.getLogger("voltagent-console", "1.0.0", {
+        includeTraceContext: true,
+      });
 
       // Map severity to OpenTelemetry severity number
       const severityMap: Record<string, number> = {
@@ -55,7 +60,17 @@ export class ConsoleLogger implements Logger {
 
       const severityNumber = severityMap[level] || 9;
 
-      // Emit the log record
+      // Emit the log record while preserving the current context so trace/span ids propagate
+      const globalSpanGetter = (
+        globalThis as typeof globalThis & {
+          ___voltagent_get_active_span?: () => ReturnType<typeof trace.getActiveSpan>;
+        }
+      ).___voltagent_get_active_span;
+
+      const activeSpan = trace.getActiveSpan() ?? globalSpanGetter?.();
+      const activeContext = context.active();
+      const logContext = activeSpan ? trace.setSpan(activeContext, activeSpan) : activeContext;
+
       otelLogger.emit({
         severityNumber,
         severityText: level.toUpperCase(),
@@ -64,26 +79,27 @@ export class ConsoleLogger implements Logger {
           ...this.context,
           ...obj,
         },
+        context: logContext,
       });
-    } catch {
-      // Silently ignore errors in OpenTelemetry emission
+    } catch (error) {
+      console.error("[ConsoleLogger] Failed to emit OTEL log", error);
     }
   }
 
   private createLogFn(level: string, consoleFn: (...args: any[]) => void): LogFn {
     return (msgOrObj: string | object, ...args: any[]): void => {
-      if (!this.shouldLog(level)) return;
-
       let msg: string;
       let obj: object | undefined;
 
       if (typeof msgOrObj === "string") {
         msg = msgOrObj;
         obj = args[0];
-        consoleFn(this.formatMessage(level, msg, obj));
       } else {
         msg = args[0] || "";
         obj = msgOrObj;
+      }
+
+      if (this.shouldLog(level)) {
         consoleFn(this.formatMessage(level, msg, obj));
       }
 
@@ -112,17 +128,19 @@ export function createConsoleLogger(options: { name?: string; level?: string } =
   if (options.name) {
     context.component = options.name;
   }
-  const defaultLevel =
-    process.env.VOLTAGENT_LOG_LEVEL ||
-    process.env.LOG_LEVEL ||
-    (process.env.NODE_ENV === "production" ? "error" : "info");
-  return new ConsoleLogger(context, options.level || defaultLevel);
+  const resolvedLevel =
+    options.level ||
+    getEnvVar("VOLTAGENT_LOG_LEVEL") ||
+    getEnvVar("LOG_LEVEL") ||
+    (getEnvVar("NODE_ENV") === "production" ? "error" : "info");
+
+  return new ConsoleLogger(context, resolvedLevel);
 }
 
 /**
  * Simple in-memory log buffer implementation with event emitter
  */
-export class InMemoryLogBuffer extends EventEmitter implements LogBuffer {
+export class InMemoryLogBuffer extends SimpleEventEmitter implements LogBuffer {
   private logs: LogEntry[] = [];
   private maxSize: number;
 

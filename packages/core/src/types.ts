@@ -10,7 +10,7 @@ import type { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
 import type { AgentStatus } from "./agent/types";
 import type { MCPServerRegistry } from "./mcp";
-import type { VoltAgentObservability } from "./observability/voltagent-observability";
+import type { VoltAgentObservability } from "./observability";
 import type { ToolStatusInfo } from "./tool";
 import type { VoltOpsClient } from "./voltops/client";
 import type { WorkflowChain } from "./workflow/chain";
@@ -63,6 +63,24 @@ export interface IServerProvider {
   isRunning(): boolean;
 }
 
+export type ServerlessRequestHandler = (req: Request, ...args: unknown[]) => Promise<Response>;
+
+export type CloudflareFetchHandler = (
+  req: Request,
+  env: Record<string, unknown>,
+  ctx: unknown,
+) => Promise<Response>;
+
+export interface IServerlessProvider {
+  handleRequest(request: Request): Promise<Response>;
+  toCloudflareWorker(): { fetch: CloudflareFetchHandler };
+  toVercelEdge(): ServerlessRequestHandler;
+  toDeno(): ServerlessRequestHandler;
+  auto(): { fetch: CloudflareFetchHandler } | ServerlessRequestHandler;
+}
+
+export type ServerlessProviderFactory = (deps: ServerProviderDeps) => IServerlessProvider;
+
 /**
  * Server provider dependencies
  */
@@ -102,6 +120,7 @@ export interface ServerProviderDeps {
   a2a?: {
     registry: A2AServerRegistry;
   };
+  ensureEnvironment?: (env?: Record<string, unknown>) => void;
 }
 
 /**
@@ -171,6 +190,12 @@ export type VoltAgentOptions = {
    * Example: honoServer({ port: 3141, enableSwaggerUI: true })
    */
   server?: ServerProviderFactory;
+
+  /**
+   * Serverless provider factory function for fetch-based runtimes
+   * Example: serverlessHono({ corsOrigin: '*' })
+   */
+  serverless?: ServerlessProviderFactory;
 
   /**
    * Unified VoltOps client for telemetry and prompt management

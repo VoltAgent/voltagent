@@ -1,3 +1,4 @@
+import { context, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import type { LogFn, Logger } from "@voltagent/internal";
 import { getGlobalLogger } from "./index";
@@ -31,13 +32,15 @@ export class LoggerProxy implements Logger {
   /**
    * Emit log via OpenTelemetry Logs API if available
    */
-  private emitOtelLog(severity: string, msg: string, context?: object): void {
+  private emitOtelLog(severity: string, msg: string, metadata?: object): void {
     // Check if OpenTelemetry LoggerProvider is available via globalThis
     const loggerProvider = (globalThis as any).___voltagent_otel_logger_provider;
     if (!loggerProvider) return;
 
     try {
-      const otelLogger = logs.getLogger("voltagent", "1.0.0");
+      const otelLogger = logs.getLogger("voltagent", "1.0.0", {
+        includeTraceContext: true,
+      });
 
       // Map severity to OpenTelemetry severity number
       const severityMap: Record<string, number> = {
@@ -52,14 +55,25 @@ export class LoggerProxy implements Logger {
       const severityNumber = severityMap[severity] || 9;
 
       // Emit the log record
+      const globalSpanGetter = (
+        globalThis as typeof globalThis & {
+          ___voltagent_get_active_span?: () => ReturnType<typeof trace.getActiveSpan>;
+        }
+      ).___voltagent_get_active_span;
+
+      const activeSpan = trace.getActiveSpan() ?? globalSpanGetter?.();
+      const activeContext = context.active();
+      const logContext = activeSpan ? trace.setSpan(activeContext, activeSpan) : activeContext;
+
       otelLogger.emit({
         severityNumber,
         severityText: severity.toUpperCase(),
         body: msg,
         attributes: {
           ...this.bindings,
-          ...context,
+          ...metadata,
         },
+        context: logContext,
       });
     } catch {
       // Silently ignore errors in OpenTelemetry emission

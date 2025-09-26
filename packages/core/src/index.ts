@@ -134,6 +134,7 @@ export * from "./mcp";
 export * from "./a2a";
 export { AgentRegistry } from "./registries/agent-registry";
 export { WorkflowRegistry } from "./workflow/registry";
+export * from "./observability";
 export * from "./utils/update";
 export * from "./voice";
 // TelemetryExporter removed - migrated to OpenTelemetry
@@ -142,8 +143,10 @@ export type { UsageInfo, StreamPart } from "./agent/providers";
 export type {
   VoltAgentOptions,
   IServerProvider,
+  IServerlessProvider,
   ServerProviderDeps,
   ServerProviderFactory,
+  ServerlessProviderFactory,
   ServerAgentResponse,
   ServerWorkflowResponse,
   ServerApiResponse,

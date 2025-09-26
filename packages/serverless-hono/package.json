@@ -1,0 +1,41 @@
+{
+  "name": "@voltagent/serverless-hono",
+  "description": "Serverless (fetch-based) runtime provider for VoltAgent using Hono",
+  "version": "1.0.0",
+  "dependencies": {
+    "@voltagent/internal": "^0.0.11",
+    "@voltagent/server-core": "^1.0.11",
+    "hono": "^4.7.7"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "peerDependencies": {
+    "@voltagent/core": "^1.0.0",
+    "@voltagent/server-core": "^1.0.0",
+    "hono": "^4.0.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts"
+}

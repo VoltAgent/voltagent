@@ -4,14 +4,14 @@
  * Streams OpenTelemetry log records via WebSocket for real-time monitoring
  */
 
-import { EventEmitter } from "node:events";
 import type { Context } from "@opentelemetry/api";
 import { trace } from "@opentelemetry/api";
 import type { LogRecordProcessor, ReadableLogRecord } from "@opentelemetry/sdk-logs";
+import { SimpleEventEmitter } from "../../utils/simple-event-emitter";
 import type { ObservabilityLogRecord } from "../types";
 
 export class WebSocketLogProcessor implements LogRecordProcessor {
-  private static emitter = new EventEmitter();
+  private static emitter = new SimpleEventEmitter();
 
   /**
    * Called when a log record is emitted

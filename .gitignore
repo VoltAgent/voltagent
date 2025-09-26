@@ -171,3 +171,5 @@ node_modules/
 .taskmaster
 
 !packages/core/src/observability/logs
+# Local Netlify folder
+.netlify

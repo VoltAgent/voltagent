@@ -3,9 +3,6 @@
   "description": "Backend framework with a monorepo structure using pnpm and lerna",
   "version": "0.1.0",
   "author": "",
-  "dependencies": {
-    "@opentelemetry/context-async-hooks": "^2.0.1"
-  },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.17.4",
     "@biomejs/biome": "^1.9.4",

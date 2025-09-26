@@ -1,5 +1,5 @@
-import { EventEmitter } from "node:events";
 import { LoggerProxy } from "../logger";
+import { SimpleEventEmitter } from "../utils/simple-event-emitter";
 import { serializeWorkflowStep } from "./core";
 import type { Workflow, WorkflowExecutionResult, WorkflowSuspendController } from "./types";
 
@@ -32,7 +32,7 @@ declare global {
   var ___voltagent_workflow_registry: WorkflowRegistry | undefined;
 }
 
-export class WorkflowRegistry extends EventEmitter {
+export class WorkflowRegistry extends SimpleEventEmitter {
   // Avoid module-level static for cross-bundle consistency
   // private static instance: WorkflowRegistry;
   private workflows: Map<string, RegisteredWorkflow> = new Map();

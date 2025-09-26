@@ -1,4 +1,3 @@
-import * as crypto from "node:crypto";
 import type { ModelMessage, ProviderOptions, SystemModelMessage } from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
 import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
@@ -34,12 +33,13 @@ import { LogEvents, LoggerProxy } from "../logger";
 import { ActionType, buildAgentLogMessage } from "../logger/message-builder";
 import type { Memory, MemoryUpdateMode } from "../memory";
 import { MemoryManager } from "../memory/manager/memory-manager";
-import { VoltAgentObservability } from "../observability";
+import { type VoltAgentObservability, createVoltAgentObservability } from "../observability";
 import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
+import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import { convertUsage } from "../utils/usage-converter";
@@ -927,7 +927,7 @@ export class Agent {
         if (oc.userId && oc.conversationId) {
           // Create UIMessage from the object response
           const message: UIMessage = {
-            id: crypto.randomUUID(),
+            id: randomUUID(),
             role: "assistant",
             parts: [
               {
@@ -942,7 +942,7 @@ export class Agent {
 
           // Add step to history
           const step: StepWithContent = {
-            id: crypto.randomUUID(),
+            id: randomUUID(),
             type: "text",
             content: safeStringify(result.object),
             role: "assistant",
@@ -1138,7 +1138,7 @@ export class Agent {
             if (oc.userId && oc.conversationId) {
               // Create UIMessage from the object response
               const message: UIMessage = {
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 role: "assistant",
                 parts: [
                   {
@@ -1153,7 +1153,7 @@ export class Agent {
 
               // Add step to history
               const step: StepWithContent = {
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 type: "text",
                 content: safeStringify(finalResult.object),
                 role: "assistant",
@@ -1306,7 +1306,7 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     options?: BaseGenerationOptions,
   ): OperationContext {
-    const operationId = crypto.randomUUID();
+    const operationId = randomUUID();
     const startTimeDate = new Date();
 
     // Prefer reusing an existing context instance to preserve reference across calls/subagents
@@ -1494,25 +1494,20 @@ export class Agent {
    * but still work standalone with their own instance
    */
   private getObservability(): VoltAgentObservability {
+    const registry = AgentRegistry.getInstance();
+
     // Always check global registry first (it might have been set after agent creation)
-    const globalObservability = AgentRegistry.getInstance().getGlobalObservability();
+    const globalObservability = registry.getGlobalObservability();
     if (globalObservability) {
       return globalObservability;
     }
 
-    // If no global observability, use or create default instance for this agent
-    return this.getOrCreateDefaultObservability();
-  }
-
-  /**
-   * Create a default observability instance for standalone agent usage
-   */
-  private getOrCreateDefaultObservability(): VoltAgentObservability {
     if (!this.defaultObservability) {
-      this.defaultObservability = new VoltAgentObservability({
+      this.defaultObservability = createVoltAgentObservability({
         serviceName: `agent-${this.name}`,
       });
     }
+
     return this.defaultObservability;
   }
 
@@ -1584,7 +1579,7 @@ export class Agent {
     if (systemMessage) {
       // Convert system message to UIMessage format
       const systemUIMessage: UIMessage = {
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         role: "system",
         parts: [
           {
@@ -1709,7 +1704,7 @@ export class Agent {
 
           // Ensure conversation ID exists for semantic search
           if (isSemanticSearch && !oc.conversationId) {
-            oc.conversationId = crypto.randomUUID();
+            oc.conversationId = randomUUID();
           }
 
           // Add memory messages
@@ -1742,7 +1737,7 @@ export class Agent {
     // Add current input
     if (typeof input === "string") {
       messages.push({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         role: "user",
         parts: [{ type: "text", text: input }],
       });
@@ -2233,7 +2228,7 @@ export class Agent {
             label: tool.name,
             attributes: {
               "tool.name": tool.name,
-              "tool.call.id": crypto.randomUUID(),
+              "tool.call.id": randomUUID(),
               input: args ? safeStringify(args) : undefined,
             },
             kind: SpanKind.CLIENT,

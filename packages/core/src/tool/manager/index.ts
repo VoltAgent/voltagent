@@ -2,6 +2,7 @@ import type { Logger } from "@voltagent/internal";
 import type { BaseTool, ToolExecuteOptions } from "../../agent/providers/base/types";
 import type { ApiToolInfo } from "../../agent/types";
 import { ActionType, LogEvents, buildToolLogMessage, getGlobalLogger } from "../../logger";
+import { getEnvVar } from "../../utils/runtime";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
 import { type AgentTool, createTool } from "../index";
 import type { Toolkit } from "../toolkit";
@@ -116,6 +117,7 @@ export class ToolManager {
 
     // Convert AgentTool to BaseTool
     const baseTool = createTool({
+      id: tool.id,
       name: tool.name,
       description: tool.description || tool.name,
       parameters: tool.parameters,
@@ -418,7 +420,7 @@ export class ToolManager {
                   message: error.message,
                   type: error.constructor?.name || "Error",
                   // Include stack trace only in development
-                  ...(process.env.NODE_ENV !== "production" && { stack: error.stack }),
+                  ...(getEnvVar("NODE_ENV") !== "production" && { stack: error.stack }),
                 }
               : "Unknown error",
         },

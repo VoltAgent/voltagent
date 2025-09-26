@@ -1,6 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import type { Agent } from "../agent/agent";
-import type { VoltAgentObservability } from "../observability/voltagent-observability";
+import type { VoltAgentObservability } from "../observability";
 import type { VoltOpsClient } from "../voltops/client";
 
 /**

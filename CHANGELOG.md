@@ -1,5 +1,1995 @@
 ## Package: @voltagent/core
 
+## 1.1.19
+
+### Patch Changes
+
+- [#617](https://github.com/VoltAgent/voltagent/pull/617) [`02a78af`](https://github.com/VoltAgent/voltagent/commit/02a78afed1870fe00968a60f44db912df7fbabe6) Thanks [@omeraplak](https://github.com/omeraplak)! - - preserve raw UI messages in storage, sanitize only before LLM invocation
+
+## 1.1.18
+
+### Patch Changes
+
+- [`8a99f4f`](https://github.com/VoltAgent/voltagent/commit/8a99f4fb9365da3b80a0d4e5b6df4bd50ac19288) Thanks [@omeraplak](https://github.com/omeraplak)! - - refine message normalization and persistence pipeline
+  - rely on AI SDK reasoning metadata directly
+  - drop synthetic tool-result injection and trust AI SDK stream output
+
+- [`bbd6c17`](https://github.com/VoltAgent/voltagent/commit/bbd6c176b2bed532a4f03b5f8f7011806aa746c2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: reasoning parts - #614
+
+## 1.1.17
+
+### Patch Changes
+
+- [`78b2298`](https://github.com/VoltAgent/voltagent/commit/78b2298c561e86bbef61f783b0fee83667c25d8a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: `tool_use` ids were found without `tool_result` blocks immediately after
+
+## 1.1.16
+
+### Patch Changes
+
+- [#609](https://github.com/VoltAgent/voltagent/pull/609) [`942663f`](https://github.com/VoltAgent/voltagent/commit/942663f74dca0df70cdac323102acb18c050fa65) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow cancellation support, including cancellation metadata, default controller updates, and a new API endpoint for cancelling executions - #608
+
+  ## Usage Example
+
+  ```ts
+  import { createSuspendController } from "@voltagent/core";
+
+  const controller = createSuspendController();
+  const stream = workflow.stream(input, { suspendController: controller });
+
+  // Cancel from application code
+  controller.cancel("User stopped the workflow");
+
+  // Or via HTTP
+  await fetch(`/api/workflows/${workflowId}/executions/${executionId}/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason: "User stopped the workflow" }),
+  });
+  ```
+
+## 1.1.15
+
+### Patch Changes
+
+- [#602](https://github.com/VoltAgent/voltagent/pull/602) [`14932b6`](https://github.com/VoltAgent/voltagent/commit/14932b69cce36abefcea2200e912bc2614216e1f) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: only process VoltAgent spans by default and expose spanFilters config
+
+## 1.1.14
+
+### Patch Changes
+
+- [#598](https://github.com/VoltAgent/voltagent/pull/598) [`783d334`](https://github.com/VoltAgent/voltagent/commit/783d334a1d9252eb227ef2e1d69d3e939765a13f) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve workflow stream text-delta empty output and improve type safety
+
+  ## The Problem
+
+  When forwarding agent.streamText() results to workflow streams via writer.pipeFrom(), text-delta events had empty output fields. This was caused by incorrect field mapping - the code was accessing `part.textDelta` but AI SDK v5 uses `part.text` for text-delta events.
+
+  ## The Solution
+
+  Fixed field mappings to match AI SDK v5 conventions:
+  - text-delta: `textDelta` → `text`
+  - tool-call: `args` → `input`
+  - tool-result: `result` → `output`
+  - finish: `usage` → `totalUsage`
+
+  Also improved type safety by:
+  - Using `VoltAgentTextStreamPart` type instead of `any` for fullStream parameter
+  - Proper type guards with `in` operator to check field existence
+  - Eliminated need for `as any` casts
+
+  ## Impact
+  - Fixes "output field is undefined" for text-delta events in workflow streams
+  - Provides proper TypeScript type checking for stream parts
+  - Ensures compatibility with AI SDK v5 field conventions
+  - Better IDE support and compile-time error detection
+
+- [#600](https://github.com/VoltAgent/voltagent/pull/600) [`31ded11`](https://github.com/VoltAgent/voltagent/commit/31ded113253dd73c28a797f185b2ea0595160cf7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add missing export `MCPConfiguration`
+
+## 1.1.13
+
+### Patch Changes
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - add `@voltagent/a2a-server`, a JSON-RPC Agent-to-Agent (A2A) server that lets external agents call your VoltAgent instance over HTTP/SSE
+  - teach `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` to auto-register configured A2A servers so adding `{ a2aServers: { ... } }` on `VoltAgent` and opting into `honoServer` instantly exposes discovery and RPC endpoints
+  - forward request context (`userId`, `sessionId`, metadata) into agent invocations and provide task management hooks, plus allow filtering/augmenting exposed agents by default
+  - document the setup in `website/docs/agents/a2a/a2a-server.md` and refresh `examples/with-a2a-server` with basic usage and task-store customization
+  - A2A endpoints are now described in Swagger/OpenAPI and listed in the startup banner whenever an A2A server is registered, making discovery of `/.well-known/...` and `/a2a/:serverId` routes trivial.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { A2AServer } from "@voltagent/a2a-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "SupportAgent",
+    purpose: "Handle support questions from partner agents.",
+    model: myModel,
+  });
+
+  const a2aServer = new A2AServer({
+    name: "support-agent",
+    version: "0.1.0",
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    a2aServers: { a2aServer },
+    server: honoServer({ port: 3141 }),
+  });
+  ```
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - ## ✨ New: first-class Model Context Protocol support
+
+  We shipped a complete MCP integration stack:
+  - `@voltagent/mcp-server` exposes VoltAgent registries (agents, workflows, tools) over stdio/HTTP/SSE transports.
+  - `@voltagent/server-core` and `@voltagent/server-hono` gained ready-made route handlers so HTTP servers can proxy MCP traffic with a few lines of glue code.
+  - `@voltagent/core` exports the shared types that the MCP layers rely on.
+
+  ### Quick start
+
+  ```ts title="src/mcp/server.ts"
+  import { MCPServer } from "@voltagent/mcp-server";
+  import { Agent, createTool } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+  import { z } from "zod";
+
+  const status = createTool({
+    name: "status",
+    description: "Return the current time",
+    parameters: z.object({}),
+    async execute() {
+      return { status: "ok", time: new Date().toISOString() };
+    },
+  });
+
+  const assistant = new Agent({
+    name: "Support Agent",
+    instructions: "Route customer tickets to the correct queue.",
+    model: openai("gpt-4o-mini"),
+    tools: [status],
+  });
+
+  export const mcpServer = new MCPServer({
+    name: "voltagent-example",
+    version: "0.1.0",
+    description: "Expose VoltAgent over MCP",
+    agents: { support: assistant },
+    tools: { status },
+    filterTools: ({ items }) => items.filter((tool) => tool.name !== "debug"),
+  });
+  ```
+
+  With the server registered on your VoltAgent instance (and the Hono MCP routes enabled), the same agents, workflows, and tools become discoverable from VoltOps Console or any MCP-compatible IDE.
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - Ship `@voltagent/mcp-server`, a transport-agnostic MCP provider that surfaces VoltAgent agents, workflows, tools, prompts, and resources over stdio, SSE, and HTTP.
+  - Wire MCP registration through `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` so a single `VoltAgent` constructor opt-in (optionally with `honoServer`) exposes stdio mode immediately and HTTP/SSE endpoints when desired.
+  - Filter child sub-agents automatically and lift an agent's `purpose` (fallback to `instructions`) into the MCP tool description for cleaner IDE listings out of the box.
+  - Document the workflow in `website/docs/agents/mcp/mcp-server.md` and refresh `examples/with-mcp-server` with stdio-only and HTTP/SSE configurations.
+  - When MCP is enabled we now publish REST endpoints in Swagger/OpenAPI and echo them in the startup banner so you can discover `/mcp/*` routes without digging through code.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { MCPServer } from "@voltagent/mcp-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "AssistantAgent",
+    purpose: "Respond to support questions and invoke helper tools when needed.",
+    model: myModel,
+  });
+
+  const mcpServer = new MCPServer({
+    name: "support-mcp",
+    version: "1.0.0",
+    agents: { assistant },
+    protocols: { stdio: true, http: false, sse: false },
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    mcpServers: { primary: mcpServer },
+    server: honoServer({ port: 3141 }), // flip http/sse to true when you need remote clients
+  });
+  ```
+
+- Updated dependencies [[`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7)]:
+  - @voltagent/internal@0.0.11
+
+## 1.1.12
+
+### Patch Changes
+
+- [#590](https://github.com/VoltAgent/voltagent/pull/590) [`4292460`](https://github.com/VoltAgent/voltagent/commit/42924609b3fc72c918addba050d6f85e8e8712d8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve Zod v4 compatibility issue in delegate_task tool schema
+
+  Fixed a compatibility issue where `z.record(z.unknown())` in the delegate_task tool's context parameter was causing JSON schema generation errors with Zod v4. Changed to `z.record(z.string(), z.any())` which works correctly with both Zod v3 and v4.
+
+  The error occurred when using the MCP server or other components that convert Zod schemas to JSON schemas:
+
+  ```
+  TypeError: Cannot read properties of undefined (reading '_zod')
+  ```
+
+  This fix ensures the delegate_task tool works seamlessly across all Zod versions supported by the framework (^3.25.0 || ^4.0.0).
+
+## 1.1.11
+
+### Patch Changes
+
+- [#584](https://github.com/VoltAgent/voltagent/pull/584) [`00838b0`](https://github.com/VoltAgent/voltagent/commit/00838b0f4f75f03fad606589a6159121be0b40ba) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: add ConversationBuffer + MemoryPersistQueue so tool calls, results, and assistant text persist as a single step and flush on errors
+
+## 1.1.10
+
+### Patch Changes
+
+- [`103c48c`](https://github.com/VoltAgent/voltagent/commit/103c48cb197e23fdedf61a4804f1a50c4ccdc655) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve UIMessage tool persistence issue causing OpenAI API errors and useChat display problems
+
+  Fixed a critical issue where tool messages weren't being properly converted between UIMessage and ModelMessage formats, causing two problems:
+  1. OpenAI API rejecting requests with "An assistant message with 'tool_calls' must be followed by tool messages"
+  2. useChat hook showing tools as "working/running" despite having `state: "output-available"`
+
+  ## The Problem
+
+  When converting tool messages to UIMessages for persistence:
+  - Tool role messages were incorrectly having `providerExecuted: false` set
+  - This caused AI SDK's `convertToModelMessages` to misinterpret client-executed tools
+  - The conversion logic was not properly preserving the tool execution context
+
+  ## The Solution
+  - Removed explicit `providerExecuted` assignments for tool role messages
+  - Tool role messages now correctly indicate client execution by omitting the flag
+  - Removed unnecessary `step-start` insertions that were added during message conversion
+  - Now exactly mimics AI SDK's UIMessage generation behavior
+
+  ## Technical Details
+
+  The `providerExecuted` flag determines how tools are converted:
+  - `providerExecuted: true` → tool results embedded in assistant message (provider-executed)
+  - `providerExecuted: undefined/false` → separate tool role messages (client-executed)
+
+  By not setting this flag for tool role messages, the AI SDK correctly:
+  1. Generates required tool messages after tool_calls (fixes OpenAI API error)
+  2. Recognizes tools as completed rather than "working" (fixes useChat display)
+
+## 1.1.9
+
+### Patch Changes
+
+- [#577](https://github.com/VoltAgent/voltagent/pull/577) [`749bbdf`](https://github.com/VoltAgent/voltagent/commit/749bbdfc12a42242ebc3b93e0fea5b439e5b84bf) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve subagent tool call/result pairing issue with Claude/Bedrock
+
+  Fixed a critical issue where subagents performing tool calls would break the conversation flow with Claude/Bedrock models. The error "tool_use ids were found without tool_result blocks" occurred because the tool result messages were not being properly included when converting subagent responses to UI message streams.
+
+  ## The Problem
+
+  When a subagent executed a tool call, the parent agent would receive incomplete message history:
+  - Direct agents: Called `toUIMessageStream` with `sendStart: false` and `originalMessages`, which only included the initial task message
+  - StreamText configs: Called `toUIMessageStream` without any parameters
+  - Both approaches failed to include the complete tool call/result sequence
+
+  ## The Solution
+  - Removed explicit parameters from `toUIMessageStream` calls in both direct agent and streamText configuration paths
+  - Let the AI SDK handle the default behavior for proper message inclusion
+  - This ensures tool_use and tool_result messages remain properly paired in the conversation
+
+  ## Impact
+  - Fixes "No output generated" errors when subagents use tools
+  - Resolves conversation breakage after subagent tool calls
+  - Maintains proper message history for Claude/Bedrock compatibility
+  - No breaking changes - the fix simplifies the internal implementation
+
+## 1.1.8
+
+### Patch Changes
+
+- [#573](https://github.com/VoltAgent/voltagent/pull/573) [`51cc774`](https://github.com/VoltAgent/voltagent/commit/51cc774445e5c4e676563b5576868ad45d8ecb9c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve subagent tracing hierarchy and entity filtering
+
+  ## What Changed
+
+  Fixed OpenTelemetry span hierarchy issues where subagent spans were overriding parent delegate_task spans instead of being properly nested as children. Also resolved entity ID filtering returning incorrect traces for subagent queries.
+
+  ## The Problem
+
+  When a supervisor agent delegated tasks to subagents:
+  1. **Span Hierarchy**: Subagent spans appeared to replace delegate_task spans instead of being children
+  2. **Entity Filtering**: Querying by subagent entity ID (e.g., `entityId=Formatter`) incorrectly returned traces that should only be associated with the root agent (e.g., `entityId=Supervisor`)
+
+  ## The Solution
+
+  Implemented namespace-based attribute management in trace-context:
+  - **Root agents** use `entity.id`, `entity.type`, `entity.name` attributes
+  - **Subagents** use `subagent.id`, `subagent.name`, `subagent.type` namespace
+  - **Subagents inherit** parent's `entity.id` for correct trace association
+  - **Span naming** clearly identifies subagents with `subagent:AgentName` prefix
+
+  ## Example
+
+  ```typescript
+  // Before: Incorrect hierarchy and filtering
+  // delegate_task span seemed to disappear
+  // entityId=Formatter returned Supervisor's traces
+
+  // After: Proper hierarchy and filtering
+  const supervisor = new Agent({
+    name: "Supervisor",
+    subAgents: [formatter, writer],
+  });
+
+  // Trace structure now shows:
+  // - Supervisor (root span)
+  //   - delegate_task: Formatter (tool span)
+  //     - subagent:Formatter (subagent span with proper parent)
+  //       - (formatter's tools and operations)
+
+  // Filtering works correctly:
+  // entityId=Supervisor ✓ Returns supervisor traces
+  // entityId=Formatter ✗ Returns no traces (correct - Formatter is a subagent)
+  ```
+
+  ## Impact
+  - Proper parent-child relationships in span hierarchy
+  - Correct trace filtering by entity ID
+  - Clear distinction between root agents and subagents in observability data
+  - Better debugging experience with properly nested spans
+
+## 1.1.7
+
+### Patch Changes
+
+- [#571](https://github.com/VoltAgent/voltagent/pull/571) [`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+## 1.1.7-next.1
+
+### Patch Changes
+
+- [`78a5046`](https://github.com/VoltAgent/voltagent/commit/78a5046ca4d768a96650ebee63ae1630b0dff7a7) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+## 1.1.7-next.0
+
+### Patch Changes
+
+- [#551](https://github.com/VoltAgent/voltagent/pull/551) [`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+## 1.1.6
+
+### Patch Changes
+
+- [#565](https://github.com/VoltAgent/voltagent/pull/565) [`b14d953`](https://github.com/VoltAgent/voltagent/commit/b14d95345f0bce653931ff27e5dac59e4750c123) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add experimental_output support for structured generation - #428
+
+  ## What Changed for You
+
+  VoltAgent now supports ai-sdk v5's experimental structured output features! You can now generate type-safe structured data directly from your agents using Zod schemas.
+
+  ## Features Added
+  - **`experimental_output`** for `generateText` - Get fully typed structured output
+  - **`experimental_partialOutputStream`** for `streamText` - Stream partial objects as they're being generated
+
+  ## Using Structured Output with `generateText`
+
+  ```typescript
+  import { Agent } from "@voltagent/core";
+  import { Output } from "ai";
+  import { z } from "zod";
+
+  // Define your schema
+  const RecipeSchema = z.object({
+    name: z.string(),
+    ingredients: z.array(z.string()),
+    instructions: z.array(z.string()),
+    prepTime: z.number(),
+    cookTime: z.number(),
+  });
+
+  // Generate structured output
+  const result = await agent.generateText("Create a pasta recipe", {
+    experimental_output: Output.object({
+      schema: RecipeSchema,
+    }),
+  });
+
+  // Access the typed object directly!
+  console.log(result.experimental_output);
+  // {
+  //   name: "Creamy Garlic Pasta",
+  //   ingredients: ["pasta", "garlic", "cream", ...],
+  //   instructions: ["Boil water", "Cook pasta", ...],
+  //   prepTime: 10,
+  //   cookTime: 15
+  // }
+  ```
+
+  ## Streaming Partial Objects with `streamText`
+
+  ```typescript
+  // Stream partial objects as they're generated
+  const stream = await agent.streamText("Create a detailed recipe", {
+    experimental_output: Output.object({
+      schema: RecipeSchema,
+    }),
+  });
+
+  // Access the partial object stream
+  for await (const partial of stream.experimental_partialOutputStream ?? []) {
+    console.log(partial);
+    // Partial objects that build up over time:
+    // { name: "Creamy..." }
+    // { name: "Creamy Garlic Pasta", ingredients: ["pasta"] }
+    // { name: "Creamy Garlic Pasta", ingredients: ["pasta", "garlic"] }
+    // ... until the full object is complete
+  }
+  ```
+
+  ## Text Mode for Constrained Output
+
+  You can also use `Output.text()` for text generation with specific constraints:
+
+  ```typescript
+  const result = await agent.generateText("Write a haiku", {
+    experimental_output: Output.text({
+      maxLength: 100,
+      description: "A traditional haiku poem",
+    }),
+  });
+
+  console.log(result.experimental_output); // The generated haiku text
+  ```
+
+  ## Important Notes
+  - These are **experimental features** from ai-sdk v5 and may change
+  - TypeScript may show `experimental_output` as `any` due to type inference limitations
+  - `generateText` returns the complete structured output in `experimental_output`
+  - `streamText` provides partial objects via `experimental_partialOutputStream`
+  - Both features require importing `Output` from `@voltagent/core` (re-exported from ai-sdk)
+
+  ## Why This Matters
+  - **Type-safe output** - No more parsing JSON strings and hoping for the best
+  - **Real-time streaming** - See structured data build up as it's generated
+  - **Zod validation** - Automatic validation against your schemas
+  - **Better DX** - Work with typed objects instead of unstructured text
+
+## 1.1.5
+
+### Patch Changes
+
+- [#562](https://github.com/VoltAgent/voltagent/pull/562) [`2886b7a`](https://github.com/VoltAgent/voltagent/commit/2886b7aab5bda296cebc0b8b2bd56d684324d799) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: using `safeStringify` instead of `JSON.stringify`
+
+- [#561](https://github.com/VoltAgent/voltagent/pull/561) [`ca6a8ec`](https://github.com/VoltAgent/voltagent/commit/ca6a8ec9e45de4c262864e8819f45b1a83679592) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - chore: updated the underlying AgentError creation and types for improved upstream types & internal usage
+
+## 1.1.4
+
+### Patch Changes
+
+- [#559](https://github.com/VoltAgent/voltagent/pull/559) [`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add deps that the core types rely on, i.e. `type-fest` or they are not installed by default by package managers
+
+- [`a0d9e84`](https://github.com/VoltAgent/voltagent/commit/a0d9e8404fe3e2cebfc146cd4622b607bd16b462) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency version
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
+## 1.1.3
+
+### Patch Changes
+
+- [#557](https://github.com/VoltAgent/voltagent/pull/557) [`4c2919e`](https://github.com/VoltAgent/voltagent/commit/4c2919e9d531681d72586505174ff3d688666e2b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix(core): preserve context Map instance across operations and subagents
+
+  ## What Changed
+  - Reuse the same `context` Map instance instead of cloning it on every call.
+  - `createOperationContext` no longer creates a fresh `new Map(...)` for user or parent context; it reuses the incoming Map to keep state alive.
+  - All results now expose the same context reference:
+    - `generateText`, `streamText`, `generateObject`, `streamObject` return `{ context: oc.context }` instead of `new Map(oc.context)`.
+  - Subagents invoked via `delegate_task` receive and update the same shared context through `parentOperationContext`.
+
+  ## Merge Precedence (no overwrites of parent)
+
+  `parentOperationContext.context` > `options.context` > agent default context. Only missing keys are filled from lower-precedence sources; parent context values are not overridden.
+
+  ## Why
+
+  Previously, context was effectively reset by cloning on each call, which broke continuity and sharing across subagents. This fix ensures a single source of truth for context throughout an operation chain.
+
+  ## Potential Impact
+  - If you relied on context being cloned (new Map identity per call), note that the instance is now shared. For isolation, pass `new Map(existingContext)` yourself when needed.
+
+  ## Affected Files
+  - `packages/core/src/agent/agent.ts` (createOperationContext; return shapes for generate/stream methods)
+
+## 1.1.2
+
+### Patch Changes
+
+- [#556](https://github.com/VoltAgent/voltagent/pull/556) [`3d3deb9`](https://github.com/VoltAgent/voltagent/commit/3d3deb98379066072392f29d08b43b431c0d3b9b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat(core): semantic memory defaults and retrieval fixes
+
+  ## Summary
+  - Default `semanticMemory.mergeStrategy` is now `"append"` (previously `"prepend"`).
+  - Default `semanticMemory.semanticThreshold` is `0.7`.
+  - Fix: propagate `semanticMemory` options end‑to‑end (Agent → MemoryManager → Memory).
+  - Fix: preserve vector result order when mapping `messageIds` → `UIMessage`.
+  - Docs: updated Semantic Search/Overview to reflect new defaults.
+  - Examples: long conversation demo with optional real LLM seeding.
+
+  ## Why
+
+  Appending semantic hits after the recent context reduces stale facts overriding recent ones (e.g., old name "Ömer" overshadowing newer "Ahmet"). Preserving vector result order ensures the most relevant semantic hits remain in ranked order.
+
+  ## Defaults
+
+  When `userId` + `conversationId` are provided and vectors are configured:
+  - `enabled: true`
+  - `semanticLimit: 5`
+  - `semanticThreshold: 0.7`
+  - `mergeStrategy: "append"`
+
+  ## Migration Notes
+
+  If you relied on the previous default `mergeStrategy: "prepend"`, explicitly set:
+
+  ```ts
+  await agent.generateText(input, {
+    userId,
+    conversationId,
+    semanticMemory: { mergeStrategy: "prepend" },
+  });
+  ```
+
+  Otherwise, no action is required.
+
+- [`9b08cff`](https://github.com/VoltAgent/voltagent/commit/9b08cff97c2e8616807a12e89bdbd3dceaf66d33) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: node:crypto import issue on workflow
+
+## 1.1.1
+
+### Patch Changes
+
+- [#552](https://github.com/VoltAgent/voltagent/pull/552) [`89f3f37`](https://github.com/VoltAgent/voltagent/commit/89f3f373a4efe97875c725a9be8374ed31c5bf40) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve shutdown handlers to properly stop server and clean up resources - #528
+
+  ## What Changed
+
+  Fixed the shutdown handler to properly stop the VoltAgent server and clean up all resources when receiving SIGINT/SIGTERM signals. This ensures the process can exit cleanly when multiple signal handlers exist from other frameworks.
+
+  ## The Problem (Before)
+
+  When multiple SIGINT/SIGTERM handlers existed (from frameworks like Adonis, NestJS, etc.), the VoltAgent server would remain open after shutdown, preventing the process from exiting cleanly. The previous fix only addressed the `process.exit()` issue but didn't actually stop the server.
+
+  ## The Solution (After)
+  - **Server Cleanup**: The shutdown handler now properly stops the server using `stopServer()`
+  - **Telemetry Shutdown**: Added telemetry/observability shutdown for complete cleanup
+  - **Public API**: Added a new `shutdown()` method for programmatic cleanup
+  - **Resource Order**: Resources are cleaned up in the correct order: server → workflows → telemetry
+  - **Framework Compatibility**: Still respects other frameworks' handlers using `isSoleSignalHandler` check
+
+  ## Usage
+
+  ```typescript
+  // Programmatic shutdown (new)
+  const voltAgent = new VoltAgent({ agents, server });
+  await voltAgent.shutdown(); // Cleanly stops server, workflows, and telemetry
+
+  // Automatic cleanup on SIGINT/SIGTERM still works
+  // Server is now properly stopped, allowing the process to exit
+  ```
+
+  This ensures VoltAgent plays nicely with other frameworks while properly cleaning up all resources during shutdown.
+
+## 1.1.0
+
+### Minor Changes
+
+- [#549](https://github.com/VoltAgent/voltagent/pull/549) [`63d4787`](https://github.com/VoltAgent/voltagent/commit/63d4787bd92135fa2d6edffb3b610889ddc0e3f5) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: ai sdk v5 ModelMessage support across Agent + Workflow; improved image/file handling and metadata preservation.
+
+  What's new
+  - Agent I/O: `generateText`, `streamText`, `generateObject`, `streamObject` now accept `string | UIMessage[] | ModelMessage[]` (AI SDK v5) as input. No breaking changes for existing callers.
+  - Conversion layer: Robust `ModelMessage → UIMessage` handling with:
+    - Image support: `image` parts are mapped to UI `file` parts; URLs and `data:` URIs are preserved, raw/base64 strings become `data:<mediaType>;base64,...`.
+    - File support: string data is auto-detected as URL (`http(s)://`, `data:`) or base64; binary is encoded to data URI.
+    - Metadata: `providerOptions` on text/reasoning/image/file parts is preserved as `providerMetadata` on UI parts.
+    - Step boundaries: Inserts `step-start` after tool results when followed by assistant text.
+  - Workflow: `andAgent` step and `WorkflowInput` types now also accept `UIMessage[] | ModelMessage[]` in addition to `string`.
+
+  Usage examples
+  1. Agent with AI SDK v5 ModelMessage input (multimodal)
+
+  ```ts
+  import type { ModelMessage } from "@ai-sdk/provider-utils";
+
+  const messages: ModelMessage[] = [
+    {
+      role: "user",
+      content: [
+        { type: "image", image: "https://example.com/cat.jpg", mediaType: "image/jpeg" },
+        { type: "text", text: "What's in this picture?" },
+      ],
+    },
+  ];
+
+  const result = await agent.generateText(messages);
+  console.log(result.text);
+  ```
+
+  2. Agent with UIMessage input
+
+  ```ts
+  import type { UIMessage } from "ai";
+
+  const uiMessages: UIMessage[] = [
+    {
+      id: crypto.randomUUID(),
+      role: "user",
+      parts: [
+        { type: "file", url: "https://example.com/cat.jpg", mediaType: "image/jpeg" },
+        { type: "text", text: "What's in this picture?" },
+      ],
+    },
+  ];
+
+  const result = await agent.generateText(uiMessages);
+  ```
+
+  3. Provider metadata preservation (files/images)
+
+  ```ts
+  import type { ModelMessage } from "@ai-sdk/provider-utils";
+
+  const msgs: ModelMessage[] = [
+    {
+      role: "assistant",
+      content: [
+        {
+          type: "file",
+          mediaType: "image/png",
+          data: "https://cdn.example.com/img.png",
+          providerOptions: { source: "cdn" },
+        },
+      ],
+    },
+  ];
+
+  // Internally preserved as providerMetadata on the UI file part
+  await agent.generateText(msgs);
+  ```
+
+  4. Workflow andAgent with ModelMessage[] or UIMessage[]
+
+  ```ts
+  import { z } from "zod";
+  import type { ModelMessage } from "@ai-sdk/provider-utils";
+
+  workflow
+    .andAgent(
+      ({ data }) =>
+        [
+          {
+            role: "user",
+            content: [{ type: "text", text: `Hello ${data.name}` }],
+          },
+        ] as ModelMessage[],
+      agent,
+      { schema: z.object({ reply: z.string() }) }
+    )
+    .andThen({
+      id: "extract",
+      execute: async ({ data }) => data.reply,
+    });
+  ```
+
+  Notes
+  - No breaking changes. Existing string/UIMessage inputs continue to work.
+  - Multimodal inputs are passed through correctly to the model after conversion.
+
+## 1.0.1
+
+### Patch Changes
+
+- [#546](https://github.com/VoltAgent/voltagent/pull/546) [`f12f344`](https://github.com/VoltAgent/voltagent/commit/f12f34405edf0fcb417ed098deba62570260fb81) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: align Zod to ^3.25.76 and fix type mismatch with AI SDK
+
+  We aligned Zod versions across packages to `^3.25.76` to match AI SDK peer ranges and avoid multiple Zod instances at runtime.
+
+  Why this matters
+  - Fixes TypeScript narrowing issues in workflows when consuming `@voltagent/core` from npm with a different Zod instance (e.g., `ai` packages pulling newer Zod).
+  - Prevents errors like "Spread types may only be created from object types" where `data` failed to narrow because `z.ZodTypeAny` checks saw different Zod identities.
+
+  What changed
+  - `@voltagent/server-core`, `@voltagent/server-hono`: dependencies.zod → `^3.25.76`.
+  - `@voltagent/docs-mcp`, `@voltagent/core`: devDependencies.zod → `^3.25.76`.
+  - Examples and templates updated to use `^3.25.76` for consistency (non-publishable).
+
+  Notes for consumers
+  - Ensure a single Zod version is installed (consider a workspace override to pin Zod to `3.25.76`).
+  - This improves compatibility with `ai@5.x` packages that require `zod@^3.25.76 || ^4`.
+
+## 1.0.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Core 1.x — AI SDK native, Memory V2, pluggable server
+
+  Breaking but simple to migrate. Key changes and copy‑paste examples below.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Agent: remove `llm`, use ai‑sdk model directly
+
+  Before (0.1.x):
+
+  ```ts
+  import { Agent } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "app",
+    instructions: "Helpful",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Agent } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "app",
+    instructions: "Helpful",
+    model: openai("gpt-4o-mini"), // ai-sdk native
+  });
+  ```
+
+  Note: `@voltagent/core@1.x` has a peer dependency on `ai@^5`. Install `ai` and a provider like `@ai-sdk/openai`.
+
+  ## Memory V2: use `Memory({ storage: <Adapter> })`
+
+  Before (0.1.x):
+
+  ```ts
+  import { LibSQLStorage } from "@voltagent/libsql";
+
+  const agent = new Agent({
+    // ...
+    memory: new LibSQLStorage({ url: "file:./.voltagent/memory.db" }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+    }),
+  });
+  ```
+
+  Default memory is in‑memory when omitted.
+
+  ## Server: moved out of core → use `@voltagent/server-hono`
+
+  Before (0.1.x):
+
+  ```ts
+  import { VoltAgent } from "@voltagent/core";
+
+  new VoltAgent({ agents: { agent }, port: 3141, enableSwaggerUI: true });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({ port: 3141, enableSwaggerUI: true }),
+  });
+  ```
+
+  ## Abort: option renamed
+
+  ```ts
+  // 0.1.x
+  await agent.generateText("...", { abortController: new AbortController() });
+
+  // 1.x
+  const ac = new AbortController();
+  await agent.generateText("...", { abortSignal: ac.signal });
+  ```
+
+  ## Observability: OTel‑based, zero code required
+
+  Set keys and run:
+
+  ```bash
+  VOLTAGENT_PUBLIC_KEY=pk_... VOLTAGENT_SECRET_KEY=sk_...
+  ```
+
+  Remote export auto‑enables when keys are present. Local Console streaming remains available.
+
+## 1.0.0-next.2
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Core 1.x — AI SDK native, Memory V2, pluggable server
+
+  Breaking but simple to migrate. Key changes and copy‑paste examples below.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Agent: remove `llm`, use ai‑sdk model directly
+
+  Before (0.1.x):
+
+  ```ts
+  import { Agent } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "app",
+    instructions: "Helpful",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Agent } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "app",
+    instructions: "Helpful",
+    model: openai("gpt-4o-mini"), // ai-sdk native
+  });
+  ```
+
+  Note: `@voltagent/core@1.x` has a peer dependency on `ai@^5`. Install `ai` and a provider like `@ai-sdk/openai`.
+
+  ## Memory V2: use `Memory({ storage: <Adapter> })`
+
+  Before (0.1.x):
+
+  ```ts
+  import { LibSQLStorage } from "@voltagent/libsql";
+
+  const agent = new Agent({
+    // ...
+    memory: new LibSQLStorage({ url: "file:./.voltagent/memory.db" }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+    }),
+  });
+  ```
+
+  Default memory is in‑memory when omitted.
+
+  ## Server: moved out of core → use `@voltagent/server-hono`
+
+  Before (0.1.x):
+
+  ```ts
+  import { VoltAgent } from "@voltagent/core";
+
+  new VoltAgent({ agents: { agent }, port: 3141, enableSwaggerUI: true });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({ port: 3141, enableSwaggerUI: true }),
+  });
+  ```
+
+  ## Abort: option renamed
+
+  ```ts
+  // 0.1.x
+  await agent.generateText("...", { abortController: new AbortController() });
+
+  // 1.x
+  const ac = new AbortController();
+  await agent.generateText("...", { abortSignal: ac.signal });
+  ```
+
+  ## Observability: OTel‑based, zero code required
+
+  Set keys and run:
+
+  ```bash
+  VOLTAGENT_PUBLIC_KEY=pk_... VOLTAGENT_SECRET_KEY=sk_...
+  ```
+
+  Remote export auto‑enables when keys are present. Local Console streaming remains available.
+
+### Patch Changes
+
+- Updated dependencies [[`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93)]:
+  - @voltagent/logger@1.0.0-next.0
+
+## 1.0.0-next.1
+
+### Major Changes
+
+- [#514](https://github.com/VoltAgent/voltagent/pull/514) [`e86cadb`](https://github.com/VoltAgent/voltagent/commit/e86cadb5ae9ee9719bfd1f12e7116d95224699ce) Thanks [@omeraplak](https://github.com/omeraplak)! - # Agent Class - AI SDK Native Integration
+
+  The Agent class has been completely refactored to use AI SDK directly, removing the provider abstraction layer for better performance and simpler API.
+
+  ## Breaking Changes
+
+  ### Provider System Removed
+
+  The Agent class no longer uses the provider abstraction. It now works directly with AI SDK's LanguageModel.
+
+  **Before:**
+
+  ```typescript
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+
+  const agent = new Agent({
+    name: "assistant",
+    description: "You are a helpful assistant",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new Agent({
+    name: "assistant",
+    instructions: "You are a helpful assistant", // description -> instructions
+    model: openai("gpt-4o-mini"),
+  });
+  ```
+
+  ### Description Field Removed
+
+  The deprecated `description` field has been completely removed in favor of `instructions`.
+
+  **Before:**
+
+  ```typescript
+  const agent = new Agent({
+    name: "assistant",
+    description: "You are a helpful assistant", // @deprecated
+    instructions: "You are a helpful assistant", // Had to use both
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  const agent = new Agent({
+    name: "assistant",
+    instructions: "You are a helpful assistant", // Only instructions now
+    model: openai("gpt-4o-mini"),
+  });
+  ```
+
+  ### Context API Changes
+
+  The context property has been renamed from `userContext` to `context` and can now accept plain objects.
+
+  **Before:**
+
+  ```typescript
+  // userContext only accepted Map
+  const agent = new Agent({
+    userContext: new Map([["key", "value"]]),
+  });
+
+  await agent.generateText({
+    input: "Hello",
+    userContext: new Map([["key", "value"]]),
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  // context accepts both Map and plain objects
+  const agent = new Agent({
+    context: { key: "value" }, // Can be Map or plain object
+  });
+
+  await agent.generateText({
+    input: "Hello",
+    context: { key: "value" }, // ContextInput type: Map or Record
+  });
+  ```
+
+  ```ts
+  // New AgentContext structure used internally:
+  interface AgentContext {
+    context: Map<string | symbol, unknown>;
+    operation: {
+      id: string;
+      userId?: string;
+      conversationId?: string;
+      parentAgentId?: string;
+      parentHistoryId?: string;
+    };
+    system: {
+      logger: Logger;
+      signal?: AbortSignal;
+      startTime: string;
+    };
+  }
+  ```
+
+  ### Hook System Simplified
+
+  Hooks are now defined directly without createHooks wrapper.
+
+  **Before:**
+
+  ```typescript
+  import { createHooks } from "@voltagent/core";
+
+  const agent = new Agent({
+    hooks: createHooks({
+      onStart: async (context) => {},
+      onEnd: async (context, result) => {},
+    }),
+  });
+  ```
+
+  **After:**
+
+  ```ts
+  const agent = new Agent({
+    hooks: {
+      onStart: async (context: AgentContext) => {},
+      onEnd: async (context: AgentContext, result, error?) => {},
+      onError: async (context: AgentContext, error) => {},
+      onPrepareMessages: async (messages: UIMessage[], context) => {
+        // New hook for message preparation
+        return { messages };
+      },
+      onToolStart: async (context, tool) => {},
+      onToolEnd: async (context, tool, output, error?) => {},
+    },
+  });
+  ```
+
+  ### Method Signatures Now Use AI SDK Options
+
+  All generation methods now accept AI SDK's CallSettings.
+
+  **Before:**
+
+  ```typescript
+  await agent.generateText({
+    input: "Hello",
+    userId: "123",
+    conversationId: "conv-1",
+    provider: {
+      maxTokens: 1000,
+      temperature: 0.7,
+    },
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  await agent.generateText({
+    input: "Hello",
+    // VoltAgent specific
+    userId: "123",
+    conversationId: "conv-1",
+    context: { key: "value" },
+    // AI SDK CallSettings
+    maxTokens: 1000,
+    temperature: 0.7,
+    topP: 0.9,
+    presencePenalty: 0.1,
+    frequencyPenalty: 0.1,
+    seed: 12345,
+    maxRetries: 3,
+  });
+  ```
+
+  ### Message Format Changes
+
+  Agent now accepts UIMessage format from AI SDK.
+
+  **Before:**
+
+  ```typescript
+  // BaseMessage format
+  await agent.generateText({
+    input: [
+      { role: "user", content: "Hello" },
+      { role: "assistant", content: "Hi there!" },
+    ],
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  // UIMessage format (AI SDK compatible)
+  await agent.generateText({
+    input: [
+      {
+        id: "1",
+        role: "user",
+        parts: [{ type: "text", text: "Hello" }],
+      },
+      {
+        id: "2",
+        role: "assistant",
+        parts: [{ type: "text", text: "Hi there!" }],
+      },
+    ],
+  });
+
+  // UIMessage structure from AI SDK:
+  interface UIMessage {
+    id: string;
+    role: "system" | "user" | "assistant";
+    metadata?: unknown; // For custom data like createdAt
+    parts: Array<UIMessagePart>; // text, tool, reasoning, etc.
+  }
+  ```
+
+  ## New Features
+
+  ### Direct AI SDK Integration
+  - Better performance without abstraction overhead
+  - Access to all AI SDK features directly
+  - Simplified error handling
+  - Native streaming support
+
+  ### Enhanced Type Safety
+
+  ```typescript
+  // All methods now have proper generic types
+  const result = await agent.generateObject<typeof schema>({
+    input: "Generate user data",
+    schema: userSchema,
+  });
+  // result.object is properly typed
+  ```
+
+  ### Streamlined API
+
+  ```typescript
+  // All generation methods follow same pattern
+  const textResult = await agent.generateText(options);
+  const textStream = await agent.streamText(options);
+  const objectResult = await agent.generateObject(options);
+  const objectStream = await agent.streamObject(options);
+  ```
+
+  ## Migration Guide
+
+  ### 1. Remove Deprecated Packages
+
+  ```diff
+  - "@voltagent/vercel-ai": "^0.9.0",
+  - "@voltagent/vercel-ui": "^0.9.0",
+  - "@voltagent/xsai": "^0.9.0",
+  ```
+
+  ```bash
+  npm uninstall @voltagent/vercel-ai @voltagent/vercel-ui @voltagent/xsai
+  ```
+
+  ### 2. Install AI SDK Directly
+
+  ```diff
+  + "ai": "^5.0.0",
+  + "@ai-sdk/openai": "^1.0.0",
+  + "@ai-sdk/anthropic": "^1.0.0",
+  ```
+
+  ```bash
+  npm install ai @ai-sdk/openai @ai-sdk/anthropic
+  ```
+
+  ### 3. Update Your Code
+
+  ```diff
+  // imports
+  - import { VercelAIProvider } from '@voltagent/vercel-ai';
+  + import { openai } from '@ai-sdk/openai';
+
+  // agent creation
+  const agent = new Agent({
+    name: 'assistant',
+  - description: 'You are a helpful assistant',
+  + instructions: 'You are a helpful assistant',
+  - llm: new VercelAIProvider(),
+  - model: 'gpt-4o-mini',
+  + model: openai('gpt-4o-mini'),
+  });
+
+  // hooks
+  - import { createHooks } from '@voltagent/core';
+  - hooks: createHooks({ onStart: () => {} })
+  + hooks: { onStart: () => {} }
+
+  // context
+  - userContext: new Map([['key', 'value']])
+  + context: { key: 'value' }
+  ```
+
+  ## Benefits
+  - **Simpler API**: No provider abstraction complexity
+  - **Better Performance**: Direct AI SDK usage
+  - **Type Safety**: Improved TypeScript support
+  - **Future Proof**: Aligned with AI SDK ecosystem
+  - **Smaller Bundle**: Removed abstraction layer code
+
+- [#514](https://github.com/VoltAgent/voltagent/pull/514) [`e86cadb`](https://github.com/VoltAgent/voltagent/commit/e86cadb5ae9ee9719bfd1f12e7116d95224699ce) Thanks [@omeraplak](https://github.com/omeraplak)! - # VoltAgent Server Architecture - Pluggable Server Providers
+
+  VoltAgent's server architecture has been completely redesigned with a pluggable server provider pattern, removing the built-in server in favor of optional server packages.
+
+  ## Breaking Changes
+
+  ### Built-in Server Removed
+
+  The built-in server has been removed from the core package. Server functionality is now provided through separate server packages.
+
+  **Before:**
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+
+  // Server was built-in and auto-started
+  const voltAgent = new VoltAgent({
+    agents: { myAgent },
+    port: 3000,
+    enableSwaggerUI: true,
+    autoStart: true, // Server auto-started
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+
+  // Server is now optional and explicitly configured
+  const voltAgent = new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3000,
+      enableSwaggerUI: true,
+    }),
+  });
+  ```
+
+  ### Custom Endpoints Removed
+
+  Custom endpoint registration methods have been removed. Custom routes should now be added through the server provider's `configureApp` option.
+
+  **Before:**
+
+  ```typescript
+  voltAgent.registerCustomEndpoint({
+    path: "/custom",
+    method: "GET",
+    handler: async (req) => {
+      return { message: "Hello" };
+    },
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3000,
+      // Configure custom routes via configureApp callback
+      configureApp: (app) => {
+        app.get("/api/custom", (c) => {
+          return c.json({ message: "Hello" });
+        });
+
+        app.post("/api/calculate", async (c) => {
+          const { a, b } = await c.req.json();
+          return c.json({ result: a + b });
+        });
+      },
+    }),
+  });
+  ```
+
+  ### Server Management Methods Changed
+
+  **Before:**
+
+  ```typescript
+  // Server started automatically or with:
+  voltAgent.startServer();
+  // No stop method available
+  ```
+
+  **After:**
+
+  ```typescript
+  // Server starts automatically if provider is configured
+  voltAgent.startServer(); // Still available
+  voltAgent.stopServer(); // New method for graceful shutdown
+  ```
+
+  ## New Server Provider Pattern
+
+  ### IServerProvider Interface
+
+  Server providers must implement the `IServerProvider` interface:
+
+  ```typescript
+  interface IServerProvider {
+    start(): Promise<{ port: number }>;
+    stop(): Promise<void>;
+    isRunning(): boolean;
+  }
+  ```
+
+  ### Available Server Providers
+
+  #### @voltagent/server-hono (Recommended)
+
+  Edge-optimized server using Hono framework:
+
+  ```typescript
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+      enableSwaggerUI: true,
+      auth: {
+        provider: "jwt",
+        secret: "your-secret",
+      },
+      configureApp: (app) => {
+        // Add custom routes
+        app.get("/api/health", (c) => {
+          return c.json({ status: "healthy" });
+        });
+      },
+    }),
+  });
+  ```
+
+  Features:
+  - **Built-in JWT Authentication**: Secure your API with JWT tokens
+  - **Swagger UI Support**: Interactive API documentation
+  - **WebSocket Support**: Real-time streaming capabilities
+  - **Edge Runtime Compatible**: Deploy to Vercel Edge, Cloudflare Workers, etc.
+  - **Fast and Lightweight**: Optimized for performance
+
+  #### Authentication & Authorization
+
+  The server-hono package includes comprehensive JWT authentication support:
+
+  ```typescript
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+
+      // Configure JWT authentication
+      auth: jwtAuth({
+        secret: process.env.JWT_SECRET,
+
+        // Map JWT payload to user object
+        mapUser: (payload) => ({
+          id: payload.sub,
+          email: payload.email,
+          role: payload.role,
+          permissions: payload.permissions || [],
+        }),
+
+        // Define public routes (no auth required)
+        publicRoutes: ["/health", "/metrics"],
+
+        // JWT verification options
+        verifyOptions: {
+          algorithms: ["HS256"],
+          audience: "your-app",
+          issuer: "your-auth-server",
+        },
+      }),
+    }),
+  });
+  ```
+
+  **Accessing User Context in Agents:**
+
+  ```typescript
+  const agent = new Agent({
+    name: "SecureAgent",
+    instructions: "You are a secure assistant",
+    model: openai("gpt-4o-mini"),
+
+    // Access authenticated user in hooks
+    hooks: {
+      onStart: async ({ context }) => {
+        const user = context.get("user");
+        if (user?.role === "admin") {
+          // Admin-specific logic
+        }
+      },
+    },
+  });
+  ```
+
+  **Making Authenticated Requests:**
+
+  ```bash
+  # Include JWT token in Authorization header
+  curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+    http://localhost:3141/api/agent/chat
+  ```
+
+  ### No Server Configuration
+
+  For serverless or custom deployments:
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    // No server property - runs without HTTP server
+  });
+  ```
+
+  ## Migration Guide
+  1. **Install server package**:
+
+     ```bash
+     npm install @voltagent/server-hono
+     ```
+
+  2. **Update imports**:
+
+     ```typescript
+     import { honoServer } from "@voltagent/server-hono";
+     ```
+
+  3. **Update VoltAgent configuration**:
+     - Remove: `port`, `enableSwaggerUI`, `autoStart`, `customEndpoints`
+     - Add: `server: honoServer({ /* config */ })`
+  4. **Handle custom routes**:
+     - Use `configureApp` callback in server config
+     - Access full Hono app instance for custom routes
+
+## 1.0.0-next.0
+
+### Major Changes
+
+- [#485](https://github.com/VoltAgent/voltagent/pull/485) [`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: change default memory storage from LibSQL to InMemoryStorage for serverless compatibility
+
+  ## Breaking Change ⚠️
+
+  The default memory storage has been changed from LibSQL to InMemoryStorage to fix serverless deployment issues with native binary dependencies.
+
+  ## Migration Guide
+
+  ### If you need persistent storage with LibSQL:
+  1. Install the new package:
+
+  ```bash
+  npm install @voltagent/libsql
+  # or
+  pnpm add @voltagent/libsql
+  ```
+
+  2. Import and configure LibSQLStorage:
+
+  ```typescript
+  import { Agent } from "@voltagent/core";
+  import { LibSQLStorage } from "@voltagent/libsql";
+
+  // Use with Agent
+  const agent = new Agent({
+    name: "Assistant",
+    instructions: "You are a helpful assistant",
+    // Pass LibSQL storage explicitly
+    memory: new LibSQLStorage({
+      url: "file:./.voltagent/memory.db", // It's default value
+    }),
+    // ... other config
+  });
+  ```
+
+  ### If you're fine with in-memory storage:
+
+  No changes needed! Your agents will use InMemoryStorage by default:
+
+  ```typescript
+  const agent = new Agent({
+    name: "Assistant",
+    instructions: "You are a helpful assistant",
+    // memory defaults to InMemoryStorage (no persistence)
+  });
+  ```
+
+  ## Why This Change?
+  - **Lambda Compatibility**: Fixes "Cannot find module '@libsql/linux-x64-gnu'" error in AWS Lambda
+  - **Smaller Core Bundle**: Removes native dependencies from core package
+  - **Better Defaults**: InMemoryStorage works everywhere without configuration
+  - **Modular Architecture**: Use only the storage backends you need
+
+- [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e) Thanks [@omeraplak](https://github.com/omeraplak)! - Initial v1.0.0 prerelease
+
+  This is the first prerelease for VoltAgent v1.0.0. This release includes various improvements and prepares for the upcoming major version.
+
+  Testing the prerelease workflow with the next branch.
+
+## 0.1.84
+
+### Patch Changes
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add cachedInputTokens and reasoningTokens to UsageInfo type
+
+  Enhanced the `UsageInfo` type to include additional token usage metrics:
+  - Added `cachedInputTokens?: number` to track tokens served from cache
+  - Added `reasoningTokens?: number` to track tokens used for model reasoning
+
+  These optional fields provide more granular usage information when supported by the underlying LLM provider. The Vercel AI provider now passes through these values when available from the AI SDK.
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - Update Zod to v3.25.0 for compatibility with Vercel AI@5
+  - Updated Zod dependency to ^3.25.0 across all packages
+  - Maintained compatibility with zod-from-json-schema@0.0.5
+  - Fixed TypeScript declaration build hanging issue
+  - Resolved circular dependency issues in the build process
+
+## 0.1.83
+
+### Patch Changes
+
+- Updated dependencies [[`5968cef`](https://github.com/VoltAgent/voltagent/commit/5968cef5fe417cd118867ac78217dddfbd60493d)]:
+  - @voltagent/internal@0.0.9
+
+## 0.1.82
+
+### Patch Changes
+
+- [#492](https://github.com/VoltAgent/voltagent/pull/492) [`17d73f2`](https://github.com/VoltAgent/voltagent/commit/17d73f2972f061d8f468c209b79c42b5241cf06f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add addTools method and deprecate addItems for better developer experience - #487
+
+  ## What Changed
+  - Added new `addTools()` method to Agent class for dynamically adding tools and toolkits
+  - Deprecated `addItems()` method in favor of more intuitive `addTools()` naming
+  - Fixed type signature to accept `Tool<any, any>` instead of `Tool<any>` to support tools with output schemas
+
+  ## Before
+
+  ```typescript
+  // ❌ Method didn't exist - would throw error
+  agent.addTools([weatherTool]);
+
+  // ❌ Type error with tools that have outputSchema
+  agent.addItems([weatherTool]); // Type error if weatherTool has outputSchema
+  ```
+
+  ## After
+
+  ```typescript
+  // ✅ Works with new addTools method
+  agent.addTools([weatherTool]);
+
+  // ✅ Also supports toolkits
+  agent.addTools([myToolkit]);
+
+  // ✅ No type errors with outputSchema tools
+  const weatherTool = createTool({
+    name: "getWeather",
+    outputSchema: weatherOutputSchema, // Works without type errors
+    // ...
+  });
+  agent.addTools([weatherTool]);
+  ```
+
+  ## Migration
+
+  The `addItems()` method is deprecated but still works. Update your code to use `addTools()`:
+
+  ```typescript
+  // Old (deprecated)
+  agent.addItems([tool1, tool2]);
+
+  // New (recommended)
+  agent.addTools([tool1, tool2]);
+  ```
+
+  This change improves developer experience by using more intuitive method naming and fixing TypeScript compatibility issues with tools that have output schemas.
+
+## 0.1.81
+
+### Patch Changes
+
+- [#489](https://github.com/VoltAgent/voltagent/pull/489) [`fc79d81`](https://github.com/VoltAgent/voltagent/commit/fc79d81a2657a8472fdc2169213f6ef9f93e9b22) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add separate stream method for workflows with real-time event streaming
+
+  ## What Changed
+
+  Workflows now have a dedicated `.stream()` method that returns an AsyncIterable for real-time event streaming, separate from the `.run()` method. This provides better separation of concerns and improved developer experience.
+
+  ## New Stream Method
+
+  ```typescript
+  // Stream workflow execution with real-time events
+  const stream = workflow.stream(input);
+
+  // Iterate through events as they happen
+  for await (const event of stream) {
+    console.log(`[${event.type}] ${event.from}`, event);
+
+    if (event.type === "workflow-suspended") {
+      // Resume continues the same stream
+      await stream.resume({ approved: true });
+    }
+  }
+
+  // Get final result after stream completes
+  const result = await stream.result;
+  ```
+
+  ## Key Features
+  - **Separate `.stream()` method**: Clean API separation from `.run()`
+  - **AsyncIterable interface**: Native async iteration support
+  - **Promise-based fields**: Result, status, and usage resolve when execution completes
+  - **Continuous streaming**: Stream remains open across suspend/resume cycles (programmatic API)
+  - **Type safety**: Full TypeScript support with `WorkflowStreamResult` type
+
+  ## REST API Streaming
+
+  Added Server-Sent Events (SSE) endpoint for workflow streaming:
+
+  ```typescript
+  POST / workflows / { id } / stream;
+
+  // Returns SSE stream with real-time workflow events
+  // Note: Due to stateless architecture, stream closes on suspension
+  // Resume operations return complete results (not streamed)
+  ```
+
+  ## Technical Details
+  - Stream events flow through central `WorkflowStreamController`
+  - No-op stream writer for non-streaming execution
+  - Suspension events properly emitted to stream
+  - Documentation updated with streaming examples and architecture notes
+
+- [#490](https://github.com/VoltAgent/voltagent/pull/490) [`3d278cf`](https://github.com/VoltAgent/voltagent/commit/3d278cfb1799ffb2b2e460d5595ad68fc5f5c812) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: InMemoryStorage timestamp field for VoltOps history display
+
+  Fixed an issue where VoltOps history wasn't displaying when using InMemoryStorage. The problem was caused by using `updatedAt` field instead of `timestamp` when setting history entries.
+
+  The fix ensures that the `timestamp` field is properly preserved when updating history entries in InMemoryStorage, allowing VoltOps to correctly display workflow execution history.
+
+## 0.1.80
+
+### Patch Changes
+
+- [#484](https://github.com/VoltAgent/voltagent/pull/484) [`6a638f5`](https://github.com/VoltAgent/voltagent/commit/6a638f52b682e7282747a95cac5c3a917caaaf5b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add real-time stream support and usage tracking for workflows
+
+  ## What Changed for You
+
+  Workflows now support real-time event streaming and token usage tracking, providing complete visibility into workflow execution and resource consumption. Previously, workflows only returned final results without intermediate visibility or usage metrics.
+
+  ## Before - Limited Visibility
+
+  ```typescript
+  // ❌ OLD: Only final result, no streaming or usage tracking
+  const workflow = createWorkflowChain(config)
+    .andThen({ execute: async ({ data }) => processData(data) })
+    .andAgent(prompt, agent, { schema });
+
+  const result = await workflow.run(input);
+  // Only got final result, no intermediate events or usage info
+  ```
+
+  ## After - Full Stream Support and Usage Tracking
+
+  ```typescript
+  // ✅ NEW: Real-time streaming and usage tracking
+  const workflow = createWorkflowChain(config)
+    .andThen({
+      execute: async ({ data, writer }) => {
+        // Emit custom events for monitoring
+        writer.write({
+          type: "processing-started",
+          metadata: { itemCount: data.items.length },
+        });
+
+        const processed = await processData(data);
+
+        writer.write({
+          type: "processing-complete",
+          output: { processedCount: processed.length },
+        });
+
+        return processed;
+      },
+    })
+    .andAgent(prompt, agent, { schema });
+
+  // Get both result and stream
+  const execution = await workflow.run(input);
+
+  // Monitor events in real-time
+  for await (const event of execution.stream) {
+    console.log(`[${event.type}] ${event.from}:`, event);
+    // Events: workflow-start, step-start, custom events, step-complete, workflow-complete
+  }
+
+  // Access token usage from all andAgent steps
+  console.log("Total tokens used:", execution.usage);
+  // { promptTokens: 250, completionTokens: 150, totalTokens: 400 }
+  ```
+
+  ## Advanced: Agent Stream Piping
+
+  ```typescript
+  // ✅ NEW: Pipe agent's streaming output directly to workflow stream
+  .andThen({
+    execute: async ({ data, writer }) => {
+      const agent = new Agent({ /* ... */ });
+
+      // Stream agent's response with full visibility
+      const response = await agent.streamText(prompt);
+
+      // Pipe all agent events (text-delta, tool-call, etc.) to workflow stream
+      if (response.fullStream) {
+        await writer.pipeFrom(response.fullStream, {
+          prefix: "agent-", // Optional: prefix event types
+          filter: (part) => part.type !== "finish" // Optional: filter events
+        });
+      }
+
+      const result = await response.text;
+      return { ...data, agentResponse: result };
+    }
+  })
+  ```
+
+  ## Key Features
+
+  ### 1. Stream Events
+
+  Every workflow execution now includes a stream of events:
+  - `workflow-start` / `workflow-complete` - Workflow lifecycle
+  - `step-start` / `step-complete` - Step execution tracking
+  - Custom events via `writer.write()` - Application-specific monitoring
+  - Piped agent events via `writer.pipeFrom()` - Full agent visibility
+
+  ### 2. Writer API in All Steps
+
+  The `writer` is available in all step types:
+
+  ```typescript
+  // andThen
+  .andThen({ execute: async ({ data, writer }) => { /* ... */ } })
+
+  // andTap (observe without modifying)
+  .andTap({ execute: async ({ data, writer }) => {
+    writer.write({ type: "checkpoint", metadata: { data } });
+  }})
+
+  // andWhen
+  .andWhen({
+    condition: async ({ data, writer }) => {
+      writer.write({ type: "condition-check", input: data });
+      return data.shouldProcess;
+    },
+    execute: async ({ data, writer }) => { /* ... */ }
+  })
+  ```
+
+  ### 3. Usage Tracking
+
+  Token usage from all `andAgent` steps is automatically accumulated:
+
+  ```typescript
+  const execution = await workflow.run(input);
+
+  // Total usage across all andAgent steps
+  const { promptTokens, completionTokens, totalTokens } = execution.usage;
+
+  // Usage is always available (defaults to 0 if no agents used)
+  console.log(`Cost: ${totalTokens * 0.0001}`); // Example cost calculation
+  ```
+
+  ## Why This Matters
+  - **Real-time Monitoring**: See what's happening as workflows execute
+  - **Debugging**: Track data flow through each step with custom events
+  - **Cost Control**: Monitor token usage across complex workflows
+  - **Agent Integration**: Full visibility into agent operations within workflows
+  - **Production Ready**: Stream events for logging, monitoring, and alerting
+
+  ## Technical Details
+  - Stream is always available (non-optional) for consistent API
+  - Events include execution context (executionId, timestamp, status)
+  - Writer functions are synchronous for `write()`, async for `pipeFrom()`
+  - Usage tracking only counts `andAgent` steps (not custom agent calls in `andThen`)
+  - All events flow through a central `WorkflowStreamController` for ordering
+
+## 0.1.79
+
+### Patch Changes
+
+- [#481](https://github.com/VoltAgent/voltagent/pull/481) [`2fd8bb4`](https://github.com/VoltAgent/voltagent/commit/2fd8bb47af2906bcfff9be4aac8c6a53a264b628) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add configurable subagent event forwarding for enhanced stream control
+
+  ## What Changed for You
+
+  You can now control which events from subagents are forwarded to the parent stream, providing fine-grained control over stream verbosity and performance. Previously, only `tool-call` and `tool-result` events were forwarded with no way to customize this behavior.
+
+  ## Before - Fixed Event Forwarding
+
+  ```typescript
+  // ❌ OLD: Only tool-call and tool-result events were forwarded (hardcoded)
+  const supervisor = new Agent({
+    name: "Supervisor",
+    subAgents: [writerAgent, editorAgent],
+    // No way to change which events were forwarded
+  });
+
+  const result = await supervisor.streamText("Create content");
+
+  // Stream only contained tool-call and tool-result from subagents
+  for await (const event of result.fullStream) {
+    console.log("Event", event);
+  }
+  ```
+
+  ## After - Full Control Over Event Forwarding
+
+  ```typescript
+  // ✅ NEW: Configure exactly which events to forward
+  const supervisor = new Agent({
+    name: "Supervisor",
+    subAgents: [writerAgent, editorAgent],
+
+    supervisorConfig: {
+      fullStreamEventForwarding: {
+        // Choose which event types to forward (default: ['tool-call', 'tool-result'])
+        types: ["tool-call", "tool-result", "text-delta"],
+
+        // Control tool name prefixing (default: true)
+        addSubAgentPrefix: true, // "WriterAgent: search_tool" vs "search_tool"
+      },
+    },
+  });
+
+  // Stream only contains configured event types from subagents
+  const result = await supervisor.streamText("Create content");
+
+  // Filter subagent events in your application
+  for await (const event of result.fullStream) {
+    if (event.subAgentId && event.subAgentName) {
+      console.log(`Event from ${event.subAgentName}: ${event.type}`);
+    }
+  }
+  ```
+
+  ## Configuration Options
+
+  ```typescript
+  // Minimal - Only tool events (default)
+  fullStreamEventForwarding: {
+    types: ['tool-call', 'tool-result'],
+  }
+
+  // Verbose - See what subagents are saying and doing
+  fullStreamEventForwarding: {
+    types: ['tool-call', 'tool-result', 'text-delta'],
+  }
+
+  // Full visibility - All events for debugging
+  fullStreamEventForwarding: {
+    types: ['tool-call', 'tool-result', 'text-delta', 'reasoning', 'source', 'error', 'finish'],
+  }
+
+  // Clean tool names without agent prefix
+  fullStreamEventForwarding: {
+    types: ['tool-call', 'tool-result'],
+    addSubAgentPrefix: false,
+  }
+  ```
+
+  ## Why This Matters
+  - **Better Performance**: Reduce stream overhead by forwarding only necessary events
+  - **Cleaner Streams**: Focus on meaningful actions rather than all intermediate steps
+  - **Type Safety**: Use `StreamEventType[]` for compile-time validation of event types
+  - **Backward Compatible**: Existing code continues to work with sensible defaults
+
+  ## Technical Details
+  - Default configuration: `['tool-call', 'tool-result']` with `addSubAgentPrefix: true`
+  - Events from subagents include `subAgentId` and `subAgentName` properties for filtering
+  - Configuration available through `supervisorConfig.fullStreamEventForwarding`
+  - Utilizes the `streamEventForwarder` utility for consistent event filtering
+
 ## 0.1.78
 
 ### Patch Changes
@@ -3602,6 +5592,48 @@
 
 ---
 
+## Package: @voltagent/a2a-server
+
+## 1.0.1
+
+### Patch Changes
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - add `@voltagent/a2a-server`, a JSON-RPC Agent-to-Agent (A2A) server that lets external agents call your VoltAgent instance over HTTP/SSE
+  - teach `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` to auto-register configured A2A servers so adding `{ a2aServers: { ... } }` on `VoltAgent` and opting into `honoServer` instantly exposes discovery and RPC endpoints
+  - forward request context (`userId`, `sessionId`, metadata) into agent invocations and provide task management hooks, plus allow filtering/augmenting exposed agents by default
+  - document the setup in `website/docs/agents/a2a/a2a-server.md` and refresh `examples/with-a2a-server` with basic usage and task-store customization
+  - A2A endpoints are now described in Swagger/OpenAPI and listed in the startup banner whenever an A2A server is registered, making discovery of `/.well-known/...` and `/a2a/:serverId` routes trivial.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { A2AServer } from "@voltagent/a2a-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "SupportAgent",
+    purpose: "Handle support questions from partner agents.",
+    model: myModel,
+  });
+
+  const a2aServer = new A2AServer({
+    name: "support-agent",
+    version: "0.1.0",
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    a2aServers: { a2aServer },
+    server: honoServer({ port: 3141 }),
+  });
+  ```
+
+- Updated dependencies [[`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7)]:
+  - @voltagent/internal@0.0.11
+
+---
+
 ## Package: @voltagent/cli
 
 ## 0.1.10
@@ -3737,6 +5769,34 @@
 ---
 
 ## Package: create-voltagent-app
+
+## 0.2.10
+
+### Patch Changes
+
+- [#587](https://github.com/VoltAgent/voltagent/pull/587) [`28d4268`](https://github.com/VoltAgent/voltagent/commit/28d42689e1f2c0f1304f0f934bd09ba510e493bc) Thanks [@wayneg123](https://github.com/wayneg123)! - Switch the app template to bundle with tsdown so the production build runs under Node ESM without manual .js extensions or bespoke import mappers.
+
+## 0.2.9
+
+### Patch Changes
+
+- [`59b4a3e`](https://github.com/VoltAgent/voltagent/commit/59b4a3ecaa5353228bc142f3f175c95a1e4f6d8c) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add VoltAgent v1 support
+
+## 0.2.9-next.0
+
+### Patch Changes
+
+- [#541](https://github.com/VoltAgent/voltagent/pull/541) [`59b4a3e`](https://github.com/VoltAgent/voltagent/commit/59b4a3ecaa5353228bc142f3f175c95a1e4f6d8c) Thanks [@voltagent-bot](https://github.com/voltagent-bot)! - feat: add VoltAgent v1 support
+
+## 0.2.8
+
+### Patch Changes
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - Update Zod to v3.25.0 for compatibility with Vercel AI@5
+  - Updated Zod dependency to ^3.25.0 across all packages
+  - Maintained compatibility with zod-from-json-schema@0.0.5
+  - Fixed TypeScript declaration build hanging issue
+  - Resolved circular dependency issues in the build process
 
 ## 0.2.7
 
@@ -3971,6 +6031,134 @@
 
 ## Package: @voltagent/docs-mcp
 
+## 1.0.14
+
+### Patch Changes
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
+## 1.0.2
+
+### Patch Changes
+
+- [#571](https://github.com/VoltAgent/voltagent/pull/571) [`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+## 1.0.2-next.1
+
+### Patch Changes
+
+- [#551](https://github.com/VoltAgent/voltagent/pull/551) [`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+## 1.0.2-next.0
+
+### Patch Changes
+
+- [#551](https://github.com/VoltAgent/voltagent/pull/551) [`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 1.0.1
+
+### Patch Changes
+
+- [#546](https://github.com/VoltAgent/voltagent/pull/546) [`f12f344`](https://github.com/VoltAgent/voltagent/commit/f12f34405edf0fcb417ed098deba62570260fb81) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: align Zod to ^3.25.76 and fix type mismatch with AI SDK
+
+  We aligned Zod versions across packages to `^3.25.76` to match AI SDK peer ranges and avoid multiple Zod instances at runtime.
+
+  Why this matters
+  - Fixes TypeScript narrowing issues in workflows when consuming `@voltagent/core` from npm with a different Zod instance (e.g., `ai` packages pulling newer Zod).
+  - Prevents errors like "Spread types may only be created from object types" where `data` failed to narrow because `z.ZodTypeAny` checks saw different Zod identities.
+
+  What changed
+  - `@voltagent/server-core`, `@voltagent/server-hono`: dependencies.zod → `^3.25.76`.
+  - `@voltagent/docs-mcp`, `@voltagent/core`: devDependencies.zod → `^3.25.76`.
+  - Examples and templates updated to use `^3.25.76` for consistency (non-publishable).
+
+  Notes for consumers
+  - Ensure a single Zod version is installed (consider a workspace override to pin Zod to `3.25.76`).
+  - This improves compatibility with `ai@5.x` packages that require `zod@^3.25.76 || ^4`.
+
+## 1.0.0
+
+### Minor Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: update docs & examples for V1
+
+## 1.0.0-next.1
+
+### Minor Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: update docs & examples for V1
+
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
+## 0.2.3
+
+### Patch Changes
+
+- [#462](https://github.com/VoltAgent/voltagent/pull/462) [`23ecea4`](https://github.com/VoltAgent/voltagent/commit/23ecea421b8c699f5c395dc8aed687f94d558b6c) Thanks [@omeraplak](https://github.com/omeraplak)! - Update Zod to v3.25.0 for compatibility with Vercel AI@5
+  - Updated Zod dependency to ^3.25.0 across all packages
+  - Maintained compatibility with zod-from-json-schema@0.0.5
+  - Fixed TypeScript declaration build hanging issue
+  - Resolved circular dependency issues in the build process
+
 ## 0.2.2
 
 ### Patch Changes
@@ -4067,6 +6255,95 @@
 ---
 
 ## Package: @voltagent/internal
+
+## 0.0.11
+
+### Patch Changes
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - add `@voltagent/a2a-server`, a JSON-RPC Agent-to-Agent (A2A) server that lets external agents call your VoltAgent instance over HTTP/SSE
+  - teach `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` to auto-register configured A2A servers so adding `{ a2aServers: { ... } }` on `VoltAgent` and opting into `honoServer` instantly exposes discovery and RPC endpoints
+  - forward request context (`userId`, `sessionId`, metadata) into agent invocations and provide task management hooks, plus allow filtering/augmenting exposed agents by default
+  - document the setup in `website/docs/agents/a2a/a2a-server.md` and refresh `examples/with-a2a-server` with basic usage and task-store customization
+  - A2A endpoints are now described in Swagger/OpenAPI and listed in the startup banner whenever an A2A server is registered, making discovery of `/.well-known/...` and `/a2a/:serverId` routes trivial.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { A2AServer } from "@voltagent/a2a-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "SupportAgent",
+    purpose: "Handle support questions from partner agents.",
+    model: myModel,
+  });
+
+  const a2aServer = new A2AServer({
+    name: "support-agent",
+    version: "0.1.0",
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    a2aServers: { a2aServer },
+    server: honoServer({ port: 3141 }),
+  });
+  ```
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - Ship `@voltagent/mcp-server`, a transport-agnostic MCP provider that surfaces VoltAgent agents, workflows, tools, prompts, and resources over stdio, SSE, and HTTP.
+  - Wire MCP registration through `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` so a single `VoltAgent` constructor opt-in (optionally with `honoServer`) exposes stdio mode immediately and HTTP/SSE endpoints when desired.
+  - Filter child sub-agents automatically and lift an agent's `purpose` (fallback to `instructions`) into the MCP tool description for cleaner IDE listings out of the box.
+  - Document the workflow in `website/docs/agents/mcp/mcp-server.md` and refresh `examples/with-mcp-server` with stdio-only and HTTP/SSE configurations.
+  - When MCP is enabled we now publish REST endpoints in Swagger/OpenAPI and echo them in the startup banner so you can discover `/mcp/*` routes without digging through code.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { MCPServer } from "@voltagent/mcp-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "AssistantAgent",
+    purpose: "Respond to support questions and invoke helper tools when needed.",
+    model: myModel,
+  });
+
+  const mcpServer = new MCPServer({
+    name: "support-mcp",
+    version: "1.0.0",
+    agents: { assistant },
+    protocols: { stdio: true, http: false, sse: false },
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    mcpServers: { primary: mcpServer },
+    server: honoServer({ port: 3141 }), // flip http/sse to true when you need remote clients
+  });
+  ```
+
+## 0.0.10
+
+### Patch Changes
+
+- [#559](https://github.com/VoltAgent/voltagent/pull/559) [`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add deps that the core types rely on, i.e. `type-fest` or they are not installed by default by package managers
+
+## 0.0.9
+
+### Patch Changes
+
+- [`5968cef`](https://github.com/VoltAgent/voltagent/commit/5968cef5fe417cd118867ac78217dddfbd60493d) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: remove console.warn from deepClone function
+
+  Removed the console.warn statement from the deepClone function's error handling. Since we require Node.js 17+ where structuredClone is always available, this warning is unnecessary and can clutter logs in development environments.
+
+  ## What Changed
+  - Removed `console.warn("Failed to deep clone object, using shallow clone", { error });` from the catch block
+  - Kept the fallback logic intact for edge cases
+  - Maintained the development-only condition check even though the warning is removed
+
+  This change reduces unnecessary console output while maintaining the same fallback behavior for shallow cloning when structuredClone fails.
 
 ## 0.0.8
 
@@ -4191,6 +6468,88 @@
 ---
 
 ## Package: @voltagent/langfuse-exporter
+
+## 1.1.2
+
+### Patch Changes
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
+## 1.1.1
+
+## 1.1.1-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 1.1.0
+
+### Minor Changes
+
+- [#554](https://github.com/VoltAgent/voltagent/pull/554) [`3a70b05`](https://github.com/VoltAgent/voltagent/commit/3a70b05515d04ea7bc39135d3d399ecd7a59dbe3) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add createLangfuseSpanProcessor helper and robust attribute mappings for new OpenTelemetry observability
+
+  What changed for you
+  - New helper: `createLangfuseSpanProcessor` to plug Langfuse export directly into VoltAgent’s OpenTelemetry-based observability without touching core.
+  - Improved attribute mappings with careful fallbacks to align `@voltagent/core` span attributes and Langfuse fields (usage, model params, input/output, user/session, tags, names).
+  - Updated `examples/with-langfuse` to demonstrate the new integration.
+
+  Quick start
+
+  ```ts
+  import { Agent, VoltAgent, VoltAgentObservability } from "@voltagent/core";
+  import { createLangfuseSpanProcessor } from "@voltagent/langfuse-exporter";
+
+  // Configure Observability: add Langfuse via SpanProcessor
+  const observability = new VoltAgentObservability({
+    spanProcessors: [
+      createLangfuseSpanProcessor({
+        publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+        secretKey: process.env.LANGFUSE_SECRET_KEY,
+        baseUrl: process.env.LANGFUSE_BASE_URL, // e.g. https://cloud.langfuse.com or self-hosted
+        debug: true, // optional
+        // batch: { maxQueueSize, maxExportBatchSize, scheduledDelayMillis, exportTimeoutMillis }
+      }),
+    ],
+  });
+
+  const agent = new Agent({
+    name: "Base Agent",
+    // ...model, tools, memory
+  });
+
+  new VoltAgent({
+    agents: { agent },
+    observability,
+  });
+  ```
+
+  Environment variables
+  - `LANGFUSE_PUBLIC_KEY`
+  - `LANGFUSE_SECRET_KEY`
+  - `LANGFUSE_BASE_URL` (optional; defaults to Langfuse cloud if omitted)
+
+  Mapping details (highlights)
+  - Usage tokens: `gen_ai.usage.*` ← fallbacks to `usage.prompt_tokens`, `usage.completion_tokens`, `usage.total_tokens` from core.
+  - Model params: prefers `gen_ai.request.*`, falls back to `ai.model.*` from core.
+  - Input/output (generation): prefers `ai.prompt.messages` / `ai.response.text`, falls back to generic `input` / `output` set by core.
+  - Input/output (tools): prefers `tool.arguments` / `tool.result`, falls back to `input` / `output`.
+  - User/session: `enduser.id` ← `user.id`, `session.id` ← `conversation.id`.
+  - Tags: reads `tags` or parses JSON from `prompt.tags` if present.
+  - Name: prefers `voltagent.agent.name` then `entity.name` then span name.
+
+  Example updated
+  - See `examples/with-langfuse` for a complete, working setup using `createLangfuseSpanProcessor`.
+
+## 1.0.0
+
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
 
 ## 0.1.5
 
@@ -4321,7 +6680,312 @@
 
 ---
 
+## Package: @voltagent/libsql
+
+## 1.0.6
+
+### Patch Changes
+
+- Updated dependencies [[`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7)]:
+  - @voltagent/internal@0.0.11
+
+## 1.0.5
+
+### Patch Changes
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
+## 1.0.4
+
+### Patch Changes
+
+- [#573](https://github.com/VoltAgent/voltagent/pull/573) [`51cc774`](https://github.com/VoltAgent/voltagent/commit/51cc774445e5c4e676563b5576868ad45d8ecb9c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve subagent tracing hierarchy and entity filtering
+
+  ## What Changed
+
+  Fixed OpenTelemetry span hierarchy issues where subagent spans were overriding parent delegate_task spans instead of being properly nested as children. Also resolved entity ID filtering returning incorrect traces for subagent queries.
+
+  ## The Problem
+
+  When a supervisor agent delegated tasks to subagents:
+  1. **Span Hierarchy**: Subagent spans appeared to replace delegate_task spans instead of being children
+  2. **Entity Filtering**: Querying by subagent entity ID (e.g., `entityId=Formatter`) incorrectly returned traces that should only be associated with the root agent (e.g., `entityId=Supervisor`)
+
+  ## The Solution
+
+  Implemented namespace-based attribute management in trace-context:
+  - **Root agents** use `entity.id`, `entity.type`, `entity.name` attributes
+  - **Subagents** use `subagent.id`, `subagent.name`, `subagent.type` namespace
+  - **Subagents inherit** parent's `entity.id` for correct trace association
+  - **Span naming** clearly identifies subagents with `subagent:AgentName` prefix
+
+  ## Example
+
+  ```typescript
+  // Before: Incorrect hierarchy and filtering
+  // delegate_task span seemed to disappear
+  // entityId=Formatter returned Supervisor's traces
+
+  // After: Proper hierarchy and filtering
+  const supervisor = new Agent({
+    name: "Supervisor",
+    subAgents: [formatter, writer],
+  });
+
+  // Trace structure now shows:
+  // - Supervisor (root span)
+  //   - delegate_task: Formatter (tool span)
+  //     - subagent:Formatter (subagent span with proper parent)
+  //       - (formatter's tools and operations)
+
+  // Filtering works correctly:
+  // entityId=Supervisor ✓ Returns supervisor traces
+  // entityId=Formatter ✗ Returns no traces (correct - Formatter is a subagent)
+  ```
+
+  ## Impact
+  - Proper parent-child relationships in span hierarchy
+  - Correct trace filtering by entity ID
+  - Clear distinction between root agents and subagents in observability data
+  - Better debugging experience with properly nested spans
+
+## 1.0.3
+
+## 1.0.3-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 1.0.2
+
+### Patch Changes
+
+- [#562](https://github.com/VoltAgent/voltagent/pull/562) [`2886b7a`](https://github.com/VoltAgent/voltagent/commit/2886b7aab5bda296cebc0b8b2bd56d684324d799) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: using `safeStringify` instead of `JSON.stringify`
+
+## 1.0.1
+
+### Patch Changes
+
+- [`a0d9e84`](https://github.com/VoltAgent/voltagent/commit/a0d9e8404fe3e2cebfc146cd4622b607bd16b462) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency version
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
+## 1.0.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # LibSQL 1.x — Memory Adapter
+
+  Replaces `LibSQLStorage` with Memory V2 adapter and adds vector/observability adapters.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Migrate storage
+
+  Before (0.1.x):
+
+  ```ts
+  import { LibSQLStorage } from "@voltagent/libsql";
+
+  const agent = new Agent({
+    // ...
+    memory: new LibSQLStorage({ url: "file:./.voltagent/memory.db" }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+    }),
+  });
+  ```
+
+  ## Optional (new)
+
+  ```ts
+  import { LibSQLVectorAdapter } from "@voltagent/libsql";
+  // Add vector search: new Memory({ vector: new LibSQLVectorAdapter({ ... }) })
+  ```
+
+### Patch Changes
+
+- [`c2a6ae1`](https://github.com/VoltAgent/voltagent/commit/c2a6ae125abf9c0b6642927ee78721c6a83dc0f8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency
+
+## 1.0.0-next.2
+
+### Patch Changes
+
+- [`c2a6ae1`](https://github.com/VoltAgent/voltagent/commit/c2a6ae125abf9c0b6642927ee78721c6a83dc0f8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency
+
+## 1.0.0-next.1
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # LibSQL 1.x — Memory Adapter
+
+  Replaces `LibSQLStorage` with Memory V2 adapter and adds vector/observability adapters.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Migrate storage
+
+  Before (0.1.x):
+
+  ```ts
+  import { LibSQLStorage } from "@voltagent/libsql";
+
+  const agent = new Agent({
+    // ...
+    memory: new LibSQLStorage({ url: "file:./.voltagent/memory.db" }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+    }),
+  });
+  ```
+
+  ## Optional (new)
+
+  ```ts
+  import { LibSQLVectorAdapter } from "@voltagent/libsql";
+  // Add vector search: new Memory({ vector: new LibSQLVectorAdapter({ ... }) })
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93)]:
+  - @voltagent/logger@1.0.0-next.0
+
+## 1.0.0-next.0
+
+### Minor Changes
+
+- [#485](https://github.com/VoltAgent/voltagent/pull/485) [`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: initial release of @voltagent/libsql package
+
+  ## What's New
+
+  Introducing `@voltagent/libsql` - a dedicated package for LibSQL/Turso database integration with VoltAgent. This package was extracted from `@voltagent/core` to improve modularity and reduce core dependencies.
+
+  ## Key Features
+  - **Full LibSQL/Turso Support**: Complete implementation of VoltAgent's memory storage interface for LibSQL databases
+  - **Automatic Migrations**: Built-in schema migrations for conversations, messages, and agent history tables
+  - **Thread-based Storage**: Support for conversation threads and message history
+  - **Agent History Tracking**: Store and retrieve agent execution history and timeline events
+  - **Configurable Logging**: Optional logger injection for debugging and monitoring
+
+  ## Installation
+
+  ```bash
+  npm install @voltagent/libsql @libsql/client
+  # or
+  pnpm add @voltagent/libsql @libsql/client
+  # or
+  yarn add @voltagent/libsql @libsql/client
+  ```
+
+  ## Usage
+
+  ```typescript
+  import { LibSQLStorage } from "@voltagent/libsql";
+  import { createClient } from "@libsql/client";
+
+  // Create LibSQL client
+  const client = createClient({
+    url: "file:./memory.db", // or your Turso database URL
+    authToken: "your-token", // for Turso cloud
+  });
+
+  // Initialize storage
+  const storage = new LibSQLStorage({
+    client,
+    tablePrefix: "company_", // optional, defaults to "conversations"
+    debug: true, // optional, enables debug logging
+  });
+
+  // Use with VoltAgent
+  import { VoltAgent, Agent } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Assistant",
+    instructions: "You are a helpful assistant",
+    memory: {
+      storage: storage, // Use LibSQL storage instead of default InMemoryStorage
+    },
+    // ... other config
+  });
+  ```
+
+  ## Migration from Core
+
+  If you were previously using LibSQL as the default storage in `@voltagent/core`, you'll need to explicitly install this package and configure it. See the migration guide in the `@voltagent/core` changelog for detailed instructions.
+
+  ## Why This Package?
+  - **Lambda Compatibility**: Removes native binary dependencies from core, making it Lambda-friendly
+  - **Modular Architecture**: Use only the storage backends you need
+  - **Smaller Core Bundle**: Reduces the size of `@voltagent/core` for users who don't need LibSQL
+  - **Better Maintenance**: Dedicated package allows for independent versioning and updates
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
+---
+
 ## Package: @voltagent/logger
+
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7)]:
+  - @voltagent/internal@0.0.11
+
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
+## 1.0.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - This release adds first‑class OpenTelemetry (OTel) support and seamless integration with VoltAgent 1.x observability.
+
+## 1.0.0-next.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - This release adds first‑class OpenTelemetry (OTel) support and seamless integration with VoltAgent 1.x observability.
+
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [[`5968cef`](https://github.com/VoltAgent/voltagent/commit/5968cef5fe417cd118867ac78217dddfbd60493d)]:
+  - @voltagent/internal@0.0.9
 
 ## 0.1.3
 
@@ -4386,7 +7050,226 @@
 
 ---
 
+## Package: @voltagent/mcp-server
+
+## 1.0.1
+
+### Patch Changes
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - ## ✨ New: first-class Model Context Protocol support
+
+  We shipped a complete MCP integration stack:
+  - `@voltagent/mcp-server` exposes VoltAgent registries (agents, workflows, tools) over stdio/HTTP/SSE transports.
+  - `@voltagent/server-core` and `@voltagent/server-hono` gained ready-made route handlers so HTTP servers can proxy MCP traffic with a few lines of glue code.
+  - `@voltagent/core` exports the shared types that the MCP layers rely on.
+
+  ### Quick start
+
+  ```ts title="src/mcp/server.ts"
+  import { MCPServer } from "@voltagent/mcp-server";
+  import { Agent, createTool } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+  import { z } from "zod";
+
+  const status = createTool({
+    name: "status",
+    description: "Return the current time",
+    parameters: z.object({}),
+    async execute() {
+      return { status: "ok", time: new Date().toISOString() };
+    },
+  });
+
+  const assistant = new Agent({
+    name: "Support Agent",
+    instructions: "Route customer tickets to the correct queue.",
+    model: openai("gpt-4o-mini"),
+    tools: [status],
+  });
+
+  export const mcpServer = new MCPServer({
+    name: "voltagent-example",
+    version: "0.1.0",
+    description: "Expose VoltAgent over MCP",
+    agents: { support: assistant },
+    tools: { status },
+    filterTools: ({ items }) => items.filter((tool) => tool.name !== "debug"),
+  });
+  ```
+
+  With the server registered on your VoltAgent instance (and the Hono MCP routes enabled), the same agents, workflows, and tools become discoverable from VoltOps Console or any MCP-compatible IDE.
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - Ship `@voltagent/mcp-server`, a transport-agnostic MCP provider that surfaces VoltAgent agents, workflows, tools, prompts, and resources over stdio, SSE, and HTTP.
+  - Wire MCP registration through `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` so a single `VoltAgent` constructor opt-in (optionally with `honoServer`) exposes stdio mode immediately and HTTP/SSE endpoints when desired.
+  - Filter child sub-agents automatically and lift an agent's `purpose` (fallback to `instructions`) into the MCP tool description for cleaner IDE listings out of the box.
+  - Document the workflow in `website/docs/agents/mcp/mcp-server.md` and refresh `examples/with-mcp-server` with stdio-only and HTTP/SSE configurations.
+  - When MCP is enabled we now publish REST endpoints in Swagger/OpenAPI and echo them in the startup banner so you can discover `/mcp/*` routes without digging through code.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { MCPServer } from "@voltagent/mcp-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "AssistantAgent",
+    purpose: "Respond to support questions and invoke helper tools when needed.",
+    model: myModel,
+  });
+
+  const mcpServer = new MCPServer({
+    name: "support-mcp",
+    version: "1.0.0",
+    agents: { assistant },
+    protocols: { stdio: true, http: false, sse: false },
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    mcpServers: { primary: mcpServer },
+    server: honoServer({ port: 3141 }), // flip http/sse to true when you need remote clients
+  });
+  ```
+
+- Updated dependencies [[`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7)]:
+  - @voltagent/internal@0.0.11
+
+---
+
 ## Package: @voltagent/postgres
+
+## 1.0.7
+
+### Patch Changes
+
+- Updated dependencies [[`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7)]:
+  - @voltagent/internal@0.0.11
+
+## 1.0.6
+
+### Patch Changes
+
+- [`90ea801`](https://github.com/VoltAgent/voltagent/commit/90ea80121e73e890bb5cea1f970d50d78cd50680) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: migration issue
+
+## 1.0.5
+
+### Patch Changes
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
+## 1.0.4
+
+### Patch Changes
+
+- [`e268f61`](https://github.com/VoltAgent/voltagent/commit/e268f61dff91691000675222093165e1349831dc) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: add debug logs
+
+## 1.0.3
+
+## 1.0.3-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 1.0.2
+
+### Patch Changes
+
+- [#562](https://github.com/VoltAgent/voltagent/pull/562) [`2886b7a`](https://github.com/VoltAgent/voltagent/commit/2886b7aab5bda296cebc0b8b2bd56d684324d799) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: using `safeStringify` instead of `JSON.stringify`
+
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
+## 1.0.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # PostgreSQL 1.x — Memory Adapter
+
+  The old `PostgresStorage` API is replaced by a Memory V2 adapter.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Migrate
+
+  Before (0.1.x):
+
+  ```ts
+  import { PostgresStorage } from "@voltagent/postgres";
+
+  const agent = new Agent({
+    // ...
+    memory: new PostgresStorage({ connection: process.env.DATABASE_URL! }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new PostgreSQLMemoryAdapter({
+        connection: process.env.DATABASE_URL!,
+      }),
+    }),
+  });
+  ```
+
+## 1.0.0-next.1
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # PostgreSQL 1.x — Memory Adapter
+
+  The old `PostgresStorage` API is replaced by a Memory V2 adapter.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Migrate
+
+  Before (0.1.x):
+
+  ```ts
+  import { PostgresStorage } from "@voltagent/postgres";
+
+  const agent = new Agent({
+    // ...
+    memory: new PostgresStorage({ connection: process.env.DATABASE_URL! }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new PostgreSQLMemoryAdapter({
+        connection: process.env.DATABASE_URL!,
+      }),
+    }),
+  });
+  ```
+
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
 
 ## 0.1.12
 
@@ -4768,6 +7651,20 @@
 
 ## Package: @voltagent/sdk
 
+## 0.1.7-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 0.1.7-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
 ## 0.1.6
 
 ### Patch Changes
@@ -4861,7 +7758,1369 @@
 
 ---
 
+## Package: @voltagent/server-core
+
+## 1.0.11
+
+### Patch Changes
+
+- [`c738241`](https://github.com/VoltAgent/voltagent/commit/c738241fea017eeb3c6e3ceb27436ab2f027c48d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod@4 swagger doc issue
+
+## 1.0.10
+
+### Patch Changes
+
+- [#609](https://github.com/VoltAgent/voltagent/pull/609) [`942663f`](https://github.com/VoltAgent/voltagent/commit/942663f74dca0df70cdac323102acb18c050fa65) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow cancellation support, including cancellation metadata, default controller updates, and a new API endpoint for cancelling executions - #608
+
+  ## Usage Example
+
+  ```ts
+  import { createSuspendController } from "@voltagent/core";
+
+  const controller = createSuspendController();
+  const stream = workflow.stream(input, { suspendController: controller });
+
+  // Cancel from application code
+  controller.cancel("User stopped the workflow");
+
+  // Or via HTTP
+  await fetch(`/api/workflows/${workflowId}/executions/${executionId}/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason: "User stopped the workflow" }),
+  });
+  ```
+
+## 1.0.9
+
+### Patch Changes
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - add `@voltagent/a2a-server`, a JSON-RPC Agent-to-Agent (A2A) server that lets external agents call your VoltAgent instance over HTTP/SSE
+  - teach `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` to auto-register configured A2A servers so adding `{ a2aServers: { ... } }` on `VoltAgent` and opting into `honoServer` instantly exposes discovery and RPC endpoints
+  - forward request context (`userId`, `sessionId`, metadata) into agent invocations and provide task management hooks, plus allow filtering/augmenting exposed agents by default
+  - document the setup in `website/docs/agents/a2a/a2a-server.md` and refresh `examples/with-a2a-server` with basic usage and task-store customization
+  - A2A endpoints are now described in Swagger/OpenAPI and listed in the startup banner whenever an A2A server is registered, making discovery of `/.well-known/...` and `/a2a/:serverId` routes trivial.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { A2AServer } from "@voltagent/a2a-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "SupportAgent",
+    purpose: "Handle support questions from partner agents.",
+    model: myModel,
+  });
+
+  const a2aServer = new A2AServer({
+    name: "support-agent",
+    version: "0.1.0",
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    a2aServers: { a2aServer },
+    server: honoServer({ port: 3141 }),
+  });
+  ```
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - ## ✨ New: first-class Model Context Protocol support
+
+  We shipped a complete MCP integration stack:
+  - `@voltagent/mcp-server` exposes VoltAgent registries (agents, workflows, tools) over stdio/HTTP/SSE transports.
+  - `@voltagent/server-core` and `@voltagent/server-hono` gained ready-made route handlers so HTTP servers can proxy MCP traffic with a few lines of glue code.
+  - `@voltagent/core` exports the shared types that the MCP layers rely on.
+
+  ### Quick start
+
+  ```ts title="src/mcp/server.ts"
+  import { MCPServer } from "@voltagent/mcp-server";
+  import { Agent, createTool } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+  import { z } from "zod";
+
+  const status = createTool({
+    name: "status",
+    description: "Return the current time",
+    parameters: z.object({}),
+    async execute() {
+      return { status: "ok", time: new Date().toISOString() };
+    },
+  });
+
+  const assistant = new Agent({
+    name: "Support Agent",
+    instructions: "Route customer tickets to the correct queue.",
+    model: openai("gpt-4o-mini"),
+    tools: [status],
+  });
+
+  export const mcpServer = new MCPServer({
+    name: "voltagent-example",
+    version: "0.1.0",
+    description: "Expose VoltAgent over MCP",
+    agents: { support: assistant },
+    tools: { status },
+    filterTools: ({ items }) => items.filter((tool) => tool.name !== "debug"),
+  });
+  ```
+
+  With the server registered on your VoltAgent instance (and the Hono MCP routes enabled), the same agents, workflows, and tools become discoverable from VoltOps Console or any MCP-compatible IDE.
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - Ship `@voltagent/mcp-server`, a transport-agnostic MCP provider that surfaces VoltAgent agents, workflows, tools, prompts, and resources over stdio, SSE, and HTTP.
+  - Wire MCP registration through `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` so a single `VoltAgent` constructor opt-in (optionally with `honoServer`) exposes stdio mode immediately and HTTP/SSE endpoints when desired.
+  - Filter child sub-agents automatically and lift an agent's `purpose` (fallback to `instructions`) into the MCP tool description for cleaner IDE listings out of the box.
+  - Document the workflow in `website/docs/agents/mcp/mcp-server.md` and refresh `examples/with-mcp-server` with stdio-only and HTTP/SSE configurations.
+  - When MCP is enabled we now publish REST endpoints in Swagger/OpenAPI and echo them in the startup banner so you can discover `/mcp/*` routes without digging through code.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { MCPServer } from "@voltagent/mcp-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "AssistantAgent",
+    purpose: "Respond to support questions and invoke helper tools when needed.",
+    model: myModel,
+  });
+
+  const mcpServer = new MCPServer({
+    name: "support-mcp",
+    version: "1.0.0",
+    agents: { assistant },
+    protocols: { stdio: true, http: false, sse: false },
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    mcpServers: { primary: mcpServer },
+    server: honoServer({ port: 3141 }), // flip http/sse to true when you need remote clients
+  });
+  ```
+
+- Updated dependencies [[`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7)]:
+  - @voltagent/internal@0.0.11
+
+## 1.0.8
+
+### Patch Changes
+
+- [#581](https://github.com/VoltAgent/voltagent/pull/581) [`05ddac1`](https://github.com/VoltAgent/voltagent/commit/05ddac1ac9404cd6062d2e448b0ce4df90ecd748) Thanks [@wayneg123](https://github.com/wayneg123)! - fix(server-core): add missing /chat endpoint to protected routes for JWT auth
+
+  The /agents/:id/chat endpoint was missing from PROTECTED_ROUTES, causing it to bypass JWT authentication while other execution endpoints (/text, /stream, /object, /stream-object) correctly required authentication.
+
+  This fix ensures all agent execution endpoints consistently require JWT authentication when jwtAuth is configured.
+
+  Fixes authentication bypass vulnerability on chat endpoint.
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
+## 1.0.7
+
+### Patch Changes
+
+- [#571](https://github.com/VoltAgent/voltagent/pull/571) [`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+## 1.0.7-next.1
+
+### Patch Changes
+
+- [`78a5046`](https://github.com/VoltAgent/voltagent/commit/78a5046ca4d768a96650ebee63ae1630b0dff7a7) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+## 1.0.7-next.0
+
+### Patch Changes
+
+- [#551](https://github.com/VoltAgent/voltagent/pull/551) [`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 1.0.6
+
+### Patch Changes
+
+- [#562](https://github.com/VoltAgent/voltagent/pull/562) [`2886b7a`](https://github.com/VoltAgent/voltagent/commit/2886b7aab5bda296cebc0b8b2bd56d684324d799) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: using `safeStringify` instead of `JSON.stringify`
+
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
+## 1.0.4
+
+### Patch Changes
+
+- [`78658de`](https://github.com/VoltAgent/voltagent/commit/78658de30e71c586df7391d52b4fe657fe4dc2b0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add ModelMessage format support to server API endpoints
+
+  Server endpoints now accept ModelMessage format (messages with `role` and `content` fields) in addition to UIMessage format and plain strings. This allows clients to send messages in either format:
+  - **String**: Direct text input
+  - **UIMessage[]**: AI SDK UIMessage format with `parts` structure
+  - **ModelMessage[]**: AI SDK ModelMessage format with `role` and `content` structure
+
+  The change adopts a flexible validation, where the server handlers pass input directly to agents which handle the conversion. API schemas and documentation have been updated to reflect this support.
+
+  Example:
+
+  ```typescript
+  // All three formats are now supported
+  await fetch("/agents/assistant/text", {
+    method: "POST",
+    body: JSON.stringify({
+      // Option 1: String
+      input: "Hello",
+
+      // Option 2: UIMessage format
+      input: [{ role: "user", parts: [{ type: "text", text: "Hello" }] }],
+
+      // Option 3: ModelMessage format
+      input: [{ role: "user", content: "Hello" }],
+    }),
+  });
+  ```
+
+## 1.0.3
+
+### Patch Changes
+
+- [`3177a60`](https://github.com/VoltAgent/voltagent/commit/3177a60a2632c200150e8a71d706b44df508cc66) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: version bump
+
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`63d4787`](https://github.com/VoltAgent/voltagent/commit/63d4787bd92135fa2d6edffb3b610889ddc0e3f5)]:
+  - @voltagent/core@1.1.0
+
+## 1.0.2
+
+### Patch Changes
+
+- [`c27b260`](https://github.com/VoltAgent/voltagent/commit/c27b260bfca007da5201eb2967e089790cab3b97) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod dependency moved from dependencies to devDependencies
+
+## 1.0.1
+
+### Patch Changes
+
+- [#545](https://github.com/VoltAgent/voltagent/pull/545) [`5d7c8e7`](https://github.com/VoltAgent/voltagent/commit/5d7c8e7f3898fe84066d0dd9be7f573fca66f185) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve EADDRINUSE error on server startup by fixing race condition in port availability check - #544
+
+  Fixed a critical issue where users would encounter "EADDRINUSE: address already in use" errors when starting VoltAgent servers. The problem was caused by a race condition in the port availability check where the test server wasn't fully closed before the actual server tried to bind to the same port.
+
+  ## What was happening
+
+  When checking if a port was available, the port manager would:
+  1. Create a test server and bind to the port
+  2. On successful binding, immediately close the server
+  3. Return `true` indicating the port was available
+  4. But the test server wasn't fully closed yet when `serve()` tried to bind to the same port
+
+  ## The fix
+
+  Modified the port availability check in `port-manager.ts` to:
+  - Wait for the server's close callback before returning
+  - Add a small delay (50ms) to ensure the OS has fully released the port
+  - This prevents the race condition between test server closure and actual server startup
+
+  ## Changes
+  - **port-manager.ts**: Fixed race condition by properly waiting for test server to close
+  - **hono-server-provider.ts**: Added proper error handling for server startup failures
+
+  This ensures reliable server startup without port conflicts.
+
+- [#546](https://github.com/VoltAgent/voltagent/pull/546) [`f12f344`](https://github.com/VoltAgent/voltagent/commit/f12f34405edf0fcb417ed098deba62570260fb81) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: align Zod to ^3.25.76 and fix type mismatch with AI SDK
+
+  We aligned Zod versions across packages to `^3.25.76` to match AI SDK peer ranges and avoid multiple Zod instances at runtime.
+
+  Why this matters
+  - Fixes TypeScript narrowing issues in workflows when consuming `@voltagent/core` from npm with a different Zod instance (e.g., `ai` packages pulling newer Zod).
+  - Prevents errors like "Spread types may only be created from object types" where `data` failed to narrow because `z.ZodTypeAny` checks saw different Zod identities.
+
+  What changed
+  - `@voltagent/server-core`, `@voltagent/server-hono`: dependencies.zod → `^3.25.76`.
+  - `@voltagent/docs-mcp`, `@voltagent/core`: devDependencies.zod → `^3.25.76`.
+  - Examples and templates updated to use `^3.25.76` for consistency (non-publishable).
+
+  Notes for consumers
+  - Ensure a single Zod version is installed (consider a workspace override to pin Zod to `3.25.76`).
+  - This improves compatibility with `ai@5.x` packages that require `zod@^3.25.76 || ^4`.
+
+- Updated dependencies [[`f12f344`](https://github.com/VoltAgent/voltagent/commit/f12f34405edf0fcb417ed098deba62570260fb81)]:
+  - @voltagent/core@1.0.1
+
+## 1.0.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Server Core 1.x — typed routes, schemas, utilities
+
+  Server functionality lives outside core. Use `@voltagent/server-core` types/schemas with `@voltagent/server-hono`.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Example: extend the app
+
+  ```ts
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+  import { AgentRoutes } from "@voltagent/server-core"; // typed route defs (optional)
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({
+      configureApp: (app) => {
+        // Add custom endpoints alongside the built‑ins
+        app.get("/api/health", (c) => c.json({ status: "ok" }));
+      },
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93)]:
+  - @voltagent/core@1.0.0
+
+## 1.0.0-next.2
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Server Core 1.x — typed routes, schemas, utilities
+
+  Server functionality lives outside core. Use `@voltagent/server-core` types/schemas with `@voltagent/server-hono`.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Example: extend the app
+
+  ```ts
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+  import { AgentRoutes } from "@voltagent/server-core"; // typed route defs (optional)
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({
+      configureApp: (app) => {
+        // Add custom endpoints alongside the built‑ins
+        app.get("/api/health", (c) => c.json({ status: "ok" }));
+      },
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93)]:
+  - @voltagent/core@1.0.0-next.2
+
+## 1.0.0-next.1
+
+### Patch Changes
+
+- Updated dependencies [[`e86cadb`](https://github.com/VoltAgent/voltagent/commit/e86cadb5ae9ee9719bfd1f12e7116d95224699ce), [`e86cadb`](https://github.com/VoltAgent/voltagent/commit/e86cadb5ae9ee9719bfd1f12e7116d95224699ce)]:
+  - @voltagent/core@1.0.0-next.1
+
+---
+
+## Package: @voltagent/server-hono
+
+## 1.0.13
+
+### Patch Changes
+
+- [`d000689`](https://github.com/VoltAgent/voltagent/commit/d00068907428c407757e35f426746924e1617b61) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod@4 and zod@3 compability
+
+## 1.0.12
+
+### Patch Changes
+
+- [`c738241`](https://github.com/VoltAgent/voltagent/commit/c738241fea017eeb3c6e3ceb27436ab2f027c48d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod@4 swagger doc issue
+
+- Updated dependencies [[`c738241`](https://github.com/VoltAgent/voltagent/commit/c738241fea017eeb3c6e3ceb27436ab2f027c48d)]:
+  - @voltagent/server-core@1.0.11
+
+## 1.0.11
+
+### Patch Changes
+
+- [#609](https://github.com/VoltAgent/voltagent/pull/609) [`942663f`](https://github.com/VoltAgent/voltagent/commit/942663f74dca0df70cdac323102acb18c050fa65) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow cancellation support, including cancellation metadata, default controller updates, and a new API endpoint for cancelling executions - #608
+
+  ## Usage Example
+
+  ```ts
+  import { createSuspendController } from "@voltagent/core";
+
+  const controller = createSuspendController();
+  const stream = workflow.stream(input, { suspendController: controller });
+
+  // Cancel from application code
+  controller.cancel("User stopped the workflow");
+
+  // Or via HTTP
+  await fetch(`/api/workflows/${workflowId}/executions/${executionId}/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason: "User stopped the workflow" }),
+  });
+  ```
+
+- Updated dependencies [[`942663f`](https://github.com/VoltAgent/voltagent/commit/942663f74dca0df70cdac323102acb18c050fa65)]:
+  - @voltagent/core@1.1.16
+  - @voltagent/server-core@1.0.10
+
+## 1.0.10
+
+### Patch Changes
+
+- [`8997e35`](https://github.com/VoltAgent/voltagent/commit/8997e3572113ebdab21ce4ccd7a15c4333f7e915) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod@4 compability
+
+## 1.0.9
+
+### Patch Changes
+
+- [`325bc30`](https://github.com/VoltAgent/voltagent/commit/325bc303bd8e99b8f3e8ecd6ea011dcff3500809) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent Swagger/OpenAPI from registering MCP and A2A endpoints when no servers are configured and ensure path parameters declare required metadata, avoiding `/doc` errors in projects that omit those optional packages.
+
+## 1.0.8
+
+### Patch Changes
+
+- [`e4d51da`](https://github.com/VoltAgent/voltagent/commit/e4d51da4161b69cbe0ac737aeca6842a48a4568c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent Swagger/OpenAPI from registering MCP and A2A endpoints when no servers are configured, avoiding `/doc` errors in projects that omit those optional packages.
+
+## 1.0.7
+
+### Patch Changes
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - add `@voltagent/a2a-server`, a JSON-RPC Agent-to-Agent (A2A) server that lets external agents call your VoltAgent instance over HTTP/SSE
+  - teach `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` to auto-register configured A2A servers so adding `{ a2aServers: { ... } }` on `VoltAgent` and opting into `honoServer` instantly exposes discovery and RPC endpoints
+  - forward request context (`userId`, `sessionId`, metadata) into agent invocations and provide task management hooks, plus allow filtering/augmenting exposed agents by default
+  - document the setup in `website/docs/agents/a2a/a2a-server.md` and refresh `examples/with-a2a-server` with basic usage and task-store customization
+  - A2A endpoints are now described in Swagger/OpenAPI and listed in the startup banner whenever an A2A server is registered, making discovery of `/.well-known/...` and `/a2a/:serverId` routes trivial.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { A2AServer } from "@voltagent/a2a-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "SupportAgent",
+    purpose: "Handle support questions from partner agents.",
+    model: myModel,
+  });
+
+  const a2aServer = new A2AServer({
+    name: "support-agent",
+    version: "0.1.0",
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    a2aServers: { a2aServer },
+    server: honoServer({ port: 3141 }),
+  });
+  ```
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - ## ✨ New: first-class Model Context Protocol support
+
+  We shipped a complete MCP integration stack:
+  - `@voltagent/mcp-server` exposes VoltAgent registries (agents, workflows, tools) over stdio/HTTP/SSE transports.
+  - `@voltagent/server-core` and `@voltagent/server-hono` gained ready-made route handlers so HTTP servers can proxy MCP traffic with a few lines of glue code.
+  - `@voltagent/core` exports the shared types that the MCP layers rely on.
+
+  ### Quick start
+
+  ```ts title="src/mcp/server.ts"
+  import { MCPServer } from "@voltagent/mcp-server";
+  import { Agent, createTool } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+  import { z } from "zod";
+
+  const status = createTool({
+    name: "status",
+    description: "Return the current time",
+    parameters: z.object({}),
+    async execute() {
+      return { status: "ok", time: new Date().toISOString() };
+    },
+  });
+
+  const assistant = new Agent({
+    name: "Support Agent",
+    instructions: "Route customer tickets to the correct queue.",
+    model: openai("gpt-4o-mini"),
+    tools: [status],
+  });
+
+  export const mcpServer = new MCPServer({
+    name: "voltagent-example",
+    version: "0.1.0",
+    description: "Expose VoltAgent over MCP",
+    agents: { support: assistant },
+    tools: { status },
+    filterTools: ({ items }) => items.filter((tool) => tool.name !== "debug"),
+  });
+  ```
+
+  With the server registered on your VoltAgent instance (and the Hono MCP routes enabled), the same agents, workflows, and tools become discoverable from VoltOps Console or any MCP-compatible IDE.
+
+- [#596](https://github.com/VoltAgent/voltagent/pull/596) [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7) Thanks [@omeraplak](https://github.com/omeraplak)! - - Ship `@voltagent/mcp-server`, a transport-agnostic MCP provider that surfaces VoltAgent agents, workflows, tools, prompts, and resources over stdio, SSE, and HTTP.
+  - Wire MCP registration through `@voltagent/core`, `@voltagent/server-core`, and `@voltagent/server-hono` so a single `VoltAgent` constructor opt-in (optionally with `honoServer`) exposes stdio mode immediately and HTTP/SSE endpoints when desired.
+  - Filter child sub-agents automatically and lift an agent's `purpose` (fallback to `instructions`) into the MCP tool description for cleaner IDE listings out of the box.
+  - Document the workflow in `website/docs/agents/mcp/mcp-server.md` and refresh `examples/with-mcp-server` with stdio-only and HTTP/SSE configurations.
+  - When MCP is enabled we now publish REST endpoints in Swagger/OpenAPI and echo them in the startup banner so you can discover `/mcp/*` routes without digging through code.
+
+  **Getting started**
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { MCPServer } from "@voltagent/mcp-server";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const assistant = new Agent({
+    name: "AssistantAgent",
+    purpose: "Respond to support questions and invoke helper tools when needed.",
+    model: myModel,
+  });
+
+  const mcpServer = new MCPServer({
+    name: "support-mcp",
+    version: "1.0.0",
+    agents: { assistant },
+    protocols: { stdio: true, http: false, sse: false },
+  });
+
+  export const voltAgent = new VoltAgent({
+    agents: { assistant },
+    mcpServers: { primary: mcpServer },
+    server: honoServer({ port: 3141 }), // flip http/sse to true when you need remote clients
+  });
+  ```
+
+- Updated dependencies [[`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7)]:
+  - @voltagent/server-core@1.0.9
+  - @voltagent/a2a-server@1.0.1
+  - @voltagent/internal@0.0.11
+  - @voltagent/core@1.1.13
+  - @voltagent/mcp-server@1.0.1
+
+## 1.0.6
+
+### Patch Changes
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
+- Updated dependencies [[`05ddac1`](https://github.com/VoltAgent/voltagent/commit/05ddac1ac9404cd6062d2e448b0ce4df90ecd748), [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6)]:
+  - @voltagent/server-core@1.0.8
+
+## 1.0.5
+
+### Patch Changes
+
+- [#571](https://github.com/VoltAgent/voltagent/pull/571) [`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add Zod v3/v4 compatibility layer for @hono/zod-openapi
+  - Added dynamic detection of Zod version using `toJSONSchema` method check
+  - Conditionally loads correct @hono/zod-openapi version based on installed Zod
+  - Fixed route definitions to use enhanced `z` from zod-openapi-compat instead of extending base schemas
+  - Resolves `.openapi()` method not found errors when using Zod v4
+
+- [#571](https://github.com/VoltAgent/voltagent/pull/571) [`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+- Updated dependencies [[`b801a8d`](https://github.com/VoltAgent/voltagent/commit/b801a8da47da5cad15b8637635f83acab5e0d6fc)]:
+  - @voltagent/server-core@1.0.7
+
+## 1.0.5-next.2
+
+### Patch Changes
+
+- [`7d05717`](https://github.com/VoltAgent/voltagent/commit/7d057172029e594b8fe7c77e7fe49fdb3c937ac3) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add Zod v3/v4 compatibility layer for @hono/zod-openapi
+  - Added dynamic detection of Zod version using `toJSONSchema` method check
+  - Conditionally loads correct @hono/zod-openapi version based on installed Zod
+  - Fixed route definitions to use enhanced `z` from zod-openapi-compat instead of extending base schemas
+  - Resolves `.openapi()` method not found errors when using Zod v4
+
+## 1.0.5-next.1
+
+### Patch Changes
+
+- [#551](https://github.com/VoltAgent/voltagent/pull/551) [`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+- Updated dependencies [[`78a5046`](https://github.com/VoltAgent/voltagent/commit/78a5046ca4d768a96650ebee63ae1630b0dff7a7)]:
+  - @voltagent/server-core@1.0.7-next.1
+
+## 1.0.5-next.0
+
+### Patch Changes
+
+- [#551](https://github.com/VoltAgent/voltagent/pull/551) [`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Zod v4 support (backwards-compatible with v3)
+
+  What’s new
+  - Core + server now support `zod` v4 while keeping v3 working.
+  - Peer ranges expanded to `"zod": "^3.25.0 || ^4.0.0"`.
+  - JSON Schema → Zod conversion handles both versions:
+    - Uses `zod-from-json-schema@^0.5.0` when Zod v4 is detected.
+    - Falls back to `zod-from-json-schema@^0.0.5` via alias `zod-from-json-schema-v3` for Zod v3.
+  - Implemented in MCP client (core) and object handlers (server-core).
+
+  Why
+  - Zod v4 introduces changes that require a version-aware conversion path. This update adds seamless compatibility for both major versions.
+
+  Impact
+  - No breaking changes. Projects on Zod v3 continue to work unchanged. Projects can upgrade to Zod v4 without code changes.
+
+  Notes
+  - If your bundler disallows npm aliasing, ensure it can resolve `zod-from-json-schema-v3` (alias to `zod-from-json-schema@^0.0.5`).
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+  - @voltagent/server-core@1.0.7-next.0
+
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+  - @voltagent/server-core@1.0.5
+
+## 1.0.3
+
+### Patch Changes
+
+- [`3177a60`](https://github.com/VoltAgent/voltagent/commit/3177a60a2632c200150e8a71d706b44df508cc66) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: version bump
+
+- Updated dependencies [[`3177a60`](https://github.com/VoltAgent/voltagent/commit/3177a60a2632c200150e8a71d706b44df508cc66)]:
+  - @voltagent/server-core@1.0.3
+
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`63d4787`](https://github.com/VoltAgent/voltagent/commit/63d4787bd92135fa2d6edffb3b610889ddc0e3f5)]:
+  - @voltagent/core@1.1.0
+  - @voltagent/server-core@2.0.0
+
+## 1.0.2
+
+### Patch Changes
+
+- [`c27b260`](https://github.com/VoltAgent/voltagent/commit/c27b260bfca007da5201eb2967e089790cab3b97) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod dependency moved from dependencies to devDependencies
+
+- Updated dependencies [[`c27b260`](https://github.com/VoltAgent/voltagent/commit/c27b260bfca007da5201eb2967e089790cab3b97)]:
+  - @voltagent/server-core@1.0.2
+
+## 1.0.1
+
+### Patch Changes
+
+- [#545](https://github.com/VoltAgent/voltagent/pull/545) [`5d7c8e7`](https://github.com/VoltAgent/voltagent/commit/5d7c8e7f3898fe84066d0dd9be7f573fca66f185) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve EADDRINUSE error on server startup by fixing race condition in port availability check - #544
+
+  Fixed a critical issue where users would encounter "EADDRINUSE: address already in use" errors when starting VoltAgent servers. The problem was caused by a race condition in the port availability check where the test server wasn't fully closed before the actual server tried to bind to the same port.
+
+  ## What was happening
+
+  When checking if a port was available, the port manager would:
+  1. Create a test server and bind to the port
+  2. On successful binding, immediately close the server
+  3. Return `true` indicating the port was available
+  4. But the test server wasn't fully closed yet when `serve()` tried to bind to the same port
+
+  ## The fix
+
+  Modified the port availability check in `port-manager.ts` to:
+  - Wait for the server's close callback before returning
+  - Add a small delay (50ms) to ensure the OS has fully released the port
+  - This prevents the race condition between test server closure and actual server startup
+
+  ## Changes
+  - **port-manager.ts**: Fixed race condition by properly waiting for test server to close
+  - **hono-server-provider.ts**: Added proper error handling for server startup failures
+
+  This ensures reliable server startup without port conflicts.
+
+- [#546](https://github.com/VoltAgent/voltagent/pull/546) [`f12f344`](https://github.com/VoltAgent/voltagent/commit/f12f34405edf0fcb417ed098deba62570260fb81) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: align Zod to ^3.25.76 and fix type mismatch with AI SDK
+
+  We aligned Zod versions across packages to `^3.25.76` to match AI SDK peer ranges and avoid multiple Zod instances at runtime.
+
+  Why this matters
+  - Fixes TypeScript narrowing issues in workflows when consuming `@voltagent/core` from npm with a different Zod instance (e.g., `ai` packages pulling newer Zod).
+  - Prevents errors like "Spread types may only be created from object types" where `data` failed to narrow because `z.ZodTypeAny` checks saw different Zod identities.
+
+  What changed
+  - `@voltagent/server-core`, `@voltagent/server-hono`: dependencies.zod → `^3.25.76`.
+  - `@voltagent/docs-mcp`, `@voltagent/core`: devDependencies.zod → `^3.25.76`.
+  - Examples and templates updated to use `^3.25.76` for consistency (non-publishable).
+
+  Notes for consumers
+  - Ensure a single Zod version is installed (consider a workspace override to pin Zod to `3.25.76`).
+  - This improves compatibility with `ai@5.x` packages that require `zod@^3.25.76 || ^4`.
+
+- Updated dependencies [[`5d7c8e7`](https://github.com/VoltAgent/voltagent/commit/5d7c8e7f3898fe84066d0dd9be7f573fca66f185), [`f12f344`](https://github.com/VoltAgent/voltagent/commit/f12f34405edf0fcb417ed098deba62570260fb81)]:
+  - @voltagent/server-core@1.0.1
+  - @voltagent/core@1.0.1
+
+## 1.0.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Server Hono 1.x — pluggable HTTP server
+
+  Core no longer embeds an HTTP server. Use the Hono provider.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Basic setup
+
+  ```ts
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({ port: 3141, enableSwaggerUI: true }),
+  });
+  ```
+
+  ## Custom routes and auth
+
+  ```ts
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({
+      configureApp: (app) => {
+        app.get("/api/health", (c) => c.json({ status: "ok" }));
+      },
+      auth: jwtAuth({
+        secret: process.env.JWT_SECRET!,
+        publicRoutes: ["/health", "/metrics"],
+      }),
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93), [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93)]:
+  - @voltagent/core@1.0.0
+  - @voltagent/server-core@1.0.0
+
+## 1.0.0-next.2
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Server Hono 1.x — pluggable HTTP server
+
+  Core no longer embeds an HTTP server. Use the Hono provider.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Basic setup
+
+  ```ts
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({ port: 3141, enableSwaggerUI: true }),
+  });
+  ```
+
+  ## Custom routes and auth
+
+  ```ts
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { agent },
+    server: honoServer({
+      configureApp: (app) => {
+        app.get("/api/health", (c) => c.json({ status: "ok" }));
+      },
+      auth: jwtAuth({
+        secret: process.env.JWT_SECRET!,
+        publicRoutes: ["/health", "/metrics"],
+      }),
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93), [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93)]:
+  - @voltagent/core@1.0.0-next.2
+  - @voltagent/server-core@1.0.0-next.2
+
+## 1.0.0-next.1
+
+### Minor Changes
+
+- [#514](https://github.com/VoltAgent/voltagent/pull/514) [`e86cadb`](https://github.com/VoltAgent/voltagent/commit/e86cadb5ae9ee9719bfd1f12e7116d95224699ce) Thanks [@omeraplak](https://github.com/omeraplak)! - # VoltAgent Server Architecture - Pluggable Server Providers
+
+  VoltAgent's server architecture has been completely redesigned with a pluggable server provider pattern, removing the built-in server in favor of optional server packages.
+
+  ## Breaking Changes
+
+  ### Built-in Server Removed
+
+  The built-in server has been removed from the core package. Server functionality is now provided through separate server packages.
+
+  **Before:**
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+
+  // Server was built-in and auto-started
+  const voltAgent = new VoltAgent({
+    agents: { myAgent },
+    port: 3000,
+    enableSwaggerUI: true,
+    autoStart: true, // Server auto-started
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+
+  // Server is now optional and explicitly configured
+  const voltAgent = new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3000,
+      enableSwaggerUI: true,
+    }),
+  });
+  ```
+
+  ### Custom Endpoints Removed
+
+  Custom endpoint registration methods have been removed. Custom routes should now be added through the server provider's `configureApp` option.
+
+  **Before:**
+
+  ```typescript
+  voltAgent.registerCustomEndpoint({
+    path: "/custom",
+    method: "GET",
+    handler: async (req) => {
+      return { message: "Hello" };
+    },
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3000,
+      // Configure custom routes via configureApp callback
+      configureApp: (app) => {
+        app.get("/api/custom", (c) => {
+          return c.json({ message: "Hello" });
+        });
+
+        app.post("/api/calculate", async (c) => {
+          const { a, b } = await c.req.json();
+          return c.json({ result: a + b });
+        });
+      },
+    }),
+  });
+  ```
+
+  ### Server Management Methods Changed
+
+  **Before:**
+
+  ```typescript
+  // Server started automatically or with:
+  voltAgent.startServer();
+  // No stop method available
+  ```
+
+  **After:**
+
+  ```typescript
+  // Server starts automatically if provider is configured
+  voltAgent.startServer(); // Still available
+  voltAgent.stopServer(); // New method for graceful shutdown
+  ```
+
+  ## New Server Provider Pattern
+
+  ### IServerProvider Interface
+
+  Server providers must implement the `IServerProvider` interface:
+
+  ```typescript
+  interface IServerProvider {
+    start(): Promise<{ port: number }>;
+    stop(): Promise<void>;
+    isRunning(): boolean;
+  }
+  ```
+
+  ### Available Server Providers
+
+  #### @voltagent/server-hono (Recommended)
+
+  Edge-optimized server using Hono framework:
+
+  ```typescript
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+      enableSwaggerUI: true,
+      auth: {
+        provider: "jwt",
+        secret: "your-secret",
+      },
+      configureApp: (app) => {
+        // Add custom routes
+        app.get("/api/health", (c) => {
+          return c.json({ status: "healthy" });
+        });
+      },
+    }),
+  });
+  ```
+
+  Features:
+  - **Built-in JWT Authentication**: Secure your API with JWT tokens
+  - **Swagger UI Support**: Interactive API documentation
+  - **WebSocket Support**: Real-time streaming capabilities
+  - **Edge Runtime Compatible**: Deploy to Vercel Edge, Cloudflare Workers, etc.
+  - **Fast and Lightweight**: Optimized for performance
+
+  #### Authentication & Authorization
+
+  The server-hono package includes comprehensive JWT authentication support:
+
+  ```typescript
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+
+      // Configure JWT authentication
+      auth: jwtAuth({
+        secret: process.env.JWT_SECRET,
+
+        // Map JWT payload to user object
+        mapUser: (payload) => ({
+          id: payload.sub,
+          email: payload.email,
+          role: payload.role,
+          permissions: payload.permissions || [],
+        }),
+
+        // Define public routes (no auth required)
+        publicRoutes: ["/health", "/metrics"],
+
+        // JWT verification options
+        verifyOptions: {
+          algorithms: ["HS256"],
+          audience: "your-app",
+          issuer: "your-auth-server",
+        },
+      }),
+    }),
+  });
+  ```
+
+  **Accessing User Context in Agents:**
+
+  ```typescript
+  const agent = new Agent({
+    name: "SecureAgent",
+    instructions: "You are a secure assistant",
+    model: openai("gpt-4o-mini"),
+
+    // Access authenticated user in hooks
+    hooks: {
+      onStart: async ({ context }) => {
+        const user = context.get("user");
+        if (user?.role === "admin") {
+          // Admin-specific logic
+        }
+      },
+    },
+  });
+  ```
+
+  **Making Authenticated Requests:**
+
+  ```bash
+  # Include JWT token in Authorization header
+  curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+    http://localhost:3141/api/agent/chat
+  ```
+
+  ### No Server Configuration
+
+  For serverless or custom deployments:
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    // No server property - runs without HTTP server
+  });
+  ```
+
+  ## Migration Guide
+  1. **Install server package**:
+
+     ```bash
+     npm install @voltagent/server-hono
+     ```
+
+  2. **Update imports**:
+
+     ```typescript
+     import { honoServer } from "@voltagent/server-hono";
+     ```
+
+  3. **Update VoltAgent configuration**:
+     - Remove: `port`, `enableSwaggerUI`, `autoStart`, `customEndpoints`
+     - Add: `server: honoServer({ /* config */ })`
+  4. **Handle custom routes**:
+     - Use `configureApp` callback in server config
+     - Access full Hono app instance for custom routes
+
+### Patch Changes
+
+- Updated dependencies [[`e86cadb`](https://github.com/VoltAgent/voltagent/commit/e86cadb5ae9ee9719bfd1f12e7116d95224699ce), [`e86cadb`](https://github.com/VoltAgent/voltagent/commit/e86cadb5ae9ee9719bfd1f12e7116d95224699ce)]:
+  - @voltagent/core@1.0.0-next.1
+  - @voltagent/server-core@1.0.0-next.1
+
+---
+
 ## Package: @voltagent/supabase
+
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [[`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7), [`355836b`](https://github.com/VoltAgent/voltagent/commit/355836b39a6d1ba36c5cfac82008cab3281703e7)]:
+  - @voltagent/internal@0.0.11
+
+## 1.0.3
+
+### Patch Changes
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
+## 1.0.2
+
+## 1.0.2-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 1.0.1
+
+### Patch Changes
+
+- [`a0d9e84`](https://github.com/VoltAgent/voltagent/commit/a0d9e8404fe3e2cebfc146cd4622b607bd16b462) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency version
+
+- Updated dependencies [[`134bf9a`](https://github.com/VoltAgent/voltagent/commit/134bf9a2978f0b069f842910fb4fb3e969f70390)]:
+  - @voltagent/internal@0.0.10
+
+## 1.0.0
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Supabase 1.x — Memory Adapter
+
+  Supabase storage now implements the Memory V2 adapter pattern.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Migrate
+
+  Before (0.1.x):
+
+  ```ts
+  import { SupabaseMemory } from "@voltagent/supabase";
+
+  const agent = new Agent({
+    // ...
+    memory: new SupabaseMemory({ url: process.env.SUPABASE_URL!, key: process.env.SUPABASE_KEY! }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { SupabaseMemoryAdapter } from "@voltagent/supabase";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new SupabaseMemoryAdapter({
+        url: process.env.SUPABASE_URL!,
+        key: process.env.SUPABASE_KEY!,
+      }),
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- [`c2a6ae1`](https://github.com/VoltAgent/voltagent/commit/c2a6ae125abf9c0b6642927ee78721c6a83dc0f8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency
+
+## 1.0.0-next.2
+
+### Patch Changes
+
+- [`c2a6ae1`](https://github.com/VoltAgent/voltagent/commit/c2a6ae125abf9c0b6642927ee78721c6a83dc0f8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/logger dependency
+
+## 1.0.0-next.1
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # Supabase 1.x — Memory Adapter
+
+  Supabase storage now implements the Memory V2 adapter pattern.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Migrate
+
+  Before (0.1.x):
+
+  ```ts
+  import { SupabaseMemory } from "@voltagent/supabase";
+
+  const agent = new Agent({
+    // ...
+    memory: new SupabaseMemory({ url: process.env.SUPABASE_URL!, key: process.env.SUPABASE_KEY! }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { SupabaseMemoryAdapter } from "@voltagent/supabase";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new SupabaseMemoryAdapter({
+        url: process.env.SUPABASE_URL!,
+        key: process.env.SUPABASE_KEY!,
+      }),
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93)]:
+  - @voltagent/logger@1.0.0-next.0
+
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
+## 0.1.20
+
+### Patch Changes
+
+- [#496](https://github.com/VoltAgent/voltagent/pull/496) [`0dcc675`](https://github.com/VoltAgent/voltagent/commit/0dcc6759eb1a95d756a49139610b5352db2e91b0) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve SupabaseClient ESM import error
+
+  Fixed an issue where `SupabaseClient` was not available as a runtime export in the ESM build of @supabase/supabase-js v2.54.0. The type is exported in TypeScript definitions but not in the actual ESM runtime.
+
+  ## What Changed
+  - Changed `SupabaseClient` to a type-only import using `import { type SupabaseClient }`
+  - Replaced `P.instanceOf(SupabaseClient)` pattern matching with `P.not(P.nullish)` since the class is not available at runtime
+  - Added type assertion to maintain TypeScript type safety
+
+  ## Before
+
+  ```typescript
+  import { SupabaseClient, createClient } from "@supabase/supabase-js";
+  // ...
+  .with({ client: P.instanceOf(SupabaseClient) }, (o) => o.client)
+  ```
+
+  ## After
+
+  ```typescript
+  import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+  // ...
+  .with({ client: P.not(P.nullish) }, (o) => o.client as SupabaseClient)
+  ```
+
+  This ensures compatibility with both CommonJS and ESM module systems while maintaining full type safety.
+
+- Updated dependencies [[`5968cef`](https://github.com/VoltAgent/voltagent/commit/5968cef5fe417cd118867ac78217dddfbd60493d)]:
+  - @voltagent/internal@0.0.9
+  - @voltagent/logger@0.1.4
+
+## 0.1.19
+
+### Patch Changes
+
+- [#479](https://github.com/VoltAgent/voltagent/pull/479) [`8b55691`](https://github.com/VoltAgent/voltagent/commit/8b556910b0d1000bf0a956098e5ca49e733b9476) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat: Added `logger` to the SupabaseMemory provider and provided improved type safety for the constructor
+
+  ### New Features
+
+  #### `logger`
+
+  You can now pass in a `logger` to the SupabaseMemory provider and it will be used to log messages.
+
+  ```typescript
+  import { createPinoLogger } from "@voltagent/logger";
+
+  const memory = new SupabaseMemory({
+    client: supabaseClient,
+    logger: createPinoLogger({ name: "memory-supabase" }),
+  });
+  ```
+
+  #### Improved type safety for the constructor
+
+  The constructor now has improved type safety for the `client` and `logger` options.
+
+  ```typescript
+  const memory = new SupabaseMemory({
+    client: supabaseClient,
+    supabaseUrl: "https://test.supabase.co", // this will show a TypeScript error
+    supabaseKey: "test-key",
+  });
+  ```
+
+  The `client` option also checks that the `client` is an instance of `SupabaseClient`
+
+  ```typescript
+  const memory = new SupabaseMemory({
+    client: aNonSupabaseClient, // this will show a TypeScript error AND throw an error at runtime
+  });
+  ```
+
+  ### Internal Changes
+  - Cleaned up and reorganized the SupabaseMemory class
+  - Renamed files to be more descriptive and not in the `index.ts` file
+  - Added improved mocking to the test implementation for the SupabaseClient
+  - Removed all `console.*` statements and added a `biome` lint rule to prevent them from being added back
+
+## 0.1.18
+
+### Patch Changes
+
+- [#475](https://github.com/VoltAgent/voltagent/pull/475) [`9b4ea38`](https://github.com/VoltAgent/voltagent/commit/9b4ea38b28df248c1e1ad5541d414bd47838df9a) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Remove other potentially problematic `JSON.stringify` usages
 
 ## 0.1.17
 
@@ -5407,260 +9666,27 @@
 
 ---
 
-## Package: @voltagent/vercel-ai
-
-## 0.1.17
-
-### Patch Changes
-
-- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
-
-  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
-
-  **Key improvements:**
-  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
-  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
-  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
-  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
-  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
-
-  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
-
-## 0.1.16
-
-### Patch Changes
-
-- [#425](https://github.com/VoltAgent/voltagent/pull/425) [`8605e70`](https://github.com/VoltAgent/voltagent/commit/8605e708d17e6fa0150bd13235e795288422c52b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Promise-based properties and warnings to AI responses - #422
-
-  Enhanced AI response types to align with Vercel AI SDK's API and provide better metadata:
-
-  **For `streamObject`:**
-  - Added optional `object?: Promise<T>` property that resolves to the final generated object
-  - Added optional `usage?: Promise<UsageInfo>` property that resolves to token usage information
-  - Added optional `warnings?: Promise<any[] | undefined>` property for provider warnings
-
-  **For `streamText`:**
-  - Added optional `text?: Promise<string>` property that resolves to the full generated text
-  - Added optional `finishReason?: Promise<string>` property that resolves to the reason generation stopped
-  - Added optional `usage?: Promise<UsageInfo>` property that resolves to token usage information
-  - Added optional `reasoning?: Promise<string | undefined>` property that resolves to model's reasoning text
-
-  **For `generateText` and `generateObject`:**
-  - Added optional `reasoning?: string` property for model's reasoning text (generateText only)
-  - Added optional `warnings?: any[]` property for provider warnings
-
-  These properties are optional to maintain backward compatibility. Providers that support these features (like Vercel AI) now return these values, allowing users to access rich metadata:
-
-  ```typescript
-  // For streamObject
-  const response = await agent.streamObject(input, schema);
-  const finalObject = await response.object; // Promise<T>
-  const usage = await response.usage; // Promise<UsageInfo>
-
-  // For streamText
-  const response = await agent.streamText(input);
-  const fullText = await response.text; // Promise<string>
-  const usage = await response.usage; // Promise<UsageInfo>
-
-  // For generateText
-  const response = await agent.generateText(input);
-  console.log(response.warnings); // Any provider warnings
-  console.log(response.reasoning); // Model's reasoning (if available)
-  ```
-
-- Updated dependencies [[`8605e70`](https://github.com/VoltAgent/voltagent/commit/8605e708d17e6fa0150bd13235e795288422c52b)]:
-  - @voltagent/core@0.1.69
-
-## 0.1.15
-
-### Patch Changes
-
-- [`1f8ce22`](https://github.com/VoltAgent/voltagent/commit/1f8ce226fec449f16f1dce6c2b96cef7030eff3a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: zod peer dependency to allow flexible versioning (^3.24.2 instead of 3.24.2) to resolve npm install conflicts
-
-- Updated dependencies [[`1f8ce22`](https://github.com/VoltAgent/voltagent/commit/1f8ce226fec449f16f1dce6c2b96cef7030eff3a)]:
-  - @voltagent/core@0.1.66
-
-## 0.1.14
-
-### Patch Changes
-
-- [#401](https://github.com/VoltAgent/voltagent/pull/401) [`4a7145d`](https://github.com/VoltAgent/voltagent/commit/4a7145debd66c7b1dfb953608e400b6c1ed02db7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve TypeScript performance issues by fixing Zod dependency configuration (#377)
-
-  Moved Zod from direct dependencies to peer dependencies in @voltagent/vercel-ai to prevent duplicate Zod installations that were causing TypeScript server slowdowns. Also standardized Zod versions across the workspace to ensure consistency.
-
-  Changes:
-  - @voltagent/vercel-ai: Moved `zod` from dependencies to peerDependencies
-  - @voltagent/docs-mcp: Updated `zod` from `^3.23.8` to `3.24.2`
-  - @voltagent/with-postgres: Updated `zod` from `^3.24.2` to `3.24.2` (removed caret)
-
-  This fix significantly improves TypeScript language server performance by ensuring only one Zod version is processed, eliminating the "Type instantiation is excessively deep and possibly infinite" errors that users were experiencing.
-
-- Updated dependencies [[`57c4874`](https://github.com/VoltAgent/voltagent/commit/57c4874d4d4807c50242b2e34ab9574fc6129888), [`da66f86`](https://github.com/VoltAgent/voltagent/commit/da66f86d92a278007c2d3386d22b482fa70d93ff), [`4a7145d`](https://github.com/VoltAgent/voltagent/commit/4a7145debd66c7b1dfb953608e400b6c1ed02db7)]:
-  - @voltagent/core@0.1.61
-
-## 0.1.13
-
-### Patch Changes
-
-- [`8eced6d`](https://github.com/VoltAgent/voltagent/commit/8eced6dad9c688a33b4700a6fc4be34bfc3ba88b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve onStepFinishHandler issue preventing tool_calls and hooks from functioning properly
-
-  Fixed a critical bug in the Vercel AI provider where the `onStepFinishHandler` was blocking tool calls and agent hooks from executing correctly. This issue was preventing agents from properly utilizing tools and executing lifecycle hooks during operations.
-
-## 0.1.12
-
-### Patch Changes
-
-- [#251](https://github.com/VoltAgent/voltagent/pull/251) [`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add fullStream support for generative UIs
-
-  Added `fullStream` support to the Vercel AI provider for better streaming in generative UI applications.
-
-- Updated dependencies [[`be0cf47`](https://github.com/VoltAgent/voltagent/commit/be0cf47ec6e9640119d752dd6b608097d06bf69d), [`a3b4e60`](https://github.com/VoltAgent/voltagent/commit/a3b4e604e6f79281903ff0c28422e6ee2863b340), [`20119ad`](https://github.com/VoltAgent/voltagent/commit/20119ada182ec5f313a7f46956218d593180e096)]:
-  - @voltagent/core@0.1.36
-
-## 0.1.11
-
-### Patch Changes
-
-- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add toolName to tool-result steps
-
-  Tool result steps now include the toolName field, ensuring proper identification of which tool generated each result in conversation flows and hook messages.
-
-## 0.1.10
-
-### Patch Changes
-
-- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
-
-- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
-  - @voltagent/core@0.1.31
-
-## 0.1.9
-
-### Patch Changes
-
-- [#155](https://github.com/VoltAgent/voltagent/pull/155) [`35b11f5`](https://github.com/VoltAgent/voltagent/commit/35b11f5258073dd39f3032db6d9b29146f4b940c) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: update `tsconfig.json`'s `target` to `ES2022`
-
-- [#162](https://github.com/VoltAgent/voltagent/pull/162) [`b164bd0`](https://github.com/VoltAgent/voltagent/commit/b164bd014670452cb162b388f03565db992767af) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: pin zod version to 3.24.2 to avoid "Type instantiation is excessively deep and possibly infinite" error
-
-  Fixed compatibility issues between different zod versions that were causing TypeScript compilation errors. This issue occurs when multiple packages use different patch versions of zod (e.g., 3.23.x vs 3.24.x), leading to type instantiation depth problems. By pinning to 3.24.2, we ensure consistent behavior across all packages.
-
-  See: https://github.com/colinhacks/zod/issues/3435
-
-- Updated dependencies [[`35b11f5`](https://github.com/VoltAgent/voltagent/commit/35b11f5258073dd39f3032db6d9b29146f4b940c), [`b164bd0`](https://github.com/VoltAgent/voltagent/commit/b164bd014670452cb162b388f03565db992767af), [`9412cf0`](https://github.com/VoltAgent/voltagent/commit/9412cf0633f20d6b77c87625fc05e9e216936758)]:
-  - @voltagent/core@0.1.20
-
-## 0.1.7
-
-### Patch Changes
-
-- [#102](https://github.com/VoltAgent/voltagent/pull/102) [`cdfec65`](https://github.com/VoltAgent/voltagent/commit/cdfec657f731fdc1b6d0c307376e3299813f55d3) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: use 'instructions' field for Agent definitions in examples - #88
-
-  Updated documentation examples (READMEs, docs, blogs) and relevant package code examples to use the `instructions` field instead of `description` when defining `Agent` instances.
-
-  This change aligns the examples with the preferred API usage for the `Agent` class, where `instructions` provides behavioral guidance to the agent/LLM. This prepares for the eventual deprecation of the `description` field specifically for `Agent` class definitions.
-
-  **Example Change for Agent Definition:**
-
-  ```diff
-    const agent = new Agent({
-      name: "My Assistant",
-  -   description: "A helpful assistant.",
-  +   instructions: "A helpful assistant.",
-      llm: new VercelAIProvider(),
-      model: openai("gpt-4o-mini"),
-    });
-  ```
-
-- Updated dependencies [[`cdfec65`](https://github.com/VoltAgent/voltagent/commit/cdfec657f731fdc1b6d0c307376e3299813f55d3)]:
-  - @voltagent/core@0.1.14
-
-## 0.1.6
-
-### Patch Changes
-
-- [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Update Zod to version 3.24.2 to resolve "Type instantiation is excessively deep and possibly infinite" error (related to https://github.com/colinhacks/zod/issues/3435).
-
-- Updated dependencies [[`f7de864`](https://github.com/VoltAgent/voltagent/commit/f7de864503d598cf7131cc01afa3779639190107), [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925)]:
-  - @voltagent/core@0.1.13
-
-## 0.1.5
-
-### Patch Changes
-
-- [#77](https://github.com/VoltAgent/voltagent/pull/77) [`beaa8fb`](https://github.com/VoltAgent/voltagent/commit/beaa8fb1f1bc6351f1bede0b65a6a189cc1b6ea2) Thanks [@omeraplak](https://github.com/omeraplak)! - **API & Providers:** Standardized message content format for array inputs.
-  - The API (`/text`, `/stream`, `/object`, `/stream-object` endpoints) now strictly expects the `content` field within message objects (when `input` is an array) to be either a `string` or an `Array` of content parts (e.g., `[{ type: 'text', text: '...' }]`).
-  - The previous behavior of allowing a single content object (e.g., `{ type: 'text', ... }`) directly as the value for `content` in message arrays is no longer supported in the API schema. Raw string inputs remain unchanged.
-  - Provider logic (`google-ai`, `groq-ai`, `xsai`) updated to align with this stricter definition.
-
-  **Console:**
-  - **Added file and image upload functionality to the Assistant Chat.** Users can now attach multiple files/images via a button, preview attachments, and send them along with text messages.
-  - Improved the Assistant Chat resizing: Replaced size toggle buttons with a draggable handle (top-left corner).
-  - Chat window dimensions are now saved to local storage and restored on reload.
-
-  **Internal:**
-  - Added comprehensive test suites for Groq and XsAI providers.
-
-- Updated dependencies [[`beaa8fb`](https://github.com/VoltAgent/voltagent/commit/beaa8fb1f1bc6351f1bede0b65a6a189cc1b6ea2)]:
-  - @voltagent/core@0.1.10
-
-## 0.1.4
-
-### Patch Changes
-
-- [#71](https://github.com/VoltAgent/voltagent/pull/71) [`1f20509`](https://github.com/VoltAgent/voltagent/commit/1f20509528fc2cb2ba00f86d649848afae34af04) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: Standardize Agent Error and Finish Handling
-
-  This change introduces a more robust and consistent way errors and successful finishes are handled across the `@voltagent/core` Agent and LLM provider implementations (like `@voltagent/vercel-ai`).
-
-  **Key Improvements:**
-  - **Standardized Errors (`VoltAgentError`):**
-    - Introduced `VoltAgentError`, `ToolErrorInfo`, and `StreamOnErrorCallback` types in `@voltagent/core`.
-    - LLM Providers (e.g., Vercel) now wrap underlying SDK/API errors into a structured `VoltAgentError` before passing them to `onError` callbacks or throwing them.
-    - Agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) now consistently handle `VoltAgentError`, enabling richer context (stage, code, tool details) in history events and logs.
-
-  - **Standardized Stream Finish Results:**
-    - Introduced `StreamTextFinishResult`, `StreamTextOnFinishCallback`, `StreamObjectFinishResult`, and `StreamObjectOnFinishCallback` types in `@voltagent/core`.
-    - LLM Providers (e.g., Vercel) now construct these standardized result objects upon successful stream completion.
-    - Agent streaming methods (`streamText`, `streamObject`) now receive these standardized results in their `onFinish` handlers, ensuring consistent access to final output (`text` or `object`), `usage`, `finishReason`, etc., for history, events, and hooks.
-
-  - **Updated Interfaces:** The `LLMProvider` interface and related options types (`StreamTextOptions`, `StreamObjectOptions`) have been updated to reflect these new standardized callback types and error-throwing expectations.
-
-  These changes lead to more predictable behavior, improved debugging capabilities through structured errors, and a more consistent experience when working with different LLM providers.
-
-- Updated dependencies [[`1f20509`](https://github.com/VoltAgent/voltagent/commit/1f20509528fc2cb2ba00f86d649848afae34af04), [`1f20509`](https://github.com/VoltAgent/voltagent/commit/1f20509528fc2cb2ba00f86d649848afae34af04), [`7a7a0f6`](https://github.com/VoltAgent/voltagent/commit/7a7a0f672adbe42635c3edc5f0a7f282575d0932)]:
-  - @voltagent/core@0.1.9
-
-## 0.1.3
-
-### Patch Changes
-
-- [#33](https://github.com/VoltAgent/voltagent/pull/33) [`3ef2eaa`](https://github.com/VoltAgent/voltagent/commit/3ef2eaa9661e8ecfebf17af56b09af41285d0ca9) Thanks [@kwaa](https://github.com/kwaa)! - Update package.json files:
-  - Remove `src` directory from the `files` array.
-  - Add explicit `exports` field for better module resolution.
-
-- Updated dependencies [[`52d5fa9`](https://github.com/VoltAgent/voltagent/commit/52d5fa94045481dc43dc260a40b701606190585c), [`3ef2eaa`](https://github.com/VoltAgent/voltagent/commit/3ef2eaa9661e8ecfebf17af56b09af41285d0ca9), [`52d5fa9`](https://github.com/VoltAgent/voltagent/commit/52d5fa94045481dc43dc260a40b701606190585c)]:
-  - @voltagent/core@0.1.6
-
-## 0.1.1
-
-- 🚀 **Introducing VoltAgent: TypeScript AI Agent Framework!**
-
-  This initial release marks the beginning of VoltAgent, a powerful toolkit crafted for the JavaScript developer community. We saw the challenges: the complexity of building AI from scratch, the limitations of No-Code tools, and the lack of first-class AI tooling specifically for JS.
-
-  ![VoltAgent Demo](https://cdn.voltagent.dev/readme/demo.gif)
-  VoltAgent aims to fix that by providing the building blocks you need:
-  - **`@voltagent/core`**: The foundational engine for agent capabilities.
-  - **`@voltagent/voice`**: Easily add voice interaction.
-  - **`@voltagent/vercel-ai`**: Seamless integration with [Vercel AI SDK](https://sdk.vercel.ai/docs/introduction).
-  - **`@voltagent/xsai`**: A Seamless integration with [xsAI](https://xsai.js.org/).
-  - **`@voltagent/cli` & `create-voltagent-app`**: Quick start tools to get you building _fast_.
-
-  We're combining the flexibility of code with the clarity of visual tools (like our **currently live [VoltOps LLM Observability Platform](https://console.voltagent.dev/)**) to make AI development easier, clearer, and more powerful. Join us as we build the future of AI in JavaScript!
-
-  Explore the [Docs](https://voltagent.dev/docs/) and join our [Discord community](https://s.voltagent.dev/discord)!
-
----
-
 ## Package: @voltagent/vercel-ai-exporter
+
+## 1.0.1
+
+## 1.0.1-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+  - @voltagent/sdk@0.1.7-next.0
+
+## 1.0.0
+
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+  - @voltagent/sdk@0.1.7-next.0
 
 ## 0.1.6
 
@@ -5739,219 +9765,37 @@
 
 ---
 
-## Package: @voltagent/vercel-ui
-
-## 0.1.9
-
-### Patch Changes
-
-- Updated dependencies [[`8de5785`](https://github.com/VoltAgent/voltagent/commit/8de5785e385bec632f846bcae44ee5cb22a9022e)]:
-  - @voltagent/internal@0.0.8
-
-## 0.1.8
-
-### Patch Changes
-
-- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
-
-  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
-
-  **Key improvements:**
-  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
-  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
-  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
-  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
-  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
-
-  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
-
-- Updated dependencies [[`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5)]:
-  - @voltagent/internal@0.0.7
-
-## 0.1.7
-
-### Patch Changes
-
-- [#404](https://github.com/VoltAgent/voltagent/pull/404) [`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: remove devLogger dependency and use native console methods
-
-  Removed the dependency on `@voltagent/internal/dev` logger and replaced devLogger calls with standard console methods (console.error, console.warn) for a cleaner dependency tree and better compatibility.
-
-- Updated dependencies [[`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726), [`809bd13`](https://github.com/VoltAgent/voltagent/commit/809bd13c5fce7b2afdb0f0d934cc5a21d3e77726)]:
-  - @voltagent/internal@0.0.6
-  - @voltagent/core@0.1.65
-
-## 0.1.6
-
-### Patch Changes
-
-- Updated dependencies [[`6fadbb0`](https://github.com/VoltAgent/voltagent/commit/6fadbb098fe40d8b658aa3386e6126fea155f117)]:
-  - @voltagent/internal@0.0.5
-  - @voltagent/core@0.1.62
-
-## 0.1.5
-
-### Patch Changes
-
-- [#354](https://github.com/VoltAgent/voltagent/pull/354) [`5bfb1e2`](https://github.com/VoltAgent/voltagent/commit/5bfb1e22162cb69aed0d333072237c68b705f6c0) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Fixed passing along an ID of empty string
-
-## 0.1.4
-
-### Patch Changes
-
-- Updated dependencies [[`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479), [`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479), [`8da1ecc`](https://github.com/VoltAgent/voltagent/commit/8da1eccd0332d1f9037085e16cb0b7d5afaac479)]:
-  - @voltagent/core@0.1.49
-  - @voltagent/internal@0.0.4
-
-## 0.1.3
-
-### Patch Changes
-
-- [#311](https://github.com/VoltAgent/voltagent/pull/311) [`1f7fa14`](https://github.com/VoltAgent/voltagent/commit/1f7fa140fcc4062fe85220e61f276e439392b0b4) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core, vercel-ui): Currently the `convertToUIMessages` function does not handle tool calls in steps correctly as it does not properly default filter non-tool related steps for sub-agents, same as the `data-stream` functions and in addition in the core the `operationContext` does not have the `subAgent` fields set correctly.
-
-  ### Changes
-  - deprecated `isSubAgentStreamPart` in favor of `isSubAgent` for universal use
-  - by default `convertToUIMessages` now filters out non-tool related steps for sub-agents
-  - now able to exclude specific parts or steps (from OperationContext) in `convertToUIMessages`
-
-  ***
-
-  ### Internals
-
-  New utils were added to the internal package:
-  - `isObject`
-  - `isFunction`
-  - `isPlainObject`
-  - `isEmptyObject`
-  - `isNil`
-  - `hasKey`
-
-- Updated dependencies [[`1f7fa14`](https://github.com/VoltAgent/voltagent/commit/1f7fa140fcc4062fe85220e61f276e439392b0b4)]:
-  - @voltagent/internal@0.0.3
-  - @voltagent/core@0.1.47
-
-## 0.1.2
-
-### Patch Changes
-
-- [#302](https://github.com/VoltAgent/voltagent/pull/302) [`1e1f563`](https://github.com/VoltAgent/voltagent/commit/1e1f563aeb9ac25880ca56a33285abca0b24b389) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Fix to match the output of `mergeIntoDataStream` and `convertToUIMessages` as the `mergeIntoDataStream` filters out the `SubAgent` prefix of a `toolName` (i.e. `BlogReader: read-blog-post`). `convertToUIMessages` was not filtering out the `SubAgent` prefix by default and it was causing the `toolName` to be different on the server in the `onEnd` hook from whats being sent to the client (and expected by the developer).
-
-- Updated dependencies [[`33afe6e`](https://github.com/VoltAgent/voltagent/commit/33afe6ef40ef56c501f7fa69be42da730f87d29d), [`b8529b5`](https://github.com/VoltAgent/voltagent/commit/b8529b53313fa97e941ecacb8c1555205de49c19)]:
-  - @voltagent/core@0.1.45
-
-## 0.1.1
-
-### Patch Changes
-
-- Updated dependencies [[`94de46a`](https://github.com/VoltAgent/voltagent/commit/94de46ab2b7ccead47a539e93c72b357f17168f6)]:
-  - @voltagent/internal@0.0.2
-  - @voltagent/core@0.1.44
-
-## 0.1.0
-
-### Minor Changes
-
-- [#273](https://github.com/VoltAgent/voltagent/pull/273) [`12b8c90`](https://github.com/VoltAgent/voltagent/commit/12b8c9025488e1d6f4b5a99d74b639bf202ba7d2) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Added a set of new utility functions for working with data streams in the vercel `ai` package.
-
-  ## New Functions
-
-  ### `toDataStream`
-
-  You can use this function to convert a VoltAgent `ReadableStream` to a `DataStream`.
-
-  ```typescript
-  const result = await agent.streamText("Hello, world!");
-  const dataStream = toDataStream(result.fullStream);
-  ```
-
-  ### `mergeIntoDataStream`
-
-  You can use this function to merge a VoltAgent `ReadableStream` into a `DataStream` using the vercel `createDataStream` function.
-
-  ```typescript
-  const result = await agent.streamText("Hello, world!");
-
-  const dataStream = createDataStream({
-    execute: async (writer) => {
-      const result = await agent.streamText("Hello, world!");
-      mergeIntoDataStream(writer, result.fullStream);
-    },
-  });
-
-  reply.send(dataStream);
-  ```
-
-  ### `formatDataStreamPart`
-
-  You can use this function to format a data stream part for the vercel `ai` package to be used in the `DataStream` interface, this appends certain metadata for VoltAgent.
-
-  ```typescript
-  const result = await agent.streamText("Hello, world!");
-
-  const dataStream = toDataStream(result.fullStream);
-
-  // This will append subAgentId and subAgentName to the data stream part
-  ```
-
-  ### `isSubAgentStreamPart`
-
-  You can use this function to check if a data stream part is a sub-agent stream part.
-
-  ```typescript
-  import { isSubAgentStreamPart } from "@voltagent/vercel-ui";
-
-  const messages = useChat(...);
-
-  for (const message of messages) {
-    if (isSubAgentStreamPart(message)) {
-      // This is a sub-agent stream part
-      // NOTE: This will ONLY work for Tool calls and results and not other stream parts
-      console.log(message.subAgentId, message.subAgentName);
-    }
-  }
-  ```
-
-  ## New Types
-
-  Additional types have been exposed to make it easier to improve types with the vercel `ai` package.
-  - `UIMessage` - A VoltAgent ready `UIMessage` type, this is a wrapper around the vercel `UIMessage` type.
-  - `DataStream` - A VoltAgent ready `DataStream` type, this is a wrapper around the vercel `DataStream` type.
-
-### Patch Changes
-
-- Updated dependencies [[`73632ea`](https://github.com/VoltAgent/voltagent/commit/73632ea229917ab4042bb58b61d5e6dbd9b72804)]:
-  - @voltagent/core@0.1.42
-
-## 0.0.2
-
-### Patch Changes
-
-- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat: add Vercel UI SDK integration package for converting the `OperationContext` to a list of messages that can be used with the Vercel AI SDK
-
-  Added `convertToUIMessages` function to the `@voltagent/vercel-ui` package that converts the `OperationContext` to a list of messages that can be used with the Vercel AI SDK.
-
-  ```ts
-  import { convertToUIMessages } from "@voltagent/vercel-ui";
-  import { Agent } from "@voltagent/core";
-
-  const uiMessages = convertToUIMessages(context);
-
-  // Semi-realistic example
-  new Agent({
-    hooks: {
-      onEnd: async ({ agent, output, error, conversationId, context }) => {
-        const uiMessages = convertToUIMessages(context);
-        await chatStore.save({
-          conversationId,
-          messages: uiMessages,
-        });
-      },
-    },
-  });
-  ```
-
----
-
 ## Package: @voltagent/voice
+
+## 1.0.2
+
+### Patch Changes
+
+- [`9cc4ea4`](https://github.com/VoltAgent/voltagent/commit/9cc4ea4a4985320139e33e8029f299c7ec8329a6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core peerDependency version
+
+## 1.0.1
+
+## 1.0.1-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`77a3f64`](https://github.com/VoltAgent/voltagent/commit/77a3f64dea6e8a06fbbd72878711efa9ceb90bc3)]:
+  - @voltagent/core@1.1.7-next.0
+
+## 1.0.0
+
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
+## 0.2.4
+
+### Patch Changes
+
+- [#494](https://github.com/VoltAgent/voltagent/pull/494) [`4459ae2`](https://github.com/VoltAgent/voltagent/commit/4459ae24a7c8b4ed3031f5a81ce7835e90fa6ade) Thanks [@kwaa](https://github.com/kwaa)! - fix(xsai): bump to v0.4.0-beta.1, support file & reasoning
 
 ## 0.2.3
 
@@ -6103,280 +9947,6 @@
 
 - Updated dependencies [[`55c58b0`](https://github.com/VoltAgent/voltagent/commit/55c58b0da12dd94a3095aad4bc74c90757c98db4), [`d40cb14`](https://github.com/VoltAgent/voltagent/commit/d40cb14860a5abe8771e0b91200d10f522c62881), [`e88cb12`](https://github.com/VoltAgent/voltagent/commit/e88cb1249c4189ced9e245069bed5eab71cdd894), [`0651d35`](https://github.com/VoltAgent/voltagent/commit/0651d35442cda32b6057f8b7daf7fd8655a9a2a4)]:
   - @voltagent/core@0.1.8
-
-## 0.1.3
-
-### Patch Changes
-
-- [#33](https://github.com/VoltAgent/voltagent/pull/33) [`3ef2eaa`](https://github.com/VoltAgent/voltagent/commit/3ef2eaa9661e8ecfebf17af56b09af41285d0ca9) Thanks [@kwaa](https://github.com/kwaa)! - Update package.json files:
-  - Remove `src` directory from the `files` array.
-  - Add explicit `exports` field for better module resolution.
-
-- Updated dependencies [[`52d5fa9`](https://github.com/VoltAgent/voltagent/commit/52d5fa94045481dc43dc260a40b701606190585c), [`3ef2eaa`](https://github.com/VoltAgent/voltagent/commit/3ef2eaa9661e8ecfebf17af56b09af41285d0ca9), [`52d5fa9`](https://github.com/VoltAgent/voltagent/commit/52d5fa94045481dc43dc260a40b701606190585c)]:
-  - @voltagent/core@0.1.6
-
-## 0.1.1
-
-- 🚀 **Introducing VoltAgent: TypeScript AI Agent Framework!**
-
-  This initial release marks the beginning of VoltAgent, a powerful toolkit crafted for the JavaScript developer community. We saw the challenges: the complexity of building AI from scratch, the limitations of No-Code tools, and the lack of first-class AI tooling specifically for JS.
-
-  ![VoltAgent Demo](https://cdn.voltagent.dev/readme/demo.gif)
-  VoltAgent aims to fix that by providing the building blocks you need:
-  - **`@voltagent/core`**: The foundational engine for agent capabilities.
-  - **`@voltagent/voice`**: Easily add voice interaction.
-  - **`@voltagent/vercel-ai`**: Seamless integration with [Vercel AI SDK](https://sdk.vercel.ai/docs/introduction).
-  - **`@voltagent/xsai`**: A Seamless integration with [xsAI](https://xsai.js.org/).
-  - **`@voltagent/cli` & `create-voltagent-app`**: Quick start tools to get you building _fast_.
-
-  We're combining the flexibility of code with the clarity of visual tools (like our **currently live [VoltOps LLM Observability Platform](https://console.voltagent.dev/)**) to make AI development easier, clearer, and more powerful. Join us as we build the future of AI in JavaScript!
-
-  Explore the [Docs](https://voltagent.dev/docs/) and join our [Discord community](https://s.voltagent.dev/discord)!
-
----
-
-## Package: @voltagent/xsai
-
-## 0.3.2
-
-### Patch Changes
-
-- [`4f4ffc2`](https://github.com/VoltAgent/voltagent/commit/4f4ffc23eaea36675e66eb8a17d275fe9f32a671) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add fullStream support
-
-- Updated dependencies [[`760a294`](https://github.com/VoltAgent/voltagent/commit/760a294e4d68742d8701d54dc1c541c87959e5d8), [`760a294`](https://github.com/VoltAgent/voltagent/commit/760a294e4d68742d8701d54dc1c541c87959e5d8), [`980d037`](https://github.com/VoltAgent/voltagent/commit/980d037ce535bcc85cc7df3f64354c823453a147)]:
-  - @voltagent/core@0.1.74
-
-## 0.3.1
-
-### Patch Changes
-
-- [`90a1316`](https://github.com/VoltAgent/voltagent/commit/90a131622a876c0d91e1b9046a5e1fc143fef6b5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: improve code quality with biome linting and package configuration enhancements
-
-  This update focuses on improving code quality and package configuration across the entire VoltAgent monorepo:
-
-  **Key improvements:**
-  - **Biome Linting**: Fixed numerous linting issues identified by Biome across all packages, ensuring consistent code style and catching potential bugs
-  - **Package Configuration**: Added `publint` script to all packages for strict validation of package.json files to ensure proper publishing configuration
-  - **TypeScript Exports**: Fixed `typesVersions` structure in @voltagent/internal package and removed duplicate entries
-  - **Test Utilities**: Refactored `createTrackedStorage` function in core package by simplifying its API - removed the `testName` parameter for cleaner test setup
-  - **Type Checking**: Enabled `attw` (Are The Types Wrong) checking to ensure TypeScript types are correctly exported
-
-  These changes improve the overall maintainability and reliability of the VoltAgent framework without affecting the public API.
-
-## 0.3.0
-
-### Minor Changes
-
-- [#411](https://github.com/VoltAgent/voltagent/pull/411) [`80b24e2`](https://github.com/VoltAgent/voltagent/commit/80b24e245daa9584733762c9aaf7e23e1d90c6c5) Thanks [@kwaa](https://github.com/kwaa)! - chore(deps): bump xsai to 0.3.3
-
-### Patch Changes
-
-- Updated dependencies [[`99fe836`](https://github.com/VoltAgent/voltagent/commit/99fe83662e9b3e550380fce066521a5c27d69eb3)]:
-  - @voltagent/core@0.1.71
-
-## 0.2.4
-
-### Patch Changes
-
-- [#348](https://github.com/VoltAgent/voltagent/pull/348) [`9581df0`](https://github.com/VoltAgent/voltagent/commit/9581df02bce2ba8b25f9f2964b781095bc50b004) Thanks [@Adherentman](https://github.com/Adherentman)! - fix: xsai empty tools will sent undefined - #337
-
-- Updated dependencies [[`b7dcded`](https://github.com/VoltAgent/voltagent/commit/b7dcdedfbbdda5bfb1885317b59b4d4e2495c956), [`822739c`](https://github.com/VoltAgent/voltagent/commit/822739c901bbc679cd11dd2c9df99cd041fc40c7)]:
-  - @voltagent/core@0.1.55
-
-## 0.2.3
-
-### Patch Changes
-
-- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
-
-  Example:
-
-  ```typescript
-  const stream = createAsyncIterableStream(
-    new ReadableStream({
-      start(controller) {
-        controller.enqueue("Hello");
-        controller.enqueue(", ");
-        controller.enqueue("world!");
-        controller.close();
-      },
-    })
-  );
-
-  for await (const chunk of stream) {
-    console.log(chunk);
-  }
-
-  // in the agent
-  const result = await agent.streamObject({
-    messages,
-    model: "test-model",
-    schema,
-  });
-
-  for await (const chunk of result.objectStream) {
-    console.log(chunk);
-  }
-  ```
-
-  New exports:
-  - `createAsyncIterableStream`
-  - `type AsyncIterableStream`
-
-- Updated dependencies [[`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8), [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778)]:
-  - @voltagent/core@0.1.32
-
-## 0.2.2
-
-### Patch Changes
-
-- [#226](https://github.com/VoltAgent/voltagent/pull/226) [`d879e6d`](https://github.com/VoltAgent/voltagent/commit/d879e6d41757081420162cf983223683b72b66a5) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: add toolName to tool-result steps
-
-  Tool result steps now include the toolName field, ensuring proper identification of which tool generated each result in conversation flows and hook messages.
-
-## 0.2.1
-
-### Patch Changes
-
-- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
-
-- Updated dependencies [[`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f), [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6)]:
-  - @voltagent/core@0.1.31
-
-## 0.2.0
-
-### Minor Changes
-
-- [#195](https://github.com/VoltAgent/voltagent/pull/195) [`0c4e941`](https://github.com/VoltAgent/voltagent/commit/0c4e9418ae75c82b20a503678e75277729c0174b) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - 🚨 Breaking Change: Renamed XsAI and Xsai to XSAI
-
-  We’ve renamed the XsAI and Xsai classes to XSAI to keep naming consistent across the framework.
-
-  What changed?
-
-  If you’re using the XsAIProvider or XsAIVoiceProvider, you now need to update your code to use XSAIProvider and XSAIVoiceProvider.
-
-  Before:
-
-  ```ts
-  import { XsAIVoiceProvider } from "@voltagent/voice";
-
-  const agent = new Agent({
-    name: "Asistant",
-    description: "A helpful assistant that answers questions without using tools",
-    llm: new XsAIProvider({
-      apiKey: process.env.OPENAI_API_KEY!,
-    }),
-    model: "gpt-4o-mini",
-  });
-
-  const voiceProvider = new XsAIVoiceProvider({
-    apiKey: process.env.OPENAI_API_KEY!,
-  });
-  ```
-
-  After:
-
-  ```ts
-  import { XSAIVoiceProvider } from "@voltagent/voice";
-
-  const agent = new Agent({
-    name: "Asistant",
-    description: "A helpful assistant that answers questions without using tools",
-    llm: new XSAIProvider({
-      apiKey: process.env.OPENAI_API_KEY!,
-    }),
-    model: "gpt-4o-mini",
-  });
-
-  const voiceProvider = new XSAIVoiceProvider({
-    apiKey: process.env.OPENAI_API_KEY!,
-  });
-  ```
-
-  This change resolves [#140](https://github.com/your-repo/issues/140).
-
-### Patch Changes
-
-- Updated dependencies [[`07d99d1`](https://github.com/VoltAgent/voltagent/commit/07d99d133232babf78ba4e1c32fe235d5b3c9944), [`67b0e7e`](https://github.com/VoltAgent/voltagent/commit/67b0e7ea704d23bf9efb722c0b0b4971d0974153)]:
-  - @voltagent/core@0.1.29
-
-## 0.1.9
-
-### Patch Changes
-
-- [#155](https://github.com/VoltAgent/voltagent/pull/155) [`35b11f5`](https://github.com/VoltAgent/voltagent/commit/35b11f5258073dd39f3032db6d9b29146f4b940c) Thanks [@baseballyama](https://github.com/baseballyama)! - chore: update `tsconfig.json`'s `target` to `ES2022`
-
-- [#162](https://github.com/VoltAgent/voltagent/pull/162) [`b164bd0`](https://github.com/VoltAgent/voltagent/commit/b164bd014670452cb162b388f03565db992767af) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: pin zod version to 3.24.2 to avoid "Type instantiation is excessively deep and possibly infinite" error
-
-  Fixed compatibility issues between different zod versions that were causing TypeScript compilation errors. This issue occurs when multiple packages use different patch versions of zod (e.g., 3.23.x vs 3.24.x), leading to type instantiation depth problems. By pinning to 3.24.2, we ensure consistent behavior across all packages.
-
-  See: https://github.com/colinhacks/zod/issues/3435
-
-- Updated dependencies [[`35b11f5`](https://github.com/VoltAgent/voltagent/commit/35b11f5258073dd39f3032db6d9b29146f4b940c), [`b164bd0`](https://github.com/VoltAgent/voltagent/commit/b164bd014670452cb162b388f03565db992767af), [`9412cf0`](https://github.com/VoltAgent/voltagent/commit/9412cf0633f20d6b77c87625fc05e9e216936758)]:
-  - @voltagent/core@0.1.20
-
-## 0.1.8
-
-### Patch Changes
-
-- [#100](https://github.com/VoltAgent/voltagent/pull/100) [`0bdcf94`](https://github.com/VoltAgent/voltagent/commit/0bdcf9441cc79cf6321b377c303123d28daddda4) Thanks [@kwaa](https://github.com/kwaa)! - feat: Add multi-modal support (see [docs](https://voltagent.dev/docs/providers/xsai/#multi-modal-support)) - [#79](https://github.com/VoltAgent/voltagent/issues/79)
-
-## 0.1.6
-
-### Patch Changes
-
-- [#102](https://github.com/VoltAgent/voltagent/pull/102) [`cdfec65`](https://github.com/VoltAgent/voltagent/commit/cdfec657f731fdc1b6d0c307376e3299813f55d3) Thanks [@omeraplak](https://github.com/omeraplak)! - refactor: use 'instructions' field for Agent definitions in examples - #88
-
-  Updated documentation examples (READMEs, docs, blogs) and relevant package code examples to use the `instructions` field instead of `description` when defining `Agent` instances.
-
-  This change aligns the examples with the preferred API usage for the `Agent` class, where `instructions` provides behavioral guidance to the agent/LLM. This prepares for the eventual deprecation of the `description` field specifically for `Agent` class definitions.
-
-  **Example Change for Agent Definition:**
-
-  ```diff
-    const agent = new Agent({
-      name: "My Assistant",
-  -   description: "A helpful assistant.",
-  +   instructions: "A helpful assistant.",
-      llm: new VercelAIProvider(),
-      model: openai("gpt-4o-mini"),
-    });
-  ```
-
-- Updated dependencies [[`cdfec65`](https://github.com/VoltAgent/voltagent/commit/cdfec657f731fdc1b6d0c307376e3299813f55d3)]:
-  - @voltagent/core@0.1.14
-  - @voltagent/xsai@0.1.6
-
-## 0.1.5
-
-### Patch Changes
-
-- [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: Update Zod to version 3.24.2 to resolve "Type instantiation is excessively deep and possibly infinite" error (related to https://github.com/colinhacks/zod/issues/3435).
-
-- Updated dependencies [[`f7de864`](https://github.com/VoltAgent/voltagent/commit/f7de864503d598cf7131cc01afa3779639190107), [`13db262`](https://github.com/VoltAgent/voltagent/commit/13db2621ae6b730667f9991d3c2129c85265e925)]:
-  - @voltagent/core@0.1.13
-  - @voltagent/xsai@0.1.5
-
-## 0.1.4
-
-### Patch Changes
-
-- [#77](https://github.com/VoltAgent/voltagent/pull/77) [`beaa8fb`](https://github.com/VoltAgent/voltagent/commit/beaa8fb1f1bc6351f1bede0b65a6a189cc1b6ea2) Thanks [@omeraplak](https://github.com/omeraplak)! - **API & Providers:** Standardized message content format for array inputs.
-  - The API (`/text`, `/stream`, `/object`, `/stream-object` endpoints) now strictly expects the `content` field within message objects (when `input` is an array) to be either a `string` or an `Array` of content parts (e.g., `[{ type: 'text', text: '...' }]`).
-  - The previous behavior of allowing a single content object (e.g., `{ type: 'text', ... }`) directly as the value for `content` in message arrays is no longer supported in the API schema. Raw string inputs remain unchanged.
-  - Provider logic (`google-ai`, `groq-ai`, `xsai`) updated to align with this stricter definition.
-
-  **Console:**
-  - **Added file and image upload functionality to the Assistant Chat.** Users can now attach multiple files/images via a button, preview attachments, and send them along with text messages.
-  - Improved the Assistant Chat resizing: Replaced size toggle buttons with a draggable handle (top-left corner).
-  - Chat window dimensions are now saved to local storage and restored on reload.
-
-  **Internal:**
-  - Added comprehensive test suites for Groq and XsAI providers.
-
-- Updated dependencies [[`beaa8fb`](https://github.com/VoltAgent/voltagent/commit/beaa8fb1f1bc6351f1bede0b65a6a189cc1b6ea2)]:
-  - @voltagent/core@0.1.10
-  - @voltagent/xsai@0.1.4
 
 ## 0.1.3
 

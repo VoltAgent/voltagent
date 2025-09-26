@@ -1,0 +1,40 @@
+{
+  "name": "voltagent-example-netlify-functions",
+  "description": "VoltAgent example deployed as a Netlify Function",
+  "version": "1.0.0",
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.2",
+    "@voltagent/core": "^1.1.19",
+    "@voltagent/serverless-hono": "^1.0.0",
+    "ai": "^5.0.12",
+    "hono": "^4.7.7",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "netlify-cli": "^23.7.3",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "functions",
+    "netlify",
+    "serverless",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "deploy": "netlify deploy --prod",
+    "deploy:preview": "netlify deploy --dir . --functions netlify/functions",
+    "dev": "netlify dev --dir . --functions netlify/functions",
+    "typecheck": "tsc --noEmit",
+    "volt": "volt"
+  },
+  "type": "module"
+}

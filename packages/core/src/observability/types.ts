@@ -26,18 +26,37 @@ export interface ObservabilityConfig {
   resourceAttributes?: Record<string, any>;
   spanFilters?: SpanFilterConfig;
   voltOpsSync?: {
-    sampling?: {
-      strategy?: "always" | "never" | "ratio" | "parent"; // Default: 'always' (no sampling)
-      ratio?: number; // 0.0 to 1.0 (e.g., 0.1 = 10% sampling), only used when strategy is 'ratio'
-    };
+    sampling?: ObservabilitySamplingConfig;
     // BatchSpanProcessor configuration
     maxQueueSize?: number; // Default: 2048
     maxExportBatchSize?: number; // Default: 512
     scheduledDelayMillis?: number; // Default: 5000ms
     exportTimeoutMillis?: number; // Default: 30000ms
   };
+  serverlessRemote?: ServerlessRemoteExportConfig;
   spanProcessors?: SpanProcessor[];
   logProcessors?: LogRecordProcessor[];
+}
+
+export interface ObservabilitySamplingConfig {
+  strategy?: "always" | "never" | "ratio" | "parent";
+  ratio?: number;
+}
+
+export interface ServerlessRemoteEndpointConfig {
+  url: string;
+  headers?: Record<string, string>;
+  method?: string;
+}
+
+export interface ServerlessRemoteExportConfig {
+  traces?: ServerlessRemoteEndpointConfig;
+  logs?: ServerlessRemoteEndpointConfig;
+  sampling?: ObservabilitySamplingConfig;
+  maxQueueSize?: number;
+  maxExportBatchSize?: number;
+  scheduledDelayMillis?: number;
+  exportTimeoutMillis?: number;
 }
 
 /**

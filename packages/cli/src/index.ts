@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 import figlet from "figlet";
 import { registerAddCommand } from "./commands/add";
+import { registerDeployCommand } from "./commands/deploy";
 import { registerInitCommand } from "./commands/init";
 import { registerMCPCommand } from "./commands/mcp";
 import { registerUpdateCommand } from "./commands/update";
@@ -26,6 +27,7 @@ const createCLI = () => {
   registerWhoamiCommand(program);
   registerAddCommand(program);
   registerMCPCommand(program);
+  registerDeployCommand(program);
 
   return program;
 };

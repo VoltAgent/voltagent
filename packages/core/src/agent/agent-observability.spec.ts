@@ -1,16 +1,16 @@
 import { MockLanguageModelV2, mockId, simulateReadableStream } from "ai/test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { VoltAgentObservability, WebSocketEventEmitter } from "../observability";
+import { NodeVoltAgentObservability, WebSocketEventEmitter } from "../observability";
 import { SpanKind, SpanStatusCode } from "../observability/types";
 import { Agent } from "./agent";
 
 describe("Agent with Observability", () => {
-  let observability: VoltAgentObservability;
+  let observability: NodeVoltAgentObservability;
   let mockModel: MockLanguageModelV2;
 
   beforeEach(() => {
-    observability = new VoltAgentObservability();
+    observability = new NodeVoltAgentObservability();
     mockModel = new MockLanguageModelV2();
   });
 

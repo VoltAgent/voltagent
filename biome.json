@@ -54,7 +54,8 @@
       "**/.docusaurus/**",
       "**/generated/**",
       "**/package.json",
-      "website/src/data/tweets.json"
+      "website/src/data/tweets.json",
+      ".wrangler"
     ]
   },
   "overrides": [
