@@ -1,5 +1,62 @@
 # @voltagent/core
 
+## 1.1.21
+
+### Patch Changes
+
+- [#625](https://github.com/VoltAgent/voltagent/pull/625) [`ec76c47`](https://github.com/VoltAgent/voltagent/commit/ec76c47a9533fd4bcf9ffd22153e3d99248f00fa) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `onPrepareModelMessages` hook
+  - ensure `onPrepareMessages` now receives the sanitized UI payload while exposing `rawMessages` for audit or metadata recovery without sending it to the LLM.
+  - introduce `onPrepareModelMessages` so developers can tweak the final provider-facing message array (e.g. add guardrails, adapt to provider quirks) after conversion.
+
+  ```ts
+  const hooks = createHooks({
+    onPrepareMessages: ({ messages, rawMessages }) => ({
+      messages: messages.map((msg) =>
+        messageHelpers.addTimestampToMessage(msg, new Date().toISOString())
+      ),
+      rawMessages, // still available for logging/analytics
+    }),
+    onPrepareModelMessages: ({ modelMessages }) => ({
+      modelMessages: modelMessages.map((message, idx) =>
+        idx === modelMessages.length - 1 && message.role === "assistant"
+          ? {
+              ...message,
+              content: [
+                ...message.content,
+                { type: "text", text: "Please keep the summary under 200 words." },
+              ],
+            }
+          : message
+      ),
+    }),
+  });
+  ```
+
+- [#625](https://github.com/VoltAgent/voltagent/pull/625) [`ec76c47`](https://github.com/VoltAgent/voltagent/commit/ec76c47a9533fd4bcf9ffd22153e3d99248f00fa) Thanks [@omeraplak](https://github.com/omeraplak)! - - preserve Anthropic-compatible providerOptions on system messages - #593
+
+  ```ts
+  const agent = new Agent({
+    name: "Cacheable System",
+    model: anthropic("claude-3-7-sonnet-20250219"),
+    instructions: {
+      type: "chat",
+      messages: [
+        {
+          role: "system",
+          content: "remember to use cached context",
+          providerOptions: {
+            anthropic: { cacheControl: { type: "ephemeral", ttl: "5m" } },
+          },
+        },
+      ],
+    },
+  });
+
+  await agent.generateText("ping"); // providerOptions now flow through unchanged
+  ```
+
+- [#623](https://github.com/VoltAgent/voltagent/pull/623) [`0d91d90`](https://github.com/VoltAgent/voltagent/commit/0d91d9081381a6c259188209cd708293271e5e3e) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: allow constructing `VoltAgent` without passing an `agents` map so workflows-only setups boot without boilerplate.
+
 ## 1.1.20
 
 ### Patch Changes
