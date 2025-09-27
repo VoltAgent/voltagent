@@ -1,5 +1,11 @@
 # @voltagent/server-core
 
+## 1.0.13
+
+### Patch Changes
+
+- [#629](https://github.com/VoltAgent/voltagent/pull/629) [`3e64b9c`](https://github.com/VoltAgent/voltagent/commit/3e64b9ce58d0e91bc272f491be2c1932a005ef48) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add memory observability
+
 ## 1.0.12
 
 ### Patch Changes
