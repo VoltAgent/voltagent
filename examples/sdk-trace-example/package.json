@@ -4,7 +4,7 @@
   "dependencies": {
     "@voltagent/logger": "^1.0.2",
     "@voltagent/sdk": "^0.1.6",
-    "@voltagent/server-hono": "^1.0.14"
+    "@voltagent/server-hono": "^1.0.15"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",

@@ -6,7 +6,7 @@
     "@voltagent/core": "^1.1.22",
     "@voltagent/internal": "^0.0.11",
     "@voltagent/logger": "^1.0.2",
-    "@voltagent/server-hono": "^1.0.14",
+    "@voltagent/server-hono": "^1.0.15",
     "ai": "^5.0.12",
     "zod": "^3.25.76"
   },

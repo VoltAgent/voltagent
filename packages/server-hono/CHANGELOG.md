@@ -1,5 +1,14 @@
 # @voltagent/server-hono
 
+## 1.0.15
+
+### Patch Changes
+
+- [`ca6160a`](https://github.com/VoltAgent/voltagent/commit/ca6160a2f5098f296729dcd842a013558d14eeb8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: updates endpoint
+
+- Updated dependencies [[`ca6160a`](https://github.com/VoltAgent/voltagent/commit/ca6160a2f5098f296729dcd842a013558d14eeb8)]:
+  - @voltagent/server-core@1.0.14
+
 ## 1.0.14
 
 ### Patch Changes
