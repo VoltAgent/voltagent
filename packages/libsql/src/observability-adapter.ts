@@ -1016,6 +1016,15 @@ export class LibSQLObservabilityAdapter implements ObservabilityStorageAdapter {
     return log;
   }
 
+  getInfo() {
+    return {
+      adapter: this.constructor.name,
+      displayName: "LibSQL Observability Storage",
+      persistent: true,
+      description: "Persists spans and logs to a LibSQL/Turso database for long-term retention.",
+    };
+  }
+
   /**
    * Close the database connection
    */

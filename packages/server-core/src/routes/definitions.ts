@@ -690,6 +690,93 @@ export const OBSERVABILITY_ROUTES = {
   },
 } as const;
 
+export const OBSERVABILITY_MEMORY_ROUTES = {
+  listMemoryUsers: {
+    method: "get" as const,
+    path: "/observability/memory/users",
+    summary: "List memory users",
+    description:
+      "Retrieve all users who have associated memory records. Supports optional filtering by agent and pagination controls.",
+    tags: ["Observability", "Memory"],
+    operationId: "listMemoryUsers",
+    responses: {
+      200: {
+        description: "Successfully retrieved users",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve memory users due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  listMemoryConversations: {
+    method: "get" as const,
+    path: "/observability/memory/conversations",
+    summary: "List memory conversations",
+    description:
+      "Retrieve conversations stored in memory with optional filtering by agent or user. Results are paginated and sorted by last update by default.",
+    tags: ["Observability", "Memory"],
+    operationId: "listMemoryConversations",
+    responses: {
+      200: {
+        description: "Successfully retrieved conversations",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve conversations due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getMemoryConversationMessages: {
+    method: "get" as const,
+    path: "/observability/memory/conversations/:conversationId/messages",
+    summary: "Get conversation messages",
+    description:
+      "Fetch the messages for a specific conversation stored in memory. Supports optional role filtering and windowing via before/after parameters.",
+    tags: ["Observability", "Memory"],
+    operationId: "getMemoryConversationMessages",
+    responses: {
+      200: {
+        description: "Successfully retrieved messages",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve messages due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getWorkingMemory: {
+    method: "get" as const,
+    path: "/observability/memory/working-memory",
+    summary: "Get working memory",
+    description:
+      "Retrieve working memory content for a conversation or user. Specify the scope and relevant identifiers in query parameters.",
+    tags: ["Observability", "Memory"],
+    operationId: "getWorkingMemory",
+    responses: {
+      200: {
+        description: "Successfully retrieved working memory",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Working memory not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve working memory due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+} as const;
+
 /**
  * All route definitions combined
  */
@@ -699,6 +786,7 @@ export const ALL_ROUTES = {
   ...LOG_ROUTES,
   ...UPDATE_ROUTES,
   ...OBSERVABILITY_ROUTES,
+  ...OBSERVABILITY_MEMORY_ROUTES,
 } as const;
 
 /**

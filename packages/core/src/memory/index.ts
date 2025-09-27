@@ -14,12 +14,14 @@ import type {
   EmbeddingAdapter,
   GetMessagesOptions,
   MemoryConfig,
+  MemoryStorageMetadata,
   SearchOptions,
   SearchResult,
   StorageAdapter,
   VectorAdapter,
   WorkflowStateEntry,
   WorkingMemoryConfig,
+  WorkingMemorySummary,
   WorkingMemoryUpdateOptions,
 } from "./types";
 import { BatchEmbeddingCache } from "./utils/cache";
@@ -996,6 +998,60 @@ Remember:
    */
   getEmbeddingAdapter(): EmbeddingAdapter | undefined {
     return this.embedding;
+  }
+
+  /**
+   * Get metadata about the configured storage adapter
+   */
+  getStorageMetadata(): MemoryStorageMetadata {
+    const adapter = this.storage?.constructor?.name || "UnknownStorageAdapter";
+    return { adapter };
+  }
+
+  /**
+   * Get a UI-friendly summary of working memory configuration
+   */
+  getWorkingMemorySummary(): WorkingMemorySummary | null {
+    if (!this.workingMemoryConfig?.enabled) {
+      return null;
+    }
+
+    const scope = this.workingMemoryConfig.scope || "conversation";
+    const format = this.getWorkingMemoryFormat();
+    const hasTemplate = Boolean(
+      "template" in this.workingMemoryConfig && this.workingMemoryConfig.template,
+    );
+    const hasSchema = Boolean(
+      "schema" in this.workingMemoryConfig && this.workingMemoryConfig.schema,
+    );
+
+    let template: string | null = null;
+    let schemaSummary: Record<string, string> | null = null;
+
+    if (hasTemplate && "template" in this.workingMemoryConfig) {
+      template = this.workingMemoryConfig.template ?? null;
+    }
+
+    if (hasSchema && "schema" in this.workingMemoryConfig && this.workingMemoryConfig.schema) {
+      const schemaShape = this.workingMemoryConfig.schema.shape;
+      schemaSummary = Object.fromEntries(
+        Object.entries(schemaShape || {}).map(([key, value]) => {
+          const typeName = (value as z.ZodTypeAny)?._def?.typeName;
+          const friendlyName = typeName ? typeName.replace(/^Zod/, "").toLowerCase() : "unknown";
+          return [key, friendlyName];
+        }),
+      );
+    }
+
+    return {
+      enabled: true,
+      scope,
+      format,
+      hasTemplate,
+      hasSchema,
+      template,
+      schema: schemaSummary,
+    };
   }
 
   // ============================================================================

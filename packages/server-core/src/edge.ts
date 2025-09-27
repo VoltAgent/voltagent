@@ -5,6 +5,7 @@ export {
   WORKFLOW_ROUTES,
   A2A_ROUTES,
   OBSERVABILITY_ROUTES,
+  OBSERVABILITY_MEMORY_ROUTES,
   LOG_ROUTES,
 } from "./routes/definitions";
 
@@ -32,6 +33,12 @@ export {
   handleResumeWorkflow,
   handleGetWorkflowState,
 } from "./handlers/workflow.handlers";
+export {
+  listMemoryUsersHandler,
+  listMemoryConversationsHandler,
+  getConversationMessagesHandler,
+  getWorkingMemoryHandler,
+} from "./handlers/memory-observability.handlers";
 
 export {
   resolveAgentCard,

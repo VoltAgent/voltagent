@@ -258,6 +258,14 @@ export interface ObservabilityStorageAdapter {
   deleteOldSpans(beforeTimestamp: number): Promise<number>;
   deleteOldLogs(beforeTimestamp: number): Promise<number>;
   clear(): Promise<void>;
+
+  // === Metadata ===
+  getInfo?(): {
+    adapter: string;
+    displayName?: string;
+    persistent?: boolean;
+    description?: string;
+  };
 }
 
 /**

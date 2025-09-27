@@ -426,4 +426,13 @@ export class InMemoryStorageAdapter implements ObservabilityStorageAdapter {
 
     return stats;
   }
+
+  getInfo() {
+    return {
+      adapter: this.constructor.name,
+      displayName: "In-memory Storage",
+      persistent: false,
+      description: "Volatile storage intended for development and debugging sessions.",
+    };
+  }
 }

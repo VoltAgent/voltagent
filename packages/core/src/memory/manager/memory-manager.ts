@@ -570,6 +570,8 @@ export class MemoryManager {
       available: !!this.conversationMemory,
       status: "idle", // Default to idle since we're only updating status during operations
       node_id: memoryNodeId,
+      storage: this.conversationMemory?.getStorageMetadata?.(),
+      workingMemory: this.conversationMemory?.getWorkingMemorySummary?.() || undefined,
     };
 
     return memoryObject;

@@ -1,6 +1,16 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, AiSdkEmbeddingAdapter, Memory, VoltAgent } from "@voltagent/core";
-import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
+import {
+  Agent,
+  AiSdkEmbeddingAdapter,
+  Memory,
+  VoltAgent,
+  VoltAgentObservability,
+} from "@voltagent/core";
+import {
+  LibSQLMemoryAdapter,
+  LibSQLObservabilityAdapter,
+  LibSQLVectorAdapter,
+} from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -44,7 +54,7 @@ const jsonMemory = new Memory({
   // Enable working memory with JSON schema
   workingMemory: {
     enabled: true,
-    scope: "conversation",
+    scope: "user",
     schema: workingMemorySchema, // JSON format with deep merge support
   },
 });
@@ -107,4 +117,14 @@ new VoltAgent({
   },
   server: honoServer({ port: 3141 }),
   logger,
+  observability: new VoltAgentObservability({
+    logger,
+    storage: new LibSQLObservabilityAdapter({
+      // Local file (default): creates ./.voltagent/observability.db if not present
+      // url: "file:./.voltagent/observability.db",
+      // Remote Turso example:
+      // url: "libsql://<your-db>.turso.io",
+      // authToken: process.env.TURSO_AUTH_TOKEN,
+    }),
+  }),
 });

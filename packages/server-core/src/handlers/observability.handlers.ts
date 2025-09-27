@@ -168,6 +168,10 @@ export async function getObservabilityStatusHandler(deps: ServerProviderDeps): P
     const enabled = !!observability;
 
     let storageType = "none";
+    let storageAdapterName: string | null = null;
+    let storagePersistent: boolean | null = null;
+    let storageDisplayName: string | null = null;
+    let storageDescription: string | null = null;
     let spanCount = 0;
     let traceCount = 0;
     let logCount = 0;
@@ -175,8 +179,14 @@ export async function getObservabilityStatusHandler(deps: ServerProviderDeps): P
     if (observability) {
       const storage = observability.getStorage();
 
-      // Determine storage type
-      storageType = storage.constructor.name.replace("Adapter", "").toLowerCase();
+      const info = typeof storage.getInfo === "function" ? storage.getInfo() : undefined;
+
+      storageAdapterName = info?.adapter ?? storage.constructor.name;
+      storagePersistent = info?.persistent ?? null;
+      storageDisplayName = info?.displayName ?? null;
+      storageDescription = info?.description ?? null;
+
+      storageType = info?.adapter?.toLowerCase() ?? storageAdapterName?.toLowerCase() ?? "";
 
       // Get counts
       const traceIds = await storage.listTraces();
@@ -200,6 +210,10 @@ export async function getObservabilityStatusHandler(deps: ServerProviderDeps): P
       data: {
         enabled,
         storage: storageType,
+        storageAdapter: storageAdapterName,
+        storagePersistent,
+        storageDisplayName,
+        storageDescription,
         websocket: enabled,
         traceCount,
         spanCount,

@@ -209,6 +209,34 @@ export interface MemoryConfig {
   workingMemory?: WorkingMemoryConfig;
 }
 
+/**
+ * Metadata about the underlying storage adapter
+ */
+export interface MemoryStorageMetadata {
+  /** Name of the configured storage adapter */
+  adapter: string;
+}
+
+/**
+ * Summary of working memory configuration exposed to the UI
+ */
+export interface WorkingMemorySummary {
+  /** Whether working memory support is enabled */
+  enabled: boolean;
+  /** Scope of working memory persistence */
+  scope?: WorkingMemoryScope;
+  /** Output format (markdown/json) */
+  format: "markdown" | "json" | null;
+  /** Indicates if a template is configured */
+  hasTemplate: boolean;
+  /** Indicates if a schema is configured */
+  hasSchema: boolean;
+  /** Template content if configured */
+  template?: string | null;
+  /** Simplified schema field map if configured */
+  schema?: Record<string, string> | null;
+}
+
 // ============================================================================
 // Vector Search Types
 // ============================================================================

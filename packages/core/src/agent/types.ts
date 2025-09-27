@@ -24,6 +24,7 @@ import type { UsageInfo } from "./providers/base/types";
 import type { SubAgentConfig } from "./subagent/types";
 
 import type { Logger } from "@voltagent/internal";
+import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
 import type { VoltAgentObservability } from "../observability";
 import type {
   DynamicValue,
@@ -64,7 +65,7 @@ export interface SubAgentStateData {
   status: string;
   model: string;
   tools: ApiToolInfo[]; // API representation of tools
-  memory?: Record<string, unknown>;
+  memory?: AgentMemoryState;
   node_id: string;
   subAgents?: SubAgentStateData[];
   methodConfig?: {
@@ -73,6 +74,34 @@ export interface SubAgentStateData {
     options?: string[];
   };
   [key: string]: unknown;
+}
+
+/**
+ * Memory block representation shared across agent and sub-agent state
+ */
+export interface AgentMemoryState extends Record<string, unknown> {
+  node_id: string;
+  type?: string;
+  resourceId?: string;
+  options?: MemoryOptions;
+  available?: boolean;
+  status?: string;
+  storage?: MemoryStorageMetadata;
+  workingMemory?: WorkingMemorySummary | null;
+  vectorDB?: {
+    enabled: boolean;
+    adapter?: string;
+    dimension?: number;
+    status?: string;
+    node_id?: string;
+  } | null;
+  embeddingModel?: {
+    enabled: boolean;
+    model?: string;
+    dimension?: number;
+    status?: string;
+    node_id?: string;
+  } | null;
 }
 
 /**
@@ -87,7 +116,7 @@ export interface AgentFullState {
   node_id: string;
   tools: ToolWithNodeId[];
   subAgents: SubAgentStateData[];
-  memory: Record<string, unknown> & { node_id: string };
+  memory: AgentMemoryState;
   retriever?: {
     name: string;
     description?: string;
