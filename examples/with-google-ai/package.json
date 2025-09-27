@@ -4,7 +4,7 @@
   "dependencies": {
     "@ai-sdk/google": "^2.0.13",
     "@voltagent/cli": "^0.1.11",
-    "@voltagent/core": "^1.1.22",
+    "@voltagent/core": "^1.1.23",
     "@voltagent/libsql": "^1.0.7",
     "@voltagent/logger": "^1.0.2",
     "@voltagent/server-hono": "^1.0.15",

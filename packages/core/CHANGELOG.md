@@ -1,5 +1,12 @@
 # @voltagent/core
 
+## 1.1.23
+
+### Patch Changes
+
+- [#632](https://github.com/VoltAgent/voltagent/pull/632) [`9bd1cf5`](https://github.com/VoltAgent/voltagent/commit/9bd1cf5ab0b0ff54f2bc301a40a486b36d76c3f4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: ensure agents expose their default in-memory storage so observability APIs can read it
+  fix: keep tool call inputs intact when persisted so VoltOps observability shows them instead of empty payloads
+
 ## 1.1.22
 
 ### Patch Changes
