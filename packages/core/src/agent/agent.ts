@@ -2848,7 +2848,11 @@ export class Agent {
    * Get Memory instance if available
    */
   public getMemory(): Memory | false | undefined {
-    return this.memory;
+    if (this.memory === false) {
+      return false;
+    }
+
+    return this.memory ?? this.memoryManager.getMemory();
   }
 
   /**
