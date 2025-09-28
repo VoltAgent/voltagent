@@ -1,0 +1,55 @@
+service: voltagent-lambda
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  timeout: 30
+  memorySize: 512
+  environment:
+    VOLTAGENT_PUBLIC_KEY: ${param:voltAgentPublicKey, ""}
+    VOLTAGENT_SECRET_KEY: ${param:voltAgentSecretKey, ""}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - bedrock:InvokeModel
+            - bedrock:InvokeModelWithResponseStream
+          Resource: "*"
+
+functions:
+  voltagent:
+    handler: dist/lambda.handler
+    description: VoltAgent serverless function powered by Amazon Bedrock
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+    lambdaPort: 3002
+    host: 0.0.0.0
+
+package:
+  patterns:
+    - 'dist/**'
+    - '!src/**'
+    - '!cdk/**'
+    - '!.aws-sam/**'
+    - '!node_modules/**'
+    - '!*.ts'
+    - '!tsconfig.json'
