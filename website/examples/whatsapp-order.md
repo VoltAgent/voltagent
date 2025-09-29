@@ -36,8 +36,8 @@ Before starting, ensure you have:
 Use the VoltAgent CLI to get the WhatsApp order AI agent example from our repository:
 
 ```bash
-npm create voltagent-app@latest -- --example with-whatsapp-order
-cd with-whatsapp-order
+npm create voltagent-app@latest -- --example with-whatsapp
+cd with-whatsapp
 ```
 
 #### Configure environment variables
