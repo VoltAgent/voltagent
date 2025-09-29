@@ -47,7 +47,12 @@ import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
 import type { PromptContent, PromptHelper } from "../voltops/types";
-import { createAbortError, createVoltAgentError } from "./errors";
+import {
+  createAbortError,
+  createVoltAgentError,
+  isClientHTTPError,
+  isToolDeniedError,
+} from "./errors";
 import type { AgentHooks } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type { BaseMessage, StepWithContent } from "./providers/base/types";
@@ -2239,6 +2244,29 @@ export class Agent {
   }
 
   /**
+   * Validate tool output against optional output schema.
+   */
+  private async validateToolOutput(result: any, tool: Tool<any, any>): Promise<any> {
+    if (!tool.outputSchema?.safeParse) {
+      return result;
+    }
+
+    // Validate output if schema provided
+    const parseResult = tool.outputSchema.safeParse(result);
+    if (!parseResult.success) {
+      const error = new Error(`Output validation failed: ${parseResult.error.message}`);
+      Object.assign(error, {
+        validationErrors: parseResult.error.errors,
+        actualOutput: result,
+      });
+
+      throw error;
+    }
+
+    return parseResult.data;
+  }
+
+  /**
    * Convert VoltAgent tools to AI SDK format with context injection
    */
   private convertTools(
@@ -2275,77 +2303,17 @@ export class Agent {
           // Execute tool and handle span lifecycle
           return await oc.traceContext.withSpan(toolSpan, async () => {
             try {
-              // Call tool start hook
-              await hooks.onToolStart?.({ agent: this, tool, context: oc });
+              // Call tool start hook - can throw ToolDeniedError
+              await hooks.onToolStart?.({ agent: this, tool, context: oc, args });
 
-              // Specifically handle Reasoning Tools (think and analyze)
-              let result: any;
               // Execute tool with OperationContext directly
-              result = await tool.execute(args, oc);
-
-              // Validate output if schema provided
-              if (
-                tool.outputSchema &&
-                typeof tool.outputSchema === "object" &&
-                "safeParse" in tool.outputSchema
-              ) {
-                const parseResult = (tool.outputSchema as any).safeParse(result);
-                if (!parseResult.success) {
-                  const error = {
-                    error: true,
-                    message: `Output validation failed: ${parseResult.error.message}`,
-                    validationErrors: parseResult.error.errors,
-                    actualOutput: result,
-                  };
-
-                  // End OTEL span with error
-                  if (toolSpan) {
-                    toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-                    toolSpan.recordException(new Error(error.message));
-                    toolSpan.end();
-                  }
-
-                  // Event tracking now handled by OpenTelemetry spans
-
-                  // Call tool end hook
-                  await hooks.onToolEnd?.({
-                    agent: this,
-                    tool,
-                    output: undefined,
-                    error: error as any,
-                    context: oc,
-                  });
-
-                  return error;
-                }
-
-                // End OTEL span with success
-                if (toolSpan) {
-                  toolSpan.setAttribute("output", safeStringify(parseResult.data));
-                  toolSpan.setStatus({ code: SpanStatusCode.OK });
-                  toolSpan.end();
-                }
-
-                // Event tracking now handled by OpenTelemetry spans
-
-                // Call tool end hook
-                await hooks.onToolEnd?.({
-                  agent: this,
-                  tool,
-                  output: parseResult.data,
-                  error: undefined,
-                  context: oc,
-                });
-
-                return parseResult.data;
-              }
+              const result = await tool.execute(args, oc);
+              const validatedResult = await this.validateToolOutput(result, tool);
 
               // End OTEL span
-              if (toolSpan) {
-                toolSpan.setAttribute("output", safeStringify(result));
-                toolSpan.setStatus({ code: SpanStatusCode.OK });
-                toolSpan.end();
-              }
+              toolSpan.setAttribute("output", safeStringify(result));
+              toolSpan.setStatus({ code: SpanStatusCode.OK });
+              toolSpan.end();
 
               // Event tracking now handled by OpenTelemetry spans
 
@@ -2353,32 +2321,21 @@ export class Agent {
               await hooks.onToolEnd?.({
                 agent: this,
                 tool,
-                output: result,
+                output: validatedResult,
                 error: undefined,
                 context: oc,
               });
 
               return result;
-            } catch (error) {
-              const errorResult = {
-                error: true,
-                message: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined,
-              };
+            } catch (e) {
+              const error = e instanceof Error ? e : new Error(String(e));
+              //POJO error
+              const errorResult = { error: true, ...error };
 
-              // End OTEL span with error
-              if (toolSpan) {
-                toolSpan.setStatus({
-                  code: SpanStatusCode.ERROR,
-                  message: error instanceof Error ? error.message : String(error),
-                });
-                toolSpan.recordException(error instanceof Error ? error : new Error(String(error)));
-                toolSpan.end();
-              }
+              toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+              toolSpan.recordException(error);
+              toolSpan.end();
 
-              // Event tracking now handled by OpenTelemetry spans
-
-              // Call tool end hook
               await hooks.onToolEnd?.({
                 agent: this,
                 tool,
@@ -2387,12 +2344,14 @@ export class Agent {
                 context: oc,
               });
 
+              if (isToolDeniedError(e)) {
+                oc.abortController.abort(e);
+              }
+
               return errorResult;
             } finally {
               // End the span if it was created
-              if (toolSpan) {
-                oc.traceContext.endChildSpan(toolSpan, "completed", {});
-              }
+              oc.traceContext.endChildSpan(toolSpan, "completed", {});
             }
           }); // End of withSpan
         }, // End of execute function
@@ -2548,26 +2507,26 @@ export class Agent {
       // Mark operation as inactive
       oc.isActive = false;
 
-      const abortReason = match(signal.reason)
-        .with(P.string, (reason) => reason)
-        .with({ message: P.string }, (reason) => reason.message)
-        .otherwise(() => "Operation cancelled");
-      const cancellationError = createAbortError(abortReason);
-
-      // Store cancellation error
-      oc.cancellationError = cancellationError;
-
+      if (isClientHTTPError(signal.reason)) {
+        oc.cancellationError = signal.reason;
+      } else {
+        const abortReason = match(signal.reason)
+          .with(P.string, (reason) => reason)
+          .with({ message: P.string }, (reason) => reason.message)
+          .otherwise(() => "Operation cancelled");
+        oc.cancellationError = createAbortError(abortReason);
+      }
       // Track cancellation in OpenTelemetry
       if (oc.traceContext) {
         const rootSpan = oc.traceContext.getRootSpan();
         rootSpan.setAttribute("agent.state", "cancelled");
         rootSpan.setAttribute("cancelled", true);
-        rootSpan.setAttribute("cancellation.reason", cancellationError.message);
+        rootSpan.setAttribute("cancellation.reason", oc.cancellationError.message);
         rootSpan.setStatus({
           code: SpanStatusCode.ERROR,
-          message: cancellationError.message,
+          message: oc.cancellationError.message,
         });
-        rootSpan.recordException(cancellationError);
+        rootSpan.recordException(oc.cancellationError);
         rootSpan.end();
       }
 
@@ -2577,7 +2536,7 @@ export class Agent {
         conversationId: oc.conversationId || "",
         agent: this,
         output: undefined,
-        error: cancellationError,
+        error: oc.cancellationError,
         context: oc,
       });
     });

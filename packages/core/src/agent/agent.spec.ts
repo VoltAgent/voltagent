@@ -14,6 +14,7 @@ import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { Tool } from "../tool";
 import { Agent } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
+import { ToolDeniedError } from "./errors";
 
 // Mock the AI SDK functions while preserving core converters
 vi.mock("ai", async () => {
@@ -1055,6 +1056,66 @@ describe("Agent", () => {
       expect(ai.streamObject).toHaveBeenCalled();
       const obj = await result.object;
       expect(obj).toEqual({ message: "Hello" });
+    });
+
+    it("should abort with ToolDeniedError passed to abortController", async () => {
+      const mockExecute = vi.fn().mockResolvedValue("42");
+      const tool = new Tool({
+        name: "calculator",
+        description: "Calculate math",
+        parameters: z.object({ expression: z.string() }),
+        execute: mockExecute,
+      });
+
+      const thrownError = new ToolDeniedError({
+        toolName: "calculator",
+        message: "Pro plan required for this tool.",
+        code: "TOOL_FORBIDDEN",
+        httpStatus: 403,
+      });
+
+      let abortSpy: any;
+
+      const onToolStart = vi.fn().mockImplementation(({ context }) => {
+        abortSpy = vi.spyOn(context.abortController, "abort");
+        throw thrownError;
+      });
+
+      const onEnd = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Use tools when needed",
+        model: mockModel as any,
+        tools: [tool],
+        hooks: { onToolStart, onEnd },
+      });
+
+      vi.mocked(ai.generateText).mockImplementation(async (args: any) => {
+        // Invoke the agent-provided tool wrapper so onToolStart is executed
+        await args?.tools?.calculator?.execute({ expression: "40+2" });
+        return {
+          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          response: {
+            id: "test",
+            modelId: "test-model",
+            timestamp: new Date(),
+          },
+        } as any;
+      });
+
+      await agent.generateText("Calculate 40+2");
+
+      // Give the abort listener a tick to run and set cancellationError
+      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(ai.generateText).toHaveBeenCalled();
+      expect(onToolStart).toHaveBeenCalled();
+      expect(onEnd).toHaveBeenCalled();
+      // onEnd should receive the cancellation error propagated from abortController
+      expect(onEnd).toHaveBeenCalledWith(expect.objectContaining({ error: thrownError }));
+      expect(abortSpy).toBeDefined();
+      expect(abortSpy).toHaveBeenCalledWith(thrownError);
     });
   });
 

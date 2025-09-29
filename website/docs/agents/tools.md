@@ -179,7 +179,7 @@ import { openai } from "@ai-sdk/openai";
 
 // Define the hooks using createHooks
 const hooks = createHooks({
-  onToolStart({ agent, tool, context }) {
+  onToolStart({ agent, tool, context, args }) {
     console.log(`Tool starting: ${tool.name}`);
     console.log(`Agent: ${agent.name}`);
     console.log(`Operation ID: ${context.operationId}`);
@@ -210,6 +210,87 @@ const agent = new Agent({
 
 // When the agent uses a tool, the hooks will be triggered
 // const response = await agent.generateText("What is 123 * 456?");
+```
+
+#### ToolDeniedError: Deny a tool and terminate the flow
+
+In policy or security scenarios you may want to prevent a tool from running and immediately stop the entire agent operation. Throw a ToolDeniedError from a hook (typically onToolStart) to do this. The agent will:
+
+- Stop the tool call immediately,
+- Surface the error to the caller as a ToolDeniedError, preserving httpStatus and code for programmatic handling.
+
+Example policy check in onToolStart:
+
+```ts
+import { createHooks, ToolDeniedError } from "@voltagent/core";
+
+const hooks = createHooks({
+  onToolStart({ tool, context, args }) {
+    const userId = context.userId;
+    const plan = context.userPlan; // your app can inject any context values
+
+    // Block expensive or restricted tools for non-pro users
+    if (tool.name === "search_web" && plan !== "pro") {
+      throw new ToolDeniedError({
+        toolName: tool.name,
+        message: "Pro plan required to use web search.",
+        code: "TOOL_PLAN_REQUIRED",
+        httpStatus: 402, // Payment Required (choose a suitable 4xx code)
+      });
+    }
+  },
+});
+```
+
+Catching the termination when calling the agent:
+
+```ts
+import { isToolDeniedError } from "@voltagent/core";
+
+try {
+  const res = await agent.generateText("Please search the web for ...", { hooks });
+} catch (err) {
+  if (isToolDeniedError(err)) {
+    // Access structured fields
+    console.log("Tool denied:", {
+      tool: err.name, // the tool name
+      status: err.httpStatus,
+      code: err.code,
+      message: err.message,
+    });
+    // Show a friendly UI, redirect to upgrade, etc.
+  } else {
+    // Other errors, including AbortError for generic cancellations
+    console.error("Operation failed:", err);
+  }
+}
+```
+
+Notes:
+
+- Throw ToolDeniedError from any hook (onToolStart is most common) to terminate early.
+- When ToolDeniedError is thrown, the agent aborts the entire flow; no further tool calls will be executed.
+- For generic cancellations (timeouts, user cancel), catch isAbortError; for policy denials, use isToolDeniedError.
+
+Allowed codes and custom codes:
+
+- Built-in codes you can use for `code`:
+  - TOOL_ERROR
+  - TOOL_FORBIDDEN
+  - TOOL_PLAN_REQUIRED
+  - TOOL_QUOTA_EXCEEDED
+- You can also supply any custom string for `code` to fit your app’s taxonomy, e.g. "TOOL_REGION_BLOCKED".
+- HTTP status must be a client error (4xx).
+
+Example using a custom code:
+
+```ts
+throw new ToolDeniedError({
+  toolName: "browser_screenshot",
+  message: "Screenshots are disabled for this tenant in EU region.",
+  code: "TOOL_REGION_BLOCKED", // custom application-specific code
+  httpStatus: 403,
+});
 ```
 
 ## Best Practices

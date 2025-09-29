@@ -10,6 +10,9 @@ export interface SuccessResponse<T = any> {
 export interface ErrorResponse {
   success: false;
   error: string;
+  httpStatus?: number;
+  code?: string;
+  name?: string;
 }
 
 export type ApiResponse<T = any> = SuccessResponse<T> | ErrorResponse;

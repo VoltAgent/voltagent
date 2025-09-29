@@ -124,6 +124,7 @@ export type {
   DynamicValueOptions,
 } from "./agent/types";
 export type { VoltAgentError, AbortError } from "./agent/errors";
+export { ToolDeniedError, ClientHTTPError } from "./agent/errors";
 export { isAbortError, isVoltAgentError } from "./agent/errors";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";
