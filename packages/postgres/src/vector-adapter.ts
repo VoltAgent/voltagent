@@ -159,12 +159,16 @@ export class PostgreSQLVectorAdapter implements VectorAdapter {
       await this.withClient(async (client) => {
         await client.query("BEGIN");
         try {
-          for (const item of items) {
-            this.validateVector(item.vector);
-            const serializedVector = this.serializeVector(item.vector);
-            const metadataJson = item.metadata ? safeStringify(item.metadata) : null;
-            await client.query(
-              `INSERT INTO ${this.vectorTable()} (id, vector, dimensions, metadata, content, updated_at)
+          const effectiveBatchSize = Math.max(1, this.batchSize);
+          for (let start = 0; start < items.length; start += effectiveBatchSize) {
+            const batch = items.slice(start, start + effectiveBatchSize);
+
+            for (const item of batch) {
+              this.validateVector(item.vector);
+              const serializedVector = this.serializeVector(item.vector);
+              const metadataJson = item.metadata ? safeStringify(item.metadata) : null;
+              await client.query(
+                `INSERT INTO ${this.vectorTable()} (id, vector, dimensions, metadata, content, updated_at)
                VALUES ($1, $2, $3, $4, $5, NOW())
                ON CONFLICT (id) DO UPDATE 
                  SET vector = EXCLUDED.vector,
@@ -172,14 +176,15 @@ export class PostgreSQLVectorAdapter implements VectorAdapter {
                      metadata = EXCLUDED.metadata,
                      content = EXCLUDED.content,
                      updated_at = NOW()`,
-              [item.id, serializedVector, item.vector.length, metadataJson, item.content ?? null],
-            );
-            this.setCacheItem({
-              id: item.id,
-              vector: [...item.vector],
-              metadata: item.metadata,
-              content: item.content,
-            });
+                [item.id, serializedVector, item.vector.length, metadataJson, item.content ?? null],
+              );
+              this.setCacheItem({
+                id: item.id,
+                vector: [...item.vector],
+                metadata: item.metadata,
+                content: item.content,
+              });
+            }
           }
 
           await client.query("COMMIT");
