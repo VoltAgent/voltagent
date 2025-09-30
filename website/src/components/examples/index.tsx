@@ -28,9 +28,7 @@ export const ExampleList = ({ examples = [] }: ExampleListProps) => {
 
             <p className="text-base text-gray-400 mb-4 leading-relaxed max-w-3xl">
               Explore practical examples and code snippets to get started with{" "}
-              <span className="text-[#00d992] font-semibold">VoltAgent</span>. Each example includes
-              complete code, installation instructions, and usage guidelines to help you build
-              powerful AI agents quickly.
+              <span className="text-[#00d992] font-semibold">VoltAgent</span>.
             </p>
           </div>
         </div>
