@@ -118,25 +118,6 @@ const sanitizeVideo = (video) => {
   });
 };
 
-const sanitizeCard = (card) => {
-  if (!card) {
-    return undefined;
-  }
-
-  const thumbnail = card.binding_values?.thumbnail_image_large;
-  if (!thumbnail) {
-    return undefined;
-  }
-
-  return compactObject({
-    binding_values: {
-      thumbnail_image_large: thumbnail,
-    },
-    name: card.name,
-    url: card.url,
-  });
-};
-
 const sanitizeTweet = (tweet) => {
   if (!tweet) {
     return undefined;
@@ -156,7 +137,6 @@ const sanitizeTweet = (tweet) => {
       user: sanitizeUser(tweet.user),
       photos: sanitizeArray(tweet.photos, sanitizePhoto),
       video: sanitizeVideo(tweet.video),
-      card: sanitizeCard(tweet.card),
       in_reply_to_screen_name: tweet.in_reply_to_screen_name,
       in_reply_to_status_id_str: tweet.in_reply_to_status_id_str,
     }) || {};

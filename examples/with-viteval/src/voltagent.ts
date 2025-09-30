@@ -10,8 +10,8 @@ import { scienceAgent } from "#/agents/science";
 import { supervisorAgent } from "#/agents/supervisor";
 
 const env = cleanEnv(process.env, {
-  VOLTOPS_PUBLIC_KEY: str(),
-  VOLTOPS_SECRET_KEY: str(),
+  VOLTAGENT_PUBLIC_KEY: str(),
+  VOLTAGENT_SECRET_KEY: str(),
 });
 
 export const voltagent = new VoltAgent({
@@ -24,8 +24,8 @@ export const voltagent = new VoltAgent({
     science: scienceAgent,
   },
   voltOpsClient: new VoltOpsClient({
-    publicKey: env.VOLTOPS_PUBLIC_KEY,
-    secretKey: env.VOLTOPS_SECRET_KEY,
+    publicKey: env.VOLTAGENT_PUBLIC_KEY,
+    secretKey: env.VOLTAGENT_SECRET_KEY,
   }),
   server: honoServer(),
 });

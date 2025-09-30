@@ -18,6 +18,7 @@ interface ExampleMetadata {
   description: string;
   tags?: string[];
   published?: boolean;
+  repository?: string;
 }
 
 type MDXContentComponent = React.ComponentType<Record<string, unknown>> & {
@@ -81,8 +82,9 @@ export default function ExampleProjectPage({
 
   const seoTitle = `${example.title} - VoltAgent Example | TypeScript AI Framework`;
   const seoDescription = `${example.description} - Learn how to build this with VoltAgent. Complete code example with installation and usage instructions.`;
+  const repositoryUrl = example.repository;
 
-  const DetailsComponent = ({ children, ...props }: any) => {
+  const DetailsComponent = React.useCallback(({ children, ...props }: any) => {
     const [isOpen, setIsOpen] = React.useState(false);
     const [summary, ...content] = React.Children.toArray(children);
 
@@ -101,7 +103,7 @@ export default function ExampleProjectPage({
         <div className="mt-4">{content}</div>
       </details>
     );
-  };
+  }, []);
 
   const mdxComponents = React.useMemo(
     () => ({
@@ -112,7 +114,6 @@ export default function ExampleProjectPage({
       Warning,
       details: DetailsComponent,
     }),
-    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     [DetailsComponent],
   );
 
@@ -222,19 +223,23 @@ export default function ExampleProjectPage({
                     </div>
                   )}
                   <div className="flex flex-col gap-3 pt-4 sm:flex-row">
-                    <Link
-                      to={example?.metadata?.repository ?? "#"}
-                      className="inline-flex items-center justify-center rounded-xl bg-emerald-400 px-5 py-2 text-sm font-semibold text-black shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-300 no-underline"
-                      target={example?.metadata?.repository ? "_blank" : undefined}
-                      rel={example?.metadata?.repository ? "noopener noreferrer" : undefined}
-                    >
-                      Go to Source Code
-                    </Link>
+                    {repositoryUrl ? (
+                      <a
+                        href={repositoryUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center rounded-xl bg-emerald-400 px-5 py-2 text-sm font-semibold text-black shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-300 hover:text-black no-underline"
+                      >
+                        Source Code
+                      </a>
+                    ) : null}
                     <a
-                      href="/examples"
+                      href="https://github.com/VoltAgent/voltagent/tree/main/examples"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center justify-center rounded-xl border border-solid border-emerald-400/40 px-5 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/10 no-underline"
                     >
-                      View All Examples
+                      Other Mini Examples
                     </a>
                   </div>
                 </div>

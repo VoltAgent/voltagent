@@ -10,8 +10,8 @@ const logger = createPinoLogger({
 });
 
 const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-  secretKey: process.env.VOLTOPS_SECRET_KEY,
+  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+  secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
 const supportAgent = new Agent({

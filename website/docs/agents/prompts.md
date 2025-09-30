@@ -201,8 +201,8 @@ VoltOps provides a complete prompt management platform with version control, tea
 4. **Add to your .env file**:
 
 ```bash
-VOLTOPS_PUBLIC_KEY=pk_your_public_key_here
-VOLTOPS_SECRET_KEY=sk_your_secret_key_here
+VOLTAGENT_PUBLIC_KEY=pk_your_public_key_here
+VOLTAGENT_SECRET_KEY=sk_your_secret_key_here
 ```
 
 ### Step 2: Create Your First Prompt
@@ -254,8 +254,8 @@ import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
 const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-  secretKey: process.env.VOLTOPS_SECRET_KEY,
+  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+  secretKey: process.env.VOLTAGENT_SECRET_KEY,
   prompts: true,
   promptCache: {
     enabled: true,
@@ -323,8 +323,8 @@ You can also access prompts directly from the VoltOpsClient outside of agent ins
 ```typescript
 // Direct access for testing or utility functions
 const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-  secretKey: process.env.VOLTOPS_SECRET_KEY,
+  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+  secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
 // Get prompt directly
@@ -759,8 +759,8 @@ return await prompts.getPrompt({
 Error: Authentication failed
 
 // Solution: Verify environment variables
-console.log("Public Key:", process.env.VOLTOPS_PUBLIC_KEY?.substring(0, 8) + "...");
-console.log("Secret Key:", process.env.VOLTOPS_SECRET_KEY ? "Set" : "Missing");
+console.log("Public Key:", process.env.VOLTAGENT_PUBLIC_KEY?.substring(0, 8) + "...");
+console.log("Secret Key:", process.env.VOLTAGENT_SECRET_KEY ? "Set" : "Missing");
 ```
 
 ### Debug Tips
@@ -770,8 +770,8 @@ console.log("Secret Key:", process.env.VOLTOPS_SECRET_KEY ? "Set" : "Missing");
 ```typescript
 // Test VoltOps connection outside of agent
 const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-  secretKey: process.env.VOLTOPS_SECRET_KEY,
+  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+  secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
 const promptManager = voltOpsClient.prompts;

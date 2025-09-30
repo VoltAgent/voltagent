@@ -2,50 +2,37 @@
 id: 3
 slug: whatsapp-ai-agent
 title: WhatsApp Order Agent
-description: Learn how to build an intelligent WhatsApp chatbot for food ordering with VoltAgent.
+description: Learn how to build a WhatsApp AI agent chatbot for food ordering with VoltAgent.
+repository: https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp
 ---
 
-In this example, we'll build an intelligent WhatsApp chatbot using VoltAgent that can handle food orders through natural conversation. We'll create a complete ordering system that interacts with customers via WhatsApp, manages menu items from a database, and processes orders with full conversation context. This demonstrates the power of AI agents in building practical business applications.
+This example demonstrates a WhatsApp chatbot using VoltAgent that can handle food orders through natural conversation. The complete ordering system interacts with customers via WhatsApp, manages menu items from a database, and processes orders with full conversation context.
 
-You'll create a WhatsApp bot that:
+This example includes a WhatsApp AI agent that:
 
 - Displays menu items from a Supabase database
 - Takes food orders through natural conversation
-- Collects delivery addresses seamlessly
+- Collects delivery addresses
 - Tracks order status in real-time
 - Maintains conversation context using working memory
 - Stores all orders persistently in the database
 
-**Prerequisites**
+### Setup
 
-<Info title="What you'll need">
-Before starting, make sure you can log into Supabase, access the Meta developer dashboard for WhatsApp Business API, and have an OpenAI API key ready. With those in place you can move through the setup without blockers.
-</Info>
-
-Before starting, ensure you have:
-
-- Node.js 20.19.0 or higher
+<Info title="Before you begin, line up these accounts and keys:">
+- Sign in to [VoltOps LLM Observability platfrom](https://console.voltagent.dev/login)
 - A [Supabase account](https://supabase.com) (free tier works)
 - WhatsApp Business API access via [Meta for Developers](https://developers.facebook.com)
 - An OpenAI API key from [platform.openai.com](https://platform.openai.com/api-keys)
-
-### Setup
+</Info>
 
 #### Get the example code
 
-Use the VoltAgent CLI to get the WhatsApp order bot example from our repository:
+Use the VoltAgent CLI to get the WhatsApp order AI agent example from our repository:
 
 ```bash
-npm create voltagent-app@latest -- --example with-whatsapp-order
-cd my-order-bot
-```
-
-#### Install additional dependencies
-
-Install the Supabase SDK for database operations:
-
-```bash
-npm install @supabase/supabase-js
+npm create voltagent-app@latest -- --example with-whatsapp
+cd with-whatsapp
 ```
 
 #### Configure environment variables
@@ -72,14 +59,16 @@ VOLTAGENT_SECRET_KEY=your_secret_key
 
 #### Set up the database
 
-First, you'll need to set up your Supabase database:
+First, set up your Supabase database:
 
-1. **Create a Supabase account** at [supabase.com](https://supabase.com)
-2. **Create a new project** in your Supabase dashboard
+1. Create a Supabase account at [supabase.com](https://supabase.com)
+2. Create a new project in your Supabase dashboard
 3. Once your project is ready, navigate to the **SQL Editor** from the sidebar
 4. Run the following SQL commands to create the necessary tables for your ordering system:
 
 For detailed Supabase setup instructions, see the [official Supabase documentation](https://supabase.com/docs/guides/getting-started).
+
+![supabase table](https://cdn.voltagent.dev/examples/with-whatsapp/supabase.png)
 
 #### Menu Items Table
 
@@ -140,21 +129,21 @@ INSERT INTO menu_items (category, name, description, price) VALUES
   ('Drinks', 'Water', 'Mineral water 500ml', 1.99);
 ```
 
-#### Create Supabase Client
+#### Supabase Client Configuration
 
-Create a `lib/supabase.ts` file to initialize the Supabase client:
+The example already includes a `lib/supabase.ts` file that initializes the Supabase client:
 
 ```typescript
 import { createClient } from "@supabase/supabase-js";
 
-// Supabase configuration - you'll need to add these to your .env file
+// Supabase configuration - add these to your .env file
 const supabaseUrl = process.env.SUPABASE_URL || "";
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 ```
 
-This file creates a Supabase client instance that all our tools will use to interact with the database. Make sure your environment variables are properly set in the `.env` file.
+This file provides a Supabase client instance that all the tools use to interact with the database. Make sure your environment variables are properly set in the `.env` file.
 
 #### Start the development server
 
@@ -162,7 +151,7 @@ This file creates a Supabase client instance that all our tools will use to inte
 npm run dev
 ```
 
-Once your server starts successfully, you'll see:
+Once your server starts successfully, you see:
 
 ```bash
 ════════════════════════════════════════════
@@ -175,30 +164,30 @@ Once your server starts successfully, you'll see:
 [VoltAgent] All packages are up to date
 ```
 
-The [VoltOps Platform](https://console.voltagent.dev) link opens automatically, allowing you to interact with and debug your WhatsApp bot in real-time.
+The [VoltOps Platform](https://console.voltagent.dev) link opens automatically, allowing you to interact with and debug your WhatsApp AI agent in real-time.
 
-### Building the Bot
+![List tool](https://cdn.voltagent.dev/examples/with-whatsapp/1-start-server.png)
 
-Let's build our WhatsApp order bot step by step. We'll start by understanding the core concepts and then implement each component.
+### Understanding the Bot Architecture
 
-For our WhatsApp order bot, we'll create three essential tools:
+Let's explore the WhatsApp order AI agent components and understand how they work together.
+
+The WhatsApp order AI agent includes three essential tools:
 
 1. **List Menu Items** - Fetches available food items from the database
 2. **Create Order** - Processes and saves customer orders
 3. **Check Order Status** - Retrieves order tracking information
 
-![supabase table](https://cdn.voltagent.dev/examples/supabase.png)
-
 **Understanding VoltAgent Tools:** In VoltAgent, tools are the actions your agent can perform. Think of them as functions that your AI agent can call when needed. Each tool has a single responsibility, validates inputs with Zod, returns structured responses, and surfaces clear errors so runtime behaviour stays predictable.
 
-Let's implement each tool:
+Let's examine each tool:
 
-### Tool 1: List Menu Items
+### List Menu Items Tool
 
-Our first tool retrieves available menu items from the database:
+This tool retrieves available menu items from the database:
 
 <details>
-<summary>View Tool 1 Code</summary>
+<summary>View code</summary>
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -243,14 +232,16 @@ export const listMenuItemsTool = createTool({
 
 </details>
 
+![List tool](https://cdn.voltagent.dev/examples/with-whatsapp/list-tool.png)
+
 **What this tool does:** Fetches menu items from Supabase with optional pagination, returning a structured response that keeps error handling and schema validation in one place so the agent can safely show the menu whenever a conversation starts.
 
-### Tool 2: Create Order
+### Create Order Tool
 
-The second tool processes and saves customer orders to the database:
+This tool processes and saves customer orders to the database:
 
 <details>
-<summary>View Tool 2 Code</summary>
+<summary>View code</summary>
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -339,16 +330,18 @@ export const createOrderTool = createTool({
 
 </details>
 
+![create-order tool](https://cdn.voltagent.dev/examples/with-whatsapp/create-order.png)
+
 **What this tool does:** Takes the items collected in working memory, derives totals, creates the `orders` and `order_items` records, and returns a confirmation message, letting the agent wrap up an order as soon as the customer shares an address.
 
-**Working memory integration:** This tool demonstrates how VoltAgent's working memory maintains conversation context across messages - the bot remembers cart items and delivery details without requiring the customer to repeat information.
+**Working memory integration:** This tool demonstrates how VoltAgent's working memory maintains conversation context across messages - the AI agent remembers cart items and delivery details without requiring the customer to repeat information.
 
-### Tool 3: Check Order Status
+### Check Order Status Tool
 
-The third tool allows customers to check the status of their orders:
+This tool allows customers to check the status of their orders:
 
 <details>
-<summary>View Tool 3 Code</summary>
+<summary>View code</summary>
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -477,14 +470,16 @@ export const checkOrderStatusTool = createTool({
 
 </details>
 
+![order-status tool](https://cdn.voltagent.dev/examples/with-whatsapp/order-status.png)
+
 **What this tool does:** Pulls recent orders for the current WhatsApp user, optionally filtering by ID, so the agent can answer “Where is my order?” questions with up-to-date status information without exposing anyone else’s data.
 
-### Creating the Complete Application
+### The Complete Application Structure
 
-Now let's build the complete `src/index.ts` file that brings everything together:
+Now let's examine the complete `src/index.ts` file that brings everything together:
 
 <details>
-<summary>View Full Application Code</summary>
+<summary>View code</summary>
 
 ```typescript
 import "dotenv/config";
@@ -535,7 +530,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "with-whatsapp",
-  instructions: `You are a WhatsApp ordering bot. Your task is to take food orders from customers.
+  instructions: `You are a WhatsApp ordering AI agent. Your task is to take food orders from customers.
 
 Order Flow:
    - If orders array is empty, show menu
@@ -581,7 +576,7 @@ new VoltAgent({
       app.get("/health", (c) => {
         return c.json({
           status: "healthy",
-          service: "whatsapp-ordering-bot",
+          service: "whatsapp-ordering-agent",
           timestamp: new Date().toISOString(),
         });
       });
@@ -597,11 +592,11 @@ new VoltAgent({
 
 </details>
 
-Now let's break down this code and understand each section:
+Let's understand each section of this code:
 
 ### Working Memory Schema
 
-Define the conversation state structure using Zod:
+We defined the conversation state structure using Zod:
 
 ```typescript
 // Define working memory schema with Zod
@@ -622,13 +617,18 @@ const workingMemorySchema = z.object({
 });
 ```
 
-This schema tracks the customer's cart items, delivery address, optional notes, and current order status so the bot always knows how to keep the conversation moving.
+**Key points:**
 
-**Type safety with Zod:** Zod provides runtime type validation ensuring inputs are checked, outputs stay consistent, TypeScript maintains autocomplete, and any mistakes surface with clear error messages.
+- `orders` array tracks selected menu items with quantities and prices
+- `orderStatus` enum manages conversation flow through ordering states
+- `deliveryAddress` captures customer location for order fulfillment
+- `customerNotes` allows for special delivery instructions
+- All fields have sensible defaults to handle incomplete conversations
+- Zod schema provides runtime type validation and TypeScript integration
 
-### Memory Configuration
+#### Memory Configuration
 
-Set up persistent memory with conversation-scoped working memory:
+We set up persistent memory with conversation-scoped working memory:
 
 ```typescript
 // Configure persistent memory with working memory enabled
@@ -645,32 +645,27 @@ const memory = new Memory({
 });
 ```
 
-**Understanding VoltAgent Memory:**
+![Memory](https://cdn.voltagent.dev/examples/with-whatsapp/memory.png)
 
-VoltAgent provides two types of memory systems:
+**Key points:**
 
-- **Long-term memory** - Persists across all conversations, storing message history and context permanently in a database
-- **Working memory** - Temporary, session-specific storage that maintains state during an active conversation
-
-Working memory is perfect for:
-
-- Shopping carts and order items
-- Form inputs and multi-step workflows
-- Conversation state and user preferences
-- Any temporary data that shouldn't persist forever
-
-The `scope: "conversation"` setting ensures each WhatsApp user gets their own isolated working memory instance, keeping their cart separate from other customers.
+- Uses `LibSQLMemoryAdapter` for lightweight local persistence
+- `scope: "conversation"` isolates each customer's cart data
+- Working memory automatically clears after order completion
+- Persistent memory retains order history for status checks
+- Session-specific storage prevents cart mixing between customers
+- Local SQLite database ensures fast access and simple deployment
 
 📚 For detailed information about memory management, see the [Working Memory Guide](https://voltagent.dev/docs/agents/memory/working-memory/).
 
-### Agent Creation
+### Agent Configuration
 
-Create the intelligent agent with instructions and tools:
+The example configures an intelligent agent with specific instructions and tools:
 
 ```typescript
 const agent = new Agent({
   name: "with-whatsapp",
-  instructions: `You are a WhatsApp ordering bot. Your task is to take food orders from customers.
+  instructions: `You are a WhatsApp ordering AI agent. Your task is to take food orders from customers.
 
 Order Flow:
    - If orders array is empty, show menu
@@ -696,51 +691,13 @@ Always be friendly and helpful. Start with "Welcome!" greeting.`,
 });
 ```
 
-**Agent configuration includes:** The agent is named, given its ordering instructions, pointed at the GPT-4o-mini model, wired to the three tools, and connected to shared memory so each chat stays stateful.
+**Key points:**
 
-#### VoltAgent Server Configuration
-
-Initialize VoltAgent with custom webhook handlers:
-
-```typescript
-new VoltAgent({
-  agents: {
-    agent,
-  },
-
-  server: honoServer({
-    configureApp: (app) => {
-      // WhatsApp webhook verification (GET)
-      app.get("/webhook/whatsapp", async (c) => {
-        return handleWhatsAppVerification(c);
-      });
-
-      // WhatsApp webhook message handler (POST)
-      app.post("/webhook/whatsapp", async (c) => {
-        return handleWhatsAppMessage(c, agent);
-      });
-
-      // Health check endpoint
-      app.get("/health", (c) => {
-        return c.json({
-          status: "healthy",
-          service: "whatsapp-ordering-bot",
-          timestamp: new Date().toISOString(),
-        });
-      });
-    },
-  }),
-  logger,
-  voltOpsClient: new VoltOpsClient({
-    publicKey: process.env.VOLTAGENT_PUBLIC_KEY || "",
-    secretKey: process.env.VOLTAGENT_SECRET_KEY || "",
-  }),
-});
-```
-
-**Server endpoints:** The service exposes `/webhook/whatsapp` for the Meta verification handshake, accepts incoming messages on the same route via POST, and offers `/health` so you can keep an eye on uptime.
-
-**VoltOps integration** provides real-time traces, performance and cost telemetry, debugging tools, and replayable conversation history without bolting on extra infrastructure.
+- Uses `gpt-4o-mini` for cost-effective conversational responses
+- Structured instructions define clear order flow states
+- Tools array provides database operations capabilities
+- Memory integration maintains conversation context across messages
+- `name: "with-whatsapp"` identifies the agent in logs and traces
 
 ### WhatsApp Webhook Integration
 
@@ -750,10 +707,10 @@ Work through the [WhatsApp Cloud API onboarding guide](https://developers.facebo
 
 ![](https://cdn.voltagent.dev/examples/meta.png)
 
-Now let's create the complete WhatsApp webhook handlers in `src/webhooks/whatsapp.ts`:
+Here are the WhatsApp webhook handlers in `src/webhooks/whatsapp.ts`:
 
 <details>
-<summary>View WhatsApp Webhook Code</summary>
+<summary>View code</summary>
 
 ```typescript
 import { Context } from "hono";
@@ -892,19 +849,36 @@ export async function handleWhatsAppMessage(c: Context, agent: Agent) {
 
 **Key Security Features:** Together these handlers validate the verify token, keep responses at 200 to avoid retry storms, lean on typed payloads for safety, and log unexpected errors without taking the service offline.
 
-#### Configuring VoltAgent with Custom Server
+#### VoltAgent Server Configuration
 
-Finally, let's set up VoltAgent with our custom server configuration:
+Initialize VoltAgent with custom webhook handlers:
 
 ```typescript
-// Initialize VoltAgent with custom server
 new VoltAgent({
-  agents: { agent },
+  agents: {
+    agent,
+  },
+
   server: honoServer({
     configureApp: (app) => {
-      app.get("/webhook/whatsapp", handleWhatsAppVerification);
-      app.post("/webhook/whatsapp", (c) => handleWhatsAppMessage(c, agent));
-      app.get("/health", (c) => c.json({ status: "healthy" }));
+      // WhatsApp webhook verification (GET)
+      app.get("/webhook/whatsapp", async (c) => {
+        return handleWhatsAppVerification(c);
+      });
+
+      // WhatsApp webhook message handler (POST)
+      app.post("/webhook/whatsapp", async (c) => {
+        return handleWhatsAppMessage(c, agent);
+      });
+
+      // Health check endpoint
+      app.get("/health", (c) => {
+        return c.json({
+          status: "healthy",
+          service: "whatsapp-ordering-agent",
+          timestamp: new Date().toISOString(),
+        });
+      });
     },
   }),
   logger,
@@ -915,20 +889,31 @@ new VoltAgent({
 });
 ```
 
-**Server Configuration:** The production setup exposes `/webhook/whatsapp` for both the verification handshake and incoming messages, leaves `/health` available for load balancers, and sticks with VoltOps for real-time monitoring and debugging.
+**Key points:**
 
-### Running the Bot
+- `honoServer` provides lightweight HTTP handling for webhook integration
+- `/webhook/whatsapp` handles both Meta verification and message processing
+- `/health` endpoint enables uptime monitoring and load balancer checks
+- VoltOps client integration for observability and debugging
+- Custom server configuration allows WhatsApp-specific routing
+- Async handlers support concurrent message processing
 
-Once deployed, your bot handles natural conversations. Here are example interactions:
+### Running the AI Agent
+
+Once deployed, your AI agent handles natural conversations.
+
+![agent-works](https://cdn.voltagent.dev/examples/with-whatsapp/agent-work.png)
+
+Here are example interactions:
 
 #### Example Conversation 1: First-time Order
 
 ```
 Customer: Hi
-Bot: Welcome to our restaurant! 🍕 I'm here to help you order delicious food. Would you like to see our menu?
+Agent: Welcome to our restaurant! 🍕 I'm here to help you order delicious food. Would you like to see our menu?
 
 Customer: Yes please
-Bot: Here's our menu:
+Agent: Here's our menu:
 
 **Pizza**
 • Margherita - Fresh tomatoes, mozzarella, basil ($12.99)
@@ -945,17 +930,17 @@ Bot: Here's our menu:
 What would you like to order?
 
 Customer: I'll have 2 pepperoni pizzas and a coke
-Bot: Great choice! I've added:
+Agent: Great choice! I've added:
 - 2x Pepperoni Pizza ($29.98)
 - 1x Coke ($2.99)
 
 Your current total is $32.97. Would you like anything else?
 
 Customer: No that's all
-Bot: Perfect! Please provide your delivery address.
+Agent: Perfect! Please provide your delivery address.
 
 Customer: 123 Main Street, Apt 4B
-Bot: Thank you! Order #1057 confirmed!
+Agent: Thank you! Order #1057 confirmed!
 📍 Delivery to: 123 Main Street, Apt 4B
 💰 Total: $32.97
 ⏰ Estimated delivery: 30-45 minutes
@@ -967,7 +952,7 @@ We'll notify you when your order is on the way!
 
 ```
 Customer: What's the status of my order?
-Bot: Let me check your recent orders...
+Agent: Let me check your recent orders...
 
 I found your order #1057:
 - Status: On the way 🚗
@@ -979,7 +964,7 @@ Your order should arrive in about 15-30 minutes!
 
 #### Next Steps
 
-Now that you have a working WhatsApp order bot, consider these enhancements:
+Now that you have a working WhatsApp order AI agent, consider these enhancements:
 
 1. **Add payment integration**: Connect Stripe or PayPal for online payments
 2. **Implement order tracking**: Real-time status updates via WhatsApp
