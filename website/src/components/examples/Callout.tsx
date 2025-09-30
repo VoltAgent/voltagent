@@ -15,11 +15,9 @@ const ICONS: Record<CalloutType, React.ReactNode> = {
 };
 
 const WRAPPER_STYLES: Record<CalloutType, string> = {
-  info: "border border-solid border-emerald-400/30 bg-gradient-to-br from-emerald-500/15 via-slate-950/80 to-emerald-500/10 text-emerald-50",
-  success:
-    "border border-solid border-lime-400/30 bg-gradient-to-br from-lime-500/20 via-slate-950/80 to-lime-400/10 text-lime-50",
-  warning:
-    "border border-solid border-amber-400/30 bg-gradient-to-br from-amber-500/20 via-slate-950/80 to-amber-400/10 text-amber-50",
+  info: "border border-solid border-emerald-400/20 bg-transparent text-emerald-100",
+  success: "border border-solid border-lime-400/20 bg-transparent text-lime-100",
+  warning: "border border-solid border-amber-400/25 bg-transparent text-amber-100",
 };
 
 const ICON_STYLES: Record<CalloutType, string> = {
@@ -38,8 +36,8 @@ export function Callout({ title, type = "info", children }: CalloutProps) {
   return (
     <div
       className={clsx(
-        "rounded-2xl p-5 sm:p-6 shadow-lg shadow-black/10 backdrop-blur",
-        "flex flex-col gap-4",
+        "rounded-2xl p-3 sm:p-4 shadow-lg shadow-black/10",
+        "flex flex-col gap-3 sm:gap-4",
         WRAPPER_STYLES[type],
       )}
     >
@@ -53,12 +51,14 @@ export function Callout({ title, type = "info", children }: CalloutProps) {
           {ICONS[type]}
         </span>
         {title ? (
-          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/80">
             {title}
           </span>
         ) : null}
       </div>
-      <div className="text-sm leading-relaxed text-white/80 [&_p]:mb-0">{children}</div>
+      <div className="text-sm leading-relaxed text-white/85 [&_ul]:space-y-2 [&_ul]:mb-0 [&_li]:leading-relaxed [&_p]:mb-0 [&_p]:leading-[1.7]">
+        {children}
+      </div>
     </div>
   );
 }

@@ -2,34 +2,29 @@
 id: 3
 slug: whatsapp-ai-agent
 title: WhatsApp Order Agent
-description: Learn how to build an intelligent WhatsApp chatbot for food ordering with VoltAgent.
+description: Learn how to build a WhatsApp AI agent chatbot for food ordering with VoltAgent.
+repository: https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp
 ---
 
-This example demonstrates an intelligent WhatsApp chatbot using VoltAgent that can handle food orders through natural conversation. The complete ordering system interacts with customers via WhatsApp, manages menu items from a database, and processes orders with full conversation context. This showcases the power of AI agents in practical business applications.
+This example demonstrates a WhatsApp chatbot using VoltAgent that can handle food orders through natural conversation. The complete ordering system interacts with customers via WhatsApp, manages menu items from a database, and processes orders with full conversation context.
 
 This example includes a WhatsApp AI agent that:
 
 - Displays menu items from a Supabase database
 - Takes food orders through natural conversation
-- Collects delivery addresses seamlessly
+- Collects delivery addresses
 - Tracks order status in real-time
 - Maintains conversation context using working memory
 - Stores all orders persistently in the database
 
-**Prerequisites**
+### Setup
 
-<Info title="What you need">
-Before starting, make sure you can log into Supabase, access the Meta developer dashboard for WhatsApp Business API, and have an OpenAI API key ready. With those in place you can move through the setup without blockers.
-</Info>
-
-Before starting, ensure you have:
-
-- Node.js 20.19.0 or higher
+<Info title="Before you begin, line up these accounts and keys:">
+- Sign in to [VoltOps LLM Observability platfrom](https://console.voltagent.dev/login)
 - A [Supabase account](https://supabase.com) (free tier works)
 - WhatsApp Business API access via [Meta for Developers](https://developers.facebook.com)
 - An OpenAI API key from [platform.openai.com](https://platform.openai.com/api-keys)
-
-### Setup
+</Info>
 
 #### Get the example code
 
@@ -66,12 +61,14 @@ VOLTAGENT_SECRET_KEY=your_secret_key
 
 First, set up your Supabase database:
 
-1. **Create a Supabase account** at [supabase.com](https://supabase.com)
-2. **Create a new project** in your Supabase dashboard
+1. Create a Supabase account at [supabase.com](https://supabase.com)
+2. Create a new project in your Supabase dashboard
 3. Once your project is ready, navigate to the **SQL Editor** from the sidebar
 4. Run the following SQL commands to create the necessary tables for your ordering system:
 
 For detailed Supabase setup instructions, see the [official Supabase documentation](https://supabase.com/docs/guides/getting-started).
+
+![supabase table](https://cdn.voltagent.dev/examples/with-whatsapp/supabase.png)
 
 #### Menu Items Table
 
@@ -169,6 +166,8 @@ Once your server starts successfully, you see:
 
 The [VoltOps Platform](https://console.voltagent.dev) link opens automatically, allowing you to interact with and debug your WhatsApp AI agent in real-time.
 
+![List tool](https://cdn.voltagent.dev/examples/with-whatsapp/1-start-server.png)
+
 ### Understanding the Bot Architecture
 
 Let's explore the WhatsApp order AI agent components and understand how they work together.
@@ -178,8 +177,6 @@ The WhatsApp order AI agent includes three essential tools:
 1. **List Menu Items** - Fetches available food items from the database
 2. **Create Order** - Processes and saves customer orders
 3. **Check Order Status** - Retrieves order tracking information
-
-![supabase table](https://cdn.voltagent.dev/examples/supabase.png)
 
 **Understanding VoltAgent Tools:** In VoltAgent, tools are the actions your agent can perform. Think of them as functions that your AI agent can call when needed. Each tool has a single responsibility, validates inputs with Zod, returns structured responses, and surfaces clear errors so runtime behaviour stays predictable.
 
@@ -234,6 +231,8 @@ export const listMenuItemsTool = createTool({
 ```
 
 </details>
+
+![List tool](https://cdn.voltagent.dev/examples/with-whatsapp/list-tool.png)
 
 **What this tool does:** Fetches menu items from Supabase with optional pagination, returning a structured response that keeps error handling and schema validation in one place so the agent can safely show the menu whenever a conversation starts.
 
@@ -330,6 +329,8 @@ export const createOrderTool = createTool({
 ```
 
 </details>
+
+![create-order tool](https://cdn.voltagent.dev/examples/with-whatsapp/create-order.png)
 
 **What this tool does:** Takes the items collected in working memory, derives totals, creates the `orders` and `order_items` records, and returns a confirmation message, letting the agent wrap up an order as soon as the customer shares an address.
 
@@ -468,6 +469,8 @@ export const checkOrderStatusTool = createTool({
 ```
 
 </details>
+
+![order-status tool](https://cdn.voltagent.dev/examples/with-whatsapp/order-status.png)
 
 **What this tool does:** Pulls recent orders for the current WhatsApp user, optionally filtering by ID, so the agent can answer “Where is my order?” questions with up-to-date status information without exposing anyone else’s data.
 
@@ -623,7 +626,7 @@ const workingMemorySchema = z.object({
 - All fields have sensible defaults to handle incomplete conversations
 - Zod schema provides runtime type validation and TypeScript integration
 
-### Memory Configuration
+#### Memory Configuration
 
 We set up persistent memory with conversation-scoped working memory:
 
@@ -641,6 +644,8 @@ const memory = new Memory({
   },
 });
 ```
+
+![Memory](https://cdn.voltagent.dev/examples/with-whatsapp/memory.png)
 
 **Key points:**
 
@@ -895,7 +900,11 @@ new VoltAgent({
 
 ### Running the AI Agent
 
-Once deployed, your AI agent handles natural conversations. Here are example interactions:
+Once deployed, your AI agent handles natural conversations.
+
+![agent-works](https://cdn.voltagent.dev/examples/with-whatsapp/agent-work.png)
+
+Here are example interactions:
 
 #### Example Conversation 1: First-time Order
 

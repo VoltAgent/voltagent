@@ -20,6 +20,7 @@ async function loadExamples(contentPath, siteDir) {
             ...frontMatter,
             permalink: `/examples/agents/${frontMatter.slug || file.replace(/\.mdx?$/, "")}`,
             fileName: file,
+            repository: frontMatter.repository,
           },
           source: aliasedSitePath(filePath, siteDir),
         };
