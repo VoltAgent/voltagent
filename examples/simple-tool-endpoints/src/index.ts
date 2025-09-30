@@ -1,6 +1,6 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool, generateEndpointsFromTools } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 console.log("[Simple Tool Endpoints] Demo - Endpoints as a Toggle");
@@ -180,7 +180,6 @@ console.log(`  (Set NODE_ENV=production to enable)`);
 const agent = new Agent({
   name: "SimpleEndpointAgent",
   description: "Agent demonstrating simple endpoint toggling",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [
     regularTool,
@@ -193,14 +192,14 @@ const agent = new Agent({
 });
 
 // =============================================================================
-// GENERATE ENDPOINTS (Only for tools with enabled: true)
+// ENDPOINT INFORMATION
 // =============================================================================
 
 console.log("\n" + "=".repeat(60));
-console.log("[Endpoint Generation]");
+console.log("[Endpoint Information]");
 console.log("=".repeat(60));
 
-// Pass the original tools array (not agent.getTools()) to preserve endpoint methods
+// Check which tools can be endpoints
 const allTools = [
   regularTool,
   disabledEndpointTool,
@@ -210,24 +209,32 @@ const allTools = [
   productionTool,
 ];
 
-const endpoints = generateEndpointsFromTools(allTools, {
-  basePath: "/tools",
-  includeBatch: true,
-  includeListing: true,
+console.log("\nTools with endpoints enabled:");
+allTools.forEach((tool) => {
+  if (tool.canBeEndpoint()) {
+    const info = tool.getEndpointInfo();
+    console.log(`  ✓ ${tool.name}`);
+    console.log(`    Path: ${info.path}`);
+    console.log(`    Method: ${info.method.toUpperCase()}`);
+  }
 });
 
-console.log(`\nGenerated ${endpoints.length} endpoints:`);
-endpoints.forEach((endpoint) => {
-  console.log(`  ${endpoint.method.toUpperCase().padEnd(6)} ${endpoint.path}`);
+console.log("\nTools without endpoints:");
+allTools.forEach((tool) => {
+  if (!tool.canBeEndpoint()) {
+    console.log(`  ✗ ${tool.name}`);
+  }
 });
 
 // =============================================================================
-// CREATE VOLTAGENT
+// CREATE VOLTAGENT (Note: Tool endpoints require v1.0 server provider integration)
 // =============================================================================
 
-const voltAgent = new VoltAgent({
+// In v1.0, tool endpoints will be integrated with the server provider
+// For now, this example demonstrates the tool endpoint configuration
+new VoltAgent({
   agents: { agent },
-  customEndpoints: endpoints,
+  // Server provider integration for tool endpoints coming soon
 });
 
 // =============================================================================

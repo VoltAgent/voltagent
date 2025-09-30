@@ -15,14 +15,16 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^0.0.66",
+    "@ai-sdk/openai": "^2.0.2",
     "@voltagent/core": "workspace:*",
-    "@voltagent/vercel-ai": "workspace:*",
-    "zod": "^3.23.8"
+    "@voltagent/server-hono": "workspace:*",
+    "ai": "^5.0.12",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "tsx": "^4.19.1",
-    "typescript": "^5.6.2"
-  }
+    "@types/node": "^24.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "private": true
 }
