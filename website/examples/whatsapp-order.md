@@ -168,7 +168,7 @@ The [VoltOps Platform](https://console.voltagent.dev) link opens automatically, 
 
 ![List tool](https://cdn.voltagent.dev/examples/with-whatsapp/1-start-server.png)
 
-### Understanding the Bot Architecture
+### Understanding the Agent Architecture
 
 Let's explore the WhatsApp order AI agent components and understand how they work together.
 
