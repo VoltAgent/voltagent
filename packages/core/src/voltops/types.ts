@@ -5,7 +5,19 @@
  * prompt management, telemetry, and API interactions.
  */
 
+export type ManagedMemoryStatus = "provisioning" | "ready" | "failed";
+
+import type { UIMessage } from "ai";
 import type { BaseMessage } from "../agent/providers/base/types";
+import type { SearchResult, VectorItem } from "../memory/adapters/vector/types";
+import type {
+  Conversation,
+  ConversationQueryOptions,
+  CreateConversationInput,
+  GetMessagesOptions,
+  WorkflowStateEntry,
+  WorkingMemoryScope,
+} from "../memory/types";
 // VoltAgentExporter removed - migrated to OpenTelemetry
 
 /**
@@ -68,7 +80,7 @@ export type VoltOpsClientOptions = {
    *
    * @example
    * ```typescript
-   * publicKey: process.env.VOLTOPS_PUBLIC_KEY
+   * publicKey: process.env.VOLTAGENT_PUBLIC_KEY
    * ```
    *
    *
@@ -86,7 +98,7 @@ export type VoltOpsClientOptions = {
    *
    * @example
    * ```typescript
-   * secretKey: process.env.VOLTOPS_SECRET_KEY
+   * secretKey: process.env.VOLTAGENT_SECRET_KEY
    * ```
    *
    *
@@ -187,6 +199,21 @@ export interface VoltOpsClient {
   /** Create a prompt helper for agent instructions */
   createPromptHelper(agentId: string, historyEntryId?: string): PromptHelper;
 
+  /** List managed memory databases available to the project */
+  listManagedMemoryDatabases(): Promise<ManagedMemoryDatabaseSummary[]>;
+
+  /** List credentials for a managed memory database */
+  listManagedMemoryCredentials(databaseId: string): Promise<ManagedMemoryCredentialListResult>;
+
+  /** Create a credential for a managed memory database */
+  createManagedMemoryCredential(
+    databaseId: string,
+    input?: { name?: string },
+  ): Promise<ManagedMemoryCredentialCreateResult>;
+
+  /** Managed memory storage operations */
+  managedMemory: ManagedMemoryVoltOpsClient;
+
   // Backward compatibility methods removed - migrated to OpenTelemetry
 }
 
@@ -232,4 +259,162 @@ export interface PromptContent {
       [key: string]: any;
     };
   };
+}
+
+export interface ManagedMemoryConnectionInfo {
+  host: string;
+  port: number;
+  database: string;
+  schema: string;
+  tablePrefix: string;
+  ssl: boolean;
+}
+
+export interface ManagedMemoryDatabaseSummary {
+  id: string;
+  organization_id: string;
+  name: string;
+  region: string;
+  schema_name: string;
+  table_prefix: string;
+  status: ManagedMemoryStatus;
+  last_error?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  connection: ManagedMemoryConnectionInfo;
+}
+
+export interface ManagedMemoryCredentialSummary {
+  id: string;
+  name: string;
+  role: string;
+  username: string;
+  secret: string | null;
+  expiresAt: string | null;
+  isRevoked: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ManagedMemoryCredentialListResult {
+  connection: ManagedMemoryConnectionInfo;
+  credentials: ManagedMemoryCredentialSummary[];
+}
+
+export interface ManagedMemoryCredentialCreateResult {
+  connection: ManagedMemoryConnectionInfo;
+  credential: ManagedMemoryCredentialSummary;
+}
+
+export interface ManagedMemoryAddMessageInput {
+  conversationId: string;
+  userId: string;
+  message: UIMessage;
+}
+
+export interface ManagedMemoryAddMessagesInput {
+  conversationId: string;
+  userId: string;
+  messages: UIMessage[];
+}
+
+export interface ManagedMemoryGetMessagesInput {
+  conversationId: string;
+  userId: string;
+  options?: GetMessagesOptions;
+}
+
+export interface ManagedMemoryClearMessagesInput {
+  userId: string;
+  conversationId?: string;
+}
+
+export interface ManagedMemoryStoreVectorInput {
+  id: string;
+  vector: number[];
+  metadata?: Record<string, unknown>;
+  content?: string;
+}
+
+export interface ManagedMemoryStoreVectorsBatchInput {
+  items: ManagedMemoryStoreVectorInput[];
+}
+
+export interface ManagedMemorySearchVectorsInput {
+  vector: number[];
+  limit?: number;
+  threshold?: number;
+  filter?: Record<string, unknown>;
+}
+
+export interface ManagedMemoryDeleteVectorsInput {
+  ids: string[];
+}
+
+export interface ManagedMemoryUpdateConversationInput {
+  conversationId: string;
+  updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>;
+}
+
+export interface ManagedMemoryWorkingMemoryInput {
+  scope: WorkingMemoryScope;
+  conversationId?: string;
+  userId?: string;
+}
+
+export interface ManagedMemorySetWorkingMemoryInput extends ManagedMemoryWorkingMemoryInput {
+  content: string;
+}
+
+export interface ManagedMemoryWorkflowStateUpdateInput {
+  executionId: string;
+  updates: Partial<WorkflowStateEntry>;
+}
+
+export interface ManagedMemoryMessagesClient {
+  add(databaseId: string, input: ManagedMemoryAddMessageInput): Promise<void>;
+  addBatch(databaseId: string, input: ManagedMemoryAddMessagesInput): Promise<void>;
+  list(databaseId: string, input: ManagedMemoryGetMessagesInput): Promise<UIMessage[]>;
+  clear(databaseId: string, input: ManagedMemoryClearMessagesInput): Promise<void>;
+}
+
+export interface ManagedMemoryConversationsClient {
+  create(databaseId: string, input: CreateConversationInput): Promise<Conversation>;
+  get(databaseId: string, conversationId: string): Promise<Conversation | null>;
+  query(databaseId: string, options: ConversationQueryOptions): Promise<Conversation[]>;
+  update(databaseId: string, input: ManagedMemoryUpdateConversationInput): Promise<Conversation>;
+  delete(databaseId: string, conversationId: string): Promise<void>;
+}
+
+export interface ManagedMemoryWorkingMemoryClient {
+  get(databaseId: string, input: ManagedMemoryWorkingMemoryInput): Promise<string | null>;
+  set(databaseId: string, input: ManagedMemorySetWorkingMemoryInput): Promise<void>;
+  delete(databaseId: string, input: ManagedMemoryWorkingMemoryInput): Promise<void>;
+}
+
+export interface ManagedMemoryWorkflowStatesClient {
+  get(databaseId: string, executionId: string): Promise<WorkflowStateEntry | null>;
+  set(databaseId: string, executionId: string, state: WorkflowStateEntry): Promise<void>;
+  update(databaseId: string, input: ManagedMemoryWorkflowStateUpdateInput): Promise<void>;
+  listSuspended(databaseId: string, workflowId: string): Promise<WorkflowStateEntry[]>;
+}
+
+export interface ManagedMemoryVectorsClient {
+  store(databaseId: string, input: ManagedMemoryStoreVectorInput): Promise<void>;
+  storeBatch(databaseId: string, input: ManagedMemoryStoreVectorsBatchInput): Promise<void>;
+  search(databaseId: string, input: ManagedMemorySearchVectorsInput): Promise<SearchResult[]>;
+  get(databaseId: string, vectorId: string): Promise<VectorItem | null>;
+  delete(databaseId: string, vectorId: string): Promise<void>;
+  deleteBatch(databaseId: string, input: ManagedMemoryDeleteVectorsInput): Promise<void>;
+  clear(databaseId: string): Promise<void>;
+  count(databaseId: string): Promise<number>;
+}
+
+export interface ManagedMemoryVoltOpsClient {
+  messages: ManagedMemoryMessagesClient;
+  conversations: ManagedMemoryConversationsClient;
+  workingMemory: ManagedMemoryWorkingMemoryClient;
+  workflowStates: ManagedMemoryWorkflowStatesClient;
+  vectors: ManagedMemoryVectorsClient;
 }

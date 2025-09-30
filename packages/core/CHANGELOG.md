@@ -4109,8 +4109,8 @@
 
   // 1. Initialize VoltOps client
   const voltOpsClient = new VoltOpsClient({
-    publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-    secretKey: process.env.VOLTOPS_SECRET_KEY,
+    publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+    secretKey: process.env.VOLTAGENT_SECRET_KEY,
   });
 
   // 2. Create agent with VoltOps prompts
@@ -4148,8 +4148,8 @@
   import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
 
   const voltOpsClient = new VoltOpsClient({
-    publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-    secretKey: process.env.VOLTOPS_SECRET_KEY,
+    publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+    secretKey: process.env.VOLTAGENT_SECRET_KEY,
     observability: true, // Enable observability - default is true
     prompts: true, // Enable prompt management - default is true
   });
@@ -4173,8 +4173,8 @@
     agents: { myAgent },
   - telemetryExporter: new VoltAgentExporter({
   + voltOpsClient: new VoltOpsClient({
-      publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-      secretKey: process.env.VOLTOPS_SECRET_KEY,
+      publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+      secretKey: process.env.VOLTAGENT_SECRET_KEY,
   -   baseUrl: "https://api.voltagent.dev",
     }),
   });
@@ -4204,8 +4204,8 @@
 
   ```typescript
   const voltOpsClient = new VoltOpsClient({
-    publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-    secretKey: process.env.VOLTOPS_SECRET_KEY,
+    publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+    secretKey: process.env.VOLTAGENT_SECRET_KEY,
     baseUrl: "https://api.voltagent.dev", // Default
     observability: true, // Enable observability export - default is true
     prompts: false, // Observability only - default is true

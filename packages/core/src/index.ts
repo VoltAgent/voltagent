@@ -167,3 +167,25 @@ export { createAsyncIterableStream, type AsyncIterableStream } from "@voltagent/
 // Convenience re-exports from ai-sdk so apps need only @voltagent/core
 export { stepCountIs, hasToolCall } from "ai";
 export type { StopWhen } from "./ai-types";
+
+export type {
+  ManagedMemoryStatus,
+  ManagedMemoryConnectionInfo,
+  ManagedMemoryDatabaseSummary,
+  ManagedMemoryCredentialSummary,
+  ManagedMemoryCredentialListResult,
+  ManagedMemoryCredentialCreateResult,
+  ManagedMemoryAddMessageInput,
+  ManagedMemoryAddMessagesInput,
+  ManagedMemoryGetMessagesInput,
+  ManagedMemoryClearMessagesInput,
+  ManagedMemoryUpdateConversationInput,
+  ManagedMemoryWorkingMemoryInput,
+  ManagedMemorySetWorkingMemoryInput,
+  ManagedMemoryWorkflowStateUpdateInput,
+  ManagedMemoryMessagesClient,
+  ManagedMemoryConversationsClient,
+  ManagedMemoryWorkingMemoryClient,
+  ManagedMemoryWorkflowStatesClient,
+  ManagedMemoryVoltOpsClient,
+} from "./voltops/types";
