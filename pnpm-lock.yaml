@@ -2037,10 +2037,10 @@ importers:
   examples/with-whatsapp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.34
+        specifier: ^2.0.2
         version: 2.0.42(zod@3.25.76)
       '@supabase/supabase-js':
-        specifier: ^2.57.4
+        specifier: ^2.49.4
         version: 2.58.0
       '@voltagent/cli':
         specifier: ^0.1.11
@@ -2058,10 +2058,10 @@ importers:
         specifier: ^1.0.15
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.51
+        specifier: ^5.0.12
         version: 5.0.59(zod@3.25.76)
       dotenv:
-        specifier: ^16.4.7
+        specifier: ^16.4.5
         version: 16.6.1
       zod:
         specifier: ^3.25.76
