@@ -657,7 +657,7 @@ importers:
         version: link:../../../packages/server-hono
       composio-core:
         specifier: ^0.5.33
-        version: 0.5.39(@ai-sdk/openai@2.0.12)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.19)(langchain@0.3.30)(openai@4.104.0)
+        version: 0.5.39(@ai-sdk/openai@2.0.12)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.59)(langchain@0.3.30)(openai@4.104.0)
       hono:
         specifier: ^4.7.7
         version: 4.9.1
@@ -1970,8 +1970,11 @@ importers:
   examples/with-whatsapp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
+        specifier: ^2.0.34
+        version: 2.0.42(zod@3.25.76)
+      '@supabase/supabase-js':
+        specifier: ^2.57.4
+        version: 2.58.0
       '@voltagent/cli':
         specifier: ^0.1.11
         version: link:../../packages/cli
@@ -1988,8 +1991,11 @@ importers:
         specifier: ^1.0.15
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
+        specifier: ^5.0.51
+        version: 5.0.59(zod@3.25.76)
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2873,6 +2879,17 @@ packages:
       zod: 3.25.76
     dev: false
 
+  /@ai-sdk/gateway@1.0.32(zod@3.25.76):
+    resolution: {integrity: sha512-TQRIM63EI/ccJBc7RxeB8nq/CnGNnyl7eu5stWdLwL41stkV5skVeZJe0QRvFbaOrwCkgUVE0yrUqJi4tgDC1A==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.10(zod@3.25.76)
+      zod: 3.25.76
+    dev: false
+
   /@ai-sdk/gateway@1.0.6(zod@3.25.76):
     resolution: {integrity: sha512-JuSj1MtTr4vw2VBBth4wlbciQnQIV0o1YV9qGLFA+r85nR5H+cJp3jaYE0nprqfzC9rYG8w9c6XGHB3SDKgcgA==}
     engines: {node: '>=18'}
@@ -2962,6 +2979,29 @@ packages:
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.4(zod@3.25.76)
+      zod: 3.25.76
+    dev: false
+
+  /@ai-sdk/openai@2.0.42(zod@3.25.76):
+    resolution: {integrity: sha512-9mM6QS8k0ooH9qMC27nlrYLQmNDnO6Rk0JTmFo/yUxpABEWOcvQhMWNHbp9lFL6Ty5vkdINrujhsAQfWuEleOg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.10(zod@3.25.76)
+      zod: 3.25.76
+    dev: false
+
+  /@ai-sdk/provider-utils@3.0.10(zod@3.25.76):
+    resolution: {integrity: sha512-T1gZ76gEIwffep6MWI0QNy9jgoybUHE7TRaHB5k54K8mF91ciGFlbtCGxDYhMH3nCRergKwYFIDeFF0hJSIQHQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.6
       zod: 3.25.76
     dev: false
 
@@ -11791,8 +11831,20 @@ packages:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
+  /@supabase/auth-js@2.72.0:
+    resolution: {integrity: sha512-4+bnUrtTDK1YD0/FCx2YtMiQH5FGu9Jlf4IQi5kcqRwRwqp2ey39V61nHNdH86jm3DIzz0aZKiWfTW8qXk1swQ==}
+    dependencies:
+      '@supabase/node-fetch': 2.6.15
+    dev: false
+
   /@supabase/functions-js@2.4.5:
     resolution: {integrity: sha512-v5GSqb9zbosquTo6gBwIiq7W9eQ7rE5QazsK/ezNiQXdCbY+bH8D9qEaBIkhVvX4ZRW5rP03gEfw5yw9tiq4EQ==}
+    dependencies:
+      '@supabase/node-fetch': 2.6.15
+    dev: false
+
+  /@supabase/functions-js@2.5.0:
+    resolution: {integrity: sha512-SXBx6Jvp+MOBekeKFu+G11YLYPeVeGQl23eYyAG9+Ro0pQ1aIP0UZNIBxHKNHqxzR0L0n6gysNr2KT3841NATw==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
     dev: false
@@ -11810,8 +11862,26 @@ packages:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
+  /@supabase/postgrest-js@1.21.4:
+    resolution: {integrity: sha512-TxZCIjxk6/dP9abAi89VQbWWMBbybpGWyvmIzTd79OeravM13OjR/YEYeyUOPcM1C3QyvXkvPZhUfItvmhY1IQ==}
+    dependencies:
+      '@supabase/node-fetch': 2.6.15
+    dev: false
+
   /@supabase/realtime-js@2.15.1:
     resolution: {integrity: sha512-edRFa2IrQw50kNntvUyS38hsL7t2d/psah6om6aNTLLcWem0R6bOUq7sk7DsGeSlNfuwEwWn57FdYSva6VddYw==}
+    dependencies:
+      '@supabase/node-fetch': 2.6.15
+      '@types/phoenix': 1.6.6
+      '@types/ws': 8.18.1
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
+  /@supabase/realtime-js@2.15.5:
+    resolution: {integrity: sha512-/Rs5Vqu9jejRD8ZeuaWXebdkH+J7V6VySbCZ/zQM93Ta5y3mAmocjioa/nzlB6qvFmyylUgKVS1KpE212t30OA==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
       '@types/phoenix': 1.6.6
@@ -11828,6 +11898,12 @@ packages:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
+  /@supabase/storage-js@2.12.2:
+    resolution: {integrity: sha512-SiySHxi3q7gia7NBYpsYRu8gyI0NhFwSORMxbZIxJ/zAVkN6QpwDRan158CJ+UdzD4WB/rQMAGRqIJQP+7ccAQ==}
+    dependencies:
+      '@supabase/node-fetch': 2.6.15
+    dev: false
+
   /@supabase/supabase-js@2.55.0:
     resolution: {integrity: sha512-Y1uV4nEMjQV1x83DGn7+Z9LOisVVRlY1geSARrUHbXWgbyKLZ6/08dvc0Us1r6AJ4tcKpwpCZWG9yDQYo1JgHg==}
     dependencies:
@@ -11837,6 +11913,20 @@ packages:
       '@supabase/postgrest-js': 1.19.4
       '@supabase/realtime-js': 2.15.1
       '@supabase/storage-js': 2.10.5
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
+  /@supabase/supabase-js@2.58.0:
+    resolution: {integrity: sha512-Tm1RmQpoAKdQr4/8wiayGti/no+If7RtveVZjHR8zbO7hhQjmPW2Ok5ZBPf1MGkt5c+9R85AVMsTfSaqAP1sUg==}
+    dependencies:
+      '@supabase/auth-js': 2.72.0
+      '@supabase/functions-js': 2.5.0
+      '@supabase/node-fetch': 2.6.15
+      '@supabase/postgrest-js': 1.21.4
+      '@supabase/realtime-js': 2.15.5
+      '@supabase/storage-js': 2.12.2
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -14026,6 +14116,19 @@ packages:
       '@opentelemetry/api': 1.9.0
       zod: 3.25.76
 
+  /ai@5.0.59(zod@3.25.76):
+    resolution: {integrity: sha512-SuAFxKXt2Ha9FiXB3gaOITkOg9ek/3QNVatGVExvTT4gNXc+hJpuNe1dmuwf6Z5Op4fzc8wdbsrYP27ZCXBzlw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/gateway': 1.0.32(zod@3.25.76)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.10(zod@3.25.76)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.76
+    dev: false
+
   /ajv-errors@3.0.0(ajv@8.17.1):
     resolution: {integrity: sha512-V3wD15YHfHz6y0KdhYFjyy9vWtEVALT9UrxfN3zqlI6dMioHnJrqOYfyPKol3oqrnCM9uwkcdCwkJ0WUcbLMTQ==}
     peerDependencies:
@@ -15664,7 +15767,7 @@ packages:
     resolution: {integrity: sha512-6gLRNt4ygsi5NyMVhceOCFv14CIdDFN7fQjX1U4+47qVE/+kjPoXMK65KWK+dWxmFzMTuKazoQ9sch6pM0p5oA==}
     dev: true
 
-  /composio-core@0.5.39(@ai-sdk/openai@2.0.12)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.19)(langchain@0.3.30)(openai@4.104.0):
+  /composio-core@0.5.39(@ai-sdk/openai@2.0.12)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.59)(langchain@0.3.30)(openai@4.104.0):
     resolution: {integrity: sha512-7BeSFlfRzr1cbIfGYJW4jQ3BHwaObOaFKiRJIFuWOmvOrTABl1hbxGkWPA3C+uFw9CFXbZhrLWNyD7lhYy2Scg==}
     hasBin: true
     peerDependencies:
@@ -15682,7 +15785,7 @@ packages:
       '@hey-api/client-axios': 0.2.12(axios@1.11.0)
       '@langchain/core': 0.3.70(openai@4.104.0)
       '@langchain/openai': 0.6.7(@langchain/core@0.3.70)
-      ai: 5.0.19(zod@3.25.76)
+      ai: 5.0.59(zod@3.25.76)
       axios: 1.11.0
       chalk: 4.1.2
       cli-progress: 3.12.0
