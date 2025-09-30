@@ -165,10 +165,10 @@ export const createReasoningTools = (options: CreateReasoningToolsOptions = {}):
   }
 
   if (think) {
-    enabledTools.push({ ...baseThinkTool });
+    enabledTools.push(baseThinkTool);
   }
   if (analyze) {
-    enabledTools.push({ ...baseAnalyzeTool });
+    enabledTools.push(baseAnalyzeTool);
   }
 
   const reasoningToolkit = createToolkit({
