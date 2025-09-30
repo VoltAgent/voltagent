@@ -149,7 +149,7 @@ const envControlledTool = createTool({
 
 console.log(`\n[Tool 5] ${envControlledTool.name}`);
 console.log(`  Endpoint enabled: ${envControlledTool.canBeEndpoint()}`);
-console.log(`  (Set ENABLE_ENV_TOOL=true to enable)`);
+console.log("  (Set ENABLE_ENV_TOOL=true to enable)");
 
 // =============================================================================
 // EXAMPLE 6: Tool with Production-Only Endpoint
@@ -171,7 +171,7 @@ const productionTool = createTool({
 
 console.log(`\n[Tool 6] ${productionTool.name}`);
 console.log(`  Endpoint enabled: ${productionTool.canBeEndpoint()}`);
-console.log(`  (Set NODE_ENV=production to enable)`);
+console.log("  (Set NODE_ENV=production to enable)");
 
 // =============================================================================
 // CREATE AGENT WITH ALL TOOLS
