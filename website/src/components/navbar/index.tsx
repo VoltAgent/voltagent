@@ -228,10 +228,7 @@ export default function Navbar() {
                         </div>
                       </div>
                     </Link>
-                    <Link
-                      to="https://github.com/voltagent/voltagent/tree/main/examples/"
-                      className="no-underline"
-                    >
+                    <Link to="https://voltagent.dev/examples/" className="no-underline">
                       <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 mb-2">
                         <CommandLineIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
                         <div className="min-w-0 font-['Inter']">
