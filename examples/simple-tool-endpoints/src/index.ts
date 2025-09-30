@@ -211,7 +211,7 @@ const allTools = [
 ];
 
 const endpoints = generateEndpointsFromTools(allTools, {
-  basePath: "/api/tools",
+  basePath: "/tools",
   includeBatch: true,
   includeListing: true,
 });
@@ -257,12 +257,10 @@ console.log(`  ${productionTool.name}: ${productionTool.canBeEndpoint() ? "ON" :
 
 console.log("\n[Server] Started on http://localhost:3141");
 console.log("\nExample Usage:");
-console.log("curl -X POST http://localhost:3141/api/tools/calculator \\");
+console.log("curl -X POST http://localhost:3141/tools/calculator \\");
 console.log('  -H "Content-Type: application/json" \\');
 console.log('  -d \'{"operation": "add", "a": 5, "b": 3}\'');
 
-console.log(
-  "\ncurl 'http://localhost:3141/api/tools/textProcessor?text=Hello&operation=uppercase'",
-);
+console.log("\ncurl 'http://localhost:3141/tools/textProcessor?text=Hello&operation=uppercase'");
 
-console.log("\ncurl http://localhost:3141/api/tools");
+console.log("\ncurl http://localhost:3141/tools");

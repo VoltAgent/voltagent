@@ -202,7 +202,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   /**
    * Generate a custom endpoint definition for this tool
    */
-  toEndpoint(basePath: string = "/api/tools"): CustomEndpointDefinition | null {
+  toEndpoint(basePath: string = "/tools"): CustomEndpointDefinition | null {
     if (!this.canBeEndpoint()) {
       return null;
     }
@@ -281,7 +281,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   /**
    * Get endpoint metadata for documentation
    */
-  getEndpointInfo(basePath: string = "/api/tools") {
+  getEndpointInfo(basePath: string = "/tools") {
     if (!this.canBeEndpoint()) {
       return null;
     }
@@ -331,7 +331,7 @@ export function generateEndpointsFromTools(
     includeListing?: boolean;
   } = {},
 ): CustomEndpointDefinition[] {
-  const { basePath = "/api/tools", includeBatch = true, includeListing = true } = options;
+  const { basePath = "/tools", includeBatch = true, includeListing = true } = options;
   const endpoints: CustomEndpointDefinition[] = [];
   const enabledTools = tools.filter((tool) => tool.canBeEndpoint());
 
@@ -366,7 +366,7 @@ export function generateEndpointsFromTools(
  */
 function createBatchEndpoint(
   tools: Tool<any>[],
-  basePath: string = "/api/tools",
+  basePath: string = "/tools",
 ): CustomEndpointDefinition {
   const toolMap = new Map(tools.map((tool) => [tool.name, tool]));
 
@@ -444,7 +444,7 @@ function createBatchEndpoint(
  */
 function createListingEndpoint(
   tools: Tool<any>[],
-  basePath: string = "/api/tools",
+  basePath: string = "/tools",
 ): CustomEndpointDefinition {
   const handler = async (c: Context) => {
     const toolsInfo = tools.map((tool) => tool.getEndpointInfo(basePath)).filter(Boolean);
