@@ -1,0 +1,30 @@
+{
+  "name": "@voltagent/example-simple-tool-endpoints",
+  "version": "1.0.0",
+  "description": "Simple example showing tool endpoints as a toggle",
+  "keywords": ["voltagent", "ai", "tools", "endpoints", "simple"],
+  "license": "MIT",
+  "author": "VoltAgent Team",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsx src/index.ts",
+    "dev:all-on": "ENABLE_ENV_TOOL=true NODE_ENV=production tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.2",
+    "@voltagent/core": "workspace:*",
+    "@voltagent/server-hono": "workspace:*",
+    "ai": "^5.0.12",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "private": true
+}
