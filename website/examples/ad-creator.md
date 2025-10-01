@@ -111,6 +111,8 @@ The system consists of three agents:
 
 VoltAgent agents are autonomous units that execute specific tasks. Each agent has defined responsibilities, tool access, memory persistence, and delegation capabilities. The framework supports multiple LLM providers and includes OpenTelemetry-based observability.
 
+![agent-list](https://cdn.voltagent.dev/examples/with-ad-generator/agents-overall.png)
+
 Agent specifications:
 
 ### Landing Page Analyzer Agent
