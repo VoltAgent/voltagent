@@ -80,10 +80,12 @@ export function registerAgentRoutes(
       throw new Error("Missing agent id parameter");
     }
     const body = await c.req.json();
+
     const signal = c.req.raw.signal;
     const response = await handleGenerateText(agentId, body, deps, logger, signal);
     if (!response.success) {
-      return c.json(response, 500);
+      const { httpStatus, ...details } = response;
+      return c.json(details, httpStatus || 500);
     }
     return c.json(response, 200);
   });
@@ -126,7 +128,8 @@ export function registerAgentRoutes(
     const signal = c.req.raw.signal;
     const response = await handleGenerateObject(agentId, body, deps, logger, signal);
     if (!response.success) {
-      return c.json(response, 500);
+      const { httpStatus, ...details } = response;
+      return c.json(details, httpStatus || 500);
     }
     return c.json(response, 200);
   });

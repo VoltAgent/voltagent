@@ -124,6 +124,7 @@ export type {
   DynamicValueOptions,
 } from "./agent/types";
 export type { VoltAgentError, AbortError } from "./agent/errors";
+export { ToolDeniedError, ClientHTTPError } from "./agent/errors";
 export { isAbortError, isVoltAgentError } from "./agent/errors";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";
@@ -167,3 +168,25 @@ export { createAsyncIterableStream, type AsyncIterableStream } from "@voltagent/
 // Convenience re-exports from ai-sdk so apps need only @voltagent/core
 export { stepCountIs, hasToolCall } from "ai";
 export type { StopWhen } from "./ai-types";
+
+export type {
+  ManagedMemoryStatus,
+  ManagedMemoryConnectionInfo,
+  ManagedMemoryDatabaseSummary,
+  ManagedMemoryCredentialSummary,
+  ManagedMemoryCredentialListResult,
+  ManagedMemoryCredentialCreateResult,
+  ManagedMemoryAddMessageInput,
+  ManagedMemoryAddMessagesInput,
+  ManagedMemoryGetMessagesInput,
+  ManagedMemoryClearMessagesInput,
+  ManagedMemoryUpdateConversationInput,
+  ManagedMemoryWorkingMemoryInput,
+  ManagedMemorySetWorkingMemoryInput,
+  ManagedMemoryWorkflowStateUpdateInput,
+  ManagedMemoryMessagesClient,
+  ManagedMemoryConversationsClient,
+  ManagedMemoryWorkingMemoryClient,
+  ManagedMemoryWorkflowStatesClient,
+  ManagedMemoryVoltOpsClient,
+} from "./voltops/types";

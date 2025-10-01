@@ -5,86 +5,63 @@ slug: /agents/memory
 
 # Agent Memory
 
-Memory enables agents to remember past interactions and maintain conversation context. This guide shows how to configure memory for your agents.
+VoltAgent's `Memory` class stores conversation history and enables agents to maintain context across interactions. Supports persistent storage, semantic search, and working memory.
 
-## Default Behavior
+## Storage Providers
 
-Agents automatically use in-memory storage by default, storing conversations in application memory:
+| Provider           | Package                       | Persistence            | Use Case                         |
+| ------------------ | ----------------------------- | ---------------------- | -------------------------------- |
+| **InMemory**       | `@voltagent/core`             | None (RAM only)        | Development, testing             |
+| **Managed Memory** | `@voltagent/voltagent-memory` | VoltOps-hosted         | Production-ready, zero-setup     |
+| **LibSQL**         | `@voltagent/libsql`           | Local SQLite or remote | Self-hosted, edge deployments    |
+| **Postgres**       | `@voltagent/postgres`         | Self-hosted Postgres   | Existing Postgres infrastructure |
+| **Supabase**       | `@voltagent/supabase`         | Supabase               | Supabase-based applications      |
+
+## Core Features
+
+- **Conversation Storage** - Messages stored per `userId` and `conversationId`
+- **Semantic Search** - Retrieve past messages by similarity (requires embedding + vector adapters)
+- **Working Memory** - Compact context storage (Markdown template, JSON schema, or free-form)
+- **Workflow State** - Suspendable workflow checkpoint storage
+
+## Quick Start
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { Agent, Memory } from "@voltagent/core";
+import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
 import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new ManagedMemoryAdapter({
+    databaseName: "my-app-memory",
+  }),
+});
 
 const agent = new Agent({
   name: "Assistant",
-  instructions: "You are a helpful assistant",
-  model: openai("gpt-4o"),
-  // Memory is automatically enabled with in-memory storage
+  model: openai("gpt-4o-mini"),
+  memory,
 });
-```
 
-## Using Memory
-
-To maintain conversation context, provide `userId` and `conversationId`:
-
-```typescript
 // First message
-const response1 = await agent.generateText("My name is Sarah", {
+await agent.generateText("My name is Sarah", {
   userId: "user-123",
   conversationId: "chat-001",
 });
 
-// Follow-up message - agent remembers the name
-const response2 = await agent.generateText("What's my name?", {
+// Agent remembers context
+await agent.generateText("What's my name?", {
   userId: "user-123",
-  conversationId: "chat-001", // Same conversation ID
-});
-console.log(response2.text); // "Your name is Sarah"
-```
-
-## Persistent Storage
-
-For conversations that survive application restarts, configure `Memory` with a persistent adapter such as LibSQL:
-
-```typescript
-import { Agent, Memory } from "@voltagent/core";
-import { LibSQLMemoryAdapter } from "@voltagent/libsql"; // npm install @voltagent/libsql
-import { openai } from "@ai-sdk/openai";
-
-const agent = new Agent({
-  name: "Persistent Assistant",
-  instructions: "You are a helpful assistant",
-  model: openai("gpt-4o"),
-  memory: new Memory({
-    storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
-  }),
+  conversationId: "chat-001",
 });
 ```
 
-## Disabling Memory
+## Complete Documentation
 
-For stateless agents that don't need conversation history:
+For detailed configuration, provider setup, and advanced features:
 
-```typescript
-const agent = new Agent({
-  name: "Stateless Assistant",
-  instructions: "You provide one-off responses",
-  model: openai("gpt-4o"),
-  memory: false, // Disable memory completely
-});
-```
-
-## Available Memory Providers
-
-- **[InMemoryStorageAdapter](./memory/in-memory.md)** (Default) - Built into `@voltagent/core`
-- **[LibSQLMemoryAdapter](./memory/libsql.md)** - Install: `npm install @voltagent/libsql`
-- **[PostgreSQLMemoryAdapter](./memory/postgres.md)** - Install: `npm install @voltagent/postgres`
-- **[SupabaseMemoryAdapter](./memory/supabase.md)** - Install: `npm install @voltagent/supabase`
-
-## Learn More
-
-For detailed information about memory configuration, providers, and advanced usage:
-
-- **[Memory Overview](./memory/overview.md)** - Complete memory documentation
-- **[Memory Providers](./memory/overview.md#memory-providers)** - Detailed provider comparison
-- **[Custom Providers](./memory/overview.md#implementing-custom-memory-providers)** - Build your own storage
+- **[Memory Overview](./memory/overview.md)** - Full memory system documentation
+- **[Managed Memory](./memory/managed-memory.md)** - Production-ready hosted storage
+- **[Semantic Search](./memory/semantic-search.md)** - Vector-based message retrieval
+- **[Working Memory](./memory/working-memory.md)** - Compact context management
+- **[Storage Adapters](./memory/in-memory.md)** - Provider-specific guides

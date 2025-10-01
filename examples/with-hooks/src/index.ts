@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, Memory, Tool, VoltAgent, messageHelpers } from "@voltagent/core";
+import { Agent, Memory, Tool, ToolDeniedError, VoltAgent, messageHelpers } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -68,10 +68,18 @@ const agent = new Agent({
     },
 
     // Called when a tool starts executing
-    onToolStart: async ({ tool }) => {
+    onToolStart: async ({ tool, args, context }) => {
       console.log("\n🔧 [onToolStart] Tool execution started");
       console.log(`   Tool: ${tool.name}`);
       console.log(`   Description: ${tool.description}`);
+      if (args.location === "New York" && context.userId === "guest") {
+        throw new ToolDeniedError({
+          toolName: tool.name,
+          message: "Pro plan required for this tool.",
+          code: "TOOL_FORBIDDEN",
+          httpStatus: 403,
+        });
+      }
     },
 
     // Called when a tool finishes executing

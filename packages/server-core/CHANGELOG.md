@@ -1,5 +1,15 @@
 # @voltagent/server-core
 
+## 1.0.15
+
+### Patch Changes
+
+- [#637](https://github.com/VoltAgent/voltagent/pull/637) [`b7ee693`](https://github.com/VoltAgent/voltagent/commit/b7ee6936280b5d09b893db6500ad58b4ac80eaf2) Thanks [@marinoska](https://github.com/marinoska)! - - Introduced tests and documentation for the `ToolDeniedError`.
+  - Added a feature to terminate the process flow when the `onToolStart` hook triggers a `ToolDeniedError`.
+  - Enhanced error handling mechanisms to ensure proper flow termination in specific error scenarios.
+- Updated dependencies [[`4c42bf7`](https://github.com/VoltAgent/voltagent/commit/4c42bf72834d3cd45ff5246ef65d7b08470d6a8e), [`b7ee693`](https://github.com/VoltAgent/voltagent/commit/b7ee6936280b5d09b893db6500ad58b4ac80eaf2)]:
+  - @voltagent/core@1.1.24
+
 ## 1.0.14
 
 ### Patch Changes

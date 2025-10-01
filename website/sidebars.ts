@@ -86,6 +86,7 @@ const sidebars: SidebarsConfig = {
           label: "Storage Adapters",
           items: [
             "agents/memory/in-memory",
+            "agents/memory/managed-memory",
             "agents/memory/libsql",
             "agents/memory/postgres",
             "agents/memory/supabase",

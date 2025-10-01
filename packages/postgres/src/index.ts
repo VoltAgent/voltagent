@@ -8,3 +8,7 @@
 // Export Memory Adapter
 export { PostgreSQLMemoryAdapter } from "./memory-adapter";
 export type { PostgreSQLMemoryOptions } from "./memory-adapter";
+
+// Export Vector Adapter
+export { PostgreSQLVectorAdapter } from "./vector-adapter";
+export type { PostgresVectorAdapterOptions } from "./vector-adapter";

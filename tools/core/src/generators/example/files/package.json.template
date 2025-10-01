@@ -4,10 +4,10 @@
   "dependencies": {
     "ai": "^5.0.0",
     "@ai-sdk/openai": "^2.0.2",
-    "@voltagent/cli": "workspace:*",
-    "@voltagent/core": "workspace:*",
-    "@voltagent/logger": "workspace:*",
-    "@voltagent/server-hono": "workspace:*",
+    "@voltagent/cli": "^0.1.11",
+    "@voltagent/core": "^1.1.23",
+    "@voltagent/logger": "^1.0.2",
+    "@voltagent/server-hono": "^1.0.15",
     "zod": "^3.25.76"
   },
   "devDependencies": {

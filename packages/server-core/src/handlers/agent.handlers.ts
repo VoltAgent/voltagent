@@ -1,4 +1,4 @@
-import type { ServerProviderDeps } from "@voltagent/core";
+import { ClientHTTPError, type ServerProviderDeps } from "@voltagent/core";
 import { convertUsage } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import { z } from "zod";
@@ -95,6 +95,15 @@ export async function handleGenerateText(
     };
   } catch (error) {
     logger.error("Failed to generate text", { error });
+    if (error instanceof ClientHTTPError) {
+      return {
+        success: false,
+        error: error.message,
+        code: error.code,
+        name: error.name,
+        httpStatus: error.httpStatus,
+      };
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
