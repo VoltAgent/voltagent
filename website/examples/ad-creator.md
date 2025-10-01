@@ -35,6 +35,8 @@ npm create voltagent-app@latest -- --example with-ad-creator
 cd with-ad-creator
 ```
 
+You can find the source code of this example [here](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator).
+
 #### Configure environment variables
 
 Create a `.env` file with your API keys:

@@ -3,6 +3,7 @@ id: 1
 slug: recipe-generator
 title: AI Recipe Generator Agent
 description: Intelligent recipe recommendation system with MCP.
+repository: https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator
 ---
 
 <YouTubeEmbed url="https://youtu.be/KjV1c6AhlfY" title="AI Recipe Generator Agent Demo" />
@@ -26,6 +27,8 @@ Initialize a new AI agent project with the recipe creator example.
 ```bash
 npm create voltagent-app@latest -- --example with-recipe-generator
 ```
+
+You can find the source code of this example [here](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator).
 
 ### 2. Configure API keys
 

@@ -3,6 +3,7 @@ id: 2
 slug: research-assistant
 title: AI Research Assistant Agent
 description: Learn how to build a multi-agent research workflow with VoltAgent.
+repository: https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant
 ---
 
 <YouTubeEmbed url="https://youtu.be/j6KAUaoZMy4" title="AI Research Assistant Demo" />
@@ -27,6 +28,8 @@ You'll create a research workflow that:
 npm create voltagent-app@latest -- --example with-research-assistant
 cd my-agent-app
 ```
+
+You can find the source code of this example [here](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant).
 
 #### Configure environment variables
 
