@@ -1,122 +1,140 @@
 import { Stagehand } from "@browserbasehq/stagehand";
 
-class StagehandSessionManager {
-  private static instance: StagehandSessionManager;
-  private stagehand: Stagehand | null = null;
-  private initialized = false;
-  private lastUsed = Date.now();
-  private readonly sessionTimeout = 10 * 60 * 1000; // 10 minutes
+class BrowserAutomationController {
+  private static controllerInstance: BrowserAutomationController;
+  private browserClient: Stagehand | null = null;
+  private isActive = false;
+  private lastActivityTime = Date.now();
+  private readonly idleTimeLimit = 600000; // 10min in milliseconds
+  private cleanupTimer: NodeJS.Timeout;
 
   private constructor() {
-    // Schedule session cleanup to prevent memory leaks
-    setInterval(() => this.checkAndCleanupSession(), 60 * 1000);
+    // Periodic maintenance task for resource management
+    this.cleanupTimer = setInterval(() => {
+      this.performIdleCleanup();
+    }, 60000); // Check every minute
   }
 
   /**
-   * Get the singleton instance of StagehandSessionManager
+   * Factory method for obtaining controller reference
    */
-  public static getInstance(): StagehandSessionManager {
-    if (!StagehandSessionManager.instance) {
-      StagehandSessionManager.instance = new StagehandSessionManager();
+  public static getController(): BrowserAutomationController {
+    if (!BrowserAutomationController.controllerInstance) {
+      BrowserAutomationController.controllerInstance = new BrowserAutomationController();
     }
-    return StagehandSessionManager.instance;
+    return BrowserAutomationController.controllerInstance;
   }
 
   /**
-   * Ensure Stagehand is initialized and return the instance
+   * Retrieve or create active browser automation client
    */
-  public async ensureStagehand(): Promise<Stagehand> {
-    this.lastUsed = Date.now();
+  public async getBrowserClient(): Promise<Stagehand> {
+    this.lastActivityTime = Date.now();
 
     try {
-      // Initialize if not already initialized
-      if (!this.stagehand || !this.initialized) {
-        console.log("Creating new Stagehand instance");
-        this.stagehand = new Stagehand({
+      // Create fresh client if needed
+      if (!this.browserClient || !this.isActive) {
+        this.browserClient = new Stagehand({
           apiKey: process.env.BROWSERBASE_API_KEY,
           projectId: process.env.BROWSERBASE_PROJECT_ID,
           env: "BROWSERBASE",
         });
 
         try {
-          console.log("Initializing Stagehand...");
-          await this.stagehand.init();
-          console.log("Stagehand initialized successfully");
-          this.initialized = true;
-          return this.stagehand;
-        } catch (initError) {
-          console.error("Failed to initialize Stagehand:", initError);
-          throw initError;
+          await this.browserClient.init();
+
+          this.isActive = true;
+          return this.browserClient;
+        } catch (setupError) {
+          console.error("Browser client setup failed:", setupError);
+          throw setupError;
         }
       }
 
+      // Validate existing connection
       try {
-        const title = await this.stagehand.page.evaluate(() => document.title);
-        console.log("Session check successful, page title:", title);
-        return this.stagehand;
-      } catch (error) {
-        // If we get an error indicating the session is invalid, reinitialize
-        console.error("Session check failed:", error);
+        const _pageStatus = await this.browserClient.page.evaluate(() => document.title);
+
+        return this.browserClient;
+      } catch (connectionError) {
+        // Handle disconnected sessions
+        console.error("Connection validation failed:", connectionError);
         if (
-          error instanceof Error &&
-          (error.message.includes("Target page, context or browser has been closed") ||
-            error.message.includes("Session expired") ||
-            error.message.includes("context destroyed"))
+          connectionError instanceof Error &&
+          (connectionError.message.includes("Target page, context or browser has been closed") ||
+            connectionError.message.includes("Session expired") ||
+            connectionError.message.includes("context destroyed"))
         ) {
-          console.log("Browser session expired, reinitializing Stagehand...");
-          this.stagehand = new Stagehand({
+          this.browserClient = new Stagehand({
             apiKey: process.env.BROWSERBASE_API_KEY,
             projectId: process.env.BROWSERBASE_PROJECT_ID,
             env: "BROWSERBASE",
           });
-          await this.stagehand.init();
-          this.initialized = true;
-          return this.stagehand;
+          await this.browserClient.init();
+          this.isActive = true;
+          return this.browserClient;
         }
-        throw error; // Re-throw if it's a different type of error
+        throw connectionError; // Propagate unexpected errors
       }
-    } catch (error) {
-      this.initialized = false;
-      this.stagehand = null;
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to initialize/reinitialize Stagehand: ${errorMsg}`);
+    } catch (generalError) {
+      this.isActive = false;
+      this.browserClient = null;
+      const errorDetails =
+        generalError instanceof Error ? generalError.message : String(generalError);
+      throw new Error(`Browser automation client error: ${errorDetails}`);
     }
   }
 
   /**
-   * Close the Stagehand session if it's been idle for too long
+   * Resource cleanup for inactive sessions
    */
-  private async checkAndCleanupSession(): Promise<void> {
-    if (!this.stagehand || !this.initialized) return;
+  private async performIdleCleanup(): Promise<void> {
+    if (!this.browserClient || !this.isActive) return;
 
-    const now = Date.now();
-    if (now - this.lastUsed > this.sessionTimeout) {
-      console.log("Cleaning up idle Stagehand session");
+    const currentTime = Date.now();
+    const idleDuration = currentTime - this.lastActivityTime;
+
+    if (idleDuration > this.idleTimeLimit) {
       try {
-        await this.stagehand.close();
-      } catch (error) {
-        console.error(`Error closing idle session: ${error}`);
+        await this.browserClient.close();
+      } catch (cleanupError) {
+        console.error(`Cleanup error encountered: ${cleanupError}`);
       }
-      this.stagehand = null;
-      this.initialized = false;
+      this.browserClient = null;
+      this.isActive = false;
     }
   }
 
   /**
-   * Manually close the session
+   * Explicit resource release method
    */
-  public async close(): Promise<void> {
-    if (this.stagehand) {
+  public async terminate(): Promise<void> {
+    if (this.browserClient) {
       try {
-        await this.stagehand.close();
-      } catch (error) {
-        console.error(`Error closing Stagehand session: ${error}`);
+        await this.browserClient.close();
+      } catch (terminationError) {
+        console.error(`Termination error: ${terminationError}`);
       }
-      this.stagehand = null;
-      this.initialized = false;
+      this.browserClient = null;
+      this.isActive = false;
+    }
+  }
+
+  /**
+   * Cleanup method for proper resource disposal
+   */
+  public dispose(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
     }
   }
 }
 
-// Get the singleton instance
-export const sessionManager = StagehandSessionManager.getInstance();
+// Export singleton accessor
+const automationController = BrowserAutomationController.getController();
+
+// Compatibility wrapper for existing code
+export const sessionManager = {
+  ensureStagehand: () => automationController.getBrowserClient(),
+  close: () => automationController.terminate(),
+};

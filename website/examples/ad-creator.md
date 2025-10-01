@@ -2,24 +2,24 @@
 id: 4
 slug: ai-instagram-ad-agent
 title: AI Ads Generator Agent
-description: Learn how to build an Instagram ad generator using VoltAgent with BrowserBase Stagehand and Google Gemini.
+description: Build an Instagram ad generator using VoltAgent with BrowserBase Stagehand and Google Gemini.
 repository: https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator
 ---
 
-This example demonstrates an AI-powered Instagram ad generation system using VoltAgent that can analyze any landing page and create professional Instagram ads. The complete system navigates websites with BrowserBase Stagehand, extracts brand insights, and generates Instagram-ready visuals using Google Gemini AI.
+This example implements an Instagram ad generator with VoltAgent. The system uses BrowserBase Stagehand to analyze landing pages, extracts brand data, and generates visuals through Google Gemini AI.
 
-This example includes an AI agent system that:
+The implementation includes:
 
-- Navigates and analyzes any marketing page using BrowserBase Stagehand
-- Extracts brand tone, audience, and unique value propositions
-- Captures screenshots for visual reference and context
-- Generates Instagram-ready creative briefs with AI
-- Creates professional ad visuals using Google Gemini
-- Orchestrates the complete workflow with supervisor agents
+- Web page navigation and analysis via BrowserBase Stagehand
+- Brand data extraction (tone, audience, value propositions)
+- Screenshot capture for visual reference
+- Creative brief generation through AI models
+- Ad visual generation using Google Gemini
+- Multi-agent workflow orchestration
 
 ### Setup
 
-<Info title="Before you begin, line up these accounts and keys:">
+<Info title="Required accounts and API keys:">
 - Sign in to [VoltOps LLM Observability platform](https://console.voltagent.dev/login)
 - A [BrowserBase account](https://browserbase.com) with API key and project ID
 - Google Generative AI access for [Gemini API](https://ai.google.dev/gemini-api)
@@ -28,7 +28,7 @@ This example includes an AI agent system that:
 
 #### Get the example code
 
-Use the VoltAgent CLI to get the AI ad generator example from our repository:
+Clone the ad generator example using the VoltAgent CLI:
 
 ```bash
 npm create voltagent-app@latest -- --example with-ad-creator
@@ -53,9 +53,9 @@ VOLTAGENT_PUBLIC_KEY=your_public_key
 VOLTAGENT_SECRET_KEY=your_secret_key
 ```
 
-#### Set up BrowserBase
+#### Set Up BrowserBase
 
-First, set up your BrowserBase account:
+Configure BrowserBase:
 
 1. Create a BrowserBase account at [browserbase.com](https://browserbase.com)
 2. Navigate to your dashboard and create a new project
@@ -63,9 +63,9 @@ First, set up your BrowserBase account:
 4. Copy your Project ID from the project settings
 5. Add both values to your `.env` file
 
-For detailed BrowserBase setup instructions, see the [official BrowserBase documentation](https://docs.browserbase.com/introduction).
+For BrowserBase configuration details, see [BrowserBase documentation](https://docs.browserbase.com/introduction).
 
-![browserbase dashboard](https://cdn.voltagent.dev/examples/with-ad-creator/browserbase.png)
+![browserbase dashboard](https://cdn.voltagent.dev/examples/with-ad-generator/browserbase.png)
 
 #### Configure Google Gemini API
 
@@ -76,15 +76,15 @@ Set up Google Gemini for image generation:
 3. Enable the Generative AI API in your Google Cloud Console if needed
 4. Add the API key to your `.env` file as `GOOGLE_GENERATIVE_AI_API_KEY`
 
-Google Gemini powers both the creative brief generation and the final image creation, ensuring brand-consistent visuals.
+Google Gemini handles creative brief generation and image creation.
 
-#### Start the development server
+#### Start the Development Server
 
 ```bash
 npm run dev
 ```
 
-Once your server starts successfully, you see:
+After server startup:
 
 ```bash
 ════════════════════════════════════════════
@@ -97,27 +97,25 @@ Once your server starts successfully, you see:
 [VoltAgent] All packages are up to date
 ```
 
-The [VoltOps Platform](https://console.voltagent.dev) link opens automatically, allowing you to interact with and debug your AI ad generator in real-time.
+The [VoltOps Platform](https://console.voltagent.dev) provides debugging and interaction capabilities.
 
-![VoltOps Platform](https://cdn.voltagent.dev/examples/with-ad-creator/voltops-start.png)
+![VoltOps Platform](https://cdn.voltagent.dev/examples/with-ad-generator/voltops-platform.png)
 
-### Understanding the Agent Architecture
+### Agent Architecture
 
-Let's explore the AI ad generator components and understand how they work together.
-
-The AI ad generator system includes three specialized agents:
+The system consists of three agents:
 
 1. **Supervisor Agent** - Orchestrates the entire workflow and coordinates subagents
 2. **Landing Page Analyzer** - Extracts brand information from websites
 3. **Ad Creator Agent** - Generates Instagram ads using Google Gemini
 
-In VoltAgent, agents are autonomous AI entities that can reason, make decisions, and execute tasks. Each agent has a specific purpose, can use tools to interact with external systems, maintain memory for context, and delegate work to other agents. The framework is LLM-agnostic, so agents can run on different providers. With built-in observability (via OpenTelemetry and the VoltOps console), every step of execution is traceable, making complex multi-agent workflows easier to manage and debug.
+VoltAgent agents are autonomous units that execute specific tasks. Each agent has defined responsibilities, tool access, memory persistence, and delegation capabilities. The framework supports multiple LLM providers and includes OpenTelemetry-based observability.
 
-Let's examine each agent:
+Agent specifications:
 
 ### Landing Page Analyzer Agent
 
-This agent specializes in extracting comprehensive brand information from websites:
+Extracts brand information from websites:
 
 <details>
 <summary>Show landing-page-analyzer.agent.ts</summary>
@@ -172,15 +170,21 @@ export const createLandingPageAnalyzer = (memory: Memory) => {
 
 </details>
 
-![Landing Page Analyzer](https://cdn.voltagent.dev/examples/with-ad-creator/analyzer-agent.png)
+![Landing Page Analyzer](https://cdn.voltagent.dev/examples/with-ad-generator/page-analyzer.png)
 
-Navigates to any website and performs comprehensive analysis, extracts product names, taglines, and value propositions, identifies target audience and brand personality, captures visual references for ad creation, and outputs structured JSON data for downstream processing. This agent is the intelligence behind understanding brand identity from web presence.
+Functionality:
 
-**Tool integration:** The agent uses BrowserBase tools strategically: navigation for loading pages, screenshot for visual capture, extraction for structured data, and observation for UI element analysis. This comprehensive approach ensures no brand detail is missed.
+- Navigates to websites and analyzes content
+- Extracts product names, taglines, value propositions
+- Identifies target audience and brand attributes
+- Captures screenshots for reference
+- Outputs structured JSON data
+
+**Tool usage:** BrowserBase integration includes navigation (page loading), screenshot (visual capture), extraction (structured data), and observation (UI element analysis).
 
 ### Instagram Ad Creator Agent
 
-This agent transforms brand insights into professional Instagram ads using Google Gemini:
+Transforms brand data into Instagram ads via Google Gemini:
 
 <details>
 <summary>Show ad-creator.agent.ts</summary>
@@ -234,19 +238,25 @@ export const createAdCreatorAgent = (memory: Memory) => {
 
 </details>
 
-![Ad Creator Agent](https://cdn.voltagent.dev/examples/with-ad-creator/creator-agent.png)
+![Ad Creator Agent](https://cdn.voltagent.dev/examples/with-ad-generator/instagram-agent.png)
 
-Transforms brand analysis into Instagram-optimized creative concepts, generates square format ads perfect for Instagram feed, uses Google Gemini for intelligent image generation, provides creative rationale and optimization suggestions, and embeds generated assets for immediate preview. This agent bridges the gap between brand understanding and visual execution.
+Functionality:
 
-**Key configuration details:**
+- Converts brand analysis to creative concepts
+- Generates 1:1 aspect ratio ads for Instagram feed
+- Uses Google Gemini for image generation
+- Provides optimization recommendations
+- Embeds generated assets for preview
 
-- Uses `gpt-4o-mini` for cost-effective conversational responses and creative reasoning
-- Structured instructions define clear Instagram ad best practices and guidelines
-- Tools array provides Google Gemini image generation capability
-- Memory integration maintains conversation context across messages
-- `name: "InstagramAdCreator"` identifies the agent in logs and traces
+**Configuration:**
 
-**Gemini integration:** The agent leverages two Gemini models - `gemini-2.0-flash-exp` for creative brief generation and `gemini-2.5-flash-image-preview` for actual image creation, ensuring both strategic thinking and visual excellence.
+- Model: `gpt-4o-mini` for conversational processing
+- Instructions define Instagram ad specifications
+- Google Gemini tool integration for image generation
+- Memory persistence for context retention
+- Agent name: `InstagramAdCreator` for logging
+
+**Gemini models:** Uses `gemini-2.0-flash-exp` for creative briefs and `gemini-2.5-flash-image-preview` for image generation.
 
 ### Supervisor Agent
 
@@ -324,17 +334,23 @@ export const createSupervisorAgent = (memory: Memory) => {
 
 </details>
 
-![Supervisor Agent](https://cdn.voltagent.dev/examples/with-ad-creator/supervisor-agent.png)
+![Supervisor Agent](https://cdn.voltagent.dev/examples/with-ad-generator/supervisor.png)
 
-Manages the complete workflow from URL to finished ad, coordinates landing page analysis and ad creation agents, ensures quality control and brand consistency, provides structured output with embedded previews, and supports parallel processing for multiple URLs. The supervisor is the brain that ensures all pieces work together seamlessly.
+Functionality:
 
-**Workflow orchestration:** The supervisor enforces a strict workflow - always analyzing before creating, ensuring brand insights inform creative decisions, and maintaining quality standards throughout the process.
+- Manages workflow from URL input to ad output
+- Coordinates landing page analysis and ad creation agents
+- Enforces quality control and brand consistency
+- Provides structured output with embedded previews
+- Supports parallel processing for multiple URLs
 
-Now let's explore the infrastructure components that power these agents:
+**Workflow sequence:** Enforces analysis-first approach, brand data extraction precedes creative generation, maintains quality control throughout execution.
+
+Infrastructure components:
 
 ### Stagehand Session Manager
 
-The Stagehand Session Manager maintains a singleton browser instance for efficient web automation:
+Maintains singleton browser instance for web automation:
 
 <details>
 <summary>Show stagehand-manager.ts</summary>
@@ -342,67 +358,165 @@ The Stagehand Session Manager maintains a singleton browser instance for efficie
 ```typescript
 import { Stagehand } from "@browserbasehq/stagehand";
 
-class StagehandSessionManager {
-  private static instance: StagehandSessionManager;
-  private stagehand: Stagehand | null = null;
-  private initialized = false;
-  private lastUsed = Date.now();
-  private readonly sessionTimeout = 10 * 60 * 1000; // 10 minutes
+class BrowserAutomationController {
+  private static controllerInstance: BrowserAutomationController;
+  private browserClient: Stagehand | null = null;
+  private isActive = false;
+  private lastActivityTime = Date.now();
+  private readonly idleTimeLimit = 600000; // 10min in milliseconds
+  private cleanupTimer: NodeJS.Timeout;
 
-  public static getInstance(): StagehandSessionManager {
-    if (!StagehandSessionManager.instance) {
-      StagehandSessionManager.instance = new StagehandSessionManager();
-    }
-    return StagehandSessionManager.instance;
+  private constructor() {
+    // Periodic maintenance task for resource management
+    this.cleanupTimer = setInterval(() => {
+      this.performIdleCleanup();
+    }, 60000); // Check every minute
   }
 
-  public async ensureStagehand(): Promise<Stagehand> {
-    this.lastUsed = Date.now();
-
-    if (!this.stagehand || !this.initialized) {
-      this.stagehand = new Stagehand({
-        apiKey: process.env.BROWSERBASE_API_KEY,
-        projectId: process.env.BROWSERBASE_PROJECT_ID,
-        env: "BROWSERBASE",
-      });
-      await this.stagehand.init();
-      this.initialized = true;
-      return this.stagehand;
+  /**
+   * Factory method for obtaining controller reference
+   */
+  public static getController(): BrowserAutomationController {
+    if (!BrowserAutomationController.controllerInstance) {
+      BrowserAutomationController.controllerInstance = new BrowserAutomationController();
     }
+    return BrowserAutomationController.controllerInstance;
+  }
+
+  /**
+   * Retrieve or create active browser automation client
+   */
+  public async getBrowserClient(): Promise<Stagehand> {
+    this.lastActivityTime = Date.now();
 
     try {
-      await this.stagehand.page.evaluate(() => document.title);
-      return this.stagehand;
-    } catch (error) {
-      // Reinitialize if session expired
-      this.stagehand = new Stagehand({
-        apiKey: process.env.BROWSERBASE_API_KEY,
-        projectId: process.env.BROWSERBASE_PROJECT_ID,
-        env: "BROWSERBASE",
-      });
-      await this.stagehand.init();
-      this.initialized = true;
-      return this.stagehand;
+      // Create fresh client if needed
+      if (!this.browserClient || !this.isActive) {
+        this.browserClient = new Stagehand({
+          apiKey: process.env.BROWSERBASE_API_KEY,
+          projectId: process.env.BROWSERBASE_PROJECT_ID,
+          env: "BROWSERBASE",
+        });
+
+        try {
+          await this.browserClient.init();
+
+          this.isActive = true;
+          return this.browserClient;
+        } catch (setupError) {
+          console.error("Browser client setup failed:", setupError);
+          throw setupError;
+        }
+      }
+
+      // Validate existing connection
+      try {
+        const pageStatus = await this.browserClient.page.evaluate(() => document.title);
+
+        return this.browserClient;
+      } catch (connectionError) {
+        // Handle disconnected sessions
+        console.error("Connection validation failed:", connectionError);
+        if (
+          connectionError instanceof Error &&
+          (connectionError.message.includes("Target page, context or browser has been closed") ||
+            connectionError.message.includes("Session expired") ||
+            connectionError.message.includes("context destroyed"))
+        ) {
+          this.browserClient = new Stagehand({
+            apiKey: process.env.BROWSERBASE_API_KEY,
+            projectId: process.env.BROWSERBASE_PROJECT_ID,
+            env: "BROWSERBASE",
+          });
+          await this.browserClient.init();
+          this.isActive = true;
+          return this.browserClient;
+        }
+        throw connectionError; // Propagate unexpected errors
+      }
+    } catch (generalError) {
+      this.isActive = false;
+      this.browserClient = null;
+      const errorDetails =
+        generalError instanceof Error ? generalError.message : String(generalError);
+      throw new Error(`Browser automation client error: ${errorDetails}`);
+    }
+  }
+
+  /**
+   * Resource cleanup for inactive sessions
+   */
+  private async performIdleCleanup(): Promise<void> {
+    if (!this.browserClient || !this.isActive) return;
+
+    const currentTime = Date.now();
+    const idleDuration = currentTime - this.lastActivityTime;
+
+    if (idleDuration > this.idleTimeLimit) {
+      try {
+        await this.browserClient.close();
+      } catch (cleanupError) {
+        console.error(`Cleanup error encountered: ${cleanupError}`);
+      }
+      this.browserClient = null;
+      this.isActive = false;
+    }
+  }
+
+  /**
+   * Explicit resource release method
+   */
+  public async terminate(): Promise<void> {
+    if (this.browserClient) {
+      try {
+        await this.browserClient.close();
+      } catch (terminationError) {
+        console.error(`Termination error: ${terminationError}`);
+      }
+      this.browserClient = null;
+      this.isActive = false;
+    }
+  }
+
+  /**
+   * Cleanup method for proper resource disposal
+   */
+  public dispose(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
     }
   }
 }
 
-export const sessionManager = StagehandSessionManager.getInstance();
+// Export singleton accessor
+const automationController = BrowserAutomationController.getController();
+
+// Compatibility wrapper for existing code
+export const sessionManager = {
+  ensureStagehand: () => automationController.getBrowserClient(),
+  close: () => automationController.terminate(),
+};
 ```
 
 </details>
 
-![Session Manager](https://cdn.voltagent.dev/examples/with-ad-creator/session-manager.png)
+Implementation:
 
-Maintains a single browser session across all tool calls, automatically handles session expiration and reconnection, implements cleanup after 10 minutes of inactivity, and provides a singleton pattern to prevent multiple browser instances. This efficient session management ensures fast execution and prevents resource leaks.
+- Single browser session across tool calls
+- Automatic session expiration and reconnection handling
+- 10-minute inactivity cleanup
+- Singleton pattern prevents multiple instances
+- Resource leak prevention
 
 ### BrowserBase Tools
 
-The system includes five specialized tools for web interaction:
+Five tools for web interaction:
+
+![Navigate Tool](https://cdn.voltagent.dev/examples/with-ad-generator/tools.png)
 
 #### Page Navigate Tool
 
-This tool loads websites and waits for content to be ready:
+Loads websites and waits for content:
 
 <details>
 <summary>Show page-navigate.tool.ts</summary>
@@ -449,15 +563,17 @@ export const pageNavigateTool = createTool({
 
 </details>
 
-![Navigate Tool](https://cdn.voltagent.dev/examples/with-ad-creator/navigate-tool.png)
+Features:
 
-Navigates to any URL with configurable wait strategies, returns page title and final URL after redirects, ensures the page is fully loaded before proceeding, and provides error handling for navigation failures.
-
-The `networkidle` default ensures all resources are loaded.
+- URL navigation with configurable wait strategies
+- Returns page title and final URL after redirects
+- Waits for full page load
+- Error handling for navigation failures
+- Default: `networkidle` wait strategy
 
 #### Page Extract Tool
 
-This tool extracts structured data from web pages using AI:
+Extracts structured data from web pages:
 
 <details>
 <summary>Show page-extract.tool.ts</summary>
@@ -517,13 +633,16 @@ export const pageExtractTool = createTool({
 
 </details>
 
-![Extract Tool](https://cdn.voltagent.dev/examples/with-ad-creator/extract-tool.png)
+Features:
 
-Uses AI to extract structured data from any webpage, supports custom Zod schemas for type-safe extraction, provides a default brand extraction schema for marketing pages, and handles both small and large-scale data extraction. This tool is the core of the landing page analysis capability.
+- AI-based structured data extraction
+- Custom Zod schema support for type safety
+- Default brand extraction schema
+- Handles variable extraction scales
 
 #### Page Observe Tool
 
-This tool locates and analyzes UI elements on web pages:
+Locates and analyzes UI elements:
 
 <details>
 <summary>Show page-observe.tool.ts</summary>
@@ -576,15 +695,16 @@ export const pageObserveTool = createTool({
 
 </details>
 
-![Observe Tool](https://cdn.voltagent.dev/examples/with-ad-creator/observe-tool.png)
+Features:
 
-This tool is essential for understanding page layout and finding specific UI components.
-
-Uses AI vision to locate UI elements based on natural language descriptions, identifies buttons, forms, images, and other interactive elements, provides element selectors and properties for interaction, and enables intelligent page understanding beyond simple CSS selectors.
+- AI vision for element location via natural language
+- Identifies buttons, forms, images, interactive elements
+- Returns element selectors and properties
+- Extends beyond CSS selector limitations
 
 #### Page Act Tool
 
-This tool performs interactions on web page elements:
+Performs web page interactions:
 
 <details>
 <summary>Show page-act.tool.ts</summary>
@@ -632,13 +752,16 @@ export const pageActTool = createTool({
 
 </details>
 
-![Act Tool](https://cdn.voltagent.dev/examples/with-ad-creator/act-tool.png)
+Features:
 
-Performs clicks, form fills, and other interactions using natural language, leverages AI vision to find the right elements to interact with, handles complex interaction sequences automatically, and enables navigation through multi-step workflows. It allows the agent to interact with websites as a human would.
+- Natural language-based interactions (clicks, form fills)
+- AI vision for element identification
+- Complex interaction sequence handling
+- Multi-step workflow navigation
 
 #### Screenshot Tool
 
-This tool captures visual references from web pages:
+Captures visual references:
 
 <details>
 <summary>Show screenshot.tool.ts</summary>
@@ -706,13 +829,17 @@ export const screenshotTool = createTool({
 
 </details>
 
-![Screenshot Tool](https://cdn.voltagent.dev/examples/with-ad-creator/screenshot-tool.png)
+Features:
 
-Captures full page or viewport screenshots, supports element-specific captures with CSS selectors, automatically saves to the output directory, and shares screenshot paths with other tools via context. The screenshots serve as visual references for Gemini's image generation.
+- Full page or viewport screenshots
+- Element-specific captures via CSS selectors
+- Automatic output directory saving
+- Context sharing with other tools
+- Reference images for Gemini generation
 
 ### Google Gemini Image Generation Tool
 
-This tool orchestrates the complete image generation pipeline with Google Gemini:
+Orchestrates image generation pipeline:
 
 <details>
 <summary>Show instagram-ad-gemini.tool.ts</summary>
@@ -819,15 +946,23 @@ export const generateInstagramAdGeminiTool = createTool({
 
 </details>
 
-![Gemini Tool](https://cdn.voltagent.dev/examples/with-ad-creator/gemini-tool.png)
+![Gemini Tool](https://cdn.voltagent.dev/examples/with-ad-generator/gemini-image-generation-tool.png)
 
-Orchestrates two-stage Gemini generation , creative brief then image, incorporates landing page screenshots as visual references, processes images to Instagram's square format (1024x1024), saves assets locally and provides public URLs, and maintains context for traceability. This sophisticated pipeline ensures brand-consistent, platform-optimized visuals.
+Implementation:
 
-**Reference image integration:** When a screenshot is available from the landing page analysis, the tool automatically includes it as a reference for Gemini, ensuring the generated ad maintains visual consistency with the brand's existing design language.
+- Two-stage generation: creative brief, then image
+- Incorporates landing page screenshots as references
+- Processes to Instagram square format (1024x1024)
+- Local asset storage with public URL generation
+- Context maintenance for traceability
 
-### The Complete Application Structure
+**Screenshot integration:** When available, screenshots from landing page analysis are included as references for visual consistency.
 
-Now let's examine how the complete application is configured and initialized:
+### Application Structure
+
+![Agent Running](https://cdn.voltagent.dev/examples/with-ad-generator/complete-app.png)
+
+Application configuration and initialization:
 
 <details>
 <summary>Show index.ts</summary>
@@ -880,40 +1015,36 @@ new VoltAgent({
 
 </details>
 
-![Application Architecture](https://cdn.voltagent.dev/examples/with-ad-creator/app-architecture.png)
-
-**Key components:**
+**Components:**
 
 **Memory System:**
 
-- Uses `LibSQLMemoryAdapter` for lightweight SQLite-based persistence
-- Stores last 100 messages per conversation for context retention
-- Shared memory across all agents ensures consistency
-- Enables agents to reference previous analyses and maintain conversation flow
+- `LibSQLMemoryAdapter` for SQLite persistence
+- 100-message limit per conversation
+- Shared memory across agents
+- Context retention for agent references
 
-**Observability & Debugging:**
+**Observability:**
 
-- Comprehensive trace logging with `LibSQLObservabilityAdapter`
-- Integrates with VoltOps platform for visual debugging and monitoring
-- Tracks all agent interactions, tool executions, and decision paths
-- Essential for understanding and optimizing multi-agent workflows
+- `LibSQLObservabilityAdapter` for trace logging
+- VoltOps platform integration
+- Agent interaction and tool execution tracking
+- Decision path monitoring
 
 **VoltAgent Core:**
 
-- Registers `InstagramAdSupervisor` as the main orchestrator
-- Supervisor automatically manages subagents (LandingPageAnalyzer and InstagramAdCreator)
-- Pino logger provides structured, performant logging throughout
-- All components work together seamlessly for end-to-end ad generation
+- `InstagramAdSupervisor` as main orchestrator
+- Automatic subagent management (LandingPageAnalyzer, InstagramAdCreator)
+- Pino logger for structured logging
+- End-to-end workflow execution
 
-📚 For detailed information about these components, see the [VoltAgent Core Documentation](https://voltagent.dev/docs/core-concepts/).
+### Running the Agent
 
-### Running the AI Agent
+The agent handles Instagram ad generation via conversational interface.
 
-Once deployed, your AI agent handles Instagram ad generation through natural conversation.
+![Application Architecture](https://cdn.voltagent.dev/examples/with-ad-generator/overall.png)
 
-![Agent Running](https://cdn.voltagent.dev/examples/with-ad-creator/agent-running.png)
-
-Here's how to use the system:
+Usage:
 
 #### Step 1: Connect to VoltOps
 
@@ -922,12 +1053,12 @@ Here's how to use the system:
 3. Your local instance automatically connects
 4. Select the `InstagramAdSupervisor` agent
 
-#### Step 2: Generate Your First Ad
+#### Step 2: Generate an Ad
 
 Provide a prompt like:
 
 ```
-Generate an Instagram ad for https://example.com targeting young entrepreneurs
+Go to https://www.amazon.com/Roku-Streaming-Stick-Plus-2025/dp/B0DXY833HV and extract brand information for Instagram ad
 ```
 
 The supervisor will:
@@ -941,7 +1072,7 @@ The supervisor will:
 
 ### Next Steps
 
-Now that you have a working Instagram ad generator, consider these enhancements:
+Potential enhancements:
 
 1. **Multi-platform support**: Extend to Facebook, Twitter, LinkedIn ad formats
 2. **A/B testing variations**: Generate multiple versions for testing
@@ -955,10 +1086,3 @@ Now that you have a working Instagram ad generator, consider these enhancements:
 10. **Competitive analysis**: Compare generated ads with competitor campaigns
 11. **Cost optimization**: Estimate and optimize ad spend recommendations
 12. **Approval workflows**: Add review and approval stages before publishing
-
-📚 **Additional Resources:**
-
-- [VoltAgent Documentation](https://voltagent.dev/docs)
-- [BrowserBase Stagehand Guide](https://docs.browserbase.com/guides/stagehand)
-- [Google Gemini API Reference](https://ai.google.dev/api/rest)
-- [Instagram Ads Best Practices](https://business.instagram.com/advertising)

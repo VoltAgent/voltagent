@@ -233,14 +233,6 @@ export default function ExampleProjectPage({
                         Source Code
                       </a>
                     ) : null}
-                    <a
-                      href="https://github.com/VoltAgent/voltagent/tree/main/examples"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center rounded-xl border border-solid border-emerald-400/40 px-5 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/10 no-underline"
-                    >
-                      Other Mini Examples
-                    </a>
                   </div>
                 </div>
               </div>
