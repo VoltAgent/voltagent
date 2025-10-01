@@ -2,7 +2,7 @@
 id: 4
 slug: ai-instagram-ad-agent
 title: AI Ads Generator Agent
-description: Build an Instagram ad generator using VoltAgent with BrowserBase Stagehand and Google Gemini.
+description: Build Instagram ads with VoltAgent, BrowserBase and Gemini.
 repository: https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator
 ---
 
