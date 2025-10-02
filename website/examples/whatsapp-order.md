@@ -37,6 +37,7 @@ cd with-whatsapp
 
 You can find the source code of this example [here](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp).
 
+
 #### Configure environment variables
 
 Create a `.env` file with your API keys:

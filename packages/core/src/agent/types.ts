@@ -16,7 +16,7 @@ import type { Tool, Toolkit } from "../tool";
 import type { StreamEvent } from "../utils/streams";
 import type { Voice } from "../voice/types";
 import type { VoltOpsClient } from "../voltops/client";
-import type { AbortError, VoltAgentError } from "./errors";
+import type { CancellationError, VoltAgentError } from "./errors";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
@@ -656,7 +656,7 @@ export type OperationContext = {
   startTime: Date;
 
   /** Cancellation error to be thrown when operation is aborted */
-  cancellationError?: AbortError;
+  cancellationError?: CancellationError;
 };
 
 // ToolExecutionContext removed in favor of passing OperationContext directly to tools

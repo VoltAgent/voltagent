@@ -129,6 +129,52 @@ createWorkflowChain({
 })
 ```
 
+### Agent with Tools
+
+When you need tool support or streaming (not available in `andAgent`), call the agent directly:
+
+```typescript
+import { Agent, createTool } from "@voltagent/core";
+import { z } from "zod";
+import { openai } from "@ai-sdk/openai";
+
+const searchTool = createTool({
+  name: "search_database",
+  description: "Search the product database",
+  parameters: z.object({ query: z.string() }),
+  execute: async ({ query }) => {
+    // Your database search logic
+    return { results: [...] };
+  },
+});
+
+const agent = new Agent({
+  name: "Assistant",
+  model: openai("gpt-4o-mini"),
+  tools: [searchTool],
+});
+
+// Use andThen to leverage agent's tools
+.andThen({
+  id: "search-with-agent",
+  execute: async ({ data }) => {
+    // Agent can use tools during generateText/streamText
+    const result = await agent.generateText(
+      `Find products matching: ${data.searchQuery}`
+    );
+    return {
+      response: result.text,
+      toolCalls: result.toolCalls // Access tool usage
+    };
+  }
+})
+```
+
+**Why use `andThen` instead of `andAgent`?**
+
+- `andAgent` uses `generateObject` (structured output only, no tools)
+- `andThen` with direct agent calls supports `streamText`/`generateText` (tools + streaming)
+
 ## Suspend & Resume Support
 
 ```typescript

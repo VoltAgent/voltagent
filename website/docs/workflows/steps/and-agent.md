@@ -44,6 +44,14 @@ const result = await workflow.run({ text: "I love this!" });
 )
 ```
 
+**Important:** `andAgent` uses `generateObject` under the hood, which means:
+
+- ✅ You get **structured, typed responses** based on your schema
+- ❌ The agent **cannot use tools** during this step
+- ❌ **Streaming is not supported** (response returns when complete)
+
+**Need tools or streaming?** Use [andThen](./and-then.md) to call the agent directly with `streamText` or `generateText`.
+
 ## Function Signature
 
 ```typescript
@@ -169,12 +177,48 @@ createWorkflowChain({ id: "smart-email" })
   });
 ```
 
+## Using Tools or Streaming
+
+If you need the agent to use tools or stream responses, use `andThen` instead:
+
+```typescript
+import { Agent, createTool } from "@voltagent/core";
+import { z } from "zod";
+import { openai } from "@ai-sdk/openai";
+
+const getWeatherTool = createTool({
+  name: "get_weather",
+  description: "Get weather for a location",
+  parameters: z.object({ city: z.string() }),
+  execute: async ({ city }) => {
+    return { temp: 72, condition: "sunny" };
+  },
+});
+
+const agent = new Agent({
+  name: "Assistant",
+  model: openai("gpt-4o-mini"),
+  tools: [getWeatherTool],
+});
+
+// Use andThen to call agent directly with tools
+createWorkflowChain({ id: "weather-flow" }).andThen({
+  id: "get-weather",
+  execute: async ({ data }) => {
+    // Call streamText/generateText directly for tool support
+    const result = await agent.generateText(`What's the weather in ${data.city}?`);
+    return { response: result.text };
+  },
+});
+```
+
 ## Best Practices
 
 1. **Keep prompts clear** - AI performs better with specific instructions
 2. **Use enums for categories** - `z.enum()` ensures valid options
 3. **Add descriptions to schema fields** - Helps AI understand what you want
 4. **Handle edge cases** - Check for missing or low-confidence results
+5. **Need tools?** - Use `andThen` with direct agent calls instead of `andAgent`
 
 ## Next Steps
 

@@ -5,70 +5,149 @@ slug: /agents/memory/in-memory
 
 # In-Memory Storage
 
-VoltAgent's core package (`@voltagent/core`) includes `InMemoryStorageAdapter`, a simple storage adapter (for the `Memory` class) that stores conversation history in application memory.
+`InMemoryStorageAdapter` stores conversation history in application memory. Data is lost when the application restarts.
 
-## Overview
+## Default Behavior
 
-- **Use Case:** Development, testing, demos, or any scenario where persistent memory across application restarts is not required.
-- **Pros:** Zero external dependencies, extremely fast, easy to use.
-- **Cons:** All stored data (conversation history, agent state) is **lost** when the application stops or restarts.
-- **Availability:** Included directly in `@voltagent/core`.
+Agents use in-memory storage by default when no `memory` option is provided:
 
-## Configuration
+```ts
+import { Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
 
-By default, agents use in-memory storage without any configuration. To customize (e.g., storage limits), configure it explicitly.
+// Uses InMemoryStorageAdapter automatically
+const agent = new Agent({
+  name: "Assistant",
+  instructions: "Help users with questions.",
+  model: openai("gpt-4o-mini"),
+});
+```
 
-```typescript
+## Explicit Configuration
+
+Configure storage limits explicitly:
+
+```ts
 import { Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-// Optional: Configure in-memory storage explicitly
 const memory = new Memory({
-  storage: new InMemoryStorageAdapter({ storageLimit: 100 }),
+  storage: new InMemoryStorageAdapter({
+    storageLimit: 100, // max messages per userId/conversationId (default: 100)
+  }),
 });
 
 const agent = new Agent({
-  name: "Ephemeral Agent",
-  instructions: "An agent using in-memory storage (history resets on restart).",
-  model: openai("gpt-4o"),
-  memory, // Optional; default is also in-memory
+  name: "Assistant",
+  model: openai("gpt-4o-mini"),
+  memory,
 });
-
-// Interactions with this agent will use the in-memory store.
-// await agent.generateText("Remember this info.", { userId: "user1", conversationId: "conv1" });
-// // If the app restarts here, the above message is lost.
-// await agent.generateText("Do you remember?", { userId: "user1", conversationId: "conv1" });
 ```
 
-**Configuration Options (InMemoryStorageAdapter):**
+## Features
 
-- `storageLimit` (number, optional): The maximum number of messages to retain per unique `userId`/`conversationId`. Oldest messages are pruned when exceeded. Defaults to `100`.
+### Conversation Storage
 
-## Working Memory
+- Messages stored per `userId` and `conversationId`
+- Oldest messages pruned when `storageLimit` exceeded
+- All `StorageAdapter` methods supported
 
-`InMemoryStorageAdapter` implements working memory storage for both conversation and user scopes using in‑process metadata fields. Enable it via `Memory({ workingMemory: { enabled: true, ... } })`. See: [Working Memory](./working-memory.md).
+### Working Memory
 
-## Semantic Search (Embeddings + Vectors)
-
-The in-memory storage can be combined with `AiSdkEmbeddingAdapter` and `InMemoryVectorAdapter` to enable semantic retrieval in development:
+Supports both conversation and user-scoped working memory:
 
 ```ts
-import { Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
-import { InMemoryStorageAdapter } from "@voltagent/core";
+const memory = new Memory({
+  storage: new InMemoryStorageAdapter(),
+  workingMemory: {
+    enabled: true,
+    scope: "conversation", // or "user"
+  },
+});
+```
+
+See [Working Memory](./working-memory.md) for configuration details.
+
+### Semantic Search (Development)
+
+Combine with `InMemoryVectorAdapter` for semantic search during development:
+
+```ts
+import {
+  Memory,
+  AiSdkEmbeddingAdapter,
+  InMemoryVectorAdapter,
+  InMemoryStorageAdapter,
+} from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
-  storage: new InMemoryStorageAdapter({ storageLimit: 100 }),
+  storage: new InMemoryStorageAdapter(),
   embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
   vector: new InMemoryVectorAdapter(),
 });
 ```
 
-## When to Use
+Both storage and vectors are lost on restart. For persistent vectors, use `LibSQLVectorAdapter`.
 
-- **Development & Testing:** Quickly test agent logic without setting up a database.
-- **Stateless Use Cases:** When conversation history is not needed between sessions or application runs.
-- **Demos & Examples:** Simple setup for showcasing agent capabilities.
-- **Caching Layers:** Could potentially be used as a short-term cache in more complex memory strategies (though not its primary design).
+## Use Cases
 
-Avoid using `InMemoryStorage` in production environments where conversation history needs to be persistent.
+### Development & Testing
+
+Test agent logic without database setup:
+
+```ts
+import { Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const testAgent = new Agent({
+  name: "Test Assistant",
+  model: openai("gpt-4o-mini"),
+  memory: new Memory({
+    storage: new InMemoryStorageAdapter({ storageLimit: 50 }),
+  }),
+});
+
+// Test conversations without persistence
+await testAgent.generateText("Test message", {
+  userId: "test-user",
+  conversationId: "test-conversation",
+});
+```
+
+### Stateless Deployments
+
+Serverless functions or ephemeral containers where persistence isn't needed:
+
+```ts
+// Cloud function handler
+export async function handler(event) {
+  const agent = new Agent({
+    name: "Serverless Assistant",
+    model: openai("gpt-4o-mini"),
+    // Default in-memory storage
+  });
+
+  return await agent.generateText(event.message, {
+    userId: event.userId,
+    conversationId: event.sessionId,
+  });
+}
+```
+
+### Demos & Examples
+
+Quick prototypes without infrastructure dependencies.
+
+## Limitations
+
+- **No persistence** - All data lost on restart
+- **Memory usage** - Large message counts consume application memory
+- **Not for production** - Use persistent adapters for production applications
+
+## Learn More
+
+- **[Managed Memory](./managed-memory.md)** - Production-ready hosted memory with zero setup
+- **[LibSQL / SQLite](./libsql.md)** - Self-hosted SQLite or edge deployments
+- **[PostgreSQL](./postgres.md)** - Self-hosted Postgres adapter
+- **[Supabase](./supabase.md)** - Supabase integration

@@ -5,12 +5,7 @@ slug: /agents/memory/semantic-search
 
 # Semantic Search
 
-Semantic search retrieves past messages by similarity. It requires:
-
-- An embedding adapter to create vectors from text
-- A vector adapter to store and search vectors
-
-The core provides `AiSdkEmbeddingAdapter` and `InMemoryVectorAdapter`. For persistent vectors, use `LibSQLVectorAdapter` from `@voltagent/libsql`.
+Semantic search retrieves past messages by similarity rather than recency. It requires an embedding adapter (text to vectors) and a vector adapter (storage and search).
 
 ## Configuration
 
@@ -22,72 +17,208 @@ import { openai } from "@ai-sdk/openai";
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
   embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
-  // Option A (dev):
-  // vector: new InMemoryVectorAdapter(),
-  // Option B (persistent vectors):
-  vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
-  enableCache: true, // optional cache for embeddings
+  vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }), // or InMemoryVectorAdapter() for dev
+  enableCache: true, // optional embedding cache
 });
 
-const agent = new Agent({ name: "assistant", model: openai("gpt-4o-mini"), memory });
+const agent = new Agent({
+  name: "Assistant",
+  model: openai("gpt-4o-mini"),
+  memory,
+});
 ```
 
-### Call Options
+### Available Adapters
 
-Enable semantic search per call using `semanticMemory` (defaults shown below):
+**Embedding:**
+
+- `AiSdkEmbeddingAdapter` - Wraps any AI SDK embedding model
+
+**Vector Storage:**
+
+- `InMemoryVectorAdapter` (`@voltagent/core`) - Development only
+- `LibSQLVectorAdapter` (`@voltagent/libsql`) - Persistent vectors in SQLite/LibSQL/Turso
+- `PostgresVectorAdapter` (`@voltagent/postgres`) - Persistent vectors in Postgres with pgvector
+- `ManagedMemoryVectorAdapter` (`@voltagent/voltagent-memory`) - VoltOps-hosted vectors
+
+## Usage
+
+Enable semantic search per generation call:
 
 ```ts
-const out = await agent.generateText("What did we decide about pricing?", {
-  userId: "u1",
-  conversationId: "c1",
+const result = await agent.generateText("What pricing model did we discuss?", {
+  userId: "user-123",
+  conversationId: "thread-abc",
   semanticMemory: {
-    enabled: true, // default: true when vector support is present
-    semanticLimit: 5, // default
-    semanticThreshold: 0.7, // default
-    mergeStrategy: "append", // default ('prepend' | 'append' | 'interleave')
+    enabled: true, // default: auto-enabled when vector support is present
+    semanticLimit: 5, // number of similar messages to retrieve
+    semanticThreshold: 0.7, // minimum similarity score (0-1)
+    mergeStrategy: "append", // "prepend" | "append" | "interleave"
   },
 });
 ```
 
-## Behavior
+### Default Behavior
 
-When vectors are configured, `Memory` embeds text parts of messages and stores them with IDs:
+When `embedding` and `vector` adapters are configured:
 
-- `msg_${conversationId}_${message.id}`
+- Semantic search auto-enables for calls with `userId` and `conversationId`
+- Default `semanticLimit`: 5 messages
+- Default `semanticThreshold`: 0.7
+- Default `mergeStrategy`: `"append"` (recent messages first, then similar messages)
 
-Each vector has metadata:
+### Merge Strategies
 
-- `messageId`, `conversationId`, `userId`, `role`, `createdAt`
+- **`append`** (default): `[recent messages] + [similar messages]` - preserves chronological order
+- **`prepend`**: `[similar messages] + [recent messages]` - emphasizes relevance
+- **`interleave`**: Alternates between similar and recent messages
 
-On read with semantic search enabled:
+## How It Works
 
-1. Embed the current query.
-2. Search similar vectors with `limit` and `threshold`.
-3. Load the matching messages.
-4. Merge with recent messages using `mergeStrategy`.
+### On Message Save
 
-## Programmatic Search
+When saving messages, the `Memory` class:
 
-`Memory` also exposes a direct API:
+1. Extracts text content from `UIMessage.parts`
+2. Generates embeddings via the embedding adapter
+3. Stores vectors with metadata:
+   - ID: `msg_${conversationId}_${message.id}`
+   - Metadata: `{ messageId, conversationId, userId, role, createdAt }`
 
-- `hasVectorSupport() → boolean`
-- `searchSimilar(query: string, { limit?, threshold?, filter? }) → Promise<SearchResult[]>`
+### On Message Retrieval
 
-The in‑memory vector adapter uses cosine similarity and supports a metadata `filter` on stored items.
+When semantic search is enabled:
 
-LibSQL vector adapter persists vectors as BLOBs with metadata and supports `limit`, `threshold`, and metadata `filter`. For tests, prefer `url: ":memory:"` (or `"file::memory:"`); for production, use a file path (e.g., `file:./.voltagent/memory.db`) or a remote Turso URL.
+1. Embed the current query
+2. Search for similar vectors using the vector adapter
+3. Retrieve matching messages by ID
+4. Merge with recent messages using the configured strategy
+5. Remove duplicates (messages in both sets)
 
-Note on defaults:
+## Programmatic API
 
-- Semantic memory auto‑enables when you pass `userId` and `conversationId` and your `Memory` has both an embedding and a vector adapter.
-- Default merge strategy is `append` to preserve recency first and attach semantically similar messages afterwards.
+Direct search without agent generation:
 
-## Embedding Details
+```ts
+// Check if vectors are configured
+const hasVectors = memory.hasVectorSupport(); // boolean
 
-`AiSdkEmbeddingAdapter` wraps ai‑sdk embedding models. It supports:
+// Search similar messages
+const results = await memory.searchSimilar("pricing discussion", {
+  limit: 10,
+  threshold: 0.8,
+  filter: { userId: "user-123", conversationId: "thread-abc" },
+});
 
-- Single and batch embedding
-- Optional normalization (`normalize: boolean`)
-- Basic batching (`maxBatchSize`) and a simple in‑process cache (`enableCache`, `cacheSize`, `cacheTTL` on `Memory`)
+for (const result of results) {
+  console.log(result.id, result.score, result.metadata);
+}
+```
 
-The embedding dimensions are inferred after the first call.
+## Embedding Cache
+
+Enable caching to avoid re-embedding identical text:
+
+```ts
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
+  enableCache: true, // enable cache
+  cacheSize: 1000, // max entries (default: 1000)
+  cacheTTL: 3600000, // TTL in ms (default: 1 hour)
+});
+```
+
+The cache stores `text → vector` mappings in memory with LRU eviction.
+
+## Vector Adapters
+
+### InMemoryVectorAdapter
+
+```ts
+import { InMemoryVectorAdapter } from "@voltagent/core";
+
+const vector = new InMemoryVectorAdapter();
+```
+
+- Uses cosine similarity
+- Supports metadata filtering
+- Lost on restart (use for development only)
+
+### LibSQLVectorAdapter
+
+```ts
+import { LibSQLVectorAdapter } from "@voltagent/libsql";
+
+// Local SQLite
+const vector = new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" });
+
+// In-memory (testing)
+const vector = new LibSQLVectorAdapter({ url: ":memory:" });
+
+// Turso
+const vector = new LibSQLVectorAdapter({
+  url: "libsql://your-db.turso.io",
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+```
+
+- Stores vectors as BLOBs
+- Supports metadata filtering and thresholds
+- Persistent across restarts
+
+### ManagedMemoryVectorAdapter
+
+```ts
+import { ManagedMemoryVectorAdapter } from "@voltagent/voltagent-memory";
+
+const vector = new ManagedMemoryVectorAdapter({
+  databaseName: "production-memory",
+  // voltOpsClient optional (auto-resolves from environment)
+});
+```
+
+- VoltOps-hosted vectors with zero setup
+- See [Managed Memory](./managed-memory.md) for configuration
+
+## Example: Full Semantic Search Setup
+
+```ts
+import { Agent, Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
+  enableCache: true,
+});
+
+const agent = new Agent({
+  name: "Research Assistant",
+  instructions: "Help users recall past discussions and find relevant information.",
+  model: openai("gpt-4o-mini"),
+  memory,
+});
+
+// Semantic search automatically enabled
+const result = await agent.generateText(
+  "What did we decide about the API authentication approach?",
+  {
+    userId: "user-123",
+    conversationId: "project-alpha",
+    semanticMemory: {
+      semanticLimit: 10,
+      semanticThreshold: 0.75,
+    },
+  }
+);
+```
+
+## Learn More
+
+- **[Working Memory](./working-memory.md)** - Maintain compact context across turns
+- **[Managed Memory](./managed-memory.md)** - Zero-setup vector storage
+- **[LibSQL / Turso](./libsql.md)** - Self-hosted vector storage

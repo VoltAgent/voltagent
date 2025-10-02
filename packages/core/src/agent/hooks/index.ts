@@ -2,7 +2,7 @@ import type { ModelMessage } from "@ai-sdk/provider-utils";
 import type { UIMessage } from "ai";
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../agent";
-import type { AbortError, VoltAgentError } from "../errors";
+import type { AbortError, CancellationError, VoltAgentError } from "../errors";
 import type { AgentOperationOutput, OperationContext } from "../types";
 
 // Argument Object Interfaces (old API restored, adapted for AI SDK types)
@@ -19,7 +19,7 @@ export interface OnEndHookArgs {
   /** The standardized successful output object. Undefined on error. */
   output: AgentOperationOutput | undefined;
   /** The error object if the operation failed. */
-  error: VoltAgentError | AbortError | undefined;
+  error: VoltAgentError | CancellationError | undefined;
   /** The operation context. */
   context: OperationContext;
 }
@@ -33,6 +33,7 @@ export interface OnToolStartHookArgs {
   agent: Agent;
   tool: AgentTool;
   context: OperationContext;
+  args: any;
 }
 
 export interface OnToolEndHookArgs {
