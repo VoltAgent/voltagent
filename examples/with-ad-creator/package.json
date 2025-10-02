@@ -1,20 +1,10 @@
 {
   "name": "ai-ad-generator",
-  "version": "0.1.0",
   "description": "A VoltAgent application",
-  "type": "module",
-  "scripts": {
-    "dev": "tsx watch --env-file=.env ./src",
-    "build": "tsdown",
-    "start": "node dist/index.js",
-    "lint": "biome check ./src",
-    "lint:fix": "biome check --write ./src",
-    "typecheck": "tsc --noEmit",
-    "volt": "volt"
-  },
+  "version": "0.1.0",
   "dependencies": {
-    "@ai-sdk/google": "^2.0.17",
-    "@ai-sdk/openai": "^2.0.39",
+    "@ai-sdk/google": "^2.0.13",
+    "@ai-sdk/openai": "^2.0.2",
     "@browserbasehq/sdk": "^2.6.0",
     "@browserbasehq/stagehand": "^2.5.0",
     "@google-cloud/aiplatform": "^5.7.0",
@@ -24,21 +14,30 @@
     "@voltagent/libsql": "^1.0.7",
     "@voltagent/logger": "^1.0.2",
     "@voltagent/server-hono": "^1.0.16",
-    "ai": "^5.0.57",
-    "dotenv": "^16.4.7",
-    "openai": "^5.23.1",
+    "ai": "^5.0.12",
+    "dotenv": "^16.4.5",
     "sharp": "^0.34.4",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.5",
-    "@types/node": "^24.6.2",
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^24.2.1",
     "tsdown": "^0.15.2",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   },
   "engines": {
     "node": ">=20.19.0"
   },
-  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac"
+  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsx watch --env-file=.env ./src",
+    "lint": "biome check ./src",
+    "lint:fix": "biome check --write ./src",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "volt": "volt"
+  },
+  "type": "module"
 }
