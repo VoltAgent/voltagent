@@ -263,7 +263,6 @@ export default function ExampleProjectPage({
                       Other Mini Examples
                     </a>
                   </div>
-
                 </div>
               </div>
             </motion.div>

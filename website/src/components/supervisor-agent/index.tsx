@@ -329,7 +329,6 @@ export function SupervisorAgent() {
 
                 {/* Feature 3 - Shared Memory System */}
                 <div className="relative h-full">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "memory"
@@ -339,6 +338,14 @@ export function SupervisorAgent() {
                     onMouseEnter={() => handleMouseEnter("memory")}
                     onMouseLeave={handleMouseLeave}
                     onClick={() => handleClick("memory")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleClick("memory");
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                   >
                     <div className="flex items-center gap-3 mb-3">
                       <div className="bg-indigo-500/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">

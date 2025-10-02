@@ -151,7 +151,7 @@
       "profile_image_url_https": "https://pbs.twimg.com/profile_images/1895917137543528448/AcTKNyvc_normal.jpg",
       "profile_image_shape": "Circle",
       "verified": false,
-      "is_blue_verified": true
+      "is_blue_verified": false
     },
     "photos": [
       {
@@ -228,7 +228,7 @@
       "profile_image_url_https": "https://pbs.twimg.com/profile_images/1895917137543528448/AcTKNyvc_normal.jpg",
       "profile_image_shape": "Circle",
       "verified": false,
-      "is_blue_verified": true
+      "is_blue_verified": false
     },
     "in_reply_to_screen_name": "digitalconner",
     "in_reply_to_status_id_str": "1952222819963830562"
@@ -393,7 +393,7 @@
             9
           ],
           "id_str": "19107253",
-          "name": "Tanny Siwik",
+          "name": "Tom Siwik",
           "screen_name": "tomsiwik"
         }
       ],
