@@ -354,6 +354,51 @@ execute: async (args) => {
 };
 ```
 
+### Accessing Input in Tools
+
+Tools can access the original input provided to the agent operation through the `operationContext`. This is useful for debugging, logging, or when tools need context about the user's original request.
+
+```typescript
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const debugTool = createTool({
+  name: "log_debug_info",
+  description: "Logs debugging information including the original user input",
+  parameters: z.object({
+    message: z.string().describe("Debug message to log"),
+  }),
+  execute: async (args, options) => {
+    // Access the original input
+    const originalInput = options?.operationContext?.input;
+
+    console.log("Debug message:", args.message);
+    console.log("Original user input:", originalInput);
+    // originalInput can be: string, UIMessage[], or BaseMessage[]
+
+    // You can also access other context information
+    console.log("Operation ID:", options?.operationContext?.operationId);
+    console.log("User ID:", options?.operationContext?.userId);
+    console.log("Conversation ID:", options?.operationContext?.conversationId);
+
+    return `Debug info logged for input: ${typeof originalInput === "string" ? originalInput : "[messages]"}`;
+  },
+});
+
+// Use the tool in an agent
+const debugAgent = new Agent({
+  name: "Debug Assistant",
+  model: openai("gpt-4o"),
+  tools: [debugTool],
+  instructions: "You are a helpful assistant. Use the log_debug_info tool when asked to debug.",
+});
+
+// The tool can now access the original input
+await debugAgent.generateText("Debug this request for me");
+```
+
+**Note**: The `output` field is only available after the generation completes, so it's primarily useful in hooks rather than during tool execution.
+
 ### Cancellable Tools with AbortController
 
 For long-running tools, implement cancellation with AbortController. This allows tools to be gracefully cancelled when needed, such as when a user cancels a request or when an operation times out.
