@@ -325,6 +325,10 @@ onEnd: async ({ agent, output, error, conversationId, context }) => {
       console.log(`Agent ${agent.name} operation ${context.operationId} succeeded.`);
     }
 
+    // Access input and output directly from context
+    console.log("Request input:", context.input);
+    console.log("Generated output:", context.output);
+
     // Log the complete conversation flow
     console.log(`Conversation flow:`, {
       user: context.historyEntry.input,
@@ -332,6 +336,15 @@ onEnd: async ({ agent, output, error, conversationId, context }) => {
       totalMessages: context.steps.length,
       toolInteractions: context.steps.flatMap((s) => s.toolInvocations || []).length,
       toolsUsed: context.steps.flatMap((s) => s.toolInvocations || []).map((t) => t.toolName),
+    });
+
+    // Log complete interaction using input/output
+    console.log("Full interaction:", {
+      input: context.input,
+      output: context.output,
+      userId: context.userId,
+      conversationId: context.conversationId,
+      operationId: context.operationId,
     });
 
     // Log usage if available

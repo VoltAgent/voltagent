@@ -501,6 +501,9 @@ export class Agent {
         oc.traceContext.setOutput(result.text);
         oc.traceContext.end("completed");
 
+        // Set output in operation context
+        oc.output = result.text;
+
         // Return result with context - use Object.assign to properly copy all properties including getters
         const returnValue = Object.assign(
           Object.create(Object.getPrototypeOf(result)), // Preserve prototype chain
@@ -673,6 +676,9 @@ export class Agent {
             this.setTraceContextUsage(oc.traceContext, finalResult.totalUsage);
             oc.traceContext.setOutput(finalResult.text);
             oc.traceContext.end("completed");
+
+            // Set output in operation context
+            oc.output = finalResult.text;
 
             const usage = convertUsage(finalResult.totalUsage);
             // Call hooks with standardized output (stream finish result)
@@ -965,6 +971,9 @@ export class Agent {
         oc.traceContext.setOutput(result.object);
         oc.traceContext.end("completed");
 
+        // Set output in operation context
+        oc.output = result.object;
+
         // Call hooks
         await this.getMergedHooks(options).onEnd?.({
           conversationId: oc.conversationId || "",
@@ -1175,6 +1184,9 @@ export class Agent {
             this.setTraceContextUsage(oc.traceContext, finalResult.usage);
             oc.traceContext.setOutput(finalResult.object);
             oc.traceContext.end("completed");
+
+            // Set output in operation context
+            oc.output = finalResult.object;
 
             // Call hooks with standardized output (stream object finish)
             await this.getMergedHooks(options).onEnd?.({
@@ -1417,6 +1429,8 @@ export class Agent {
       traceContext,
       startTime: startTimeDate,
       elicitation: elicitationHandler,
+      input,
+      output: undefined,
     };
   }
 

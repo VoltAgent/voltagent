@@ -176,6 +176,100 @@ const logs = response.context?.get("logs");
 console.log("All logs:", logs);
 ```
 
+## Access Input and Output in Context
+
+The `OperationContext` provides access to both the input and output of the current operation, making debugging and observability much easier.
+
+### Accessing Input
+
+The `input` field contains the original input provided to the agent operation:
+
+```typescript
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const logTool = createTool({
+  name: "log_input",
+  description: "Logs the original user input",
+  parameters: z.object({}),
+  execute: async (args, options) => {
+    const input = options?.operationContext?.input;
+    console.log("Original input:", input);
+    // input can be: string, UIMessage[], or BaseMessage[]
+
+    return "Input logged successfully";
+  },
+});
+```
+
+### Accessing Output
+
+The `output` field contains the generated response (only available after generation completes, mainly useful in hooks):
+
+```typescript
+import { createHooks } from "@voltagent/core";
+
+const hooks = createHooks({
+  onEnd: async ({ context }) => {
+    // Access both input and output
+    console.log("User asked:", context.input);
+    console.log("Agent responded:", context.output);
+
+    // Output type depends on the method used:
+    // - generateText/streamText: string
+    // - generateObject/streamObject: object
+
+    // Log complete interaction
+    const interaction = {
+      input: context.input,
+      output: context.output,
+      userId: context.userId,
+      conversationId: context.conversationId,
+      operationId: context.operationId,
+    };
+
+    console.log("Complete interaction:", interaction);
+  },
+});
+```
+
+### Use Cases
+
+The `input` and `output` fields are particularly useful for:
+
+- **Audit Logging**: Track what users asked and what the agent responded
+- **Analytics**: Analyze input/output patterns across conversations
+- **Debugging**: Trace issues by comparing input to output
+- **Quality Assurance**: Monitor agent responses for quality control
+- **Custom Metrics**: Calculate response time, token efficiency, etc.
+
+```typescript
+import { Agent, createHooks } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const auditHooks = createHooks({
+  onEnd: async ({ context, output }) => {
+    // Log complete audit trail
+    await auditLog.save({
+      timestamp: context.startTime,
+      operationId: context.operationId,
+      userId: context.userId,
+      conversationId: context.conversationId,
+      input: context.input,
+      output: context.output,
+      usage: output?.usage,
+    });
+  },
+});
+
+const auditedAgent = new Agent({
+  name: "Audited Assistant",
+  model: openai("gpt-4o"),
+  instructions: "You are a helpful assistant.",
+  hooks: auditHooks,
+});
+```
+
 ## Retrievers Store References
 
 Retrievers can store source information in `context`:
