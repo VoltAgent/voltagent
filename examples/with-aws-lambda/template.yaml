@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  VoltAgent AWS Lambda deployment example
+
+Parameters:
+  VoltAgentPublicKey:
+    Type: String
+    Description: VoltOps public key (optional)
+    Default: ""
+  VoltAgentSecretKey:
+    Type: String
+    Description: VoltOps secret key (optional)
+    NoEcho: true
+    Default: ""
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Environment:
+      Variables:
+        VOLTAGENT_PUBLIC_KEY: !Ref VoltAgentPublicKey
+        VOLTAGENT_SECRET_KEY: !Ref VoltAgentSecretKey
+
+Resources:
+  VoltAgentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: lambda.handler
+      Description: VoltAgent serverless function powered by Amazon Bedrock
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - bedrock:InvokeModel
+              - bedrock:InvokeModelWithResponseStream
+            Resource: "*"
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        RootEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+
+Outputs:
+  VoltAgentApi:
+    Description: "API Gateway endpoint URL for VoltAgent"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  VoltAgentFunction:
+    Description: "VoltAgent Lambda Function ARN"
+    Value: !GetAtt VoltAgentFunction.Arn
+  VoltAgentFunctionIamRole:
+    Description: "Implicit IAM Role created for VoltAgent function"
+    Value: !GetAtt VoltAgentFunctionRole.Arn
