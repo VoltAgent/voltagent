@@ -273,7 +273,7 @@ const config: Config = {
       content:
         "<a target='_blank' rel='noopener noreferrer' href='https://github.com/VoltAgent/voltagent/stargazers'>⭐️ Join our GitHub community!</a>",
       backgroundColor: "#10b981",
-      textColor: "#000000",
+      textColor: "#ffffff",
       isCloseable: true,
     },
     colorMode: {
@@ -338,14 +338,14 @@ const config: Config = {
     prism: {
       darkTheme: {
         plain: {
-          color: "#e2e8f0",
-          backgroundColor: "#282c34",
+          color: "#e5e7eb",
+          backgroundColor: "#1a1a1a",
         },
         styles: [
           {
             types: ["comment", "prolog", "doctype", "cdata"],
             style: {
-              color: "#8b949e", // Light gray - comments
+              color: "#6b7280", // Muted gray - comments
               fontStyle: "italic",
             },
           },
@@ -358,13 +358,13 @@ const config: Config = {
           {
             types: ["string", "attr-value", "char", "regex"],
             style: {
-              color: "#a5d6ff", // Light blue (Strings)
+              color: "#10b981", // Emerald (Strings)
             },
           },
           {
             types: ["punctuation", "operator"],
             style: {
-              color: "#c9d1d9", // Light gray (Punctuation marks, operators)
+              color: "#d1d5db", // Light gray (Punctuation marks, operators)
             },
           },
           {
@@ -380,37 +380,37 @@ const config: Config = {
               "inserted",
             ],
             style: {
-              color: "#79c0ff", // Light blue (Variables, numbers, booleans)
+              color: "#60a5fa", // Blue (Variables, numbers, booleans)
             },
           },
           {
             types: ["keyword", "selector"],
             style: {
-              color: "#ff7b72", // Reddish (Keywords, like `import`, `const`, `async`)
+              color: "#a78bfa", // Purple (Keywords, like `import`, `const`, `async`)
             },
           },
           {
             types: ["atrule", "attr-name"],
             style: {
-              color: "#d2a8ff", // Light purple (CSS @rules and HTML attribute names)
+              color: "#818cf8", // Indigo (CSS @rules and HTML attribute names)
             },
           },
           {
             types: ["function", "deleted", "tag"],
             style: {
-              color: "#d2a8ff", // Light purple (Functions, JSX/HTML tags)
+              color: "#34d399", // Emerald light (Functions, JSX/HTML tags)
             },
           },
           {
             types: ["function-variable"],
             style: {
-              color: "#f778ba", // Pink (Function variables)
+              color: "#10b981", // Emerald (Function variables)
             },
           },
           {
             types: ["class-name", "builtin"],
             style: {
-              color: "#ffa657", // Orange (Class names, like `React.FC`)
+              color: "#60a5fa", // Blue (Class names, like `React.FC`)
             },
           },
         ],

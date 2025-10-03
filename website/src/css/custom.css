@@ -6,25 +6,27 @@
 
 :root {
   --color-black: #000000;
-  --color-black2: #1b1b1b;
-  --color-yellow: #fdfd96;
-  --color-blue: #24f2ff;
-  --color-purple: #9a1aff;
+  --color-black2: #0a0a0a;
+  --color-yellow: #3b82f6;
+  --color-blue: #60a5fa;
+  --color-purple: #818cf8;
+  --color-accent: #10b981;
+  --color-muted: #6b7280;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 
   --ifm-color-primary: #000000;
   --ifm-font-primary: #000000;
   --ifm-background-color: #fdfdfd;
   --ifm-navbar-background-color: #ffffff;
-  --ifm-toc-border-color: #6b7280;
-  --ifm-toc-link-color: #000000;
+  --ifm-toc-border-color: #e5e7eb;
+  --ifm-toc-link-color: #374151;
   --ifm-footer-background-color: #ffffff;
   --ifm-navbar-sidebar-width: 100vw;
-  --docsearch-text-color: #00d992 !important;
-  --docsearch-highlight-color: #00d992 !important;
-  --ifm-tabs-color-active-border: #00d992 !important;
-  --ifm-tabs-color-active: #00d992 !important;
-  --ifm-color-primary: #00d992 !important;
+  --docsearch-text-color: #10b981 !important;
+  --docsearch-highlight-color: #10b981 !important;
+  --ifm-tabs-color-active-border: #10b981 !important;
+  --ifm-tabs-color-active: #10b981 !important;
+  --ifm-color-primary: #10b981 !important;
 
   /* Shadcn UI Variables */
   --background: 0 0% 100%;
@@ -63,43 +65,43 @@
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 html[data-theme="dark"] {
-  --ifm-background-color: #1b1b1b;
-  --ifm-navbar-background-color: #1b1b1b;
-  --ifm-color-primary: #fdfd96;
-  --ifm-toc-border-color: #ffffff;
-  --ifm-footer-background-color: #1b1b1b;
+  --ifm-background-color: #0a0a0a;
+  --ifm-navbar-background-color: #0a0a0a;
+  --ifm-color-primary: #10b981;
+  --ifm-toc-border-color: #1f2937;
+  --ifm-footer-background-color: #0a0a0a;
 
-  --docusaurus-highlighted-code-line-bg: #ffed182e;
+  --docusaurus-highlighted-code-line-bg: rgba(16, 185, 129, 0.1);
 
   /* Shadcn UI Dark Mode Variables */
-  --background: 224 71% 4%;
-  --foreground: 213 31% 91%;
+  --background: 0 0% 4%;
+  --foreground: 0 0% 95%;
 
-  --muted: 223 47% 11%;
-  --muted-foreground: 215.4 16.3% 56.9%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 60%;
 
-  --accent: 216 34% 17%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 142 71% 45%;
+  --accent-foreground: 0 0% 100%;
 
-  --popover: 224 71% 4%;
-  --popover-foreground: 215 20.2% 65.1%;
+  --popover: 0 0% 4%;
+  --popover-foreground: 0 0% 95%;
 
-  --border: 216 34% 17%;
-  --input: 216 34% 17%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
 
-  --card: 224 71% 4%;
-  --card-foreground: 213 31% 91%;
+  --card: 0 0% 6%;
+  --card-foreground: 0 0% 95%;
 
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 1.2%;
+  --primary: 142 71% 45%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 222.2 47.4% 11.2%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 95%;
 
   --destructive: 0 63% 31%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 0 0% 100%;
 
-  --ring: 216 34% 17%;
+  --ring: 142 71% 45%;
 
   --radius: 0.5rem;
 }
@@ -123,21 +125,41 @@ h4,
 h5,
 h6 {
   font-weight: 700;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
   font-family: "Inter", sans-serif;
+  line-height: 1.3;
 }
 
 h1 {
-  font-size: 56px;
-  line-height: 70px;
+  font-size: 24px;
+  line-height: 1.3;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
 }
 
 h2 {
-  font-size: 2rem;
+  font-size: 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
 h3 {
-  font-size: 1.5rem;
+  font-size: 1.125rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Article content paragraphs */
+.theme-doc-markdown p {
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  color: #d1d5db;
+}
+
+/* Code blocks */
+.theme-doc-markdown pre {
+  margin: 1rem 0;
 }
 
 a {
@@ -160,12 +182,12 @@ button {
   :root {
     --base: 16px;
     --baseUnitless: 16;
-    --color-primary-yellow-filter: invert(98%) sepia(34%) saturate(4729%) hue-rotate(335deg)
-      brightness(102%) contrast(107%);
-    --color-primary-cyan-filter: invert(98%) sepia(87%) saturate(4083%) hue-rotate(127deg)
-      brightness(100%) contrast(101%);
-    --color-primary-purple-filter: invert(23%) sepia(98%) saturate(6670%) hue-rotate(273deg)
-      brightness(102%) contrast(103%);
+    --color-primary-emerald-filter: invert(61%) sepia(69%) saturate(398%) hue-rotate(101deg)
+      brightness(96%) contrast(91%);
+    --color-primary-cyan-filter: invert(63%) sepia(30%) saturate(1282%) hue-rotate(187deg)
+      brightness(100%) contrast(98%);
+    --color-primary-purple-filter: invert(52%) sepia(32%) saturate(1261%) hue-rotate(201deg)
+      brightness(100%) contrast(97%);
 
     --max-page-width: 1440px;
   }
@@ -180,8 +202,8 @@ button {
 }
 
 .newsletter {
-  border: 2px solid #1b1b1b;
-  background-color: #ffd467;
+  border: 2px solid #1f2937;
+  background-color: #10b981;
 }
 
 .newsletter-input-text {
@@ -220,15 +242,45 @@ ul.table-of-contents li code {
 }
 
 .table-of-contents li {
-  margin: 0.75rem 1.5rem;
+  margin: 0.25rem 0;
 }
 
 .table-of-contents__link {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.25rem;
+  text-decoration: none;
+  color: #9ca3af;
+  padding: 0.25rem 0;
+  display: block;
+}
+
+[data-theme="dark"] .table-of-contents__link {
+  color: #9ca3af;
+}
+
+.table-of-contents__link--active {
+  color: #10b981 !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="dark"] .table-of-contents__link--active {
+  color: #10b981 !important;
+  font-weight: 500 !important;
+}
+
+/* TOC Container */
+.col.col--3 {
+}
+
+/* TOC Header - "On this page" */
+.col.col--3::before {
+  display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  line-height: 1.375rem;
-  text-decoration: none;
-  color: #6b7280;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+  padding: 0 0.25rem;
 }
 
 .pagination-nav__sublabel {
@@ -315,12 +367,12 @@ article header h2 {
   font-size: var(--typography-h2-d-medium-font-size) !important;
   line-height: var(--typography-h2-d-medium-line-height) !important;
   font-weight: var(--typography-h2-d-medium-font-weight) !important;
-  color: var(--color-yellow) !important;
+  color: #10b981 !important;
   text-decoration: none !important;
 }
 
 article header h2 a {
-  color: var(--color-yellow);
+  color: #10b981;
   text-decoration: none;
 }
 
@@ -482,13 +534,17 @@ main.col.col--7 article {
   padding-bottom: 6.5rem;
 }
 
-.col.col--3,
-.col.col--2 {
-  --ifm-col-width: 20% !important;
+/* TOC column - fixed width on right */
+.col.col--3 {
+  --ifm-col-width: 180px !important;
+  flex: 0 0 180px !important;
+  max-width: 180px !important;
 }
 
+/* Main content - takes remaining space with max reading width */
 main.col.col--7 {
-  --ifm-col-width: 60% !important;
+  flex: 1 1 auto !important;
+  max-width: 100% !important;
 }
 
 article h1 {
@@ -4133,12 +4189,15 @@ code .token.coord {
 
 /* Sidebar Navigation Styles */
 .menu__list {
-  padding-left: 0 !important; /* Remove default padding from menu list to improve alignment */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  width: 100% !important;
 }
 
 .menu__list-item {
   margin: 0 !important;
   padding: 0 !important;
+  width: 100% !important;
 }
 
 .menu__link--sublist-caret::after {
@@ -4146,12 +4205,14 @@ code .token.coord {
 }
 
 .menu__link {
-  padding: 0.5rem 0.75rem !important; /* Standardize padding for menu links */
-  margin-left: 0 !important; /* Remove left margin for consistent alignment */
-  border-radius: 0px !important;
+  padding: 0.5rem 0.75rem !important;
+  margin: 0.125rem 0 !important;
+  border-radius: 4px !important;
   font-size: 0.875rem !important;
   transition: all 0.2s ease !important;
   line-height: 1.25rem !important;
+  width: 100% !important;
+  display: block !important;
 }
 
 .menu__link.login-btn {
@@ -4160,18 +4221,17 @@ code .token.coord {
 }
 
 .menu__link:hover {
-  color: #fff !important;
-  background: none !important;
+  color: rgb(229, 231, 235) !important;
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-left: none !important;
 }
 
 .menu__link--active {
   font-weight: 500 !important;
   color: rgb(16, 185, 129) !important;
-  /* emerald-500 */
-  background-color: transparent !important;
-  border-left: 2px solid rgb(16, 185, 129) !important;
-  /* emerald-500 */
-  margin-left: -2px !important;
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-left: none !important;
+  margin-left: 0 !important;
 }
 
 /* Category Headers (Accordion) */
@@ -4181,15 +4241,17 @@ code .token.coord {
 }
 
 .menu__list-item-collapsible .menu__link {
-  font-weight: 600 !important;
-  color: rgb(17, 24, 39) !important;
-  font-size: 0.875rem !important;
-  text-transform: none !important;
-  letter-spacing: normal !important;
+  font-weight: 700 !important;
+  color: #6b7280 !important;
+  font-size: 0.6875rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
   background-color: transparent !important;
   border-left: none !important;
   position: relative !important;
-  padding-left: 1.5rem !important;
+  padding-left: 0.75rem !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
 }
 
 /* .menu__list-item-collapsible .menu__link::before {
@@ -4214,7 +4276,8 @@ code .token.coord {
 }
 
 [data-theme="dark"] .menu__list-item-collapsible .menu__link {
-  color: rgb(243, 244, 246) !important;
+  color: rgb(229, 231, 235) !important;
+  font-weight: 600 !important;
 }
 
 [data-theme="dark"] .menu__list-item-collapsible .menu__link::before {
@@ -4225,18 +4288,24 @@ code .token.coord {
   color: rgb(16, 185, 129) !important;
 }
 
+[data-theme="dark"] .menu__list-item-collapsible .menu__link:hover {
+  color: rgb(16, 185, 129) !important;
+}
+
 /* Submenu Items */
 .menu__list .menu__list {
-  padding-left: 1rem !important;
-  margin-top: 0 !important;
+  padding-left: 0.75rem !important;
+  padding-right: 0 !important;
+  margin-top: 0.125rem !important;
+  width: 100% !important;
 }
 
 .menu__list .menu__list .menu__link {
-  padding: 0.25rem 0.75rem !important;
+  padding: 0.375rem 0.75rem !important;
   font-weight: 400 !important;
   color: rgb(75, 85, 99) !important;
-  /* gray-600 */
   font-size: 0.875rem !important;
+  width: 100% !important;
 }
 
 .menu__list .menu__list .menu__link:hover {
@@ -4250,57 +4319,135 @@ code .token.coord {
 }
 
 [data-theme="dark"] .menu__list .menu__list .menu__link:hover {
-  color: #fff !important;
-  background: none !important;
+  color: rgb(229, 231, 235) !important;
+  background: rgba(16, 185, 129, 0.05) !important;
+}
+
+[data-theme="dark"] .menu__list .menu__list .menu__link--active {
+  color: rgb(16, 185, 129) !important;
+  background: rgba(16, 185, 129, 0.08) !important;
 }
 
 /* Keep menu open by default */
 
 /* Dark Mode */
 [data-theme="dark"] .menu__link {
-  color: rgb(209, 213, 219) !important;
-  border-left: 1px solid rgba(10, 14, 13, 0.05) !important;
+  color: rgb(156, 163, 175) !important;
+  border-left: none !important;
 }
 
 [data-theme="dark"] .menu__link:hover {
-  color: #fff !important;
-  background: none !important;
+  color: rgb(229, 231, 235) !important;
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-left: none !important;
 }
 
 [data-theme="dark"] .menu__link--active {
   color: rgb(16, 185, 129) !important;
-  /* emerald-500 */
-  background-color: transparent !important;
-  /* emerald-500 */
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-left: none !important;
 }
 
 [data-theme="dark"] .menu__list-item-collapsible .menu__link {
-  color: rgb(243, 244, 246) !important;
+  font-weight: 700 !important;
+  color: #9ca3af !important;
+  font-size: 0.6875rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  background-color: transparent !important;
+  border-left: none !important;
+  padding-left: 0.75rem !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
 }
 
 /* Main Content Styles */
 main article {
   border-radius: 0 !important;
   border: none !important;
-  padding: 1rem !important;
-  background-color: rgba(240, 249, 255, 0.02) !important;
-  /* Very subtle background */
+  padding: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  background-color: transparent !important;
 }
 
 [data-theme="dark"] main article {
   background-color: transparent !important;
 }
 
-/* Sidebar Border */
+/* Ensure article content has proper reading width */
+.theme-doc-markdown {
+  max-width: 100% !important;
+  padding: 1rem 4rem !important;
+}
+
+/* Content container spacing */
+.docItemCol_node_modules-\@docusaurus-theme-classic-lib-theme-DocItem-Layout-styles-module {
+  padding: 0 !important;
+}
+
+/* Remove all container padding */
+.container {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.container.padding-top--md {
+  padding-top: 0 !important;
+}
+
+.container.padding-bottom--lg {
+  padding-bottom: 0 !important;
+}
+
+/* Main container in docs */
+.docMainContainer_node_modules-\@docusaurus-theme-classic-lib-theme-DocRoot-Layout-Main-styles-module,
+.docMainContainer_src-theme-DocRoot-Layout-Main-styles-module {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Remove row margins */
+.row {
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Docs wrapper no padding */
+.docs-wrapper .container,
+.docItemContainer_node_modules-\@docusaurus-theme-classic-lib-theme-DocItem-Layout-styles-module {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Docs wrapper itself */
+[class*="docsWrapper_"] {
+  max-width: 100% !important;
+}
+
+/* Main wrapper full width */
+.main-wrapper {
+  max-width: 100% !important;
+}
+
+/* Sidebar Border and Background */
 aside.theme-doc-sidebar-container {
-  border-right: 1px solid rgba(107, 114, 128, 0.05) !important;
-  /* border-gray-500/5 */
-  /* padding-left: 72px !important; */ /* Match the navbar padding to align with the VoltAgent logo */
+  border-right: none !important;
+  background-color: #fafafa !important;
+  padding: 0 !important;
 }
 
 [data-theme="dark"] aside.theme-doc-sidebar-container {
-  border-right: 1px solid rgba(249, 250, 251, 0.05) !important;
-  /* border-gray-50/5 */
+  border-right: none !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  padding: 0 !important;
+}
+
+/* Sidebar menu padding */
+aside.theme-doc-sidebar-container .menu {
+  padding: 0 1rem 1.5rem 1rem !important;
 }
 
 .menu__link:hover {
@@ -4310,16 +4457,18 @@ aside.theme-doc-sidebar-container {
 
 /* Submenu Items */
 .menu__list .menu__list {
-  padding-left: 1rem !important;
-  margin-top: 0 !important;
+  padding-left: 0.75rem !important;
+  padding-right: 0 !important;
+  margin-top: 0.125rem !important;
+  width: 100% !important;
 }
 
 .menu__list .menu__list .menu__link {
-  padding: 0.25rem 0.75rem !important;
+  padding: 0.375rem 0.75rem !important;
   font-weight: 400 !important;
   color: rgb(75, 85, 99) !important;
-  /* gray-600 */
   font-size: 0.875rem !important;
+  width: 100% !important;
 }
 
 [data-theme="dark"] .menu__list .menu__list .menu__link {
@@ -4404,7 +4553,7 @@ nav.table-of-contents .table-of-contents__link--active,
 
 /* Level 2 Sidebar Items */
 .theme-doc-sidebar-item-link-level-2 .menu__link {
-  border-left: 1px solid rgba(10, 14, 13, 0.05) !important;
+  border-left: none !important;
   margin-left: -2px !important;
 }
 
@@ -4412,17 +4561,17 @@ nav.table-of-contents .table-of-contents__link--active,
   font-weight: 600 !important;
   color: rgb(16, 185, 129) !important;
   background-color: transparent !important;
-  border-left: 2px solid rgb(16, 185, 129) !important;
+  border-left: none !important;
   margin-left: -2px !important;
 }
 
 [data-theme="dark"] .theme-doc-sidebar-item-link-level-2 .menu__link {
-  border-left: 1px solid rgba(249, 250, 251, 0.05) !important;
+  border-left: none !important;
 }
 
 [data-theme="dark"] .theme-doc-sidebar-item-link-level-2 .menu__link--active {
   color: rgb(16, 185, 129) !important;
-  border-left: 2px solid rgb(16, 185, 129) !important;
+  border-left: none !important;
 }
 
 /* Article Content Link Styles */
@@ -4866,7 +5015,7 @@ nav.table-of-contents .table-of-contents__link--active,
 [data-theme="dark"] .menu__list .menu__list .menu__link--active {
   color: rgb(16, 185, 129) !important;
   font-weight: 600 !important;
-  border-left: 2px solid rgb(16, 185, 129) !important;
+  border-left: none !important;
 }
 
 /* Arrow Icon */

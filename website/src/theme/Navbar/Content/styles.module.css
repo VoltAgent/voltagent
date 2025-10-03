@@ -1,3 +1,56 @@
+.navLink {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #9ca3af;
+  padding: 0.5rem 0.75rem;
+  transition: color 0.2s;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: #fff;
+}
+
+.navLinkActive {
+  color: #fff;
+  font-weight: 600;
+}
+
+[data-theme='light'] .navLink {
+  color: #6b7280;
+}
+
+[data-theme='light'] .navLink:hover {
+  color: #111827;
+}
+
+[data-theme='light'] .navLinkActive {
+  color: #111827;
+  font-weight: 600;
+}
+
+.socialButton {
+  display: flex;
+  align-items: center;
+  padding: 0.375rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  text-decoration: none;
+}
+
+.socialButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='light'] .socialButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.socialIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 /*
 Hide color mode toggle in small viewports
  */

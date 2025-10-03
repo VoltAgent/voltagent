@@ -1,0 +1,274 @@
+
+.docMainContainer {
+  flex: 1 0 auto;
+}
+
+.docMainContainerEnhanced {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.docItemWrapper {
+  position: relative;
+  padding: 0 0 2rem 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.docItemWrapperEnhanced {
+  max-width: 960px;
+}
+
+.docHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.75rem 2rem;
+  margin-bottom: 1.5rem;
+  margin-left: 0;
+  margin-right: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='light'] .docHeader {
+  border-bottom-color: #e5e7eb;
+}
+
+.leftGroup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navLink {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.navLink:hover {
+  color: #fff;
+}
+
+[data-theme='light'] .navLink {
+  color: #6b7280;
+}
+
+[data-theme='light'] .navLink:hover {
+  color: #111827;
+}
+
+/* eyebrow section shown inside content */
+.eyebrowSection {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(148, 191, 174, 0.75);
+  padding-left: 4rem;
+  padding-right: 2rem;
+}
+
+.brandLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.brandMark {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 28% 22%, rgba(94, 234, 212, 0.45), rgba(12, 74, 110, 0.12));
+  border: 1px solid rgba(94, 234, 212, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+.brandIcon {
+  width: 20px;
+  height: 20px;
+  color: #5eead4;
+}
+
+.brandTextGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.brandTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.brandSubtitle {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(148, 191, 174, 0.82);
+}
+
+.centerLinks {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.centerLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(148, 163, 184, 0.92);
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.centerLink:hover {
+  color: rgba(226, 232, 240, 1);
+  background-color: rgba(94, 234, 212, 0.15);
+}
+
+.centerLinkActive {
+  color: #5eead4;
+  background-color: rgba(94, 234, 212, 0.2);
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.socialButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  transition: opacity 0.2s ease;
+}
+
+.socialButton:hover {
+  opacity: 0.7;
+}
+
+.socialIconDiscord {
+  width: 20px;
+  height: 20px;
+  color: #5865f2;
+}
+
+.socialIconGitHub {
+  width: 20px;
+  height: 20px;
+  color: #fff;
+}
+
+@media (max-width: 1160px) {
+  .docHeader {
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .centerLinks {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .actionGroup {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .docHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .leftGroup { display: none; }
+
+  .centerLinks {
+    flex-wrap: wrap;
+    margin: 0;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 576px) {
+  .centerLinks {
+    width: 100%;
+    gap: 0.6rem;
+  }
+
+  .actionGroup {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+[data-theme='light'] .docHeader {
+  border-bottom-color: #e5e7eb;
+}
+
+[data-theme='light'] .sectionLabel {
+  color: rgba(2, 44, 34, 0.58);
+}
+
+[data-theme='light'] .brandMark {
+  background: radial-gradient(circle at 28% 22%, rgba(16, 185, 129, 0.42), rgba(209, 250, 229, 0.6));
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+[data-theme='light'] .brandTitle {
+  color: rgba(15, 23, 42, 0.85);
+}
+
+[data-theme='light'] .brandSubtitle {
+  color: rgba(2, 44, 34, 0.62);
+}
+
+[data-theme='light'] .centerLink {
+  color: rgba(30, 64, 55, 0.75);
+}
+
+[data-theme='light'] .centerLink:hover {
+  color: rgba(15, 23, 42, 0.95);
+  background-color: rgba(16, 185, 129, 0.18);
+}
+
+[data-theme='light'] .centerLinkActive {
+  color: #0f766e;
+  background-color: rgba(16, 185, 129, 0.24);
+}
+
+[data-theme='light'] .socialButton {
+  background: transparent;
+}
+
+[data-theme='light'] .socialIconGitHub {
+  color: #0f172a;
+}

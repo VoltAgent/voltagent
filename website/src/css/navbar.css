@@ -1,9 +1,9 @@
 .navbar {
-  background: #0a1017;
+  background: transparent;
   box-shadow: none;
-  border-bottom: 1px solid #1a2533;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
-  padding-top: 40px;
+  padding-top: 0;
 }
 
 @media (max-width: 640px) {
@@ -37,7 +37,7 @@
 }
 
 .navbar__inner {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -112,7 +112,13 @@
 }
 
 [data-theme="dark"] .navbar {
-  background: #0a1017;
+  background: transparent;
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .navbar {
+  background: transparent;
+  border-bottom-color: #e5e7eb;
 }
 
 .navbar a {
@@ -121,7 +127,7 @@
 
 /* Existing styles from new CSS */
 .navbar__inner {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -503,7 +509,7 @@
 /* Tablet and desktop styles */
 @media (min-width: 996px) and (max-width: 1270px) {
   .navbar {
-    padding-top: 40px;
+    padding-top: 0;
   }
 
   .navbar__items--right .login-btn,
