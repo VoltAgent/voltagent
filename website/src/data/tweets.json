@@ -654,9 +654,7 @@
       "profile_image_shape": "Circle",
       "verified": false,
       "is_blue_verified": true
-    },
-    "in_reply_to_screen_name": "Arindam_1729",
-    "in_reply_to_status_id_str": "1923295965391327302"
+    }
   },
   "1920502438215250259": {
     "__typename": "Tweet",

@@ -1,4 +1,5 @@
 import { useLocation } from "@docusaurus/router";
+import { ListBulletIcon } from "@heroicons/react/24/outline";
 import TOCItems from "@theme/TOCItems";
 import clsx from "clsx";
 import React, { useEffect, useState } from "react";
@@ -55,11 +56,12 @@ export default function TOC({ toc, ...props }) {
         "overflow-x-hidden",
         "max-h-[calc(100vh-var(--ifm-navbar-height)-2rem)]",
         "sticky",
-        "top-[calc(var(--ifm-navbar-height)+1rem)]",
+        "top-20",
       )}
     >
-      <div className="mb-3 pb-1 ">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+      <div className="flex items-center  gap-2">
+        <ListBulletIcon className="w-4 h-4 text-[#94bfaebf]" />
+        <h3 className="text-sm text-left font-semibold text-gray-900 dark:text-gray-100 m-0">
           Table of Contents
         </h3>
       </div>

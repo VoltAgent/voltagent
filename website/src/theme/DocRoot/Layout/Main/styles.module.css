@@ -21,18 +21,23 @@
 
 .docHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 1.5rem;
-  padding: 0.75rem 2rem;
+  padding: 0.75rem 2rem 0;
   margin-bottom: 1.5rem;
   margin-left: 0;
   margin-right: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  background-color: #0a0a0a;
+  z-index: 100;
 }
 
 [data-theme='light'] .docHeader {
   border-bottom-color: #e5e7eb;
+  background-color: #fdfdfd;
 }
 
 .leftGroup {
@@ -125,8 +130,6 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .centerLink {
@@ -134,28 +137,29 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: rgba(148, 163, 184, 0.92);
-  padding: 0.4rem 0.75rem;
-  border-radius: 999px;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  color: #9fa1a1;
+  padding: 0.5rem 1rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 .centerLink:hover {
   color: rgba(226, 232, 240, 1);
-  background-color: rgba(94, 234, 212, 0.15);
 }
 
 .centerLinkActive {
-  color: #5eead4;
-  background-color: rgba(94, 234, 212, 0.2);
+  color: #ffffff;
+  border-bottom-color: #10b981;
 }
 
 .actionGroup {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding-bottom: 0.5rem;
 }
 
 .socialButton {
@@ -257,12 +261,11 @@
 
 [data-theme='light'] .centerLink:hover {
   color: rgba(15, 23, 42, 0.95);
-  background-color: rgba(16, 185, 129, 0.18);
 }
 
 [data-theme='light'] .centerLinkActive {
-  color: #0f766e;
-  background-color: rgba(16, 185, 129, 0.24);
+  color: #10b981;
+  border-bottom-color: #10b981;
 }
 
 [data-theme='light'] .socialButton {

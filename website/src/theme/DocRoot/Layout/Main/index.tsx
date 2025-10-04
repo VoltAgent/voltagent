@@ -2,7 +2,6 @@ import Link from "@docusaurus/Link";
 import { useActiveDocContext } from "@docusaurus/plugin-content-docs/client";
 import { useLocation } from "@docusaurus/router";
 import { useDocsSidebar } from "@docusaurus/theme-common/internal";
-import { BoltIcon } from "@heroicons/react/24/solid";
 import { DiscordLogo } from "@site/static/img/logos/discord";
 import { GitHubLogo } from "@site/static/img/logos/github";
 import type { Props } from "@theme/DocRoot/Layout/Main";
@@ -77,13 +76,28 @@ export default function DocRootLayoutMain({
         )}
       >
         <div className={styles.docHeader}>
-          <div className={styles.leftGroup}>
-            <Link to="/voltops-llm-observability-docs/" className={styles.navLink}>
+          <div className={styles.centerLinks}>
+            <Link
+              to="/docs/"
+              className={`${styles.centerLink} ${
+                location.pathname.startsWith("/docs/") ? styles.centerLinkActive : ""
+              }`}
+            >
+              VoltAgent Docs
+            </Link>
+            <Link
+              to="/voltops-llm-observability-docs/"
+              className={`${styles.centerLink} ${
+                location.pathname.startsWith("/voltops-llm-observability-docs/")
+                  ? styles.centerLinkActive
+                  : ""
+              }`}
+            >
               VoltOps Docs
             </Link>
             <Link
               to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
-              className={styles.navLink}
+              className={styles.centerLink}
             >
               Changelog
             </Link>
