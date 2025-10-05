@@ -1,0 +1,36 @@
+{
+  "name": "my-agent-app",
+  "version": "0.1.0",
+  "description": "A VoltAgent application",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx --env-file=.env ./src",
+    "build": "tsdown",
+    "start": "node dist/index.js",
+    "lint": "biome check ./src",
+    "lint:fix": "biome check --write ./src",
+    "typecheck": "tsc --noEmit",
+    "volt": "volt"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^2.0.6",
+    "@voltagent/cli": "^0.1.10",
+    "@voltagent/core": "*",
+    "@voltagent/libsql": "^1.0.0",
+    "@voltagent/logger": "^1.0.0",
+    "@voltagent/server-hono": "^1.0.0",
+    "ai": "^5.0.60",
+    "dotenv": "^16.4.7",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.10.5",
+    "tsdown": "^0.15.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
