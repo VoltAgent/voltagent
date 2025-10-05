@@ -31,6 +31,7 @@ import type {
   WorkflowExecutionResult,
   WorkflowInput,
   WorkflowRunOptions,
+  WorkflowStepState,
   WorkflowStreamResult,
   WorkflowStreamWriter,
 } from "./types";
@@ -179,7 +180,7 @@ export class WorkflowChain<
     resumeSchema?: RS;
     execute: (context: {
       data: z.infer<IS>;
-      state: any;
+      state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
       getStepData: (stepId: string) => { input: any; output: any } | undefined;
       suspend: (
         reason?: string,
@@ -211,7 +212,7 @@ export class WorkflowChain<
     resumeSchema?: RS;
     execute: (context: {
       data: z.infer<IS>;
-      state: any;
+      state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
       getStepData: (stepId: string) => { input: any; output: any } | undefined;
       suspend: (
         reason?: string,
@@ -242,7 +243,7 @@ export class WorkflowChain<
     resumeSchema?: RS;
     execute: (context: {
       data: CURRENT_DATA;
-      state: any;
+      state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
       getStepData: (stepId: string) => { input: any; output: any } | undefined;
       suspend: (
         reason?: string,
@@ -273,7 +274,7 @@ export class WorkflowChain<
     resumeSchema: RS;
     execute: (context: {
       data: CURRENT_DATA;
-      state: any;
+      state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
       getStepData: (stepId: string) => { input: any; output: any } | undefined;
       suspend: (
         reason?: string,
@@ -316,7 +317,7 @@ export class WorkflowChain<
   andThen<NEW_DATA>(config: {
     execute: (context: {
       data: CURRENT_DATA;
-      state: any;
+      state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
       getStepData: (stepId: string) => { input: any; output: any } | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;
@@ -362,7 +363,7 @@ export class WorkflowChain<
       resumeSchema?: RS;
       condition: (context: {
         data: z.infer<IS>;
-        state: any;
+        state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
         getStepData: (stepId: string) => { input: any; output: any } | undefined;
         suspend: (
           reason?: string,
@@ -455,7 +456,7 @@ export class WorkflowChain<
     resumeSchema?: RS;
     execute: (context: {
       data: z.infer<IS>;
-      state: any;
+      state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
       getStepData: (stepId: string) => { input: any; output: any } | undefined;
       suspend: (
         reason?: string,
@@ -497,7 +498,7 @@ export class WorkflowChain<
   andTap<_NEW_DATA>(config: {
     execute: (context: {
       data: CURRENT_DATA;
-      state: any;
+      state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
       getStepData: (stepId: string) => { input: any; output: any } | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;

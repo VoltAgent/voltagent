@@ -8,6 +8,7 @@ import type { UsageInfo } from "../agent/providers";
 import type { UserContext } from "../agent/types";
 import type { Memory } from "../memory";
 import type { VoltAgentObservability } from "../observability";
+import type { WorkflowExecutionContext } from "./context";
 import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
@@ -712,6 +713,19 @@ export interface UpdateWorkflowStepOptions {
   agentExecutionId?: string;
   metadata?: Record<string, unknown>;
 }
+
+/**
+ * The state parameter passed to workflow steps
+ */
+export type WorkflowStepState<INPUT> = Omit<
+  WorkflowState<INPUT, DangerouslyAllowAny>,
+  "data" | "result"
+> & {
+  /** Workflow execution context for event tracking */
+  workflowContext?: WorkflowExecutionContext;
+  /** AbortSignal for checking suspension during step execution */
+  signal?: AbortSignal;
+};
 
 /**
  * Workflow memory storage interface - provides abstraction for different storage backends
