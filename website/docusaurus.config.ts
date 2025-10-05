@@ -338,79 +338,75 @@ const config: Config = {
     prism: {
       darkTheme: {
         plain: {
-          color: "#e5e7eb",
-          backgroundColor: "#1a1a1a",
+          color: "#f0f6fc",
+          backgroundColor: "#010409",
         },
         styles: [
           {
             types: ["comment", "prolog", "doctype", "cdata"],
             style: {
-              color: "#6b7280", // Muted gray - comments
+              color: "#8b949e",
               fontStyle: "italic",
             },
           },
           {
-            types: ["namespace"],
+            types: ["punctuation"],
             style: {
-              opacity: 0.7,
+              color: "#f0f6fc",
             },
           },
           {
-            types: ["string", "attr-value", "char", "regex"],
+            types: ["property", "constant", "symbol"],
             style: {
-              color: "#10b981", // Emerald (Strings)
+              color: "#79c0ff",
             },
           },
           {
-            types: ["punctuation", "operator"],
+            types: ["tag", "deleted"],
             style: {
-              color: "#d1d5db", // Light gray (Punctuation marks, operators)
+              color: "#7ee787",
             },
           },
           {
-            types: [
-              "entity",
-              "url",
-              "symbol",
-              "number",
-              "boolean",
-              "variable",
-              "constant",
-              "property",
-              "inserted",
-            ],
+            types: ["boolean", "number"],
             style: {
-              color: "#60a5fa", // Blue (Variables, numbers, booleans)
+              color: "#79c0ff",
             },
           },
           {
-            types: ["keyword", "selector"],
+            types: ["string", "char", "inserted"],
             style: {
-              color: "#a78bfa", // Purple (Keywords, like `import`, `const`, `async`)
+              color: "#a5d6ff",
             },
           },
           {
-            types: ["atrule", "attr-name"],
+            types: ["selector", "attr-name", "builtin"],
             style: {
-              color: "#818cf8", // Indigo (CSS @rules and HTML attribute names)
+              color: "#7ee787",
             },
           },
           {
-            types: ["function", "deleted", "tag"],
+            types: ["operator", "entity", "url"],
             style: {
-              color: "#34d399", // Emerald light (Functions, JSX/HTML tags)
+              color: "#ff7b72",
             },
           },
           {
-            types: ["function-variable"],
+            types: ["atrule", "attr-value", "keyword"],
             style: {
-              color: "#10b981", // Emerald (Function variables)
+              color: "#ff7b72",
             },
           },
           {
-            types: ["class-name", "builtin"],
+            types: ["function", "class-name"],
             style: {
-              color: "#60a5fa", // Blue (Class names, like `React.FC`)
+              color: "#d2a8ff",
+            },
+          },
+          {
+            types: ["regex", "important", "variable"],
+            style: {
+              color: "#79c0ff",
             },
           },
         ],
