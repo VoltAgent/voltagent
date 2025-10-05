@@ -593,6 +593,103 @@ const response = await agent.generateText("Calculate 123 * 456", {
 });
 ```
 
+## Tool Types
+
+1. **Client-side Tools**: Execute client-side, don't return data
+   - Change theme
+   - Show notifications
+   - Get location
+   - Read clipboard
+   - Ask for confirmation
+
+2. **Server Tools**: Traditional server-side execution
+   - Get weather
+   - Database queries
+
+## Client-Side Tools
+
+Client-side tools are tools that run in your browser or client application instead of on the server. They're perfect for things that need user permission or access to browser features.
+
+### What makes a tool client-side?
+
+Simple: Don't give it an `execute` function. That's it!
+
+```ts
+// This is a client-side tool (no execute function)
+const showNotificationTool = createTool({
+  name: "show_notification",
+  description: "Shows a browser notification to the user",
+  parameters: z.object({
+    title: z.string().describe("Notification title"),
+    message: z.string().describe("Notification message"),
+  }),
+  // No execute function = client-side tool
+});
+```
+
+### How It Works
+
+### 1. Define Tools (No Execute = Client-Side)
+
+```typescript
+// Client-side tool (no execute function)
+const getLocationTool = createTool({
+  name: "getLocation",
+  description: "Get user's current location",
+  parameters: z.object({}),
+  // No execute = automatically client-side
+});
+```
+
+### 2. Handle Client-Side Tools with useChat
+
+```typescript
+const [result, setResult] = useState<ClientSideToolResult | null>(null);
+
+const { messages, input, handleSubmit, addToolResult } = useChat({
+  // Automatic client-side tool execution
+  async onToolCall({ toolCall }) {
+    if (toolCall.toolName === "getLocation") {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const payload: ClientSideToolResult = {
+            tool: "getLocation",
+            toolCallId: toolCall.toolCallId,
+            output: {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+            },
+          };
+          setResult(payload);
+        },
+        (error) => {
+          const payload: ClientSideToolResult = {
+            state: "output-error",
+            tool: "getLocation",
+            toolCallId: toolCall.toolCallId,
+            errorText: error.message,
+          };
+          setResult(payload);
+        }
+      );
+    }
+  },
+});
+```
+
+### 2. Sending back tool results to the model
+
+When a client-side tool is executed, you **MUST** call `addToolResult` to provide the tool result to the model. The model will then use the result to update the conversation state.
+Otherwise, the model will consider the tool call as a failure.
+
+```ts
+useEffect(() => {
+  if (!result) return;
+  addToolResult(result);
+}, [result, addToolResult]);
+```
+
 ## MCP (Model Context Protocol) Support
 
 VoltAgent supports the [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/mcp), allowing your agents to seamlessly connect with external model servers, AI systems, and other tools that implement this protocol. This enables you to expand your agent's capabilities without having to write complex integration code.

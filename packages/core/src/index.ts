@@ -121,6 +121,7 @@ export type {
   StreamObjectFinishResult,
   StreamObjectOnFinishCallback,
   ToolErrorInfo,
+  ClientSideToolResult,
   DynamicValueOptions,
 } from "./agent/types";
 export type { VoltAgentError, AbortError } from "./agent/errors";

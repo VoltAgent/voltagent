@@ -10,7 +10,7 @@ import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
 import { vi } from "vitest";
 import { z } from "zod";
 import type { BaseRetriever } from "../../retriever/retriever";
-import type { Tool, Toolkit } from "../../tool";
+import { type Tool, type Toolkit, createTool } from "../../tool";
 import type { Voice } from "../../voice";
 import type { VoltOpsClient } from "../../voltops/client";
 import { Agent } from "../agent";
@@ -506,14 +506,14 @@ export async function collectStream<T>(stream: AsyncIterable<T>): Promise<T[]> {
  * Creates a mock tool for testing
  */
 export function createMockTool(name = "mock_tool"): Tool<ToolSchema, undefined> {
-  const schema = z.object({});
-  return {
+  const schema: ToolSchema = z.object({});
+  return createTool({
     id: `tool-${name}`,
     name,
     description: `Mock tool ${name}`,
     parameters: schema,
     execute: vi.fn().mockResolvedValue({ result: `Result from ${name}` }),
-  } as Tool<ToolSchema, undefined>;
+  });
 }
 
 /**

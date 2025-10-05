@@ -39,6 +39,9 @@ async function executeTool(
     operationContext = createStubOperationContext(options.requestElicitation);
   }
 
+  if (!tool.execute) {
+    throw new Error(`Tool ${tool.name} does not have "execute" method`);
+  }
   const result = await tool.execute(args as Record<string, unknown>, operationContext);
   const text = typeof result === "string" ? result : safeStringify(result, { indentation: 2 });
 

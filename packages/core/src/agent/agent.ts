@@ -2294,6 +2294,14 @@ export class Agent {
       aiTools[tool.name] = {
         description: tool.description,
         inputSchema: tool.parameters, // AI SDK will convert this to JSON Schema internally
+      };
+
+      if (tool.isClientSide()) {
+        continue;
+      }
+
+      aiTools[tool.name] = {
+        ...aiTools[tool.name],
         execute: async (args: any) => {
           // Event tracking now handled by OpenTelemetry spans
 
@@ -2320,6 +2328,9 @@ export class Agent {
               await hooks.onToolStart?.({ agent: this, tool, context: oc, args });
 
               // Execute tool with OperationContext directly
+              if (!tool.execute) {
+                throw new Error(`Tool ${tool.name} does not have "execute" method`);
+              }
               const result = await tool.execute(args, oc);
               const validatedResult = await this.validateToolOutput(result, tool);
 

@@ -477,6 +477,14 @@ export type ModelToolCall = {
 };
 
 /**
+ * Represents the payload used when sending a tool's result back to the chat runtime
+ *  via useChat().addToolResult in the Vercel AI SDK.
+ */
+export type ClientSideToolResult =
+  | { tool: string; toolCallId: string; output: unknown }
+  | { tool: string; toolCallId: string; state: "output-error"; errorText: string };
+
+/**
  * Agent response format
  */
 export type AgentResponse = {
