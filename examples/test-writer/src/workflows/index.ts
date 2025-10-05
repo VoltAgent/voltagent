@@ -92,7 +92,7 @@ export const writeTests = createWorkflowChain({
 
   .andThen({
     id: "generate-test-code-step",
-    execute: async ({ data }) => {
+    execute: async ({ data, state }) => {
       try {
         console.log(`[write-tests] Generating test code for: ${data?.fileName}`);
         const response = await testWritingAgent.generateText(
@@ -103,6 +103,9 @@ export const writeTests = createWorkflowChain({
         </code>
 
         `,
+          {
+            executionId: state.executionId,
+          },
         );
         console.log(`[write-tests] Generated test code length: ${response.text.length}`);
 
