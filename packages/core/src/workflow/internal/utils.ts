@@ -41,6 +41,7 @@ export function convertWorkflowStateToParam<INPUT>(
     error: state.error,
     usage: state.usage,
     suspension: state.suspension,
+    cancellation: state.cancellation,
     workflowContext: executionContext,
     signal,
   };
