@@ -185,7 +185,7 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   parentAgentId?: string;
   parentOperationContext?: OperationContext;
   parentSpan?: Span; // Optional parent span for OpenTelemetry context propagation
-
+  executionId?: string;
   // Memory
   contextLimit?: number;
 
@@ -1377,7 +1377,7 @@ export class Agent {
       operationId,
       userId: options?.userId,
       conversationId: options?.conversationId,
-      executionId: operationId,
+      executionId: options?.executionId || operationId,
     });
 
     const observability = this.getObservability();
@@ -1386,6 +1386,7 @@ export class Agent {
       agentName: this.name,
       userId: options?.userId,
       conversationId: options?.conversationId,
+      executionId: options?.executionId || operationId,
       operationId,
       parentSpan: options?.parentSpan,
       parentAgentId: options?.parentAgentId,
