@@ -1,3 +1,13 @@
 {
-    "image": "mcr.microsoft.com/devcontainers/typescript-node:22"
+    "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "biomejs.biome",
+                "esbenp.prettier-vscode"
+            ]
+        }
+    },
+    // https://github.com/pnpm/pnpm/issues/5803#issuecomment-1360641459
+    "onCreateCommand": "pnpm config set store-dir /home/node/.local/share/pnpm/store && pnpm install"
 }
