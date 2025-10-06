@@ -174,7 +174,7 @@ h3 {
   background-color: #010409 !important;
 }
 
-[data-theme='light'] .theme-doc-markdown pre {
+[data-theme="light"] .theme-doc-markdown pre {
   border: 1px solid rgba(208, 215, 222, 0.7);
   box-shadow: none;
   background-color: #f6f8fa !important;
@@ -198,7 +198,6 @@ h3 {
 .tabs-container + * {
   margin-top: 0;
 }
-
 
 a {
   text-decoration: underline;
@@ -237,6 +236,15 @@ button {
   .h2-caps {
     @apply uppercase font-heading text-2xl;
   }
+}
+
+/* Force smaller font on Docusaurus TOC collapsible button (mobile)
+   Note: target generated class from theme; apply to descendants too */
+.tocCollapsibleButton_node_modules-\@docusaurus-theme-classic-lib-theme-TOCCollapsible-CollapseButton-styles-module,
+.tocCollapsibleButton_node_modules-\@docusaurus-theme-classic-lib-theme-TOCCollapsible-CollapseButton-styles-module
+  * {
+  font-size: 12px !important;
+  margin-bottom: 0 !important;
 }
 
 .newsletter {
@@ -290,7 +298,7 @@ pre code,
   margin-bottom: -1px !important;
 }
 
-[data-theme='light'] .theme-code-block [class*="codeBlockTitle"] {
+[data-theme="light"] .theme-code-block [class*="codeBlockTitle"] {
   background-color: rgba(87, 96, 106, 0.08) !important;
   border-color: rgba(208, 215, 222, 0.7) !important;
   color: #57606a !important;
@@ -324,29 +332,28 @@ pre code,
 .tabs__item:hover {
   background-color: rgba(6, 78, 59, 0.3);
   color: #10b981;
-
 }
 
 .tabs__item--active {
   background-color: rgba(6, 78, 59, 0.4);
- color: #10b981 !important;
+  color: #10b981 !important;
 }
 
-[data-theme='light'] .tabs {
+[data-theme="light"] .tabs {
   background-color: rgba(209, 250, 229, 0.4);
 }
 
-[data-theme='light'] .tabs__item {
+[data-theme="light"] .tabs__item {
   color: #047857;
 }
 
-[data-theme='light'] .tabs__item:hover {
+[data-theme="light"] .tabs__item:hover {
   background-color: rgba(167, 243, 208, 0.5);
   color: #065f46;
   border: 1px solid rgba(110, 231, 183, 0.4);
 }
 
-[data-theme='light'] .tabs__item--active {
+[data-theme="light"] .tabs__item--active {
   background-color: rgba(110, 231, 183, 0.4);
   color: #065f46;
   border: 1px solid rgba(52, 211, 153, 0.4);
@@ -406,6 +413,7 @@ ul.table-of-contents li code {
 
 /* TOC Container */
 .col.col--3 {
+  /* Placeholder for TOC styles */
 }
 
 /* TOC Header - "On this page" */
@@ -4163,7 +4171,7 @@ code .token.coord {
 }
 
 .menu__link--sublist-caret::after {
-  content: '' !important;
+  content: "" !important;
   background: rgb(16, 185, 129) !important;
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>') !important;
   mask-repeat: no-repeat !important;
@@ -4266,8 +4274,14 @@ code .token.coord {
 
 /* Sadece root level section başlıkları beyaz (GETTING STARTED, AGENTS, vb.) */
 .theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible .menu__link,
-[data-theme="dark"] .theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible .menu__link,
-[data-theme="light"] .theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible .menu__link {
+[data-theme="dark"]
+  .theme-doc-sidebar-item-category-level-1
+  > .menu__list-item-collapsible
+  .menu__link,
+[data-theme="light"]
+  .theme-doc-sidebar-item-category-level-1
+  > .menu__list-item-collapsible
+  .menu__link {
   color: #ffffff !important;
   font-weight: 600 !important;
 }
@@ -4279,7 +4293,6 @@ code .token.coord {
 [data-theme="dark"] .menu__list-item-collapsible .menu__link--active {
   color: #ffffff !important;
 }
-
 
 /* Submenu Items - Level 1 */
 .menu__list .menu__list {
@@ -4300,7 +4313,6 @@ code .token.coord {
   width: 100% !important;
   position: relative !important;
 }
-
 
 .menu__list .menu__list .menu__link:hover {
   opacity: 0.8 !important;
@@ -4331,7 +4343,6 @@ code .token.coord {
   padding-left: 0.5rem !important;
   position: relative !important;
 }
-
 
 /* Submenu Items - Level 3+ (çok derin nested) */
 .menu__list .menu__list .menu__list .menu__list .menu__link {
@@ -4379,7 +4390,10 @@ code .token.coord {
 }
 
 /* Dark mode'da sadece root level beyaz */
-[data-theme="dark"] .theme-doc-sidebar-item-category-level-1 .menu__list-item-collapsible .menu__link {
+[data-theme="dark"]
+  .theme-doc-sidebar-item-category-level-1
+  .menu__list-item-collapsible
+  .menu__link {
   color: #ffffff !important;
 }
 
@@ -4401,6 +4415,12 @@ main article {
 .theme-doc-markdown {
   max-width: 100% !important;
   padding: 1rem 4rem !important;
+}
+
+@media (max-width: 996px) {
+  .theme-doc-markdown {
+    padding: 1.5rem !important;
+  }
 }
 
 /* Content container spacing */

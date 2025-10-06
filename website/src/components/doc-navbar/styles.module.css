@@ -1,1 +1,273 @@
-/* Empty styles file for doc-navbar */
+.docNavbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0 1rem;
+  background: #0a0a0a;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.brandLink {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.brandMark {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 2px solid #00d992;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 217, 146, 0.08);
+  flex-shrink: 0;
+}
+
+.brandIcon {
+  width: 16px;
+  height: 16px;
+  color: #00d992;
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.searchWrapper {
+  min-width: 0;
+}
+
+.searchWrapper :global(.DocSearch-Button) {
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
+  background: rgba(148, 163, 184, 0.08) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.searchWrapper :global(.DocSearch-Button-Placeholder),
+.searchWrapper :global(.DocSearch-Button-Keys) {
+  display: none !important;
+}
+
+.searchWrapper :global(.DocSearch-Search-Icon) {
+  color: rgba(226, 232, 240, 0.85) !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.iconButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(148, 163, 184, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+}
+
+.iconButton:hover {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.iconGlyphDiscord {
+  width: 18px;
+  height: 18px;
+  color: #5865f2;
+}
+
+.iconGlyphGithub {
+  width: 18px;
+  height: 18px;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.menuButton {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 36px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: transparent;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.menuButton:hover {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.menuButtonOpen {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.menuBar {
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(226, 232, 240, 0.85);
+}
+
+.tabList {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+  margin: 0;
+}
+
+.tabList::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.25rem;
+  border: none;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.tab:hover { color: #10b981; }
+
+.tab::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.tabActive { color: #f2f2f2; }
+.tabActive::after { background: #10b981; }
+
+.mobileMenu {
+  margin-top: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobileDivider {
+  height: 1px;
+  width: 100%;
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.mobileLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobileNavLink {
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.75);
+  padding: 0.35rem 0;
+}
+
+.mobileNavLinkActive {
+  color: #f2f2f2;
+}
+
+@media (max-width: 420px) {
+  .searchWrapper {
+
+  }
+
+  .actions {
+    gap: 0.35rem;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .docNavbar {
+    border-bottom-color: rgba(15, 23, 42, 0.08);
+  }
+
+  .searchWrapper :global(.DocSearch-Button) {
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    background: rgba(15, 23, 42, 0.05) !important;
+  }
+
+  .searchWrapper :global(.DocSearch-Search-Icon) {
+    color: rgba(15, 23, 42, 0.65) !important;
+  }
+
+  .iconButton {
+    border-color: rgba(15, 23, 42, 0.15);
+    background: rgba(15, 23, 42, 0.05);
+  }
+
+  .iconGlyphGithub {
+    color: rgba(15, 23, 42, 0.75);
+  }
+
+  .tab {
+    background: rgba(15, 23, 42, 0.06);
+    color: rgba(15, 23, 42, 0.72);
+  }
+
+  .tab:hover {
+    color: #0f766e;
+  }
+
+  .mobileMenu {
+    background: rgba(241, 245, 249, 0.92);
+    border-color: rgba(15, 23, 42, 0.1);
+  }
+
+  .mobileNavLink {
+    color: rgba(15, 23, 42, 0.78);
+  }
+
+  .menuButton {
+    border-color: rgba(15, 23, 42, 0.12);
+  }
+
+  .menuBar {
+    background: rgba(15, 23, 42, 0.85);
+  }
+}

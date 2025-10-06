@@ -8,9 +8,8 @@ import DocSidebarItems from "@theme/DocSidebarItems";
 import SearchBar from "@theme/SearchBar";
 import clsx from "clsx";
 import React, { useState } from "react";
-import { DiscordLogo } from "../../../../../static/img/logos/discord";
-import { GitHubLogo } from "../../../../../static/img/logos/github";
 import styles from "./styles.module.css";
+
 function useShowAnnouncementBar() {
   const { isActive } = useAnnouncementBar();
   const [showAnnouncementBar, setShowAnnouncementBar] = useState(isActive);
@@ -24,6 +23,7 @@ function useShowAnnouncementBar() {
   );
   return isActive && showAnnouncementBar;
 }
+
 export default function DocSidebarDesktopContent({ path, sidebar, className }) {
   const showAnnouncementBar = useShowAnnouncementBar();
   const location = useLocation();
@@ -31,14 +31,18 @@ export default function DocSidebarDesktopContent({ path, sidebar, className }) {
 
   return (
     <div className={styles.contentWrapper}>
+      {/* Desktop header - hidden on mobile */}
       <div className={styles.sidebarHeader}>
         <div className={styles.logoRow}>
-          <Link to="/" className={styles.sidebarLogo}>
+          <Link
+            to={isVoltOpsDoc ? "/voltops-llm-observability-docs/" : "/docs/"}
+            className={styles.sidebarLogo}
+          >
             <div className={styles.logoContainer}>
               <div className={styles.logoIcon}>
                 <BoltIcon className={styles.boltIcon} />
               </div>
-              <span className={styles.logoText}>{isVoltOpsDoc ? "VoltOps" : "voltagent"}</span>
+              <span className={styles.logoText}>{isVoltOpsDoc ? "voltops" : "voltagent"}</span>
               <span className={styles.frameworkText}>
                 {isVoltOpsDoc ? "Observability" : "Framework"}
               </span>
@@ -53,6 +57,7 @@ export default function DocSidebarDesktopContent({ path, sidebar, className }) {
           {!isVoltOpsDoc && <div className={styles.versionBadge}>v1.0.x</div>}
         </div>
       </div>
+
       <nav
         aria-label={translate({
           id: "theme.docs.sidebar.navAriaLabel",

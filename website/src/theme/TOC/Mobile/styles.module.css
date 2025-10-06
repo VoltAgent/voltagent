@@ -1,0 +1,60 @@
+.container {
+  margin: 0.5rem 1rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: 0;
+}
+
+.title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.chevron {
+  transition: transform 0.15s ease;
+  color: rgba(226, 232, 240, 0.75);
+  font-size: 12px;
+  line-height: 1;
+}
+.chevronOpen { transform: rotate(180deg); }
+
+.content {
+  padding: 0.25rem 0.75rem 0.5rem;
+}
+
+.list {
+  margin: 0;
+  padding-left: 0.25rem;
+}
+
+.link {
+  display: block;
+  padding: 0.25rem 0;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.link:hover { color: #94bfae; }
+.linkActive { color: #94bfae; font-weight: 600; }
+
+@media (prefers-color-scheme: light) {
+  .container {
+    background: rgba(15, 23, 42, 0.06);
+    border-color: rgba(15, 23, 42, 0.1);
+  }
+  .title { color: rgba(30, 41, 59, 0.9); }
+  .chevron { color: rgba(30, 41, 59, 0.65); }
+  .link { color: rgba(30, 41, 59, 0.78); }
+}

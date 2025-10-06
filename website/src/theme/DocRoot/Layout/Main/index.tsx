@@ -76,28 +76,31 @@ export default function DocRootLayoutMain({
         )}
       >
         <div className={styles.docHeader}>
-          <div className={styles.centerLinks}>
+          <div className={styles.tabList} role="tablist" aria-label="Documentation sections">
             <Link
               to="/docs/"
-              className={`${styles.centerLink} ${
-                location.pathname.startsWith("/docs/") ? styles.centerLinkActive : ""
-              }`}
+              className={clsx(
+                styles.tab,
+                location.pathname.startsWith("/docs/") && styles.tabActive,
+              )}
             >
               VoltAgent Docs
             </Link>
             <Link
               to="/voltops-llm-observability-docs/"
-              className={`${styles.centerLink} ${
-                location.pathname.startsWith("/voltops-llm-observability-docs/")
-                  ? styles.centerLinkActive
-                  : ""
-              }`}
+              className={clsx(
+                styles.tab,
+                location.pathname.startsWith("/voltops-llm-observability-docs/") &&
+                  styles.tabActive,
+              )}
             >
               VoltOps Docs
             </Link>
             <Link
               to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
-              className={styles.centerLink}
+              className={styles.tab}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Changelog
             </Link>
@@ -108,6 +111,7 @@ export default function DocRootLayoutMain({
               className={styles.socialButton}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Discord"
             >
               <DiscordLogo className={styles.socialIconDiscord} />
             </Link>
@@ -116,6 +120,7 @@ export default function DocRootLayoutMain({
               className={styles.socialButton}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="GitHub"
             >
               <GitHubLogo className={styles.socialIconGitHub} />
             </Link>
