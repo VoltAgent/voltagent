@@ -9,7 +9,7 @@ import { XLogo } from "../../../static/img/logos/x";
 
 export function Footer() {
   return (
-    <footer className="bg-[#080f11d9] text-[#dcdcdc] font-['Inter'] py-8 md:py-12 border-solid border-b-0 border-l-0 border-r-0 border-t border-white/10">
+    <footer className=" text-[#dcdcdc] font-['Inter'] py-8 md:py-12 border-solid border-b-0 border-l-0 border-r-0 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left section with logo and social links */}

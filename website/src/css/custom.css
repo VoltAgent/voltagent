@@ -143,21 +143,21 @@ h2 {
   font-size: 1.25rem;
   margin-top: 2rem;
   margin-bottom: 1rem;
-    font-weight: 500 !important;
+  font-weight: 500 !important;
 }
 
 h3 {
   font-size: 1.125rem;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
-    font-weight: 500 !important;
+  font-weight: 500 !important;
 }
 
 /* Article content paragraphs */
 .theme-doc-markdown p {
   line-height: 1.7;
   margin-bottom: 1rem;
-  color: #d1d5db;
+  color: #9fa1a1;
 }
 
 /* Strong/bold text */
@@ -184,6 +184,7 @@ h3 {
 .theme-doc-markdown ul li,
 .theme-doc-markdown ol li {
   margin-bottom: 0;
+  color: #9fa1a1;
 }
 
 .theme-doc-markdown li pre,
@@ -306,7 +307,6 @@ pre code,
   display: inline-flex;
   gap: 0.375rem;
   padding: 0.25rem;
-  background-color: rgba(139, 148, 158, 0.08);
   border-radius: 0.5rem;
 }
 
@@ -316,38 +316,40 @@ pre code,
   padding: 0.25rem 0.625rem;
   border-radius: 0.375rem;
   background-color: transparent;
-  color: #8b949e;
+
   border: none;
-  transition: all 0.2s ease;
   margin-bottom: 0;
 }
 
 .tabs__item:hover {
-  background-color: rgba(16, 185, 129, 0.1);
+  background-color: rgba(6, 78, 59, 0.3);
   color: #10b981;
+
 }
 
 .tabs__item--active {
-  background-color: rgba(16, 185, 129, 0.15);
-  color: #10b981;
+  background-color: rgba(6, 78, 59, 0.4);
+ color: #10b981 !important;
 }
 
 [data-theme='light'] .tabs {
-  background-color: rgba(87, 96, 106, 0.08);
+  background-color: rgba(209, 250, 229, 0.4);
 }
 
 [data-theme='light'] .tabs__item {
-  color: #57606a;
+  color: #047857;
 }
 
 [data-theme='light'] .tabs__item:hover {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #059669;
+  background-color: rgba(167, 243, 208, 0.5);
+  color: #065f46;
+  border: 1px solid rgba(110, 231, 183, 0.4);
 }
 
 [data-theme='light'] .tabs__item--active {
-  background-color: rgba(16, 185, 129, 0.15);
-  color: #059669;
+  background-color: rgba(110, 231, 183, 0.4);
+  color: #065f46;
+  border: 1px solid rgba(52, 211, 153, 0.4);
 }
 
 /* Horrible confusing code below */
@@ -4167,8 +4169,8 @@ code .token.coord {
   mask-repeat: no-repeat !important;
   mask-position: center !important;
   mask-size: contain !important;
-  width: 1.125rem !important;
-  height: 1.125rem !important;
+  width: 1rem !important;
+  height: 1rem !important;
   display: inline-block !important;
   transition: transform 0.25s ease !important;
   transform: rotate(-90deg) !important;
@@ -4182,7 +4184,7 @@ code .token.coord {
 }
 
 .menu__link {
-  padding: 0.5rem 0.75rem !important;
+  padding: 0.4rem 0.75rem !important;
   padding-left: 0.75rem !important;
   border-radius: 0 !important;
   font-size: 0.875rem !important;
@@ -4201,16 +4203,15 @@ code .token.coord {
 }
 
 .menu__link:hover {
-  color: rgb(229, 231, 235) !important;
+  opacity: 0.8 !important;
   background: transparent !important;
-  border-left: 3px solid rgba(16, 185, 129, 0.3) !important;
 }
 
 .menu__link--active {
   font-weight: 500 !important;
-  color: rgb(16, 185, 129) !important;
+  color: #ffffff !important;
   background-color: transparent !important;
-  border-left: 3px solid rgb(16, 185, 129) !important;
+  border-left: 2px solid rgb(16, 185, 129) !important;
 }
 
 /* Category Headers (Accordion) */
@@ -4237,9 +4238,9 @@ code .token.coord {
   cursor: pointer !important;
 }
 
-/* Root level'ı emerald yap */
+/* Root level'ı beyaz yap */
 .theme-doc-sidebar-item-category-level-1 .menu__list-item-collapsible .menu__link {
-  color: rgb(16, 185, 129) !important;
+  color: #ffffff !important;
 }
 
 /* .menu__list-item-collapsible .menu__link::before {
@@ -4255,19 +4256,19 @@ code .token.coord {
 }  */
 
 .menu__list-item-collapsible .menu__link--active {
-  color: rgb(16, 185, 129) !important;
-  border-left: none !important;
+  color: #ffffff !important;
+  border-left: 2px solid rgb(16, 185, 129) !important;
 }
 
 .menu__list-item-collapsible .menu__link--active::before {
-  color: rgb(16, 185, 129) !important;
+  color: #ffffff !important;
 }
 
-/* Sadece root level section başlıkları emerald (GETTING STARTED, AGENTS, vb.) */
+/* Sadece root level section başlıkları beyaz (GETTING STARTED, AGENTS, vb.) */
 .theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible .menu__link,
 [data-theme="dark"] .theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible .menu__link,
 [data-theme="light"] .theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible .menu__link {
-  color: rgb(16, 185, 129) !important;
+  color: #ffffff !important;
   font-weight: 600 !important;
 }
 
@@ -4276,7 +4277,7 @@ code .token.coord {
 }
 
 [data-theme="dark"] .menu__list-item-collapsible .menu__link--active {
-  color: rgb(16, 185, 129) !important;
+  color: #ffffff !important;
 }
 
 
@@ -4291,7 +4292,7 @@ code .token.coord {
 }
 
 .menu__list .menu__list .menu__link {
-  padding: 0.5rem 0.75rem !important;
+  padding: 0.4rem 0.75rem !important;
   padding-left: 2rem !important;
   font-weight: 400 !important;
   color: rgb(156, 163, 175) !important;
@@ -4302,7 +4303,7 @@ code .token.coord {
 
 
 .menu__list .menu__list .menu__link:hover {
-  color: #fff !important;
+  opacity: 0.8 !important;
   background: none !important;
 }
 
@@ -4312,11 +4313,11 @@ code .token.coord {
 }
 
 [data-theme="dark"] .menu__list .menu__list .menu__link:hover {
-  color: rgb(229, 231, 235) !important;
+  opacity: 0.8 !important;
 }
 
 [data-theme="dark"] .menu__list .menu__list .menu__link--active {
-  color: rgb(16, 185, 129) !important;
+  color: #ffffff !important;
 }
 
 /* Submenu Items - Level 2 (nested dropdown içindekiler) */
@@ -4356,13 +4357,12 @@ code .token.coord {
 }
 
 [data-theme="dark"] .menu__link:hover {
-  color: rgb(229, 231, 235) !important;
-  border-left: none !important;
+  opacity: 0.8 !important;
 }
 
 [data-theme="dark"] .menu__link--active {
-  color: rgb(16, 185, 129) !important;
-  border-left: none !important;
+  color: #ffffff !important;
+  border-left: 2px solid rgb(16, 185, 129) !important;
 }
 
 [data-theme="dark"] .menu__list-item-collapsible .menu__link {
@@ -4378,9 +4378,9 @@ code .token.coord {
   padding-bottom: 0.5rem !important;
 }
 
-/* Dark mode'da sadece root level emerald */
+/* Dark mode'da sadece root level beyaz */
 [data-theme="dark"] .theme-doc-sidebar-item-category-level-1 .menu__list-item-collapsible .menu__link {
-  color: rgb(16, 185, 129) !important;
+  color: #ffffff !important;
 }
 
 /* Main Content Styles */
@@ -4463,7 +4463,7 @@ aside.theme-doc-sidebar-container {
 
 [data-theme="dark"] aside.theme-doc-sidebar-container {
   border-right: none !important;
-  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-color: #aaaaaa0d !important;
   padding: 0 !important;
 }
 
@@ -4473,7 +4473,7 @@ aside.theme-doc-sidebar-container .menu {
 }
 
 .menu__link:hover {
-  color: #fff !important;
+  opacity: 0.8 !important;
   background: none !important;
 }
 
@@ -4488,7 +4488,7 @@ aside.theme-doc-sidebar-container .menu {
 }
 
 .menu__list .menu__list .menu__link {
-  padding: 0.5rem 0.75rem !important;
+  padding: 0.4rem 0.75rem !important;
   padding-left: 1rem !important;
   font-weight: 400 !important;
   color: rgb(156, 163, 175) !important;
@@ -4586,7 +4586,7 @@ nav.table-of-contents .table-of-contents__link--active,
   font-weight: 600 !important;
   color: rgb(16, 185, 129) !important;
   background-color: transparent !important;
-  border-left: none !important;
+  border-left: 3px solid rgb(16, 185, 129) !important;
   margin-left: -2px !important;
 }
 
@@ -4596,7 +4596,7 @@ nav.table-of-contents .table-of-contents__link--active,
 
 [data-theme="dark"] .theme-doc-sidebar-item-link-level-2 .menu__link--active {
   color: rgb(16, 185, 129) !important;
-  border-left: none !important;
+  border-left: 2px solid rgb(16, 185, 129) !important;
 }
 
 /* Article Content Link Styles */
@@ -4901,7 +4901,7 @@ nav.table-of-contents .table-of-contents__link--active,
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #fff !important;
   border-radius: 6px !important;
-  padding: 0.5rem 0.75rem !important;
+  padding: 0.4rem 0.75rem !important;
   font-size: 14px !important;
   transition: all 0.2s ease !important;
   width: 250px !important;
@@ -4937,8 +4937,8 @@ nav.table-of-contents .table-of-contents__link--active,
 .DocSearch-Button-Keys {
   align-items: center !important;
   min-width: auto !important;
-  background-color: rgba(0, 217, 146, 0.1) !important;
-  border: 1px solid rgba(0, 217, 146, 0.2) !important;
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
   border-radius: 4px !important;
   padding: 2px 4px !important;
   margin-right: 2px !important;
@@ -4947,7 +4947,7 @@ nav.table-of-contents .table-of-contents__link--active,
 
 .DocSearch-Button-Key {
   font-size: 12px !important;
-  color: #00d992 !important;
+  color: #10b981 !important;
   font-weight: 600 !important;
   background: none !important;
   border: none !important;
@@ -5040,7 +5040,7 @@ nav.table-of-contents .table-of-contents__link--active,
 [data-theme="dark"] .menu__list .menu__list .menu__link--active {
   color: rgb(16, 185, 129) !important;
   font-weight: 600 !important;
-  border-left: none !important;
+  border-left: 2px solid rgb(16, 185, 129) !important;
 }
 
 /* Arrow Icon */
@@ -5075,18 +5075,18 @@ nav.table-of-contents .table-of-contents__link--active,
 }
 
 .theme-doc-markdown table thead {
-  background-color: rgba(139, 148, 158, 0.08) !important;
+  background-color: rgba(16, 185, 129, 0.15) !important;
 }
 
 .theme-doc-markdown table thead tr {
-  border-bottom: 1px solid rgba(48, 54, 61, 0.6) !important;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.3) !important;
 }
 
 .theme-doc-markdown table th {
   padding: 0.875rem 1rem !important;
   text-align: left !important;
   font-weight: 600 !important;
-  color: #e6edf3 !important;
+  color: #10b981 !important;
   border: none !important;
   white-space: nowrap !important;
 }
@@ -5108,7 +5108,7 @@ nav.table-of-contents .table-of-contents__link--active,
 }
 
 .theme-doc-markdown table tbody tr:hover {
-  background-color: rgba(139, 148, 158, 0.05) !important;
+  background-color: rgba(16, 185, 129, 0.05) !important;
 }
 
 /* Sandpack */
