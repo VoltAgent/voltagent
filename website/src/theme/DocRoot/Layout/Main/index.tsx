@@ -8,6 +8,7 @@ import type { Props } from "@theme/DocRoot/Layout/Main";
 import clsx from "clsx";
 import React, { useMemo } from "react";
 
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import styles from "./styles.module.css";
 
 export default function DocRootLayoutMain({
@@ -92,7 +93,8 @@ export default function DocRootLayoutMain({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Changelog
+            <span>Changelog</span>
+            <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-1" />
           </Link>
         </div>
         <div className={styles.actionGroup}>
