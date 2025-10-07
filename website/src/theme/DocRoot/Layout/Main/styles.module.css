@@ -11,13 +11,11 @@
 .docItemWrapper {
   position: relative;
   width: 100%;
-  max-width: 100%;
-  margin: 0;
+
   padding: 0 var(--docs-content-horizontal-padding, 3.6rem) 2rem;
 }
 
 .docItemWrapperEnhanced {
-  max-width: 100%;
 }
 
 .docHeader {
@@ -26,12 +24,11 @@
   justify-content: space-between;
   gap: 1.5rem;
   width: 100%;
-  padding: 0 3rem;
+  margin: 0 auto;
+  padding: 0 var(--docs-content-horizontal-padding, 3.6rem);
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);
   position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   background-color: #0a0a0a;
   z-index: 100;
   flex-wrap: nowrap;
@@ -231,7 +228,13 @@
 @media (max-width: 1160px) {
   .docHeader {
     padding: 0 var(--docs-content-horizontal-padding-mobile, 1.5rem);
+    max-width: 100%;
     min-height: 64px;
+  }
+
+  .docItemWrapper {
+    max-width: 100%;
+    padding: 0 var(--docs-content-horizontal-padding-mobile, 1.5rem) 2rem;
   }
 }
 
@@ -240,6 +243,7 @@
     flex-direction: column;
     align-items: flex-start;
     padding: 0.5rem 1.25rem 0;
+    max-width: 100%;
   }
 
   .leftGroup { display: none; }

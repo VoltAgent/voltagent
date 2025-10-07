@@ -21,7 +21,7 @@ const sidebars: SidebarsConfig = {
         "getting-started/mcp-docs-server",
         {
           type: "link",
-          label: "5-Step Tutorial ↗",
+          label: "5-Step Tutorial",
           href: "https://voltagent.dev/tutorial/introduction",
           customProps: {
             target: "_blank",

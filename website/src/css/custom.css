@@ -31,6 +31,8 @@
   /* Docs layout dimensions */
   --docs-content-horizontal-padding: 3.6rem;
   --docs-content-horizontal-padding-mobile: 1.5rem;
+  --docs-content-max-width: 1280px;
+  --docs-reading-width: 1000px;
 
   /* Shadcn UI Variables */
   --background: 0 0% 100%;
@@ -4646,13 +4648,14 @@ main[class*="docMainContainer_"] article {
 /* Ensure article content has proper reading width */
 .theme-doc-markdown {
   width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
+  max-width: var(--docs-reading-width, 1000px) !important;
   padding: 1.5rem 0 !important;
 }
 
 @media (max-width: 996px) {
   .theme-doc-markdown {
+    max-width: 100% !important;
+    margin: 0 !important;
     padding: 1.5rem 0 !important;
   }
 }
@@ -5317,40 +5320,43 @@ nav.table-of-contents .table-of-contents__link--active,
   width: auto !important;
   max-width: 100% !important;
   margin: 1.5rem 0 !important;
-  border: 1px solid rgba(48, 54, 61, 0.6) !important;
-  border-radius: 6px !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  border-radius: 8px !important;
   overflow: hidden !important;
   font-size: 0.875rem !important;
   display: table !important;
+  background-color: rgba(0, 0, 0, 0.2) !important;
 }
 
 .theme-doc-markdown table thead {
-  background-color: rgba(16, 185, 129, 0.15) !important;
+  background-color: rgba(148, 163, 184, 0.08) !important;
 }
 
 .theme-doc-markdown table thead tr {
-  border-bottom: 1px solid rgba(16, 185, 129, 0.3) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
 }
 
 .theme-doc-markdown table th {
-  padding: 0.875rem 1rem !important;
+  padding: 0.75rem 1rem !important;
   text-align: left !important;
-  font-weight: 600 !important;
-  color: #10b981 !important;
+  font-weight: 500 !important;
+  color: #f1f5f9 !important;
   border: none !important;
   white-space: nowrap !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.01em !important;
 }
 
 .theme-doc-markdown table td {
-  padding: 0.875rem 1rem !important;
+  padding: 0.75rem 1rem !important;
   border: none !important;
-  color: #c9d1d9 !important;
+  color: #cbd5e1 !important;
   line-height: 1.6 !important;
 }
 
 .theme-doc-markdown table tbody tr {
-  border-bottom: 1px solid rgba(48, 54, 61, 0.3) !important;
-  transition: background-color 0.2s ease !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
+  transition: background-color 0.15s ease !important;
 }
 
 .theme-doc-markdown table tbody tr:last-child {
@@ -5358,7 +5364,7 @@ nav.table-of-contents .table-of-contents__link--active,
 }
 
 .theme-doc-markdown table tbody tr:hover {
-  background-color: rgba(16, 185, 129, 0.05) !important;
+  background-color: rgba(148, 163, 184, 0.06) !important;
 }
 
 /* Sandpack */
