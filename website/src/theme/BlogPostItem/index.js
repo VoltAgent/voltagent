@@ -24,7 +24,7 @@ export default function BlogPostItem({ className }) {
           to={permalink}
           className="block no-underline hover:no-underline h-full flex flex-col"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between ">
             <div className="flex items-center gap-2">
               {author && (
                 <>
