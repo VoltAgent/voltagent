@@ -26,13 +26,12 @@ html.blog-post-page body {
 }
 
 /* Ensure the entire documentation page area has the dark background */
-html[data-theme="dark"] #__docusaurus:has([class*="docsWrapper_"]) {
+html.docs-wrapper[data-theme="dark"] #__docusaurus {
   background-color: #0a0a0a;
 }
 
-/* Target the main wrapper when it contains documentation or blog */
-.main-wrapper:has([class*="docsWrapper_"]),
-.main-wrapper:has([class*="docMainContainer_"]) {
+/* Target the main wrapper when rendering documentation */
+html.docs-wrapper .main-wrapper {
   background-color: #0a0a0a !important;
   /* Docs pages should span full width */
   max-width: 100% !important;
@@ -132,15 +131,53 @@ div[class^="announcementBar_"] a {
   max-width: var(--max-page-width);
 }
 
+/* Mobile docs layout (below 997px) */
+@media (max-width: 996px) {
+  .main-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  html.docs-wrapper .main-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Target docMainContainer by attribute selector */
+  [class*="docMainContainer"] {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Target docItemCol by attribute selector */
+  [class*="docItemCol"] {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .docs-wrapper #__docusaurus article {
+    padding: 1rem;
+  }
+
+  .pagination-nav {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+}
+
+/* Desktop docs layout (997px and above) */
 @media (min-width: 997px) {
-  .docMainContainer_src-layout-DocPage-styles-module,
-  .docMainContainer_src-theme-DocRoot-Layout-Main-styles-module {
+  /* Target docMainContainer by attribute selector */
+  [class*="docMainContainer"] {
     max-width: 100% !important;
     width: 100% !important;
     flex: 1 !important;
   }
 
-  .docItemCol_node_modules-\@docusaurus-theme-classic-lib-theme-DocItem-Layout-styles-module {
+  /* Target docItemCol by attribute selector */
+  [class*="docItemCol"] {
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -152,14 +189,10 @@ div[class^="announcementBar_"] a {
     margin-left: 0;
   }
 
-  .docSidebarContainer_CEHd,
-  .docSidebarContainer_src-theme-DocPage-styles-module {
-    min-width: 220px !important;
-    max-width: 220px !important;
-    margin-top: 0 !important;
-  }
-
-  .docSidebarContainer_node_modules-\@docusaurus-theme-classic-lib-theme-DocRoot-Layout-Sidebar-styles-module {
+  /* Target docSidebarContainer by attribute selector */
+  [class*="docSidebarContainer"] {
+    min-width: 300px !important;
+    max-width: 300px !important;
     margin-top: 0 !important;
   }
 
@@ -170,6 +203,19 @@ div[class^="announcementBar_"] a {
   .pagination-nav {
     padding-right: 2rem;
     padding-left: 2rem;
+  }
+}
+
+/* Large screens: center content with max-width */
+@media (min-width: 1992px) {
+  [class*="docMainContainer"] {
+    max-width: 1600px !important;
+    margin: 0 auto !important;
+  }
+
+  [class*="docItemCol"] {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
   }
 }
 
