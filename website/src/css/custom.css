@@ -28,6 +28,10 @@
   --ifm-tabs-color-active: #10b981 !important;
   --ifm-color-primary: #10b981 !important;
 
+  /* Docs layout dimensions */
+  --docs-content-horizontal-padding: 3.6rem;
+  --docs-content-horizontal-padding-mobile: 1.5rem;
+
   /* Shadcn UI Variables */
   --background: 0 0% 100%;
   --foreground: 222.2 47.4% 11.2%;
@@ -4413,13 +4417,15 @@ main article {
 
 /* Ensure article content has proper reading width */
 .theme-doc-markdown {
-  max-width: 100% !important;
-  padding: 1rem 4rem !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 1.5rem 0 !important;
 }
 
 @media (max-width: 996px) {
   .theme-doc-markdown {
-    padding: 1.5rem !important;
+    padding: 1.5rem 0 !important;
   }
 }
 

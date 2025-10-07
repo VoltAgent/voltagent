@@ -69,63 +69,59 @@ export default function DocRootLayoutMain({
         (hiddenSidebarContainer || !sidebar) && styles.docMainContainerEnhanced,
       )}
     >
+      <div className={styles.docHeader}>
+        <div className={styles.tabList} role="tablist" aria-label="Documentation sections">
+          <Link
+            to="/docs/"
+            className={clsx(styles.tab, location.pathname.startsWith("/docs/") && styles.tabActive)}
+          >
+            VoltAgent Docs
+          </Link>
+          <Link
+            to="/voltops-llm-observability-docs/"
+            className={clsx(
+              styles.tab,
+              location.pathname.startsWith("/voltops-llm-observability-docs/") && styles.tabActive,
+            )}
+          >
+            VoltOps Docs
+          </Link>
+          <Link
+            to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
+            className={styles.tab}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Changelog
+          </Link>
+        </div>
+        <div className={styles.actionGroup}>
+          <Link
+            to="https://s.voltagent.dev/discord"
+            className={styles.socialButton}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Discord"
+          >
+            <DiscordLogo className={styles.socialIconDiscord} />
+          </Link>
+          <Link
+            to="https://github.com/voltagent/voltagent"
+            className={styles.socialButton}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+          >
+            <GitHubLogo className={styles.socialIconGitHub} />
+          </Link>
+        </div>
+      </div>
       <div
         className={clsx(
           styles.docItemWrapper,
           hiddenSidebarContainer && styles.docItemWrapperEnhanced,
         )}
       >
-        <div className={styles.docHeader}>
-          <div className={styles.tabList} role="tablist" aria-label="Documentation sections">
-            <Link
-              to="/docs/"
-              className={clsx(
-                styles.tab,
-                location.pathname.startsWith("/docs/") && styles.tabActive,
-              )}
-            >
-              VoltAgent Docs
-            </Link>
-            <Link
-              to="/voltops-llm-observability-docs/"
-              className={clsx(
-                styles.tab,
-                location.pathname.startsWith("/voltops-llm-observability-docs/") &&
-                  styles.tabActive,
-              )}
-            >
-              VoltOps Docs
-            </Link>
-            <Link
-              to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
-              className={styles.tab}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Changelog
-            </Link>
-          </div>
-          <div className={styles.actionGroup}>
-            <Link
-              to="https://s.voltagent.dev/discord"
-              className={styles.socialButton}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Discord"
-            >
-              <DiscordLogo className={styles.socialIconDiscord} />
-            </Link>
-            <Link
-              to="https://github.com/voltagent/voltagent"
-              className={styles.socialButton}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-            >
-              <GitHubLogo className={styles.socialIconGitHub} />
-            </Link>
-          </div>
-        </div>
         {sectionLabel && <div className={styles.eyebrowSection}>{sectionLabel}</div>}
         {children}
       </div>
