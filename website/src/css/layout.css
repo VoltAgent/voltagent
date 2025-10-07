@@ -81,8 +81,6 @@ div[class^="announcementBar_"] a {
   width: 100%;
 }
 
-
-
 #__docusaurus {
   /*     padding-left: 1rem;
     padding-right: 1rem; */
@@ -90,12 +88,12 @@ div[class^="announcementBar_"] a {
 
 .main-wrapper {
   margin: 0 auto;
-    max-width: 1440px;
-    width: 100%;
+  max-width: 1440px;
+  width: 100%;
 }
 
 .main-wrapper .navbar {
-    max-width: 100% !important;
+  max-width: 100% !important;
 }
 
 #__docusaurus .footer {

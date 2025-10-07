@@ -376,14 +376,14 @@ pre code,
 }
 
 .tabs__item:hover {
-  background-color: rgba(16, 185, 129, 0.10);
-  border-color: rgba(16, 185, 129, 0.30);
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
   color: #10b981;
 }
 
 .tabs__item--active {
   background-color: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.40);
+  border-color: rgba(16, 185, 129, 0.4);
   color: #10b981 !important;
 }
 
@@ -393,19 +393,19 @@ pre code,
 
 [data-theme="light"] .tabs__item {
   color: #047857;
-  border-color: rgba(208, 215, 222, 0.50);
+  border-color: rgba(208, 215, 222, 0.5);
 }
 
 [data-theme="light"] .tabs__item:hover {
-  background-color: rgba(16, 185, 129, 0.10);
+  background-color: rgba(16, 185, 129, 0.1);
   color: #059669;
-  border-color: rgba(16, 185, 129, 0.30);
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 [data-theme="light"] .tabs__item--active {
   background-color: rgba(16, 185, 129, 0.15);
   color: #10b981 !important;
-  border-color: rgba(16, 185, 129, 0.40);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 /* Horrible confusing code below */
@@ -4195,7 +4195,6 @@ details > summary::-webkit-details-marker {
   }
 }
 
-
 .table-of-contents__link {
   font-family: "Inter", sans-serif !important;
   font-optical-sizing: auto;
@@ -4705,7 +4704,6 @@ main[class*="docMainContainer_"] article {
 [class*="docsWrapper_"] {
   max-width: 100% !important;
 }
-
 
 /* Sidebar Border and Background */
 aside.theme-doc-sidebar-container {
