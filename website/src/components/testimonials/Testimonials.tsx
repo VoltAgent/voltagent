@@ -458,6 +458,7 @@ export function Testimonials() {
               ref={tweetsRowRef}
               className="flex overflow-hidden"
               style={{
+                width: "100%",
                 maxWidth: "100%",
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
@@ -500,6 +501,7 @@ export function Testimonials() {
               ref={discordRowRef}
               className="flex overflow-hidden"
               style={{
+                width: "100%",
                 maxWidth: "100%",
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
@@ -549,6 +551,7 @@ export function Testimonials() {
                 ref={articlesRowRef}
                 className="flex overflow-hidden"
                 style={{
+                  width: "100%",
                   maxWidth: "100%",
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",

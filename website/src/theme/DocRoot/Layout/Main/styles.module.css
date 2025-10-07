@@ -35,7 +35,6 @@
   background-color: #0a0a0a;
   z-index: 100;
   flex-wrap: nowrap;
-  min-height: 68px;
 }
 
 [data-theme='light'] .docHeader {
@@ -223,6 +222,12 @@
   color: rgba(226, 232, 240, 0.9);
 }
 
+@media (max-width: 1024px) {
+  .docHeader {
+    display: none;
+  }
+}
+
 @media (max-width: 1160px) {
   .docHeader {
     padding: 0 var(--docs-content-horizontal-padding-mobile, 1.5rem);
@@ -307,4 +312,15 @@
 
 [data-theme='light'] .socialIconGitHub {
   color: #0f172a;
+}
+
+/* Hide the docs tab header on tablet & mobile (<1024px) */
+@media (max-width: 1024px) {
+  .docHeader {
+    display: none !important;
+  }
+}
+
+.docItemContainer_node_modules-\@docusaurus-theme-classic-lib-theme-DocItem-Layout-styles-module article > *:first-child {
+  margin-top: 6px !important;
 }

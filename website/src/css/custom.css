@@ -140,20 +140,40 @@ h1 {
   line-height: 1.3;
   margin-top: 0;
   margin-bottom: 1.5rem;
-  font-weight: 500 !important;
+  font-weight: 600;
 }
 
 h2 {
   font-size: 1.25rem;
   margin-top: 2rem;
   margin-bottom: 1rem;
-  font-weight: 500 !important;
+  font-weight: 600;
 }
 
 h3 {
   font-size: 1.125rem;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+h4 {
+  font-weight: 600;
+}
+
+/* Blog ve Docs için tüm heading'ler 500 */
+.blog-content h1,
+.blog-content h2,
+.blog-content h3,
+.blog-content h4,
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+article h1,
+article h2,
+article h3,
+article h4 {
   font-weight: 500 !important;
 }
 
@@ -161,7 +181,12 @@ h3 {
 .theme-doc-markdown p {
   line-height: 1.7;
   margin-bottom: 1rem;
-  color: #9fa1a1;
+  /* Docs paragraph color (dark mode) */
+}
+
+/* Set docs paragraph color in dark theme */
+html[data-theme="dark"] .theme-doc-markdown p {
+  color: #b2b2b2 !important;
 }
 
 /* Strong/bold text */
@@ -184,11 +209,26 @@ h3 {
   background-color: #f6f8fa !important;
 }
 
-/* Fix spacing for code blocks inside lists */
-.theme-doc-markdown ul li,
-.theme-doc-markdown ol li {
+/* Fix spacing for code blocks inside lists
+   Do NOT affect Docusaurus Tabs list (ul[role="tablist"]) */
+.theme-doc-markdown ul:not([role="tablist"]):not(.tabs):not(.tabs__list) li,
+.theme-doc-markdown ol:not([role="tablist"]) li {
   margin-bottom: 0;
-  color: #9fa1a1;
+  color: #b4b4b4 !important;
+}
+
+/* Ensure docs Tabs keep their intended palette */
+.theme-doc-markdown .tabs .tabs__item,
+.theme-doc-markdown ul[role="tablist"] .tabs__item {
+  color: #cbd5e1 !important; /* base tab color */
+}
+.theme-doc-markdown .tabs .tabs__item:hover,
+.theme-doc-markdown ul[role="tablist"] .tabs__item:hover {
+  color: #10b981 !important;
+}
+.theme-doc-markdown .tabs .tabs__item--active,
+.theme-doc-markdown ul[role="tablist"] .tabs__item--active {
+  color: #10b981 !important;
 }
 
 .theme-doc-markdown li pre,
@@ -328,18 +368,20 @@ pre code,
   padding: 0.25rem 0.625rem;
   border-radius: 0.375rem;
   background-color: transparent;
-
-  border: none;
+  border: 1px solid rgba(148, 163, 184, 0.18);
   margin-bottom: 0;
+  color: #cbd5e1; /* slate-300 */
 }
 
 .tabs__item:hover {
-  background-color: rgba(6, 78, 59, 0.3);
+  background-color: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.30);
   color: #10b981;
 }
 
 .tabs__item--active {
-  background-color: rgba(6, 78, 59, 0.4);
+  background-color: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.40);
   color: #10b981 !important;
 }
 
@@ -349,18 +391,19 @@ pre code,
 
 [data-theme="light"] .tabs__item {
   color: #047857;
+  border-color: rgba(208, 215, 222, 0.50);
 }
 
 [data-theme="light"] .tabs__item:hover {
-  background-color: rgba(167, 243, 208, 0.5);
-  color: #065f46;
-  border: 1px solid rgba(110, 231, 183, 0.4);
+  background-color: rgba(16, 185, 129, 0.10);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.30);
 }
 
 [data-theme="light"] .tabs__item--active {
-  background-color: rgba(110, 231, 183, 0.4);
-  color: #065f46;
-  border: 1px solid rgba(52, 211, 153, 0.4);
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981 !important;
+  border-color: rgba(16, 185, 129, 0.40);
 }
 
 /* Horrible confusing code below */
@@ -547,6 +590,24 @@ article .markdown p {
   font-size: var(--typography-body-1-d-font-size);
   font-size: var(--typography-body-1-d-font-size);
   line-height: var(--typography-body-1-d-line-height);
+}
+
+.blog-content > div > .markdown p,
+.blog-content > div > .markdown ul,
+.blog-content > div > .markdown li {
+  color: #b4b4b4 !important;
+}
+
+#__blog-post-container p:not(.blog-related p),
+#__blog-post-container ul:not(.blog-related ul),
+#__blog-post-container li:not(.blog-related li) {
+  color: #b4b4b4 !important;
+}
+
+[data-theme="light"] .blog-content > div > .markdown p,
+[data-theme="light"] .blog-content > div > .markdown ul,
+[data-theme="light"] .blog-content > div > .markdown li {
+  color: inherit !important;
 }
 
 article .markdown h5 {
@@ -3954,19 +4015,184 @@ details > summary::-webkit-details-marker {
   font-optical-sizing: auto;
   font-style: normal;
   font-variation-settings: "slnt" 0;
+  width: 100%;
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 0 2.5rem;
+}
+
+@media (max-width: 1200px) {
+  .blog-content {
+    max-width: 760px;
+    padding: 0 2rem;
+  }
+}
+
+@media (max-width: 996px) {
+  .blog-content {
+    max-width: 100%;
+    padding: 0 1.5rem;
+  }
 }
 
 .blog-content h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+.blog-content h2,
+.blog-content h3,
+.blog-content h4,
+.blog-content h5,
+.blog-content h6 {
   font-family: "Inter", sans-serif !important;
   font-optical-sizing: auto;
   font-style: normal;
   font-variation-settings: "slnt" 0;
 }
+
+/* Blog Detail Related Posts */
+.blog-related {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+[data-theme="light"] .blog-related {
+  border-top-color: rgba(15, 23, 42, 0.08);
+}
+
+.blog-related__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.blog-related__header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+[data-theme="light"] .blog-related__header h2 {
+  color: #0f172a;
+}
+
+.blog-related__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.blog-related__card {
+  display: block;
+  text-decoration: none;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 35, 0.5);
+  padding: 1rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.blog-related__card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.15);
+}
+
+[data-theme="light"] .blog-related__card {
+  background: rgba(248, 250, 252, 0.7);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="light"] .blog-related__card:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.12);
+}
+
+.blog-related__card article {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0.75rem;
+}
+
+.blog-related__card header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.blog-related__card header p {
+  color: rgba(180, 180, 180, 0.85) !important;
+  line-height: 1.5;
+  margin: 0;
+  font-size: 0.85rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme="light"] .blog-related__card header h3 {
+  color: #0f172a;
+}
+
+[data-theme="light"] .blog-related__card header p {
+  color: rgba(15, 23, 42, 0.68) !important;
+}
+
+.blog-related__card footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.8);
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.blog-related__card footer .separator {
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background-color: currentColor;
+}
+
+[data-theme="light"] .blog-related__card footer {
+  color: rgba(71, 85, 105, 0.9);
+}
+
+@media (max-width: 1100px) {
+  .blog-related__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .blog-related {
+    margin-top: 3rem;
+    padding-top: 2rem;
+  }
+
+  .blog-related__card {
+    padding: 1.5rem;
+  }
+
+  .blog-related__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .blog-related__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 .table-of-contents__link {
   font-family: "Inter", sans-serif !important;
@@ -4401,8 +4627,9 @@ code .token.coord {
   color: #ffffff !important;
 }
 
-/* Main Content Styles */
-main article {
+/* Docs Main Content Styles */
+.docs-wrapper main article,
+main[class*="docMainContainer_"] article {
   border-radius: 0 !important;
   border: none !important;
   padding: 0 !important;
@@ -4411,7 +4638,8 @@ main article {
   background-color: transparent !important;
 }
 
-[data-theme="dark"] main article {
+[data-theme="dark"] .docs-wrapper main article,
+[data-theme="dark"] main[class*="docMainContainer_"] article {
   background-color: transparent !important;
 }
 
@@ -4475,10 +4703,6 @@ main article {
   max-width: 100% !important;
 }
 
-/* Main wrapper full width */
-.main-wrapper {
-  max-width: 100% !important;
-}
 
 /* Sidebar Border and Background */
 aside.theme-doc-sidebar-container {

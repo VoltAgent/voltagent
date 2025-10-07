@@ -22,13 +22,16 @@ module.exports = {
       },
     },
     extend: {
+      maxWidth: {
+        "9xl": "90rem", // 1440px
+      },
       screens: {
         mobile: "375px",
         tablet: "768px",
         desktop: "1024px",
         "desktop-lg": "1200px",
         hd: "1820px",
-        "blog-sm": "825px",
+        "blog-sm": "975px",
         "blog-md": "1000px",
         "blog-lg": "1280px",
         "blog-max": "1408px",
