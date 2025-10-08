@@ -438,6 +438,12 @@ export type InternalGenerateOptions = PublicGenerateOptions & {
    * Used when agent is called from workflows or as a subagent
    */
   parentSpan?: Span;
+
+  /**
+   * Explicit execution ID to use for this operation
+   * If not provided, a new one will be generated
+   */
+  executionId?: string;
 };
 
 /**

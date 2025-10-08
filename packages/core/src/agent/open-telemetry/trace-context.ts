@@ -48,6 +48,7 @@ export interface TraceContextOptions {
   userId?: string;
   conversationId?: string;
   operationId: string;
+  executionId?: string;
   parentSpan?: Span;
   parentAgentId?: string;
   input?: string | UIMessage[] | BaseMessage[];
@@ -92,6 +93,7 @@ export class AgentTraceContext {
       ...(options.conversationId && { "conversation.id": options.conversationId }),
       ...(options.parentAgentId && { "agent.parent.id": options.parentAgentId }),
       "operation.id": options.operationId,
+      ...(options.executionId && { "execution.id": options.executionId }),
     };
 
     // If there's a parent span, use it as context
