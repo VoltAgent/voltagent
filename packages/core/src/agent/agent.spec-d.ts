@@ -1091,7 +1091,44 @@ describe("Agent Type System", () => {
       });
 
       // Agent should accept complex tools
-      expectTypeOf(agent).toHaveProperty("tools");
+      expect(agent.getTools()).toHaveLength(1);
+      expect(agent.dynamicTools).toBeUndefined();
+    });
+
+    it("should work with dynamic tools", () => {
+      const complexTool = new Tool({
+        name: "analyzer",
+        description: "Analyze data",
+        parameters: z.object({
+          data: z.array(
+            z.object({
+              id: z.number(),
+              value: z.string(),
+              metadata: z.record(z.unknown()).optional(),
+            }),
+          ),
+          options: z.object({
+            format: z.enum(["json", "csv", "xml"]),
+            includeHeaders: z.boolean().default(true),
+          }),
+        }),
+        execute: async (params) => ({
+          result: `Analyzed ${params.data.length} items`,
+          format: params.options.format,
+        }),
+      });
+
+      const toolsFn = async () => [complexTool];
+      const agent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: mockModel,
+        tools: toolsFn,
+      });
+
+      // Agent should accept dynamic tools function
+      expect(agent.getTools()).toHaveLength(0);
+      expect(agent.dynamicTools).toBe(toolsFn);
     });
 
     it("should handle tool execution context types", async () => {

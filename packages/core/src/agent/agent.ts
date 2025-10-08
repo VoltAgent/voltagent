@@ -244,7 +244,7 @@ export class Agent {
   readonly purpose?: string;
   readonly instructions: InstructionsDynamicValue;
   readonly model: LanguageModel | DynamicValue<LanguageModel>;
-  readonly tools: (Tool<any, any> | Toolkit)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
+  readonly dynamicTools?: DynamicValue<(Tool<any, any> | Toolkit)[]>;
   readonly hooks: AgentHooks;
   readonly temperature?: number;
   readonly maxOutputTokens?: number;
@@ -271,7 +271,7 @@ export class Agent {
     this.purpose = options.purpose;
     this.instructions = options.instructions;
     this.model = options.model;
-    this.tools = options.tools || [];
+    this.dynamicTools = typeof options.tools === "function" ? options.tools : undefined;
     this.hooks = options.hooks || {};
     this.temperature = options.temperature;
     this.maxOutputTokens = options.maxOutputTokens;
@@ -312,7 +312,7 @@ export class Agent {
     this.memoryManager = new MemoryManager(this.id, this.memory, {}, this.logger);
 
     // Initialize tool manager with static tools
-    const staticTools = typeof this.tools === "function" ? [] : this.tools || [];
+    const staticTools = typeof options.tools === "function" ? [] : options.tools;
     this.toolManager = new ToolManager(staticTools, this.logger);
     if (options.toolkits) {
       this.toolManager.addItems(options.toolkits);
@@ -1278,10 +1278,6 @@ export class Agent {
     tools: Record<string, any>;
     maxSteps: number;
   }> {
-    // Resolve dynamic values
-    const model = await this.resolveValue(this.model, oc);
-    const agentToolList = await this.resolveValue(this.tools, oc);
-
     // Prepare messages (system + memory + input) as UIMessages
     const buffer = this.getConversationBuffer(oc);
     const uiMessages = await this.prepareMessages(input, oc, options, buffer);
@@ -1304,10 +1300,13 @@ export class Agent {
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
 
+    // Resolve dynamic values
+    const model = await this.resolveValue(this.model, oc);
+    const dynamicToolList = (await this.resolveValue(this.dynamicTools, oc)) || [];
+
     // Merge agent tools with option tools
-    const agentToolsArray = Array.isArray(agentToolList) ? agentToolList : [];
     const optionToolsArray = options?.tools || [];
-    const mergedTools = [...agentToolsArray, ...optionToolsArray];
+    const mergedTools = [...dynamicToolList, ...optionToolsArray];
 
     // Prepare tools with execution context
     const tools = await this.prepareTools(mergedTools, oc, maxSteps, options);
