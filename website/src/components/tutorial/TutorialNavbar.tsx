@@ -1,5 +1,5 @@
 import Link from "@docusaurus/Link";
-import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import type React from "react";
 
@@ -20,7 +20,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
   return (
     <>
       {/* GitHub Banner */}
-      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-emerald-400/[0.03] to-emerald-500/[0.03] backdrop-blur-sm border-0 border-b border-solid border-emerald-500/20">
+      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-emerald-500 to-emerald-500 backdrop-blur-sm border-0 border-b border-solid border-emerald-500/20">
         <Link
           to="https://github.com/VoltAgent/voltagent"
           className="block w-full no-underline hover:bg-gradient-to-r hover:from-emerald-400/10 hover:to-emerald-500/10 transition-all duration-300"
@@ -29,7 +29,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
         >
           <div className="w-full">
             <div className="flex items-center justify-center text-center py-2">
-              <span className="text-xs sm:text-sm font-medium text-emerald-300">
+              <span className="text-xs sm:text-sm font-medium text-emerald-500">
                 ⭐ We're open source – a GitHub star means a lot to us. Thank you for the support! ❤️
               </span>
             </div>
@@ -39,7 +39,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
 
       {/* Main Navbar */}
       <div className="fixed top-8 sm:top-8 left-0 right-0 z-50 bg-background backdrop-blur-md border-0 border-b border-border">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-3">
           {/* Mobile Layout */}
           <div className="block md:hidden">
             {/* Mobile Header */}
@@ -115,11 +115,11 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
             {/* Logo */}
             <Link to="/docs" className="flex items-center justify-center no-underline">
               <div className="flex mr-2 items-center border-2 border-solid border-main-emerald rounded-full p-1">
-                <BoltIcon className="w-5 h-5 sm:w-5 sm:h-5 text-main-emerald" />
+                <BoltIcon className="w-4 h-4 sm:w-4 sm:h-4 text-main-emerald" />
               </div>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl font-bold text-main-emerald">voltagent</span>
-                <span className="ml-2 font-medium text-muted-foreground">Tutorial</span>
+                <span className="text-xl sm:text-xl font-bold text-main-emerald">voltagent</span>
+                <span className="ml-1 font-medium text-sm text-muted-foreground">Tutorial</span>
               </div>
             </Link>
 
@@ -131,7 +131,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
                 </span>
                 <div className="flex-1 bg-muted rounded-full h-2">
                   <div
-                    className="bg-main-emerald h-2 rounded-full transition-all duration-500"
+                    className="bg-emerald-600 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${(currentStep / totalSteps) * 100}%` }}
                   />
                 </div>
@@ -173,12 +173,12 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
               {/* Console Link */}
               <Link
                 to="https://console.voltagent.dev"
-                className="inline-flex items-center px-4 py-2 text-sm font-medium bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-lg hover:bg-emerald-400/40 transition-all duration-300 shadow-lg hover:shadow-xl no-underline"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-main-emerald transition-all duration-300 shadow-lg hover:shadow-xl no-underline"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <ArrowTopRightOnSquareIcon className="w-4 h-4 mr-2" />
-                Console
+                Try VoltOps
+                <ArrowRightIcon className="w-4 h-4 ml-2" />
               </Link>
             </div>
           </div>
