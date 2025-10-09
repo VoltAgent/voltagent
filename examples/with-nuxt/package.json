@@ -1,27 +1,28 @@
 {
-  "name": "nuxt-app",
-  "type": "module",
+  "name": "voltagent-example-with-nuxt",
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.2",
+    "@nuxt/eslint": "^1.9.0",
+    "@nuxt/ui": "^4.0.0",
+    "@voltagent/core": "^1.1.25",
+    "@voltagent/libsql": "^1.0.7",
+    "@voltagent/server-hono": "^1.0.17",
+    "ai": "^5.0.12",
+    "nuxt": "^4.1.2",
+    "vue": "^3.5.22",
+    "vue-router": "^4.5.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  },
   "private": true,
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "preview": "nuxt preview"
   },
-  "dependencies": {
-    "@ai-sdk/openai": "^2.0.42",
-    "@nuxt/eslint": "^1.9.0",
-    "@nuxt/ui": "^4.0.0",
-    "@voltagent/core": "^1.1.24",
-    "@voltagent/libsql": "^1.0.7",
-    "@voltagent/server-hono": "^1.0.16",
-    "nuxt": "^4.1.2",
-    "vue": "^3.5.22",
-    "vue-router": "^4.5.1",
-    "zod": "^4.1.11"
-  },
-  "devDependencies": {
-    "prettier": "^3.6.2"
-  }
+  "type": "module"
 }
