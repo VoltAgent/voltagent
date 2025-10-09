@@ -221,7 +221,9 @@ export default function TutorialIntroduction() {
                     <p className="text-muted-foreground mb-2 pt-1 text-xs landing-md:text-base">
                       Create Your Project
                     </p>
-                    <CodeBlock language="bash">npm create voltagent-app@latest</CodeBlock>
+                    <CodeBlock language="bash" className="w-[315px]">
+                      npm create voltagent-app@latest
+                    </CodeBlock>
                   </div>
                 </div>
 
@@ -233,7 +235,9 @@ export default function TutorialIntroduction() {
                     <p className="text-muted-foreground mb-2 pt-1 text-xs landing-md:text-base">
                       Navigate to Project
                     </p>
-                    <CodeBlock language="bash">cd my-voltagent-app</CodeBlock>
+                    <CodeBlock language="bash" className="w-[315px]">
+                      cd my-voltagent-app
+                    </CodeBlock>
                   </div>
                 </div>
 
@@ -250,7 +254,9 @@ export default function TutorialIntroduction() {
                       <code className="bg-muted px-2 py-1 rounded text-amber-300">.env</code> file
                       and add your OpenAI API key:
                     </p>
-                    <CodeBlock language="bash">OPENAI_API_KEY=your-api-key-here</CodeBlock>
+                    <CodeBlock language="bash" className="w-[315px]">
+                      OPENAI_API_KEY=your-api-key-here
+                    </CodeBlock>
                     <p className="text-xs text-muted-foreground mt-2">
                       Get your API key from{" "}
                       <a
@@ -273,7 +279,9 @@ export default function TutorialIntroduction() {
                     <p className="text-muted-foreground mb-2 pt-1 text-xs landing-md:text-base">
                       Start Your Agent
                     </p>
-                    <CodeBlock language="bash">npm run dev </CodeBlock>
+                    <CodeBlock language="bash" className="w-[315px]">
+                      npm run dev{" "}
+                    </CodeBlock>
                   </div>
                 </div>
               </div>
