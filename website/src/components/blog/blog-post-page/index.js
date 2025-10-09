@@ -10,37 +10,49 @@ import { DateComponent, ReadingTime } from "@site/src/components/blog/common";
 
 const SimilarBlogs = () => {
   const { metadata } = useBlogPost();
-  const relatedPosts = metadata.relatedPosts || [];
+  const MAX_RELATED_POSTS = 3;
+  const MAX_WORDS = 12;
+
+  const relatedPosts = (metadata.relatedPosts || []).slice(0, MAX_RELATED_POSTS);
 
   if (relatedPosts.length === 0) {
     return null;
   }
 
   return (
-    <div className="mt-12 border-t border-gray-200 dark:border-gray-800 pt-8">
-      <h2 className="text-2xl font-bold mb-6">Related Posts</h2>
-      <div className="flex flex-col gap-8">
-        {relatedPosts.map((post) => (
-          <Link key={post.permalink} to={post.permalink} className="no-underline group">
-            <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 transition-all duration-200 hover:shadow-md bg-white dark:bg-gray-900">
-              <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100 group-hover:text-primary">
-                {post.title}
-              </h3>
-              <p className="text-base text-gray-600 dark:text-gray-400 mb-4">{post.description}</p>
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <DateComponent date={post.date} formattedDate={post.formattedDate} />
-                {post.readingTime && (
-                  <>
-                    <span className="mx-2">·</span>
-                    <ReadingTime readingTime={post.readingTime} />
-                  </>
-                )}
-              </div>
-            </div>
-          </Link>
-        ))}
+    <section className="blog-related">
+      <div className="blog-related__header">
+        <h2>Related Posts</h2>
       </div>
-    </div>
+      <div className="blog-related__grid">
+        {relatedPosts.map((post) => {
+          const description = post.description ?? "";
+          const words = description.split(/\s+/);
+          const shortened =
+            words.length > MAX_WORDS ? `${words.slice(0, MAX_WORDS).join(" ")}…` : description;
+
+          return (
+            <Link key={post.permalink} to={post.permalink} className="blog-related__card">
+              <article>
+                <header>
+                  <h3>{post.title}</h3>
+                  <p>{shortened}</p>
+                </header>
+                <footer>
+                  <DateComponent date={post.date} formattedDate={post.formattedDate} />
+                  {post.readingTime && (
+                    <>
+                      <span className="separator" />
+                      <ReadingTime readingTime={post.readingTime} />
+                    </>
+                  )}
+                </footer>
+              </article>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 };
 

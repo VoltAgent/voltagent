@@ -321,6 +321,42 @@ const contentAnalysisWorkflow = createWorkflowChain({
     },
   });
 
+// ==============================================================================
+// Example 4: Article Summarization with Dynamic Schema
+// Concepts: Dynamic schema generation based on workflow input
+// ==============================================================================
+const articleSummarizationWorkflow = createWorkflowChain({
+  id: "article-summarizer",
+  name: "Article Summarization Workflow",
+  purpose: "Summarize an article with a dynamically specified length",
+  input: z.object({
+    article: z.string(),
+    min: z.number().default(50),
+    max: z.number().default(150),
+  }),
+  result: z.object({
+    summary: z.string(),
+  }),
+}).andAgent(
+  async ({ data }) =>
+    `Summarize the following article in ${data.min} to ${data.max} characters:
+  
+  Article: ${data.article}`,
+  contentAgent,
+  {
+    // Dynamically generate the schema based on the input data
+    schema: ({ data }) => {
+      console.log(`Generating schema with min: ${data.min}, max: ${data.max}`);
+      return z.object({
+        summary: z
+          .string()
+          .min(data.min, `Summary must be at least ${data.min} characters`)
+          .max(data.max, `Summary must be at most ${data.max} characters`),
+      });
+    },
+  },
+);
+
 // Register workflows with VoltAgent
 
 // Create logger
@@ -340,5 +376,6 @@ new VoltAgent({
     orderProcessingWorkflow,
     expenseApprovalWorkflow,
     contentAnalysisWorkflow,
+    articleSummarizationWorkflow,
   },
 });

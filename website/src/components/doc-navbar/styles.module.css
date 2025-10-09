@@ -1,383 +1,273 @@
-/* Main navbar styles */
 .docNavbar {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background-color: #1d1d1d;
-  width: 100%;
-  height: 56px;
-  border-bottom: 1px solid #1a2533;
-  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem 0 1rem;
+  background: #0a0a0a;
 }
 
-.docNavbarInner {
-  margin: 0 auto;
-  max-width: 1440px;
-
-  height: 100%;
+.topRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px 0 20px;
+  gap: 0.75rem;
 }
 
-.docNavbarLeft {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.logoLink {
-  display: flex;
+.brandLink {
+  display: inline-flex;
   align-items: center;
   text-decoration: none;
-  gap: 8px;
+  margin-right: auto;
 }
 
-.logoIcon {
-  width: 20px;
-  height: 20px;
+.brandMark {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 2px solid #00d992;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 217, 146, 0.08);
+  flex-shrink: 0;
+}
+
+.brandIcon {
+  width: 16px;
+  height: 16px;
   color: #00d992;
 }
 
-.logoText {
-  font-size: 20px;
-  font-weight: 700;
-  color: #00d992;
-  letter-spacing: -0.5px;
-}
-
-.separator {
-  height: 24px;
-  width: 1px;
-  background-color: rgba(255, 255, 255, 0.2);
-  margin: 0 8px;
-}
-
-.navLinks {
-  display: flex;
+.actions {
+  display: inline-flex;
   align-items: center;
-  gap: 32px;
+  gap: 0.4rem;
 }
 
-.navLink {
-  text-decoration: none;
-  color: #94a3b8;
-  font-size: 16px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  padding: 4px 8px;
-  border-radius: 6px;
-  position: relative;
+.searchWrapper {
+  min-width: 0;
 }
 
-.navLink:hover {
-  color: #ffffff;
-  text-decoration: none;
-  background-color: rgba(255, 255, 255, 0.05);
+.searchWrapper :global(.DocSearch-Button) {
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
+  background: rgba(148, 163, 184, 0.08) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.navLink.active {
-  font-weight: 600;
-  color: #00d992;
-  box-shadow: 0 0 20px rgba(0, 217, 146, 0.1);
+.searchWrapper :global(.DocSearch-Button-Placeholder),
+.searchWrapper :global(.DocSearch-Button-Keys) {
+  display: none !important;
 }
 
-.docNavbarRight {
-  display: flex;
+.searchWrapper :global(.DocSearch-Search-Icon) {
+  color: rgba(226, 232, 240, 0.85) !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.iconButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(148, 163, 184, 0.08);
+  display: inline-flex;
   align-items: center;
-  gap: 16px;
-}
-
-.socialButton {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-radius: 6px;
-  transition: background-color 0.2s;
-  position: relative;
-  animation: slackPulse 2s infinite;
-}
-
-.socialButton::after {
-  position: absolute;
-  background-color: #1a202c;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  white-space: nowrap;
-  bottom: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.2s;
-  pointer-events: none;
-}
-
-.socialButton:hover::after {
-  opacity: 1;
-}
-
-.socialButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  animation-play-state: paused;
-}
-
-.versionBadge {
-  background-color: rgba(0, 217, 146, 0.15);
-  color: #00d992;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  border: 1px solid rgba(0, 217, 146, 0.3);
-}
-.versionBadgeMobile {
-  background-color: rgba(0, 217, 146, 0.15);
-  color: #00d992;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  border: 1px solid rgba(0, 217, 146, 0.3);
-}
-
-.searchBarContainer {
-  margin-left: 8px;
-  display: flex;
-  align-items: center;
-}
-
-@media (max-width: 996px) {
-  .navLinks {
-    display: none;
-  }
-
-  .mobileMenu {
-    display: flex;
-  }
-
-  .menuButton {
-    display: block;
-  }
-
-  .docSubNavInner {
-    padding: 0 16px;
-  }
-
-  .docSubNavRight {
-    display: none; /* Hide links on mobile to save space */
-  }
-
-  /*   .searchBarContainer {
-    display: none;
-  } */
-}
-@media (max-width: 576px) {
-  .versionBadge {
-    display: none;
-  }
-
-  .docNavbarRight {
-    gap: 4px;
-  }
-}
-
-/* Sub navbar (breadcrumbs) */
-.docSubNav {
-  background-color: #080f11d9;
-  width: 100%;
-  border-bottom: 1px solid #1a2533;
-  padding: 8px 0;
-}
-
-.docSubNavInner {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px 0 72px; /* Match the main navbar padding */
-}
-
-.breadcrumbs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #94a3b8;
-  font-size: 14px;
-}
-
-.breadcrumbLink {
-  color: #94a3b8;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.breadcrumbLink:hover {
-  color: #fff;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease;
   text-decoration: none;
 }
 
-.breadcrumbCurrent {
-  color: #fff;
-  font-weight: 500;
+.iconButton:hover {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.35);
 }
 
-.docSubNavRight {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+.iconGlyphDiscord {
+  width: 18px;
+  height: 18px;
+  color: #5865f2;
 }
 
-.feedbackLink,
-.editPageLink {
-  color: #94a3b8;
-  font-size: 14px;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: color 0.2s;
+.iconGlyphGithub {
+  width: 18px;
+  height: 18px;
+  color: rgba(226, 232, 240, 0.9);
 }
 
-.feedbackLink:hover,
-.editPageLink:hover {
-  color: #fff;
-  text-decoration: none;
-}
-
-.feedbackLink::after,
-.editPageLink::after {
-  content: "↗";
-  font-size: 12px;
-}
-
-@keyframes slackPulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.1);
-  }
-
-  70% {
-    transform: scale(1.1);
-    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
-  }
-
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
-  }
-}
-
-/* Menu button styles */
 .menuButton {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 36px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: transparent;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.menuButton:hover {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.menuButtonOpen {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.menuBar {
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(226, 232, 240, 0.85);
+}
+
+.tabList {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+  margin: 0;
+}
+
+.tabList::-webkit-scrollbar {
   display: none;
-  background: none;
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.25rem;
   border: none;
-  padding: 8px;
-  cursor: pointer;
-  color: #00d992;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
 }
 
-.menuIcon {
-  display: block;
-  transition: transform 0.2s;
-}
+.tab:hover { color: #10b981; }
 
-.menuButtonOpen .menuIcon {
-  transform: rotate(90deg);
-}
-
-/* Mobile menu */
-.mobileMenu {
-  display: none;
+.tab::after {
+  content: "";
   position: absolute;
-  top: 50px;
   left: 0;
   right: 0;
-  background-color: #0a1017;
-  padding: 20px;
-  border-bottom: 1px solid #1a2533;
-  flex-direction: column;
-  gap: 16px;
-  align-items: flex-start;
-  width: 100%;
-  z-index: 999;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.2s ease;
 }
 
-.mobileLogo {
+.tabActive { color: #f2f2f2; }
+.tabActive::after { background: #10b981; }
+
+.mobileMenu {
+  margin-top: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobileDivider {
+  height: 1px;
+  width: 100%;
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.mobileLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .mobileNavLink {
   text-decoration: none;
-  color: #94a3b8;
-  font-size: 16px;
-  font-weight: 500;
-  padding: 8px 16px;
-  width: 100%;
-  display: block;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.mobileNavLink:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
-}
-
-.mobileNavLink.active {
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #00d992;
-  background-color: rgba(0, 217, 146, 0.15);
-  border: 1px solid rgba(0, 217, 146, 0.3);
+  color: rgba(226, 232, 240, 0.75);
+  padding: 0.35rem 0;
 }
 
-@media (min-width: 1024px) {
-  .DocSearch-Modal {
-    margin-top: 40px !important;
+.mobileNavLinkActive {
+  color: #f2f2f2;
+}
+
+@media (max-width: 420px) {
+  .searchWrapper {
+
+  }
+
+  .actions {
+    gap: 0.35rem;
   }
 }
 
-@media (max-width: 996px) {
-  .navLinks {
-    display: none;
+@media (prefers-color-scheme: light) {
+  .docNavbar {
+    border-bottom-color: rgba(15, 23, 42, 0.08);
   }
 
-  .separator {
-    display: none;
+  .searchWrapper :global(.DocSearch-Button) {
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    background: rgba(15, 23, 42, 0.05) !important;
+  }
+
+  .searchWrapper :global(.DocSearch-Search-Icon) {
+    color: rgba(15, 23, 42, 0.65) !important;
+  }
+
+  .iconButton {
+    border-color: rgba(15, 23, 42, 0.15);
+    background: rgba(15, 23, 42, 0.05);
+  }
+
+  .iconGlyphGithub {
+    color: rgba(15, 23, 42, 0.75);
+  }
+
+  .tab {
+    background: rgba(15, 23, 42, 0.06);
+    color: rgba(15, 23, 42, 0.72);
+  }
+
+  .tab:hover {
+    color: #0f766e;
   }
 
   .mobileMenu {
-    display: flex;
+    background: rgba(241, 245, 249, 0.92);
+    border-color: rgba(15, 23, 42, 0.1);
+  }
+
+  .mobileNavLink {
+    color: rgba(15, 23, 42, 0.78);
   }
 
   .menuButton {
-    display: block;
+    border-color: rgba(15, 23, 42, 0.12);
   }
 
-  .docSubNavInner {
-    padding: 0 16px;
-  }
-
-  .docSubNavRight {
-    display: none; /* Hide links on mobile to save space */
-  }
-
-  /*  .searchBarContainer {
-    display: none;
-  } */
-}
-
-@media (max-width: 576px) {
-  .versionBadge {
-    display: none;
+  .menuBar {
+    background: rgba(15, 23, 42, 0.85);
   }
 }

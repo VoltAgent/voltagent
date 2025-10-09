@@ -1,14 +1,18 @@
-import Logo from "@theme/Logo";
+import Link from "@docusaurus/Link";
+import { BoltIcon } from "@heroicons/react/24/solid";
 import React from "react";
+import styles from "./styles.module.css";
 
 export default function NavbarLogo() {
   return (
-    <div>
-      <Logo
-        className="navbar__brand"
-        imageClassName="navbar__logo"
-        titleClassName="navbar__title text--truncate"
-      />
-    </div>
+    <Link to="/" className={styles.logoContainer}>
+      <div className={styles.logoIcon}>
+        <BoltIcon className={styles.boltIcon} />
+      </div>
+      <span className={styles.logoText}>voltagent</span>
+      <span className={styles.frameworkText}>Framework</span>
+      <span className={styles.docsText}>Docs</span>
+      <div className={styles.versionBadge}>v1.0.x</div>
+    </Link>
   );
 }

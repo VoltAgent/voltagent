@@ -3,11 +3,15 @@ import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { Agent, BaseGenerationOptions } from "../../agent/agent";
 import { convertUsage } from "../../utils/usage-converter";
-import type { InternalWorkflowFunc } from "../internal/types";
+import type { InternalWorkflowFunc, WorkflowExecuteContext } from "../internal/types";
 import type { WorkflowStepAgent } from "./types";
 
-export type AgentConfig<SCHEMA extends z.ZodTypeAny> = BaseGenerationOptions & {
-  schema: SCHEMA;
+export type AgentConfig<SCHEMA extends z.ZodTypeAny, INPUT, DATA> = BaseGenerationOptions & {
+  schema:
+    | SCHEMA
+    | ((
+        context: Omit<WorkflowExecuteContext<INPUT, DATA, any, any>, "suspend" | "writer">,
+      ) => SCHEMA | Promise<SCHEMA>);
 };
 
 /**
@@ -40,7 +44,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
     | string
     | InternalWorkflowFunc<INPUT, DATA, UIMessage[] | ModelMessage[] | string, any, any>,
   agent: Agent,
-  config: AgentConfig<SCHEMA>,
+  config: AgentConfig<SCHEMA, INPUT, DATA>,
 ) {
   return {
     type: "agent",
@@ -52,11 +56,12 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
       const { state } = context;
       const { schema, ...restConfig } = config;
       const finalTask = typeof task === "function" ? await task(context) : task;
+      const finalSchema = typeof schema === "function" ? await schema(context) : schema;
 
       // Create step context and publish start event
       if (!state.workflowContext) {
         // No workflow context, execute without events
-        const result = await agent.generateObject(finalTask, config.schema, {
+        const result = await agent.generateObject(finalTask, finalSchema, {
           ...restConfig,
           context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,
@@ -82,7 +87,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
       // Step start event removed - now handled by OpenTelemetry spans
 
       try {
-        const result = await agent.generateObject(finalTask, config.schema, {
+        const result = await agent.generateObject(finalTask, finalSchema, {
           ...restConfig,
           context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,

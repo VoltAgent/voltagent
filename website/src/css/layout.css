@@ -1,8 +1,7 @@
 body,
 html {
   max-width: 100vw;
-  overflow-x: hidden !important;
-  font-family: "Inter", monospace;
+  font-family: "Inter", sans-serif;
   background-color: #070f12;
 }
 
@@ -17,24 +16,27 @@ html[class*="blog-wrapper"],
 html[class*="blog-post-page"],
 .blog-wrapper,
 .blog-post-page {
-  background-color: #1d1d1d !important;
+  background-color: #0a0a0a !important;
 }
 
 /* Target blog content areas specifically */
 html.blog-post-page #__docusaurus,
 html.blog-post-page body {
-  background-color: #1d1d1d !important;
+  background-color: #0a0a0a !important;
 }
 
 /* Ensure the entire documentation page area has the dark background */
-html[data-theme="dark"] #__docusaurus:has([class*="docsWrapper_"]) {
-  background-color: #1d1d1d;
+html.docs-wrapper[data-theme="dark"] #__docusaurus {
+  background-color: #0a0a0a;
 }
 
-/* Target the main wrapper when it contains documentation or blog */
-.main-wrapper:has([class*="docsWrapper_"]),
-.main-wrapper:has([class*="docMainContainer_"]) {
-  background-color: #1d1d1d !important;
+/* Target the main wrapper when rendering documentation */
+html.docs-wrapper .main-wrapper {
+  background-color: #0a0a0a !important;
+  /* Docs pages should span full width */
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 auto;
 }
 
 /* Announcement bar height */
@@ -44,7 +46,7 @@ div[class^="announcementBar_"] {
   align-items: center;
   font-size: 18px !important;
   font-weight: 600;
-  color: #000000 !important;
+  color: #ffffff !important;
   cursor: pointer;
   padding: 0 16px;
   justify-content: center;
@@ -72,9 +74,8 @@ div[class^="announcementBar_"] a {
   display: none;
 }
 
-.navbar,
-.main-wrapper {
-  max-width: 1440px;
+.navbar {
+  max-width: 100%;
   margin: 0 auto;
   width: 100%;
 }
@@ -82,6 +83,16 @@ div[class^="announcementBar_"] a {
 #__docusaurus {
   /*     padding-left: 1rem;
     padding-right: 1rem; */
+}
+
+.main-wrapper {
+  margin: 0 auto;
+  max-width: 1440px;
+  width: 100%;
+}
+
+.main-wrapper .navbar {
+  max-width: 100% !important;
 }
 
 #__docusaurus .footer {
@@ -93,8 +104,7 @@ div[class^="announcementBar_"] a {
 }
 
 .theme-doc-markdown h1 {
-  font-size: 2.5rem;
-  /* Adjust as needed */
+  font-size: 24px;
   font-weight: bold;
 }
 
@@ -121,40 +131,91 @@ div[class^="announcementBar_"] a {
   max-width: var(--max-page-width);
 }
 
-@media (min-width: 997px) {
-  .docMainContainer_src-layout-DocPage-styles-module {
-    max-width: calc(var(--max-page-width) - var(--doc-sidebar-width)) !important;
-    width: calc(var(--max-page-width) - var(--doc-sidebar-width)) !important;
+/* Mobile docs layout (below 997px) */
+@media (max-width: 996px) {
+  .main-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
   }
 
-  .docItemCol_node_modules-\@docusaurus-theme-classic-lib-theme-DocItem-Layout-styles-module {
-    min-width: 80% !important;
+  html.docs-wrapper .main-wrapper {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Target docMainContainer by attribute selector */
+  [class*="docMainContainer"] {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Target docItemCol by attribute selector */
+  [class*="docItemCol"] {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .docs-wrapper #__docusaurus article {
+    padding: 1rem;
+  }
+
+  .pagination-nav {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+}
+
+/* Desktop docs layout (997px and above) */
+@media (min-width: 997px) {
+  /* Target docMainContainer by attribute selector */
+  [class*="docMainContainer"] {
+    max-width: 100% !important;
+    width: 100% !important;
+    flex: 1 !important;
+  }
+
+  /* Target docItemCol by attribute selector */
+  [class*="docItemCol"] {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .theme-doc-sidebar-container {
     /*  border-right: none !important; */
     margin-top: 0 !important;
-    margin-left: 20px;
+    margin-left: 0;
   }
 
-  .docSidebarContainer_CEHd,
-  .docSidebarContainer_src-theme-DocPage-styles-module {
-    min-width: 16.625rem !important;
-    max-width: 16.625rem !important;
-    margin-top: 0 !important;
-  }
-
-  .docSidebarContainer_node_modules-\@docusaurus-theme-classic-lib-theme-DocRoot-Layout-Sidebar-styles-module {
+  /* Target docSidebarContainer by attribute selector */
+  [class*="docSidebarContainer"] {
+    min-width: 300px !important;
+    max-width: 300px !important;
     margin-top: 0 !important;
   }
 
   .docs-wrapper #__docusaurus article {
-    padding: 1rem 1.5vw;
+    padding: 1rem 2rem;
   }
 
   .pagination-nav {
-    padding-right: 1.5vw;
-    padding-left: 1.5vw;
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+}
+
+/* Large screens: center content with max-width */
+@media (min-width: 1992px) {
+  [class*="docMainContainer"] {
+    max-width: 1600px !important;
+    margin: 0 auto !important;
+  }
+
+  [class*="docItemCol"] {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
   }
 }
 
@@ -166,6 +227,8 @@ div.col.col--3 {
 @media (min-width: 1025px) {
   div.col.col--3 {
     display: block; /* Show only on screens 1025px and wider */
+    flex: 0 0 280px !important;
+    max-width: 280px !important;
   }
 }
 

@@ -40,7 +40,7 @@ pnpm create voltagent-app my-agent-app
 
 After running the command, you'll see the VoltAgent Generator welcome screen:
 
-```bash
+```
  _    __      ____  ___                    __
 | |  / /___  / / /_/   | ____ ____  ____  / /_
 | | / / __ \/ / __/ /| |/ __ `/ _ \/ __ \/ __/

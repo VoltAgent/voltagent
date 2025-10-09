@@ -273,7 +273,7 @@ const config: Config = {
       content:
         "<a target='_blank' rel='noopener noreferrer' href='https://github.com/VoltAgent/voltagent/stargazers'>⭐️ Join our GitHub community!</a>",
       backgroundColor: "#10b981",
-      textColor: "#000000",
+      textColor: "#ffffff",
       isCloseable: true,
     },
     colorMode: {
@@ -338,79 +338,75 @@ const config: Config = {
     prism: {
       darkTheme: {
         plain: {
-          color: "#e2e8f0",
-          backgroundColor: "#282c34",
+          color: "#f0f6fc",
+          backgroundColor: "#010409",
         },
         styles: [
           {
             types: ["comment", "prolog", "doctype", "cdata"],
             style: {
-              color: "#8b949e", // Light gray - comments
+              color: "#8b949e",
               fontStyle: "italic",
             },
           },
           {
-            types: ["namespace"],
+            types: ["punctuation"],
             style: {
-              opacity: 0.7,
+              color: "#f0f6fc",
             },
           },
           {
-            types: ["string", "attr-value", "char", "regex"],
+            types: ["property", "constant", "symbol"],
             style: {
-              color: "#a5d6ff", // Light blue (Strings)
+              color: "#79c0ff",
             },
           },
           {
-            types: ["punctuation", "operator"],
+            types: ["tag", "deleted"],
             style: {
-              color: "#c9d1d9", // Light gray (Punctuation marks, operators)
+              color: "#7ee787",
             },
           },
           {
-            types: [
-              "entity",
-              "url",
-              "symbol",
-              "number",
-              "boolean",
-              "variable",
-              "constant",
-              "property",
-              "inserted",
-            ],
+            types: ["boolean", "number"],
             style: {
-              color: "#79c0ff", // Light blue (Variables, numbers, booleans)
+              color: "#79c0ff",
             },
           },
           {
-            types: ["keyword", "selector"],
+            types: ["string", "char", "inserted"],
             style: {
-              color: "#ff7b72", // Reddish (Keywords, like `import`, `const`, `async`)
+              color: "#a5d6ff",
             },
           },
           {
-            types: ["atrule", "attr-name"],
+            types: ["selector", "attr-name", "builtin"],
             style: {
-              color: "#d2a8ff", // Light purple (CSS @rules and HTML attribute names)
+              color: "#7ee787",
             },
           },
           {
-            types: ["function", "deleted", "tag"],
+            types: ["operator", "entity", "url"],
             style: {
-              color: "#d2a8ff", // Light purple (Functions, JSX/HTML tags)
+              color: "#ff7b72",
             },
           },
           {
-            types: ["function-variable"],
+            types: ["atrule", "attr-value", "keyword"],
             style: {
-              color: "#f778ba", // Pink (Function variables)
+              color: "#ff7b72",
             },
           },
           {
-            types: ["class-name", "builtin"],
+            types: ["function", "class-name"],
             style: {
-              color: "#ffa657", // Orange (Class names, like `React.FC`)
+              color: "#d2a8ff",
+            },
+          },
+          {
+            types: ["regex", "important", "variable"],
+            style: {
+              color: "#79c0ff",
             },
           },
         ],

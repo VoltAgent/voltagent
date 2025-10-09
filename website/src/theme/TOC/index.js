@@ -1,4 +1,5 @@
 import { useLocation } from "@docusaurus/router";
+import { ListBulletIcon } from "@heroicons/react/24/outline";
 import TOCItems from "@theme/TOCItems";
 import clsx from "clsx";
 import React, { useEffect, useState } from "react";
@@ -50,19 +51,19 @@ export default function TOC({ toc, ...props }) {
   return (
     <div
       className={clsx(
-        "toc-wrapper mt-16",
+        "toc-wrapper",
         "overflow-y-auto",
         "overflow-x-hidden",
         "max-h-[calc(100vh-var(--ifm-navbar-height)-2rem)]",
         "sticky",
-        "top-[calc(var(--ifm-navbar-height)+1rem)]",
+        "top-20",
       )}
     >
-      <div className="mb-3 pb-1 ">
-        <h3 className="text-base font-semibold border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 mb-1">
+      <div className="flex items-center  gap-2">
+        <ListBulletIcon className="w-4 h-4 text-[#94bfaebf]" />
+        <h3 className="text-sm text-left font-semibold text-gray-900 dark:text-gray-100 m-0">
           Table of Contents
         </h3>
-        <div className="w-24 h-1 bg-main-emerald rounded-full" />
       </div>
       <style>
         {`
@@ -85,7 +86,7 @@ export default function TOC({ toc, ...props }) {
                 }
                 
                 .table-of-contents__link--active {
-                    color: #00d992 !important;
+                    color: #94bfaebf !important;
                     font-weight: 500;
                     background: transparent !important;
                     padding-left: 0.25rem;
@@ -93,25 +94,25 @@ export default function TOC({ toc, ...props }) {
                     margin-left: 0;
                     padding-right: 0.25rem;
                 }
-                
+
                 :root[data-theme='dark'] .table-of-contents__link {
                     color: #9CA3AF !important;
                 }
 
                 :root[data-theme='dark'] .table-of-contents__link--active {
-                    color: #00d992 !important;
+                    color: #94bfaebf !important;
                     background: transparent !important;
                 }
 
                 .table-of-contents__link:hover:not(.table-of-contents__link--active) {
-                    color: #00d992 !important;
+                    color: #94bfaebf !important;
                     background: transparent !important;
                     padding-left: 0.25rem;
                     padding-right: 0.25rem;
                 }
 
                 :root[data-theme='dark'] .table-of-contents__link:hover:not(.table-of-contents__link--active) {
-                    color: #00d992 !important;
+                    color: #94bfaebf !important;
                     background: transparent !important;
                 }
                 

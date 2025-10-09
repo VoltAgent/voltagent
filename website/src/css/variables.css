@@ -1,11 +1,11 @@
 :root {
   --color-black: #000;
-  --color-yellow: #fdfd96;
-  --color-blue: #24f2ff;
-  --color-purple: #9a1aff;
+  --color-yellow: #3b82f6;
+  --color-blue: #60a5fa;
+  --color-purple: #818cf8;
   --color-white: #fff;
-  --color-red: #ff2e00;
-  --color-grey-dark: #333;
+  --color-red: #ef4444;
+  --color-grey-dark: #1f2937;
   --typography-h1-d-font-size: 56px;
   --typography-h1-d-text-decoration: none;
   --typography-h1-d-font-family: Inter;

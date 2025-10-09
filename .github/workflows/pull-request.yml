@@ -61,8 +61,8 @@ jobs:
         run: pnpm build:all
       - name: Publint
         run: pnpm publint:all
-     # - name: Are The Types Wrong
-     #   run: pnpm attw:all
+      # - name: Are The Types Wrong
+      #   run: pnpm attw:all
 
   test-packages:
     runs-on: ubuntu-latest
@@ -133,7 +133,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Check for PostgreSQL changes
         id: check_postgres
         run: |
@@ -142,11 +142,11 @@ jobs:
           else
             echo "postgres_changed=false" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Skip if no PostgreSQL changes
         if: steps.check_postgres.outputs.postgres_changed == 'false'
         run: echo "No PostgreSQL changes detected, skipping integration tests"
-      
+
       - uses: pnpm/action-setup@v4
         if: steps.check_postgres.outputs.postgres_changed == 'true'
       - uses: actions/setup-node@v4
@@ -154,17 +154,17 @@ jobs:
         with:
           node-version: 20
           cache: "pnpm"
-      
+
       - name: Install Dependencies
         if: steps.check_postgres.outputs.postgres_changed == 'true'
         run: pnpm install
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
-      
+
       - name: Build Core Dependencies
         if: steps.check_postgres.outputs.postgres_changed == 'true'
         run: pnpm build --scope @voltagent/core
-      
+
       - name: Run PostgreSQL Integration Tests
         if: steps.check_postgres.outputs.postgres_changed == 'true'
         run: |
@@ -172,17 +172,3 @@ jobs:
           npm run test:integration:ci
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/voltagent_test
-
-  tsdoc-check:
-    runs-on: ubuntu-latest
-    name: Check TSDoc Links
-    concurrency:
-      group: ${{ github.ref }}-tsdoc-check
-      cancel-in-progress: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - name: Check TSDoc Links
-        run: npx tsdoc-link-check --patterns packages/**

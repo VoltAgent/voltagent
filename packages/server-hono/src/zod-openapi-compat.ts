@@ -1,17 +1,17 @@
 /**
- * Compatibility layer for @hono/zod-openapi to support both Zod v3 and v4
+ * Compatibility layer for the vendored @hono/zod-openapi implementations to support both Zod v3 and v4
  *
  * This module provides a unified interface that works with both Zod versions.
- * It will automatically select the appropriate @hono/zod-openapi version
+ * It will automatically select the appropriate upstream implementation
  * based on the installed Zod version in the project.
  *
- * - Zod v3: Uses @hono/zod-openapi (0.19.10)
- * - Zod v4: Uses @hono/zod-openapi-v4 (1.1.0+)
+ * - Zod v3: Uses vendored @hono/zod-openapi 0.19.10
+ * - Zod v4: Uses vendored @hono/zod-openapi 1.1.0+
  */
 
-import { createRequire } from "node:module";
-import { join } from "node:path";
 import { z as zodBase } from "zod";
+import * as zodOpenApiV3 from "./vendor/zod-openapi/v3";
+import * as zodOpenApiV4 from "./vendor/zod-openapi/v4";
 
 const isZodV4 = (() => {
   const testSchema = zodBase.string();
@@ -37,58 +37,14 @@ if (typeof globalThis !== "undefined") {
   }
 }
 
-const moduleUrl = (() => {
-  try {
-    // Use dynamic evaluation so bundlers targeting CJS don't warn about import.meta
-    return new Function("return import.meta.url;")();
-  } catch {
-    return undefined;
-  }
-})();
+type ModuleExportsV3 = typeof import("./vendor/zod-openapi/v3");
+type CompatibleModule = Pick<ModuleExportsV3, "OpenAPIHono" | "createRoute" | "z">;
 
-const require =
-  typeof moduleUrl === "string"
-    ? createRequire(moduleUrl)
-    : typeof __filename === "string"
-      ? createRequire(__filename)
-      : createRequire(join(process.cwd(), "index.js"));
+const selectedModule = (
+  isZodV4 ? (zodOpenApiV4 as unknown as ModuleExportsV3) : zodOpenApiV3
+) as CompatibleModule;
 
-// Import both versions synchronously using their CommonJS entrypoints to avoid
-// duplicate module instances when mixing ESM/CJS loaders.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const v3Module = require("@hono/zod-openapi");
-
-let v4Module: CompatibleModule | undefined;
-if (isZodV4) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    v4Module = require("@hono/zod-openapi-v4");
-  } catch (error) {
-    const notFound =
-      error instanceof Error &&
-      "code" in error &&
-      (error as { code?: string }).code === "MODULE_NOT_FOUND";
-    if (!notFound) {
-      throw error;
-    }
-    throw new Error(
-      "@hono/zod-openapi-v4 is required when using Zod v4. Install it alongside @hono/zod-openapi or downgrade to Zod v3.",
-    );
-  }
-}
-
-type OpenAPIHonoCtor = typeof v3Module.OpenAPIHono;
-type CreateRouteFn = typeof v3Module.createRoute;
-type ZExport = typeof v3Module.z;
-
-interface CompatibleModule {
-  OpenAPIHono: OpenAPIHonoCtor;
-  createRoute: CreateRouteFn;
-  z: ZExport;
-}
-
-// Select the appropriate module based on Zod version but retain v3 typings for compatibility
-const selectedModule = (isZodV4 ? v4Module : v3Module) as CompatibleModule;
+type OpenAPIHonoCtor = CompatibleModule["OpenAPIHono"];
 
 // Ensure metadata added via .openapi is also mirrored into Zod's meta storage so that
 // environments loading multiple module formats (ESM/CJS) can still retrieve parameter

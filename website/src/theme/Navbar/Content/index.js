@@ -1,11 +1,15 @@
+import Link from "@docusaurus/Link";
 import { ErrorCauseBoundary, useThemeConfig } from "@docusaurus/theme-common";
 import { splitNavbarItems, useNavbarMobileSidebar } from "@docusaurus/theme-common/internal";
+import { DiscordLogo } from "@site/static/img/logos/discord";
+import { GitHubLogo } from "@site/static/img/logos/github";
 import NavbarColorModeToggle from "@theme/Navbar/ColorModeToggle";
 import NavbarLogo from "@theme/Navbar/Logo";
 import NavbarMobileSidebarToggle from "@theme/Navbar/MobileSidebar/Toggle";
 import NavbarSearch from "@theme/Navbar/Search";
 import NavbarItem from "@theme/NavbarItem";
 import SearchBar from "@theme/SearchBar";
+import clsx from "clsx";
 import React from "react";
 import styles from "./styles.module.css";
 function useNavbarItems() {
@@ -38,15 +42,29 @@ function NavbarContentLayout({ left, right }) {
   return (
     <div className="navbar__inner">
       <div className="navbar__items">{left}</div>
-      <div className="navbar__items navbar__items--right ">{right}</div>
+      <div className="navbar__items navbar__items--right">
+        <Link to="/docs/overview" className={clsx(styles.navLink, styles.navLinkActive)}>
+          VoltAgent Docs
+        </Link>
+        <Link to="/voltops-llm-observability-docs/" className={styles.navLink}>
+          VoltOps Docs
+        </Link>
+        <Link
+          to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
+          className={styles.navLink}
+        >
+          Changelog
+        </Link>
+        {right}
+      </div>
     </div>
   );
 }
 export default function NavbarContent() {
   const mobileSidebar = useNavbarMobileSidebar();
   const items = useNavbarItems();
-  const [leftItems, rightItems] = splitNavbarItems(items);
-  const searchBarItem = items.find((item) => item.type === "search");
+  const [leftItems] = splitNavbarItems(items);
+
   return (
     <NavbarContentLayout
       left={
@@ -54,6 +72,9 @@ export default function NavbarContent() {
         <>
           {!mobileSidebar.disabled && <NavbarMobileSidebarToggle />}
           <NavbarLogo />
+          <Link to="/docs/overview" className={clsx(styles.navLink, styles.navLinkActive)}>
+            VoltAgent Docs
+          </Link>
           <NavbarItems items={leftItems} />
         </>
       }
@@ -61,13 +82,23 @@ export default function NavbarContent() {
         // TODO stop hardcoding items?
         // Ask the user to add the respective navbar items => more flexible
         <>
-          <NavbarItems items={rightItems} />
+          <Link
+            to="https://s.voltagent.dev/discord"
+            className={styles.socialButton}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <DiscordLogo className={styles.socialIcon} />
+          </Link>
+          <Link
+            to="https://github.com/voltagent/voltagent"
+            target="_blank"
+            className={styles.socialButton}
+            rel="noopener noreferrer"
+          >
+            <GitHubLogo className={styles.socialIcon} />
+          </Link>
           <NavbarColorModeToggle className={styles.colorModeToggle} />
-          {!searchBarItem && (
-            <NavbarSearch>
-              <SearchBar />
-            </NavbarSearch>
-          )}
         </>
       }
     />

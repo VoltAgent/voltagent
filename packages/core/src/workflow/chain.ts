@@ -3,13 +3,14 @@ import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { UIMessage } from "ai";
 import type { z } from "zod";
-import type { Agent } from "../agent/agent";
+import type { Agent, BaseGenerationOptions } from "../agent/agent";
 import { createWorkflow } from "./core";
 import type {
   InternalAnyWorkflowStep,
   InternalBaseWorkflowInputSchema,
   InternalInferWorkflowStepsResult,
   InternalWorkflowFunc,
+  WorkflowExecuteContext,
 } from "./internal/types";
 import {
   type WorkflowStep,
@@ -38,8 +39,19 @@ import type {
 /**
  * Agent configuration for the chain
  */
-export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
-  schema: SCHEMA;
+export type AgentConfig<
+  SCHEMA extends z.ZodTypeAny,
+  INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
+  CURRENT_DATA,
+> = BaseGenerationOptions & {
+  schema:
+    | SCHEMA
+    | ((
+        context: Omit<
+          WorkflowExecuteContext<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, any, any>,
+          "suspend" | "writer"
+        >,
+      ) => SCHEMA | Promise<SCHEMA>);
 };
 
 /**
@@ -138,14 +150,14 @@ export class WorkflowChain<
       | UIMessage[]
       | ModelMessage[]
       | InternalWorkflowFunc<
-          INPUT_SCHEMA,
+          WorkflowInput<INPUT_SCHEMA>,
           CURRENT_DATA,
           string | UIMessage[] | ModelMessage[],
           any,
           any
         >,
     agent: Agent,
-    config: AgentConfig<SCHEMA>,
+    config: AgentConfig<SCHEMA, INPUT_SCHEMA, CURRENT_DATA>,
   ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>, SUSPEND_SCHEMA, RESUME_SCHEMA> {
     const step = andAgent(task, agent, config) as unknown as WorkflowStep<
       WorkflowInput<INPUT_SCHEMA>,

@@ -22,13 +22,16 @@ module.exports = {
       },
     },
     extend: {
+      maxWidth: {
+        "9xl": "90rem", // 1440px
+      },
       screens: {
         mobile: "375px",
         tablet: "768px",
         desktop: "1024px",
         "desktop-lg": "1200px",
         hd: "1820px",
-        "blog-sm": "825px",
+        "blog-sm": "975px",
         "blog-md": "1000px",
         "blog-lg": "1280px",
         "blog-max": "1408px",
@@ -47,9 +50,9 @@ module.exports = {
         "primary-white": "var(--color-white)",
         "accent-cyan": "var(--color-blue)",
         "accent-purple": "var(--color-purple)",
-        "light-yellow": "#FDFD96",
-        "main-emerald": "#00d992",
-        "main-red": "#ff6285",
+        "light-yellow": "#3b82f6",
+        "main-emerald": "#10b981",
+        "main-red": "#ef4444",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

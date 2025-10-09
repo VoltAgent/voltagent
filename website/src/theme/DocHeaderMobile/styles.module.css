@@ -1,0 +1,72 @@
+.header {
+  position: sticky;
+  top: var(--ifm-navbar-height, 0);
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: 44px;
+  padding: 0 12px;
+  background: var(--ifm-background-color);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  z-index: 8;
+}
+
+@media (max-width: 996px) {
+  .header { display: flex; }
+}
+
+.hamburger {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 32px;
+  height: 28px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+}
+
+.hamburgerBar {
+  width: 100%;
+  height: 2px;
+  background: var(--ifm-color-emphasis-800);
+}
+
+[data-theme='dark'] .hamburgerBar {
+  background: var(--ifm-color-emphasis-200);
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+}
+
+.iconBtn:hover {
+  background: var(--ifm-hover-overlay);
+}
+
+.colorMode {
+  margin: 0;
+}
+

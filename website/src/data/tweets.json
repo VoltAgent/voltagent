@@ -347,20 +347,6 @@
       "profile_image_shape": "Circle",
       "verified": false,
       "is_blue_verified": true
-    },
-    "card": {
-      "binding_values": {
-        "thumbnail_image_large": {
-          "image_value": {
-            "height": 315,
-            "width": 600,
-            "url": "https://pbs.twimg.com/card_img/1971672588465414144/kJ66evm-?format=png&name=600x600"
-          },
-          "type": "IMAGE"
-        }
-      },
-      "name": "summary_large_image",
-      "url": "https://t.co/RoNXr7Y9ZP"
     }
   },
   "1950536117549486550": {
@@ -585,20 +571,6 @@
       "profile_image_shape": "Circle",
       "verified": false,
       "is_blue_verified": false
-    },
-    "card": {
-      "binding_values": {
-        "thumbnail_image_large": {
-          "image_value": {
-            "height": 315,
-            "width": 600,
-            "url": "https://pbs.twimg.com/card_img/1973103689876512772/gxD_gRLF?format=jpg&name=600x600"
-          },
-          "type": "IMAGE"
-        }
-      },
-      "name": "summary_large_image",
-      "url": "https://t.co/Udxy7OyUFi"
     }
   },
   "1924303206794059823": {
@@ -771,20 +743,6 @@
       "profile_image_shape": "Circle",
       "verified": false,
       "is_blue_verified": true
-    },
-    "card": {
-      "binding_values": {
-        "thumbnail_image_large": {
-          "image_value": {
-            "height": 315,
-            "width": 600,
-            "url": "https://pbs.twimg.com/card_img/1972923001805877249/avCFma03?format=png&name=600x600"
-          },
-          "type": "IMAGE"
-        }
-      },
-      "name": "summary_large_image",
-      "url": "https://t.co/CiddI3z4yw"
     }
   },
   "1916757463426302247": {

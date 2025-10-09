@@ -55,7 +55,8 @@
       "**/generated/**",
       "**/package.json",
       "website/src/data/tweets.json",
-      ".wrangler"
+      ".wrangler",
+      "packages/server-hono/src/vendor"
     ]
   },
   "overrides": [

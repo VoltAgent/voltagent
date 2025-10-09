@@ -1,5 +1,11 @@
 # @voltagent/server-hono
 
+## 1.0.17
+
+### Patch Changes
+
+- [#664](https://github.com/VoltAgent/voltagent/pull/664) [`f46aae9`](https://github.com/VoltAgent/voltagent/commit/f46aae9784b6a7e86a33b55d59d90a8f4f1489f4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: vendored Hono OpenAPI adapters to eliminate pnpm alias requirement and auto-select Zod v3/v4 support; docs now clarify that installing `zod` is sufficient. #651
+
 ## 1.0.16
 
 ### Patch Changes

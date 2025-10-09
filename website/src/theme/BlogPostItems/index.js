@@ -57,7 +57,7 @@ export default function BlogPostItems({
     <div className="w-full">
       {children}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  ">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {loadedPosts.map(({ content: BlogPostContent }, index) => (
           <BlogPostProvider key={BlogPostContent.metadata.permalink} content={BlogPostContent}>
             <div
