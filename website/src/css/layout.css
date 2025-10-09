@@ -44,11 +44,11 @@ div[class^="announcementBar_"] {
   height: 40px;
   display: flex;
   align-items: center;
-  font-size: 18px !important;
-  font-weight: 600;
+  font-size: 17px !important;
+  font-weight: 500;
   color: #ffffff !important;
   cursor: pointer;
-  padding: 0 16px;
+  padding: 0 5px;
   justify-content: center;
   text-align: center;
 }
@@ -56,6 +56,16 @@ div[class^="announcementBar_"] {
 /* Remove underline from announcement bar links */
 div[class^="announcementBar_"] a {
   text-decoration: none;
+  color: #10b981 !important;
+}
+
+/* Close button color */
+div[class^="announcementBar_"] button[class*="close"] {
+  color: #10b981 !important;
+}
+
+div[class^="announcementBar_"] button {
+  color: #10b981 !important;
 }
 
 /* Mobile styles for announcement bar */
