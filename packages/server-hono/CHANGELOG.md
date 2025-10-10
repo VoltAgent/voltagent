@@ -1,5 +1,15 @@
 # @voltagent/server-hono
 
+## 1.0.18
+
+### Patch Changes
+
+- [#676](https://github.com/VoltAgent/voltagent/pull/676) [`8781956`](https://github.com/VoltAgent/voltagent/commit/8781956ad86ec731684f0ca92ef28c65f26e1229) Thanks [@venatir](https://github.com/venatir)! - fix(auth-context): retain context in response body and options for user authentication
+
+- Updated dependencies [[`78b9727`](https://github.com/VoltAgent/voltagent/commit/78b9727e85a31fd8eaa9c333de373d982f58b04f), [`6d00793`](https://github.com/VoltAgent/voltagent/commit/6d007938d31c6d928185153834661c50227af326), [`7fef3a7`](https://github.com/VoltAgent/voltagent/commit/7fef3a7ea1b3f7f8c780a528d3c3abce312f3be9), [`c4d13f2`](https://github.com/VoltAgent/voltagent/commit/c4d13f2be129013eed6392990863ae85cdbd8855)]:
+  - @voltagent/core@1.1.26
+  - @voltagent/mcp-server@1.0.2
+
 ## 1.0.17
 
 ### Patch Changes
