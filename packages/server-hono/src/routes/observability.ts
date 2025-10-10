@@ -8,6 +8,7 @@ import {
   OBSERVABILITY_MEMORY_ROUTES,
   OBSERVABILITY_ROUTES,
   getConversationMessagesHandler,
+  getLiveEvalScoresHandler,
   getLogsBySpanIdHandler,
   getLogsByTraceIdHandler,
   getObservabilityStatusHandler,
@@ -92,6 +93,14 @@ export function registerObservabilityRoutes(
     const query = c.req.query();
     logger.trace("GET /observability/logs - querying logs", { query });
     const result = await queryLogsHandler(query, deps);
+    return c.json(result, result.success ? 200 : 400);
+  });
+
+  // Get live evaluation scores
+  app.get(OBSERVABILITY_ROUTES.getLiveEvalScores.path, async (c) => {
+    const query = c.req.query();
+    logger.trace("GET /observability/evals/live-scores - fetching live eval scores", { query });
+    const result = await getLiveEvalScoresHandler(query, deps);
     return c.json(result, result.success ? 200 : 400);
   });
 

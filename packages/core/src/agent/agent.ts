@@ -53,6 +53,11 @@ import {
   isClientHTTPError,
   isToolDeniedError,
 } from "./errors";
+import {
+  type AgentEvalHost,
+  type EnqueueEvalScoringArgs,
+  enqueueEvalScoring as enqueueEvalScoringHelper,
+} from "./eval";
 import type { AgentHooks } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type { BaseMessage, StepWithContent } from "./providers/base/types";
@@ -66,6 +71,7 @@ import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
+  AgentEvalConfig,
   AgentFullState,
   AgentOptions,
   DynamicValue,
@@ -264,6 +270,7 @@ export class Agent {
   private readonly subAgentManager: SubAgentManager;
   private readonly voltOpsClient?: VoltOpsClient;
   private readonly prompts?: PromptHelper;
+  private readonly evalConfig?: AgentEvalConfig;
 
   constructor(options: AgentOptions) {
     this.id = options.id || options.name;
@@ -283,6 +290,7 @@ export class Agent {
     this.supervisorConfig = options.supervisorConfig;
     this.context = toContextMap(options.context);
     this.voltOpsClient = options.voltOpsClient;
+    this.evalConfig = options.eval;
 
     // Initialize logger - always use LoggerProxy for consistency
     // If external logger is provided, it will be used by LoggerProxy
@@ -504,6 +512,17 @@ export class Agent {
         // Set output in operation context
         oc.output = result.text;
 
+        this.enqueueEvalScoring({
+          oc,
+          output: result.text,
+          operation: "generateText",
+          metadata: {
+            finishReason: result.finishReason,
+            usage: result.usage ? JSON.parse(safeStringify(result.usage)) : undefined,
+            toolCalls: result.toolCalls,
+          },
+        });
+
         // Return result with context - use Object.assign to properly copy all properties including getters
         const returnValue = Object.assign(
           Object.create(Object.getPrototypeOf(result)), // Preserve prototype chain
@@ -718,6 +737,19 @@ export class Agent {
                 text: finalResult.text,
               },
             );
+
+            this.enqueueEvalScoring({
+              oc,
+              output: finalResult.text,
+              operation: "streamText",
+              metadata: {
+                finishReason: finalResult.finishReason,
+                usage: finalResult.totalUsage
+                  ? JSON.parse(safeStringify(finalResult.totalUsage))
+                  : undefined,
+                toolCalls: finalResult.toolCalls,
+              },
+            });
           },
         });
 
@@ -974,6 +1006,17 @@ export class Agent {
         // Set output in operation context
         oc.output = result.object;
 
+        this.enqueueEvalScoring({
+          oc,
+          output: result.object,
+          operation: "generateObject",
+          metadata: {
+            finishReason: result.finishReason,
+            usage: result.usage ? JSON.parse(safeStringify(result.usage)) : undefined,
+            schemaName,
+          },
+        });
+
         // Call hooks
         await this.getMergedHooks(options).onEnd?.({
           conversationId: oc.conversationId || "",
@@ -1226,6 +1269,17 @@ export class Agent {
                 schemaName,
               },
             );
+
+            this.enqueueEvalScoring({
+              oc,
+              output: finalResult.object,
+              operation: "streamObject",
+              metadata: {
+                finishReason: finalResult.finishReason,
+                usage: finalResult.usage ? JSON.parse(safeStringify(finalResult.usage)) : undefined,
+                schemaName,
+              },
+            });
           },
         });
 
@@ -1512,6 +1566,20 @@ export class Agent {
     }
 
     return depth;
+  }
+
+  private enqueueEvalScoring(args: EnqueueEvalScoringArgs): void {
+    enqueueEvalScoringHelper(this.createEvalHost(), args);
+  }
+
+  private createEvalHost(): AgentEvalHost {
+    return {
+      id: this.id,
+      name: this.name,
+      logger: this.logger,
+      evalConfig: this.evalConfig,
+      getObservability: () => this.getObservability(),
+    };
   }
 
   /**

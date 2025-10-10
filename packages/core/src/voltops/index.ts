@@ -20,6 +20,20 @@ export type {
   CachedPrompt,
   DynamicValueOptions,
   DynamicValue,
+  VoltOpsEvalRunStatus,
+  VoltOpsTerminalEvalRunStatus,
+  VoltOpsEvalResultStatus,
+  VoltOpsEvalRunSummary,
+  VoltOpsCreateEvalRunRequest,
+  VoltOpsEvalRunResultScorePayload,
+  VoltOpsEvalRunResultLiveMetadata,
+  VoltOpsAppendEvalRunResultPayload,
+  VoltOpsAppendEvalRunResultsRequest,
+  VoltOpsEvalRunCompletionSummaryPayload,
+  VoltOpsEvalRunErrorPayload,
+  VoltOpsCompleteEvalRunRequest,
+  VoltOpsCreateScorerRequest,
+  VoltOpsScorerSummary,
 } from "./types";
 
 // Export prompt manager implementation

@@ -153,7 +153,14 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Evals",
-      items: ["evals/overview", "evals/quick-start"],
+      items: [
+        "evals/overview",
+        "evals/offline-evaluations",
+        "evals/live-evaluations",
+        "evals/building-custom-scorers",
+        "evals/prebuilt-scorers",
+        "evals/quick-start",
+      ],
     },
     {
       type: "category",

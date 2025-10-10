@@ -266,6 +266,10 @@ export interface ObservabilityStorageAdapter {
     persistent?: boolean;
     description?: string;
   };
+
+  // === Eval score operations ===
+  saveEvalScore?(record: ObservabilityEvalScoreRecord): Promise<void>;
+  listEvalScores?(filter: ObservabilityEvalScoreQuery): Promise<ObservabilityEvalScoreRecord[]>;
 }
 
 /**
@@ -283,6 +287,56 @@ export interface LogFilter {
   bodyContains?: string;
   attributeKey?: string;
   attributeValue?: any;
+}
+
+export type ObservabilityEvalScoreStatus = "success" | "error" | "skipped";
+
+export interface ObservabilityEvalScoreRecord {
+  id: string;
+  agentId: string;
+  agentName?: string;
+  traceId?: string;
+  spanId?: string;
+  operationId?: string;
+  operationType?: string;
+  runId?: string;
+  resultId?: string;
+  datasetId?: string;
+  datasetVersionId?: string;
+  datasetItemHash?: string;
+  datasetItemId?: string;
+  scorerId: string;
+  scorerName?: string;
+  status: ObservabilityEvalScoreStatus;
+  score?: number | null;
+  threshold?: number | null;
+  thresholdPassed?: boolean | null;
+  metadata?: Record<string, unknown> | null;
+  sampling?: {
+    strategy: string;
+    rate?: number;
+  };
+  triggerSource?: string;
+  environment?: string;
+  durationMs?: number | null;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ObservabilityEvalScoreQuery {
+  traceId?: string;
+  agentId?: string;
+  spanId?: string;
+  scorerId?: string;
+  runId?: string;
+  datasetId?: string;
+  datasetVersionId?: string;
+  datasetItemId?: string;
+  thresholdPassed?: boolean;
+  limit?: number;
+  offset?: number;
+  order?: "asc" | "desc";
 }
 
 /**

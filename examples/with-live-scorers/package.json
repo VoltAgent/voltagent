@@ -1,0 +1,24 @@
+{
+  "name": "example-with-live-scorers",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.2",
+    "@voltagent/core": "^1.1.25",
+    "@voltagent/scorers": "^0.1.0",
+    "@voltagent/server-hono": "^1.0.16",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@voltagent/scorers",
+  "version": "0.1.0",
+  "description": "VoltAgent scorers re-export sourced from Viteval's prebuilt scorer set",
+  "author": "VoltAgent",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@voltagent/core": "workspace:^1.1.25",
+    "@voltagent/internal": "^0.0.11",
+    "autoevals": "^0.0.131",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {}
+}

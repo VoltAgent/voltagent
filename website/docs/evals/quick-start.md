@@ -124,7 +124,7 @@ export default defineDataset({
 ```
 
 :::tip
-You can also use an LLM to generate the dataset dynamically. See an example in [Viteval Example](https://github.com/voltagent/examples/tree/main/with-viteval)
+You can also use an LLM to generate the dataset dynamically. See an example in [`with-offline-evals`](https://github.com/voltagent/examples/tree/main/with-offline-evals)
 :::
 
 ### 6. Create Evaluation File

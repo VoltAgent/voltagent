@@ -1,6 +1,5 @@
 packages:
   - "!archive/**"
-  - "!packages/sdk"
   - "!packages/vercel-ai-exporter"
   - "packages/*"
   - "examples/*"

@@ -8,6 +8,8 @@
 import { safeStringify } from "@voltagent/internal";
 import type {
   LogFilter,
+  ObservabilityEvalScoreQuery,
+  ObservabilityEvalScoreRecord,
   ObservabilityLogRecord,
   ObservabilitySpan,
   ObservabilityStorageAdapter,
@@ -25,11 +27,21 @@ export class InMemoryStorageAdapter implements ObservabilityStorageAdapter {
   private logSpanIndex: Map<string, ObservabilityLogRecord[]> = new Map();
   private maxSpans: number;
   private maxLogs: number;
+  private evalScores: ObservabilityEvalScoreRecord[] = [];
+  private maxEvalScores: number;
   private cleanupInterval: NodeJS.Timeout | null = null;
 
-  constructor(options: { maxSpans?: number; maxLogs?: number; cleanupIntervalMs?: number } = {}) {
+  constructor(
+    options: {
+      maxSpans?: number;
+      maxLogs?: number;
+      maxEvalScores?: number;
+      cleanupIntervalMs?: number;
+    } = {},
+  ) {
     this.maxSpans = options.maxSpans || 10000;
     this.maxLogs = options.maxLogs || 50000;
+    this.maxEvalScores = options.maxEvalScores || 5000;
 
     // Start cleanup interval if specified
     if (options.cleanupIntervalMs) {
@@ -192,6 +204,7 @@ export class InMemoryStorageAdapter implements ObservabilityStorageAdapter {
     this.logs = [];
     this.logTraceIndex.clear();
     this.logSpanIndex.clear();
+    this.evalScores = [];
   }
 
   /**
@@ -391,6 +404,90 @@ export class InMemoryStorageAdapter implements ObservabilityStorageAdapter {
         this.logSpanIndex.get(log.spanId)?.push(log);
       }
     }
+  }
+
+  async saveEvalScore(record: ObservabilityEvalScoreRecord): Promise<void> {
+    // Replace existing record with same id if present
+    this.evalScores = this.evalScores.filter((existing) => existing.id !== record.id);
+    this.evalScores.push({ ...record });
+
+    if (this.evalScores.length > this.maxEvalScores) {
+      const overflow = this.evalScores.length - this.maxEvalScores;
+      this.evalScores.splice(0, overflow);
+    }
+  }
+
+  async listEvalScores(
+    filter: ObservabilityEvalScoreQuery,
+  ): Promise<ObservabilityEvalScoreRecord[]> {
+    const {
+      traceId,
+      agentId,
+      spanId,
+      scorerId,
+      runId,
+      datasetId,
+      datasetVersionId,
+      thresholdPassed,
+      limit,
+      offset,
+      order,
+    } = filter;
+
+    let results = this.evalScores;
+
+    if (traceId) {
+      results = results.filter((score) => score.traceId === traceId);
+    }
+
+    if (agentId) {
+      results = results.filter((score) => score.agentId === agentId);
+    }
+
+    if (spanId) {
+      results = results.filter((score) => score.spanId === spanId);
+    }
+
+    if (scorerId) {
+      results = results.filter((score) => score.scorerId === scorerId);
+    }
+
+    if (runId) {
+      results = results.filter((score) => score.runId === runId);
+    }
+
+    if (datasetId) {
+      results = results.filter((score) => score.datasetId === datasetId);
+    }
+
+    if (datasetVersionId) {
+      results = results.filter((score) => score.datasetVersionId === datasetVersionId);
+    }
+
+    if (filter.datasetItemId) {
+      results = results.filter((score) => score.datasetItemId === filter.datasetItemId);
+    }
+
+    if (typeof thresholdPassed === "boolean") {
+      results = results.filter((score) => score.thresholdPassed === thresholdPassed);
+    }
+
+    const sorted = [...results].sort((a, b) => {
+      const aTime = Date.parse(a.createdAt);
+      const bTime = Date.parse(b.createdAt);
+      const direction = order === "asc" ? 1 : -1;
+
+      if (aTime === bTime) {
+        return direction * a.id.localeCompare(b.id);
+      }
+
+      return direction * (aTime - bTime);
+    });
+
+    const start = Math.max(0, offset ?? 0);
+    const end = limit !== undefined ? start + Math.max(0, limit) : undefined;
+
+    return sorted.slice(start, end).map((record) => ({ ...record }));
   }
 
   /**

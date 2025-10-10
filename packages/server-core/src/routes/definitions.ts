@@ -666,6 +666,29 @@ export const OBSERVABILITY_ROUTES = {
       },
     },
   },
+  getLiveEvalScores: {
+    method: "get" as const,
+    path: "/observability/evals/live-scores",
+    summary: "List live evaluation scores",
+    description:
+      "Retrieve the latest evaluation scores recorded by the local observability adapter, filtered by trace or span.",
+    tags: ["Observability"],
+    operationId: "getLiveEvalScores",
+    responses: {
+      200: {
+        description: "Successfully retrieved live evaluation scores",
+        contentType: "application/json",
+      },
+      404: {
+        description: "No evaluation scores found for the specified filters",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve evaluation scores due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   queryLogs: {
     method: "get" as const,
     path: "/observability/logs",
