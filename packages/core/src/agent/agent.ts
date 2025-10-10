@@ -64,6 +64,7 @@ import type { BaseMessage, StepWithContent } from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
+import type { SamplingPolicy } from "../eval/runtime";
 import { ConversationBuffer } from "./conversation-buffer";
 import { MemoryPersistQueue } from "./memory-persist-queue";
 import { sanitizeMessagesForModel } from "./message-normalizer";
@@ -2710,6 +2711,54 @@ export class Agent {
    * Get full agent state
    */
   public getFullState(): AgentFullState {
+    const cloneRecord = (value: unknown): Record<string, unknown> | null => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+      }
+      const result = Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).filter(
+          ([, entryValue]) => typeof entryValue !== "function",
+        ),
+      );
+      return Object.keys(result).length > 0 ? result : null;
+    };
+
+    const scorerEntries = Object.entries(this.evalConfig?.scorers ?? {});
+    const scorers =
+      scorerEntries.length > 0
+        ? scorerEntries.map(([key, scorerConfig]) => {
+            const definition =
+              typeof scorerConfig.scorer === "object" && scorerConfig.scorer !== null
+                ? (scorerConfig.scorer as {
+                    id?: string;
+                    name?: string;
+                    metadata?: unknown;
+                    sampling?: SamplingPolicy;
+                  })
+                : undefined;
+            const scorerId = String(scorerConfig.id ?? definition?.id ?? key);
+            const scorerName =
+              (typeof definition?.name === "string" && definition.name.trim().length > 0
+                ? definition.name
+                : undefined) ?? scorerId;
+            const sampling =
+              scorerConfig.sampling ?? definition?.sampling ?? this.evalConfig?.sampling;
+            const metadata = cloneRecord(definition?.metadata ?? null);
+            const params =
+              typeof scorerConfig.params === "function" ? null : cloneRecord(scorerConfig.params);
+
+            return {
+              key,
+              id: scorerId,
+              name: scorerName,
+              sampling,
+              metadata,
+              params,
+              node_id: createNodeId(NodeType.SCORER, scorerId, this.id),
+            };
+          })
+        : [];
+
     return {
       id: this.id,
       name: this.name,
@@ -2763,6 +2812,7 @@ export class Agent {
             node_id: createNodeId(NodeType.RETRIEVER, this.retriever.tool.name, this.id),
           }
         : null,
+      scorers,
     };
   }
 

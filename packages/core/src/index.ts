@@ -114,6 +114,7 @@ export type {
   ApiToolInfo,
   ToolWithNodeId,
   SubAgentStateData,
+  AgentScorerState,
   ModelToolCall,
   OperationContext,
   StreamTextFinishResult,

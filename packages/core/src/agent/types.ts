@@ -56,6 +56,16 @@ export interface ToolWithNodeId extends BaseTool {
   node_id: string;
 }
 
+export interface AgentScorerState {
+  key: string;
+  id: string;
+  name: string;
+  node_id: string;
+  sampling?: SamplingPolicy;
+  metadata?: Record<string, unknown> | null;
+  params?: Record<string, unknown> | null;
+}
+
 /**
  * SubAgent data structure for agent state
  */
@@ -69,6 +79,7 @@ export interface SubAgentStateData {
   memory?: AgentMemoryState;
   node_id: string;
   subAgents?: SubAgentStateData[];
+  scorers?: AgentScorerState[];
   methodConfig?: {
     method: string;
     schema?: string;
@@ -118,6 +129,7 @@ export interface AgentFullState {
   tools: ToolWithNodeId[];
   subAgents: SubAgentStateData[];
   memory: AgentMemoryState;
+  scorers?: AgentScorerState[];
   retriever?: {
     name: string;
     description?: string;
