@@ -25,7 +25,7 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 
 <div align="center">
     <strong>VoltAgent is an open source TypeScript framework for building and orchestrating AI agents.</strong><br>
-Escape the limitations of no-code builders and the complexity of starting from scratch.
+Build production-ready agents with memory, workflows, tools, and built-in LLM observability.
     <br />
     <br />
 </div>
@@ -218,16 +218,6 @@ Build AI agents for real-world business needs across different industries:
 - **[Government Agent](https://voltagent.dev/use-cases/government-agent/)** - Handle permit applications, process benefits, and serve citizens.
 - **[Documentation Agent](https://voltagent.dev/use-cases/documentation-agent/)** - Create API docs, write changelogs, and generate tutorials from code.
 
-### General Capabilities
-
-- **Complex Workflow Automation:** Build multi-step processes that use different tools, APIs, and make decisions automatically.
-- **Intelligent Data Pipelines:** Create agents that collect, process, and transform data from multiple sources.
-- **AI-Powered Internal Tools:** Build internal apps that use AI for data analysis, reporting, and automation.
-- **Retrieval-Augmented Generation (RAG) Systems:** Build agents that search your knowledge base before answering questions.
-- **Voice-Controlled Interfaces:** Create apps that understand and respond with speech using the `@voltagent/voice` package.
-- **Real-time Monitoring & Alerting:** Build agents that watch your systems and send alerts when something happens.
-- **And Virtually Anything Else...**: If you can imagine an AI agent doing it, VoltAgent can help you build it! ⚡
-
 ### Running Your First Workflow
 
 Your new project also includes a powerful workflow engine. You can test the pre-built `expenseApprovalWorkflow` directly from the VoltOps console:
@@ -247,24 +237,6 @@ Your new project also includes a powerful workflow engine. You can test the pre-
     }
     ```
 5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
-
-## Why VoltAgent?
-
-Building AI applications often involves a trade-off:
-
-1.  **DIY Approach:** Using basic AI provider tools offers control but leads to complex, hard-to-manage code and repeated effort.
-2.  **No-Code Builders:** Simpler initially but often restrictive, limiting customization, provider choice, and complexity.
-
-VoltAgent provides a middle ground, offering structure and components without sacrificing flexibility:
-
-- **Build Faster:** Accelerate development with pre-built components compared to starting from scratch.
-- **Maintainable Code:** Encourages organization for easier updates and debugging.
-- **Scalability:** Start simple and easily scale to complex, multi-agent systems handling intricate workflows.
-- **Build Sophisticated Automations:** It's not just for chat. The workflow engine lets you build complex, multi-step processes for tasks like data analysis pipelines, automated content generation, or intelligent decision-making systems.
-- **Flexibility:** Full control over agent behavior, LLM choice, tool integrations, and UI connections.
-- **Avoid Lock-in:** Freedom to switch AI providers and models as needed.
-- **Cost Efficiency:** Features designed to optimize AI service usage and reduce redundant calls.
-- **Visual Monitoring:** Use the [VoltOps LLM Observability Platform](https://console.voltagent.dev) to track agent performance, inspect state, and debug visually.
 
 ## Key Features
 
@@ -292,6 +264,10 @@ VoltAgent provides a middle ground, offering structure and components without sa
 - **[Documentation](https://voltagent.dev/docs/)**: Dive into guides, concepts, and tutorials.
 - **[Examples](https://github.com/voltagent/voltagent/tree/main/examples)**: Explore practical implementations.
 - **[Blog](https://voltagent.dev/blog/)**: Read more about technical insights, and best practices.
+
+### MCP Server (@voltagent/mcp-docs-server)
+
+Use our MCP server `@voltagent/mcp-docs-server` to teach your LLM how to use VoltAgent. This allows AI assistants to access VoltAgent documentation, examples, and changelogs directly.
 
 ## Contribution
 
