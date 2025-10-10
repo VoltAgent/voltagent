@@ -49,7 +49,7 @@ export type ToolOptions<
   /**
    * Function to execute when the tool is called
    */
-  execute: (
+  execute?: (
     args: z.infer<T>,
     context?: OperationContext,
   ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
@@ -88,10 +88,18 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   /**
    * Function to execute when the tool is called
    */
-  readonly execute: (
+  readonly execute?: (
     args: z.infer<T>,
     context?: OperationContext,
   ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
+
+  /**
+   * Whether this tool should be executed on the client side.
+   * Returns true when no server-side execute handler is provided.
+   */
+  readonly isClientSide = (): boolean => {
+    return typeof this.execute !== "function";
+  };
 
   /**
    * Create a new tool
@@ -106,9 +114,6 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
     }
     if (!options.parameters) {
       throw new Error(`Tool '${options.name}' parameters schema is required`);
-    }
-    if (!options.execute) {
-      throw new Error(`Tool '${options.name}' execute function is required`);
     }
 
     this.id = options.id || uuidv4();

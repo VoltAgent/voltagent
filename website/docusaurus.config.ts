@@ -271,9 +271,9 @@ const config: Config = {
     announcementBar: {
       id: "support_us",
       content:
-        "<a target='_blank' rel='noopener noreferrer' href='https://github.com/VoltAgent/voltagent/stargazers'>⭐️ Join our GitHub community!</a>",
-      backgroundColor: "#10b981",
-      textColor: "#ffffff",
+        "<a target='_blank' rel='noopener noreferrer' href='https://github.com/VoltAgent/voltagent/stargazers'>⭐ We're open source – a GitHub star means a lot to us. Thank you for the support! ❤️ </a>",
+      backgroundColor: "transparent",
+      textColor: "#10B981 !important",
       isCloseable: true,
     },
     colorMode: {

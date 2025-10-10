@@ -44,18 +44,34 @@ div[class^="announcementBar_"] {
   height: 40px;
   display: flex;
   align-items: center;
-  font-size: 18px !important;
-  font-weight: 600;
+  font-size: 17px !important;
+  font-weight: 500;
   color: #ffffff !important;
   cursor: pointer;
-  padding: 0 16px;
+  padding: 0 5px;
   justify-content: center;
   text-align: center;
+  background: linear-gradient(to right, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15)) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Remove underline from announcement bar links */
 div[class^="announcementBar_"] a {
   text-decoration: none;
+  color: #10b981 !important;
+}
+
+/* Close button color */
+div[class^="announcementBar_"] button[class*="close"] {
+  color: #10b981 !important;
+}
+
+div[class^="announcementBar_"] button {
+  color: #10b981 !important;
 }
 
 /* Mobile styles for announcement bar */

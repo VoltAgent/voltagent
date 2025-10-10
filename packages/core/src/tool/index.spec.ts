@@ -85,14 +85,17 @@ describe("Tool", () => {
       expect(() => new Tool(options)).toThrow("Tool 'testTool' parameters schema is required");
     });
 
-    it("should throw error if execute is missing", () => {
+    it("should create tool without execute function (client-side tool)", () => {
       const options = {
         name: "testTool",
         parameters: z.object({}),
         description: "A test tool",
-      } as any;
+      };
 
-      expect(() => new Tool(options)).toThrow("Tool 'testTool' execute function is required");
+      const tool = new Tool(options);
+      expect(tool.name).toBe("testTool");
+      expect(tool.execute).toBeUndefined();
+      expect(tool.isClientSide()).toBe(true);
     });
   });
 
@@ -160,7 +163,7 @@ describe("Tool", () => {
       });
 
       // Execute the tool
-      const result = await tool.execute({ text: "hello" });
+      const result = await tool.execute?.({ text: "hello" });
 
       // The output should match the schema
       expect(result).toEqual({
@@ -196,7 +199,7 @@ describe("Tool", () => {
       });
 
       // Execute the tool
-      const result = await tool.execute({ text: "test" });
+      const result = await tool.execute?.({ text: "test" });
 
       // Validate the output against the schema
       const parseResult = tool.outputSchema?.safeParse(result);
@@ -224,7 +227,7 @@ describe("Tool", () => {
         },
       });
 
-      const result = await tool.execute({ value: 5 });
+      const result = await tool.execute?.({ value: 5 });
 
       // Should work without schema
       expect(result).toEqual({
@@ -282,14 +285,14 @@ describe("Tool", () => {
         },
       });
 
-      const result = await tool.execute({ count: 3 });
+      const result = await tool.execute?.({ count: 3 });
 
       // Validate against schema
       const parseResult = tool.outputSchema?.safeParse(result);
       expect(parseResult?.success).toBe(true);
-      expect(result.status).toBe("success");
-      expect(result.data.items).toHaveLength(3);
-      expect(result.data.total).toBe(3);
+      expect(result?.status).toBe("success");
+      expect(result?.data.items).toHaveLength(3);
+      expect(result?.data.total).toBe(3);
     });
   });
 });

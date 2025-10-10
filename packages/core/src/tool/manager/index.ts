@@ -101,9 +101,6 @@ export class ToolManager {
     if (!tool || !tool.name) {
       throw new Error("Cannot add an invalid or unnamed tool.");
     }
-    if (!tool.execute || typeof tool.execute !== "function") {
-      throw new Error(`Tool ${tool.name} must have an execute function`);
-    }
 
     // Check for conflict with tools *inside* toolkits and issue a warning
     const conflictsWithToolkitTool = this.toolkits.some((toolkit) =>
@@ -210,14 +207,7 @@ export class ToolManager {
           );
         }
       } else {
-        // Ensure tool structure is valid (has execute)
-        if (typeof item.execute === "function") {
-          this.addTool(item);
-        } else {
-          this.logger.warn(
-            `[ToolManager] Skipping tool '${item.name}' due to missing or invalid 'execute' function.`,
-          );
-        }
+        this.addTool(item);
       }
     }
   }
@@ -336,7 +326,11 @@ export class ToolManager {
    * @returns The result of the tool execution
    * @throws Error if the tool doesn't exist or fails to execute
    */
-  async executeTool(toolName: string, args: any, options?: ToolExecuteOptions): Promise<any> {
+  async executeTool(
+    toolName: string,
+    args: unknown,
+    options?: ToolExecuteOptions,
+  ): Promise<unknown> {
     const tool = this.getToolByName(toolName);
     if (!tool) {
       throw new Error(`Tool not found: ${toolName}`);

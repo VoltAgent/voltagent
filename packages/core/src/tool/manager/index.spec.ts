@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type AgentTool, ToolManager, createTool } from "../index";
+import { type AgentTool, Tool, ToolManager, createTool } from "../index";
 import { createToolkit } from "../toolkit";
 import type { Toolkit } from "../toolkit";
 
@@ -76,14 +76,19 @@ describe("ToolManager", () => {
       expect(tools[0].description).toBe("Updated test tool 1");
     });
 
-    it("should throw an error if tool doesn't have an execute function", () => {
-      const invalidTool = {
-        name: "invalidTool",
-        description: "Invalid tool",
+    it("should add client-side tool without execute function", () => {
+      const clientSideTool = new Tool({
+        name: "clientSideTool",
+        description: "Client-side tool",
         parameters: z.object({}),
-      } as unknown as AgentTool;
+      });
 
-      expect(() => toolManager.addTool(invalidTool)).toThrow();
+      toolManager.addTool(clientSideTool);
+      const tools = toolManager.getTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].name).toBe("clientSideTool");
+      expect(tools[0].execute).toBeUndefined();
+      expect(tools[0].isClientSide()).toBe(true);
     });
   });
 

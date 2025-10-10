@@ -121,6 +121,7 @@ export type {
   StreamObjectFinishResult,
   StreamObjectOnFinishCallback,
   ToolErrorInfo,
+  ClientSideToolResult,
   DynamicValueOptions,
   AgentEvalConfig,
   AgentEvalScorerConfig,

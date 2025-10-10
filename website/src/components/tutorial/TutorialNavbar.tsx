@@ -1,5 +1,5 @@
 import Link from "@docusaurus/Link";
-import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import type React from "react";
 
@@ -20,17 +20,17 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
   return (
     <>
       {/* GitHub Banner */}
-      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-[#00d992]/10 to-[#00c085]/10 backdrop-blur-sm border-solid border-0 border-b border-[#00d992]/20">
+      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-emerald-500 to-emerald-500 backdrop-blur-sm border-0 border-b border-solid border-emerald-500/20">
         <Link
           to="https://github.com/VoltAgent/voltagent"
-          className="block w-full no-underline hover:bg-gradient-to-r hover:from-[#00d992]/15 hover:to-[#00c085]/15 transition-all duration-300"
+          className="block w-full no-underline hover:bg-gradient-to-r hover:from-emerald-400/10 hover:to-emerald-500/10 transition-all duration-300"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <div className=" w-full  ">
-            <div className="flex items-center justify-center text-center py-2 bg-emerald-400">
-              <span className="text-xs sm:text-sm font-medium text-black">
-                ⭐ We’re open source – a GitHub star means a lot to us. Thank you for the support! ❤️
+          <div className="w-full">
+            <div className="flex items-center justify-center text-center py-2">
+              <span className="text-xs sm:text-sm font-medium text-emerald-500">
+                ⭐ We're open source – a GitHub star means a lot to us. Thank you for the support! ❤️
               </span>
             </div>
           </div>
@@ -38,32 +38,32 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
       </div>
 
       {/* Main Navbar */}
-      <div className="fixed top-8 sm:top-8 left-0 right-0 z-50 bg-[#1d1d1d] backdrop-blur-md border-solid border-0 border-b-2 border-[#1a2533]">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-4">
+      <div className="fixed top-8 sm:top-8 left-0 right-0 z-50 bg-background backdrop-blur-md border-0 border-b border-border">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-3">
           {/* Mobile Layout */}
           <div className="block md:hidden">
             {/* Mobile Header */}
             <div className="flex items-center justify-between mb-3">
               {/* Logo */}
               <Link to="/docs" className="flex items-center no-underline">
-                <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
-                  <BoltIcon className="w-4 h-4 text-[#00d992]" />
+                <div className="flex mr-2 items-center border-2 border-solid border-main-emerald rounded-full p-1">
+                  <BoltIcon className="w-4 h-4 text-main-emerald" />
                 </div>
-                <span className="text-lg font-bold text-[#00d992]">voltagent</span>
-                <span className="ml-2  text-sm  font-medium text-gray-400">Tutorial</span>
+                <span className="text-lg font-bold text-main-emerald">voltagent</span>
+                <span className="ml-2  text-sm  font-medium text-muted-foreground">Tutorial</span>
               </Link>
 
               {/* Mobile Actions */}
               <div className="flex items-center space-x-2">
                 <Link
                   to="/docs"
-                  className="text-xs font-medium text-[#cbd5e0] hover:text-[#00d992] transition-colors no-underline"
+                  className="text-xs font-medium text-muted-foreground hover:text-main-emerald transition-colors no-underline"
                 >
                   Exit
                 </Link>
                 <Link
                   to="https://console.voltagent.dev"
-                  className="inline-flex items-center px-2 py-1 text-xs font-medium bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded hover:bg-[#00c085] transition-all duration-300 no-underline"
+                  className="inline-flex items-center px-2 py-1 text-xs font-medium bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 rounded hover:bg-emerald-400/40 transition-all duration-300 no-underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -75,16 +75,16 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
             {/* Mobile Progress */}
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
-                <span className="text-xs font-medium text-[#e2e8f0] whitespace-nowrap">
+                <span className="text-xs font-medium text-foreground whitespace-nowrap">
                   Step {currentStep}/{totalSteps}
                 </span>
-                <div className="flex-1 bg-[#4a5568] rounded-full h-1.5">
+                <div className="flex-1 bg-muted rounded-full h-1.5">
                   <div
-                    className="bg-[#00d992] h-1.5 rounded-full transition-all duration-500"
+                    className="bg-main-emerald h-1.5 rounded-full transition-all duration-500"
                     style={{ width: `${(currentStep / totalSteps) * 100}%` }}
                   />
                 </div>
-                <span className="text-xs font-medium text-[#e2e8f0] whitespace-nowrap">
+                <span className="text-xs font-medium text-foreground whitespace-nowrap">
                   {Math.round((currentStep / totalSteps) * 100)}%
                 </span>
               </div>
@@ -97,10 +97,10 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
                     to={step.url}
                     className={`px-2 py-1 rounded text-xs font-medium no-underline transition-all duration-300 whitespace-nowrap ${
                       step.number === currentStep
-                        ? "bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20"
+                        ? "bg-emerald-400/10 text-emerald-400 border border-emerald-400/20"
                         : step.number < currentStep
-                          ? "bg-[#4a5568]/10 text-[#f7fafc] hover:bg-[#718096]"
-                          : "bg-[#2d3748]/40 border-solid border border-[#2d3748]/20 text-[#a0aec0] hover:bg-[#4a5568]/10 hover:text-[#cbd5e0]"
+                          ? "bg-muted/10 text-foreground hover:bg-muted"
+                          : "bg-card border border-border text-muted-foreground hover:bg-muted/10 hover:text-foreground border-opacity-20 bg-opacity-40"
                     }`}
                   >
                     {step.number}
@@ -114,28 +114,28 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
           <div className="hidden md:flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/docs" className="flex items-center justify-center no-underline">
-              <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
-                <BoltIcon className="w-5 h-5 sm:w-5 sm:h-5 text-[#00d992]" />
+              <div className="flex mr-2 items-center border-2 border-solid border-main-emerald rounded-full p-1">
+                <BoltIcon className="w-4 h-4 sm:w-4 sm:h-4 text-main-emerald" />
               </div>
               <div className="flex items-baseline">
-                <span className="text-xl sm:text-2xl font-bold text-[#00d992]">voltagent</span>
-                <span className="ml-2 font-medium text-gray-400">Tutorial</span>
+                <span className="text-xl sm:text-xl font-bold text-main-emerald">voltagent</span>
+                <span className="ml-1 font-medium text-sm text-muted-foreground">Tutorial</span>
               </div>
             </Link>
 
             {/* Tutorial Progress */}
             <div className="flex-1 max-w-2xl mx-8">
               <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-[#e2e8f0] whitespace-nowrap">
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
                   Step {currentStep} of {totalSteps}
                 </span>
-                <div className="flex-1 bg-[#4a5568] rounded-full h-2">
+                <div className="flex-1 bg-muted rounded-full h-2">
                   <div
-                    className="bg-[#00d992] h-2 rounded-full transition-all duration-500"
+                    className="bg-emerald-600 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${(currentStep / totalSteps) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-[#e2e8f0] whitespace-nowrap">
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
                   {Math.round((currentStep / totalSteps) * 100)}%
                 </span>
               </div>
@@ -148,10 +148,10 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
                     to={step.url}
                     className={`px-3 py-1 rounded-full text-xs font-medium no-underline transition-all duration-300 ${
                       step.number === currentStep
-                        ? "bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20"
+                        ? "bg-emerald-400/10 text-emerald-400 border border-emerald-400/20"
                         : step.number < currentStep
-                          ? "bg-[#4a5568]/10 text-[#f7fafc] hover:bg-[#718096]"
-                          : "bg-[#2d3748]/40 border-solid border border-[#2d3748]/20 text-[#a0aec0] hover:bg-[#4a5568]/10 hover:text-[#cbd5e0]"
+                          ? "bg-muted/10 text-foreground hover:bg-muted"
+                          : "bg-card border border-border text-muted-foreground hover:bg-muted/10 hover:text-foreground border-opacity-20 bg-opacity-40"
                     }`}
                   >
                     {step.number}. {step.title}
@@ -165,7 +165,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
               {/* Exit Tutorial */}
               <Link
                 to="/docs"
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-[#cbd5e0] hover:text-[#00d992] transition-colors no-underline"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-muted-foreground hover:text-main-emerald transition-colors no-underline"
               >
                 Exit Tutorial
               </Link>
@@ -173,12 +173,12 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
               {/* Console Link */}
               <Link
                 to="https://console.voltagent.dev"
-                className="inline-flex items-center px-4 py-2 text-sm font-medium bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 rounded-lg hover:bg-emerald-400/40 transition-all duration-300 shadow-lg hover:shadow-xl no-underline"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-main-emerald transition-all duration-300 shadow-lg hover:shadow-xl no-underline"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <ArrowTopRightOnSquareIcon className="w-4 h-4 mr-2" />
-                Console
+                Try VoltOps
+                <ArrowRightIcon className="w-4 h-4 ml-2" />
               </Link>
             </div>
           </div>
