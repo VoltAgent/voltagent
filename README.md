@@ -1,6 +1,6 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1500" height="276" alt="voltagent" src="https://github.com/user-attachments/assets/4b05581b-9e65-4986-b653-3fdfd838c1c8" />
+<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
 </a>
 
 <br/>
@@ -54,17 +54,21 @@ Build production-ready agents with memory, workflows, tools, and built-in LLM ob
 
 Instead of shipping everything from scratch, VoltAgent gives you modular building blocks:
 
-- **Core Runtime (`@voltagent/core`)**: Define agents with typed roles, tools, memory, and model providers in one place so everything stays organized.
-- **Workflow Engine**: Describe multi-step automations declaratively rather than stitching together custom control flow.
-- **Supervisors & Sub-Agents**: Run teams of specialized agents under a supervisor runtime that routes tasks and keeps them in sync.
-- **Tool Registry & MCP**: Ship Zod-typed tools with lifecycle hooks and cancellation, and connect to [Model Context Protocol](https://modelcontextprotocol.io/) servers without extra glue code.
-- **LLM Compatibility**: Swap between OpenAI, Anthropic, Google, or other providers by changing config, not rewriting agent logic.
-- **Memory**: Attach durable memory adapters so agents remember important context across runs.
-- **Retrieval & RAG**: Plug in retriever agents to pull facts from your data sources and ground responses (RAG) before the model answers.
-- **Observability (`VoltOps`)**: VoltOps gives you LLM observability; trace every step, replay runs, and review audit trails in one dashboard.
-- **Evals**: Ship guardrails faster by running agent eval suites alongside your workflows.
+- **[Core Runtime](https://voltagent.dev/docs/agents/overview/) (`@voltagent/core`)**: Define agents with typed roles, tools, memory, and model providers in one place so everything stays organized.
+- **[Workflow Engine](https://voltagent.dev/docs/workflows/overview/)**: Describe multi-step automations declaratively rather than stitching together custom control flow.
+- **[Supervisors & Sub-Agents](https://voltagent.dev/docs/agents/subagents/)**: Run teams of specialized agents under a supervisor runtime that routes tasks and keeps them in sync.
+- **[Tool Registry](https://voltagent.dev/docs/agents/tools/) & [MCP](https://voltagent.dev/docs/agents/mcp/mcp/)**: Ship Zod-typed tools with lifecycle hooks and cancellation, and connect to [Model Context Protocol](https://modelcontextprotocol.io/) servers without extra glue code.
+- **[LLM Compatibility](https://voltagent.dev/docs/getting-started/providers-models/)**: Swap between OpenAI, Anthropic, Google, or other providers by changing config, not rewriting agent logic.
+- **[Memory](https://voltagent.dev/docs/agents/memory/overview/)**: Attach durable memory adapters so agents remember important context across runs.
+- **[Retrieval & RAG](https://voltagent.dev/docs/rag/overview/)**: Plug in retriever agents to pull facts from your data sources and ground responses (RAG) before the model answers.
+- **[Observability](https://voltagent.dev/docs/observability/developer-console/) (`VoltOps`)**: VoltOps gives you LLM observability; trace every step, replay runs, and review audit trails in one dashboard.
+- **[Evals](https://voltagent.dev/docs/evals/overview/)**: Ship guardrails faster by running agent eval suites alongside your workflows.
 
 📖 **[Start with interactive tutorial](https://voltagent.dev/tutorial/introduction/)** to learn the fundamentals building AI Agents.
+
+### MCP Server (@voltagent/mcp-docs-server)
+
+You can use the MCP server `@voltagent/mcp-docs-server` to teach your LLM how to use VoltAgent. This allows AI assistants to access VoltAgent documentation, examples, and changelogs directly.
 
 ## ⚡ Quick Start
 
@@ -264,10 +268,6 @@ Your new project also includes a powerful workflow engine. You can test the pre-
 - **[Documentation](https://voltagent.dev/docs/)**: Dive into guides, concepts, and tutorials.
 - **[Examples](https://github.com/voltagent/voltagent/tree/main/examples)**: Explore practical implementations.
 - **[Blog](https://voltagent.dev/blog/)**: Read more about technical insights, and best practices.
-
-### MCP Server (@voltagent/mcp-docs-server)
-
-Use our MCP server `@voltagent/mcp-docs-server` to teach your LLM how to use VoltAgent. This allows AI assistants to access VoltAgent documentation, examples, and changelogs directly.
 
 ## Contribution
 
