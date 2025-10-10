@@ -1,18 +1,15 @@
+import {
+  type Span,
+  type SpanContext,
+  SpanKind,
+  SpanStatusCode,
+  context as otelContext,
+  trace,
+} from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
 import { type LocalScorerDefinition, runLocalScorers } from "../eval/runtime";
 import type { VoltAgentObservability } from "../observability";
-import type { ObservabilityEvalScoreRecord } from "../observability/types";
-import { AgentRegistry } from "../registries/agent-registry";
-import { randomUUID } from "../utils/id";
-import type {
-  VoltOpsAppendEvalRunResultsRequest,
-  VoltOpsClient,
-  VoltOpsCompleteEvalRunRequest,
-  VoltOpsCreateEvalRunRequest,
-  VoltOpsEvalRunCompletionSummaryPayload,
-  VoltOpsTerminalEvalRunStatus,
-} from "../voltops";
 import type {
   AgentEvalConfig,
   AgentEvalContext,
@@ -32,6 +29,199 @@ const scheduleAsync =
         setTimeout(fn, 0);
       };
 
+type ScorerDescriptor = {
+  key: string;
+  config: AgentEvalScorerConfig;
+  definition: LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>;
+};
+
+interface ScoreMetrics {
+  combinedMetadata: Record<string, unknown> | null;
+  scoreValue: number | null;
+  thresholdValue?: number;
+  thresholdPassed: boolean | null;
+  datasetMetadata?: ReturnType<typeof extractDatasetMetadataFromCombinedMetadata>;
+}
+
+async function resolveScorerDescriptors(
+  config: AgentEvalConfig,
+  host: AgentEvalHost,
+): Promise<ScorerDescriptor[]> {
+  const scorerEntries = Object.entries(config.scorers ?? {});
+  if (scorerEntries.length === 0) {
+    return [];
+  }
+
+  const descriptors: ScorerDescriptor[] = [];
+  for (const [key, scorerConfig] of scorerEntries) {
+    try {
+      const definition = await resolveEvalScorersDefinition(key, scorerConfig);
+      if (!definition) {
+        host.logger.warn(`[Agent:${host.name}] Unknown eval scorer for key ${key}`);
+        continue;
+      }
+      descriptors.push({ key, config: scorerConfig, definition });
+    } catch (error) {
+      host.logger.warn(`[Agent:${host.name}] Failed to resolve eval scorer for key ${key}`, {
+        error: error instanceof Error ? error.message : error,
+      });
+    }
+  }
+
+  return descriptors;
+}
+
+function buildScoreMetrics(
+  storagePayload: AgentEvalPayload,
+  result: Awaited<ReturnType<typeof runLocalScorers>>["results"][number],
+): ScoreMetrics {
+  const combinedMetadata = combineEvalMetadata(storagePayload, result.metadata);
+  const scoreValue = result.score ?? null;
+  const thresholdValue = resolveThresholdFromMetadata(combinedMetadata);
+  let thresholdPassed = resolveThresholdPassedFromMetadata(combinedMetadata);
+  if (thresholdPassed === null && thresholdValue !== undefined && scoreValue !== null) {
+    thresholdPassed = scoreValue >= thresholdValue;
+  }
+
+  const datasetMetadata = extractDatasetMetadataFromCombinedMetadata(combinedMetadata);
+
+  return {
+    combinedMetadata,
+    scoreValue,
+    thresholdValue,
+    thresholdPassed,
+    datasetMetadata,
+  };
+}
+
+function createScorerSpanAttributes(
+  host: AgentEvalHost,
+  descriptor: ScorerDescriptor,
+  config: AgentEvalConfig,
+  storagePayload: AgentEvalPayload,
+  metrics: ScoreMetrics,
+  result: Awaited<ReturnType<typeof runLocalScorers>>["results"][number],
+): Record<string, unknown> {
+  const { definition } = descriptor;
+  const scorerLabel = definition.name ?? descriptor.key ?? definition.id;
+  const attributes: Record<string, unknown> = {
+    "span.type": "scorer",
+    "voltagent.label": scorerLabel,
+    "entity.id": host.id,
+    "entity.name": host.name,
+    "eval.scorer.id": definition.id,
+    "eval.scorer.key": descriptor.key,
+    "eval.scorer.name": scorerLabel,
+    "eval.scorer.kind": "live",
+    "eval.scorer.status": result.status,
+    "eval.operation.id": storagePayload.operationId,
+    "eval.operation.type": storagePayload.operationType,
+    "eval.trace.id": storagePayload.traceId,
+    "eval.source.span_id": storagePayload.spanId,
+    "eval.trigger_source": config.triggerSource ?? "live",
+    "eval.environment": config.environment,
+  };
+
+  if (metrics.scoreValue !== null) {
+    attributes["eval.scorer.score"] = metrics.scoreValue;
+  }
+  if (metrics.thresholdValue !== undefined) {
+    attributes["eval.scorer.threshold"] = metrics.thresholdValue;
+  }
+  if (metrics.thresholdPassed !== null) {
+    attributes["eval.scorer.threshold_passed"] = metrics.thresholdPassed;
+  }
+  if (result.durationMs !== undefined) {
+    attributes["eval.scorer.duration_ms"] = result.durationMs;
+  }
+  if (result.sampling?.applied !== undefined) {
+    attributes["eval.scorer.sampling.applied"] = result.sampling.applied;
+  }
+  if (result.sampling?.rate !== undefined) {
+    attributes["eval.scorer.sampling.rate"] = result.sampling.rate;
+  }
+  if (result.sampling?.strategy) {
+    attributes["eval.scorer.sampling.strategy"] = result.sampling.strategy;
+  }
+  if (metrics.datasetMetadata?.datasetId) {
+    attributes["eval.dataset.id"] = metrics.datasetMetadata.datasetId;
+  }
+  if (metrics.datasetMetadata?.datasetVersionId) {
+    attributes["eval.dataset.version_id"] = metrics.datasetMetadata.datasetVersionId;
+  }
+  if (metrics.datasetMetadata?.datasetItemId) {
+    attributes["eval.dataset.item_id"] = metrics.datasetMetadata.datasetItemId;
+  }
+  if (metrics.datasetMetadata?.datasetItemHash) {
+    attributes["eval.dataset.item_hash"] = metrics.datasetMetadata.datasetItemHash;
+  }
+  if (storagePayload.userId) {
+    attributes["user.id"] = storagePayload.userId;
+  }
+  if (storagePayload.conversationId) {
+    attributes["conversation.id"] = storagePayload.conversationId;
+  }
+
+  return attributes;
+}
+
+function finalizeScorerSpan(
+  span: Span,
+  host: AgentEvalHost,
+  descriptor: ScorerDescriptor,
+  config: AgentEvalConfig,
+  storagePayload: AgentEvalPayload,
+  metrics: ScoreMetrics,
+  result: Awaited<ReturnType<typeof runLocalScorers>>["results"][number],
+): void {
+  const attributes = createScorerSpanAttributes(
+    host,
+    descriptor,
+    config,
+    storagePayload,
+    metrics,
+    result,
+  );
+
+  span.setAttributes(attributes);
+
+  if (metrics.combinedMetadata && Object.keys(metrics.combinedMetadata).length > 0) {
+    try {
+      span.setAttribute("eval.scorer.metadata", safeStringify(metrics.combinedMetadata));
+    } catch {
+      span.setAttribute("eval.scorer.metadata", "[unserializable]");
+    }
+  }
+
+  span.addEvent("eval.scorer.result", {
+    status: result.status,
+    score: metrics.scoreValue ?? undefined,
+    threshold: metrics.thresholdValue ?? undefined,
+    thresholdPassed: metrics.thresholdPassed ?? undefined,
+  });
+
+  if (result.status === "error") {
+    const errorMessage = extractErrorMessage(result.error);
+    span.setAttribute("eval.scorer.error_message", errorMessage);
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: errorMessage,
+    });
+    if (result.error instanceof Error) {
+      span.recordException(result.error);
+    } else if (result.error) {
+      span.recordException({ message: errorMessage });
+    }
+  } else {
+    span.setStatus({
+      code: SpanStatusCode.OK,
+      message: result.status === "skipped" ? "skipped" : undefined,
+    });
+  }
+
+  span.end();
+}
+
 export interface AgentEvalHost {
   readonly id: string;
   readonly name: string;
@@ -39,8 +229,6 @@ export interface AgentEvalHost {
   readonly evalConfig?: AgentEvalConfig;
   getObservability(): VoltAgentObservability;
 }
-
-const ensuredVoltOpsScorers = new Set<string>();
 
 export interface EnqueueEvalScoringArgs {
   oc: OperationContext;
@@ -55,6 +243,9 @@ export function enqueueEvalScoring(host: AgentEvalHost, args: EnqueueEvalScoring
     return;
   }
 
+  const rootSpan = args.oc.traceContext.getRootSpan();
+  const rootSpanContext = rootSpan.spanContext();
+
   const rawPayload = buildEvalPayload(args.oc, args.output, args.operation, args.metadata);
   if (!rawPayload) {
     return;
@@ -62,6 +253,27 @@ export function enqueueEvalScoring(host: AgentEvalHost, args: EnqueueEvalScoring
 
   const storagePayload =
     config.redact?.(cloneEvalPayload(rawPayload)) ?? cloneEvalPayload(rawPayload);
+
+  if (rootSpanContext.traceId && rootSpanContext.spanId) {
+    const scorerKeys = Object.keys(config.scorers ?? {});
+    if (scorerKeys.length > 0) {
+      rootSpan.setAttribute("eval.scorers.count", scorerKeys.length);
+      rootSpan.setAttribute("eval.scorers.trigger_source", config.triggerSource ?? "live");
+      rootSpan.setAttribute("eval.operation.type", rawPayload.operationType);
+      rootSpan.setAttribute("eval.operation.id", rawPayload.operationId);
+      if (config.environment) {
+        rootSpan.setAttribute("eval.environment", config.environment);
+      }
+      if (config.sampling?.percentage !== undefined) {
+        rootSpan.setAttribute("eval.sampling.percentage", config.sampling.percentage);
+      }
+      rootSpan.addEvent("eval.scorers.scheduled", {
+        count: scorerKeys.length,
+        operation: rawPayload.operationType,
+        trigger: config.triggerSource ?? "live",
+      });
+    }
+  }
 
   const context: AgentEvalContext = {
     ...rawPayload,
@@ -80,6 +292,7 @@ export function enqueueEvalScoring(host: AgentEvalHost, args: EnqueueEvalScoring
       rawPayload,
       storagePayload,
       observability,
+      rootSpanContext,
     }).catch((error) => {
       host.logger.warn(`[Agent:${host.name}] eval scoring failed`, {
         error: error instanceof Error ? error.message : error,
@@ -94,39 +307,12 @@ interface RunEvalScorersArgs {
   rawPayload: AgentEvalPayload;
   storagePayload: AgentEvalPayload;
   observability: VoltAgentObservability;
+  rootSpanContext: SpanContext;
 }
 
 async function runEvalScorers(host: AgentEvalHost, args: RunEvalScorersArgs): Promise<void> {
-  const { config, context, rawPayload, storagePayload, observability } = args;
-  const scorerEntries = Object.entries(config.scorers ?? {});
-  if (scorerEntries.length === 0) {
-    return;
-  }
-
-  type ScorerDescriptor = {
-    key: string;
-    config: AgentEvalScorerConfig;
-    definition: LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>;
-  };
-
-  const descriptors: ScorerDescriptor[] = [];
-  for (const [key, scorerConfig] of scorerEntries) {
-    let definition: LocalScorerDefinition<AgentEvalContext, Record<string, unknown>> | null = null;
-    try {
-      definition = await resolveEvalScorersDefinition(key, scorerConfig);
-    } catch (error) {
-      host.logger.warn(`[Agent:${host.name}] Failed to resolve eval scorer for key ${key}`, {
-        error: error instanceof Error ? error.message : error,
-      });
-      continue;
-    }
-    if (!definition) {
-      host.logger.warn(`[Agent:${host.name}] Unknown eval scorer for key ${key}`);
-      continue;
-    }
-    descriptors.push({ key, config: scorerConfig, definition });
-  }
-
+  const { config, context, rawPayload, storagePayload, observability, rootSpanContext } = args;
+  const descriptors = await resolveScorerDescriptors(config, host);
   if (descriptors.length === 0) {
     return;
   }
@@ -135,6 +321,12 @@ async function runEvalScorers(host: AgentEvalHost, args: RunEvalScorersArgs): Pr
   for (const descriptor of descriptors) {
     descriptorById.set(descriptor.definition.id, descriptor);
   }
+
+  const tracer = observability.getTracer();
+  const parentContext =
+    rootSpanContext.traceId && rootSpanContext.spanId
+      ? trace.setSpanContext(otelContext.active(), rootSpanContext)
+      : otelContext.active();
 
   const execution = await runLocalScorers({
     payload: context,
@@ -149,9 +341,85 @@ async function runEvalScorers(host: AgentEvalHost, args: RunEvalScorersArgs): Pr
       return base;
     },
     scorers: descriptors.map(({ definition }) => definition),
-  });
+    onScorerStart: ({ definition }) => {
+      const descriptor = descriptorById.get(definition.id);
+      if (!descriptor) {
+        return undefined;
+      }
 
-  const voltOpsRecords: ObservabilityEvalScoreRecord[] = [];
+      const links =
+        rootSpanContext.traceId && rootSpanContext.spanId
+          ? [
+              {
+                context: {
+                  traceId: rootSpanContext.traceId,
+                  spanId: rootSpanContext.spanId,
+                  traceFlags: rootSpanContext.traceFlags,
+                  traceState: rootSpanContext.traceState,
+                },
+                attributes: {
+                  "link.type": "eval-scorer",
+                  "eval.operation.id": storagePayload.operationId,
+                  "eval.operation.type": storagePayload.operationType,
+                },
+              },
+            ]
+          : undefined;
+
+      const span = tracer.startSpan(
+        `eval.scorer.${definition.id}`,
+        {
+          kind: SpanKind.INTERNAL,
+          attributes: { "span.type": "scorer" },
+          links,
+        },
+        parentContext,
+      );
+
+      span.setAttributes({
+        "voltagent.label": definition.name ?? descriptor.key ?? definition.id,
+        "entity.id": host.id,
+        "entity.type": "agent",
+        "entity.name": host.name,
+        "eval.scorer.id": definition.id,
+        "eval.scorer.key": descriptor.key,
+        "eval.scorer.name": definition.name ?? definition.id,
+        "eval.scorer.kind": "live",
+        "eval.scorer.status": "running",
+        "eval.operation.id": storagePayload.operationId,
+        "eval.operation.type": storagePayload.operationType,
+        "eval.trace.id": storagePayload.traceId,
+        "eval.source.span_id": storagePayload.spanId,
+        "eval.trigger_source": config.triggerSource ?? "live",
+        "eval.environment": config.environment,
+      });
+
+      if (storagePayload.userId) {
+        span.setAttribute("user.id", storagePayload.userId);
+      }
+      if (storagePayload.conversationId) {
+        span.setAttribute("conversation.id", storagePayload.conversationId);
+      }
+
+      span.addEvent("eval.scorer.started");
+      return span;
+    },
+    onScorerComplete: ({ definition, execution: scorerExecution, context: lifecycleContext }) => {
+      const span = lifecycleContext as Span | undefined;
+      if (!span) {
+        return;
+      }
+
+      const descriptor = descriptorById.get(definition.id);
+      if (!descriptor) {
+        span.end();
+        return;
+      }
+
+      const metrics = buildScoreMetrics(storagePayload, scorerExecution);
+      finalizeScorerSpan(span, host, descriptor, config, storagePayload, metrics, scorerExecution);
+    },
+  });
 
   for (const result of execution.results) {
     const descriptor = descriptorById.get(result.id);
@@ -162,53 +430,14 @@ async function runEvalScorers(host: AgentEvalHost, args: RunEvalScorersArgs): Pr
       continue;
     }
 
-    const { config: scorerConfig, definition } = descriptor;
-    const createdAt = new Date();
+    const metrics = buildScoreMetrics(storagePayload, result);
 
-    const combinedMetadata = combineEvalMetadata(storagePayload, result.metadata);
-    const scoreValue = result.score ?? null;
-    const thresholdValue = resolveThresholdFromMetadata(combinedMetadata);
-    let thresholdPassed = resolveThresholdPassedFromMetadata(combinedMetadata);
-    if (thresholdPassed === null && thresholdValue !== undefined && scoreValue !== null) {
-      thresholdPassed = scoreValue >= thresholdValue;
-    }
-    const datasetMetadata = extractDatasetMetadataFromCombinedMetadata(combinedMetadata);
-
-    const record: ObservabilityEvalScoreRecord = {
-      id: randomUUID(),
-      agentId: host.id,
-      agentName: host.name,
-      traceId: storagePayload.traceId,
-      spanId: storagePayload.spanId,
-      operationId: storagePayload.operationId,
-      operationType: storagePayload.operationType,
-      scorerId: definition.id,
-      scorerName: definition.name,
-      status: result.status,
-      score: scoreValue,
-      metadata: combinedMetadata,
-      sampling: result.sampling,
-      triggerSource: config.triggerSource ?? "live",
-      environment: config.environment,
-      durationMs: result.durationMs,
-      errorMessage: result.error ? extractErrorMessage(result.error) : undefined,
-      createdAt: createdAt.toISOString(),
-      threshold: thresholdValue ?? null,
-      thresholdPassed,
-      datasetId: datasetMetadata?.datasetId,
-      datasetVersionId: datasetMetadata?.datasetVersionId,
-      datasetItemHash: datasetMetadata?.datasetItemHash,
-      datasetItemId: datasetMetadata?.datasetItemId,
-    };
-
-    await persistEvalScore(observability, record, host, { forward: false });
-
-    await invokeEvalResultCallback(host, scorerConfig, {
-      scorerId: definition.id,
-      scorerName: definition.name,
+    await invokeEvalResultCallback(host, descriptor.config, {
+      scorerId: descriptor.definition.id,
+      scorerName: descriptor.definition.name,
       status: result.status,
       score: result.score ?? null,
-      metadata: record.metadata ?? undefined,
+      metadata: metrics.combinedMetadata ?? undefined,
       error: result.error,
       durationMs: result.durationMs,
       payload: storagePayload,
@@ -216,25 +445,11 @@ async function runEvalScorers(host: AgentEvalHost, args: RunEvalScorersArgs): Pr
     });
 
     if (result.status === "error") {
-      host.logger.warn(`[Agent:${host.name}] Eval scorer '${definition.name}' failed`, {
+      host.logger.warn(`[Agent:${host.name}] Eval scorer '${descriptor.definition.name}' failed`, {
         error: result.error instanceof Error ? result.error.message : result.error,
-        scorerId: definition.id,
+        scorerId: descriptor.definition.id,
       });
     }
-
-    if (result.status !== "skipped") {
-      voltOpsRecords.push(record);
-    }
-  }
-
-  if (voltOpsRecords.length > 0) {
-    scheduleAsync(() => {
-      void forwardEvalScoresToVoltOps(voltOpsRecords, host).catch((error) => {
-        host.logger.warn(`[Agent:${host.name}] Failed to sync eval scores to VoltOps`, {
-          error: error instanceof Error ? error.message : error,
-        });
-      });
-    });
   }
 }
 
@@ -693,276 +908,6 @@ function extractDatasetMetadataFromCombinedMetadata(
     datasetItemHash: datasetMetadata.datasetItemHash,
     datasetItemId: datasetMetadata.datasetItemId,
   };
-}
-
-interface PersistEvalScoreOptions {
-  forward?: boolean;
-}
-
-async function persistEvalScore(
-  observability: VoltAgentObservability,
-  record: ObservabilityEvalScoreRecord,
-  host: AgentEvalHost,
-  options: PersistEvalScoreOptions = {},
-): Promise<void> {
-  const storage = observability.getStorage();
-  if (!storage?.saveEvalScore) {
-    return;
-  }
-  try {
-    await storage.saveEvalScore(record);
-
-    if (options.forward ?? true) {
-      scheduleAsync(() => {
-        void forwardEvalScoresToVoltOps([record], host).catch((error) => {
-          host.logger.warn(`[Agent:${host.name}] Failed to sync eval score to VoltOps`, {
-            error: error instanceof Error ? error.message : error,
-            scoreId: record.id,
-          });
-        });
-      });
-    }
-  } catch (error) {
-    host.logger.warn(`[Agent:${host.name}] Failed to persist eval score`, {
-      error: error instanceof Error ? error.message : error,
-      scorerId: record.scorerId,
-    });
-  }
-}
-
-async function forwardEvalScoresToVoltOps(
-  records: ObservabilityEvalScoreRecord[],
-  host: AgentEvalHost,
-): Promise<void> {
-  const voltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
-  if (!voltOpsClient || !voltOpsClient.hasValidKeys()) {
-    return;
-  }
-
-  const evaluableRecords = records.filter((record) => record.status !== "skipped");
-  if (evaluableRecords.length === 0) {
-    return;
-  }
-
-  const firstRecord = evaluableRecords[0];
-  const runPayload: VoltOpsCreateEvalRunRequest = {
-    triggerSource: firstRecord.triggerSource ?? "live-eval",
-    autoQueue: false,
-  };
-
-  for (const record of evaluableRecords) {
-    await ensureVoltOpsScorer(voltOpsClient, record, host);
-  }
-
-  const runSummary = await voltOpsClient.createEvalRun(runPayload);
-
-  const appendPayload: VoltOpsAppendEvalRunResultsRequest = {
-    results: evaluableRecords.map((record) => buildVoltOpsResultPayload(record)),
-  };
-
-  await voltOpsClient.appendEvalRunResults(runSummary.id, appendPayload);
-
-  const completionPayload = buildVoltOpsBatchCompletionPayload(evaluableRecords);
-
-  await voltOpsClient.completeEvalRun(runSummary.id, completionPayload);
-
-  host.logger.debug(`[Agent:${host.name}] Synced eval score to VoltOps`, {
-    scoreIds: evaluableRecords.map((record) => record.id),
-    runId: runSummary.id,
-  });
-}
-
-function buildVoltOpsResultPayload(
-  record: ObservabilityEvalScoreRecord,
-): VoltOpsAppendEvalRunResultsRequest["results"][number] {
-  const metadata = cloneMetadata(record.metadata);
-  if (record.errorMessage) {
-    metadata.errorMessage = record.errorMessage;
-  }
-
-  return {
-    datasetItemHash: buildDatasetItemHash(record),
-    datasetId: record.datasetId ?? null,
-    datasetVersionId: record.datasetVersionId ?? null,
-    datasetItemId: record.datasetItemId ?? null,
-    status: mapEvalResultStatus(record.status),
-    input: metadata.input ?? null,
-    expected: null,
-    output: metadata.output ?? null,
-    durationMs: record.durationMs ?? null,
-    metadata,
-    scores: [
-      {
-        scorerId: record.scorerId,
-        score: record.score ?? null,
-        metadata: extractScorerMetadata(record.metadata),
-      },
-    ],
-    traceIds: record.traceId ? [record.traceId] : null,
-    liveEval: {
-      traceId: record.traceId ?? null,
-      spanId: record.spanId ?? null,
-      operationId: record.operationId ?? null,
-      operationType: record.operationType ?? null,
-      sampling: record.sampling ?? null,
-      triggerSource: record.triggerSource ?? null,
-      environment: record.environment ?? null,
-    },
-  };
-}
-
-function buildVoltOpsBatchCompletionPayload(
-  records: ObservabilityEvalScoreRecord[],
-): VoltOpsCompleteEvalRunRequest {
-  const itemCount = records.length;
-  const successCount = records.filter((record) => record.status === "success").length;
-  const failureCount = records.filter((record) => record.status === "error").length;
-  const scoreValues = records
-    .map((record) => (typeof record.score === "number" ? record.score : null))
-    .filter((value): value is number => value !== null);
-
-  const meanScore = scoreValues.length
-    ? scoreValues.reduce((total, score) => total + score, 0) / scoreValues.length
-    : null;
-  const passRate = itemCount > 0 ? successCount / itemCount : null;
-  const durationValues = records
-    .map((record) => (typeof record.durationMs === "number" ? record.durationMs : null))
-    .filter((value): value is number => value !== null);
-  const totalDuration = durationValues.reduce((total, value) => total + value, 0);
-
-  const createdTimestamps = records
-    .map((record) => (record.createdAt ? new Date(record.createdAt).valueOf() : Number.NaN))
-    .filter((value) => Number.isFinite(value));
-  const startedAt = createdTimestamps.length
-    ? new Date(Math.min(...createdTimestamps)).toISOString()
-    : undefined;
-  const completedAt = createdTimestamps.length
-    ? new Date(Math.max(...createdTimestamps)).toISOString()
-    : undefined;
-
-  const summaryMetadata = {
-    scorers: records.map((record) => ({
-      id: record.scorerId,
-      name: record.scorerName ?? record.scorerId,
-      status: record.status,
-      score: record.score ?? null,
-      errorMessage: record.errorMessage ?? null,
-    })),
-  } as Record<string, unknown>;
-
-  const status: VoltOpsTerminalEvalRunStatus = failureCount > 0 ? "failed" : "succeeded";
-
-  const summary: VoltOpsEvalRunCompletionSummaryPayload = {
-    itemCount,
-    successCount,
-    failureCount,
-    meanScore,
-    passRate,
-    durationMs: durationValues.length ? totalDuration : undefined,
-    metadata: summaryMetadata,
-  };
-
-  if (startedAt) {
-    summary.metadata = {
-      ...summary.metadata,
-      startedAt,
-      completedAt,
-    };
-  }
-
-  return {
-    status,
-    summary,
-    ...(failureCount > 0
-      ? {
-          error: {
-            message: `${failureCount} scorer${failureCount === 1 ? "" : "s"} reported errors`,
-          },
-        }
-      : {}),
-  };
-}
-
-function mapEvalResultStatus(
-  status: ObservabilityEvalScoreRecord["status"],
-): VoltOpsAppendEvalRunResultsRequest["results"][number]["status"] {
-  switch (status) {
-    case "success":
-      return "passed";
-    case "error":
-      return "error";
-    default:
-      return "pending";
-  }
-}
-
-function buildDatasetItemHash(record: ObservabilityEvalScoreRecord): string {
-  const tracePart = record.traceId ?? "trace";
-  return `${tracePart}:${record.id}`;
-}
-
-function cloneMetadata(
-  metadata: Record<string, unknown> | null | undefined,
-): Record<string, unknown> {
-  if (!metadata) {
-    return {};
-  }
-  try {
-    return JSON.parse(safeStringify(metadata)) as Record<string, unknown>;
-  } catch {
-    return { ...metadata };
-  }
-}
-
-function extractScorerMetadata(
-  metadata: Record<string, unknown> | null | undefined,
-): Record<string, unknown> | null {
-  if (!metadata) {
-    return null;
-  }
-  const clone = cloneMetadata(metadata);
-  const scorerDetails =
-    clone.scorer && typeof clone.scorer === "object" && clone.scorer
-      ? (clone.scorer as Record<string, unknown>)
-      : undefined;
-  const builderDetails =
-    clone.scorerBuilder && typeof clone.scorerBuilder === "object"
-      ? (clone.scorerBuilder as Record<string, unknown>)
-      : undefined;
-
-  const result: Record<string, unknown> = {};
-  if (scorerDetails && Object.keys(scorerDetails).length > 0) {
-    result.details = scorerDetails;
-  }
-  if (builderDetails && Object.keys(builderDetails).length > 0) {
-    result.builder = builderDetails;
-  }
-
-  return Object.keys(result).length > 0 ? result : null;
-}
-
-async function ensureVoltOpsScorer(
-  client: VoltOpsClient,
-  record: ObservabilityEvalScoreRecord,
-  host: AgentEvalHost,
-): Promise<void> {
-  const scorerId = record.scorerId;
-  if (ensuredVoltOpsScorers.has(scorerId)) {
-    return;
-  }
-  try {
-    await client.createEvalScorer({
-      id: scorerId,
-      name: record.scorerName ?? scorerId,
-      description: `Auto-registered live scorer '${record.scorerName ?? scorerId}' from agent ${host.name}`,
-    });
-    ensuredVoltOpsScorers.add(scorerId);
-  } catch (error) {
-    host.logger.warn(`[Agent:${host.name}] Failed to ensure VoltOps scorer`, {
-      scorerId,
-      error: error instanceof Error ? error.message : error,
-    });
-  }
 }
 
 function extractErrorMessage(error: unknown): string {

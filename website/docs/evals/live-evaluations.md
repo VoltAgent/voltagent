@@ -453,54 +453,6 @@ scorers: {
 }
 ```
 
-## Observability Integration
-
-Live scorer results are stored via the `VoltAgentObservability` instance. Access scores programmatically:
-
-```ts
-const observability = new VoltAgentObservability();
-
-// After interactions complete:
-const storage = observability.getStorage();
-if (storage?.listEvalScores) {
-  const scores = await storage.listEvalScores({
-    agentId: agent.id,
-    limit: 10,
-  });
-
-  for (const score of scores) {
-    console.log(`${score.scorerName}: ${score.score} (${score.status})`);
-  }
-}
-```
-
-### Score Record Structure
-
-```ts
-interface ObservabilityEvalScoreRecord {
-  id: string;
-  agentId: string;
-  agentName: string;
-  traceId?: string;
-  spanId?: string;
-  operationId?: string;
-  operationType?: string;
-  scorerId: string;
-  scorerName?: string;
-  status: "success" | "error" | "skipped";
-  score: number | null;
-  metadata?: Record<string, unknown> | null;
-  sampling?: SamplingMetadata;
-  triggerSource?: string;
-  environment?: string;
-  durationMs?: number;
-  errorMessage?: string;
-  createdAt: string;
-  threshold?: number | null;
-  thresholdPassed?: boolean | null;
-}
-```
-
 ## VoltOps Integration
 
 When a VoltOps client is configured globally, live scorer results are forwarded automatically:
@@ -622,19 +574,6 @@ redact: (payload) => ({
 ```
 
 Scorers receive unredacted data. Only storage and telemetry are redacted.
-
-### Monitor Scorer Performance
-
-Check scorer duration and error rates in observability:
-
-```ts
-const scores = await storage.listEvalScores({ limit: 100 });
-const avgDuration = scores.reduce((sum, s) => sum + (s.durationMs ?? 0), 0) / scores.length;
-const errorRate = scores.filter((s) => s.status === "error").length / scores.length;
-
-console.log(`Avg scorer duration: ${avgDuration}ms`);
-console.log(`Error rate: ${(errorRate * 100).toFixed(1)}%`);
-```
 
 ### Use Thresholds for Alerts
 

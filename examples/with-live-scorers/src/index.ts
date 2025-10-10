@@ -156,17 +156,17 @@ const supportAgent = new Agent({
   eval: {
     sampling: { type: "ratio", rate: 1 },
     scorers: {
-      moderation: {
-        scorer: createModerationScorer({
-          model: moderationModel,
-          threshold: 0.5,
-        }),
-      },
       keyword: {
         scorer: keywordMatchScorer,
         params: {
           keyword: "voltagent",
         },
+      },
+      moderation: {
+        scorer: createModerationScorer({
+          model: moderationModel,
+          threshold: 0.5,
+        }),
       },
       helpfulness: {
         scorer: helpfulnessJudgeScorer,
@@ -214,32 +214,71 @@ new VoltAgent({
   await new Promise((resolve) => setTimeout(resolve, 750));
 
   const storage = observability.getStorage();
-  if (storage && typeof storage.listEvalScores === "function") {
-    const scores = await storage.listEvalScores({ agentId: supportAgent.id, limit: 10 });
+  if (storage) {
+    const traceIds = await storage.listTraces(20, 0);
+    const scorerSpans: import("@voltagent/core").ObservabilitySpan[] = [];
 
-    if (scores.length === 0) {
+    for (const traceId of traceIds) {
+      const spans = await storage.getTrace(traceId);
+      for (const span of spans) {
+        const attrs = span.attributes ?? {};
+        if (attrs["entity.id"] === supportAgent.id && attrs["eval.scorer.id"]) {
+          scorerSpans.push(span);
+        }
+      }
+    }
+
+    scorerSpans.sort((a, b) => {
+      const aTime = new Date(a.endTime ?? a.startTime).getTime();
+      const bTime = new Date(b.endTime ?? b.startTime).getTime();
+      return bTime - aTime;
+    });
+
+    const latest = scorerSpans.slice(0, 10);
+
+    if (latest.length === 0) {
       console.log("No live eval scores recorded yet. Try running the script again.");
     } else {
       console.log("Live eval scores:");
-      for (const score of scores) {
+      for (const span of latest) {
+        const attrs = span.attributes ?? {};
+        const name =
+          (attrs["eval.scorer.name"] as string) ?? (attrs["eval.scorer.id"] as string) ?? "unknown";
+        const status = (attrs["eval.scorer.status"] as string) ?? "unknown";
+        const rawScore = attrs["eval.scorer.score"];
         const value =
-          score.score === null || score.score === undefined ? "n/a" : score.score.toFixed(3);
-        const name = score.scorerName ?? score.scorerId;
-        console.log(`- ${name}: ${value} (${score.status})`);
-        if (score.sampling?.strategy) {
-          console.log(
-            `  sampling: ${score.sampling.strategy}${
-              score.sampling.rate !== undefined ? ` (${score.sampling.rate})` : ""
-            }`,
-          );
+          typeof rawScore === "number"
+            ? rawScore.toFixed(3)
+            : typeof rawScore === "string" && rawScore.length > 0
+              ? Number.parseFloat(rawScore).toFixed(3)
+              : "n/a";
+        console.log(`- ${name}: ${value} (${status})`);
+
+        const strategy = attrs["eval.scorer.sampling.strategy"] as string | undefined;
+        const rateAttr = attrs["eval.scorer.sampling.rate"];
+        const rate =
+          typeof rateAttr === "number"
+            ? rateAttr
+            : typeof rateAttr === "string"
+              ? Number.parseFloat(rateAttr)
+              : undefined;
+        if (strategy) {
+          console.log(`  sampling: ${strategy}${rate !== undefined ? ` (${rate})` : ""}`);
         }
-        if (score.triggerSource || score.environment) {
-          console.log(
-            `  trigger: ${score.triggerSource ?? "unknown"} | env: ${score.environment ?? "n/a"}`,
-          );
-        }
-        if (score.metadata?.scorer) {
-          console.log("  metadata:", score.metadata.scorer);
+
+        const trigger = (attrs["eval.trigger_source"] as string) ?? "unknown";
+        const environment = (attrs["eval.environment"] as string) ?? "n/a";
+        console.log(`  trigger: ${trigger} | env: ${environment}`);
+
+        const metadataRaw = attrs["eval.scorer.metadata"];
+        if (metadataRaw) {
+          try {
+            const metadata =
+              typeof metadataRaw === "string" ? JSON.parse(metadataRaw) : metadataRaw;
+            console.log("  metadata:", JSON.stringify(metadata, null, 2));
+          } catch {
+            console.log("  metadata:", metadataRaw);
+          }
         }
       }
     }

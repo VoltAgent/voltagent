@@ -97,9 +97,6 @@ export type {
   SpanStatus,
   SpanTreeNode,
   LogFilter,
-  ObservabilityEvalScoreRecord,
-  ObservabilityEvalScoreStatus,
-  ObservabilityEvalScoreQuery,
 } from "./types";
 
 export {

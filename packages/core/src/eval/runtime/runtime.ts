@@ -66,6 +66,15 @@ export interface RunLocalScorersArgs<Payload extends Record<string, unknown>> {
   baseArgs?:
     | Record<string, unknown>
     | ((payload: Payload) => Record<string, unknown> | Promise<Record<string, unknown>>);
+  onScorerStart?: (info: {
+    definition: LocalScorerDefinition<Payload>;
+    sampling?: SamplingMetadata;
+  }) => unknown;
+  onScorerComplete?: (info: {
+    definition: LocalScorerDefinition<Payload>;
+    execution: LocalScorerExecutionResult;
+    context?: unknown;
+  }) => void;
 }
 
 export interface RunLocalScorersResult {
@@ -96,18 +105,12 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
     };
   }
 
-  const results: LocalScorerExecutionResult[] = [];
-  let successCount = 0;
-  let errorCount = 0;
-  let skippedCount = 0;
-
-  for (const definition of scorers) {
+  const tasks = scorers.map(async (definition) => {
     const policy = definition.sampling ?? defaultSampling ?? { type: "always" };
     const samplingMetadata = buildSamplingMetadata(policy);
 
     if (!shouldSample(policy)) {
-      skippedCount += 1;
-      results.push({
+      return {
         id: definition.id,
         name: definition.name,
         status: "skipped",
@@ -115,8 +118,7 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
         metadata: mergeMetadata(null, definition.metadata),
         sampling: samplingMetadata,
         durationMs: 0,
-      });
-      continue;
+      } satisfies LocalScorerExecutionResult;
     }
 
     let scorerParams: Record<string, unknown> = {};
@@ -124,8 +126,7 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
     try {
       scorerParams = await resolveScorerParams(payload, baseArgs, definition.params);
     } catch (error) {
-      errorCount += 1;
-      results.push({
+      const execution: LocalScorerExecutionResult = {
         id: definition.id,
         name: definition.name,
         status: "error",
@@ -134,9 +135,19 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
         sampling: samplingMetadata,
         durationMs: 0,
         error,
+      };
+      args.onScorerComplete?.({
+        definition,
+        execution,
+        context: undefined,
       });
-      continue;
+      return execution;
     }
+
+    const lifecycleContext = args.onScorerStart?.({
+      definition,
+      sampling: samplingMetadata,
+    });
 
     const start = Date.now();
     let status: LocalScorerExecutionResult["status"] = "success";
@@ -174,15 +185,7 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
 
     const durationMs = Date.now() - start;
 
-    if (status === "success") {
-      successCount += 1;
-    } else if (status === "error") {
-      errorCount += 1;
-    } else {
-      skippedCount += 1;
-    }
-
-    results.push({
+    const execution: LocalScorerExecutionResult = {
       id: definition.id,
       name: definition.name,
       status,
@@ -191,16 +194,36 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
       sampling: samplingMetadata,
       durationMs,
       error: errorValue,
+    };
+
+    args.onScorerComplete?.({
+      definition,
+      execution,
+      context: lifecycleContext,
     });
-  }
+
+    return execution;
+  });
+
+  const results = await Promise.all(tasks);
+
+  const summary = results.reduce(
+    (acc, result) => {
+      if (result.status === "success") {
+        acc.successCount += 1;
+      } else if (result.status === "error") {
+        acc.errorCount += 1;
+      } else {
+        acc.skippedCount += 1;
+      }
+      return acc;
+    },
+    { successCount: 0, errorCount: 0, skippedCount: 0 },
+  );
 
   return {
     results,
-    summary: {
-      successCount,
-      errorCount,
-      skippedCount,
-    },
+    summary,
   };
 }
 

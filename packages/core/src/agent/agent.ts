@@ -504,10 +504,9 @@ export class Agent {
           },
         );
 
-        // Add usage to span and close it successfully
+        // Add usage to span
         this.setTraceContextUsage(oc.traceContext, result.usage);
         oc.traceContext.setOutput(result.text);
-        oc.traceContext.end("completed");
 
         // Set output in operation context
         oc.output = result.text;
@@ -522,6 +521,9 @@ export class Agent {
             toolCalls: result.toolCalls,
           },
         });
+
+        // Close span after scheduling scorers
+        oc.traceContext.end("completed");
 
         // Return result with context - use Object.assign to properly copy all properties including getters
         const returnValue = Object.assign(
@@ -691,10 +693,9 @@ export class Agent {
 
             // Event tracking now handled by OpenTelemetry spans
 
-            // Add usage to span and close it successfully
+            // Add usage to span
             this.setTraceContextUsage(oc.traceContext, finalResult.totalUsage);
             oc.traceContext.setOutput(finalResult.text);
-            oc.traceContext.end("completed");
 
             // Set output in operation context
             oc.output = finalResult.text;
@@ -750,6 +751,8 @@ export class Agent {
                 toolCalls: finalResult.toolCalls,
               },
             });
+
+            oc.traceContext.end("completed");
           },
         });
 
@@ -998,10 +1001,9 @@ export class Agent {
 
         // Event tracking now handled by OpenTelemetry spans
 
-        // Add usage to span and close it successfully
+        // Add usage to span
         this.setTraceContextUsage(oc.traceContext, result.usage);
         oc.traceContext.setOutput(result.object);
-        oc.traceContext.end("completed");
 
         // Set output in operation context
         oc.output = result.object;
@@ -1016,6 +1018,8 @@ export class Agent {
             schemaName,
           },
         });
+
+        oc.traceContext.end("completed");
 
         // Call hooks
         await this.getMergedHooks(options).onEnd?.({
@@ -1223,10 +1227,9 @@ export class Agent {
 
             // Event tracking now handled by OpenTelemetry spans
 
-            // Add usage to span and close it successfully
+            // Add usage to span
             this.setTraceContextUsage(oc.traceContext, finalResult.usage);
             oc.traceContext.setOutput(finalResult.object);
-            oc.traceContext.end("completed");
 
             // Set output in operation context
             oc.output = finalResult.object;
@@ -1280,6 +1283,8 @@ export class Agent {
                 schemaName,
               },
             });
+
+            oc.traceContext.end("completed");
           },
         });
 
