@@ -96,35 +96,35 @@ export default function Navbar() {
                 Products
                 <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-white" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-slate-900 border border-solid border-slate-700 rounded-xl shadow-2xl shadow-emerald-500/10 w-[280px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-emerald-500/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[280px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="p-3">
                   <Link to="/docs/" className="no-underline">
-                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 mb-2">
-                      <CubeIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
+                      <CubeIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
                       <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         VoltAgent Core Framework
                       </span>
                     </div>
                   </Link>
                   <Link to="/voltops-llm-observability/" className="no-underline">
-                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 mb-2">
-                      <ComputerDesktopIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
+                      <ComputerDesktopIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
                       <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         VoltOps LLM Observability
                       </span>
                     </div>
                   </Link>
                   <Link to="/ai-agent-marketplace/" className="no-underline">
-                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 mb-2">
-                      <ShoppingCartIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
+                      <ShoppingCartIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
                       <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         Marketplace
                       </span>
                     </div>
                   </Link>
-                  <div className="group p-3 -mx-1 hover:bg-slate-800 text-[#DCDCDC] flex items-center justify-between transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 mb-2">
+                  <div className="group p-3 -mx-1 hover:bg-slate-800 text-[#DCDCDC] flex items-center justify-between transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
                     <div className="flex items-center font-['Inter']">
-                      <CloudArrowUpIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                      <CloudArrowUpIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
                       <span className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         Deployment
                       </span>
@@ -134,9 +134,9 @@ export default function Navbar() {
                     </span>
                   </div>
 
-                  <div className="group p-3 -mx-1 hover:bg-slate-800 text-[#DCDCDC] flex items-center justify-between transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10">
+                  <div className="group p-3 -mx-1 hover:bg-slate-800 text-[#DCDCDC] flex items-center justify-between transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20">
                     <div className="flex items-center font-['Inter']">
-                      <PuzzlePieceIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                      <PuzzlePieceIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
                       <span className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         Agentic App Builder
                       </span>
@@ -163,7 +163,7 @@ export default function Navbar() {
                 Use Cases
                 <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-white" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-slate-900 border border-solid border-slate-700 rounded-xl shadow-2xl shadow-emerald-500/10 w-[580px] max-h-[500px] overflow-y-auto opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-emerald-500/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[580px] max-h-[500px] overflow-y-auto opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="grid grid-cols-2 gap-1 p-3">
                   {useCasesData.map((useCase) => {
                     const Icon = useCaseIcons[useCase.slug] || BoltIcon;
@@ -173,30 +173,11 @@ export default function Navbar() {
                         to={`/use-cases/${useCase.slug}`}
                         className="no-underline"
                       >
-                        <div className="group p-2 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10">
-                          <Icon className="w-5 h-5 mr-3 text-[#00d992] flex-shrink-0 group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                        <div className="group p-2 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20">
+                          <Icon className="w-5 h-5 mr-3 text-[#00d992] flex-shrink-0  transition-all duration-200" />
                           <div className="min-w-0">
                             <div className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                               {useCase.title}
-                            </div>
-                            <div className="text-xs text-gray-500 font-['Inter'] font-normal">
-                              {(() => {
-                                const descriptions = {
-                                  "customer-support-agent": "for support and service teams",
-                                  "hr-agent": "for HR and people teams",
-                                  "sales-teams": "for sales and revenue teams",
-                                  "finance-agent": "for finance and accounting teams",
-                                  "development-agent": "for engineering and dev teams",
-                                  "marketing-agent": "for marketing and growth teams",
-                                  "legal-agent": "for legal and compliance teams",
-                                  "insurance-agent": "for insurance companies",
-                                  "industrial-agent": "for manufacturing and operations",
-                                  "education-agent": "for education and training teams",
-                                  "government-agent": "for government and public sector",
-                                  "documentation-agent": "for documentation and content teams",
-                                };
-                                return descriptions[useCase.slug] || "for your team";
-                              })()}
                             </div>
                           </div>
                         </div>
@@ -212,13 +193,13 @@ export default function Navbar() {
                 Resources
                 <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-white" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-slate-900 border border-solid border-slate-700 rounded-xl shadow-2xl shadow-emerald-500/10 w-[600px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-emerald-500/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[600px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="grid grid-cols-2 gap-0">
                   {/* Left Column - LEARN */}
-                  <div className="p-4 border-r border-emerald-500/10">
+                  <div className="p-4 border-r border-slate-700/30">
                     <Link to="/tutorial/introduction" className="no-underline">
-                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 mb-2">
-                        <BookOpenIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
+                        <BookOpenIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                         <div className="min-w-0 font-['Inter']">
                           <div className="text-sm font-semibold whitespace-nowrap !text-white group-hover:!text-white transition-colors duration-200">
                             5 Steps Tutorial
@@ -230,8 +211,8 @@ export default function Navbar() {
                       </div>
                     </Link>
                     <Link to="https://voltagent.dev/examples/" className="no-underline">
-                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 mb-2">
-                        <CommandLineIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
+                        <CommandLineIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                         <div className="min-w-0 font-['Inter']">
                           <div className="text-sm font-semibold whitespace-nowrap !text-white group-hover:!text-white transition-colors duration-200">
                             Examples
@@ -243,8 +224,8 @@ export default function Navbar() {
                       </div>
                     </Link>
                     <Link to="/mcp/" className="no-underline">
-                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10">
-                        <ServerIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20">
+                        <ServerIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                         <div className="min-w-0 font-['Inter']">
                           <div className="text-sm font-semibold whitespace-nowrap !text-white group-hover:!text-white transition-colors duration-200">
                             MCP Directory
@@ -260,8 +241,8 @@ export default function Navbar() {
                   {/* Right Column - CONNECT */}
                   <div className="p-4">
                     <Link to="/blog/" className="no-underline">
-                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 mb-2">
-                        <PencilSquareIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
+                        <PencilSquareIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                         <div className="min-w-0 font-['Inter']">
                           <div className="text-sm font-semibold whitespace-nowrap !text-white group-hover:!text-white transition-colors duration-200">
                             Blog
@@ -273,8 +254,8 @@ export default function Navbar() {
                       </div>
                     </Link>
                     <Link to="/about/" className="no-underline">
-                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 mb-2">
-                        <InformationCircleIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
+                        <InformationCircleIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                         <div className="min-w-0 font-['Inter']">
                           <div className="text-sm font-semibold whitespace-nowrap !text-white group-hover:!text-white transition-colors duration-200">
                             About Us
@@ -286,8 +267,8 @@ export default function Navbar() {
                       </div>
                     </Link>
                     <Link to="/launch-week-june-25/" className="no-underline">
-                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10">
-                        <RocketLaunchIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_8px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                      <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20">
+                        <RocketLaunchIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                         <div className="min-w-0 font-['Inter']">
                           <div className="text-sm font-semibold whitespace-nowrap !text-white group-hover:!text-white transition-colors duration-200">
                             Launch Week #1
@@ -308,7 +289,7 @@ export default function Navbar() {
           <Link
             to="https://github.com/voltagent/voltagent/"
             target="_blank"
-            className={`${styles.navbarButton} group relative no-underline flex hover:border-emerald-400  hover:text-[#00d992] items-center border-solid border-1 border-[#DCDCDC] rounded-3xl p-1 rounded-full text-[#DCDCDC] hover:text-[#00d992]`}
+            className={`${styles.navbarButton} group relative no-underline flex hover:border-slate-600  hover:text-[#00d992] items-center border-solid border-1 border-[#DCDCDC] rounded-3xl p-1 rounded-full text-[#DCDCDC] hover:text-[#00d992]`}
             rel="noopener noreferrer"
           >
             <GitHubLogo className="w-6 h-6 " />
@@ -410,14 +391,14 @@ export default function Navbar() {
             </button>
             <div id="mobile-products-dropdown" className="hidden  mt-4 mb-2 ">
               <Link to="/voltops-llm-observability/" className="no-underline">
-                <div className="group p-3 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-t-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10">
-                  <ComputerDesktopIcon className="w-5 h-5 mr-2 text-[#00d992] group-hover:drop-shadow-[0_0_6px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                <div className="group p-3 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-t-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20">
+                  <ComputerDesktopIcon className="w-5 h-5 mr-2 text-[#00d992]  transition-all duration-200" />
                   <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                     VoltOps LLM Observability
                   </span>
                 </div>
               </Link>
-              <div className="p-3 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-all border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.02] hover:shadow-md hover:shadow-emerald-500/10 rounded-b-lg">
+              <div className="p-3 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-all border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 rounded-b-lg">
                 <div className="flex items-center font-['Inter']">
                   <CloudArrowUpIcon className="w-5 h-5 mr-2 text-[#00d992]" />
                   <span className="text-sm font-semibold">Deployment</span>
@@ -427,7 +408,7 @@ export default function Navbar() {
                 </span>
               </div>
 
-              <div className="p-3 hover:bg-slate-800/50 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400 rounded-b-md">
+              <div className="p-3 hover:bg-slate-800/50 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-slate-600 rounded-b-md">
                 <div className="flex items-center font-['Inter']">
                   <ShoppingCartIcon className="w-5 h-5 mr-2 text-[#00d992]" />
                   <Link
@@ -438,7 +419,7 @@ export default function Navbar() {
                   </Link>
                 </div>
               </div>
-              <div className="p-3 hover:bg-slate-800/50 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
+              <div className="p-3 hover:bg-slate-800/50 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-slate-600">
                 <div className="flex items-center font-['Inter']">
                   <PuzzlePieceIcon className="w-5 h-5 mr-2 text-[#00d992]" />
                   <span className="text-sm font-semibold">Agentic App Builder</span>
@@ -489,9 +470,9 @@ export default function Navbar() {
                         isFirst ? "rounded-t-lg" : ""
                       } ${
                         isLast ? "rounded-b-lg" : ""
-                      } transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10`}
+                      } transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.01] hover:shadow-md hover:shadow-slate-900/20`}
                     >
-                      <Icon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_6px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                      <Icon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                       <div className="min-w-0 flex-1 font-['Inter']">
                         <div className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200 break-words line-clamp-2">
                           {useCase.title}
@@ -522,8 +503,8 @@ export default function Navbar() {
             </button>
             <div id="mobile-resources-menu" className="hidden mt-4 mb-2">
               <Link to="/tutorial/introduction" className="no-underline">
-                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center rounded-t-lg transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10">
-                  <BookOpenIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_6px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center rounded-t-lg transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.01] hover:shadow-md hover:shadow-slate-900/20">
+                  <BookOpenIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                       5 Steps Tutorial
@@ -538,8 +519,8 @@ export default function Navbar() {
                 to="https://github.com/voltagent/voltagent/tree/main/examples/"
                 className="no-underline"
               >
-                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10">
-                  <CommandLineIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_6px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.01] hover:shadow-md hover:shadow-slate-900/20">
+                  <CommandLineIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                       Examples
@@ -549,8 +530,8 @@ export default function Navbar() {
                 </div>
               </Link>
               <Link to="/mcp/" className="no-underline">
-                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10">
-                  <ServerIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_6px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.01] hover:shadow-md hover:shadow-slate-900/20">
+                  <ServerIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                       MCP Directory
@@ -562,8 +543,8 @@ export default function Navbar() {
                 </div>
               </Link>
               <Link to="/blog/" className="no-underline">
-                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10">
-                  <PencilSquareIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_6px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.01] hover:shadow-md hover:shadow-slate-900/20">
+                  <PencilSquareIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                       Blog
@@ -573,8 +554,8 @@ export default function Navbar() {
                 </div>
               </Link>
               <Link to="/about/" className="no-underline">
-                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10">
-                  <InformationCircleIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_6px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.01] hover:shadow-md hover:shadow-slate-900/20">
+                  <InformationCircleIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                       About Us
@@ -584,8 +565,8 @@ export default function Navbar() {
                 </div>
               </Link>
               <Link to="/launch-week-june-25/" className="no-underline">
-                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-b-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10">
-                  <RocketLaunchIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992] group-hover:drop-shadow-[0_0_6px_rgba(0,217,146,0.5)] transition-all duration-200" />
+                <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-b-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.01] hover:shadow-md hover:shadow-slate-900/20">
+                  <RocketLaunchIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                       Launch Week #1
