@@ -98,6 +98,7 @@ export const runCLI = async (): Promise<void> => {
             { name: `Groq (${AI_PROVIDER_CONFIG.groq.modelName})`, value: "groq" },
             { name: `Mistral (${AI_PROVIDER_CONFIG.mistral.modelName})`, value: "mistral" },
             { name: `Ollama (${AI_PROVIDER_CONFIG.ollama.modelName} - Local)`, value: "ollama" },
+            { name: `Cerebras (${AI_PROVIDER_CONFIG.cerebras.modelName})`, value: "cerebras" },
           ],
           default: "openai",
         },
