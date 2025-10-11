@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
-    "@voltagent/core": "^1.1.25",
+    "@voltagent/core": "^1.1.26",
     "@voltagent/scorers": "^0.1.0",
-    "@voltagent/server-hono": "^1.0.16",
+    "@voltagent/server-hono": "^1.0.18",
     "zod": "^3.25.76"
   },
   "devDependencies": {

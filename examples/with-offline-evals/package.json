@@ -10,7 +10,7 @@
     "volt": "volt"
   },
   "dependencies": {
-    "@voltagent/core": "^1.1.25",
+    "@voltagent/core": "^1.1.26",
     "@voltagent/cli": "^0.1.11",
     "@voltagent/evals": "^0.1.0",
     "@voltagent/scorers": "^0.1.0",
