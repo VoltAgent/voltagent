@@ -1,5 +1,29 @@
 # @voltagent/core
 
+## 1.1.26
+
+### Patch Changes
+
+- [#654](https://github.com/VoltAgent/voltagent/pull/654) [`78b9727`](https://github.com/VoltAgent/voltagent/commit/78b9727e85a31fd8eaa9c333de373d982f58b04f) Thanks [@VISHWAJ33T](https://github.com/VISHWAJ33T)! - feat(workflow): Improve typing for state parameter in steps.
+
+- [#669](https://github.com/VoltAgent/voltagent/pull/669) [`6d00793`](https://github.com/VoltAgent/voltagent/commit/6d007938d31c6d928185153834661c50227af326) Thanks [@marinoska](https://github.com/marinoska)! - Fix duplicate tool registration during agent preparation.
+
+- [#663](https://github.com/VoltAgent/voltagent/pull/663) [`7fef3a7`](https://github.com/VoltAgent/voltagent/commit/7fef3a7ea1b3f7f8c780a528d3c3abce312f3be9) Thanks [@VISHWAJ33T](https://github.com/VISHWAJ33T)! - feat(workflow): add support for dynamic schemas in agent steps
+
+- [#659](https://github.com/VoltAgent/voltagent/pull/659) [`c4d13f2`](https://github.com/VoltAgent/voltagent/commit/c4d13f2be129013eed6392990863ae85cdbd8855) Thanks [@marinoska](https://github.com/marinoska)! - Add first-class support for client-side tool calls and Vercel AI hooks integration.
+
+  This enables tools to run in the browser (no execute function) while the model remains on the server. Tool calls are surfaced to the client via Vercel AI hooks (useChat/useAssistant), executed with access to browser APIs, and their results are sent back to the model using addToolResult with the original toolCallId.
+
+  Highlights:
+  - Define a client-side tool by omitting the execute function.
+  - Automatic interception of tool calls on the client via onToolCall in useChat/useAssistant.
+  - Report outputs and errors back to the model via addToolResult(toolCallId, payload), preserving conversation state.
+  - Example added/updated: examples/with-client-side-tools (Next.js + Vercel AI).
+
+  Docs:
+  - README: Clarifies client-side tool support and where it fits in the stack.
+  - website/docs/agents/tools.md: New/updated “Client-Side Tools” section, end-to-end flow with useChat/useAssistant, addToolResult usage, and error handling.
+
 ## 1.1.25
 
 ### Patch Changes

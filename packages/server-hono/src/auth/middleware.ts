@@ -67,6 +67,7 @@ export function createAuthMiddleware(authProvider: AuthProvider<Request>) {
         const body = await originalJson();
         return {
           ...body,
+          // Not removing context from body as it might be used somewhere else
           context: {
             ...body.context,
             user,
@@ -74,6 +75,19 @@ export function createAuthMiddleware(authProvider: AuthProvider<Request>) {
           // Set userId if available
           ...(user.id && { userId: user.id }),
           ...(user.sub && !user.id && { userId: user.sub }),
+          // Adding the above in options, as this is where context is read from
+          // by processAgentOptions (packages/server-core/src/utils/options.ts:37)
+          // and processWorkflowOptions
+          // These is needed so the auth context/user arrives into OperationContext
+          options: {
+            context: {
+              ...body.context,
+              user,
+            },
+            // Set userId if available
+            ...(user.id && { userId: user.id }),
+            ...(user.sub && !user.id && { userId: user.sub }),
+          },
         };
       };
 
