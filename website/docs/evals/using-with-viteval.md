@@ -1,14 +1,36 @@
 ---
-title: Quick Start
-slug: /evals/quick-start
+title: Using with Viteval
+slug: /evals/using-with-viteval
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Evals Quick Start Guide
+# Using VoltAgent with Viteval
 
-This guide will walk you through setting up your first evaluation pipeline with VoltAgent and Viteval. In just a few minutes, you'll have a working eval system that can measure your agent's performance.
+Viteval is a third-party evaluation framework that can be integrated with VoltAgent for running evaluations. While VoltAgent provides its own native evaluation system through the CLI and `runExperiment` API, Viteval offers an alternative approach for teams already familiar with its ecosystem.
+
+:::info Recommended Approach
+For full feature support and VoltOps integration, we recommend using VoltAgent's native evaluation system:
+
+- **VoltAgent CLI**: Use `volt eval` commands for dataset management and evaluation runs
+- **runExperiment API**: Direct programmatic control over evaluations
+- **VoltOps Integration**: Cloud-based evaluation management (coming soon)
+
+See our [CLI Reference](/evals/cli-reference) and [Experiments Guide](/evals/experiments) for the recommended approach.
+:::
+
+:::warning VoltOps Integration
+Viteval does not currently integrate with VoltOps, VoltAgent's cloud platform for managing evaluations. VoltOps integration for third-party evaluation frameworks is coming soon. For now, use VoltAgent's native evaluation features for full cloud support.
+:::
+
+## When to Use Viteval
+
+Consider using Viteval if:
+
+- Your team already uses Viteval for other projects
+- You need Viteval-specific features not yet available in VoltAgent
+- You're migrating from a Viteval-based evaluation system
 
 ## Prerequisites
 
@@ -42,7 +64,7 @@ Install Viteval as a development dependency:
 
 ## Quick Setup
 
-### 1. Set up VoltAgent
+### 1. Initialize Viteval
 
 ```bash
 viteval init
@@ -160,15 +182,15 @@ Add a script to your `package.json`:
 ```json
 {
   "scripts": {
-    "eval": "viteval"
+    "eval:viteval": "viteval"
   }
 }
 ```
 
-### 8. Run Your First Evaluation
+### 8. Run Your Evaluation
 
 ```bash
-npm run eval
+npm run eval:viteval
 ```
 
 You'll see output like:
@@ -181,7 +203,27 @@ You'll see output like:
   Overall: 0.883 (threshold: 0.7) ✓
 ```
 
+## Limitations
+
+When using Viteval with VoltAgent, be aware of these limitations:
+
+1. **No VoltOps Integration**: Results won't appear in your VoltOps dashboard
+2. **Limited Scorer Support**: Not all VoltAgent scorers are available in Viteval
+3. **No Live Evaluations**: Viteval only supports offline evaluations
+4. **Dataset Format Differences**: Viteval datasets use a different format than VoltAgent datasets
+
+## Migration to Native VoltAgent Evals
+
+To migrate from Viteval to VoltAgent's native evaluation system:
+
+1. Convert your Viteval datasets to VoltAgent format (see [Datasets Guide](/evals/datasets))
+2. Replace `viteval` commands with `volt eval` commands
+3. Use `runExperiment` instead of `evaluate()` function
+4. Update scorers to use VoltAgent's scorer definitions
+
 ## Next Steps
 
-- [**View Available Scorers**](https://viteval.dev/api/scorers?ref=voltagent): Understanding evaluation metrics
-- [**CI Integration**](https://viteval.dev/guide/advanced/ci?ref=voltagent): Integrate Viteval into your CI pipeline
+- **For Viteval Users**: [View Available Viteval Scorers](https://viteval.dev/api/scorers?ref=voltagent)
+- **Recommended**: [VoltAgent CLI Reference](/evals/cli-reference) - Use native VoltAgent evaluations
+- **Recommended**: [Experiments Guide](/evals/experiments) - Learn about VoltAgent's evaluation system
+- **Coming Soon**: VoltOps integration for enhanced evaluation management

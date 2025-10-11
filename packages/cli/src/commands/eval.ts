@@ -227,7 +227,7 @@ export const registerEvalCommand = (program: Command): void => {
 
   datasetCommand
     .command("pull")
-    .description("Download a dataset version from VoltOps into .viteval/datasets")
+    .description("Download a dataset version from VoltOps into .voltagent/datasets")
     .option("--name <datasetName>", "Dataset name to pull (defaults to VOLTAGENT_DATASET_NAME)")
     .option("--id <datasetId>", "Dataset ID to pull (overrides --name)")
     .option("--version <versionId>", "Dataset version ID (defaults to latest)")

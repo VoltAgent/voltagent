@@ -155,11 +155,31 @@ const sidebars: SidebarsConfig = {
       label: "Evals",
       items: [
         "evals/overview",
-        "evals/offline-evaluations",
-        "evals/live-evaluations",
-        "evals/building-custom-scorers",
-        "evals/prebuilt-scorers",
-        "evals/quick-start",
+        {
+          type: "category",
+          label: "Getting Started",
+          items: ["evals/offline-evaluations", "evals/live-evaluations"],
+        },
+        {
+          type: "category",
+          label: "Core Concepts",
+          items: ["evals/datasets", "evals/experiments"],
+        },
+        {
+          type: "category",
+          label: "Scorers",
+          items: ["evals/prebuilt-scorers", "evals/building-custom-scorers"],
+        },
+        {
+          type: "category",
+          label: "Tools & Reference",
+          items: ["evals/cli-reference"],
+        },
+        {
+          type: "category",
+          label: "Integrations",
+          items: ["evals/using-with-viteval"],
+        },
       ],
     },
     {

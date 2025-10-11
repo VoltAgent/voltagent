@@ -22,7 +22,7 @@ export interface ReadDatasetFileOptions {
   cwd?: string;
 }
 
-const DEFAULT_DATASET_DIR = ".viteval/datasets";
+const DEFAULT_DATASET_DIR = ".voltagent/datasets";
 
 export const resolveDatasetFilePath = (
   datasetName: string,

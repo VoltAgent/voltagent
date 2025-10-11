@@ -15,7 +15,7 @@ export interface ResolveAuthOptions {
 
 const ENV_FILE_NAME = ".env";
 const normaliseBaseUrl = (input: string): string => input.replace(/\/?$/, "");
-const DEFAULT_API_URL = "http://localhost:3003";
+const DEFAULT_API_URL = "https://api.voltagent.dev";
 
 interface LoadedEnvFile {
   path: string;

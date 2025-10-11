@@ -674,9 +674,6 @@ export class LibSQLObservabilityAdapter implements ObservabilityStorageAdapter {
     return span;
   }
 
-  // Live scorer data now flows exclusively through OpenTelemetry spans; legacy eval score
-  // persistence helpers have been removed.
-
   /**
    * Get statistics about stored spans
    */
