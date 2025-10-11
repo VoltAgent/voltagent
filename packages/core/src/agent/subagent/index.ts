@@ -818,6 +818,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         tools: subAgent.getToolsForApi(),
         memory: agentState.memory,
         node_id: agentState.node_id,
+        scorers: agentState.scorers,
       };
 
       // Add method configuration if it's not a direct agent

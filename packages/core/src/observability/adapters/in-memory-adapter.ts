@@ -27,7 +27,13 @@ export class InMemoryStorageAdapter implements ObservabilityStorageAdapter {
   private maxLogs: number;
   private cleanupInterval: NodeJS.Timeout | null = null;
 
-  constructor(options: { maxSpans?: number; maxLogs?: number; cleanupIntervalMs?: number } = {}) {
+  constructor(
+    options: {
+      maxSpans?: number;
+      maxLogs?: number;
+      cleanupIntervalMs?: number;
+    } = {},
+  ) {
     this.maxSpans = options.maxSpans || 10000;
     this.maxLogs = options.maxLogs || 50000;
 

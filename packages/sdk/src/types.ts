@@ -1,267 +1,9 @@
-// Type definitions for SDK
-// Re-exporting types from Core
-import type {
-  AgentStartEventMetadata,
-  BaseEventMetadata,
-  HistoryStatus,
-  NewTimelineEvent,
-  TimelineEventCoreLevel,
-  TimelineEventCoreStatus,
-  UsageInfo,
-} from "@voltagent/core";
-
-// SDK Options
 export interface VoltAgentClientOptions {
-  baseUrl: string;
-  publicKey: string;
-  secretKey: string;
-  headers?: Record<string, string>;
+  baseUrl?: string;
+  publicKey?: string;
+  secretKey?: string;
   timeout?: number;
-}
-
-// History related types
-export interface CreateHistoryRequest {
-  id?: string;
-  agent_id: string;
-  userId?: string;
-  conversationId?: string;
-  startTime?: string;
-  endTime?: string;
-  status?: HistoryStatus;
-  input?: Record<string, unknown>;
-  output?: Record<string, unknown>;
-  usage?: UsageInfo;
-  metadata?: Record<string, unknown>;
-  completionStartTime?: string;
-  level?: string;
-  statusMessage?: string;
-  version?: string;
-  tags?: string[];
-}
-
-export interface UpdateHistoryRequest {
-  id: string;
-  agent_id?: string;
-  userId?: string;
-  conversationId?: string;
-  startTime?: string;
-  endTime?: string;
-  status?: HistoryStatus;
-  input?: Record<string, unknown>;
-  output?: Record<string, unknown>;
-  usage?: UsageInfo;
-  metadata?: Record<string, unknown>;
-  completionStartTime?: string;
-  model?: string;
-  modelParameters?: Record<string, unknown>;
-  level?: string;
-  statusMessage?: string;
-  version?: string;
-}
-
-export interface History {
-  id: string;
-  name: string;
-  projectId: string;
-  userId?: string;
-  metadata?: Record<string, unknown>;
-  input?: string;
-  startTime: string;
-  endTime?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Use strict event types from Core
-export type TimelineEventCore = NewTimelineEvent;
-
-// --- TYPE-SAFE EVENT INPUT DEFINITIONS ---
-
-// Base input interface for creating events (without required fields that will be auto-generated)
-interface BaseEventInput<M = BaseEventMetadata | null> {
-  startTime?: string; // Optional - will be auto-generated if not provided
-  endTime?: string | null;
-  status?: TimelineEventCoreStatus;
-  level?: TimelineEventCoreLevel;
-  input?: Record<string, unknown> | null;
-  output?: Record<string, unknown> | null;
-  metadata: M; // Required and strongly typed
-  statusMessage?: {
-    message: string;
-    stack?: string;
-    code?: string | number;
-    [key: string]: unknown;
-  } | null;
-  version?: string | null;
-  parentEventId?: string | null;
-  tags?: string[] | null;
-}
-
-// Tool Event Inputs
-export type ToolStartEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "tool:start";
-  type: "tool";
-};
-
-export type ToolSuccessEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "tool:success";
-  type: "tool";
-  status?: "completed";
-};
-
-export type ToolErrorEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "tool:error";
-  type: "tool";
-  status: "error";
-  level: "ERROR" | "CRITICAL";
-};
-
-// Agent Event Inputs
-export type AgentStartEventInput = BaseEventInput<AgentStartEventMetadata> & {
-  name: "agent:start";
-  type: "agent";
-  input: { input: string | any[] }; // Required for agent start
-};
-
-export type AgentSuccessEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "agent:success";
-  type: "agent";
-  status?: "completed";
-};
-
-export type AgentErrorEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "agent:error";
-  type: "agent";
-  status: "error";
-  level: "ERROR" | "CRITICAL";
-};
-
-// Memory Event Inputs
-export type MemoryReadStartEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "memory:read_start";
-  type: "memory";
-};
-
-export type MemoryReadSuccessEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "memory:read_success";
-  type: "memory";
-  status?: "completed";
-};
-
-export type MemoryReadErrorEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "memory:read_error";
-  type: "memory";
-  status: "error";
-  level: "ERROR" | "CRITICAL";
-};
-
-export type MemoryWriteStartEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "memory:write_start";
-  type: "memory";
-};
-
-export type MemoryWriteSuccessEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "memory:write_success";
-  type: "memory";
-  status?: "completed";
-};
-
-export type MemoryWriteErrorEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "memory:write_error";
-  type: "memory";
-  status: "error";
-  level: "ERROR" | "CRITICAL";
-};
-
-// Retriever Event Inputs
-export type RetrieverStartEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "retriever:start";
-  type: "retriever";
-};
-
-export type RetrieverSuccessEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "retriever:success";
-  type: "retriever";
-  status?: "completed";
-};
-
-export type RetrieverErrorEventInput = BaseEventInput<BaseEventMetadata> & {
-  name: "retriever:error";
-  type: "retriever";
-  status: "error";
-  level: "ERROR" | "CRITICAL";
-};
-
-// Main type-safe event input union - this is now the single event input type
-export type TimelineEventInput =
-  | ToolStartEventInput
-  | ToolSuccessEventInput
-  | ToolErrorEventInput
-  | AgentStartEventInput
-  | AgentSuccessEventInput
-  | AgentErrorEventInput
-  | MemoryReadStartEventInput
-  | MemoryReadSuccessEventInput
-  | MemoryReadErrorEventInput
-  | MemoryWriteStartEventInput
-  | MemoryWriteSuccessEventInput
-  | MemoryWriteErrorEventInput
-  | RetrieverStartEventInput
-  | RetrieverSuccessEventInput
-  | RetrieverErrorEventInput;
-
-export interface AddEventRequest {
-  historyId: string;
-  event: TimelineEventCore;
-}
-
-export interface UpdateEventRequest {
-  id: string;
-  agent_id?: string;
-  start_time?: string;
-  end_time?: string;
-  status?: TimelineEventCoreStatus;
-  status_message?: string;
-  level?: TimelineEventCoreLevel;
-  version?: string;
-  parent_event_id?: string;
-  tags?: string[];
-  metadata?: Record<string, unknown>;
-  input?: Record<string, unknown>;
-  output?: Record<string, unknown>;
-}
-
-export interface Event {
-  id: string; // UUID, will be generated server-side
-  historyId: string;
-  name: string;
-  type: "agent" | "tool" | "memory" | "retriever";
-  startTime: string;
-  endTime?: string | null;
-  status?: "idle" | "running" | "completed" | "error";
-  statusMessage?: string | null;
-  level?: "DEBUG" | "INFO" | "WARNING" | "ERROR" | "CRITICAL";
-  input?: Record<string, unknown> | null;
-  output?: Record<string, unknown> | null;
-  metadata?: Record<string, unknown> | null;
-  error?: {
-    message: string;
-    stack?: string;
-    code?: string | number;
-    [key: string]: unknown;
-  } | null;
-  version?: string | null;
-  parentEventId?: string | null;
-  tags?: string[] | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// API Responses
-export interface ApiResponse<T> {
-  data: T;
-  status: number;
-  message?: string;
+  headers?: Record<string, string>;
 }
 
 export interface ApiError {
@@ -270,182 +12,255 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
-export interface AgentSuccessOptions {
-  output?: any;
-  metadata?: Record<string, unknown>;
-  usage?: UsageInfo;
+export type EvalRunStatus = "pending" | "running" | "succeeded" | "failed" | "cancelled";
+export type TerminalEvalRunStatus = "succeeded" | "failed" | "cancelled";
+export type EvalResultStatus = "pending" | "running" | "passed" | "failed" | "error";
+export type EvalThresholdOperator = "gte" | "lte" | "eq";
+
+export interface CreateEvalRunRequest {
+  experimentId?: string;
+  datasetVersionId?: string;
+  providerCredentialId?: string;
+  triggerSource?: string;
+  autoQueue?: boolean;
 }
 
-export interface AgentErrorOptions {
-  statusMessage?: Error | any;
-  metadata?: Record<string, unknown>;
+export interface EvalRunResultScorePayload {
+  scorerId: string;
+  score?: number | null;
+  threshold?: number | null;
+  thresholdPassed?: boolean | null;
+  metadata?: Record<string, unknown> | null;
 }
 
-export interface ToolSuccessOptions {
-  output?: any;
-  metadata?: Record<string, unknown>;
-}
-
-export interface ToolErrorOptions {
-  statusMessage?: Error | any;
-  metadata?: Record<string, unknown>;
-}
-
-export interface MemorySuccessOptions {
-  output?: any;
-  metadata?: Record<string, unknown>;
-}
-
-export interface MemoryErrorOptions {
-  statusMessage?: Error | any;
-  metadata?: Record<string, unknown>;
-}
-
-export interface RetrieverSuccessOptions {
-  output?: any;
-  metadata?: Record<string, unknown>;
-}
-
-export interface RetrieverErrorOptions {
-  statusMessage?: Error | any;
-  metadata?: Record<string, unknown>;
-}
-
-// Re-export specific event types from Core
-export type {
-  ToolStartEvent,
-  ToolSuccessEvent,
-  ToolErrorEvent,
-  AgentStartEvent,
-  AgentSuccessEvent,
-  AgentErrorEvent,
-  MemoryReadStartEvent,
-  MemoryReadSuccessEvent,
-  MemoryReadErrorEvent,
-  MemoryWriteStartEvent,
-  MemoryWriteSuccessEvent,
-  MemoryWriteErrorEvent,
-  RetrieverStartEvent,
-  RetrieverSuccessEvent,
-  RetrieverErrorEvent,
-} from "@voltagent/core";
-
-// === NEW TRACE-BASED SDK TYPES ===
-
-export interface TraceOptions {
+export interface AppendEvalRunResultPayload {
   id?: string;
-  agentId: string;
-  input?: any;
-  userId?: string;
-  conversationId?: string;
-  metadata?: Record<string, unknown>;
-  tags?: string[];
-  completionStartTime?: string;
-  startTime?: string;
-  version?: string;
-  level?: string;
+  datasetItemId?: string | null;
+  datasetItemHash: string;
+  datasetId?: string | null;
+  datasetVersionId?: string | null;
+  datasetItemLabel?: string | null;
+  threshold?: number | null;
+  thresholdPassed?: boolean | null;
+  status?: EvalResultStatus;
+  input?: unknown;
+  expected?: unknown;
+  output?: unknown;
+  durationMs?: number | null;
+  scores?: EvalRunResultScorePayload[];
+  metadata?: Record<string, unknown> | null;
+  traceIds?: string[] | null;
+  liveEval?: EvalRunResultLiveMetadata | null;
 }
 
-export interface TraceEndOptions {
-  output?: any;
-  status?: HistoryStatus;
-  metadata?: Record<string, unknown>;
-  usage?: UsageInfo;
+export interface AppendEvalRunResultsRequest {
+  results: AppendEvalRunResultPayload[];
 }
 
-export interface AgentOptions {
+export interface EvalRunResultLiveMetadata {
+  traceId?: string | null;
+  spanId?: string | null;
+  operationId?: string | null;
+  operationType?: string | null;
+  sampling?: {
+    strategy: string;
+    rate?: number | null;
+  } | null;
+  triggerSource?: string | null;
+  environment?: string | null;
+}
+
+export interface EvalRunCompletionSummaryPayload {
+  itemCount?: number;
+  successCount?: number;
+  failureCount?: number;
+  meanScore?: number | null;
+  medianScore?: number | null;
+  sumScore?: number | null;
+  passRate?: number | null;
+  durationMs?: number | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface EvalRunErrorPayload {
+  message: string;
+  code?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface CompleteEvalRunRequest {
+  status: TerminalEvalRunStatus;
+  summary?: EvalRunCompletionSummaryPayload;
+  error?: EvalRunErrorPayload;
+}
+
+export interface FailEvalRunRequest {
+  error: EvalRunErrorPayload;
+}
+
+export interface EvalRunSummary {
+  id: string;
+  status: EvalRunStatus;
+  triggerSource: string;
+  datasetId?: string | null;
+  datasetVersionId?: string | null;
+  datasetVersionLabel?: string | null;
+  itemCount: number;
+  successCount: number;
+  failureCount: number;
+  meanScore?: number | null;
+  medianScore?: number | null;
+  sumScore?: number | null;
+  passRate?: number | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  durationMs?: number | null;
+  tags?: string[] | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EvalDatasetVersionSummary {
+  id: string;
+  version: number;
+  description?: string | null;
+  itemCount: number;
+  createdAt: string;
+}
+
+export interface EvalDatasetDetail {
+  id: string;
   name: string;
-  input?: any;
-  instructions?: string;
-  metadata?: Omit<AgentStartEventMetadata, "id" | "agentId" | "displayName" | "instructions">;
+  description?: string | null;
+  tags?: string[] | null;
+  projectId: string;
+  versionCount: number;
+  createdAt: string;
+  updatedAt: string;
+  versions: EvalDatasetVersionSummary[];
 }
 
-export interface ToolOptions {
+export interface EvalDatasetSummary {
+  id: string;
   name: string;
-  input?: any;
-  metadata?: Record<string, unknown>;
+  description?: string | null;
+  tags?: string[] | null;
+  projectId: string;
+  versionCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface MemoryOptions {
+export interface EvalDatasetItemSummary {
+  id: string;
+  datasetVersionId: string;
+  label?: string | null;
+  input: unknown;
+  expected?: unknown;
+  extra?: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface EvalDatasetItemsResponse {
+  items: EvalDatasetItemSummary[];
+  total: number;
+}
+
+export interface ListEvalDatasetItemsOptions {
+  limit?: number;
+  offset?: number;
+  search?: string;
+}
+
+export interface ListEvalExperimentsOptions {
+  projectId?: string;
+  datasetId?: string;
+  targetType?: string;
+  search?: string;
+  limit?: number;
+}
+
+export interface CreateEvalExperimentRequest {
   name: string;
-  input?: any;
-  metadata?: Record<string, unknown>;
+  description?: string | null;
+  datasetId?: string | null;
+  datasetVersionId?: string | null;
+  targetType?: "agent" | "workflow" | "none";
+  targetId?: string | null;
+  metadata?: Record<string, unknown> | null;
+  config?: Record<string, unknown> | null;
+  tags?: string[] | null;
+  enabled?: boolean;
 }
 
-export interface RetrieverOptions {
+export interface EvalExperimentSummary {
+  id: string;
+  projectId: string;
   name: string;
-  input?: any;
-  metadata?: Record<string, unknown>;
+  description?: string | null;
+  tags?: string[] | null;
+  datasetName?: string | null;
+  datasetId?: string | null;
+  datasetVersionId?: string | null;
+  datasetVersionLabel?: string | null;
+  targetType?: string | null;
+  targetId?: string | null;
+  targetName?: string | null;
+  enabled: boolean;
+  totalRuns: number;
+  lastRunId?: string | null;
+  lastRunStatus?: string | null;
+  lastRunAt?: string | null;
+  lastPassRate?: number | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Context interfaces
-export interface TraceContext {
-  readonly id: string;
-  readonly agentId: string;
-  update(data: Partial<UpdateHistoryRequest>): Promise<TraceContext>;
-  end(options?: TraceEndOptions): Promise<void>;
-  addAgent(options: AgentOptions): Promise<AgentContext>;
-  addEvent(event: TimelineEventInput): Promise<EventContext>;
+export interface EvalExperimentDetail extends EvalExperimentSummary {
+  metadata?: Record<string, unknown> | null;
+  config?: Record<string, unknown> | null;
 }
 
-export interface AgentContext {
-  readonly id: string;
-  readonly traceId: string;
-  readonly parentId?: string;
-  addAgent(options: AgentOptions): Promise<AgentContext>;
-  addTool(options: ToolOptions): Promise<ToolContext>;
-  addMemory(options: MemoryOptions): Promise<MemoryContext>;
-  addRetriever(options: RetrieverOptions): Promise<RetrieverContext>;
-  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
-  success(options?: AgentSuccessOptions): Promise<void>;
-  error(options: { statusMessage: Error | any } & AgentErrorOptions): Promise<void>;
+export interface ResolveExperimentIdOptions {
+  experimentId?: string;
+  experimentName?: string;
+  autoCreate?: boolean;
+  datasetId?: string | null;
+  datasetVersionId?: string | null;
+  description?: string | null;
+  tags?: string[] | null;
+  targetType?: "agent" | "workflow" | "none";
+  targetId?: string | null;
+  metadata?: Record<string, unknown> | null;
+  config?: Record<string, unknown> | null;
+  projectId?: string;
+  enabled?: boolean;
 }
 
-export interface ToolContext {
-  readonly id: string;
-  readonly parentId: string;
-  readonly traceId: string;
-  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
-  success(options?: ToolSuccessOptions): Promise<void>;
-  error(options: { statusMessage: Error | any } & ToolErrorOptions): Promise<void>;
+export interface ResolveExperimentIdResult {
+  experimentId: string;
+  name?: string | null;
+  created?: boolean;
 }
 
-export interface MemoryContext {
-  readonly id: string;
-  readonly parentId: string;
-  readonly traceId: string;
-  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
-  success(options?: MemorySuccessOptions): Promise<void>;
-  error(options: { statusMessage: Error | any } & MemoryErrorOptions): Promise<void>;
+export interface CreateEvalScorerRequest {
+  id: string;
+  name: string;
+  category?: string | null;
+  description?: string | null;
+  defaultThreshold?: number | null;
+  thresholdOperator?: EvalThresholdOperator | null;
+  metadata?: Record<string, unknown> | null;
 }
 
-export interface RetrieverContext {
-  readonly id: string;
-  readonly parentId: string;
-  readonly traceId: string;
-  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
-  success(options?: RetrieverSuccessOptions): Promise<void>;
-  error(options: { statusMessage: Error | any } & RetrieverErrorOptions): Promise<void>;
-}
-
-export interface EventContext {
-  readonly id: string;
-  readonly parentId?: string;
-  readonly traceId: string;
-  update(data: Omit<UpdateEventRequest, "id">): Promise<void>;
-  success(
-    options?:
-      | AgentSuccessOptions
-      | ToolSuccessOptions
-      | MemorySuccessOptions
-      | RetrieverSuccessOptions,
-  ): Promise<void>;
-  error(
-    options: { statusMessage: Error | any } & (
-      | AgentErrorOptions
-      | ToolErrorOptions
-      | MemoryErrorOptions
-      | RetrieverErrorOptions
-    ),
-  ): Promise<void>;
+export interface EvalScorerSummary {
+  id: string;
+  name: string;
+  category?: string | null;
+  description?: string | null;
+  defaultThreshold?: number | null;
+  thresholdOperator?: EvalThresholdOperator | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
 }

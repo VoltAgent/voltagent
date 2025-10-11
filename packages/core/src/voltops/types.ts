@@ -186,6 +186,126 @@ export interface VoltOpsPromptManager {
   getCacheStats(): { size: number; entries: string[] };
 }
 
+export type VoltOpsEvalRunStatus = "pending" | "running" | "succeeded" | "failed" | "cancelled";
+export type VoltOpsTerminalEvalRunStatus = "succeeded" | "failed" | "cancelled";
+export type VoltOpsEvalResultStatus = "pending" | "running" | "passed" | "failed" | "error";
+
+export interface VoltOpsEvalRunSummary {
+  id: string;
+  status: VoltOpsEvalRunStatus | string;
+  triggerSource: string;
+  datasetId?: string | null;
+  datasetVersionId?: string | null;
+  datasetVersionLabel?: string | null;
+  itemCount: number;
+  successCount: number;
+  failureCount: number;
+  meanScore?: number | null;
+  medianScore?: number | null;
+  sumScore?: number | null;
+  passRate?: number | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  durationMs?: number | null;
+  tags?: string[] | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VoltOpsCreateEvalRunRequest {
+  experimentId?: string;
+  datasetVersionId?: string;
+  providerCredentialId?: string;
+  triggerSource?: string;
+  autoQueue?: boolean;
+}
+
+export interface VoltOpsEvalRunResultScorePayload {
+  scorerId: string;
+  score?: number | null;
+  threshold?: number | null;
+  thresholdPassed?: boolean | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface VoltOpsEvalRunResultLiveMetadata {
+  traceId?: string | null;
+  spanId?: string | null;
+  operationId?: string | null;
+  operationType?: string | null;
+  sampling?: {
+    strategy: string;
+    rate?: number | null;
+  } | null;
+  triggerSource?: string | null;
+  environment?: string | null;
+}
+
+export interface VoltOpsAppendEvalRunResultPayload {
+  id?: string;
+  datasetItemId?: string | null;
+  datasetItemHash: string;
+  status?: VoltOpsEvalResultStatus;
+  input?: unknown;
+  expected?: unknown;
+  output?: unknown;
+  durationMs?: number | null;
+  scores?: VoltOpsEvalRunResultScorePayload[];
+  metadata?: Record<string, unknown> | null;
+  traceIds?: string[] | null;
+  liveEval?: VoltOpsEvalRunResultLiveMetadata | null;
+}
+
+export interface VoltOpsAppendEvalRunResultsRequest {
+  results: VoltOpsAppendEvalRunResultPayload[];
+}
+
+export interface VoltOpsEvalRunCompletionSummaryPayload {
+  itemCount?: number;
+  successCount?: number;
+  failureCount?: number;
+  meanScore?: number | null;
+  medianScore?: number | null;
+  sumScore?: number | null;
+  passRate?: number | null;
+  durationMs?: number | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface VoltOpsEvalRunErrorPayload {
+  message: string;
+  code?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface VoltOpsCompleteEvalRunRequest {
+  status: VoltOpsTerminalEvalRunStatus;
+  summary?: VoltOpsEvalRunCompletionSummaryPayload;
+  error?: VoltOpsEvalRunErrorPayload;
+}
+
+export interface VoltOpsCreateScorerRequest {
+  id: string;
+  name: string;
+  category?: string | null;
+  description?: string | null;
+  defaultThreshold?: number | null;
+  thresholdOperator?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface VoltOpsScorerSummary {
+  id: string;
+  name: string;
+  category?: string | null;
+  description?: string | null;
+  defaultThreshold?: number | null;
+  thresholdOperator?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * Main VoltOps client interface
  */
@@ -198,6 +318,24 @@ export interface VoltOpsClient {
 
   /** Create a prompt helper for agent instructions */
   createPromptHelper(agentId: string, historyEntryId?: string): PromptHelper;
+
+  /** Create a new evaluation run in VoltOps */
+  createEvalRun(payload?: VoltOpsCreateEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+
+  /** Append evaluation results to an existing run */
+  appendEvalRunResults(
+    runId: string,
+    payload: VoltOpsAppendEvalRunResultsRequest,
+  ): Promise<VoltOpsEvalRunSummary>;
+
+  /** Complete an evaluation run */
+  completeEvalRun(
+    runId: string,
+    payload: VoltOpsCompleteEvalRunRequest,
+  ): Promise<VoltOpsEvalRunSummary>;
+
+  /** Upsert a scorer definition */
+  createEvalScorer(payload: VoltOpsCreateScorerRequest): Promise<VoltOpsScorerSummary>;
 
   /** List managed memory databases available to the project */
   listManagedMemoryDatabases(): Promise<ManagedMemoryDatabaseSummary[]>;

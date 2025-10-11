@@ -24,6 +24,7 @@ import type { UsageInfo } from "./providers/base/types";
 import type { SubAgentConfig } from "./subagent/types";
 
 import type { Logger } from "@voltagent/internal";
+import type { LocalScorerDefinition, SamplingPolicy } from "../eval/runtime";
 import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
 import type { VoltAgentObservability } from "../observability";
 import type {
@@ -55,6 +56,16 @@ export interface ToolWithNodeId extends BaseTool {
   node_id: string;
 }
 
+export interface AgentScorerState {
+  key: string;
+  id: string;
+  name: string;
+  node_id: string;
+  sampling?: SamplingPolicy;
+  metadata?: Record<string, unknown> | null;
+  params?: Record<string, unknown> | null;
+}
+
 /**
  * SubAgent data structure for agent state
  */
@@ -68,6 +79,7 @@ export interface SubAgentStateData {
   memory?: AgentMemoryState;
   node_id: string;
   subAgents?: SubAgentStateData[];
+  scorers?: AgentScorerState[];
   methodConfig?: {
     method: string;
     schema?: string;
@@ -117,6 +129,7 @@ export interface AgentFullState {
   tools: ToolWithNodeId[];
   subAgents: SubAgentStateData[];
   memory: AgentMemoryState;
+  scorers?: AgentScorerState[];
   retriever?: {
     name: string;
     description?: string;
@@ -297,7 +310,82 @@ export type AgentOptions = {
 
   // User context
   context?: ContextInput;
+
+  // Live evaluation configuration
+  eval?: AgentEvalConfig;
 };
+
+export type AgentEvalOperationType =
+  | "generateText"
+  | "streamText"
+  | "generateObject"
+  | "streamObject";
+
+export interface AgentEvalPayload {
+  operationId: string;
+  operationType: AgentEvalOperationType;
+  input?: string | null;
+  output?: string | null;
+  rawInput?: string | UIMessage[] | BaseMessage[];
+  rawOutput?: unknown;
+  userId?: string;
+  conversationId?: string;
+  traceId: string;
+  spanId: string;
+  metadata?: Record<string, unknown>;
+}
+
+export type AgentEvalContext = AgentEvalPayload &
+  Record<string, unknown> & {
+    agentId: string;
+    agentName: string;
+    timestamp: string;
+    rawPayload: AgentEvalPayload;
+  };
+
+export type AgentEvalParams = Record<string, unknown>;
+
+export type AgentEvalSamplingPolicy = SamplingPolicy;
+
+export type AgentEvalScorerFactory = () =>
+  | LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>
+  | Promise<LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>>;
+
+export type AgentEvalScorerReference =
+  | LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>
+  | AgentEvalScorerFactory;
+
+export interface AgentEvalResult {
+  scorerId: string;
+  scorerName?: string;
+  status: "success" | "error" | "skipped";
+  score?: number | null;
+  metadata?: Record<string, unknown> | null;
+  error?: unknown;
+  durationMs?: number;
+  payload: AgentEvalPayload;
+  rawPayload: AgentEvalPayload;
+}
+
+export interface AgentEvalScorerConfig {
+  scorer: AgentEvalScorerReference;
+  params?:
+    | AgentEvalParams
+    | ((
+        context: AgentEvalContext,
+      ) => AgentEvalParams | undefined | Promise<AgentEvalParams | undefined>);
+  sampling?: AgentEvalSamplingPolicy;
+  id?: string;
+  onResult?: (result: AgentEvalResult) => void | Promise<void>;
+}
+
+export interface AgentEvalConfig {
+  scorers: Record<string, AgentEvalScorerConfig>;
+  triggerSource?: string;
+  environment?: string;
+  sampling?: AgentEvalSamplingPolicy;
+  redact?: (payload: AgentEvalPayload) => AgentEvalPayload;
+}
 
 /**
  * System message response with optional prompt metadata

@@ -53,12 +53,18 @@ import {
   isClientHTTPError,
   isToolDeniedError,
 } from "./errors";
+import {
+  type AgentEvalHost,
+  type EnqueueEvalScoringArgs,
+  enqueueEvalScoring as enqueueEvalScoringHelper,
+} from "./eval";
 import type { AgentHooks } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type { BaseMessage, StepWithContent } from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
+import type { SamplingPolicy } from "../eval/runtime";
 import { ConversationBuffer } from "./conversation-buffer";
 import { MemoryPersistQueue } from "./memory-persist-queue";
 import { sanitizeMessagesForModel } from "./message-normalizer";
@@ -66,6 +72,7 @@ import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
+  AgentEvalConfig,
   AgentFullState,
   AgentOptions,
   DynamicValue,
@@ -264,6 +271,7 @@ export class Agent {
   private readonly subAgentManager: SubAgentManager;
   private readonly voltOpsClient?: VoltOpsClient;
   private readonly prompts?: PromptHelper;
+  private readonly evalConfig?: AgentEvalConfig;
 
   constructor(options: AgentOptions) {
     this.id = options.id || options.name;
@@ -283,6 +291,7 @@ export class Agent {
     this.supervisorConfig = options.supervisorConfig;
     this.context = toContextMap(options.context);
     this.voltOpsClient = options.voltOpsClient;
+    this.evalConfig = options.eval;
 
     // Initialize logger - always use LoggerProxy for consistency
     // If external logger is provided, it will be used by LoggerProxy
@@ -496,13 +505,26 @@ export class Agent {
           },
         );
 
-        // Add usage to span and close it successfully
+        // Add usage to span
         this.setTraceContextUsage(oc.traceContext, result.usage);
         oc.traceContext.setOutput(result.text);
-        oc.traceContext.end("completed");
 
         // Set output in operation context
         oc.output = result.text;
+
+        this.enqueueEvalScoring({
+          oc,
+          output: result.text,
+          operation: "generateText",
+          metadata: {
+            finishReason: result.finishReason,
+            usage: result.usage ? JSON.parse(safeStringify(result.usage)) : undefined,
+            toolCalls: result.toolCalls,
+          },
+        });
+
+        // Close span after scheduling scorers
+        oc.traceContext.end("completed");
 
         // Return result with context - use Object.assign to properly copy all properties including getters
         const returnValue = Object.assign(
@@ -672,10 +694,9 @@ export class Agent {
 
             // Event tracking now handled by OpenTelemetry spans
 
-            // Add usage to span and close it successfully
+            // Add usage to span
             this.setTraceContextUsage(oc.traceContext, finalResult.totalUsage);
             oc.traceContext.setOutput(finalResult.text);
-            oc.traceContext.end("completed");
 
             // Set output in operation context
             oc.output = finalResult.text;
@@ -718,6 +739,21 @@ export class Agent {
                 text: finalResult.text,
               },
             );
+
+            this.enqueueEvalScoring({
+              oc,
+              output: finalResult.text,
+              operation: "streamText",
+              metadata: {
+                finishReason: finalResult.finishReason,
+                usage: finalResult.totalUsage
+                  ? JSON.parse(safeStringify(finalResult.totalUsage))
+                  : undefined,
+                toolCalls: finalResult.toolCalls,
+              },
+            });
+
+            oc.traceContext.end("completed");
           },
         });
 
@@ -966,13 +1002,25 @@ export class Agent {
 
         // Event tracking now handled by OpenTelemetry spans
 
-        // Add usage to span and close it successfully
+        // Add usage to span
         this.setTraceContextUsage(oc.traceContext, result.usage);
         oc.traceContext.setOutput(result.object);
-        oc.traceContext.end("completed");
 
         // Set output in operation context
         oc.output = result.object;
+
+        this.enqueueEvalScoring({
+          oc,
+          output: result.object,
+          operation: "generateObject",
+          metadata: {
+            finishReason: result.finishReason,
+            usage: result.usage ? JSON.parse(safeStringify(result.usage)) : undefined,
+            schemaName,
+          },
+        });
+
+        oc.traceContext.end("completed");
 
         // Call hooks
         await this.getMergedHooks(options).onEnd?.({
@@ -1180,10 +1228,9 @@ export class Agent {
 
             // Event tracking now handled by OpenTelemetry spans
 
-            // Add usage to span and close it successfully
+            // Add usage to span
             this.setTraceContextUsage(oc.traceContext, finalResult.usage);
             oc.traceContext.setOutput(finalResult.object);
-            oc.traceContext.end("completed");
 
             // Set output in operation context
             oc.output = finalResult.object;
@@ -1226,6 +1273,19 @@ export class Agent {
                 schemaName,
               },
             );
+
+            this.enqueueEvalScoring({
+              oc,
+              output: finalResult.object,
+              operation: "streamObject",
+              metadata: {
+                finishReason: finalResult.finishReason,
+                usage: finalResult.usage ? JSON.parse(safeStringify(finalResult.usage)) : undefined,
+                schemaName,
+              },
+            });
+
+            oc.traceContext.end("completed");
           },
         });
 
@@ -1512,6 +1572,20 @@ export class Agent {
     }
 
     return depth;
+  }
+
+  private enqueueEvalScoring(args: EnqueueEvalScoringArgs): void {
+    enqueueEvalScoringHelper(this.createEvalHost(), args);
+  }
+
+  private createEvalHost(): AgentEvalHost {
+    return {
+      id: this.id,
+      name: this.name,
+      logger: this.logger,
+      evalConfig: this.evalConfig,
+      getObservability: () => this.getObservability(),
+    };
   }
 
   /**
@@ -2637,6 +2711,54 @@ export class Agent {
    * Get full agent state
    */
   public getFullState(): AgentFullState {
+    const cloneRecord = (value: unknown): Record<string, unknown> | null => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+      }
+      const result = Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).filter(
+          ([, entryValue]) => typeof entryValue !== "function",
+        ),
+      );
+      return Object.keys(result).length > 0 ? result : null;
+    };
+
+    const scorerEntries = Object.entries(this.evalConfig?.scorers ?? {});
+    const scorers =
+      scorerEntries.length > 0
+        ? scorerEntries.map(([key, scorerConfig]) => {
+            const definition =
+              typeof scorerConfig.scorer === "object" && scorerConfig.scorer !== null
+                ? (scorerConfig.scorer as {
+                    id?: string;
+                    name?: string;
+                    metadata?: unknown;
+                    sampling?: SamplingPolicy;
+                  })
+                : undefined;
+            const scorerId = String(scorerConfig.id ?? definition?.id ?? key);
+            const scorerName =
+              (typeof definition?.name === "string" && definition.name.trim().length > 0
+                ? definition.name
+                : undefined) ?? scorerId;
+            const sampling =
+              scorerConfig.sampling ?? definition?.sampling ?? this.evalConfig?.sampling;
+            const metadata = cloneRecord(definition?.metadata ?? null);
+            const params =
+              typeof scorerConfig.params === "function" ? null : cloneRecord(scorerConfig.params);
+
+            return {
+              key,
+              id: scorerId,
+              name: scorerName,
+              sampling,
+              metadata,
+              params,
+              node_id: createNodeId(NodeType.SCORER, scorerId, this.id),
+            };
+          })
+        : [];
+
     return {
       id: this.id,
       name: this.name,
@@ -2690,6 +2812,7 @@ export class Agent {
             node_id: createNodeId(NodeType.RETRIEVER, this.retriever.tool.name, this.id),
           }
         : null,
+      scorers,
     };
   }
 

@@ -3,7 +3,8 @@
   "description": "VoltAgent SDK - Client SDK for interacting with VoltAgent API",
   "version": "0.1.6",
   "dependencies": {
-    "@voltagent/core": "^1.1.6"
+    "@voltagent/core": "^1.1.25",
+    "@voltagent/internal": "^0.0.11"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",

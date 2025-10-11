@@ -4,6 +4,7 @@ import { Command } from "commander";
 import figlet from "figlet";
 import { registerAddCommand } from "./commands/add";
 import { registerDeployCommand } from "./commands/deploy";
+import { registerEvalCommand } from "./commands/eval";
 import { registerInitCommand } from "./commands/init";
 import { registerMCPCommand } from "./commands/mcp";
 import { registerUpdateCommand } from "./commands/update";
@@ -28,6 +29,7 @@ const createCLI = () => {
   registerAddCommand(program);
   registerMCPCommand(program);
   registerDeployCommand(program);
+  registerEvalCommand(program);
 
   return program;
 };
