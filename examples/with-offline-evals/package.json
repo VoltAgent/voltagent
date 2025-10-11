@@ -1,17 +1,9 @@
 {
   "name": "@examples/with-offline-evals",
   "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "tsc --project tsconfig.json",
-    "dev": "tsx watch --env-file=.env ./src/index.ts",
-    "start": "node dist/index.js",
-    "volt": "volt"
-  },
   "dependencies": {
-    "@voltagent/core": "^1.1.26",
     "@voltagent/cli": "^0.1.11",
+    "@voltagent/core": "^1.1.26",
     "@voltagent/evals": "^0.1.0",
     "@voltagent/scorers": "^0.1.0",
     "@voltagent/sdk": "^0.1.6"
@@ -20,5 +12,13 @@
     "@types/node": "^24.2.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
-  }
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "dev": "tsx watch --env-file=.env ./src/index.ts",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
 }
