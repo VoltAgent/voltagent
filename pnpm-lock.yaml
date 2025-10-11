@@ -421,7 +421,7 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/core':
-        specifier: workspace:*
+        specifier: ^1.1.26
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^1.0.0
@@ -2913,7 +2913,7 @@ importers:
   packages/scorers:
     dependencies:
       '@voltagent/core':
-        specifier: workspace:^1.1.25
+        specifier: ^1.1.26
         version: link:../core
       '@voltagent/internal':
         specifier: ^0.0.11
