@@ -1,4 +1,5 @@
 import {
+  type Attributes,
   type Span,
   type SpanContext,
   SpanKind,
@@ -10,6 +11,7 @@ import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
 import { type LocalScorerDefinition, runLocalScorers } from "../eval/runtime";
 import type { VoltAgentObservability } from "../observability";
+import { randomUUID } from "../utils/id";
 import type {
   AgentEvalConfig,
   AgentEvalContext,
@@ -101,10 +103,10 @@ function createScorerSpanAttributes(
   storagePayload: AgentEvalPayload,
   metrics: ScoreMetrics,
   result: Awaited<ReturnType<typeof runLocalScorers>>["results"][number],
-): Record<string, unknown> {
+): Attributes {
   const { definition } = descriptor;
   const scorerLabel = definition.name ?? descriptor.key ?? definition.id;
-  const attributes: Record<string, unknown> = {
+  const attributes: Attributes = {
     "span.type": "scorer",
     "voltagent.label": scorerLabel,
     "entity.id": host.id,
@@ -264,8 +266,10 @@ export function enqueueEvalScoring(host: AgentEvalHost, args: EnqueueEvalScoring
       if (config.environment) {
         rootSpan.setAttribute("eval.environment", config.environment);
       }
-      if (config.sampling?.percentage !== undefined) {
-        rootSpan.setAttribute("eval.sampling.percentage", config.sampling.percentage);
+      if (config.sampling?.type === "ratio" && config.sampling.rate !== undefined) {
+        const boundedRate = Math.max(0, Math.min(1, config.sampling.rate));
+        rootSpan.setAttribute("eval.sampling.rate", boundedRate);
+        rootSpan.setAttribute("eval.sampling.percentage", boundedRate * 100);
       }
       rootSpan.addEvent("eval.scorers.scheduled", {
         count: scorerKeys.length,

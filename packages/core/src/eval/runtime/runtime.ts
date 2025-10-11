@@ -8,6 +8,7 @@ export type SamplingPolicy =
 export interface SamplingMetadata {
   strategy: "always" | "never" | "ratio";
   rate?: number;
+  applied?: boolean;
 }
 
 export interface ScorerContext<
@@ -107,16 +108,20 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
 
   const tasks = scorers.map(async (definition) => {
     const policy = definition.sampling ?? defaultSampling ?? { type: "always" };
-    const samplingMetadata = buildSamplingMetadata(policy);
+    const samplingDecision = shouldSample(policy);
+    const baseSamplingMetadata = buildSamplingMetadata(policy);
+    const sampling = baseSamplingMetadata
+      ? { ...baseSamplingMetadata, applied: samplingDecision }
+      : undefined;
 
-    if (!shouldSample(policy)) {
+    if (!samplingDecision) {
       return {
         id: definition.id,
         name: definition.name,
         status: "skipped",
         score: null,
         metadata: mergeMetadata(null, definition.metadata),
-        sampling: samplingMetadata,
+        sampling,
         durationMs: 0,
       } satisfies LocalScorerExecutionResult;
     }
@@ -132,7 +137,7 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
         status: "error",
         score: null,
         metadata: mergeMetadata(null, definition.metadata),
-        sampling: samplingMetadata,
+        sampling,
         durationMs: 0,
         error,
       };
@@ -146,7 +151,7 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
 
     const lifecycleContext = args.onScorerStart?.({
       definition,
-      sampling: samplingMetadata,
+      sampling,
     });
 
     const start = Date.now();
@@ -191,7 +196,7 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
       status,
       score: status === "success" ? (score ?? null) : score,
       metadata,
-      sampling: samplingMetadata,
+      sampling,
       durationMs,
       error: errorValue,
     };
