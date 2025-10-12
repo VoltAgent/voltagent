@@ -1,6 +1,5 @@
 import { safeStringify } from "@voltagent/internal/utils";
 import type {
-  EmbeddingModel,
   GenerateTextResult,
   LanguageModel,
   ToolChoice,
@@ -8,7 +7,7 @@ import type {
   TypedToolCall,
   TypedToolResult,
 } from "ai";
-import { embedMany, generateText } from "ai";
+import { generateText } from "ai";
 
 import type { LocalScorerDefinition } from "./runtime";
 
@@ -715,135 +714,6 @@ export function weightedBlend<
   };
 }
 
-export interface EmbeddingSimilarityReference {
-  id?: string;
-  text: string;
-}
-
-export interface EmbeddingSimilarityInput {
-  query: string;
-  references: EmbeddingSimilarityReference[];
-}
-
-export interface EmbeddingSimilarityItem {
-  id: string;
-  text: string;
-  similarity: number;
-  score: number;
-  embedding?: number[];
-}
-
-export interface EmbeddingSimilarityStepResult {
-  aggregateScore: number;
-  strategy: "max" | "average" | "custom";
-  items: EmbeddingSimilarityItem[];
-  usage: number;
-}
-
-export interface EmbeddingSimilarityTransformArgs<Context> {
-  context: Context;
-  input: EmbeddingSimilarityInput;
-  queryEmbedding: number[];
-  referenceEmbeddings: number[][];
-  items: EmbeddingSimilarityItem[];
-  aggregateScore: number;
-  strategy: "max" | "average" | "custom";
-  usage: number;
-}
-
-export interface EmbeddingSimilarityResultArgs<Context, Result>
-  extends EmbeddingSimilarityTransformArgs<Context> {
-  result: Result;
-}
-
-export interface CreateEmbeddingSimilarityStepOptions<
-  Context,
-  Result = EmbeddingSimilarityStepResult,
-> {
-  model: EmbeddingModel<string>;
-  buildInput: (context: Context) => EmbeddingSimilarityInput | Promise<EmbeddingSimilarityInput>;
-  strategy?: "max" | "average" | ((items: EmbeddingSimilarityItem[]) => number);
-  normalize?: boolean;
-  includeEmbeddings?: boolean;
-  transform?: (args: EmbeddingSimilarityTransformArgs<Context>) => Result | Promise<Result>;
-  onResult?: (args: EmbeddingSimilarityResultArgs<Context, Result>) => void | Promise<void>;
-}
-
-export function createEmbeddingSimilarityStep<Context, Result = EmbeddingSimilarityStepResult>(
-  options: CreateEmbeddingSimilarityStepOptions<Context, Result>,
-): (context: Context) => Promise<Result> {
-  const {
-    model,
-    buildInput,
-    strategy = "max",
-    normalize = true,
-    includeEmbeddings = false,
-    transform,
-    onResult,
-  } = options;
-
-  return async (context) => {
-    const input = await buildInput(context);
-
-    if (!input || typeof input.query !== "string" || input.query.trim().length === 0) {
-      throw new Error("Embedding similarity requires a non-empty query value");
-    }
-
-    if (!Array.isArray(input.references) || input.references.length === 0) {
-      throw new Error("Embedding similarity requires at least one reference value");
-    }
-
-    const values = [input.query, ...input.references.map((reference) => reference.text)];
-    const embeddingResult = await embedMany({ model, values });
-
-    const embeddings = embeddingResult.embeddings as unknown as number[][];
-    const [queryEmbedding, ...referenceEmbeddings] = embeddings;
-
-    const items: EmbeddingSimilarityItem[] = referenceEmbeddings.map((embedding, index) => {
-      const similarity = cosineSimilarity(queryEmbedding, embedding);
-      const score = normalize ? similarityToScore(similarity) : similarity;
-      return {
-        id: input.references[index]?.id ?? String(index),
-        text: input.references[index]?.text ?? "",
-        similarity,
-        score,
-        embedding: includeEmbeddings ? embedding : undefined,
-      } satisfies EmbeddingSimilarityItem;
-    });
-
-    const aggregateScore = computeEmbeddingAggregate(items, strategy);
-    const strategyLabel: "max" | "average" | "custom" =
-      typeof strategy === "function" ? "custom" : strategy;
-
-    const baseResult: EmbeddingSimilarityStepResult = {
-      aggregateScore,
-      strategy: strategyLabel,
-      items,
-      usage: embeddingResult.usage?.tokens ?? 0,
-    } satisfies EmbeddingSimilarityStepResult;
-
-    const transformArgs: EmbeddingSimilarityTransformArgs<Context> = {
-      context,
-      input,
-      queryEmbedding,
-      referenceEmbeddings,
-      items,
-      aggregateScore,
-      strategy: strategyLabel,
-      usage: embeddingResult.usage?.tokens ?? 0,
-    } satisfies EmbeddingSimilarityTransformArgs<Context>;
-
-    const finalResult = (await (transform?.(transformArgs) ??
-      (baseResult as unknown as Result))) as Result;
-
-    if (onResult) {
-      await onResult({ ...transformArgs, result: finalResult });
-    }
-
-    return finalResult;
-  };
-}
-
 function mergeMetadata(
   primary: Record<string, unknown> | null | undefined,
   secondary: Record<string, unknown> | null | undefined,
@@ -857,6 +727,8 @@ function mergeMetadata(
 
   return Object.keys(base).length > 0 ? base : null;
 }
+
+type ErrorWithMetadata = Error & { metadata?: Record<string, unknown> };
 
 export async function parseStructuredResponse<SchemaResult>(
   text: string,
@@ -1063,33 +935,6 @@ function normalizeToolCall(call: TypedToolCall<ToolSet>): Record<string, unknown
   };
 }
 
-function computeEmbeddingAggregate(
-  items: EmbeddingSimilarityItem[],
-  strategy: "max" | "average" | ((entries: EmbeddingSimilarityItem[]) => number),
-): number {
-  if (items.length === 0) {
-    return 0;
-  }
-
-  if (typeof strategy === "function") {
-    const value = strategy(items);
-    return Number.isFinite(value) ? value : 0;
-  }
-
-  if (strategy === "average") {
-    const total = items.reduce((sum, item) => sum + item.score, 0);
-    return total / items.length;
-  }
-
-  let maxScore = Number.NEGATIVE_INFINITY;
-  for (const item of items) {
-    if (item.score > maxScore) {
-      maxScore = item.score;
-    }
-  }
-  return Number.isFinite(maxScore) ? maxScore : 0;
-}
-
 type NormalizedScoreResult = {
   score: number | null;
   metadata: Record<string, unknown> | null;
@@ -1160,214 +1005,3 @@ function getErrorMetadata(error: unknown): Record<string, unknown> | null {
     return { ...(metadata as Record<string, unknown>) };
   }
 }
-
-export interface LlmJudgeScorerParams extends Record<string, unknown> {
-  criteria?: string;
-}
-
-export interface LlmJudgePromptContext {
-  question: string;
-  answer: string;
-  criteria?: string;
-}
-
-export interface CreateLlmJudgeGenerateScore<
-  Payload extends Record<string, unknown>,
-  Params extends Record<string, unknown>,
-> {
-  model: LanguageModel;
-  instructions: string;
-  maxOutputTokens?: number;
-  build?: (
-    context: ScorerPipelineContext<Payload, Params>,
-  ) => LlmJudgePromptContext | Promise<LlmJudgePromptContext>;
-  onResult?: (
-    result: ScorerPipelineContext<Payload, Params> & { text: string },
-  ) => void | Promise<void>;
-}
-
-export interface LlmJudgeScoreResult {
-  score: number;
-  metadata?: Record<string, unknown> | null;
-}
-
-export function createLlmJudgeGenerateScore<
-  Payload extends Record<string, unknown> = Record<string, unknown>,
-  Params extends Record<string, unknown> = LlmJudgeScorerParams,
->(options: CreateLlmJudgeGenerateScore<Payload, Params>): GenerateScoreStep<Payload, Params>;
-export function createLlmJudgeGenerateScore<
-  Payload extends Record<string, unknown> = Record<string, unknown>,
-  Params extends Record<string, unknown> = LlmJudgeScorerParams,
->(
-  options: CreateLlmJudgeGenerateScore<Payload, Params> & {
-    context: ScorerPipelineContext<Payload, Params>;
-  },
-): Promise<LlmJudgeScoreResult>;
-export function createLlmJudgeGenerateScore<
-  Payload extends Record<string, unknown> = Record<string, unknown>,
-  Params extends Record<string, unknown> = LlmJudgeScorerParams,
->(
-  options: CreateLlmJudgeGenerateScore<Payload, Params> & {
-    context?: ScorerPipelineContext<Payload, Params>;
-  },
-): GenerateScoreStep<Payload, Params> | Promise<LlmJudgeScoreResult> {
-  const { model, instructions, maxOutputTokens = 200, build, onResult } = options;
-
-  const stepOptions: CreateLlmStepOptions<
-    ScorerPipelineContext<Payload, Params>,
-    GenerateScoreResult
-  > = {
-    model,
-    maxOutputTokens,
-    buildPrompt: async (context) => {
-      const promptContext = build ? await build(context) : defaultPromptContext(context);
-      context.results.judgePromptContext = promptContext;
-      return buildPrompt({
-        instructions,
-        criteria: promptContext.criteria ?? "",
-        question: promptContext.question,
-        answer: promptContext.answer,
-      });
-    },
-    parse: ({ text }) => {
-      const parsed = parseJudgeResponse(text);
-      if (!parsed) {
-        const error = new Error("Judge response was not valid JSON") as ErrorWithMetadata;
-        error.metadata = { raw: text.trim() };
-        throw error;
-      }
-
-      return {
-        score: parsed.score,
-        metadata: {
-          reason: parsed.reason,
-          raw: text.trim(),
-        },
-      } satisfies GenerateScoreResult;
-    },
-    onResult: onResult
-      ? async ({ context, text }) => {
-          await onResult({ ...context, text });
-        }
-      : undefined,
-  };
-
-  if (options.context) {
-    return evaluateWithLlm({ ...stepOptions, context: options.context }).then(({ result }) => {
-      if (typeof result === "number") {
-        return { score: result } satisfies LlmJudgeScoreResult;
-      }
-      return {
-        score: result.score,
-        metadata: result.metadata,
-      } satisfies LlmJudgeScoreResult;
-    });
-  }
-
-  return createLlmStep(stepOptions) as GenerateScoreStep<Payload, Params>;
-}
-
-type ErrorWithMetadata = Error & { metadata?: Record<string, unknown> };
-
-function defaultPromptContext(
-  context: ScorerPipelineContext<Record<string, unknown>, Record<string, unknown>>,
-): LlmJudgePromptContext {
-  const question = stringify(context.payload.input);
-  const answer = stringify(context.payload.output);
-  const criteriaValue = (context.params as LlmJudgeScorerParams | undefined)?.criteria;
-
-  return {
-    question,
-    answer,
-    criteria: criteriaValue ? String(criteriaValue) : undefined,
-  };
-}
-
-function buildPrompt(args: {
-  instructions: string;
-  criteria: string;
-  question: string;
-  answer: string;
-}): string {
-  const { instructions, criteria, question, answer } = args;
-  const criteriaBlock = criteria ? `\nAdditional criteria:\n${criteria}` : "";
-
-  return `You are a strict evaluator. Output JSON like {"score":0.82,"reason":"..."}.
-     The score must be between 0 and 1.
-     Your goal: ${instructions}${criteriaBlock}
-     Question:\n${question}
-     Assistant Response:\n${answer}`;
-}
-
-function parseJudgeResponse(text: string): { score: number; reason: string } | null {
-  const trimmed = text.trim();
-  const candidates = collectJsonCandidates(trimmed);
-
-  for (const candidate of candidates) {
-    try {
-      const parsed = JSON.parse(candidate) as unknown;
-
-      if (typeof parsed === "number") {
-        const score = clamp(parsed);
-        if (Number.isNaN(score)) {
-          continue;
-        }
-        return {
-          score,
-          reason: "",
-        };
-      }
-
-      if (parsed && typeof parsed === "object") {
-        const record = parsed as { score?: number; reason?: string };
-        const score = clamp(record.score ?? Number.NaN);
-        if (Number.isNaN(score)) {
-          continue;
-        }
-        return {
-          score,
-          reason: record.reason ?? "",
-        };
-      }
-    } catch {
-      // ignore and try next candidate
-    }
-  }
-
-  const numeric = clamp(Number.parseFloat(trimmed));
-  if (Number.isNaN(numeric)) {
-    return null;
-  }
-  return {
-    score: numeric,
-    reason: "Judge returned a bare score",
-  };
-}
-
-function clamp(value: number): number {
-  if (Number.isNaN(value)) {
-    return Number.NaN;
-  }
-  if (value < 0) {
-    return 0;
-  }
-  if (value > 1) {
-    return 1;
-  }
-  return value;
-}
-
-function stringify(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
-  }
-  if (value === null || value === undefined) {
-    return "";
-  }
-  try {
-    return typeof value === "object" ? safeStringify(value) : String(value);
-  } catch {
-    return String(value);
-  }
-}
-import { cosineSimilarity, similarityToScore } from "../memory/utils/vector-math";

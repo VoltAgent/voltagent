@@ -105,7 +105,6 @@ runner: async ({ item }) => {
   return {
     output: "agent response",
     metadata: { tokens: 150 },
-    traceIds: ["trace-123"],
   };
 };
 
@@ -123,23 +122,28 @@ The runner can return the output directly or wrap it in an object with metadata 
 
 Array of scoring functions to evaluate outputs. Each scorer compares the runner output against the expected value or applies custom logic.
 
-**Basic usage:**
+**Basic usage with heuristic scorers:**
 
 ```ts
-scorers: [scorers.exactMatch, scorers.levenshtein];
+// These scorers don't require LLM/API keys
+scorers: [scorers.exactMatch, scorers.levenshtein, scorers.numericDiff];
 ```
 
-**With thresholds and metadata:**
+**With thresholds and LLM-based scorers:**
 
 ```ts
+import { createAnswerCorrectnessScorer } from "@voltagent/scorers";
+import { openai } from "@ai-sdk/openai";
+
 scorers: [
   {
-    scorer: scorers.embeddingSimilarity,
+    scorer: scorers.levenshtein, // Heuristic scorer
     threshold: 0.8,
-    metadata: { model: "text-embedding-ada-002" },
   },
   {
-    scorer: scorers.answerCorrectness,
+    scorer: createAnswerCorrectnessScorer({
+      model: openai("gpt-4o-mini"), // LLM scorer requires model
+    }),
     threshold: 0.9,
   },
 ];
@@ -314,57 +318,81 @@ Scorers compare runner output to expected values or apply custom validation. Eac
 - `reason` - Explanation for the score (especially for LLM judges)
 - `error` - Error message if status is `"error"`
 
-### String Comparison
+### Heuristic Scorers (No LLM Required)
 
 ```ts
 import { scorers } from "@voltagent/scorers";
 
+// String comparison
 scorers.exactMatch; // output === expected
-scorers.levenshtein; // edit distance
+scorers.levenshtein; // edit distance (0-1 score)
+
+// Numeric and data comparison
+scorers.numericDiff; // normalized numeric difference
+scorers.jsonDiff; // JSON object comparison
+scorers.listContains; // list element matching
 ```
 
-### Semantic Similarity
+### LLM-Based Scorers
+
+For LLM-based evaluation, use the native VoltAgent scorers that explicitly require a model:
 
 ```ts
-scorers.embeddingSimilarity; // cosine similarity of embeddings
-scorers.answerSimilarity; // LLM-based semantic comparison
-```
+import {
+  createAnswerCorrectnessScorer,
+  createAnswerRelevancyScorer,
+  createContextPrecisionScorer,
+  createContextRecallScorer,
+  createContextRelevancyScorer,
+  createModerationScorer,
+  createFactualityScorer,
+  createSummaryScorer,
+} from "@voltagent/scorers";
+import { openai } from "@ai-sdk/openai";
 
-### LLM Judges
+// Create LLM scorers with explicit model configuration
+const answerCorrectness = createAnswerCorrectnessScorer({
+  model: openai("gpt-4o-mini"),
+  options: { factualityWeight: 0.8 },
+});
 
-```ts
-scorers.answerCorrectness; // combines factuality + semantic similarity
-scorers.answerRelevancy; // checks if output answers the input
-scorers.contextRelevancy; // validates retrieved context relevance
-scorers.contextRecall; // checks if all expected facts are present
-scorers.contextPrecision; // measures precision of retrieved context
-```
-
-### Moderation and Classification
-
-```ts
-scorers.moderation; // safety checks (toxicity, bias, etc.)
-scorers.factual; // verifies factual claims
-scorers.summary; // validates summaries
-scorers.translation; // checks translation quality
+const moderation = createModerationScorer({
+  model: openai("gpt-4o-mini"),
+  threshold: 0.5,
+});
 ```
 
 ### Custom Scorers
 
-```ts
-import { createAutoEvalScorer } from "@voltagent/scorers";
+For custom scoring logic, use `buildScorer` from @voltagent/core:
 
-const customScorer = createAutoEvalScorer({
-  id: "custom-length",
-  name: "Length Validator",
-  scorer: ({ output, expected }) => {
-    const valid = output.length >= expected.minLength;
+```ts
+import { buildScorer } from "@voltagent/core";
+
+const customLengthScorer = buildScorer({
+  id: "length-validator",
+  label: "Length Validator",
+})
+  .score(({ payload }) => {
+    const output = String(payload.output || "");
+    const minLength = Number(payload.minLength || 10);
+    const valid = output.length >= minLength;
+
     return {
       score: valid ? 1.0 : 0.0,
-      metadata: { actualLength: output.length },
+      metadata: {
+        actualLength: output.length,
+        minLength,
+      },
     };
-  },
-});
+  })
+  .reason(({ score, results }) => ({
+    reason:
+      score >= 1
+        ? `Output meets minimum length of ${results.raw.minLength}`
+        : `Output too short: ${results.raw.actualLength} < ${results.raw.minLength}`,
+  }))
+  .build();
 ```
 
 ## Result Structure

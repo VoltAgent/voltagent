@@ -24,24 +24,12 @@ export {
   weightedBlend,
   type WeightedBlendComponent,
   type WeightedBlendOptions,
-  createEmbeddingSimilarityStep,
-  type CreateEmbeddingSimilarityStepOptions,
-  type EmbeddingSimilarityReference,
-  type EmbeddingSimilarityInput,
-  type EmbeddingSimilarityItem,
-  type EmbeddingSimilarityStepResult,
-  type EmbeddingSimilarityTransformArgs,
-  type EmbeddingSimilarityResultArgs,
   evaluateWithLlm,
-  createLlmJudgeGenerateScore,
-  type CreateLlmJudgeGenerateScore,
-  type LlmJudgeScorerParams,
   parseStructuredResponse,
 } from "../create-scorer";
 export {
   buildScorer,
   type BuildScorerOptions,
-  type BuilderJudgeDefaults,
   type ScorerBuilder,
   type BuildScorerRunArgs,
   type BuildScorerRunResult,
@@ -50,9 +38,3 @@ export {
   type BuilderScoreContext,
   type BuilderReasonContext,
 } from "../builder";
-export {
-  createBuilderPromptStep,
-  type BuilderPromptTransformArgs,
-  type BuilderPromptResultArgs,
-  type CreateBuilderPromptStepOptions,
-} from "../builder-prompt";

@@ -96,11 +96,11 @@ describe("default scorers map", () => {
     expect(execution.results[0]).toMatchObject({ score: 1, status: "success" });
   });
 
-  it("provides metadata for moderation scorer", () => {
-    expect(scorers.moderation.id).toBe("moderation");
-    expect(scorers.moderation.metadata).toEqual({
+  it("provides metadata for exactMatch scorer", () => {
+    expect(scorers.exactMatch.id).toBe("exactMatch");
+    expect(scorers.exactMatch.metadata).toEqual({
       voltAgent: {
-        scorer: "moderation",
+        scorer: "exactMatch",
       },
     });
   });

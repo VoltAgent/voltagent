@@ -145,7 +145,6 @@ runner: async ({ item, index, total, runtime }) => {
   const result = await process(item.input);
   return {
     output: result,
-    traceIds: ["trace-123"], // Optional trace IDs for observability
   };
 };
 ```

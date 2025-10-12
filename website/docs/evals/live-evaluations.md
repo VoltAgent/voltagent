@@ -181,7 +181,7 @@ const customScorer = buildScorer({
 ```ts
 scorer: async () => {
   const { createAnswerCorrectnessScorer } = await import("@voltagent/scorers");
-  return createAnswerCorrectnessScorer({ model, embeddingModel });
+  return createAnswerCorrectnessScorer();
 };
 ```
 
@@ -346,35 +346,49 @@ Returns the `LocalScorerDefinition` object.
 
 ## LLM Judge Scorers
 
-Use `createLlmJudgeGenerateScore` to build LLM-based evaluators:
+Use AI SDK's `generateObject` to build LLM-based evaluators:
 
 ```ts
-import { buildScorer, createLlmJudgeGenerateScore } from "@voltagent/core";
+import { buildScorer } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
+import { generateObject } from "ai";
+import { z } from "zod";
 
-const judgeModel = openai("gpt-4o-mini");
+const JUDGE_SCHEMA = z.object({
+  score: z.number().min(0).max(1).describe("Score from 0 to 1"),
+  reason: z.string().describe("Detailed explanation"),
+});
 
 const helpfulnessScorer = buildScorer({
   id: "helpfulness",
-  type: "agent",
   label: "Helpfulness Judge",
 })
-  .score(async (context) => {
-    const judge = await createLlmJudgeGenerateScore({
-      model: judgeModel,
-      instructions: "Rate the response for clarity and helpfulness on a scale of 0-1.",
-      context: {
-        payload: context.payload,
-        params: context.params,
-        results: {},
-      },
+  .score(async ({ payload }) => {
+    const prompt = `Rate the response for clarity and helpfulness.
+
+User Input: ${payload.input}
+Assistant Response: ${payload.output}
+
+Provide a score from 0 to 1 with an explanation.`;
+
+    const response = await generateObject({
+      model: openai("gpt-4o-mini"),
+      schema: JUDGE_SCHEMA,
+      prompt,
+      maxTokens: 200,
     });
-    return judge;
+
+    return {
+      score: response.object.score,
+      metadata: {
+        reason: response.object.reason,
+      },
+    };
   })
   .build();
 ```
 
-The judge function calls the LLM, parses the score, and returns `{ score, metadata }`.
+The judge calls the LLM with a structured schema, ensuring consistent scoring output.
 
 ## Prebuilt Scorers
 
@@ -396,9 +410,7 @@ Flags unsafe content (toxicity, bias, etc.) using LLM-based classification.
 ```ts
 import { createAnswerCorrectnessScorer } from "@voltagent/scorers";
 
-createAnswerCorrectnessScorer({
-  model: judgeModel,
-  embeddingModel,
+const scorer = createAnswerCorrectnessScorer({
   buildPayload: ({ payload, params }) => ({
     input: payload.input,
     output: payload.output,
@@ -407,16 +419,14 @@ createAnswerCorrectnessScorer({
 });
 ```
 
-Combines factual accuracy and semantic similarity. Requires `expected` in params.
+Evaluates factual accuracy. Requires `expected` in params. Users implement scoring logic.
 
 ### Answer Relevancy
 
 ```ts
 import { createAnswerRelevancyScorer } from "@voltagent/scorers";
 
-createAnswerRelevancyScorer({
-  model: judgeModel,
-  embeddingModel,
+const scorer = createAnswerRelevancyScorer({
   strictness: 3,
   buildPayload: ({ payload, params }) => ({
     input: payload.input,
@@ -426,7 +436,7 @@ createAnswerRelevancyScorer({
 });
 ```
 
-Checks if the output addresses the input. Strictness controls how many LLM-generated questions are used (1-5).
+Checks if the output addresses the input. Strictness controls evaluation level.
 
 ### Keyword Match
 
@@ -649,31 +659,46 @@ const agent = new Agent({
 ### LLM Judge for Helpfulness
 
 ```ts
-import { buildScorer, createLlmJudgeGenerateScore } from "@voltagent/core";
+import { Agent, buildScorer } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 
-const judgeModel = openai("gpt-4o-mini");
+const HELPFULNESS_SCHEMA = z.object({
+  score: z.number().min(0).max(1),
+  reason: z.string(),
+});
 
 const helpfulnessScorer = buildScorer({
   id: "helpfulness",
-  type: "agent",
   label: "Helpfulness",
 })
-  .score(async (context) => {
-    const judge = await createLlmJudgeGenerateScore({
-      model: judgeModel,
-      instructions: "Rate the response for clarity, accuracy, and helpfulness.",
-      context: {
-        payload: context.payload,
-        params: context.params,
-        results: {},
-      },
+  .score(async ({ payload }) => {
+    const agent = new Agent({
+      name: "helpfulness-judge",
+      model: openai("gpt-4o-mini"),
+      instructions: "You rate responses for helpfulness",
     });
-    return judge;
+
+    const prompt = `Rate the response for clarity, accuracy, and helpfulness.
+
+User Input: ${payload.input}
+Assistant Response: ${payload.output}
+
+Provide a score from 0 to 1 with an explanation.`;
+
+    const response = await agent.generateObject(prompt, HELPFULNESS_SCHEMA);
+
+    const rawResults = (payload as any).results?.raw ?? {};
+    rawResults.helpfulnessJudge = response.object;
+
+    return {
+      score: response.object.score,
+      metadata: { reason: response.object.reason },
+    };
   })
   .reason(({ results }) => {
-    const judge = results.raw?.helpfulnessJudge as { metadata?: { reason?: string } };
-    return { reason: judge?.metadata?.reason ?? "No explanation provided." };
+    const judge = results.raw?.helpfulnessJudge as { reason?: string };
+    return { reason: judge?.reason ?? "No explanation provided." };
   })
   .build();
 
@@ -705,7 +730,7 @@ const agent = new Agent({
         sampling: { type: "ratio", rate: 1 }, // always run
       },
       answerCorrectness: {
-        scorer: createAnswerCorrectnessScorer({ model, embeddingModel }),
+        scorer: createAnswerCorrectnessScorer(),
         sampling: { type: "ratio", rate: 0.05 }, // 5% (expensive)
         params: (payload) => ({
           expectedAnswer: lookupExpectedAnswer(payload.input),

@@ -10,6 +10,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "ai": "^5.0.12",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"
@@ -20,7 +21,6 @@
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "peerDependencies": {},
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -1,33 +1,21 @@
 import { openai } from "@ai-sdk/openai";
-import VoltAgent, {
-  Agent,
-  VoltAgentObservability,
-  buildScorer,
-  createLlmJudgeGenerateScore,
-  type AgentEvalContext,
-  type LlmJudgeScorerParams,
-} from "@voltagent/core";
-import {
-  createAnswerCorrectnessScorer,
-  createAnswerRelevancyScorer,
-  createModerationScorer,
-} from "@voltagent/scorers";
+import VoltAgent, { Agent, VoltAgentObservability, buildScorer } from "@voltagent/core";
+import { createModerationScorer, scorers } from "@voltagent/scorers";
 import honoServer from "@voltagent/server-hono";
+import { z } from "zod";
 
 const observability = new VoltAgentObservability();
 
 const judgeModel = openai("gpt-4o-mini");
 const moderationModel = openai("gpt-4o-mini");
-const embeddingModel = openai.embedding("text-embedding-3-small");
 
 const keywordMatchScorer = buildScorer({
   id: "keyword-match",
-  type: "agent",
   label: "Keyword Match",
 })
   .score(({ payload, params }) => {
-    const output = normalizeEvalText(payload.output);
-    const keyword = readStringParam(params, "keyword");
+    const output = payload.output as string;
+    const keyword = params.keyword as string;
     if (!keyword) {
       const error = new Error("keyword parameter is required");
       (error as Error & { metadata?: Record<string, unknown> }).metadata = { keyword };
@@ -45,7 +33,7 @@ const keywordMatchScorer = buildScorer({
     };
   })
   .reason(({ score, params }) => {
-    const keyword = readStringParam(params, "keyword");
+    const keyword = params.keyword as string;
     if (!keyword) {
       return {
         reason: "Keyword parameter was not provided.",
@@ -61,92 +49,52 @@ const keywordMatchScorer = buildScorer({
   })
   .build();
 
+const HELPFULNESS_SCHEMA = z.object({
+  score: z.number().min(0).max(1).describe("Score from 0 to 1 for helpfulness"),
+  reason: z.string().describe("Explanation of the score"),
+});
+
 const helpfulnessJudgeScorer = buildScorer({
   id: "helpfulness-judge",
-  type: "agent",
   label: "Helpfulness Judge",
-  preferJudge: {
-    model: judgeModel,
-    instructions: "Rate the assistant response for factual accuracy, helpfulness, and clarity.",
-  },
 })
   .score(async (context) => {
-    const rawResults = ensureRecord(context.results.raw);
-    const judge = await createLlmJudgeGenerateScore<AgentEvalContext, LlmJudgeScorerParams>({
+    const prompt = `Rate the assistant response for factual accuracy, helpfulness, and clarity.
+
+User Input: ${context.payload.input}
+Assistant Response: ${context.payload.output}
+
+Provide a score from 0 to 1 and explain your reasoning.`;
+
+    const agent = new Agent({
+      name: "helpfulness-judge",
       model: judgeModel,
-      instructions: "Rate the assistant response for factual accuracy, helpfulness, and clarity.",
-      context: {
-        payload: context.payload,
-        params: context.params as LlmJudgeScorerParams,
-        results: rawResults,
-      },
+      instructions: "You evaluate helpfulness of responses",
     });
 
-    rawResults.helpfulnessJudge = judge;
+    const response = await agent.generateObject(prompt, HELPFULNESS_SCHEMA);
+
+    const rawResults = context.results.raw;
+    rawResults.helpfulnessJudge = response.object;
     context.results.raw = rawResults;
 
-    return judge;
+    return {
+      score: response.object.score,
+      metadata: {
+        reason: response.object.reason,
+      },
+    };
   })
   .reason(({ results }) => {
-    const raw = ensureRecord(results.raw);
-    const judge = raw.helpfulnessJudge as { metadata?: Record<string, unknown> } | undefined;
-    const reason =
-      judge?.metadata && typeof judge.metadata.reason === "string"
-        ? judge.metadata.reason
-        : "The judge did not provide an explanation.";
+    const raw = results.raw;
+    const judge = raw.helpfulnessJudge as { reason?: string } | undefined;
+    const reason = judge?.reason ?? "The judge did not provide an explanation.";
 
     return {
       reason,
     };
   })
   .build();
-
-const answerCorrectnessScorer = createAnswerCorrectnessScorer<AgentEvalContext>({
-  model: judgeModel,
-  embeddingModel,
-  buildPayload: ({ payload, params }) => ({
-    input: normalizeEvalText(payload.input),
-    output: normalizeEvalText(payload.output),
-    expected: readStringParam(params, "expectedAnswer"),
-  }),
-});
-
-const answerRelevancyScorer = createAnswerRelevancyScorer<AgentEvalContext>({
-  model: judgeModel,
-  embeddingModel,
-  strictness: 3,
-  buildPayload: ({ payload, params }) => ({
-    input: normalizeEvalText(payload.input),
-    output: normalizeEvalText(payload.output),
-    context: readStringParam(params, "referenceContext"),
-  }),
-});
-
-function normalizeEvalText(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
-  }
-  if (value === null || value === undefined) {
-    return "";
-  }
-  try {
-    return typeof value === "object" ? JSON.stringify(value) : String(value);
-  } catch {
-    return String(value);
-  }
-}
-
-function readStringParam(params: Record<string, unknown>, key: string): string {
-  const value = params?.[key];
-  return typeof value === "string" ? value : "";
-}
-
-function ensureRecord(value: unknown): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return {};
-}
 
 const supportAgent = new Agent({
   name: "live-scorer-demo",
@@ -162,6 +110,18 @@ const supportAgent = new Agent({
           keyword: "voltagent",
         },
       },
+      levenshtein: {
+        scorer: scorers.levenshtein,
+        params: {
+          expected: "voltagent",
+        },
+      },
+      exactMatch: {
+        scorer: scorers.exactMatch,
+        params: {
+          expected: "voltagent",
+        },
+      },
       moderation: {
         scorer: createModerationScorer({
           model: moderationModel,
@@ -173,24 +133,6 @@ const supportAgent = new Agent({
         params: {
           criteria:
             "Reward answers that are specific to VoltAgent features and actionable guidance.",
-        },
-      },
-      answerCorrectness: {
-        scorer: answerCorrectnessScorer,
-        params: {
-          expectedAnswer:
-            "Configure the agent's eval.scorers map with LocalScorer definitions and params to enable live evaluations in VoltAgent.",
-          factualityWeight: 0.75,
-          answerSimilarityWeight: 0.25,
-          embeddingExpectedMin: 0.7,
-        },
-      },
-      answerRelevancy: {
-        scorer: answerRelevancyScorer,
-        params: {
-          strictness: 3,
-          referenceContext:
-            "VoltAgent lets you attach live eval scorers by providing an eval configuration with a scorers map. Each scorer can be a LocalScorer definition created with createScorer or helper factories such as createAnswerCorrectnessScorer.",
         },
       },
     },
@@ -209,80 +151,4 @@ new VoltAgent({
 
   console.log("Question:\n", question, "\n");
   console.log("Agent response:\n", result.text, "\n");
-
-  // Live scorers run asynchronously, give them a short moment to finish.
-  await new Promise((resolve) => setTimeout(resolve, 750));
-
-  const storage = observability.getStorage();
-  if (storage) {
-    const traceIds = await storage.listTraces(20, 0);
-    const scorerSpans: import("@voltagent/core").ObservabilitySpan[] = [];
-
-    for (const traceId of traceIds) {
-      const spans = await storage.getTrace(traceId);
-      for (const span of spans) {
-        const attrs = span.attributes ?? {};
-        if (attrs["entity.id"] === supportAgent.id && attrs["eval.scorer.id"]) {
-          scorerSpans.push(span);
-        }
-      }
-    }
-
-    scorerSpans.sort((a, b) => {
-      const aTime = new Date(a.endTime ?? a.startTime).getTime();
-      const bTime = new Date(b.endTime ?? b.startTime).getTime();
-      return bTime - aTime;
-    });
-
-    const latest = scorerSpans.slice(0, 10);
-
-    if (latest.length === 0) {
-      console.log("No live eval scores recorded yet. Try running the script again.");
-    } else {
-      console.log("Live eval scores:");
-      for (const span of latest) {
-        const attrs = span.attributes ?? {};
-        const name =
-          (attrs["eval.scorer.name"] as string) ?? (attrs["eval.scorer.id"] as string) ?? "unknown";
-        const status = (attrs["eval.scorer.status"] as string) ?? "unknown";
-        const rawScore = attrs["eval.scorer.score"];
-        const value =
-          typeof rawScore === "number"
-            ? rawScore.toFixed(3)
-            : typeof rawScore === "string" && rawScore.length > 0
-              ? Number.parseFloat(rawScore).toFixed(3)
-              : "n/a";
-        console.log(`- ${name}: ${value} (${status})`);
-
-        const strategy = attrs["eval.scorer.sampling.strategy"] as string | undefined;
-        const rateAttr = attrs["eval.scorer.sampling.rate"];
-        const rate =
-          typeof rateAttr === "number"
-            ? rateAttr
-            : typeof rateAttr === "string"
-              ? Number.parseFloat(rateAttr)
-              : undefined;
-        if (strategy) {
-          console.log(`  sampling: ${strategy}${rate !== undefined ? ` (${rate})` : ""}`);
-        }
-
-        const trigger = (attrs["eval.trigger_source"] as string) ?? "unknown";
-        const environment = (attrs["eval.environment"] as string) ?? "n/a";
-        console.log(`  trigger: ${trigger} | env: ${environment}`);
-
-        const metadataRaw = attrs["eval.scorer.metadata"];
-        if (metadataRaw) {
-          try {
-            const metadata =
-              typeof metadataRaw === "string" ? JSON.parse(metadataRaw) : metadataRaw;
-            console.log("  metadata:", JSON.stringify(metadata, null, 2));
-          } catch {
-            console.log("  metadata:", metadataRaw);
-          }
-        }
-      }
-    }
-  } else {
-    console.warn("Observability storage does not expose eval score queries in this runtime.");
-  }
 })();

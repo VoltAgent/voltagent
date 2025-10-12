@@ -169,11 +169,6 @@ function createChoiceScorer(
         scorer: id,
       },
     },
-    preferJudge: {
-      model,
-      instructions: options.judgeInstructions ?? "Select the best option according to the rubric.",
-      maxOutputTokens,
-    },
   })
     .score(async (context) => {
       const analysis = await evaluateChoice({

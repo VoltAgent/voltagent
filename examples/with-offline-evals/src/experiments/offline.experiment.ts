@@ -5,10 +5,6 @@ export default createExperiment({
   dataset: {
     name: "basic-eval-inline",
   },
-  experiment: {
-    name: "first2",
-    autoCreate: true,
-  },
   id: "offline-smoke",
   label: "Offline Regression Smoke Test",
   description: "Demonstrates createExperiment + runExperiment without VoltOps connectivity.",
@@ -22,10 +18,10 @@ export default createExperiment({
     };
   },
   scorers: [
-    /* {
+    {
       scorer: scorers.levenshtein,
       threshold: 1,
-    }, */
+    },
     scorers.exactMatch,
   ],
   passCriteria: {

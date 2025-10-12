@@ -1,59 +1,55 @@
 import {
+  Agent,
   type BuilderScoreContext,
-  type LanguageModel,
   type LocalScorerDefinition,
   buildScorer,
-  createBuilderPromptStep,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
+import type { LanguageModel } from "ai";
 import { z } from "zod";
 
-const CONTEXT_RECALL_PROMPT = `Given a context, and an answer, analyze each sentence in the answer and classify if the sentence can be attributed to the given context or not. Use only "Yes" (1) or "No" (0) as a binary classification. Output json with reason.
-
-The output should be a well-formatted JSON instance that conforms to the JSON schema below.
-
-As an example, for the schema {"properties": {"foo": {"title": "Foo", "description": "a list of strings", "type": "array", "items": {"type": "string"}}}, "required": ["foo"]}
-the object {"foo": ["bar", "baz"]} is a well-formatted instance of the schema. The object {"properties": {"foo": ["bar", "baz"]}} is not well-formatted.
-
-Here is the output JSON schema:
-\`\`\`
-{"type": "array", "items": {"$ref": "#/definitions/ContextRecallClassificationAnswer"}, "definitions": {"ContextRecallClassificationAnswer": {"title": "ContextRecallClassificationAnswer", "type": "object", "properties": {"statement": {"title": "Statement", "type": "string"}, "attributed": {"title": "Attributed", "type": "integer"}, "reason": {"title": "Reason", "type": "string"}}, "required": ["statement", "attributed", "reason"]}}}
-\`\`\`
-
-Do not return any preamble or explanations, return only a pure JSON string surrounded by triple backticks (\`\`\`).
+const CONTEXT_RECALL_EXTRACT_PROMPT = `Given the context and ground truth (expected output), extract all factual statements from the ground truth.
 
 Examples:
 
-question: "What can you tell me about albert Albert Einstein?"
-context: "Albert Einstein (14 March 1879 - 18 April 1955) was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time. Best known for developing the theory of relativity, he also made important contributions to quantum mechanics, and was thus a central figure in the revolutionary reshaping of the scientific understanding of nature that modern physics accomplished in the first decades of the twentieth century. His mass-energy equivalence formula E = mc2, which arises from relativity theory, has been called 'the world's most famous equation'. He received the 1921 Nobel Prize in Physics 'for his services to theoretical physics, and especially for his discovery of the law of the photoelectric effect', a pivotal step in the development of quantum theory. His work is also known for its influence on the philosophy of science. In a 1999 poll of 130 leading physicists worldwide by the British journal Physics World, Einstein was ranked the greatest physicist of all time. His intellectual achievements and originality have made Einstein synonymous with genius."
-answer: "Albert Einstein born in 14 March 1879 was  German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time. He received the 1921 Nobel Prize in Physics for his services to theoretical physics. He published 4 papers in 1905.  Einstein moved to Switzerland in 1895"
-classification: \`\`\`[{"statement": "Albert Einstein, born on 14 March 1879, was a German-born theoretical physicist, widely held to be one of the greatest and most influential scientists of all time.", "attributed": 1, "reason": "The date of birth of Einstein is mentioned clearly in the context."}, {"statement": "He received the 1921 Nobel Prize in Physics for his services to theoretical physics.", "attributed": 1, "reason": "The exact sentence is present in the given context."}, {"statement": "He published 4 papers in 1905.", "attributed": 0, "reason": "There is no mention about papers he wrote in the given context."}, {"statement": "Einstein moved to Switzerland in 1895.", "attributed": 0, "reason": "There is no supporting evidence for this in the given context."}]\`\`\`
+Context: "The Eiffel Tower is a wrought-iron lattice tower on the Champ de Mars in Paris, France. It is named after the engineer Gustave Eiffel, whose company designed and built the tower. Constructed from 1887 to 1889, it was initially criticized by some of France's leading artists and intellectuals."
+Ground Truth: "The Eiffel Tower was built between 1887 and 1889. It was designed by Gustave Eiffel's company and is located in Paris."
 
-question: "who won 2020 icc world cup?"
-context: "The 2022 ICC Men's T20 World Cup, held from October 16 to November 13, 2022, in Australia, was the eighth edition of the tournament. Originally scheduled for 2020, it was postponed due to the COVID-19 pandemic. England emerged victorious, defeating Pakistan by five wickets in the final to clinch their second ICC Men's T20 World Cup title."
-answer: "England"
-classification: \`\`\`[{"statement": "England won the 2022 ICC Men's T20 World Cup.", "attributed": 1, "reason": "From context it is clear that England defeated Pakistan to win the World Cup."}]\`\`\`
+Statements:
+- The Eiffel Tower was built between 1887 and 1889
+- The Eiffel Tower was designed by Gustave Eiffel's company
+- The Eiffel Tower is located in Paris
 
-question: "What is the primary fuel for the Sun?"
-context: "NULL"
-answer: "Hydrogen"
-classification: \`\`\`[{"statement": "The Sun's primary fuel is hydrogen.", "attributed": 0, "reason": "The context contains no information"}]\`\`\`
+Your task:
 
-Your actual task:
+Context: {{context}}
+Ground Truth: {{expected}}
 
-question: {{question}}
-context: {{context}}
-answer: {{answer}}
-classification:
-`;
+Extract all factual statements from the ground truth:`;
 
-const CONTEXT_RECALL_SCHEMA = z.array(
-  z.object({
-    statement: z.string(),
-    attributed: z.number().int().min(0).max(1),
-    reason: z.string(),
-  }),
-);
+const CONTEXT_RECALL_VERIFY_PROMPT = `For each statement, determine if it can be attributed to the given context. Answer with "1" if the statement is supported by the context, "0" if not.
+
+Context: {{context}}
+
+Statement: {{statement}}
+
+Analyze if this statement can be attributed to the context and provide your verdict:`;
+
+const EXTRACT_SCHEMA = z.object({
+  statements: z
+    .array(z.string())
+    .describe("List of factual statements extracted from the ground truth"),
+});
+
+const VERIFY_SCHEMA = z.object({
+  verdict: z
+    .number()
+    .int()
+    .min(0)
+    .max(1)
+    .describe("1 if statement is supported by context, 0 if not"),
+  reasoning: z.string().describe("Brief reasoning for the verdict"),
+});
 
 export interface ContextRecallPayload extends Record<string, unknown> {
   input: unknown;
@@ -61,21 +57,14 @@ export interface ContextRecallPayload extends Record<string, unknown> {
   context: unknown;
 }
 
-export interface ContextRecallParams extends Record<string, unknown> {
-  maxOutputTokens?: number;
+export interface ContextRecallParams extends Record<string, unknown> {}
+
+export interface ContextRecallOptions {
+  strictness?: number; // 0-1, how strict the attribution should be (default: 0.7)
+  partialCredit?: boolean; // Whether to give partial credit for partially supported statements (default: false)
 }
 
-export interface ContextRecallEntry extends Record<string, unknown> {
-  statement: string;
-  attributed: number;
-  reason: string;
-}
-
-export interface ContextRecallMetadata extends Record<string, unknown> {
-  statements: ContextRecallEntry[];
-}
-
-type ContextRecallBuilderContext<
+type ContextRecallScoreContext<
   Payload extends Record<string, unknown>,
   Params extends Record<string, unknown>,
 > = BuilderScoreContext<Payload, Params>;
@@ -87,60 +76,35 @@ export interface ContextRecallScorerOptions<
   id?: string;
   name?: string;
   model: LanguageModel;
-  maxOutputTokens?: number;
+  options?: ContextRecallOptions;
   metadata?: Record<string, unknown> | null;
-  buildPayload?: (context: ContextRecallBuilderContext<Payload, Params>) => {
+  buildPayload?: (context: ContextRecallScoreContext<Payload, Params>) => {
     input: string;
     expected: string;
-    context: string;
+    context: string | string[];
   };
-  evaluateWith?: (
-    context: ContextRecallBuilderContext<Payload, Params>,
-  ) => Promise<ContextRecallEntry[]>;
 }
 
-type ContextRecallResult = { score: number; metadata: ContextRecallMetadata };
+const DEFAULT_OPTIONS: ContextRecallOptions = {
+  strictness: 0.7,
+  partialCredit: false,
+};
 
 export function createContextRecallScorer<
   Payload extends Record<string, unknown> = ContextRecallPayload,
   Params extends Record<string, unknown> = ContextRecallParams,
->(options: ContextRecallScorerOptions<Payload, Params>): LocalScorerDefinition<Payload, Params> {
-  const {
-    id = "contextRecall",
-    name = "Context Recall",
-    model,
-    maxOutputTokens,
-    metadata,
-    buildPayload,
-    evaluateWith: evaluateOverride,
-  } = options;
-
-  const resolvePayload = (context: ContextRecallBuilderContext<Payload, Params>) => {
-    if (buildPayload) {
-      return buildPayload(context);
-    }
-    return {
-      input: normalizeText(context.payload.input),
-      expected: normalizeText((context.payload as Record<string, unknown>).expected),
-      context: normalizeText((context.payload as Record<string, unknown>).context),
-    };
+>({
+  id = "contextRecall",
+  name = "Context Recall",
+  model,
+  options = DEFAULT_OPTIONS,
+  metadata,
+  buildPayload,
+}: ContextRecallScorerOptions<Payload, Params>): LocalScorerDefinition<Payload, Params> {
+  const mergedOptions: Required<ContextRecallOptions> = {
+    strictness: options?.strictness ?? DEFAULT_OPTIONS.strictness ?? 0.7,
+    partialCredit: options?.partialCredit ?? DEFAULT_OPTIONS.partialCredit ?? false,
   };
-
-  const classifyStep = createBuilderPromptStep<
-    ContextRecallBuilderContext<Payload, Params>,
-    z.infer<typeof CONTEXT_RECALL_SCHEMA>,
-    ContextRecallEntry[]
-  >({
-    model,
-    maxOutputTokens,
-    schema: CONTEXT_RECALL_SCHEMA,
-    buildPrompt: (context) => {
-      const payload = resolvePayload(context);
-      return CONTEXT_RECALL_PROMPT.replace("{{question}}", payload.input)
-        .replace("{{context}}", payload.context)
-        .replace("{{answer}}", payload.expected);
-    },
-  });
 
   return buildScorer<Payload, Params>({
     id,
@@ -153,68 +117,157 @@ export function createContextRecallScorer<
     }),
   })
     .score(async (context) => {
-      const entries = evaluateOverride
-        ? await evaluateOverride(context)
-        : await classifyStep(context);
-      context.results.raw.contextRecall = entries;
-      return formatEntries(entries);
+      const agent = new Agent({
+        name: "context-recall-evaluator",
+        model,
+        instructions: "You evaluate how well provided context supports factual statements",
+      });
+
+      const payload = resolvePayload(context, buildPayload);
+      const contextText = Array.isArray(payload.context)
+        ? payload.context.join("\n")
+        : payload.context;
+
+      // Extract statements from expected output
+      const extractPrompt = CONTEXT_RECALL_EXTRACT_PROMPT.replace(
+        "{{context}}",
+        contextText,
+      ).replace("{{expected}}", payload.expected);
+
+      const extractResponse = await agent.generateObject(extractPrompt, EXTRACT_SCHEMA);
+      const statements = extractResponse.object.statements;
+
+      if (statements.length === 0) {
+        context.results.raw.contextRecallStatements = [];
+        context.results.raw.contextRecallVerdicts = [];
+        return 0;
+      }
+
+      // Verify each statement against context
+      const verdicts: Array<{ statement: string; verdict: number; reasoning: string }> = [];
+
+      for (const statement of statements) {
+        const verifyPrompt = CONTEXT_RECALL_VERIFY_PROMPT.replace(
+          "{{context}}",
+          contextText,
+        ).replace("{{statement}}", statement);
+
+        const verifyResponse = await agent.generateObject(verifyPrompt, VERIFY_SCHEMA);
+        verdicts.push({
+          statement,
+          verdict: verifyResponse.object.verdict,
+          reasoning: verifyResponse.object.reasoning,
+        });
+      }
+
+      context.results.raw.contextRecallStatements = statements;
+      context.results.raw.contextRecallVerdicts = verdicts;
+
+      // Calculate score
+      let supportedCount = 0;
+      for (const verdict of verdicts) {
+        if (verdict.verdict === 1) {
+          supportedCount += 1;
+        } else if (
+          mergedOptions.partialCredit &&
+          verdict.reasoning.toLowerCase().includes("partial")
+        ) {
+          supportedCount += 0.5;
+        }
+      }
+
+      const recallScore = supportedCount / statements.length;
+
+      // Apply strictness threshold if needed
+      if (mergedOptions.strictness > 0.5) {
+        // Penalize scores below strictness threshold
+        const adjustedScore =
+          recallScore >= mergedOptions.strictness
+            ? recallScore
+            : recallScore * (recallScore / mergedOptions.strictness);
+        return Math.min(1, adjustedScore);
+      }
+
+      return recallScore;
+    })
+    .reason(({ results }) => {
+      const statements = (results.raw.contextRecallStatements as string[]) || [];
+      const verdicts =
+        (results.raw.contextRecallVerdicts as Array<{
+          statement: string;
+          verdict: number;
+          reasoning: string;
+        }>) || [];
+
+      if (statements.length === 0) {
+        return { reason: "No statements found in expected output to evaluate" };
+      }
+
+      const supportedStatements = verdicts.filter((v) => v.verdict === 1);
+      const unsupportedStatements = verdicts.filter((v) => v.verdict === 0);
+
+      let reason = `Context recall: ${supportedStatements.length}/${statements.length} statements from expected output are supported by context.`;
+
+      if (unsupportedStatements.length > 0) {
+        reason += ` Missing support for: ${unsupportedStatements.map((v) => v.statement).join("; ")}`;
+      }
+
+      return {
+        reason,
+        metadata: {
+          totalStatements: statements.length,
+          supportedCount: supportedStatements.length,
+          unsupportedCount: unsupportedStatements.length,
+        },
+      };
     })
     .build();
 }
 
-function normalizeText(value: unknown): string {
-  if (value === null || value === undefined) {
-    return "";
+// Helper functions
+
+function resolvePayload<
+  Payload extends Record<string, unknown>,
+  Params extends Record<string, unknown>,
+>(
+  context: ContextRecallScoreContext<Payload, Params>,
+  buildPayload?: (context: ContextRecallScoreContext<Payload, Params>) => {
+    input: string;
+    expected: string;
+    context: string | string[];
+  },
+): { input: string; expected: string; context: string | string[] } {
+  if (buildPayload) {
+    return buildPayload(context);
   }
+
+  return {
+    input: normalizeText(context.payload.input),
+    expected: normalizeText((context.payload as any).expected || ""),
+    context: normalizeContext(context.payload.context),
+  };
+}
+
+function normalizeText(value: unknown): string {
   if (typeof value === "string") {
     return value;
+  }
+  if (value === null || value === undefined) {
+    return "";
   }
   return safeStringify(value);
 }
 
-function formatEntries(entries: ContextRecallEntry[]): ContextRecallResult {
-  const attributedValues = entries.map((entry) => clampBinary(entry.attributed));
-  const score =
-    attributedValues.length === 0
-      ? 0
-      : attributedValues.reduce((sum, value) => sum + value, 0) / attributedValues.length;
-  const normalizedStatements = entries.map(
-    (entry, index) =>
-      ({
-        statement: entry.statement,
-        attributed: attributedValues[index],
-        reason: entry.reason,
-      }) satisfies ContextRecallEntry,
-  );
-
-  return {
-    score,
-    metadata: {
-      statements: normalizedStatements,
-    },
-  };
-}
-
-function clampBinary(value: unknown): number {
-  const numeric = typeof value === "number" ? value : Number.parseFloat(String(value));
-  if (!Number.isFinite(numeric)) {
-    return 0;
+function normalizeContext(value: unknown): string | string[] {
+  if (Array.isArray(value)) {
+    return value.map((v) => normalizeText(v));
   }
-  if (numeric <= 0) {
-    return 0;
-  }
-  if (numeric >= 1) {
-    return 1;
-  }
-  return numeric;
+  return normalizeText(value);
 }
 
 function mergeMetadata(
-  primary: Record<string, unknown> | null | undefined,
-  secondary: Record<string, unknown>,
-): Record<string, unknown> | null {
-  if (!primary) {
-    return secondary;
-  }
-  return { ...secondary, ...primary };
+  base: Record<string, unknown> | null | undefined,
+  additional: Record<string, unknown>,
+): Record<string, unknown> {
+  return { ...base, ...additional };
 }

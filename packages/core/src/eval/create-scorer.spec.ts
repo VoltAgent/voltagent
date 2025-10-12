@@ -1,11 +1,9 @@
-import { embedMany, generateText } from "ai";
+import { generateText } from "ai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { z } from "zod";
 
 import {
-  type EmbeddingSimilarityStepResult,
-  createEmbeddingSimilarityStep,
   createLlmJudgeGenerateScore,
   createLlmPromptStep,
   createLlmStep,
@@ -18,11 +16,9 @@ import type { ScorerPipelineContext } from "./create-scorer";
 
 vi.mock("ai", () => ({
   generateText: vi.fn(),
-  embedMany: vi.fn(),
 }));
 
 const mockedGenerateText = vi.mocked(generateText);
-const mockedEmbedMany = vi.mocked(embedMany);
 
 interface TestPayload {
   input: string;
@@ -32,7 +28,6 @@ interface TestPayload {
 describe("createScorer", () => {
   beforeEach(() => {
     mockedGenerateText.mockReset();
-    mockedEmbedMany.mockReset();
   });
 
   it("executes pipeline steps and returns score", async () => {
@@ -393,83 +388,5 @@ describe("createScorer", () => {
         ],
       },
     });
-  });
-
-  it("computes embedding similarity with default strategy", async () => {
-    mockedEmbedMany.mockResolvedValue({
-      embeddings: [
-        [1, 0],
-        [1, 0],
-        [0, 1],
-      ],
-      values: [],
-      usage: { tokens: 6 },
-    } as any);
-
-    const scorer = createScorer<TestPayload, Record<string, never>>({
-      id: "embedding-default",
-      analyze: createEmbeddingSimilarityStep<
-        ScorerPipelineContext<TestPayload, Record<string, never>>
-      >({
-        model: { provider: "mock", modelId: "embed" } as any,
-        buildInput: ({ payload }) => ({
-          query: payload.output,
-          references: [
-            { id: "expected", text: "VoltAgent is great" },
-            { id: "alt", text: "Something else" },
-          ],
-        }),
-      }),
-      generateScore: ({ results }) =>
-        (results.analyze as EmbeddingSimilarityStepResult).aggregateScore,
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "", output: "VoltAgent is great" },
-      params: {},
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.score).toBeCloseTo(1);
-    expect(mockedEmbedMany).toHaveBeenCalledTimes(1);
-  });
-
-  it("maps embedding similarity into score via transform", async () => {
-    mockedEmbedMany.mockResolvedValue({
-      embeddings: [
-        [1, 0],
-        [1, 0],
-        [0, 1],
-      ],
-      values: [],
-      usage: { tokens: 6 },
-    } as any);
-
-    const scorer = createScorer<TestPayload, Record<string, never>>({
-      id: "embedding-score",
-      generateScore: createEmbeddingSimilarityStep<
-        ScorerPipelineContext<TestPayload, Record<string, never>>,
-        { score: number }
-      >({
-        model: { provider: "mock", modelId: "embed" } as any,
-        strategy: "average",
-        buildInput: ({ payload }) => ({
-          query: payload.output,
-          references: [
-            { id: "expected", text: "VoltAgent is great" },
-            { id: "alt", text: "Totally different" },
-          ],
-        }),
-        transform: ({ aggregateScore }) => ({ score: aggregateScore }),
-      }),
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "", output: "VoltAgent is great" },
-      params: {},
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.score).toBeCloseTo(0.75, 2);
   });
 });

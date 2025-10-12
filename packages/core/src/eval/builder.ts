@@ -1,6 +1,3 @@
-import type { LanguageModel } from "ai";
-
-import type { AgentEvalContext, AgentEvalParams } from "../agent/types";
 import {
   type CreateScorerOptions,
   type GenerateReasonResult,
@@ -35,7 +32,6 @@ interface BuilderContextBase<
   payload: Payload;
   params: Params;
   results: BuilderResultsSnapshot;
-  judge?: BuilderJudgeDefaults;
 }
 
 export interface BuilderPrepareContext<
@@ -101,11 +97,7 @@ interface BuilderStepRegistry<
   reason?: BuilderReasonStep<Payload, Params>;
 }
 
-export interface BuilderJudgeDefaults {
-  model: LanguageModel;
-  instructions: string;
-  maxOutputTokens?: number;
-}
+// Removed BuilderJudgeDefaults - users should provide models explicitly
 
 type BuildScorerCustomOptions<
   Payload extends Record<string, unknown> = Record<string, unknown>,
@@ -117,18 +109,13 @@ type BuildScorerCustomOptions<
   metadata?: Record<string, unknown> | null;
   sampling?: SamplingPolicy;
   params?: Params | ((payload: Payload) => Params | undefined | Promise<Params | undefined>);
-  preferJudge?: BuilderJudgeDefaults;
 };
 
-export interface AgentBuildScorerOptions
-  extends BuildScorerCustomOptions<AgentEvalContext, AgentEvalParams> {
-  type: "agent";
-}
-
+// Removed type shortcuts - be explicit about types
 export type BuildScorerOptions<
   Payload extends Record<string, unknown> = Record<string, unknown>,
   Params extends Record<string, unknown> = Record<string, unknown>,
-> = (BuildScorerCustomOptions<Payload, Params> & { type?: undefined }) | AgentBuildScorerOptions;
+> = BuildScorerCustomOptions<Payload, Params>;
 
 export interface BuildScorerRunArgs<
   Payload extends Record<string, unknown>,
@@ -413,7 +400,6 @@ class ScorerBuilderImpl<
       payload: context.payload,
       params: context.params,
       results: this.#snapshotResults(runResults),
-      judge: this.#state.options.preferJudge,
     };
   }
 
@@ -426,7 +412,6 @@ class ScorerBuilderImpl<
       payload: context.payload,
       params: context.params,
       results: this.#snapshotResults(runResults),
-      judge: this.#state.options.preferJudge,
     };
   }
 
@@ -439,7 +424,6 @@ class ScorerBuilderImpl<
       payload: context.payload,
       params: context.params,
       results: this.#snapshotResults(runResults),
-      judge: this.#state.options.preferJudge,
     };
   }
 
@@ -453,7 +437,6 @@ class ScorerBuilderImpl<
       params: context.params,
       score: context.score ?? null,
       results: this.#snapshotResults(runResults),
-      judge: this.#state.options.preferJudge,
     };
   }
 
@@ -558,19 +541,11 @@ function extractBuilderSnapshot(
 }
 
 export function buildScorer<
-  Payload extends Record<string, unknown>,
-  Params extends Record<string, unknown>,
->(options: BuildScorerCustomOptions<Payload, Params>): ScorerBuilder<Payload, Params>;
-export function buildScorer(
-  options: AgentBuildScorerOptions,
-): ScorerBuilder<AgentEvalContext, AgentEvalParams>;
-export function buildScorer(options: BuildScorerOptions<any, any>): ScorerBuilder<any, any> {
+  Payload extends Record<string, unknown> = Record<string, unknown>,
+  Params extends Record<string, unknown> = Record<string, unknown>,
+>(options: BuildScorerOptions<Payload, Params>): ScorerBuilder<Payload, Params> {
   if (!options?.id) {
     throw new Error("buildScorer requires an 'id' property.");
-  }
-  if ("type" in options && options.type === "agent") {
-    const { type: _type, ...rest } = options;
-    return new ScorerBuilderImpl<AgentEvalContext, AgentEvalParams>(rest);
   }
   return new ScorerBuilderImpl(options);
 }

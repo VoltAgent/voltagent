@@ -1,6 +1,6 @@
 import { runExperiment } from "@voltagent/evals";
 import { VoltOpsRestClient } from "@voltagent/sdk";
-import experiment from "./experiments/offline.experiment";
+import experiment from "./experiments/offline.experiment.js";
 
 async function main() {
   try {
