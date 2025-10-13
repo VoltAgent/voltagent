@@ -299,12 +299,16 @@ Convert YouTube videos into Markdown blog posts using a supervisor agent that co
 
 ### AI Ads Generator Agent
 
+<img width="1115" height="363" alt="instagram" src="https://github.com/user-attachments/assets/973e79c7-34ec-4f8e-8a41-9273d44234c6" />
+
 Implement an Instagram ad generator that uses BrowserBase Stagehand to analyze landing pages, extract brand data, and generate visuals through Google Gemini AI.
 
 - 📖 [Tutorial](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)
 - 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator)
 
 ### AI Recipe Generator Agent
+
+<img width="1111" height="363" alt="cook" src="https://github.com/user-attachments/assets/dde6ce2f-c963-4075-9825-f216bc6e3467" />
 
 Build an intelligent recipe recommendation system that creates personalized cooking suggestions based on available ingredients, dietary preferences, and time constraints.
 
@@ -313,6 +317,8 @@ Build an intelligent recipe recommendation system that creates personalized cook
 - 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator)
 
 ### AI Research Assistant Agent
+
+<img width="2228" height="678" alt="research" src="https://github.com/user-attachments/assets/8f459748-132e-4ff3-9afe-0561fa5075c2" />
 
 Create a multi-agent research workflow where different AI agents collaborate to research topics and generate comprehensive reports with type-safe data flow.
 
