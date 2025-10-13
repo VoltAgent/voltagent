@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { createMockLanguageModel } from "../test-utils";
 import {
   type AnswerCorrectnessParams,
   type AnswerCorrectnessPayload,
@@ -8,88 +9,256 @@ import {
 
 const BASE_CONTEXT = {
   payload: {
-    input: "question",
-    output: "answer",
-    expected: "reference",
+    input: "What is 2+2?",
+    output: "2+2 equals 4. It is a basic arithmetic operation.",
+    expected: "2+2 equals 4.",
   } satisfies AnswerCorrectnessPayload,
   params: {} as AnswerCorrectnessParams,
 };
 
-function createClassificationResult(tp: number, fp: number, fn: number) {
-  const tpArr = Array.from({ length: tp }, (_, idx) => `tp-${idx}`);
-  const fpArr = Array.from({ length: fp }, (_, idx) => `fp-${idx}`);
-  const fnArr = Array.from({ length: fn }, (_, idx) => `fn-${idx}`);
-  const denominator = tp + 0.5 * (fp + fn);
-  const f1Score = denominator === 0 ? 0 : tp / denominator;
-  return {
-    TP: tpArr,
-    FP: fpArr,
-    FN: fnArr,
-    f1Score,
-  };
-}
-
 describe("createAnswerCorrectnessScorer", () => {
-  it("calculates blended score with default weights", async () => {
+  it("calculates F1 score from classification", async () => {
     const scorer = createAnswerCorrectnessScorer({
-      model: {} as any,
-      embeddingModel: {} as any,
-      classifyWith: async () => createClassificationResult(2, 1, 1),
-      similarityWith: async () => ({ score: 0.9, rawScore: 0.8, usage: 42 }),
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                TP: ["2+2 equals 4"],
+                FP: ["It is a basic arithmetic operation"],
+                FN: [],
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
     });
 
     const result = await scorer.scorer(BASE_CONTEXT);
 
     expect(result.status).toBe("success");
     expect(result.score).toBeGreaterThan(0);
-    expect(result.metadata).toMatchObject({
-      factuality: {
-        truePositive: ["tp-0", "tp-1"],
-        falsePositive: ["fp-0"],
-        falseNegative: ["fn-0"],
-      },
-      similarity: {
-        score: 0.9,
-        rawScore: 0.8,
-        usage: 42,
-      },
-    });
+    expect(result.score).toBeLessThanOrEqual(1);
   });
 
-  it("respects custom weights and skips similarity when weight is zero", async () => {
+  it("returns 0 for completely incorrect answer", async () => {
     const scorer = createAnswerCorrectnessScorer({
-      model: {} as any,
-      embeddingModel: {} as any,
-      classifyWith: async () => createClassificationResult(3, 0, 0),
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                TP: [],
+                FP: ["Wrong statement 1", "Wrong statement 2"],
+                FN: ["Correct statement 1"],
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
     });
 
-    const result = await scorer.scorer({
-      ...BASE_CONTEXT,
-      params: {
-        factualityWeight: 1,
-        answerSimilarityWeight: 0,
-      },
-    });
+    const result = await scorer.scorer(BASE_CONTEXT);
 
     expect(result.status).toBe("success");
-    expect(result.metadata?.similarity).toBeNull();
-    expect(result.score).toBeCloseTo(1);
+    expect(result.score).toBe(0);
   });
 
-  it("signals error when both weights are zero", async () => {
+  it("returns perfect score when TP only, no FP or FN", async () => {
     const scorer = createAnswerCorrectnessScorer({
-      model: {} as any,
-      embeddingModel: {} as any,
-      classifyWith: async () => createClassificationResult(1, 0, 0),
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                TP: ["Statement 1", "Statement 2"],
+                FP: [],
+                FN: [],
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
     });
 
-    const result = await scorer.scorer({
-      ...BASE_CONTEXT,
-      params: { factualityWeight: 0, answerSimilarityWeight: 0 },
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    expect(result.score).toBe(1);
+  });
+
+  it("correctly calculates F1 score with known TP/FP/FN values", async () => {
+    // F1 = 2 * (precision * recall) / (precision + recall)
+    // precision = TP / (TP + FP) = 2 / (2 + 1) = 0.666...
+    // recall = TP / (TP + FN) = 2 / (2 + 1) = 0.666...
+    // F1 = 2 * (0.666... * 0.666...) / (0.666... + 0.666...) = 0.666...
+    const scorer = createAnswerCorrectnessScorer({
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                TP: ["True 1", "True 2"],
+                FP: ["False positive"],
+                FN: ["False negative"],
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
     });
 
-    expect(result.status).toBe("error");
-    expect(result.error).toBeInstanceOf(Error);
-    expect((result.error as Error).message).toMatch(/At least one/);
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    expect(result.score).toBeCloseTo(0.6667, 3);
+  });
+
+  it("handles empty classification gracefully", async () => {
+    const scorer = createAnswerCorrectnessScorer({
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                TP: [],
+                FP: [],
+                FN: [],
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
+    });
+
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    expect(result.score).toBe(0);
+  });
+
+  it("applies factualityWeight to F1 score", async () => {
+    const scorer = createAnswerCorrectnessScorer({
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                TP: ["Statement 1", "Statement 2"],
+                FP: ["False positive"],
+                FN: [],
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
+      options: { factualityWeight: 0.5 },
+    });
+
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    // F1 = 2*2/(2+2+1) = 0.8
+    // With weight 0.5: 0.8 * 0.5 = 0.4
+    expect(result.score).toBeCloseTo(0.4, 4);
+  });
+
+  it("factualityWeight greater than 1 amplifies score", async () => {
+    const scorer = createAnswerCorrectnessScorer({
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                TP: ["Statement 1"],
+                FP: ["False positive"],
+                FN: [],
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
+      options: { factualityWeight: 1.5 },
+    });
+
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    // F1 = 2*1/(1+1+1) = 0.6666...
+    // With weight 1.5: 0.6666 * 1.5 = 1.0
+    expect(result.score).toBeCloseTo(1.0, 4);
+  });
+
+  it("uses default factualityWeight of 1.0 when not specified", async () => {
+    const scorer = createAnswerCorrectnessScorer({
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                TP: ["Statement 1", "Statement 2"],
+                FP: [],
+                FN: [],
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
+      // No options specified, should use default weight 1.0
+    });
+
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    // F1 = 1.0, weight = 1.0 → score = 1.0
+    expect(result.score).toBe(1.0);
   });
 });

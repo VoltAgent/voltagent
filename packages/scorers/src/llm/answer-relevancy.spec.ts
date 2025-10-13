@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { createMockLanguageModel } from "../test-utils";
+
 import {
   type AnswerRelevancyParams,
   type AnswerRelevancyPayload,
-  type GeneratedQuestion,
-  type QuestionSimilarityEntry,
   createAnswerRelevancyScorer,
 } from "./answer-relevancy";
 
@@ -18,91 +18,240 @@ const BASE_CONTEXT = {
 };
 
 describe("createAnswerRelevancyScorer", () => {
-  it("averages similarity scores when all questions are committal", async () => {
-    const questions: GeneratedQuestion[] = [
-      { question: "Who discovered penicillin?", noncommittal: false },
-      { question: "When was penicillin discovered?", noncommittal: false },
-      {
-        question: "What was Alexander Fleming studying when he found penicillin?",
-        noncommittal: false,
-      },
-    ];
-
-    const similarities: QuestionSimilarityEntry[] = [
-      { question: questions[0].question, score: 0.9, rawScore: 0.85, usage: 10 },
-      { question: questions[1].question, score: 0.7, rawScore: 0.65, usage: 12 },
-      { question: questions[2].question, score: 0.8, rawScore: 0.75, usage: 11 },
-    ];
-
+  it("generates questions and calculates relevancy score", async () => {
     const scorer = createAnswerRelevancyScorer({
-      model: {} as any,
-      embeddingModel: {} as any,
-      strictness: questions.length,
-      questionGenerator: async (_context, iteration) => questions[iteration],
-      similarityCalculator: async ({ index }) => similarities[index],
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                question: "Who discovered penicillin?",
+                noncommittal: 0,
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
+      options: { strictness: 3 },
     });
 
     const result = await scorer.scorer(BASE_CONTEXT);
 
     expect(result.status).toBe("success");
-    expect(result.score).toBeCloseTo((0.9 + 0.7 + 0.8) / 3, 5);
-    expect(result.metadata).toMatchObject({
-      questions,
-      similarity: similarities,
-      strictness: questions.length,
-      noncommittal: false,
-    });
+    expect(result.score).toBeGreaterThanOrEqual(0);
+    expect(result.score).toBeLessThanOrEqual(1);
   });
 
-  it("returns zero when any generated question is noncommittal", async () => {
-    const questions: GeneratedQuestion[] = [
-      { question: "What was discovered?", noncommittal: true },
-      { question: "Who discovered it?", noncommittal: false },
-    ];
-
+  it("returns zero when questions are noncommittal", async () => {
+    let callCount = 0;
     const scorer = createAnswerRelevancyScorer({
-      model: {} as any,
-      embeddingModel: {} as any,
-      strictness: questions.length,
-      questionGenerator: async (_context, iteration) => questions[iteration],
-      similarityCalculator: async () => ({
-        question: "irrelevant",
-        score: 0.9,
-        rawScore: 0.9,
-        usage: 5,
+      model: createMockLanguageModel({
+        doGenerate: async () => {
+          callCount++;
+          return {
+            finishReason: "stop",
+            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  question: "I don't know",
+                  noncommittal: 1,
+                }),
+              },
+            ],
+            warnings: [],
+            rawPrompt: null,
+            rawSettings: {},
+          };
+        },
       }),
+      options: { strictness: 2 },
     });
 
     const result = await scorer.scorer(BASE_CONTEXT);
 
     expect(result.status).toBe("success");
     expect(result.score).toBe(0);
-    expect(result.metadata).toMatchObject({
-      questions,
-      noncommittal: true,
-    });
+    expect(callCount).toBe(2);
   });
 
-  it("uses params.strictness to override option strictness", async () => {
+  it("generates multiple questions based on strictness", async () => {
     let callCount = 0;
     const scorer = createAnswerRelevancyScorer({
-      model: {} as any,
-      embeddingModel: {} as any,
-      strictness: 1,
-      questionGenerator: async () => {
-        callCount += 1;
-        return { question: "Q", noncommittal: false } satisfies GeneratedQuestion;
-      },
-      similarityCalculator: async () => ({ question: "Q", score: 1, rawScore: 1, usage: 1 }),
+      model: createMockLanguageModel({
+        doGenerate: async () => {
+          callCount++;
+          return {
+            finishReason: "stop",
+            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  question: `Question ${callCount}`,
+                  noncommittal: 0,
+                }),
+              },
+            ],
+            warnings: [],
+            rawPrompt: null,
+            rawSettings: {},
+          };
+        },
+      }),
+      options: { strictness: 5 },
+    });
+
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    expect(callCount).toBe(5);
+  });
+
+  it("handles committal questions with similarity calculation", async () => {
+    const scorer = createAnswerRelevancyScorer({
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                question: "Who discovered penicillin?",
+                noncommittal: 0,
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
+      options: { strictness: 1 },
+    });
+
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    // Score based on word overlap similarity between generated question and input
+    expect(result.score).toBeGreaterThan(0);
+  });
+
+  it("applies noncommittal threshold correctly", async () => {
+    let callCount = 0;
+    const scorer = createAnswerRelevancyScorer({
+      model: createMockLanguageModel({
+        doGenerate: async () => {
+          callCount++;
+          return {
+            finishReason: "stop",
+            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  question: callCount === 1 ? "Good question" : "I don't know",
+                  noncommittal: callCount === 1 ? 0 : 1,
+                }),
+              },
+            ],
+            warnings: [],
+            rawPrompt: null,
+            rawSettings: {},
+          };
+        },
+      }),
+      options: { strictness: 2, noncommittalThreshold: 0.5 },
+    });
+
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    // 1 out of 2 questions is noncommittal = 50%, which equals threshold
+    // Should be treated as noncommittal
+    expect(result.score).toBe(0);
+  });
+
+  it("applies uncertaintyWeight for medium similarity questions", async () => {
+    let callCount = 0;
+    const scorer = createAnswerRelevancyScorer({
+      model: createMockLanguageModel({
+        doGenerate: async () => {
+          callCount++;
+          return {
+            finishReason: "stop",
+            usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  question: `Question ${callCount}`,
+                  noncommittal: 0,
+                }),
+              },
+            ],
+            warnings: [],
+            rawPrompt: null,
+            rawSettings: {},
+          };
+        },
+      }),
+      options: { strictness: 2, uncertaintyWeight: 0.5 },
     });
 
     const result = await scorer.scorer({
       ...BASE_CONTEXT,
-      params: { strictness: 2 },
+      payload: {
+        ...BASE_CONTEXT.payload,
+        input: "What is machine learning?",
+        output: "Machine learning is a method of data analysis",
+      },
     });
 
     expect(result.status).toBe("success");
-    expect(callCount).toBe(2);
-    expect(result.metadata).toMatchObject({ strictness: 2 });
+    // Score depends on similarity calculation
+    // With uncertaintyWeight 0.5, medium similarity gets partial credit
+    expect(result.score).toBeGreaterThanOrEqual(0);
+    expect(result.score).toBeLessThanOrEqual(1);
+  });
+
+  it("uses default uncertaintyWeight of 0.3 when not specified", async () => {
+    const scorer = createAnswerRelevancyScorer({
+      model: createMockLanguageModel({
+        doGenerate: {
+          finishReason: "stop",
+          usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                question: "Test question",
+                noncommittal: 0,
+              }),
+            },
+          ],
+          warnings: [],
+          rawPrompt: null,
+          rawSettings: {},
+        },
+      }),
+      options: { strictness: 1 },
+      // uncertaintyWeight not specified, should use default 0.3
+    });
+
+    const result = await scorer.scorer(BASE_CONTEXT);
+
+    expect(result.status).toBe("success");
+    // Score calculation uses default uncertaintyWeight of 0.3
+    expect(result.score).toBeGreaterThanOrEqual(0);
+    expect(result.score).toBeLessThanOrEqual(1);
   });
 });

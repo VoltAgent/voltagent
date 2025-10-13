@@ -38,9 +38,9 @@ describe("createAutoEvalScorer", () => {
     expect(definition.metadata).toMatchObject({ voltAgent: { scorer: "auto-test" } });
   });
 
-  it("normalizes non-string outputs and propagates errors", async () => {
+  it("preserves objects and arrays, propagates errors", async () => {
     const error = new Error("LLM failure");
-    const scorerFn = vi.fn(async (args: { output: string }) => {
+    const scorerFn = vi.fn(async (args: { output: unknown }) => {
       return {
         name: "example",
         score: null,
@@ -59,11 +59,12 @@ describe("createAutoEvalScorer", () => {
       params: {},
     });
 
-    expect(scorerFn).toHaveBeenCalledWith({ output: '{"foo":"bar"}' });
+    // Objects should be preserved, not stringified
+    expect(scorerFn).toHaveBeenCalledWith({ output: { foo: "bar" } });
     expect(result.status).toBe("error");
     expect(result.error).toBe(error);
     expect(result.metadata).toMatchObject({
-      output: '{"foo":"bar"}',
+      output: { foo: "bar" },
       voltAgent: { scorer: "auto-error" },
     });
     const builderMetadata = (result.metadata as Record<string, unknown>).scorerBuilder as
@@ -103,5 +104,129 @@ describe("default scorers map", () => {
         scorer: "exactMatch",
       },
     });
+  });
+
+  it("executes listContains scorer with all items present", async () => {
+    const payload = {
+      output: ["apple", "banana"],
+      expected: ["apple", "banana"],
+    } satisfies Record<string, unknown>;
+
+    const execution = await runLocalScorers({
+      payload,
+      baseArgs: (context) => ({
+        output: context.output,
+        expected: context.expected,
+      }),
+      scorers: [scorers.listContains],
+    });
+
+    expect(execution.results[0]).toMatchObject({ score: 1, status: "success" });
+    expect(execution.results[0].metadata).toMatchObject({
+      voltAgent: { scorer: "listContains" },
+    });
+  });
+
+  it("executes listContains scorer with partial match", async () => {
+    const payload = {
+      output: ["apple", "banana"],
+      expected: ["apple", "banana", "cherry"],
+    } satisfies Record<string, unknown>;
+
+    const execution = await runLocalScorers({
+      payload,
+      baseArgs: (context) => ({
+        output: context.output,
+        expected: context.expected,
+      }),
+      scorers: [scorers.listContains],
+    });
+
+    // Should be partial score since cherry is missing
+    expect(execution.results[0].status).toBe("success");
+    expect(execution.results[0].score).toBeGreaterThan(0);
+    expect(execution.results[0].score).toBeLessThan(1);
+  });
+
+  it("executes numericDiff scorer with identical values", async () => {
+    const payload = {
+      output: 42,
+      expected: 42,
+    } satisfies Record<string, unknown>;
+
+    const execution = await runLocalScorers({
+      payload,
+      baseArgs: (context) => ({
+        output: context.output,
+        expected: context.expected,
+      }),
+      scorers: [scorers.numericDiff],
+    });
+
+    expect(execution.results[0]).toMatchObject({ score: 1, status: "success" });
+    expect(execution.results[0].metadata).toMatchObject({
+      voltAgent: { scorer: "numericDiff" },
+    });
+  });
+
+  it("executes numericDiff scorer with different values", async () => {
+    const payload = {
+      output: 40,
+      expected: 42,
+    } satisfies Record<string, unknown>;
+
+    const execution = await runLocalScorers({
+      payload,
+      baseArgs: (context) => ({
+        output: context.output,
+        expected: context.expected,
+      }),
+      scorers: [scorers.numericDiff],
+    });
+
+    expect(execution.results[0].status).toBe("success");
+    expect(execution.results[0].score).toBeGreaterThan(0);
+    expect(execution.results[0].score).toBeLessThan(1);
+  });
+
+  it("executes jsonDiff scorer with identical objects", async () => {
+    const payload = {
+      output: { name: "VoltAgent", version: "1.0" },
+      expected: { name: "VoltAgent", version: "1.0" },
+    } satisfies Record<string, unknown>;
+
+    const execution = await runLocalScorers({
+      payload,
+      baseArgs: (context) => ({
+        output: context.output,
+        expected: context.expected,
+      }),
+      scorers: [scorers.jsonDiff],
+    });
+
+    expect(execution.results[0]).toMatchObject({ score: 1, status: "success" });
+    expect(execution.results[0].metadata).toMatchObject({
+      voltAgent: { scorer: "jsonDiff" },
+    });
+  });
+
+  it("executes jsonDiff scorer with nested object differences", async () => {
+    const payload = {
+      output: { name: "VoltAgent", config: { port: 3000 } },
+      expected: { name: "VoltAgent", config: { port: 8080 } },
+    } satisfies Record<string, unknown>;
+
+    const execution = await runLocalScorers({
+      payload,
+      baseArgs: (context) => ({
+        output: context.output,
+        expected: context.expected,
+      }),
+      scorers: [scorers.jsonDiff],
+    });
+
+    expect(execution.results[0].status).toBe("success");
+    expect(execution.results[0].score).toBeGreaterThan(0);
+    expect(execution.results[0].score).toBeLessThan(1);
   });
 });

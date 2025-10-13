@@ -160,22 +160,43 @@ function defaultBuildArgs<
   if (base.output === undefined) {
     const output = (context.payload as Record<string, unknown>).output;
     if (output !== undefined) {
-      base.output = normalizeScoreText(output);
+      base.output = normalizeScoreValue(output);
     }
-  } else if (typeof base.output !== "string") {
-    base.output = normalizeScoreText(base.output);
+  } else if (typeof base.output !== "string" && !Array.isArray(base.output)) {
+    base.output = normalizeScoreValue(base.output);
   }
 
   if (base.expected === undefined) {
     const expected = (context.payload as Record<string, unknown>).expected;
     if (expected !== undefined) {
-      base.expected = normalizeScoreText(expected);
+      base.expected = normalizeScoreValue(expected);
     }
-  } else if (base.expected !== null && typeof base.expected !== "string") {
-    base.expected = normalizeScoreText(base.expected);
+  } else if (
+    base.expected !== null &&
+    typeof base.expected !== "string" &&
+    !Array.isArray(base.expected)
+  ) {
+    base.expected = normalizeScoreValue(base.expected);
   }
 
   return base;
+}
+
+function normalizeScoreValue(value: unknown): unknown {
+  // Preserve arrays (for scorers like ListContains)
+  if (Array.isArray(value)) {
+    return value;
+  }
+  // Preserve numbers (for scorers like NumericDiff)
+  if (typeof value === "number") {
+    return value;
+  }
+  // Preserve plain objects (for scorers like JSONDiff)
+  if (value && typeof value === "object" && value.constructor === Object) {
+    return value;
+  }
+  // Convert everything else to string
+  return normalizeScoreText(value);
 }
 
 function defaultTransformResult({ autoEvalScore }: { autoEvalScore: AutoEvalScore }): ScorerResult {
