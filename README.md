@@ -4,7 +4,6 @@
 </a>
 
 <br/>
-<br/>
 
 <div align="center">
 English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i18n/README-cn-bsc.md">简体中文</a> | <a href="i18n/README-jp.md">日本語</a> | <a href="i18n/README-kr.md">한국어</a>
@@ -24,13 +23,6 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 <br/>
 
 <div align="center">
-    <strong>VoltAgent is an open source TypeScript framework for building and orchestrating AI agents.</strong><br>
-Build production-ready agents with memory, workflows, tools, and built-in LLM observability.
-    <br />
-    <br />
-</div>
-
-<div align="center">
 
 [![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
@@ -48,9 +40,8 @@ Build production-ready agents with memory, workflows, tools, and built-in LLM ob
 
 </div> -->
 
-## What is VoltAgent?
-
-**VoltAgent** is an open-source TypeScript framework for building production-grade AI agents. It lets you orchestrate agents, tools, and workflows with minimal setup.
+**VoltAgent** is an open source TypeScript framework for building and orchestrating AI agents.
+You can build production-ready agents with memory, workflows, tools, and built-in LLM observability.
 
 Instead of shipping everything from scratch, VoltAgent gives you modular building blocks:
 
@@ -279,7 +270,7 @@ Big thanks to everyone who's been part of the VoltAgent journey, whether you've 
 
 VoltAgent is a community effort, and it keeps getting better because of people like you.
 
-![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent)
+![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent&max=100)
 
 Your stars help us reach more developers! If you find VoltAgent useful, please consider giving us a star on GitHub to support the project and help others discover it.
 
