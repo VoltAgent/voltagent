@@ -92,19 +92,23 @@ describe("buildScorer", () => {
     expect(result.steps.raw).toEqual({});
   });
 
-  it("exposes judge defaults in step contexts", async () => {
-    const builder = buildScorer<TestPayload, Record<string, unknown>>({
-      id: "judge-defaults",
-      preferJudge: {
-        model: { provider: "mock", modelId: "judge-model" } as any,
-        instructions: "Rate response",
-      },
-    }).score((context) => {
-      expect(context.judge?.instructions).toBe("Rate response");
-      return 1;
-    });
+  it("provides accumulated results in step contexts without judge defaults", async () => {
+    const builder = buildScorer<TestPayload, { keyword: string }>({
+      id: "context-snapshots",
+      params: { keyword: "VoltAgent" },
+    })
+      .prepare(({ payload }) => payload.output.toUpperCase())
+      .analyze(({ results }) => results.prepare === "OK")
+      .score((context) => {
+        expect(context.results.prepare).toBe("OK");
+        expect(context.results.analyze).toBe(true);
+        expect(context.params.keyword).toBe("VoltAgent");
+        expect("judge" in context).toBe(false);
+        return 1;
+      });
 
     const result = await builder.run({ payload: { input: "", output: "ok" } });
+    expect(result.status).toBe("success");
     expect(result.score).toBe(1);
   });
 

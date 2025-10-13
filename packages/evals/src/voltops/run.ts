@@ -1,3 +1,4 @@
+import { safeStringify } from "@voltagent/internal/utils";
 import type {
   AppendEvalRunResultsRequest,
   CompleteEvalRunRequest,
@@ -461,12 +462,14 @@ function serializeError(error: unknown): { message: string; name?: string; stack
 
   if (typeof error === "string") {
     message = error;
-  } else {
+  } else if (typeof error === "object") {
     try {
-      message = JSON.stringify(error);
+      message = safeStringify(error);
     } catch {
       message = String(error);
     }
+  } else {
+    message = String(error);
   }
 
   return {

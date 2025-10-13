@@ -1,5 +1,5 @@
 {
-  "name": "example-with-live-scorers",
+  "name": "example-with-live-evals",
   "version": "0.0.1",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",

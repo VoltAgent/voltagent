@@ -1,5 +1,5 @@
 {
-  "name": "@examples/with-offline-evals",
+  "name": "voltagent-example-with-offline-evals",
   "version": "0.0.0",
   "dependencies": {
     "@voltagent/cli": "^0.1.11",

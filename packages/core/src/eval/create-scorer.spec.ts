@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import {
-  createLlmJudgeGenerateScore,
   createLlmPromptStep,
   createLlmStep,
   createLlmToolStep,
@@ -13,6 +12,7 @@ import {
   weightedBlend,
 } from "./create-scorer";
 import type { ScorerPipelineContext } from "./create-scorer";
+import { createLLMJudgeScorer } from "./llm/create-judge-scorer";
 
 vi.mock("ai", () => ({
   generateText: vi.fn(),
@@ -133,22 +133,13 @@ describe("createScorer", () => {
     expect(result.score).toBeCloseTo(0.42);
   });
 
-  it("creates judge scorer using LLM helper", async () => {
+  it("creates judge scorer using dedicated helper", async () => {
     mockedGenerateText.mockResolvedValue({ text: '{"score":0.75,"reason":"helpful"}' });
 
-    const scorer = createScorer<TestPayload, { criteria?: string }>({
+    const scorer = createLLMJudgeScorer<TestPayload>({
       id: "judge",
-      metadata: {
-        voltAgent: {
-          scorer: "judge",
-        },
-      },
-      generateScore: (context) =>
-        createLlmJudgeGenerateScore<TestPayload, { criteria?: string }>({
-          model: { provider: "mock", modelId: "judge" } as any,
-          instructions: "Score helpfulness",
-          context,
-        }),
+      model: { provider: "mock", modelId: "judge" } as any,
+      instructions: "Score helpfulness",
     });
 
     const result = await scorer.scorer({
@@ -161,6 +152,7 @@ describe("createScorer", () => {
     expect(result.metadata).toMatchObject({
       reason: "helpful",
       raw: '{"score":0.75,"reason":"helpful"}',
+      voltAgent: { scorer: "judge" },
     });
   });
 
