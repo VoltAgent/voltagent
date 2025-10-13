@@ -64,9 +64,7 @@ With the core framework, you can build intelligent agents with memory, tools, an
 
 ### VoltOps LLM Observability
 
-VoltAgent comes with built-in VoltOps observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.
-
-- **[Observability](#built-in-llm-observability-with-voltops) (`VoltOps`)**: VoltOps gives you LLM observability; trace every step, replay runs, and review audit trails in one dashboard.
+VoltAgent comes with built-in [VoltOps](#built-in-llm-observability-with-voltops) LLM observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.
 
 ### MCP Server (@voltagent/mcp-docs-server)
 
@@ -213,67 +211,11 @@ Analyze complete execution traces to understand agent behavior and optimize perf
 
 ![VoltOps Traces](https://cdn.voltagent.dev/console/traces.png)
 
-## Use Cases
-
-Build AI agents for real-world business needs across different industries:
-
-- **[HR Agent](https://voltagent.dev/use-cases/hr-agent/)** - Automate recruiting, employee onboarding, and HR support tasks.
-- **[Customer Support Agent](https://voltagent.dev/use-cases/customer-support-agent/)** - Build support agents that handle customer questions and issues.
-- **[Sales Teams](https://voltagent.dev/use-cases/sales-teams/)** - Qualify leads, gather customer data, and personalize sales outreach.
-- **[Finance Agent](https://voltagent.dev/use-cases/finance-agent/)** - Manage invoices, track expenses, and generate financial reports.
-- **[Development Agent](https://voltagent.dev/use-cases/development-agent/)** - Review code, manage deployments, and help development teams.
-- **[Marketing Agent](https://voltagent.dev/use-cases/marketing-agent/)** - Plan campaigns, create content, and analyze marketing performance.
-- **[Legal Agent](https://voltagent.dev/use-cases/legal-agent/)** - Review contracts, check compliance, and handle legal tasks.
-- **[Insurance Agent](https://voltagent.dev/use-cases/insurance-agent/)** - Process claims, evaluate risks, and manage policies.
-- **[Industrial Agent](https://voltagent.dev/use-cases/industrial-agent/)** - Monitor equipment, predict maintenance needs, and ensure safety.
-- **[Education Agent](https://voltagent.dev/use-cases/education-agent/)** - Provide personalized tutoring, track student progress, and support learning.
-- **[Government Agent](https://voltagent.dev/use-cases/government-agent/)** - Handle permit applications, process benefits, and serve citizens.
-- **[Documentation Agent](https://voltagent.dev/use-cases/documentation-agent/)** - Create API docs, write changelogs, and generate tutorials from code.
-
-### Running Your First Workflow
-
-Your new project also includes a powerful workflow engine. You can test the pre-built `expenseApprovalWorkflow` directly from the VoltOps console:
-
-![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
-
-1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
-2.  **Select Your Project:** Use the project selector to choose your project (e.g., "my-agent-app").
-3.  **Find and Run:** You will see **"Expense Approval Workflow"** listed. Click it, then click the **"Run"** button.
-4.  **Provide Input:** The workflow expects a JSON object with expense details. Try a small expense for automatic approval:
-    ```json
-    {
-      "employeeId": "EMP-123",
-      "amount": 250,
-      "category": "office-supplies",
-      "description": "New laptop mouse and keyboard"
-    }
-    ```
-5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
-
-## Key Features
-
-- **Agent Core:** Define agents with descriptions, LLM providers, tools, and memory management with full TypeScript type safety.
-- **Workflow Engine:** Orchestrate complex, multi-step automations with a powerful and declarative API (`andThen`, `andAgent`, `andAll`, `andRace`, `andWhen`) with automatic type inference.
-- **Multi-Agent Systems:** Build complex workflows using Supervisor Agents coordinating multiple specialized Sub-Agents with dynamic task delegation.
-- **Tool Usage & Lifecycle:** Equip agents with custom or pre-built tools (functions) with type-safety (Zod), lifecycle hooks, and cancellation support to interact with external systems.
-- **Flexible LLM Support:** Integrate seamlessly with various LLM providers (OpenAI, Anthropic, Google, etc.) via AI SDK and easily switch between models.
-- **Memory Management:** Enable agents to retain context across interactions using different configurable memory providers (LibSQL, PostgreSQL, Supabase) with optional semantic search.
-- **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltOps LLM Observability Platform](https://console.voltagent.dev) with built-in execution history and tracing.
-- **Prompt Management:** Manage prompts with static instructions, dynamic runtime functions, or enterprise-grade VoltOps remote management with versioning and A/B testing.
-- **Dynamic Agents:** Create adaptive agents that change behavior, models, and capabilities based on runtime context for multi-tenant applications and role-based access.
-- **Evaluation Framework:** Test and improve agent quality with built-in Viteval integration for accuracy, relevance, and safety testing.
-- **Custom API Endpoints:** Extend the VoltAgent API server with your own custom endpoints to build specialized functionality on top of the core framework.
-- **Voice Interaction:** Build voice-enabled agents capable of speech recognition and synthesis using the `@voltagent/voice` package with OpenAI and ElevenLabs support.
-- **Data Retrieval & RAG:** Integrate specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)** from various sources (Pinecone, Qdrant, Chroma).
-- **Model Context Protocol (MCP) Support:** Connect to external tool servers (HTTP/stdio) adhering to the [MCP standard](https://modelcontextprotocol.io/) for extended capabilities and act as an MCP server.
-- **Structured Output:** Generate type-safe structured data with Zod schemas using AI SDK's experimental output features for both objects and constrained text.
-- **Multi-modal Support:** Process images, audio, and other media types alongside text for comprehensive AI interactions.
-- **Workflow Suspend & Resume:** Build long-running workflows with human-in-the-loop approvals and async task execution.
-- **Framework Compatibility:** Designed for easy integration into existing Node.js applications and popular frameworks (Next.js, Express, Hono).
-
 ## Examples
 
-Explore real-world implementations of VoltAgent with complete source code and video tutorials. For more examples and use cases, visit our [examples repository](https://github.com/VoltAgent/voltagent/tree/main/examples).
+Explore real-world implementations of VoltAgent with complete source code and video tutorials.
+
+For more examples and use cases, visit our [examples repository](https://github.com/VoltAgent/voltagent/tree/main/examples).
 
 ### WhatsApp Order Agent
 
@@ -346,6 +288,64 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - 📖 [Tutorial](https://voltagent.dev/examples/agents/research-assistant)
 - 📹 [Watch Video](https://youtu.be/j6KAUaoZMy4)
 - 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant)
+
+## Use Cases
+
+Build AI agents for real-world business needs across different industries:
+
+- **[HR Agent](https://voltagent.dev/use-cases/hr-agent/)** - Automate recruiting, employee onboarding, and HR support tasks.
+- **[Customer Support Agent](https://voltagent.dev/use-cases/customer-support-agent/)** - Build support agents that handle customer questions and issues.
+- **[Sales Teams](https://voltagent.dev/use-cases/sales-teams/)** - Qualify leads, gather customer data, and personalize sales outreach.
+- **[Finance Agent](https://voltagent.dev/use-cases/finance-agent/)** - Manage invoices, track expenses, and generate financial reports.
+- **[Development Agent](https://voltagent.dev/use-cases/development-agent/)** - Review code, manage deployments, and help development teams.
+- **[Marketing Agent](https://voltagent.dev/use-cases/marketing-agent/)** - Plan campaigns, create content, and analyze marketing performance.
+- **[Legal Agent](https://voltagent.dev/use-cases/legal-agent/)** - Review contracts, check compliance, and handle legal tasks.
+- **[Insurance Agent](https://voltagent.dev/use-cases/insurance-agent/)** - Process claims, evaluate risks, and manage policies.
+- **[Industrial Agent](https://voltagent.dev/use-cases/industrial-agent/)** - Monitor equipment, predict maintenance needs, and ensure safety.
+- **[Education Agent](https://voltagent.dev/use-cases/education-agent/)** - Provide personalized tutoring, track student progress, and support learning.
+- **[Government Agent](https://voltagent.dev/use-cases/government-agent/)** - Handle permit applications, process benefits, and serve citizens.
+- **[Documentation Agent](https://voltagent.dev/use-cases/documentation-agent/)** - Create API docs, write changelogs, and generate tutorials from code.
+
+### Running Your First Workflow
+
+Your new project also includes a powerful workflow engine. You can test the pre-built `expenseApprovalWorkflow` directly from the VoltOps console:
+
+![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
+
+1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
+2.  **Select Your Project:** Use the project selector to choose your project (e.g., "my-agent-app").
+3.  **Find and Run:** You will see **"Expense Approval Workflow"** listed. Click it, then click the **"Run"** button.
+4.  **Provide Input:** The workflow expects a JSON object with expense details. Try a small expense for automatic approval:
+    ```json
+    {
+      "employeeId": "EMP-123",
+      "amount": 250,
+      "category": "office-supplies",
+      "description": "New laptop mouse and keyboard"
+    }
+    ```
+5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
+
+## Key Features
+
+- **Agent Core:** Define agents with descriptions, LLM providers, tools, and memory management with full TypeScript type safety.
+- **Workflow Engine:** Orchestrate complex, multi-step automations with a powerful and declarative API (`andThen`, `andAgent`, `andAll`, `andRace`, `andWhen`) with automatic type inference.
+- **Multi-Agent Systems:** Build complex workflows using Supervisor Agents coordinating multiple specialized Sub-Agents with dynamic task delegation.
+- **Tool Usage & Lifecycle:** Equip agents with custom or pre-built tools (functions) with type-safety (Zod), lifecycle hooks, and cancellation support to interact with external systems.
+- **Flexible LLM Support:** Integrate seamlessly with various LLM providers (OpenAI, Anthropic, Google, etc.) via AI SDK and easily switch between models.
+- **Memory Management:** Enable agents to retain context across interactions using different configurable memory providers (LibSQL, PostgreSQL, Supabase) with optional semantic search.
+- **Observability & Debugging:** Visually monitor agent states, interactions, logs, and performance via the [VoltOps LLM Observability Platform](https://console.voltagent.dev) with built-in execution history and tracing.
+- **Prompt Management:** Manage prompts with static instructions, dynamic runtime functions, or enterprise-grade VoltOps remote management with versioning and A/B testing.
+- **Dynamic Agents:** Create adaptive agents that change behavior, models, and capabilities based on runtime context for multi-tenant applications and role-based access.
+- **Evaluation Framework:** Test and improve agent quality with built-in Viteval integration for accuracy, relevance, and safety testing.
+- **Custom API Endpoints:** Extend the VoltAgent API server with your own custom endpoints to build specialized functionality on top of the core framework.
+- **Voice Interaction:** Build voice-enabled agents capable of speech recognition and synthesis using the `@voltagent/voice` package with OpenAI and ElevenLabs support.
+- **Data Retrieval & RAG:** Integrate specialized retriever agents for efficient information fetching and **Retrieval-Augmented Generation (RAG)** from various sources (Pinecone, Qdrant, Chroma).
+- **Model Context Protocol (MCP) Support:** Connect to external tool servers (HTTP/stdio) adhering to the [MCP standard](https://modelcontextprotocol.io/) for extended capabilities and act as an MCP server.
+- **Structured Output:** Generate type-safe structured data with Zod schemas using AI SDK's experimental output features for both objects and constrained text.
+- **Multi-modal Support:** Process images, audio, and other media types alongside text for comprehensive AI interactions.
+- **Workflow Suspend & Resume:** Build long-running workflows with human-in-the-loop approvals and async task execution.
+- **Framework Compatibility:** Designed for easy integration into existing Node.js applications and popular frameworks (Next.js, Express, Hono).
 
 ## Learning VoltAgent
 
