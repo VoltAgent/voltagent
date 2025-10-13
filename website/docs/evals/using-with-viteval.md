@@ -17,7 +17,7 @@ For full feature support and VoltOps integration, we recommend using VoltAgent's
 - **runExperiment API**: Direct programmatic control over evaluations
 - **VoltOps Integration**: Cloud-based evaluation management (coming soon)
 
-See our [CLI Reference](/evals/cli-reference) and [Experiments Guide](/evals/experiments) for the recommended approach.
+See our [CLI Reference](/docs/evals/cli-reference) and [Experiments Guide](/docs/evals/experiments) for the recommended approach.
 :::
 
 :::warning VoltOps Integration
