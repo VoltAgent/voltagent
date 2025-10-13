@@ -277,12 +277,25 @@ Explore real-world implementations of VoltAgent with complete source code and vi
 
 ### WhatsApp Order Agent
 
-Build a WhatsApp chatbot that handles food orders through natural conversation, manages menu items from a database, and processes orders with full conversation context.
 <img width="1111" height="347" alt="whatsapp" src="https://github.com/user-attachments/assets/dc9c4986-3e68-42f8-a450-ecd79b4dbd99" />
 
+<br>
 
 - 📖 [Tutorial](https://voltagent.dev/examples/agents/whatsapp-ai-agent)
 - 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp)
+
+Build a WhatsApp chatbot that handles food orders through natural conversation, manages menu items from a database, and processes orders with full conversation context.
+
+### YouTube to Blog Agent
+
+<img width="1113" height="363" alt="youtube" src="https://github.com/user-attachments/assets/f9c944cf-8a9a-4ac5-a5f9-860ce08f058b" />
+
+<br>
+
+- 📖 [Tutorial](https://voltagent.dev/examples/agents/youtube-blog-agent)
+- 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)
+
+Convert YouTube videos into Markdown blog posts using a supervisor agent that coordinates subagents with MCP tools, shared working memory, and VoltOps observability.
 
 ### AI Ads Generator Agent
 
@@ -290,14 +303,6 @@ Implement an Instagram ad generator that uses BrowserBase Stagehand to analyze l
 
 - 📖 [Tutorial](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)
 - 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator)
-
-### YouTube to Blog Agent
-<img width="1113" height="363" alt="youtube" src="https://github.com/user-attachments/assets/f9c944cf-8a9a-4ac5-a5f9-860ce08f058b" />
-
-Convert YouTube videos into Markdown blog posts using a supervisor agent that coordinates subagents with MCP tools, shared working memory, and VoltOps observability.
-
-- 📖 [Tutorial](https://voltagent.dev/examples/agents/youtube-blog-agent)
-- 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)
 
 ### AI Recipe Generator Agent
 
