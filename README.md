@@ -15,8 +15,6 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
     <a href="https://voltagent.dev">Home Page</a> |
     <a href="https://voltagent.dev/docs/">Documentation</a> |
     <a href="https://github.com/voltagent/voltagent/tree/main/examples">Examples</a> |
-    <a href="https://s.voltagent.dev/discord">Discord</a> |
-    <a href="https://voltagent.dev/blog/">Blog</a>
 </div>
 </div>
 
@@ -24,8 +22,13 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 
 <div align="center">
 
-[![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
+[![GitHub stars](https://img.shields.io/github/stars/voltagent/voltagent?style=social)](https://github.com/voltagent/voltagent)
+[![GitHub issues](https://img.shields.io/github/issues/voltagent/voltagent)](https://github.com/voltagent/voltagent/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/voltagent/voltagent)](https://github.com/voltagent/voltagent/pulls)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
+[![npm downloads](https://img.shields.io/npm/dm/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
 [![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
 [![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://twitter.com/voltagent_dev)
 
@@ -42,8 +45,6 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 
 **VoltAgent** is an open source TypeScript framework for building and orchestrating AI agents.
 You can build production-ready agents with memory, workflows, tools, and built-in LLM observability.
-
-📖 **[Start with interactive tutorial](https://voltagent.dev/tutorial/introduction/)** to learn the fundamentals building AI Agents.
 
 ## Why VoltAgent?
 
@@ -196,7 +197,6 @@ Deep dive into agent execution flow with detailed traces and performance metrics
 <br/>
 
 ![VoltOps Observability Overview](https://cdn.voltagent.dev/console/observability.png)
-![VoltOps Observability Timeline](https://cdn.voltagent.dev/console/observability-3.png)
 
 ### Dashboard
 
@@ -219,16 +219,7 @@ Inspect and manage agent memory, context, and conversation history.
 
 <br/>
 
-![VoltOps Memory Detail](https://cdn.voltagent.dev/console/memory-2.png)
 ![VoltOps Memory Overview](https://cdn.voltagent.dev/console/memory.png)
-
-### Prompt Builder
-
-Design, test, and refine prompts directly in the console.
-
-<br/>
-
-![VoltOps Prompt Builder](https://cdn.voltagent.dev/console/prompt.png)
 
 ### Traces
 
@@ -237,6 +228,14 @@ Analyze complete execution traces to understand agent behavior and optimize perf
 <br/>
 
 ![VoltOps Traces](https://cdn.voltagent.dev/console/traces.png)
+
+### Prompt Builder
+
+Design, test, and refine prompts directly in the console.
+
+<br/>
+
+![VoltOps Prompt Builder](https://cdn.voltagent.dev/console/prompt.png)
 
 ## Examples
 
@@ -356,6 +355,7 @@ Build AI agents for real-world business needs across different industries:
 
 ## Learning VoltAgent
 
+- 📖 **[Start with interactive tutorial](https://voltagent.dev/tutorial/introduction/)** to learn the fundamentals building AI Agents.
 - **[Documentation](https://voltagent.dev/docs/)**: Dive into guides, concepts, and tutorials.
 - **[Examples](https://github.com/voltagent/voltagent/tree/main/examples)**: Explore practical implementations.
 - **[Blog](https://voltagent.dev/blog/)**: Read more about technical insights, and best practices.
