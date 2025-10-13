@@ -43,11 +43,11 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 **VoltAgent** is an open source TypeScript framework for building and orchestrating AI agents.
 You can build production-ready agents with memory, workflows, tools, and built-in LLM observability.
 
+📖 **[Start with interactive tutorial](https://voltagent.dev/tutorial/introduction/)** to learn the fundamentals building AI Agents.
+
 ## Agent Development Platform
 
 VoltAgent provides a complete platform for developing, deploying, and monitoring AI agents through two complementary tools.
-
-📖 **[Start with interactive tutorial](https://voltagent.dev/tutorial/introduction/)** to learn the fundamentals building AI Agents.
 
 ### Core Framework
 
@@ -156,7 +156,7 @@ Your agent is now running! To interact with it:
 
 ## Built-in LLM Observability with VoltOps
 
-VoltAgent comes with VoltOps, a powerful LLM observability platform built-in to help you monitor, debug, and optimize your agents in real-time.
+VoltAgent comes with VoltOps, a LLM observability platform built-in to help you monitor, debug, and optimize your agents in real-time.
 
 🎬 [Try Live Demo](https://console.voltagent.dev/demo)
 
@@ -270,6 +270,47 @@ Your new project also includes a powerful workflow engine. You can test the pre-
 - **Multi-modal Support:** Process images, audio, and other media types alongside text for comprehensive AI interactions.
 - **Workflow Suspend & Resume:** Build long-running workflows with human-in-the-loop approvals and async task execution.
 - **Framework Compatibility:** Designed for easy integration into existing Node.js applications and popular frameworks (Next.js, Express, Hono).
+
+## Examples
+
+Explore real-world implementations of VoltAgent with complete source code and video tutorials:
+
+### WhatsApp Order Agent
+
+Build a WhatsApp chatbot that handles food orders through natural conversation, manages menu items from a database, and processes orders with full conversation context.
+
+- 📖 [Tutorial](https://voltagent.dev/examples/agents/whatsapp-ai-agent)
+- 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp)
+
+### AI Ads Generator Agent
+
+Implement an Instagram ad generator that uses BrowserBase Stagehand to analyze landing pages, extract brand data, and generate visuals through Google Gemini AI.
+
+- 📖 [Tutorial](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)
+- 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator)
+
+### YouTube to Blog Agent
+
+Convert YouTube videos into Markdown blog posts using a supervisor agent that coordinates subagents with MCP tools, shared working memory, and VoltOps observability.
+
+- 📖 [Tutorial](https://voltagent.dev/examples/agents/youtube-blog-agent)
+- 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)
+
+### AI Recipe Generator Agent
+
+Build an intelligent recipe recommendation system that creates personalized cooking suggestions based on available ingredients, dietary preferences, and time constraints.
+
+- 📖 [Tutorial](https://voltagent.dev/examples/agents/recipe-generator)
+- 📹 [Watch Video](https://youtu.be/KjV1c6AhlfY)
+- 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator)
+
+### AI Research Assistant Agent
+
+Create a multi-agent research workflow where different AI agents collaborate to research topics and generate comprehensive reports with type-safe data flow.
+
+- 📖 [Tutorial](https://voltagent.dev/examples/agents/research-assistant)
+- 📹 [Watch Video](https://youtu.be/j6KAUaoZMy4)
+- 💻 [Source Code](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant)
 
 ## Learning VoltAgent
 
