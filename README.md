@@ -1,6 +1,6 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/3e16d244-6342-4d55-9ac4-4a57b0949341" />
+<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/9259e833-0f5c-4eb6-8cc7-4e6930cc27e1" />
 </a>
 
 <br/>
