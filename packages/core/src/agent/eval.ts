@@ -9,7 +9,11 @@ import {
 } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
-import { type LocalScorerDefinition, runLocalScorers } from "../eval/runtime";
+import {
+  type LocalScorerDefinition,
+  type ScorerLifecycleScope,
+  runLocalScorers,
+} from "../eval/runtime";
 import type { VoltAgentObservability } from "../observability";
 import { randomUUID } from "../utils/id";
 import type {
@@ -406,10 +410,24 @@ async function runEvalScorers(host: AgentEvalHost, args: RunEvalScorersArgs): Pr
       }
 
       span.addEvent("eval.scorer.started");
-      return span;
+      const spanContext = trace.setSpan(parentContext, span);
+      return {
+        span,
+        run: <T>(executor: () => T | Promise<T>) =>
+          otelContext.with(spanContext, () => {
+            try {
+              return Promise.resolve(executor());
+            } catch (error) {
+              return Promise.reject(error);
+            }
+          }),
+      };
     },
     onScorerComplete: ({ definition, execution: scorerExecution, context: lifecycleContext }) => {
-      const span = lifecycleContext as Span | undefined;
+      const lifecycleScope = lifecycleContext as
+        | (ScorerLifecycleScope & { span?: Span })
+        | undefined;
+      const span = lifecycleScope?.span;
       if (!span) {
         return;
       }

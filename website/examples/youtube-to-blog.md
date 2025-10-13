@@ -225,9 +225,7 @@ I reuse LibSQL adapters for working memory and observability. See the [memory ov
 
 ```typescript
 const memory = new Memory({
-  storage: new LibSQLMemoryAdapter({
-    storageLimit: 100, // Keep last 100 messages per conversation
-  }),
+  storage: new LibSQLMemoryAdapter(),
 });
 
 const observability = new VoltAgentObservability({

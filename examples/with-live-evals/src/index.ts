@@ -7,7 +7,7 @@ import { z } from "zod";
 const observability = new VoltAgentObservability();
 
 const judgeModel = openai("gpt-4o-mini");
-const _moderationModel = openai("gpt-4o-mini");
+const moderationModel = openai("gpt-4o-mini");
 
 const keywordMatchScorer = buildScorer({
   id: "keyword-match",
@@ -116,18 +116,25 @@ const supportAgent = new Agent({
           expected: "voltagent",
         },
       },
+      helpfulness2: {
+        scorer: helpfulnessJudgeScorer,
+        params: {
+          criteria:
+            "Reward answers that are specific to VoltAgent features and actionable guidance.",
+        },
+      },
       exactMatch: {
         scorer: scorers.exactMatch,
         params: {
           expected: "voltagent",
         },
       },
-      /*  moderation: {
+      moderation: {
         scorer: createModerationScorer({
           model: moderationModel,
           threshold: 0.5,
         }),
-      }, */
+      },
       helpfulness: {
         scorer: helpfulnessJudgeScorer,
         params: {

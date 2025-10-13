@@ -60,6 +60,10 @@ export interface LocalScorerExecutionResult {
   error?: unknown;
 }
 
+export interface ScorerLifecycleScope {
+  run<T>(executor: () => T | Promise<T>): Promise<T>;
+}
+
 export interface RunLocalScorersArgs<Payload extends Record<string, unknown>> {
   payload: Payload;
   scorers: LocalScorerDefinition<Payload>[];
@@ -70,11 +74,11 @@ export interface RunLocalScorersArgs<Payload extends Record<string, unknown>> {
   onScorerStart?: (info: {
     definition: LocalScorerDefinition<Payload>;
     sampling?: SamplingMetadata;
-  }) => unknown;
+  }) => ScorerLifecycleScope | undefined;
   onScorerComplete?: (info: {
     definition: LocalScorerDefinition<Payload>;
     execution: LocalScorerExecutionResult;
-    context?: unknown;
+    context?: ScorerLifecycleScope;
   }) => void;
 }
 
@@ -149,7 +153,7 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
       return execution;
     }
 
-    const lifecycleContext = args.onScorerStart?.({
+    const lifecycleScope = args.onScorerStart?.({
       definition,
       sampling,
     });
@@ -161,10 +165,15 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
     let errorValue: unknown;
 
     try {
-      const rawResult = await definition.scorer({
-        payload,
-        params: scorerParams,
-      });
+      const scorerCall = () =>
+        definition.scorer({
+          payload,
+          params: scorerParams,
+        });
+      const rawResult =
+        lifecycleScope && typeof lifecycleScope.run === "function"
+          ? await lifecycleScope.run(scorerCall)
+          : await scorerCall();
       const normalized = normalizeScorerResult(rawResult);
 
       if (normalized.status) {
@@ -204,7 +213,7 @@ export async function runLocalScorers<Payload extends Record<string, unknown>>(
     args.onScorerComplete?.({
       definition,
       execution,
-      context: lifecycleContext,
+      context: lifecycleScope,
     });
 
     return execution;

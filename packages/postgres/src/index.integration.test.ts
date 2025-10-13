@@ -124,7 +124,6 @@ describe("PostgreSQLMemoryAdapter Integration Tests", () => {
     it("should enforce storage limits", async () => {
       const limitedStorage = new PostgreSQLMemoryAdapter({
         ...TEST_CONFIG,
-        storageLimit: 3,
         tablePrefix: "test_limited",
       });
 

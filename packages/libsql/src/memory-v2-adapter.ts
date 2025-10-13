@@ -41,12 +41,6 @@ export interface LibSQLMemoryOptions {
   authToken?: string;
 
   /**
-   * Maximum number of messages to store per conversation
-   * @default 100
-   */
-  storageLimit?: number;
-
-  /**
    * Prefix for table names
    * @default "voltagent_memory"
    */
@@ -83,7 +77,6 @@ export interface LibSQLMemoryOptions {
  */
 export class LibSQLMemoryAdapter implements StorageAdapter {
   private client: Client;
-  private storageLimit: number;
   private tablePrefix: string;
   private initialized = false;
   private logger: Logger;
@@ -92,7 +85,6 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
   private url: string;
 
   constructor(options: LibSQLMemoryOptions = {}) {
-    this.storageLimit = options.storageLimit ?? 100;
     this.tablePrefix = options.tablePrefix ?? "voltagent_memory";
     this.maxRetries = options.maxRetries ?? 3;
     this.retryDelayMs = options.retryDelayMs ?? 100;
@@ -492,9 +484,6 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
         ],
       });
     }, "add message");
-
-    // Apply storage limit
-    await this.applyStorageLimit(conversationId);
   }
 
   /**
@@ -532,31 +521,6 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
         })),
       );
     }, "add batch messages");
-
-    // Apply storage limit
-    await this.applyStorageLimit(conversationId);
-  }
-
-  /**
-   * Apply storage limit to a conversation
-   */
-  private async applyStorageLimit(conversationId: string): Promise<void> {
-    const messagesTable = `${this.tablePrefix}_messages`;
-
-    // Delete old messages beyond the storage limit
-    await this.executeWithRetry(async () => {
-      await this.client.execute({
-        sql: `DELETE FROM ${messagesTable}
-            WHERE conversation_id = ? 
-            AND message_id NOT IN (
-              SELECT message_id FROM ${messagesTable}
-              WHERE conversation_id = ? 
-              ORDER BY created_at DESC 
-              LIMIT ?
-            )`,
-        args: [conversationId, conversationId, this.storageLimit],
-      });
-    }, "apply storage limit");
   }
 
   /**
@@ -570,7 +534,7 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
     await this.initialize();
 
     const messagesTable = `${this.tablePrefix}_messages`;
-    const { limit = this.storageLimit, before, after, roles } = options || {};
+    const { limit, before, after, roles } = options || {};
 
     // Build query with filters - use SELECT * to handle both old and new schemas safely
     let sql = `SELECT * FROM ${messagesTable}

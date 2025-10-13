@@ -220,7 +220,7 @@ const prodAgent = new Agent({
 // In-memory for testing
 const testAgent = new Agent({
   // ... other config
-  memory: new InMemoryStorage({ storageLimit: 100 }),
+  memory: new InMemoryStorage(),
 });
 ```
 

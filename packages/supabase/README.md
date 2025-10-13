@@ -210,7 +210,6 @@ const memory = new SupabaseMemory({
   // Optional: Specify a custom base table name prefix
   // tableName: 'my_custom_prefix',
   // Optional: Configure storage limits and debugging
-  storageLimit: 100, // Maximum messages per conversation (default: 100, set to 0 for unlimited)
   debug: false, // Enable debug logging (default: false)
 });
 
@@ -235,7 +234,6 @@ The Supabase memory provider supports automatic message pruning to manage storag
 const memory = new SupabaseMemory({
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseKey: process.env.SUPABASE_KEY,
-  storageLimit: 100, // Keep only the latest 100 messages per conversation. default: 100
 });
 ```
 
@@ -268,7 +266,6 @@ const supabaseClient = createClient(process.env.SUPABASE_URL, process.env.SUPABA
 
 const memory = new SupabaseMemory({
   client: supabaseClient,
-  storageLimit: 50,
   debug: true,
 });
 ```

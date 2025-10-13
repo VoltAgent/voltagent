@@ -16,7 +16,7 @@ describe("InMemoryStorageAdapter", () => {
   let storage: InMemoryStorageAdapter;
 
   beforeEach(() => {
-    storage = new InMemoryStorageAdapter({ storageLimit: 100 });
+    storage = new InMemoryStorageAdapter();
   });
 
   describe("Conversation Operations", () => {
@@ -400,26 +400,6 @@ describe("InMemoryStorageAdapter", () => {
         expect(retrieved).toHaveLength(3);
         expect(retrieved.map((m) => m.id)).toEqual(messages.map((m) => m.id));
       });
-
-      it("should apply storage limit after batch add", async () => {
-        // Arrange
-        const limitedStorage = new InMemoryStorageAdapter({ storageLimit: 2 });
-        await limitedStorage.createConversation(
-          createTestConversation({ id: conversationId, userId }),
-        );
-
-        const messages = createTestMessages(5);
-
-        // Act
-        await limitedStorage.addMessages(messages, userId, conversationId);
-        const retrieved = await limitedStorage.getMessages(userId, conversationId);
-
-        // Assert
-        expect(retrieved).toHaveLength(2);
-        // Should keep the last 2 messages
-        expect(retrieved[0].id).toBe(messages[3].id);
-        expect(retrieved[1].id).toBe(messages[4].id);
-      });
     });
 
     describe("getMessages", () => {
@@ -573,108 +553,6 @@ describe("InMemoryStorageAdapter", () => {
       it("should handle non-existent user gracefully", async () => {
         // Act & Assert - should not throw
         await expect(storage.clearMessages("non-existent-user")).resolves.toBeUndefined();
-      });
-    });
-
-    describe("Storage Limits", () => {
-      it("should enforce storage limit per conversation", async () => {
-        // Arrange
-        const limitedStorage = new InMemoryStorageAdapter({ storageLimit: 3 });
-        await limitedStorage.createConversation(
-          createTestConversation({ id: conversationId, userId }),
-        );
-
-        // Act
-        for (let i = 0; i < 5; i++) {
-          await limitedStorage.addMessage(
-            createTestUIMessage({
-              id: `msg-${i}`,
-              parts: [{ type: "text", text: `Message ${i}` }],
-            }),
-            userId,
-            conversationId,
-          );
-        }
-
-        // Assert
-        const messages = await limitedStorage.getMessages(userId, conversationId);
-        expect(messages).toHaveLength(3);
-
-        const texts = extractMessageTexts(messages);
-        expect(texts).toEqual(["Message 2", "Message 3", "Message 4"]);
-      });
-
-      it("should keep most recent messages when limit exceeded", async () => {
-        // Arrange
-        const limitedStorage = new InMemoryStorageAdapter({ storageLimit: 2 });
-        await limitedStorage.createConversation(
-          createTestConversation({ id: conversationId, userId }),
-        );
-
-        // Act
-        await limitedStorage.addMessage(
-          createTestUIMessage({ id: "old", parts: [{ type: "text", text: "Old" }] }),
-          userId,
-          conversationId,
-        );
-        await limitedStorage.addMessage(
-          createTestUIMessage({ id: "new", parts: [{ type: "text", text: "New" }] }),
-          userId,
-          conversationId,
-        );
-        await limitedStorage.addMessage(
-          createTestUIMessage({ id: "newest", parts: [{ type: "text", text: "Newest" }] }),
-          userId,
-          conversationId,
-        );
-
-        // Assert
-        const messages = await limitedStorage.getMessages(userId, conversationId);
-        const texts = extractMessageTexts(messages);
-        expect(texts).toEqual(["New", "Newest"]);
-      });
-
-      it("should maintain separate limits for different conversations", async () => {
-        // Arrange
-        const limitedStorage = new InMemoryStorageAdapter({ storageLimit: 2 });
-        const conv1 = "conv-1";
-        const conv2 = "conv-2";
-
-        await limitedStorage.createConversation(createTestConversation({ id: conv1, userId }));
-        await limitedStorage.createConversation(createTestConversation({ id: conv2, userId }));
-
-        // Act
-        // Add 3 messages to conv1
-        for (let i = 0; i < 3; i++) {
-          await limitedStorage.addMessage(
-            createTestUIMessage({
-              id: `c1-${i}`,
-              parts: [{ type: "text", text: `Conv1-${i}` }],
-            }),
-            userId,
-            conv1,
-          );
-        }
-
-        // Add 1 message to conv2
-        await limitedStorage.addMessage(
-          createTestUIMessage({
-            id: "c2-0",
-            parts: [{ type: "text", text: "Conv2-0" }],
-          }),
-          userId,
-          conv2,
-        );
-
-        // Assert
-        const messages1 = await limitedStorage.getMessages(userId, conv1);
-        const messages2 = await limitedStorage.getMessages(userId, conv2);
-
-        expect(messages1).toHaveLength(2);
-        expect(messages2).toHaveLength(1);
-
-        const texts1 = extractMessageTexts(messages1);
-        expect(texts1).toEqual(["Conv1-1", "Conv1-2"]);
       });
     });
   });

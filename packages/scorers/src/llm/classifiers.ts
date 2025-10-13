@@ -1,16 +1,12 @@
 import {
+  Agent,
   type BuilderScoreContext,
-  type GenerateReasonResult,
-  type GenerateScoreResult,
   type LanguageModel,
   type LocalScorerDefinition,
-  type ScorerPipelineContext,
   buildScorer,
-  createLlmStep,
-  createScorer,
-  evaluateWithLlm,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
+import { z } from "zod";
 
 type ChoiceId = string;
 
@@ -28,6 +24,11 @@ type ChoiceAnalysis = {
 };
 
 type ErrorWithMetadata = Error & { metadata?: Record<string, unknown> };
+
+const CHOICE_RESPONSE_SCHEMA = z.object({
+  choice: z.string(),
+  reason: z.string().optional().nullable(),
+});
 
 function parseChoiceResponse(text: string): { choice: ChoiceId; reason?: string } {
   const trimmed = text.trim();
@@ -80,38 +81,82 @@ interface EvaluateChoiceArgs {
   choices: Record<ChoiceId, ChoiceDefinition>;
   maxOutputTokens?: number;
   scorerId: string;
+  judgeInstructions?: string;
 }
 
 async function evaluateChoice(args: EvaluateChoiceArgs): Promise<ChoiceAnalysis> {
-  const { context, model, buildPrompt, choices, maxOutputTokens, scorerId } = args;
+  const { context, model, buildPrompt, choices, maxOutputTokens, scorerId, judgeInstructions } =
+    args;
 
   const prompt = await buildPrompt(context);
 
-  const { result, raw } = await evaluateWithLlm({
+  const agent = new Agent({
+    name: `${scorerId}-judge`,
     model,
-    maxOutputTokens,
-    context,
-    buildPrompt: () => prompt,
-    parse: ({ text }) => parseChoiceResponse(text),
+    instructions: judgeInstructions ?? buildDefaultChoiceInstructions(Object.keys(choices)),
   });
 
-  const { choice, reason } = result;
+  const response = await agent.generateObject(prompt, CHOICE_RESPONSE_SCHEMA, {
+    maxOutputTokens,
+  });
+
+  const { choice, reason } = extractChoiceFromResponse(response.object, choices, scorerId);
   const definition = choices[choice];
-  if (!definition) {
-    const error = new Error(
-      `LLM choice '${choice}' was not recognized for scorer ${scorerId}`,
-    ) as ErrorWithMetadata;
-    error.metadata = { raw };
-    throw error;
-  }
 
   return {
     choice,
     reason,
-    raw,
+    raw: response.object,
     score: definition.score,
     definition,
   } satisfies ChoiceAnalysis;
+}
+
+function buildDefaultChoiceInstructions(choiceIds: string[]): string {
+  const formatted = choiceIds.join(", ");
+  return [
+    "You are an impartial evaluator.",
+    `Respond strictly with JSON in the shape {"choice":"<id>","reason":"..."} where <id> is one of [${formatted}].`,
+    "Provide a concise reason when appropriate.",
+  ].join(" ");
+}
+
+function extractChoiceFromResponse(
+  raw: unknown,
+  choices: Record<ChoiceId, ChoiceDefinition>,
+  scorerId: string,
+): { choice: ChoiceId; reason?: string } {
+  const parsed = CHOICE_RESPONSE_SCHEMA.safeParse(raw);
+  if (parsed.success) {
+    const choice = normalizeChoiceValue(parsed.data.choice, choices, scorerId, raw);
+    const reason = parsed.data.reason ? parsed.data.reason.trim() || undefined : undefined;
+    return { choice, reason };
+  }
+
+  const fallback = parseChoiceResponse(safeStringify(raw));
+  const choice = normalizeChoiceValue(fallback.choice, choices, scorerId, raw);
+  const reason = fallback.reason ? fallback.reason.trim() : undefined;
+  return { choice, reason };
+}
+
+function normalizeChoiceValue(
+  rawChoice: string,
+  choices: Record<ChoiceId, ChoiceDefinition>,
+  scorerId: string,
+  raw: unknown,
+): ChoiceId {
+  const normalized = rawChoice.trim().toUpperCase();
+  if (!choices[normalized]) {
+    const error = new Error(
+      `LLM choice '${normalized}' was not recognized for scorer ${scorerId}`,
+    ) as ErrorWithMetadata;
+    error.metadata = {
+      raw,
+      allowedChoices: Object.keys(choices),
+    };
+    throw error;
+  }
+  return normalized as ChoiceId;
 }
 
 function getChoiceAnalysis(
@@ -178,6 +223,7 @@ function createChoiceScorer(
         choices,
         maxOutputTokens,
         scorerId: id,
+        judgeInstructions: options.judgeInstructions,
       });
 
       context.results.raw[resultKey] = analysis;

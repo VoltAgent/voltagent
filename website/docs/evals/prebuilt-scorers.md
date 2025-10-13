@@ -888,5 +888,5 @@ const experiment = await voltagent.evals.runExperiment({
 
 - [Build Custom Scorers](./building-custom-scorers.md)
 - [Run Offline Evaluations](./offline-evaluations.md)
-- [Set Up Agent Evaluations](./agent-evaluations.md)
+- [Set Up Agent Evaluations](./live-evaluations.md)
 - [Configure Datasets](./datasets.md)

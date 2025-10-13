@@ -557,7 +557,7 @@ voltOps: {
 
 ## Next Steps
 
-- [Datasets](/evals/datasets) - Learn about creating and managing datasets
-- [Building Custom Scorers](/evals/building-custom-scorers) - Create domain-specific scorers
-- [Prebuilt Scorers](/evals/prebuilt-scorers) - Explore available scorers
-- [CLI Reference](/evals/cli-reference) - Run experiments from the command line
+- [Datasets](/docs/evals/datasets) - Learn about creating and managing datasets
+- [Building Custom Scorers](/docs/evals/building-custom-scorers) - Create domain-specific scorers
+- [Prebuilt Scorers](/docs/evals/prebuilt-scorers) - Explore available scorers
+- [CLI Reference](/docs/evals/cli-reference) - Run experiments from the command line

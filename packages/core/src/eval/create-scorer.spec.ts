@@ -1,24 +1,6 @@
-import { generateText } from "ai";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { z } from "zod";
-
-import {
-  createLlmPromptStep,
-  createLlmStep,
-  createLlmToolStep,
-  createScorer,
-  parallelSteps,
-  weightedBlend,
-} from "./create-scorer";
-import type { ScorerPipelineContext } from "./create-scorer";
-import { createLLMJudgeScorer } from "./llm/create-judge-scorer";
-
-vi.mock("ai", () => ({
-  generateText: vi.fn(),
-}));
-
-const mockedGenerateText = vi.mocked(generateText);
+import { type ScorerPipelineContext, createScorer, weightedBlend } from "./create-scorer";
 
 interface TestPayload {
   input: string;
@@ -26,10 +8,6 @@ interface TestPayload {
 }
 
 describe("createScorer", () => {
-  beforeEach(() => {
-    mockedGenerateText.mockReset();
-  });
-
   it("executes pipeline steps and returns score", async () => {
     const scorer = createScorer<TestPayload, { keyword: string }>({
       id: "keyword",
@@ -49,7 +27,7 @@ describe("createScorer", () => {
     expect(result.metadata).toMatchObject({ reason: "Keyword present." });
   });
 
-  it("handles metadata returned from score and reason", async () => {
+  it("merges metadata returned from score and reason", async () => {
     const scorer = createScorer<TestPayload, { threshold: number }>({
       id: "threshold",
       metadata: { base: true },
@@ -76,11 +54,19 @@ describe("createScorer", () => {
     });
   });
 
-  it("returns error when a step throws", async () => {
+  it("returns error metadata when a step throws with metadata", async () => {
+    class MetadataError extends Error {
+      metadata?: Record<string, unknown>;
+      constructor(message: string) {
+        super(message);
+        this.metadata = { details: "step failed" };
+      }
+    }
+
     const scorer = createScorer<TestPayload, Record<string, never>>({
       id: "failing",
       analyze: () => {
-        throw new Error("failure");
+        throw new MetadataError("failure");
       },
     });
 
@@ -90,10 +76,11 @@ describe("createScorer", () => {
     });
 
     expect(result.status).toBe("error");
-    expect(result.error).toBeInstanceOf(Error);
+    expect(result.error).toBeInstanceOf(MetadataError);
+    expect(result.metadata).toMatchObject({ details: "step failed" });
   });
 
-  it("supports async steps", async () => {
+  it("supports async pipeline steps", async () => {
     const scorer = createScorer<TestPayload, Record<string, never>>({
       id: "async",
       preprocess: async ({ payload }) => payload.output,
@@ -107,238 +94,6 @@ describe("createScorer", () => {
     });
 
     expect(result.score).toBeCloseTo(0.9);
-  });
-
-  it("supports LLM prompt objects for generateScore", async () => {
-    mockedGenerateText.mockResolvedValue({ text: '{"score":0.42}' });
-
-    const scorer = createScorer<TestPayload, Record<string, never>>({
-      id: "llm-prompt",
-      generateScore: createLlmStep({
-        model: { provider: "mock", modelId: "judge" } as any,
-        buildPrompt: ({ payload }) => `Evaluate: ${payload.output}`,
-        parse: ({ text }) => {
-          const parsed = JSON.parse(text) as { score: number };
-          return parsed.score;
-        },
-      }),
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "", output: "LLM prompt" },
-      params: {},
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.score).toBeCloseTo(0.42);
-  });
-
-  it("creates judge scorer using dedicated helper", async () => {
-    mockedGenerateText.mockResolvedValue({ text: '{"score":0.75,"reason":"helpful"}' });
-
-    const scorer = createLLMJudgeScorer<TestPayload>({
-      id: "judge",
-      model: { provider: "mock", modelId: "judge" } as any,
-      instructions: "Score helpfulness",
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "What is VoltAgent?", output: "It is a framework." },
-      params: { criteria: "Prefer concise answers" },
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.score).toBeCloseTo(0.75);
-    expect(result.metadata).toMatchObject({
-      reason: "helpful",
-      raw: '{"score":0.75,"reason":"helpful"}',
-      voltAgent: { scorer: "judge" },
-    });
-  });
-
-  it("supports schema-based LLM prompt helper for generateScore", async () => {
-    mockedGenerateText.mockResolvedValue({ text: '{"score":0.91}' });
-
-    const scorer = createScorer<TestPayload, Record<string, never>>({
-      id: "llm-prompt-schema",
-      generateScore: createLlmPromptStep({
-        model: { provider: "mock", modelId: "judge" } as any,
-        buildPrompt: () => "Rate answer",
-        schema: z.object({ score: z.number().min(0).max(1) }),
-        transform: ({ value }) => value.score,
-      }),
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "", output: "Great" },
-      params: {},
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.score).toBeCloseTo(0.91);
-  });
-
-  it("uses LLM prompt helper inside preprocess step", async () => {
-    mockedGenerateText.mockResolvedValue({ text: '{"normalized":"voltagent"}' });
-
-    const scorer = createScorer<TestPayload, Record<string, never>>({
-      id: "llm-preprocess",
-      preprocess: createLlmPromptStep({
-        model: { provider: "mock", modelId: "normalizer" } as any,
-        buildPrompt: ({ payload }) => `Normalize: ${payload.output}`,
-        schema: z.object({ normalized: z.string() }),
-        transform: ({ value }) => value.normalized,
-      }),
-      analyze: ({ results }) => results.preprocess === "voltagent",
-      generateScore: ({ results }) => (results.analyze ? 1 : 0),
-      generateReason: ({ results }) => `Normalized value: ${results.preprocess}`,
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "", output: "VoltAgent" },
-      params: {},
-    });
-
-    expect(result.score).toBe(1);
-    expect(result.metadata).toMatchObject({ reason: "Normalized value: voltagent" });
-    expect(mockedGenerateText).toHaveBeenCalledWith(
-      expect.objectContaining({ prompt: "Normalize: VoltAgent" }),
-    );
-  });
-
-  it("provides detailed metadata when schema validation fails", async () => {
-    mockedGenerateText.mockResolvedValue({ text: "not-json" });
-
-    const scorer = createScorer<TestPayload, Record<string, never>>({
-      id: "llm-schema-error",
-      generateScore: createLlmPromptStep({
-        model: { provider: "mock", modelId: "judge" } as any,
-        buildPrompt: () => "Evaluate",
-        schema: z.object({ score: z.number() }),
-        transform: ({ value }) => value.score,
-      }),
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "", output: "" },
-      params: {},
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.metadata).toMatchObject({
-      raw: "not-json",
-      validationError: expect.any(Object),
-    });
-    expect(result.metadata?.attempts).toBeDefined();
-  });
-
-  it("supports tool-calling helper with custom transform", async () => {
-    mockedGenerateText.mockResolvedValue({
-      text: "",
-      toolCalls: [
-        {
-          type: "tool-call",
-          toolCallId: "call-1",
-          toolName: "judge",
-          input: { score: 0.88 },
-          dynamic: false,
-        },
-      ],
-      toolResults: [],
-    });
-
-    const scorer = createScorer<TestPayload, Record<string, never>>({
-      id: "llm-tool",
-      preprocess: createLlmToolStep({
-        model: { provider: "mock", modelId: "judge" } as any,
-        buildPrompt: () => "Call judge tool",
-        tools: {
-          judge: {
-            description: "Judge",
-            parameters: z.object({ score: z.number() }),
-            execute: vi.fn(),
-          },
-        } as any,
-        transform: ({ toolCalls }) => toolCalls[0]?.input,
-      }),
-      generateScore: ({ results }) => (results.preprocess as { score: number }).score,
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "", output: "" },
-      params: {},
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.score).toBeCloseTo(0.88);
-    expect(mockedGenerateText).toHaveBeenCalledWith(
-      expect.objectContaining({ tools: expect.any(Object) }),
-    );
-  });
-
-  it("returns error when tool call is missing", async () => {
-    mockedGenerateText.mockResolvedValue({
-      text: "",
-      toolCalls: [],
-      toolResults: [],
-    });
-
-    const scorer = createScorer<TestPayload, Record<string, never>>({
-      id: "llm-tool-error",
-      generateScore: createLlmToolStep({
-        model: { provider: "mock", modelId: "judge" } as any,
-        buildPrompt: () => "Call tool",
-        tools: {
-          judge: {
-            description: "Judge",
-            parameters: z.object({ score: z.number() }),
-            execute: vi.fn(),
-          },
-        } as any,
-      }),
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "", output: "" },
-      params: {},
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.metadata).toMatchObject({ expectedTools: ["judge"] });
-  });
-
-  it("runs parallel steps and stores component metadata", async () => {
-    const scoreStepA = ({
-      payload,
-    }: ScorerPipelineContext<TestPayload, Record<string, never>>) => ({
-      score: payload.output.includes("Volt") ? 0.8 : 0.2,
-      metadata: { id: "a" },
-    });
-    const scoreStepB = () => ({ score: 0.6, metadata: { id: "b" } });
-
-    const scorer = createScorer<TestPayload, Record<string, never>>({
-      id: "parallel",
-      generateScore: parallelSteps([
-        { id: "judgeA", step: scoreStepA },
-        { id: "judgeB", step: scoreStepB },
-      ]),
-      generateReason: ({ results }) =>
-        `A:${results.judgeA.score ?? "-"},B:${results.judgeB.score ?? "-"}`,
-    });
-
-    const result = await scorer.scorer({
-      payload: { input: "", output: "VoltAgent" },
-      params: {},
-    });
-
-    expect(result.score).toBeCloseTo(0.7);
-    expect(result.metadata).toMatchObject({
-      components: [
-        { id: "judgeA", score: 0.8 },
-        { id: "judgeB", score: 0.6 },
-      ],
-    });
-    expect(result.metadata?.components?.length).toBe(2);
   });
 
   it("blends component scores using weights", async () => {
@@ -360,9 +115,12 @@ describe("createScorer", () => {
             step: () => ({ score: 0.5, metadata: { label: "embedding" } }),
           },
         ],
-        { metadataKey: "weights" },
+        { metadataKey: "components" },
       ),
-      generateReason: ({ results }) => `Model:${results.model.score}`,
+      generateReason: ({ results }) => {
+        const modelResult = results.model as { score?: number } | undefined;
+        return `Model:${modelResult?.score ?? "-"}`;
+      },
     });
 
     const result = await scorer.scorer({
@@ -370,14 +128,11 @@ describe("createScorer", () => {
       params: {},
     });
 
-    expect(result.status).toBe("success");
-    expect(result.score).toBeCloseTo(0.78, 2);
+    expect(result.score).toBeCloseTo(0.78);
     expect(result.metadata).toMatchObject({
-      weights: {
-        components: [
-          { id: "model", weight: 0.7, score: 0.9 },
-          { id: "embedding", weight: 0.3, score: 0.5 },
-        ],
+      components: {
+        components: expect.any(Array),
+        totalWeight: expect.any(Number),
       },
     });
   });

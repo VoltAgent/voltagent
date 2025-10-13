@@ -545,7 +545,6 @@ const compositeScorer = buildScorer({
 
 ## Next Steps
 
-- Explore [pre-built scorers](./pre-built-scorers.md) for common evaluation needs
+- Explore [pre-built scorers](./prebuilt-scorers.md) for common evaluation needs
 - Learn about [offline evaluations](./offline-evaluations.md) for batch testing
-- Configure [Agent evaluations](./agent-evaluations.md) for real-time monitoring
-- Review [scoring best practices](./best-practices.md) for production deployments
+- Configure [Agent evaluations](./live-evaluations.md) for real-time monitoring

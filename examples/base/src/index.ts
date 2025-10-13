@@ -16,9 +16,7 @@ const logger = createPinoLogger({
 
 // Create Memory instance with vector support for semantic search and working memory
 const memory = new Memory({
-  storage: new LibSQLMemoryAdapter({
-    storageLimit: 100, // Keep last 100 messages per conversation
-  }),
+  storage: new LibSQLMemoryAdapter(),
   embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
   vector: new LibSQLVectorAdapter(),
 });

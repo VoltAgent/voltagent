@@ -66,37 +66,48 @@ export class AgentTraceContext {
   ) {
     this.tracer = observability.getTracer();
 
+    const resolvedParent = this.resolveParentSpan(options.parentSpan);
+    const parentSpan = resolvedParent?.span ?? options.parentSpan;
+    const parentAgentId = options.parentAgentId ?? resolvedParent?.agentInfo?.id;
+    const parentAgentName = resolvedParent?.agentInfo?.name;
+
     // Store common attributes once - these will be inherited by all child spans
-    const isSubagent = !!options.parentSpan;
-
-    this.commonAttributes = {
-      // Root entity attributes - only for root agents
-      ...(!isSubagent && {
-        "entity.id": options.agentId,
-        "entity.type": "agent",
-        "entity.name": options.agentName,
-      }),
-
-      // Subagent attributes - with different namespace
-      ...(isSubagent && {
-        "subagent.id": options.agentId,
-        "subagent.name": options.agentName,
-        "subagent.type": "agent",
-        // Keep parent's entity info for filtering - this ensures traces are associated with root agent
-        "entity.id": options.parentAgentId,
-        "entity.type": "agent",
-      }),
-
-      // Common attributes
+    const isSubagent = !!parentSpan;
+    const commonAttributes: Record<string, any> = {
       ...(options.userId && { "user.id": options.userId }),
       ...(options.conversationId && { "conversation.id": options.conversationId }),
-      ...(options.parentAgentId && { "agent.parent.id": options.parentAgentId }),
+      ...(parentAgentId && { "agent.parent.id": parentAgentId }),
+      ...(parentAgentName && { "agent.parent.name": parentAgentName }),
       "operation.id": options.operationId,
     };
 
+    if (isSubagent) {
+      commonAttributes["subagent.id"] = options.agentId;
+      if (options.agentName) {
+        commonAttributes["subagent.name"] = options.agentName;
+      }
+      commonAttributes["subagent.type"] = "agent";
+      commonAttributes["entity.type"] = "agent";
+      commonAttributes["voltagent.is_subagent"] = true;
+      if (parentAgentId) {
+        commonAttributes["entity.id"] = parentAgentId;
+      }
+      if (parentAgentName) {
+        commonAttributes["entity.name"] = parentAgentName;
+      }
+    } else {
+      commonAttributes["entity.id"] = options.agentId;
+      commonAttributes["entity.type"] = "agent";
+      if (options.agentName) {
+        commonAttributes["entity.name"] = options.agentName;
+      }
+    }
+
+    this.commonAttributes = commonAttributes;
+
     // If there's a parent span, use it as context
-    const parentContext = options.parentSpan
-      ? trace.setSpan(context.active(), options.parentSpan)
+    const parentContext = parentSpan
+      ? trace.setSpan(context.active(), parentSpan)
       : context.active();
 
     // Create root span with common attributes
@@ -113,9 +124,7 @@ export class AgentTraceContext {
 
     // If we have a parent span, this agent is being called as a subagent
     // Create a more descriptive span name to show the hierarchy clearly
-    const spanName = options.parentSpan
-      ? `subagent:${options.agentName || operationName}`
-      : operationName;
+    const spanName = parentSpan ? `subagent:${options.agentName || operationName}` : operationName;
 
     this.rootSpan = this.tracer.startSpan(
       spanName,
@@ -125,7 +134,10 @@ export class AgentTraceContext {
           ...spanAttributes,
           "agent.state": "running", // Track initial agent state
           // Mark as subagent if we have a parent span
-          ...(options.parentSpan && { "agent.is_subagent": true }),
+          ...(parentSpan && {
+            "agent.is_subagent": true,
+            "voltagent.is_subagent": true,
+          }),
         },
       },
       parentContext,
@@ -393,6 +405,37 @@ export class AgentTraceContext {
     }
 
     span.end();
+  }
+
+  private resolveParentSpan(
+    explicitParent?: Span,
+  ): { span: Span; agentInfo?: { id?: string; name?: string } } | undefined {
+    if (explicitParent) {
+      return { span: explicitParent };
+    }
+
+    const activeSpan = trace.getSpan(context.active());
+    if (!activeSpan) {
+      return undefined;
+    }
+
+    const attributes =
+      (activeSpan as unknown as { attributes?: Record<string, unknown> }).attributes ?? {};
+
+    const spanType = attributes["span.type"];
+    const scorerId = attributes["eval.scorer.id"];
+    if (spanType !== "scorer" && scorerId === undefined) {
+      return undefined;
+    }
+
+    const agentInfo = {
+      id:
+        (attributes["entity.id"] as string | undefined) ??
+        (attributes["eval.source.agent_id"] as string | undefined),
+      name: attributes["entity.name"] as string | undefined,
+    };
+
+    return { span: activeSpan, agentInfo };
   }
 
   /**

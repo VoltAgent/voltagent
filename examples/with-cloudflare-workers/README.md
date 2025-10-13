@@ -148,9 +148,7 @@ This example uses in-memory storage adapters:
 
 ```typescript
 const memory = new Memory({
-  storage: new InMemoryStorageAdapter({
-    storageLimit: 50, // Messages per conversation
-  }),
+  storage: new InMemoryStorageAdapter(),
   embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
   vector: new InMemoryVectorAdapter(),
 });

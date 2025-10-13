@@ -59,9 +59,7 @@ type Env = {
 
 // LibSQL is not supported on Cloudflare Workers. Use InMemory or Postgres/Supabase instead.
 const memory = new Memory({
-  storage: new InMemoryStorageAdapter({
-    storageLimit: 50,
-  }),
+  storage: new InMemoryStorageAdapter(),
 });
 
 const agent = new Agent({
@@ -146,9 +144,7 @@ import TabItem from '@theme/TabItem';
 import { Memory, InMemoryStorageAdapter } from "@voltagent/core";
 
 const memory = new Memory({
-  storage: new InMemoryStorageAdapter({
-    storageLimit: 50,
-  }),
+  storage: new InMemoryStorageAdapter(),
 });
 
 const agent = new Agent({

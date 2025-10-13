@@ -19,9 +19,7 @@ const logger = createPinoLogger({
 });
 
 const memory = new Memory({
-  storage: new LibSQLMemoryAdapter({
-    storageLimit: 100, // Keep last 100 messages per conversation
-  }),
+  storage: new LibSQLMemoryAdapter({}),
   embedding: new AiSdkEmbeddingAdapter(openai.textEmbeddingModel("text-embedding-3-small")),
   vector: new InMemoryVectorAdapter(),
 });

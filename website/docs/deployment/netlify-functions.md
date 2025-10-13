@@ -134,9 +134,7 @@ import TabItem from '@theme/TabItem';
 import { Memory, InMemoryStorageAdapter } from "@voltagent/core";
 
 const memory = new Memory({
-  storage: new InMemoryStorageAdapter({
-    storageLimit: 50,
-  }),
+  storage: new InMemoryStorageAdapter(),
 });
 ```
 

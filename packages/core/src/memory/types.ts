@@ -68,13 +68,9 @@ export type GetMessagesOptions = {
 /**
  * Memory options for MemoryManager
  */
-export type MemoryOptions = {
-  /**
-   * Maximum number of messages to store in the database
-   * @default 100
-   */
-  storageLimit?: number;
-};
+
+// biome-ignore lint/complexity/noBannedTypes: <explanation>
+export type MemoryOptions = {};
 
 // ============================================================================
 // Workflow State Types
@@ -195,12 +191,6 @@ export interface MemoryConfig {
    * @default 3600000 (1 hour)
    */
   cacheTTL?: number;
-
-  /**
-   * Maximum number of messages to store per conversation
-   * @default 100
-   */
-  storageLimit?: number;
 
   /**
    * Working memory configuration

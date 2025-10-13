@@ -216,7 +216,7 @@ When using Viteval with VoltAgent, be aware of these limitations:
 
 To migrate from Viteval to VoltAgent's native evaluation system:
 
-1. Convert your Viteval datasets to VoltAgent format (see [Datasets Guide](/evals/datasets))
+1. Convert your Viteval datasets to VoltAgent format (see [Datasets Guide](/docs/evals/datasets))
 2. Replace `viteval` commands with `volt eval` commands
 3. Use `runExperiment` instead of `evaluate()` function
 4. Update scorers to use VoltAgent's scorer definitions
@@ -224,6 +224,6 @@ To migrate from Viteval to VoltAgent's native evaluation system:
 ## Next Steps
 
 - **For Viteval Users**: [View Available Viteval Scorers](https://viteval.dev/api/scorers?ref=voltagent)
-- **Recommended**: [VoltAgent CLI Reference](/evals/cli-reference) - Use native VoltAgent evaluations
-- **Recommended**: [Experiments Guide](/evals/experiments) - Learn about VoltAgent's evaluation system
+- **Recommended**: [VoltAgent CLI Reference](/docs/evals/cli-reference) - Use native VoltAgent evaluations
+- **Recommended**: [Experiments Guide](/docs/evals/experiments) - Learn about VoltAgent's evaluation system
 - **Coming Soon**: VoltOps integration for enhanced evaluation management

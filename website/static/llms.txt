@@ -307,7 +307,6 @@ export const productionMemory = new LibSQLStorage({
   url: process.env.TURSO_DATABASE_URL,
   authToken: process.env.TURSO_AUTH_TOKEN,
   tablePrefix: "prod_chats", // Optional: Namespace tables
-  storageLimit: 500,       // Optional: Keep last 500 messages per conversation
   debug: process.env.NODE_ENV === 'development', // Enable debug logs in dev
 });
 ```

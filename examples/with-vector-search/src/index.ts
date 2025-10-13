@@ -9,10 +9,7 @@ const logger = createPinoLogger({ name: "with-vector-search", level: "info" });
 
 // Memory configured with embeddings + vector DB
 const memory = new Memory({
-  storage: new LibSQLMemoryAdapter({
-    // default: file:./.voltagent/memory.db
-    storageLimit: 200,
-  }),
+  storage: new LibSQLMemoryAdapter(), // default: file:./.voltagent/memory.db
   embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small"), {
     // Optional caching/normalization settings
     normalize: false,

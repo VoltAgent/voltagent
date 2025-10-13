@@ -991,7 +991,6 @@ const memory = new Memory({
   storage: new LibSQLMemoryAdapter({
     url: "file:./.voltagent/memory.db",
     logger: logger.child({ component: "libsql" }),
-    storageLimit: 100, // Keep last 100 messages per conversation
   }),
 });
 
