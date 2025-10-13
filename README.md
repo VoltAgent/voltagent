@@ -47,9 +47,9 @@ You can build production-ready agents with memory, workflows, tools, and built-i
 
 ## Agent Development Platform
 
-VoltAgent provides a complete platform for developing, deploying, and monitoring AI agents through two complementary tools.
+VoltAgent provides a complete platform for developing and monitoring AI agents through two complementary tools.
 
-### Core Framework
+### 1.Core Framework
 
 With the core framework, you can build intelligent agents with memory, tools, and multi-step workflows while connecting to any AI provider. Create sophisticated multi-agent systems where specialized agents work together under supervisor coordination.
 
@@ -62,11 +62,11 @@ With the core framework, you can build intelligent agents with memory, tools, an
 - **[Retrieval & RAG](https://voltagent.dev/docs/rag/overview/)**: Plug in retriever agents to pull facts from your data sources and ground responses (RAG) before the model answers.
 - **[Evals](https://voltagent.dev/docs/evals/overview/)**: Ship guardrails faster by running agent eval suites alongside your workflows.
 
-### VoltOps LLM Observability
+### 2.VoltOps LLM Observability Platform
 
 VoltAgent comes with built-in [VoltOps](#built-in-llm-observability-with-voltops) LLM observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.
 
-### MCP Server (@voltagent/mcp-docs-server)
+#### MCP Server (@voltagent/mcp-docs-server)
 
 You can use the MCP server `@voltagent/mcp-docs-server` to teach your LLM how to use VoltAgent. This allows AI assistants to access VoltAgent documentation, examples, and changelogs directly.
 
@@ -151,6 +151,26 @@ Your agent is now running! To interact with it:
 5. Send a Message: Type a message like "Hello" and press Enter.
 
 [![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
+
+### Running Your First Workflow
+
+Your new project also includes a powerful workflow engine. You can test the pre-built `expenseApprovalWorkflow` directly from the VoltOps console:
+
+![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
+
+1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
+2.  **Select Your Project:** Use the project selector to choose your project (e.g., "my-agent-app").
+3.  **Find and Run:** You will see **"Expense Approval Workflow"** listed. Click it, then click the **"Run"** button.
+4.  **Provide Input:** The workflow expects a JSON object with expense details. Try a small expense for automatic approval:
+    ```json
+    {
+      "employeeId": "EMP-123",
+      "amount": 250,
+      "category": "office-supplies",
+      "description": "New laptop mouse and keyboard"
+    }
+    ```
+5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
 
 ## Built-in LLM Observability with VoltOps
 
@@ -305,26 +325,6 @@ Build AI agents for real-world business needs across different industries:
 - **[Education Agent](https://voltagent.dev/use-cases/education-agent/)** - Provide personalized tutoring, track student progress, and support learning.
 - **[Government Agent](https://voltagent.dev/use-cases/government-agent/)** - Handle permit applications, process benefits, and serve citizens.
 - **[Documentation Agent](https://voltagent.dev/use-cases/documentation-agent/)** - Create API docs, write changelogs, and generate tutorials from code.
-
-### Running Your First Workflow
-
-Your new project also includes a powerful workflow engine. You can test the pre-built `expenseApprovalWorkflow` directly from the VoltOps console:
-
-![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
-
-1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
-2.  **Select Your Project:** Use the project selector to choose your project (e.g., "my-agent-app").
-3.  **Find and Run:** You will see **"Expense Approval Workflow"** listed. Click it, then click the **"Run"** button.
-4.  **Provide Input:** The workflow expects a JSON object with expense details. Try a small expense for automatic approval:
-    ```json
-    {
-      "employeeId": "EMP-123",
-      "amount": 250,
-      "category": "office-supplies",
-      "description": "New laptop mouse and keyboard"
-    }
-    ```
-5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
 
 ## Key Features
 
