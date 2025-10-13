@@ -14,7 +14,7 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 <div align="center">
     <a href="https://voltagent.dev">Home Page</a> |
     <a href="https://voltagent.dev/docs/">Documentation</a> |
-    <a href="https://github.com/voltagent/voltagent/tree/main/examples">Examples</a> |
+    <a href="https://github.com/voltagent/voltagent/tree/main/examples">Examples</a> 
 </div>
 </div>
 
@@ -28,8 +28,6 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
-
-
 
 [![npm downloads](https://img.shields.io/npm/dm/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
 [![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
@@ -79,7 +77,9 @@ VoltAgent comes with built-in [VoltOps](#built-in-llm-observability-with-voltops
 
 #### MCP Server (@voltagent/mcp-docs-server)
 
-You can use the MCP server `@voltagent/mcp-docs-server` to teach your LLM how to use VoltAgent. This allows AI assistants to access VoltAgent documentation, examples, and changelogs directly.
+You can use the MCP server `@voltagent/mcp-docs-server` to teach your LLM how to use VoltAgent for AI-powered coding assistants like Claude, Cursor, or Windsurf. This allows AI assistants to access VoltAgent documentation, examples, and changelogs directly while you code.
+
+📖 [How to setup MCP docs server](https://voltagent.dev/docs/getting-started/mcp-docs-server/)
 
 ## ⚡ Quick Start
 
@@ -161,7 +161,7 @@ Your agent is now running! To interact with it:
 4. Start Chatting: On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
 5. Send a Message: Type a message like "Hello" and press Enter.
 
-[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
+![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
 
 ### Running Your First Workflow
 
@@ -182,6 +182,81 @@ Your new project also includes a powerful workflow engine. You can test the pre-
     }
     ```
 5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
+
+#### Workflow Implementation
+
+The expense approval workflow demonstrates human-in-the-loop automation with suspend/resume capabilities:
+
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+export const expenseApprovalWorkflow = createWorkflowChain({
+  id: "expense-approval",
+  name: "Expense Approval Workflow",
+  purpose: "Process expense reports with manager approval for high amounts",
+
+  input: z.object({
+    employeeId: z.string(),
+    amount: z.number(),
+    category: z.string(),
+    description: z.string(),
+  }),
+  result: z.object({
+    status: z.enum(["approved", "rejected"]),
+    approvedBy: z.string(),
+    finalAmount: z.number(),
+  }),
+})
+  // Step 1: Validate expense and check if approval needed
+  .andThen({
+    id: "check-approval-needed",
+    resumeSchema: z.object({
+      approved: z.boolean(),
+      managerId: z.string(),
+      comments: z.string().optional(),
+      adjustedAmount: z.number().optional(),
+    }),
+    execute: async ({ data, suspend, resumeData }) => {
+      // If we're resuming with manager's decision
+      if (resumeData) {
+        return {
+          ...data,
+          approved: resumeData.approved,
+          approvedBy: resumeData.managerId,
+          finalAmount: resumeData.adjustedAmount || data.amount,
+        };
+      }
+
+      // Check if manager approval is needed (expenses over $500)
+      if (data.amount > 500) {
+        await suspend("Manager approval required", {
+          employeeId: data.employeeId,
+          requestedAmount: data.amount,
+        });
+      }
+
+      // Auto-approve small expenses
+      return {
+        ...data,
+        approved: true,
+        approvedBy: "system",
+        finalAmount: data.amount,
+      };
+    },
+  })
+  // Step 2: Process the final decision
+  .andThen({
+    id: "process-decision",
+    execute: async ({ data }) => {
+      return {
+        status: data.approved ? "approved" : "rejected",
+        approvedBy: data.approvedBy,
+        finalAmount: data.finalAmount,
+      };
+    },
+  });
+```
 
 ## Built-in LLM Observability with VoltOps
 
@@ -280,7 +355,9 @@ Implement an Instagram ad generator that uses BrowserBase Stagehand to analyze l
 
 <br/>
 
+<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator">
 <img width="1115" height="363" alt="instagram" src="https://github.com/user-attachments/assets/973e79c7-34ec-4f8e-8a41-9273d44234c6" />
+</a>
 
 <br/>
 <br/>
@@ -294,7 +371,9 @@ Build an intelligent recipe recommendation system that creates personalized cook
 
 <br/>
 
+<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator">
 <img width="1111" height="363" alt="cook" src="https://github.com/user-attachments/assets/dde6ce2f-c963-4075-9825-f216bc6e3467" />
+</a>
 
 <br/>
 <br/>
@@ -309,7 +388,9 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 
 <br/>
 
+<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant">
 <img width="2228" height="678" alt="research" src="https://github.com/user-attachments/assets/8f459748-132e-4ff3-9afe-0561fa5075c2" />
+</a>
 
 <br/>
 <br/>
