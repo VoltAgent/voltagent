@@ -43,19 +43,30 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 **VoltAgent** is an open source TypeScript framework for building and orchestrating AI agents.
 You can build production-ready agents with memory, workflows, tools, and built-in LLM observability.
 
-Instead of shipping everything from scratch, VoltAgent gives you modular building blocks:
+## Agent Development Platform
+
+VoltAgent provides a complete platform for developing, deploying, and monitoring AI agents through two complementary tools.
+
+📖 **[Start with interactive tutorial](https://voltagent.dev/tutorial/introduction/)** to learn the fundamentals building AI Agents.
+
+### Core Framework
+
+With the core framework, you can build intelligent agents with memory, tools, and multi-step workflows while connecting to any AI provider. Create sophisticated multi-agent systems where specialized agents work together under supervisor coordination.
 
 - **[Core Runtime](https://voltagent.dev/docs/agents/overview/) (`@voltagent/core`)**: Define agents with typed roles, tools, memory, and model providers in one place so everything stays organized.
 - **[Workflow Engine](https://voltagent.dev/docs/workflows/overview/)**: Describe multi-step automations declaratively rather than stitching together custom control flow.
-- **[Supervisors & Sub-Agents](https://voltagent.dev/docs/agents/subagents/)**: Run teams of specialized agents under a supervisor runtime that routes tasks and keeps them in sync.
-- **[Tool Registry](https://voltagent.dev/docs/agents/tools/) & [MCP](https://voltagent.dev/docs/agents/mcp/mcp/)**: Ship Zod-typed tools with lifecycle hooks and cancellation, and connect to [Model Context Protocol](https://modelcontextprotocol.io/) servers without extra glue code.
+- **[Supervisors & Sub-Agents](https://voltagent.dev/docs/agents/sub-agents/)**: Run teams of specialized agents under a supervisor runtime that routes tasks and keeps them in sync.
+- **[Tool Registry](https://voltagent.dev/docs/agents/tools/) & [MCP](https://voltagent.dev/docs/agents/mcp/)**: Ship Zod-typed tools with lifecycle hooks and cancellation, and connect to [Model Context Protocol](https://modelcontextprotocol.io/) servers without extra glue code.
 - **[LLM Compatibility](https://voltagent.dev/docs/getting-started/providers-models/)**: Swap between OpenAI, Anthropic, Google, or other providers by changing config, not rewriting agent logic.
 - **[Memory](https://voltagent.dev/docs/agents/memory/overview/)**: Attach durable memory adapters so agents remember important context across runs.
 - **[Retrieval & RAG](https://voltagent.dev/docs/rag/overview/)**: Plug in retriever agents to pull facts from your data sources and ground responses (RAG) before the model answers.
-- **[Observability](https://voltagent.dev/docs/observability/developer-console/) (`VoltOps`)**: VoltOps gives you LLM observability; trace every step, replay runs, and review audit trails in one dashboard.
 - **[Evals](https://voltagent.dev/docs/evals/overview/)**: Ship guardrails faster by running agent eval suites alongside your workflows.
 
-📖 **[Start with interactive tutorial](https://voltagent.dev/tutorial/introduction/)** to learn the fundamentals building AI Agents.
+### VoltOps LLM Observability
+
+VoltAgent comes with built-in VoltOps observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.
+
+- **[Observability](#built-in-llm-observability-with-voltops) (`VoltOps`)**: VoltOps gives you LLM observability; trace every step, replay runs, and review audit trails in one dashboard.
 
 ### MCP Server (@voltagent/mcp-docs-server)
 
@@ -146,6 +157,12 @@ Your agent is now running! To interact with it:
 ## Built-in LLM Observability with VoltOps
 
 VoltAgent comes with VoltOps, a powerful LLM observability platform built-in to help you monitor, debug, and optimize your agents in real-time.
+
+🎬 [Try Live Demo](https://console.voltagent.dev/demo)
+
+📖 [VoltOps Documentation](https://voltagent.dev/voltops-llm-observability-docs/)
+
+🚀 [VoltOps Platform](https://voltagent.dev/voltops-llm-observability/)
 
 ### Observability & Tracing
 
