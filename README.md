@@ -165,25 +165,7 @@ Your agent is now running! To interact with it:
 
 ### Running Your First Workflow
 
-Your new project also includes a powerful workflow engine. You can test the pre-built `expenseApprovalWorkflow` directly from the VoltOps console:
-
-![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
-
-1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
-2.  **Select Your Project:** Use the project selector to choose your project (e.g., "my-agent-app").
-3.  **Find and Run:** You will see **"Expense Approval Workflow"** listed. Click it, then click the **"Run"** button.
-4.  **Provide Input:** The workflow expects a JSON object with expense details. Try a small expense for automatic approval:
-    ```json
-    {
-      "employeeId": "EMP-123",
-      "amount": 250,
-      "category": "office-supplies",
-      "description": "New laptop mouse and keyboard"
-    }
-    ```
-5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
-
-#### Workflow Implementation
+Your new project also includes a powerful workflow engine.
 
 The expense approval workflow demonstrates human-in-the-loop automation with suspend/resume capabilities:
 
@@ -257,6 +239,24 @@ export const expenseApprovalWorkflow = createWorkflowChain({
     },
   });
 ```
+
+You can test the pre-built `expenseApprovalWorkflow` directly from the VoltOps console:
+
+![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
+
+1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
+2.  **Select Your Project:** Use the project selector to choose your project (e.g., "my-agent-app").
+3.  **Find and Run:** You will see **"Expense Approval Workflow"** listed. Click it, then click the **"Run"** button.
+4.  **Provide Input:** The workflow expects a JSON object with expense details. Try a small expense for automatic approval:
+    ```json
+    {
+      "employeeId": "EMP-123",
+      "amount": 250,
+      "category": "office-supplies",
+      "description": "New laptop mouse and keyboard"
+    }
+    ```
+5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
 
 ## Built-in LLM Observability with VoltOps
 
