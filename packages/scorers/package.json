@@ -10,20 +10,10 @@
   },
   "devDependencies": {
     "ai": "^5.0.12",
-    "zod": "^3.25.76",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
-    "vitest": "^3.2.4"
-  },
-  "peerDependencies": {
-    "@voltagent/core": "^1.0.0",
-    "zod": "^3.25.0 || ^4.0.0",
-    "ai": "^5.0.0"
-  },
-  "peerDependenciesMeta": {
-    "ai": {
-      "optional": true
-    }
+    "vitest": "^3.2.4",
+    "zod": "^3.25.76"
   },
   "files": [
     "dist"
@@ -31,6 +21,16 @@
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
+  "peerDependencies": {
+    "@voltagent/core": "^1.0.0",
+    "ai": "^5.0.0",
+    "zod": "^3.25.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ai": {
+      "optional": true
+    }
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -13,16 +13,16 @@
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"
   },
-  "peerDependencies": {
-    "@voltagent/scorers": "^0.1.0",
-    "@voltagent/sdk": "^0.1.0"
-  },
   "files": [
     "dist"
   ],
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
+  "peerDependencies": {
+    "@voltagent/scorers": "^0.1.0",
+    "@voltagent/sdk": "^0.1.0"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
