@@ -16,3 +16,15 @@ export type {
   WorkflowTimelineEvent,
 } from "./types";
 export type { WorkflowExecuteContext } from "./internal/types";
+export type {
+  WorkflowEvalConfig,
+  WorkflowEvalScorerConfig,
+  WorkflowEvalScorerFactory,
+  WorkflowEvalScorerReference,
+  WorkflowEvalResult,
+  WorkflowEvalSamplingPolicy,
+  WorkflowEvalOperationType,
+  WorkflowEvalPayload,
+  WorkflowEvalContext,
+  WorkflowEvalStepConfig,
+} from "./eval/types";

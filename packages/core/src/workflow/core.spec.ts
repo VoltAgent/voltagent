@@ -1,9 +1,11 @@
 import type { UIMessageChunk } from "ai";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import type { LocalScorerDefinition } from "../eval/runtime";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { createWorkflow } from "./core";
+import type { WorkflowEvalContext } from "./eval/types";
 import { WorkflowRegistry } from "./registry";
 import { andThen } from "./steps";
 
@@ -204,5 +206,76 @@ describe.sequential("workflow streaming", () => {
     for (const chunk of parsedChunks) {
       expect(allowedTypes.includes(chunk.type)).toBe(true);
     }
+  });
+});
+
+describe.sequential("workflow eval scoring", () => {
+  beforeEach(() => {
+    const registry = WorkflowRegistry.getInstance();
+    (registry as any).workflows.clear();
+  });
+
+  it("runs step-level scorers when configured", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const onStepResult = vi.fn();
+
+    const stepScorer: LocalScorerDefinition<WorkflowEvalContext, Record<string, unknown>> = {
+      id: "step-scorer",
+      name: "Step Scorer",
+      scorer: () => ({
+        status: "success",
+        score: 0.9,
+      }),
+    };
+
+    const workflow = createWorkflow(
+      {
+        id: "eval-test",
+        name: "Eval Test",
+        input: z.object({ value: z.number() }),
+        result: z.object({ doubled: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "multiply",
+        name: "Multiply",
+        execute: async ({ data }) => ({ doubled: data.value * 2 }),
+        eval: {
+          scorers: {
+            quality: {
+              scorer: stepScorer,
+              onResult: onStepResult,
+            },
+          },
+        },
+      }),
+      andThen({
+        id: "identity",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    await workflow.run({ value: 3 });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onStepResult).toHaveBeenCalledTimes(1);
+    const [result] = onStepResult.mock.calls[0];
+    expect(result.status).toBe("success");
+    expect(result.payload.target).toBe("step");
+    expect(result.payload.step?.id).toBe("multiply");
+    expect(result.payload.status).toBe("completed");
+    expect(result.metadata?.workflow?.id).toBe("eval-test");
+    expect(result.metadata?.step).toEqual(
+      expect.objectContaining({
+        id: "multiply",
+        metadata: expect.objectContaining({
+          durationMs: expect.any(Number),
+        }),
+      }),
+    );
   });
 });

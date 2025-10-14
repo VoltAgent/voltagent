@@ -5,6 +5,7 @@ import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowExecutionContext } from "../context";
+import type { WorkflowEvalStepConfig } from "../eval/types";
 import type { WorkflowStreamWriter } from "../types";
 import type { WorkflowState } from "./state";
 
@@ -79,6 +80,10 @@ export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
    * Description of what the step does
    */
   purpose?: string;
+  /**
+   * Live evaluation configuration applied to this step
+   */
+  eval?: WorkflowEvalStepConfig;
 } & T;
 
 /**
@@ -126,6 +131,10 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RES
   execute: (
     context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>,
   ) => Promise<RESULT>;
+  /**
+   * Live evaluation configuration applied directly to this step
+   */
+  eval?: WorkflowEvalStepConfig;
 }
 
 /**

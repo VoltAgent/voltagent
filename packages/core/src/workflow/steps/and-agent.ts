@@ -3,6 +3,7 @@ import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { Agent, BaseGenerationOptions } from "../../agent/agent";
 import { convertUsage } from "../../utils/usage-converter";
+import type { WorkflowEvalStepConfig } from "../eval/types";
 import type { InternalWorkflowFunc, WorkflowExecuteContext } from "../internal/types";
 import type { WorkflowStepAgent } from "./types";
 
@@ -12,6 +13,22 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny, INPUT, DATA> = BaseGenerati
     | ((
         context: Omit<WorkflowExecuteContext<INPUT, DATA, any, any>, "suspend" | "writer">,
       ) => SCHEMA | Promise<SCHEMA>);
+  /**
+   * Override step identifier for workflow tracking
+   */
+  stepId?: string;
+  /**
+   * Override step display name (defaults to agent name or ID)
+   */
+  stepName?: string;
+  /**
+   * Override step purpose/description (defaults to agent purpose)
+   */
+  stepPurpose?: string;
+  /**
+   * Live evaluation configuration for this step
+   */
+  eval?: WorkflowEvalStepConfig;
 };
 
 /**
@@ -46,15 +63,21 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
   agent: Agent,
   config: AgentConfig<SCHEMA, INPUT, DATA>,
 ) {
+  const { schema, stepId, stepName, stepPurpose, eval: stepEvalConfig, ...restConfig } = config;
+
+  const stepIdentifier = stepId ?? agent.id;
+  const resolvedStepName = stepName ?? agent.name ?? stepIdentifier;
+  const resolvedPurpose = stepPurpose ?? agent.purpose ?? null;
+
   return {
     type: "agent",
-    id: agent.id,
-    name: agent.name || agent.id,
-    purpose: agent.purpose ?? null,
+    id: stepIdentifier,
+    name: resolvedStepName,
+    purpose: resolvedPurpose,
+    eval: stepEvalConfig,
     agent,
     execute: async (context) => {
       const { state } = context;
-      const { schema, ...restConfig } = config;
       const finalTask = typeof task === "function" ? await task(context) : task;
       const finalSchema = typeof schema === "function" ? await schema(context) : schema;
 
