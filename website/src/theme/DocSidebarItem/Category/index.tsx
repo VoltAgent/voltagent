@@ -193,7 +193,7 @@ export default function DocSidebarItemCategory({
           }
           aria-current={isCurrentPage ? "page" : undefined}
           aria-expanded={collapsible ? !collapsed : undefined}
-          href={collapsible ? hrefWithSSRFallback ?? "#" : hrefWithSSRFallback}
+          href={hrefWithSSRFallback ?? (collapsible ? "#" : undefined)}
           {...props}
         >
           <span className="menu__link-label-text">{label}</span>
