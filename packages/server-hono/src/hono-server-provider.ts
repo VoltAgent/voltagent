@@ -15,6 +15,7 @@ import type { HonoServerConfig } from "./types";
  */
 export class HonoServerProvider extends BaseServerProvider {
   private honoConfig: HonoServerConfig;
+  private app?: any; // Store app instance to extract custom endpoints
 
   constructor(deps: ServerProviderDeps, config: HonoServerConfig = {}) {
     super(deps, config);
@@ -27,6 +28,9 @@ export class HonoServerProvider extends BaseServerProvider {
   protected async startServer(port: number): Promise<Server> {
     // Create the app with dependencies and actual port
     const { app } = await createApp(this.deps, this.honoConfig, port);
+
+    // Store app instance for custom endpoint extraction
+    this.app = app;
 
     return new Promise((resolve, reject) => {
       try {
@@ -75,6 +79,96 @@ export class HonoServerProvider extends BaseServerProvider {
   protected async stopServer(): Promise<void> {
     if (this.server) {
       this.server.close();
+    }
+  }
+
+  /**
+   * Override start method to include custom endpoints in startup display
+   */
+  async start(): Promise<{ port: number }> {
+    if (this.running) {
+      throw new Error("Server is already running");
+    }
+
+    // Allocate port from central manager
+    const { portManager } = await import("@voltagent/server-core");
+    const port = await portManager.allocatePort(this.config.port);
+    this.allocatedPort = port;
+
+    try {
+      // Framework-specific server start
+      this.server = await this.startServer(port);
+
+      // Setup WebSocket if enabled
+      if (this.config.enableWebSocket !== false) {
+        const { createWebSocketServer, setupWebSocketUpgrade } = await import(
+          "@voltagent/server-core"
+        );
+        this.websocketServer = createWebSocketServer(this.deps, this.logger);
+        setupWebSocketUpgrade(this.server, this.websocketServer, this.config.websocketPath);
+      }
+
+      this.running = true;
+
+      // Collect all endpoints (feature + custom)
+      let allEndpoints: Array<{ method: string; path: string; group?: string }> = [];
+
+      // Get base feature endpoints
+      const { MCP_ROUTES, A2A_ROUTES } = await import("@voltagent/server-core");
+      const addRoutes = (
+        routes: Record<string, { method: string; path: string; tags?: string[] }>,
+        groupLabel: string,
+      ) => {
+        Object.values(routes).forEach((route) => {
+          const prettyPath = route.path.replace(/:([A-Za-z0-9_]+)/g, "{$1}");
+          allEndpoints.push({
+            method: route.method.toUpperCase(),
+            path: prettyPath,
+            group: groupLabel,
+          });
+        });
+      };
+
+      // Add feature endpoints
+      const mcpRegistry = this.deps.mcp?.registry;
+      const registeredMcpServers =
+        mcpRegistry && typeof mcpRegistry.list === "function" ? mcpRegistry.list() : [];
+      if (registeredMcpServers.length > 0) {
+        addRoutes(MCP_ROUTES, "MCP Endpoints");
+      }
+
+      const a2aRegistry = this.deps.a2a?.registry;
+      const registeredA2AServers =
+        a2aRegistry && typeof a2aRegistry.list === "function" ? a2aRegistry.list() : [];
+      if (registeredA2AServers.length > 0) {
+        addRoutes(A2A_ROUTES, "A2A Endpoints");
+      }
+
+      // Add custom endpoints if we have them
+      if (this.app && this.honoConfig.configureApp) {
+        try {
+          const { extractCustomEndpoints } = await import("./utils/custom-endpoints");
+          const customEndpoints = extractCustomEndpoints(this.app);
+          allEndpoints = [...allEndpoints, ...customEndpoints];
+        } catch (_error) {
+          // If extraction fails, continue without custom endpoints
+          this.logger.warn("Failed to extract custom endpoints for startup display");
+        }
+      }
+
+      // Print startup message with all endpoints
+      const { printServerStartup } = await import("@voltagent/server-core");
+      printServerStartup(port, {
+        enableSwaggerUI: this.config.enableSwaggerUI,
+        customEndpoints: allEndpoints.length > 0 ? allEndpoints : undefined,
+      });
+
+      return { port };
+    } catch (error) {
+      // If server fails to start, release the port
+      portManager.releasePort(port);
+      this.allocatedPort = null;
+      throw error;
     }
   }
 }
