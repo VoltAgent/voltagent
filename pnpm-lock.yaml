@@ -1242,6 +1242,9 @@ importers:
 
   examples/with-offline-evals:
     dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.2
+        version: 2.0.42(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.11
         version: link:../../packages/cli
@@ -1257,6 +1260,12 @@ importers:
       '@voltagent/sdk':
         specifier: ^0.1.6
         version: link:../../packages/sdk
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.64(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -9369,16 +9378,6 @@ packages:
       '@tybys/wasm-util': 0.9.0
     dev: true
 
-  /@napi-rs/wasm-runtime@1.0.6:
-    resolution: {integrity: sha512-DXj75ewm11LIWUk198QSKUTxjyRjsBwk09MuMk5DGK+GDUtyPhhEHOGP/Xwwj3DjQXXkivoBirmOnKrLfc0+9g==}
-    requiresBuild: true
-    dependencies:
-      '@emnapi/core': 1.5.0
-      '@emnapi/runtime': 1.5.0
-      '@tybys/wasm-util': 0.10.1
-    dev: false
-    optional: true
-
   /@napi-rs/wasm-runtime@1.0.7:
     resolution: {integrity: sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw==}
     requiresBuild: true
@@ -9386,7 +9385,6 @@ packages:
       '@emnapi/core': 1.5.0
       '@emnapi/runtime': 1.5.0
       '@tybys/wasm-util': 0.10.1
-    dev: true
     optional: true
 
   /@neon-rs/load@0.0.4:
@@ -11937,7 +11935,7 @@ packages:
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.0.6
+      '@napi-rs/wasm-runtime': 1.0.7
     dev: false
     optional: true
 
@@ -12073,7 +12071,7 @@ packages:
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.0.6
+      '@napi-rs/wasm-runtime': 1.0.7
     dev: false
     optional: true
 
@@ -12212,7 +12210,7 @@ packages:
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.0.6
+      '@napi-rs/wasm-runtime': 1.0.7
     dev: false
     optional: true
 

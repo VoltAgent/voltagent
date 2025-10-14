@@ -4,6 +4,7 @@
  * Compatible with existing PostgreSQL storage structure
  */
 
+import type { ConnectionOptions } from "node:tls";
 import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@voltagent/core";
 import type {
   Conversation,
@@ -33,7 +34,7 @@ export interface PostgreSQLMemoryOptions {
         database: string;
         user: string;
         password: string;
-        ssl?: boolean;
+        ssl?: boolean | ConnectionOptions;
       }
     | string;
 

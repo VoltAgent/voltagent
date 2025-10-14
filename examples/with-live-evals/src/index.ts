@@ -1,6 +1,19 @@
 import { openai } from "@ai-sdk/openai";
 import VoltAgent, { Agent, VoltAgentObservability, buildScorer } from "@voltagent/core";
-import { createModerationScorer, scorers } from "@voltagent/scorers";
+import {
+  createAnswerCorrectnessScorer,
+  createAnswerRelevancyScorer,
+  createContextPrecisionScorer,
+  createContextRecallScorer,
+  createContextRelevancyScorer,
+  createFactualityScorer,
+  createHumorScorer,
+  createModerationScorer,
+  createPossibleScorer,
+  createSummaryScorer,
+  createTranslationScorer,
+  scorers,
+} from "@voltagent/scorers";
 import honoServer from "@voltagent/server-hono";
 import { z } from "zod";
 
@@ -53,6 +66,45 @@ const HELPFULNESS_SCHEMA = z.object({
   score: z.number().min(0).max(1).describe("Score from 0 to 1 for helpfulness"),
   reason: z.string().describe("Explanation of the score"),
 });
+
+const referenceAnswer =
+  "You can enable live evaluation in VoltAgent by configuring the Agent.eval field with a list of scorers.";
+const referenceSummarySource =
+  "VoltAgent ships with a flexible evaluation pipeline. Developers can attach scorers to agents, stream results to VoltOps, and monitor quality in real time.";
+const referenceSummary =
+  "VoltAgent lets you attach evaluation scorers to agents so you can monitor quality in real time.";
+const referenceTranslationSource =
+  "Activa las evaluaciones en vivo en VoltAgent configurando la sección eval con los scorers que necesitas.";
+const referenceTranslationExpected =
+  "Enable live evaluations in VoltAgent by configuring the eval section with the scorers you need.";
+const referenceContextSnippets = [
+  "Live scorers run asynchronously after each agent operation so latency stays low.",
+  "VoltAgent forwards scorer output to VoltOps for dashboards, alerts, and annotations.",
+  "You can mix heuristic scorers with LLM-based judges inside the same pipeline.",
+];
+const referenceEntities = ["VoltAgent", "live evaluation", "VoltOps"];
+const referenceJson = { feature: "evals", state: "enabled" };
+const numericBaseline = { expected: 3.14, output: 3.14 };
+
+const answerCorrectnessScorer = createAnswerCorrectnessScorer({ model: judgeModel });
+
+const answerRelevancyScorer = createAnswerRelevancyScorer({ model: judgeModel });
+
+const contextPrecisionScorer = createContextPrecisionScorer({ model: judgeModel });
+
+const contextRecallScorer = createContextRecallScorer({ model: judgeModel });
+
+const contextRelevancyScorer = createContextRelevancyScorer({ model: judgeModel });
+
+const factualityScorer = createFactualityScorer({ model: judgeModel });
+
+const summaryScorer = createSummaryScorer({ model: judgeModel });
+
+const translationScorer = createTranslationScorer({ model: judgeModel });
+
+const humorScorer = createHumorScorer({ model: judgeModel });
+
+const possibleScorer = createPossibleScorer({ model: judgeModel });
 
 const helpfulnessJudgeScorer = buildScorer({
   id: "helpfulness-judge",
@@ -110,24 +162,74 @@ const supportAgent = new Agent({
           keyword: "voltagent",
         },
       },
-      levenshtein: {
-        scorer: scorers.levenshtein,
-        params: {
-          expected: "voltagent",
-        },
-      },
-      helpfulness2: {
-        scorer: helpfulnessJudgeScorer,
-        params: {
-          criteria:
-            "Reward answers that are specific to VoltAgent features and actionable guidance.",
-        },
-      },
       exactMatch: {
         scorer: scorers.exactMatch,
         params: {
-          expected: "voltagent",
+          expected: referenceAnswer,
         },
+      },
+      factuality: {
+        scorer: factualityScorer,
+        buildPayload: (context) => ({
+          input: context.input,
+          output: context.output,
+          expected: referenceAnswer,
+        }),
+      },
+      answerCorrectness: {
+        scorer: answerCorrectnessScorer,
+        buildPayload: () => ({
+          expected: referenceAnswer,
+        }),
+      },
+      answerRelevancy: {
+        scorer: answerRelevancyScorer,
+        buildPayload: () => ({
+          context: referenceAnswer,
+        }),
+      },
+      summary: {
+        scorer: summaryScorer,
+        buildPayload: () => ({
+          input: referenceSummarySource,
+          expected: referenceSummary,
+        }),
+      },
+      translation: {
+        scorer: translationScorer,
+        buildPayload: () => ({
+          input: referenceTranslationSource,
+          expected: referenceTranslationExpected,
+        }),
+        buildParams: () => ({
+          language: "Spanish",
+        }),
+      },
+      humor: {
+        scorer: humorScorer,
+      },
+      possible: {
+        scorer: possibleScorer,
+      },
+      contextPrecision: {
+        scorer: contextPrecisionScorer,
+        buildPayload: () => ({
+          context: referenceContextSnippets,
+          expected: referenceAnswer,
+        }),
+      },
+      contextRecall: {
+        scorer: contextRecallScorer,
+        buildPayload: () => ({
+          expected: referenceAnswer,
+          context: referenceContextSnippets,
+        }),
+      },
+      contextRelevancy: {
+        scorer: contextRelevancyScorer,
+        buildPayload: () => ({
+          context: referenceContextSnippets,
+        }),
       },
       moderation: {
         scorer: createModerationScorer({
@@ -140,6 +242,33 @@ const supportAgent = new Agent({
         params: {
           criteria:
             "Reward answers that are specific to VoltAgent features and actionable guidance.",
+        },
+      },
+      levenshtein: {
+        scorer: scorers.levenshtein,
+        params: {
+          expected: referenceAnswer,
+        },
+      },
+      numericDiff: {
+        scorer: scorers.numericDiff,
+        params: {
+          expected: numericBaseline.expected,
+          output: numericBaseline.output,
+        },
+      },
+      jsonDiff: {
+        scorer: scorers.jsonDiff,
+        params: {
+          expected: referenceJson,
+          output: referenceJson,
+        },
+      },
+      listContains: {
+        scorer: scorers.listContains,
+        params: {
+          expected: referenceEntities,
+          output: [...referenceEntities, "extra-note"],
         },
       },
     },

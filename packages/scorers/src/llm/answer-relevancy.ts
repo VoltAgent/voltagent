@@ -40,9 +40,9 @@ const QUESTION_SCHEMA = z.object({
 });
 
 export interface AnswerRelevancyPayload extends Record<string, unknown> {
-  input: unknown;
-  output: unknown;
-  context: unknown;
+  input?: unknown;
+  output?: unknown;
+  context?: unknown;
 }
 
 export interface AnswerRelevancyParams extends Record<string, unknown> {}

@@ -143,11 +143,14 @@ export function buildAggregatorSummary(
     meanScore: state.globalScoreCount > 0 ? state.globalScoreSum / state.globalScoreCount : null,
     passRate: completedCount > 0 ? state.successCount / completedCount : null,
     startedAt: state.startedAt,
-    completedAt: completedAt ?? null,
-    durationMs: completedAt ? completedAt - state.startedAt : undefined,
     scorers: buildScorerAggregates(state),
     criteria: [],
   };
+
+  if (completedAt !== undefined) {
+    summary.completedAt = completedAt;
+    summary.durationMs = completedAt - state.startedAt;
+  }
 
   summary.criteria = evaluatePassCriteria(passCriteria, summary);
   return summary;
@@ -161,10 +164,10 @@ export function normalizePassCriteria(
   }
 
   if (Array.isArray(criteria)) {
-    return criteria.slice();
+    return [...criteria] as ExperimentPassCriteria[];
   }
 
-  return [criteria];
+  return [criteria as ExperimentPassCriteria];
 }
 
 function buildScorerAggregates(

@@ -4,6 +4,7 @@ import type {
   ExperimentDatasetItem,
   ExperimentRuntimePayload,
   ExperimentScorerConfig,
+  ExperimentScorerConfigEntry,
 } from "./types.js";
 
 interface VoltAgentMetadata {
@@ -33,12 +34,17 @@ export function resolveExperimentScorers<
 
   return configs.map((entry, index) => {
     if (isLocalDefinition(entry)) {
-      const fallbackName = entry.name ?? entry.id ?? `scorer-${index + 1}`;
-      return createBundleFromDefinition(entry, fallbackName);
+      const adapted = adaptScorerDefinitionForExperiment<Item, any, any>(entry, {});
+      const fallbackName = adapted.name ?? adapted.id ?? `scorer-${index + 1}`;
+      return createBundleFromDefinition(adapted, fallbackName);
     }
 
     if (isScorerConfigObject(entry)) {
-      const scorer = entry.scorer;
+      const scorer = adaptScorerDefinitionForExperiment<Item, any, any>(entry.scorer, {
+        buildPayload: entry.buildPayload,
+        buildParams: entry.buildParams,
+        params: entry.params,
+      });
       const threshold = normalizeThreshold(entry.threshold);
       const metadata = entry.metadata;
 
@@ -76,13 +82,13 @@ function createBundleFromDefinition<Item extends ExperimentDatasetItem>(
   };
 }
 
-function isLocalDefinition<Item extends ExperimentDatasetItem>(
+function isLocalDefinition<_Item extends ExperimentDatasetItem>(
   value: unknown,
-): value is LocalScorerDefinition<ExperimentRuntimePayload<Item>, any> {
+): value is LocalScorerDefinition<any, any> {
   if (!value || typeof value !== "object") {
     return false;
   }
-  const candidate = value as LocalScorerDefinition<ExperimentRuntimePayload<Item>, any>;
+  const candidate = value as LocalScorerDefinition<any, any>;
   return (
     typeof candidate.scorer === "function" &&
     ("id" in candidate || "metadata" in candidate || "sampling" in candidate)
@@ -91,15 +97,138 @@ function isLocalDefinition<Item extends ExperimentDatasetItem>(
 
 function isScorerConfigObject<Item extends ExperimentDatasetItem>(
   value: ExperimentScorerConfig<Item>,
-): value is {
-  scorer: LocalScorerDefinition<ExperimentRuntimePayload<Item>, any>;
-  name?: string;
-  threshold?: number;
-  metadata?: Record<string, unknown>;
-} {
-  return (
-    Boolean(value) && typeof value === "object" && "scorer" in (value as Record<string, unknown>)
-  );
+): value is ExperimentScorerConfigEntry<Item, any, any> {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  return "scorer" in (value as { scorer?: unknown });
+}
+
+type ExperimentScorerAdaptOptions<
+  Item extends ExperimentDatasetItem,
+  Payload extends Record<string, unknown>,
+  Params extends Record<string, unknown>,
+> = {
+  buildPayload?: (context: ExperimentRuntimePayload<Item>) => Payload | Promise<Payload>;
+  buildParams?: (
+    context: ExperimentRuntimePayload<Item>,
+  ) => Params | undefined | Promise<Params | undefined>;
+  params?:
+    | Params
+    | ((
+        context: ExperimentRuntimePayload<Item>,
+      ) => Params | undefined | Promise<Params | undefined>);
+};
+
+function adaptScorerDefinitionForExperiment<
+  Item extends ExperimentDatasetItem,
+  Payload extends Record<string, unknown>,
+  Params extends Record<string, unknown>,
+>(
+  definition: LocalScorerDefinition<Payload, Params>,
+  options: ExperimentScorerAdaptOptions<Item, Payload, Params>,
+): LocalScorerDefinition<ExperimentRuntimePayload<Item>, Params> {
+  const { buildPayload, buildParams, params } = options;
+  const baseParams = definition.params;
+
+  async function resolvePayload(runtime: ExperimentRuntimePayload<Item>): Promise<Payload> {
+    const payloadOverrides = buildPayload ? await buildPayload(runtime) : undefined;
+    return normalizeExperimentScorerPayload(runtime, payloadOverrides) as Payload;
+  }
+
+  async function resolveConfigParams(
+    runtime: ExperimentRuntimePayload<Item>,
+  ): Promise<Record<string, unknown>> {
+    const merged: Record<string, unknown> = {};
+
+    if (params !== undefined) {
+      const value = typeof params === "function" ? await params(runtime) : params;
+      if (isPlainRecord(value)) {
+        Object.assign(merged, value);
+      }
+    }
+
+    if (buildParams) {
+      const value = await buildParams(runtime);
+      if (isPlainRecord(value)) {
+        Object.assign(merged, value);
+      }
+    }
+
+    return merged;
+  }
+
+  const adaptedParams: LocalScorerDefinition<ExperimentRuntimePayload<Item>, Params>["params"] =
+    undefined;
+
+  const adaptedScorer: LocalScorerDefinition<ExperimentRuntimePayload<Item>, Params>["scorer"] =
+    async ({ payload, params: runtimeParams }) => {
+      const runtime = payload as ExperimentRuntimePayload<Item>;
+      const resolvedPayload = await resolvePayload(runtime);
+
+      const resolvedParams: Record<string, unknown> = isPlainRecord(runtimeParams)
+        ? { ...runtimeParams }
+        : {};
+
+      if (typeof baseParams === "function") {
+        const base = await baseParams(resolvedPayload);
+        if (isPlainRecord(base)) {
+          Object.assign(resolvedParams, base);
+        }
+      } else if (isPlainRecord(baseParams)) {
+        Object.assign(resolvedParams, baseParams);
+      }
+
+      const configParams = await resolveConfigParams(runtime);
+      if (Object.keys(configParams).length > 0) {
+        Object.assign(resolvedParams, configParams);
+      }
+
+      return definition.scorer({
+        payload: resolvedPayload,
+        params: (resolvedParams as Params) ?? ({} as Params),
+      });
+    };
+
+  return {
+    ...definition,
+    params: adaptedParams,
+    scorer: adaptedScorer,
+  };
+}
+
+function normalizeExperimentScorerPayload<
+  Item extends ExperimentDatasetItem,
+  Payload extends Record<string, unknown> | undefined,
+>(runtime: ExperimentRuntimePayload<Item>, basePayload: Payload): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    ...runtime,
+    ...(basePayload ?? {}),
+  };
+
+  if (!("input" in payload)) {
+    payload.input = runtime.input;
+  }
+
+  if (!("output" in payload)) {
+    payload.output = runtime.output;
+  }
+
+  if (!("expected" in payload) && runtime.expected !== undefined) {
+    payload.expected = runtime.expected;
+  }
+
+  payload.item = runtime.item;
+  payload.datasetId = runtime.datasetId;
+  payload.datasetVersionId = runtime.datasetVersionId;
+  payload.datasetName = runtime.datasetName;
+
+  return payload;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function mergeMetadata(

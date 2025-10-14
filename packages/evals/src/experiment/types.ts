@@ -145,14 +145,36 @@ export interface ExperimentRuntimePayload<
   datasetName?: string;
 }
 
+export interface ExperimentScorerAdapterOptions<
+  Item extends ExperimentDatasetItem = ExperimentDatasetItem,
+  Payload extends Record<string, unknown> = Record<string, unknown>,
+  Params extends Record<string, unknown> = Record<string, unknown>,
+> {
+  buildPayload?: (context: ExperimentRuntimePayload<Item>) => Payload | Promise<Payload>;
+  buildParams?: (
+    context: ExperimentRuntimePayload<Item>,
+  ) => Params | undefined | Promise<Params | undefined>;
+}
+
+export interface ExperimentScorerConfigEntry<
+  Item extends ExperimentDatasetItem = ExperimentDatasetItem,
+  Payload extends Record<string, unknown> = Record<string, unknown>,
+  Params extends Record<string, unknown> = Record<string, unknown>,
+> extends ExperimentScorerAdapterOptions<Item, Payload, Params> {
+  scorer: LocalScorerDefinition<Payload, Params>;
+  name?: string;
+  threshold?: number;
+  metadata?: Record<string, unknown>;
+  params?:
+    | Params
+    | ((
+        context: ExperimentRuntimePayload<Item>,
+      ) => Params | undefined | Promise<Params | undefined>);
+}
+
 export type ExperimentScorerConfig<Item extends ExperimentDatasetItem = ExperimentDatasetItem> =
   | LocalScorerDefinition<ExperimentRuntimePayload<Item>, any>
-  | {
-      scorer: LocalScorerDefinition<ExperimentRuntimePayload<Item>, any>;
-      name?: string;
-      threshold?: number;
-      metadata?: Record<string, unknown>;
-    };
+  | ExperimentScorerConfigEntry<Item, any, any>;
 
 export interface ExperimentConfig<
   Item extends ExperimentDatasetItem = ExperimentDatasetItem,

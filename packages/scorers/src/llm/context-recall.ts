@@ -52,9 +52,9 @@ const VERIFY_SCHEMA = z.object({
 });
 
 export interface ContextRecallPayload extends Record<string, unknown> {
-  input: unknown;
-  expected: unknown;
-  context: unknown;
+  input?: unknown;
+  expected?: unknown;
+  context?: unknown;
 }
 
 export interface ContextRecallParams extends Record<string, unknown> {}

@@ -39,10 +39,10 @@ const CONTEXT_PRECISION_SCHEMA = z.object({
 });
 
 export interface ContextPrecisionPayload extends Record<string, unknown> {
-  input: unknown;
-  output: unknown;
-  context: unknown;
-  expected: unknown;
+  input?: unknown;
+  output?: unknown;
+  context?: unknown;
+  expected?: unknown;
 }
 
 export interface ContextPrecisionParams extends Record<string, unknown> {}

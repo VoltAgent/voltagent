@@ -1,4 +1,4 @@
-import type { LocalScorerDefinition } from "@voltagent/core";
+import type { AgentEvalContext, LocalScorerDefinition } from "@voltagent/core";
 // Only import heuristic scorers from AutoEvals that don't require LLM/API keys
 // For LLM-based evaluation, use the native VoltAgent scorers below that take a model parameter
 import { ExactMatch, JSONDiff, Levenshtein, ListContains, NumericDiff } from "autoevals";
@@ -116,3 +116,58 @@ export {
   type ContextRelevancyParams,
   type ContextRelevancyMetadata,
 } from "./llm/context-relevancy";
+
+export interface AgentScorerAdapterOptions<
+  Payload extends Record<string, unknown>,
+  Params extends Record<string, unknown>,
+> {
+  buildPayload: (context: AgentEvalContext) => Payload | Promise<Payload>;
+  buildParams?: (context: AgentEvalContext) => Params | undefined | Promise<Params | undefined>;
+}
+
+export function adaptScorerForAgentEval<
+  Payload extends Record<string, unknown>,
+  Params extends Record<string, unknown> = Record<string, unknown>,
+>(
+  definition: LocalScorerDefinition<Payload, Params>,
+  options: AgentScorerAdapterOptions<Payload, Params>,
+): LocalScorerDefinition<AgentEvalContext, Params> {
+  const { buildPayload, buildParams } = options;
+  const originalParams = definition.params;
+
+  const adaptedParams =
+    buildParams ??
+    (typeof originalParams === "function"
+      ? async (agentContext: AgentEvalContext) => {
+          const payload = await buildPayload(agentContext);
+          return originalParams(payload);
+        }
+      : originalParams);
+
+  return {
+    ...definition,
+    params: adaptedParams as
+      | Params
+      | ((payload: AgentEvalContext) => Params | undefined | Promise<Params | undefined>)
+      | undefined,
+    scorer: async ({ payload: agentPayload, params }) => {
+      const resolvedPayload = await buildPayload(agentPayload);
+
+      let resolvedParams = params as Params | undefined;
+      if (resolvedParams === undefined) {
+        if (buildParams) {
+          resolvedParams = await buildParams(agentPayload);
+        } else if (typeof originalParams === "function") {
+          resolvedParams = await originalParams(resolvedPayload);
+        } else if (originalParams !== undefined) {
+          resolvedParams = originalParams as Params;
+        }
+      }
+
+      return definition.scorer({
+        payload: resolvedPayload,
+        params: (resolvedParams ?? ({} as Params)) as Params,
+      });
+    },
+  };
+}

@@ -42,8 +42,8 @@ const CONTEXT_RELEVANCY_SCHEMA = z.object({
 });
 
 export interface ContextRelevancyPayload extends Record<string, unknown> {
-  input: unknown;
-  context: unknown;
+  input?: unknown;
+  context?: unknown;
 }
 
 export interface ContextRelevancyParams extends Record<string, unknown> {}

@@ -480,8 +480,7 @@ async function resolveEvalScorersDefinition(
   config: AgentEvalScorerConfig,
 ): Promise<LocalScorerDefinition<AgentEvalContext, Record<string, unknown>> | null> {
   const scorerRef = config.scorer;
-  let baseDefinition: LocalScorerDefinition<AgentEvalContext, Record<string, unknown>> | null =
-    null;
+  let baseDefinition: LocalScorerDefinition<any, Record<string, unknown>> | null = null;
 
   if (isLocalScorerDefinition(scorerRef)) {
     baseDefinition = scorerRef;
@@ -499,7 +498,8 @@ async function resolveEvalScorersDefinition(
     return null;
   }
 
-  return applyEvalConfigOverrides(baseDefinition, key, config);
+  const adaptedDefinition = adaptScorerDefinitionForAgent(baseDefinition, config);
+  return applyEvalConfigOverrides(adaptedDefinition, key, config);
 }
 
 function applyEvalConfigOverrides(
@@ -517,6 +517,72 @@ function applyEvalConfigOverrides(
     sampling: config.sampling ?? baseDefinition.sampling,
     params: mergeParamsSources(baseDefinition.params, config.params),
   };
+}
+
+function adaptScorerDefinitionForAgent(
+  definition: LocalScorerDefinition<any, Record<string, unknown>>,
+  config: AgentEvalScorerConfig,
+): LocalScorerDefinition<AgentEvalContext, Record<string, unknown>> {
+  const { buildPayload, buildParams } = config;
+
+  const baseParams = definition.params;
+
+  const computeMergedParams =
+    buildParams || baseParams
+      ? async (agentContext: AgentEvalContext, normalizedPayload: Record<string, unknown>) => {
+          const merged: Record<string, unknown> = {};
+
+          if (typeof baseParams === "function") {
+            const baseResult = await baseParams(normalizedPayload);
+            if (isPlainRecord(baseResult)) {
+              Object.assign(merged, baseResult);
+            }
+          } else if (isPlainRecord(baseParams)) {
+            Object.assign(merged, baseParams);
+          }
+
+          if (buildParams) {
+            const override = await buildParams(agentContext);
+            if (isPlainRecord(override)) {
+              Object.assign(merged, override);
+            }
+          }
+
+          return merged;
+        }
+      : undefined;
+
+  const adaptedParams =
+    computeMergedParams !== undefined
+      ? async (agentContext: AgentEvalContext) => {
+          const rawPayload = buildPayload ? await buildPayload(agentContext) : undefined;
+          const normalizedPayload = normalizeScorerPayload(agentContext, rawPayload);
+          return computeMergedParams(agentContext, normalizedPayload);
+        }
+      : undefined;
+
+  const adaptedScorer: LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>["scorer"] =
+    async ({ payload, params }) => {
+      const agentPayload = payload;
+      const rawPayload = buildPayload ? await buildPayload(agentPayload) : undefined;
+      const payloadForBase = normalizeScorerPayload(agentPayload, rawPayload);
+
+      let resolvedParams = params;
+      if ((!resolvedParams || Object.keys(resolvedParams).length === 0) && computeMergedParams) {
+        resolvedParams = await computeMergedParams(agentPayload, payloadForBase);
+      }
+
+      return definition.scorer({
+        payload: payloadForBase,
+        params: (resolvedParams ?? {}) as Record<string, unknown>,
+      });
+    };
+
+  return {
+    ...definition,
+    scorer: adaptedScorer,
+    params: adaptedParams,
+  } as LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>;
 }
 
 function mergeParamsSources(
@@ -562,7 +628,7 @@ async function resolveParamsSource(
 
 function isLocalScorerDefinition(
   value: unknown,
-): value is LocalScorerDefinition<AgentEvalContext, Record<string, unknown>> {
+): value is LocalScorerDefinition<any, Record<string, unknown>> {
   return (
     Boolean(value) && typeof value === "object" && "scorer" in (value as Record<string, unknown>)
   );
@@ -570,6 +636,42 @@ function isLocalScorerDefinition(
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeScorerPayload(
+  agentContext: AgentEvalContext,
+  basePayload?: Record<string, unknown>,
+): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    ...agentContext,
+    ...(basePayload ?? {}),
+  };
+
+  payload.input = ensureScorerText(
+    basePayload?.input ?? agentContext.input ?? agentContext.rawInput ?? null,
+  );
+  payload.output = ensureScorerText(
+    basePayload?.output ?? agentContext.output ?? agentContext.rawOutput ?? null,
+  );
+
+  return payload;
+}
+
+function ensureScorerText(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (typeof value === "object") {
+    try {
+      return safeStringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
 }
 
 function buildEvalPayload(

@@ -29,9 +29,9 @@ const CLASSIFICATION_SCHEMA = z.object({
 });
 
 export interface AnswerCorrectnessPayload extends Record<string, unknown> {
-  input: unknown;
-  output: unknown;
-  expected: unknown;
+  input?: unknown;
+  output?: unknown;
+  expected?: unknown;
 }
 
 export interface AnswerCorrectnessParams extends Record<string, unknown> {}

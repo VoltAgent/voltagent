@@ -377,6 +377,12 @@ export interface AgentEvalScorerConfig {
   sampling?: AgentEvalSamplingPolicy;
   id?: string;
   onResult?: (result: AgentEvalResult) => void | Promise<void>;
+  buildPayload?: (
+    context: AgentEvalContext,
+  ) => Record<string, unknown> | Promise<Record<string, unknown>>;
+  buildParams?: (
+    context: AgentEvalContext,
+  ) => AgentEvalParams | undefined | Promise<AgentEvalParams | undefined>;
 }
 
 export interface AgentEvalConfig {
