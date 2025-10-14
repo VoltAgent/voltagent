@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
-    "@voltagent/cli": "^0.1.11",
-    "@voltagent/core": "^1.1.26",
-    "@voltagent/evals": "^0.1.0",
-    "@voltagent/scorers": "^0.1.0",
-    "@voltagent/sdk": "^0.1.6",
+    "@voltagent/cli": "^0.1.12",
+    "@voltagent/core": "^1.1.27",
+    "@voltagent/evals": "^1.0.0",
+    "@voltagent/scorers": "^1.0.0",
+    "@voltagent/sdk": "^1.0.0",
     "ai": "^5.0.12",
     "zod": "^3.25.76"
   },

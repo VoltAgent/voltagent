@@ -1,10 +1,10 @@
 {
   "name": "example-with-live-evals",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
-    "@voltagent/core": "^1.1.26",
-    "@voltagent/scorers": "^0.1.0",
+    "@voltagent/core": "^1.1.27",
+    "@voltagent/scorers": "^1.0.0",
     "@voltagent/server-hono": "^1.0.18",
     "zod": "^3.25.76"
   },

@@ -1,5 +1,15 @@
 # @voltagent/cli
 
+## 0.1.12
+
+### Patch Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add eval commands
+
+- Updated dependencies [[`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b), [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b)]:
+  - @voltagent/evals@1.0.0
+  - @voltagent/sdk@1.0.0
+
 ## 0.1.11
 
 ### Patch Changes
