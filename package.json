@@ -33,6 +33,7 @@
     "rimraf": "^5.0.5",
     "syncpack": "^13.0.2",
     "tslib": "^2.3.0",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vite": "^5.0.0",
     "vitest": "^3.2.4"

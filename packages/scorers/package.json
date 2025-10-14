@@ -10,9 +10,6 @@
   },
   "devDependencies": {
     "ai": "^5.0.12",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.2",
-    "vitest": "^3.2.4",
     "zod": "^3.25.76"
   },
   "files": [

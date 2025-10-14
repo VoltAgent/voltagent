@@ -8,11 +8,7 @@
     "@voltagent/scorers": "^1.0.0",
     "@voltagent/sdk": "^1.0.0"
   },
-  "devDependencies": {
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.2",
-    "vitest": "^3.2.4"
-  },
+  "devDependencies": {},
   "files": [
     "dist"
   ],

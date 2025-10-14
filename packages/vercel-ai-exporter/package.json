@@ -9,11 +9,7 @@
     "@voltagent/sdk": "^0.1.7-next.0"
   },
   "devDependencies": {
-    "@types/node": "^24.2.1",
-    "@voltagent/core": "^1.1.7",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.2",
-    "vitest": "^3.2.4"
+    "@voltagent/core": "^1.1.7"
   },
   "exports": {
     ".": {
