@@ -9,6 +9,8 @@ import { type VoltAgentObservability, createVoltAgentObservability } from "../ob
 import { AgentRegistry } from "../registries/agent-registry";
 import { randomUUID } from "../utils/id";
 import type { WorkflowExecutionContext } from "./context";
+import { enqueueWorkflowEvalScoring, enqueueWorkflowStepEvalScoring } from "./eval";
+import type { WorkflowEvalHost, WorkflowEvalPayload } from "./eval/types";
 import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import {
@@ -628,6 +630,7 @@ export function createWorkflow<
     resumeSchema,
     memory: workflowMemory,
     observability: workflowObservability,
+    eval: workflowEvalConfig,
   }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>,
   ...steps: ReadonlyArray<BaseStep>
 ) {
@@ -690,6 +693,14 @@ export function createWorkflow<
     return cachedObservability;
   };
 
+  const workflowEvalHost: WorkflowEvalHost = {
+    id,
+    name,
+    logger,
+    evalConfig: workflowEvalConfig,
+    getObservability: () => getObservability(),
+  };
+
   // Set default schemas if not provided
   const effectiveSuspendSchema = suspendSchema || z.any();
   const effectiveResumeSchema = resumeSchema || z.any();
@@ -714,6 +725,7 @@ export function createWorkflow<
     // Only create stream controller if one is provided (for streaming execution)
     // For normal run, we don't need a stream controller
     const streamController = externalStreamController || null;
+    const operationType = streamController ? "stream" : "run";
 
     // Get observability instance
     const observability = getObservability();
@@ -1176,6 +1188,48 @@ export function createWorkflow<
             },
           });
 
+          const stepInputForEval = stateManager.state.data;
+          const stepStartTime = Date.now();
+          const userIdForEval = stateManager.state.userId ?? options?.userId;
+          const conversationIdForEval =
+            stateManager.state.conversationId ?? options?.conversationId;
+          const globalStepEvalConfig =
+            workflowEvalHost.evalConfig?.steps?.[step.id] ??
+            workflowEvalHost.evalConfig?.steps?.["*"];
+          const stepEvalConfig = step.eval ?? globalStepEvalConfig;
+
+          const scheduleStepScoring = (
+            status: WorkflowEvalPayload["status"],
+            details: { output?: unknown; metadata?: Record<string, unknown> },
+          ) => {
+            enqueueWorkflowStepEvalScoring(
+              workflowEvalHost,
+              {
+                span: stepSpan,
+                executionId,
+                workflowId: id,
+                workflowName: name,
+                status,
+                input: stepInputForEval,
+                output: details.output,
+                rawInput: stepInputForEval,
+                rawOutput: details.output,
+                userId: userIdForEval,
+                conversationId: conversationIdForEval,
+                operation: operationType,
+                metadata: details.metadata,
+                step: {
+                  id: step.id,
+                  name: step.name ?? stepName,
+                  index,
+                  type: step.type,
+                  metadata: details.metadata,
+                },
+              },
+              stepEvalConfig ?? undefined,
+            );
+          };
+
           // Create stream writer for this step - real one for streaming, no-op for regular execution
           const stepWriter = streamController
             ? new WorkflowStreamWriterImpl(
@@ -1310,6 +1364,19 @@ export function createWorkflow<
             const isSkipped =
               step.type === "conditional-when" && result === stateManager.state.data;
 
+            const stepDuration = Date.now() - stepStartTime;
+            const stepMetadata: Record<string, unknown> = {
+              durationMs: stepDuration,
+            };
+            if (isSkipped) {
+              stepMetadata.skipped = true;
+            }
+
+            scheduleStepScoring(isSkipped ? "skipped" : "completed", {
+              output: result,
+              metadata: stepMetadata,
+            });
+
             stateManager.update({
               data: result,
               result: result,
@@ -1378,6 +1445,19 @@ export function createWorkflow<
 
               // Get suspend data if provided
               const suspendData = executionContext.context.get("suspendData");
+
+              const suspensionDuration = Date.now() - stepStartTime;
+              const suspensionEvalMetadata: Record<string, unknown> = {
+                durationMs: suspensionDuration,
+                reason: suspensionReason,
+              };
+              if (suspendData !== undefined) {
+                suspensionEvalMetadata.suspendData = suspendData;
+              }
+
+              scheduleStepScoring("suspended", {
+                metadata: suspensionEvalMetadata,
+              });
 
               const suspensionMetadata = stateManager.suspend(
                 suspensionReason,
@@ -1461,6 +1541,28 @@ export function createWorkflow<
             }
 
             // End step span with error
+            const errorDuration = Date.now() - stepStartTime;
+            const errorMetadata: Record<string, unknown> = {
+              durationMs: errorDuration,
+            };
+            let errorMessage: string | undefined;
+            if (stepError instanceof Error && stepError.message) {
+              errorMessage = stepError.message;
+            } else if (stepError !== undefined) {
+              try {
+                errorMessage = safeStringify(stepError);
+              } catch {
+                errorMessage = String(stepError);
+              }
+            }
+            if (errorMessage) {
+              errorMetadata.errorMessage = errorMessage;
+            }
+
+            scheduleStepScoring("error", {
+              metadata: errorMetadata,
+            });
+
             traceContext.endStepSpan(stepSpan, "error", {
               error: stepError as Error,
             });
@@ -1470,10 +1572,44 @@ export function createWorkflow<
         }
 
         const finalState = stateManager.finish();
+        const duration = finalState.endAt.getTime() - finalState.startAt.getTime();
 
         // Record workflow completion in trace
         traceContext.setOutput(finalState.result);
         traceContext.setUsage(stateManager.state.usage);
+
+        if (workflowEvalHost.evalConfig) {
+          const metadata: Record<string, unknown> = {
+            durationMs: duration,
+            stepsExecuted: executionContext.steps.length,
+          };
+          if (stateManager.state.usage) {
+            try {
+              metadata.usage = JSON.parse(safeStringify(stateManager.state.usage));
+            } catch (error) {
+              runLogger.debug("Failed to serialize workflow usage for eval metadata", {
+                error: error instanceof Error ? error.message : error,
+              });
+            }
+          }
+
+          enqueueWorkflowEvalScoring(workflowEvalHost, {
+            span: rootSpan,
+            executionId,
+            workflowId: id,
+            workflowName: name,
+            status: "completed",
+            input: stateManager.state.input,
+            output: finalState.result,
+            rawInput: stateManager.state.input,
+            rawOutput: finalState.result,
+            userId: stateManager.state.userId ?? options?.userId,
+            conversationId: stateManager.state.conversationId ?? options?.conversationId,
+            operation: operationType,
+            metadata,
+          });
+        }
+
         traceContext.end("completed");
 
         // Update Memory V2 state to completed
@@ -1491,7 +1627,6 @@ export function createWorkflow<
         await hooks?.onEnd?.(stateManager.state);
 
         // Log workflow completion with context
-        const duration = finalState.endAt.getTime() - finalState.startAt.getTime();
         runLogger.debug(
           `Workflow completed | user=${options?.userId || "anonymous"} conv=${options?.conversationId || "none"} duration=${duration}ms`,
           {
@@ -1689,6 +1824,7 @@ export function createWorkflow<
     // ✅ Always expose memory for registry access
     memory: effectiveMemory,
     observability: workflowObservability,
+    evalConfig: workflowEvalConfig,
     getFullState: () => {
       // Return workflow state similar to agent.getFullState
       return {
