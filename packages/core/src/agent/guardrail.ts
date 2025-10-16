@@ -12,7 +12,6 @@ import type {
   GuardrailAction,
   GuardrailDefinition,
   GuardrailFunction,
-  GuardrailFunctionMetadata,
   GuardrailSeverity,
   InputGuardrail,
   InputGuardrailArgs,
@@ -38,10 +37,12 @@ export interface NormalizedGuardrail<TArgs, TResult> {
   handler: GuardrailFunction<TArgs, TResult>;
 }
 
+type EmptyGuardrailExtras = Record<never, never>;
+
 type CreateGuardrailDefinition<
   TArgs,
   TResult,
-  TExtra extends Record<string, unknown> = Record<string, never>,
+  TExtra extends Record<PropertyKey, unknown> = EmptyGuardrailExtras,
 > = Omit<GuardrailDefinition<TArgs, TResult>, keyof TExtra | "handler"> &
   TExtra & {
     handler: GuardrailFunction<TArgs, TResult>;
@@ -59,40 +60,32 @@ export type CreateOutputGuardrailOptions<TOutput = unknown> = CreateGuardrailDef
 >;
 
 export function createInputGuardrail(options: CreateInputGuardrailOptions): InputGuardrail {
-  const handler = options.handler;
-  (handler as GuardrailFunctionMetadata).guardrailId = options.id;
-  (handler as GuardrailFunctionMetadata).guardrailName = options.name;
-  (handler as GuardrailFunctionMetadata).guardrailDescription = options.description;
-  (handler as GuardrailFunctionMetadata).guardrailTags = options.tags;
-  (handler as GuardrailFunctionMetadata).guardrailSeverity = options.severity;
-  return Object.assign(handler, {
+  return {
     id: options.id,
-    guardrailId: options.id,
-    guardrailName: options.name,
-    guardrailDescription: options.description,
-    guardrailTags: options.tags,
-    guardrailSeverity: options.severity,
-  }) as InputGuardrail;
+    name: options.name,
+    description: options.description,
+    tags: options.tags,
+    severity: options.severity,
+    metadata: options.metadata,
+    handler: options.handler,
+  };
 }
 
 export function createOutputGuardrail<TOutput = unknown>(
   options: CreateOutputGuardrailOptions<TOutput>,
 ): OutputGuardrail<TOutput> {
   const handler = options.handler as OutputGuardrailFunction<TOutput>;
-  (handler as GuardrailFunctionMetadata).guardrailId = options.id;
-  (handler as GuardrailFunctionMetadata).guardrailName = options.name;
-  (handler as GuardrailFunctionMetadata).guardrailDescription = options.description;
-  (handler as GuardrailFunctionMetadata).guardrailTags = options.tags;
-  (handler as GuardrailFunctionMetadata).guardrailSeverity = options.severity;
   handler.guardrailStreamHandler = options.streamHandler;
-  return Object.assign(handler, {
+  return {
     id: options.id,
-    guardrailId: options.id,
-    guardrailName: options.name,
-    guardrailDescription: options.description,
-    guardrailTags: options.tags,
-    guardrailSeverity: options.severity,
-  }) as OutputGuardrail<TOutput>;
+    name: options.name,
+    description: options.description,
+    tags: options.tags,
+    severity: options.severity,
+    metadata: options.metadata,
+    handler,
+    streamHandler: options.streamHandler,
+  };
 }
 
 export type NormalizedInputGuardrail = NormalizedGuardrail<
