@@ -196,6 +196,35 @@ export interface GenerateObjectResultWithContext<T> extends GenerateObjectResult
   context: Map<string | symbol, unknown>;
 }
 
+function cloneGenerateTextResultWithContext<
+  TOOLS extends ToolSet = Record<string, any>,
+  OUTPUT = any,
+>(
+  result: GenerateTextResult<TOOLS, OUTPUT>,
+  overrides: Pick<GenerateTextResultWithContext<TOOLS, OUTPUT>, "text" | "context">,
+): GenerateTextResultWithContext<TOOLS, OUTPUT> {
+  const prototype = Object.getPrototypeOf(result);
+  const clone = Object.create(prototype) as GenerateTextResultWithContext<TOOLS, OUTPUT>;
+  const descriptors = Object.getOwnPropertyDescriptors(result);
+  const overrideKeys = new Set(Object.keys(overrides));
+  const baseDescriptors = Object.fromEntries(
+    Object.entries(descriptors).filter(([key]) => !overrideKeys.has(key)),
+  ) as PropertyDescriptorMap;
+
+  Object.defineProperties(clone, baseDescriptors);
+
+  for (const key of Object.keys(overrides) as Array<keyof typeof overrides>) {
+    Object.defineProperty(clone, key, {
+      value: overrides[key],
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+  }
+
+  return clone;
+}
+
 /**
  * Base options for all generation methods
  * Extends AI SDK's CallSettings for full compatibility
@@ -509,18 +538,18 @@ export class Agent {
         await persistQueue.flush(buffer, oc);
 
         const usageInfo = convertUsage(result.usage);
-        const finalText = await executeOutputGuardrails(
-          result.text,
-          oc,
-          guardrailSet.output,
-          "generateText",
-          this,
-          {
+        const finalText = await executeOutputGuardrails({
+          output: result.text,
+          operationContext: oc,
+          guardrails: guardrailSet.output,
+          operation: "generateText",
+          agent: this,
+          metadata: {
             usage: usageInfo,
             finishReason: result.finishReason ?? null,
             warnings: result.warnings ?? null,
           },
-        );
+        });
 
         await this.getMergedHooks(options).onEnd?.({
           conversationId: oc.conversationId || "",
@@ -577,13 +606,10 @@ export class Agent {
         // Close span after scheduling scorers
         oc.traceContext.end("completed");
 
-        // Return result with context - use Object.assign to properly copy all properties including getters
-        const returnValue = Object.assign(Object.create(Object.getPrototypeOf(result)), result, {
+        return cloneGenerateTextResultWithContext(result, {
           text: finalText,
           context: oc.context,
         });
-
-        return returnValue;
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
@@ -766,18 +792,18 @@ export class Agent {
             if (guardrailPipeline) {
               finalText = await sanitizedTextPromise;
             } else if (guardrailSet.output.length > 0) {
-              finalText = await executeOutputGuardrails(
-                finalResult.text,
-                oc,
-                guardrailSet.output,
-                "streamText",
-                this,
-                {
+              finalText = await executeOutputGuardrails({
+                output: finalResult.text,
+                operationContext: oc,
+                guardrails: guardrailSet.output,
+                operation: "streamText",
+                agent: this,
+                metadata: {
                   usage,
                   finishReason: finalResult.finishReason ?? null,
                   warnings: finalResult.warnings ?? null,
                 },
-              );
+              });
             } else {
               finalText = finalResult.text;
             }
@@ -1174,18 +1200,18 @@ export class Agent {
         });
 
         const usageInfo = convertUsage(result.usage);
-        const finalObject = await executeOutputGuardrails(
-          result.object,
-          oc,
-          guardrailSet.output,
-          "generateObject",
-          this,
-          {
+        const finalObject = await executeOutputGuardrails({
+          output: result.object,
+          operationContext: oc,
+          guardrails: guardrailSet.output,
+          operation: "generateObject",
+          agent: this,
+          metadata: {
             usage: usageInfo,
             finishReason: result.finishReason ?? null,
             warnings: result.warnings ?? null,
           },
-        );
+        });
 
         // Save the object response to memory
         if (oc.userId && oc.conversationId) {
@@ -1435,18 +1461,18 @@ export class Agent {
               const usageInfo = convertUsage(finalResult.usage as any);
               let finalObject = finalResult.object as z.infer<T>;
               if (guardrailSet.output.length > 0) {
-                finalObject = await executeOutputGuardrails(
-                  finalResult.object as z.infer<T>,
-                  oc,
-                  guardrailSet.output,
-                  "streamObject",
-                  this,
-                  {
+                finalObject = await executeOutputGuardrails({
+                  output: finalResult.object as z.infer<T>,
+                  operationContext: oc,
+                  guardrails: guardrailSet.output,
+                  operation: "streamObject",
+                  agent: this,
+                  metadata: {
                     usage: usageInfo,
                     finishReason: finalResult.finishReason ?? null,
                     warnings: finalResult.warnings ?? null,
                   },
-                );
+                });
                 resolveGuardrailObject?.(finalObject);
               }
 

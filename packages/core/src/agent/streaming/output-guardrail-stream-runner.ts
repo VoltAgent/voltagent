@@ -207,15 +207,15 @@ export class OutputGuardrailStreamRunner {
       }
 
       this.endGuardrailSpans(SpanStatusCode.OK, false);
-      const finalText = await runOutputGuardrails<string>(
-        currentText,
-        this.operationContext,
-        this.guardrails,
-        this.operation,
+      const finalText = await runOutputGuardrails<string>({
+        output: currentText,
+        operationContext: this.operationContext,
+        guardrails: this.guardrails,
+        operation: this.operation,
+        agent: this.agent,
         metadata,
-        this.agent,
-        this.originalText || currentText,
-      );
+        originalOutputOverride: this.originalText || currentText,
+      });
 
       this.finalizedText = finalText;
       this.sanitizedText = finalText;
@@ -261,12 +261,14 @@ export class OutputGuardrailStreamRunner {
     if (!state.span || state.ended) {
       return;
     }
-    state.span.recordException(error);
+    const normalizedError =
+      error instanceof Error ? error : new Error(`Guardrail stream error: ${String(error)}`);
+    state.span.recordException(normalizedError);
     state.span.setStatus({
       code: SpanStatusCode.ERROR,
       message:
-        error instanceof Error
-          ? error.message
+        normalizedError instanceof Error
+          ? normalizedError.message
           : `Guardrail stream handler error (${guardrail.name})`,
     });
     state.span.end();
@@ -278,10 +280,12 @@ export class OutputGuardrailStreamRunner {
       if (!state.span || state.ended) {
         continue;
       }
-      state.span.recordException(error);
+      const normalizedError =
+        error instanceof Error ? error : new Error(`Guardrail finalize error: ${String(error)}`);
+      state.span.recordException(normalizedError);
       state.span.setStatus({
         code: SpanStatusCode.ERROR,
-        message: error instanceof Error ? error.message : "Guardrail finalization error",
+        message: normalizedError.message,
       });
       state.span.end();
       state.ended = true;

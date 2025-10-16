@@ -1,5 +1,6 @@
+import { createInputGuardrail, createOutputGuardrail } from "../guardrail";
 import type { VoltAgentTextStreamPart } from "../subagent/types";
-import type { GuardrailSeverity, OutputGuardrail } from "../types";
+import type { GuardrailSeverity, InputGuardrail, OutputGuardrail } from "../types";
 
 type BaseGuardrailOptions = {
   id?: string;
@@ -44,6 +45,35 @@ type MaxLengthGuardrailOptions = BaseGuardrailOptions & {
   mode?: MaxLengthGuardrailMode;
 };
 
+type InputGuardrailBaseOptions = BaseGuardrailOptions & {
+  message?: string;
+};
+
+type ProfanityInputGuardrailOptions = InputGuardrailBaseOptions & {
+  bannedWords?: string[];
+  replacement?: string;
+  mode?: "mask" | "block";
+};
+
+type PIIInputGuardrailOptions = InputGuardrailBaseOptions & {
+  replacement?: string;
+  maskEmails?: boolean;
+  maskPhones?: boolean;
+};
+
+type PromptInjectionGuardrailOptions = InputGuardrailBaseOptions & {
+  phrases?: string[];
+};
+
+type InputLengthGuardrailOptions = InputGuardrailBaseOptions & {
+  maxCharacters: number;
+  mode?: MaxLengthGuardrailMode;
+};
+
+type HTMLSanitizerGuardrailOptions = InputGuardrailBaseOptions & {
+  allowBasicFormatting?: boolean;
+};
+
 const DEFAULT_NUMBER_REPLACEMENT = "[redacted]";
 const DEFAULT_EMAIL_REPLACEMENT = "[redacted-email]";
 const DEFAULT_PHONE_REPLACEMENT = "[redacted-phone]";
@@ -73,7 +103,7 @@ export function createSensitiveNumberGuardrail(
   const replacement = options.replacement ?? DEFAULT_NUMBER_REPLACEMENT;
   const digitPattern = new RegExp(`\\d{${minimumDigits},}`, "g");
 
-  return {
+  return createOutputGuardrail({
     id: options.id ?? "sensitive-number-redactor",
     name: options.name ?? "Sensitive Number Redactor",
     description:
@@ -135,7 +165,7 @@ export function createSensitiveNumberGuardrail(
       clone.delta = sanitized;
       return clone as VoltAgentTextStreamPart;
     },
-  };
+  });
 }
 
 /**
@@ -147,7 +177,7 @@ export function createEmailRedactorGuardrail(
   const replacement = options.replacement ?? DEFAULT_EMAIL_REPLACEMENT;
   const holdWindow = 128;
 
-  return {
+  return createOutputGuardrail({
     id: options.id ?? "email-redactor",
     name: options.name ?? "Email Redactor",
     description: options.description ?? "Redacts email addresses from streaming output.",
@@ -210,7 +240,7 @@ export function createEmailRedactorGuardrail(
       clone.delta = sanitized;
       return clone as VoltAgentTextStreamPart;
     },
-  };
+  });
 }
 
 /**
@@ -222,7 +252,7 @@ export function createPhoneNumberGuardrail(
   const replacement = options.replacement ?? DEFAULT_PHONE_REPLACEMENT;
   const holdWindow = 32;
 
-  return {
+  return createOutputGuardrail({
     id: options.id ?? "phone-number-redactor",
     name: options.name ?? "Phone Number Redactor",
     description: options.description ?? "Redacts phone numbers and contact strings.",
@@ -285,7 +315,7 @@ export function createPhoneNumberGuardrail(
       clone.delta = sanitized;
       return clone as VoltAgentTextStreamPart;
     },
-  };
+  });
 }
 
 /**
@@ -317,7 +347,7 @@ export function createProfanityGuardrail(
     return { sanitized, matched };
   };
 
-  return {
+  return createOutputGuardrail({
     id: options.id ?? "profanity-guardrail",
     name: options.name ?? "Profanity Guardrail",
     description:
@@ -371,7 +401,7 @@ export function createProfanityGuardrail(
       clone.delta = sanitized;
       return clone as VoltAgentTextStreamPart;
     },
-  };
+  });
 }
 
 /**
@@ -387,7 +417,7 @@ export function createMaxLengthGuardrail(
 
   const mode: MaxLengthGuardrailMode = options.mode ?? "truncate";
 
-  return {
+  return createOutputGuardrail({
     id: options.id ?? "max-length-guardrail",
     name: options.name ?? "Max Length Guardrail",
     description:
@@ -469,7 +499,304 @@ export function createMaxLengthGuardrail(
       clone.delta = emitText;
       return clone as VoltAgentTextStreamPart;
     },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Input guardrail helpers
+// ---------------------------------------------------------------------------
+
+export function createProfanityInputGuardrail(
+  options: ProfanityInputGuardrailOptions = {},
+): InputGuardrail {
+  const bannedWords =
+    options.bannedWords && options.bannedWords.length > 0
+      ? options.bannedWords
+      : DEFAULT_PROFANITY_WORDS;
+  const mode = options.mode ?? "mask";
+  const replacement = options.replacement ?? "[censored]";
+  const message =
+    options.message ?? "Please avoid offensive language and try phrasing your request differently.";
+
+  const escaped = bannedWords.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const profanityRegex =
+    escaped.length > 0 ? new RegExp(`\\b(${escaped.join("|")})\\b`, "gi") : null;
+
+  return createInputGuardrail({
+    id: options.id ?? "input-profanity-guardrail",
+    name: options.name ?? "Input Profanity Guardrail",
+    description:
+      options.description ?? "Stops offensive or abusive language before it reaches the model.",
+    severity: options.severity ?? "warning",
+    handler: async ({ input, inputText }) => {
+      if (!profanityRegex || !inputText) {
+        return { pass: true };
+      }
+
+      const containsProfanity = profanityRegex.test(inputText);
+      profanityRegex.lastIndex = 0;
+
+      if (!containsProfanity) {
+        return { pass: true };
+      }
+
+      if (mode === "block") {
+        return {
+          pass: false,
+          action: "block",
+          message,
+        };
+      }
+
+      if (typeof input === "string") {
+        const sanitized = input.replace(profanityRegex, replacement);
+        profanityRegex.lastIndex = 0;
+        return {
+          pass: true,
+          action: "modify",
+          modifiedInput: sanitized,
+          message,
+        };
+      }
+
+      return {
+        pass: false,
+        action: "block",
+        message,
+      };
+    },
+  });
+}
+
+export function createPIIInputGuardrail(options: PIIInputGuardrailOptions = {}): InputGuardrail {
+  const replacement = options.replacement ?? "[redacted]";
+  const maskEmails = options.maskEmails ?? true;
+  const maskPhones = options.maskPhones ?? true;
+  const message =
+    options.message ??
+    "Sensitive personal information was detected. Please remove it and try again.";
+
+  return createInputGuardrail({
+    id: options.id ?? "input-pii-guardrail",
+    name: options.name ?? "Input PII Guardrail",
+    description:
+      options.description ??
+      "Detects personal identifiers in user input and removes them before execution.",
+    severity: options.severity ?? "critical",
+    handler: async ({ input, inputText }) => {
+      if (!inputText) {
+        return { pass: true };
+      }
+
+      const emailRegex = maskEmails ? EMAIL_REGEX : null;
+      const phoneRegex = maskPhones ? PHONE_REGEX : null;
+      const numberRegex = /\b\d{4,}\b/g;
+
+      const detected =
+        emailRegex?.test(inputText) || phoneRegex?.test(inputText) || numberRegex.test(inputText);
+
+      if (!detected) {
+        if (emailRegex) emailRegex.lastIndex = 0;
+        if (phoneRegex) phoneRegex.lastIndex = 0;
+        numberRegex.lastIndex = 0;
+        return { pass: true };
+      }
+
+      const sanitize = (value: string): string => {
+        let next = value;
+        if (emailRegex) {
+          next = next.replace(emailRegex, replacement);
+          emailRegex.lastIndex = 0;
+        }
+        if (phoneRegex) {
+          next = next.replace(phoneRegex, replacement);
+          phoneRegex.lastIndex = 0;
+        }
+        next = next.replace(numberRegex, replacement);
+        numberRegex.lastIndex = 0;
+        return next;
+      };
+
+      if (typeof input === "string") {
+        return {
+          pass: true,
+          action: "modify",
+          modifiedInput: sanitize(input),
+          message,
+        };
+      }
+
+      return {
+        pass: false,
+        action: "block",
+        message,
+      };
+    },
+  });
+}
+
+export function createPromptInjectionGuardrail(
+  options: PromptInjectionGuardrailOptions = {},
+): InputGuardrail {
+  const phrases =
+    options.phrases && options.phrases.length > 0
+      ? options.phrases
+      : [
+          "ignore previous instructions",
+          "system prompt:",
+          "forget all your rules",
+          "act as system",
+          "override safety",
+        ];
+
+  const message =
+    options.message ??
+    "The request contains instructions that attempt to override the assistant's safety policies.";
+
+  const normalizedPhrases = phrases.map((phrase) => phrase.toLowerCase());
+
+  return createInputGuardrail({
+    id: options.id ?? "input-injection-guardrail",
+    name: options.name ?? "Prompt Injection Guardrail",
+    description:
+      options.description ??
+      "Detects common prompt-injection attempts and blocks them before they reach the model.",
+    severity: options.severity ?? "warning",
+    handler: async ({ inputText }) => {
+      if (!inputText) {
+        return { pass: true };
+      }
+      const lowered = inputText.toLowerCase();
+      const flagged = normalizedPhrases.some((phrase) => lowered.includes(phrase));
+      if (!flagged) {
+        return { pass: true };
+      }
+
+      return {
+        pass: false,
+        action: "block",
+        message,
+      };
+    },
+  });
+}
+
+export function createInputLengthGuardrail(options: InputLengthGuardrailOptions): InputGuardrail {
+  const { maxCharacters } = options;
+  if (!maxCharacters || maxCharacters <= 0) {
+    throw new Error("maxCharacters must be a positive integer");
+  }
+  const mode = options.mode ?? "block";
+  const message =
+    options.message ??
+    `Input exceeds the maximum length of ${maxCharacters} characters. Please shorten your request.`;
+
+  return createInputGuardrail({
+    id: options.id ?? "input-length-guardrail",
+    name: options.name ?? "Input Length Guardrail",
+    description:
+      options.description ??
+      "Enforces maximum input length before passing the prompt to the model.",
+    severity: options.severity ?? "info",
+    handler: async ({ input }) => {
+      if (typeof input !== "string") {
+        return { pass: true };
+      }
+
+      if (input.length <= maxCharacters) {
+        return { pass: true };
+      }
+
+      if (mode === "truncate") {
+        return {
+          pass: true,
+          action: "modify",
+          modifiedInput: input.slice(0, maxCharacters),
+          message,
+        };
+      }
+
+      return {
+        pass: false,
+        action: "block",
+        message,
+      };
+    },
+  });
+}
+
+export function createHTMLSanitizerInputGuardrail(
+  options: HTMLSanitizerGuardrailOptions = {},
+): InputGuardrail {
+  const allowFormatting = options.allowBasicFormatting ?? true;
+  const message = options.message ?? "Markup was removed from your request to keep things safe.";
+
+  const allowedTags = allowFormatting ? ["b", "strong", "i", "em", "u", "code"] : [];
+
+  const stripMarkup = (raw: string): string => {
+    const allowedPattern =
+      allowedTags.length > 0
+        ? new RegExp(`</?(${allowedTags.join("|")})(\\s+[^>]+)?>`, "gi")
+        : null;
+
+    let result = raw.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
+    result = result.replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "");
+    result = result.replace(/<!--[\s\S]*?-->/g, "");
+
+    if (allowedPattern) {
+      const placeholders: string[] = [];
+      let placeholderIndex = 0;
+      result = result.replace(allowedPattern, (match) => {
+        placeholders.push(match);
+        return `@@ALLOWED_TAG_${placeholderIndex++}@@`;
+      });
+
+      result = result.replace(/<[^>]+>/g, "");
+
+      placeholders.forEach((tag, index) => {
+        result = result.replace(`@@ALLOWED_TAG_${index}@@`, tag);
+      });
+
+      return result.trim();
+    }
+
+    return result.replace(/<[^>]+>/g, "").trim();
   };
+
+  return createInputGuardrail({
+    id: options.id ?? "input-html-guardrail",
+    name: options.name ?? "Input HTML Sanitizer",
+    description:
+      options.description ??
+      "Removes HTML and script tags from user input before the model sees it.",
+    severity: options.severity ?? "warning",
+    handler: async ({ input }) => {
+      if (typeof input !== "string") {
+        return { pass: true };
+      }
+
+      const sanitized = stripMarkup(input);
+      if (sanitized === input) {
+        return { pass: true };
+      }
+
+      return {
+        pass: true,
+        action: "modify",
+        modifiedInput: sanitized,
+        message,
+      };
+    },
+  });
+}
+
+export function createDefaultInputSafetyGuardrails(): InputGuardrail[] {
+  return [
+    createProfanityInputGuardrail(),
+    createPIIInputGuardrail(),
+    createPromptInjectionGuardrail(),
+    createHTMLSanitizerInputGuardrail(),
+  ];
 }
 
 /**

@@ -52,9 +52,20 @@ export {
   createPhoneNumberGuardrail,
   createProfanityGuardrail,
   createMaxLengthGuardrail,
+  createProfanityInputGuardrail,
+  createPIIInputGuardrail,
+  createPromptInjectionGuardrail,
+  createInputLengthGuardrail,
+  createHTMLSanitizerInputGuardrail,
+  createDefaultInputSafetyGuardrails,
   createDefaultPIIGuardrails,
   createDefaultSafetyGuardrails,
 } from "./agent/guardrails/defaults";
+export { createInputGuardrail, createOutputGuardrail } from "./agent/guardrail";
+export type {
+  CreateInputGuardrailOptions,
+  CreateOutputGuardrailOptions,
+} from "./agent/guardrail";
 
 // Observability exports
 export { VoltAgentObservability } from "./observability";

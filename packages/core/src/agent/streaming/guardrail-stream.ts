@@ -603,8 +603,9 @@ function convertFullStreamChunkToUIMessageStream<UI_MESSAGE extends UIMessage>({
     case "tool-output": {
       const typed = part as { toolCallId?: string; output: unknown };
       return {
-        id: typed.toolCallId,
-        ...typed.output,
+        type: "tool-output-available",
+        toolCallId: typed.toolCallId,
+        output: typed.output,
       } as InferUIMessageChunk<UI_MESSAGE>;
     }
 
@@ -649,8 +650,12 @@ function convertFullStreamChunkToUIMessageStream<UI_MESSAGE extends UIMessage>({
     }
 
     default: {
-      const exhaustiveCheck: never = part.type;
-      throw new Error(`Unknown stream chunk type: ${exhaustiveCheck as string}`);
+      const exhaustiveCheck = part as never;
+      const typeLabel =
+        exhaustiveCheck && typeof exhaustiveCheck === "object" && "type" in exhaustiveCheck
+          ? (exhaustiveCheck as Record<string, unknown>).type
+          : "unknown";
+      throw new Error(`Unknown stream chunk type: ${String(typeLabel)}`);
     }
   }
 }

@@ -12,6 +12,7 @@ import type {
   GuardrailAction,
   GuardrailDefinition,
   GuardrailFunction,
+  GuardrailFunctionMetadata,
   GuardrailSeverity,
   InputGuardrail,
   InputGuardrailArgs,
@@ -35,6 +36,63 @@ export interface NormalizedGuardrail<TArgs, TResult> {
   severity?: GuardrailSeverity;
   metadata?: Record<string, unknown>;
   handler: GuardrailFunction<TArgs, TResult>;
+}
+
+type CreateGuardrailDefinition<
+  TArgs,
+  TResult,
+  TExtra extends Record<string, unknown> = Record<string, never>,
+> = Omit<GuardrailDefinition<TArgs, TResult>, keyof TExtra | "handler"> &
+  TExtra & {
+    handler: GuardrailFunction<TArgs, TResult>;
+  };
+
+export type CreateInputGuardrailOptions = CreateGuardrailDefinition<
+  InputGuardrailArgs,
+  InputGuardrailResult
+>;
+
+export type CreateOutputGuardrailOptions<TOutput = unknown> = CreateGuardrailDefinition<
+  OutputGuardrailArgs<TOutput>,
+  OutputGuardrailResult<TOutput>,
+  { streamHandler?: OutputGuardrailStreamHandler }
+>;
+
+export function createInputGuardrail(options: CreateInputGuardrailOptions): InputGuardrail {
+  const handler = options.handler;
+  (handler as GuardrailFunctionMetadata).guardrailId = options.id;
+  (handler as GuardrailFunctionMetadata).guardrailName = options.name;
+  (handler as GuardrailFunctionMetadata).guardrailDescription = options.description;
+  (handler as GuardrailFunctionMetadata).guardrailTags = options.tags;
+  (handler as GuardrailFunctionMetadata).guardrailSeverity = options.severity;
+  return Object.assign(handler, {
+    id: options.id,
+    guardrailId: options.id,
+    guardrailName: options.name,
+    guardrailDescription: options.description,
+    guardrailTags: options.tags,
+    guardrailSeverity: options.severity,
+  }) as InputGuardrail;
+}
+
+export function createOutputGuardrail<TOutput = unknown>(
+  options: CreateOutputGuardrailOptions<TOutput>,
+): OutputGuardrail<TOutput> {
+  const handler = options.handler as OutputGuardrailFunction<TOutput>;
+  (handler as GuardrailFunctionMetadata).guardrailId = options.id;
+  (handler as GuardrailFunctionMetadata).guardrailName = options.name;
+  (handler as GuardrailFunctionMetadata).guardrailDescription = options.description;
+  (handler as GuardrailFunctionMetadata).guardrailTags = options.tags;
+  (handler as GuardrailFunctionMetadata).guardrailSeverity = options.severity;
+  handler.guardrailStreamHandler = options.streamHandler;
+  return Object.assign(handler, {
+    id: options.id,
+    guardrailId: options.id,
+    guardrailName: options.name,
+    guardrailDescription: options.description,
+    guardrailTags: options.tags,
+    guardrailSeverity: options.severity,
+  }) as OutputGuardrail<TOutput>;
 }
 
 export type NormalizedInputGuardrail = NormalizedGuardrail<
@@ -329,16 +387,26 @@ export async function runInputGuardrails(
   return currentInput;
 }
 
+export type RunOutputGuardrailsOptions<TOutput> = {
+  output: TOutput;
+  operationContext: OperationContext;
+  guardrails: NormalizedOutputGuardrail[];
+  operation: AgentEvalOperationType;
+  agent: Agent;
+  metadata?: OutputGuardrailMetadata;
+  originalOutputOverride?: TOutput;
+};
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: guardrail pipeline handles multiple branches for streaming + final hooks
-export async function runOutputGuardrails<TOutput>(
-  output: TOutput,
-  oc: OperationContext,
-  guardrails: NormalizedOutputGuardrail[],
-  operation: AgentEvalOperationType,
-  agent: Agent,
-  metadata: OutputGuardrailMetadata = {},
-  originalOutputOverride?: TOutput,
-): Promise<TOutput> {
+export async function runOutputGuardrails<TOutput>({
+  output,
+  operationContext: oc,
+  guardrails,
+  operation,
+  agent,
+  metadata = {},
+  originalOutputOverride,
+}: RunOutputGuardrailsOptions<TOutput>): Promise<TOutput> {
   if (!guardrails.length) {
     return output;
   }

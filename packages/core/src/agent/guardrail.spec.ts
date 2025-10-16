@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type NormalizedInputGuardrail,
   type NormalizedOutputGuardrail,
+  createInputGuardrail,
+  createOutputGuardrail,
   extractInputTextForGuardrail,
   extractOutputTextForGuardrail,
   getDefaultGuardrailName,
@@ -250,7 +252,13 @@ describe("guardrail helpers", () => {
     });
 
     it("returns original output when no guardrails", async () => {
-      const result = await runOutputGuardrails("done", oc, [], "generateText", {}, agent);
+      const result = await runOutputGuardrails({
+        output: "done",
+        operationContext: oc,
+        guardrails: [],
+        operation: "generateText",
+        agent,
+      });
       expect(result).toBe("done");
       expect(oc.traceContext.setOutput).not.toHaveBeenCalled();
     });
@@ -267,14 +275,14 @@ describe("guardrail helpers", () => {
         },
       ];
 
-      const result = await runOutputGuardrails(
-        "dirty",
-        oc,
+      const result = await runOutputGuardrails({
+        output: "dirty",
+        operationContext: oc,
         guardrails,
-        "generateText",
-        { usage: { tokens: 10 } },
+        operation: "generateText",
         agent,
-      );
+        metadata: { usage: { tokens: 10 } },
+      });
 
       expect(result).toBe("clean");
       expect(oc.traceContext.setOutput).toHaveBeenCalledWith("clean");
@@ -293,10 +301,120 @@ describe("guardrail helpers", () => {
       ];
 
       await expect(
-        runOutputGuardrails("bad", oc, guardrails, "generateText", {}, agent),
+        runOutputGuardrails({
+          output: "bad",
+          operationContext: oc,
+          guardrails,
+          operation: "generateText",
+          agent,
+        }),
       ).rejects.toThrow(/nope/);
       expect(oc.isActive).toBe(false);
       expect(oc.traceContext.end).toHaveBeenCalledWith("error", expect.any(Error));
+    });
+
+    it("applies guardrails sequentially in order", async () => {
+      const guardrails: NormalizedOutputGuardrail[] = [
+        {
+          name: "uppercase",
+          handler: vi.fn(async ({ outputText }) => ({
+            pass: true,
+            action: "modify",
+            modifiedOutput: (outputText as string).toUpperCase(),
+          })),
+        },
+        {
+          name: "suffix",
+          handler: vi.fn(async ({ outputText }) => ({
+            pass: true,
+            action: "modify",
+            modifiedOutput: `${outputText} ✅`,
+          })),
+        },
+      ];
+
+      const result = await runOutputGuardrails({
+        output: "funding ok",
+        operationContext: oc,
+        guardrails,
+        operation: "generateText",
+        agent,
+      });
+
+      expect(result).toBe("FUNDING OK ✅");
+      const secondHandler = guardrails[1].handler as vi.Mock;
+      expect(secondHandler).toHaveBeenCalledWith(
+        expect.objectContaining({ outputText: "FUNDING OK" }),
+      );
+    });
+
+    it("supplies metadata and original output to guardrail handlers", async () => {
+      const guardrail = {
+        name: "metadata-check",
+        handler: vi.fn(async () => ({ pass: true })),
+      };
+
+      const metadata = {
+        usage: {
+          promptTokens: 5,
+          completionTokens: 3,
+          totalTokens: 8,
+          cachedInputTokens: 0,
+          reasoningTokens: 0,
+        },
+        finishReason: "stop" as const,
+        warnings: ["trimmed"],
+      };
+
+      await runOutputGuardrails({
+        output: "funding: [redacted]",
+        operationContext: oc,
+        guardrails: [guardrail],
+        operation: "generateText",
+        agent,
+        metadata,
+        originalOutputOverride: "funding: $123",
+      });
+
+      expect(guardrail.handler).toHaveBeenCalledTimes(1);
+      const callArgs = (guardrail.handler as vi.Mock).mock.calls[0][0];
+      expect(callArgs.usage).toEqual(metadata.usage);
+      expect(callArgs.finishReason).toBe(metadata.finishReason);
+      expect(callArgs.warnings).toEqual(metadata.warnings);
+      expect(callArgs.originalOutputText).toBe("funding: $123");
+      expect(callArgs.outputText).toBe("funding: $123");
+    });
+
+    it("createInputGuardrail helper preserves metadata and handler", () => {
+      const helperGuardrail = createInputGuardrail({
+        id: "helper-input",
+        name: "Helper Input Guardrail",
+        severity: "warning",
+        handler: vi.fn(async () => ({ pass: true })),
+      });
+
+      const [normalized] = normalizeInputGuardrailList([helperGuardrail]);
+      expect(normalized.name).toBe("Helper Input Guardrail");
+      expect(normalized.severity).toBe("warning");
+      expect(normalized.handler).toBe(helperGuardrail.handler);
+    });
+
+    it("createOutputGuardrail helper attaches stream handler", () => {
+      const streamHandler = vi.fn();
+      const helperGuardrail = createOutputGuardrail({
+        id: "helper-output",
+        name: "Helper Output Guardrail",
+        handler: vi.fn(async () => ({ pass: true })),
+        streamHandler,
+      });
+
+      const [normalized] = normalizeOutputGuardrailList([helperGuardrail]);
+      expect(normalized.name).toBe("Helper Output Guardrail");
+      expect(normalized.streamHandler).toBe(streamHandler);
+      expect("handler" in helperGuardrail).toBe(true);
+      if ("handler" in helperGuardrail) {
+        expect(normalized.handler).toBe(helperGuardrail.handler);
+      }
     });
   });
 });
