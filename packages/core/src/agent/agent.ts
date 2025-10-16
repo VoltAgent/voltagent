@@ -514,12 +514,12 @@ export class Agent {
           oc,
           guardrailSet.output,
           "generateText",
+          this,
           {
             usage: usageInfo,
             finishReason: result.finishReason ?? null,
             warnings: result.warnings ?? null,
           },
-          this,
         );
 
         await this.getMergedHooks(options).onEnd?.({
@@ -771,12 +771,12 @@ export class Agent {
                 oc,
                 guardrailSet.output,
                 "streamText",
+                this,
                 {
                   usage,
                   finishReason: finalResult.finishReason ?? null,
                   warnings: finalResult.warnings ?? null,
                 },
-                this,
               );
             } else {
               finalText = finalResult.text;
@@ -1179,12 +1179,12 @@ export class Agent {
           oc,
           guardrailSet.output,
           "generateObject",
+          this,
           {
             usage: usageInfo,
             finishReason: result.finishReason ?? null,
             warnings: result.warnings ?? null,
           },
-          this,
         );
 
         // Save the object response to memory
@@ -1440,12 +1440,12 @@ export class Agent {
                   oc,
                   guardrailSet.output,
                   "streamObject",
+                  this,
                   {
                     usage: usageInfo,
                     finishReason: finalResult.finishReason ?? null,
                     warnings: finalResult.warnings ?? null,
                   },
-                  this,
                 );
                 resolveGuardrailObject?.(finalObject);
               }
