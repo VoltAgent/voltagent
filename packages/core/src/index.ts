@@ -46,6 +46,15 @@ export type { SupervisorConfig } from "./agent/types";
 export * from "./tool";
 export * from "./tool/reasoning/index";
 export * from "./memory";
+export {
+  createSensitiveNumberGuardrail,
+  createEmailRedactorGuardrail,
+  createPhoneNumberGuardrail,
+  createProfanityGuardrail,
+  createMaxLengthGuardrail,
+  createDefaultPIIGuardrails,
+  createDefaultSafetyGuardrails,
+} from "./agent/guardrails/defaults";
 
 // Observability exports
 export { VoltAgentObservability } from "./observability";
@@ -133,6 +142,17 @@ export type {
   AgentEvalOperationType,
   AgentEvalPayload,
   AgentEvalContext,
+  GuardrailAction,
+  GuardrailSeverity,
+  InputGuardrail,
+  OutputGuardrail,
+  GuardrailDefinition,
+  GuardrailFunction,
+  GuardrailContext,
+  InputGuardrailArgs,
+  InputGuardrailResult,
+  OutputGuardrailArgs,
+  OutputGuardrailResult,
 } from "./agent/types";
 export type { VoltAgentError, AbortError } from "./agent/errors";
 export { ToolDeniedError, ClientHTTPError } from "./agent/errors";

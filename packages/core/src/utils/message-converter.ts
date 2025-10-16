@@ -11,6 +11,7 @@ import { randomUUID } from "./id";
  * Convert response messages to UIMessages for batch saving
  * This follows the same pattern as AI SDK's internal toUIMessageStream conversion
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: conversion mirrors AI SDK logic
 export async function convertResponseMessagesToUIMessages(
   responseMessages: (AssistantModelMessage | ToolModelMessage)[],
 ): Promise<UIMessage[]> {
@@ -169,6 +170,7 @@ function pushTextPart(
  * - Preserves roles (user/assistant/system). Tool messages are represented as
  *   assistant messages with tool parts, matching AI SDK UI message semantics.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: conversion mirrors AI SDK logic
 export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMessage[] {
   const uiMessages: UIMessage[] = [];
 

@@ -20,10 +20,13 @@ import {
   type LanguageModelUsage,
   type Output,
   convertToModelMessages,
+  createTextStreamResponse,
   createUIMessageStream,
   createUIMessageStreamResponse,
   generateObject,
   generateText,
+  pipeTextStreamToResponse,
+  pipeUIMessageStreamToResponse,
   stepCountIs,
   streamObject,
   streamText,
@@ -66,19 +69,36 @@ import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import type { SamplingPolicy } from "../eval/runtime";
 import { ConversationBuffer } from "./conversation-buffer";
+import {
+  type NormalizedInputGuardrail,
+  type NormalizedOutputGuardrail,
+  runInputGuardrails as executeInputGuardrails,
+  runOutputGuardrails as executeOutputGuardrails,
+  normalizeInputGuardrailList,
+  normalizeOutputGuardrailList,
+} from "./guardrail";
 import { MemoryPersistQueue } from "./memory-persist-queue";
 import { sanitizeMessagesForModel } from "./message-normalizer";
+import {
+  type GuardrailPipeline,
+  createAsyncIterableReadable,
+  createGuardrailPipeline,
+} from "./streaming/guardrail-stream";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
   AgentEvalConfig,
+  AgentEvalOperationType,
   AgentFullState,
+  AgentGuardrailState,
   AgentOptions,
   DynamicValue,
   DynamicValueOptions,
+  InputGuardrail,
   InstructionsDynamicValue,
   OperationContext,
+  OutputGuardrail,
   SupervisorConfig,
 } from "./types";
 
@@ -220,6 +240,10 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   // Hooks (can override agent hooks)
   hooks?: AgentHooks;
 
+  // Guardrails (can override agent-level guardrails)
+  inputGuardrails?: InputGuardrail[];
+  outputGuardrails?: OutputGuardrail<any>[];
+
   // Provider-specific options
   providerOptions?: ProviderOptions;
 
@@ -272,6 +296,8 @@ export class Agent {
   private readonly voltOpsClient?: VoltOpsClient;
   private readonly prompts?: PromptHelper;
   private readonly evalConfig?: AgentEvalConfig;
+  private readonly inputGuardrails: NormalizedInputGuardrail[];
+  private readonly outputGuardrails: NormalizedOutputGuardrail[];
 
   constructor(options: AgentOptions) {
     this.id = options.id || options.name;
@@ -292,6 +318,8 @@ export class Agent {
     this.context = toContextMap(options.context);
     this.voltOpsClient = options.voltOpsClient;
     this.evalConfig = options.eval;
+    this.inputGuardrails = normalizeInputGuardrailList(options.inputGuardrails || []);
+    this.outputGuardrails = normalizeOutputGuardrailList(options.outputGuardrails || []);
 
     // Initialize logger - always use LoggerProxy for consistency
     // If external logger is provided, it will be used by LoggerProxy
@@ -362,59 +390,69 @@ export class Agent {
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
+      const guardrailSet = this.resolveGuardrailSets(options);
       const buffer = this.getConversationBuffer(oc);
       const persistQueue = this.getMemoryPersistQueue(oc);
-      const { messages, uiMessages, model, tools, maxSteps } = await this.prepareExecution(
-        input,
-        oc,
-        options,
-      );
-
-      const modelName = this.getModelName();
-      const contextLimit = options?.contextLimit;
-
-      // Add model attributes and all options
-      addModelAttributesToSpan(
-        rootSpan,
-        modelName,
-        options,
-        this.maxOutputTokens,
-        this.temperature,
-      );
-
-      // Add context to span
-      const contextMap = Object.fromEntries(oc.context.entries());
-      if (Object.keys(contextMap).length > 0) {
-        rootSpan.setAttribute("agent.context", safeStringify(contextMap));
-      }
-
-      // Add messages (serialize to JSON string)
-      rootSpan.setAttribute("agent.messages", safeStringify(messages));
-      rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
-
-      // Add agent state snapshot for remote observability
-      const agentState = this.getFullState();
-      rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
-
-      // Log generation start with only event-specific context
-      methodLogger.debug(
-        buildAgentLogMessage(
-          this.name,
-          ActionType.GENERATION_START,
-          `Starting text generation with ${modelName}`,
-        ),
-        {
-          event: LogEvents.AGENT_GENERATION_STARTED,
-          operationType: "text",
-          contextLimit,
-          memoryEnabled: !!this.memoryManager.getMemory(),
-          model: modelName,
-          messageCount: messages?.length || 0,
-          input,
-        },
-      );
-
+      let effectiveInput: typeof input = input;
       try {
+        effectiveInput = await executeInputGuardrails(
+          input,
+          oc,
+          guardrailSet.input,
+          "generateText",
+          this,
+        );
+
+        const { messages, uiMessages, model, tools, maxSteps } = await this.prepareExecution(
+          effectiveInput,
+          oc,
+          options,
+        );
+
+        const modelName = this.getModelName();
+        const contextLimit = options?.contextLimit;
+
+        // Add model attributes and all options
+        addModelAttributesToSpan(
+          rootSpan,
+          modelName,
+          options,
+          this.maxOutputTokens,
+          this.temperature,
+        );
+
+        // Add context to span
+        const contextMap = Object.fromEntries(oc.context.entries());
+        if (Object.keys(contextMap).length > 0) {
+          rootSpan.setAttribute("agent.context", safeStringify(contextMap));
+        }
+
+        // Add messages (serialize to JSON string)
+        rootSpan.setAttribute("agent.messages", safeStringify(messages));
+        rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
+
+        // Add agent state snapshot for remote observability
+        const agentState = this.getFullState();
+        rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
+
+        // Log generation start with only event-specific context
+        methodLogger.debug(
+          buildAgentLogMessage(
+            this.name,
+            ActionType.GENERATION_START,
+            `Starting text generation with ${modelName}`,
+          ),
+          {
+            event: LogEvents.AGENT_GENERATION_STARTED,
+            operationType: "text",
+            contextLimit,
+            memoryEnabled: !!this.memoryManager.getMemory(),
+            model: modelName,
+            messageCount: messages?.length || 0,
+            input: effectiveInput,
+          },
+        );
+
         // Call hooks
         await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
 
@@ -440,7 +478,6 @@ export class Agent {
           conversationId,
           parentAgentId,
           parentOperationContext,
-          contextLimit,
           hooks,
           maxSteps: userMaxSteps,
           tools: userTools,
@@ -471,12 +508,26 @@ export class Agent {
 
         await persistQueue.flush(buffer, oc);
 
+        const usageInfo = convertUsage(result.usage);
+        const finalText = await executeOutputGuardrails(
+          result.text,
+          oc,
+          guardrailSet.output,
+          "generateText",
+          {
+            usage: usageInfo,
+            finishReason: result.finishReason ?? null,
+            warnings: result.warnings ?? null,
+          },
+          this,
+        );
+
         await this.getMergedHooks(options).onEnd?.({
           conversationId: oc.conversationId || "",
           agent: this,
           output: {
-            text: result.text,
-            usage: convertUsage(result.usage),
+            text: finalText,
+            usage: usageInfo,
             providerResponse: result.response,
             finishReason: result.finishReason,
             warnings: result.warnings,
@@ -487,8 +538,8 @@ export class Agent {
         });
 
         // Log successful completion with usage details
-        const usage = result.usage;
-        const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+        const providerUsage = result.usage;
+        const tokenInfo = providerUsage ? `${providerUsage.totalTokens} tokens` : "no usage data";
         methodLogger.debug(
           buildAgentLogMessage(
             this.name,
@@ -501,20 +552,20 @@ export class Agent {
             finishReason: result.finishReason,
             usage: result.usage,
             toolCalls: result.toolCalls?.length || 0,
-            text: result.text,
+            text: finalText,
           },
         );
 
         // Add usage to span
         this.setTraceContextUsage(oc.traceContext, result.usage);
-        oc.traceContext.setOutput(result.text);
+        oc.traceContext.setOutput(finalText);
 
         // Set output in operation context
-        oc.output = result.text;
+        oc.output = finalText;
 
         this.enqueueEvalScoring({
           oc,
-          output: result.text,
+          output: finalText,
           operation: "generateText",
           metadata: {
             finishReason: result.finishReason,
@@ -527,11 +578,10 @@ export class Agent {
         oc.traceContext.end("completed");
 
         // Return result with context - use Object.assign to properly copy all properties including getters
-        const returnValue = Object.assign(
-          Object.create(Object.getPrototypeOf(result)), // Preserve prototype chain
-          result, // Copy all enumerable properties
-          { context: oc.context }, // Expose the same context instance
-        );
+        const returnValue = Object.assign(Object.create(Object.getPrototypeOf(result)), result, {
+          text: finalText,
+          context: oc.context,
+        });
 
         return returnValue;
       } catch (error) {
@@ -555,67 +605,76 @@ export class Agent {
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
       const methodLogger = oc.logger; // Extract logger with executionId
+      const guardrailSet = this.resolveGuardrailSets(options);
       const buffer = this.getConversationBuffer(oc);
       const persistQueue = this.getMemoryPersistQueue(oc);
-
-      // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
-
-      const { messages, uiMessages, model, tools, maxSteps } = await this.prepareExecution(
-        input,
-        oc,
-        options,
-      );
-
-      const modelName = this.getModelName();
-      const contextLimit = options?.contextLimit;
-
-      // Add model attributes to root span if TraceContext exists
-      // Input is now set during TraceContext creation in createContext
-      if (oc.traceContext) {
-        const rootSpan = oc.traceContext.getRootSpan();
-        // Add model attributes and all options
-        addModelAttributesToSpan(
-          rootSpan,
-          modelName,
-          options,
-          this.maxOutputTokens,
-          this.temperature,
+      let effectiveInput: typeof input = input;
+      try {
+        effectiveInput = await executeInputGuardrails(
+          input,
+          oc,
+          guardrailSet.input,
+          "streamText",
+          this,
         );
 
-        // Add context to span
-        const contextMap = Object.fromEntries(oc.context.entries());
-        if (Object.keys(contextMap).length > 0) {
-          rootSpan.setAttribute("agent.context", safeStringify(contextMap));
+        // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
+
+        const { messages, uiMessages, model, tools, maxSteps } = await this.prepareExecution(
+          effectiveInput,
+          oc,
+          options,
+        );
+
+        const modelName = this.getModelName();
+        const contextLimit = options?.contextLimit;
+
+        // Add model attributes to root span if TraceContext exists
+        // Input is now set during TraceContext creation in createContext
+        if (oc.traceContext) {
+          const rootSpan = oc.traceContext.getRootSpan();
+          // Add model attributes and all options
+          addModelAttributesToSpan(
+            rootSpan,
+            modelName,
+            options,
+            this.maxOutputTokens,
+            this.temperature,
+          );
+
+          // Add context to span
+          const contextMap = Object.fromEntries(oc.context.entries());
+          if (Object.keys(contextMap).length > 0) {
+            rootSpan.setAttribute("agent.context", safeStringify(contextMap));
+          }
+
+          // Add messages (serialize to JSON string)
+          rootSpan.setAttribute("agent.messages", safeStringify(messages));
+          rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
+
+          // Add agent state snapshot for remote observability
+          const agentState = this.getFullState();
+          rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
         }
 
-        // Add messages (serialize to JSON string)
-        rootSpan.setAttribute("agent.messages", safeStringify(messages));
-        rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
+        // Log stream start
+        methodLogger.debug(
+          buildAgentLogMessage(
+            this.name,
+            ActionType.STREAM_START,
+            `Starting stream generation with ${modelName}`,
+          ),
+          {
+            event: LogEvents.AGENT_STREAM_STARTED,
+            operationType: "stream",
+            contextLimit,
+            memoryEnabled: !!this.memoryManager.getMemory(),
+            model: modelName,
+            messageCount: messages?.length || 0,
+            input: effectiveInput,
+          },
+        );
 
-        // Add agent state snapshot for remote observability
-        const agentState = this.getFullState();
-        rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
-      }
-
-      // Log stream start
-      methodLogger.debug(
-        buildAgentLogMessage(
-          this.name,
-          ActionType.STREAM_START,
-          `Starting stream generation with ${modelName}`,
-        ),
-        {
-          event: LogEvents.AGENT_STREAM_STARTED,
-          operationType: "stream",
-          contextLimit,
-          memoryEnabled: !!this.memoryManager.getMemory(),
-          model: modelName,
-          messageCount: messages?.length || 0,
-          input,
-        },
-      );
-
-      try {
         // Call hooks
         await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
 
@@ -630,7 +689,6 @@ export class Agent {
           conversationId,
           parentAgentId,
           parentOperationContext,
-          contextLimit,
           hooks,
           maxSteps: userMaxSteps,
           tools: userTools,
@@ -639,6 +697,11 @@ export class Agent {
           providerOptions,
           ...aiSDKOptions
         } = options || {};
+
+        const guardrailStreamingEnabled = guardrailSet.output.length > 0;
+
+        let guardrailPipeline: GuardrailPipeline | null = null;
+        let sanitizedTextPromise!: Promise<string>;
 
         const result = streamText({
           model,
@@ -696,18 +759,42 @@ export class Agent {
 
             // Add usage to span
             this.setTraceContextUsage(oc.traceContext, finalResult.totalUsage);
-            oc.traceContext.setOutput(finalResult.text);
-
-            // Set output in operation context
-            oc.output = finalResult.text;
 
             const usage = convertUsage(finalResult.totalUsage);
+            let finalText: string;
+
+            if (guardrailPipeline) {
+              finalText = await sanitizedTextPromise;
+            } else if (guardrailSet.output.length > 0) {
+              finalText = await executeOutputGuardrails(
+                finalResult.text,
+                oc,
+                guardrailSet.output,
+                "streamText",
+                {
+                  usage,
+                  finishReason: finalResult.finishReason ?? null,
+                  warnings: finalResult.warnings ?? null,
+                },
+                this,
+              );
+            } else {
+              finalText = finalResult.text;
+            }
+
+            const guardrailedResult =
+              guardrailSet.output.length > 0 ? { ...finalResult, text: finalText } : finalResult;
+
+            oc.traceContext.setOutput(finalText);
+
+            // Set output in operation context
+            oc.output = finalText;
             // Call hooks with standardized output (stream finish result)
             await this.getMergedHooks(options).onEnd?.({
               conversationId: oc.conversationId || "",
               agent: this,
               output: {
-                text: finalResult.text,
+                text: finalText,
                 usage,
                 providerResponse: finalResult.response,
                 finishReason: finalResult.finishReason,
@@ -720,7 +807,7 @@ export class Agent {
 
             // Call user's onFinish if it exists
             if (userOnFinish) {
-              await userOnFinish(finalResult);
+              await userOnFinish(guardrailedResult);
             }
 
             const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
@@ -736,13 +823,13 @@ export class Agent {
                 finishReason: finalResult.finishReason,
                 usage: finalResult.usage,
                 toolCalls: finalResult.toolCalls?.length || 0,
-                text: finalResult.text,
+                text: finalText,
               },
             );
 
             this.enqueueEvalScoring({
               oc,
-              output: finalResult.text,
+              output: finalText,
               operation: "streamText",
               metadata: {
                 finishReason: finalResult.finishReason,
@@ -757,118 +844,222 @@ export class Agent {
           },
         });
 
-        // Capture the agent instance for use in getters
+        // Capture the agent instance for use in helpers
+        type ToUIMessageStreamOptions = Parameters<typeof result.toUIMessageStream>[0];
+        type ToUIMessageStreamResponseOptions = Parameters<
+          typeof result.toUIMessageStreamResponse
+        >[0];
+        type ToUIMessageStreamReturn = ReturnType<typeof result.toUIMessageStream>;
+        type UIStreamChunk = ToUIMessageStreamReturn extends AsyncIterable<infer Chunk>
+          ? Chunk
+          : never;
+
         const agent = this;
 
-        // Create a wrapper that includes context and delegates to the original result
-        const resultWithContext: StreamTextResultWithContext = {
-          // Delegate all properties and methods to the original result
-          text: result.text,
-          // Use getters for streams to avoid ReadableStream locking issues
-          get textStream() {
-            return result.textStream;
-          },
-          get fullStream() {
-            // If we have subagents, create a merged fullStream similar to toUIMessageStreamResponse
-            if (agent.subAgentManager.hasSubAgents()) {
-              // Create a custom async iterable that merges streams
-              const createMergedFullStream =
-                async function* (): AsyncIterable<VoltAgentTextStreamPart> {
-                  // Create a TransformStream to handle merging
-                  const { readable, writable } = new TransformStream<VoltAgentTextStreamPart>();
-                  const writer = writable.getWriter();
+        const createBaseFullStream = (): AsyncIterable<VoltAgentTextStreamPart> => {
+          if (agent.subAgentManager.hasSubAgents()) {
+            const createMergedFullStream =
+              async function* (): AsyncIterable<VoltAgentTextStreamPart> {
+                const { readable, writable } = new TransformStream<VoltAgentTextStreamPart>();
+                const writer = writable.getWriter();
 
-                  // Store the writer in context for delegate_task to use
-                  oc.systemContext.set("fullStreamWriter", writer);
+                oc.systemContext.set("fullStreamWriter", writer);
 
-                  // Start writing parent stream events
-                  const writeParentStream = async () => {
-                    try {
-                      for await (const part of result.fullStream) {
-                        await writer.write(part as VoltAgentTextStreamPart);
-                      }
-                    } finally {
-                      // Don't close the writer here, delegate_task might still write
-                      // It will be closed after all operations complete
-                    }
-                  };
-
-                  // Start the parent stream writing in background
-                  const parentPromise = writeParentStream();
-
-                  // Read from the merged stream
-                  const reader = readable.getReader();
+                const writeParentStream = async () => {
                   try {
-                    while (true) {
-                      const { done, value } = await reader.read();
-                      if (done) break;
-                      yield value;
+                    for await (const part of result.fullStream) {
+                      await writer.write(part as VoltAgentTextStreamPart);
                     }
                   } finally {
-                    reader.releaseLock();
-                    // Ensure parent stream completes
-                    await parentPromise;
-                    // Close the writer after everything is done
-                    await writer.close();
+                    // noop, writer closed after draining merged stream
                   }
                 };
 
-              return createMergedFullStream();
-            }
+                const parentPromise = writeParentStream();
+                const reader = readable.getReader();
 
-            // No subagents, return original fullStream
-            return result.fullStream;
+                try {
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    if (value !== undefined) {
+                      yield value;
+                    }
+                  }
+                } finally {
+                  reader.releaseLock();
+                  await parentPromise;
+                  await writer.close();
+                }
+              };
+
+            return createMergedFullStream();
+          }
+
+          return result.fullStream;
+        };
+
+        const guardrailContext = guardrailStreamingEnabled
+          ? {
+              guardrails: guardrailSet.output,
+              agent: this,
+              operationContext: oc,
+              operation: "streamText" as AgentEvalOperationType,
+            }
+          : null;
+
+        const baseFullStreamForPipeline = guardrailStreamingEnabled
+          ? createBaseFullStream()
+          : undefined;
+
+        if (guardrailStreamingEnabled) {
+          guardrailPipeline = createGuardrailPipeline(
+            baseFullStreamForPipeline as AsyncIterable<VoltAgentTextStreamPart>,
+            result.textStream,
+            guardrailContext,
+          );
+          sanitizedTextPromise = guardrailPipeline.finalizePromise.then(async () => {
+            const sanitized = guardrailPipeline?.runner?.getSanitizedText();
+            if (typeof sanitized === "string" && sanitized.length > 0) {
+              return sanitized;
+            }
+            return await result.text;
+          });
+        } else {
+          sanitizedTextPromise = result.text;
+        }
+
+        const getGuardrailAwareFullStream = (): AsyncIterable<VoltAgentTextStreamPart> => {
+          if (guardrailPipeline) {
+            return guardrailPipeline.fullStream;
+          }
+          return createBaseFullStream();
+        };
+
+        const getGuardrailAwareTextStream = (): AsyncIterableStream<string> => {
+          if (guardrailPipeline) {
+            return guardrailPipeline.textStream;
+          }
+          return result.textStream;
+        };
+
+        const getGuardrailAwareUIStream = (
+          streamOptions?: ToUIMessageStreamOptions,
+        ): ToUIMessageStreamReturn => {
+          if (!guardrailPipeline) {
+            return result.toUIMessageStream(streamOptions);
+          }
+          return guardrailPipeline.createUIStream(streamOptions) as ToUIMessageStreamReturn;
+        };
+
+        const createMergedUIStream = (
+          streamOptions?: ToUIMessageStreamOptions,
+        ): ToUIMessageStreamReturn => {
+          const mergedStream = createUIMessageStream({
+            execute: async ({ writer }) => {
+              oc.systemContext.set("uiStreamWriter", writer);
+              writer.merge(getGuardrailAwareUIStream(streamOptions));
+            },
+            onError: (error) => String(error),
+          });
+
+          return createAsyncIterableReadable<UIStreamChunk>(async (controller) => {
+            const reader = mergedStream.getReader();
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value !== undefined) {
+                  controller.enqueue(value);
+                }
+              }
+              controller.close();
+            } catch (error) {
+              controller.error(error);
+            } finally {
+              reader.releaseLock();
+            }
+          });
+        };
+
+        const toUIMessageStreamSanitized = (
+          streamOptions?: ToUIMessageStreamOptions,
+        ): ToUIMessageStreamReturn => {
+          if (agent.subAgentManager.hasSubAgents()) {
+            return createMergedUIStream(streamOptions);
+          }
+          return getGuardrailAwareUIStream(streamOptions);
+        };
+
+        const toUIMessageStreamResponseSanitized = (
+          options?: ToUIMessageStreamResponseOptions,
+        ): ReturnType<typeof result.toUIMessageStreamResponse> => {
+          const streamOptions = options as ToUIMessageStreamOptions | undefined;
+          const stream = agent.subAgentManager.hasSubAgents()
+            ? createMergedUIStream(streamOptions)
+            : getGuardrailAwareUIStream(streamOptions);
+          const responseInit = options ? { ...options } : {};
+          return createUIMessageStreamResponse({
+            stream,
+            ...responseInit,
+          });
+        };
+
+        const pipeUIMessageStreamToResponseSanitized = (
+          response: Parameters<typeof result.pipeUIMessageStreamToResponse>[0],
+          init?: Parameters<typeof result.pipeUIMessageStreamToResponse>[1],
+        ): void => {
+          const streamOptions = init as ToUIMessageStreamOptions | undefined;
+          const stream = agent.subAgentManager.hasSubAgents()
+            ? createMergedUIStream(streamOptions)
+            : getGuardrailAwareUIStream(streamOptions);
+          const initOptions = init ? { ...init } : {};
+          pipeUIMessageStreamToResponse({
+            response,
+            stream,
+            ...initOptions,
+          });
+        };
+
+        // Create a wrapper that includes context and delegates to the original result
+        const resultWithContext: StreamTextResultWithContext = {
+          text: sanitizedTextPromise,
+          get textStream() {
+            return getGuardrailAwareTextStream();
+          },
+          get fullStream() {
+            return getGuardrailAwareFullStream();
           },
           usage: result.usage,
           finishReason: result.finishReason,
-          // Don't access experimental_partialOutputStream directly, use getter
           get experimental_partialOutputStream() {
             return result.experimental_partialOutputStream;
           },
-          // Override toUIMessageStreamResponse to use createUIMessageStream for merging
-          toUIMessageStreamResponse: (options) => {
-            // Only use custom stream if we have subagents and operation context
-            if (this.subAgentManager.hasSubAgents()) {
-              // Use createUIMessageStream to enable stream merging
-              const mergedStream = createUIMessageStream({
-                execute: async ({ writer }) => {
-                  // Put the writer in context for delegate_task to use
-                  oc.systemContext.set("uiStreamWriter", writer);
-
-                  // Start with the parent agent's stream
-                  const parentStream = result.toUIMessageStream(options);
-
-                  // Merge the parent stream
-                  writer.merge(parentStream);
-
-                  // The delegate_task tool will use the writer to merge subagent streams
-                },
-                onError: (error) => String(error),
-              });
-
-              // Return the response with the merged stream
-              return createUIMessageStreamResponse({
-                stream: mergedStream,
-                ...options,
-              });
-            }
-
-            // Fall back to original method if no subagents
-            return result.toUIMessageStreamResponse.call(result, options as any);
+          toUIMessageStream: toUIMessageStreamSanitized as typeof result.toUIMessageStream,
+          toUIMessageStreamResponse:
+            toUIMessageStreamResponseSanitized as typeof result.toUIMessageStreamResponse,
+          pipeUIMessageStreamToResponse:
+            pipeUIMessageStreamToResponseSanitized as typeof result.pipeUIMessageStreamToResponse,
+          pipeTextStreamToResponse: (response, init) => {
+            pipeTextStreamToResponse({
+              response,
+              textStream: getGuardrailAwareTextStream(),
+              ...(init ?? {}),
+            });
           },
-          // Keep other methods bound to the original result
-          toUIMessageStream: result.toUIMessageStream.bind(result),
-          pipeUIMessageStreamToResponse: result.pipeUIMessageStreamToResponse.bind(result),
-          pipeTextStreamToResponse: result.pipeTextStreamToResponse.bind(result),
-          toTextStreamResponse: result.toTextStreamResponse.bind(result),
-          // Add our custom context
+          toTextStreamResponse: (init) => {
+            return createTextStreamResponse({
+              textStream: getGuardrailAwareTextStream(),
+              ...(init ?? {}),
+            });
+          },
           context: oc.context,
         };
 
         return resultWithContext;
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
-        return this.handleError(error as Error, oc, options, 0);
+        return this.handleError(error as Error, oc, options, startTime);
       }
     });
   }
@@ -888,52 +1079,65 @@ export class Agent {
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
-      const { messages, uiMessages, model } = await this.prepareExecution(input, oc, options);
-
-      const modelName = this.getModelName();
-      const schemaName = schema.description || "unknown";
-
-      // Add model attributes and all options
-      addModelAttributesToSpan(
-        rootSpan,
-        modelName,
-        options,
-        this.maxOutputTokens,
-        this.temperature,
-      );
-
-      // Add context to span
-      const contextMap = Object.fromEntries(oc.context.entries());
-      if (Object.keys(contextMap).length > 0) {
-        rootSpan.setAttribute("agent.context", safeStringify(contextMap));
-      }
-
-      // Add messages (serialize to JSON string)
-      rootSpan.setAttribute("agent.messages", safeStringify(messages));
-      rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
-
-      // Add agent state snapshot for remote observability
-      const agentState = this.getFullState();
-      rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
-
-      // Log generation start (object)
-      methodLogger.debug(
-        buildAgentLogMessage(
-          this.name,
-          ActionType.GENERATION_START,
-          `Starting object generation with ${modelName}`,
-        ),
-        {
-          event: LogEvents.AGENT_GENERATION_STARTED,
-          operationType: "object",
-          schemaName,
-          model: modelName,
-          messageCount: messages?.length || 0,
-          input,
-        },
-      );
-
+      const guardrailSet = this.resolveGuardrailSets(options);
+      let effectiveInput: typeof input = input;
       try {
+        effectiveInput = await executeInputGuardrails(
+          input,
+          oc,
+          guardrailSet.input,
+          "generateObject",
+          this,
+        );
+        const { messages, uiMessages, model } = await this.prepareExecution(
+          effectiveInput,
+          oc,
+          options,
+        );
+
+        const modelName = this.getModelName();
+        const schemaName = schema.description || "unknown";
+
+        // Add model attributes and all options
+        addModelAttributesToSpan(
+          rootSpan,
+          modelName,
+          options,
+          this.maxOutputTokens,
+          this.temperature,
+        );
+
+        // Add context to span
+        const contextMap = Object.fromEntries(oc.context.entries());
+        if (Object.keys(contextMap).length > 0) {
+          rootSpan.setAttribute("agent.context", safeStringify(contextMap));
+        }
+
+        // Add messages (serialize to JSON string)
+        rootSpan.setAttribute("agent.messages", safeStringify(messages));
+        rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
+
+        // Add agent state snapshot for remote observability
+        const agentState = this.getFullState();
+        rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
+
+        // Log generation start (object)
+        methodLogger.debug(
+          buildAgentLogMessage(
+            this.name,
+            ActionType.GENERATION_START,
+            `Starting object generation with ${modelName}`,
+          ),
+          {
+            event: LogEvents.AGENT_GENERATION_STARTED,
+            operationType: "object",
+            schemaName,
+            model: modelName,
+            messageCount: messages?.length || 0,
+            input: effectiveInput,
+          },
+        );
+
         // Call hooks
         await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
 
@@ -945,7 +1149,6 @@ export class Agent {
           conversationId,
           parentAgentId,
           parentOperationContext,
-          contextLimit,
           hooks,
           maxSteps: userMaxSteps,
           tools: userTools,
@@ -970,6 +1173,20 @@ export class Agent {
           abortSignal: oc.abortController.signal,
         });
 
+        const usageInfo = convertUsage(result.usage);
+        const finalObject = await executeOutputGuardrails(
+          result.object,
+          oc,
+          guardrailSet.output,
+          "generateObject",
+          {
+            usage: usageInfo,
+            finishReason: result.finishReason ?? null,
+            warnings: result.warnings ?? null,
+          },
+          this,
+        );
+
         // Save the object response to memory
         if (oc.userId && oc.conversationId) {
           // Create UIMessage from the object response
@@ -979,7 +1196,7 @@ export class Agent {
             parts: [
               {
                 type: "text",
-                text: safeStringify(result.object),
+                text: safeStringify(finalObject),
               },
             ],
           };
@@ -991,9 +1208,9 @@ export class Agent {
           const step: StepWithContent = {
             id: randomUUID(),
             type: "text",
-            content: safeStringify(result.object),
+            content: safeStringify(finalObject),
             role: "assistant",
-            usage: convertUsage(result.usage),
+            usage: usageInfo,
           };
           this.addStepToHistory(step, oc);
         }
@@ -1004,14 +1221,14 @@ export class Agent {
 
         // Add usage to span
         this.setTraceContextUsage(oc.traceContext, result.usage);
-        oc.traceContext.setOutput(result.object);
+        oc.traceContext.setOutput(finalObject);
 
         // Set output in operation context
-        oc.output = result.object;
+        oc.output = finalObject;
 
         this.enqueueEvalScoring({
           oc,
-          output: result.object,
+          output: finalObject,
           operation: "generateObject",
           metadata: {
             finishReason: result.finishReason,
@@ -1027,8 +1244,8 @@ export class Agent {
           conversationId: oc.conversationId || "",
           agent: this,
           output: {
-            object: result.object,
-            usage: convertUsage(result.usage),
+            object: finalObject,
+            usage: usageInfo,
             providerResponse: (result as any).response,
             finishReason: result.finishReason,
             warnings: result.warnings,
@@ -1059,6 +1276,7 @@ export class Agent {
         // Return result with same context reference for consistency
         return {
           ...result,
+          object: finalObject,
           context: oc.context,
         };
       } catch (error) {
@@ -1083,53 +1301,66 @@ export class Agent {
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
       const methodLogger = oc.logger; // Extract logger with executionId
-
-      const { messages, uiMessages, model } = await this.prepareExecution(input, oc, options);
-
-      const modelName = this.getModelName();
-      const schemaName = schema.description || "unknown";
-
-      // Add model attributes and all options
-      addModelAttributesToSpan(
-        rootSpan,
-        modelName,
-        options,
-        this.maxOutputTokens,
-        this.temperature,
-      );
-
-      // Add context to span
-      const contextMap = Object.fromEntries(oc.context.entries());
-      if (Object.keys(contextMap).length > 0) {
-        rootSpan.setAttribute("agent.context", safeStringify(contextMap));
-      }
-
-      // Add messages (serialize to JSON string)
-      rootSpan.setAttribute("agent.messages", safeStringify(messages));
-      rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
-
-      // Add agent state snapshot for remote observability
-      const agentState = this.getFullState();
-      rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
-
-      // Log stream object start
-      methodLogger.debug(
-        buildAgentLogMessage(
-          this.name,
-          ActionType.STREAM_START,
-          `Starting object stream generation with ${modelName}`,
-        ),
-        {
-          event: LogEvents.AGENT_STREAM_STARTED,
-          operationType: "object",
-          schemaName: schemaName,
-          model: modelName,
-          messageCount: messages?.length || 0,
-          input,
-        },
-      );
-
+      const guardrailSet = this.resolveGuardrailSets(options);
+      let effectiveInput: typeof input = input;
       try {
+        effectiveInput = await executeInputGuardrails(
+          input,
+          oc,
+          guardrailSet.input,
+          "streamObject",
+          this,
+        );
+
+        const { messages, uiMessages, model } = await this.prepareExecution(
+          effectiveInput,
+          oc,
+          options,
+        );
+
+        const modelName = this.getModelName();
+        const schemaName = schema.description || "unknown";
+
+        // Add model attributes and all options
+        addModelAttributesToSpan(
+          rootSpan,
+          modelName,
+          options,
+          this.maxOutputTokens,
+          this.temperature,
+        );
+
+        // Add context to span
+        const contextMap = Object.fromEntries(oc.context.entries());
+        if (Object.keys(contextMap).length > 0) {
+          rootSpan.setAttribute("agent.context", safeStringify(contextMap));
+        }
+
+        // Add messages (serialize to JSON string)
+        rootSpan.setAttribute("agent.messages", safeStringify(messages));
+        rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
+
+        // Add agent state snapshot for remote observability
+        const agentState = this.getFullState();
+        rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
+
+        // Log stream object start
+        methodLogger.debug(
+          buildAgentLogMessage(
+            this.name,
+            ActionType.STREAM_START,
+            `Starting object stream generation with ${modelName}`,
+          ),
+          {
+            event: LogEvents.AGENT_STREAM_STARTED,
+            operationType: "object",
+            schemaName: schemaName,
+            model: modelName,
+            messageCount: messages?.length || 0,
+            input: effectiveInput,
+          },
+        );
+
         // Call hooks
         await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
 
@@ -1141,7 +1372,6 @@ export class Agent {
           conversationId,
           parentAgentId,
           parentOperationContext,
-          contextLimit,
           hooks,
           maxSteps: userMaxSteps,
           tools: userTools,
@@ -1149,6 +1379,10 @@ export class Agent {
           providerOptions,
           ...aiSDKOptions
         } = options || {};
+
+        let guardrailObjectPromise!: Promise<z.infer<T>>;
+        let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
+        let rejectGuardrailObject: ((reason: unknown) => void) | undefined;
 
         const result = streamObject({
           model,
@@ -1191,109 +1425,137 @@ export class Agent {
 
             // Close OpenTelemetry span with error status
             oc.traceContext.end("error", actualError as Error);
+            rejectGuardrailObject?.(actualError);
 
             // Don't re-throw - let the error be part of the stream
             // The onError callback should return void for AI SDK compatibility
           },
           onFinish: async (finalResult: any) => {
-            // Save the object response to memory
-            if (oc.userId && oc.conversationId) {
-              // Create UIMessage from the object response
-              const message: UIMessage = {
-                id: randomUUID(),
-                role: "assistant",
-                parts: [
+            try {
+              const usageInfo = convertUsage(finalResult.usage as any);
+              let finalObject = finalResult.object as z.infer<T>;
+              if (guardrailSet.output.length > 0) {
+                finalObject = await executeOutputGuardrails(
+                  finalResult.object as z.infer<T>,
+                  oc,
+                  guardrailSet.output,
+                  "streamObject",
                   {
-                    type: "text",
-                    text: safeStringify(finalResult.object),
+                    usage: usageInfo,
+                    finishReason: finalResult.finishReason ?? null,
+                    warnings: finalResult.warnings ?? null,
                   },
-                ],
-              };
+                  this,
+                );
+                resolveGuardrailObject?.(finalObject);
+              }
 
-              // Save the message to memory
-              await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+              if (oc.userId && oc.conversationId) {
+                const message: UIMessage = {
+                  id: randomUUID(),
+                  role: "assistant",
+                  parts: [
+                    {
+                      type: "text",
+                      text: safeStringify(finalObject),
+                    },
+                  ],
+                };
 
-              // Add step to history
-              const step: StepWithContent = {
-                id: randomUUID(),
-                type: "text",
-                content: safeStringify(finalResult.object),
-                role: "assistant",
-                usage: convertUsage(finalResult.usage),
-              };
-              this.addStepToHistory(step, oc);
+                await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+
+                const step: StepWithContent = {
+                  id: randomUUID(),
+                  type: "text",
+                  content: safeStringify(finalObject),
+                  role: "assistant",
+                  usage: usageInfo,
+                };
+                this.addStepToHistory(step, oc);
+              }
+
+              // Add usage to span
+              this.setTraceContextUsage(oc.traceContext, finalResult.usage);
+              oc.traceContext.setOutput(finalObject);
+
+              // Set output in operation context
+              oc.output = finalObject;
+
+              await this.getMergedHooks(options).onEnd?.({
+                conversationId: oc.conversationId || "",
+                agent: this,
+                output: {
+                  object: finalObject,
+                  usage: usageInfo,
+                  providerResponse: finalResult.response,
+                  finishReason: finalResult.finishReason,
+                  warnings: finalResult.warnings,
+                  context: oc.context,
+                },
+                error: undefined,
+                context: oc,
+              });
+
+              if (userOnFinish) {
+                const guardrailedResult =
+                  guardrailSet.output.length > 0
+                    ? { ...finalResult, object: finalObject }
+                    : finalResult;
+                await userOnFinish(guardrailedResult);
+              }
+
+              const usage = finalResult.usage as any;
+              const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+              methodLogger.debug(
+                buildAgentLogMessage(
+                  this.name,
+                  ActionType.GENERATION_COMPLETE,
+                  `Object generation completed (${tokenInfo})`,
+                ),
+                {
+                  event: LogEvents.AGENT_GENERATION_COMPLETED,
+                  duration: Date.now() - startTime,
+                  finishReason: finalResult.finishReason,
+                  usage: finalResult.usage,
+                  schemaName,
+                },
+              );
+
+              this.enqueueEvalScoring({
+                oc,
+                output: finalObject,
+                operation: "streamObject",
+                metadata: {
+                  finishReason: finalResult.finishReason,
+                  usage: finalResult.usage
+                    ? JSON.parse(safeStringify(finalResult.usage))
+                    : undefined,
+                  schemaName,
+                },
+              });
+
+              oc.traceContext.end("completed");
+            } catch (error) {
+              rejectGuardrailObject?.(error);
+              throw error;
             }
-
-            // History update removed - using OpenTelemetry only
-
-            // Event tracking now handled by OpenTelemetry spans
-
-            // Add usage to span
-            this.setTraceContextUsage(oc.traceContext, finalResult.usage);
-            oc.traceContext.setOutput(finalResult.object);
-
-            // Set output in operation context
-            oc.output = finalResult.object;
-
-            // Call hooks with standardized output (stream object finish)
-            await this.getMergedHooks(options).onEnd?.({
-              conversationId: oc.conversationId || "",
-              agent: this,
-              output: {
-                object: finalResult.object,
-                usage: convertUsage(finalResult.usage as any),
-                providerResponse: finalResult.response,
-                finishReason: finalResult.finishReason,
-                warnings: finalResult.warnings,
-                context: oc.context,
-              },
-              error: undefined,
-              context: oc,
-            });
-
-            // Call user's onFinish if it exists
-            if (userOnFinish) {
-              await userOnFinish(finalResult);
-            }
-
-            // Log successful completion
-            const usage = finalResult.usage as any;
-            const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
-            methodLogger.debug(
-              buildAgentLogMessage(
-                this.name,
-                ActionType.GENERATION_COMPLETE,
-                `Object generation completed (${tokenInfo})`,
-              ),
-              {
-                event: LogEvents.AGENT_GENERATION_COMPLETED,
-                duration: Date.now() - startTime,
-                finishReason: finalResult.finishReason,
-                usage: finalResult.usage,
-                schemaName,
-              },
-            );
-
-            this.enqueueEvalScoring({
-              oc,
-              output: finalResult.object,
-              operation: "streamObject",
-              metadata: {
-                finishReason: finalResult.finishReason,
-                usage: finalResult.usage ? JSON.parse(safeStringify(finalResult.usage)) : undefined,
-                schemaName,
-              },
-            });
-
-            oc.traceContext.end("completed");
           },
         });
+
+        if (guardrailSet.output.length > 0) {
+          guardrailObjectPromise = new Promise<z.infer<T>>((resolve, reject) => {
+            resolveGuardrailObject = resolve;
+            rejectGuardrailObject = reject;
+          });
+        } else {
+          guardrailObjectPromise = result.object;
+        }
 
         // Create a wrapper that includes context and delegates to the original result
         // Use getters for streams to avoid ReadableStream locking issues
         const resultWithContext = {
           // Delegate to original properties
-          object: result.object,
+          object: guardrailObjectPromise,
           // Use getter for lazy access to avoid stream locking
           get partialObjectStream() {
             return result.partialObjectStream;
@@ -1323,6 +1585,26 @@ export class Agent {
   // ============================================================================
   // Private Helper Methods
   // ============================================================================
+
+  private resolveGuardrailSets(options?: {
+    inputGuardrails?: InputGuardrail[];
+    outputGuardrails?: OutputGuardrail<any>[];
+  }): {
+    input: NormalizedInputGuardrail[];
+    output: NormalizedOutputGuardrail[];
+  } {
+    const optionInput = options?.inputGuardrails
+      ? normalizeInputGuardrailList(options.inputGuardrails, this.inputGuardrails.length)
+      : [];
+    const optionOutput = options?.outputGuardrails
+      ? normalizeOutputGuardrailList(options.outputGuardrails, this.outputGuardrails.length)
+      : [];
+
+    return {
+      input: [...this.inputGuardrails, ...optionInput],
+      output: [...this.outputGuardrails, ...optionOutput],
+    };
+  }
 
   /**
    * Common preparation for all execution methods
@@ -1669,6 +1951,7 @@ export class Agent {
   /**
    * Prepare messages with system prompt and memory
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy message preparation pipeline
   private async prepareMessages(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
@@ -1888,6 +2171,7 @@ export class Agent {
   /**
    * Get system message with dynamic instructions and retriever context
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy system message assembly
   private async getSystemMessage(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
@@ -2723,6 +3007,54 @@ export class Agent {
       return Object.keys(result).length > 0 ? result : null;
     };
 
+    const slugifyGuardrailIdentifier = (value: string): string => {
+      return (
+        value
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "guardrail"
+      );
+    };
+
+    const mapGuardrails = (
+      guardrailList: Array<NormalizedInputGuardrail | NormalizedOutputGuardrail>,
+      direction: "input" | "output",
+    ): AgentGuardrailState[] => {
+      return guardrailList.map((guardrail, index) => {
+        const baseIdentifier = guardrail.id ?? guardrail.name ?? `${direction}-${index + 1}`;
+        const slug = slugifyGuardrailIdentifier(String(baseIdentifier));
+        const metadata = cloneRecord(guardrail.metadata ?? null);
+
+        const state: AgentGuardrailState = {
+          id: guardrail.id,
+          name: guardrail.name,
+          direction,
+          node_id: createNodeId(NodeType.GUARDRAIL, `${direction}-${slug || index + 1}`, this.id),
+        };
+
+        if (guardrail.description) {
+          state.description = guardrail.description;
+        }
+        if (guardrail.severity) {
+          state.severity = guardrail.severity;
+        }
+        if (guardrail.tags && guardrail.tags.length > 0) {
+          state.tags = [...guardrail.tags];
+        }
+        if (metadata) {
+          state.metadata = metadata;
+        }
+
+        return state;
+      });
+    };
+
+    const guardrails = {
+      input: mapGuardrails(this.inputGuardrails, "input"),
+      output: mapGuardrails(this.outputGuardrails, "output"),
+    };
+
     const scorerEntries = Object.entries(this.evalConfig?.scorers ?? {});
     const scorers =
       scorerEntries.length > 0
@@ -2813,6 +3145,8 @@ export class Agent {
           }
         : null,
       scorers,
+      guardrails:
+        guardrails.input.length > 0 || guardrails.output.length > 0 ? guardrails : undefined,
     };
   }
 

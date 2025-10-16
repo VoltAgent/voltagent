@@ -58,6 +58,17 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Guardrails",
+      customProps: {
+        badge: {
+          label: "New",
+          variant: "accent",
+        },
+      },
+      items: ["guardrails/overview", "guardrails/built-in"],
+    },
+    {
+      type: "category",
       label: "Workflows",
       items: [
         "workflows/overview",

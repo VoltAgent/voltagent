@@ -819,6 +819,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         memory: agentState.memory,
         node_id: agentState.node_id,
         scorers: agentState.scorers,
+        guardrails: agentState.guardrails,
       };
 
       // Add method configuration if it's not a direct agent

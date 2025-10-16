@@ -143,6 +143,7 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
   /**
    * Pipe events from an agent's fullStream to the workflow stream
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: workflow stream merging handles multiple event types
   async pipeFrom(
     fullStream: AsyncIterable<VoltAgentTextStreamPart<any>>,
     options?: {

@@ -1,0 +1,31 @@
+{
+  "name": "voltagent-example-with-guardrails",
+  "author": "",
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.2",
+    "@voltagent/cli": "^0.1.12",
+    "@voltagent/core": "^1.1.27",
+    "@voltagent/logger": "^1.0.2",
+    "@voltagent/server-hono": "^1.0.18",
+    "ai": "^5.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
+}

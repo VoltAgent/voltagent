@@ -8,6 +8,7 @@ export enum NodeType {
   MEMORY = "memory",
   MESSAGE = "message",
   OUTPUT = "output",
+  GUARDRAIL = "guardrail",
   RETRIEVER = "retriever",
   VECTOR = "vector",
   EMBEDDING = "embedding",

@@ -199,7 +199,7 @@ const result = await agent.generateText("Write a haiku about coding", {
 console.log(result.experimental_output); // The generated haiku text
 ```
 
-> **Note:** `generateText` provides `experimental_output` with the final object, while `streamText` provides `experimental_partialOutputStream` for streaming partial objects.
+> **Note:** `generateText` resolves `experimental_output` with the final object, while `streamText` exposes `experimental_partialOutputStream` so you can iterate over partial objects during generation.
 
 #### Enhanced Streaming with `fullStream`
 
@@ -554,6 +554,53 @@ console.log(response.text);
 ```
 
 [Learn more about Tools](./tools.md)
+
+### Guardrails
+
+Guardrails run before and after the model call to validate inputs or adjust outputs. Input guardrails receive the request text, while output guardrails can rewrite or block the response before it reaches the caller.
+
+```ts
+import { Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "Guarded Assistant",
+  instructions: "Answer briefly.",
+  model: openai("gpt-4o-mini"),
+  inputGuardrails: [
+    {
+      id: "reject-empty",
+      name: "Reject Empty Prompts",
+      handler: async ({ inputText }) => {
+        if (inputText.trim().length === 0) {
+          return {
+            pass: false,
+            action: "block",
+            message: "Prompt cannot be empty.",
+          };
+        }
+        return { pass: true };
+      },
+    },
+  ],
+  outputGuardrails: [
+    {
+      id: "trim-output",
+      name: "Trim Whitespace",
+      handler: async ({ output }) => ({
+        pass: true,
+        action: "modify",
+        modifiedOutput: typeof output === "string" ? output.trim() : output,
+      }),
+    },
+  ],
+});
+
+const response = await agent.generateText("  Give me one fact about Mars.  ");
+console.log(response.text); // "Give me one fact about Mars." (trimmed)
+```
+
+[Learn more about Guardrails](../guardrails/built-in.md)
 
 ### Sub-Agents
 

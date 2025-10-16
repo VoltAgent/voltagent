@@ -774,6 +774,7 @@ export function createWorkflow<
     };
     rootSpan.setAttribute("workflow.stateSnapshot", safeStringify(workflowState));
 
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: workflow execution orchestrates many branches
     return await traceContext.withSpan(rootSpan, async () => {
       // Create run logger with initial context and trace info
       const runLogger = logger.child({
