@@ -90,4 +90,54 @@ describe("runExperiment integration", () => {
     expect(client.completeCalls).toHaveLength(1);
     expect(client.completeCalls[0].payload.status).toBe("failed");
   });
+
+  it("evaluates pass criteria using explicit scorer IDs", async () => {
+    const experiment = createExperiment({
+      id: "run-pass-criteria-scorer-id",
+      dataset: {
+        id: DATASET_ID,
+        versionId: DATASET_VERSION_ID,
+        name: "integration-dataset",
+        items: createDatasetItems(),
+      },
+      runner: async ({ item }) => ({
+        output: item.expected,
+      }),
+      scorers: [
+        {
+          id: "hede",
+          name: "explicit-id",
+          scorer: {
+            id: "original-id",
+            name: "original-name",
+            scorer: () => ({
+              status: "success",
+              score: 1,
+            }),
+          },
+        },
+      ],
+      passCriteria: [
+        {
+          type: "passRate",
+          min: 1,
+          scorerId: "hede",
+        },
+      ],
+    });
+
+    const result = await runExperiment(experiment);
+
+    expect(result.summary.criteria[0]).toEqual(
+      expect.objectContaining({
+        passed: true,
+        actual: 1,
+        criteria: expect.objectContaining({
+          scorerId: "hede",
+        }),
+      }),
+    );
+    expect(result.summary.scorers.hede?.passRate).toBe(1);
+    expect(result.summary.scorers).not.toHaveProperty("original-id");
+  });
 });

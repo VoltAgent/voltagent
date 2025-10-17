@@ -161,6 +161,7 @@ export interface ExperimentScorerConfigEntry<
   Payload extends Record<string, unknown> = Record<string, unknown>,
   Params extends Record<string, unknown> = Record<string, unknown>,
 > extends ExperimentScorerAdapterOptions<Item, Payload, Params> {
+  id?: string;
   scorer: LocalScorerDefinition<Payload, Params>;
   name?: string;
   threshold?: number;

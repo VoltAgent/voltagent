@@ -49,7 +49,10 @@ export function resolveExperimentScorers<
       const metadata = entry.metadata;
 
       const fallbackName = entry.name ?? scorer.name ?? scorer.id ?? `scorer-${index + 1}`;
-      return createBundleFromDefinition(scorer, fallbackName, threshold, metadata);
+      return createBundleFromDefinition(scorer, fallbackName, threshold, metadata, {
+        id: entry.id,
+        name: entry.name,
+      });
     }
 
     throw new Error("Invalid experiment scorer configuration entry.");
@@ -61,9 +64,13 @@ function createBundleFromDefinition<Item extends ExperimentDatasetItem>(
   fallbackName: string,
   threshold?: number,
   metadata?: Record<string, unknown>,
+  overrides?: {
+    id?: string;
+    name?: string;
+  },
 ): ExperimentRuntimeScorerBundle<Item> {
-  const id = definition.id ?? fallbackName;
-  const name = definition.name ?? id;
+  const id = overrides?.id ?? definition.id ?? fallbackName;
+  const name = overrides?.name ?? definition.name ?? fallbackName ?? id;
   const mergedMetadata = mergeMetadata(
     definition.metadata,
     buildVoltAgentMetadata(name, threshold, metadata),
