@@ -1,5 +1,11 @@
 # @voltagent/evals
 
+## 1.0.1
+
+### Patch Changes
+
+- [#690](https://github.com/VoltAgent/voltagent/pull/690) [`c8f9032`](https://github.com/VoltAgent/voltagent/commit/c8f9032fd806efbd22da9c8bd0a10f59a388fb7b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: allow experiment scorer configs to declare their own `id`, so `passCriteria` entries that target `scorerId` work reliably and scorer summaries use the caller-provided identifiers.
+
 ## 1.0.0
 
 ### Major Changes

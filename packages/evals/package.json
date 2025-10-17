@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/evals",
   "description": "VoltAgent evaluation orchestrator utilities",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "VoltAgent",
   "dependencies": {
     "@voltagent/internal": "^0.0.11",

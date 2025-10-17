@@ -1286,7 +1286,7 @@ importers:
         specifier: ^1.1.28
         version: link:../../packages/core
       '@voltagent/evals':
-        specifier: ^1.0.0
+        specifier: ^1.0.1
         version: link:../../packages/evals
       '@voltagent/scorers':
         specifier: ^1.0.0
