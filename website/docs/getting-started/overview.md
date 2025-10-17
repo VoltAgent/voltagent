@@ -3,27 +3,84 @@ title: Overview
 slug: /
 ---
 
-### What is VoltAgent?
+**VoltAgent** is an open source TypeScript framework for building and orchestrating AI agents.
+You can build production-ready agents with memory, workflows, tools, and built-in LLM observability.
 
-Think of VoltAgent as a powerful toolkit for developers who want to build applications with AI smarts. If you've ever wanted to create your own chatbot, a helpful virtual assistant, or any software that needs to think, learn, or interact intelligently, VoltAgent makes it much easier.
+## Why VoltAgent?
 
-Instead of building everything from scratch, VoltAgent provides ready-made building blocks. Here's what makes it special:
+- **Production-Ready from Day One**: Ship agents with built-in memory, workflows, and observability instead of building infrastructure from scratch.
+- **Code with Confidence**: Full TypeScript support with type-safe tools, automatic inference, and compile time safety across your entire agent system.
+- **Debug Like a Pro**: Built-in VoltOps observability lets you trace every decision, monitor performance, and optimize workflows in real-time without external tools.
+- **Build Complex Systems Simply**: Orchestrate multi-agent teams with supervisor coordination, declarative workflows, and modular architecture that scales from prototypes to production.
 
-- **Core Engine (`@voltagent/core`)**: This is the heart of VoltAgent, providing the fundamental brainpower and capabilities for any AI agent you build.
-- **Automate with Workflows**: Go beyond simple chatbots. VoltAgent includes a powerful workflow engine to create multi-step automations that can process data, call APIs, run tasks in parallel, and execute conditional logic.
-- **Add Special Features**: Need your AI to talk? Add the `@voltagent/voice` package. It's modular, like adding apps to your phone.
-- **Connect to Anything**: VoltAgent helps your AI connect to other websites, tools, or data sources, allowing it to perform real tasks.
-- **Memory**: Unified `Memory` with default in‑memory storage, optional embeddings + vector search, and structured working memory.
-- **Works with Many AI Brains**: You're not locked into one AI provider. VoltAgent can work with popular AI models from OpenAI (like ChatGPT), Google, Anthropic, and others.
-- **Quick Start Tools (`create-voltagent-app`, `@voltagent/cli`)**: Helpers to get developers up and running with a new AI project quickly. The create-voltagent-app CLI provides an interactive setup with AI provider selection, automatic dependency installation, and IDE configuration.
+## Agent Development Platform
 
-To easily monitor and manage the agents you build with VoltAgent, there's a complementary tool called **[VoltOps LLM Observability Platform](https://console.voltagent.dev/)** (available separately). It provides a user-friendly interface, bridging the gap between coding flexibility and no-code convenience.
+VoltAgent provides a complete platform for developing and monitoring AI agents through two complementary tools.
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+### Core Framework
 
-<Tabs>
-  <TabItem value="code" label="Core Framework">
+With the core framework, you can build intelligent agents with memory, tools, and multi-step workflows while connecting to any AI provider. Create sophisticated multi-agent systems where specialized agents work together under supervisor coordination.
+
+import DocCardList from '@theme/DocCardList';
+
+<DocCardList className="three-columns" items={[
+{
+type: 'link',
+href: '/docs/agents/overview/',
+label: 'Core Runtime',
+description: 'Define agents with typed roles, tools, memory, and model providers in one place so everything stays organized.'
+},
+{
+type: 'link',
+href: '/docs/workflows/overview/',
+label: 'Workflow Engine',
+description: 'Describe multi-step automations declaratively rather than stitching together custom control flow.'
+},
+{
+type: 'link',
+href: '/docs/agents/sub-agents/',
+label: 'Supervisors & Sub-Agents',
+description: 'Run teams of specialized agents under a supervisor runtime that routes tasks and keeps them in sync.'
+},
+{
+type: 'link',
+href: '/docs/agents/tools/',
+label: 'Tool Registry & MCP',
+description: 'Ship Zod-typed tools with lifecycle hooks and cancellation, and connect to Model Context Protocol servers without extra glue code.'
+},
+{
+type: 'link',
+href: '/docs/getting-started/providers-models/',
+label: 'LLM Compatibility',
+description: 'Swap between OpenAI, Anthropic, Google, or other providers by changing config, not rewriting agent logic.'
+},
+{
+type: 'link',
+href: '/docs/agents/memory/overview/',
+label: 'Memory',
+description: 'Attach durable memory adapters so agents remember important context across runs.'
+},
+{
+type: 'link',
+href: '/docs/rag/overview/',
+label: 'Retrieval & RAG',
+description: 'Plug in retriever agents to pull facts from your data sources and ground responses (RAG) before the model answers.'
+},
+{
+type: 'link',
+href: '/docs/evals/overview/',
+label: 'Evals',
+description: 'Ship guardrails faster by running agent eval suites alongside your workflows.'
+},
+{
+type: 'link',
+href: '/docs/guardrails/overview/',
+label: 'Guardrails',
+description: 'Add safety checks and validation layers to ensure your agents behave correctly and safely.'
+}
+]} />
+
+### Core Framework Example
 
 ```tsx
 import { VoltAgent, Agent } from "@voltagent/core";
@@ -44,8 +101,7 @@ new VoltAgent({
 });
 ```
 
-  </TabItem>
-  <TabItem value="workflow" label="Workflow Engine">
+### Workflow Engine Example
 
 ```typescript
 import { createWorkflowChain, andThen, andAgent, Agent } from "@voltagent/core";
@@ -94,30 +150,8 @@ const analysisWorkflow = createWorkflowChain({
   });
 ```
 
-  </TabItem>
-  <TabItem value="console" label="VoltOps Platform">
+### VoltOps LLM Observability Platform
+
+VoltAgent comes with built-in [VoltOps](/voltops-llm-observability-docs/) LLM observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.
+
 ![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
-  </TabItem>
-</Tabs>
-
-In short, VoltAgent helps developers build sophisticated AI applications faster and more reliably, without getting bogged down in repetitive setup or being limited by overly simple tools.
-
-### Why VoltAgent?
-
-Creating smart AI applications can be tricky. Developers often face two choices:
-
-1.  **Build Everything Themselves:** Using the basic tools provided by AI companies (like OpenAI or Google). This gives lots of control but can quickly become messy, hard to manage, and requires re-building the same features over and over for different projects.
-2.  **Use Simple "No-Code" Builders:** These tools are easier to start with but often limit what you can build. You might get stuck with features you can't change, be forced to use only one company's AI, or find it impossible to create truly unique or complex AI assistants.
-
-VoltAgent offers a better way, finding the sweet spot between these two extremes. It provides helpful structure and ready-made components without boxing developers in. Here's why it's a great choice:
-
-- **Build Faster:** Get your AI application up and running much quicker than starting from scratch.
-- **Build Sophisticated Automations:** It's not just for chat. The workflow engine lets you build complex, multi-step processes for tasks like data analysis pipelines, automated content generation, or intelligent decision-making systems.
-- **Keep Things Tidy:** VoltAgent encourages organized code, making applications easier to update and fix later.
-- **Grow Easily:** Start with a simple chatbot and scale up to handle more complex tasks or multiple AI agents working together.
-- **Stay Flexible:** You have full control to customize how your AI looks, behaves, and interacts.
-- **Avoid Getting Stuck:** VoltAgent doesn't lock you into a specific AI provider. You can switch if needed, protecting your work.
-- **Save Costs:** Smart features help reduce how much you spend on using the underlying AI services.
-- **Monitor and Debug Visually:** The separate [VoltOps LLM Observability Platform](https://console.voltagent.dev/) provides a visual interface to easily track performance, understand behavior, and fix issues in your VoltAgent applications.
-
-Essentially, VoltAgent helps developers build the exact AI application they imagine – from simple helpers to sophisticated systems – more efficiently and with less frustration, complemented by powerful monitoring tools.
