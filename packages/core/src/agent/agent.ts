@@ -63,7 +63,7 @@ import {
 } from "./eval";
 import type { AgentHooks } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
-import type { BaseMessage, StepWithContent } from "./providers/base/types";
+import type { BaseMessage, BaseTool, StepWithContent } from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
@@ -1674,10 +1674,10 @@ export class Agent {
 
     // Merge agent tools with option tools
     const optionToolsArray = options?.tools || [];
-    const mergedTools = [...dynamicToolList, ...optionToolsArray];
+    const adHocTools = [...dynamicToolList, ...optionToolsArray];
 
     // Prepare tools with execution context
-    const tools = await this.prepareTools(mergedTools, oc, maxSteps, options);
+    const tools = await this.prepareTools(adHocTools, oc, maxSteps, options);
 
     return {
       messages,
@@ -2609,13 +2609,12 @@ export class Agent {
    * Prepare tools with execution context
    */
   private async prepareTools(
-    toolList: any,
+    adHocTools: (BaseTool | Toolkit)[],
     oc: OperationContext,
     maxSteps: number,
     options?: BaseGenerationOptions,
   ): Promise<Record<string, any>> {
-    const tools = Array.isArray(toolList) ? toolList : [];
-    const baseTools = this.toolManager.prepareToolsForGeneration(tools);
+    const baseTools = this.toolManager.combineStaticAndRuntimeBaseTools(adHocTools);
 
     // Add delegate tool if we have subagents
     if (this.subAgentManager.hasSubAgents()) {
@@ -2637,7 +2636,15 @@ export class Agent {
     }
 
     // Convert to AI SDK tools with context injection
-    return this.convertTools(baseTools, oc, options);
+    const aiTools = this.convertTools(baseTools, oc, options);
+
+    // Pass through the provider tools untouched as they are
+    const providerTools = this.toolManager.getProviderTools();
+    for (const tool of providerTools) {
+      aiTools[tool.name] = tool;
+    }
+
+    return aiTools;
   }
 
   /**

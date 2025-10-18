@@ -3,10 +3,10 @@
   "description": "VoltAgent example for Cloudflare Workers deployment with in-memory storage",
   "version": "1.0.0",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.2",
+    "@ai-sdk/openai": "^2.0.52",
     "@voltagent/core": "^1.1.29",
     "@voltagent/serverless-hono": "^1.0.4",
-    "ai": "^5.0.12",
+    "ai": "^5.0.76",
     "hono": "^4.7.7",
     "zod": "^3.25.76"
   },

@@ -230,6 +230,8 @@ try {
 
 Client-side tools execute in the browser or client application instead of on the server. They're useful for accessing browser APIs, user permissions, or client-specific features.
 
+For a complete working setup, see the example: [with-client-side-tools](https://github.com/VoltAgent/voltagent/tree/main/examples/with-client-side-tools).
+
 ### What Makes a Tool Client-Side?
 
 A tool without an `execute` function is automatically client-side.

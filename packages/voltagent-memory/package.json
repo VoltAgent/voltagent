@@ -8,7 +8,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
     "@voltagent/core": "^1.1.24",
-    "ai": "^5.0.12"
+    "ai": "^5.0.76"
   },
   "exports": {
     ".": {
@@ -30,7 +30,7 @@
   "module": "dist/index.mjs",
   "peerDependencies": {
     "@voltagent/core": "^1.0.0",
-    "ai": "^5.0.0"
+    "ai": "^5.0.76"
   },
   "scripts": {
     "attw": "attw --pack",

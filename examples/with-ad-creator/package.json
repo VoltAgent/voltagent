@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "dependencies": {
     "@ai-sdk/google": "^2.0.13",
-    "@ai-sdk/openai": "^2.0.2",
+    "@ai-sdk/openai": "^2.0.52",
     "@browserbasehq/sdk": "^2.6.0",
     "@browserbasehq/stagehand": "^2.5.0",
     "@google-cloud/aiplatform": "^5.7.0",
@@ -14,7 +14,7 @@
     "@voltagent/libsql": "^1.0.7",
     "@voltagent/logger": "^1.0.2",
     "@voltagent/server-hono": "^1.0.16",
-    "ai": "^5.0.12",
+    "ai": "^5.0.76",
     "dotenv": "^16.4.5",
     "sharp": "^0.34.4",
     "zod": "^3.25.76"

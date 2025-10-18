@@ -9,7 +9,7 @@
     "autoevals": "^0.0.131"
   },
   "devDependencies": {
-    "ai": "^5.0.12",
+    "ai": "^5.0.76",
     "zod": "^3.25.76"
   },
   "files": [

@@ -170,6 +170,7 @@ const myCalculatorToolkit = createToolkit({
 The `tools` option in the `Agent` constructor now accepts an array containing both individual `Tool` objects and `Toolkit` objects. The `ToolManager` handles both seamlessly.
 
 ```typescript
+import { openai } from "@ai-sdk/openai";
 import { Agent, createTool, createToolkit, type Toolkit } from "@voltagent/core";
 // ... import other tools and toolkits ...
 
@@ -180,6 +181,7 @@ const agent = new Agent({
   tools: [
     getWeatherTool, // Add an individual tool
     myCalculatorToolkit, // Add a toolkit
+    openai.tools.webSearch(), // Add a provider-defined tool
     // ... other tools or toolkits
   ],
 });
@@ -188,6 +190,13 @@ const agent = new Agent({
 ### Automatic Instructions
 
 When an agent is initialized, its `getSystemMessage` method checks all the `Toolkit`s provided in the `tools` array. If a `Toolkit` has `addInstructions: true` and defines an `instructions` string, those instructions will be automatically appended to the agent's base description, forming part of the final system prompt sent to the LLM.
+
+## Provider-defined Tools
+
+Some providers expose their own tools (via the Vercel AI SDK).
+
+- They can be standalone tools or live inside Toolkits and are subject to name-conflict checks when adding toolkits.
+- They are not executable on your server via the usual `Tool.execute` handler — the provider manages them.
 
 ## Next Steps
 

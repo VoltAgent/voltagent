@@ -2,14 +2,14 @@
   "name": "voltagent-example-with-voice-openai",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.2",
+    "@ai-sdk/openai": "^2.0.52",
     "@voltagent/cli": "^0.1.12",
     "@voltagent/core": "^1.1.29",
     "@voltagent/libsql": "^1.0.8",
     "@voltagent/logger": "^1.0.2",
     "@voltagent/server-hono": "^1.0.20",
     "@voltagent/voice": "^1.0.2",
-    "ai": "^5.0.12",
+    "ai": "^5.0.76",
     "dotenv": "^16.4.5",
     "openai": "^4.91.0",
     "zod": "^3.25.76"

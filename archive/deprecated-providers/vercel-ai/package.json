@@ -4,7 +4,7 @@
   "version": "1.0.0-next.0",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.2",
-    "ai": "^5.0.12",
+    "ai": "^5.0.76",
     "ts-pattern": "^5.7.1",
     "type-fest": "^4.41.0"
   },

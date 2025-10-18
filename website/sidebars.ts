@@ -141,7 +141,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Tools",
-      items: ["tools/overview", "tools/reasoning-tool"],
+      items: ["tools/overview", "tools/reasoning-tool", "tools/provider-tools"],
     },
     {
       type: "category",

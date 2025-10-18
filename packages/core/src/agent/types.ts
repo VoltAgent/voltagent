@@ -12,7 +12,7 @@ import type { StopWhen } from "../ai-types";
 import type { LanguageModel, TextStreamPart, UIMessage } from "ai";
 import type { Memory } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { Tool, Toolkit } from "../tool";
+import type { Tool, Toolkit, VercelTool } from "../tool";
 import type { StreamEvent } from "../utils/streams";
 import type { Voice } from "../voice/types";
 import type { VoltOpsClient } from "../voltops/client";
@@ -433,7 +433,7 @@ export type AgentOptions = {
   instructions: InstructionsDynamicValue;
 
   // Tools & Memory
-  tools?: (Tool<any, any> | Toolkit)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
+  tools?: (Tool<any, any> | Toolkit | VercelTool)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
   toolkits?: Toolkit[];
   memory?: Memory | false;
 

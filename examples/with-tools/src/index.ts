@@ -24,7 +24,12 @@ const agent = new Agent({
   name: "Assistant with Tools",
   instructions: "A helpful assistant that can use tools to provide better answers",
   model: openai("gpt-4o-mini"),
-  tools: [addCalendarEventTool, checkCalendarTool, searchTool],
+  tools: [
+    addCalendarEventTool,
+    checkCalendarTool,
+    openai.tools.webSearch(),
+    // searchTool,
+  ],
   memory,
 });
 
