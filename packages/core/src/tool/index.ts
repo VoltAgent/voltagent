@@ -1,8 +1,10 @@
+import type { Tool as VercelTool } from "ai";
 import { v4 as uuidv4 } from "uuid";
 import type { z } from "zod";
 import type { BaseTool, ToolSchema } from "../agent/providers/base/types";
 import type { OperationContext } from "../agent/types";
 import { LoggerProxy } from "../logger";
+export type { Tool as VercelTool } from "ai";
 
 // Export ToolManager and related types
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
@@ -13,6 +15,18 @@ export { type Toolkit, createToolkit } from "./toolkit";
  * Tool definition compatible with Vercel AI SDK
  */
 export type AgentTool = BaseTool;
+
+/**
+ * Block access to user-defined and dynamic tools by requiring provider-defined type
+ * */
+export type ProviderTool = Extract<VercelTool, { type: "provider-defined" }>;
+
+/**
+ * Type guard for provider-defined tools
+ * */
+export function isProviderTool(t: object): t is ProviderTool {
+  return "type" in t && t.type === "provider-defined" && "name" in t;
+}
 
 /**
  * Tool options for creating a new tool
