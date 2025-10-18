@@ -19,3 +19,6 @@ export type { HonoServerConfig } from "./types";
 
 // Export auth utilities
 export { jwtAuth } from "./auth";
+
+// Export custom endpoint utilities
+export { extractCustomEndpoints, getEnhancedOpenApiDoc } from "./utils/custom-endpoints";

@@ -18,6 +18,7 @@ import {
   registerWorkflowRoutes,
 } from "./routes";
 import type { HonoServerConfig } from "./types";
+import { getEnhancedOpenApiDoc } from "./utils/custom-endpoints";
 import { OpenAPIHono } from "./zod-openapi-compat";
 
 /**
@@ -41,14 +42,6 @@ export async function createApp(
     app.use("*", createAuthMiddleware(config.auth));
   }
 
-  // Setup Swagger UI if enabled
-  if (shouldEnableSwaggerUI(config)) {
-    app.get("/ui", swaggerUI({ url: "/doc" }));
-  }
-
-  // Setup OpenAPI documentation with dynamic port
-  app.doc("/doc", getOpenApiDoc(port || config.port || 3141));
-
   // Landing page
   app.get("/", (c) => {
     return c.html(getLandingPageHTML());
@@ -69,6 +62,19 @@ export async function createApp(
     await config.configureApp(app);
     logger.debug("Custom app configuration applied");
   }
+
+  // Setup Swagger UI and OpenAPI documentation AFTER custom routes are registered
+  // This ensures custom endpoints are included in the documentation
+  if (shouldEnableSwaggerUI(config)) {
+    app.get("/ui", swaggerUI({ url: "/doc" }));
+  }
+
+  // Setup enhanced OpenAPI documentation that includes custom endpoints
+  app.get("/doc", (c) => {
+    const baseDoc = getOpenApiDoc(port || config.port || 3141);
+    const result = getEnhancedOpenApiDoc(app, baseDoc);
+    return c.json(result);
+  });
 
   return { app };
 }
