@@ -4,7 +4,13 @@ import type { ApiToolInfo } from "../../agent/types";
 import { ActionType, LogEvents, buildToolLogMessage, getGlobalLogger } from "../../logger";
 import { getEnvVar } from "../../utils/runtime";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
-import { type AgentTool, createTool } from "../index";
+import {
+  type AgentTool,
+  type ProviderTool,
+  type VercelTool,
+  createTool,
+  isProviderTool,
+} from "../index";
 import type { Toolkit } from "../toolkit";
 
 /**
@@ -29,7 +35,7 @@ export type ToolStatusInfo = {
 /**
  * Type guard to check if an object is a Toolkit
  */
-function isToolkit(item: AgentTool | Toolkit): item is Toolkit {
+function isToolkit(item: object): item is Toolkit {
   // Check for the 'tools' array property which is specific to Toolkit
   return (item as Toolkit).tools !== undefined && Array.isArray((item as Toolkit).tools);
 }
@@ -43,6 +49,10 @@ export class ToolManager {
    */
   private tools: BaseTool[] = [];
   /**
+   * Provider-defined tools managed separately from agent tools.
+   */
+  private providerTools: ProviderTool[] = [];
+  /**
    * Toolkits managed by this manager.
    */
   private toolkits: Toolkit[] = [];
@@ -53,9 +63,9 @@ export class ToolManager {
 
   /**
    * Creates a new ToolManager.
-   * Accepts both individual tools and toolkits.
+   * Accepts individual tools, provider-defined tools, and toolkits.
    */
-  constructor(items: (AgentTool | Toolkit)[] = [], logger?: Logger) {
+  constructor(items: (AgentTool | VercelTool | Toolkit)[] = [], logger?: Logger) {
     this.logger = logger || getGlobalLogger().child({ component: "tool-manager" });
     this.addItems(items);
   }
@@ -89,6 +99,13 @@ export class ToolManager {
    */
   getToolkits(): Toolkit[] {
     return [...this.toolkits]; // Return a copy
+  }
+
+  /**
+   * Get provider-defined tools managed by this manager.
+   */
+  getProviderTools(): ProviderTool[] {
+    return [...this.providerTools];
   }
 
   /**
@@ -188,27 +205,26 @@ export class ToolManager {
   /**
    * Add multiple tools or toolkits to the manager.
    */
-  addItems(items: (AgentTool | Toolkit)[]): void {
+  addItems(items: (AgentTool | VercelTool | Toolkit)[]): void {
     if (!items) return; // Handle null or undefined input
+
     for (const item of items) {
-      // Basic validation of item
       if (!item || !("name" in item)) {
         this.logger.warn("Skipping invalid item in addItems:", item);
         continue;
       }
 
-      if (isToolkit(item)) {
-        // Ensure toolkit structure is valid before adding
-        if (item.tools && Array.isArray(item.tools)) {
-          this.addToolkit(item);
-        } else {
-          this.logger.warn(
-            `[ToolManager] Skipping toolkit '${item.name}' due to missing or invalid 'tools' array.`,
-          );
-        }
-      } else {
-        this.addTool(item);
+      if (isProviderTool(item)) {
+        this.providerTools.push(item);
+        continue;
       }
+
+      if (isToolkit(item)) {
+        this.addToolkit(item);
+        continue;
+      }
+
+      this.addTool(item);
     }
   }
 
@@ -243,7 +259,7 @@ export class ToolManager {
   /**
    * Prepare tools for text generation (includes tools from toolkits).
    */
-  prepareToolsForGeneration(dynamicTools?: (BaseTool | Toolkit)[]): BaseTool[] {
+  prepareToolsForGeneration(dynamicTools?: (BaseTool | ProviderTool | Toolkit)[]): BaseTool[] {
     // Start with existing tools
     let toolsToUse = this.getTools();
 

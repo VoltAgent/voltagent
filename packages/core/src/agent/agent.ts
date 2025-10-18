@@ -39,7 +39,7 @@ import { MemoryManager } from "../memory/manager/memory-manager";
 import { type VoltAgentObservability, createVoltAgentObservability } from "../observability";
 import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { Tool, Toolkit } from "../tool";
+import type { Tool, Toolkit, VercelTool } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
 import { randomUUID } from "../utils/id";
@@ -304,7 +304,7 @@ export class Agent {
   readonly purpose?: string;
   readonly instructions: InstructionsDynamicValue;
   readonly model: LanguageModel | DynamicValue<LanguageModel>;
-  readonly dynamicTools?: DynamicValue<(Tool<any, any> | Toolkit)[]>;
+  readonly dynamicTools?: DynamicValue<(Tool<any, any> | Toolkit | VercelTool)[]>;
   readonly hooks: AgentHooks;
   readonly temperature?: number;
   readonly maxOutputTokens?: number;
@@ -2764,6 +2764,11 @@ export class Agent {
           }); // End of withSpan
         }, // End of execute function
       };
+    }
+
+    const providerTools = this.toolManager.getProviderTools();
+    for (const tool of providerTools) {
+      aiTools[tool.name] = tool;
     }
 
     return aiTools;
