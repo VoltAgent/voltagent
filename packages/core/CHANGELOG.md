@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.1.29
+
+### Patch Changes
+
+- [`d5170ce`](https://github.com/VoltAgent/voltagent/commit/d5170ced80fbc9fd2de03bb7eaff1cb31424d618) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add runtime payload support for evals
+
 ## 1.1.28
 
 ### Patch Changes

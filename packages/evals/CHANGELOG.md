@@ -1,5 +1,11 @@
 # @voltagent/evals
 
+## 1.0.2
+
+### Patch Changes
+
+- [`d5170ce`](https://github.com/VoltAgent/voltagent/commit/d5170ced80fbc9fd2de03bb7eaff1cb31424d618) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add runtime payload support for evals
+
 ## 1.0.1
 
 ### Patch Changes
