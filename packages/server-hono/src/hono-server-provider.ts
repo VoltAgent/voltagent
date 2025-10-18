@@ -6,9 +6,18 @@
 import type { Server } from "node:http";
 import { serve } from "@hono/node-server";
 import type { ServerProviderDeps } from "@voltagent/core";
-import { BaseServerProvider } from "@voltagent/server-core";
+import {
+  A2A_ROUTES,
+  BaseServerProvider,
+  MCP_ROUTES,
+  createWebSocketServer,
+  portManager,
+  printServerStartup,
+  setupWebSocketUpgrade,
+} from "@voltagent/server-core";
 import { createApp } from "./app-factory";
 import type { HonoServerConfig } from "./types";
+import { extractCustomEndpoints } from "./utils/custom-endpoints";
 
 /**
  * Hono server provider class
@@ -91,7 +100,6 @@ export class HonoServerProvider extends BaseServerProvider {
     }
 
     // Allocate port from central manager
-    const { portManager } = await import("@voltagent/server-core");
     const port = await portManager.allocatePort(this.config.port);
     this.allocatedPort = port;
 
@@ -101,9 +109,6 @@ export class HonoServerProvider extends BaseServerProvider {
 
       // Setup WebSocket if enabled
       if (this.config.enableWebSocket !== false) {
-        const { createWebSocketServer, setupWebSocketUpgrade } = await import(
-          "@voltagent/server-core"
-        );
         this.websocketServer = createWebSocketServer(this.deps, this.logger);
         setupWebSocketUpgrade(this.server, this.websocketServer, this.config.websocketPath);
       }
@@ -114,7 +119,6 @@ export class HonoServerProvider extends BaseServerProvider {
       let allEndpoints: Array<{ method: string; path: string; group?: string }> = [];
 
       // Get base feature endpoints
-      const { MCP_ROUTES, A2A_ROUTES } = await import("@voltagent/server-core");
       const addRoutes = (
         routes: Record<string, { method: string; path: string; tags?: string[] }>,
         groupLabel: string,
@@ -147,7 +151,6 @@ export class HonoServerProvider extends BaseServerProvider {
       // Add custom endpoints if we have them
       if (this.app && this.honoConfig.configureApp) {
         try {
-          const { extractCustomEndpoints } = await import("./utils/custom-endpoints");
           const customEndpoints = extractCustomEndpoints(this.app);
           allEndpoints = [...allEndpoints, ...customEndpoints];
         } catch (_error) {
@@ -157,7 +160,6 @@ export class HonoServerProvider extends BaseServerProvider {
       }
 
       // Print startup message with all endpoints
-      const { printServerStartup } = await import("@voltagent/server-core");
       printServerStartup(port, {
         enableSwaggerUI: this.config.enableSwaggerUI,
         customEndpoints: allEndpoints.length > 0 ? allEndpoints : undefined,
