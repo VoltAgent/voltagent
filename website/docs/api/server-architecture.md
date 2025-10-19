@@ -100,6 +100,9 @@ interface HonoServerConfig {
   // Port to listen on (default: 3141)
   port?: number;
 
+  // Hostname to bind the server to (default: "0.0.0.0")
+  hostname?: string;
+
   // Enable Swagger UI (default: true in dev, false in prod)
   enableSwaggerUI?: boolean;
 
@@ -109,6 +112,80 @@ interface HonoServerConfig {
   // Authentication provider
   auth?: AuthProvider;
 }
+```
+
+### Network Binding Configuration
+
+The `hostname` option controls which network interface the server binds to. This is particularly important for deployment on modern cloud platforms that use IPv6 or require dual-stack networking.
+
+#### Default Behavior (IPv4)
+
+By default, VoltAgent binds to `0.0.0.0`, which accepts connections on all IPv4 interfaces:
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    port: 3141,
+    // hostname: "0.0.0.0" is the default
+  }),
+});
+```
+
+#### IPv6 Dual-Stack (Recommended for Production)
+
+For platforms like Railway, Fly.io, or other IPv6-enabled environments, use `::` to bind to both IPv4 and IPv6:
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    port: 3141,
+    hostname: "::", // Binds to both IPv4 and IPv6
+  }),
+});
+```
+
+This is the recommended configuration for production deployments as it ensures compatibility with modern networking infrastructure.
+
+#### Localhost Only (Development)
+
+For local development when you want to restrict access to localhost only:
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    port: 3141,
+    hostname: "127.0.0.1", // IPv4 localhost only
+  }),
+});
+```
+
+#### Environment-Based Configuration
+
+Use environment variables for flexible deployment configuration:
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    port: parseInt(process.env.PORT || "3141"),
+    hostname: process.env.HOSTNAME || "::", // Default to dual-stack
+  }),
+});
+```
+
+Then set in your deployment environment:
+
+```bash
+# Railway, Fly.io, etc.
+PORT=8080
+HOSTNAME=::
+
+# Local development
+PORT=3141
+HOSTNAME=127.0.0.1
 ```
 
 ### Advanced Configuration
@@ -329,12 +406,14 @@ This order ensures that:
 ## Best Practices
 
 1. **Use the Official Implementation**: Start with `@voltagent/server-hono` unless you have specific requirements
-2. **Leverage configureApp**: Add custom routes and middleware through the configuration
-3. **Follow Route Definitions**: Use the standardized route definitions for consistency
-4. **Handle Errors Properly**: Implement proper error handling in custom providers
-5. **Support Graceful Shutdown**: Always clean up resources properly
-6. **Test Shutdown Behavior**: Verify your application exits cleanly in different scenarios
-7. **Use `shutdown()` in Tests**: Ensure proper cleanup in test suites
+2. **Configure for Your Deployment**: Use `hostname: "::"` for production deployments to support both IPv4 and IPv6
+3. **Leverage configureApp**: Add custom routes and middleware through the configuration
+4. **Follow Route Definitions**: Use the standardized route definitions for consistency
+5. **Handle Errors Properly**: Implement proper error handling in custom providers
+6. **Support Graceful Shutdown**: Always clean up resources properly
+7. **Test Shutdown Behavior**: Verify your application exits cleanly in different scenarios
+8. **Use `shutdown()` in Tests**: Ensure proper cleanup in test suites
+9. **Environment Variables**: Use environment variables for port and hostname configuration to support different deployment environments
 
 ## Next Steps
 

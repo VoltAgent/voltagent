@@ -7,7 +7,7 @@ You can run VoltAgent in classic Node.js servers or in serverless (edge) runtime
 
 ## Supported scenarios
 
-- **Server (Node.js)** – use `@voltagent/server-hono` (or another HTTP layer) and deploy on any host such as Fly.io, Render, AWS, Railway.
+- **Server (Node.js)** – use `@voltagent/server-hono` (or another HTTP layer) and deploy on any host such as Fly.io, Render, AWS, Railway. Note: For IPv6-enabled platforms like Railway and Fly.io, configure `hostname: "::"` for dual-stack networking.
 - **Serverless (edge runtimes)** – run VoltAgent on platforms like Cloudflare Workers, Vercel Edge, or Deno Deploy for low latency responses while using the shared serverless provider.
 - **Serverless Functions** – deploy to Node-based functions such as Netlify Functions when you need Node compatibility but prefer managed cold starts over dedicated servers.
 - **Hybrid** – keep heavy work on a Node server and expose lightweight endpoints from the edge.
@@ -17,6 +17,29 @@ You can run VoltAgent in classic Node.js servers or in serverless (edge) runtime
 - Choose **Node.js** if you need long-running tasks, heavy state, or many open connections.
 - Choose **Serverless (edge)** when global reach and very low latency are more important than local disk access or Node-specific libraries.
 - **Observability** works in both modes. On serverless runtimes, VoltAgent falls back to HTTP polling instead of WebSocket streaming.
+
+## Network Configuration
+
+When deploying to Node.js servers, you may need to configure the network binding depending on your platform:
+
+### IPv6 and Dual-Stack Support
+
+Modern cloud platforms like Railway and Fly.io use IPv6 or dual-stack networking. Configure your server to bind to both IPv4 and IPv6:
+
+```typescript
+import { VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    port: parseInt(process.env.PORT || "3141"),
+    hostname: "::", // Binds to both IPv4 and IPv6
+  }),
+});
+```
+
+For more details on network binding configuration, see the [Server Architecture](../api/server-architecture.md#network-binding-configuration) documentation.
 
 ## Tooling
 
