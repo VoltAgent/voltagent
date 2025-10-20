@@ -33,8 +33,35 @@ export async function createApp(
   // Get logger from dependencies or use global
   const logger = getOrCreateLogger(deps, "api-server");
 
-  // Setup CORS
-  app.use("*", cors());
+  // Track if user has configured CORS
+  let userConfiguredCors = false;
+
+  // Allow user to configure the app with custom routes and middleware FIRST
+  // This allows users to set up their own CORS, authentication, and other middleware
+  // before the default middleware is applied
+  if (config.configureApp) {
+    // Wrap the app to detect if CORS was configured
+    const originalUse = app.use.bind(app);
+    app.use = ((...args: any[]) => {
+      // Check if cors middleware is being registered
+      const middleware = args[args.length - 1];
+      if (middleware && middleware.name === "cors") {
+        userConfiguredCors = true;
+      }
+      return originalUse(...args);
+    }) as any;
+
+    await config.configureApp(app);
+    logger.debug("Custom app configuration applied");
+
+    // Restore original use method
+    app.use = originalUse;
+  }
+
+  // Setup default CORS only if user hasn't configured it
+  if (!userConfiguredCors) {
+    app.use("*", cors());
+  }
 
   // Setup Authentication if provided
   if (config.auth) {
@@ -63,12 +90,6 @@ export async function createApp(
   // Cast preserves compatibility when multiple copies of core types exist at build time.
   registerMcpRoutes(app as any, deps as any, logger);
   registerA2ARoutes(app as any, deps as any, logger);
-
-  // Allow user to configure the app with custom routes and middleware
-  if (config.configureApp) {
-    await config.configureApp(app);
-    logger.debug("Custom app configuration applied");
-  }
 
   return { app };
 }

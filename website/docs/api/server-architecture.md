@@ -264,12 +264,31 @@ Server implementations use these definitions to:
 
 ## Middleware and Plugins
 
-The Hono server supports standard middleware:
+The Hono server supports standard middleware. Middleware configured in `configureApp` runs **before** the default VoltAgent middleware, allowing you to override default behavior.
+
+### Middleware Execution Order
+
+1. **User's `configureApp`** - Your custom middleware and routes (runs first)
+2. **Default CORS** - Applied only if you didn't configure custom CORS
+3. **Authentication** - If configured via `auth` option
+4. **VoltAgent Routes** - Built-in agent and workflow endpoints
+
+### Example: Custom Middleware
 
 ```typescript
+import { cors } from "hono/cors";
+import { logger } from "hono/logger";
+import { compress } from "hono/compress";
+
 configureApp: (app) => {
-  // CORS
-  app.use("*", cors());
+  // Custom CORS (disables default CORS)
+  app.use(
+    "*",
+    cors({
+      origin: "https://your-domain.com",
+      credentials: true,
+    })
+  );
 
   // Logging
   app.use("*", logger());
@@ -278,6 +297,8 @@ configureApp: (app) => {
   app.use("*", compress());
 };
 ```
+
+**Important**: If you configure CORS middleware in `configureApp`, the default permissive CORS (`origin: "*"`) is automatically disabled.
 
 ## Graceful Shutdown
 

@@ -249,6 +249,47 @@ configureApp: (app) => {
 };
 ```
 
+### Custom CORS Configuration
+
+By default, VoltAgent applies permissive CORS (`origin: "*"`). You can override this with custom CORS settings in `configureApp`:
+
+```typescript
+import { cors } from "hono/cors";
+
+configureApp: (app) => {
+  // Custom CORS for all routes
+  app.use(
+    "*",
+    cors({
+      origin: "https://your-domain.com",
+      allowHeaders: ["X-Custom-Header", "Content-Type", "Authorization"],
+      allowMethods: ["POST", "GET", "OPTIONS"],
+      exposeHeaders: ["Content-Length"],
+      maxAge: 600,
+      credentials: true,
+    })
+  );
+
+  // Or apply different CORS to different route patterns
+  app.use(
+    "/agents/*",
+    cors({
+      origin: ["https://app1.com", "https://app2.com"],
+      credentials: true,
+    })
+  );
+
+  app.use(
+    "/public/*",
+    cors({
+      origin: "*",
+    })
+  );
+};
+```
+
+**Important**: When you configure custom CORS in `configureApp`, the default CORS middleware is automatically disabled. Your custom CORS configuration takes full control.
+
 ### Request Validation
 
 ```typescript
