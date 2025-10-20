@@ -11,7 +11,7 @@
     "@voltagent/core": "^1.1.29",
     "@voltagent/libsql": "^1.0.8",
     "@voltagent/logger": "^1.0.2",
-    "@voltagent/server-hono": "^1.0.18",
+    "@voltagent/server-hono": "^1.0.19",
     "ai": "^5.0.12",
     "axios": "^1.5.0",
     "playwright": "1.51.1",
