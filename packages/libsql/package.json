@@ -1,15 +1,15 @@
 {
   "name": "@voltagent/libsql",
   "description": "VoltAgent LibSQL - LibSQL/Turso Memory provider integration for VoltAgent",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "dependencies": {
     "@libsql/client": "^0.15.0",
-    "@voltagent/internal": "^0.0.11"
+    "@voltagent/internal": "^0.0.12"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^1.1.27",
-    "@voltagent/logger": "^1.0.2",
+    "@voltagent/core": "^1.1.30",
+    "@voltagent/logger": "^1.0.3",
     "ai": "^5.0.76"
   },
   "exports": {

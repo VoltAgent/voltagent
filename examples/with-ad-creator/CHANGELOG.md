@@ -1,6 +1,6 @@
-# example-with-live-evals
+# ai-ad-generator
 
-## 0.0.3
+## 0.1.1
 
 ### Patch Changes
 
@@ -10,13 +10,7 @@
   - Upgraded dependency: `ai` → `^5.0.76`
 - Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
   - @voltagent/server-hono@1.0.22
-  - @voltagent/scorers@1.0.1
+  - @voltagent/libsql@1.0.9
+  - @voltagent/logger@1.0.3
   - @voltagent/core@1.1.30
-
-## 0.0.2
-
-### Patch Changes
-
-- Updated dependencies [[`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b), [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b), [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b)]:
-  - @voltagent/scorers@1.0.0
-  - @voltagent/core@1.1.27
+  - @voltagent/cli@0.1.13

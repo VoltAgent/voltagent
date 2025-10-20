@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/internal",
   "description": "VoltAgent internal - an internal set of tools for the VoltAgent packages",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "dependencies": {
     "type-fest": "^4.41.0"
   },

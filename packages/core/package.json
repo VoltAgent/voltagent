@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/core",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
-  "version": "1.1.29",
+  "version": "1.1.30",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@opentelemetry/api": "^1.9.0",
@@ -15,7 +15,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
-    "@voltagent/internal": "^0.0.11",
+    "@voltagent/internal": "^0.0.12",
     "ts-pattern": "^5.7.1",
     "type-fest": "^4.41.0",
     "uuid": "^9.0.1",
