@@ -81,57 +81,57 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 
 ## All Examples
 
-- [Base Starter](./base) — Minimal TypeScript starter.
-- [GitHub Repo Analyzer](./github-repo-analyzer) — Analyze repositories with agents and tools.
-- [SDK Trace Example](./sdk-trace-example) — End‑to‑end tracing with VoltAgent SDK.
-- [Agent‑to‑Agent Server](./with-a2a-server) — A2A server pattern.
-- [Amazon Bedrock](./with-amazon-bedrock) — Use Bedrock models with VoltAgent.
-- [Anthropic](./with-anthropic) — Use Claude models with VoltAgent.
-- [Chroma](./with-chroma) — Vector search with ChromaDB.
-- [Client‑side Tools](./with-client-side-tools) — Safe client‑side tool execution.
-- [Cloudflare Workers](./with-cloudflare-workers) — Deploy on Workers.
-- [Composio (MCP)](./with-composio-mcp) — Use Composio tools via MCP.
-- [Custom Endpoints](./with-custom-endpoints) — Expose custom HTTP endpoints.
-- [Dynamic Parameters](./with-dynamic-parameters) — Typed runtime parameters for agents.
-- [Dynamic Prompts](./with-dynamic-prompts) — Generate prompts programmatically.
-- [Google AI](./with-google-ai) — Use Gemini models via @ai-sdk/openai.
-- [Google Drive (MCP)](./with-google-drive-mcp) — Access Drive via MCP tools.
-- [Google Vertex AI](./with-google-vertex-ai) — Use Vertex AI models.
-- [Groq](./with-groq-ai) — Fast inference with Groq LPU models.
-- [Guardrails](./with-guardrails) — Add output validation/guardrails.
-- [Hooks](./with-hooks) — Lifecycle hooks and middleware.
-- [Hugging Face (MCP)](./with-hugging-face-mcp) — HF tools via MCP.
-- [JWT Auth](./with-jwt-auth) — Protect endpoints with JWT.
-- [Langfuse](./with-langfuse) — Observability with Langfuse.
-- [Live Evals](./with-live-evals) — Online evaluation patterns.
-- [MCP Basics](./with-mcp) — Call tools over MCP.
-- [MCP Server](./with-mcp-server) — Run a local MCP server.
-- [Netlify Functions](./with-netlify-functions) — Deploy with Netlify.
-- [Next.js](./with-nextjs) — UI + API with Next.js.
-- [Nuxt](./with-nuxt) — UI + API with Nuxt.
-- [Offline Evals](./with-offline-evals) — Batch/offline evaluation flows.
-- [Peaka (MCP)](./with-peaka-mcp) — Peaka integration via MCP.
-- [Pinecone](./with-pinecone) — Vector DB with Pinecone.
-- [Playwright](./with-playwright) — Browser automation tool integration.
-- [Postgres](./with-postgres) — Vector/text storage with Postgres.
-- [Qdrant](./with-qdrant) — Vector DB with Qdrant.
-- [RAG Chatbot](./with-rag-chatbot) — Retrieval‑augmented chat agent.
-- [Retrieval](./with-retrieval) — Simple retrieval patterns.
-- [Sub‑agents](./with-subagents) — Orchestrate focused sub‑agents.
-- [Supabase](./with-supabase) — Build on Supabase services.
-- [Tavily Search](./with-tavily-search) — Web search with Tavily.
-- [Thinking Tool](./with-thinking-tool) — Structured “thinking” tool usage.
-- [Tools](./with-tools) — Build and register custom tools.
-- [Turso](./with-turso) — LibSQL/Turso storage.
-- [Vector Search](./with-vector-search) — Generic vector search setup.
-- [Vercel AI](./with-vercel-ai) — Use Vercel AI SDK.
-- [ViteVal](./with-viteval) — Evals with ViteVal.
-- [Voice (ElevenLabs)](./with-voice-elevenlabs) — Text‑to‑speech with ElevenLabs.
-- [Voice (OpenAI)](./with-voice-openai) — Text‑to‑speech with OpenAI.
-- [Voice (xAI)](./with-voice-xsai) — Text‑to‑speech with xAI audio.
-- [VoltAgent Exporter](./with-voltagent-exporter) — Observability exporter usage.
-- [Managed Memory](./with-voltagent-managed-memory) — VoltAgent managed memory integration.
-- [Workflow](./with-workflow) — Define and run workflows.
-- [Working Memory](./with-working-memory) — Short‑term memory patterns.
-- [xAI](./with-xsai) — Use Grok models via xAI.
-- [Zapier (MCP)](./with-zapier-mcp) — Zapier tools via MCP.
+- [Base Starter](./base) — Minimal VoltAgent starter with a single agent, memory, and dev server.
+- [GitHub Repo Analyzer](./github-repo-analyzer) — Agents read repository code and summarize insights/issues from GitHub projects.
+- [SDK Trace Example](./sdk-trace-example) — OpenTelemetry tracing wired to VoltOps so you can inspect spans and events.
+- [Agent‑to‑Agent Server](./with-a2a-server) — Expose agents over HTTP so other agents/services can call them.
+- [Amazon Bedrock](./with-amazon-bedrock) — Run AWS Bedrock models by configuring credentials and providers in VoltAgent.
+- [Anthropic](./with-anthropic) — Use Claude models as your agent’s LLM via the AI SDK.
+- [Chroma](./with-chroma) — RAG with Chroma vectors showing automatic vs tool‑driven retrieval patterns.
+- [Client‑side Tools](./with-client-side-tools) — Next.js UI triggers typed client‑side tools safely, VoltAgent on the server.
+- [Cloudflare Workers](./with-cloudflare-workers) — Deploy your agent on Workers using the Hono server adapter.
+- [Composio (MCP)](./with-composio-mcp) — Call Composio actions through MCP tools inside your workflows.
+- [Custom Endpoints](./with-custom-endpoints) — Add bespoke REST endpoints alongside agent/workflow routes.
+- [Dynamic Parameters](./with-dynamic-parameters) — Validate and inject runtime parameters into agents with Zod.
+- [Dynamic Prompts](./with-dynamic-prompts) — Build prompts from templates and live data programmatically.
+- [Google AI](./with-google-ai) — Use Google Gemini models via the AI SDK provider.
+- [Google Drive (MCP)](./with-google-drive-mcp) — Browse and read Drive files through a Google Drive MCP server.
+- [Google Vertex AI](./with-google-vertex-ai) — Connect agents to Vertex AI models in your GCP project.
+- [Groq](./with-groq-ai) — Ultra‑low latency responses using Groq’s LPU inference.
+- [Guardrails](./with-guardrails) — Add output validation and schema enforcement to keep responses on spec.
+- [Hooks](./with-hooks) — Demonstrates lifecycle hooks/middleware for logging, auth, or customization.
+- [Hugging Face (MCP)](./with-hugging-face-mcp) — Access HF tools and models through MCP from agents.
+- [JWT Auth](./with-jwt-auth) — Protect agent endpoints with JWT verification and helpers.
+- [Langfuse](./with-langfuse) — Send traces and metrics to Langfuse for observability.
+- [Live Evals](./with-live-evals) — Run online evaluations against prompts/agents during development.
+- [MCP Basics](./with-mcp) — Connect to MCP servers and call tools from an agent.
+- [MCP Server](./with-mcp-server) — Implement and run a local MCP server that exposes custom tools.
+- [Netlify Functions](./with-netlify-functions) — Ship serverless agent APIs on Netlify.
+- [Next.js](./with-nextjs) — React UI with agent APIs and streaming responses.
+- [Nuxt](./with-nuxt) — Vue/Nuxt front‑end talking to VoltAgent APIs.
+- [Offline Evals](./with-offline-evals) — Batch datasets and score outputs for regression testing.
+- [Peaka (MCP)](./with-peaka-mcp) — Integrate Peaka services via MCP tools.
+- [Pinecone](./with-pinecone) — RAG retrieval backed by Pinecone vectors and embeddings.
+- [Playwright](./with-playwright) — Web automation tools powered by Playwright for browsing and actions.
+- [Postgres](./with-postgres) — Use Postgres/pgvector for storage and semantic retrieval.
+- [Qdrant](./with-qdrant) — RAG with Qdrant showing retriever‑on‑every‑turn vs LLM‑decides search.
+- [RAG Chatbot](./with-rag-chatbot) — A conversational bot grounded in your documents with citations.
+- [Retrieval](./with-retrieval) — Minimal retrieval helpers demonstrating the retriever API.
+- [Sub‑agents](./with-subagents) — Supervisor orchestrates focused sub‑agents to divide tasks.
+- [Supabase](./with-supabase) — Use Supabase auth/database in tools and server endpoints.
+- [Tavily Search](./with-tavily-search) — Augment answers with web results from Tavily.
+- [Thinking Tool](./with-thinking-tool) — Structured reasoning via a dedicated “thinking” tool and schema.
+- [Tools](./with-tools) — Author Zod‑typed tools with cancellation and streaming support.
+- [Turso](./with-turso) — Persist memory on LibSQL/Turso with simple setup.
+- [Vector Search](./with-vector-search) — Semantic memory with embeddings and automatic recall during chats.
+- [Vercel AI](./with-vercel-ai) — VoltAgent with Vercel AI SDK provider and streaming.
+- [ViteVal](./with-viteval) — Integrate ViteVal to evaluate agents and prompts.
+- [Voice (ElevenLabs)](./with-voice-elevenlabs) — Convert agent replies to speech using ElevenLabs TTS.
+- [Voice (OpenAI)](./with-voice-openai) — Speak responses with OpenAI’s TTS voices.
+- [Voice (xAI)](./with-voice-xsai) — Use xAI audio models for voice output.
+- [VoltAgent Exporter](./with-voltagent-exporter) — Export traces/events to external observability targets.
+- [Managed Memory](./with-voltagent-managed-memory) — Production‑grade memory via VoltOps Managed Memory REST adapter.
+- [Workflow](./with-workflow) — Build multi‑step flows with createWorkflowChain and human‑in‑the‑loop.
+- [Working Memory](./with-working-memory) — Persist per‑conversation/user facts with built‑in read/update tools.
+- [xAI](./with-xsai) — Use xAI Grok models as an LLM provider.
+- [Zapier (MCP)](./with-zapier-mcp) — Trigger Zapier actions through MCP from your agents.
