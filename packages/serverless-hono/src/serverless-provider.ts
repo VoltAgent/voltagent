@@ -3,10 +3,7 @@ import type { Hono } from "hono";
 import { createServerlessApp } from "./app-factory";
 import type { ServerlessConfig, ServerlessRuntime } from "./types";
 import { detectServerlessRuntime } from "./utils/runtime-detection";
-
-type VoltAgentGlobal = typeof globalThis & {
-  ___voltagent_wait_until?: (promise: Promise<unknown>) => void;
-};
+import { withWaitUntil } from "./utils/wait-until-wrapper";
 export class HonoServerlessProvider implements IServerlessProvider {
   private readonly deps: ServerProviderDeps;
   private readonly config?: ServerlessConfig;
@@ -45,36 +42,14 @@ export class HonoServerlessProvider implements IServerlessProvider {
         env: Record<string, unknown>,
         executionCtx: unknown,
       ): Promise<Response> => {
-        const waitUntil =
-          executionCtx && typeof (executionCtx as any)?.waitUntil === "function"
-            ? (executionCtx as any).waitUntil.bind(executionCtx)
-            : undefined;
-
-        const globals = globalThis as VoltAgentGlobal;
-        const previousWaitUntil = globals.___voltagent_wait_until;
-
-        if (waitUntil) {
-          globals.___voltagent_wait_until = (promise) => {
-            try {
-              waitUntil(promise);
-            } catch {
-              void promise;
-            }
-          };
-        }
+        const cleanup = withWaitUntil(executionCtx as any);
 
         try {
           await this.ensureEnvironmentTarget(env);
           const app = await this.getApp();
           return await app.fetch(request, env as Record<string, unknown>, executionCtx as any);
         } finally {
-          if (waitUntil) {
-            if (previousWaitUntil) {
-              globals.___voltagent_wait_until = previousWaitUntil;
-            } else {
-              globals.___voltagent_wait_until = undefined;
-            }
-          }
+          cleanup();
         }
       },
     };
@@ -82,17 +57,29 @@ export class HonoServerlessProvider implements IServerlessProvider {
 
   toVercelEdge(): (request: Request, context?: unknown) => Promise<Response> {
     return async (request: Request, context?: unknown) => {
-      await this.ensureEnvironmentTarget(context as Record<string, unknown> | undefined);
-      const app = await this.getApp();
-      return app.fetch(request, context as Record<string, unknown> | undefined);
+      const cleanup = withWaitUntil(context as any);
+
+      try {
+        await this.ensureEnvironmentTarget(context as Record<string, unknown> | undefined);
+        const app = await this.getApp();
+        return await app.fetch(request, context as Record<string, unknown> | undefined);
+      } finally {
+        cleanup();
+      }
     };
   }
 
   toDeno(): (request: Request, info?: unknown) => Promise<Response> {
     return async (request: Request, info?: unknown) => {
-      await this.ensureEnvironmentTarget(info as Record<string, unknown> | undefined);
-      const app = await this.getApp();
-      return app.fetch(request, info as Record<string, unknown> | undefined);
+      const cleanup = withWaitUntil(info as any);
+
+      try {
+        await this.ensureEnvironmentTarget(info as Record<string, unknown> | undefined);
+        const app = await this.getApp();
+        return await app.fetch(request, info as Record<string, unknown> | undefined);
+      } finally {
+        cleanup();
+      }
     };
   }
 
