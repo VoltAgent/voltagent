@@ -5502,21 +5502,21 @@ body:has([class*="ExampleProjectPage"]) main div {
 }
 
 /* Dark mode styles */
-html[data-theme='dark'] .three-columns .card {
+html[data-theme="dark"] .three-columns .card {
   background-color: transparent !important;
   border-color: #30363d !important;
 }
 
-html[data-theme='dark'] .three-columns .card:hover {
+html[data-theme="dark"] .three-columns .card:hover {
   border-color: #10b981 !important;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 
-html[data-theme='dark'] .three-columns .card h2 {
+html[data-theme="dark"] .three-columns .card h2 {
   color: #10b981 !important;
 }
 
-html[data-theme='dark'] .three-columns .card p {
+html[data-theme="dark"] .three-columns .card p {
   color: #9ca3af !important;
 }
 
