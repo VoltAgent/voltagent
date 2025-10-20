@@ -3,6 +3,17 @@ import type { OpenAPIHonoType } from "./zod-openapi-compat";
 
 export interface HonoServerConfig {
   port?: number;
+
+  /**
+   * Hostname to bind the server to
+   * - "0.0.0.0" - Binds to all IPv4 interfaces (default)
+   * - "::" - Binds to all IPv6 interfaces (dual-stack on most systems)
+   * - "localhost" or "127.0.0.1" - Only localhost access
+   *
+   * @default "0.0.0.0"
+   */
+  hostname?: string;
+
   enableSwaggerUI?: boolean;
 
   /**
