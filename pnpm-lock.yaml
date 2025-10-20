@@ -1133,8 +1133,8 @@ importers:
   examples/with-memory-rest-api:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.42(zod@4.1.11)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@4.1.11)
       '@voltagent/cli':
         specifier: ^0.1.12
         version: link:../../packages/cli
@@ -3399,17 +3399,6 @@ packages:
       zod: 3.25.76
     dev: false
 
-  /@ai-sdk/openai@2.0.42(zod@4.1.11):
-    resolution: {integrity: sha512-9mM6QS8k0ooH9qMC27nlrYLQmNDnO6Rk0JTmFo/yUxpABEWOcvQhMWNHbp9lFL6Ty5vkdINrujhsAQfWuEleOg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.10(zod@4.1.11)
-      zod: 4.1.11
-    dev: false
-
   /@ai-sdk/openai@2.0.53(zod@3.25.76):
     resolution: {integrity: sha512-GIkR3+Fyif516ftXv+YPSPstnAHhcZxNoR2s8uSHhQ1yBT7I7aQYTVwpjAuYoT3GR+TeP50q7onj2/nDRbT2FQ==}
     engines: {node: '>=18'}
@@ -3467,18 +3456,6 @@ packages:
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
-    dev: false
-
-  /@ai-sdk/provider-utils@3.0.10(zod@4.1.11):
-    resolution: {integrity: sha512-T1gZ76gEIwffep6MWI0QNy9jgoybUHE7TRaHB5k54K8mF91ciGFlbtCGxDYhMH3nCRergKwYFIDeFF0hJSIQHQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
-      eventsource-parser: 3.0.6
-      zod: 4.1.11
     dev: false
 
   /@ai-sdk/provider-utils@3.0.11(zod@3.25.76):
@@ -10643,7 +10620,7 @@ packages:
       pathe: 2.0.3
       pkg-types: 2.3.0
       postcss: 8.5.6
-      rollup-plugin-visualizer: 6.0.4(rollup@4.50.2)
+      rollup-plugin-visualizer: 6.0.4
       std-env: 3.9.0
       ufo: 1.6.1
       unenv: 2.0.0-rc.21
@@ -30000,7 +29977,7 @@ packages:
       source-map: 0.7.6
       yargs: 17.7.2
 
-  /rollup-plugin-visualizer@6.0.4(rollup@4.50.2):
+  /rollup-plugin-visualizer@6.0.4:
     resolution: {integrity: sha512-q8Q7J/6YofkmaGW1sH/fPRAz37x/+pd7VBuaUU7lwvOS/YikuiiEU9jeb9PH8XHiq50XFrUsBbOxeAMYQ7KZkg==}
     engines: {node: '>=18'}
     hasBin: true
@@ -30015,7 +29992,6 @@ packages:
     dependencies:
       open: 8.4.2
       picomatch: 4.0.3
-      rollup: 4.50.2
       source-map: 0.7.6
       yargs: 17.7.2
     dev: false
