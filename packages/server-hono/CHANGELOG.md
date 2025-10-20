@@ -1,5 +1,34 @@
 # @voltagent/server-hono
 
+## 1.0.20
+
+### Patch Changes
+
+- [#696](https://github.com/VoltAgent/voltagent/pull/696) [`69bc5bf`](https://github.com/VoltAgent/voltagent/commit/69bc5bf1c0ccedd65964f9b878cc57318b82a8a4) Thanks [@fav-devs](https://github.com/fav-devs)! - Add hostname configuration option to honoServer() to support IPv6 and dual-stack networking.
+
+  The honoServer() function now accepts a `hostname` option that allows configuring which network interface the server binds to. This fixes deployment issues on platforms like Railway that require IPv6 binding for private networking.
+
+  **Example usage:**
+
+  ```typescript
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents,
+    server: honoServer({
+      port: 8080,
+      hostname: "::", // Binds to IPv6/dual-stack
+    }),
+  });
+  ```
+
+  **Options:**
+  - `"0.0.0.0"` - Binds to all IPv4 interfaces (default, maintains backward compatibility)
+  - `"::"` - Binds to all IPv6 interfaces (dual-stack on most systems)
+  - `"localhost"` or `"127.0.0.1"` - Only localhost access
+
+  Fixes #694
+
 ## 1.0.19
 
 ### Patch Changes
