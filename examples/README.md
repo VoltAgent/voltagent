@@ -1,6 +1,14 @@
-# VoltAgent Examples
+# VoltAgent AI Agent Examples
 
-Explore runnable examples to learn and copy proven patterns. Click any link to jump directly into the example’s source.
+Discover end‑to‑end, runnable examples that show how to build real AI agents with VoltAgent. These projects demonstrate core patterns such as RAG retrieval, typed tools, persistent memory, supervisor‑subagent orchestration, workflows, MCP tool integration, and voice/UX integrations. Use them as learning guides or as starters for your own apps.
+
+What you’ll find here
+
+- RAG and retrieval over vectors and databases
+- Typed tool design, MCP servers, and external APIs
+- Working and persistent memory for grounded conversations
+- Supervisor + sub‑agent orchestration and workflows
+- Deployments for Next.js, Cloudflare Workers, Netlify and more
 
 ## Featured
 
