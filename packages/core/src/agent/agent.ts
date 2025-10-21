@@ -2628,37 +2628,36 @@ export class Agent {
     maxSteps: number,
     options?: BaseGenerationOptions,
   ): Promise<Record<string, any>> {
-    const baseTools = this.toolManager.combineStaticAndRuntimeBaseTools(adHocTools);
+    const hooks = this.getMergedHooks(options);
+    const createToolExecuteFunction = this.createToolExecutionFactory(oc, hooks);
+
+    const runtimeTools: (BaseTool | Toolkit)[] = [...adHocTools];
 
     // Add delegate tool if we have subagents
     if (this.subAgentManager.hasSubAgents()) {
       const delegateTool = this.subAgentManager.createDelegateTool({
-        sourceAgent: this as any, // Type workaround
+        sourceAgent: this,
         currentHistoryEntryId: oc.operationId,
         operationContext: oc,
         maxSteps: maxSteps,
         conversationId: options?.conversationId,
         userId: options?.userId,
       });
-      baseTools.push(delegateTool);
+      runtimeTools.push(delegateTool);
     }
-
     // Add working memory tools if Memory V2 with working memory is configured
     const workingMemoryTools = this.createWorkingMemoryTools(options);
     if (workingMemoryTools.length > 0) {
-      baseTools.push(...workingMemoryTools);
+      runtimeTools.push(...workingMemoryTools);
     }
 
-    // Convert to AI SDK tools with context injection
-    const aiTools = this.convertTools(baseTools, oc, options);
+    const tempManager = new ToolManager(runtimeTools, this.logger);
 
-    // Pass through the provider tools untouched as they are
-    const providerTools = this.toolManager.getProviderTools();
-    for (const tool of providerTools) {
-      aiTools[tool.name] = tool;
-    }
+    const preparedDynamicTools = tempManager.prepareToolsForExecution(createToolExecuteFunction);
+    const preparedStaticTools =
+      this.toolManager.prepareToolsForExecution(createToolExecuteFunction);
 
-    return aiTools;
+    return { ...preparedStaticTools, ...preparedDynamicTools };
   }
 
   /**
@@ -2684,110 +2683,86 @@ export class Agent {
     return parseResult.data;
   }
 
-  /**
-   * Convert VoltAgent tools to AI SDK format with context injection
-   */
-  private convertTools(
-    tools: Tool<any, any>[],
+  private createToolExecutionFactory(
     oc: OperationContext,
-    options?: BaseGenerationOptions,
-  ): Record<string, any> {
-    const aiTools: Record<string, any> = {};
-    const hooks = this.getMergedHooks(options);
+    hooks: AgentHooks,
+  ): (tool: BaseTool) => (args: any) => Promise<any> {
+    return (tool: BaseTool) => async (args: any) => {
+      // Event tracking now handled by OpenTelemetry spans
+      // Create tool span using TraceContext
+      const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
+        label: tool.name,
+        attributes: {
+          "tool.name": tool.name,
+          "tool.call.id": randomUUID(),
+          input: args ? safeStringify(args) : undefined,
+        },
+        kind: SpanKind.CLIENT,
+      });
 
-    for (const tool of tools) {
-      aiTools[tool.name] = {
-        description: tool.description,
-        inputSchema: tool.parameters, // AI SDK will convert this to JSON Schema internally
-      };
+      // Push execution metadata into systemContext for tools to consume
+      oc.systemContext.set("agentId", this.id);
+      oc.systemContext.set("historyEntryId", oc.operationId);
+      oc.systemContext.set("parentToolSpan", toolSpan);
 
-      if (tool.isClientSide()) {
-        continue;
-      }
+      // Execute tool and handle span lifecycle
+      return oc.traceContext.withSpan(toolSpan, async () => {
+        try {
+          // Call tool start hook - can throw ToolDeniedError
+          await hooks.onToolStart?.({ agent: this, tool, context: oc, args });
 
-      aiTools[tool.name] = {
-        ...aiTools[tool.name],
-        execute: async (args: any) => {
+          // Execute tool with OperationContext directly
+          if (!tool.execute) {
+            throw new Error(`Tool ${tool.name} does not have "execute" method`);
+          }
+          const result = await tool.execute(args, oc);
+          const validatedResult = await this.validateToolOutput(result, tool);
+
+          // End OTEL span
+          toolSpan.setAttribute("output", safeStringify(result));
+          toolSpan.setStatus({ code: SpanStatusCode.OK });
+          toolSpan.end();
+
           // Event tracking now handled by OpenTelemetry spans
 
-          // Create tool span using TraceContext
-          const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
-            label: tool.name,
-            attributes: {
-              "tool.name": tool.name,
-              "tool.call.id": randomUUID(),
-              input: args ? safeStringify(args) : undefined,
-            },
-            kind: SpanKind.CLIENT,
+          // Call tool end hook
+          await hooks.onToolEnd?.({
+            agent: this,
+            tool,
+            output: validatedResult,
+            error: undefined,
+            context: oc,
           });
 
-          // Push execution metadata into systemContext for tools to consume
-          oc.systemContext.set("agentId", this.id);
-          oc.systemContext.set("historyEntryId", oc.operationId);
-          oc.systemContext.set("parentToolSpan", toolSpan);
+          return result;
+        } catch (e) {
+          const error = e instanceof Error ? e : new Error(String(e));
+          //POJO error
+          const errorResult = { error: true, ...error };
 
-          // Execute tool and handle span lifecycle
-          return await oc.traceContext.withSpan(toolSpan, async () => {
-            try {
-              // Call tool start hook - can throw ToolDeniedError
-              await hooks.onToolStart?.({ agent: this, tool, context: oc, args });
+          toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+          toolSpan.recordException(error);
+          toolSpan.end();
 
-              // Execute tool with OperationContext directly
-              if (!tool.execute) {
-                throw new Error(`Tool ${tool.name} does not have "execute" method`);
-              }
-              const result = await tool.execute(args, oc);
-              const validatedResult = await this.validateToolOutput(result, tool);
+          await hooks.onToolEnd?.({
+            agent: this,
+            tool,
+            output: undefined,
+            error: errorResult as any,
+            context: oc,
+          });
 
-              // End OTEL span
-              toolSpan.setAttribute("output", safeStringify(result));
-              toolSpan.setStatus({ code: SpanStatusCode.OK });
-              toolSpan.end();
+          if (isToolDeniedError(e)) {
+            oc.abortController.abort(e);
+          }
 
-              // Event tracking now handled by OpenTelemetry spans
-
-              // Call tool end hook
-              await hooks.onToolEnd?.({
-                agent: this,
-                tool,
-                output: validatedResult,
-                error: undefined,
-                context: oc,
-              });
-
-              return result;
-            } catch (e) {
-              const error = e instanceof Error ? e : new Error(String(e));
-              //POJO error
-              const errorResult = { error: true, ...error };
-
-              toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-              toolSpan.recordException(error);
-              toolSpan.end();
-
-              await hooks.onToolEnd?.({
-                agent: this,
-                tool,
-                output: undefined,
-                error: errorResult as any,
-                context: oc,
-              });
-
-              if (isToolDeniedError(e)) {
-                oc.abortController.abort(e);
-              }
-
-              return errorResult;
-            } finally {
-              // End the span if it was created
-              oc.traceContext.endChildSpan(toolSpan, "completed", {});
-            }
-          }); // End of withSpan
-        }, // End of execute function
-      };
-    }
-
-    return aiTools;
+          return errorResult;
+        } finally {
+          // End the span if it was created
+          oc.traceContext.endChildSpan(toolSpan, "completed", {});
+        }
+      }); // End of withSpan
+    };
   }
 
   /**
@@ -3147,7 +3122,7 @@ export class Agent {
       model: this.getModelName(),
       node_id: createNodeId(NodeType.AGENT, this.id),
 
-      tools: this.toolManager.getTools().map((tool) => ({
+      tools: this.toolManager.getAllBaseTools().map((tool) => ({
         ...tool,
         node_id: createNodeId(NodeType.TOOL, tool.name, this.id),
       })),
@@ -3254,7 +3229,7 @@ export class Agent {
       const delegateTool = this.subAgentManager.createDelegateTool({
         sourceAgent: this as any,
       });
-      this.toolManager.addTool(delegateTool);
+      this.toolManager.addStandaloneTool(delegateTool);
     }
   }
 
@@ -3274,7 +3249,7 @@ export class Agent {
    * Get all tools
    */
   public getTools() {
-    return this.toolManager.getTools();
+    return this.toolManager.getAllBaseTools();
   }
 
   /**

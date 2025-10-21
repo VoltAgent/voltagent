@@ -1556,6 +1556,130 @@ describe("Agent", () => {
     });
   });
 
+  describe("prepareTools", () => {
+    it("should merge static and runtime tools with runtime overrides", async () => {
+      const staticOnlyTool = new Tool({
+        name: "static-only",
+        description: "Static only tool",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("static-only"),
+      });
+      const staticSharedTool = new Tool({
+        name: "shared-tool",
+        description: "Static shared tool",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("static-shared"),
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        tools: [staticOnlyTool, staticSharedTool],
+      });
+
+      const runtimeOnlyTool = new Tool({
+        name: "runtime-only",
+        description: "Runtime only tool",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("runtime-only"),
+      });
+      const runtimeOverrideTool = new Tool({
+        name: "shared-tool",
+        description: "Runtime override tool",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("runtime-override"),
+      });
+
+      const operationContext = (agent as any).createOperationContext("input message");
+      const prepared = await (agent as any).prepareTools(
+        [runtimeOnlyTool, runtimeOverrideTool],
+        operationContext,
+        3,
+        {},
+      );
+
+      expect(Object.keys(prepared).sort()).toEqual(["runtime-only", "shared-tool", "static-only"]);
+      expect(prepared["shared-tool"].description).toBe("Runtime override tool");
+      expect(typeof prepared["runtime-only"].execute).toBe("function");
+      expect(prepared["static-only"].description).toBe("Static only tool");
+    });
+
+    it("should add delegate tool when subagents are present", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const delegateTool = new Tool({
+        name: "delegate-tool",
+        description: "Delegate tool",
+        parameters: z.object({}),
+        execute: vi.fn(),
+      });
+
+      const mockHasSubAgents = vi.fn().mockReturnValue(true);
+      const mockCreateDelegateTool = vi.fn().mockReturnValue(delegateTool);
+      (agent as any).subAgentManager = {
+        hasSubAgents: mockHasSubAgents,
+        createDelegateTool: mockCreateDelegateTool,
+      };
+
+      const factorySpy = vi.spyOn(agent as any, "createToolExecutionFactory");
+
+      const operationContext = (agent as any).createOperationContext("input message");
+      const options = { conversationId: "conv-1", userId: "user-1" } as any;
+      const prepared = await (agent as any).prepareTools([], operationContext, 7, options);
+
+      expect(mockHasSubAgents).toHaveBeenCalledTimes(1);
+      expect(mockCreateDelegateTool).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sourceAgent: agent,
+          currentHistoryEntryId: operationContext.operationId,
+          operationContext,
+          maxSteps: 7,
+          conversationId: "conv-1",
+          userId: "user-1",
+        }),
+      );
+      expect(prepared["delegate-tool"]).toBeDefined();
+      expect(typeof prepared["delegate-tool"].execute).toBe("function");
+      expect(factorySpy).toHaveBeenCalledWith(operationContext, expect.any(Object));
+
+      factorySpy.mockRestore();
+    });
+
+    it("should include working memory tools produced at runtime", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const workingMemoryTool = new Tool({
+        name: "get_working_memory",
+        description: "Working memory accessor",
+        parameters: z.object({}),
+        execute: vi.fn(),
+      });
+
+      const workingMemorySpy = vi
+        .spyOn(agent as any, "createWorkingMemoryTools")
+        .mockReturnValue([workingMemoryTool]);
+
+      const operationContext = (agent as any).createOperationContext("input message");
+      const options = { conversationId: "conv-2" } as any;
+      const prepared = await (agent as any).prepareTools([], operationContext, 4, options);
+
+      expect(workingMemorySpy).toHaveBeenCalledWith(options);
+      expect(prepared.get_working_memory).toBeDefined();
+      expect(typeof prepared.get_working_memory.execute).toBe("function");
+
+      workingMemorySpy.mockRestore();
+    });
+  });
+
   describe("Utility Methods", () => {
     it("should get model name", () => {
       const agent = new Agent({
