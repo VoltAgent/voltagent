@@ -1,5 +1,14 @@
 # @voltagent/core
 
+## 1.1.31
+
+### Patch Changes
+
+- [#711](https://github.com/VoltAgent/voltagent/pull/711) [`461ecec`](https://github.com/VoltAgent/voltagent/commit/461ecec60aa90b56a413713070b6e9f43efbd74b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: sanitize stored assistant/tool messages so GPT-5 conversations no longer crash with "missing reasoning item" errors when replaying memory history
+
+  fixes:
+  - #706
+
 ## 1.1.30
 
 ### Patch Changes

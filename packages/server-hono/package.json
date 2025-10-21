@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/server-hono",
   "description": "Hono server implementation for VoltAgent",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "dependencies": {
     "@hono/node-server": "^1.14.0",
     "@hono/swagger-ui": "^0.5.1",
@@ -9,7 +9,7 @@
     "@voltagent/core": "workspace:*",
     "@voltagent/internal": "^0.0.12",
     "@voltagent/mcp-server": "^1.0.3",
-    "@voltagent/server-core": "^1.0.17",
+    "@voltagent/server-core": "^1.0.18",
     "fetch-to-node": "^2.1.0",
     "hono": "^4.7.7",
     "openapi3-ts": "^4.5.0"
