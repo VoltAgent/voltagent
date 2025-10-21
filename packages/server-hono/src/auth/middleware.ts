@@ -14,7 +14,7 @@ export function createAuthMiddleware(authProvider: AuthProvider<Request>) {
     const method = c.req.method;
 
     // Check if this route requires authentication
-    if (!requiresAuth(method, path, authProvider.publicRoutes)) {
+    if (!requiresAuth(method, path, authProvider.publicRoutes, authProvider.defaultPrivate)) {
       // Public route, no auth needed
       return next();
     }

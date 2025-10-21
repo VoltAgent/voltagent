@@ -71,7 +71,7 @@ export function createAuthMiddlewareFactory<TRequest, TResponse>(
     const method = adapter.getMethod(req);
 
     // Check if this route requires authentication
-    if (!requiresAuth(method, path, authProvider.publicRoutes)) {
+    if (!requiresAuth(method, path, authProvider.publicRoutes, authProvider.defaultPrivate)) {
       // Public route, no auth needed
       return next ? next() : adapter.next();
     }

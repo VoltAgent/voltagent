@@ -35,4 +35,25 @@ export interface AuthProvider<TRequest = any> {
    * These are added to the default public routes
    */
   publicRoutes?: string[];
+
+  /**
+   * When true, all routes require authentication by default (opt-out model)
+   * When false or undefined, only routes in PROTECTED_ROUTES require auth (opt-in model)
+   *
+   * Use this when you want to protect all routes by default and selectively
+   * make certain routes public using the publicRoutes property.
+   *
+   * @default false
+   * @example
+   * ```typescript
+   * // Protect all routes except those in publicRoutes
+   * const authProvider: AuthProvider = {
+   *   type: 'clerk',
+   *   defaultPrivate: true,
+   *   publicRoutes: ['GET /health', 'POST /webhooks'],
+   *   verifyToken: async (token) => { ... }
+   * }
+   * ```
+   */
+  defaultPrivate?: boolean;
 }

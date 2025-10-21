@@ -428,7 +428,11 @@ configureApp: (app) => {
 
 ## Authentication for Custom Endpoints
 
-Custom endpoints respect the authentication configuration:
+Custom endpoints can be protected using VoltAgent's authentication system. You have two modes to choose from:
+
+### Opt-In Mode (Default)
+
+By default, custom endpoints added via `configureApp` are **public** unless you add additional middleware:
 
 ```typescript
 import { jwtAuth } from "@voltagent/server-core";
@@ -438,22 +442,69 @@ new VoltAgent({
   server: honoServer({
     auth: jwtAuth({
       secret: process.env.JWT_SECRET,
-      // Make some custom endpoints public
-      publicRoutes: ["GET /api/health", "GET /api/status", "POST /api/webhooks/*"],
     }),
     configureApp: (app) => {
-      // Public endpoint (in publicRoutes)
-      app.get("/api/health", (c) => c.json({ status: "ok" }));
+      // This endpoint is PUBLIC by default
+      app.get("/api/data", (c) => {
+        return c.json({ data: "anyone can access this" });
+      });
 
-      // Protected endpoint (requires auth)
-      app.get("/api/user/profile", (c) => {
+      // To protect it, you need to add your own middleware
+      app.get("/api/protected", async (c, next) => {
         const user = c.get("authenticatedUser");
+        if (!user) {
+          return c.json({ error: "Unauthorized" }, 401);
+        }
         return c.json({ user });
       });
     },
   }),
 });
 ```
+
+### Opt-Out Mode (Recommended)
+
+Set `defaultPrivate: true` to protect **all routes by default**, including custom endpoints. Then selectively make routes public using `publicRoutes`:
+
+```typescript
+import { jwtAuth } from "@voltagent/server-core";
+
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    auth: jwtAuth({
+      secret: process.env.JWT_SECRET,
+      defaultPrivate: true, // Protect all routes by default
+      publicRoutes: ["GET /api/health", "GET /api/status", "POST /api/webhooks/*"],
+    }),
+    configureApp: (app) => {
+      // Public endpoint (in publicRoutes)
+      app.get("/api/health", (c) => c.json({ status: "ok" }));
+
+      // Protected endpoint (automatically protected by defaultPrivate)
+      app.get("/api/user/profile", (c) => {
+        const user = c.get("authenticatedUser");
+        return c.json({ user });
+      });
+
+      // All custom routes are protected unless in publicRoutes
+      app.post("/api/data", async (c) => {
+        const user = c.get("authenticatedUser");
+        const body = await c.req.json();
+        // Process authenticated request
+        return c.json({ success: true, userId: user.id });
+      });
+    },
+  }),
+});
+```
+
+**Benefits of Opt-Out Mode**:
+
+- ✅ No need to manually protect each custom endpoint
+- ✅ Better security by default (fail-safe)
+- ✅ Easier to maintain when using third-party auth providers (Clerk, Auth0)
+- ✅ Consistent auth behavior across all routes
 
 ## Best Practices
 
