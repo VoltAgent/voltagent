@@ -68,9 +68,73 @@ const normalizeText = (part: TextLikePart) => {
   return normalized as UIMessagePart<any, any>;
 };
 
+const sanitizeReasoningProviderMetadata = (
+  providerMetadata: unknown,
+): Record<string, unknown> | undefined => {
+  if (!isObject(providerMetadata) || Array.isArray(providerMetadata)) {
+    return undefined;
+  }
+
+  const cloned = safeClone(providerMetadata) as Record<string, unknown>;
+  if (Object.keys(cloned).length === 0) {
+    return undefined;
+  }
+  return cloned;
+};
+
+const extractReasoningIdFromMetadata = (metadata: Record<string, unknown>): string | undefined => {
+  const visit = (value: unknown, hasReasoningContext: boolean): string | undefined => {
+    if (Array.isArray(value)) {
+      for (const element of value) {
+        const found = visit(element, hasReasoningContext);
+        if (found) return found;
+      }
+      return undefined;
+    }
+
+    if (!isObject(value)) {
+      return undefined;
+    }
+
+    for (const [key, child] of Object.entries(value)) {
+      const keyHasReasoningContext = hasReasoningContext || /reasoning/i.test(key);
+
+      if (typeof child === "string") {
+        const trimmed = child.trim();
+        if (
+          trimmed &&
+          keyHasReasoningContext &&
+          (/(^|_)id$/i.test(key) || /trace/i.test(key) || /id$/i.test(key))
+        ) {
+          return trimmed;
+        }
+      } else {
+        const found = visit(child, keyHasReasoningContext);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return undefined;
+  };
+
+  return visit(metadata, false);
+};
+
 const normalizeReasoning = (part: TextLikePart) => {
   const text = typeof part.text === "string" ? part.text : "";
-  if (!text.trim()) {
+  const explicitReasoningId =
+    typeof (part as any).reasoningId === "string" ? (part as any).reasoningId : "";
+
+  const providerMetadata = sanitizeReasoningProviderMetadata((part as any).providerMetadata);
+  const metadataReasoningId =
+    providerMetadata && isObject(providerMetadata)
+      ? extractReasoningIdFromMetadata(providerMetadata)
+      : undefined;
+
+  const reasoningId = explicitReasoningId || metadataReasoningId || "";
+
+  if (!text.trim() && !reasoningId.trim()) {
     return null;
   }
 
@@ -79,14 +143,12 @@ const normalizeReasoning = (part: TextLikePart) => {
     text,
   };
 
-  if ((part as any).reasoningId) {
-    normalized.reasoningId = (part as any).reasoningId;
+  if (reasoningId) {
+    normalized.reasoningId = reasoningId;
   }
   if ((part as any).reasoningConfidence !== undefined) {
     normalized.reasoningConfidence = (part as any).reasoningConfidence;
   }
-  // NOTE: provider metadata attached to reasoning parts caused GPT-5 to reject
-  // subsequent requests (missing required reasoning item). We intentionally drop it here.
 
   return normalized as UIMessagePart<any, any>;
 };
@@ -124,6 +186,16 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
   if (part.providerExecuted !== undefined) normalized.providerExecuted = part.providerExecuted;
   if (part.isError !== undefined) normalized.isError = part.isError;
   if (part.errorText !== undefined) normalized.errorText = part.errorText;
+  const callProviderMetadata = sanitizeReasoningProviderMetadata(
+    (part as any).callProviderMetadata,
+  );
+  if (callProviderMetadata) {
+    normalized.callProviderMetadata = callProviderMetadata;
+  }
+  const providerMetadata = sanitizeReasoningProviderMetadata((part as any).providerMetadata);
+  if (providerMetadata) {
+    normalized.providerMetadata = providerMetadata;
+  }
 
   return normalized as UIMessagePart<any, any>;
 };
@@ -145,13 +217,18 @@ export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null =>
   }
 
   const pruned = collapseRedundantStepStarts(pruneEmptyToolRuns(sanitizedParts));
+  const withoutDanglingTools = removeProviderExecutedToolsWithoutReasoning(pruned);
+  const normalizedParts = stripReasoningLinkedProviderMetadata(withoutDanglingTools);
 
-  const effectiveParts = pruned.filter((part) => {
+  const effectiveParts = normalizedParts.filter((part) => {
     if (part.type === "text") {
       return typeof (part as any).text === "string" && (part as any).text.trim().length > 0;
     }
     if (part.type === "reasoning") {
-      return typeof (part as any).text === "string" && (part as any).text.trim().length > 0;
+      const text = typeof (part as any).text === "string" ? (part as any).text.trim() : "";
+      const reasoningId =
+        typeof (part as any).reasoningId === "string" ? (part as any).reasoningId.trim() : "";
+      return text.length > 0 || reasoningId.length > 0;
     }
     if (typeof part.type === "string" && part.type.startsWith("tool-")) {
       return Boolean((part as any).toolCallId);
@@ -212,6 +289,102 @@ const pruneEmptyToolRuns = (parts: UIMessagePart<any, any>[]): UIMessagePart<any
     cleaned.push(part);
   }
   return cleaned;
+};
+
+const removeProviderExecutedToolsWithoutReasoning = (
+  parts: UIMessagePart<any, any>[],
+): UIMessagePart<any, any>[] => {
+  const hasReasoning = parts.some((part) => part.type === "reasoning");
+  if (hasReasoning) {
+    return parts;
+  }
+
+  const hasProviderExecutedTool = parts.some(
+    (part) =>
+      typeof part.type === "string" &&
+      part.type.startsWith("tool-") &&
+      (part as any).providerExecuted === true,
+  );
+
+  if (!hasProviderExecutedTool) {
+    return parts;
+  }
+
+  return parts.filter(
+    (part) =>
+      !(
+        typeof part.type === "string" &&
+        part.type.startsWith("tool-") &&
+        (part as any).providerExecuted === true
+      ),
+  );
+};
+
+const stripReasoningLinkedProviderMetadata = (
+  parts: UIMessagePart<any, any>[],
+): UIMessagePart<any, any>[] => {
+  const hasReasoning = parts.some((part) => part.type === "reasoning");
+  if (hasReasoning) {
+    return parts;
+  }
+
+  const stripMetadata = (metadata: unknown): Record<string, unknown> | undefined => {
+    if (!isObject(metadata)) {
+      return undefined;
+    }
+    const cloned = { ...(metadata as Record<string, unknown>) };
+    const openaiMetadata = cloned.openai;
+    if (
+      !isObject(openaiMetadata) ||
+      !(
+        "itemId" in openaiMetadata ||
+        "reasoning_trace_id" in openaiMetadata ||
+        ("reasoning" in openaiMetadata &&
+          isObject((openaiMetadata as Record<string, unknown>).reasoning))
+      )
+    ) {
+      return metadata as Record<string, unknown>;
+    }
+    cloned.openai = undefined;
+    return Object.keys(cloned).length > 0 ? cloned : undefined;
+  };
+
+  let mutated = false;
+  const result = parts.map((part) => {
+    let updated = false;
+    const nextPart: Record<string, unknown> = { ...(part as any) };
+
+    const applyStrip = (key: "providerMetadata" | "callProviderMetadata") => {
+      const current = (part as any)[key];
+      const cleaned = stripMetadata(current);
+      if (cleaned === undefined && current === undefined) {
+        return;
+      }
+      if (cleaned === current) {
+        return;
+      }
+      if (!updated) {
+        updated = true;
+      }
+      if (cleaned) {
+        nextPart[key] = cleaned;
+      } else {
+        delete nextPart[key];
+      }
+    };
+
+    applyStrip("providerMetadata");
+    applyStrip("callProviderMetadata");
+
+    if (!updated) {
+      return part;
+    }
+
+    mutated = true;
+    return nextPart as UIMessagePart<any, any>;
+  });
+
+  return mutated ? (result as UIMessagePart<any, any>[]) : parts;
 };
 
 const collapseRedundantStepStarts = (
