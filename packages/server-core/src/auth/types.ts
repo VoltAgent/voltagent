@@ -35,4 +35,13 @@ export interface AuthProvider<TRequest = any> {
    * These are added to the default public routes
    */
   publicRoutes?: string[];
+
+  /**
+   * Whether the default route protection is private (default: false)
+   * If true, all routes will require authentication by default (except for public routes)
+   * If false, only routes that are explicitly protected will require authentication
+   * These are defined in the PROTECTED_ROUTES constant
+   * This is useful for cases where you want to add additional protected routes via configureApp
+   */
+  isPrivate?: boolean;
 }
