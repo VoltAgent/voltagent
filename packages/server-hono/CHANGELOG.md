@@ -1,5 +1,147 @@
 # @voltagent/server-hono
 
+## 1.0.23
+
+### Patch Changes
+
+- [#709](https://github.com/VoltAgent/voltagent/pull/709) [`8b838ec`](https://github.com/VoltAgent/voltagent/commit/8b838ecf085f13efacb94897063de5e7087861e6) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add defaultPrivate option to AuthProvider for protecting all routes by default
+
+  ## The Problem
+
+  When using VoltAgent with third-party auth providers (like Clerk, Auth0, or custom providers), custom routes added via `configureApp` were public by default. This meant:
+  - Only routes explicitly in `PROTECTED_ROUTES` required authentication
+  - Custom endpoints needed manual middleware to be protected
+  - The `publicRoutes` property couldn't make all routes private by default
+
+  This was especially problematic when integrating with enterprise auth systems where security-by-default is expected.
+
+  ## The Solution
+
+  Added `defaultPrivate` option to `AuthProvider` interface, enabling two authentication modes:
+  - **Opt-In Mode** (default, `defaultPrivate: false`): Only specific routes require auth
+  - **Opt-Out Mode** (`defaultPrivate: true`): All routes require auth unless explicitly listed in `publicRoutes`
+
+  ## Usage Example
+
+  ### Protecting All Routes with Clerk
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      auth: jwtAuth({
+        secret: process.env.CLERK_JWT_KEY,
+        defaultPrivate: true, // 🔒 Protect all routes by default
+        publicRoutes: ["GET /health", "POST /webhooks/clerk"],
+        mapUser: (payload) => ({
+          id: payload.sub,
+          email: payload.email,
+        }),
+      }),
+      configureApp: (app) => {
+        // ✅ Public (in publicRoutes)
+        app.get("/health", (c) => c.json({ status: "ok" }));
+
+        // 🔒 Protected automatically (defaultPrivate: true)
+        app.get("/api/user/data", (c) => {
+          const user = c.get("authenticatedUser");
+          return c.json({ user });
+        });
+      },
+    }),
+  });
+  ```
+
+  ### Default Behavior (Backward Compatible)
+
+  ```typescript
+  // Without defaultPrivate, behavior is unchanged
+  auth: jwtAuth({
+    secret: process.env.JWT_SECRET,
+    // defaultPrivate: false (default)
+  });
+
+  // Custom routes are public unless you add your own middleware
+  configureApp: (app) => {
+    app.get("/api/data", (c) => {
+      // This is PUBLIC by default
+      return c.json({ data: "anyone can access" });
+    });
+  };
+  ```
+
+  ## Benefits
+  - ✅ **Fail-safe security**: Routes are protected by default when enabled
+  - ✅ **No manual middleware**: Custom endpoints automatically protected
+  - ✅ **Perfect for third-party auth**: Ideal for Clerk, Auth0, Supabase
+  - ✅ **Backward compatible**: No breaking changes, opt-in feature
+  - ✅ **Fine-grained control**: Use `publicRoutes` to selectively allow access
+
+- [`5a0728d`](https://github.com/VoltAgent/voltagent/commit/5a0728d888b48169cdadabb62641cdcf437f4ee4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: correct CORS middleware detection to use actual function name 'cors2'
+
+  Fixed a critical bug where custom CORS middleware was not being properly detected, causing both custom and default CORS to be applied simultaneously. This resulted in the default CORS (`origin: "*"`) overwriting custom CORS headers on actual POST/GET requests, while OPTIONS (preflight) requests worked correctly.
+
+  ## The Problem
+
+  The middleware detection logic was checking for `middleware.name === "cors"`, but Hono's cors middleware function is actually named `"cors2"`. This caused:
+  - Detection to always fail → `userConfiguredCors` stayed `false`
+  - Default CORS (`app.use("*", cors())`) was applied even when users configured custom CORS
+  - **Both** middlewares executed: custom CORS on specific paths + default CORS on `"*"`
+  - OPTIONS requests returned correct custom CORS headers ✅
+  - POST/GET requests had custom headers **overwritten** by default CORS (`*`) ❌
+
+  ## The Solution
+
+  Updated the detection logic to check for the actual function name:
+
+  ```typescript
+  // Before: middleware.name === "cors"
+  // After:  middleware.name === "cors2"
+  ```
+
+  Now when users configure custom CORS in `configureApp`, it's properly detected and default CORS is skipped entirely.
+
+  ## Impact
+  - Custom CORS configurations now work correctly for **all** request types (OPTIONS, POST, GET, etc.)
+  - No more default CORS overwriting custom CORS headers
+  - Fixes browser CORS errors when using custom origins with credentials
+  - Maintains backward compatibility - default CORS still applies when no custom CORS is configured
+
+  ## Example
+
+  This now works as expected:
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+  import { cors } from "hono/cors";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      configureApp: (app) => {
+        app.use(
+          "/agents/*",
+          cors({
+            origin: "http://localhost:3001",
+            credentials: true,
+          })
+        );
+      },
+    }),
+  });
+  ```
+
+  Both OPTIONS and POST requests now return:
+  - `Access-Control-Allow-Origin: http://localhost:3001` ✅
+  - `Access-Control-Allow-Credentials: true` ✅
+
+- Updated dependencies [[`8b838ec`](https://github.com/VoltAgent/voltagent/commit/8b838ecf085f13efacb94897063de5e7087861e6)]:
+  - @voltagent/server-core@1.0.17
+
 ## 1.0.22
 
 ### Patch Changes

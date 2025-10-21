@@ -5,7 +5,7 @@
     "@ai-sdk/openai": "^2.0.52",
     "@voltagent/core": "^1.1.30",
     "@voltagent/logger": "^1.0.3",
-    "@voltagent/server-hono": "^1.0.22",
+    "@voltagent/server-hono": "^1.0.23",
     "@voltagent/voltagent-memory": "^0.1.2",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
