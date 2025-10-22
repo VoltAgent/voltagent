@@ -1,49 +1,131 @@
-# Prompt Management
+# Agent Instructions
 
 ## Overview
 
-VoltAgent provides a three-tier prompt management system that scales from simple prototypes to enterprise-grade production deployments. Choose the approach that best fits your current needs and easily migrate as your requirements grow.
+VoltAgent supports three approaches for defining agent instructions. Each approach addresses different requirements around flexibility, team collaboration, and deployment workflows.
 
 ### The Three Approaches
 
-| Approach                 | Best For                 | Setup Time | Team Size       | Flexibility |
-| ------------------------ | ------------------------ | ---------- | --------------- | ----------- |
-| **Static Instructions**  | Prototypes, simple tools | 0 minutes  | 1-2 developers  | Low         |
-| **Dynamic Instructions** | Context-aware apps       | 5 minutes  | 2-5 developers  | High        |
-| **VoltOps Management**   | Production teams         | 15 minutes | 3+ team members | Enterprise  |
+| Approach                 | Definition                    | Context Access | Team Workflow    |
+| ------------------------ | ----------------------------- | -------------- | ---------------- |
+| **Static Instructions**  | Hardcoded string              | No             | Code-based       |
+| **Dynamic Instructions** | Function with runtime context | Yes            | Code-based       |
+| **VoltOps Management**   | Externally managed prompts    | Yes            | Platform-managed |
 
 ## Static Instructions
 
-### Simple Text Instructions
+Static instructions are literal strings assigned to the `instructions` property.
 
 ```typescript
 import { Agent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-const weatherAgent = new Agent({
-  name: "WeatherAgent",
+const agent = new Agent({
+  name: "SupportAgent",
   model: openai("gpt-4o-mini"),
-  instructions:
-    "You are a customer support agent. Help users with their questions politely and efficiently.",
+  instructions: "You are a customer support agent. Help users with their questions.",
 });
 ```
 
-### Chat Instruction Objects
+**Type signature:**
+
+```typescript
+instructions: string;
+```
+
+### When to Use
+
+Use static instructions when:
+
+- Agent behavior is consistent across all interactions
+- No runtime context is needed
+- Instructions rarely change
+- Team members edit prompts through code reviews
+
+Avoid when:
+
+- Different users need different behavior
+- Instructions depend on runtime data (user tier, time, location)
+- Non-technical team members need to edit prompts
+- You need prompt versioning outside of code commits
+
+## Dynamic Instructions
+
+Dynamic instructions are functions that receive runtime context and return instructions.
+
+### Returning Strings
+
+Functions can return a plain string based on context:
+
+```typescript
+const agent = new Agent({
+  name: "SupportAgent",
+  model: openai("gpt-4o-mini"),
+  instructions: async ({ context }) => {
+    const userTier = context.get("userTier") || "basic";
+
+    if (userTier === "premium") {
+      return "You are a premium customer support agent. Provide detailed explanations and prioritize this customer's requests.";
+    }
+    return "You are a customer support agent. Provide helpful but concise answers.";
+  },
+});
+```
+
+**Using with context:**
+
+```typescript
+const premiumContext = new Map();
+premiumContext.set("userTier", "premium");
+
+const response = await agent.generateText("I need help", {
+  context: premiumContext,
+});
+```
+
+### Returning PromptContent Objects
+
+Functions can also return `PromptContent` objects for text or chat-based instructions.
+
+**Text type:**
+
+```typescript
+const agent = new Agent({
+  name: "SupportAgent",
+  model: openai("gpt-4o-mini"),
+  instructions: async ({ context }) => {
+    return {
+      type: "text",
+      text: "You are a customer support agent.",
+    };
+  },
+});
+```
+
+**Chat type with multiple messages:**
 
 ```typescript
 import { Agent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-const chatAgent = new Agent({
+const agent = new Agent({
   name: "ChatAgent",
   model: openai("gpt-4o-mini"),
-  instructions: () => {
+  instructions: async () => {
     return {
       type: "chat",
       messages: [
         {
           role: "system",
-          content: "some system prompt",
+          content: "You are a helpful assistant.",
+        },
+        {
+          role: "user",
+          content: "Hello!",
+        },
+        {
+          role: "assistant",
+          content: "Hi! How can I help you today?",
         },
       ],
     };
@@ -51,22 +133,22 @@ const chatAgent = new Agent({
 });
 ```
 
-#### Provider Metadata Example
+**Chat type with provider-specific options:**
 
 ```typescript
 import { Agent } from "@voltagent/core";
 import { anthropic } from "@ai-sdk/anthropic";
 
-const cachedSystemAgent = new Agent({
-  name: "CacheableSystem",
+const agent = new Agent({
+  name: "CachedAgent",
   model: anthropic("claude-3-7-sonnet-20250219"),
-  instructions: () => {
+  instructions: async () => {
     return {
       type: "chat",
       messages: [
         {
           role: "system",
-          content: "some system prompt",
+          content: "Long system prompt that should be cached...",
           providerOptions: {
             anthropic: {
               cacheControl: { type: "ephemeral", ttl: "5m" },
@@ -79,175 +161,72 @@ const cachedSystemAgent = new Agent({
 });
 ```
 
-### What it is
-
-Simple string-based instructions that remain constant throughout your agent's lifecycle. This is the most straightforward approach where you hardcode your agent's behavior directly in your application code.
-
-**Real-world example**: A documentation chatbot that always behaves the same way regardless of user, time, or context.
-
-### When to use
-
-**✅ Perfect for:**
-
-- **MVP/Prototyping**: Getting your agent working quickly without infrastructure overhead
-- **Simple task-specific agents**: Email summarizers, code formatters, static content generators
-- **Educational projects**: Learning VoltAgent basics without complexity
-- **Single-purpose tools**: Agents that perform one specific task consistently
-
-**❌ Avoid when:**
-
-- You need different behavior for different users
-- Your agent needs to adapt based on time, location, or context
-- Multiple team members need to edit prompts
-- You're planning to A/B test different approaches
-- Your application serves multiple customer segments
-
-### Pros & Cons
-
-| Pros                        | Cons                         |
-| --------------------------- | ---------------------------- |
-| Simple and straightforward  | No runtime flexibility       |
-| No external dependencies    | No version control           |
-| Perfect for getting started | Hard to update in production |
-| Immediate deployment        | No analytics or monitoring   |
-
-## 2. Dynamic Instructions with Context
-
-**Function-based instructions with userTier:**
+**Type signature:**
 
 ```typescript
-const supportAgent = new Agent({
-  name: "SupportAgent",
-  model: openai("gpt-4o-mini"),
-  instructions: async ({ context }) => {
-    const userTier = context.get("userTier") || "basic";
+instructions: (options: DynamicValueOptions) => Promise<string | PromptContent>;
 
-    if (userTier === "premium") {
-      return "You are a premium customer support agent. Provide detailed explanations, offer multiple solutions, and prioritize this customer's requests. Be thorough and professional.";
-    } else {
-      return "You are a customer support agent. Provide helpful but concise answers to user questions. Be friendly and efficient.";
-    }
-  },
-});
+interface DynamicValueOptions {
+  context: Map<string | symbol, unknown>;
+  prompts: PromptHelper;
+}
+
+interface PromptContent {
+  type: "text" | "chat";
+  text?: string;
+  messages?: ChatMessage[];
+}
 ```
 
-**Using the agent with context:**
+### When to Use
 
-```typescript
-// Premium user gets different treatment
-const premiumContext = new Map();
-premiumContext.set("userTier", "premium");
+Use dynamic instructions when:
 
-const premiumResponse = await supportAgent.generateText("I need help with my order", {
-  context: premiumContext,
-});
+- Agent behavior depends on user properties (tier, role, preferences)
+- Instructions need runtime data (time, location, session state)
+- Different tenants require different behavior
+- Conditional logic determines instruction content
 
-// Basic user gets standard support
-const basicContext = new Map();
-basicContext.set("userTier", "basic");
+Avoid when:
 
-const basicResponse = await supportAgent.generateText("I need help with my order", {
-  context: basicContext,
-});
-```
+- Multiple non-technical stakeholders need to edit prompts
+- You need prompt version history outside of code
+- Collaborative prompt editing is required
+- Prompts should update without deploying code
 
-### What it is
+## VoltOps Prompt Management
 
-Function-based instructions that generate prompts dynamically based on runtime context, user data, and application state. Your agent's behavior adapts in real-time without external dependencies.
+VoltOps separates prompt content from application code. Prompts are created and versioned in the VoltOps platform, then fetched at runtime.
 
-**Real-world examples**:
+### Setup
 
-- E-commerce support agent that behaves differently for VIP vs. regular customers
-- Educational tutor that adjusts complexity based on student level
-- Multi-tenant SaaS agent that uses different brand voices per customer
+**1. Get API keys:**
 
-### When to use
+Sign up at [console.voltagent.dev](https://console.voltagent.dev/) and navigate to Settings → [Projects](https://console.voltagent.dev/settings/projects).
 
-**✅ Perfect for:**
-
-- **User-specific experiences**: Different prompt behavior per user tier, role, or preferences
-- **Context-dependent logic**: Time-sensitive responses, location-based customization
-- **Multi-tenant applications**: Different behavior per customer/organization
-- **A/B testing setup**: Conditional prompt logic for experimentation
-- **Privacy-conscious applications**: No external prompt management needed
-
-**❌ Consider alternatives when:**
-
-- Multiple non-technical team members need to edit prompts
-- You need detailed prompt analytics and version history
-- Your team needs collaborative prompt development
-- You want to update prompts without code deployments
-- Complex prompt templates that would benefit from a visual editor
-
-### Pros & Cons
-
-| Pros                                         | Cons                             |
-| -------------------------------------------- | -------------------------------- |
-| Full runtime flexibility                     | More complex code                |
-| Access to user context and application state | Harder to debug prompts          |
-| Conditional prompt logic                     | No centralized prompt management |
-| No external dependencies                     | No built-in analytics            |
-| Immediate updates                            |                                  |
-
-## 3. VoltOps Prompt Management
-
-VoltOps provides a complete prompt management platform with version control, team collaboration, and analytics. Let's walk through setting it up step by step.
-
-### Step 1: Sign Up and Get API Keys
-
-1. **Sign up** at [console.voltagent.dev](https://console.voltagent.dev/)
-2. **Create a project** or select an existing one
-3. **Get your API keys** from Settings → [Projects](https://console.voltagent.dev/settings/projects)
-4. **Add to your .env file**:
+**2. Configure environment:**
 
 ```bash
 VOLTAGENT_PUBLIC_KEY=pk_your_public_key_here
 VOLTAGENT_SECRET_KEY=sk_your_secret_key_here
 ```
 
-### Step 2: Create Your First Prompt
+### Create a Prompt
 
 ![VoltOps Prompt Management](https://cdn.voltagent.dev/docs/create-prompt-demo.gif)
 
-Let's create a customer support prompt step by step:
-
-1. **Navigate to Prompts**: Go to [`https://console.voltagent.dev/prompts`](https://console.voltagent.dev/prompts)
-2. **Click "Create Prompt"** button in the top right
-3. **Fill in the prompt details**:
+1. Navigate to [console.voltagent.dev/prompts](https://console.voltagent.dev/prompts)
+2. Click "Create Prompt"
+3. Fill in details:
    - **Name**: `customer-support-prompt`
-   - **Description**: `Customer support agent prompt for handling user inquiries`
-   - **Type**: Select `Text` (we'll explore chat type later)
-   - **Content**:
+   - **Type**: `Text` or `Chat`
+   - **Content**: Your prompt with optional template variables like `{{companyName}}`
+4. Set initial label (e.g., `development`)
+5. Click "Create Prompt"
 
-   ```
-   You are a helpful customer support agent for {{companyName}}.
-
-   Your role is to assist customers with their questions and concerns in a {{tone}} manner.
-
-   Current support level: {{supportLevel}}
-
-   Guidelines:
-   - Always be polite and professional
-   - If you cannot help, escalate to human support
-   - Use the company name when appropriate
-   ```
-
-4. **Add template variables** (these will be auto-detected):
-   - `companyName`
-   - `tone`
-   - `supportLevel`
-5. **Set initial labels**: Add `development` label
-6. **Click "Create Prompt"**
-
-<!-- GIF: Creating a prompt in the console -->
-
-### Step 3: Use the Prompt in Your Code
+### Use in Code
 
 ![VoltOps Prompt Playground Demo](https://cdn.voltagent.dev/docs/voltops-prompt-playground.gif)
-
-Now let's integrate this prompt into your VoltAgent application:
-
-**Setup VoltOps Client:**
 
 ```typescript
 import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
@@ -263,7 +242,7 @@ const voltOpsClient = new VoltOpsClient({
   },
 });
 
-const supportAgent = new Agent({
+const agent = new Agent({
   name: "SupportAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
@@ -271,219 +250,110 @@ const supportAgent = new Agent({
       promptName: "customer-support-prompt",
       variables: {
         companyName: "VoltAgent Corp",
-        tone: "friendly and professional",
-        supportLevel: "premium",
+        tone: "professional",
       },
     });
   },
 });
 
-// Initialize VoltAgent with agents and VoltOps client
 const voltAgent = new VoltAgent({
-  agents: {
-    supportAgent,
+  agents: { agent },
+  voltOpsClient: voltOpsClient,
+});
+```
+
+**Alternative: Agent-level VoltOpsClient**
+
+```typescript
+const agent = new Agent({
+  name: "SupportAgent",
+  model: openai("gpt-4o-mini"),
+  instructions: async ({ prompts }) => {
+    return await prompts.getPrompt({
+      promptName: "customer-support-prompt",
+      variables: { companyName: "VoltAgent Corp" },
+    });
   },
   voltOpsClient: voltOpsClient,
 });
-
-// Test your agent
-const response = await supportAgent.generateText("I'm having trouble with my order");
-console.log(response.text);
 ```
 
-:::tip Alternative: Direct VoltOpsClient on Agent
-You can also pass the VoltOpsClient directly to individual agents:
+**Direct VoltOpsClient access:**
 
 ```typescript
-const supportAgent = new Agent({
-  name: "SupportAgent",
-  model: openai("gpt-4o-mini"),
-  instructions: async ({ prompts }) => {
-    return await prompts.getPrompt({
-      promptName: "customer-support-prompt",
-      variables: {
-        companyName: "VoltAgent Corp",
-        tone: "friendly and professional",
-        supportLevel: "premium",
-      },
-    });
-  },
-  voltOpsClient: voltOpsClient, // Direct client assignment
-});
-```
-
-This approach is useful when you have agents with different VoltOps configurations or when you need fine-grained control over client settings per agent.
-:::
-
-**💡 Tip**: You can also find complete usage examples in the prompt's **Usage tab** in the console interface, with copy-ready code snippets for different scenarios.
-
-:::tip Direct VoltOpsClient Access
-You can also access prompts directly from the VoltOpsClient outside of agent instructions, which is useful for testing and debugging:
-
-```typescript
-// Direct access for testing or utility functions
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
   secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
-// Get prompt directly
-const promptContent = await voltOpsClient.prompts.getPrompt({
+const content = await voltOpsClient.prompts.getPrompt({
   promptName: "customer-support-prompt",
-  variables: {
-    companyName: "VoltAgent Corp",
-    tone: "friendly and professional",
-    supportLevel: "premium",
-  },
+  variables: { companyName: "VoltAgent Corp" },
 });
 
-console.log("Prompt content:", promptContent);
+console.log("Prompt content:", content);
 ```
 
-This approach is perfect for:
-
-- Testing prompts independently
-- Building prompt preview tools
-- Dynamic prompt selection logic
-- Utility functions that need prompt access
-  :::
-
-### Step 4: Create a New Version
+### Versioning
 
 ![VoltOps Prompt Versioning](https://cdn.voltagent.dev/docs/create-new-version-prompt.gif)
 
-As your application evolves, you'll want to improve your prompts. Let's create a new version:
+Create new versions through the console:
 
-1. **Go to your prompt detail page**
-2. **Click "New Version"** button
-3. **Modify the prompt content**:
+1. Open prompt detail page
+2. Click "New Version"
+3. Modify content
+4. Add commit message
+5. Click "Create Version"
 
-   ```
-   You are an expert customer support agent for {{companyName}}.
+### Caching
 
-   Your mission is to provide exceptional service and resolve customer issues efficiently.
+VoltOps caches prompts at two levels.
 
-   Support tier: {{supportLevel}}
-   Communication style: {{tone}}
-
-   Enhanced guidelines:
-   - Always acknowledge the customer's concern first
-   - Provide clear, step-by-step solutions
-   - Offer alternative solutions when possible
-   - Follow up to ensure satisfaction
-   - Escalate complex technical issues to our technical team
-
-   Remember: Every interaction is an opportunity to create a loyal customer.
-   ```
-
-4. **Add a commit message**: "Enhanced support guidelines and improved structure"
-5. **Click "Create Version"**
-
-<!-- GIF: Creating a new version -->
-
-### Step 5: Test with Cache Behavior
-
-Now let's test our updated prompt:
-
-```typescript
-// Run your agent again
-const response = await supportAgent.generateText("I'm having trouble with my order");
-```
-
-**You might notice the old prompt is still being used!** This is because of caching.
-
-### Understanding Cache Behavior
-
-VoltOps uses caching to reduce latency and improve performance. There are two levels of cache configuration:
-
-**1. Global VoltOps Client Cache:**
+**Global cache (VoltOpsClient):**
 
 ```typescript
 const voltOpsClient = new VoltOpsClient({
-  // ... other options
   promptCache: {
     enabled: true,
-    ttl: 300, // 5 minutes - cached prompts expire after this time
-    maxSize: 100, // Maximum number of prompts to cache
+    ttl: 300, // Seconds until expiration
+    maxSize: 100, // Maximum cached prompts
   },
 });
 ```
 
-**2. Per-Prompt Cache Override:**
+**Per-prompt cache override:**
 
 ```typescript
 instructions: async ({ prompts }) => {
   return await prompts.getPrompt({
     promptName: "customer-support-prompt",
-    promptCache: {
-      enabled: false, // Disable cache for this specific prompt
-    },
-    variables: {
-      companyName: "VoltAgent Corp",
-      tone: "friendly and professional",
-      supportLevel: "premium",
-    },
+    promptCache: { enabled: false }, // Disable cache for this fetch
+    variables: { companyName: "VoltAgent Corp" },
   });
 };
 ```
 
-**To test your new version immediately:**
+**Clear cache:**
 
 ```typescript
-// Option 1: Disable cache temporarily
-promptCache: {
-  enabled: false;
-}
-
-// Option 2: Clear cache and test
 voltOpsClient.prompts.clearCache();
-
-// Option 3: Wait for TTL to expire (5 minutes by default)
 ```
 
-### Step 6: Using Labels for Environment Management
+### Labels
 
 ![Promote to Production](https://cdn.voltagent.dev/docs/prompt-promoting.gif)
 
-Labels help you manage different versions across environments. Let's promote your new version to production:
+Labels associate versions with environments.
 
-1. **Go to your prompt detail page**
-2. **Find version 2** in the version history sidebar
-3. **Click the "⋯" menu** next to the version
-4. **Select "Promote to Production"**
-5. **Confirm the promotion**
+**Promote version to label:**
 
-Now you can target specific environments in your code:
+1. Open prompt detail page
+2. Find version in history
+3. Click "⋯" menu
+4. Select "Promote to Production"
 
-**Development Environment:**
-
-```typescript
-instructions: async ({ prompts }) => {
-  return await prompts.getPrompt({
-    promptName: "customer-support-prompt",
-    label: "development", // Uses development version
-    variables: {
-      /* ... */
-    },
-  });
-};
-```
-
-**Production Environment:**
-
-```typescript
-instructions: async ({ prompts }) => {
-  return await prompts.getPrompt({
-    promptName: "customer-support-prompt",
-    label: "production", // Uses production version
-    variables: {
-      /* ... */
-    },
-  });
-};
-```
-
-**Environment-based Selection:**
+**Use labels in code:**
 
 ```typescript
 instructions: async ({ prompts }) => {
@@ -499,39 +369,38 @@ instructions: async ({ prompts }) => {
 };
 ```
 
-<!-- GIF: Promoting to production label -->
+### Chat Prompts
 
-### Step 7: Chat Type Prompts
+Chat prompts define multi-message conversations.
 
-For more complex conversational agents, you can use chat-type prompts that define multiple message roles:
+**Create in console:**
 
-**Creating a Chat Prompt:**
+1. Click "Create Prompt"
+2. Select type: "Chat"
+3. Add messages:
 
-1. **Click "Create Prompt"**
-2. **Select "Chat" type**
-3. **Add multiple messages**:
-   ```json
-   [
-     {
-       "role": "system",
-       "content": "You are {{agentRole}} for {{companyName}}. Always maintain a {{tone}} tone."
-     },
-     {
-       "role": "user",
-       "content": "Hello, I need help with my account."
-     },
-     {
-       "role": "assistant",
-       "content": "Hello! I'd be happy to help you with your account. Could you please provide more details about the specific issue you're experiencing?"
-     }
-   ]
-   ```
+```json
+[
+  {
+    "role": "system",
+    "content": "You are {{agentRole}} for {{companyName}}."
+  },
+  {
+    "role": "user",
+    "content": "Hello, I need help."
+  },
+  {
+    "role": "assistant",
+    "content": "Hello! How can I assist you today?"
+  }
+]
+```
 
-**Using Chat Prompts:**
+**Use in code:**
 
 ```typescript
-const chatAgent = new Agent({
-  name: "ChatSupportAgent",
+const agent = new Agent({
+  name: "ChatAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
@@ -539,7 +408,6 @@ const chatAgent = new Agent({
       variables: {
         agentRole: "customer support specialist",
         companyName: "VoltAgent Corp",
-        tone: "friendly and professional",
       },
     });
   },
@@ -547,296 +415,224 @@ const chatAgent = new Agent({
 });
 ```
 
-Chat prompts are perfect for:
+### When to Use
 
-- Multi-turn conversations
-- Setting conversation context
-- Providing example interactions
-- Fine-tuning response patterns
+Use VoltOps when:
 
-### What it is
+- Non-technical team members edit prompts
+- Audit trails and approval workflows are required
+- Multiple environments need different prompt versions
+- Prompt analytics and monitoring are needed
+- Managing many prompts across multiple agents
 
-Enterprise-grade prompt management platform that separates prompt content from your application code. Think of it as "GitHub for prompts" with built-in analytics, team collaboration, and deployment pipelines.
+Avoid when:
 
-**Real-world examples**:
+- External dependencies are not acceptable
+- Offline operation is required
+- Network latency is a concern (though mitigated by caching)
 
-- **Large development teams**: Product managers can edit prompts without touching code
-- **Enterprise applications**: Compliance teams can review prompt changes before production
-- **SaaS platforms**: Different prompt versions for different customer tiers managed centrally
-- **AI-first companies**: Data scientists can optimize prompts based on performance analytics
+## Best Practices
 
-### When to use
+### Versioning
 
-**✅ Essential for:**
-
-- **Team collaboration**: Non-technical stakeholders need to edit prompts
-- **Production environments**: You need audit trails, rollback capabilities, and change approval workflows
-- **Multiple environments**: Different prompt versions for dev/staging/production
-- **Performance optimization**: You need analytics on prompt effectiveness and costs
-- **Compliance requirements**: Audit trails and approval processes for prompt changes
-- **Scale operations**: Managing 10+ different prompts across multiple agents
-
-### Pros & Cons
-
-| Pros                               | Cons                |
-| ---------------------------------- | ------------------- |
-| Complete version control           | External dependency |
-| Team collaboration features        | Requires setup      |
-| Environment-specific labels        | Network requests    |
-| Template variables with validation | Learning curve      |
-| Built-in analytics and monitoring  |                     |
-| Performance caching                |                     |
-| Chat and text prompt support       |                     |
-
-## 5. Best Practices
-
-### Prompt Versioning Strategies
-
-**Follow semantic versioning principles:**
+Use descriptive commit messages:
 
 ```typescript
-// Bad: Vague commit messages
+// Avoid
 "updated prompt";
 "fixed issues";
 
-// Good: Descriptive commit messages
+// Prefer
 "Add persona consistency guidelines for customer support";
 "Reduce hallucination by adding explicit knowledge boundaries";
-"Optimize for 20% faster response times based on analytics";
 ```
 
-**Environment promotion workflow:**
+### Error Handling
 
-```typescript
-// 1. Develop and test in development
-const devPrompt = await prompts.getPrompt({
-  promptName: "support-agent",
-  label: "development",
-});
-
-// 2. Promote to staging for integration testing
-// (Done via VoltOps console)
-
-// 3. After approval, promote to production
-const prodPrompt = await prompts.getPrompt({
-  promptName: "support-agent",
-  label: "production",
-});
-```
-
-### Error Handling & Resilience
-
-**Always implement fallback strategies:**
+Implement fallback strategies:
 
 ```typescript
 instructions: async ({ prompts }) => {
   try {
     return await prompts.getPrompt({
       promptName: "primary-prompt",
-      timeout: 5000, // 5 second timeout
+      timeout: 5000,
     });
   } catch (error) {
-    console.error("Prompt fetch failed, using fallback:", error);
-
-    // Fallback to static prompt
-    return "You are a helpful assistant. Please help the user with their question.";
+    console.error("Prompt fetch failed:", error);
+    return "You are a helpful assistant.";
   }
 };
 ```
 
-### Performance Optimization
+### Performance
 
-**Strategic caching configuration:**
+**Cache configuration:**
 
 ```typescript
-// High-frequency prompts: Short TTL
-const frequentPrompt = await prompts.getPrompt({
+// High-frequency prompts: short TTL
+await prompts.getPrompt({
   promptName: "chat-greeting",
-  promptCache: { ttl: 60, enabled: true }, // 1 minute
+  promptCache: { ttl: 60, enabled: true },
 });
 
-// Stable prompts: Long TTL
-const stablePrompt = await prompts.getPrompt({
+// Stable prompts: long TTL
+await prompts.getPrompt({
   promptName: "system-instructions",
-  promptCache: { ttl: 3600, enabled: true }, // 1 hour
+  promptCache: { ttl: 3600, enabled: true },
 });
 
-// Dynamic prompts: No cache
-const dynamicPrompt = await prompts.getPrompt({
+// Dynamic prompts: no cache
+await prompts.getPrompt({
   promptName: "personalized-prompt",
   promptCache: { enabled: false },
   variables: { userId: dynamicUserId },
 });
 ```
 
-**Preload critical prompts:**
+**Preload prompts:**
 
 ```typescript
-// Preload during application startup
-const criticalPrompts = ["welcome-message", "error-handler", "fallback-response"];
-
+const criticalPrompts = ["welcome-message", "error-handler"];
 await Promise.all(criticalPrompts.map((name) => prompts.getPrompt({ promptName: name })));
 ```
 
-### Security Best Practices
+### Security
 
-**Input sanitization for template variables:**
+Sanitize template variables:
 
 ```typescript
 instructions: async ({ prompts, context }) => {
-  // Sanitize user input
   const sanitizedUserName =
-    context
-      .get("userName")
-      ?.replace(/[<>]/g, "") // Remove potential HTML
-      ?.substring(0, 50) || "Guest"; // Limit length
+    context.get("userName")?.replace(/[<>]/g, "")?.substring(0, 50) || "Guest";
 
   return await prompts.getPrompt({
     promptName: "personalized-greeting",
-    variables: {
-      userName: sanitizedUserName,
-      // Never pass raw user input directly
-    },
+    variables: { userName: sanitizedUserName },
   });
 };
 ```
 
-## 6. Troubleshooting
+## Troubleshooting
 
-### Common Issues
-
-**Prompt not found error:**
+### Prompt not found
 
 ```typescript
-// Problem: Prompt name doesn't exist
-Error: Prompt 'weather-prompt' not found
+// Error: Prompt 'weather-prompt' not found
 
-// Solution: Check prompt name spelling and ensure it exists in VoltOps
+// Solution: Verify name and existence
 instructions: async ({ prompts }) => {
   try {
     return await prompts.getPrompt({ promptName: "weather-prompt" });
   } catch (error) {
     console.error("Prompt fetch failed:", error);
-    return "Fallback instructions here";
+    return "Fallback instructions";
   }
-}
+};
 ```
 
-**Template variable errors:**
+### Missing variables
 
 ```typescript
-// Problem: Missing required variables
-Template error: Variable 'userName' not found
+// Error: Variable 'userName' not found
 
 // Solution: Provide all required variables
 return await prompts.getPrompt({
   promptName: "greeting-prompt",
   variables: {
-    userName: context.get('userName') || 'Guest', // Provide default
-    currentTime: new Date().toISOString()
-  }
+    userName: context.get("userName") || "Guest",
+    currentTime: new Date().toISOString(),
+  },
 });
 ```
 
-**Cache issues:**
+### Stale cache
 
 ```typescript
-// Problem: Stale prompts due to caching
-// Solution: Clear cache or adjust TTL
-voltOpsClient.clearCache(); // Clear all cached prompts
+// Problem: Old prompt version still in use
 
-// Or disable caching temporarily
+// Solution 1: Clear cache
+voltOpsClient.prompts.clearCache();
+
+// Solution 2: Disable cache temporarily
 return await prompts.getPrompt({
   promptName: "urgent-prompt",
   promptCache: { enabled: false },
 });
+
+// Solution 3: Wait for TTL expiration
 ```
 
-**Authentication errors:**
+### Authentication
 
 ```typescript
-// Problem: Invalid API keys
-Error: Authentication failed
+// Error: Authentication failed
 
 // Solution: Verify environment variables
 console.log("Public Key:", process.env.VOLTAGENT_PUBLIC_KEY?.substring(0, 8) + "...");
 console.log("Secret Key:", process.env.VOLTAGENT_SECRET_KEY ? "Set" : "Missing");
 ```
 
-### Debug Tips
-
-**Test prompt fetching independently:**
+### Debug prompts independently
 
 ```typescript
-// Test VoltOps connection outside of agent
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
   secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
-const promptManager = voltOpsClient.prompts;
-
 try {
-  const prompt = await promptManager.getPrompt({
+  const prompt = await voltOpsClient.prompts.getPrompt({
     promptName: "test-prompt",
   });
-  console.log("Prompt fetch successful:", prompt);
+  console.log("Success:", prompt);
 } catch (error) {
-  console.error("Prompt fetch failed:", error);
+  console.error("Failed:", error);
 }
 ```
 
-## 7. Choosing the Right Approach
+## Comparison
 
-### At a Glance Comparison
+| Feature                   | Static      | Dynamic     | VoltOps            |
+| ------------------------- | ----------- | ----------- | ------------------ |
+| **Type**                  | String      | Function    | External platform  |
+| **Context Access**        | No          | Yes         | Yes (via function) |
+| **Runtime Flexibility**   | None        | Full        | Full               |
+| **Team Collaboration**    | Code review | Code review | Platform UI        |
+| **Version Control**       | Git         | Git         | VoltOps + Git      |
+| **Non-technical Editing** | No          | No          | Yes                |
+| **Analytics**             | No          | No          | Yes                |
+| **Offline Support**       | Yes         | Yes         | No                 |
+| **External Dependency**   | No          | No          | Yes                |
 
-| Feature                   | Static Instructions | Dynamic Instructions | VoltOps Management  |
-| ------------------------- | ------------------- | -------------------- | ------------------- |
-| **Setup Time**            | 0 minutes           | 5 minutes            | 15 minutes          |
-| **Runtime Performance**   | Fastest             | Fast                 | Good (with caching) |
-| **Context Awareness**     | ❌                  | ✅                   | ✅                  |
-| **Team Collaboration**    | ❌                  | Limited              | ✅                  |
-| **Version Control**       | Code-based          | Code-based           | Built-in            |
-| **Non-technical Editing** | ❌                  | ❌                   | ✅                  |
-| **Analytics**             | Manual              | Manual               | Built-in            |
-| **A/B Testing**           | Manual              | Code-based           | Built-in            |
-| **Offline Support**       | ✅                  | ✅                   | ❌                  |
-| **Cost**                  | Free                | Free                 | Paid service        |
+## Examples
 
-### Real-World Scenarios
-
-**Scenario 1: Solo Developer Building a Personal Tool**
+**Static (solo developer, consistent behavior):**
 
 ```typescript
-// Use Static Instructions
 const agent = new Agent({
-  instructions: "You are a helpful code reviewer. Focus on security and performance.",
-  // ... other options
+  instructions: "You are a code reviewer. Focus on security and performance.",
+  model: openai("gpt-4o-mini"),
 });
 ```
 
-**Why**: No team collaboration needed, behavior is consistent, setup is instant.
-
-**Scenario 2: SaaS Platform with Different User Tiers**
+**Dynamic (user-specific behavior):**
 
 ```typescript
-// Use Dynamic Instructions
 const agent = new Agent({
   instructions: async ({ context }) => {
     const tier = context.get("tier");
     return tier === "premium"
-      ? "You are a dedicated premium support agent with deep technical expertise."
-      : "You are a helpful support agent providing efficient solutions.";
+      ? "You are a premium support agent with deep technical expertise."
+      : "You are a support agent providing efficient solutions.";
   },
+  model: openai("gpt-4o-mini"),
 });
 ```
 
-**Why**: Behavior changes based on user context, but you don't need external prompt management.
-
-**Scenario 3: Enterprise Team with Product Managers**
+**VoltOps (team collaboration, versioning):**
 
 ```typescript
-// Use VoltOps Management
 const agent = new Agent({
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
@@ -844,17 +640,7 @@ const agent = new Agent({
       label: process.env.NODE_ENV === "production" ? "production" : "development",
     });
   },
+  model: openai("gpt-4o-mini"),
   voltOpsClient: voltOpsClient,
 });
 ```
-
-**Why**: Non-technical team members need to edit prompts, you need approval workflows, and analytics are important.
-
-### Quick Start Recommendations
-
-1. **Just starting with VoltAgent?** → Start with Static Instructions
-2. **Need user-specific behavior?** → Use Dynamic Instructions
-3. **Working with a team?** → Evaluate VoltOps Management
-4. **Building for production?** → Plan migration path to VoltOps
-
-Remember: You can always start simple and migrate to more sophisticated approaches as your needs grow. The key is choosing the right level of complexity for your current requirements.

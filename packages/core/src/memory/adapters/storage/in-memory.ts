@@ -40,11 +40,6 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   private users: Map<string, UserInfo> = new Map();
   private workflowStates: Map<string, WorkflowStateEntry> = new Map();
   private workflowStatesByWorkflow: Map<string, Set<string>> = new Map();
-  private storageLimit: number;
-
-  constructor(options?: { storageLimit?: number }) {
-    this.storageLimit = options?.storageLimit ?? 100;
-  }
 
   // ============================================================================
   // Message Operations
@@ -74,12 +69,6 @@ export class InMemoryStorageAdapter implements StorageAdapter {
 
     // Add message to storage
     this.storage[userId][conversationId].push(storedMessage);
-
-    // Apply storage limit (keep only the most recent messages)
-    const messages = this.storage[userId][conversationId];
-    if (messages.length > this.storageLimit) {
-      this.storage[userId][conversationId] = messages.slice(-this.storageLimit);
-    }
   }
 
   /**
@@ -99,7 +88,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     conversationId: string,
     options?: GetMessagesOptions,
   ): Promise<UIMessage[]> {
-    const { limit = this.storageLimit, before, after, roles } = options || {};
+    const { limit = 100, before, after, roles } = options || {};
 
     // Get user's messages or return empty array
     const userMessages = this.storage[userId] || {};

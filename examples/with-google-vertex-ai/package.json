@@ -3,12 +3,12 @@
   "author": "",
   "dependencies": {
     "@ai-sdk/google-vertex": "^3.0.25",
-    "@voltagent/cli": "^0.1.11",
-    "@voltagent/core": "^1.1.26",
-    "@voltagent/libsql": "^1.0.7",
-    "@voltagent/logger": "^1.0.2",
-    "@voltagent/server-hono": "^1.0.18",
-    "ai": "^5.0.12",
+    "@voltagent/cli": "^0.1.13",
+    "@voltagent/core": "^1.1.31",
+    "@voltagent/libsql": "^1.0.9",
+    "@voltagent/logger": "^1.0.3",
+    "@voltagent/server-hono": "^1.0.26",
+    "ai": "^5.0.76",
     "zod": "^3.25.76"
   },
   "devDependencies": {

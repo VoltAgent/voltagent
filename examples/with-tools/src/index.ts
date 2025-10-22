@@ -14,9 +14,7 @@ const logger = createPinoLogger({
 });
 
 const memory = new Memory({
-  storage: new LibSQLMemoryAdapter({
-    storageLimit: 100, // Keep last 100 messages per conversation
-  }),
+  storage: new LibSQLMemoryAdapter({}),
   embedding: new AiSdkEmbeddingAdapter(openai.textEmbeddingModel("text-embedding-3-small")),
   vector: new LibSQLVectorAdapter(),
 });
@@ -26,7 +24,12 @@ const agent = new Agent({
   name: "Assistant with Tools",
   instructions: "A helpful assistant that can use tools to provide better answers",
   model: openai("gpt-4o-mini"),
-  tools: [addCalendarEventTool, checkCalendarTool, searchTool],
+  tools: [
+    addCalendarEventTool,
+    checkCalendarTool,
+    openai.tools.webSearch(),
+    // searchTool,
+  ],
   memory,
 });
 

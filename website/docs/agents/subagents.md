@@ -3,79 +3,74 @@ title: Sub-agents
 slug: /agents/sub-agents
 ---
 
-# Subagents
+# Sub-agents
 
-Subagents are specialized agents that work under a supervisor agent to handle specific tasks. This architecture enables the creation of complex agent workflows where each subagent focuses on its area of expertise, coordinated by a supervisor.
+Sub-agents are agents that work under a supervisor agent to handle specific tasks. This architecture allows you to create agent workflows where each sub-agent focuses on a specific domain, coordinated by a supervisor.
 
-## Why Use Subagents?
+## Why Use Sub-agents?
 
-- **Specialization**: Create agents that excel at specific tasks (e.g., coding, translation, data analysis).
-- **Workflow Orchestration**: Build complex, multi-step workflows by having a supervisor delegate tasks to the appropriate specialized agents.
-- **Scalability**: Break down complex problems into smaller, manageable parts, making the overall system easier to develop and maintain.
-- **Improved Responses**: Achieve better results by leveraging the focused knowledge and capabilities of specialized agents for specific parts of a user request.
-- **Modularity**: Easily swap or add specialized agents without disrupting the entire system.
+- **Task delegation**: Assign specific tasks to agents configured for particular domains (e.g., coding, translation, data analysis)
+- **Workflow orchestration**: Build multi-step workflows by delegating tasks to appropriate agents
+- **Code organization**: Break down complex problems into smaller components
+- **Modularity**: Add or swap agents without disrupting the entire system
 
-## Creating and Using Subagents
+## Creating and Using Sub-agents
 
 ### Creating Individual Agents
 
-First, create the specialized agents that will serve as subagents:
+Create the agents that will serve as sub-agents:
 
 ```ts
 import { Agent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-// Create a specialized agent for writing stories
-const storyAgent = new Agent({
-  name: "Story Agent",
-  purpose: "A story writer agent that creates original, engaging short stories.",
-  instructions: "You are a creative story writer. Create original, engaging short stories.",
+// Create an agent for content creation
+const contentCreatorAgent = new Agent({
+  name: "ContentCreator",
+  instructions: "Creates short text content on requested topics",
   model: openai("gpt-4o-mini"),
 });
 
-// Create a specialized agent for translation
-const translatorAgent = new Agent({
-  name: "Translator Agent",
-  purpose: "A translator agent that translates text accurately.",
-  instructions: "You are a skilled translator. Translate text accurately.",
+// Create an agent for formatting
+const formatterAgent = new Agent({
+  name: "Formatter",
+  instructions: "Formats and styles text content",
   model: openai("gpt-4o-mini"),
 });
 ```
 
 ### Creating a Supervisor Agent
 
-Create a supervisor agent that will coordinate between subagents. Simply pass the specialized agents in the `subAgents` array during initialization:
+Pass the agents in the `subAgents` array during supervisor initialization:
 
 ```ts
 import { Agent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-// Create a supervisor agent with specialized agents as subagents
 const supervisorAgent = new Agent({
-  name: "Supervisor Agent",
-  instructions: "You manage a workflow between specialized agents.",
+  name: "Supervisor",
+  instructions: "Coordinates between content creation and formatting agents",
   model: openai("gpt-4o-mini"),
-  // Specify subagents during initialization
-  subAgents: [storyAgent, translatorAgent],
+  subAgents: [contentCreatorAgent, formatterAgent],
 });
 ```
 
-:::tip Advanced SubAgent Configuration
-The basic example above uses the default `streamText` method for subagents. For more control over how subagents execute tasks, you can specify different methods like `generateText`, `generateObject`, or `streamObject` with custom schemas and options.
+:::tip Advanced Sub-agent Configuration
+By default, sub-agents use the `streamText` method. You can specify different methods like `generateText`, `generateObject`, or `streamObject` with custom schemas and options.
 
-**Learn more:** [Advanced SubAgent Configuration](#advanced-configuration)
+See: [Advanced Configuration](#advanced-configuration)
 :::
 
 ## Customizing Supervisor Behavior
 
-By default, supervisor agents use an automatically generated system message that includes guidelines for managing subagents. However, you can customize this behavior using the `supervisorConfig` option for more control over how your supervisor agent behaves.
+Supervisor agents use an automatically generated system message that includes guidelines for managing sub-agents. Customize this behavior using the `supervisorConfig` option.
 
 :::info Default System Message
-To see the current default supervisor system message template and understand how it works, check the [generateSupervisorSystemMessage implementation](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/subagent/index.ts#L131) on GitHub.
+See the [generateSupervisorSystemMessage implementation](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/subagent/index.ts#L131) on GitHub.
 :::
 
 :::note Type Safety
-The `supervisorConfig` option is only available when `subAgents` are provided. TypeScript will prevent you from using `supervisorConfig` on agents without subagents.
+The `supervisorConfig` option is only available when `subAgents` are provided. TypeScript will prevent you from using `supervisorConfig` on agents without sub-agents.
 :::
 
 ### Basic Supervisor Configuration
@@ -90,7 +85,6 @@ const supervisorAgent = new Agent({
   model: openai("gpt-4o-mini"),
   subAgents: [writerAgent, editorAgent],
 
-  // ✅ Basic supervisor customization
   supervisorConfig: {
     // Add custom guidelines to the default ones
     customGuidelines: [
@@ -107,7 +101,7 @@ const supervisorAgent = new Agent({
 
 ### Stream Event Forwarding Configuration
 
-Control which events from subagents are forwarded to the parent stream. By default, only `tool-call` and `tool-result` events are forwarded to keep the stream focused on meaningful actions.
+Control which events from sub-agents are forwarded to the parent stream. By default, only `tool-call` and `tool-result` events are forwarded.
 
 ```ts
 const supervisorAgent = new Agent({
@@ -117,10 +111,9 @@ const supervisorAgent = new Agent({
   subAgents: [writerAgent, editorAgent],
 
   supervisorConfig: {
-    // Configure which subagent events to forward
+    // Configure which sub-agent events to forward
     fullStreamEventForwarding: {
       // Default: ['tool-call', 'tool-result']
-      // Enable all event types for complete visibility
       types: ["tool-call", "tool-result", "text-delta", "reasoning", "source", "error", "finish"],
     },
   },
@@ -135,7 +128,7 @@ fullStreamEventForwarding: {
   types: ['tool-call', 'tool-result'],
 }
 
-// Text + Tools - See what subagents are saying and doing
+// Text + Tools - Include text generation
 fullStreamEventForwarding: {
   types: ['tool-call', 'tool-result', 'text-delta'],
 }
@@ -151,11 +144,11 @@ fullStreamEventForwarding: {
 }
 ```
 
-This configuration helps you balance between stream performance and information richness, allowing you to see exactly what you need from subagent interactions.
+This configuration balances stream performance and information detail for sub-agent interactions.
 
 ### Error Handling Configuration
 
-Control how your supervisor handles subagent failures with configurable error handling behavior. This is especially useful when subagents encounter stream errors or fail to generate responses.
+Control how the supervisor handles sub-agent failures.
 
 ```ts
 const supervisorAgent = new Agent({
@@ -180,13 +173,13 @@ const supervisorAgent = new Agent({
 
 - When `false`: Stream errors are caught and returned as error results with `status: "error"`
 - When `true`: Stream errors throw exceptions that must be caught with try/catch
-- Use `true` when you want to handle errors at a higher level or trigger retry logic
+- Set to `true` to handle errors at a higher level or trigger retry logic
 
 **`includeErrorInEmptyResponse`** (boolean, default: `true`)
 
 - When `true`: Error messages are included in the response when no content was generated
 - When `false`: Returns empty string in result, but still marks status as "error"
-- Use `false` when you want to handle error messaging yourself
+- Set to `false` to handle error messaging yourself
 
 #### Common Error Handling Patterns
 
@@ -201,31 +194,13 @@ supervisorConfig: {
 
 // Usage:
 const result = await supervisor.streamText("Process data");
-// If subagent fails:
+// If sub-agent fails:
 // result contains error message like "Error in DataProcessor: Stream failed"
 ```
 
-**Exception-Based - For Retry Logic:**
-
-```ts
-// Errors throw exceptions for custom handling
-supervisorConfig: {
-  throwOnStreamError: true,
-}
-
-// Usage with retry:
-let retries = 3;
-while (retries > 0) {
-  try {
-    const result = await supervisor.streamText("Process data");
-    break;
-  } catch (error) {
-    console.error(`Attempt failed: ${error.message}`);
-    retries--;
-    if (retries === 0) throw error;
-  }
-}
-```
+:::info Native Retry Support
+VoltAgent uses the AI SDK's native retry mechanism (default: 3 attempts). Setting `throwOnStreamError: true` is useful for custom error handling or logging at a higher level, not for implementing retry logic.
+:::
 
 **Silent Errors - Custom Messaging:**
 
@@ -245,14 +220,14 @@ for await (const event of result.fullStream) {
 }
 ```
 
-**Production Setup - Detailed Error Tracking:**
+**Production Setup - Error Tracking:**
 
 ```ts
 supervisorConfig: {
   throwOnStreamError: false, // Don't crash the app
   includeErrorInEmptyResponse: true, // Help with debugging
 
-  // Also capture all error events for monitoring
+  // Capture error events for monitoring
   fullStreamEventForwarding: {
     types: ['tool-call', 'tool-result', 'error'],
   },
@@ -261,10 +236,10 @@ supervisorConfig: {
 
 #### Error Handling in Practice
 
-When a subagent encounters an error, the supervisor's behavior depends on your configuration:
+The supervisor's behavior when a sub-agent encounters an error depends on your configuration:
 
 ```ts
-// Example: Subagent fails during stream
+// Example: Sub-agent fails during stream
 const supervisor = new Agent({
   name: "Supervisor",
   subAgents: [unreliableAgent],
@@ -274,31 +249,29 @@ const supervisor = new Agent({
   },
 });
 
-// The supervisor handles the failure gracefully
+// The supervisor handles the failure
 const response = await supervisor.streamText("Do something risky");
 
 // Check the response
 if (response.status === "error") {
-  console.log("Subagent failed:", response.error);
+  console.log("Sub-agent failed:", response.error);
   // response.result contains: "Error in UnreliableAgent: [error details]"
 } else {
   // Process successful response
 }
 ```
 
-This configuration ensures your supervisor agents can handle subagent failures gracefully, providing better reliability and debugging capabilities in production environments.
-
 #### Using with fullStream
 
-When using `fullStream` to get detailed streaming events, the configuration controls what you receive from subagents:
+When using `fullStream`, the configuration controls what you receive from sub-agents:
 
 ```ts
 // Stream with full event details
 const result = await supervisorAgent.streamText("Create and edit content", {
-  fullStream: true, // Enable full streaming to get all event types
+  fullStream: true,
 });
 
-// Process different event types; add your own prefix using sub-agent metadata if desired
+// Process different event types
 for await (const event of result.fullStream) {
   switch (event.type) {
     case "tool-call":
@@ -323,9 +296,9 @@ for await (const event of result.fullStream) {
 }
 ```
 
-#### Filtering Subagent Events
+#### Filtering Sub-agent Events
 
-You can identify which events come from subagents by checking for `subAgentId` and `subAgentName` properties:
+Identify which events come from sub-agents by checking for `subAgentId` and `subAgentName` properties:
 
 ```ts
 const result = await supervisorAgent.streamText("Create and edit content", {
@@ -333,13 +306,13 @@ const result = await supervisorAgent.streamText("Create and edit content", {
 });
 
 for await (const event of result.fullStream) {
-  // Check if this event is from a subagent
+  // Check if this event is from a sub-agent
   if (event.subAgentId && event.subAgentName) {
-    console.log(`Event from subagent ${event.subAgentName}:`);
+    console.log(`Event from sub-agent ${event.subAgentName}:`);
     console.log(`  Type: ${event.type}`);
     console.log(`  Data:`, event.data);
 
-    // Filter by specific subagent
+    // Filter by specific sub-agent
     if (event.subAgentName === "WriterAgent") {
       // Handle writer agent events specifically
     }
@@ -352,13 +325,13 @@ for await (const event of result.fullStream) {
 
 This allows you to:
 
-- Distinguish between supervisor and subagent events
-- Filter events by specific subagent
+- Distinguish between supervisor and sub-agent events
+- Filter events by specific sub-agent
 - Apply different handling logic based on the event source
 
 ### Complete System Message Override
 
-For complete control over the supervisor's behavior, you can provide a custom `systemMessage` that entirely replaces the default template:
+Provide a custom `systemMessage` to replace the default template:
 
 ```ts
 const supervisorAgent = new Agent({
@@ -367,21 +340,20 @@ const supervisorAgent = new Agent({
   model: openai("gpt-4o-mini"),
   subAgents: [writerAgent, editorAgent],
 
-  // ✅ Complete system message override
   supervisorConfig: {
     systemMessage: `
-You are a professional content manager named "ContentBot".
+You are a content manager named "ContentBot".
 
-Your specialist team:
+Your team:
 - Writer: Creates original content
 - Editor: Reviews and improves content
 
 Your workflow:
-1. Analyze user requests carefully
+1. Analyze user requests
 2. Use delegate_task to assign work to appropriate specialists
 3. Coordinate between specialists as needed
-4. Provide comprehensive final responses
-5. Always maintain a professional but friendly tone
+4. Provide final responses
+5. Maintain a professional tone
 
 Remember: Use the delegate_task tool to assign tasks to your specialists.
     `.trim(),
@@ -437,53 +409,53 @@ supervisorConfig: {
 }
 ```
 
-**Throw exceptions for retry logic:**
+**Throw exceptions for custom error handling:**
 
 ```ts
 supervisorConfig: {
-  throwOnStreamError: true; // Throw exceptions on subagent failures
+  throwOnStreamError: true; // Throw exceptions on sub-agent failures
 }
 ```
 
-## How Subagents Work
+## How Sub-agents Work
 
-The core mechanism involves the supervisor agent delegating tasks to its subagents using the automatically provided `delegate_task` tool.
+The supervisor agent delegates tasks to its sub-agents using the automatically provided `delegate_task` tool.
 
-1.  A user sends a request to the supervisor agent.
-2.  The supervisor agent's LLM analyzes the request and its enhanced system prompt (which lists available subagents).
-3.  Based on the task, the supervisor decides which subagent(s) are best suited to handle specific parts of the request.
-4.  The supervisor uses the `delegate_task` tool to hand off the task(s).
+1. A user sends a request to the supervisor agent.
+2. The supervisor's LLM analyzes the request and its system prompt (which lists available sub-agents).
+3. Based on the task, the supervisor decides which sub-agent(s) to use.
+4. The supervisor uses the `delegate_task` tool to hand off the task(s).
 
 ### The `delegate_task` Tool
 
-This tool is the primary interface for delegation.
+This tool is automatically added to supervisor agents and handles delegation.
 
 - **Name**: `delegate_task`
 - **Description**: "Delegate a task to one or more specialized agents"
 - **Parameters**:
-  - `task` (string, required): The specific task description to be delegated.
-  - `targetAgents` (array of strings, required): A list of subagent **names** to delegate the task to. The supervisor can delegate to multiple agents simultaneously if appropriate.
-  - `context` (object, optional): Any additional context needed by the subagent(s) to perform the task.
+  - `task` (string, required): The task description to be delegated
+  - `targetAgents` (array of strings, required): Sub-agent names to delegate the task to. The supervisor can delegate to multiple agents simultaneously
+  - `context` (object, optional): Additional context needed by the sub-agent(s)
 - **Execution**:
-  - The tool finds the corresponding subagent instances based on the provided names.
-  - It calls the `handoffTask` (or `handoffToMultiple`) method internally, which sends the task description and context to the target subagent(s).
-  - Crucially, it passes the supervisor's agent ID (`parentAgentId`) and the current history entry ID (`parentHistoryEntryId`) to the subagent's execution context. This is key for [Observability](#observability).
-- **Returns**: An array of objects, where each object contains the result from a delegated agent:
+  - Finds the sub-agent instances based on the provided names
+  - Calls the `handoffTask` (or `handoffToMultiple`) method internally
+  - Passes the supervisor's agent ID (`parentAgentId`) and history entry ID (`parentHistoryEntryId`) for observability
+- **Returns**: An array of objects with results from each delegated agent:
   ```ts
   [
     {
-      agentName: string; // Name of the subagent that executed the task
-      response: string; // The text result returned by the subagent
-      conversationId: string; // The conversation ID used for the handoff
+      agentName: string; // Name of the sub-agent that executed the task
+      response: string; // The text result returned by the sub-agent
+      usage?: any; // Token usage information
     },
-    // ... potentially more results if multiple agents were targeted
+    // ... more results if multiple agents were targeted
   ]
   ```
 
-5.  Subagents process their delegated tasks independently. They can use their own tools or even delegate further if they are also supervisors.
-6.  Each subagent returns its result to the `delegate_task` tool execution context within the supervisor.
-7.  The supervisor receives the results from the `delegate_task` tool.
-8.  Based on its instructions and the received results, the supervisor synthesizes the final response and presents it to the user.
+5. Sub-agents process their delegated tasks independently. They can use their own tools or delegate further if they are also supervisors.
+6. Each sub-agent returns its result to the `delegate_task` tool execution context.
+7. The supervisor receives the results from the `delegate_task` tool.
+8. The supervisor synthesizes the final response based on its instructions and the received results.
 
 ## Complete Example
 
@@ -491,7 +463,7 @@ This tool is the primary interface for delegation.
 import { Agent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-// Create specialists
+// Create agents
 const writer = new Agent({
   name: "Writer",
   instructions: "Write creative stories",
@@ -545,7 +517,7 @@ const supervisor = new Agent({
 
 ## Context Sharing
 
-SubAgents automatically inherit the supervisor's context:
+Sub-agents automatically inherit the supervisor's context:
 
 ```ts
 // Supervisor passes context
@@ -553,7 +525,7 @@ const response = await supervisor.streamText("Task", {
   context: new Map([["projectId", "123"]]),
 });
 
-// SubAgent receives it automatically
+// Sub-agent receives it automatically
 const subAgent = new Agent({
   hooks: {
     onStart: (context) => {
@@ -570,22 +542,22 @@ Control workflow steps with `maxSteps`:
 ```ts
 const supervisor = new Agent({
   subAgents: [writer, editor],
-  maxSteps: 20, // Inherited by all subagents
+  maxSteps: 20, // Inherited by all sub-agents
 });
 
 // Override per request
 const result = await supervisor.generateText("Task", { maxSteps: 10 });
 ```
 
-**Default:** `10 × number_of_subagents` (prevents infinite loops)
+**Default:** `10 × number_of_sub-agents` (prevents infinite loops)
 
 ## Observability
 
-SubAgent operations are automatically linked to their supervisor for complete traceability in monitoring tools.
+Sub-agent operations are automatically linked to their supervisor for traceability in monitoring tools.
 
 ## Advanced Configuration
 
-Use different execution methods for specialized subagents:
+Use different execution methods for sub-agents:
 
 ```ts
 import { createSubagent } from "@voltagent/core";
@@ -612,19 +584,19 @@ const supervisor = new Agent({
 **Available methods:**
 
 - `streamText` (default) - Real-time text streaming
-- `generateText` - Simple text generation
+- `generateText` - Text generation
 - `generateObject` - Structured data with Zod schema
 - `streamObject` - Streaming structured data
 
-## Dynamic SubAgents
+## Dynamic Sub-agents
 
-Add subagents after initialization:
+Add sub-agents after initialization:
 
 ```ts
 supervisor.addSubAgent(newAgent);
 ```
 
-## Remove SubAgents
+## Remove Sub-agents
 
 ```ts
 supervisor.removeSubAgent(agentId);
@@ -632,7 +604,7 @@ supervisor.removeSubAgent(agentId);
 
 ## Troubleshooting
 
-**SubAgent not being called?**
+**Sub-agent not being called?**
 
 - Check agent names match exactly
 - Make supervisor instructions explicit about when to delegate

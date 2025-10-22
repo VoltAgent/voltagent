@@ -121,48 +121,6 @@ describe("PostgreSQLMemoryAdapter Integration Tests", () => {
       expect(user2Conversations[0].userId).toBe("user2");
     });
 
-    it("should enforce storage limits", async () => {
-      const limitedStorage = new PostgreSQLMemoryAdapter({
-        ...TEST_CONFIG,
-        storageLimit: 3,
-        tablePrefix: "test_limited",
-      });
-
-      const conversation = {
-        id: `limit-test-conv-${Date.now()}`, // Use unique ID to avoid conflicts
-        resourceId: "test-resource",
-        userId: "test-user",
-        title: "Limit Test",
-        metadata: {},
-      };
-
-      await limitedStorage.createConversation(conversation);
-
-      // Add messages beyond the limit
-      for (let i = 1; i <= 5; i++) {
-        const message: UIMessage = {
-          id: `msg-${i}`,
-          role: "user",
-          parts: [
-            {
-              type: "text",
-              text: `Message ${i}`,
-            },
-          ],
-          metadata: {},
-        };
-        await limitedStorage.addMessage(message, conversation.userId, conversation.id);
-        await new Promise((resolve) => setTimeout(resolve, 10)); // Small delay for ordering
-      }
-
-      const messages = await limitedStorage.getMessages(conversation.userId, conversation.id);
-
-      // Should only have 3 messages (the limit)
-      expect(messages.length).toBeLessThanOrEqual(3);
-
-      await limitedStorage.close();
-    });
-
     it("should add multiple messages at once", async () => {
       const conversation = {
         id: "test-conv-batch",

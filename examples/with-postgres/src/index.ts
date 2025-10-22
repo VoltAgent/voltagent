@@ -24,9 +24,6 @@ const memoryStorage = new PostgreSQLMemoryAdapter({
   // Optional: Configure connection pool
   maxConnections: 10,
 
-  // Optional: Set storage limit for messages
-  storageLimit: 100,
-
   // Optional: Enable debug logging for storage
   debug: process.env.NODE_ENV === "development",
 });

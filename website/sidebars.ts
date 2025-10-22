@@ -58,6 +58,17 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Guardrails",
+      customProps: {
+        badge: {
+          label: "New",
+          variant: "accent",
+        },
+      },
+      items: ["guardrails/overview", "guardrails/built-in"],
+    },
+    {
+      type: "category",
       label: "Workflows",
       items: [
         "workflows/overview",
@@ -76,6 +87,30 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Evals",
+      customProps: {
+        badge: {
+          label: "New",
+          variant: "accent",
+        },
+      },
+      items: [
+        "evals/overview",
+        "evals/offline-evaluations",
+        "evals/live-evaluations",
+        "evals/datasets",
+        "evals/experiments",
+        {
+          type: "category",
+          label: "Scorers",
+          items: ["evals/prebuilt-scorers", "evals/building-custom-scorers"],
+        },
+        "evals/cli-reference",
+        "evals/using-with-viteval",
+      ],
+    },
+    {
+      type: "category",
       label: "Memory",
       items: [
         "agents/memory/overview",
@@ -86,7 +121,16 @@ const sidebars: SidebarsConfig = {
           label: "Storage Adapters",
           items: [
             "agents/memory/in-memory",
-            "agents/memory/managed-memory",
+            {
+              type: "doc",
+              id: "agents/memory/managed-memory",
+              customProps: {
+                badge: {
+                  label: "New",
+                  variant: "accent",
+                },
+              },
+            },
             "agents/memory/libsql",
             "agents/memory/postgres",
             "agents/memory/supabase",
@@ -149,11 +193,6 @@ const sidebars: SidebarsConfig = {
         "deployment/cloudflare-workers",
         "deployment/netlify-functions",
       ],
-    },
-    {
-      type: "category",
-      label: "Evals",
-      items: ["evals/overview", "evals/quick-start"],
     },
     {
       type: "category",

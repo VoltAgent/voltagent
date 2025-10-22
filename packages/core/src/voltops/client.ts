@@ -41,8 +41,14 @@ import type {
   ManagedMemoryWorkingMemoryInput,
   PromptHelper,
   PromptReference,
+  VoltOpsAppendEvalRunResultsRequest,
   VoltOpsClientOptions,
+  VoltOpsCompleteEvalRunRequest,
+  VoltOpsCreateEvalRunRequest,
+  VoltOpsCreateScorerRequest,
+  VoltOpsEvalRunSummary,
   VoltOpsPromptManager,
+  VoltOpsScorerSummary,
 } from "./types";
 
 /**
@@ -199,6 +205,44 @@ export class VoltOpsClient implements IVoltOpsClient {
    */
   public getPromptManager(): VoltOpsPromptManager | undefined {
     return this.prompts;
+  }
+
+  public async createEvalRun(
+    payload: VoltOpsCreateEvalRunRequest = {},
+  ): Promise<VoltOpsEvalRunSummary> {
+    const response = await this.request<unknown>("POST", "/evals/runs", payload);
+    return this.normalizeRunSummary(response);
+  }
+
+  public async appendEvalRunResults(
+    runId: string,
+    payload: VoltOpsAppendEvalRunResultsRequest,
+  ): Promise<VoltOpsEvalRunSummary> {
+    const response = await this.request<unknown>(
+      "POST",
+      `/evals/runs/${encodeURIComponent(runId)}/results`,
+      payload,
+    );
+    return this.normalizeRunSummary(response);
+  }
+
+  public async completeEvalRun(
+    runId: string,
+    payload: VoltOpsCompleteEvalRunRequest,
+  ): Promise<VoltOpsEvalRunSummary> {
+    const response = await this.request<unknown>(
+      "POST",
+      `/evals/runs/${encodeURIComponent(runId)}/complete`,
+      payload,
+    );
+    return this.normalizeRunSummary(response);
+  }
+
+  public async createEvalScorer(
+    payload: VoltOpsCreateScorerRequest,
+  ): Promise<VoltOpsScorerSummary> {
+    const response = await this.request<unknown>("POST", "/evals/scorers", payload);
+    return this.normalizeScorerSummary(response);
   }
 
   private async request<T>(method: string, endpoint: string, body?: unknown): Promise<T> {
@@ -828,6 +872,82 @@ export class VoltOpsClient implements IVoltOpsClient {
     } catch (error) {
       this.logger.error("Error during disposal", { error });
     }
+  }
+
+  private normalizeRunSummary(raw: any): VoltOpsEvalRunSummary {
+    const toNumber = (value: unknown, fallback: number): number => {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+      }
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    const toNullableNumber = (value: unknown): number | null => {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+      }
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const tags = Array.isArray(raw?.tags)
+      ? raw.tags.filter((tag: unknown) => typeof tag === "string")
+      : null;
+
+    const createdAt = this.normalizeDate(raw?.createdAt) ?? new Date().toISOString();
+    const updatedAt = this.normalizeDate(raw?.updatedAt) ?? createdAt;
+
+    return {
+      id: raw?.id ? String(raw.id) : "",
+      status: typeof raw?.status === "string" ? raw.status : "pending",
+      triggerSource: typeof raw?.triggerSource === "string" ? raw.triggerSource : "",
+      datasetId: raw?.datasetId ?? raw?.dataset_id ?? null,
+      datasetVersionId: raw?.datasetVersionId ?? raw?.dataset_version_id ?? null,
+      datasetVersionLabel: raw?.datasetVersionLabel ?? raw?.dataset_version_label ?? null,
+      itemCount: toNumber(raw?.itemCount ?? raw?.item_count, 0),
+      successCount: toNumber(raw?.successCount ?? raw?.success_count, 0),
+      failureCount: toNumber(raw?.failureCount ?? raw?.failure_count, 0),
+      meanScore: toNullableNumber(raw?.meanScore ?? raw?.mean_score),
+      medianScore: toNullableNumber(raw?.medianScore ?? raw?.median_score),
+      sumScore: toNullableNumber(raw?.sumScore ?? raw?.sum_score),
+      passRate: toNullableNumber(raw?.passRate ?? raw?.pass_rate),
+      startedAt: this.normalizeDate(raw?.startedAt ?? raw?.started_at),
+      completedAt: this.normalizeDate(raw?.completedAt ?? raw?.completed_at),
+      durationMs: toNullableNumber(raw?.durationMs ?? raw?.duration_ms),
+      tags,
+      createdAt,
+      updatedAt,
+    };
+  }
+
+  private normalizeDate(value: unknown): string | null {
+    if (!value) {
+      return null;
+    }
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+    if (typeof value === "string") {
+      const parsed = Date.parse(value);
+      return Number.isNaN(parsed) ? value : new Date(parsed).toISOString();
+    }
+    const parsed = Date.parse(String(value));
+    return Number.isNaN(parsed) ? null : new Date(parsed).toISOString();
+  }
+
+  private normalizeScorerSummary(raw: any): VoltOpsScorerSummary {
+    return {
+      id: String(raw?.id ?? ""),
+      name: String(raw?.name ?? raw?.id ?? ""),
+      category: raw?.category ?? null,
+      description: raw?.description ?? null,
+      defaultThreshold: raw?.defaultThreshold ?? raw?.default_threshold ?? null,
+      thresholdOperator: raw?.thresholdOperator ?? raw?.threshold_operator ?? null,
+      metadata: raw?.metadata ?? null,
+      createdAt: this.normalizeDate(raw?.createdAt ?? raw?.created_at) ?? new Date().toISOString(),
+      updatedAt: this.normalizeDate(raw?.updatedAt ?? raw?.updated_at) ?? new Date().toISOString(),
+    };
   }
 }
 

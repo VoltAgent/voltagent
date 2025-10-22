@@ -18,9 +18,55 @@ Authentication in VoltAgent:
 
 ## Default Route Protection
 
-### Public Routes (No Auth Required)
+VoltAgent supports two authentication modes to give you full control over route security:
 
-These endpoints are public by default:
+### Authentication Modes
+
+#### Opt-In Mode (Default)
+
+By default (`defaultPrivate: false` or not set), only specific execution endpoints require authentication. This is the traditional mode where you explicitly protect sensitive routes.
+
+```typescript
+auth: jwtAuth({
+  secret: process.env.JWT_SECRET,
+  // defaultPrivate: false (this is the default)
+});
+```
+
+**Behavior**:
+
+- VoltAgent execution routes (like `POST /agents/:id/text`) → Protected ✅
+- VoltAgent management routes (like `GET /agents`) → Public 🌐
+- Custom routes added via `configureApp` → Public 🌐
+
+#### Opt-Out Mode
+
+When you set `defaultPrivate: true`, all routes require authentication by default. You can selectively make routes public using the `publicRoutes` property.
+
+```typescript
+auth: jwtAuth({
+  secret: process.env.JWT_SECRET,
+  defaultPrivate: true, // Protect all routes by default
+  publicRoutes: ["GET /health", "POST /api/webhooks/*"],
+});
+```
+
+**Behavior**:
+
+- VoltAgent execution routes → Protected ✅
+- VoltAgent management routes → Protected ✅
+- Custom routes added via `configureApp` → Protected ✅
+- Routes in `publicRoutes` → Public 🌐
+
+**Use Cases**:
+
+- You're using third-party auth providers (Clerk, Auth0, Supabase)
+- You want to protect all custom endpoints by default
+- You need fine-grained control over which routes are public
+
+### Public Routes (No Auth Required in Opt-In Mode)
+
+In the default opt-in mode, these endpoints are public:
 
 ```javascript
 // Management endpoints
@@ -101,6 +147,10 @@ const authProvider = jwtAuth({
 
   // Additional public routes
   publicRoutes: ["GET /api/public/*", "POST /api/webhooks/*"],
+
+  // Protect all routes by default (opt-out mode)
+  // When true, all routes require auth unless listed in publicRoutes
+  // defaultPrivate: true,
 
   // JWT verification options
   verifyOptions: {
@@ -310,6 +360,9 @@ export function customAuth(config: CustomAuthConfig): AuthProvider<Request> {
       const url = new URL(request.url);
       return url.searchParams.get("token") || undefined;
     },
+
+    // Protect all routes by default (recommended for custom providers)
+    defaultPrivate: true,
 
     // Additional public routes
     publicRoutes: ["GET /api/status", "POST /api/login"],

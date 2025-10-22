@@ -44,13 +44,12 @@ const agent = new Agent({
 
 ### Configuration Options
 
-| Option         | Type     | Description                                                |
-| -------------- | -------- | ---------------------------------------------------------- |
-| `url`          | `string` | Connection URL (`file:<path>`, `libsql://`, or `:memory:`) |
-| `authToken`    | `string` | Auth token for remote instances (optional for local files) |
-| `tablePrefix`  | `string` | Table name prefix (default: `voltagent_memory`)            |
-| `storageLimit` | `number` | Max messages per conversation (default: `100`)             |
-| `logger`       | `Logger` | Optional logger for debugging                              |
+| Option        | Type     | Description                                                |
+| ------------- | -------- | ---------------------------------------------------------- |
+| `url`         | `string` | Connection URL (`file:<path>`, `libsql://`, or `:memory:`) |
+| `authToken`   | `string` | Auth token for remote instances (optional for local files) |
+| `tablePrefix` | `string` | Table name prefix (default: `voltagent_memory`)            |
+| `logger`      | `Logger` | Optional logger for debugging                              |
 
 ### URL Formats
 
@@ -75,8 +74,8 @@ Schema migrations run automatically when updating VoltAgent versions.
 ### Conversation Storage
 
 - Messages stored per `userId` and `conversationId`
-- Oldest messages pruned when `storageLimit` exceeded
 - All `StorageAdapter` methods supported
+- No automatic message pruning - all messages are preserved
 
 ### Working Memory
 

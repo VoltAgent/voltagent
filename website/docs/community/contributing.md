@@ -139,14 +139,16 @@ pnpm test:all:coverage
 
 ## Working on Documentation
 
-Our documentation likely resides in the `website` directory (confirm this structure if different) and may use a static site generator like Docusaurus.
+Our documentation resides in the `website` directory and uses [Docusaurus](https://docusaurus.io/).
 
-Navigate to the documentation directory and follow its setup instructions (update these steps based on your actual documentation setup):
+**Note:** The `/website/` directory uses **npm** (not pnpm). It is intentionally kept separate from the main pnpm monorepo.
+
+Navigate to the documentation directory and follow its setup instructions:
 
 ```sh title="Terminal"
-cd website # Or your actual documentation directory
-pnpm install
-pnpm start # Or the relevant dev script (e.g., dev, develop)
+cd website
+npm install
+npm start
 ```
 
 ## Committing Your Work and Preparing a Pull Request

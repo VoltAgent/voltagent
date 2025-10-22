@@ -32,9 +32,7 @@ import { Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
-  storage: new InMemoryStorageAdapter({
-    storageLimit: 100, // max messages per userId/conversationId (default: 100)
-  }),
+  storage: new InMemoryStorageAdapter(),
 });
 
 const agent = new Agent({
@@ -49,8 +47,8 @@ const agent = new Agent({
 ### Conversation Storage
 
 - Messages stored per `userId` and `conversationId`
-- Oldest messages pruned when `storageLimit` exceeded
 - All `StorageAdapter` methods supported
+- No automatic message pruning - all messages are preserved in memory
 
 ### Working Memory
 
@@ -104,7 +102,7 @@ const testAgent = new Agent({
   name: "Test Assistant",
   model: openai("gpt-4o-mini"),
   memory: new Memory({
-    storage: new InMemoryStorageAdapter({ storageLimit: 50 }),
+    storage: new InMemoryStorageAdapter(),
   }),
 });
 

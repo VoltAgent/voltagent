@@ -16,6 +16,7 @@ export default defineConfig({
     ".template": "text",
   },
   esbuildPlugins: [markAsExternalPlugin],
+  external: ["@voltagent/internal", "@voltagent/sdk"],
   esbuildOptions(options) {
     options.keepNames = true;
     return options;

@@ -49,7 +49,6 @@ const workingMemorySchema = z.object({
 const jsonMemory = new Memory({
   storage: new LibSQLMemoryAdapter({
     url: "file:./.voltagent/json-memory.db",
-    storageLimit: 100,
   }),
   // Enable working memory with JSON schema
   workingMemory: {
@@ -93,7 +92,6 @@ const workingMemoryTemplate = `
 const markdownMemory = new Memory({
   storage: new LibSQLMemoryAdapter({
     url: "file:./.voltagent/markdown-memory.db",
-    storageLimit: 100,
   }),
   workingMemory: {
     enabled: true,

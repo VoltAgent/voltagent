@@ -52,6 +52,7 @@ const getLocationTool = createTool({
 const [result, setResult] = useState<ClientSideToolResult | null>(null);
 
 const { messages, input, handleSubmit, addToolResult } = useChat({
+  sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
   // Automatic client-side tool execution
   async onToolCall({ toolCall }) {
     if (toolCall.toolName === "getLocation") {

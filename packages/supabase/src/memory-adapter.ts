@@ -28,12 +28,6 @@ export type SupabaseMemoryOptions =
 
 interface BaseSupabaseMemoryOptions {
   /**
-   * Maximum number of messages to store per conversation
-   * @default 100
-   */
-  storageLimit?: number;
-
-  /**
    * The base table name for the memory, use to customize the prefix appended to all the tables
    *
    * @example
@@ -92,7 +86,6 @@ interface SupabaseMemoryOptionsWithClient extends BaseSupabaseMemoryOptions {
  */
 export class SupabaseMemoryAdapter implements StorageAdapter {
   private client: SupabaseClient;
-  private storageLimit: number;
   private baseTableName: string;
   private initialized = false;
   private debug: boolean;
@@ -119,7 +112,6 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
         throw new Error("Invalid configuration");
       });
 
-    this.storageLimit = options.storageLimit ?? 100;
     this.baseTableName = options.tableName ?? "voltagent_memory";
     this.debug = options.debug ?? false;
 
@@ -434,9 +426,6 @@ END OF MIGRATION SQL
       throw new Error(`Failed to add message: ${error.message}`);
     }
 
-    // Apply storage limit
-    await this.applyStorageLimit(conversationId);
-
     this.log(`Added message to conversation ${conversationId}`);
   }
 
@@ -475,60 +464,7 @@ END OF MIGRATION SQL
       throw new Error(`Failed to add messages: ${error.message}`);
     }
 
-    // Apply storage limit
-    await this.applyStorageLimit(conversationId);
-
     this.log(`Added ${messages.length} messages to conversation ${conversationId}`);
-  }
-
-  /**
-   * Apply storage limit to a conversation
-   */
-  private async applyStorageLimit(conversationId: string): Promise<void> {
-    const messagesTable = `${this.baseTableName}_messages`;
-
-    // Get count of messages
-    const { count, error: countError } = await this.client
-      .from(messagesTable)
-      .select("*", { count: "exact", head: true })
-      .eq("conversation_id", conversationId);
-
-    if (countError) {
-      this.logger.error("Error getting message count:", countError);
-      return;
-    }
-
-    // Delete old messages beyond the storage limit
-    if (count && count > this.storageLimit) {
-      const toDelete = count - this.storageLimit;
-
-      // Get oldest messages to delete
-      const { data: oldMessages, error: fetchError } = await this.client
-        .from(messagesTable)
-        .select("message_id")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true })
-        .limit(toDelete);
-
-      if (fetchError) {
-        this.logger.error("Error fetching old messages:", fetchError);
-        return;
-      }
-
-      if (oldMessages && oldMessages.length > 0) {
-        const messageIds = oldMessages.map((m) => m.message_id);
-
-        const { error: deleteError } = await this.client
-          .from(messagesTable)
-          .delete()
-          .eq("conversation_id", conversationId)
-          .in("message_id", messageIds);
-
-        if (deleteError) {
-          this.logger.error("Error deleting old messages:", deleteError);
-        }
-      }
-    }
   }
 
   /**
@@ -542,7 +478,7 @@ END OF MIGRATION SQL
     await this.initialize();
 
     const messagesTable = `${this.baseTableName}_messages`;
-    const { limit = this.storageLimit, before, after, roles } = options || {};
+    const { limit, before, after, roles } = options || {};
 
     // Build query - use SELECT * to handle both old and new schemas safely
     let query = this.client

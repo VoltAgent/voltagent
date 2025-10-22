@@ -3,6 +3,7 @@
  * Provides vector storage and cosine-similarity search using PostgreSQL.
  */
 
+import type { ConnectionOptions } from "node:tls";
 import {
   type SearchResult,
   type VectorAdapter,
@@ -27,7 +28,7 @@ export interface PostgresVectorAdapterOptions {
         database: string;
         user: string;
         password: string;
-        ssl?: boolean;
+        ssl?: boolean | ConnectionOptions;
       }
     | string;
 

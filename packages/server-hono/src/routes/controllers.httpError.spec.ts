@@ -109,7 +109,14 @@ describe("server-hono controllers: httpError/httpStatus mapping", () => {
     const res = await app.request("/agents/agent-1/object", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ input: "{}" }),
+      body: JSON.stringify({
+        input: "{}",
+        schema: {
+          type: "object",
+          properties: {},
+          required: [],
+        },
+      }),
     });
 
     expect(res.status).toBe(400);
@@ -134,7 +141,14 @@ describe("server-hono controllers: httpError/httpStatus mapping", () => {
     const res = await app.request("/agents/agent-1/object", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ input: "{}" }),
+      body: JSON.stringify({
+        input: "{}",
+        schema: {
+          type: "object",
+          properties: {},
+          required: [],
+        },
+      }),
     });
 
     expect(res.status).toBe(500);

@@ -1,6 +1,6 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
+<img width="1800" alt="voltagent-banner" src="https://github.com/user-attachments/assets/9259e833-0f5c-4eb6-8cc7-4e6930cc27e1" />
 </a>
 
 <br/>
@@ -24,168 +24,288 @@
 <br/>
 
 <div align="center">
-    <strong>VoltAgent 是一个开源的 TypeScript 框架，用于构建和编排 AI 智能体。</strong><br>
-摆脱无代码构建器的局限性和从零开始的复杂性。
-    <br />
-    <br />
-</div>
 
-<div align="center">
-
+[![GitHub stars](https://img.shields.io/github/stars/voltagent/voltagent?style=social)](https://github.com/voltagent/voltagent)
+[![GitHub issues](https://img.shields.io/github/issues/voltagent/voltagent)](https://github.com/voltagent/voltagent/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/voltagent/voltagent)](https://github.com/voltagent/voltagent/pulls)
+[![License](https://img.shields.io/github/license/voltagent/voltagent)](https://github.com/voltagent/voltagent/blob/main/LICENSE)
 [![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
-[![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://twitter.com/voltagent_dev)
 
 </div>
 
 <br/>
 
-<div align="center">
-<a href="https://voltagent.dev/">
-<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
-</a>
-
-</div>
-
-## 什么是 VoltAgent？
-
-> **AI 智能体框架**提供了构建由自主智能体驱动的应用程序所需的基础结构和工具。这些智能体通常由大型语言模型（LLM）驱动，能够感知环境、做出决策并采取行动来实现特定目标。从零开始构建此类智能体涉及管理与 LLM 的复杂交互、处理状态、连接外部工具和数据，以及编排工作流程。
-
-**VoltAgent** 是一个开源的 TypeScript 框架，作为这个重要的工具包。它通过提供模块化的构建块、标准化模式和抽象来简化 AI 智能体应用程序的开发。无论您是在创建聊天机器人、虚拟助手、自动化工作流程还是复杂的多智能体系统，VoltAgent 都能处理底层复杂性，让您专注于定义智能体的能力和逻辑。
-
-VoltAgent 提供现成的模块化构建块，而不是从零开始构建所有内容：
-
-- **核心引擎（`@voltagent/core`）**：VoltAgent 的核心，为您的 AI 智能体提供基本功能，定义具有特定角色、工具和记忆的个别智能体。
-- **多智能体系统**：通过使用监督者协调多个专业智能体来构建复杂的应用程序。
-- **可扩展包**：使用 `@voltagent/voice` 等包增强语音交互功能。
-- **工具和集成**：为智能体配备工具以连接外部 API、数据库和服务，使其能够执行实际任务。**支持[模型上下文协议（MCP）](https://modelcontextprotocol.io/)用于标准化工具交互。**
-- **数据检索和 RAG**：实施专门的检索器智能体以实现高效的信息获取和**检索增强生成（RAG）**。
-- **记忆**：使智能体能够记住过去的交互，以实现更自然和上下文感知的对话。
-- **LLM 兼容性**：与来自 OpenAI、Google、Anthropic 等流行 AI 模型配合使用，允许轻松切换。
-- **开发者生态系统**：包括 `create-voltagent-app`、`@voltagent/cli` 和可视化 [VoltOps LLM 可观察性平台](https://console.voltagent.dev) 等助手，用于快速设置、监控和调试。
-
-总之，VoltAgent 帮助开发者更快、更可靠地构建复杂的 AI 应用程序，避免重复设置和简单工具的限制。
-
 ## 为什么选择 VoltAgent？
 
-构建 AI 应用程序通常涉及权衡：
+- **真正的代码优先**：不是低代码或无代码 - 为喜欢代码的开发人员提供完全的灵活性和控制
+- **内置可观察性**：VoltOps 与平台深度集成 - 不是事后添加的附加功能
+- **原生多代理协调**：唯一一个将工作流和多代理编排作为核心功能的框架
+- **生产就绪**：受企业客户在现实世界高规模场景中的信任和测试
 
-1.  **DIY 方法：**使用基本的 AI 提供商工具提供控制权，但会导致复杂、难以管理的代码和重复工作。
-2.  **无代码构建器：**最初更简单，但通常限制性强，限制自定义、提供商选择和复杂性。
+## 代理开发平台
 
-VoltAgent 提供了中间地带，在不牺牲灵活性的情况下提供结构和组件：
+VoltAgent 不仅仅是一个框架 - 它是一个完整的平台，包括：
 
-- **更快构建：**与从零开始相比，使用预构建组件加速开发。
-- **可维护代码：**鼓励组织以便于更新和调试。
-- **可扩展性：**从简单开始，轻松扩展到处理复杂工作流程的复杂多智能体系统。
-- **灵活性：**完全控制智能体行为、LLM 选择、工具集成和 UI 连接。
-- **避免锁定：**根据需要自由切换 AI 提供商和模型。
-- **成本效率：**旨在优化 AI 服务使用并减少冗余调用的功能。
-- **可视化监控：**使用 [VoltOps LLM 可观察性平台](https://console.voltagent.dev) 跟踪智能体性能、检查状态并进行可视化调试。
+### 核心框架
 
-VoltAgent 使开发者能够高效地构建他们设想的 AI 应用程序，从简单的助手到复杂的系统。
+- **灵活的代理系统**：使用工具、记忆和自定义指令构建单个代理或复杂的多代理系统
+- **工作流引擎**：使用 `createWorkflowChain` 编排复杂、多步骤的 AI 工作流，具有状态管理和错误处理
+- **工具生态系统**：广泛的预构建集成和对自定义工具的支持
+- **记忆管理**：多种记忆提供程序，支持短期和长期上下文保留
+- **LLM 灵活性**：与任何 AI 提供程序配合使用 - OpenAI、Anthropic、Google 等
+- **MCP 支持**：模型上下文协议集成，用于标准化工具使用
+
+### VoltOps LLM 可观察性平台
+
+完全集成的 LLM 可观察性平台，用于监控、调试和优化您的代理：
+
+- **实时跟踪**：可视化代理执行、工具调用和 LLM 交互
+- **性能监控**：跟踪延迟、成本和令牌使用情况
+- **调试工具**：检查状态、查看日志并重放交互
+- **生产监控**：监控实时代理性能和错误
 
 ## ⚡ 快速开始
 
-使用 `create-voltagent-app` CLI 工具在几秒钟内创建新的 VoltAgent 项目：
+使用 `create-voltagent-app` 在几秒钟内创建一个新的 VoltAgent 项目：
 
 ```bash
 npm create voltagent-app@latest
 ```
 
-此命令引导您完成设置。
-
-您将在 `src/index.ts` 中看到起始代码，帮助您开始使用 VoltAgent 框架。
-
-```typescript
-import { VoltAgent, Agent } from "@voltagent/core";
-import { honoServer } from "@voltagent/server-hono";
-import { openai } from "@ai-sdk/openai"; // 示例模型
-
-// 定义一个简单的智能体
-const agent = new Agent({
-  name: "my-agent",
-  instructions: "一个有用的助手，无需使用工具即可回答问题",
-  model: openai("gpt-4o-mini"),
-});
-
-// 使用您的智能体初始化 VoltAgent
-new VoltAgent({
-  agents: {
-    agent,
-  },
-  server: honoServer(),
-});
-```
-
-之后，导航到您的项目并运行：
+在现有项目中安装 VoltAgent：
 
 ```bash
-npm run dev
+npm install @voltagent/core
 ```
 
-当您运行 dev 命令时，tsx 将编译并运行您的代码。您应该在终端中看到 VoltAgent 服务器启动消息：
+创建您的第一个代理工作流：
 
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+// 费用批准工作流
+export const expenseApprovalWorkflow = createWorkflowChain({
+  id: "expense-approval",
+  name: "费用批准工作流",
+  purpose: "处理费用报告，对高金额进行经理批准",
+
+  // 定义工作流数据结构
+  schema: z.object({
+    employeeName: z.string(),
+    amount: z.number(),
+    category: z.string(),
+    description: z.string(),
+    approved: z.boolean().optional(),
+    reviewerNotes: z.string().optional(),
+  }),
+
+  // 步骤 1：验证费用并检查是否需要批准
+  async run({ data, logger }) {
+    logger.info(`处理 ${data.employeeName} 的费用报告: $${data.amount}`);
+
+    if (data.amount < 100) {
+      logger.info("金额低于 $100 - 自动批准");
+      return {
+        ...data,
+        approved: true,
+        reviewerNotes: "在限额内自动批准",
+      };
+    }
+
+    logger.info("需要经理批准");
+    // 暂停工作流以进行人工审核
+    return { suspend: { reason: "等待经理批准" } };
+  },
+})
+  // 步骤 2：经理批准后继续
+  .andThen({
+    id: "finalize-approval",
+    name: "完成批准",
+    async run({ data, logger }) {
+      if (data.approved) {
+        logger.info(`费用已批准: $${data.amount}`);
+        // 在这里添加通知逻辑
+      } else {
+        logger.info("费用被拒绝");
+      }
+      return data;
+    },
+  });
+
+// 运行工作流
+const result = await expenseApprovalWorkflow.run({
+  employeeName: "Alice",
+  amount: 250,
+  category: "软件",
+  description: "团队许可证",
+});
 ```
-══════════════════════════════════════════════════
-VOLTAGENT SERVER STARTED SUCCESSFULLY
-══════════════════════════════════════════════════
-✓ HTTP Server: http://localhost:3141
 
-Test your agents with VoltOps Console: https://console.voltagent.dev
-══════════════════════════════════════════════════
-```
+## 使用 VoltOps 的内置 LLM 可观察性
 
-您的智能体现在正在运行！要与其交互：
+VoltAgent 配备了 **VoltOps** - 一个强大的 LLM 可观察性平台，为您的 AI 代理提供完整的可见性。
 
-1. 打开控制台：点击终端输出中的 [VoltOps LLM 可观察性平台](https://console.voltagent.dev) 链接（或将其复制粘贴到浏览器中）。
-2. 找到您的智能体：在 VoltOps LLM 可观察性平台页面上，您应该看到您的智能体列出（例如，"my-agent"）。
-3. 打开智能体详情：点击您的智能体名称。
-4. 开始聊天：在智能体详情页面上，点击右下角的聊天图标打开聊天窗口。
-5. 发送消息：输入消息如"你好"并按 Enter。
+### 实时跟踪和可视化
 
-[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
+在 VoltOps 控制台中实时查看您的代理运行：
 
-## 主要功能
+<div align="center">
+<a href="https://console.voltagent.dev">
+<img width="800" alt="voltagent-trace-1" src="https://github.com/user-attachments/assets/f9ba0406-7e4b-4866-9754-e9d9f1d9eb84" />
+</a>
+</div>
 
-- **智能体核心：**使用描述、LLM 提供商、工具和记忆管理定义智能体。
-- **多智能体系统：**使用监督者智能体协调多个专业子智能体构建复杂的工作流程。
-- **工具使用和生命周期：**为智能体配备自定义或预构建的工具（函数），具有类型安全性（Zod）、生命周期钩子和取消支持，以与外部系统交互。
-- **灵活的 LLM 支持：**与各种 LLM 提供商（OpenAI、Anthropic、Google 等）无缝集成，并轻松切换模型。
-- **记忆管理：**使智能体能够使用不同的可配置记忆提供商在交互之间保留上下文。
-- **可观察性和调试：**通过 [VoltOps LLM 可观察性平台](https://console.voltagent.dev) 可视化监控智能体状态、交互、日志和性能。
-- **自定义 API 端点：**使用您自己的自定义端点扩展 VoltAgent API 服务器，在核心框架之上构建专门功能。
-- **语音交互：**使用 `@voltagent/voice` 包构建能够语音识别和合成的语音启用智能体。
-- **数据检索和 RAG：**集成专门的检索器智能体，从各种来源实现高效的信息获取和**检索增强生成（RAG）**。
-- **模型上下文协议（MCP）支持：**连接到遵循 [MCP 标准](https://modelcontextprotocol.io/) 的外部工具服务器（HTTP/stdio）以获得扩展功能。
-- **提示工程工具：**利用 `createPrompt` 等工具为您的智能体制作和管理有效的提示。
-- **框架兼容性：**设计用于轻松集成到现有 Node.js 应用程序和流行框架中。
+### 深入了解每个跟踪
 
-## 使用案例
+单击任何跟踪以查看完整的执行详细信息：
 
-VoltAgent 多功能，可为各种 AI 驱动的应用程序提供动力：
+<div align="center">
+<a href="https://console.voltagent.dev">
+<img width="800" alt="voltagent-trace-2" src="https://github.com/user-attachments/assets/d7c6f93b-80ca-4c4f-9c86-d93ca9754806" />
+</a>
+</div>
 
-- **复杂工作流程自动化：**使用协调智能体编排涉及各种工具、API 和决策点的多步骤流程。
-- **智能数据管道：**构建从不同来源获取、处理、分析和转换数据的智能体。
-- **AI 驱动的内部工具和仪表板：**创建利用 AI 进行分析、报告或任务自动化的交互式内部应用程序，通常使用钩子与 UI 集成。
-- **自动化客户支持智能体：**开发能够理解上下文（记忆）、使用工具（例如检查订单状态）并升级复杂问题的复杂聊天机器人。
-- **存储库分析和代码库自动化：**分析代码存储库、自动化重构任务、生成文档或管理 CI/CD 流程。
-- **检索增强生成（RAG）系统：**构建在生成知情响应之前从知识库检索相关信息（使用检索器智能体）的智能体。
-- **语音控制界面和应用程序：**利用 `@voltagent/voice` 包创建响应和生成口语的应用程序。
-- **个性化用户体验：**开发根据存储在记忆中的用户历史和偏好调整响应和操作的智能体。
-- **实时监控和警报：**设计持续监控数据流或系统并根据定义条件触发操作或通知的智能体。
-- **以及几乎任何其他事情...**：如果您能想象 AI 智能体做这件事，VoltAgent 可能可以帮助您构建它！⚡
+### 检查 LLM 调用和响应
 
-## 学习 VoltAgent
+查看发送到 LLM 的确切提示和收到的响应：
 
-- **[文档](https://voltagent.dev/docs/)**：深入了解指南、概念和教程。
-- **[示例](https://github.com/voltagent/voltagent/tree/main/examples)**：探索实际实施。
-- **[博客](https://voltagent.dev/blog/)**：阅读更多技术见解和最佳实践。
+<div align="center">
+<a href="https://console.voltagent.dev">
+<img width="800" alt="voltagent-llm-call" src="https://github.com/user-attachments/assets/7e5a8e3c-9e7c-4d3c-9e5e-e5e5e5e5e5e5" />
+</a>
+</div>
+
+### 监控工具执行
+
+跟踪您的代理调用的工具及其结果：
+
+<div align="center">
+<a href="https://console.voltagent.dev">
+<img width="800" alt="voltagent-tool-calls" src="https://github.com/user-attachments/assets/8e5a8e3c-9e7c-4d3c-9e5e-e5e5e5e5e5e6" />
+</a>
+</div>
+
+### 性能指标
+
+跟踪延迟、令牌使用和成本：
+
+<div align="center">
+<a href="https://console.voltagent.dev">
+<img width="800" alt="voltagent-metrics" src="https://github.com/user-attachments/assets/9e5a8e3c-9e7c-4d3c-9e5e-e5e5e5e5e5e7" />
+</a>
+</div>
+
+### 生产监控
+
+在生产中监控您的代理性能：
+
+<div align="center">
+<a href="https://console.voltagent.dev">
+<img width="800" alt="voltagent-production" src="https://github.com/user-attachments/assets/0e5a8e3c-9e7c-4d3c-9e5e-e5e5e5e5e5e8" />
+</a>
+</div>
+
+> **立即开始**：创建新的 VoltAgent 项目时，VoltOps 会自动配置。只需运行 `npm run dev` 并访问 [console.voltagent.dev](https://console.voltagent.dev) 即可查看您的代理运行情况！
+
+## 示例
+
+### WhatsApp 订单代理
+
+一个全功能的 AI 驱动的 WhatsApp 机器人，用于餐厅订单，具有记忆、工具使用和 Supabase 集成。
+
+<div align="center">
+<a href="https://github.com/voltagent/voltagent/tree/main/examples/with-whatsapp">
+<img width="800" alt="whatsapp-agent" src="https://github.com/user-attachments/assets/5aa65d69-33c3-4c32-b5b2-2e9b5c8e8e8e" />
+</a>
+</div>
+
+[查看示例 →](https://github.com/voltagent/voltagent/tree/main/examples/with-whatsapp)
+
+### YouTube 转博客代理
+
+将 YouTube 视频转换为 SEO 优化的博客文章，具有成绩单分析和内容生成。
+
+<div align="center">
+<a href="https://github.com/voltagent/voltagent/tree/main/examples/with-youtube">
+<img width="800" alt="youtube-agent" src="https://github.com/user-attachments/assets/6aa65d69-33c3-4c32-b5b2-2e9b5c8e8e8f" />
+</a>
+</div>
+
+[查看示例 →](https://github.com/voltagent/voltagent/tree/main/examples/with-youtube)
+
+### AI 广告生成代理（Instagram Reels）
+
+为 Instagram Reels 生成 AI 驱动的广告创意，包括视频生成和字幕。
+
+<div align="center">
+<a href="https://github.com/voltagent/voltagent/tree/main/examples/ai-ads-generator">
+<img width="800" alt="instagram-agent" src="https://github.com/user-attachments/assets/7aa65d69-33c3-4c32-b5b2-2e9b5c8e8e90" />
+</a>
+</div>
+
+[查看示例 →](https://github.com/voltagent/voltagent/tree/main/examples/ai-ads-generator)
+
+### AI 配方代理
+
+一个智能配方助手，可以根据可用配料建议食谱，进行膳食规划并提供营养信息。
+
+<div align="center">
+<a href="https://github.com/voltagent/voltagent/tree/main/examples/with-recipe-agent">
+<img width="800" alt="recipe-agent" src="https://github.com/user-attachments/assets/8aa65d69-33c3-4c32-b5b2-2e9b5c8e8e91" />
+</a>
+</div>
+
+[查看示例 →](https://github.com/voltagent/voltagent/tree/main/examples/with-recipe-agent)
+
+### AI 研究代理
+
+一个复杂的研究代理，可以从多个来源收集信息、综合发现并生成全面的报告。
+
+<div align="center">
+<a href="https://github.com/voltagent/voltagent/tree/main/examples/with-research-agent">
+<img width="800" alt="research-agent" src="https://github.com/user-attachments/assets/9aa65d69-33c3-4c32-b5b2-2e9b5c8e8e92" />
+</a>
+</div>
+
+[查看示例 →](https://github.com/voltagent/voltagent/tree/main/examples/with-research-agent)
+
+[浏览所有示例 →](https://github.com/voltagent/voltagent/tree/main/examples)
+
+## 用例
+
+使用 VoltAgent 构建强大的 AI 代理用于：
+
+- **HR 代理**：自动化招聘、入职和员工查询，具有上下文感知响应
+- **客户支持代理**：使用工具集成（订单查找、票证创建）和记忆处理多轮对话
+- **销售团队**：潜在客户资格认证、后续自动化和 CRM 集成，具有多代理协调
+- **财务代理**：费用批准、预算跟踪和使用工作流进行财务报告
+- **开发代理**：代码审查、文档生成和 CI/CD 自动化
+- **营销代理**：内容生成、社交媒体管理和活动分析
+- **法律代理**：合同审查、合规性检查和文档分析
+- **保险代理**：索赔处理、承保和客户服务
+- **工业代理**：供应链优化、库存管理和质量控制
+- **教育代理**：个性化辅导、评分自动化和学生支持
+- **政府代理**：公民服务、许可处理和政策分析
+- **文档代理**：文档生成、翻译和知识管理
+
+## 学习
+
+- **[从互动式教程开始](https://voltagent.dev/tutorial)** - 通过构建真实的代理学习 VoltAgent
+- **[文档](https://voltagent.dev/docs/)** - 完整的 API 参考和指南
+- **[示例](https://github.com/voltagent/voltagent/tree/main/examples)** - 生产就绪的代理实现
+- **[博客](https://voltagent.dev/blog/)** - 教程和最佳实践
+
+## 社区和支持
+
+- **[Discord](https://s.voltagent.dev/discord)** - 加入我们的社区以获得帮助和讨论
+- **[GitHub 讨论](https://github.com/voltagent/voltagent/discussions)** - 提问并分享您的项目
+- **[Twitter](https://twitter.com/voltagent_dev)** - 关注更新和公告
 
 ## 贡献
 
-我们欢迎贡献！请参考贡献指南（如果可用，需要链接）。加入我们的 [Discord](https://s.voltagent.dev/discord) 服务器进行问题和讨论。
+我们欢迎贡献！查看我们的[贡献指南](CONTRIBUTING.md)以开始使用。
 
 ## 贡献者 ♥️ 感谢
 

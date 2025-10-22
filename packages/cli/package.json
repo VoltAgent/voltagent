@@ -1,15 +1,20 @@
 {
   "name": "@voltagent/cli",
   "description": "CLI tool for VoltAgent applications",
-  "version": "0.1.11",
+  "version": "0.1.13",
   "bin": {
     "volt": "dist/index.js"
   },
   "dependencies": {
+    "@voltagent/evals": "^1.0.3",
+    "@voltagent/internal": "^0.0.12",
+    "@voltagent/sdk": "^1.0.1",
     "boxen": "^5.1.2",
+    "bundle-require": "^5.1.0",
     "chalk": "^4.1.2",
     "commander": "^11.1.0",
-    "conf": "^10.2.0",
+    "dotenv": "^16.4.5",
+    "esbuild": "^0.25.10",
     "figlet": "^1.7.0",
     "fs-extra": "^11.1.1",
     "inquirer": "^8.2.6",
@@ -25,14 +30,10 @@
     "@types/figlet": "^1.5.8",
     "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "^9.0.7",
-    "@types/node": "^24.2.1",
     "@types/semver": "^7.5.6",
     "@types/update-notifier": "^6.0.8",
     "@types/uuid": "^10.0.0",
-    "@vitest/coverage-v8": "^3.2.4",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.2",
-    "vitest": "^3.2.4"
+    "@vitest/coverage-v8": "^3.2.4"
   },
   "engines": {
     "node": ">=20"

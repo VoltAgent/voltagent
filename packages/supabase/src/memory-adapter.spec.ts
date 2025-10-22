@@ -58,7 +58,6 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
     adapter = new SupabaseMemoryAdapter({
       supabaseUrl: "https://test.supabase.co",
       supabaseKey: "test-key",
-      storageLimit: 10,
       debug: false,
     });
   });
@@ -551,7 +550,7 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
   });
 
   // ============================================================================
-  // Advanced Behavior Tests (Query shapes, storage limits, initialization)
+  // Advanced Behavior Tests (Query shapes, initialization)
   // ============================================================================
 
   describe("Advanced Behavior", () => {
@@ -577,50 +576,6 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       expect(builder.gt).toHaveBeenCalledWith("created_at", after.toISOString());
       expect(builder.order).toHaveBeenCalledWith("created_at", { ascending: true });
       expect(builder.limit).toHaveBeenCalledWith(5);
-    });
-
-    it("should delete oldest messages when exceeding storage limit", async () => {
-      const conv = {
-        id: "conv-1",
-        resource_id: "r",
-        user_id: "u",
-        title: "t",
-        metadata: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      // Prepare queues for addMessage and applyStorageLimit
-      supabaseMock.queue("voltagent_memory_conversations", ok(conv)); // getConversation
-      supabaseMock.queue("voltagent_memory_messages", ok(null)); // insert
-      supabaseMock.queue("voltagent_memory_messages", ok(null, { count: 5 })); // count
-      supabaseMock.queue(
-        "voltagent_memory_messages",
-        ok([{ message_id: "old1" }, { message_id: "old2" }]),
-      ); // oldest messages
-      supabaseMock.queue("voltagent_memory_messages", ok(null)); // delete
-
-      const smallAdapter = new SupabaseMemoryAdapter({
-        supabaseUrl: "https://test.supabase.co",
-        supabaseKey: "test-key",
-        storageLimit: 3,
-        debug: false,
-      });
-
-      // avoid real init work
-      vi.spyOn(smallAdapter as any, "initialize").mockResolvedValue(undefined);
-
-      await smallAdapter.addMessage(
-        { id: "m-new", role: "user", parts: [], metadata: {} } as UIMessage,
-        "user-1",
-        "conv-1",
-      );
-
-      const history = supabaseMock.getHistory("voltagent_memory_messages");
-      const deleteBuilder = history[history.length - 1];
-      expect(deleteBuilder.delete).toHaveBeenCalled();
-      expect(deleteBuilder.eq).toHaveBeenCalledWith("conversation_id", "conv-1");
-      expect(deleteBuilder.in).toHaveBeenCalledWith("message_id", ["old1", "old2"]);
     });
 
     it("should order and paginate conversations correctly", async () => {

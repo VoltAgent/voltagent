@@ -38,6 +38,9 @@
   --background: 0 0% 100%;
   --foreground: 222.2 47.4% 11.2%;
 
+  --sidebar-badge-accent-bg: rgba(16, 185, 129, 0.12);
+  --sidebar-badge-accent-color: #047857;
+
   --muted: 210 40% 96.1%;
   --muted-foreground: 215.4 16.3% 46.9%;
 
@@ -109,6 +112,9 @@ html[data-theme="dark"] {
 
   --ring: 142 71% 45%;
 
+  --sidebar-badge-accent-bg: rgba(16, 185, 129, 0.2);
+  --sidebar-badge-accent-color: #6ee7b7;
+
   --radius: 0.5rem;
 }
 
@@ -155,6 +161,33 @@ html[data-theme="dark"] .theme-doc-markdown p {
 /* Strong/bold text */
 .theme-doc-markdown strong {
   font-weight: 500;
+}
+
+/* Sidebar badges */
+.menu__link--with-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sidebar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.sidebar-badge--accent {
+  background-color: var(--sidebar-badge-accent-bg);
+  color: var(--sidebar-badge-accent-color);
+  border-color: rgba(16, 185, 129, 0.18);
 }
 
 /* Code blocks */
@@ -5413,4 +5446,88 @@ body:has([class*="ExampleProjectPage"]) main,
 body:has([class*="ExampleProjectPage"]) main p,
 body:has([class*="ExampleProjectPage"]) main div {
   color: #d1d5db !important;
+}
+
+/* Three column grid for DocCardList */
+.three-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+.three-columns .card {
+  min-height: auto !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 8px !important;
+  border: 1px solid #e5e7eb !important;
+  background-color: transparent !important;
+  transition: all 0.2s ease;
+  height: 100%;
+}
+
+.three-columns .card:hover {
+  border-color: #10b981 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+}
+
+/* Override Docusaurus padding */
+.three-columns .padding--lg {
+  padding: 1rem !important;
+}
+
+.three-columns [class*="cardContainer"] {
+  padding: 1rem !important;
+}
+
+.three-columns .card h2 {
+  font-size: 1rem !important;
+  margin-bottom: 0.5rem !important;
+  white-space: normal;
+  word-wrap: break-word;
+  color: #10b981 !important;
+}
+
+.three-columns .card p {
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  white-space: normal;
+  word-wrap: break-word;
+  color: #374151 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Dark mode styles */
+html[data-theme="dark"] .three-columns .card {
+  background-color: transparent !important;
+  border-color: #30363d !important;
+}
+
+html[data-theme="dark"] .three-columns .card:hover {
+  border-color: #10b981 !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+html[data-theme="dark"] .three-columns .card h2 {
+  color: #10b981 !important;
+}
+
+html[data-theme="dark"] .three-columns .card p {
+  color: #9ca3af !important;
+}
+
+@media (max-width: 1440px) {
+  .three-columns {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .three-columns {
+    grid-template-columns: 1fr;
+  }
 }

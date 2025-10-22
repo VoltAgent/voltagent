@@ -1,6 +1,6 @@
 /**
  * Unit tests for LibSQL Memory Storage Adapter (V2)
- * Tests query shapes and storage limit behavior with mocked client
+ * Tests query shapes with mocked client
  */
 
 import type { UIMessage } from "ai";
@@ -74,46 +74,5 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
       after.toISOString(),
       5,
     ]);
-  });
-
-  it("should delete oldest messages when exceeding storage limit", async () => {
-    // getConversation SELECT
-    mockExecute.mockResolvedValueOnce({
-      rows: [
-        {
-          id: "conv-1",
-          resource_id: "r",
-          user_id: "u",
-          title: "t",
-          metadata: "{}",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ],
-    });
-
-    // batch insert
-    mockBatch.mockResolvedValueOnce(undefined as any);
-
-    // applyStorageLimit DELETE
-    mockExecute.mockResolvedValueOnce({ rows: [] });
-
-    const small = new LibSQLMemoryAdapter({ tablePrefix: "test", storageLimit: 3 });
-    vi.spyOn(small as any, "initialize").mockResolvedValue(undefined);
-
-    await small.addMessage(
-      { id: "m1", role: "user", parts: [], metadata: {} } as UIMessage,
-      "user-1",
-      "conv-1",
-    );
-
-    const last = mockExecute.mock.calls.at(-1)?.[0];
-    const sql: string = last.sql;
-    const args: any[] = last.args;
-    expect(sql).toContain("DELETE FROM test_messages");
-    expect(sql).toContain("AND message_id NOT IN (");
-    expect(sql).toContain("ORDER BY created_at DESC");
-    expect(sql).toContain("LIMIT ?");
-    expect(args).toEqual(["conv-1", "conv-1", 3]);
   });
 });

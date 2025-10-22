@@ -12,18 +12,21 @@ import type { StopWhen } from "../ai-types";
 import type { LanguageModel, TextStreamPart, UIMessage } from "ai";
 import type { Memory } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { Tool, Toolkit } from "../tool";
+import type { Tool, Toolkit, VercelTool } from "../tool";
 import type { StreamEvent } from "../utils/streams";
 import type { Voice } from "../voice/types";
 import type { VoltOpsClient } from "../voltops/client";
+import type { Agent } from "./agent";
 import type { CancellationError, VoltAgentError } from "./errors";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
 import type { UsageInfo } from "./providers/base/types";
 import type { SubAgentConfig } from "./subagent/types";
+import type { VoltAgentTextStreamPart } from "./subagent/types";
 
 import type { Logger } from "@voltagent/internal";
+import type { LocalScorerDefinition, SamplingPolicy } from "../eval/runtime";
 import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
 import type { VoltAgentObservability } from "../observability";
 import type {
@@ -55,6 +58,16 @@ export interface ToolWithNodeId extends BaseTool {
   node_id: string;
 }
 
+export interface AgentScorerState {
+  key: string;
+  id: string;
+  name: string;
+  node_id: string;
+  sampling?: SamplingPolicy;
+  metadata?: Record<string, unknown> | null;
+  params?: Record<string, unknown> | null;
+}
+
 /**
  * SubAgent data structure for agent state
  */
@@ -68,6 +81,8 @@ export interface SubAgentStateData {
   memory?: AgentMemoryState;
   node_id: string;
   subAgents?: SubAgentStateData[];
+  scorers?: AgentScorerState[];
+  guardrails?: AgentGuardrailStateGroup;
   methodConfig?: {
     method: string;
     schema?: string;
@@ -117,12 +132,14 @@ export interface AgentFullState {
   tools: ToolWithNodeId[];
   subAgents: SubAgentStateData[];
   memory: AgentMemoryState;
+  scorers?: AgentScorerState[];
   retriever?: {
     name: string;
     description?: string;
     status?: string;
     node_id: string;
   } | null;
+  guardrails?: AgentGuardrailStateGroup;
 }
 
 /**
@@ -247,6 +264,161 @@ export type SupervisorConfig = {
   includeErrorInEmptyResponse?: boolean;
 };
 
+// -----------------------------------------------------------------------------
+// Guardrail Types
+// -----------------------------------------------------------------------------
+
+export type GuardrailSeverity = "info" | "warning" | "critical";
+
+export type GuardrailAction = "allow" | "modify" | "block";
+
+export interface GuardrailBaseResult {
+  pass: boolean;
+  action?: GuardrailAction;
+  message?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface OutputGuardrailStreamArgs extends GuardrailContext {
+  part: VoltAgentTextStreamPart;
+  streamParts: VoltAgentTextStreamPart[];
+  state: Record<string, any>;
+  abort: (reason?: string) => never;
+}
+
+export type OutputGuardrailStreamResult =
+  | VoltAgentTextStreamPart
+  | null
+  | undefined
+  | Promise<VoltAgentTextStreamPart | null | undefined>;
+
+export type OutputGuardrailStreamHandler = (
+  args: OutputGuardrailStreamArgs,
+) => OutputGuardrailStreamResult;
+
+export type GuardrailFunctionMetadata = {
+  guardrailId?: string;
+  guardrailName?: string;
+  guardrailDescription?: string;
+  guardrailTags?: string[];
+  guardrailSeverity?: GuardrailSeverity;
+};
+
+export type GuardrailFunction<TArgs, TResult> = ((args: TArgs) => TResult | Promise<TResult>) &
+  GuardrailFunctionMetadata;
+
+export interface GuardrailDefinition<TArgs, TResult> {
+  id?: string;
+  name?: string;
+  description?: string;
+  tags?: string[];
+  severity?: GuardrailSeverity;
+  metadata?: Record<string, unknown>;
+  handler: GuardrailFunction<TArgs, TResult>;
+}
+
+export type GuardrailConfig<TArgs, TResult> =
+  | GuardrailFunction<TArgs, TResult>
+  | GuardrailDefinition<TArgs, TResult>;
+
+export interface AgentGuardrailState {
+  id?: string;
+  name: string;
+  direction: "input" | "output";
+  description?: string;
+  severity?: GuardrailSeverity;
+  tags?: string[];
+  metadata?: Record<string, unknown> | null;
+  node_id: string;
+}
+
+export interface AgentGuardrailStateGroup {
+  input: AgentGuardrailState[];
+  output: AgentGuardrailState[];
+}
+
+export interface GuardrailContext {
+  agent: Agent;
+  context: OperationContext;
+  operation: AgentEvalOperationType;
+}
+
+export interface InputGuardrailArgs extends GuardrailContext {
+  /**
+   * The latest value after any previous guardrail modifications.
+   */
+  input: string | UIMessage[] | BaseMessage[];
+  /**
+   * Plain text representation of the latest input value.
+   */
+  inputText: string;
+  /**
+   * The original user provided value before any guardrail modifications.
+   */
+  originalInput: string | UIMessage[] | BaseMessage[];
+  /**
+   * Plain text representation of the original input value.
+   */
+  originalInputText: string;
+}
+
+export interface InputGuardrailResult extends GuardrailBaseResult {
+  modifiedInput?: string | UIMessage[] | BaseMessage[];
+}
+
+export interface OutputGuardrailArgs<TOutput = unknown> extends GuardrailContext {
+  /**
+   * The latest value after any previous guardrail modifications.
+   */
+  output: TOutput;
+  /**
+   * Optional plain text representation of the latest output value.
+   */
+  outputText?: string;
+  /**
+   * The original value produced by the model before guardrail modifications.
+   */
+  originalOutput: TOutput;
+  /**
+   * Optional plain text representation of the original output value.
+   */
+  originalOutputText?: string;
+  /**
+   * Optional usage metrics for the generation.
+   */
+  usage?: UsageInfo;
+  /**
+   * Optional finish reason from the model/provider.
+   */
+  finishReason?: string | null;
+  /**
+   * Optional warnings or diagnostics returned by the provider.
+   */
+  warnings?: unknown[] | null;
+}
+
+export interface OutputGuardrailResult<TOutput = unknown> extends GuardrailBaseResult {
+  modifiedOutput?: TOutput;
+}
+
+export type InputGuardrail = GuardrailConfig<InputGuardrailArgs, InputGuardrailResult>;
+
+export type OutputGuardrailFunction<TOutput = unknown> = GuardrailFunction<
+  OutputGuardrailArgs<TOutput>,
+  OutputGuardrailResult<TOutput>
+> & {
+  guardrailStreamHandler?: OutputGuardrailStreamHandler;
+};
+
+export interface OutputGuardrailDefinition<TOutput = unknown>
+  extends GuardrailDefinition<OutputGuardrailArgs<TOutput>, OutputGuardrailResult<TOutput>> {
+  streamHandler?: OutputGuardrailStreamHandler;
+}
+
+export type OutputGuardrail<TOutput = unknown> =
+  | OutputGuardrailFunction<TOutput>
+  | OutputGuardrailDefinition<TOutput>;
+
 /**
  * Agent configuration options
  */
@@ -261,7 +433,7 @@ export type AgentOptions = {
   instructions: InstructionsDynamicValue;
 
   // Tools & Memory
-  tools?: (Tool<any, any> | Toolkit)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
+  tools?: (Tool<any, any> | Toolkit | VercelTool)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
   toolkits?: Toolkit[];
   memory?: Memory | false;
 
@@ -275,6 +447,10 @@ export type AgentOptions = {
 
   // Hooks
   hooks?: AgentHooks;
+
+  // Guardrails
+  inputGuardrails?: InputGuardrail[];
+  outputGuardrails?: OutputGuardrail<any>[];
 
   // Configuration
   temperature?: number;
@@ -297,7 +473,88 @@ export type AgentOptions = {
 
   // User context
   context?: ContextInput;
+
+  // Live evaluation configuration
+  eval?: AgentEvalConfig;
 };
+
+export type AgentEvalOperationType =
+  | "generateText"
+  | "streamText"
+  | "generateObject"
+  | "streamObject";
+
+export interface AgentEvalPayload {
+  operationId: string;
+  operationType: AgentEvalOperationType;
+  input?: string | null;
+  output?: string | null;
+  rawInput?: string | UIMessage[] | BaseMessage[];
+  rawOutput?: unknown;
+  userId?: string;
+  conversationId?: string;
+  traceId: string;
+  spanId: string;
+  metadata?: Record<string, unknown>;
+}
+
+export type AgentEvalContext = AgentEvalPayload &
+  Record<string, unknown> & {
+    agentId: string;
+    agentName: string;
+    timestamp: string;
+    rawPayload: AgentEvalPayload;
+  };
+
+export type AgentEvalParams = Record<string, unknown>;
+
+export type AgentEvalSamplingPolicy = SamplingPolicy;
+
+export type AgentEvalScorerFactory = () =>
+  | LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>
+  | Promise<LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>>;
+
+export type AgentEvalScorerReference =
+  | LocalScorerDefinition<AgentEvalContext, Record<string, unknown>>
+  | AgentEvalScorerFactory;
+
+export interface AgentEvalResult {
+  scorerId: string;
+  scorerName?: string;
+  status: "success" | "error" | "skipped";
+  score?: number | null;
+  metadata?: Record<string, unknown> | null;
+  error?: unknown;
+  durationMs?: number;
+  payload: AgentEvalPayload;
+  rawPayload: AgentEvalPayload;
+}
+
+export interface AgentEvalScorerConfig {
+  scorer: AgentEvalScorerReference;
+  params?:
+    | AgentEvalParams
+    | ((
+        context: AgentEvalContext,
+      ) => AgentEvalParams | undefined | Promise<AgentEvalParams | undefined>);
+  sampling?: AgentEvalSamplingPolicy;
+  id?: string;
+  onResult?: (result: AgentEvalResult) => void | Promise<void>;
+  buildPayload?: (
+    context: AgentEvalContext,
+  ) => Record<string, unknown> | Promise<Record<string, unknown>>;
+  buildParams?: (
+    context: AgentEvalContext,
+  ) => AgentEvalParams | undefined | Promise<AgentEvalParams | undefined>;
+}
+
+export interface AgentEvalConfig {
+  scorers: Record<string, AgentEvalScorerConfig>;
+  triggerSource?: string;
+  environment?: string;
+  sampling?: AgentEvalSamplingPolicy;
+  redact?: (payload: AgentEvalPayload) => AgentEvalPayload;
+}
 
 /**
  * System message response with optional prompt metadata

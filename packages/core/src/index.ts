@@ -46,6 +46,26 @@ export type { SupervisorConfig } from "./agent/types";
 export * from "./tool";
 export * from "./tool/reasoning/index";
 export * from "./memory";
+export {
+  createSensitiveNumberGuardrail,
+  createEmailRedactorGuardrail,
+  createPhoneNumberGuardrail,
+  createProfanityGuardrail,
+  createMaxLengthGuardrail,
+  createProfanityInputGuardrail,
+  createPIIInputGuardrail,
+  createPromptInjectionGuardrail,
+  createInputLengthGuardrail,
+  createHTMLSanitizerInputGuardrail,
+  createDefaultInputSafetyGuardrails,
+  createDefaultPIIGuardrails,
+  createDefaultSafetyGuardrails,
+} from "./agent/guardrails/defaults";
+export { createInputGuardrail, createOutputGuardrail } from "./agent/guardrail";
+export type {
+  CreateInputGuardrailOptions,
+  CreateOutputGuardrailOptions,
+} from "./agent/guardrail";
 
 // Observability exports
 export { VoltAgentObservability } from "./observability";
@@ -114,6 +134,7 @@ export type {
   ApiToolInfo,
   ToolWithNodeId,
   SubAgentStateData,
+  AgentScorerState,
   ModelToolCall,
   OperationContext,
   StreamTextFinishResult,
@@ -123,6 +144,26 @@ export type {
   ToolErrorInfo,
   ClientSideToolResult,
   DynamicValueOptions,
+  AgentEvalConfig,
+  AgentEvalScorerConfig,
+  AgentEvalScorerFactory,
+  AgentEvalScorerReference,
+  AgentEvalResult,
+  AgentEvalSamplingPolicy,
+  AgentEvalOperationType,
+  AgentEvalPayload,
+  AgentEvalContext,
+  GuardrailAction,
+  GuardrailSeverity,
+  InputGuardrail,
+  OutputGuardrail,
+  GuardrailDefinition,
+  GuardrailFunction,
+  GuardrailContext,
+  InputGuardrailArgs,
+  InputGuardrailResult,
+  OutputGuardrailArgs,
+  OutputGuardrailResult,
 } from "./agent/types";
 export type { VoltAgentError, AbortError } from "./agent/errors";
 export { ToolDeniedError, ClientHTTPError } from "./agent/errors";
@@ -141,6 +182,7 @@ export * from "./utils/update";
 export * from "./voice";
 // TelemetryExporter removed - migrated to OpenTelemetry
 export * from "./voltops";
+export * from "./eval/runtime";
 export type { UsageInfo, StreamPart } from "./agent/providers";
 export type {
   VoltAgentOptions,
@@ -168,6 +210,7 @@ export { createAsyncIterableStream, type AsyncIterableStream } from "@voltagent/
 
 // Convenience re-exports from ai-sdk so apps need only @voltagent/core
 export { stepCountIs, hasToolCall } from "ai";
+export type { LanguageModel } from "ai";
 export type { StopWhen } from "./ai-types";
 
 export type {

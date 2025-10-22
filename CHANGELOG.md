@@ -4893,8 +4893,6 @@
     // Optional: Configure connection pool
     maxConnections: 10,
 
-    // Optional: Set storage limit for messages
-    storageLimit: 100,
 
     // Optional: Enable debug logging for development
     debug: process.env.NODE_ENV === "development",
@@ -9399,7 +9397,6 @@
     const memory = new SupabaseMemory({
       client: supabaseClient,
       tableName: "voltagent_memory", // Optional
-      storageLimit: 150, // Optional: Custom storage limit
       debug: false, // Optional: Debug logging
     });
 

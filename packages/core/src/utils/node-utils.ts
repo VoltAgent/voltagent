@@ -8,9 +8,11 @@ export enum NodeType {
   MEMORY = "memory",
   MESSAGE = "message",
   OUTPUT = "output",
+  GUARDRAIL = "guardrail",
   RETRIEVER = "retriever",
   VECTOR = "vector",
   EMBEDDING = "embedding",
+  SCORER = "scorer",
   // Workflow step types
   WORKFLOW_STEP = "workflow_step",
   WORKFLOW_AGENT_STEP = "workflow_agent_step",

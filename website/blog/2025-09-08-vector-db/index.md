@@ -76,9 +76,9 @@ If you're building AI agents with TypeScript, VoltAgent makes it incredibly easy
 
 VoltAgent supports multiple vector databases out of the box:
 
-- **[Chroma](https://docs.voltagent.dev/docs/rag/chroma)** - Perfect for local development, runs without Docker
-- **[Pinecone](https://docs.voltagent.dev/docs/rag/pinecone)** - Fully managed, serverless solution for production
-- **[Qdrant](https://docs.voltagent.dev/docs/rag/qdrant)** - Open source with both self-hosted and cloud options
+- **[Chroma](https://voltagent.dev/docs/rag/chroma/)** - Perfect for local development, runs without Docker
+- **[Pinecone](https://voltagent.dev/docs/rag/pinecone/)** - Fully managed, serverless solution for production
+- **[Qdrant](https://voltagent.dev/docs/rag/qdrant/)** - Open source with both self-hosted and cloud options
 
 Getting started is simple:
 
@@ -103,7 +103,7 @@ const agent = new Agent({
 });
 ```
 
-Learn more in the [VoltAgent RAG documentation](https://docs.voltagent.dev/docs/rag/overview) or check out the [examples on GitHub](https://github.com/voltagent/voltagent/tree/main/examples).
+Learn more in the [VoltAgent RAG documentation](https://voltagent.dev/docs/rag/overview/) or check out the [examples on GitHub](https://github.com/voltagent/voltagent/tree/main/examples).
 
 ## Understanding Similarity Metrics
 

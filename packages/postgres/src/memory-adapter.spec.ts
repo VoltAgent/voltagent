@@ -151,7 +151,6 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       },
       tablePrefix: "test",
       debug: false,
-      storageLimit: 100,
     });
   });
 
@@ -267,7 +266,7 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
   });
 
   // ============================================================================
-  // Advanced Behavior Tests (SQL shapes, storage limits, filters)
+  // Advanced Behavior Tests (SQL shapes, filters)
   // ============================================================================
 
   describe("Advanced Behavior", () => {
@@ -305,35 +304,6 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
         after.toISOString(),
         5,
       ]);
-    });
-
-    it("should delete oldest messages when exceeding storage limit", async () => {
-      const conv = createConversationData({ id: "conv-1" });
-
-      // addMessage flow on default adapter (storageLimit: 100)
-      const tx = mockTransaction();
-      mockGetConversation(conv); // existence check
-      mockEmptyResult(); // INSERT message
-      mockResultWith({ count: "105" }); // COUNT > limit -> delete 5
-      mockEmptyResult(); // DELETE old messages
-      tx.commit();
-
-      await adapter.addMessage(
-        { id: "m1", role: "user", parts: [], metadata: {} } as UIMessage,
-        "user-1",
-        "conv-1",
-      );
-
-      // Find DELETE statement
-      const delCall = mockQuery.mock.calls.find((c) =>
-        String(c[0]).startsWith("DELETE FROM test_messages"),
-      );
-      expect(delCall).toBeTruthy();
-      const delSql: string = delCall?.[0] as string;
-      const delParams: any[] = (delCall?.[1] as any[]) || [];
-      expect(delSql).toContain("AND message_id IN (");
-      expect(delSql).toContain("ORDER BY created_at ASC");
-      expect(delParams).toEqual(["conv-1", 5]);
     });
 
     it("should order and paginate conversations correctly", async () => {
@@ -417,7 +387,6 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       const tx = mockTransaction();
       mockGetConversation(createConversationData({ id: conversationId }));
       mockEmptyResult(); // INSERT message
-      mockResultWith({ count: "1" }); // COUNT for storage limit
       tx.commit();
 
       await adapter.addMessage(message, "user-1", conversationId);
@@ -457,7 +426,6 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       mockGetConversation(createConversationData({ id: conversationId }));
       mockEmptyResult(); // INSERT first message
       mockEmptyResult(); // INSERT second message
-      mockResultWith({ count: "2" }); // COUNT for storage limit
       tx.commit();
 
       await adapter.addMessages(messages, "user-1", conversationId);
@@ -513,7 +481,6 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       for (let i = 0; i < 3; i++) {
         mockEmptyResult();
       }
-      mockResultWith({ count: "3" }); // COUNT
       tx.commit();
 
       await adapter.addMessages(testMessages, "user-1", conversationId);
@@ -546,7 +513,6 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       const tx1 = mockTransaction();
       mockGetConversation(createConversationData({ id: conversationId }));
       mockEmptyResult(); // INSERT
-      mockResultWith({ count: "1" }); // COUNT
       tx1.commit();
 
       await adapter.addMessage(

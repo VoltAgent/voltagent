@@ -1,5 +1,110 @@
 # @voltagent/server-core
 
+## 1.0.19
+
+### Patch Changes
+
+- [`907cc30`](https://github.com/VoltAgent/voltagent/commit/907cc30b8cbe655ae6e79fd25494f246663fd8ad) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core dependency
+
+## 1.0.18
+
+### Patch Changes
+
+- Updated dependencies [[`461ecec`](https://github.com/VoltAgent/voltagent/commit/461ecec60aa90b56a413713070b6e9f43efbd74b)]:
+  - @voltagent/core@1.1.31
+
+## 1.0.17
+
+### Patch Changes
+
+- [#709](https://github.com/VoltAgent/voltagent/pull/709) [`8b838ec`](https://github.com/VoltAgent/voltagent/commit/8b838ecf085f13efacb94897063de5e7087861e6) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add defaultPrivate option to AuthProvider for protecting all routes by default
+
+  ## The Problem
+
+  When using VoltAgent with third-party auth providers (like Clerk, Auth0, or custom providers), custom routes added via `configureApp` were public by default. This meant:
+  - Only routes explicitly in `PROTECTED_ROUTES` required authentication
+  - Custom endpoints needed manual middleware to be protected
+  - The `publicRoutes` property couldn't make all routes private by default
+
+  This was especially problematic when integrating with enterprise auth systems where security-by-default is expected.
+
+  ## The Solution
+
+  Added `defaultPrivate` option to `AuthProvider` interface, enabling two authentication modes:
+  - **Opt-In Mode** (default, `defaultPrivate: false`): Only specific routes require auth
+  - **Opt-Out Mode** (`defaultPrivate: true`): All routes require auth unless explicitly listed in `publicRoutes`
+
+  ## Usage Example
+
+  ### Protecting All Routes with Clerk
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      auth: jwtAuth({
+        secret: process.env.CLERK_JWT_KEY,
+        defaultPrivate: true, // 🔒 Protect all routes by default
+        publicRoutes: ["GET /health", "POST /webhooks/clerk"],
+        mapUser: (payload) => ({
+          id: payload.sub,
+          email: payload.email,
+        }),
+      }),
+      configureApp: (app) => {
+        // ✅ Public (in publicRoutes)
+        app.get("/health", (c) => c.json({ status: "ok" }));
+
+        // 🔒 Protected automatically (defaultPrivate: true)
+        app.get("/api/user/data", (c) => {
+          const user = c.get("authenticatedUser");
+          return c.json({ user });
+        });
+      },
+    }),
+  });
+  ```
+
+  ### Default Behavior (Backward Compatible)
+
+  ```typescript
+  // Without defaultPrivate, behavior is unchanged
+  auth: jwtAuth({
+    secret: process.env.JWT_SECRET,
+    // defaultPrivate: false (default)
+  });
+
+  // Custom routes are public unless you add your own middleware
+  configureApp: (app) => {
+    app.get("/api/data", (c) => {
+      // This is PUBLIC by default
+      return c.json({ data: "anyone can access" });
+    });
+  };
+  ```
+
+  ## Benefits
+  - ✅ **Fail-safe security**: Routes are protected by default when enabled
+  - ✅ **No manual middleware**: Custom endpoints automatically protected
+  - ✅ **Perfect for third-party auth**: Ideal for Clerk, Auth0, Supabase
+  - ✅ **Backward compatible**: No breaking changes, opt-in feature
+  - ✅ **Fine-grained control**: Use `publicRoutes` to selectively allow access
+
+## 1.0.16
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+  - @voltagent/core@1.1.30
+
 ## 1.0.15
 
 ### Patch Changes

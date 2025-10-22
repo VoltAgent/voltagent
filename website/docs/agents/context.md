@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 
 # Operation Context (`context`)
 
-`context` allows you to pass custom data throughout a single agent operation. Think of it as a shared bag of information that all components (hooks, tools, retrievers, sub-agents) can access during one agent task.
+The `context` field in `OperationContext` is a Map that passes custom data throughout a single agent operation. All components (hooks, tools, retrievers, sub-agents) can read and write to this shared data structure during execution.
 
 ## Basic Concept
 
@@ -21,15 +21,13 @@ You → Agent → Hooks → Tools → Retrievers → Sub-Agents
      ← ← ← ← ← context flows everywhere ← ← ← ← ←
 ```
 
-Let's see this in action with simple examples:
-
 ## Initialize context
 
 You can provide initial data in two ways:
 
 ### Method 1: Set Default Context in Constructor
 
-You can set default `context` when creating the agent, which will be used for all operations unless overridden:
+Set default `context` when creating the agent. This context is used for all operations unless overridden at execution time:
 
 ```typescript
 import { Agent } from "@voltagent/core";
@@ -64,7 +62,7 @@ console.log("Project ID:", response2.context?.get("projectId")); // "my-project"
 
 ### Method 2: Pass Context During Execution
 
-You can also pass `context` only when calling the agent:
+Pass `context` when calling the agent to provide operation-specific data:
 
 ```typescript
 const agent = new Agent({
@@ -270,6 +268,221 @@ const auditedAgent = new Agent({
 });
 ```
 
+## OperationContext Properties
+
+The `OperationContext` type (defined in [types.ts](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/types.ts)) contains multiple properties beyond the user-managed `context` Map. Understanding these properties helps with debugging, observability, and advanced use cases.
+
+### User-Managed Fields
+
+These fields are set by you and used to identify and track operations:
+
+```typescript
+interface OperationContext {
+  // User data storage - read and write custom values
+  readonly context: Map<string | symbol, unknown>;
+
+  // Optional user identifier
+  userId?: string;
+
+  // Optional conversation identifier
+  conversationId?: string;
+}
+```
+
+**Usage example:**
+
+```typescript
+const response = await agent.generateText("Hello", {
+  userId: "user-123",
+  conversationId: "conv-456",
+  context: new Map([["language", "en"]]),
+});
+
+// Access in hooks or tools
+console.log(operationContext.userId); // "user-123"
+console.log(operationContext.conversationId); // "conv-456"
+console.log(operationContext.context.get("language")); // "en"
+```
+
+### Operation Metadata (Read-Only)
+
+These fields are automatically set by the framework and provide metadata about the current operation:
+
+```typescript
+interface OperationContext {
+  // Unique identifier for this operation
+  readonly operationId: string;
+
+  // When the operation started
+  startTime: Date;
+
+  // Whether the operation is still active
+  isActive: boolean;
+
+  // Parent agent ID if this is a sub-agent execution
+  parentAgentId?: string;
+}
+```
+
+**Usage example:**
+
+```typescript
+const agent = new Agent({
+  name: "TrackedAgent",
+  model: openai("gpt-4o"),
+  hooks: createHooks({
+    onEnd: async ({ context }) => {
+      const duration = Date.now() - context.startTime.getTime();
+      console.log(`Operation ${context.operationId} took ${duration}ms`);
+
+      if (context.parentAgentId) {
+        console.log(`Executed as sub-agent of ${context.parentAgentId}`);
+      }
+    },
+  }),
+  instructions: "You are a helpful assistant.",
+});
+```
+
+### System Fields (Advanced)
+
+These fields are used internally by the framework. Most users don't need to interact with them directly:
+
+```typescript
+interface OperationContext {
+  // Internal state management (used by framework)
+  readonly systemContext: Map<string | symbol, unknown>;
+
+  // Scoped logger with operation context
+  logger: Logger;
+
+  // OpenTelemetry span management
+  traceContext: AgentTraceContext;
+
+  // Full conversation history including tool calls
+  conversationSteps?: StepWithContent[];
+
+  // Cancellation control
+  abortController: AbortController;
+
+  // Error to throw when operation is aborted
+  cancellationError?: CancellationError;
+
+  // Bridge for requesting user input (human-in-the-loop)
+  elicitation?: (request: unknown) => Promise<unknown>;
+}
+```
+
+**System Context vs User Context:**
+
+- **`context`**: Your data - use this for sharing information between components
+- **`systemContext`**: Framework internals - stores stream writers, internal state, etc.
+
+The framework uses `systemContext` to pass internal state between components. For example, when a sub-agent streams data, the parent agent's stream writer is stored in `systemContext` (see [subagent/index.ts:145-148](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/subagent/index.ts#L145-L148)).
+
+### Input/Output (Automatically Set)
+
+These fields capture the operation's input and output:
+
+```typescript
+interface OperationContext {
+  // Original input provided to the agent
+  input?: string | UIMessage[] | BaseMessage[];
+
+  // Generated response (text or object)
+  output?: string | object;
+}
+```
+
+These fields are documented in detail in the "Access Input and Output in Context" section below.
+
+### Operation Lifecycle Example
+
+Here's how to use metadata fields for observability:
+
+```typescript
+import { Agent, createHooks } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const observableAgent = new Agent({
+  name: "ObservableAgent",
+  model: openai("gpt-4o"),
+  hooks: createHooks({
+    onStart: ({ context }) => {
+      // Use the scoped logger
+      context.logger.info("Operation started", {
+        operationId: context.operationId,
+        userId: context.userId,
+        conversationId: context.conversationId,
+      });
+
+      // Store start metrics
+      context.context.set("metrics", {
+        startTime: context.startTime,
+        operationId: context.operationId,
+      });
+    },
+    onEnd: ({ context, output }) => {
+      const metrics = context.context.get("metrics") as any;
+      const duration = Date.now() - context.startTime.getTime();
+
+      context.logger.info("Operation completed", {
+        operationId: context.operationId,
+        duration,
+        inputType: typeof context.input,
+        outputType: typeof context.output,
+        isActive: context.isActive,
+      });
+    },
+  }),
+  instructions: "You are a helpful assistant.",
+});
+
+// The logger automatically includes userId, conversationId, and operationId
+const response = await observableAgent.generateText("Hello", {
+  userId: "user-123",
+  conversationId: "conv-456",
+});
+```
+
+### Cancellation with AbortController
+
+The `abortController` field allows operation cancellation:
+
+```typescript
+import { Agent } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "CancellableAgent",
+  model: openai("gpt-4o"),
+  instructions: "You are a helpful assistant.",
+});
+
+// Create an abort controller
+const abortController = new AbortController();
+
+// Pass the signal to the agent
+const responsePromise = agent.generateText("Write a long story", {
+  abortSignal: abortController.signal,
+});
+
+// Cancel after 1 second
+setTimeout(() => {
+  abortController.abort("User cancelled");
+}, 1000);
+
+try {
+  const response = await responsePromise;
+} catch (error) {
+  if (error.name === "AbortError") {
+    console.log("Operation was cancelled");
+  }
+}
+```
+
+The agent creates an internal `AbortController` and cascades the external signal to it (see [agent.ts:3385-3395](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L3385-L3395)). Sub-agents automatically inherit the parent's abort controller.
+
 ## Retrievers Store References
 
 Retrievers can store source information in `context`:
@@ -313,7 +526,7 @@ console.log("References:", response.context?.get("references"));
 
 ## Sub-Agents Automatically Inherit Context
 
-When a supervisor delegates to sub-agents, the complete operation context is automatically passed, including `context` and conversation history:
+When a supervisor delegates to sub-agents, the parent's `OperationContext` is passed down. The sub-agent receives the same `context` Map reference (not a copy), so modifications are visible to both parent and sub-agent.
 
 ```typescript
 // Worker agent - automatically receives supervisor's context
@@ -363,12 +576,22 @@ console.log("Project ID:", response.context?.get("projectId"));
 console.log("Worker start time:", response.context?.get("workerStartTime"));
 ```
 
-### Key Benefits
+### Context Inheritance Priority
 
-- **Automatic Inheritance**: No manual context passing required
-- **Shared History**: All agents contribute to the same conversation steps
-- **Bidirectional Updates**: Changes made by sub-agents are visible to supervisor
-- **Unified Workflow**: The entire operation appears as one cohesive process
+When creating an `OperationContext`, the framework follows this priority (see [agent.ts:3343-3371](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L3343-L3371)):
+
+1. **Parent context** (if sub-agent): Use parent's context Map reference
+2. **Runtime context** (if provided at execution): Use the provided Map
+3. **Agent-level context** (if set in constructor): Use the agent's default Map
+4. **New Map**: Create an empty Map if none exists
+
+The framework then fills in missing keys from lower-priority sources without overriding existing values. This means:
+
+- Sub-agents see all parent context data
+- Parent's values take precedence over runtime and agent-level defaults
+- Runtime values take precedence over agent-level defaults
+
+**Important**: The context Map reference is preserved, not cloned. This enables bidirectional updates - changes made by sub-agents are visible to the parent.
 
 For more details on sub-agent architecture, see the [Sub-Agents guide](./subagents.md).
 
@@ -451,32 +674,58 @@ async function demonstrateFlow() {
 
 ## Key Points
 
-1. **Initialization**:
-   - Set default context in constructor: `new Agent({ context: defaultMap })`
-   - Override per call: `agent.generateText("...", { context: callMap })`
-2. **Hooks**: Access via `context.context` in `onStart`/`onEnd`
-3. **Tools**: Access via `options.operationContext.context` in `execute`
-4. **Retrievers**: Access via `options.context` in `retrieve`
-5. **Sub-Agents**: Automatically get a copy of supervisor's `context`
-6. **Response**: Access final state via `response.context`
-7. **Dynamic Values**: Constructor context is available in dynamic instructions, model, and tools functions
+### Context Access by Component
 
-Each component can read existing data and add new data. The `context` travels through the entire operation, making it easy to share state and track information across all parts of your agent system.
+1. **Hooks**: Access via `context.context` in `onStart`/`onEnd` callbacks
+2. **Tools**: Access via `options.operationContext.context` in `execute` function
+3. **Retrievers**: Access via `options.context` in `retrieve` method
+4. **Sub-Agents**: Automatically receive parent's `context` Map reference
+5. **Response**: Access final state via `response.context`
+6. **Dynamic Values**: Constructor context is available in dynamic instructions, model, and tools functions
 
-### Context Priority
+### OperationContext Fields
 
-When both constructor and execution contexts are provided:
+The `OperationContext` contains:
 
-- Execution context completely replaces constructor context (no automatic merging)
-- Constructor context serves as the default when no execution context is provided
-- Dynamic values (instructions, model, tools) receive whichever context is active
+- **User-managed**: `context` (Map), `userId`, `conversationId`
+- **Metadata**: `operationId`, `startTime`, `isActive`, `parentAgentId`
+- **System**: `systemContext`, `logger`, `traceContext`, `conversationSteps`, `abortController`, `cancellationError`, `elicitation`
+- **Input/Output**: `input`, `output` (automatically set)
 
-:::tip
-To extend rather than replace the default context, create a new Map from it:
+### Context Initialization Priority
+
+1. Parent context (for sub-agents) - highest priority
+2. Runtime context (execution parameter)
+3. Agent-level context (constructor)
+4. New empty Map - lowest priority
+
+Lower-priority sources only fill in missing keys; they don't override existing values. The Map reference is preserved (not cloned) to enable bidirectional updates between parent and sub-agents.
+
+### Tips
+
+**Extend rather than replace default context:**
 
 ```typescript
-const extendedContext = new Map(defaultContext);
-extendedContext.set("environment", "development"); // Override specific values
+const agent = new Agent({
+  context: new Map([["env", "production"]]),
+  // ...
+});
+
+// Extend the default context
+const extendedContext = new Map(agent.context);
+extendedContext.set("requestId", "req-123");
+
+await agent.generateText("Hello", { context: extendedContext });
 ```
 
-:::
+**Use metadata fields for observability:**
+
+```typescript
+hooks: createHooks({
+  onEnd: ({ context }) => {
+    console.log(
+      `Operation ${context.operationId} completed in ${Date.now() - context.startTime.getTime()}ms`
+    );
+  },
+});
+```

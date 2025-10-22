@@ -1,5 +1,457 @@
 # @voltagent/server-hono
 
+## 1.0.26
+
+### Patch Changes
+
+- [`907cc30`](https://github.com/VoltAgent/voltagent/commit/907cc30b8cbe655ae6e79fd25494f246663fd8ad) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core dependency
+
+- Updated dependencies [[`907cc30`](https://github.com/VoltAgent/voltagent/commit/907cc30b8cbe655ae6e79fd25494f246663fd8ad)]:
+  - @voltagent/server-core@1.0.19
+
+## 1.0.25
+
+### Patch Changes
+
+- [#714](https://github.com/VoltAgent/voltagent/pull/714) [`f20cdf1`](https://github.com/VoltAgent/voltagent/commit/f20cdf1c9cc84daa6c4002c1dfa2c2085f2ed2ca) Thanks [@{...}](https://github.com/{...})! - fix: auth middleware now preserves conversationId and all client options
+
+  ## The Problem
+
+  When using custom auth providers with VoltAgent, the auth middleware was completely replacing the `body.options` object instead of merging with it. This caused critical client-provided options to be lost, including:
+  - `conversationId` - essential for conversation continuity and hooks
+  - `temperature`, `maxSteps`, `topP` - LLM configuration parameters
+  - Any other options sent by the client in the request body
+
+  This happened because the middleware created a brand new `options` object containing only auth-related fields (`context.user` and `userId`), completely discarding the original `body.options`.
+
+  **Example of the bug:**
+
+  ```typescript
+  // Client sends:
+  {
+    input: "Hello",
+    options: {
+      conversationId: "conv-abc-123",
+      temperature: 0.7
+    }
+  }
+
+  // After auth middleware (BEFORE FIX):
+  {
+    input: "Hello",
+    options: {
+      // ❌ conversationId LOST!
+      // ❌ temperature LOST!
+      context: { user: {...} },
+      userId: "user-123"
+    }
+  }
+
+  // Result: conversationId missing in onStart hook's context
+  ```
+
+  This was especially problematic when:
+  - Using hooks that depend on `conversationId` (like `onStart`, `onEnd`)
+  - Configuring LLM parameters from the client side
+  - Tracking conversations across multiple agent calls
+
+  ## The Solution
+
+  Changed the auth middleware to **merge** auth data into the existing `body.options` instead of replacing it. Now all client options are preserved while auth context is properly added.
+
+  **After the fix:**
+
+  ```typescript
+  // Client sends:
+  {
+    input: "Hello",
+    options: {
+      conversationId: "conv-abc-123",
+      temperature: 0.7
+    }
+  }
+
+  // After auth middleware (AFTER FIX):
+  {
+    input: "Hello",
+    options: {
+      ...body.options,  // ✅ All original options preserved
+      conversationId: "conv-abc-123",  // ✅ Preserved
+      temperature: 0.7,  // ✅ Preserved
+      context: {
+        ...body.options?.context,  // ✅ Existing context merged
+    // ✅ Auth user added
+      },
+      userId: "user-123"  // ✅ Auth userId added
+    }
+  }
+
+  // Result: conversationId properly available in hooks!
+  ```
+
+  ## Technical Changes
+
+  **Before (packages/server-hono/src/auth/middleware.ts:82-90):**
+
+  ```typescript
+  options: {
+    context: {
+      ...body.context,
+      user,
+    },
+    userId: user.id || user.sub,
+  }
+  // ❌ Creates NEW options object, loses body.options
+  ```
+
+  **After:**
+
+  ```typescript
+  options: {
+    ...body.options,  // ✅ Preserve all existing options
+    context: {
+      ...body.options?.context,  // ✅ Merge existing context
+      ...body.context,
+      user,
+    },
+    userId: user.id || user.sub,
+  }
+  // ✅ Merges auth data into existing options
+  ```
+
+  ## Impact
+  - ✅ **Fixes missing conversationId in hooks**: `onStart`, `onEnd`, and other hooks now receive the correct `conversationId` from client
+  - ✅ **Preserves LLM configuration**: Client-side `temperature`, `maxSteps`, `topP`, etc. are no longer lost
+  - ✅ **Context merging works correctly**: Both custom context and auth user context coexist
+  - ✅ **Backward compatible**: Existing code continues to work, only fixes the broken behavior
+  - ✅ **Proper fallback chain**: `userId` uses `user.id` → `user.sub` → `body.options.userId`
+
+  ## Testing
+
+  Added comprehensive test suite (`packages/server-hono/src/auth/middleware.spec.ts`) with 12 test cases covering:
+  - conversationId preservation
+  - Multiple options preservation
+  - Context merging
+  - userId priority logic
+  - Empty options handling
+  - Public routes
+  - Authentication failures
+
+  All tests passing ✅
+
+## 1.0.24
+
+### Patch Changes
+
+- Updated dependencies [[`461ecec`](https://github.com/VoltAgent/voltagent/commit/461ecec60aa90b56a413713070b6e9f43efbd74b)]:
+  - @voltagent/core@1.1.31
+  - @voltagent/server-core@1.0.18
+
+## 1.0.23
+
+### Patch Changes
+
+- [#709](https://github.com/VoltAgent/voltagent/pull/709) [`8b838ec`](https://github.com/VoltAgent/voltagent/commit/8b838ecf085f13efacb94897063de5e7087861e6) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add defaultPrivate option to AuthProvider for protecting all routes by default
+
+  ## The Problem
+
+  When using VoltAgent with third-party auth providers (like Clerk, Auth0, or custom providers), custom routes added via `configureApp` were public by default. This meant:
+  - Only routes explicitly in `PROTECTED_ROUTES` required authentication
+  - Custom endpoints needed manual middleware to be protected
+  - The `publicRoutes` property couldn't make all routes private by default
+
+  This was especially problematic when integrating with enterprise auth systems where security-by-default is expected.
+
+  ## The Solution
+
+  Added `defaultPrivate` option to `AuthProvider` interface, enabling two authentication modes:
+  - **Opt-In Mode** (default, `defaultPrivate: false`): Only specific routes require auth
+  - **Opt-Out Mode** (`defaultPrivate: true`): All routes require auth unless explicitly listed in `publicRoutes`
+
+  ## Usage Example
+
+  ### Protecting All Routes with Clerk
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      auth: jwtAuth({
+        secret: process.env.CLERK_JWT_KEY,
+        defaultPrivate: true, // 🔒 Protect all routes by default
+        publicRoutes: ["GET /health", "POST /webhooks/clerk"],
+        mapUser: (payload) => ({
+          id: payload.sub,
+          email: payload.email,
+        }),
+      }),
+      configureApp: (app) => {
+        // ✅ Public (in publicRoutes)
+        app.get("/health", (c) => c.json({ status: "ok" }));
+
+        // 🔒 Protected automatically (defaultPrivate: true)
+        app.get("/api/user/data", (c) => {
+          const user = c.get("authenticatedUser");
+          return c.json({ user });
+        });
+      },
+    }),
+  });
+  ```
+
+  ### Default Behavior (Backward Compatible)
+
+  ```typescript
+  // Without defaultPrivate, behavior is unchanged
+  auth: jwtAuth({
+    secret: process.env.JWT_SECRET,
+    // defaultPrivate: false (default)
+  });
+
+  // Custom routes are public unless you add your own middleware
+  configureApp: (app) => {
+    app.get("/api/data", (c) => {
+      // This is PUBLIC by default
+      return c.json({ data: "anyone can access" });
+    });
+  };
+  ```
+
+  ## Benefits
+  - ✅ **Fail-safe security**: Routes are protected by default when enabled
+  - ✅ **No manual middleware**: Custom endpoints automatically protected
+  - ✅ **Perfect for third-party auth**: Ideal for Clerk, Auth0, Supabase
+  - ✅ **Backward compatible**: No breaking changes, opt-in feature
+  - ✅ **Fine-grained control**: Use `publicRoutes` to selectively allow access
+
+- [`5a0728d`](https://github.com/VoltAgent/voltagent/commit/5a0728d888b48169cdadabb62641cdcf437f4ee4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: correct CORS middleware detection to use actual function name 'cors2'
+
+  Fixed a critical bug where custom CORS middleware was not being properly detected, causing both custom and default CORS to be applied simultaneously. This resulted in the default CORS (`origin: "*"`) overwriting custom CORS headers on actual POST/GET requests, while OPTIONS (preflight) requests worked correctly.
+
+  ## The Problem
+
+  The middleware detection logic was checking for `middleware.name === "cors"`, but Hono's cors middleware function is actually named `"cors2"`. This caused:
+  - Detection to always fail → `userConfiguredCors` stayed `false`
+  - Default CORS (`app.use("*", cors())`) was applied even when users configured custom CORS
+  - **Both** middlewares executed: custom CORS on specific paths + default CORS on `"*"`
+  - OPTIONS requests returned correct custom CORS headers ✅
+  - POST/GET requests had custom headers **overwritten** by default CORS (`*`) ❌
+
+  ## The Solution
+
+  Updated the detection logic to check for the actual function name:
+
+  ```typescript
+  // Before: middleware.name === "cors"
+  // After:  middleware.name === "cors2"
+  ```
+
+  Now when users configure custom CORS in `configureApp`, it's properly detected and default CORS is skipped entirely.
+
+  ## Impact
+  - Custom CORS configurations now work correctly for **all** request types (OPTIONS, POST, GET, etc.)
+  - No more default CORS overwriting custom CORS headers
+  - Fixes browser CORS errors when using custom origins with credentials
+  - Maintains backward compatibility - default CORS still applies when no custom CORS is configured
+
+  ## Example
+
+  This now works as expected:
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+  import { cors } from "hono/cors";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      configureApp: (app) => {
+        app.use(
+          "/agents/*",
+          cors({
+            origin: "http://localhost:3001",
+            credentials: true,
+          })
+        );
+      },
+    }),
+  });
+  ```
+
+  Both OPTIONS and POST requests now return:
+  - `Access-Control-Allow-Origin: http://localhost:3001` ✅
+  - `Access-Control-Allow-Credentials: true` ✅
+
+- Updated dependencies [[`8b838ec`](https://github.com/VoltAgent/voltagent/commit/8b838ecf085f13efacb94897063de5e7087861e6)]:
+  - @voltagent/server-core@1.0.17
+
+## 1.0.22
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/server-core@1.0.16
+  - @voltagent/a2a-server@1.0.2
+  - @voltagent/mcp-server@1.0.3
+  - @voltagent/internal@0.0.12
+  - @voltagent/core@1.1.30
+
+## 1.0.21
+
+### Patch Changes
+
+- [#703](https://github.com/VoltAgent/voltagent/pull/703) [`fbbb349`](https://github.com/VoltAgent/voltagent/commit/fbbb34932aeeaf6cede30228ded03df43df415ad) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve CORS middleware execution order issue preventing custom CORS configuration
+
+  Fixed a critical issue where custom CORS middleware configured in `configureApp` was not being applied because the default CORS middleware was registered before user configuration.
+
+  ## The Problem
+
+  When users configured custom CORS settings in `configureApp`, their configuration was ignored:
+  - Default CORS middleware (`origin: "*"`) was applied before `configureApp` was called
+  - Hono middleware executes in registration order, so default CORS handled OPTIONS requests first
+  - Custom CORS middleware never executed, causing incorrect CORS headers in responses
+
+  ## The Solution
+  - Restructured middleware execution order to call `configureApp` **first**
+  - Added detection logic to identify when users configure custom CORS
+  - Default CORS now only applies if user hasn't configured custom CORS
+  - Custom CORS configuration takes full control when present
+
+  ## Impact
+  - Custom CORS configurations in `configureApp` now work correctly
+  - Users can specify custom origins, headers, methods, and credentials
+  - Maintains backward compatibility - default CORS still applies when no custom CORS is configured
+  - Updated documentation with middleware execution order and CORS configuration examples
+
+  ## Example Usage
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+  import { cors } from "hono/cors";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      configureApp: (app) => {
+        // Custom CORS configuration now works correctly
+        app.use(
+          "*",
+          cors({
+            origin: "https://your-domain.com",
+            allowHeaders: ["X-Custom-Header", "Content-Type"],
+            allowMethods: ["POST", "GET", "OPTIONS"],
+            credentials: true,
+          })
+        );
+      },
+    }),
+  });
+  ```
+
+## 1.0.20
+
+### Patch Changes
+
+- [#696](https://github.com/VoltAgent/voltagent/pull/696) [`69bc5bf`](https://github.com/VoltAgent/voltagent/commit/69bc5bf1c0ccedd65964f9b878cc57318b82a8a4) Thanks [@fav-devs](https://github.com/fav-devs)! - Add hostname configuration option to honoServer() to support IPv6 and dual-stack networking.
+
+  The honoServer() function now accepts a `hostname` option that allows configuring which network interface the server binds to. This fixes deployment issues on platforms like Railway that require IPv6 binding for private networking.
+
+  **Example usage:**
+
+  ```typescript
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents,
+    server: honoServer({
+      port: 8080,
+      hostname: "::", // Binds to IPv6/dual-stack
+    }),
+  });
+  ```
+
+  **Options:**
+  - `"0.0.0.0"` - Binds to all IPv4 interfaces (default, maintains backward compatibility)
+  - `"::"` - Binds to all IPv6 interfaces (dual-stack on most systems)
+  - `"localhost"` or `"127.0.0.1"` - Only localhost access
+
+  Fixes #694
+
+## 1.0.19
+
+### Patch Changes
+
+- [#695](https://github.com/VoltAgent/voltagent/pull/695) [`66a1bff`](https://github.com/VoltAgent/voltagent/commit/66a1bfff1c7258c79935af4e4361b2fc043d2d1f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add hostname configuration support to honoServer - #694
+
+  ## The Problem
+
+  The `honoServer()` function hardcoded `hostname: "0.0.0.0"` which prevented binding to IPv6 addresses. This caused deployment issues on platforms like Railway that require IPv6 or dual-stack binding for private networking.
+
+  ## The Solution
+
+  Added a `hostname` configuration option to `HonoServerConfig` that allows users to specify which network interface to bind to. The default remains `"0.0.0.0"` for backward compatibility.
+
+  ## Usage Examples
+
+  **Default behavior (IPv4 only):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+    }),
+  });
+  // Binds to 0.0.0.0 (all IPv4 interfaces)
+  ```
+
+  **IPv6 dual-stack (recommended for Railway, Fly.io):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+      hostname: "::", // Binds to both IPv4 and IPv6
+    }),
+  });
+  ```
+
+  **Localhost only:**
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+      hostname: "127.0.0.1", // Local development only
+    }),
+  });
+  ```
+
+  **Environment-based configuration:**
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: parseInt(process.env.PORT || "3141"),
+      hostname: process.env.HOSTNAME || "::", // Default to dual-stack
+    }),
+  });
+  ```
+
+  This change is fully backward compatible and enables VoltAgent to work seamlessly on modern cloud platforms with IPv6 networking.
+
 ## 1.0.18
 
 ### Patch Changes

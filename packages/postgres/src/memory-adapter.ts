@@ -4,6 +4,7 @@
  * Compatible with existing PostgreSQL storage structure
  */
 
+import type { ConnectionOptions } from "node:tls";
 import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@voltagent/core";
 import type {
   Conversation,
@@ -33,7 +34,7 @@ export interface PostgreSQLMemoryOptions {
         database: string;
         user: string;
         password: string;
-        ssl?: boolean;
+        ssl?: boolean | ConnectionOptions;
       }
     | string;
 
@@ -42,12 +43,6 @@ export interface PostgreSQLMemoryOptions {
    * @default 10
    */
   maxConnections?: number;
-
-  /**
-   * Maximum number of messages to store per conversation
-   * @default 100
-   */
-  storageLimit?: number;
 
   /**
    * Prefix for table names
@@ -69,14 +64,12 @@ export interface PostgreSQLMemoryOptions {
  */
 export class PostgreSQLMemoryAdapter implements StorageAdapter {
   private pool: Pool;
-  private storageLimit: number;
   private tablePrefix: string;
   private initialized = false;
   private initPromise: Promise<void> | null = null;
   private debug: boolean;
 
   constructor(options: PostgreSQLMemoryOptions) {
-    this.storageLimit = options.storageLimit ?? 100;
     this.tablePrefix = options.tablePrefix ?? "voltagent_memory";
     this.debug = options.debug ?? false;
 
@@ -283,9 +276,6 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
         ],
       );
 
-      // Apply storage limit
-      await this.applyStorageLimit(client, conversationId);
-
       await client.query("COMMIT");
       this.log(`Added message to conversation ${conversationId}`);
     } catch (error) {
@@ -335,9 +325,6 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
         );
       }
 
-      // Apply storage limit
-      await this.applyStorageLimit(client, conversationId);
-
       await client.query("COMMIT");
       this.log(`Added ${messages.length} messages to conversation ${conversationId}`);
     } catch (error) {
@@ -345,36 +332,6 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       throw error;
     } finally {
       client.release();
-    }
-  }
-
-  /**
-   * Apply storage limit to a conversation
-   */
-  private async applyStorageLimit(client: PoolClient, conversationId: string): Promise<void> {
-    const messagesTable = `${this.tablePrefix}_messages`;
-
-    // Get count of messages
-    const countResult = await client.query(
-      `SELECT COUNT(*) as count FROM ${messagesTable} WHERE conversation_id = $1`,
-      [conversationId],
-    );
-
-    const count = Number.parseInt(countResult.rows[0].count);
-
-    // Delete old messages beyond the storage limit
-    if (count > this.storageLimit) {
-      await client.query(
-        `DELETE FROM ${messagesTable}
-         WHERE conversation_id = $1 
-         AND message_id IN (
-           SELECT message_id FROM ${messagesTable}
-           WHERE conversation_id = $1 
-           ORDER BY created_at ASC 
-           LIMIT $2
-         )`,
-        [conversationId, count - this.storageLimit],
-      );
     }
   }
 
@@ -394,13 +351,11 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     const client = await this.pool.connect();
     try {
       const messagesTable = `${this.tablePrefix}_messages`;
-      const { limit = this.storageLimit, before, after, roles } = options || {};
+      const { limit, before, after, roles } = options || {};
 
       // Debug: Parsed options
       this.log("Parsed options:", {
         limit,
-        storageLimit: this.storageLimit,
-        effectiveLimit: limit,
         before: before?.toISOString(),
         after: after?.toISOString(),
         roles,

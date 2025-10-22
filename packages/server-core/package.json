@@ -1,12 +1,12 @@
 {
   "name": "@voltagent/server-core",
   "description": "Framework-agnostic server core for VoltAgent",
-  "version": "1.0.15",
+  "version": "1.0.19",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@voltagent/core": "^1.1.24",
-    "@voltagent/internal": "^0.0.11",
-    "ai": "^5.0.12",
+    "@voltagent/core": "^1.1.31",
+    "@voltagent/internal": "^0.0.12",
+    "ai": "^5.0.76",
     "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.1",
     "zod-from-json-schema": "^0.5.0",
@@ -14,11 +14,7 @@
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.2.1",
     "@types/ws": "^8.18.1",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.2",
-    "vitest": "^3.2.4",
     "zod": "^3.25.76"
   },
   "exports": {

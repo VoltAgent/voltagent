@@ -48,7 +48,7 @@ export class HonoServerProvider extends BaseServerProvider {
         const server = serve({
           fetch: app.fetch.bind(app),
           port,
-          hostname: "0.0.0.0",
+          hostname: this.honoConfig.hostname || "0.0.0.0",
         });
 
         // Check if server started successfully

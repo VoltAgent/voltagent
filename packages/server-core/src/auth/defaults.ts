@@ -97,9 +97,15 @@ export function pathMatches(path: string, pattern: string): boolean {
  * @param method The HTTP method
  * @param path The request path
  * @param publicRoutes Additional public routes from config
+ * @param defaultPrivate When true, routes require auth by default (opt-out model)
  * @returns True if the route requires authentication
  */
-export function requiresAuth(method: string, path: string, publicRoutes?: string[]): boolean {
+export function requiresAuth(
+  method: string,
+  path: string,
+  publicRoutes?: string[],
+  defaultPrivate?: boolean,
+): boolean {
   const fullRoute = `${method.toUpperCase()} ${path}`;
 
   // Check if it's a default public route
@@ -150,7 +156,8 @@ export function requiresAuth(method: string, path: string, publicRoutes?: string
     }
   }
 
-  // Default: don't require auth for unknown routes
-  // This allows custom endpoints to work without auth by default
-  return false;
+  // Default: Use defaultPrivate to determine behavior for unknown routes
+  // When defaultPrivate is true, all routes require auth unless explicitly made public
+  // When defaultPrivate is false/undefined, custom endpoints work without auth (current behavior)
+  return defaultPrivate ?? false;
 }

@@ -1,0 +1,31 @@
+{
+  "name": "@voltagent/evals",
+  "description": "VoltAgent evaluation orchestrator utilities",
+  "version": "1.0.3",
+  "author": "VoltAgent",
+  "dependencies": {
+    "@voltagent/internal": "^0.0.12",
+    "@voltagent/scorers": "^1.0.1",
+    "@voltagent/sdk": "^1.0.1"
+  },
+  "devDependencies": {},
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "peerDependencies": {
+    "@voltagent/scorers": "^1.0.0",
+    "@voltagent/sdk": "^1.0.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "test": "vitest run"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts"
+}

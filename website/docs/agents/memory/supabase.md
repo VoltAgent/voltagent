@@ -158,23 +158,22 @@ const agent = new Agent({
 
 ### Configuration Options
 
-| Option         | Type             | Description                                           |
-| -------------- | ---------------- | ----------------------------------------------------- |
-| `supabaseUrl`  | `string`         | Supabase project URL (required if not using `client`) |
-| `supabaseKey`  | `string`         | Supabase anon key (required if not using `client`)    |
-| `client`       | `SupabaseClient` | Existing Supabase client (alternative to URL/key)     |
-| `tableName`    | `string`         | Table name prefix (default: `voltagent_memory`)       |
-| `storageLimit` | `number`         | Max messages per conversation (default: `100`)        |
-| `debug`        | `boolean`        | Enable debug logging (default: `false`)               |
-| `logger`       | `Logger`         | Optional logger for structured logging                |
+| Option        | Type             | Description                                           |
+| ------------- | ---------------- | ----------------------------------------------------- |
+| `supabaseUrl` | `string`         | Supabase project URL (required if not using `client`) |
+| `supabaseKey` | `string`         | Supabase anon key (required if not using `client`)    |
+| `client`      | `SupabaseClient` | Existing Supabase client (alternative to URL/key)     |
+| `tableName`   | `string`         | Table name prefix (default: `voltagent_memory`)       |
+| `debug`       | `boolean`        | Enable debug logging (default: `false`)               |
+| `logger`      | `Logger`         | Optional logger for structured logging                |
 
 **Note**: Table prefix must match the SQL schema. If you use a custom `tableName`, update the SQL accordingly.
 
 ## Features
 
 - Messages stored per `userId` and `conversationId`
-- Oldest messages pruned when `storageLimit` exceeded
 - Supports complex queries with filtering, pagination, and sorting
+- No automatic message pruning - all messages are preserved
 
 ### Working Memory
 
@@ -228,7 +227,6 @@ const supabaseClient = createClient(
 const memory = new Memory({
   storage: new SupabaseMemoryAdapter({
     client: supabaseClient,
-    storageLimit: 200,
   }),
 });
 

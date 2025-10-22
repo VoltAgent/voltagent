@@ -5,23 +5,53 @@ slug: /agents/dynamic-agents
 
 # Dynamic Agents
 
-Dynamic Agents allow you to create adaptive AI agents that change their behavior, capabilities, and configuration based on runtime context. Instead of having fixed instructions, models, or tools, you can define functions that dynamically determine these properties based on user context, request parameters, or any other runtime information.
+Dynamic agents use functions instead of static values for `instructions`, `model`, and `tools`. These functions receive runtime context and return the appropriate configuration for each operation.
 
-## Why Use Dynamic Agents?
+When you call `generateText()` or `streamText()`, the agent resolves dynamic values using the `context` map you provide. This lets you configure agent behavior per-request based on user roles, subscription tiers, language preferences, or any custom logic.
 
-**Why?** To create personalized, context-aware AI experiences that adapt to different users, roles, subscription tiers, languages, or any other runtime conditions without creating separate agent instances.
+## Use Cases
 
-Dynamic agents are perfect for:
+Dynamic agents work well for:
 
-- **Multi-tenant applications** where different users need different capabilities
-- **Role-based access control** where admins get different tools than regular users
-- **Subscription tiers** where premium users get access to better models
-- **Internationalization** where responses adapt to user's language
-- **A/B testing** where different users get different model configurations
+- Multi-tenant applications where different users need different capabilities
+- Role-based access control where admins get different tools than regular users
+- Subscription tiers where premium users get access to different models
+- Internationalization where responses adapt to user's language
+- A/B testing where different users get different configurations
 
-## Basic Dynamic Agent
+## How Dynamic Resolution Works
 
-Here's a simple example of a dynamic agent that changes its behavior based on user role:
+When you provide a function instead of a static value, the agent calls it during each operation:
+
+1. You call `agent.generateText(input, { context })`
+2. Agent invokes your function with `DynamicValueOptions`
+3. Function receives `{ context, prompts }` and returns the value
+4. Agent uses the resolved value for that operation
+
+The resolution happens in [agent.ts:2583-2606](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L2583-L2606) via the `resolveValue()` method. Dynamic functions are called on every operation, so keep them synchronous or fast.
+
+### Type System
+
+Dynamic values use the `DynamicValue<T>` type:
+
+```typescript
+type DynamicValue<T> = (options: DynamicValueOptions) => Promise<T> | T;
+
+interface DynamicValueOptions {
+  context: Map<string | symbol, unknown>; // Runtime context you provide
+  prompts: PromptHelper; // VoltOps prompt management
+}
+```
+
+The agent defines three specific dynamic types:
+
+- `InstructionsDynamicValue`: `string | DynamicValue<string | PromptContent>`
+- `ModelDynamicValue<T>`: `T | DynamicValue<T>`
+- `ToolsDynamicValue`: `(Tool | Toolkit)[] | DynamicValue<(Tool | Toolkit)[]>`
+
+## Basic Example
+
+Here's a dynamic agent that changes instructions based on user role:
 
 ```ts
 import { Agent } from "@voltagent/core";
@@ -48,11 +78,11 @@ const dynamicAgent = new Agent({
 
 ## Dynamic Properties
 
-Dynamic agents support three main dynamic properties:
+You can make `instructions`, `model`, and `tools` dynamic. Each is resolved independently during operation execution.
 
 ### Dynamic Instructions
 
-**Why?** To personalize the agent's personality, capabilities, and behavior based on user context.
+Instructions can be a string or a function that returns a string (or `PromptContent` when using VoltOps).
 
 ```ts
 const agent = new Agent({
@@ -79,7 +109,7 @@ const agent = new Agent({
 
 ### Dynamic Models
 
-**Why?** To allocate different AI models based on user subscription, request complexity, or cost considerations.
+The model can be a static `LanguageModel` or a function returning one. The agent resolves the model at [agent.ts:1672](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L1672) before each generation call.
 
 ```ts
 const agent = new Agent({
@@ -104,7 +134,7 @@ const agent = new Agent({
 
 ### Dynamic Tools
 
-**Why?** To provide different capabilities based on user permissions, roles, or subscription levels.
+Tools can be a static array or a function returning an array. The agent stores dynamic tool functions separately in the `dynamicTools` property ([agent.ts:337](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L337)) and resolves them at [agent.ts:1673](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L1673).
 
 ```ts
 import { createTool } from "@voltagent/core";
@@ -153,9 +183,9 @@ const agent = new Agent({
 });
 ```
 
-## Using Dynamic Agents
+## Execution
 
-To use a dynamic agent, pass the `context` when calling generation methods:
+Pass `context` as an option to any generation method. The agent uses this context to resolve dynamic values:
 
 ```ts
 // Create context with relevant information
@@ -193,7 +223,7 @@ for await (const chunk of streamResponse.textStream) {
 
 ## REST API Usage
 
-Dynamic agents can also be used via the VoltAgent REST API by passing `context` in the request options. This is perfect for web frontends, mobile apps, or any system that needs to interact with dynamic agents over HTTP.
+You can pass `context` via the REST API to trigger dynamic resolution over HTTP.
 
 ### API Request Format
 
@@ -255,26 +285,24 @@ curl -N -X POST http://localhost:3141/agents/YOUR_AGENT_NAME/stream \
 
 ## VoltOps Integration
 
-**Using Dynamic Agents with VoltOps Dashboard**
-
-VoltOps provides a user-friendly interface for testing and monitoring dynamic agents. You can easily pass different context values and see how your agent adapts in real-time.
+The VoltOps dashboard lets you test dynamic agents by setting context values through a visual interface.
 
 <!-- GIF PLACEHOLDER: VoltOps Dynamic Agents Demo -->
 
 ![VoltOps Dynamic Agents Demo](https://cdn.voltagent.dev/docs/user-context-demo.gif)
 
-The VoltOps interface allows you to:
+You can:
 
-- Set context values through a visual form
+- Set context values through a form
 - Test different user roles and configurations
 - Monitor how dynamic properties change based on context
-- Debug and optimize your dynamic agent logic
+- Debug dynamic agent logic
 
 ## Best Practices
 
 ### Context Validation
 
-Always validate and provide defaults for context values:
+Validate context values and provide defaults:
 
 ```ts
 instructions: ({ context }) => {
@@ -290,28 +318,27 @@ instructions: ({ context }) => {
 };
 ```
 
-### Performance Considerations
+### Performance
 
-Dynamic functions are called for every request, so keep them lightweight:
+Dynamic functions run on every operation. Avoid async operations or heavy computation:
 
 ```ts
-// ✅ Good - Simple and fast
+// ✅ Good - Fast synchronous logic
 model: ({ context }) => {
   const tier = context.get('tier') as string;
   return tier === 'premium' ? openai('gpt-4o') : openai('gpt-3.5-turbo');
 },
 
-// ❌ Avoid - Heavy computation in dynamic functions
+// ❌ Avoid - API calls or database queries
 model: async ({ context }) => {
-  // Don't make API calls or heavy computations here
   const userProfile = await fetchUserFromDatabase(context.get('userId'));
-  return determineModelFromProfile(userProfile); // This will slow down every request
+  return determineModelFromProfile(userProfile);
 }
 ```
 
 ### Security
 
-Be careful with user-provided context values:
+Use allowlists for security-sensitive values:
 
 ```ts
 instructions: ({ context }) => {
@@ -344,9 +371,9 @@ const createUserContext = (user: User) => {
 
 ## Advanced Patterns
 
-### Conditional Dynamic Properties
+### Conditional Resolution
 
-You can make properties dynamic only when needed:
+Make properties dynamic only when context requires it:
 
 ```ts
 const agent = new Agent({
@@ -371,9 +398,9 @@ const agent = new Agent({
 });
 ```
 
-### Context Inheritance
+### Context Between Operations
 
-Pass context between related operations:
+Pass the same context to related operations for consistency:
 
 ```ts
 // Main agent with context
@@ -390,7 +417,7 @@ const detailResponse = await detailAgent.generateText(
 
 ## Error Handling
 
-Handle errors gracefully in dynamic functions:
+Wrap dynamic logic in try-catch and provide fallbacks:
 
 ```ts
 model: ({ context }) => {

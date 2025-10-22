@@ -95,6 +95,9 @@ importers:
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
       typescript:
         specifier: ^5.8.2
         version: 5.9.2
@@ -103,31 +106,31 @@ importers:
         version: 5.4.19(@types/node@24.2.1)
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)(msw@2.11.6)
 
   examples/base:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -145,26 +148,26 @@ importers:
   examples/github-repo-analyzer:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@octokit/rest':
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -173,7 +176,7 @@ importers:
         specifier: ^24.2.1
         version: 24.2.1
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       tsx:
         specifier: ^4.19.3
@@ -185,26 +188,26 @@ importers:
   examples/with-a2a-server:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/a2a-server':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../../packages/a2a-server
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../../packages/internal
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -225,8 +228,8 @@ importers:
         specifier: ^2.0.13
         version: 2.0.17(zod@3.25.76)
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.42(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@browserbasehq/sdk':
         specifier: ^2.6.0
         version: 2.6.0
@@ -240,23 +243,23 @@ importers:
         specifier: ^0.24.1
         version: 0.24.1
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.24
+        specifier: ^1.1.30
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.16
+        specifier: ^1.0.22
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.59(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -292,23 +295,23 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -329,23 +332,23 @@ importers:
         specifier: ^2.0.6
         version: 2.0.6(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -363,8 +366,8 @@ importers:
   examples/with-chroma:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@chroma-core/default-embed':
         specifier: ^0.1.8
         version: 0.1.8
@@ -375,23 +378,23 @@ importers:
         specifier: ^0.1.7
         version: 0.1.7(chromadb@3.0.12)(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       chromadb:
         specifier: ^3.0.4
         version: 3.0.12
@@ -412,8 +415,8 @@ importers:
   examples/with-client-side-tools:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.42(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@ai-sdk/react':
         specifier: ^2.0.8
         version: 2.0.64(react@19.1.1)(zod@3.25.76)
@@ -421,7 +424,7 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/core':
-        specifier: workspace:*
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^1.0.0
@@ -430,8 +433,8 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1(@voltagent/core@packages+core)(zod@3.25.76)
       ai:
-        specifier: ^5.0.12
-        version: 5.0.64(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       next:
         specifier: 15.3.1
         version: 15.3.1(@babel/core@7.28.0)(react-dom@19.1.1)(react@19.1.1)
@@ -461,17 +464,17 @@ importers:
   examples/with-cloudflare-workers:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/serverless-hono':
-        specifier: ^1.0.3
+        specifier: ^1.0.5
         version: link:../../packages/serverless-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       hono:
         specifier: ^4.7.7
         version: 4.9.1
@@ -495,26 +498,26 @@ importers:
   examples/with-composio-mcp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -532,26 +535,26 @@ importers:
   examples/with-custom-endpoints:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -569,26 +572,26 @@ importers:
   examples/with-dynamic-parameters:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -606,26 +609,26 @@ importers:
   examples/with-dynamic-prompts:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -646,23 +649,23 @@ importers:
         specifier: ^2.0.13
         version: 2.0.13(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -718,7 +721,7 @@ importers:
         version: 5.7.3
       vite:
         specifier: ^6.3.1
-        version: 6.3.5(@types/node@24.2.1)
+        version: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
 
   examples/with-google-drive-mcp/server:
     dependencies:
@@ -748,7 +751,7 @@ importers:
         version: link:../../../packages/server-hono
       composio-core:
         specifier: ^0.5.33
-        version: 0.5.39(@ai-sdk/openai@2.0.12)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.64)(langchain@0.3.30)(openai@4.104.0)
+        version: 0.5.39(@ai-sdk/openai@2.0.12)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.76)(langchain@0.3.30)(openai@4.104.0)
       hono:
         specifier: ^4.7.7
         version: 4.9.1
@@ -775,23 +778,23 @@ importers:
         specifier: ^3.0.25
         version: 3.0.25(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -812,23 +815,23 @@ importers:
         specifier: ^2.0.18
         version: 2.0.18(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -843,29 +846,60 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-guardrails:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.52
+        version: 2.0.53(zod@4.1.11)
+      '@voltagent/cli':
+        specifier: ^0.1.13
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.1.31
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^1.0.3
+        version: link:../../packages/logger
+      '@voltagent/server-hono':
+        specifier: ^1.0.26
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^5.0.76
+        version: 5.0.76(zod@4.1.11)
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-hooks:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.6
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -883,26 +917,26 @@ importers:
   examples/with-hugging-face-mcp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -920,23 +954,23 @@ importers:
   examples/with-jwt-auth:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.1.7
+        specifier: ^1.1.30
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.3
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.0
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.5
+        specifier: ^1.0.22
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -960,29 +994,29 @@ importers:
   examples/with-langfuse:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
-        specifier: ^1.1.2
+        specifier: ^1.1.3
         version: link:../../packages/langfuse-exporter
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -997,29 +1031,57 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-live-evals:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
+      '@voltagent/core':
+        specifier: ^1.1.30
+        version: link:../../packages/core
+      '@voltagent/scorers':
+        specifier: ^1.0.1
+        version: link:../../packages/scorers
+      '@voltagent/server-hono':
+        specifier: ^1.0.22
+        version: link:../../packages/server-hono
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-mcp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1037,23 +1099,23 @@ importers:
   examples/with-mcp-server:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/mcp-server':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/mcp-server
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1068,20 +1130,51 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-memory-rest-api:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.52
+        version: 2.0.53(zod@4.1.11)
+      '@voltagent/cli':
+        specifier: ^0.1.13
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.1.31
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^1.0.3
+        version: link:../../packages/logger
+      '@voltagent/postgres':
+        specifier: ^1.0.10
+        version: link:../../packages/postgres
+      '@voltagent/server-hono':
+        specifier: ^1.0.26
+        version: link:../../packages/server-hono
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-netlify-functions:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/serverless-hono':
-        specifier: ^1.0.3
+        specifier: ^1.0.5
         version: link:../../packages/serverless-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       hono:
         specifier: ^4.7.7
         version: 4.9.1
@@ -1102,8 +1195,8 @@ importers:
   examples/with-nextjs:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@ai-sdk/react':
         specifier: ^2.0.8
         version: 2.0.12(react@19.1.1)(zod@3.25.76)
@@ -1114,23 +1207,23 @@ importers:
         specifier: ^4.1.4
         version: 4.1.11
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       import-in-the-middle:
         specifier: ^1.14.2
         version: 1.14.2
@@ -1175,8 +1268,8 @@ importers:
   examples/with-nuxt:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.42(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@nuxt/eslint':
         specifier: ^1.9.0
         version: 1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.2)(vite@6.3.5)
@@ -1184,17 +1277,17 @@ importers:
         specifier: ^4.0.0
         version: 4.0.1(embla-carousel@8.6.0)(typescript@5.9.2)(vite@6.3.5)(vue-router@4.5.1)(vue@3.5.22)(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.59(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       nuxt:
         specifier: ^4.1.2
         version: 4.1.3(@biomejs/biome@1.9.4)(@types/node@24.2.1)(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.2)(vite@6.3.5)
@@ -1212,29 +1305,66 @@ importers:
         specifier: ^3.5.3
         version: 3.6.2
 
+  examples/with-offline-evals:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
+      '@voltagent/cli':
+        specifier: ^0.1.13
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.1.31
+        version: link:../../packages/core
+      '@voltagent/evals':
+        specifier: ^1.0.3
+        version: link:../../packages/evals
+      '@voltagent/scorers':
+        specifier: ^1.0.1
+        version: link:../../packages/scorers
+      '@voltagent/sdk':
+        specifier: ^1.0.1
+        version: link:../../packages/sdk
+      ai:
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-peaka-mcp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1252,29 +1382,29 @@ importers:
   examples/with-pinecone:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@pinecone-database/pinecone':
         specifier: ^6.1.1
         version: 6.1.2
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       openai:
         specifier: ^4.91.0
         version: 4.104.0(ws@8.18.3)(zod@3.25.76)
@@ -1310,23 +1440,23 @@ importers:
         specifier: ^1.51.1
         version: 1.54.2
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       axios:
         specifier: ^1.5.0
         version: 1.11.0
@@ -1356,26 +1486,26 @@ importers:
   examples/with-postgres:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/postgres':
-        specifier: ^1.0.8
+        specifier: ^1.0.10
         version: link:../../packages/postgres
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1393,29 +1523,29 @@ importers:
   examples/with-qdrant:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@qdrant/js-client-rest':
         specifier: ^1.15.0
         version: 1.15.0(typescript@5.9.2)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       openai:
         specifier: ^4.91.0
         version: 4.104.0(ws@8.18.3)(zod@3.25.76)
@@ -1436,26 +1566,26 @@ importers:
   examples/with-rag-chatbot:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1473,23 +1603,23 @@ importers:
   examples/with-recipe-generator:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1507,22 +1637,22 @@ importers:
   examples/with-research-assistant:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       zod:
         specifier: ^3.25.76
@@ -1541,26 +1671,26 @@ importers:
   examples/with-retrieval:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1578,26 +1708,26 @@ importers:
   examples/with-subagents:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1615,29 +1745,29 @@ importers:
   examples/with-supabase:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@supabase/supabase-js':
         specifier: ^2.49.4
         version: 2.55.0
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       '@voltagent/supabase':
-        specifier: ^1.0.4
+        specifier: ^1.0.6
         version: link:../../packages/supabase
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1655,26 +1785,26 @@ importers:
   examples/with-tavily-search:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1692,26 +1822,26 @@ importers:
   examples/with-thinking-tool:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1729,26 +1859,26 @@ importers:
   examples/with-tools:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1766,26 +1896,26 @@ importers:
   examples/with-turso:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1803,26 +1933,26 @@ importers:
   examples/with-vector-search:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1840,26 +1970,26 @@ importers:
   examples/with-vercel-ai:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1877,26 +2007,26 @@ importers:
   examples/with-viteval:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       consola:
         specifier: ^3.4.2
         version: 3.4.2
@@ -1932,29 +2062,29 @@ importers:
   examples/with-voice-elevenlabs:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^1.0.2
         version: link:../../packages/voice
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -1972,29 +2102,29 @@ importers:
   examples/with-voice-openai:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^1.0.2
         version: link:../../packages/voice
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -2018,29 +2148,29 @@ importers:
   examples/with-voice-xsai:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       '@voltagent/voice':
         specifier: ^1.0.2
         version: link:../../packages/voice
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -2064,26 +2194,26 @@ importers:
   examples/with-voltagent-exporter:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2101,23 +2231,23 @@ importers:
   examples/with-voltagent-managed-memory:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.17(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       '@voltagent/voltagent-memory':
-        specifier: ^0.1.1
+        specifier: ^0.1.2
         version: link:../../packages/voltagent-memory
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2135,29 +2265,29 @@ importers:
   examples/with-whatsapp:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.42(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@supabase/supabase-js':
         specifier: ^2.49.4
         version: 2.58.0
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.59(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -2178,26 +2308,26 @@ importers:
   examples/with-workflow:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2215,26 +2345,26 @@ importers:
   examples/with-working-memory:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.12(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2252,26 +2382,26 @@ importers:
   examples/with-youtube-to-blog:
     dependencies:
       '@ai-sdk/openai':
-        specifier: ^2.0.2
-        version: 2.0.42(zod@3.25.76)
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.11
+        specifier: ^0.1.13
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.59(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2295,20 +2425,20 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~1.1.26
+        specifier: ~1.1.31
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.7
+        specifier: ^1.0.9
         version: link:../../packages/libsql
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../../packages/logger
       '@voltagent/server-hono':
-        specifier: ^1.0.18
+        specifier: ^1.0.26
         version: link:../../packages/server-hono
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2329,42 +2459,45 @@ importers:
         specifier: ^0.2.5
         version: 0.2.5
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
       zod:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@voltagent/core':
-        specifier: ^1.1.13
+        specifier: ^1.1.30
         version: link:../core
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/cli:
     dependencies:
+      '@voltagent/evals':
+        specifier: ^1.0.3
+        version: link:../evals
+      '@voltagent/internal':
+        specifier: ^0.0.12
+        version: link:../internal
+      '@voltagent/sdk':
+        specifier: ^1.0.1
+        version: link:../sdk
       boxen:
         specifier: ^5.1.2
         version: 5.1.2
+      bundle-require:
+        specifier: ^5.1.0
+        version: 5.1.0(esbuild@0.25.10)
       chalk:
         specifier: ^4.1.2
         version: 4.1.2
       commander:
         specifier: ^11.1.0
         version: 11.1.0
-      conf:
-        specifier: ^10.2.0
-        version: 10.2.0
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
+      esbuild:
+        specifier: ^0.25.10
+        version: 0.25.10
       figlet:
         specifier: ^1.7.0
         version: 1.8.2
@@ -2405,9 +2538,6 @@ importers:
       '@types/inquirer':
         specifier: ^9.0.7
         version: 9.0.9
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@types/semver':
         specifier: ^7.5.6
         version: 7.7.0
@@ -2420,15 +2550,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/core:
     dependencies:
@@ -2469,7 +2590,7 @@ importers:
         specifier: ^1.28.0
         version: 1.36.0
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
       '@voltagent/logger':
         specifier: 1.x
@@ -2493,9 +2614,6 @@ importers:
       '@ai-sdk/provider-utils':
         specifier: ^3.0.0
         version: 3.0.9(zod@3.25.76)
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
@@ -2503,17 +2621,11 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
+      msw:
+        specifier: ^2.11.5
+        version: 2.11.6(@types/node@24.2.1)(typescript@5.9.2)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2575,9 +2687,6 @@ importers:
       '@types/inquirer':
         specifier: ^9.0.7
         version: 9.0.9
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@types/tar':
         specifier: ^6.1.10
         version: 6.1.13
@@ -2593,15 +2702,6 @@ importers:
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.1(@babel/core@7.28.4)(esbuild@0.25.10)(jest@29.7.0)(typescript@5.9.2)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/docs-mcp:
     dependencies:
@@ -2611,19 +2711,18 @@ importers:
       zod:
         specifier: ^4.1.11
         version: 4.1.11
-    devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+
+  packages/evals:
+    dependencies:
+      '@voltagent/internal':
+        specifier: ^0.0.12
+        version: link:../internal
+      '@voltagent/scorers':
+        specifier: ^1.0.1
+        version: link:../scorers
+      '@voltagent/sdk':
+        specifier: ^1.0.1
+        version: link:../sdk
 
   packages/internal:
     dependencies:
@@ -2631,21 +2730,9 @@ importers:
         specifier: ^4.41.0
         version: 4.41.0
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/langfuse-exporter:
     dependencies:
@@ -2662,24 +2749,12 @@ importers:
         specifier: ^3.37.2
         version: 3.38.4
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.10
+        specifier: ^1.1.30
         version: link:../core
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/libsql:
     dependencies:
@@ -2687,33 +2762,21 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.22
+        specifier: ^1.1.30
         version: link:../core
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../logger
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@4.1.11)
 
   packages/logger:
     dependencies:
@@ -2730,7 +2793,7 @@ importers:
         specifier: ^0.204.0
         version: 0.204.0(@opentelemetry/api@1.9.0)
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
       pino:
         specifier: ^9.7.0
@@ -2739,21 +2802,9 @@ importers:
         specifier: ^13.0.0
         version: 13.1.1
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@types/pino':
         specifier: ^7.0.5
         version: 7.0.5
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/mcp-server:
     dependencies:
@@ -2761,24 +2812,12 @@ importers:
         specifier: ^1.12.1
         version: 1.17.2
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.30
         version: link:../core
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2786,15 +2825,12 @@ importers:
   packages/postgres:
     dependencies:
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
       pg:
         specifier: ^8.16.0
         version: 8.16.3
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@types/pg':
         specifier: ^8.15.2
         version: 8.15.5
@@ -2802,20 +2838,43 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.24
+        specifier: ^1.1.30
         version: link:../core
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
+        specifier: ^5.0.76
+        version: 5.0.76(zod@4.1.11)
+
+  packages/scorers:
+    dependencies:
+      '@voltagent/core':
+        specifier: ^1.1.30
+        version: link:../core
+      '@voltagent/internal':
+        specifier: ^0.0.12
+        version: link:../internal
+      autoevals:
+        specifier: ^0.0.131
+        version: 0.0.131
+    devDependencies:
+      ai:
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+
+  packages/sdk:
+    dependencies:
+      '@voltagent/core':
+        specifier: ^1.1.30
+        version: link:../core
+      '@voltagent/internal':
+        specifier: ^0.0.12
+        version: link:../internal
+    devDependencies:
+      '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(vitest@3.2.4)
 
   packages/server-core:
     dependencies:
@@ -2823,14 +2882,14 @@ importers:
         specifier: ^1.12.1
         version: 1.17.2
       '@voltagent/core':
-        specifier: ^1.1.24
+        specifier: ^1.1.31
         version: link:../core
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
       ai:
-        specifier: ^5.0.12
-        version: 5.0.12(zod@3.25.76)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -2847,21 +2906,9 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2875,19 +2922,19 @@ importers:
         specifier: ^0.5.1
         version: 0.5.2(hono@4.9.1)
       '@voltagent/a2a-server':
-        specifier: ^1.0.1
+        specifier: ^1.0.2
         version: link:../a2a-server
       '@voltagent/core':
-        specifier: ^1.1.26
+        specifier: ^1.1.31
         version: link:../core
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
       '@voltagent/mcp-server':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../mcp-server
       '@voltagent/server-core':
-        specifier: ^1.0.15
+        specifier: ^1.0.19
         version: link:../server-core
       fetch-to-node:
         specifier: ^2.1.0
@@ -2899,21 +2946,9 @@ importers:
         specifier: ^4.5.0
         version: 4.5.0
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -2924,24 +2959,14 @@ importers:
         specifier: ^1.0.0
         version: link:../core
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
       '@voltagent/server-core':
-        specifier: ^1.0.14
+        specifier: ^1.0.16
         version: link:../server-core
       hono:
         specifier: ^4.7.7
         version: 4.9.1
-    devDependencies:
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/supabase:
     dependencies:
@@ -2949,36 +2974,24 @@ importers:
         specifier: ^2.49.4
         version: 2.55.0
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
       ts-pattern:
         specifier: ^5.7.1
         version: 5.8.0
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.13
+        specifier: ^1.1.30
         version: link:../core
       '@voltagent/logger':
-        specifier: ^1.0.2
+        specifier: ^1.0.3
         version: link:../logger
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@4.1.11)
 
   packages/voice:
     dependencies:
@@ -3012,35 +3025,23 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)(msw@2.11.6)
 
   packages/voltagent-memory:
     dependencies:
       '@voltagent/internal':
-        specifier: ^0.0.11
+        specifier: ^0.0.12
         version: link:../internal
     devDependencies:
-      '@types/node':
-        specifier: ^24.2.1
-        version: 24.2.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.1.24
+        specifier: ^1.1.30
         version: link:../core
       ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
-      tsup:
-        specifier: ^8.5.0
-        version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        specifier: ^5.0.76
+        version: 5.0.76(zod@4.1.11)
 
 packages:
 
@@ -3161,17 +3162,6 @@ packages:
     dev: false
     optional: true
 
-  /@ai-sdk/gateway@1.0.32(zod@3.25.76):
-    resolution: {integrity: sha512-TQRIM63EI/ccJBc7RxeB8nq/CnGNnyl7eu5stWdLwL41stkV5skVeZJe0QRvFbaOrwCkgUVE0yrUqJi4tgDC1A==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.10(zod@3.25.76)
-      zod: 3.25.76
-    dev: false
-
   /@ai-sdk/gateway@1.0.35(zod@3.25.76):
     resolution: {integrity: sha512-cdsXbeRRMi6QxbZscin69Asx2fi0d2TmmPngcPFUMpZbchGEBiJYVNvIfiALKFKXEq0l/w0xGNV3E13vroaleA==}
     engines: {node: '>=18'}
@@ -3193,16 +3183,29 @@ packages:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.3(zod@3.25.76)
       zod: 3.25.76
+    dev: false
 
-  /@ai-sdk/gateway@1.0.9(zod@3.25.76):
-    resolution: {integrity: sha512-kIfwunyUUwyBLg2KQcaRtjRQ1bDuJYPNIs4CNWaWPpMZ4SV5cRL1hLGMuX4bhfCJYDXHMGvJGLtUK6+iAJH2ZQ==}
+  /@ai-sdk/gateway@2.0.0(zod@3.25.76):
+    resolution: {integrity: sha512-Gj0PuawK7NkZuyYgO/h5kDK/l6hFOjhLdTq3/Lli1FTl47iGmwhH1IZQpAL3Z09BeFYWakcwUmn02ovIm2wy9g==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.25.76 || ^4
+      zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.4(zod@3.25.76)
+      '@ai-sdk/provider-utils': 3.0.12(zod@3.25.76)
+      '@vercel/oidc': 3.0.3
       zod: 3.25.76
+
+  /@ai-sdk/gateway@2.0.0(zod@4.1.11):
+    resolution: {integrity: sha512-Gj0PuawK7NkZuyYgO/h5kDK/l6hFOjhLdTq3/Lli1FTl47iGmwhH1IZQpAL3Z09BeFYWakcwUmn02ovIm2wy9g==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.12(zod@4.1.11)
+      '@vercel/oidc': 3.0.3
+      zod: 4.1.11
 
   /@ai-sdk/google-vertex@3.0.25(zod@3.25.76):
     resolution: {integrity: sha512-X4VRfFHTMr50wo8qvoA4WmxmehSAMzEAiJ5pPn0/EPB4kxytz53g7BijRBDL+MZpqXRNiwF3taf4p3P1WUMnVA==}
@@ -3341,26 +3344,26 @@ packages:
       zod: 3.25.76
     dev: false
 
-  /@ai-sdk/openai@2.0.17(zod@3.25.76):
-    resolution: {integrity: sha512-nt0Dvn3etQJwzJtS6XEUchZkDb3NAjn8yTmLZj1fF+F2pyUbiwKg4joW9kjsrDhcwOxdoQ26OyONsVLE9AWfMw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.4(zod@3.25.76)
-      zod: 3.25.76
-    dev: false
-
-  /@ai-sdk/openai@2.0.42(zod@3.25.76):
-    resolution: {integrity: sha512-9mM6QS8k0ooH9qMC27nlrYLQmNDnO6Rk0JTmFo/yUxpABEWOcvQhMWNHbp9lFL6Ty5vkdINrujhsAQfWuEleOg==}
+  /@ai-sdk/openai@2.0.53(zod@3.25.76):
+    resolution: {integrity: sha512-GIkR3+Fyif516ftXv+YPSPstnAHhcZxNoR2s8uSHhQ1yBT7I7aQYTVwpjAuYoT3GR+TeP50q7onj2/nDRbT2FQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.10(zod@3.25.76)
+      '@ai-sdk/provider-utils': 3.0.12(zod@3.25.76)
       zod: 3.25.76
+    dev: false
+
+  /@ai-sdk/openai@2.0.53(zod@4.1.11):
+    resolution: {integrity: sha512-GIkR3+Fyif516ftXv+YPSPstnAHhcZxNoR2s8uSHhQ1yBT7I7aQYTVwpjAuYoT3GR+TeP50q7onj2/nDRbT2FQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.12(zod@4.1.11)
+      zod: 4.1.11
     dev: false
 
   /@ai-sdk/perplexity@1.1.9(zod@3.25.76):
@@ -3412,6 +3415,28 @@ packages:
       zod: 3.25.76
     dev: false
 
+  /@ai-sdk/provider-utils@3.0.12(zod@3.25.76):
+    resolution: {integrity: sha512-ZtbdvYxdMoria+2SlNarEk6Hlgyf+zzcznlD55EAl+7VZvJaSg2sqPvwArY7L6TfDEDJsnCq0fdhBSkYo0Xqdg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.6
+      zod: 3.25.76
+
+  /@ai-sdk/provider-utils@3.0.12(zod@4.1.11):
+    resolution: {integrity: sha512-ZtbdvYxdMoria+2SlNarEk6Hlgyf+zzcznlD55EAl+7VZvJaSg2sqPvwArY7L6TfDEDJsnCq0fdhBSkYo0Xqdg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.6
+      zod: 4.1.11
+
   /@ai-sdk/provider-utils@3.0.3(zod@3.25.76):
     resolution: {integrity: sha512-kAxIw1nYmFW1g5TvE54ZB3eNtgZna0RnLjPUp1ltz1+t9xkXJIuDT4atrwfau9IbS0BOef38wqrI8CjFfQrxhw==}
     engines: {node: '>=18'}
@@ -3423,18 +3448,7 @@ packages:
       eventsource-parser: 3.0.6
       zod: 3.25.76
       zod-to-json-schema: 3.24.6(zod@3.25.76)
-
-  /@ai-sdk/provider-utils@3.0.4(zod@3.25.76):
-    resolution: {integrity: sha512-/3Z6lfUp8r+ewFd9yzHkCmPlMOJUXup2Sx3aoUyrdXLhOmAfHRl6Z4lDbIdV0uvw/QYoBcVLJnvXN7ncYeS3uQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
-      eventsource-parser: 3.0.6
-      zod: 3.25.76
-      zod-to-json-schema: 3.24.6(zod@3.25.76)
+    dev: false
 
   /@ai-sdk/provider-utils@3.0.5(zod@3.25.76):
     resolution: {integrity: sha512-HliwB/yzufw3iwczbFVE2Fiwf1XqROB/I6ng8EKUsPM5+2wnIa8f4VbljZcDx+grhFrPV+PnRZH7zBqi8WZM7Q==}
@@ -4181,16 +4195,16 @@ packages:
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@babel/code-frame': 7.27.1
-      '@babel/generator': 7.28.0
+      '@babel/generator': 7.28.3
       '@babel/helper-compilation-targets': 7.27.2
-      '@babel/helper-module-transforms': 7.27.3(@babel/core@7.28.0)
-      '@babel/helpers': 7.28.2
-      '@babel/parser': 7.28.0
+      '@babel/helper-module-transforms': 7.28.3(@babel/core@7.28.0)
+      '@babel/helpers': 7.28.4
+      '@babel/parser': 7.28.4
       '@babel/template': 7.27.2
-      '@babel/traverse': 7.28.0
-      '@babel/types': 7.28.2
+      '@babel/traverse': 7.28.4
+      '@babel/types': 7.28.4
       convert-source-map: 2.0.0
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -4310,7 +4324,7 @@ packages:
       '@babel/core': 7.28.0
       '@babel/helper-compilation-targets': 7.27.2
       '@babel/helper-plugin-utils': 7.27.1
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       lodash.debounce: 4.0.8
       resolve: 1.22.10
     transitivePeerDependencies:
@@ -4351,6 +4365,7 @@ packages:
       '@babel/traverse': 7.28.0
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /@babel/helper-module-transforms@7.27.3(@babel/core@7.28.4):
     resolution: {integrity: sha512-dSOvYwvyLsWBeIRyOeHXp5vPj5l1I011r52FM1+r1jCERv+aFXYk4whgQccYEGYxK2H3ZAIA8nuPkQ0HaUo3qg==}
@@ -4365,6 +4380,19 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
+
+  /@babel/helper-module-transforms@7.28.3(@babel/core@7.28.0):
+    resolution: {integrity: sha512-gytXUbs8k2sXS9PnQptz5o0QnpLL51SwASIORY6XaBKF88nsOT0Zw9szLqlSGQDP/4TljBAD5y98p2U1fqkdsw==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0
+    dependencies:
+      '@babel/core': 7.28.0
+      '@babel/helper-module-imports': 7.27.1
+      '@babel/helper-validator-identifier': 7.27.1
+      '@babel/traverse': 7.28.4
+    transitivePeerDependencies:
+      - supports-color
 
   /@babel/helper-module-transforms@7.28.3(@babel/core@7.28.4):
     resolution: {integrity: sha512-gytXUbs8k2sXS9PnQptz5o0QnpLL51SwASIORY6XaBKF88nsOT0Zw9szLqlSGQDP/4TljBAD5y98p2U1fqkdsw==}
@@ -4398,7 +4426,7 @@ packages:
       '@babel/core': 7.28.0
       '@babel/helper-annotate-as-pure': 7.27.3
       '@babel/helper-wrap-function': 7.27.1
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4456,18 +4484,11 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/template': 7.27.2
-      '@babel/traverse': 7.28.0
-      '@babel/types': 7.28.2
+      '@babel/traverse': 7.28.4
+      '@babel/types': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
-
-  /@babel/helpers@7.28.2:
-    resolution: {integrity: sha512-/V9771t+EgXz62aCcyofnQhGM8DQACbRhvzKFsXKC9QM+5MadF8ZmIm0crDMaz3+o0h0zXfJnd4EhbYbxsrcFw==}
-    engines: {node: '>=6.9.0'}
-    dependencies:
-      '@babel/template': 7.27.2
-      '@babel/types': 7.28.2
 
   /@babel/helpers@7.28.4:
     resolution: {integrity: sha512-HFN59MmQXGHVyYadKLVumYsA9dBFun/ldYxipEjzA4196jpLZd8UjEEBLkbEkvfYreDqJhZxYAWFPtrfhNpj4w==}
@@ -4498,7 +4519,7 @@ packages:
     dependencies:
       '@babel/core': 7.28.0
       '@babel/helper-plugin-utils': 7.27.1
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4545,7 +4566,7 @@ packages:
     dependencies:
       '@babel/core': 7.28.0
       '@babel/helper-plugin-utils': 7.27.1
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4582,12 +4603,30 @@ packages:
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
+  /@babel/plugin-syntax-async-generators@7.8.4(@babel/core@7.28.4):
+    resolution: {integrity: sha512-tycmZxkGfZaxhMRbXlPXuVFpdWlXpir2W4AMhSJgRKzk/eDlIXOhb2LHWoLpDF7TEHylV5zNhykX6KAgHJmTNw==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
   /@babel/plugin-syntax-bigint@7.8.3(@babel/core@7.28.0):
     resolution: {integrity: sha512-wnTnFlG+YxQm3vDxpGE57Pj0srRU4sHE/mDkt1qv2YJJSeUAec2ma4WLUnUPeKjyrfntVwe/N6dCXpU+zL3Npg==}
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
+  /@babel/plugin-syntax-bigint@7.8.3(@babel/core@7.28.4):
+    resolution: {integrity: sha512-wnTnFlG+YxQm3vDxpGE57Pj0srRU4sHE/mDkt1qv2YJJSeUAec2ma4WLUnUPeKjyrfntVwe/N6dCXpU+zL3Npg==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
@@ -4600,6 +4639,15 @@ packages:
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
+  /@babel/plugin-syntax-class-properties@7.12.13(@babel/core@7.28.4):
+    resolution: {integrity: sha512-fm4idjKla0YahUNgFNLCB0qySdsoPiZP3iQE3rky0mBUtMZ23yDJ9SJdg6dXTSDnulOVqiF3Hgr9nbXvXTQZYA==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
   /@babel/plugin-syntax-class-static-block@7.14.5(@babel/core@7.28.0):
     resolution: {integrity: sha512-b+YyPmr6ldyNnM6sqYeMWE+bgJcJpO6yS4QD7ymxgH34GBPNDM/THBh8iunyvKIZztiwLH4CJZ0RxTk9emgpjw==}
     engines: {node: '>=6.9.0'}
@@ -4607,6 +4655,16 @@ packages:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
+  /@babel/plugin-syntax-class-static-block@7.14.5(@babel/core@7.28.4):
+    resolution: {integrity: sha512-b+YyPmr6ldyNnM6sqYeMWE+bgJcJpO6yS4QD7ymxgH34GBPNDM/THBh8iunyvKIZztiwLH4CJZ0RxTk9emgpjw==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
@@ -4640,6 +4698,16 @@ packages:
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
+  /@babel/plugin-syntax-import-attributes@7.27.1(@babel/core@7.28.4):
+    resolution: {integrity: sha512-oFT0FrKHgF53f4vOsZGi2Hh3I35PfSmVs4IBFLFj4dnafP+hIWDLg3VyKmUHfLoLHlyxY4C7DGtmHuJgn+IGww==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
   /@babel/plugin-syntax-import-meta@7.10.4(@babel/core@7.28.0):
     resolution: {integrity: sha512-Yqfm+XDx0+Prh3VSeEQCPU81yC+JWZ2pDPFSS4ZdpfZhp4MkFMaDC1UqseovEKwSUpnIL7+vK+Clp7bfh0iD7g==}
     peerDependencies:
@@ -4649,12 +4717,30 @@ packages:
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
+  /@babel/plugin-syntax-import-meta@7.10.4(@babel/core@7.28.4):
+    resolution: {integrity: sha512-Yqfm+XDx0+Prh3VSeEQCPU81yC+JWZ2pDPFSS4ZdpfZhp4MkFMaDC1UqseovEKwSUpnIL7+vK+Clp7bfh0iD7g==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
   /@babel/plugin-syntax-json-strings@7.8.3(@babel/core@7.28.0):
     resolution: {integrity: sha512-lY6kdGpWHvjoe2vk4WrAapEuBR69EMxZl+RoGRhrFGNYVK8mOPAW8VfbT/ZgrFbXlDNiiaxQnAtgVCZ6jv30EA==}
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
+  /@babel/plugin-syntax-json-strings@7.8.3(@babel/core@7.28.4):
+    resolution: {integrity: sha512-lY6kdGpWHvjoe2vk4WrAapEuBR69EMxZl+RoGRhrFGNYVK8mOPAW8VfbT/ZgrFbXlDNiiaxQnAtgVCZ6jv30EA==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
@@ -4686,12 +4772,30 @@ packages:
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
+  /@babel/plugin-syntax-logical-assignment-operators@7.10.4(@babel/core@7.28.4):
+    resolution: {integrity: sha512-d8waShlpFDinQ5MtvGU9xDAOzKH47+FFoney2baFIoMr952hKOLp1HR7VszoZvOsV/4+RRszNY7D17ba0te0ig==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
   /@babel/plugin-syntax-nullish-coalescing-operator@7.8.3(@babel/core@7.28.0):
     resolution: {integrity: sha512-aSff4zPII1u2QD7y+F8oDsz19ew4IGEJg9SVW+bqwpwtfFleiQDMdzA/R+UlWDzfnHFCxxleFT0PMIrR36XLNQ==}
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
+  /@babel/plugin-syntax-nullish-coalescing-operator@7.8.3(@babel/core@7.28.4):
+    resolution: {integrity: sha512-aSff4zPII1u2QD7y+F8oDsz19ew4IGEJg9SVW+bqwpwtfFleiQDMdzA/R+UlWDzfnHFCxxleFT0PMIrR36XLNQ==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
@@ -4704,12 +4808,30 @@ packages:
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
+  /@babel/plugin-syntax-numeric-separator@7.10.4(@babel/core@7.28.4):
+    resolution: {integrity: sha512-9H6YdfkcK/uOnY/K7/aA2xpzaAgkQn37yzWUMRK7OaPOqOpGS1+n0H5hxT9AUw9EsSjPW8SVyMJwYRtWs3X3ug==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
   /@babel/plugin-syntax-object-rest-spread@7.8.3(@babel/core@7.28.0):
     resolution: {integrity: sha512-XoqMijGZb9y3y2XskN+P1wUGiVwWZ5JmoDRwx5+3GmEplNyVM2s2Dg8ILFQm8rWM48orGy5YpI5Bl8U1y7ydlA==}
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
+  /@babel/plugin-syntax-object-rest-spread@7.8.3(@babel/core@7.28.4):
+    resolution: {integrity: sha512-XoqMijGZb9y3y2XskN+P1wUGiVwWZ5JmoDRwx5+3GmEplNyVM2s2Dg8ILFQm8rWM48orGy5YpI5Bl8U1y7ydlA==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
@@ -4722,12 +4844,30 @@ packages:
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
+  /@babel/plugin-syntax-optional-catch-binding@7.8.3(@babel/core@7.28.4):
+    resolution: {integrity: sha512-6VPD0Pc1lpTqw0aKoeRTMiB+kWhAoT24PA+ksWSBrFtl5SIRVpZlwN3NNPQjehA2E/91FV3RjLWoVTglWcSV3Q==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
   /@babel/plugin-syntax-optional-chaining@7.8.3(@babel/core@7.28.0):
     resolution: {integrity: sha512-KoK9ErH1MBlCPxV0VANkXW2/dw4vlbGDrFgz8bmUsBGYkFRcbRwMh6cIJubdPrkxRwuGdtCk0v/wPTKbQgBjkg==}
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
+  /@babel/plugin-syntax-optional-chaining@7.8.3(@babel/core@7.28.4):
+    resolution: {integrity: sha512-KoK9ErH1MBlCPxV0VANkXW2/dw4vlbGDrFgz8bmUsBGYkFRcbRwMh6cIJubdPrkxRwuGdtCk0v/wPTKbQgBjkg==}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
@@ -4741,6 +4881,16 @@ packages:
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
+  /@babel/plugin-syntax-private-property-in-object@7.14.5(@babel/core@7.28.4):
+    resolution: {integrity: sha512-0wVnp9dxJ72ZUJDV27ZfbSj6iHLoytYZmh3rFcxNnvsJF3ktkzLDZPy/mA17HGsaQT3/DQsWYX1f1QGWkCoVUg==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
   /@babel/plugin-syntax-top-level-await@7.14.5(@babel/core@7.28.0):
     resolution: {integrity: sha512-hx++upLv5U1rgYfwe1xBQUhRmU41NEvpUvrp8jkrSCdvGSnM5/qdRMtylJ6PG5OFkBaHkbTAKTnd3/YyESRHFw==}
     engines: {node: '>=6.9.0'}
@@ -4748,6 +4898,16 @@ packages:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
+      '@babel/helper-plugin-utils': 7.27.1
+    dev: true
+
+  /@babel/plugin-syntax-top-level-await@7.14.5(@babel/core@7.28.4):
+    resolution: {integrity: sha512-hx++upLv5U1rgYfwe1xBQUhRmU41NEvpUvrp8jkrSCdvGSnM5/qdRMtylJ6PG5OFkBaHkbTAKTnd3/YyESRHFw==}
+    engines: {node: '>=6.9.0'}
+    peerDependencies:
+      '@babel/core': ^7.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
       '@babel/helper-plugin-utils': 7.27.1
     dev: true
 
@@ -4800,7 +4960,7 @@ packages:
       '@babel/core': 7.28.0
       '@babel/helper-plugin-utils': 7.27.1
       '@babel/helper-remap-async-to-generator': 7.27.1(@babel/core@7.28.0)
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4877,7 +5037,7 @@ packages:
       '@babel/helper-globals': 7.28.0
       '@babel/helper-plugin-utils': 7.27.1
       '@babel/helper-replace-supers': 7.27.1(@babel/core@7.28.0)
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4901,7 +5061,7 @@ packages:
     dependencies:
       '@babel/core': 7.28.0
       '@babel/helper-plugin-utils': 7.27.1
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -5003,7 +5163,7 @@ packages:
       '@babel/core': 7.28.0
       '@babel/helper-compilation-targets': 7.27.2
       '@babel/helper-plugin-utils': 7.27.1
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -5055,7 +5215,7 @@ packages:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
-      '@babel/helper-module-transforms': 7.27.3(@babel/core@7.28.0)
+      '@babel/helper-module-transforms': 7.28.3(@babel/core@7.28.0)
       '@babel/helper-plugin-utils': 7.27.1
     transitivePeerDependencies:
       - supports-color
@@ -5094,10 +5254,10 @@ packages:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
-      '@babel/helper-module-transforms': 7.27.3(@babel/core@7.28.0)
+      '@babel/helper-module-transforms': 7.28.3(@babel/core@7.28.0)
       '@babel/helper-plugin-utils': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -5109,7 +5269,7 @@ packages:
       '@babel/core': ^7.0.0-0
     dependencies:
       '@babel/core': 7.28.0
-      '@babel/helper-module-transforms': 7.27.3(@babel/core@7.28.0)
+      '@babel/helper-module-transforms': 7.28.3(@babel/core@7.28.0)
       '@babel/helper-plugin-utils': 7.27.1
     transitivePeerDependencies:
       - supports-color
@@ -5167,7 +5327,7 @@ packages:
       '@babel/helper-plugin-utils': 7.27.1
       '@babel/plugin-transform-destructuring': 7.28.0(@babel/core@7.28.0)
       '@babel/plugin-transform-parameters': 7.27.7(@babel/core@7.28.0)
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -5538,7 +5698,7 @@ packages:
     dependencies:
       '@babel/core': 7.28.0
       '@babel/helper-plugin-utils': 7.27.1
-      '@babel/types': 7.28.2
+      '@babel/types': 7.28.4
       esutils: 2.0.3
     dev: true
 
@@ -5597,7 +5757,7 @@ packages:
       '@babel/parser': 7.28.4
       '@babel/template': 7.27.2
       '@babel/types': 7.28.4
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -6464,7 +6624,7 @@ packages:
       esbuild: '*'
     dependencies:
       '@types/resolve': 1.20.6
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       esbuild: 0.25.10
       escape-string-regexp: 4.0.0
       resolve: 1.22.10
@@ -8081,6 +8241,11 @@ packages:
     resolution: {integrity: sha512-RwzRTpmrrS6Q1ZhQExwuxJGK1Wqhv4stt+OF2JzS+uawewpwNyU7EJL1WpBex7aDiiGLs4FsXGkfUBdYuX7xiQ==}
     dev: true
 
+  /@inquirer/ansi@1.0.1:
+    resolution: {integrity: sha512-yqq0aJW/5XPhi5xOAL1xRCpe1eh8UFVgYFpFsjEqmIR8rKLyP+HINvFXwUaxYICflJrVlxnp7lLN6As735kVpw==}
+    engines: {node: '>=18'}
+    dev: true
+
   /@inquirer/checkbox@2.5.0:
     resolution: {integrity: sha512-sMgdETOfi2dUHT8r7TT1BTKOwNvdDGFDXYWtQ2J69SvlYNntk9I/gJe7r5yvMwwsuKnYbuRs3pNhx4tgNck5aA==}
     engines: {node: '>=18'}
@@ -8099,6 +8264,40 @@ packages:
       '@inquirer/core': 9.2.1
       '@inquirer/type': 1.5.5
     dev: false
+
+  /@inquirer/confirm@5.1.19(@types/node@24.2.1):
+    resolution: {integrity: sha512-wQNz9cfcxrtEnUyG5PndC8g3gZ7lGDBzmWiXZkX8ot3vfZ+/BLjR8EvyGX4YzQLeVqtAlY/YScZpW7CW8qMoDQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/core': 10.3.0(@types/node@24.2.1)
+      '@inquirer/type': 3.0.9(@types/node@24.2.1)
+      '@types/node': 24.2.1
+    dev: true
+
+  /@inquirer/core@10.3.0(@types/node@24.2.1):
+    resolution: {integrity: sha512-Uv2aPPPSK5jeCplQmQ9xadnFx2Zhj9b5Dj7bU6ZeCdDNNY11nhYy4btcSdtDguHqCT2h5oNeQTcUNSGGLA7NTA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@inquirer/ansi': 1.0.1
+      '@inquirer/figures': 1.0.14
+      '@inquirer/type': 3.0.9(@types/node@24.2.1)
+      '@types/node': 24.2.1
+      cli-width: 4.1.0
+      mute-stream: 2.0.0
+      signal-exit: 4.1.0
+      wrap-ansi: 6.2.0
+      yoctocolors-cjs: 2.1.2
+    dev: true
 
   /@inquirer/core@9.2.1:
     resolution: {integrity: sha512-F2VBt7W/mwqEU4bL0RnHNZmC/OxzNx9cOYxHqnXX3MP6ruYvZUZAW9imgN9+h/uBT/oP8Gh888J2OZSbjSeWcg==}
@@ -8153,6 +8352,11 @@ packages:
     resolution: {integrity: sha512-lGPVU3yO9ZNqA7vTYz26jny41lE7yoQansmqdMLBEfqaGsmdg7V3W9mK9Pvb5IL4EVZ9GnSDGMO/cJXud5dMaw==}
     engines: {node: '>=18'}
     dev: false
+
+  /@inquirer/figures@1.0.14:
+    resolution: {integrity: sha512-DbFgdt+9/OZYFM+19dbpXOSeAstPy884FPy1KjDu4anWwymZeOYhMY1mdFri172htv6mvc/uvIAAi7b7tvjJBQ==}
+    engines: {node: '>=18'}
+    dev: true
 
   /@inquirer/input@2.3.0:
     resolution: {integrity: sha512-XfnpCStx2xgh1LIRqPXrTNEEByqQWoxsWYzNRSEUxJ5c6EQlhMogJ3vHKu8aXuTacebtaZzMAHwEL0kAflKOBw==}
@@ -8238,6 +8442,18 @@ packages:
     dependencies:
       mute-stream: 1.0.0
     dev: false
+
+  /@inquirer/type@3.0.9(@types/node@24.2.1):
+    resolution: {integrity: sha512-QPaNt/nmE2bLGQa9b7wwyRJoLZ7pN6rcyXvzU0YCmivmJyq1BVo94G98tStRWkoD1RgDX5C+dPlhhHzNdu/W/w==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@types/node': 24.2.1
+    dev: true
 
   /@internationalized/date@3.10.0:
     resolution: {integrity: sha512-oxDR/NTEJ1k+UFVQElaNIk65E/Z83HK1z1WI3lQyhTtnNg4R5oVXaPzK3jcpKG8UHKDVuDQHzn+wsxSz8RP3aw==}
@@ -8861,7 +9077,7 @@ packages:
       node-fetch: 2.7.0
       nopt: 8.1.0
       semver: 7.7.2
-      tar: 7.4.3
+      tar: 7.5.1
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -8898,6 +9114,18 @@ packages:
       filenamify: 5.1.1
       got: 11.8.6
       os-filter-obj: 2.0.0
+    dev: true
+
+  /@mswjs/interceptors@0.40.0:
+    resolution: {integrity: sha512-EFd6cVbHsgLa6wa4RljGj6Wk75qoHxUSyc5asLyyPSyuhIcdS2Q3Phw6ImS1q+CkALthJRShiYfKANcQMuMqsQ==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@open-draft/deferred-promise': 2.2.0
+      '@open-draft/logger': 0.3.0
+      '@open-draft/until': 2.1.0
+      is-node-process: 1.2.0
+      outvariant: 1.4.3
+      strict-event-emitter: 0.5.1
     dev: true
 
   /@napi-rs/nice-android-arm-eabi@1.0.4:
@@ -9086,8 +9314,8 @@ packages:
       '@tybys/wasm-util': 0.9.0
     dev: true
 
-  /@napi-rs/wasm-runtime@1.0.6:
-    resolution: {integrity: sha512-DXj75ewm11LIWUk198QSKUTxjyRjsBwk09MuMk5DGK+GDUtyPhhEHOGP/Xwwj3DjQXXkivoBirmOnKrLfc0+9g==}
+  /@napi-rs/wasm-runtime@1.0.7:
+    resolution: {integrity: sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw==}
     requiresBuild: true
     dependencies:
       '@emnapi/core': 1.5.0
@@ -9203,7 +9431,7 @@ packages:
       string-width: 7.2.0
       supports-color: 10.2.2
       terminal-link: 4.0.0
-      ts-node: 10.9.1(@swc/core@1.5.29)(@types/node@24.2.1)(typescript@5.9.2)
+      ts-node: 10.9.2(@swc/core@1.5.29)(@types/node@24.2.1)(typescript@5.9.2)
       typescript: 5.9.2
       uuid: 11.1.0
       yaml: 2.8.1
@@ -9289,7 +9517,7 @@ packages:
     engines: {node: ^18.14.0 || >=20}
     dependencies:
       '@whatwg-node/server': 0.10.12
-      ansis: 4.1.0
+      ansis: 4.2.0
       chokidar: 4.0.3
       decache: 4.6.2
       dettle: 1.0.5
@@ -9864,7 +10092,7 @@ packages:
     dependencies:
       '@nuxt/kit': 3.19.3(magicast@0.3.5)
       execa: 8.0.1
-      vite: 6.3.5(@types/node@24.2.1)
+      vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
     transitivePeerDependencies:
       - magicast
     dev: false
@@ -9917,7 +10145,7 @@ packages:
       sirv: 3.0.2
       structured-clone-es: 1.0.0
       tinyglobby: 0.2.15
-      vite: 6.3.5(@types/node@24.2.1)
+      vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
       vite-plugin-inspect: 11.3.3(@nuxt/kit@3.19.3)(vite@6.3.5)
       vite-plugin-vue-tracer: 1.0.1(vite@6.3.5)(vue@3.5.22)
       which: 5.0.0
@@ -10917,7 +11145,7 @@ packages:
       minimatch: 9.0.3
       tsconfig-paths: 4.2.0
       vite: 5.4.19(@types/node@24.2.1)
-      vitest: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vitest: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)(msw@2.11.6)
     transitivePeerDependencies:
       - '@babel/traverse'
       - '@swc-node/register'
@@ -11221,6 +11449,21 @@ packages:
   /@oozcitak/util@8.3.8:
     resolution: {integrity: sha512-T8TbSnGsxo6TDBJx/Sgv/BlVJL3tshxZP7Aq5R1mSnM5OcHY2dQaxLMu2+E8u3gN0MLOzdjurqN4ZRVuzQycOQ==}
     engines: {node: '>=8.0'}
+    dev: true
+
+  /@open-draft/deferred-promise@2.2.0:
+    resolution: {integrity: sha512-CecwLWx3rhxVQF6V4bAgPS5t+So2sTbPgAzafKkVizyi7tlwpcFpdFqq+wqF2OwNBmqFuu6tOyouTuxgpMfzmA==}
+    dev: true
+
+  /@open-draft/logger@0.3.0:
+    resolution: {integrity: sha512-X2g45fzhxH238HKO4xbSr7+wBS8Fvw6ixhTDuvLd5mqh6bJJCFAPwU9mPDxbcrRtfxv4u5IHCEH77BmxvXmmxQ==}
+    dependencies:
+      is-node-process: 1.2.0
+      outvariant: 1.4.3
+    dev: true
+
+  /@open-draft/until@2.1.0:
+    resolution: {integrity: sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg==}
     dev: true
 
   /@opentelemetry/api-logs@0.203.0:
@@ -11643,7 +11886,7 @@ packages:
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.0.6
+      '@napi-rs/wasm-runtime': 1.0.7
     dev: false
     optional: true
 
@@ -11779,7 +12022,7 @@ packages:
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.0.6
+      '@napi-rs/wasm-runtime': 1.0.7
     dev: false
     optional: true
 
@@ -11803,6 +12046,11 @@ packages:
 
   /@oxc-project/types@0.94.0:
     resolution: {integrity: sha512-+UgQT/4o59cZfH6Cp7G0hwmqEQ0wE+AdIwhikdwnhWI9Dp8CgSY081+Q3O67/wq3VJu8mgUEB93J9EHHn70fOw==}
+    dev: false
+
+  /@oxc-project/types@0.95.0:
+    resolution: {integrity: sha512-vACy7vhpMPhjEJhULNxrdR0D943TkA/MigMpJCHmBHvMXxRStRi/dPtTlfQ3uDwWSzRpT8z+7ImjZVf8JWBocQ==}
+    dev: true
 
   /@oxc-transform/binding-android-arm64@0.94.0:
     resolution: {integrity: sha512-abxgEoomc5HNbDQaGhBWguR+W4cdrcEIwV8xIQ2qpUuhEUoHy6nQLfN/gREAZMdkyIaKwk12FckB9aNxVTte2w==}
@@ -11918,7 +12166,7 @@ packages:
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.0.6
+      '@napi-rs/wasm-runtime': 1.0.7
     dev: false
     optional: true
 
@@ -12164,7 +12412,7 @@ packages:
     resolution: {integrity: sha512-bWLDlHsBlgKY/05wDN/V3ETcn5G2SV/SiA2ZmNvKGGlmVX4G5li7GRDhHcgYvHJHyJ8TUStqg2xtHmCs0UbAbg==}
     engines: {node: '>=18'}
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       enquirer: 2.4.1
       minimist: 1.2.8
       untildify: 4.0.0
@@ -12772,8 +13020,8 @@ packages:
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
     dev: true
 
-  /@rolldown/binding-android-arm64@1.0.0-beta.42:
-    resolution: {integrity: sha512-W5ZKF3TP3bOWuBfotAGp+UGjxOkGV7jRmIRbBA7NFjggx7Oi6vOmGDqpHEIX7kDCiry1cnIsWQaxNvWbMdkvzQ==}
+  /@rolldown/binding-android-arm64@1.0.0-beta.44:
+    resolution: {integrity: sha512-g9ejDOehJFhxC1DIXQuZQ9bKv4lRDioOTL42cJjFjqKPl1L7DVb9QQQE1FxokGEIMr6FezLipxwnzOXWe7DNPg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [android]
@@ -12781,8 +13029,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-darwin-arm64@1.0.0-beta.42:
-    resolution: {integrity: sha512-abw/wtgJA8OCgaTlL+xJxnN/Z01BwV1rfzIp5Hh9x+IIO6xOBfPsQ0nzi0+rWx3TyZ9FZXyC7bbC+5NpQ9EaXQ==}
+  /@rolldown/binding-darwin-arm64@1.0.0-beta.44:
+    resolution: {integrity: sha512-PxAW1PXLPmCzfhfKIS53kwpjLGTUdIfX4Ht+l9mj05C3lYCGaGowcNsYi2rdxWH24vSTmeK+ajDNRmmmrK0M7g==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [darwin]
@@ -12790,8 +13038,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-darwin-x64@1.0.0-beta.42:
-    resolution: {integrity: sha512-Y/UrZIRVr8CvXVEB88t6PeC46r1K9/QdPEo2ASE/b/KBEyXIx+QbM6kv9QfQVWU2Atly2+SVsQzxQsIvuk3lZQ==}
+  /@rolldown/binding-darwin-x64@1.0.0-beta.44:
+    resolution: {integrity: sha512-/CtQqs1oO9uSb5Ju60rZvsdjE7Pzn8EK2ISAdl2jedjMzeD/4neNyCbwyJOAPzU+GIQTZVyrFZJX+t7HXR1R/g==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [darwin]
@@ -12799,8 +13047,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-freebsd-x64@1.0.0-beta.42:
-    resolution: {integrity: sha512-zRM0oOk7BZiy6DoWBvdV4hyEg+j6+WcBZIMHVirMEZRu8hd18kZdJkg+bjVMfCEhwpWeFUfBfZ1qcaZ5UdYzlQ==}
+  /@rolldown/binding-freebsd-x64@1.0.0-beta.44:
+    resolution: {integrity: sha512-V5Q5W9c4+2GJ4QabmjmVV6alY97zhC/MZBaLkDtHwGy3qwzbM4DYgXUbun/0a8AH5hGhuU27tUIlYz6ZBlvgOA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [freebsd]
@@ -12808,8 +13056,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.42:
-    resolution: {integrity: sha512-6RjFaC52QNwo7ilU8C5H7swbGlgfTkG9pudXwzr3VYyT18s0C9gLg3mvc7OMPIGqNxnQ0M5lU8j6aQCk2DTRVg==}
+  /@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.44:
+    resolution: {integrity: sha512-X6adjkHeFqKsTU0FXdNN9HY4LDozPqIfHcnXovE5RkYLWIjMWuc489mIZ6iyhrMbCqMUla9IOsh5dvXSGT9o9A==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm]
     os: [linux]
@@ -12817,8 +13065,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-arm64-gnu@1.0.0-beta.42:
-    resolution: {integrity: sha512-LMYHM5Sf6ROq+VUwHMDVX2IAuEsWTv4SnlFEedBnMGpvRuQ14lCmD4m5Q8sjyAQCgyha9oghdGoK8AEg1sXZKg==}
+  /@rolldown/binding-linux-arm64-gnu@1.0.0-beta.44:
+    resolution: {integrity: sha512-kRRKGZI4DXWa6ANFr3dLA85aSVkwPdgXaRjfanwY84tfc3LncDiIjyWCb042e3ckPzYhHSZ3LmisO+cdOIYL6Q==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
@@ -12826,8 +13074,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-arm64-musl@1.0.0-beta.42:
-    resolution: {integrity: sha512-/bNTYb9aKNhzdbPn3O4MK2aLv55AlrkUKPE4KNfBYjkoZUfDr4jWp7gsSlvTc5A/99V1RCm9axvt616ZzeXGyA==}
+  /@rolldown/binding-linux-arm64-musl@1.0.0-beta.44:
+    resolution: {integrity: sha512-hMtiN9xX1NhxXBa2U3Up4XkVcsVp2h73yYtMDY59z9CDLEZLrik9RVLhBL5QtoX4zZKJ8HZKJtWuGYvtmkCbIQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
@@ -12835,8 +13083,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-x64-gnu@1.0.0-beta.42:
-    resolution: {integrity: sha512-n/SLa4h342oyeGykZdch7Y3GNCNliRPL4k5wkeZ/5eQZs+c6/ZG1SHCJQoy7bZcmxiMyaXs9HoFmv1PEKrZgWg==}
+  /@rolldown/binding-linux-x64-gnu@1.0.0-beta.44:
+    resolution: {integrity: sha512-rd1LzbpXQuR8MTG43JB9VyXDjG7ogSJbIkBpZEHJ8oMKzL6j47kQT5BpIXrg3b5UVygW9QCI2fpFdMocT5Kudg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
@@ -12844,8 +13092,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-x64-musl@1.0.0-beta.42:
-    resolution: {integrity: sha512-4PSd46sFzqpLHSGdaSViAb1mk55sCUMpJg+X8ittXaVocQsV3QLG/uydSH8RyL0ngHX5fy3D70LcCzlB15AgHw==}
+  /@rolldown/binding-linux-x64-musl@1.0.0-beta.44:
+    resolution: {integrity: sha512-qI2IiPqmPRW25exXkuQr3TlweCDc05YvvbSDRPCuPsWkwb70dTiSoXn8iFxT4PWqTi71wWHg1Wyta9PlVhX5VA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
@@ -12853,8 +13101,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-openharmony-arm64@1.0.0-beta.42:
-    resolution: {integrity: sha512-BmWoeJJyeZXmZBcfoxG6J9+rl2G7eO47qdTkAzEegj4n3aC6CBIHOuDcbE8BvhZaEjQR0nh0nJrtEDlt65Q7Sw==}
+  /@rolldown/binding-openharmony-arm64@1.0.0-beta.44:
+    resolution: {integrity: sha512-+vHvEc1pL5iJRFlldLC8mjm6P4Qciyfh2bh5ZI6yxDQKbYhCHRKNURaKz1mFcwxhVL5YMYsLyaqM3qizVif9MQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [openharmony]
@@ -12862,18 +13110,18 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-wasm32-wasi@1.0.0-beta.42:
-    resolution: {integrity: sha512-2Ft32F7uiDTrGZUKws6CLNTlvTWHC33l4vpXrzUucf9rYtUThAdPCOt89Pmn13tNX6AulxjGEP2R0nZjTSW3eQ==}
+  /@rolldown/binding-wasm32-wasi@1.0.0-beta.44:
+    resolution: {integrity: sha512-XSgLxRrtFj6RpTeMYmmQDAwHjKseYGKUn5LPiIdW4Cq+f5SBSStL2ToBDxkbdxKPEbCZptnLPQ/nfKcAxrC8Xg==}
     engines: {node: '>=14.0.0'}
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.0.6
+      '@napi-rs/wasm-runtime': 1.0.7
     dev: true
     optional: true
 
-  /@rolldown/binding-win32-arm64-msvc@1.0.0-beta.42:
-    resolution: {integrity: sha512-hC1kShXW/z221eG+WzQMN06KepvPbMBknF0iGR3VMYJLOe9gwnSTfGxFT5hf8XrPv7CEZqTWRd0GQpkSHRbGsw==}
+  /@rolldown/binding-win32-arm64-msvc@1.0.0-beta.44:
+    resolution: {integrity: sha512-cF1LJdDIX02cJrFrX3wwQ6IzFM7I74BYeKFkzdcIA4QZ0+2WA7/NsKIgjvrunupepWb1Y6PFWdRlHSaz5AW1Wg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [win32]
@@ -12881,8 +13129,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-win32-ia32-msvc@1.0.0-beta.42:
-    resolution: {integrity: sha512-AICBYromawouGjj+GS33369E8Vwhy6UwhQEhQ5evfS8jPCsyVvoICJatbDGDGH01dwtVGLD5eDFzPicUOVpe4g==}
+  /@rolldown/binding-win32-ia32-msvc@1.0.0-beta.44:
+    resolution: {integrity: sha512-5uaJonDafhHiMn+iEh7qUp3QQ4Gihv3lEOxKfN8Vwadpy0e+5o28DWI42DpJ9YBYMrVy4JOWJ/3etB/sptpUwA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [ia32]
     os: [win32]
@@ -12890,8 +13138,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-win32-x64-msvc@1.0.0-beta.42:
-    resolution: {integrity: sha512-XpZ0M+tjoEiSc9c+uZR7FCnOI0uxDRNs1elGOMjeB0pUP1QmvVbZGYNsyLbLoP4u7e3VQN8rie1OQ8/mB6rcJg==}
+  /@rolldown/binding-win32-x64-msvc@1.0.0-beta.44:
+    resolution: {integrity: sha512-vsqhWAFJkkmgfBN/lkLCWTXF1PuPhMjfnAyru48KvF7mVh2+K7WkKYHezF3Fjz4X/mPScOcIv+g6cf6wnI6eWg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [win32]
@@ -12909,6 +13157,11 @@ packages:
 
   /@rolldown/pluginutils@1.0.0-beta.42:
     resolution: {integrity: sha512-N7pQzk9CyE7q0bBN/q0J8s6Db279r5kUZc6d7/wWRe9/zXqC52HQovVyu6iXPIDY4BEzzgbVLhVFXrOuGJ22ZQ==}
+    dev: false
+
+  /@rolldown/pluginutils@1.0.0-beta.44:
+    resolution: {integrity: sha512-g6eW7Zwnr2c5RADIoqziHoVs6b3W5QTQ4+qbpfjbkMJ9x+8Og211VW/oot2dj9dVwaK/UyC6Yo+02gV+wWQVNg==}
+    dev: true
 
   /@rollup/plugin-alias@5.1.1(rollup@4.50.2):
     resolution: {integrity: sha512-PR9zDb+rOzkRb2VD+EuKB7UC41vU5DIwZ5qqCpk0KJudcWAyi8rvYOhS7+L5aZCspw1stTViLgN5v6FF1p5cgQ==}
@@ -13965,7 +14218,7 @@ packages:
       '@swc-node/sourcemap-support': 0.5.1
       '@swc/core': 1.5.29(@swc/helpers@0.5.17)
       colorette: 2.0.20
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       pirates: 4.0.7
       tslib: 2.8.1
       typescript: 5.9.2
@@ -14485,7 +14738,7 @@ packages:
       '@tailwindcss/node': 4.1.11
       '@tailwindcss/oxide': 4.1.11
       tailwindcss: 4.1.11
-      vite: 6.3.5(@types/node@24.2.1)
+      vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
     dev: false
 
   /@tailwindcss/vite@4.1.14(vite@6.3.5):
@@ -14496,7 +14749,7 @@ packages:
       '@tailwindcss/node': 4.1.14
       '@tailwindcss/oxide': 4.1.14
       tailwindcss: 4.1.14
-      vite: 6.3.5(@types/node@24.2.1)
+      vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
     dev: false
 
   /@tanstack/directive-functions-plugin@1.131.2(vite@6.3.5):
@@ -14506,9 +14759,9 @@ packages:
       vite: '>=6.0.0'
     dependencies:
       '@babel/code-frame': 7.27.1
-      '@babel/core': 7.28.0
-      '@babel/traverse': 7.28.0
-      '@babel/types': 7.28.2
+      '@babel/core': 7.28.4
+      '@babel/traverse': 7.28.4
+      '@babel/types': 7.28.4
       '@tanstack/router-utils': 1.131.2
       babel-dead-code-elimination: 1.0.10
       tiny-invariant: 1.3.3
@@ -14565,7 +14818,7 @@ packages:
       '@tanstack/history': 1.131.2
       '@tanstack/react-store': 0.7.5(react-dom@19.1.1)(react@19.1.1)
       '@tanstack/router-core': 1.131.44
-      isbot: 5.1.30
+      isbot: 5.1.31
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
       tiny-invariant: 1.3.3
@@ -14648,7 +14901,7 @@ packages:
       '@tanstack/start-client-core': 1.131.44
       '@tanstack/start-server-core': 1.131.44
       h3: 1.13.0
-      isbot: 5.1.30
+      isbot: 5.1.31
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
     dev: true
@@ -14817,12 +15070,12 @@ packages:
     engines: {node: '>=12'}
     dependencies:
       '@babel/code-frame': 7.27.1
-      '@babel/core': 7.28.0
-      '@babel/plugin-syntax-jsx': 7.27.1(@babel/core@7.28.0)
-      '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.0)
+      '@babel/core': 7.28.4
+      '@babel/plugin-syntax-jsx': 7.27.1(@babel/core@7.28.4)
+      '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.4)
       '@babel/template': 7.27.2
-      '@babel/traverse': 7.28.0
-      '@babel/types': 7.28.2
+      '@babel/traverse': 7.28.4
+      '@babel/types': 7.28.4
       '@tanstack/directive-functions-plugin': 1.131.2(vite@6.3.5)
       babel-dead-code-elimination: 1.0.10
       tiny-invariant: 1.3.3
@@ -14912,7 +15165,7 @@ packages:
       '@tanstack/start-client-core': 1.131.44
       '@tanstack/start-storage-context': 1.131.44
       h3: 1.13.0
-      isbot: 5.1.30
+      isbot: 5.1.31
       tiny-invariant: 1.3.3
       tiny-warning: 1.0.3
       unctx: 2.4.1
@@ -15449,6 +15702,10 @@ packages:
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
     dev: true
 
+  /@types/statuses@2.0.6:
+    resolution: {integrity: sha512-xMAgYwceFhRA2zY+XbEA7mxYbA093wdiW8Vu6gZPGWy9cmOyU9XesH1tNcEWsKFd5Vzrqx5T3D38PWx1FIIXkA==}
+    dev: true
+
   /@types/tar@6.1.13:
     resolution: {integrity: sha512-IznnlmU5f4WcGTh2ltRu/Ijpmk8wiWXfF0VA4s+HPjHZgvFggk1YaIkbo5krX/zUCzWF8N/l4+W/LNxnvAJ8nw==}
     dependencies:
@@ -15939,6 +16196,10 @@ packages:
     engines: {node: '>= 20'}
     dev: false
 
+  /@vercel/oidc@3.0.3:
+    resolution: {integrity: sha512-yNEQvPcVrK9sIe637+I0jD6leluPxzwJKx/Haw6F4H77CdDsszUn5V3o96LPziXkSNE2B83+Z3mjqGKBK/R6Gg==}
+    engines: {node: '>= 20'}
+
   /@vitejs/plugin-react@4.7.0(vite@6.3.5):
     resolution: {integrity: sha512-gUu9hwfWvvEDBBmgtAowQCojwZmJ5mcLn3aufeCsitijs3+f2NsrPtlAWIR6OPiqljl96GVCUbLe0HyqIpVaoA==}
     engines: {node: ^14.18.0 || >=16.0.0}
@@ -15951,7 +16212,7 @@ packages:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.3.5(@types/node@24.2.1)
+      vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -15998,7 +16259,7 @@ packages:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
       ast-v8-to-istanbul: 0.3.4
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       istanbul-lib-coverage: 3.2.2
       istanbul-lib-report: 3.0.1
       istanbul-lib-source-maps: 5.0.6
@@ -16008,7 +16269,7 @@ packages:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vitest: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)(msw@2.11.6)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -16023,7 +16284,7 @@ packages:
       tinyrainbow: 2.0.0
     dev: true
 
-  /@vitest/mocker@3.2.4(vite@5.4.19):
+  /@vitest/mocker@3.2.4(msw@2.11.6)(vite@5.4.19):
     resolution: {integrity: sha512-46ryTE9RZO/rfDd7pEqFl7etuyzekzEhUbTW3BvmeO/BcCMEgq59BKhek3dXDWgAj4oMK6OZi+vRr1wPW6qjEQ==}
     peerDependencies:
       msw: ^2.4.9
@@ -16037,6 +16298,7 @@ packages:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.19
+      msw: 2.11.6(@types/node@24.2.1)(typescript@5.9.2)
       vite: 5.4.19(@types/node@24.2.1)
     dev: true
 
@@ -16051,14 +16313,14 @@ packages:
     dependencies:
       '@vitest/utils': 3.2.4
       pathe: 2.0.3
-      strip-literal: 3.0.0
+      strip-literal: 3.1.0
     dev: true
 
   /@vitest/snapshot@3.2.4:
     resolution: {integrity: sha512-dEYtS7qQP2CjU27QBC5oUOxLE/v5eLkGqPE0ZKEIDGMs4vKWe7IjgLOeauHsR0D5YuuycGRO5oSRXnwnmA78fQ==}
     dependencies:
       '@vitest/pretty-format': 3.2.4
-      magic-string: 0.30.17
+      magic-string: 0.30.19
       pathe: 2.0.3
     dev: true
 
@@ -16080,7 +16342,7 @@ packages:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vitest: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)(msw@2.11.6)
     dev: true
 
   /@vitest/utils@1.6.1:
@@ -16108,7 +16370,7 @@ packages:
       '@viteval/core': 0.5.3(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
       '@viteval/internal': 0.5.3
       '@viteval/ui': 0.5.3(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0)(@tanstack/router-core@1.131.44)(@types/react@19.1.10)(@vitejs/plugin-react@4.7.0)(vite@6.3.5)
-      c12: 3.2.0
+      c12: 3.3.0(magicast@0.3.5)
       chalk: 5.6.2
       consola: 3.4.2
       find-up: 7.0.0
@@ -16238,7 +16500,7 @@ packages:
       sonner: 2.0.7(react-dom@19.1.1)(react@19.1.1)
       tailwind-merge: 3.3.1
       tailwindcss: 4.1.14
-      tw-animate-css: 1.3.8
+      tw-animate-css: 1.4.0
       zod: 4.1.11
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -16308,9 +16570,9 @@ packages:
       '@voltagent/core': ^0.1.71
       zod: ^3.25.0
     dependencies:
-      '@ai-sdk/openai': 2.0.42(zod@3.25.76)
+      '@ai-sdk/openai': 2.0.53(zod@3.25.76)
       '@voltagent/core': link:packages/core
-      ai: 5.0.64(zod@3.25.76)
+      ai: 5.0.76(zod@3.25.76)
       ts-pattern: 5.8.0
       type-fest: 4.41.0
       zod: 3.25.76
@@ -16324,7 +16586,7 @@ packages:
     dependencies:
       '@voltagent/core': link:packages/core
       '@voltagent/internal': 0.0.9
-      ai: 5.0.64(zod@3.25.76)
+      ai: 5.0.76(zod@3.25.76)
       ts-pattern: 5.8.0
       type-fest: 4.41.0
       zod: 3.25.76
@@ -16895,7 +17157,7 @@ packages:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
     engines: {node: '>= 6.0.0'}
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -16948,30 +17210,6 @@ packages:
       '@ai-sdk/provider-utils': 3.0.3(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
       zod: 3.25.76
-
-  /ai@5.0.19(zod@3.25.76):
-    resolution: {integrity: sha512-I0yQO68Z1DdvjMc9be5scMYdsuBvpNneQDh6TUuUVlFXdCxAIm7yATnOaomfYTE2KaRDsrO+OSRPjJm4FSKioA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4
-    dependencies:
-      '@ai-sdk/gateway': 1.0.9(zod@3.25.76)
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.4(zod@3.25.76)
-      '@opentelemetry/api': 1.9.0
-      zod: 3.25.76
-
-  /ai@5.0.59(zod@3.25.76):
-    resolution: {integrity: sha512-SuAFxKXt2Ha9FiXB3gaOITkOg9ek/3QNVatGVExvTT4gNXc+hJpuNe1dmuwf6Z5Op4fzc8wdbsrYP27ZCXBzlw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-    dependencies:
-      '@ai-sdk/gateway': 1.0.32(zod@3.25.76)
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.10(zod@3.25.76)
-      '@opentelemetry/api': 1.9.0
-      zod: 3.25.76
     dev: false
 
   /ai@5.0.63(zod@3.25.76):
@@ -17000,6 +17238,30 @@ packages:
       zod: 3.25.76
     dev: false
 
+  /ai@5.0.76(zod@3.25.76):
+    resolution: {integrity: sha512-ZCxi1vrpyCUnDbtYrO/W8GLvyacV9689f00yshTIQ3mFFphbD7eIv40a2AOZBv3GGRA7SSRYIDnr56wcS/gyQg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/gateway': 2.0.0(zod@3.25.76)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.12(zod@3.25.76)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.76
+
+  /ai@5.0.76(zod@4.1.11):
+    resolution: {integrity: sha512-ZCxi1vrpyCUnDbtYrO/W8GLvyacV9689f00yshTIQ3mFFphbD7eIv40a2AOZBv3GGRA7SSRYIDnr56wcS/gyQg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/gateway': 2.0.0(zod@4.1.11)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.12(zod@4.1.11)
+      '@opentelemetry/api': 1.9.0
+      zod: 4.1.11
+
   /ajv-errors@3.0.0(ajv@8.17.1):
     resolution: {integrity: sha512-V3wD15YHfHz6y0KdhYFjyy9vWtEVALT9UrxfN3zqlI6dMioHnJrqOYfyPKol3oqrnCM9uwkcdCwkJ0WUcbLMTQ==}
     peerDependencies:
@@ -17017,6 +17279,7 @@ packages:
         optional: true
     dependencies:
       ajv: 8.17.1
+    dev: true
 
   /ajv-formats@3.0.1(ajv@8.17.1):
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
@@ -17313,11 +17576,6 @@ packages:
     resolution: {integrity: sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ==}
     engines: {node: '>=8.0.0'}
 
-  /atomically@1.7.0:
-    resolution: {integrity: sha512-Xcz9l0z7y9yQ9rdDaxlmaI4uJHf/T8g9hOEzJcsEqX2SjCj4J20uK7+ldkDHMbpJDK76wF7xEIgxc/vSlsfw5w==}
-    engines: {node: '>=10.12.0'}
-    dev: false
-
   /atomically@2.0.3:
     resolution: {integrity: sha512-kU6FmrwZ3Lx7/7y3hPS5QnbJfaohcIul5fGqf7ok+4KklIEk9tJ0C2IQPdacSbVUWv6zVHXEBWoWd6NrVMT7Cw==}
     dependencies:
@@ -17340,7 +17598,6 @@ packages:
     transitivePeerDependencies:
       - encoding
       - ws
-    dev: true
 
   /autoprefixer@10.4.21(postcss@8.5.6):
     resolution: {integrity: sha512-O+A6LWV5LDHSJD3LjHYoNi4VLsj/Whi7k6zG12xTYaU4cQ8oxQGckXNX8cRHK5yOZ/ppVHe0ZBXGzSV9jXdVbQ==}
@@ -17384,9 +17641,9 @@ packages:
   /babel-dead-code-elimination@1.0.10:
     resolution: {integrity: sha512-DV5bdJZTzZ0zn0DC24v3jD7Mnidh6xhKa4GfKCbq3sfW8kaWhDdZjP3i81geA8T33tdYqWKw4D3fVv0CwEgKVA==}
     dependencies:
-      '@babel/core': 7.28.0
+      '@babel/core': 7.28.4
       '@babel/parser': 7.28.4
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
       '@babel/types': 7.28.4
     transitivePeerDependencies:
       - supports-color
@@ -17418,7 +17675,7 @@ packages:
       '@babel/core': 7.28.0
       '@babel/helper-plugin-utils': 7.27.1
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.0)
-      '@babel/traverse': 7.28.0
+      '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -17525,6 +17782,29 @@ packages:
       '@babel/plugin-syntax-optional-chaining': 7.8.3(@babel/core@7.28.0)
       '@babel/plugin-syntax-private-property-in-object': 7.14.5(@babel/core@7.28.0)
       '@babel/plugin-syntax-top-level-await': 7.14.5(@babel/core@7.28.0)
+    dev: true
+
+  /babel-preset-current-node-syntax@1.2.0(@babel/core@7.28.4):
+    resolution: {integrity: sha512-E/VlAEzRrsLEb2+dv8yp3bo4scof3l9nR4lrld+Iy5NyVqgVYUJnDAmunkhPMisRI32Qc4iRiz425d8vM++2fg==}
+    peerDependencies:
+      '@babel/core': ^7.0.0 || ^8.0.0-0
+    dependencies:
+      '@babel/core': 7.28.4
+      '@babel/plugin-syntax-async-generators': 7.8.4(@babel/core@7.28.4)
+      '@babel/plugin-syntax-bigint': 7.8.3(@babel/core@7.28.4)
+      '@babel/plugin-syntax-class-properties': 7.12.13(@babel/core@7.28.4)
+      '@babel/plugin-syntax-class-static-block': 7.14.5(@babel/core@7.28.4)
+      '@babel/plugin-syntax-import-attributes': 7.27.1(@babel/core@7.28.4)
+      '@babel/plugin-syntax-import-meta': 7.10.4(@babel/core@7.28.4)
+      '@babel/plugin-syntax-json-strings': 7.8.3(@babel/core@7.28.4)
+      '@babel/plugin-syntax-logical-assignment-operators': 7.10.4(@babel/core@7.28.4)
+      '@babel/plugin-syntax-nullish-coalescing-operator': 7.8.3(@babel/core@7.28.4)
+      '@babel/plugin-syntax-numeric-separator': 7.10.4(@babel/core@7.28.4)
+      '@babel/plugin-syntax-object-rest-spread': 7.8.3(@babel/core@7.28.4)
+      '@babel/plugin-syntax-optional-catch-binding': 7.8.3(@babel/core@7.28.4)
+      '@babel/plugin-syntax-optional-chaining': 7.8.3(@babel/core@7.28.4)
+      '@babel/plugin-syntax-private-property-in-object': 7.14.5(@babel/core@7.28.4)
+      '@babel/plugin-syntax-top-level-await': 7.14.5(@babel/core@7.28.4)
     dev: true
 
   /babel-preset-jest@29.6.3(@babel/core@7.28.0):
@@ -17683,7 +17963,6 @@ packages:
 
   /binary-search@1.3.6:
     resolution: {integrity: sha512-nbE1WxOTTrUWIfsfZ4aHGYu5DOuNkbxGokjV6Z2kxfJK3uaAb8zNK1muzOeipoLHZjInT4Br88BHpzevc681xA==}
-    dev: true
 
   /bindings@1.5.0:
     resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==}
@@ -17733,7 +18012,7 @@ packages:
     dependencies:
       bytes: 3.1.2
       content-type: 1.0.5
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       http-errors: 2.0.0
       iconv-lite: 0.6.3
       on-finished: 2.4.1
@@ -17924,28 +18203,6 @@ packages:
   /bytes@3.1.2:
     resolution: {integrity: sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg==}
     engines: {node: '>= 0.8'}
-
-  /c12@3.2.0:
-    resolution: {integrity: sha512-ixkEtbYafL56E6HiFuonMm1ZjoKtIo7TH68/uiEq4DAwv9NcUX2nJ95F8TrbMeNjqIkZpruo3ojXQJ+MGG5gcQ==}
-    peerDependencies:
-      magicast: ^0.3.5
-    peerDependenciesMeta:
-      magicast:
-        optional: true
-    dependencies:
-      chokidar: 4.0.3
-      confbox: 0.2.2
-      defu: 6.1.4
-      dotenv: 17.2.2
-      exsolve: 1.0.7
-      giget: 2.0.0
-      jiti: 2.5.1
-      ohash: 2.0.11
-      pathe: 2.0.3
-      perfect-debounce: 1.0.0
-      pkg-types: 2.3.0
-      rc9: 2.1.2
-    dev: true
 
   /c12@3.3.0(magicast@0.3.5):
     resolution: {integrity: sha512-K9ZkuyeJQeqLEyqldbYLG3wjqwpw4BVaAqvmxq3GYKK0b1A/yYQdIcJxkzAOWcNVWhJpRXAPfZFueekiY/L8Dw==}
@@ -18256,7 +18513,6 @@ packages:
 
   /cheminfo-types@1.8.1:
     resolution: {integrity: sha512-FRcpVkox+cRovffgqNdDFQ1eUav+i/Vq/CUd1hcfEl2bevntFlzznL+jE8g4twl6ElB7gZjCko6pYpXyMn+6dA==}
-    dev: true
 
   /chokidar@3.6.0:
     resolution: {integrity: sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==}
@@ -18500,7 +18756,6 @@ packages:
   /cli-width@4.1.0:
     resolution: {integrity: sha512-ouuZd4/dm2Sw5Gmqy6bGyNNNe1qt9RpmxveLSO7KcgsTnU7RXfsw+/bukWGo1abgBiMAic068rclZsO4IWmmxQ==}
     engines: {node: '>= 12'}
-    dev: false
 
   /client-only@0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
@@ -18758,7 +19013,7 @@ packages:
   /compatx@0.2.0:
     resolution: {integrity: sha512-6gLRNt4ygsi5NyMVhceOCFv14CIdDFN7fQjX1U4+47qVE/+kjPoXMK65KWK+dWxmFzMTuKazoQ9sch6pM0p5oA==}
 
-  /composio-core@0.5.39(@ai-sdk/openai@2.0.12)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.64)(langchain@0.3.30)(openai@4.104.0):
+  /composio-core@0.5.39(@ai-sdk/openai@2.0.12)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.76)(langchain@0.3.30)(openai@4.104.0):
     resolution: {integrity: sha512-7BeSFlfRzr1cbIfGYJW4jQ3BHwaObOaFKiRJIFuWOmvOrTABl1hbxGkWPA3C+uFw9CFXbZhrLWNyD7lhYy2Scg==}
     hasBin: true
     peerDependencies:
@@ -18776,7 +19031,7 @@ packages:
       '@hey-api/client-axios': 0.2.12(axios@1.11.0)
       '@langchain/core': 0.3.70(openai@4.104.0)
       '@langchain/openai': 0.6.7(@langchain/core@0.3.70)
-      ai: 5.0.64(zod@3.25.76)
+      ai: 5.0.76(zod@3.25.76)
       axios: 1.11.0
       chalk: 4.1.2
       cli-progress: 3.12.0
@@ -18811,21 +19066,18 @@ packages:
       compute-l2norm: 1.1.0
       validate.io-array: 1.0.6
       validate.io-function: 1.0.2
-    dev: true
 
   /compute-dot@1.1.0:
     resolution: {integrity: sha512-L5Ocet4DdMrXboss13K59OK23GXjiSia7+7Ukc7q4Bl+RVpIXK2W9IHMbWDZkh+JUEvJAwOKRaJDiFUa1LTnJg==}
     dependencies:
       validate.io-array: 1.0.6
       validate.io-function: 1.0.2
-    dev: true
 
   /compute-l2norm@1.1.0:
     resolution: {integrity: sha512-6EHh1Elj90eU28SXi+h2PLnTQvZmkkHWySpoFz+WOlVNLz3DQoC4ISUHSV9n5jMxPHtKGJ01F4uu2PsXBB8sSg==}
     dependencies:
       validate.io-array: 1.0.6
       validate.io-function: 1.0.2
-    dev: true
 
   /concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
@@ -18839,22 +19091,6 @@ packages:
       readable-stream: 3.6.2
       typedarray: 0.0.6
     dev: true
-
-  /conf@10.2.0:
-    resolution: {integrity: sha512-8fLl9F04EJqjSqH+QjITQfJF8BrOVaYr1jewVgSRAEWePfxT0sku4w2hrGQ60BC/TNLGQ2pgxNlTbWQmMPFvXg==}
-    engines: {node: '>=12'}
-    dependencies:
-      ajv: 8.17.1
-      ajv-formats: 2.1.1(ajv@8.17.1)
-      atomically: 1.7.0
-      debounce-fn: 4.0.0
-      dot-prop: 6.0.1
-      env-paths: 2.2.1
-      json-schema-typed: 7.0.3
-      onetime: 5.1.2
-      pkg-up: 3.1.0
-      semver: 7.7.2
-    dev: false
 
   /confbox@0.1.8:
     resolution: {integrity: sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==}
@@ -19420,13 +19656,6 @@ packages:
       sqlite3:
         optional: true
 
-  /debounce-fn@4.0.0:
-    resolution: {integrity: sha512-8pYCQiL9Xdcg0UPSD3d+0KMlOjp+KGU5EPwYddgzQ7DATsg4fuUDjQtsYLmWjnk2obnNHgV3vE2Y4jejSOJVBQ==}
-    engines: {node: '>=10'}
-    dependencies:
-      mimic-fn: 3.1.0
-    dev: false
-
   /debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
     peerDependencies:
@@ -19437,7 +19666,7 @@ packages:
     dependencies:
       ms: 2.0.0
 
-  /debug@4.4.1(supports-color@10.2.2):
+  /debug@4.4.1:
     resolution: {integrity: sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==}
     engines: {node: '>=6.0'}
     peerDependencies:
@@ -19447,7 +19676,6 @@ packages:
         optional: true
     dependencies:
       ms: 2.1.3
-      supports-color: 10.2.2
 
   /debug@4.4.3(supports-color@10.2.2):
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -19668,7 +19896,7 @@ packages:
     hasBin: true
     dependencies:
       address: 1.2.2
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -19820,7 +20048,7 @@ packages:
     resolution: {integrity: sha512-ens7BiayssQz/uAxGzH8zGXCtiV24rRWXdjNha5V4zSOcxmAZsfGVm/PPFbwQdqEkDnhG+SyR9E3zSHUbOKXBQ==}
     engines: {node: '>= 8.0'}
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       readable-stream: 3.6.2
       split-ca: 1.0.1
       ssh2: 1.16.0
@@ -19879,13 +20107,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       is-obj: 2.0.0
-
-  /dot-prop@6.0.1:
-    resolution: {integrity: sha512-tE7ztYzXHIeyvc7N+hR3oi7FIbf/NIjVP9hmAt3yMXzrQ072/fpjGLx2GxNxGxUl5V73MEqYzioOMoVhGMJ5cA==}
-    engines: {node: '>=10'}
-    dependencies:
-      is-obj: 2.0.0
-    dev: false
 
   /dot-prop@9.0.0:
     resolution: {integrity: sha512-1gxPBJpI/pcjQhKgIU91II6Wkay+dLcN3M6rf2uwP8hRur3HtQXjVrdAK3sjC0piaEuxzMwjXChcETiJl47lAQ==}
@@ -20174,6 +20395,7 @@ packages:
   /env-paths@2.2.1:
     resolution: {integrity: sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==}
     engines: {node: '>=6'}
+    dev: true
 
   /env-paths@3.0.0:
     resolution: {integrity: sha512-dtJUTepzMW3Lm/NPxRf3wP4642UWhjL2sQxc+ym2YMj1m/H2zDNQOlezafzkHwn6sMstjHTwG6iQQsctDW/b1A==}
@@ -20942,7 +21164,7 @@ packages:
       content-type: 1.0.5
       cookie: 0.7.2
       cookie-signature: 1.2.2
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
@@ -21004,7 +21226,7 @@ packages:
     engines: {node: '>= 10.17.0'}
     hasBin: true
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       get-stream: 5.2.0
       yauzl: 2.10.0
     optionalDependencies:
@@ -21206,7 +21428,6 @@ packages:
 
   /fft.js@4.0.4:
     resolution: {integrity: sha512-f9c00hphOgeQTlDyavwTtu6RiK8AIFjD6+jvXkNkpeQ7rirK3uFWVpalkoS4LAwbdX7mfZ8aoBfFVQX1Re/8aw==}
-    dev: true
 
   /figlet@1.8.2:
     resolution: {integrity: sha512-iPCpE9B/rOcjewIzDnagP9F2eySzGeHReX8WlrZQJkqFBk2wvq8gY0c6U6Hd2y9HnX1LQcYSeP7aEHoPt6sVKQ==}
@@ -21302,7 +21523,7 @@ packages:
     resolution: {integrity: sha512-/t88Ty3d5JWQbWYgaOGCCYfXRwV1+be02WqYYlL6h0lEiUAMPM8o8qKGO01YIkOHzka2up08wvgYD0mDiI+q3Q==}
     engines: {node: '>= 0.8'}
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       on-finished: 2.4.1
@@ -21330,13 +21551,6 @@ packages:
     dependencies:
       locate-path: 2.0.0
     dev: true
-
-  /find-up@3.0.0:
-    resolution: {integrity: sha512-1yD6RmLI1XBfxugvORwlck6f75tYL+iR0jqwsOrOxMZyGYqUuDhJ0l4AXdO1iX/FTs9cBAMEk1gWSEx1kSbylg==}
-    engines: {node: '>=6'}
-    dependencies:
-      locate-path: 3.0.0
-    dev: false
 
   /find-up@4.1.0:
     resolution: {integrity: sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw==}
@@ -21414,7 +21628,7 @@ packages:
       debug:
         optional: true
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
 
   /fontaine@0.6.0:
     resolution: {integrity: sha512-cfKqzB62GmztJhwJ0YXtzNsmpqKAcFzTqsakJ//5COTzbou90LU7So18U+4D8z+lDXr4uztaAUZBonSoPDcj1w==}
@@ -22218,6 +22432,11 @@ packages:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
     dev: false
 
+  /graphql@16.11.0:
+    resolution: {integrity: sha512-mS1lbMsxgQj6hge1XZ6p7GPhbrtFwUFYi3wRzXAC/FmYnyXMTvvI3td3rjmQ2u8ewXueaSvRPWaEcgVVOT9Jnw==}
+    engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
+    dev: true
+
   /gtoken@7.1.0:
     resolution: {integrity: sha512-pCcEwRi+TKpMlxAQObHDQ56KawURgyAf6jtIY046fJ5tIv3zDe/LEIubckAO8fj6JnAxLdmWkUfNyulQ2iKdEw==}
     engines: {node: '>=14.0.0'}
@@ -22389,6 +22608,10 @@ packages:
     hasBin: true
     dev: true
 
+  /headers-polyfill@4.0.3:
+    resolution: {integrity: sha512-IScLbePpkvO846sIwOtOTDjutRMWdXdJmXdMvk6gCBHxFO8d+QKOQedyZSxFTTFYRSmlgSTDtXqqq4pcenBXLQ==}
+    dev: true
+
   /help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
     dev: false
@@ -22512,7 +22735,7 @@ packages:
     dependencies:
       '@tootallnate/once': 2.0.0
       agent-base: 6.0.2
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -22593,7 +22816,7 @@ packages:
     engines: {node: '>= 6'}
     dependencies:
       agent-base: 6.0.2
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -22602,7 +22825,7 @@ packages:
     engines: {node: '>= 14'}
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -22867,7 +23090,6 @@ packages:
   /install@0.13.0:
     resolution: {integrity: sha512-zDml/jzr2PKU9I8J/xyZBQn8rPCAY//UOYNmR01XwNwyfhEWObo2SWfSl1+0tm1u6PhxLwDnfsT/6jB7OUxqFA==}
     engines: {node: '>= 0.10'}
-    dev: true
 
   /ioredis@5.7.0:
     resolution: {integrity: sha512-NUcA93i1lukyXU+riqEyPtSEkyFq8tX90uL659J+qpCZ3rEdViB/APC58oAhIh3+bJln2hzdlZbBZsGNrlsR8g==}
@@ -22961,7 +23183,6 @@ packages:
 
   /is-any-array@2.0.1:
     resolution: {integrity: sha512-UtilS7hLRu++wb/WBAw9bNuP1Eg04Ivn1vERJck8zJthEvXCBEBpGR/33u/xLKWEQf95803oalHrVDptcAvFdQ==}
-    dev: true
 
   /is-arrayish@0.2.1:
     resolution: {integrity: sha512-zz06S8t0ozoDXMG+ube26zeCTNXcKIPJZJi8hBrF4idCLms4CG9QtK7qBl1boi5ODzFpjswb5JPmHCbMpjaYzg==}
@@ -23112,6 +23333,10 @@ packages:
   /is-network-error@1.3.0:
     resolution: {integrity: sha512-6oIwpsgRfnDiyEDLMay/GqCl3HoAtH5+RUKW29gYkL0QA+ipzpDLA16yQs7/RHCSu+BwgbJaOUqa4A99qNVQVw==}
     engines: {node: '>=16'}
+    dev: true
+
+  /is-node-process@1.2.0:
+    resolution: {integrity: sha512-Vg4o6/fqPxIjtxgUH5QLJhwZ7gW5diGCVlXpuUfELC62CuxM1iHcRe51f2W1FDy04Ai4KJkagKjx3XaqyfRKXw==}
     dev: true
 
   /is-npm@5.0.0:
@@ -23298,8 +23523,8 @@ packages:
   /isarray@1.0.0:
     resolution: {integrity: sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==}
 
-  /isbot@5.1.30:
-    resolution: {integrity: sha512-3wVJEonAns1OETX83uWsk5IAne2S5zfDcntD2hbtU23LelSqNXzXs9zKjMPOLMzroCgIjCfjYAEHrd2D6FOkiA==}
+  /isbot@5.1.31:
+    resolution: {integrity: sha512-DPgQshehErHAqSCKDb3rNW03pa2wS/v5evvUqtxt6TTnHRqAG8FdzcSSJs9656pK6Y+NT7K9R4acEYXLHYfpUQ==}
     engines: {node: '>=18'}
     dev: true
 
@@ -23328,7 +23553,7 @@ packages:
     resolution: {integrity: sha512-pzqtp31nLv/XFOzXGuvhCb8qhjmTVo5vjVk19XE4CRlSWz0KoeJ3bw9XsA7nOp9YBf4qHjwBxkDzKcME/J29Yg==}
     engines: {node: '>=8'}
     dependencies:
-      '@babel/core': 7.28.0
+      '@babel/core': 7.28.4
       '@babel/parser': 7.28.4
       '@istanbuljs/schema': 0.1.3
       istanbul-lib-coverage: 3.2.2
@@ -23363,7 +23588,7 @@ packages:
     resolution: {integrity: sha512-n3s8EwkdFIJCG3BPKBYvskgXGoy88ARzvegkitk60NxRdwltLOTaH7CUiMRXvwYorl0Q712iEjcWB+fK/MrWVw==}
     engines: {node: '>=10'}
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       istanbul-lib-coverage: 3.2.2
       source-map: 0.6.1
     transitivePeerDependencies:
@@ -23375,7 +23600,7 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       '@jridgewell/trace-mapping': 0.3.30
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       istanbul-lib-coverage: 3.2.2
     transitivePeerDependencies:
       - supports-color
@@ -23770,15 +23995,15 @@ packages:
     resolution: {integrity: sha512-Rm0BMWtxBcioHr1/OX5YCP8Uov4riHvKPknOGs804Zg9JGZgmIBkbtlxJC/7Z4msKYVbIJtfU+tKb8xlYNfdkw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@babel/core': 7.28.0
+      '@babel/core': 7.28.4
       '@babel/generator': 7.28.0
-      '@babel/plugin-syntax-jsx': 7.27.1(@babel/core@7.28.0)
-      '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.0)
+      '@babel/plugin-syntax-jsx': 7.27.1(@babel/core@7.28.4)
+      '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.4)
       '@babel/types': 7.28.4
       '@jest/expect-utils': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      babel-preset-current-node-syntax: 1.2.0(@babel/core@7.28.0)
+      babel-preset-current-node-syntax: 1.2.0(@babel/core@7.28.4)
       chalk: 4.1.2
       expect: 29.7.0
       graceful-fs: 4.2.11
@@ -23897,7 +24122,6 @@ packages:
   /js-levenshtein@1.1.6:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
     engines: {node: '>=0.10.0'}
-    dev: true
 
   /js-tiktoken@1.0.21:
     resolution: {integrity: sha512-biOj/6M5qdgx5TKjDnFT1ymSpM5tbd3ylwDtrQvFQSu0Z7bBYko2dF+W/aUkXUPuk6IVpRxk/3Q2sHOzGlS36g==}
@@ -24027,10 +24251,6 @@ packages:
 
   /json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
-
-  /json-schema-typed@7.0.3:
-    resolution: {integrity: sha512-7DE8mpG+/fVw+dTpjbxnx47TaMnDfOI1jwft9g1VybltZCduyRQPJPvc+zzKY9WPHxhPWczyFuYa6I8Mw4iU5A==}
-    dev: false
 
   /json-schema@0.4.0:
     resolution: {integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==}
@@ -24639,7 +24859,6 @@ packages:
       install: 0.13.0
       ml-matrix: 6.12.1
       ml-spectra-processing: 14.17.0
-    dev: true
 
   /lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
@@ -24662,7 +24881,7 @@ packages:
     dependencies:
       chalk: 5.5.0
       commander: 13.1.0
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       execa: 8.0.1
       lilconfig: 3.1.3
       listr2: 8.3.3
@@ -24688,7 +24907,7 @@ packages:
       get-port-please: 3.2.0
       h3: 1.15.4
       http-shutdown: 1.2.2
-      jiti: 2.5.1
+      jiti: 2.6.1
       mlly: 1.8.0
       node-forge: 1.3.1
       pathe: 1.1.2
@@ -24748,14 +24967,6 @@ packages:
       p-locate: 2.0.0
       path-exists: 3.0.0
     dev: true
-
-  /locate-path@3.0.0:
-    resolution: {integrity: sha512-7AO748wWnIhNqAuaty2ZWHkQHRSNfPVIsPIfwEOWO22AmaoVrWavlOcMR5nzTLNYvp36X220/maaRsrec1G65A==}
-    engines: {node: '>=6'}
-    dependencies:
-      p-locate: 3.0.0
-      path-exists: 3.0.0
-    dev: false
 
   /locate-path@5.0.0:
     resolution: {integrity: sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==}
@@ -24951,8 +25162,8 @@ packages:
   /lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
-  /lru-cache@11.1.0:
-    resolution: {integrity: sha512-QIXZUBJUx+2zHUdQujWejBkcD9+cs94tLn0+YL8UrCh+D5sCXZ4c7LaEH48pNwRY3MLDgqUFyhlCyjJPf1WP0A==}
+  /lru-cache@11.2.2:
+    resolution: {integrity: sha512-F9ODfyqML2coTIsQpSkRHnLSZMtkU8Q+mSfcaIyKwy58u+8k5nvAYeiNhsyMARvzNcXJ9QfWVrcPsC9e9rAxtg==}
     engines: {node: 20 || >=22}
     dev: true
 
@@ -25143,7 +25354,7 @@ packages:
     dependencies:
       ansi-escapes: 7.0.0
       ansi-regex: 6.1.0
-      chalk: 5.5.0
+      chalk: 5.6.2
       cli-highlight: 2.1.11
       cli-table3: 0.6.5
       marked: 9.1.6
@@ -25482,7 +25693,7 @@ packages:
     resolution: {integrity: sha512-zpe98Q6kvavpCr1NPVSCMebCKfD7CA2NqZ+rykeNhONIJBpc1tFKt9hucLGwha3jNTNI8lHpctWJWoimVF4PfA==}
     dependencies:
       '@types/debug': 4.1.12
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       decode-named-character-reference: 1.2.0
       devlop: 1.1.0
       micromark-core-commonmark: 2.0.3
@@ -25546,11 +25757,6 @@ packages:
   /mimic-fn@2.1.0:
     resolution: {integrity: sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==}
     engines: {node: '>=6'}
-
-  /mimic-fn@3.1.0:
-    resolution: {integrity: sha512-Ysbi9uYW9hFyfrThdDEQuykN4Ey6BuwPD2kpI5ES/nFTDn/98yxYNLZJcgUAKPT/mcrLLKaGzJR9YVxJrIdASQ==}
-    engines: {node: '>=8'}
-    dev: false
 
   /mimic-fn@4.0.0:
     resolution: {integrity: sha512-vqiC06CuhBTUdZH+RYl8sFrL096vA45Ok5ISO6sE/Mr1jRbGH4Csnhi8f3wKVl7x8mO4Au7Ir9D3Oyv1VYMFJw==}
@@ -25750,7 +25956,6 @@ packages:
     engines: {node: '>= 18'}
     dependencies:
       minipass: 7.1.2
-    dev: false
 
   /mitt@3.0.1:
     resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
@@ -25774,13 +25979,11 @@ packages:
     resolution: {integrity: sha512-BlEeg80jI0tW6WaPyGxf5Sa4sqvcyY6lbSn5Vcv44lp1I2GR6AWojfUvLnGTNsIXrZ8uqWmo8VcG1WpkI2ONMQ==}
     dependencies:
       is-any-array: 2.0.1
-    dev: true
 
   /ml-array-min@1.2.3:
     resolution: {integrity: sha512-VcZ5f3VZ1iihtrGvgfh/q0XlMobG6GQ8FsNyQXD3T+IlstDv85g8kfV0xUG1QPRO/t21aukaJowDzMTc7j5V6Q==}
     dependencies:
       is-any-array: 2.0.1
-    dev: true
 
   /ml-array-rescale@1.3.7:
     resolution: {integrity: sha512-48NGChTouvEo9KBctDfHC3udWnQKNKEWN0ziELvY3KG25GR5cA8K8wNVzracsqSW1QEkAXjTNx+ycgAv06/1mQ==}
@@ -25788,14 +25991,12 @@ packages:
       is-any-array: 2.0.1
       ml-array-max: 1.2.4
       ml-array-min: 1.2.3
-    dev: true
 
   /ml-matrix@6.12.1:
     resolution: {integrity: sha512-TJ+8eOFdp+INvzR4zAuwBQJznDUfktMtOB6g/hUcGh3rcyjxbz4Te57Pgri8Q9bhSQ7Zys4IYOGhFdnlgeB6Lw==}
     dependencies:
       is-any-array: 2.0.1
       ml-array-rescale: 1.3.7
-    dev: true
 
   /ml-spectra-processing@14.17.0:
     resolution: {integrity: sha512-IsegYLe16LCsRvwXdhOG0Y/6gYb9JU5rbLMMEI2OZSzcGQpGG6XAq2WE3IAkfWiRE2dCm4w3jzYWZlIJbCy1MA==}
@@ -25806,11 +26007,9 @@ packages:
       is-any-array: 2.0.1
       ml-matrix: 6.12.1
       ml-xsadd: 3.0.1
-    dev: true
 
   /ml-xsadd@3.0.1:
     resolution: {integrity: sha512-Fz2q6dwgzGM8wYKGArTUTZDGa4lQFA2Vi6orjGeTVRy22ZnQFKlJuwS9n8NRviqz1KHAHAzdKJwbnYhdo38uYg==}
-    dev: true
 
   /mlly@1.8.0:
     resolution: {integrity: sha512-l8D9ODSRWLe2KHJSifWGwBqpTZXIXTeo8mlKjY+E2HAakaTeNpqAyBZ8GSqLzHgw4XmHmC8whvpjJNMbFZN7/g==}
@@ -25898,6 +26097,40 @@ packages:
   /ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
+  /msw@2.11.6(@types/node@24.2.1)(typescript@5.9.2):
+    resolution: {integrity: sha512-MCYMykvmiYScyUm7I6y0VCxpNq1rgd5v7kG8ks5dKtvmxRUUPjribX6mUoUNBbM5/3PhUyoelEWiKXGOz84c+w==}
+    engines: {node: '>=18'}
+    hasBin: true
+    requiresBuild: true
+    peerDependencies:
+      typescript: '>= 4.8.x'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      '@inquirer/confirm': 5.1.19(@types/node@24.2.1)
+      '@mswjs/interceptors': 0.40.0
+      '@open-draft/deferred-promise': 2.2.0
+      '@types/statuses': 2.0.6
+      cookie: 1.0.2
+      graphql: 16.11.0
+      headers-polyfill: 4.0.3
+      is-node-process: 1.2.0
+      outvariant: 1.4.3
+      path-to-regexp: 6.3.0
+      picocolors: 1.1.1
+      rettime: 0.7.0
+      statuses: 2.0.2
+      strict-event-emitter: 0.5.1
+      tough-cookie: 6.0.0
+      type-fest: 4.41.0
+      typescript: 5.9.2
+      until-async: 3.0.2
+      yargs: 17.7.2
+    transitivePeerDependencies:
+      - '@types/node'
+    dev: true
+
   /muggle-string@0.4.1:
     resolution: {integrity: sha512-VNTrAak/KhO2i8dqqnqnAHOa3cYBwXEZe9h+D5h/1ZqFSTEFHdM65lR7RoIqq3tBBYavsOXV84NoHXZ0AkPyqQ==}
     dev: false
@@ -25932,6 +26165,11 @@ packages:
   /mute-stream@1.0.0:
     resolution: {integrity: sha512-avsJQhyd+680gKXyG/sQc0nXaC6rBkPOfyHYcFb9+hdkqQkR9bdnkJ0AMZhke0oesPqIO+mFFJ+IdBc7mst4IA==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
+  /mute-stream@2.0.0:
+    resolution: {integrity: sha512-WWdIxpyjEn+FhQJQQv9aQAYlHoNVdzIzUySNV1gHUPDSdZJ3yZn7pAAbQcV7B56Mvu881q9FZV+0Vx2xC44VWA==}
+    engines: {node: ^18.17.0 || >=20.5.0}
+    dev: true
 
   /mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
@@ -26034,7 +26272,7 @@ packages:
       content-type: 1.0.5
       cookie: 1.0.2
       cron-parser: 4.9.0
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       decache: 4.6.2
       dot-prop: 9.0.0
       dotenv: 17.2.2
@@ -27315,6 +27553,10 @@ packages:
     resolution: {integrity: sha512-/jHxFIzoMXdqPzTaCpFzAAWhpkSjZPF4Vsn6jAfNpmbH/ymsmd7Qc6VE9BGn0L6YMj6uwpQLxCECpus4ukKS9Q==}
     dev: true
 
+  /outvariant@1.4.3:
+    resolution: {integrity: sha512-+Sl2UErvtsoajRDKCE5/dBz4DIvHXQQnAxtQTF04OJxY0+DyZXSo5P5Bb7XYWOh81syohlYL24hbDwxedPUJCA==}
+    dev: true
+
   /oxc-minify@0.94.0:
     resolution: {integrity: sha512-7+9iyxwpzfjuiEnSqNJYzTsC1Oud742PPkr/4S1bGY930U4tApdLEK8zmgbT57c1/56cfNOndqZaeQZiAfnJ5A==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -27448,6 +27690,7 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       p-try: 2.2.0
+    dev: true
 
   /p-limit@3.1.0:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
@@ -27467,13 +27710,6 @@ packages:
     dependencies:
       p-limit: 1.3.0
     dev: true
-
-  /p-locate@3.0.0:
-    resolution: {integrity: sha512-x+12w/To+4GFfgJhBEpiDcLozRJGegY+Ei7/z0tSLkMmxGZNybVMSfWj9aJn8Z5Fc7dBUNJOOVgPv2H7IwulSQ==}
-    engines: {node: '>=6'}
-    dependencies:
-      p-limit: 2.3.0
-    dev: false
 
   /p-locate@4.1.0:
     resolution: {integrity: sha512-R79ZZ/0wAxKGu3oYMlz8jy/kbhsNrS7SKZ7PxEHBgJ5+F2mtFW2fK2cOtBh1cHYkQsbzFV7I+EoRKe6Yt0oK7A==}
@@ -27579,6 +27815,7 @@ packages:
   /p-try@2.2.0:
     resolution: {integrity: sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==}
     engines: {node: '>=6'}
+    dev: true
 
   /p-wait-for@5.0.2:
     resolution: {integrity: sha512-lwx6u1CotQYPVju77R+D0vFomni/AqRfqLmqQ8hekklqZ6gAY9rONh7lBQ0uxWMkC2AuX9b2DVAl8To0NyP1JA==}
@@ -27830,6 +28067,7 @@ packages:
   /path-exists@3.0.0:
     resolution: {integrity: sha512-bpC7GYwiDYQ4wYLe+FA8lhRjhQCMcQGuSgGGqDkg/QerRWw9CmGRT0iSOVRSZJ29NMLZgIzqaljJ63oaL4NIJQ==}
     engines: {node: '>=4'}
+    dev: true
 
   /path-exists@4.0.0:
     resolution: {integrity: sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==}
@@ -27883,7 +28121,7 @@ packages:
     resolution: {integrity: sha512-ypGJsmGtdXUOeM5u93TyeIEfEhM6s+ljAhrk5vAvSx8uyY/02OvrZnA0YNGUrPXfpJMgI1ODd3nwz8Npx4O4cg==}
     engines: {node: 20 || >=22}
     dependencies:
-      lru-cache: 11.1.0
+      lru-cache: 11.2.2
       minipass: 7.1.2
     dev: true
 
@@ -27936,6 +28174,7 @@ packages:
 
   /perfect-debounce@1.0.0:
     resolution: {integrity: sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA==}
+    dev: false
 
   /perfect-debounce@2.0.0:
     resolution: {integrity: sha512-fkEH/OBiKrqqI/yIgjR92lMfs2K8105zt/VT6+7eTjNwisrsh47CeIED9z58zI7DfKdH3uHAn25ziRZn3kgAow==}
@@ -28120,13 +28359,6 @@ packages:
       exsolve: 1.0.7
       pathe: 2.0.3
 
-  /pkg-up@3.1.0:
-    resolution: {integrity: sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA==}
-    engines: {node: '>=8'}
-    dependencies:
-      find-up: 3.0.0
-    dev: false
-
   /platform@1.3.6:
     resolution: {integrity: sha512-fnWVljUchTro6RiCFvCXBbNhJc2NijN7oIQxbwsyL0buWJPG85v81ehlHI9fXrJsMNgTofEoWIQeClKpgxFLrg==}
     dev: false
@@ -28173,7 +28405,7 @@ packages:
     engines: {node: '>= 10.12'}
     dependencies:
       async: 3.2.6
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -29416,7 +29648,7 @@ packages:
     resolution: {integrity: sha512-gAZ+kLqBdHarXB64XpAe2VCjB7rIRv+mU8tfRWziHRJ5umKsIHN2tLLv6EtMw7WCdP19S0ERVMldNvxYCHnhSQ==}
     engines: {node: '>=8.6.0'}
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       module-details-from-path: 1.0.4
       resolve: 1.22.10
     transitivePeerDependencies:
@@ -29551,6 +29783,10 @@ packages:
     resolution: {integrity: sha512-XQBQ3I8W1Cge0Seh+6gjj03LbmRFWuoszgK9ooCpwYIrhhoO80pfq4cUkU5DkknwfOfFteRwlZ56PYOGYyFWdg==}
     engines: {node: '>= 4'}
 
+  /rettime@0.7.0:
+    resolution: {integrity: sha512-LPRKoHnLKd/r3dVxcwO7vhCW+orkOGj9ViueosEBK6ie89CijnfRlhaDhHq/3Hxu4CkWQtxwlBG0mzTQY6uQjw==}
+    dev: true
+
   /reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
@@ -29593,7 +29829,7 @@ packages:
       sprintf-js: 1.1.3
     dev: false
 
-  /rolldown-plugin-dts@0.16.11(rolldown@1.0.0-beta.42)(typescript@5.9.2):
+  /rolldown-plugin-dts@0.16.11(rolldown@1.0.0-beta.44)(typescript@5.9.2):
     resolution: {integrity: sha512-9IQDaPvPqTx3RjG2eQCK5GYZITo203BxKunGI80AGYicu1ySFTUyugicAaTZWRzFWh9DSnzkgNeMNbDWBbSs0w==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
@@ -29621,36 +29857,35 @@ packages:
       dts-resolver: 2.1.2
       get-tsconfig: 4.10.1
       magic-string: 0.30.19
-      rolldown: 1.0.0-beta.42
+      rolldown: 1.0.0-beta.44
       typescript: 5.9.2
     transitivePeerDependencies:
       - oxc-resolver
       - supports-color
     dev: true
 
-  /rolldown@1.0.0-beta.42:
-    resolution: {integrity: sha512-xaPcckj+BbJhYLsv8gOqezc8EdMcKKe/gk8v47B0KPvgABDrQ0qmNPAiT/gh9n9Foe0bUkEv2qzj42uU5q1WRg==}
+  /rolldown@1.0.0-beta.44:
+    resolution: {integrity: sha512-gcqgyCi3g93Fhr49PKvymE8PoaGS0sf6ajQrsYaQ8o5de6aUEbD6rJZiJbhOfpcqOnycgsAsUNPYri1h25NgsQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     dependencies:
-      '@oxc-project/types': 0.94.0
-      '@rolldown/pluginutils': 1.0.0-beta.42
-      ansis: 4.2.0
+      '@oxc-project/types': 0.95.0
+      '@rolldown/pluginutils': 1.0.0-beta.44
     optionalDependencies:
-      '@rolldown/binding-android-arm64': 1.0.0-beta.42
-      '@rolldown/binding-darwin-arm64': 1.0.0-beta.42
-      '@rolldown/binding-darwin-x64': 1.0.0-beta.42
-      '@rolldown/binding-freebsd-x64': 1.0.0-beta.42
-      '@rolldown/binding-linux-arm-gnueabihf': 1.0.0-beta.42
-      '@rolldown/binding-linux-arm64-gnu': 1.0.0-beta.42
-      '@rolldown/binding-linux-arm64-musl': 1.0.0-beta.42
-      '@rolldown/binding-linux-x64-gnu': 1.0.0-beta.42
-      '@rolldown/binding-linux-x64-musl': 1.0.0-beta.42
-      '@rolldown/binding-openharmony-arm64': 1.0.0-beta.42
-      '@rolldown/binding-wasm32-wasi': 1.0.0-beta.42
-      '@rolldown/binding-win32-arm64-msvc': 1.0.0-beta.42
-      '@rolldown/binding-win32-ia32-msvc': 1.0.0-beta.42
-      '@rolldown/binding-win32-x64-msvc': 1.0.0-beta.42
+      '@rolldown/binding-android-arm64': 1.0.0-beta.44
+      '@rolldown/binding-darwin-arm64': 1.0.0-beta.44
+      '@rolldown/binding-darwin-x64': 1.0.0-beta.44
+      '@rolldown/binding-freebsd-x64': 1.0.0-beta.44
+      '@rolldown/binding-linux-arm-gnueabihf': 1.0.0-beta.44
+      '@rolldown/binding-linux-arm64-gnu': 1.0.0-beta.44
+      '@rolldown/binding-linux-arm64-musl': 1.0.0-beta.44
+      '@rolldown/binding-linux-x64-gnu': 1.0.0-beta.44
+      '@rolldown/binding-linux-x64-musl': 1.0.0-beta.44
+      '@rolldown/binding-openharmony-arm64': 1.0.0-beta.44
+      '@rolldown/binding-wasm32-wasi': 1.0.0-beta.44
+      '@rolldown/binding-win32-arm64-msvc': 1.0.0-beta.44
+      '@rolldown/binding-win32-ia32-msvc': 1.0.0-beta.44
+      '@rolldown/binding-win32-x64-msvc': 1.0.0-beta.44
     dev: true
 
   /rollup-plugin-inject@3.0.2:
@@ -29775,7 +30010,7 @@ packages:
     resolution: {integrity: sha512-nLTrUKm2UyiL7rlhapu/Zl45FwNgkZGaCpZbIHajDYgwlJCOzLSk+cIPAnsEqV955GjILJnKbdQC1nVPz+gAYQ==}
     engines: {node: '>= 18'}
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       depd: 2.0.0
       is-promise: 4.0.0
       parseurl: 1.3.3
@@ -29967,7 +30202,7 @@ packages:
     resolution: {integrity: sha512-uaW0WwXKpL9blXE2o0bRhoL2EGXIrZxQ2ZQ4mgcfoBxdFmQold+qWsD2jLrfZ0trjKL6vOw0j//eAwcALFjKSw==}
     engines: {node: '>= 18'}
     dependencies:
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
@@ -30300,7 +30535,7 @@ packages:
     engines: {node: '>= 10'}
     dependencies:
       agent-base: 6.0.2
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       socks: 2.8.7
     transitivePeerDependencies:
       - supports-color
@@ -30605,6 +30840,10 @@ packages:
     optionalDependencies:
       bare-events: 2.6.1
 
+  /strict-event-emitter@0.5.1:
+    resolution: {integrity: sha512-vMgjE/GGEPEFnhFub6pa4FmJBRBVOLpIII2hvCZ8Kzb7K0hlHo7mQv6xYrBvCL2LtAIBwFUK8wvuJgTVSQ5MFQ==}
+    dev: true
+
   /string-argv@0.3.2:
     resolution: {integrity: sha512-aqD2Q0144Z+/RqG52NeHEkZauTAUWJO8c6yTftGJKO3Tja5tUgIfmIl6kExvhtxSDP7fXB6DvzkfMpCd/F3G+Q==}
     engines: {node: '>=0.6.19'}
@@ -30734,6 +30973,7 @@ packages:
     resolution: {integrity: sha512-TcccoMhJOM3OebGhSBEmp3UZ2SfDMZUEBdRA/9ynfLi8yYajyWX3JiXArcJt4Umh4vISpspkQIY8ZZoCqjbviA==}
     dependencies:
       js-tokens: 9.0.1
+    dev: false
 
   /strip-literal@3.1.0:
     resolution: {integrity: sha512-8r3mkIM/2+PpjHoOtiAW8Rg3jJLHaV7xPwG+YRGrv6FP0wwk/toTpATxWYOW0BKdWwl82VT2tFYi5DlROa0Mxg==}
@@ -31050,7 +31290,6 @@ packages:
       minipass: 7.1.2
       minizlib: 3.1.0
       yallist: 5.0.0
-    dev: false
 
   /teeny-request@10.1.0:
     resolution: {integrity: sha512-3ZnLvgWF29jikg1sAQ1g0o+lr5JX6sVgYvfUJazn7ZjJroDBUTWp44/+cFVX0bULjv4vci+rBD+oGVAkWqhUbw==}
@@ -31118,7 +31357,7 @@ packages:
       archiver: 7.0.1
       async-lock: 1.4.1
       byline: 5.0.0
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       docker-compose: 0.24.8
       dockerode: 4.0.7
       get-port: 7.1.0
@@ -31226,7 +31465,7 @@ packages:
     resolution: {integrity: sha512-tX5e7OM1HnYr2+a2C/4V0htOcSQcoSTH9KgJnVvNm5zm/cyEWKJ7j7YutsH9CxMdtOkkLFy2AHrMci9IM8IPZQ==}
     engines: {node: '>=12.0.0'}
     dependencies:
-      fdir: 6.4.6(picomatch@4.0.3)
+      fdir: 6.5.0(picomatch@4.0.3)
       picomatch: 4.0.3
 
   /tinyglobby@0.2.15:
@@ -31262,12 +31501,23 @@ packages:
     resolution: {integrity: sha512-Je6p7pkk+KMzMv2XXKmAE3McmolOQFdxkKw0R8EYNr7sELW46JqnNeTX8ybPiQgvg1ymCoF8LXs5fzFaZvJPTA==}
     dev: false
 
+  /tldts-core@7.0.17:
+    resolution: {integrity: sha512-DieYoGrP78PWKsrXr8MZwtQ7GLCUeLxihtjC1jZsW1DnvSMdKPitJSe8OSYDM2u5H6g3kWJZpePqkp43TfLh0g==}
+    dev: true
+
   /tldts@6.1.86:
     resolution: {integrity: sha512-WMi/OQ2axVTf/ykqCQgXiIct+mSQDFdH2fkwhPwgEwvJ1kSzZRiinb0zF2Xb8u4+OqPChmyI6MEu4EezNJz+FQ==}
     hasBin: true
     dependencies:
       tldts-core: 6.1.86
     dev: false
+
+  /tldts@7.0.17:
+    resolution: {integrity: sha512-Y1KQBgDd/NUc+LfOtKS6mNsC9CCaH+m2P1RoIZy7RAPo3C3/t8X45+zgut31cRZtZ3xKPjfn3TkGTrctC2TQIQ==}
+    hasBin: true
+    dependencies:
+      tldts-core: 7.0.17
+    dev: true
 
   /tmp-promise@3.0.3:
     resolution: {integrity: sha512-RwM7MoPojPxsOBYnyd2hy0bxtIlVrihNs9pj5SUvY8Zz1sQcQG2tG1hSr8PDxfgEB8RNKDhqbIlroIarSNDNsQ==}
@@ -31345,6 +31595,13 @@ packages:
     dependencies:
       tldts: 6.1.86
     dev: false
+
+  /tough-cookie@6.0.0:
+    resolution: {integrity: sha512-kXuRi1mtaKMrsLUxz3sQYvVl37B0Ns6MzfrtV5DvJceE9bPyspOqk9xxv7XbZWcfLWbFmm997vl83qUWVJA64w==}
+    engines: {node: '>=16'}
+    dependencies:
+      tldts: 7.0.17
+    dev: true
 
   /tr46@0.0.3:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
@@ -31508,6 +31765,38 @@ packages:
       yn: 3.1.1
     dev: true
 
+  /ts-node@10.9.2(@swc/core@1.5.29)(@types/node@24.2.1)(typescript@5.9.2):
+    resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
+    hasBin: true
+    peerDependencies:
+      '@swc/core': '>=1.2.50'
+      '@swc/wasm': '>=1.2.50'
+      '@types/node': '*'
+      typescript: '>=2.7'
+    peerDependenciesMeta:
+      '@swc/core':
+        optional: true
+      '@swc/wasm':
+        optional: true
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      '@swc/core': 1.5.29(@swc/helpers@0.5.17)
+      '@tsconfig/node10': 1.0.11
+      '@tsconfig/node12': 1.0.11
+      '@tsconfig/node14': 1.0.3
+      '@tsconfig/node16': 1.0.4
+      '@types/node': 24.2.1
+      acorn: 8.15.0
+      acorn-walk: 8.3.4
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      typescript: 5.9.2
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
+    dev: true
+
   /ts-pattern@5.8.0:
     resolution: {integrity: sha512-kIjN2qmWiHnhgr5DAkAafF9fwb0T5OhMVSWrm8XEdTFnX6+wfXwYOFjeF86UZ54vduqiR7BfqScFmXSzSaH8oA==}
 
@@ -31554,8 +31843,8 @@ packages:
       empathic: 2.0.0
       hookable: 5.5.3
       publint: 0.3.12
-      rolldown: 1.0.0-beta.42
-      rolldown-plugin-dts: 0.16.11(rolldown@1.0.0-beta.42)(typescript@5.9.2)
+      rolldown: 1.0.0-beta.44
+      rolldown-plugin-dts: 0.16.11(rolldown@1.0.0-beta.44)(typescript@5.9.2)
       semver: 7.7.2
       tinyexec: 1.0.1
       tinyglobby: 0.2.15
@@ -31601,7 +31890,7 @@ packages:
       cac: 6.7.14
       chokidar: 4.0.3
       consola: 3.4.2
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       esbuild: 0.25.10
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
@@ -31612,7 +31901,7 @@ packages:
       source-map: 0.8.0-beta.0
       sucrase: 3.35.0
       tinyexec: 0.3.2
-      tinyglobby: 0.2.14
+      tinyglobby: 0.2.15
       tree-kill: 1.2.2
       typescript: 5.9.2
     transitivePeerDependencies:
@@ -31631,21 +31920,20 @@ packages:
       get-tsconfig: 4.10.1
     optionalDependencies:
       fsevents: 2.3.3
-    dev: true
 
   /tuf-js@1.1.7:
     resolution: {integrity: sha512-i3P9Kgw3ytjELUfpuKVDNBJvk4u5bXL6gskv572mcevPbSKCV3zt3djhmlEQ65yERjIbOSncy7U4cQJaB1CBCg==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
       '@tufjs/models': 1.0.4
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
       make-fetch-happen: 11.1.1
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /tw-animate-css@1.3.8:
-    resolution: {integrity: sha512-Qrk3PZ7l7wUcGYhwZloqfkWCmaXZAoqjkdbIDvzfGshwGtexa/DAs9koXxIkrpEasyevandomzCBAV1Yyop5rw==}
+  /tw-animate-css@1.4.0:
+    resolution: {integrity: sha512-7bziOlRqH0hJx80h/3mbicLW7o8qLsH5+RaLR2t+OHM3D0JlWGODQKQ4cxbK7WlvmUxpcj6Kgu6EKqjrGFe3QQ==}
     dev: true
 
   /tweetnacl@0.14.5:
@@ -32367,6 +32655,10 @@ packages:
       ofetch: 1.4.1
       ufo: 1.6.1
 
+  /until-async@3.0.2:
+    resolution: {integrity: sha512-IiSk4HlzAMqTUseHHe3VhIGyuFmN90zMTpD3Z3y8jeQbzLIq500MVM7Jq2vUAnTKAFPJrqwkzr6PoTcPhGcOiw==}
+    dev: true
+
   /untildify@4.0.0:
     resolution: {integrity: sha512-KK8xQ1mkzZeg9inewmFVDNkg3l5LUhoq9kN6iWYB/CC9YMG8HA+c1Q8HwDe6dEX7kErrEVNVBO3fWsVq5iDgtw==}
     engines: {node: '>=8'}
@@ -32591,11 +32883,9 @@ packages:
 
   /validate.io-array@1.0.6:
     resolution: {integrity: sha512-DeOy7CnPEziggrOO5CZhVKJw6S3Yi7e9e65R1Nl/RTN1vTQKnzjfvks0/8kQ40FP/dsjRAOd4hxmJ7uLa6vxkg==}
-    dev: true
 
   /validate.io-function@1.0.2:
     resolution: {integrity: sha512-LlFybRJEriSuBnUhQyG5bwglhh50EpTL2ul23MPIuR1odjO7XaMLFV8vHGwp7AZciFxtYOeiSCT5st+XSPONiQ==}
-    dev: true
 
   /vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
@@ -32632,7 +32922,7 @@ packages:
       vite: ^2.9.0 || ^3.0.0-0 || ^4.0.0-0 || ^5.0.0-0 || ^6.0.1 || ^7.0.0-0
     dependencies:
       birpc: 2.6.1
-      vite: 6.3.5(@types/node@24.2.1)
+      vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
       vite-hot-client: 2.1.0(vite@6.3.5)
     dev: false
 
@@ -32641,33 +32931,8 @@ packages:
     peerDependencies:
       vite: ^2.6.0 || ^3.0.0 || ^4.0.0 || ^5.0.0-0 || ^6.0.0-0 || ^7.0.0-0
     dependencies:
-      vite: 6.3.5(@types/node@24.2.1)
+      vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
     dev: false
-
-  /vite-node@3.2.4(@types/node@24.2.1):
-    resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
-    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
-    hasBin: true
-    dependencies:
-      cac: 6.7.14
-      debug: 4.4.1(supports-color@10.2.2)
-      es-module-lexer: 1.7.0
-      pathe: 2.0.3
-      vite: 6.3.5(@types/node@24.2.1)
-    transitivePeerDependencies:
-      - '@types/node'
-      - jiti
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - yaml
-    dev: true
 
   /vite-node@3.2.4(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4):
     resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
@@ -32789,7 +33054,7 @@ packages:
       perfect-debounce: 2.0.0
       sirv: 3.0.2
       unplugin-utils: 0.3.0
-      vite: 6.3.5(@types/node@24.2.1)
+      vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
       vite-dev-rpc: 1.1.0(vite@6.3.5)
     transitivePeerDependencies:
       - supports-color
@@ -32806,7 +33071,7 @@ packages:
       magic-string: 0.30.19
       pathe: 2.0.3
       source-map-js: 1.2.1
-      vite: 6.3.5(@types/node@24.2.1)
+      vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
       vue: 3.5.22(typescript@5.9.2)
     dev: false
 
@@ -32849,7 +33114,7 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vite@6.3.5(@types/node@24.2.1):
+  /vite@6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4):
     resolution: {integrity: sha512-cZn6NDFE7wdTpINgs++ZJ4N49W2vRp8LCKrn3Ob1kYNtOo21vfDoaV5GzBfLU4MovSAB8uNRm4jgzVQZ+mBzPQ==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
@@ -32892,65 +33157,14 @@ packages:
       '@types/node': 24.2.1
       esbuild: 0.25.9
       fdir: 6.4.6(picomatch@4.0.3)
+      jiti: 2.5.1
       picomatch: 4.0.3
       postcss: 8.5.6
       rollup: 4.46.2
       tinyglobby: 0.2.14
-    optionalDependencies:
-      fsevents: 2.3.3
-
-  /vite@6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4):
-    resolution: {integrity: sha512-cZn6NDFE7wdTpINgs++ZJ4N49W2vRp8LCKrn3Ob1kYNtOo21vfDoaV5GzBfLU4MovSAB8uNRm4jgzVQZ+mBzPQ==}
-    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
-    hasBin: true
-    peerDependencies:
-      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
-      jiti: '>=1.21.0'
-      less: '*'
-      lightningcss: ^1.21.0
-      sass: '*'
-      sass-embedded: '*'
-      stylus: '*'
-      sugarss: '*'
-      terser: ^5.16.0
-      tsx: ^4.8.1
-      yaml: ^2.4.2
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-      jiti:
-        optional: true
-      less:
-        optional: true
-      lightningcss:
-        optional: true
-      sass:
-        optional: true
-      sass-embedded:
-        optional: true
-      stylus:
-        optional: true
-      sugarss:
-        optional: true
-      terser:
-        optional: true
-      tsx:
-        optional: true
-      yaml:
-        optional: true
-    dependencies:
-      '@types/node': 24.2.1
-      esbuild: 0.25.10
-      fdir: 6.5.0(picomatch@4.0.3)
-      jiti: 2.5.1
-      picomatch: 4.0.3
-      postcss: 8.5.6
-      rollup: 4.50.2
-      tinyglobby: 0.2.15
       tsx: 4.20.4
     optionalDependencies:
       fsevents: 2.3.3
-    dev: true
 
   /vite@6.3.5(@types/node@24.2.1)(jiti@2.6.1):
     resolution: {integrity: sha512-cZn6NDFE7wdTpINgs++ZJ4N49W2vRp8LCKrn3Ob1kYNtOo21vfDoaV5GzBfLU4MovSAB8uNRm4jgzVQZ+mBzPQ==}
@@ -32993,13 +33207,13 @@ packages:
         optional: true
     dependencies:
       '@types/node': 24.2.1
-      esbuild: 0.25.10
-      fdir: 6.5.0(picomatch@4.0.3)
+      esbuild: 0.25.9
+      fdir: 6.4.6(picomatch@4.0.3)
       jiti: 2.6.1
       picomatch: 4.0.3
       postcss: 8.5.6
-      rollup: 4.50.2
-      tinyglobby: 0.2.15
+      rollup: 4.46.2
+      tinyglobby: 0.2.14
     optionalDependencies:
       fsevents: 2.3.3
     dev: false
@@ -33067,7 +33281,7 @@ packages:
       vite: 6.3.5(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
     dev: true
 
-  /vitest@3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0):
+  /vitest@3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)(msw@2.11.6):
     resolution: {integrity: sha512-LUCP5ev3GURDysTWiP47wRRUpLKMOfPh+yKTx3kVIEiu5KOMeqzpnYNsKyOoVrULivR8tLcks4+lga33Whn90A==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
@@ -33098,7 +33312,7 @@ packages:
       '@types/chai': 5.2.2
       '@types/node': 24.2.1
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@5.4.19)
+      '@vitest/mocker': 3.2.4(msw@2.11.6)(vite@5.4.19)
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4
@@ -33106,7 +33320,7 @@ packages:
       '@vitest/ui': 1.6.1(vitest@3.2.4)
       '@vitest/utils': 3.2.4
       chai: 5.2.1
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
       expect-type: 1.2.2
       jsdom: 22.1.0
       magic-string: 0.30.17
@@ -33119,7 +33333,7 @@ packages:
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
       vite: 5.4.19(@types/node@24.2.1)
-      vite-node: 3.2.4(@types/node@24.2.1)
+      vite-node: 3.2.4(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
       why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - jiti
@@ -33286,7 +33500,7 @@ packages:
     dependencies:
       chalk: 4.1.2
       commander: 9.5.0
-      debug: 4.4.1(supports-color@10.2.2)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -33793,7 +34007,6 @@ packages:
   /yoctocolors-cjs@2.1.2:
     resolution: {integrity: sha512-cYVsTjKl8b+FrnidjibDWskAv7UKOfcwaVZdp/it9n1s9fU3IkgDbhdIRKCW4JDsAlECJY0ytoVPT3sK6kideA==}
     engines: {node: '>=18'}
-    dev: false
 
   /yoctocolors@2.1.2:
     resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}

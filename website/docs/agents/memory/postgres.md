@@ -79,7 +79,6 @@ const agent = new Agent({
 | `connection`     | `string \| object` | Connection string or object with `host`, `port`, `database`, `user`, `password`, `ssl` |
 | `maxConnections` | `number`           | Connection pool size (default: `10`)                                                   |
 | `tablePrefix`    | `string`           | Table name prefix (default: `voltagent_memory`)                                        |
-| `storageLimit`   | `number`           | Max messages per conversation (default: `100`)                                         |
 | `debug`          | `boolean`          | Enable debug logging (default: `false`)                                                |
 
 ## Features
@@ -98,9 +97,9 @@ PostgreSQL version 12 or higher recommended.
 ### Conversation Storage
 
 - Messages stored per `userId` and `conversationId`
-- Oldest messages pruned when `storageLimit` exceeded
 - All `StorageAdapter` methods supported
 - Supports complex queries with filtering, pagination, and sorting
+- No automatic message pruning - all messages are preserved
 
 ### Working Memory
 
@@ -209,7 +208,6 @@ const memory = new Memory({
       ssl: true, // Enable SSL for production
     },
     maxConnections: 20, // Adjust based on load
-    storageLimit: 200, // Retain more history
   }),
 });
 
@@ -220,10 +218,48 @@ const agent = new Agent({
 });
 ```
 
+### Advanced SSL Configuration
+
+For databases requiring custom CA certificates or client certificates:
+
+```ts
+import fs from "fs";
+
+const memory = new Memory({
+  storage: new PostgreSQLMemoryAdapter({
+    connection: {
+      host: process.env.DB_HOST!,
+      port: parseInt(process.env.DB_PORT || "5432"),
+      database: process.env.DB_NAME!,
+      user: process.env.DB_USER!,
+      password: process.env.DB_PASSWORD!,
+      ssl: {
+        rejectUnauthorized: true,
+        ca: fs.readFileSync("/path/to/ca-certificate.crt").toString(),
+        // Optional: client certificate authentication
+        key: fs.readFileSync("/path/to/client-key.key").toString(),
+        cert: fs.readFileSync("/path/to/client-cert.crt").toString(),
+      },
+    },
+    maxConnections: 20,
+  }),
+});
+```
+
+The `ssl` option accepts either:
+
+- `boolean` - Simple SSL enable/disable
+- `ConnectionOptions` - Full TLS configuration object with support for:
+  - `ca` - Custom Certificate Authority
+  - `key` - Client private key
+  - `cert` - Client certificate
+  - `rejectUnauthorized` - Certificate validation control
+  - All other Node.js [TLS options](https://nodejs.org/api/tls.html#tls_tls_connect_options_callback)
+
 ### Security
 
-- Use SSL connections in production (`ssl: true`)
-- Store credentials in environment variables
+- Use SSL connections in production (`ssl: true` or advanced config)
+- Store credentials and certificates in environment variables or secure secret management
 - Implement regular database backups
 - Adjust `maxConnections` based on concurrent usage
 

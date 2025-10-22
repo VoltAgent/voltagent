@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type AgentTool, Tool, ToolManager, createTool } from "../index";
+import { type AgentTool, type ProviderTool, Tool, ToolManager, createTool } from "../index";
 import { createToolkit } from "../toolkit";
 import type { Toolkit } from "../toolkit";
 
@@ -121,11 +121,11 @@ describe("ToolManager", () => {
     });
   });
 
-  describe("prepareToolsForGeneration", () => {
+  describe("combineStaticAndRuntimeBaseTools", () => {
     it("should return a copy of all tools", () => {
       toolManager.addItems([mockTool1, mockTool2]);
 
-      const preparedTools = toolManager.prepareToolsForGeneration();
+      const preparedTools = toolManager.combineStaticAndRuntimeBaseTools();
       expect(preparedTools.length).toBe(2);
       expect(preparedTools[0].name).toBe("tool1");
       expect(preparedTools[1].name).toBe("tool2");
@@ -139,7 +139,7 @@ describe("ToolManager", () => {
 
       const dynamicTools = [mockTool2];
 
-      const preparedTools = toolManager.prepareToolsForGeneration(dynamicTools);
+      const preparedTools = toolManager.combineStaticAndRuntimeBaseTools(dynamicTools);
       expect(preparedTools.length).toBe(2);
       expect(preparedTools[0].name).toBe("tool1");
       expect(preparedTools[1].name).toBe("tool2");
@@ -155,7 +155,7 @@ describe("ToolManager", () => {
         tools: [mockTool2],
       });
 
-      const preparedTools = toolManager.prepareToolsForGeneration([testToolkit]);
+      const preparedTools = toolManager.combineStaticAndRuntimeBaseTools([testToolkit]);
       expect(preparedTools.length).toBe(2); // mockTool1 + mockTool2 from toolkit
       expect(preparedTools[0].name).toBe("tool1");
       expect(preparedTools[1].name).toBe("tool2");
@@ -179,7 +179,7 @@ describe("ToolManager", () => {
         tools: [mockTool2],
       });
 
-      const preparedTools = toolManager.prepareToolsForGeneration([
+      const preparedTools = toolManager.combineStaticAndRuntimeBaseTools([
         mockTool1,
         testToolkit,
         mockTool3,
@@ -211,5 +211,87 @@ describe("ToolManager", () => {
     it("should return false if tool doesn't exist", () => {
       expect(toolManager.hasTool("nonExistentTool")).toBe(false);
     });
+  });
+});
+
+// Provider tools tests
+describe("provider-defined tools", () => {
+  let manager: ToolManager;
+  beforeEach(() => {
+    manager = new ToolManager();
+  });
+
+  const createProviderTool = (name: string): ProviderTool =>
+    ({
+      type: "provider-defined",
+      name,
+      description: `Provider tool ${name}`,
+    }) as unknown as ProviderTool;
+
+  it("should add a standalone provider tool and expose via getProviderTools but not getTools", () => {
+    const providerTool = createProviderTool("prov1");
+
+    const added = manager.addTool(providerTool); // method accepts union
+    expect(added).toBe(true);
+
+    // provider tools should not appear in base tools list
+    expect(manager.getTools().map((t) => t.name)).toEqual([]);
+
+    // but should appear in provider tools list
+    const providerTools = manager.getProviderTools();
+    expect(providerTools).toHaveLength(1);
+    expect(providerTools[0].name).toBe("prov1");
+
+    // hasTool should consider provider tools too
+    expect(manager.hasTool("prov1")).toBe(true);
+  });
+
+  it("should collect provider tools from toolkits", () => {
+    const providerTool = createProviderTool("prov-in-kit");
+
+    const kit = createToolkit({
+      name: "kit-with-provider",
+      description: "A toolkit containing a provider tool",
+      tools: [providerTool],
+    });
+
+    const addedKit = manager.addToolkit(kit);
+    expect(addedKit).toBe(true);
+
+    // getProviderTools aggregates both standalone and toolkit tools
+    const providerTools = manager.getProviderTools();
+    expect(providerTools.map((t) => (t as ProviderTool).name)).toEqual(["prov-in-kit"]);
+
+    // provider tools from toolkit should still be excluded from getTools
+    expect(manager.getTools()).toHaveLength(0);
+  });
+
+  it("should prevent adding a toolkit when a provider tool name conflicts with existing standalone provider tool", () => {
+    const providerTool = createProviderTool("dup-prov");
+    expect(manager.addTool(providerTool as unknown as AgentTool)).toBe(true);
+
+    const kitWithConflict = createToolkit({
+      name: "conflicting-kit",
+      tools: [createProviderTool("dup-prov") as unknown as AgentTool],
+    });
+
+    // addToolkit should refuse due to name conflict
+    expect(manager.addToolkit(kitWithConflict)).toBe(false);
+
+    // Provider tools list should still contain only the standalone one
+    expect(manager.getProviderTools().map((t) => (t as ProviderTool).name)).toEqual(["dup-prov"]);
+  });
+
+  it("should remove standalone provider tool via removeTool", () => {
+    const providerTool = createProviderTool("to-remove");
+    manager.addTool(providerTool as unknown as AgentTool);
+
+    expect(manager.hasTool("to-remove")).toBe(true);
+    expect(manager.getProviderTools()).toHaveLength(1);
+
+    // remove it
+    expect(manager.removeTool("to-remove")).toBe(true);
+    expect(manager.hasTool("to-remove")).toBe(false);
+    expect(manager.getProviderTools()).toHaveLength(0);
   });
 });

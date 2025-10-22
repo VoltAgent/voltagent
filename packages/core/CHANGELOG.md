@@ -1,5 +1,127 @@
 # @voltagent/core
 
+## 1.1.31
+
+### Patch Changes
+
+- [#711](https://github.com/VoltAgent/voltagent/pull/711) [`461ecec`](https://github.com/VoltAgent/voltagent/commit/461ecec60aa90b56a413713070b6e9f43efbd74b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: sanitize stored assistant/tool messages so GPT-5 conversations no longer crash with "missing reasoning item" errors when replaying memory history
+
+  fixes:
+  - #706
+
+## 1.1.30
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+
+## 1.1.29
+
+### Patch Changes
+
+- [`d5170ce`](https://github.com/VoltAgent/voltagent/commit/d5170ced80fbc9fd2de03bb7eaff1cb31424d618) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add runtime payload support for evals
+
+## 1.1.28
+
+### Patch Changes
+
+- [#688](https://github.com/VoltAgent/voltagent/pull/688) [`5b9484f`](https://github.com/VoltAgent/voltagent/commit/5b9484f1c6643fd8a8d2547be640ccd296ef2266) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add guardrails - #677
+
+  ## Guardrails overview
+  - streamText/generateText now run guardrails through a dedicated pipeline
+    - streaming handlers can redact or drop chunks in-flight
+    - final handlers see the original and sanitized text + provider metadata
+  - guardrail spans inherit the guardrail name so VoltOps shows human-readable labels
+  - helper factories: createSensitiveNumberGuardrail, createEmailRedactorGuardrail, createPhoneNumberGuardrail, createProfanityGuardrail, createMaxLengthGuardrail, createDefaultPIIGuardrails, createDefaultSafetyGuardrails
+
+  ### Usage
+
+  ```ts
+  import { Agent } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+  import { createSensitiveNumberGuardrail, createDefaultSafetyGuardrails } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Guarded Assistant",
+    instructions: "Answer without leaking PII.",
+    model: openai("gpt-4o-mini"),
+    outputGuardrails: [
+      createSensitiveNumberGuardrail(),
+      createDefaultSafetyGuardrails({ maxLength: { maxCharacters: 400 } }),
+    ],
+  });
+
+  const response = await agent.streamText("Customer card 4242 4242 1234 5678");
+  console.log(await response.text); // Sanitized output with digits redacted + length capped
+  ```
+
+## 1.1.27
+
+### Patch Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add live evals
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - ## What Changed
+
+  Removed automatic message pruning functionality from all storage adapters (PostgreSQL, Supabase, LibSQL, and InMemory). Previously, messages were automatically deleted when the count exceeded `storageLimit` (default: 100 messages per conversation).
+
+  ## Why This Change
+
+  Users reported unexpected data loss when their conversation history exceeded the storage limit. Many users expect their conversation history to be preserved indefinitely rather than automatically deleted. This change gives users full control over their data retention policies.
+
+  ## Migration Guide
+
+  ### Before
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      storageLimit: 200, // Messages auto-deleted after 200
+    }),
+  });
+  ```
+
+  ### After
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      // No storageLimit - all messages preserved
+    }),
+  });
+  ```
+
+  ### If You Need Message Cleanup
+
+  Implement your own cleanup logic using the `clearMessages()` method:
+
+  ```ts
+  // Clear all messages for a conversation
+  await memory.clearMessages(userId, conversationId);
+
+  // Clear all messages for a user
+  await memory.clearMessages(userId);
+  ```
+
+  ## Affected Packages
+  - `@voltagent/core` - Removed `storageLimit` from types
+  - `@voltagent/postgres` - Removed from PostgreSQL adapter
+  - `@voltagent/supabase` - Removed from Supabase adapter
+  - `@voltagent/libsql` - Removed from LibSQL adapter
+
+  ## Impact
+  - ✅ No more unexpected data loss
+  - ✅ Users have full control over message retention
+  - ⚠️ Databases may grow larger over time (consider implementing manual cleanup)
+  - ⚠️ Breaking change: `storageLimit` parameter no longer accepted
+
 ## 1.1.26
 
 ### Patch Changes

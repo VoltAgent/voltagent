@@ -5,422 +5,169 @@ slug: /agents/tools
 
 # Tools
 
-Tools allow your agents to interact with external systems, APIs, databases, and perform specific actions. They are one of the most powerful features of VoltAgent, giving your agents the ability to affect the world beyond just generating text.
+Tools enable agents to interact with external systems, APIs, databases, and perform specific actions beyond generating text. An agent uses its model to decide when to call tools based on their descriptions and the current context.
 
-## Creating Basic Tools
+## Creating a Tool
 
-VoltAgent provides a `createTool` helper function that makes it easy to create type-safe tools with full IntelliSense support. Let's start with a simple example - a calculator tool:
+Use `createTool` to define a tool with type-safe parameters and execution logic.
 
 ```ts
 import { createTool } from "@voltagent/core";
 import { z } from "zod";
 
-const calculatorTool = createTool({
-  name: "calculate",
-  description: "Perform a mathematical calculation",
+const weatherTool = createTool({
+  name: "get_weather",
+  description: "Get current weather for a location",
   parameters: z.object({
-    expression: z.string().describe("The mathematical expression to evaluate, e.g. (2 + 2) * 3"),
+    location: z.string().describe("The city name"),
   }),
-  execute: async (args) => {
-    try {
-      // In production, use a secure math parser instead of eval
-      const result = eval(args.expression);
-      return { result };
-    } catch (error) {
-      throw new Error(`Invalid expression: ${args.expression}`);
-    }
+  execute: async ({ location }) => {
+    // Call weather API
+    const response = await fetch(`https://api.weather.com/current?city=${location}`);
+    const data = await response.json();
+
+    return {
+      location,
+      temperature: data.temp,
+      conditions: data.conditions,
+    };
   },
 });
 ```
 
-This tool takes a mathematical expression as input and returns the calculated result. Notice how the `execute` function automatically infers its parameter types from the Zod schema defined in `parameters`. This provides full IntelliSense support in your IDE, helping catch errors during development.
+Each tool has:
 
-## Understanding Tools
+- **name**: Unique identifier
+- **description**: Explains what the tool does (the model uses this to decide when to call it)
+- **parameters**: Input schema defined with Zod
+- **execute**: Function that runs when the tool is called
 
-A tool in VoltAgent is a function that an agent can call to perform an action or retrieve information. Each tool has:
+The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
 
-- **Name**: A unique identifier for the tool
-- **Description**: Explains what the tool does (the agent uses this to decide when to use the tool)
-- **Parameters**: The inputs the tool requires, defined using Zod schemas
-- **Execute function**: The code that runs when the tool is called
+## Using Tools with Agents
 
-## Using Tools with an Agent
-
-To use a tool with an agent, simply include it in the agent's configuration. When you interact with the agent (e.g., using `generateText` or `streamText`), the LLM will decide based on the prompt and the tool's description whether using the tool is appropriate to fulfill the request.
+Add tools when creating an agent. The model decides when to use them based on the user's input and tool descriptions.
 
 ```ts
 import { Agent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
-  name: "Calculator Assistant",
-  instructions: "An assistant that can perform calculations",
+  name: "Weather Assistant",
+  instructions: "An assistant that provides weather information",
   model: openai("gpt-4o"),
-  tools: [calculatorTool],
+  tools: [weatherTool],
 });
 
-// The agent can now use the calculator tool when needed
-// const response = await agent.generateText("What is 123 * 456?");
-// console.log(response.text);
+// The model calls the tool when appropriate
+const response = await agent.generateText("What's the weather in Paris?");
+console.log(response.text);
+// "The current weather in Paris is 22°C and sunny."
 ```
 
-## Using Multiple Tools Together
+### Using Multiple Tools
 
-Agents become more powerful when they can use multiple tools together. Here's an example of an agent that can both check the weather and perform calculations:
+Agents can use multiple tools together to answer complex queries.
 
 ```ts
-import { Agent, createTool } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
-
-// Calculator tool
 const calculatorTool = createTool({
   name: "calculate",
-  description: "Perform a mathematical calculation",
+  description: "Perform mathematical calculations",
   parameters: z.object({
     expression: z.string().describe("The mathematical expression to evaluate"),
   }),
-  execute: async (args) => {
-    try {
-      // args is automatically typed as { expression: string }
-      const result = eval(args.expression);
-      return { result };
-    } catch (error) {
-      throw new Error(`Invalid expression: ${args.expression}`);
-    }
+  execute: async ({ expression }) => {
+    // Use a safe math parser in production
+    const result = eval(expression);
+    return { result };
   },
 });
 
-// Weather tool
-const weatherTool = createTool({
-  name: "get_weather",
-  description: "Get the current weather for a location",
-  parameters: z.object({
-    location: z.string().describe("The city name"),
-  }),
-  execute: async (args) => {
-    // args is automatically typed as { location: string }
-    const { location } = args;
-
-    // In a real implementation, you would call a weather API
-    // This is a simplified example
-    return {
-      location,
-      temperature: 22,
-      conditions: "sunny",
-    };
-  },
-});
-
-// Create an agent with multiple tools
-const multiToolAgent = new Agent({
+const agent = new Agent({
   name: "Multi-Tool Assistant",
   instructions: "An assistant that can check weather and perform calculations",
   model: openai("gpt-4o"),
-  tools: [calculatorTool, weatherTool],
+  tools: [weatherTool, calculatorTool],
 });
 
-// The agent can now use both tools in the same conversation
-const response = await multiToolAgent.generateText(
-  "What's the weather in Paris today? Also, what is 24 * 7?"
-);
-console.log(response.text);
-
-// Example response:
-// "The current weather in Paris is 22°C and sunny. As for your calculation, 24 * 7 = 168."
+const response = await agent.generateText("What's the weather in Paris? Also, what is 24 * 7?");
+// The model uses both tools and combines the results
 ```
 
-In this example, the agent can decide which tool to use based on the user's question. When asked both about the weather and a calculation, it will use both tools and combine the results into a single coherent response.
+### Dynamic Tool Registration
 
-## Type Safety with Tools
-
-When you use `createTool`, the type of the `args` parameter in the `execute` function is automatically inferred from the Zod schema you define in `parameters`. This provides several benefits:
-
-- **IntelliSense support**: Your IDE will show autocomplete suggestions for the properties of `args`
-- **Type checking**: TypeScript will catch errors if you try to access properties that don't exist
-- **Refactoring support**: When you change the schema, TypeScript will help you update all the places that use it
-- **Documentation**: The types serve as documentation for what data the tool expects
-
-For example, with this tool definition:
+Add tools to an agent after creation or provide them per request.
 
 ```ts
-const weatherTool = createTool({
-  name: "get_weather",
-  description: "Get the current weather for a location",
-  parameters: z.object({
-    location: z.string().describe("The city name"),
-    unit: z.enum(["celsius", "fahrenheit"]).optional().describe("Temperature unit"),
-  }),
-  execute: async (args) => {
-    // args is typed as { location: string; unit?: "celsius" | "fahrenheit" }
-    const { location, unit = "celsius" } = args;
-    // ...
-  },
-});
-```
+// Add tools after agent creation
+agent.addTools([calculatorTool]);
 
-The `args` parameter is automatically typed as `{ location: string; unit?: "celsius" | "fahrenheit" }`, giving you full IDE support without having to manually specify the type.
-
-## Tool Hooks
-
-VoltAgent provides lifecycle hooks that let you respond to tool execution events. This allows you to add logging, perform additional actions, or modify behavior when tools are used.
-
-### Using hooks
-
-The `onToolStart` hook is called just before a tool is executed, and `onToolEnd` is called after execution completes. These hooks are particularly useful for:
-
-- Logging tool usage
-- Updating UI when tools are running
-- Cleaning up resources after tool execution
-
-```ts
-import { Agent, createHooks, isAbortError } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
-
-// Define the hooks using createHooks
-const hooks = createHooks({
-  onToolStart({ agent, tool, context, args }) {
-    console.log(`Tool starting: ${tool.name}`);
-    console.log(`Agent: ${agent.name}`);
-    console.log(`Operation ID: ${context.operationId}`);
-  },
-  onToolEnd({ agent, tool, output, error, context }) {
-    console.log(`Tool completed: ${tool.name}`);
-
-    if (error) {
-      if (isAbortError(error)) {
-        console.log(`Tool was aborted: ${error.message}`);
-      } else {
-        console.error(`Tool failed: ${error.message}`);
-      }
-    } else {
-      console.log(`Result: ${JSON.stringify(output)}`);
-    }
-  },
-});
-
-// Create an agent with hooks
-const agent = new Agent({
-  name: "Assistant with Tool Hooks",
-  instructions: "An assistant that logs tool execution",
-  model: openai("gpt-4o"),
+// Provide tools for a specific request only
+const response = await agent.generateText("Calculate 123 * 456", {
   tools: [calculatorTool],
-  hooks: hooks,
-});
-
-// When the agent uses a tool, the hooks will be triggered
-// const response = await agent.generateText("What is 123 * 456?");
-```
-
-#### ToolDeniedError: Deny a tool and terminate the flow
-
-In policy or security scenarios you may want to prevent a tool from running and immediately stop the entire agent operation. Throw a ToolDeniedError from a hook (typically onToolStart) to do this. The agent will:
-
-- Stop the tool call immediately,
-- Surface the error to the caller as a ToolDeniedError, preserving httpStatus and code for programmatic handling.
-
-Example policy check in onToolStart:
-
-```ts
-import { createHooks, ToolDeniedError } from "@voltagent/core";
-
-const hooks = createHooks({
-  onToolStart({ tool, context, args }) {
-    const userId = context.userId;
-    const plan = context.userPlan; // your app can inject any context values
-
-    // Block expensive or restricted tools for non-pro users
-    if (tool.name === "search_web" && plan !== "pro") {
-      throw new ToolDeniedError({
-        toolName: tool.name,
-        message: "Pro plan required to use web search.",
-        code: "TOOL_PLAN_REQUIRED",
-        httpStatus: 402, // Payment Required (choose a suitable 4xx code)
-      });
-    }
-  },
 });
 ```
 
-Catching the termination when calling the agent:
+## OperationContext
+
+The `execute` function receives an `OperationContext` as its second parameter, providing access to operation metadata and control mechanisms.
 
 ```ts
-import { isToolDeniedError } from "@voltagent/core";
-
-try {
-  const res = await agent.generateText("Please search the web for ...", { hooks });
-} catch (err) {
-  if (isToolDeniedError(err)) {
-    // Access structured fields
-    console.log("Tool denied:", {
-      tool: err.name, // the tool name
-      status: err.httpStatus,
-      code: err.code,
-      message: err.message,
-    });
-    // Show a friendly UI, redirect to upgrade, etc.
-  } else {
-    // Other errors, including AbortError for generic cancellations
-    console.error("Operation failed:", err);
-  }
-}
-```
-
-Notes:
-
-- Throw ToolDeniedError from any hook (onToolStart is most common) to terminate early.
-- When ToolDeniedError is thrown, the agent aborts the entire flow; no further tool calls will be executed.
-- For generic cancellations (timeouts, user cancel), catch isAbortError; for policy denials, use isToolDeniedError.
-
-Allowed codes and custom codes:
-
-- Built-in codes you can use for `code`:
-  - TOOL_ERROR
-  - TOOL_FORBIDDEN
-  - TOOL_PLAN_REQUIRED
-  - TOOL_QUOTA_EXCEEDED
-- You can also supply any custom string for `code` to fit your app’s taxonomy, e.g. "TOOL_REGION_BLOCKED".
-- HTTP status must be a client error (4xx).
-
-Example using a custom code:
-
-```ts
-throw new ToolDeniedError({
-  toolName: "browser_screenshot",
-  message: "Screenshots are disabled for this tenant in EU region.",
-  code: "TOOL_REGION_BLOCKED", // custom application-specific code
-  httpStatus: 403,
-});
-```
-
-## Best Practices
-
-### Clear Descriptions
-
-Provide clear descriptions for your tools and parameters. The agent relies heavily on these descriptions to understand the tool's purpose, capabilities, and required inputs. Remember that the `.describe()` strings in your Zod parameter schemas are crucial information passed directly to the LLM.
-
-**Bad Example:**
-
-```ts
-const badTool = createTool({
-  name: "search",
-  description: "Searches things", // Vague, doesn't explain what it searches or when to use it
-  parameters: z.object({
-    q: z.string(), // Unclear parameter name with no description
-    n: z.number().optional(), // Unclear what this parameter does
-  }),
-  execute: async (args) => {
-    /* ... */
-  },
-});
-```
-
-**Good Example:**
-
-```ts
-const goodTool = createTool({
-  name: "search_web",
-  description:
-    "Searches the web for current information on a topic. Use this when you need to find recent or factual information that may not be in your training data.", // Clear purpose and usage guidance
-  parameters: z.object({
-    query: z
-      .string()
-      .describe("The search query. Should be specific and focused on what information is needed."),
-    results_count: z
-      .number()
-      .min(1)
-      .max(10)
-      .optional()
-      .describe("Number of results to return. Defaults to 3 if not specified."),
-  }),
-  execute: async (args) => {
-    /* ... */
-  },
-});
-```
-
-### Error Handling
-
-Implement proper error handling in your tool's execute function. Return useful error messages that the agent can understand.
-
-```ts
-execute: async (args) => {
-  try {
-    // Tool implementation
-    return result;
-  } catch (error) {
-    throw new Error(`Failed to process request: ${error.message}`);
-  }
-};
-```
-
-### Accessing Input in Tools
-
-Tools can access the original input provided to the agent operation through the `operationContext`. This is useful for debugging, logging, or when tools need context about the user's original request.
-
-```typescript
-import { createTool } from "@voltagent/core";
-import { z } from "zod";
-
 const debugTool = createTool({
   name: "log_debug_info",
-  description: "Logs debugging information including the original user input",
+  description: "Logs debugging information",
   parameters: z.object({
     message: z.string().describe("Debug message to log"),
   }),
-  execute: async (args, options) => {
+  execute: async (args, context) => {
+    // Access operation metadata
+    console.log("Operation ID:", context?.operationId);
+    console.log("User ID:", context?.userId);
+    console.log("Conversation ID:", context?.conversationId);
+
     // Access the original input
-    const originalInput = options?.operationContext?.input;
+    console.log("Original input:", context?.input);
 
-    console.log("Debug message:", args.message);
-    console.log("Original user input:", originalInput);
-    // originalInput can be: string, UIMessage[], or BaseMessage[]
+    // Access custom context values
+    const customValue = context?.context.get("customKey");
 
-    // You can also access other context information
-    console.log("Operation ID:", options?.operationContext?.operationId);
-    console.log("User ID:", options?.operationContext?.userId);
-    console.log("Conversation ID:", options?.operationContext?.conversationId);
+    // Check if operation is still active
+    if (!context?.isActive) {
+      throw new Error("Operation has been cancelled");
+    }
 
-    return `Debug info logged for input: ${typeof originalInput === "string" ? originalInput : "[messages]"}`;
+    return `Logged: ${args.message}`;
   },
 });
-
-// Use the tool in an agent
-const debugAgent = new Agent({
-  name: "Debug Assistant",
-  model: openai("gpt-4o"),
-  tools: [debugTool],
-  instructions: "You are a helpful assistant. Use the log_debug_info tool when asked to debug.",
-});
-
-// The tool can now access the original input
-await debugAgent.generateText("Debug this request for me");
 ```
 
-**Note**: The `output` field is only available after the generation completes, so it's primarily useful in hooks rather than during tool execution.
+The `OperationContext` contains:
 
-### Cancellable Tools with AbortController
+- `operationId`: Unique identifier for this operation
+- `userId`: Optional user identifier
+- `conversationId`: Optional conversation identifier
+- `context`: Map for user-provided context values
+- `systemContext`: Map for internal system values
+- `isActive`: Whether the operation is still active
+- `input`: The original input (string, UIMessage[], or BaseMessage[])
+- `abortController`: AbortController for cancelling the operation
+- `logger`: Execution-scoped logger with full context
+- `traceContext`: OpenTelemetry trace context
+- `elicitation`: Optional function for requesting user input
 
-For long-running tools, implement cancellation with AbortController. This allows tools to be gracefully cancelled when needed, such as when a user cancels a request or when an operation times out.
+## Cancellation with AbortController
 
-Tools receive an options object as their second parameter, which contains the operation context with an AbortController. The tool can:
-
-- **Check if already aborted** using `signal.aborted`
-- **Listen for abort events** using `signal.addEventListener('abort', ...)`
-- **Trigger abort** using `abortController.abort()` to cancel the entire agent operation
-
-> **Important**: When a tool calls `abortController.abort()`, it cancels the entire agent operation, not just the current tool execution. This will stop any subsequent tool calls and cause the agent to throw an `AbortError`.
+Tools can respond to cancellation signals and cancel the entire operation when needed.
 
 ```ts
 const searchTool = createTool({
   name: "search_web",
-  description: "Search the web for current information",
+  description: "Search the web for information",
   parameters: z.object({
     query: z.string().describe("The search query"),
   }),
-  execute: async (args, options) => {
-    // Extract the AbortController from operation context
-    const abortController = options?.operationContext?.abortController;
+  execute: async (args, context) => {
+    const abortController = context?.abortController;
     const signal = abortController?.signal;
 
     // Check if already aborted
@@ -430,26 +177,22 @@ const searchTool = createTool({
 
     // Tool can trigger abort to cancel the entire operation
     if (args.query.includes("forbidden")) {
-      // This will abort the entire agent operation, not just this tool
-      abortController?.abort("Forbidden query detected - cancelling entire operation");
+      abortController?.abort("Forbidden query detected");
       throw new Error("Search query contains forbidden terms");
     }
 
-    // Example of a fetch operation that respects abort signal
     try {
-      const response = await fetch(`https://api.search.com?q=${args.query}`, {
-        signal: signal, // Pass the signal to fetch
-      });
+      // Pass signal to fetch for cancellation support
+      const response = await fetch(`https://api.search.com?q=${args.query}`, { signal });
 
-      // Tool can also abort based on response
+      // Abort based on response
       if (!response.ok && response.status === 429) {
-        abortController?.abort("Rate limit exceeded - stopping all operations");
+        abortController?.abort("Rate limit exceeded");
         throw new Error("API rate limit exceeded");
       }
 
       return await response.json();
     } catch (error) {
-      // If fetch was aborted, it will throw an AbortError
       if (error.name === "AbortError") {
         throw new Error("Search was cancelled during execution");
       }
@@ -459,43 +202,19 @@ const searchTool = createTool({
 });
 ```
 
-When calling a tool directly, you can pass an AbortController:
-
-```ts
-// Create an AbortController
-const abortController = new AbortController();
-
-// Set a timeout to abort after 5 seconds
-setTimeout(() => abortController.abort("Operation timeout"), 5000);
-
-try {
-  // Pass the abortController directly
-  const result = await searchTool.execute({ query: "Latest AI developments" }, { abortController });
-  console.log("Results:", result);
-} catch (error) {
-  if (error.name === "AbortError") {
-    console.log("Search was cancelled");
-  } else {
-    console.error("Search failed:", error);
-  }
-}
-```
-
-When using tools with an agent, you can pass the AbortController in the options of the agent's generateText or streamText methods:
+When calling an agent with an abort signal:
 
 ```ts
 import { isAbortError } from "@voltagent/core";
 
-// Create an AbortController
 const abortController = new AbortController();
 
-// Set a timeout to abort after 30 seconds
+// Set timeout to abort after 30 seconds
 setTimeout(() => abortController.abort("Operation timeout"), 30000);
 
 try {
-  // Pass the signal to the agent (recommended)
   const response = await agent.generateText("Search for the latest AI developments", {
-    abortSignal: abortController.signal, // Agent propagates an internal controller to tools
+    abortSignal: abortController.signal,
   });
   console.log(response.text);
 } catch (error) {
@@ -507,152 +226,64 @@ try {
 }
 ```
 
-The AbortSignal mechanism is particularly useful for:
-
-- User-initiated cancellations
-- Implementing timeouts for slow operations
-- Gracefully stopping batch operations
-- Preventing unnecessary work when results are no longer needed
-
-### Timeout Handling
-
-For tools that call external APIs, implement timeout handling. While `Promise.race` can be used, the `AbortController` pattern often integrates more cleanly, especially with `fetch` and the agent's own signal propagation.
-
-```ts
-execute: async (args) => {
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error("Request timed out")), 5000);
-  });
-
-  const resultPromise = fetchDataFromApi(args);
-
-  return Promise.race([resultPromise, timeoutPromise]);
-};
-```
-
-Alternatively, using AbortController with a timeout:
-
-```ts
-execute: async (args, options) => {
-  // Get parent abort controller if provided
-  const parentController = options?.operationContext?.abortController;
-
-  // Create a new AbortController for timeout
-  const timeoutController = new AbortController();
-
-  // Create a timeout that will abort the controller
-  const timeoutId = setTimeout(() => {
-    timeoutController.abort("Operation timed out");
-  }, 5000); // 5-second timeout
-
-  try {
-    // Listen to parent abort if provided
-    if (parentController?.signal) {
-      parentController.signal.addEventListener("abort", () => {
-        timeoutController.abort("Parent operation aborted");
-        clearTimeout(timeoutId);
-      });
-    }
-
-    // Use our controller's signal for the API call
-    const result = await fetchDataFromApi(args, { signal: timeoutController.signal });
-    clearTimeout(timeoutId); // Clear the timeout if the operation completed successfully
-    return result;
-  } catch (error) {
-    clearTimeout(timeoutId); // Ensure timeout is cleared on error too
-    throw error;
-  }
-};
-```
-
-## Dynamic Tool Registration
-
-You can add tools to an agent after it's been created:
-
-```ts
-import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
-import { openai } from "@ai-sdk/openai";
-
-// Create an agent without tools initially
-const agent = new Agent({
-  name: "Dynamic Assistant",
-  instructions: "An assistant that can gain new abilities",
-  model: openai("gpt-4o"),
-});
-
-// Later, add tools to the agent
-agent.addTools([calculatorTool]);
-
-// You can also add toolkits
-agent.addTools([myToolkit]);
-
-// Or provide tools for a specific request only
-const response = await agent.generateText("Calculate 123 * 456", {
-  tools: [calculatorTool],
-});
-```
-
-## Tool Types
-
-1. **Client-side Tools**: Execute client-side, don't return data
-   - Change theme
-   - Show notifications
-   - Get location
-   - Read clipboard
-   - Ask for confirmation
-
-2. **Server Tools**: Traditional server-side execution
-   - Get weather
-   - Database queries
-
 ## Client-Side Tools
 
-Client-side tools are tools that run in your browser or client application instead of on the server. They're perfect for things that need user permission or access to browser features.
+Client-side tools execute in the browser or client application instead of on the server. They're useful for accessing browser APIs, user permissions, or client-specific features.
 
-### What makes a tool client-side?
+For a complete working setup, see the example: [with-client-side-tools](https://github.com/VoltAgent/voltagent/tree/main/examples/with-client-side-tools).
 
-Simple: Don't give it an `execute` function. That's it!
+### What Makes a Tool Client-Side?
+
+A tool without an `execute` function is automatically client-side.
 
 ```ts
-// This is a client-side tool (no execute function)
-const showNotificationTool = createTool({
-  name: "show_notification",
-  description: "Shows a browser notification to the user",
-  parameters: z.object({
-    title: z.string().describe("Notification title"),
-    message: z.string().describe("Notification message"),
-  }),
-  // No execute function = client-side tool
-});
-```
-
-### How It Works
-
-### 1. Define Tools (No Execute = Client-Side)
-
-```typescript
 // Client-side tool (no execute function)
 const getLocationTool = createTool({
   name: "getLocation",
-  description: "Get user's current location",
+  description: "Get the user's current location",
   parameters: z.object({}),
-  // No execute = automatically client-side
+  // No execute = client-side
+});
+
+// Another client-side tool
+const readClipboardTool = createTool({
+  name: "readClipboard",
+  description: "Read content from the user's clipboard",
+  parameters: z.object({}),
+});
+
+// Server-side tool (has execute)
+const getWeatherTool = createTool({
+  name: "getWeather",
+  description: "Get current weather for a city",
+  parameters: z.object({
+    city: z.string().describe("City name"),
+  }),
+  execute: async ({ city }) => {
+    const response = await fetch(`https://api.weather.com/current?city=${city}`);
+    return await response.json();
+  },
 });
 ```
 
-### 2. Handle Client-Side Tools with useChat
+### Handling Client-Side Tools
 
-```typescript
-const [result, setResult] = useState<ClientSideToolResult | null>(null);
+Use the `onToolCall` callback with `useChat` to handle client-side tool execution.
 
-const { messages, input, handleSubmit, addToolResult } = useChat({
-  // Automatic client-side tool execution
-  async onToolCall({ toolCall }) {
+```tsx
+import { useChat } from "@ai-sdk/react";
+import type { ClientSideToolResult } from "@voltagent/core";
+import { useState, useEffect, useCallback } from "react";
+
+function Chat() {
+  const [result, setResult] = useState<ClientSideToolResult | null>(null);
+
+  const handleToolCall = useCallback(async ({ toolCall }) => {
+    // Handle automatic execution for getLocation
     if (toolCall.toolName === "getLocation") {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const payload: ClientSideToolResult = {
+          setResult({
             tool: "getLocation",
             toolCallId: toolCall.toolCallId,
             output: {
@@ -660,57 +291,307 @@ const { messages, input, handleSubmit, addToolResult } = useChat({
               longitude: position.coords.longitude,
               accuracy: position.coords.accuracy,
             },
-          };
-          setResult(payload);
+          });
         },
         (error) => {
-          const payload: ClientSideToolResult = {
+          setResult({
             state: "output-error",
             tool: "getLocation",
             toolCallId: toolCall.toolCallId,
             errorText: error.message,
-          };
-          setResult(payload);
+          });
         }
       );
+    }
+  }, []);
+
+  const { messages, sendMessage, addToolResult, status } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    onToolCall: handleToolCall,
+  });
+
+  // Send results back to the model
+  useEffect(() => {
+    if (!result) return;
+    addToolResult(result);
+  }, [result, addToolResult]);
+
+  return (
+    <div>
+      {messages.map((message) => (
+        <div key={message.id}>{/* Render message */}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Interactive Client-Side Tools
+
+For tools requiring user interaction, render UI components:
+
+```tsx
+function ReadClipboardTool({
+  callId,
+  state,
+  addToolResult,
+}: {
+  callId: string;
+  state?: string;
+  addToolResult: (res: ClientSideToolResult) => void;
+}) {
+  if (state === "input-streaming" || state === "input-available") {
+    return (
+      <div>
+        <p>Allow access to your clipboard?</p>
+        <button
+          onClick={async () => {
+            try {
+              const text = await navigator.clipboard.readText();
+              addToolResult({
+                tool: "readClipboard",
+                toolCallId: callId,
+                output: { content: text },
+              });
+            } catch {
+              addToolResult({
+                state: "output-error",
+                tool: "readClipboard",
+                toolCallId: callId,
+                errorText: "Clipboard access denied",
+              });
+            }
+          }}
+        >
+          Yes
+        </button>
+        <button
+          onClick={() =>
+            addToolResult({
+              state: "output-error",
+              tool: "readClipboard",
+              toolCallId: callId,
+              errorText: "Access denied",
+            })
+          }
+        >
+          No
+        </button>
+      </div>
+    );
+  }
+  return <div>readClipboard: {state}</div>;
+}
+```
+
+**Important**: You must call `addToolResult` to send the tool result back to the model. Without this, the model considers the tool call a failure.
+
+## Tool Hooks
+
+Hooks let you respond to tool execution events for logging, UI updates, or additional actions.
+
+```ts
+import { Agent, createHooks, isAbortError } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const hooks = createHooks({
+  onToolStart({ agent, tool, context, args }) {
+    console.log(`Tool starting: ${tool.name}`);
+    console.log(`Agent: ${agent.name}`);
+    console.log(`Operation ID: ${context.operationId}`);
+    console.log(`Arguments:`, args);
+  },
+
+  onToolEnd({ agent, tool, output, error, context }) {
+    console.log(`Tool completed: ${tool.name}`);
+
+    if (error) {
+      if (isAbortError(error)) {
+        console.log(`Tool was aborted: ${error.message}`);
+      } else {
+        console.error(`Tool failed: ${error.message}`);
+      }
+    } else {
+      console.log(`Result:`, output);
+    }
+  },
+});
+
+const agent = new Agent({
+  name: "Assistant with Tool Hooks",
+  instructions: "An assistant that logs tool execution",
+  model: openai("gpt-4o"),
+  tools: [weatherTool],
+  hooks: hooks,
+});
+```
+
+### Policy Enforcement with ToolDeniedError
+
+Throw `ToolDeniedError` from a hook to block a tool and immediately stop the entire agent operation.
+
+```ts
+import { createHooks, ToolDeniedError } from "@voltagent/core";
+
+const hooks = createHooks({
+  onToolStart({ tool, context }) {
+    const plan = context.context.get("userPlan");
+
+    // Block expensive tools for non-pro users
+    if (tool.name === "search_web" && plan !== "pro") {
+      throw new ToolDeniedError({
+        toolName: tool.name,
+        message: "Pro plan required to use web search.",
+        code: "TOOL_PLAN_REQUIRED",
+        httpStatus: 402,
+      });
     }
   },
 });
 ```
 
-### 2. Sending back tool results to the model
-
-When a client-side tool is executed, you **MUST** call `addToolResult` to provide the tool result to the model. The model will then use the result to update the conversation state.
-Otherwise, the model will consider the tool call as a failure.
+Catching the denial:
 
 ```ts
-useEffect(() => {
-  if (!result) return;
-  addToolResult(result);
-}, [result, addToolResult]);
+import { isToolDeniedError } from "@voltagent/core";
+
+try {
+  const res = await agent.generateText("Please search the web", { hooks });
+} catch (err) {
+  if (isToolDeniedError(err)) {
+    console.log("Tool denied:", {
+      tool: err.name,
+      status: err.httpStatus,
+      code: err.code,
+      message: err.message,
+    });
+    // Show upgrade UI, redirect, etc.
+  } else {
+    console.error("Operation failed:", err);
+  }
+}
+```
+
+Allowed `code` values:
+
+- `TOOL_ERROR`
+- `TOOL_FORBIDDEN`
+- `TOOL_PLAN_REQUIRED`
+- `TOOL_QUOTA_EXCEEDED`
+- Custom codes (e.g., `"TOOL_REGION_BLOCKED"`)
+
+## Best Practices
+
+### Clear Descriptions
+
+Provide clear descriptions for tools and parameters. The model relies on these to understand when and how to use tools.
+
+**Bad:**
+
+```ts
+const badTool = createTool({
+  name: "search",
+  description: "Searches things", // Too vague
+  parameters: z.object({
+    q: z.string(), // No description
+  }),
+  execute: async (args) => {
+    /* ... */
+  },
+});
+```
+
+**Good:**
+
+```ts
+const goodTool = createTool({
+  name: "search_web",
+  description:
+    "Searches the web for current information. Use when you need recent or factual information not in your training data.",
+  parameters: z.object({
+    query: z.string().describe("The search query. Be specific about what information is needed."),
+    results_count: z
+      .number()
+      .min(1)
+      .max(10)
+      .optional()
+      .describe("Number of results to return. Defaults to 3."),
+  }),
+  execute: async (args) => {
+    /* ... */
+  },
+});
+```
+
+### Error Handling
+
+Implement error handling that provides useful feedback to the model.
+
+```ts
+execute: async (args) => {
+  try {
+    const result = await performOperation(args);
+    return result;
+  } catch (error) {
+    throw new Error(`Failed to process request: ${error.message}`);
+  }
+};
+```
+
+### Timeout Handling
+
+For long-running operations, implement timeouts using `AbortController`.
+
+```ts
+execute: async (args, context) => {
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    timeoutController.abort("Operation timed out");
+  }, 5000);
+
+  try {
+    // Listen to parent abort if provided
+    const parentController = context?.abortController;
+    if (parentController?.signal) {
+      parentController.signal.addEventListener("abort", () => {
+        timeoutController.abort("Parent operation aborted");
+        clearTimeout(timeoutId);
+      });
+    }
+
+    const result = await fetch(url, {
+      signal: timeoutController.signal,
+    });
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+};
 ```
 
 ## MCP (Model Context Protocol) Support
 
-VoltAgent supports the [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/mcp), allowing your agents to seamlessly connect with external model servers, AI systems, and other tools that implement this protocol. This enables you to expand your agent's capabilities without having to write complex integration code.
+VoltAgent supports the [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/mcp), allowing agents to connect with external MCP-compatible servers and tools.
 
 ### Using MCP Tools
 
-You can connect to external MCP-compatible servers and use their tools with your agents:
+Connect to MCP servers and use their tools with your agents:
 
 ```ts
 import { Agent, MCPConfiguration } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-// Set up MCP configuration with multiple servers
+// Configure MCP servers
 const mcpConfig = new MCPConfiguration({
   servers: {
-    // HTTP server configuration
+    // HTTP server
     browserTools: {
       type: "http",
       url: "https://your-mcp-server.example.com/browser",
     },
-    // Local stdio server configuration
+    // Local stdio server
     localAI: {
       type: "stdio",
       command: "python",
@@ -719,43 +600,20 @@ const mcpConfig = new MCPConfiguration({
   },
 });
 
-// Option 1: Get tools grouped by server using getToolsets()
+// Get tools grouped by server
 const toolsets = await mcpConfig.getToolsets();
-// Access tools for a specific server
 const browserToolsOnly = toolsets.browserTools.getTools();
-const localAiToolsOnly = toolsets.localAI.getTools();
 
-// Option 2: Get all tools from all servers combined into a single array
+// Or get all tools combined
 const allMcpTools = await mcpConfig.getTools();
 
-// Create an agent using only the browser tools
-const agentWithBrowserTools = new Agent({
-  name: "Browser Agent",
-  description: "Assistant using only browser tools via MCP",
-  model: openai("gpt-4o"),
-  tools: browserToolsOnly, // Use the specific toolset
-});
-
-// Create another agent using *all* fetched MCP tools
-const agentWithAllMcpTools = new Agent({
+// Create agent with MCP tools
+const agent = new Agent({
   name: "MCP-Enhanced Assistant",
-  description: "Assistant with access to all configured MCP tools",
+  description: "Assistant with MCP tools",
   model: openai("gpt-4o"),
-  tools: allMcpTools, // Use the combined list
+  tools: allMcpTools,
 });
-
-// Use the agents (example)
-// const response = await agentWithBrowserTools.generateText(
-//   "Take a screenshot of the current page."
-// );
-// console.log(response.text);
 ```
 
-MCP enables your agents to:
-
-- Connect to browser extensions for web automation
-- Access specialized local AI models (image recognition, voice processing, etc.)
-- Use API gateways that implement the MCP protocol
-- Tap into ecosystems of MCP-compatible tools
-
-For in-depth details on setting up and using the Model Context Protocol with your agents, see the [MCP documentation](./mcp/mcp.md).
+For detailed MCP setup and usage, see the [MCP documentation](./mcp/mcp.md).

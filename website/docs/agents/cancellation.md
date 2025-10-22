@@ -5,11 +5,11 @@ slug: /agents/cancellation
 
 # Cancellation
 
-VoltAgent implements cancellation through the standard `AbortController` API. You pass the `AbortSignal` (`abortController.signal`) to agent methods to stop LLM generation, tool execution, and multi-agent workflows.
+VoltAgent implements cancellation through the standard `AbortController` API. Pass an `AbortController` instance to agent methods to stop LLM generation, tool execution, and multi-agent workflows.
 
 ## Basic Cancellation
 
-The simplest cancellation pattern involves creating an `AbortController` and passing it to agent methods:
+Create an `AbortController` and pass it to agent methods:
 
 ```typescript
 import { Agent, isAbortError } from "@voltagent/core";
@@ -30,7 +30,7 @@ setTimeout(() => {
 
 try {
   const response = await agent.generateText("Write a detailed analysis...", {
-    abortSignal: abortController.signal,
+    abortController,
   });
   console.log(response.text);
 } catch (error) {
@@ -44,18 +44,22 @@ try {
 
 ## How Cancellation Works
 
-When you provide an `AbortSignal` to an agent method:
+When you provide an `AbortController` to an agent method:
 
 1. The signal is passed to the LLM provider
-2. Tools receive access to `operationContext.abortController` (internally created) and its signal
-3. Subagents inherit the parent's signal
+2. Tools receive the `OperationContext` containing the `abortController`
+3. Subagents inherit the parent's `abortController`
 4. All operations check the signal state before proceeding
 
-The cancellation propagates through the entire operation chain, ensuring clean shutdown at every level.
+Cancellation propagates through the entire operation chain for clean shutdown at every level.
+
+:::note Parameter Deprecation
+The `signal` parameter is deprecated. Use `abortController` instead. The `signal` parameter will be removed in a future version.
+:::
 
 ## Streaming Cancellation
 
-Cancellation works seamlessly with streaming responses:
+Cancellation works with streaming responses:
 
 ```typescript
 const abortController = new AbortController();
@@ -66,7 +70,7 @@ document.getElementById("stop-btn")?.addEventListener("click", () => {
 });
 
 const response = await agent.streamText("Generate a long report...", {
-  abortSignal: abortController.signal,
+  abortController,
 });
 
 try {
@@ -80,27 +84,25 @@ try {
 }
 ```
 
-With `fullStream`, you get more detailed cancellation feedback:
+With `fullStream`, you receive detailed cancellation feedback:
 
 ```typescript
 const response = await agent.streamText("Complex task...", {
-  abortSignal: abortController.signal,
+  abortController,
 });
 
-if (response.fullStream) {
-  for await (const event of response.fullStream) {
-    if (event.type === "error" && isAbortError(event.error)) {
-      console.log("Cancelled during:", event.context);
-      break;
-    }
-    // Process other events
+for await (const event of response.fullStream) {
+  if (event.type === "error" && isAbortError(event.error)) {
+    console.log("Cancelled during:", event.context);
+    break;
   }
+  // Process other events
 }
 ```
 
 ## Tool Cancellation
 
-Tools receive the `AbortController` through their execution context and can both respond to and trigger cancellation:
+Tools receive the `OperationContext` as the second parameter. Access `abortController` through the context to respond to or trigger cancellation:
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -113,8 +115,8 @@ const dataProcessingTool = createTool({
     dataset: z.string(),
     operation: z.string(),
   }),
-  execute: async (args, options) => {
-    const abortController = options?.operationContext?.abortController;
+  execute: async (args, context) => {
+    const abortController = context?.abortController;
     const signal = abortController?.signal;
 
     // Check if already aborted
@@ -133,7 +135,7 @@ const dataProcessingTool = createTool({
       const response = await fetch(`/api/process/${args.dataset}`, {
         method: "POST",
         body: JSON.stringify({ operation: args.operation }),
-        signal: signal,
+        signal,
       });
 
       return await response.json();
@@ -149,7 +151,7 @@ const dataProcessingTool = createTool({
 
 ## Multi-Agent Cancellation
 
-In supervisor-subagent architectures, the abort signal automatically propagates to all subagents:
+In supervisor-subagent architectures, the abort signal propagates to all subagents:
 
 ```typescript
 const researcher = new Agent({
@@ -173,7 +175,7 @@ const supervisor = new Agent({
 
 const abortController = new AbortController();
 
-// This will cancel supervisor and any active subagent operations
+// Cancel supervisor and any active subagent operations
 setTimeout(() => {
   abortController.abort("Deadline reached");
 }, 10000);
@@ -186,13 +188,13 @@ const response = await supervisor.streamText("Research and write about quantum c
 When the supervisor is cancelled:
 
 - Any active `delegate_task` operations stop
-- Subagents receive the abort signal
+- Subagents inherit the parent's `abortController`
 - All tool executions within subagents are cancelled
-- The entire workflow shuts down gracefully
+- The entire workflow stops
 
 ## Timeout Implementation
 
-A common pattern is implementing timeouts for operations:
+Implement timeouts for operations:
 
 ```typescript
 const abortController = new AbortController();
@@ -204,10 +206,10 @@ const timeoutId = setTimeout(() => {
 
 try {
   const response = await agent.generateText("Complex analysis...", {
-    abortSignal: abortController.signal,
+    abortController,
   });
 
-  // Clear timeout if operation completes successfully
+  // Clear timeout if operation completes
   clearTimeout(timeoutId);
   console.log(response.text);
 } catch (error) {
@@ -258,7 +260,7 @@ const agent = new Agent({
 
 ## REST API Cancellation
 
-When using VoltAgent's REST API, clients can cancel requests by closing the connection:
+Clients can cancel REST API requests by closing the connection:
 
 ```typescript
 // Client-side cancellation
@@ -295,7 +297,7 @@ if (reader) {
 }
 ```
 
-The server automatically detects client disconnection and aborts the agent operation.
+The server detects client disconnection and aborts the agent operation.
 
 ## Cancellation States
 
@@ -322,7 +324,7 @@ abortController.abort("User cancelled");
 
 ### Graceful Shutdown
 
-For individual agent operations:
+For individual agent operations, manually handle shutdown signals:
 
 ```typescript
 async function processWithGracefulShutdown(agent: Agent, input: string) {
@@ -330,7 +332,7 @@ async function processWithGracefulShutdown(agent: Agent, input: string) {
 
   // Handle shutdown signals
   const shutdownHandler = () => {
-    console.log("Shutting down gracefully...");
+    console.log("Shutting down...");
     abortController.abort("System shutdown");
   };
 
@@ -349,7 +351,9 @@ async function processWithGracefulShutdown(agent: Agent, input: string) {
 }
 ```
 
-For VoltAgent-level shutdown with server and resources:
+### VoltAgent-Level Shutdown
+
+When using the `VoltAgent` class with a server, shutdown is handled automatically:
 
 ```typescript
 import { VoltAgent } from "@voltagent/core";
@@ -360,16 +364,12 @@ const voltAgent = new VoltAgent({
   server: honoServer({ port: 3141 }),
 });
 
-// VoltAgent automatically handles SIGINT/SIGTERM
-// But you can also shutdown programmatically:
-process.on("SIGUSR2", async () => {
-  console.log("Custom shutdown signal received");
-  await voltAgent.shutdown(); // Stops server, workflows, and telemetry
-  process.exit(0);
-});
+// VoltAgent automatically registers SIGINT/SIGTERM handlers
+// For programmatic shutdown:
+await voltAgent.shutdown(); // Stops server, workflows, and telemetry
 ```
 
-**Note**: VoltAgent automatically registers SIGINT/SIGTERM handlers that properly clean up the server, suspend workflows, and shutdown telemetry. See [Server Architecture - Graceful Shutdown](../api/server-architecture.md#graceful-shutdown) for details.
+VoltAgent automatically registers SIGINT/SIGTERM handlers that clean up the server, suspend workflows, and shutdown telemetry. See [Server Architecture - Graceful Shutdown](../api/server-architecture.md#graceful-shutdown) for details.
 
 ### Concurrent Operations with Cancellation
 
@@ -389,36 +389,6 @@ async function processMultiple(agent: Agent, inputs: string[]) {
 
   return Promise.all(promises);
 }
-```
-
-### Resource Cleanup
-
-```typescript
-class ResourceManager {
-  private resources: Set<() => Promise<void>> = new Set();
-
-  register(cleanup: () => Promise<void>) {
-    this.resources.add(cleanup);
-  }
-
-  async cleanupAll() {
-    await Promise.all([...this.resources].map((fn) => fn()));
-    this.resources.clear();
-  }
-}
-
-const resources = new ResourceManager();
-const abortController = new AbortController();
-
-// Register cleanup
-abortController.signal.addEventListener("abort", async () => {
-  await resources.cleanupAll();
-});
-
-// Use with agent
-const response = await agent.generateText("Process data", {
-  abortController,
-});
 ```
 
 ## Next Steps
