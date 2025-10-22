@@ -10,6 +10,7 @@ import type {
   GenerateTextResult,
   LanguageModel,
   StepResult,
+  TextUIPart,
   ToolSet,
   UIMessage,
 } from "ai";
@@ -194,6 +195,29 @@ export type GenerateTextResultWithContext<
 export interface GenerateObjectResultWithContext<T> extends GenerateObjectResult<T> {
   // Additional context field
   context: Map<string | symbol, unknown>;
+}
+
+/**
+ * Removes UI-only or excessive fields (like providerOptions, providerMetadata)
+ * from all text parts in UI messages before conversion.
+ * temporary fix for https://github.com/vercel/ai/issues/9731
+ */
+export function stripExcessiveFieldsInUIMessages(
+  uiMessages: ReadonlyArray<UIMessage>,
+): UIMessage[] {
+  function isTextUIPart(p: UIMessage["parts"][number]): p is TextUIPart {
+    return typeof p === "object" && p !== null && (p as { type?: unknown }).type === "text";
+  }
+
+  return uiMessages.map((msg) => {
+    if (!Array.isArray(msg.parts)) return msg;
+
+    const parts = msg.parts?.map((part) =>
+      isTextUIPart(part) ? ({ type: "text", text: part.text } as TextUIPart) : part,
+    );
+
+    return { ...msg, parts };
+  });
 }
 
 function cloneGenerateTextResultWithContext<
@@ -1652,7 +1676,7 @@ export class Agent {
 
     // Convert UIMessages to ModelMessages for the LLM
     const hooks = this.getMergedHooks(options);
-    let messages = convertToModelMessages(uiMessages);
+    let messages = convertToModelMessages(stripExcessiveFieldsInUIMessages(uiMessages));
     if (hooks.onPrepareModelMessages) {
       const result = await hooks.onPrepareModelMessages({
         modelMessages: messages,
@@ -2500,7 +2524,7 @@ export class Agent {
           ? input
           : Array.isArray(input) && (input as any[])[0]?.content !== undefined
             ? (input as BaseMessage[])
-            : convertToModelMessages(input as UIMessage[]);
+            : convertToModelMessages(stripExcessiveFieldsInUIMessages(input as UIMessage[]));
 
       // Execute retriever with the span context
       const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {
