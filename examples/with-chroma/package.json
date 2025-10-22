@@ -10,7 +10,7 @@
     "@voltagent/core": "^1.1.31",
     "@voltagent/libsql": "^1.0.9",
     "@voltagent/logger": "^1.0.3",
-    "@voltagent/server-hono": "^1.0.25",
+    "@voltagent/server-hono": "^1.0.26",
     "ai": "^5.0.76",
     "chromadb": "^3.0.4",
     "zod": "^3.25.76"
