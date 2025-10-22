@@ -80,7 +80,9 @@ export function createAuthMiddleware(authProvider: AuthProvider<Request>) {
           // and processWorkflowOptions
           // These is needed so the auth context/user arrives into OperationContext
           options: {
+            ...body.options, // Preserve all existing options (conversationId, temperature, etc.)
             context: {
+              ...body.options?.context,
               ...body.context,
               user,
             },
