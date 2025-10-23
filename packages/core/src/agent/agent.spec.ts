@@ -12,7 +12,7 @@ import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { Tool } from "../tool";
-import { Agent, stripExcessiveFieldsInUIMessages } from "./agent";
+import { Agent, renameProviderOptions } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
 import { ToolDeniedError } from "./errors";
 
@@ -1478,75 +1478,34 @@ describe("Agent", () => {
   });
 
   describe("Message cleanup (temporary fix)", () => {
-    it("stripExcessiveFieldsInUIMessages removes provider fields from text parts only", () => {
-      const uiMessages: ai.UIMessage[] = [
+    it("renameProviderOptions should convert providerOptions to providerMetadata in content parts", () => {
+      const input: ModelMessage[] = [
         {
-          role: "assistant",
-          parts: [
-            {
-              type: "text",
-              text: "Hello!",
-              // @ts-expect-error - simulate extra fields coming from UI layer / provider
-              providerMetadata: { any: "value" },
-              // @ts-expect-error - simulate extra fields coming from upstream
-              providerOptions: { also: "present" },
-            },
-            // Non-text part that may legitimately carry provider metadata
-            {
-              type: "tool-result",
-              toolCallId: "call-1",
-              toolName: "someTool",
-              result: { ok: true },
-              // @ts-expect-error - simulate provider metadata that should be preserved on non-text parts
-              providerMetadata: { keep: true },
-            } as any,
-          ],
+          role: "user",
+          content: [{ type: "text", text: "hi", providerOptions: { foo: "bar" } } as any],
         },
       ];
 
-      const cleaned = stripExcessiveFieldsInUIMessages(uiMessages);
-      expect(cleaned).toHaveLength(1);
-      expect(cleaned[0].parts).toHaveLength(2);
-
-      // First part should be a clean text part with no extra keys
-      const textPart = cleaned[0].parts[0] as ai.TextUIPart;
-      expect(textPart).toEqual({ type: "text", text: "Hello!" });
-
-      // Second part should be untouched (non-text)
-      const toolResultPart = cleaned[0].parts[1] as any;
-      expect(toolResultPart.type).toBe("tool-result");
-      expect(toolResultPart.providerMetadata).toEqual({ keep: true });
+      const out = renameProviderOptions(input);
+      const firstMsg = out[0];
+      expect(Array.isArray(firstMsg.content)).toBe(true);
+      const firstPart = (firstMsg.content as any[])[0];
+      expect(firstPart.providerOptions).toBeUndefined();
+      expect(firstPart.providerMetadata).toEqual({ foo: "bar" });
     });
 
-    it("convertToModelMessages on cleaned messages produces valid ModelMessage without providerOptions on text", () => {
-      const uiMessages: ai.UIMessage[] = [
-        {
-          role: "assistant",
-          id: "id",
-          parts: [
-            {
-              type: "text",
-              text: "Hello!",
-              providerMetadata: {},
-            },
-          ],
-        },
-      ];
+    it("renameProviderOptions should leave messages unchanged when no providerOptions present", () => {
+      const input: ModelMessage[] = [{ role: "user", content: [{ type: "text", text: "hello" }] }];
 
-      const cleaned = stripExcessiveFieldsInUIMessages(uiMessages);
-      const modelMessages = ai.convertToModelMessages(cleaned);
+      const out = renameProviderOptions(input);
+      expect(out).toEqual(input);
+    });
 
-      expect(Array.isArray(modelMessages)).toBe(true);
-      expect(modelMessages).toHaveLength(1);
-      const mm = modelMessages[0] as ModelMessage;
-      expect(mm.role).toBe("assistant");
-      // Ensure text content part has no providerOptions
-      // ModelMessage content is an array of parts
-      const content = (mm as any).content as Array<any>;
-      expect(Array.isArray(content)).toBe(true);
-      expect(content[0]).toEqual({ type: "text", text: "Hello!" });
-      // And it should not contain providerOptions
-      expect((content[0] as any).providerOptions).toBeUndefined();
+    it("renameProviderOptions should ignore messages where content is not an array", () => {
+      const input: ModelMessage[] = [{ role: "user", content: "plain string content" as any }];
+
+      const out = renameProviderOptions(input);
+      expect(out[0].content).toBe("plain string content");
     });
   });
 

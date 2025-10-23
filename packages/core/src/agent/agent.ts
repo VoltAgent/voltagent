@@ -10,7 +10,6 @@ import type {
   GenerateTextResult,
   LanguageModel,
   StepResult,
-  TextUIPart,
   ToolSet,
   UIMessage,
 } from "ai";
@@ -198,25 +197,27 @@ export interface GenerateObjectResultWithContext<T> extends GenerateObjectResult
 }
 
 /**
- * Removes UI-only or excessive fields (like providerOptions, providerMetadata)
- * from all text parts in UI messages before conversion.
+ * Renames providerOptions nack to providerMetadata
+ * in all content parts in model messages after conversion by convertToModelMessages.
  * temporary fix for https://github.com/vercel/ai/issues/9731
  */
-export function stripExcessiveFieldsInUIMessages(
-  uiMessages: ReadonlyArray<UIMessage>,
-): UIMessage[] {
-  function isTextUIPart(p: UIMessage["parts"][number]): p is TextUIPart {
-    return typeof p === "object" && p !== null && (p as { type?: unknown }).type === "text";
-  }
+const convertToModelMessagesFix = (uiMessages: UIMessage[]) => {
+  return renameProviderOptions(convertToModelMessages(uiMessages));
+};
 
-  return uiMessages.map((msg) => {
-    if (!Array.isArray(msg.parts)) return msg;
+export function renameProviderOptions(messages: ModelMessage[]): ModelMessage[] {
+  return messages.map((msg) => {
+    if (!Array.isArray(msg.content)) return msg;
 
-    const parts = msg.parts?.map((part) =>
-      isTextUIPart(part) ? ({ type: "text", text: part.text } as TextUIPart) : part,
-    );
+    const content = msg.content.map((part) => {
+      if (part && typeof part === "object" && "providerOptions" in part) {
+        const { providerOptions, ...rest } = part;
+        return { ...rest, providerMetadata: providerOptions };
+      }
+      return part;
+    });
 
-    return { ...msg, parts };
+    return { ...msg, content } as ModelMessage;
   });
 }
 
@@ -1676,7 +1677,8 @@ export class Agent {
 
     // Convert UIMessages to ModelMessages for the LLM
     const hooks = this.getMergedHooks(options);
-    let messages = convertToModelMessages(stripExcessiveFieldsInUIMessages(uiMessages));
+    let messages = convertToModelMessagesFix(uiMessages);
+
     if (hooks.onPrepareModelMessages) {
       const result = await hooks.onPrepareModelMessages({
         modelMessages: messages,
@@ -2524,7 +2526,7 @@ export class Agent {
           ? input
           : Array.isArray(input) && (input as any[])[0]?.content !== undefined
             ? (input as BaseMessage[])
-            : convertToModelMessages(stripExcessiveFieldsInUIMessages(input as UIMessage[]));
+            : convertToModelMessagesFix(input as UIMessage[]);
 
       // Execute retriever with the span context
       const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {
