@@ -36,6 +36,124 @@ new VoltAgent({
 });
 ```
 
+## CORS Configuration
+
+Configure Cross-Origin Resource Sharing (CORS) for your API using the `cors` field in server configuration. By default, VoltAgent allows all origins (`*`).
+
+### Default CORS (Permissive)
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    // Default: allows all origins
+  }),
+});
+```
+
+### Custom CORS Settings
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    cors: {
+      origin: "https://your-domain.com",
+      allowHeaders: ["X-Custom-Header", "Content-Type", "Authorization"],
+      allowMethods: ["POST", "GET", "OPTIONS"],
+      exposeHeaders: ["Content-Length"],
+      maxAge: 600,
+      credentials: true,
+    },
+  }),
+});
+```
+
+### Multiple Origins
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    cors: {
+      origin: ["https://app1.com", "https://app2.com", "https://app3.com"],
+      credentials: true,
+    },
+  }),
+});
+```
+
+### Dynamic Origin
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    cors: {
+      origin: (origin) => {
+        // Allow specific domains
+        const allowedDomains = ["app1.com", "app2.com"];
+        if (allowedDomains.some((domain) => origin.includes(domain))) {
+          return origin;
+        }
+        return undefined; // Reject
+      },
+      credentials: true,
+    },
+  }),
+});
+```
+
+### Route-Specific CORS
+
+For advanced use cases where different routes need different CORS policies, disable the default CORS and configure route-specific CORS in `configureApp`:
+
+```typescript
+import { cors } from "hono/cors";
+
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    cors: false, // Disable default CORS
+
+    configureApp: (app) => {
+      // Agent routes - strict CORS
+      app.use(
+        "/agents/*",
+        cors({
+          origin: "https://agents-app.com",
+          credentials: true,
+        }),
+      );
+
+      // Public API - permissive CORS
+      app.use(
+        "/api/public/*",
+        cors({
+          origin: "*",
+        }),
+      );
+
+      // Admin routes - very strict CORS
+      app.use(
+        "/api/admin/*",
+        cors({
+          origin: ["https://admin.com", "https://admin-staging.com"],
+          credentials: true,
+          allowMethods: ["GET", "POST"],
+        }),
+      );
+
+      // Your custom routes
+      app.get("/api/public/status", (c) => c.json({ status: "ok" }));
+      app.get("/api/admin/stats", (c) => c.json({ stats: {...} }));
+    },
+  }),
+});
+```
+
+**Important**: When `cors: false`, you must manually configure CORS for all routes that need it, including VoltAgent's built-in routes.
+
 ## Route Patterns
 
 Hono supports various route patterns:
@@ -227,13 +345,11 @@ Add middleware to your custom routes:
 ### Route-Specific Middleware
 
 ```typescript
-import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { compress } from "hono/compress";
 
 configureApp: (app) => {
   // Apply to specific routes
-  app.use("/api/*", cors());
   app.use("/api/*", logger());
   app.use("/api/*", compress());
 
@@ -248,47 +364,6 @@ configureApp: (app) => {
   });
 };
 ```
-
-### Custom CORS Configuration
-
-By default, VoltAgent applies permissive CORS (`origin: "*"`). You can override this with custom CORS settings in `configureApp`:
-
-```typescript
-import { cors } from "hono/cors";
-
-configureApp: (app) => {
-  // Custom CORS for all routes
-  app.use(
-    "*",
-    cors({
-      origin: "https://your-domain.com",
-      allowHeaders: ["X-Custom-Header", "Content-Type", "Authorization"],
-      allowMethods: ["POST", "GET", "OPTIONS"],
-      exposeHeaders: ["Content-Length"],
-      maxAge: 600,
-      credentials: true,
-    })
-  );
-
-  // Or apply different CORS to different route patterns
-  app.use(
-    "/agents/*",
-    cors({
-      origin: ["https://app1.com", "https://app2.com"],
-      credentials: true,
-    })
-  );
-
-  app.use(
-    "/public/*",
-    cors({
-      origin: "*",
-    })
-  );
-};
-```
-
-**Important**: When you configure custom CORS in `configureApp`, the default CORS middleware is automatically disabled. Your custom CORS configuration takes full control.
 
 ### Request Validation
 
@@ -428,11 +503,23 @@ configureApp: (app) => {
 
 ## Authentication for Custom Endpoints
 
-Custom endpoints can be protected using VoltAgent's authentication system. You have two modes to choose from:
+**Important**: Custom routes added via `configureApp` are registered AFTER the authentication middleware. This means when you configure an auth provider, your custom routes automatically inherit the same authentication behavior as VoltAgent's built-in routes.
+
+### How Authentication Works with Custom Routes
+
+VoltAgent applies authentication middleware to all routes before `configureApp` is called. This ensures your custom endpoints have the same security posture as built-in endpoints.
+
+```typescript
+// Authentication flow:
+// 1. CORS middleware applied
+// 2. Auth middleware applied (if configured)
+// 3. VoltAgent built-in routes registered
+// 4. configureApp called → your custom routes registered
+```
 
 ### Opt-In Mode (Default)
 
-By default, custom endpoints added via `configureApp` are **public** unless you add additional middleware:
+By default (`defaultPrivate: false`), only execution endpoints require authentication. Custom routes are **public** unless they match a protected pattern:
 
 ```typescript
 import { jwtAuth } from "@voltagent/server-core";
@@ -442,20 +529,21 @@ new VoltAgent({
   server: honoServer({
     auth: jwtAuth({
       secret: process.env.JWT_SECRET,
+      // defaultPrivate: false (default)
     }),
     configureApp: (app) => {
-      // This endpoint is PUBLIC by default
-      app.get("/api/data", (c) => {
+      // Public endpoint (doesn't match protected patterns)
+      app.get("/api/public-data", (c) => {
         return c.json({ data: "anyone can access this" });
       });
 
-      // To protect it, you need to add your own middleware
-      app.get("/api/protected", async (c, next) => {
+      // Also public (you can access authenticatedUser if it exists)
+      app.get("/api/optional-auth", (c) => {
         const user = c.get("authenticatedUser");
-        if (!user) {
-          return c.json({ error: "Unauthorized" }, 401);
+        if (user) {
+          return c.json({ message: `Hello, ${user.email}` });
         }
-        return c.json({ user });
+        return c.json({ message: "Hello, anonymous" });
       });
     },
   }),
@@ -481,10 +569,10 @@ new VoltAgent({
       // Public endpoint (in publicRoutes)
       app.get("/api/health", (c) => c.json({ status: "ok" }));
 
-      // Protected endpoint (automatically protected by defaultPrivate)
+      // Protected endpoint (requires authentication)
       app.get("/api/user/profile", (c) => {
         const user = c.get("authenticatedUser");
-        return c.json({ user });
+        return c.json({ user }); // user is guaranteed to exist
       });
 
       // All custom routes are protected unless in publicRoutes
@@ -501,7 +589,8 @@ new VoltAgent({
 
 **Benefits of Opt-Out Mode**:
 
-- ✅ No need to manually protect each custom endpoint
+- ✅ Automatic protection for all custom endpoints
+- ✅ No need to manually check authentication in each route
 - ✅ Better security by default (fail-safe)
 - ✅ Easier to maintain when using third-party auth providers (Clerk, Auth0)
 - ✅ Consistent auth behavior across all routes

@@ -1,5 +1,15 @@
 import type { AuthProvider } from "@voltagent/server-core";
+import type { Context } from "hono";
 import type { OpenAPIHonoType } from "./zod-openapi-compat";
+
+type CORSOptions = {
+  origin?: string | string[] | ((origin: string, c: Context) => string | undefined | null);
+  allowMethods?: string[] | ((origin: string, c: Context) => string[]);
+  allowHeaders?: string[];
+  maxAge?: number;
+  credentials?: boolean;
+  exposeHeaders?: string[];
+};
 
 export interface HonoServerConfig {
   port?: number;
@@ -24,14 +34,44 @@ export interface HonoServerConfig {
   hostname?: string;
 
   /**
+   * CORS configuration options
+   *
+   * Set to `false` to disable default CORS middleware and configure route-specific CORS in configureApp
+   *
+   * @default Allows all origins (*)
+   * @example
+   * ```typescript
+   * // Global CORS (default approach)
+   * cors: {
+   *   origin: "http://example.com",
+   *   allowHeaders: ["X-Custom-Header", "Content-Type"],
+   *   allowMethods: ["POST", "GET", "OPTIONS"],
+   *   maxAge: 600,
+   *   credentials: true,
+   * }
+   *
+   * // Disable default CORS for route-specific control
+   * cors: false,
+   * configureApp: (app) => {
+   *   app.use("/agents/*", cors({ origin: "https://agents.com" }));
+   *   app.use("/api/public/*", cors({ origin: "*" }));
+   * }
+   * ```
+   */
+  cors?: CORSOptions | false;
+
+  /**
    * Configure the Hono app with custom routes, middleware, and plugins.
    * This gives you full access to the Hono app instance to register
    * routes and middleware using Hono's native API.
    *
+   * NOTE: Custom routes added via configureApp are protected by the auth middleware
+   * if one is configured. Routes are registered AFTER authentication middleware.
+   *
    * @example
    * ```typescript
    * configureApp: (app) => {
-   *   // Add custom routes
+   *   // Add custom routes (will be auth-protected if config.auth is set)
    *   app.get('/health', (c) => c.json({ status: 'ok' }));
    *
    *   // Add middleware

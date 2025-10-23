@@ -67,13 +67,29 @@ Custom endpoints are registered through the `configureApp` callback, which gives
 
 ```typescript
 import { honoServer } from "@voltagent/server-hono";
+import { jwtAuth } from "@voltagent/server-core";
 
 new VoltAgent({
   agents: { agent },
   server: honoServer({
     port: 3141,
+
+    // Optional: Configure CORS
+    cors: {
+      origin: "https://your-domain.com",
+      credentials: true,
+    },
+
+    // Optional: Add authentication
+    auth: jwtAuth({
+      secret: process.env.JWT_SECRET,
+      defaultPrivate: true, // Protect all routes by default
+      publicRoutes: ["GET /api/health"], // Except these
+    }),
+
     configureApp: (app) => {
       // Add custom routes with full Hono API
+      // Note: Routes are automatically protected when auth is configured with defaultPrivate: true
       app.get("/api/health", (c) => c.json({ status: "ok" }));
 
       // Use route parameters
@@ -99,6 +115,7 @@ With `configureApp`, you get:
 - Type-safe route handlers with proper IntelliSense
 - Ability to use middleware and route groups
 - Support for all Hono features (OpenAPI, validation, etc.)
+- **Automatic auth protection** when `auth` is configured (routes are registered AFTER auth middleware)
 
 ## Setup
 
