@@ -1,5 +1,5 @@
 ---
-"@voltagent/server-hono": patch
+"@voltagent/server-hono": minor
 ---
 
 fix: simplify CORS configuration and ensure custom routes are auth-protected

@@ -269,4 +269,72 @@ describe("app-factory CORS configuration", () => {
     expect(defaultRes.headers.get("access-control-allow-origin")).toBe("https://default.com");
     expect(defaultRes.headers.get("access-control-allow-credentials")).toBe("true");
   });
+
+  it("should keep custom routes public in opt-in mode (default)", async () => {
+    const mockAuthProvider = {
+      verifyToken: async (token: string) => {
+        if (token === "valid-token") {
+          return { id: "user-123", email: "test@example.com" };
+        }
+        return null;
+      },
+      publicRoutes: [],
+      // defaultPrivate: false (default - implicit)
+    };
+
+    const { app } = await createApp(
+      {
+        agentRegistry: { getAll: () => [] } as any,
+        workflowRegistry: { getAll: () => [] } as any,
+      } as any,
+      {
+        auth: mockAuthProvider,
+        configureApp: (app) => {
+          app.get("/custom-public", (c) => c.json({ message: "public" }));
+        },
+      },
+    );
+
+    // Request without auth should succeed (opt-in mode)
+    const res = await app.request("/custom-public");
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.message).toBe("public");
+  });
+
+  it("should execute auth middleware before custom routes", async () => {
+    const executionOrder: string[] = [];
+
+    const mockAuthProvider = {
+      verifyToken: async (token: string) => {
+        executionOrder.push("auth-middleware");
+        return token === "valid" ? { id: "user" } : null;
+      },
+      publicRoutes: [],
+      defaultPrivate: true,
+    };
+
+    const { app } = await createApp(
+      {
+        agentRegistry: { getAll: () => [] } as any,
+        workflowRegistry: { getAll: () => [] } as any,
+      } as any,
+      {
+        auth: mockAuthProvider,
+        configureApp: (app) => {
+          app.get("/test-order", (c) => {
+            executionOrder.push("custom-route");
+            return c.json({ order: executionOrder });
+          });
+        },
+      },
+    );
+
+    await app.request("/test-order", {
+      headers: { Authorization: "Bearer valid" },
+    });
+
+    // Auth middleware should execute before custom route
+    expect(executionOrder).toEqual(["auth-middleware", "custom-route"]);
+  });
 });
