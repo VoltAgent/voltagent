@@ -580,6 +580,166 @@ describe("Agent", () => {
     });
   });
 
+  describe("Agent as Tool (toTool)", () => {
+    it("should convert agent to tool with default parameters", () => {
+      const agent = new Agent({
+        name: "WriterAgent",
+        id: "writer",
+        purpose: "Writes blog posts",
+        instructions: "You are a skilled writer",
+        model: mockModel as any,
+      });
+
+      const tool = agent.toTool();
+
+      expect(tool).toBeDefined();
+      expect(tool.name).toBe("writer_tool");
+      expect(tool.description).toBe("Writes blog posts");
+      expect(tool.parameters).toBeDefined();
+    });
+
+    it("should convert agent to tool with custom options", () => {
+      const agent = new Agent({
+        name: "EditorAgent",
+        id: "editor",
+        instructions: "You are a skilled editor",
+        model: mockModel as any,
+      });
+
+      const customSchema = z.object({
+        content: z.string().describe("The content to edit"),
+        style: z.enum(["formal", "casual"]).describe("The editing style"),
+      });
+
+      const tool = agent.toTool({
+        name: "custom_editor",
+        description: "Custom editor tool",
+        parametersSchema: customSchema,
+      });
+
+      expect(tool.name).toBe("custom_editor");
+      expect(tool.description).toBe("Custom editor tool");
+      expect(tool.parameters).toBe(customSchema);
+    });
+
+    it("should execute agent when tool is called", async () => {
+      const agent = new Agent({
+        name: "WriterAgent",
+        id: "writer",
+        instructions: "You are a writer",
+        model: mockModel as any,
+      });
+
+      // Mock the generateText result
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Generated blog post",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 20,
+          totalTokens: 30,
+        },
+        finishReason: "stop",
+        warnings: [],
+        rawResponse: undefined,
+        messages: [] as any,
+        steps: [],
+        toolCalls: [],
+        toolResults: [],
+        response: {
+          id: "test-id",
+          modelId: "test-model",
+          timestamp: new Date(),
+        },
+      } as any);
+
+      const tool = agent.toTool();
+
+      expect(tool.execute).toBeDefined();
+
+      const result = await tool.execute?.({ prompt: "Write about AI" });
+
+      expect(result).toBeDefined();
+      expect(result.text).toBe("Generated blog post");
+      expect(result.usage).toBeDefined();
+      expect(vi.mocked(ai.generateText)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: mockModel,
+        }),
+      );
+    });
+
+    it("should pass context through when executing agent tool", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        id: "test",
+        instructions: "Test agent",
+        model: mockModel as any,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Response",
+        usage: { inputTokens: 5, outputTokens: 5, totalTokens: 10 },
+        finishReason: "stop",
+        warnings: [],
+        rawResponse: undefined,
+        messages: [] as any,
+        steps: [],
+        toolCalls: [],
+        toolResults: [],
+        response: {
+          id: "test-id",
+          modelId: "test-model",
+          timestamp: new Date(),
+        },
+      } as any);
+
+      const tool = agent.toTool();
+
+      const mockContext = {
+        conversationId: "conv-123",
+        userId: "user-456",
+      };
+
+      await tool.execute?.({ prompt: "Test" }, mockContext as any);
+
+      expect(vi.mocked(ai.generateText)).toHaveBeenCalled();
+      // The generateText should be called with options containing the context
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0];
+      expect(callArgs).toBeDefined();
+    });
+
+    it("should work in supervisor pattern with multiple agent tools", () => {
+      const writerAgent = new Agent({
+        name: "Writer",
+        id: "writer",
+        purpose: "Writes content",
+        instructions: "Write blog posts",
+        model: mockModel as any,
+      });
+
+      const editorAgent = new Agent({
+        name: "Editor",
+        id: "editor",
+        purpose: "Edits content",
+        instructions: "Edit and improve content",
+        model: mockModel as any,
+      });
+
+      const supervisorAgent = new Agent({
+        name: "Supervisor",
+        id: "supervisor",
+        instructions: "Coordinate writer and editor",
+        model: mockModel as any,
+        tools: [writerAgent.toTool(), editorAgent.toTool()],
+      });
+
+      const tools = supervisorAgent.getTools();
+      expect(tools).toHaveLength(2);
+      expect(tools.map((t) => t.name)).toContain("writer_tool");
+      expect(tools.map((t) => t.name)).toContain("editor_tool");
+    });
+  });
+
   describe("Memory Integration", () => {
     it("should initialize with memory", () => {
       const memory = new Memory({

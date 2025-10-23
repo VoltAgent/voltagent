@@ -375,7 +375,7 @@ const weatherTool = createTool({
 });
 
 const agent = new Agent({
-  name: "Assistant",
+  name: "Weather Assistant",
   instructions: "Answer weather questions using the get_weather tool.",
   model: openai("gpt-4o"),
   tools: [weatherTool],
@@ -383,6 +383,32 @@ const agent = new Agent({
 ```
 
 [Tools documentation](./tools.md)
+
+#### Using Agents as Tools
+
+Agents can be converted to tools and used by other agents:
+
+```ts
+const writerAgent = new Agent({
+  id: "writer",
+  purpose: "Writes blog posts",
+  model: openai("gpt-4o-mini"),
+});
+
+const editorAgent = new Agent({
+  id: "editor",
+  purpose: "Edits content",
+  model: openai("gpt-4o-mini"),
+});
+
+// Coordinator uses them as tools
+const coordinator = new Agent({
+  tools: [writerAgent.toTool(), editorAgent.toTool()],
+  model: openai("gpt-4o-mini"),
+});
+```
+
+This is useful when the LLM should decide which agents to call based on the request.
 
 ### Guardrails
 

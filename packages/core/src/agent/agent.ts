@@ -3355,6 +3355,83 @@ export class Agent {
   }
 
   /**
+   * Convert this agent into a tool that can be used by other agents.
+   * This enables supervisor/coordinator patterns where one agent can delegate
+   * work to other specialized agents.
+   *
+   * @param options - Optional configuration for the tool
+   * @param options.name - Custom name for the tool (defaults to `${agent.id}_tool`)
+   * @param options.description - Custom description (defaults to agent's purpose or auto-generated)
+   * @param options.parametersSchema - Custom input schema (defaults to { prompt: string })
+   *
+   * @returns A Tool instance that executes this agent
+   *
+   * @example
+   * ```typescript
+   * const writerAgent = new Agent({
+   *   id: "writer",
+   *   purpose: "Writes blog posts",
+   *   // ... other config
+   * });
+   *
+   * const editorAgent = new Agent({
+   *   id: "editor",
+   *   purpose: "Edits content",
+   *   // ... other config
+   * });
+   *
+   * // Supervisor agent that uses both as tools
+   * const supervisorAgent = new Agent({
+   *   id: "supervisor",
+   *   instructions: "First call writer, then editor",
+   *   tools: [
+   *     writerAgent.toTool(),
+   *     editorAgent.toTool()
+   *   ]
+   * });
+   * ```
+   */
+  public toTool(options?: {
+    name?: string;
+    description?: string;
+    parametersSchema?: z.ZodObject<any>;
+  }): Tool<any, any> {
+    const toolName = options?.name || `${this.id}_tool`;
+    const toolDescription =
+      options?.description || this.purpose || `Executes the ${this.name} agent to complete a task`;
+
+    const parametersSchema =
+      options?.parametersSchema ||
+      z.object({
+        prompt: z.string().describe("The prompt or task to send to the agent"),
+      });
+
+    return createTool({
+      name: toolName,
+      description: toolDescription,
+      parameters: parametersSchema,
+      execute: async (args, context) => {
+        // Extract the prompt from args
+        const prompt = (args as any).prompt || args;
+
+        // Generate response using this agent
+        const result = await this.generateText(prompt, {
+          // Pass through the operation context if available
+          parentOperationContext: context,
+          conversationId: context?.conversationId,
+          userId: context?.userId,
+        });
+
+        // Return the text result
+        return {
+          text: result.text,
+          usage: result.usage,
+        };
+      },
+    });
+  }
+
+  /**
    * Check if working memory is supported
    */
   private hasWorkingMemorySupport(): boolean {
