@@ -557,3 +557,130 @@ describe("getDefaultLogBuffer", () => {
     expect(buffer.size).toBeDefined();
   });
 });
+
+describe("OTEL emission with log level filtering", () => {
+  let otelLoggerMock: any;
+  let otelLogger: any;
+
+  beforeEach(() => {
+    // Mock console methods
+    console.debug = vi.fn();
+    console.info = vi.fn();
+    console.warn = vi.fn();
+    console.error = vi.fn();
+
+    // Mock OTEL logger
+    otelLogger = {
+      emit: vi.fn(),
+    };
+
+    otelLoggerMock = {
+      getLogger: vi.fn().mockReturnValue(otelLogger),
+    };
+
+    // Set up global OTEL provider
+    (globalThis as any).___voltagent_otel_logger_provider = otelLoggerMock;
+  });
+
+  afterEach(() => {
+    // Clean up
+    (globalThis as any).___voltagent_otel_logger_provider = undefined;
+    vi.clearAllMocks();
+  });
+
+  it("should NOT emit OTEL logs when log level filters out the message", () => {
+    const logger = new ConsoleLogger({}, "error");
+
+    // Try to log debug - should be filtered
+    logger.debug("debug message");
+
+    // Console should not be called
+    expect(console.debug).not.toHaveBeenCalled();
+
+    // OTEL should NOT be called (this is the fix!)
+    expect(otelLogger.emit).not.toHaveBeenCalled();
+  });
+
+  it("should emit OTEL logs when log level allows the message", () => {
+    const logger = new ConsoleLogger({}, "error");
+
+    // Log error - should pass
+    logger.error("error message");
+
+    // Console should be called
+    expect(console.error).toHaveBeenCalled();
+
+    // OTEL should be called
+    expect(otelLogger.emit).toHaveBeenCalledTimes(1);
+    expect(otelLogger.emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severityText: "ERROR",
+        body: "error message",
+      }),
+    );
+  });
+
+  it("should respect log level for all methods", () => {
+    const logger = new ConsoleLogger({}, "warn");
+
+    // These should be filtered
+    logger.trace("trace");
+    logger.debug("debug");
+    logger.info("info");
+
+    // These should pass
+    logger.warn("warn");
+    logger.error("error");
+    logger.fatal("fatal");
+
+    // OTEL should only be called 3 times (warn, error, fatal)
+    expect(otelLogger.emit).toHaveBeenCalledTimes(3);
+
+    const calls = otelLogger.emit.mock.calls;
+    expect(calls[0][0].severityText).toBe("WARN");
+    expect(calls[1][0].severityText).toBe("ERROR");
+    expect(calls[2][0].severityText).toBe("FATAL");
+  });
+
+  it("should include context in OTEL emission", () => {
+    const logger = new ConsoleLogger({ component: "TestComponent" }, "info");
+
+    logger.info("test message", { userId: "123" });
+
+    expect(otelLogger.emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "test message",
+        attributes: expect.objectContaining({
+          component: "TestComponent",
+          userId: "123",
+        }),
+      }),
+    );
+  });
+
+  it("should handle OTEL provider unavailability gracefully", () => {
+    (globalThis as any).___voltagent_otel_logger_provider = undefined;
+
+    const logger = new ConsoleLogger({}, "info");
+
+    // Should not throw
+    expect(() => logger.info("test")).not.toThrow();
+
+    // Console should still work
+    expect(console.info).toHaveBeenCalled();
+  });
+
+  it("should handle OTEL emission errors gracefully", () => {
+    otelLogger.emit.mockImplementation(() => {
+      throw new Error("OTEL error");
+    });
+
+    const logger = new ConsoleLogger({}, "info");
+
+    // Should not throw even if OTEL fails
+    expect(() => logger.info("test")).not.toThrow();
+
+    // Console should still work
+    expect(console.info).toHaveBeenCalled();
+  });
+});

@@ -99,12 +99,12 @@ export class ConsoleLogger implements Logger {
         obj = msgOrObj;
       }
 
+      // Only log and emit if the log level allows it
       if (this.shouldLog(level)) {
         consoleFn(this.formatMessage(level, msg, obj));
+        // Emit via OpenTelemetry only when the log is actually being emitted
+        this.emitOtelLog(level, msg, obj);
       }
-
-      // Emit via OpenTelemetry if available
-      this.emitOtelLog(level, msg, obj);
     };
   }
 
