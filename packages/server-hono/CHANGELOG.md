@@ -1,5 +1,16 @@
 # @voltagent/server-hono
 
+## 1.1.0
+
+### Minor Changes
+
+- [#681](https://github.com/VoltAgent/voltagent/pull/681) [`683318f`](https://github.com/VoltAgent/voltagent/commit/683318f8671d7c5028d51169650555d2694afd05) Thanks [@ekas-7](https://github.com/ekas-7)! - feat: add support for custom endpoints
+
+### Patch Changes
+
+- Updated dependencies [[`3a1d214`](https://github.com/VoltAgent/voltagent/commit/3a1d214790cf49c5020eac3e9155a6daab2ff1db)]:
+  - @voltagent/core@1.1.32
+
 ## 1.0.26
 
 ### Patch Changes
