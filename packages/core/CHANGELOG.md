@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.1.32
+
+### Patch Changes
+
+- [#719](https://github.com/VoltAgent/voltagent/pull/719) [`3a1d214`](https://github.com/VoltAgent/voltagent/commit/3a1d214790cf49c5020eac3e9155a6daab2ff1db) Thanks [@marinoska](https://github.com/marinoska)! - Strip providerMetadata from text parts before calling convertToModelMessages to prevent invalid providerOptions in the resulting ModelMessage[].
+
 ## 1.1.31
 
 ### Patch Changes
