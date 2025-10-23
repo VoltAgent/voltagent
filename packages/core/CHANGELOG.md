@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.1.33
+
+### Patch Changes
+
+- [#724](https://github.com/VoltAgent/voltagent/pull/724) [`efe4be6`](https://github.com/VoltAgent/voltagent/commit/efe4be634f52aaef00d6b188a9146b1ad00b5968) Thanks [@marinoska](https://github.com/marinoska)! - Temporary fix for providerMetadata bug: https://github.com/vercel/ai/pull/9756
+
 ## 1.1.32
 
 ### Patch Changes

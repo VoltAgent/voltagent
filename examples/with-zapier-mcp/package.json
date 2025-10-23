@@ -6,10 +6,10 @@
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^3.0.0",
     "@aws-sdk/credential-providers": "~3.799.0",
-    "@voltagent/core": "~1.1.32",
+    "@voltagent/core": "~1.1.33",
     "@voltagent/libsql": "^1.0.9",
     "@voltagent/logger": "^1.0.3",
-    "@voltagent/server-hono": "^1.1.0",
+    "@voltagent/server-hono": "^1.2.0",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
   },
