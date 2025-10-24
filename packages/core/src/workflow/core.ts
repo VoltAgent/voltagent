@@ -640,6 +640,19 @@ export function createWorkflow<
     executionId: string,
     memory: typeof effectiveMemory,
     logger: Logger,
+    events: Array<{
+      id: string;
+      type: string;
+      name?: string;
+      from?: string;
+      startTime: string;
+      endTime?: string;
+      status?: string;
+      input?: any;
+      output?: any;
+      metadata?: Record<string, unknown>;
+      context?: Record<string, unknown>;
+    }>,
   ): Promise<void> => {
     try {
       logger.trace(`Storing suspension checkpoint for execution ${executionId}`);
@@ -655,6 +668,7 @@ export function createWorkflow<
               suspendData: suspensionData.suspendData,
             }
           : undefined,
+        events,
         updatedAt: new Date(),
       });
       logger.trace(`Successfully stored suspension checkpoint for execution ${executionId}`);
@@ -714,6 +728,58 @@ export function createWorkflow<
     // Only create stream controller if one is provided (for streaming execution)
     // For normal run, we don't need a stream controller
     const streamController = externalStreamController || null;
+
+    // Collect events during execution for persistence
+    const collectedEvents: Array<{
+      id: string;
+      type: string;
+      name?: string;
+      from?: string;
+      startTime: string;
+      endTime?: string;
+      status?: string;
+      input?: any;
+      output?: any;
+      metadata?: Record<string, unknown>;
+      context?: Record<string, unknown>;
+    }> = [];
+
+    // Helper to emit event and collect for persistence
+    const emitAndCollectEvent = (event: {
+      type: string;
+      executionId: string;
+      from: string;
+      input?: any;
+      output?: any;
+      status: string;
+      context?: any;
+      timestamp: string;
+      stepIndex?: number;
+      stepType?: string;
+      metadata?: Record<string, any>;
+      error?: any;
+    }) => {
+      // Emit to stream if available
+      if (streamController) {
+        streamController.emit(event as any);
+      }
+
+      // Collect for persistence (convert to storage format)
+      const collectedEvent = {
+        id: randomUUID(),
+        type: event.type,
+        name: event.from,
+        from: event.from,
+        startTime: event.timestamp,
+        endTime: event.timestamp, // Will be updated on complete events
+        status: event.status,
+        input: event.input,
+        output: event.output,
+        metadata: event.metadata,
+        context: event.context as Record<string, unknown> | undefined,
+      };
+      collectedEvents.push(collectedEvent);
+    };
 
     // Get observability instance
     const observability = getObservability();
@@ -882,7 +948,7 @@ export function createWorkflow<
       };
 
       // Emit workflow start event
-      streamController?.emit({
+      emitAndCollectEvent({
         type: "workflow-start",
         executionId,
         from: name,
@@ -967,7 +1033,7 @@ export function createWorkflow<
               stepData.output = stateManager.state.data;
             }
 
-            streamController?.emit({
+            emitAndCollectEvent({
               type: "step-complete",
               executionId,
               from: stepName,
@@ -991,6 +1057,11 @@ export function createWorkflow<
             try {
               await effectiveMemory.updateWorkflowState(executionId, {
                 status: "cancelled",
+                events: collectedEvents,
+                cancellation: {
+                  cancelledAt: new Date(),
+                  reason,
+                },
                 metadata: {
                   ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
                   cancellationReason: reason,
@@ -1003,7 +1074,7 @@ export function createWorkflow<
               });
             }
 
-            streamController?.emit({
+            emitAndCollectEvent({
               type: "workflow-cancelled",
               executionId,
               from: name,
@@ -1124,7 +1195,13 @@ export function createWorkflow<
             // Save suspension state to memory
             const suspensionData = stateManager.state.suspension;
             try {
-              await saveSuspensionState(suspensionData, executionId, effectiveMemory, runLogger);
+              await saveSuspensionState(
+                suspensionData,
+                executionId,
+                effectiveMemory,
+                runLogger,
+                collectedEvents,
+              );
             } catch (_) {
               // Error already logged in saveSuspensionState, don't throw
             }
@@ -1191,7 +1268,7 @@ export function createWorkflow<
           executionContext.streamWriter = stepWriter;
 
           // Emit step start event
-          streamController?.emit({
+          emitAndCollectEvent({
             type: "step-start",
             executionId,
             from: step.name || step.id,
@@ -1341,7 +1418,7 @@ export function createWorkflow<
             );
 
             // Emit step complete event
-            streamController?.emit({
+            emitAndCollectEvent({
               type: "step-complete",
               executionId,
               from: stepName,
@@ -1398,7 +1475,7 @@ export function createWorkflow<
               runLogger.debug(`Workflow suspended at step ${index}`, suspensionMetadata);
 
               // Emit suspension event to stream
-              streamController?.emit({
+              emitAndCollectEvent({
                 type: "workflow-suspended",
                 executionId,
                 from: step.name || step.id,
@@ -1437,6 +1514,7 @@ export function createWorkflow<
                   executionId,
                   effectiveMemory,
                   runLogger,
+                  collectedEvents,
                 );
               } catch (_) {
                 // Error already logged in saveSuspensionState, don't throw
@@ -1477,10 +1555,12 @@ export function createWorkflow<
         traceContext.setUsage(stateManager.state.usage);
         traceContext.end("completed");
 
-        // Update Memory V2 state to completed
+        // Update Memory V2 state to completed with events and output
         try {
           await effectiveMemory.updateWorkflowState(executionContext.executionId, {
             status: "completed",
+            events: collectedEvents,
+            output: finalState.result,
             updatedAt: new Date(),
           });
         } catch (memoryError) {
@@ -1502,7 +1582,7 @@ export function createWorkflow<
         );
 
         // Emit workflow complete event
-        streamController?.emit({
+        emitAndCollectEvent({
           type: "workflow-complete",
           executionId,
           from: name,
@@ -1543,7 +1623,7 @@ export function createWorkflow<
 
           workflowRegistry.activeExecutions.delete(executionId);
 
-          streamController?.emit({
+          emitAndCollectEvent({
             type: "workflow-cancelled",
             executionId,
             from: name,
@@ -1626,7 +1706,7 @@ export function createWorkflow<
         );
 
         // Emit workflow error event
-        streamController?.emit({
+        emitAndCollectEvent({
           type: "workflow-error",
           executionId,
           from: name,
@@ -1644,6 +1724,7 @@ export function createWorkflow<
         try {
           await effectiveMemory.updateWorkflowState(executionId, {
             status: "error",
+            events: collectedEvents,
             // Store a lightweight error summary in metadata for debugging
             metadata: {
               ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),

@@ -186,9 +186,14 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
         .select("user_id, resource_id")
         .limit(1);
 
-      // If either query fails, migration is needed
-      // If both succeed, migration has already been done
-      return !!messagesError || !!conversationsError;
+      // Try to select workflow state event columns (for events persistence feature)
+      const { error: workflowEventsError } = await this.client
+        .from(`${this.baseTableName}_workflow_states`)
+        .select("events, output, cancellation")
+        .limit(1);
+
+      // If any query fails, migration is needed
+      return !!messagesError || !!conversationsError || !!workflowEventsError;
     } catch {
       return true;
     }
@@ -256,6 +261,9 @@ CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
   workflow_name TEXT NOT NULL,
   status TEXT NOT NULL,
   suspension JSONB,
+  events JSONB,
+  output JSONB,
+  cancellation JSONB,
   user_id TEXT,
   conversation_id TEXT,
   metadata JSONB,
@@ -350,12 +358,25 @@ CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
   workflow_name TEXT NOT NULL,
   status TEXT NOT NULL,
   suspension JSONB,
+  events JSONB,
+  output JSONB,
+  cancellation JSONB,
   user_id TEXT,
   conversation_id TEXT,
   metadata JSONB,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );
+
+-- Step 5b: Add workflow state columns for existing tables (migration)
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS events JSONB;
+
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS output JSONB;
+
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS cancellation JSONB;
 
 -- Step 6: Migrate null user IDs to actual user IDs
 -- IMPORTANT: This updates messages with NULL user_id to use their conversation's user_id
@@ -1032,6 +1053,9 @@ END OF MIGRATION SQL
       workflowName: data.workflow_name,
       status: data.status,
       suspension: data.suspension || undefined,
+      events: data.events || undefined,
+      output: data.output || undefined,
+      cancellation: data.cancellation || undefined,
       userId: data.user_id || undefined,
       conversationId: data.conversation_id || undefined,
       metadata: data.metadata || undefined,
@@ -1054,6 +1078,9 @@ END OF MIGRATION SQL
       workflow_name: state.workflowName,
       status: state.status,
       suspension: state.suspension || null,
+      events: state.events || null,
+      output: state.output || null,
+      cancellation: state.cancellation || null,
       user_id: state.userId || null,
       conversation_id: state.conversationId || null,
       metadata: state.metadata || null,

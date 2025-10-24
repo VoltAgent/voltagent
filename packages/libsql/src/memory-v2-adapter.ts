@@ -241,6 +241,9 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
         workflow_name TEXT NOT NULL,
         status TEXT NOT NULL,
         suspension TEXT,
+        events TEXT,
+        output TEXT,
+        cancellation TEXT,
         user_id TEXT,
         conversation_id TEXT,
         metadata TEXT,
@@ -263,6 +266,9 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
 
     // Migrate default user_id values to actual values from conversations
     await this.migrateDefaultUserIds();
+
+    // Add new workflow state columns for event persistence
+    await this.addWorkflowStateColumns();
 
     this.initialized = true;
     this.logger.debug("Database schema initialized");
@@ -446,6 +452,55 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
     } catch (error) {
       // Log the error but don't throw - this migration is not critical
       this.logger.error("Failed to migrate default user_ids", error as Error);
+    }
+  }
+
+  /**
+   * Add new columns to workflow_states table for event persistence
+   * This migration adds support for events, output, and cancellation tracking
+   */
+  private async addWorkflowStateColumns(): Promise<void> {
+    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+
+    try {
+      // Check which columns exist
+      const tableInfo = await this.client.execute(`PRAGMA table_info(${workflowStatesTable})`);
+      const columns = tableInfo.rows.map((row) => row.name as string);
+
+      // Add events column if it doesn't exist
+      if (!columns.includes("events")) {
+        try {
+          await this.client.execute(`ALTER TABLE ${workflowStatesTable} ADD COLUMN events TEXT`);
+          this.logger.debug("Added 'events' column to workflow_states table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      // Add output column if it doesn't exist
+      if (!columns.includes("output")) {
+        try {
+          await this.client.execute(`ALTER TABLE ${workflowStatesTable} ADD COLUMN output TEXT`);
+          this.logger.debug("Added 'output' column to workflow_states table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      // Add cancellation column if it doesn't exist
+      if (!columns.includes("cancellation")) {
+        try {
+          await this.client.execute(
+            `ALTER TABLE ${workflowStatesTable} ADD COLUMN cancellation TEXT`,
+          );
+          this.logger.debug("Added 'cancellation' column to workflow_states table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+    } catch (error) {
+      // Log the error but don't throw - existing deployments without these columns will still work
+      this.logger.warn("Failed to add workflow state columns (non-critical)", error as Error);
     }
   }
 
@@ -1024,6 +1079,9 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
       workflowName: row.workflow_name as string,
       status: row.status as "running" | "suspended" | "completed" | "error",
       suspension: row.suspension ? JSON.parse(row.suspension as string) : undefined,
+      events: row.events ? JSON.parse(row.events as string) : undefined,
+      output: row.output ? JSON.parse(row.output as string) : undefined,
+      cancellation: row.cancellation ? JSON.parse(row.cancellation as string) : undefined,
       userId: row.user_id as string | undefined,
       conversationId: row.conversation_id as string | undefined,
       metadata: row.metadata ? JSON.parse(row.metadata as string) : undefined,
@@ -1040,15 +1098,18 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
 
     const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
     await this.client.execute({
-      sql: `INSERT OR REPLACE INTO ${workflowStatesTable} 
-            (id, workflow_id, workflow_name, status, suspension, user_id, conversation_id, metadata, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT OR REPLACE INTO ${workflowStatesTable}
+            (id, workflow_id, workflow_name, status, suspension, events, output, cancellation, user_id, conversation_id, metadata, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         executionId,
         state.workflowId,
         state.workflowName,
         state.status,
         state.suspension ? safeStringify(state.suspension) : null,
+        state.events ? safeStringify(state.events) : null,
+        state.output ? safeStringify(state.output) : null,
+        state.cancellation ? safeStringify(state.cancellation) : null,
         state.userId || null,
         state.conversationId || null,
         state.metadata ? safeStringify(state.metadata) : null,
@@ -1099,6 +1160,9 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
       workflowName: row.workflow_name as string,
       status: "suspended" as const,
       suspension: row.suspension ? JSON.parse(row.suspension as string) : undefined,
+      events: row.events ? JSON.parse(row.events as string) : undefined,
+      output: row.output ? JSON.parse(row.output as string) : undefined,
+      cancellation: row.cancellation ? JSON.parse(row.cancellation as string) : undefined,
       userId: row.user_id as string | undefined,
       conversationId: row.conversation_id as string | undefined,
       metadata: row.metadata ? JSON.parse(row.metadata as string) : undefined,

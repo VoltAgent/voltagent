@@ -105,6 +105,30 @@ export interface WorkflowStateEntry {
     };
     suspendData?: any;
   };
+  /**
+   * Stream events collected during execution
+   * Used for timeline visualization in UI
+   */
+  events?: Array<{
+    id: string;
+    type: string;
+    name?: string;
+    from?: string;
+    startTime: string;
+    endTime?: string;
+    status?: string;
+    input?: any;
+    output?: any;
+    metadata?: Record<string, unknown>;
+    context?: Record<string, unknown>;
+  }>;
+  /** Final output of the workflow execution */
+  output?: unknown;
+  /** Cancellation metadata */
+  cancellation?: {
+    cancelledAt: Date;
+    reason?: string;
+  };
   /** User ID if applicable */
   userId?: string;
   /** Conversation ID if applicable */

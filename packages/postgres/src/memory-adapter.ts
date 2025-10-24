@@ -171,6 +171,9 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           workflow_name TEXT NOT NULL,
           status TEXT NOT NULL,
           suspension JSONB,
+          events JSONB,
+          output JSONB,
+          cancellation JSONB,
           user_id TEXT,
           conversation_id TEXT,
           metadata JSONB,
@@ -1007,6 +1010,9 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       workflowName: row.workflow_name,
       status: row.status,
       suspension: row.suspension || undefined,
+      events: row.events || undefined,
+      output: row.output || undefined,
+      cancellation: row.cancellation || undefined,
       userId: row.user_id || undefined,
       conversationId: row.conversation_id || undefined,
       metadata: row.metadata || undefined,
@@ -1028,14 +1034,17 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       await client.query("BEGIN");
 
       await client.query(
-        `INSERT INTO ${workflowStatesTable} 
-         (id, workflow_id, workflow_name, status, suspension, user_id, conversation_id, metadata, created_at, updated_at) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `INSERT INTO ${workflowStatesTable}
+         (id, workflow_id, workflow_name, status, suspension, events, output, cancellation, user_id, conversation_id, metadata, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          ON CONFLICT (id) DO UPDATE SET
          workflow_id = EXCLUDED.workflow_id,
          workflow_name = EXCLUDED.workflow_name,
          status = EXCLUDED.status,
          suspension = EXCLUDED.suspension,
+         events = EXCLUDED.events,
+         output = EXCLUDED.output,
+         cancellation = EXCLUDED.cancellation,
          user_id = EXCLUDED.user_id,
          conversation_id = EXCLUDED.conversation_id,
          metadata = EXCLUDED.metadata,
@@ -1046,6 +1055,9 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           state.workflowName,
           state.status,
           state.suspension ? safeStringify(state.suspension) : null,
+          state.events ? safeStringify(state.events) : null,
+          state.output ? safeStringify(state.output) : null,
+          state.cancellation ? safeStringify(state.cancellation) : null,
           state.userId || null,
           state.conversationId || null,
           state.metadata ? safeStringify(state.metadata) : null,
