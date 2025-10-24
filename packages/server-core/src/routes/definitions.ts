@@ -512,6 +512,29 @@ export const UPDATE_ROUTES = {
       },
     },
   },
+  installSingleUpdate: {
+    method: "post" as const,
+    path: "/updates/:packageName",
+    summary: "Install single package update",
+    description:
+      "Install update for a specific VoltAgent package. The package manager is automatically detected based on lock files (pnpm-lock.yaml, yarn.lock, package-lock.json, or bun.lockb).",
+    tags: ["System"],
+    operationId: "installSingleUpdate",
+    responses: {
+      200: {
+        description: "Successfully installed package update",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid package name or package not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to install update due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
 } as const;
 
 /**

@@ -365,6 +365,21 @@ export function registerUpdateRoutes(
     }
     return c.json(response, 200);
   });
+
+  // POST /updates/:packageName - Install single package update
+  app.post("/updates/:packageName", async (c) => {
+    const packageName = c.req.param("packageName");
+
+    if (!packageName) {
+      return c.json({ success: false, error: "Package name is required" }, 400);
+    }
+
+    const response = await handleInstallUpdates(packageName, deps, logger);
+    if (!response.success) {
+      return c.json(response, 500);
+    }
+    return c.json(response, 200);
+  });
 }
 
 export { registerObservabilityRoutes } from "./observability";
