@@ -4,10 +4,10 @@
   "dependencies": {
     "@ai-sdk/groq": "^2.0.18",
     "@voltagent/cli": "^0.1.13",
-    "@voltagent/core": "^1.1.33",
+    "@voltagent/core": "^1.1.34",
     "@voltagent/libsql": "^1.0.9",
     "@voltagent/logger": "^1.0.3",
-    "@voltagent/server-hono": "^1.2.0",
+    "@voltagent/server-hono": "^1.2.1",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
   },
