@@ -1,5 +1,121 @@
 # @voltagent/server-hono
 
+## 1.2.2
+
+### Patch Changes
+
+- [#734](https://github.com/VoltAgent/voltagent/pull/734) [`2084fd4`](https://github.com/VoltAgent/voltagent/commit/2084fd491db4dbc89c432d1e72a633ec0c42d92b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add URL path support for single package updates and resolve 404 errors
+
+  ## The Problem
+
+  The update endpoint only accepted package names via request body (`POST /updates` with `{ "packageName": "@voltagent/core" }`), but users expected to be able to specify the package name directly in the URL path (`POST /updates/@voltagent/core`). This caused 404 errors when trying to update individual packages using the more intuitive URL-based approach.
+
+  ## The Solution
+
+  Added a new route `POST /updates/:packageName` that accepts the package name as a URL parameter, providing a more RESTful API design while maintaining backward compatibility with the existing body-based approach.
+
+  **New Routes Available:**
+  - `POST /updates/@voltagent/core` - Update single package (package name in URL path)
+  - `POST /updates` with body `{ "packageName": "@voltagent/core" }` - Update single package (package name in body)
+  - `POST /updates` with no body - Update all VoltAgent packages
+
+  **Package Manager Detection:**
+  The system automatically detects your package manager based on lock files:
+  - `pnpm-lock.yaml` → uses `pnpm add`
+  - `yarn.lock` → uses `yarn add`
+  - `package-lock.json` → uses `npm install`
+  - `bun.lockb` → uses `bun add`
+
+  ## Usage Example
+
+  ```typescript
+  // Update a single package using URL path
+  fetch("http://localhost:3141/updates/@voltagent/core", {
+    method: "POST",
+  });
+
+  // Or using the body parameter (backward compatible)
+  fetch("http://localhost:3141/updates", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ packageName: "@voltagent/core" }),
+  });
+
+  // Update all packages
+  fetch("http://localhost:3141/updates", {
+    method: "POST",
+  });
+  ```
+
+- [#736](https://github.com/VoltAgent/voltagent/pull/736) [`348bda0`](https://github.com/VoltAgent/voltagent/commit/348bda0f0fffdcbd75c8a6aa2c2d8bd15195cd22) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: respect configured log levels for console output while sending all logs to OpenTelemetry - #646
+
+  ## The Problem
+
+  When users configured a custom logger with a specific log level (e.g., `level: "error"`), DEBUG and INFO logs were still appearing in console output, cluttering the development environment. This happened because:
+  1. `LoggerProxy` was forwarding all log calls to the underlying logger without checking the configured level
+  2. Multiple components (agents, workflows, retrievers, memory adapters, observability) were logging at DEBUG level unconditionally
+  3. OpenTelemetry logs were also being filtered by the same level, preventing observability platforms from receiving all logs
+
+  ## The Solution
+
+  **Framework Changes:**
+  - Updated `LoggerProxy` to check configured log level before forwarding to console/stdout
+  - Added `shouldLog(level)` method that inspects the underlying logger's level (supports both Pino and ConsoleLogger)
+  - Separated console output filtering from OpenTelemetry emission:
+    - **Console/stdout**: Respects configured level (error level → only shows error/fatal)
+    - **OpenTelemetry**: Always receives all logs (debug, info, warn, error, fatal)
+
+  **What Gets Fixed:**
+
+  ```typescript
+  const logger = createPinoLogger({ level: "error" });
+
+  logger.debug("Agent created");
+  // Console: ❌ Hidden (keeps dev environment clean)
+  // OpenTelemetry: ✅ Sent (full observability)
+
+  logger.error("Generation failed");
+  // Console: ✅ Shown (important errors visible)
+  // OpenTelemetry: ✅ Sent (full observability)
+  ```
+
+  ## Impact
+  - **Cleaner Development**: Console output now respects configured log levels
+  - **Full Observability**: OpenTelemetry platforms receive all logs regardless of console level
+  - **Better Debugging**: Debug/trace logs available in observability tools even in production
+  - **No Breaking Changes**: Existing code works as-is with improved behavior
+
+  ## Usage
+
+  No code changes needed - the fix applies automatically:
+
+  ```typescript
+  // Create logger with error level
+  const logger = createPinoLogger({
+    level: "error",
+    name: "my-app",
+  });
+
+  // Use it with VoltAgent
+  new VoltAgent({
+    agents: { myAgent },
+    logger, // Console will be clean, OpenTelemetry gets everything
+  });
+  ```
+
+  ## Migration Notes
+
+  If you were working around this issue by:
+  - Filtering console output manually
+  - Using different loggers for different components
+  - Avoiding debug logs altogether
+
+  You can now remove those workarounds and use a single logger with your preferred console level while maintaining full observability.
+
+- Updated dependencies [[`2084fd4`](https://github.com/VoltAgent/voltagent/commit/2084fd491db4dbc89c432d1e72a633ec0c42d92b), [`348bda0`](https://github.com/VoltAgent/voltagent/commit/348bda0f0fffdcbd75c8a6aa2c2d8bd15195cd22)]:
+  - @voltagent/server-core@1.0.20
+  - @voltagent/core@1.1.36
+
 ## 1.2.1
 
 ### Patch Changes

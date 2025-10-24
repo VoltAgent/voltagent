@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/logger",
   "description": "VoltAgent logger - @voltagent/logger",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "dependencies": {
     "@opentelemetry/api-logs": "^0.204.0",
     "@opentelemetry/instrumentation": "^0.204.0",
