@@ -14,7 +14,7 @@ import { SimpleEventEmitter } from "../utils/simple-event-emitter";
  */
 export class ConsoleLogger implements Logger {
   private context: Record<string, any>;
-  private level: string;
+  public level: string;
 
   constructor(context: Record<string, any> = {}, level = "info") {
     this.context = context;
@@ -99,12 +99,15 @@ export class ConsoleLogger implements Logger {
         obj = msgOrObj;
       }
 
+      // Always emit to OpenTelemetry regardless of configured level
+      // This ensures observability platforms receive all logs
+      this.emitOtelLog(level, msg, obj);
+
+      // Only log to console if level check passes
+      // This keeps local development output clean
       if (this.shouldLog(level)) {
         consoleFn(this.formatMessage(level, msg, obj));
       }
-
-      // Emit via OpenTelemetry if available
-      this.emitOtelLog(level, msg, obj);
     };
   }
 

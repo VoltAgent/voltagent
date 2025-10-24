@@ -30,6 +30,43 @@ export class LoggerProxy implements Logger {
   }
 
   /**
+   * Check if a log level should be logged based on the configured level
+   */
+  private shouldLog(messageLevel: string): boolean {
+    const logger = this.getActualLogger();
+
+    // Try to get the level from the logger instance
+    let configuredLevel: string | undefined;
+
+    // Check for Pino instance
+    if ((logger as any)._pinoInstance?.level) {
+      configuredLevel = (logger as any)._pinoInstance.level;
+    }
+    // Check for ConsoleLogger or other logger with level property
+    else if ((logger as any).level !== undefined) {
+      configuredLevel = (logger as any).level;
+    }
+
+    // If we can't determine the level, allow the log (fail-open)
+    if (!configuredLevel) {
+      return true;
+    }
+
+    // Map log levels to numeric priorities
+    const levels = ["trace", "debug", "info", "warn", "error", "fatal"];
+    const configuredLevelIndex = levels.indexOf(configuredLevel.toLowerCase());
+    const messageLevelIndex = levels.indexOf(messageLevel.toLowerCase());
+
+    // If either level is not found, allow the log
+    if (configuredLevelIndex === -1 || messageLevelIndex === -1) {
+      return true;
+    }
+
+    // Only log if message level is >= configured level
+    return messageLevelIndex >= configuredLevelIndex;
+  }
+
+  /**
    * Emit log via OpenTelemetry Logs API if available
    */
   private emitOtelLog(severity: string, msg: string, metadata?: object): void {
@@ -81,39 +118,63 @@ export class LoggerProxy implements Logger {
   }
 
   trace: LogFn = (msg: string, context?: object): void => {
+    // Always emit to OpenTelemetry regardless of configured level
+    this.emitOtelLog("trace", msg, context);
+
+    // Only log to console/stdout if level check passes
+    if (!this.shouldLog("trace")) return;
     const logger = this.getActualLogger();
     logger.trace(msg, context);
-    this.emitOtelLog("trace", msg, context);
   };
 
   debug: LogFn = (msg: string, context?: object): void => {
+    // Always emit to OpenTelemetry regardless of configured level
+    this.emitOtelLog("debug", msg, context);
+
+    // Only log to console/stdout if level check passes
+    if (!this.shouldLog("debug")) return;
     const logger = this.getActualLogger();
     logger.debug(msg, context);
-    this.emitOtelLog("debug", msg, context);
   };
 
   info: LogFn = (msg: string, context?: object): void => {
+    // Always emit to OpenTelemetry regardless of configured level
+    this.emitOtelLog("info", msg, context);
+
+    // Only log to console/stdout if level check passes
+    if (!this.shouldLog("info")) return;
     const logger = this.getActualLogger();
     logger.info(msg, context);
-    this.emitOtelLog("info", msg, context);
   };
 
   warn: LogFn = (msg: string, context?: object): void => {
+    // Always emit to OpenTelemetry regardless of configured level
+    this.emitOtelLog("warn", msg, context);
+
+    // Only log to console/stdout if level check passes
+    if (!this.shouldLog("warn")) return;
     const logger = this.getActualLogger();
     logger.warn(msg, context);
-    this.emitOtelLog("warn", msg, context);
   };
 
   error: LogFn = (msg: string, context?: object): void => {
+    // Always emit to OpenTelemetry regardless of configured level
+    this.emitOtelLog("error", msg, context);
+
+    // Only log to console/stdout if level check passes
+    if (!this.shouldLog("error")) return;
     const logger = this.getActualLogger();
     logger.error(msg, context);
-    this.emitOtelLog("error", msg, context);
   };
 
   fatal: LogFn = (msg: string, context?: object): void => {
+    // Always emit to OpenTelemetry regardless of configured level
+    this.emitOtelLog("fatal", msg, context);
+
+    // Only log to console/stdout if level check passes
+    if (!this.shouldLog("fatal")) return;
     const logger = this.getActualLogger();
     logger.fatal(msg, context);
-    this.emitOtelLog("fatal", msg, context);
   };
 
   /**

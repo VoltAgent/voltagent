@@ -131,7 +131,6 @@ export function registerMcpRoutes(app: OpenAPIHonoType, deps: McpDeps, logger: L
   const registeredServers = typeof registry.list === "function" ? registry.list() : [];
 
   if (registeredServers.length === 0) {
-    logger.debug("No MCP servers registered; skipping MCP routes");
     return;
   }
 

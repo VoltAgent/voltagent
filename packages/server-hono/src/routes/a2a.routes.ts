@@ -91,7 +91,6 @@ export function registerA2ARoutes(app: OpenAPIHonoType, deps: ServerProviderDeps
   const registeredServers = typeof registry.list === "function" ? registry.list() : [];
 
   if (registeredServers.length === 0) {
-    logger.debug("No A2A servers registered; skipping A2A routes");
     return;
   }
 
