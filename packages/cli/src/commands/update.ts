@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import chalk from "chalk";
@@ -14,6 +15,33 @@ type UpdateResult = {
   updates: Record<string, string>;
   count: number;
   message: string;
+};
+
+/**
+ * Supported package managers
+ */
+type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
+
+/**
+ * Detects the package manager being used in the project
+ */
+const detectPackageManager = (projectPath: string): PackageManager => {
+  const lockFiles = {
+    "pnpm-lock.yaml": "pnpm",
+    "package-lock.json": "npm",
+    "yarn.lock": "yarn",
+    "bun.lockb": "bun",
+  } as const;
+
+  // Check lock files in the project root
+  for (const [file, manager] of Object.entries(lockFiles)) {
+    if (fs.existsSync(path.join(projectPath, file))) {
+      return manager as PackageManager;
+    }
+  }
+
+  // Default to npm if no lock file found
+  return "npm";
 };
 
 /**
@@ -85,6 +113,7 @@ const checkForUpdates = async (
 const interactiveUpdate = async (
   updates: Record<string, string>,
   packagePath?: string,
+  skipInstall = false,
 ): Promise<void> => {
   // Get package.json
   const rootDir = packagePath ? path.dirname(packagePath) : process.cwd();
@@ -130,7 +159,35 @@ const interactiveUpdate = async (
     });
 
     console.log(chalk.green(`✓ Updated ${selectedPackages.length} packages in package.json`));
-    console.log(chalk.green("Run 'npm install' to install updated packages"));
+
+    // Skip install if requested
+    if (skipInstall) {
+      const packageManager = detectPackageManager(rootDir);
+      const installCommand =
+        packageManager === "yarn" ? `${packageManager} install` : `${packageManager} install`;
+      console.log(chalk.yellow("\n⚠ Automatic installation skipped"));
+      console.log(chalk.cyan(`Run '${installCommand}' to install updated packages`));
+      return;
+    }
+
+    // Detect package manager and run install
+    const packageManager = detectPackageManager(rootDir);
+    const installCommand =
+      packageManager === "yarn" ? `${packageManager} install` : `${packageManager} install`;
+
+    console.log(chalk.cyan(`\nDetected package manager: ${packageManager}`));
+    console.log(chalk.cyan(`Running ${installCommand}...`));
+
+    const spinner = ora("Installing packages...").start();
+
+    try {
+      execSync(installCommand, { cwd: rootDir, stdio: "pipe" });
+      spinner.succeed(chalk.green("✓ Packages installed successfully"));
+    } catch (installError) {
+      spinner.fail(chalk.red("Failed to install packages"));
+      console.error(chalk.red(`\nPlease run '${installCommand}' manually`));
+      throw installError;
+    }
   } catch (error) {
     console.error(chalk.red("Error applying updates:"));
     console.error(error instanceof Error ? error.message : String(error));
@@ -170,6 +227,7 @@ export const registerUpdateCommand = (program: Command): void => {
     .command("update")
     .description("Interactive update for VoltAgent packages")
     .option("--apply", "Apply updates without interactive mode")
+    .option("--no-install", "Skip automatic package installation after updating package.json")
     .action(async (options) => {
       try {
         // Initialize spinner
@@ -202,15 +260,49 @@ export const registerUpdateCommand = (program: Command): void => {
           console.log(chalk.cyan("\nApplying updates..."));
 
           try {
+            const rootDir = process.cwd();
+            const packageJsonPath = path.join(rootDir, "package.json");
+
             // Use ncu API to apply updates
             await ncuPackage.default({
-              packageFile: path.join(process.cwd(), "package.json"),
+              packageFile: packageJsonPath,
               upgrade: true,
               filter: filter,
             });
 
             console.log(chalk.green("✓ Updates applied to package.json"));
-            console.log(chalk.green("Run 'npm install' to install updated packages"));
+
+            // Skip install if --no-install flag is used
+            if (options.install === false) {
+              const packageManager = detectPackageManager(rootDir);
+              const installCommand =
+                packageManager === "yarn"
+                  ? `${packageManager} install`
+                  : `${packageManager} install`;
+              console.log(chalk.yellow("\n⚠ Automatic installation skipped"));
+              console.log(chalk.cyan(`Run '${installCommand}' to install updated packages`));
+              return;
+            }
+
+            // Detect package manager and run install
+            const packageManager = detectPackageManager(rootDir);
+            const installCommand =
+              packageManager === "yarn" ? `${packageManager} install` : `${packageManager} install`;
+
+            console.log(chalk.cyan(`\nDetected package manager: ${packageManager}`));
+            console.log(chalk.cyan(`Running ${installCommand}...`));
+
+            const installSpinner = ora("Installing packages...").start();
+
+            try {
+              execSync(installCommand, { cwd: rootDir, stdio: "pipe" });
+              installSpinner.succeed(chalk.green("✓ Packages installed successfully"));
+            } catch (installError) {
+              installSpinner.fail(chalk.red("Failed to install packages"));
+              console.error(chalk.red(`\nPlease run '${installCommand}' manually`));
+              throw installError;
+            }
+
             return;
           } catch (error) {
             console.error(chalk.red("Error applying updates:"));
@@ -223,7 +315,7 @@ export const registerUpdateCommand = (program: Command): void => {
         console.log(); // Empty line
         console.log(chalk.cyan("Starting interactive update..."));
 
-        await interactiveUpdate(updates.updates);
+        await interactiveUpdate(updates.updates, undefined, options.install === false);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(chalk.red("Error checking for updates:"));
