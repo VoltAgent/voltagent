@@ -43,8 +43,6 @@ A production-ready chatbot application built with Next.js 15, VoltAgent, and the
 
 ## Architecture Overview
 
-## Architecture Overview
-
 ### System Architecture
 
 ```mermaid
@@ -408,31 +406,31 @@ Modify `lib/agent/memory.ts` to implement your preferred storage solution.
 
 ```mermaid
 graph TB
-    subgraph "Frontend Components"
-        PAGE[page.tsx<br/>Root Page]
-        CHAT[chat-interface.tsx<br/>Main UI]
-        USECHAT[useChat Hook<br/>AI SDK]
+    subgraph Frontend["Frontend Components"]
+        PAGE["page.tsx - Root Page"]
+        CHAT["chat-interface.tsx - Main UI"]
+        USECHAT["useChat Hook - AI SDK"]
     end
 
-    subgraph "API Layer"
-        CHAT_API[/api/chat/route.ts<br/>Streaming Endpoint]
+    subgraph API["API Layer"]
+        CHAT_API["/api/chat/route.ts - Streaming Endpoint"]
     end
 
-    subgraph "Library Layer"
-        AI_CONFIG[lib/ai/config.ts<br/>Provider Selection]
-        AGENT_DEF[lib/agent/agent.ts<br/>Agent Definition]
-        MEMORY_CFG[lib/agent/memory.ts<br/>Storage Config]
-        TOOLS_REG[lib/tools/index.ts<br/>Tool Registry]
+    subgraph Library["Library Layer"]
+        AI_CONFIG["lib/ai/config.ts - Provider Selection"]
+        AGENT_DEF["lib/agent/agent.ts - Agent Definition"]
+        MEMORY_CFG["lib/agent/memory.ts - Storage Config"]
+        TOOLS_REG["lib/tools/index.ts - Tool Registry"]
     end
 
-    subgraph "Tool Implementations"
+    subgraph Tools["Tool Implementations"]
         CALC[calculator.ts]
         TIME[datetime.ts]
         RAND[random.ts]
     end
 
-    subgraph "Type Definitions"
-        TYPES[lib/types/api.ts<br/>TypeScript Types]
+    subgraph Types["Type Definitions"]
+        TYPES["lib/types/api.ts - TypeScript Types"]
     end
 
     PAGE --> CHAT
@@ -458,19 +456,19 @@ graph TB
 
 ```mermaid
 graph LR
-    subgraph "Memory System"
+    subgraph Memory["Memory System"]
         MEM[Memory Instance]
         ADAPTER{Storage Adapter}
     end
 
-    subgraph "Storage Options"
-        INMEM[In-Memory<br/>Default]
-        LIBSQL[LibSQL<br/>SQLite]
-        PG[PostgreSQL<br/>Production]
-        SUPA[Supabase<br/>Serverless]
+    subgraph Storage["Storage Options"]
+        INMEM["In-Memory (Default)"]
+        LIBSQL["LibSQL (SQLite)"]
+        PG["PostgreSQL (Production)"]
+        SUPA["Supabase (Serverless)"]
     end
 
-    subgraph "Operations"
+    subgraph Operations["Operations"]
         READ[Read History]
         WRITE[Write Messages]
         QUERY[Query Context]
@@ -758,32 +756,32 @@ curl -X POST http://localhost:3000/api/chat \
 
 ```mermaid
 graph TB
-    subgraph "Client"
+    subgraph Client["Client"]
         BROWSER[Web Browser]
     end
 
-    subgraph "CDN/Edge"
+    subgraph CDN["CDN/Edge"]
         EDGE[Vercel Edge Network]
         STATIC[Static Assets]
     end
 
-    subgraph "Application Server"
+    subgraph AppServer["Application Server"]
         NEXTJS[Next.js Server]
         API_ROUTE[API Routes]
         SSR[Server Components]
     end
 
-    subgraph "Backend Services"
+    subgraph Backend["Backend Services"]
         AGENT[VoltAgent Runtime]
         MEM_SYS[Memory System]
     end
 
-    subgraph "External Services"
+    subgraph External["External Services"]
         AI_API[AI Provider APIs]
-        DB[(Database<br/>Optional)]
+        DB["Database (Optional)"]
     end
 
-    subgraph "Environment Config"
+    subgraph Config["Environment Config"]
         ENV[Environment Variables]
         SECRETS[API Keys]
     end
