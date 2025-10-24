@@ -613,6 +613,12 @@ export class Agent {
         // Add usage to span
         this.setTraceContextUsage(oc.traceContext, result.usage);
         oc.traceContext.setOutput(finalText);
+        oc.traceContext.setFinishReason(result.finishReason);
+
+        // Check if stopped by maxSteps
+        if (result.steps && result.steps.length >= maxSteps) {
+          oc.traceContext.setStopConditionMet(result.steps.length, maxSteps);
+        }
 
         // Set output in operation context
         oc.output = finalText;
@@ -837,6 +843,13 @@ export class Agent {
               guardrailSet.output.length > 0 ? { ...finalResult, text: finalText } : finalResult;
 
             oc.traceContext.setOutput(finalText);
+            oc.traceContext.setFinishReason(finalResult.finishReason);
+
+            // Check if stopped by maxSteps
+            const steps = finalResult.steps;
+            if (steps && steps.length >= maxSteps) {
+              oc.traceContext.setStopConditionMet(steps.length, maxSteps);
+            }
 
             // Set output in operation context
             oc.output = finalText;

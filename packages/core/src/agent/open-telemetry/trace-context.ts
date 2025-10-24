@@ -307,6 +307,26 @@ export class AgentTraceContext {
   }
 
   /**
+   * Set finish reason on the root span
+   */
+  setFinishReason(finishReason: string | null | undefined): void {
+    if (finishReason !== null && finishReason !== undefined) {
+      this.rootSpan.setAttribute("ai.response.finish_reason", finishReason);
+    }
+  }
+
+  /**
+   * Set stop condition metadata when maxSteps is reached
+   */
+  setStopConditionMet(stepCount: number, maxSteps: number): void {
+    this.rootSpan.setAttributes({
+      "voltagent.stopped_by_max_steps": true,
+      "voltagent.step_count": stepCount,
+      "voltagent.max_steps": maxSteps,
+    });
+  }
+
+  /**
    * End the root span with a status
    */
   end(status: "completed" | "error", error?: Error | any): void {
