@@ -1637,38 +1637,6 @@ describe("Agent", () => {
     });
   });
 
-  describe("Message cleanup (temporary fix)", () => {
-    it("renameProviderOptions should convert providerOptions to providerMetadata in content parts", () => {
-      const input: ModelMessage[] = [
-        {
-          role: "user",
-          content: [{ type: "text", text: "hi", providerOptions: { foo: "bar" } } as any],
-        },
-      ];
-
-      const out = renameProviderOptions(input);
-      const firstMsg = out[0];
-      expect(Array.isArray(firstMsg.content)).toBe(true);
-      const firstPart = (firstMsg.content as any[])[0];
-      expect(firstPart.providerOptions).toBeUndefined();
-      expect(firstPart.providerMetadata).toEqual({ foo: "bar" });
-    });
-
-    it("renameProviderOptions should leave messages unchanged when no providerOptions present", () => {
-      const input: ModelMessage[] = [{ role: "user", content: [{ type: "text", text: "hello" }] }];
-
-      const out = renameProviderOptions(input);
-      expect(out).toEqual(input);
-    });
-
-    it("renameProviderOptions should ignore messages where content is not an array", () => {
-      const input: ModelMessage[] = [{ role: "user", content: "plain string content" as any }];
-
-      const out = renameProviderOptions(input);
-      expect(out[0].content).toBe("plain string content");
-    });
-  });
-
   describe("Edge Cases", () => {
     it("should handle empty messages", async () => {
       const agent = new Agent({

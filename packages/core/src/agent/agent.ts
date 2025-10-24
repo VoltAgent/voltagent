@@ -196,31 +196,6 @@ export interface GenerateObjectResultWithContext<T> extends GenerateObjectResult
   context: Map<string | symbol, unknown>;
 }
 
-/**
- * Renames providerOptions nack to providerMetadata
- * in all content parts in model messages after conversion by convertToModelMessages.
- * temporary fix for https://github.com/vercel/ai/issues/9731
- */
-const convertToModelMessagesFix = (uiMessages: UIMessage[]) => {
-  return renameProviderOptions(convertToModelMessages(uiMessages));
-};
-
-export function renameProviderOptions(messages: ModelMessage[]): ModelMessage[] {
-  return messages.map((msg) => {
-    if (!Array.isArray(msg.content)) return msg;
-
-    const content = msg.content.map((part) => {
-      if (part && typeof part === "object" && "providerOptions" in part) {
-        const { providerOptions, ...rest } = part;
-        return { ...rest, providerMetadata: providerOptions };
-      }
-      return part;
-    });
-
-    return { ...msg, content } as ModelMessage;
-  });
-}
-
 function cloneGenerateTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
   OUTPUT = any,
@@ -1690,7 +1665,7 @@ export class Agent {
 
     // Convert UIMessages to ModelMessages for the LLM
     const hooks = this.getMergedHooks(options);
-    let messages = convertToModelMessagesFix(uiMessages);
+    let messages = convertToModelMessages(uiMessages);
 
     if (hooks.onPrepareModelMessages) {
       const result = await hooks.onPrepareModelMessages({
@@ -2539,7 +2514,7 @@ export class Agent {
           ? input
           : Array.isArray(input) && (input as any[])[0]?.content !== undefined
             ? (input as BaseMessage[])
-            : convertToModelMessagesFix(input as UIMessage[]);
+            : convertToModelMessages(input as UIMessage[]);
 
       // Execute retriever with the span context
       const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {

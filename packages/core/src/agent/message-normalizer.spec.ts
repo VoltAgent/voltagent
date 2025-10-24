@@ -139,7 +139,7 @@ describe("message-normalizer", () => {
   });
 
   it("removes OpenAI metadata that references reasoning when reasoning is absent", () => {
-    const message = baseMessage([
+    let message = baseMessage([
       {
         type: "text",
         text: "final answer",
@@ -147,13 +147,27 @@ describe("message-normalizer", () => {
       } as any,
     ]);
 
-    const sanitized = sanitizeMessageForModel(message);
+    let sanitized = sanitizeMessageForModel(message);
     expect(sanitized).not.toBeNull();
-    const part = (sanitized as UIMessage).parts[0] as any;
+    let part = (sanitized as UIMessage).parts[0];
     expect(part).toEqual({
       type: "text",
       text: "final answer",
       providerMetadata: { other: { keep: true } },
+    });
+
+    message = baseMessage([
+      {
+        type: "text",
+        text: "final answer",
+        providerMetadata: { openai: { itemId: "msg_123" } },
+      } as any,
+    ]);
+    sanitized = sanitizeMessageForModel(message);
+    part = (sanitized as UIMessage).parts[0];
+    expect(part).toEqual({
+      type: "text",
+      text: "final answer",
     });
   });
 

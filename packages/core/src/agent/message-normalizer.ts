@@ -345,8 +345,8 @@ const stripReasoningLinkedProviderMetadata = (
     ) {
       return metadata as Record<string, unknown>;
     }
-    cloned.openai = undefined;
-    return Object.keys(cloned).length > 0 ? cloned : undefined;
+    const { openai, ...cleanedMetadata } = cloned;
+    return Object.keys(cleanedMetadata).length > 0 ? cleanedMetadata : undefined;
   };
 
   let mutated = false;
