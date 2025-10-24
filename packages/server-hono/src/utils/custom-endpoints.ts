@@ -6,31 +6,6 @@ import type { ServerEndpointSummary } from "@voltagent/server-core";
 import { A2A_ROUTES, ALL_ROUTES, MCP_ROUTES } from "@voltagent/server-core";
 import type { OpenAPIHonoType } from "../zod-openapi-compat";
 
-// Store custom endpoints during registration
-let registeredCustomEndpoints: ServerEndpointSummary[] = [];
-
-/**
- * Register a custom endpoint for documentation
- * This is a helper function to track custom endpoints for Swagger documentation
- */
-export function registerCustomEndpoint(endpoint: ServerEndpointSummary): void {
-  registeredCustomEndpoints.push(endpoint);
-}
-
-/**
- * Clear registered custom endpoints (used internally)
- */
-export function clearCustomEndpoints(): void {
-  registeredCustomEndpoints = [];
-}
-
-/**
- * Get all registered custom endpoints
- */
-export function getRegisteredCustomEndpoints(): ServerEndpointSummary[] {
-  return [...registeredCustomEndpoints];
-}
-
 /**
  * Known VoltAgent built-in paths that should be excluded when extracting custom endpoints
  */
@@ -58,36 +33,37 @@ const BUILT_IN_PATHS = new Set([
 export function extractCustomEndpoints(app: OpenAPIHonoType): ServerEndpointSummary[] {
   try {
     const customEndpoints: ServerEndpointSummary[] = [];
+    const seenRoutes = new Set<string>();
 
-    // First, add any manually registered custom endpoints
-    customEndpoints.push(...getRegisteredCustomEndpoints());
+    // First, extract routes from app.routes (includes ALL Hono routes, even non-OpenAPI ones)
+    try {
+      if (app.routes && Array.isArray(app.routes)) {
+        app.routes.forEach((route) => {
+          // Construct full path and normalize it
+          const rawPath = route.basePath ? `${route.basePath}${route.path}` : route.path;
+          const fullPath = rawPath.replace(/\/+/g, "/"); // Remove duplicate slashes
 
-    // For now, let's use a simpler approach and add some known custom endpoints
-    // This is a temporary solution until we can properly extract from the router
-    const knownCustomPaths = [
-      { method: "GET", path: "/api/health", description: "Health check endpoint" },
-      { method: "GET", path: "/api/hello/{name}", description: "Personalized greeting" },
-      { method: "POST", path: "/api/calculate", description: "Simple calculator" },
-      { method: "DELETE", path: "/api/delete-all", description: "Delete all data" },
-    ];
+          // Skip built-in VoltAgent paths
+          if (isBuiltInPath(fullPath)) {
+            return;
+          }
 
-    knownCustomPaths.forEach((endpoint) => {
-      // Only add if not already present and if the path is not a built-in path
-      const exists = customEndpoints.some(
-        (ep) => ep.method === endpoint.method && ep.path === endpoint.path,
-      );
-
-      if (!exists && !isBuiltInPath(endpoint.path)) {
-        customEndpoints.push({
-          method: endpoint.method,
-          path: endpoint.path,
-          description: endpoint.description,
-          group: "Custom Endpoints",
+          const routeKey = `${route.method}:${fullPath}`;
+          if (!seenRoutes.has(routeKey)) {
+            seenRoutes.add(routeKey);
+            customEndpoints.push({
+              method: route.method.toUpperCase(),
+              path: fullPath,
+              group: "Custom Endpoints",
+            });
+          }
         });
       }
-    });
+    } catch (_routesError) {
+      // Routes extraction failed, continue with OpenAPI extraction
+    }
 
-    // Fallback: Also try to get routes from OpenAPI document
+    // Then, extract routes from OpenAPI document to get descriptions
     try {
       const openApiDoc = app.getOpenAPIDocument({
         openapi: "3.1.0",
@@ -107,12 +83,20 @@ export function extractCustomEndpoints(app: OpenAPIHonoType): ServerEndpointSumm
         methods.forEach((method) => {
           const operation = (pathItem as any)[method];
           if (operation) {
-            // Check if we already have this endpoint from router extraction
-            const exists = customEndpoints.some(
-              (ep) => ep.method === method.toUpperCase() && ep.path === path,
+            const routeKey = `${method.toUpperCase()}:${path}`;
+
+            // Update existing route with description or add new one
+            const existingIndex = customEndpoints.findIndex(
+              (ep) => `${ep.method}:${ep.path}` === routeKey,
             );
 
-            if (!exists) {
+            if (existingIndex >= 0) {
+              // Update existing route with description from OpenAPI
+              customEndpoints[existingIndex].description =
+                operation.summary || operation.description || undefined;
+            } else if (!seenRoutes.has(routeKey)) {
+              // Add new route from OpenAPI document
+              seenRoutes.add(routeKey);
               customEndpoints.push({
                 method: method.toUpperCase(),
                 path: path,
@@ -124,7 +108,7 @@ export function extractCustomEndpoints(app: OpenAPIHonoType): ServerEndpointSumm
         });
       });
     } catch (_openApiError) {
-      // OpenAPI extraction failed, continue with router-based extraction only
+      // OpenAPI extraction failed, continue with routes we already have
     }
 
     return customEndpoints;
@@ -141,29 +125,23 @@ export function extractCustomEndpoints(app: OpenAPIHonoType): ServerEndpointSumm
  * @returns True if it's a built-in path
  */
 function isBuiltInPath(path: string): boolean {
-  // Direct match
-  if (BUILT_IN_PATHS.has(path)) {
-    return true;
-  }
+  // Normalize path by removing duplicate slashes and ensuring single leading slash
+  const normalizedPath = path.replace(/\/+/g, "/").replace(/^\/+/, "/");
 
-  // Check against parameterized paths by converting :param to {param} format
-  const normalizedPath = path.replace(/\{([^}]+)\}/g, ":$1");
+  // Direct match against known built-in paths
   if (BUILT_IN_PATHS.has(normalizedPath)) {
     return true;
   }
 
-  // Check if it matches any known patterns
-  const builtInPatterns = [
-    /^\/agents/,
-    /^\/workflows/,
-    /^\/api\/logs/,
-    /^\/observability/,
-    /^\/mcp/,
-    /^\/\.well-known/,
-    /^\/api\/update/,
-  ];
+  // Check against parameterized paths by converting :param to {param} format
+  // This handles cases like "/agents/:id" vs "/agents/{id}"
+  const paramNormalized = normalizedPath.replace(/\{([^}]+)\}/g, ":$1");
+  if (BUILT_IN_PATHS.has(paramNormalized)) {
+    return true;
+  }
 
-  return builtInPatterns.some((pattern) => pattern.test(path));
+  // Not a built-in path - it's a custom endpoint
+  return false;
 }
 
 /**
@@ -195,8 +173,13 @@ export function getEnhancedOpenApiDoc(app: OpenAPIHonoType, baseDoc: any): any {
         fullDoc.paths[path] = {};
       }
 
-      // Add the operation for this method
+      // Skip if this operation already exists in OpenAPI doc (don't overwrite)
       const pathObj = fullDoc.paths[path] as any;
+      if (pathObj[method]) {
+        return;
+      }
+
+      // Add the operation for this method (only for routes not in OpenAPI doc)
       pathObj[method] = {
         tags: ["Custom Endpoints"],
         summary: endpoint.description || `${endpoint.method} ${path}`,
@@ -219,9 +202,10 @@ export function getEnhancedOpenApiDoc(app: OpenAPIHonoType, baseDoc: any): any {
         },
       };
 
-      // Add parameters for path variables
-      if (path.includes("{")) {
-        const params = path.match(/\{([^}]+)\}/g);
+      // Add parameters for path variables (support both :param and {param} formats)
+      const pathWithBraces = path.replace(/:([a-zA-Z0-9_]+)/g, "{$1}");
+      if (pathWithBraces.includes("{")) {
+        const params = pathWithBraces.match(/\{([^}]+)\}/g);
         if (params) {
           pathObj[method].parameters = params.map((param: string) => {
             const paramName = param.slice(1, -1); // Remove { and }
