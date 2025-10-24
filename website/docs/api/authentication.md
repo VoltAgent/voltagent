@@ -37,9 +37,11 @@ auth: jwtAuth({
 
 - VoltAgent execution routes (like `POST /agents/:id/text`) → Protected ✅
 - VoltAgent management routes (like `GET /agents`) → Public 🌐
-- Custom routes added via `configureApp` → Public 🌐
+- Custom routes added via `configureApp` → Public 🌐\*
 
-#### Opt-Out Mode
+\* _Custom routes are registered after auth middleware is applied, so they follow the same authentication rules as built-in routes. In opt-in mode, they're public by default unless they match a protected route pattern._
+
+#### Opt-Out Mode (Recommended)
 
 When you set `defaultPrivate: true`, all routes require authentication by default. You can selectively make routes public using the `publicRoutes` property.
 
@@ -57,6 +59,10 @@ auth: jwtAuth({
 - VoltAgent management routes → Protected ✅
 - Custom routes added via `configureApp` → Protected ✅
 - Routes in `publicRoutes` → Public 🌐
+
+**Why Opt-Out Mode is Recommended**:
+
+Since custom routes are automatically protected in opt-out mode, you get secure-by-default behavior without needing to manually add authentication checks to each endpoint.
 
 **Use Cases**:
 

@@ -1,5 +1,131 @@
 # @voltagent/core
 
+## 1.1.35
+
+### Patch Changes
+
+- [#730](https://github.com/VoltAgent/voltagent/pull/730) [`1244b3e`](https://github.com/VoltAgent/voltagent/commit/1244b3eef1c1d1feea8e7a3934556782200a760e) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add finish reason and max steps observability to agent execution traces - #721
+
+  ## The Problem
+
+  When agents hit the maximum steps limit (via `maxSteps` or `stopWhen` conditions), execution would terminate abruptly without clear indication in observability traces. This created confusion as:
+  1. The AI SDK's `finishReason` (e.g., `stop`, `tool-calls`, `length`, `error`) was not being captured in OpenTelemetry spans
+  2. MaxSteps termination looked like a normal completion with `finishReason: "tool-calls"`
+  3. Users couldn't easily debug why their agent stopped executing
+
+  ## The Solution
+
+  **Framework (VoltAgent Core):**
+  - Added `setFinishReason(finishReason: string)` method to `AgentTraceContext` to capture AI SDK finish reasons in OpenTelemetry spans as `ai.response.finish_reason` attribute
+  - Added `setStopConditionMet(stepCount: number, maxSteps: number)` method to track when maxSteps limit is reached
+  - Updated `agent.generateText()` and `agent.streamText()` to automatically record:
+    - `ai.response.finish_reason` - The AI SDK finish reason (`stop`, `tool-calls`, `length`, `error`, etc.)
+    - `voltagent.stopped_by_max_steps` - Boolean flag when maxSteps is reached
+    - `voltagent.step_count` - Actual number of steps executed
+    - `voltagent.max_steps` - The maxSteps limit that was configured
+
+  **What Gets Captured:**
+
+  ```typescript
+  // In OpenTelemetry spans:
+  {
+    "ai.response.finish_reason": "tool-calls",
+    "voltagent.stopped_by_max_steps": true,
+    "voltagent.step_count": 10,
+    "voltagent.max_steps": 10
+  }
+  ```
+
+  ## Impact
+  - **Better Debugging:** Users can now clearly see why their agent execution terminated
+  - **Observability:** All AI SDK finish reasons are now visible in traces
+  - **MaxSteps Detection:** Explicit tracking when agents hit step limits
+  - **Console UI Ready:** These attributes power warning UI in VoltOps Console to alert users when maxSteps is reached
+
+  ## Usage
+
+  No code changes needed - this is automatically tracked for all agent executions:
+
+  ```typescript
+  const agent = new Agent({
+    name: "my-agent",
+    maxSteps: 5, // Will be tracked in spans
+  });
+
+  await agent.generateText("Hello");
+  // Span will include ai.response.finish_reason and maxSteps metadata
+  ```
+
+## 1.1.34
+
+### Patch Changes
+
+- [#727](https://github.com/VoltAgent/voltagent/pull/727) [`59da0b5`](https://github.com/VoltAgent/voltagent/commit/59da0b587cd72ff6065fa7fde9fcaecf0a92d830) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add agent.toTool() for converting agents into tools
+
+  Agents can now be converted to tools using the `.toTool()` method, enabling multi-agent coordination where one agent uses other specialized agents as tools. This is useful when the LLM should dynamically decide which agents to call based on the request.
+
+  ## Usage Example
+
+  ```typescript
+  import { Agent } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+
+  // Create specialized agents
+  const writerAgent = new Agent({
+    id: "writer",
+    purpose: "Writes blog posts",
+    model: openai("gpt-4o-mini"),
+  });
+
+  const editorAgent = new Agent({
+    id: "editor",
+    purpose: "Edits content",
+    model: openai("gpt-4o-mini"),
+  });
+
+  // Coordinator uses them as tools
+  const coordinator = new Agent({
+    tools: [writerAgent.toTool(), editorAgent.toTool()],
+    model: openai("gpt-4o-mini"),
+  });
+
+  // LLM decides which agents to call
+  await coordinator.generateText("Create a blog post about AI");
+  ```
+
+  ## Key Features
+  - **Dynamic agent selection**: LLM intelligently chooses which agents to invoke
+  - **Composable agents**: Reuse agents as building blocks across multiple coordinators
+  - **Type-safe**: Full TypeScript support with automatic type inference
+  - **Context preservation**: Automatically passes through userId, conversationId, and operation context
+  - **Customizable**: Optional custom name, description, and parameter schema
+
+  ## Customization
+
+  ```typescript
+  const customTool = agent.toTool({
+    name: "professional_writer",
+    description: "Writes professional blog posts",
+    parametersSchema: z.object({
+      topic: z.string(),
+      style: z.enum(["formal", "casual"]),
+    }),
+  });
+  ```
+
+  ## When to Use
+  - **Use `agent.toTool()`** when the LLM should decide which agents to call (e.g., customer support routing)
+  - **Use Workflows** for deterministic, code-defined pipelines (e.g., always: Step A → Step B → Step C)
+  - **Use Sub-agents** for fixed sets of collaborating agents
+
+  See the [documentation](https://docs.voltagent.ai/agents) and [`examples/with-agent-tool`](https://github.com/VoltAgent/voltagent/tree/main/examples/with-agent-tool) for more details.
+
+## 1.1.33
+
+### Patch Changes
+
+- [#724](https://github.com/VoltAgent/voltagent/pull/724) [`efe4be6`](https://github.com/VoltAgent/voltagent/commit/efe4be634f52aaef00d6b188a9146b1ad00b5968) Thanks [@marinoska](https://github.com/marinoska)! - Temporary fix for providerMetadata bug: https://github.com/vercel/ai/pull/9756
+
 ## 1.1.32
 
 ### Patch Changes

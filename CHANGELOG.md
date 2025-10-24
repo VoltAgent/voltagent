@@ -1,5 +1,606 @@
 ## Package: @voltagent/core
 
+## 1.1.35
+
+### Patch Changes
+
+- [#730](https://github.com/VoltAgent/voltagent/pull/730) [`1244b3e`](https://github.com/VoltAgent/voltagent/commit/1244b3eef1c1d1feea8e7a3934556782200a760e) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add finish reason and max steps observability to agent execution traces - #721
+
+  ## The Problem
+
+  When agents hit the maximum steps limit (via `maxSteps` or `stopWhen` conditions), execution would terminate abruptly without clear indication in observability traces. This created confusion as:
+  1. The AI SDK's `finishReason` (e.g., `stop`, `tool-calls`, `length`, `error`) was not being captured in OpenTelemetry spans
+  2. MaxSteps termination looked like a normal completion with `finishReason: "tool-calls"`
+  3. Users couldn't easily debug why their agent stopped executing
+
+  ## The Solution
+
+  **Framework (VoltAgent Core):**
+  - Added `setFinishReason(finishReason: string)` method to `AgentTraceContext` to capture AI SDK finish reasons in OpenTelemetry spans as `ai.response.finish_reason` attribute
+  - Added `setStopConditionMet(stepCount: number, maxSteps: number)` method to track when maxSteps limit is reached
+  - Updated `agent.generateText()` and `agent.streamText()` to automatically record:
+    - `ai.response.finish_reason` - The AI SDK finish reason (`stop`, `tool-calls`, `length`, `error`, etc.)
+    - `voltagent.stopped_by_max_steps` - Boolean flag when maxSteps is reached
+    - `voltagent.step_count` - Actual number of steps executed
+    - `voltagent.max_steps` - The maxSteps limit that was configured
+
+  **What Gets Captured:**
+
+  ```typescript
+  // In OpenTelemetry spans:
+  {
+    "ai.response.finish_reason": "tool-calls",
+    "voltagent.stopped_by_max_steps": true,
+    "voltagent.step_count": 10,
+    "voltagent.max_steps": 10
+  }
+  ```
+
+  ## Impact
+  - **Better Debugging:** Users can now clearly see why their agent execution terminated
+  - **Observability:** All AI SDK finish reasons are now visible in traces
+  - **MaxSteps Detection:** Explicit tracking when agents hit step limits
+  - **Console UI Ready:** These attributes power warning UI in VoltOps Console to alert users when maxSteps is reached
+
+  ## Usage
+
+  No code changes needed - this is automatically tracked for all agent executions:
+
+  ```typescript
+  const agent = new Agent({
+    name: "my-agent",
+    maxSteps: 5, // Will be tracked in spans
+  });
+
+  await agent.generateText("Hello");
+  // Span will include ai.response.finish_reason and maxSteps metadata
+  ```
+
+## 1.1.34
+
+### Patch Changes
+
+- [#727](https://github.com/VoltAgent/voltagent/pull/727) [`59da0b5`](https://github.com/VoltAgent/voltagent/commit/59da0b587cd72ff6065fa7fde9fcaecf0a92d830) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add agent.toTool() for converting agents into tools
+
+  Agents can now be converted to tools using the `.toTool()` method, enabling multi-agent coordination where one agent uses other specialized agents as tools. This is useful when the LLM should dynamically decide which agents to call based on the request.
+
+  ## Usage Example
+
+  ```typescript
+  import { Agent } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+
+  // Create specialized agents
+  const writerAgent = new Agent({
+    id: "writer",
+    purpose: "Writes blog posts",
+    model: openai("gpt-4o-mini"),
+  });
+
+  const editorAgent = new Agent({
+    id: "editor",
+    purpose: "Edits content",
+    model: openai("gpt-4o-mini"),
+  });
+
+  // Coordinator uses them as tools
+  const coordinator = new Agent({
+    tools: [writerAgent.toTool(), editorAgent.toTool()],
+    model: openai("gpt-4o-mini"),
+  });
+
+  // LLM decides which agents to call
+  await coordinator.generateText("Create a blog post about AI");
+  ```
+
+  ## Key Features
+  - **Dynamic agent selection**: LLM intelligently chooses which agents to invoke
+  - **Composable agents**: Reuse agents as building blocks across multiple coordinators
+  - **Type-safe**: Full TypeScript support with automatic type inference
+  - **Context preservation**: Automatically passes through userId, conversationId, and operation context
+  - **Customizable**: Optional custom name, description, and parameter schema
+
+  ## Customization
+
+  ```typescript
+  const customTool = agent.toTool({
+    name: "professional_writer",
+    description: "Writes professional blog posts",
+    parametersSchema: z.object({
+      topic: z.string(),
+      style: z.enum(["formal", "casual"]),
+    }),
+  });
+  ```
+
+  ## When to Use
+  - **Use `agent.toTool()`** when the LLM should decide which agents to call (e.g., customer support routing)
+  - **Use Workflows** for deterministic, code-defined pipelines (e.g., always: Step A → Step B → Step C)
+  - **Use Sub-agents** for fixed sets of collaborating agents
+
+  See the [documentation](https://docs.voltagent.ai/agents) and [`examples/with-agent-tool`](https://github.com/VoltAgent/voltagent/tree/main/examples/with-agent-tool) for more details.
+
+## 1.1.33
+
+### Patch Changes
+
+- [#724](https://github.com/VoltAgent/voltagent/pull/724) [`efe4be6`](https://github.com/VoltAgent/voltagent/commit/efe4be634f52aaef00d6b188a9146b1ad00b5968) Thanks [@marinoska](https://github.com/marinoska)! - Temporary fix for providerMetadata bug: https://github.com/vercel/ai/pull/9756
+
+## 1.1.32
+
+### Patch Changes
+
+- [#719](https://github.com/VoltAgent/voltagent/pull/719) [`3a1d214`](https://github.com/VoltAgent/voltagent/commit/3a1d214790cf49c5020eac3e9155a6daab2ff1db) Thanks [@marinoska](https://github.com/marinoska)! - Strip providerMetadata from text parts before calling convertToModelMessages to prevent invalid providerOptions in the resulting ModelMessage[].
+
+## 1.1.31
+
+### Patch Changes
+
+- [#711](https://github.com/VoltAgent/voltagent/pull/711) [`461ecec`](https://github.com/VoltAgent/voltagent/commit/461ecec60aa90b56a413713070b6e9f43efbd74b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: sanitize stored assistant/tool messages so GPT-5 conversations no longer crash with "missing reasoning item" errors when replaying memory history
+
+  fixes:
+  - #706
+
+## 1.1.30
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+
+## 1.1.29
+
+### Patch Changes
+
+- [`d5170ce`](https://github.com/VoltAgent/voltagent/commit/d5170ced80fbc9fd2de03bb7eaff1cb31424d618) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add runtime payload support for evals
+
+## 1.1.28
+
+### Patch Changes
+
+- [#688](https://github.com/VoltAgent/voltagent/pull/688) [`5b9484f`](https://github.com/VoltAgent/voltagent/commit/5b9484f1c6643fd8a8d2547be640ccd296ef2266) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add guardrails - #677
+
+  ## Guardrails overview
+  - streamText/generateText now run guardrails through a dedicated pipeline
+    - streaming handlers can redact or drop chunks in-flight
+    - final handlers see the original and sanitized text + provider metadata
+  - guardrail spans inherit the guardrail name so VoltOps shows human-readable labels
+  - helper factories: createSensitiveNumberGuardrail, createEmailRedactorGuardrail, createPhoneNumberGuardrail, createProfanityGuardrail, createMaxLengthGuardrail, createDefaultPIIGuardrails, createDefaultSafetyGuardrails
+
+  ### Usage
+
+  ```ts
+  import { Agent } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+  import { createSensitiveNumberGuardrail, createDefaultSafetyGuardrails } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Guarded Assistant",
+    instructions: "Answer without leaking PII.",
+    model: openai("gpt-4o-mini"),
+    outputGuardrails: [
+      createSensitiveNumberGuardrail(),
+      createDefaultSafetyGuardrails({ maxLength: { maxCharacters: 400 } }),
+    ],
+  });
+
+  const response = await agent.streamText("Customer card 4242 4242 1234 5678");
+  console.log(await response.text); // Sanitized output with digits redacted + length capped
+  ```
+
+## 1.1.27
+
+### Patch Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add live evals
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - ## What Changed
+
+  Removed automatic message pruning functionality from all storage adapters (PostgreSQL, Supabase, LibSQL, and InMemory). Previously, messages were automatically deleted when the count exceeded `storageLimit` (default: 100 messages per conversation).
+
+  ## Why This Change
+
+  Users reported unexpected data loss when their conversation history exceeded the storage limit. Many users expect their conversation history to be preserved indefinitely rather than automatically deleted. This change gives users full control over their data retention policies.
+
+  ## Migration Guide
+
+  ### Before
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      storageLimit: 200, // Messages auto-deleted after 200
+    }),
+  });
+  ```
+
+  ### After
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      // No storageLimit - all messages preserved
+    }),
+  });
+  ```
+
+  ### If You Need Message Cleanup
+
+  Implement your own cleanup logic using the `clearMessages()` method:
+
+  ```ts
+  // Clear all messages for a conversation
+  await memory.clearMessages(userId, conversationId);
+
+  // Clear all messages for a user
+  await memory.clearMessages(userId);
+  ```
+
+  ## Affected Packages
+  - `@voltagent/core` - Removed `storageLimit` from types
+  - `@voltagent/postgres` - Removed from PostgreSQL adapter
+  - `@voltagent/supabase` - Removed from Supabase adapter
+  - `@voltagent/libsql` - Removed from LibSQL adapter
+
+  ## Impact
+  - ✅ No more unexpected data loss
+  - ✅ Users have full control over message retention
+  - ⚠️ Databases may grow larger over time (consider implementing manual cleanup)
+  - ⚠️ Breaking change: `storageLimit` parameter no longer accepted
+
+## 1.1.26
+
+### Patch Changes
+
+- [#654](https://github.com/VoltAgent/voltagent/pull/654) [`78b9727`](https://github.com/VoltAgent/voltagent/commit/78b9727e85a31fd8eaa9c333de373d982f58b04f) Thanks [@VISHWAJ33T](https://github.com/VISHWAJ33T)! - feat(workflow): Improve typing for state parameter in steps.
+
+- [#669](https://github.com/VoltAgent/voltagent/pull/669) [`6d00793`](https://github.com/VoltAgent/voltagent/commit/6d007938d31c6d928185153834661c50227af326) Thanks [@marinoska](https://github.com/marinoska)! - Fix duplicate tool registration during agent preparation.
+
+- [#663](https://github.com/VoltAgent/voltagent/pull/663) [`7fef3a7`](https://github.com/VoltAgent/voltagent/commit/7fef3a7ea1b3f7f8c780a528d3c3abce312f3be9) Thanks [@VISHWAJ33T](https://github.com/VISHWAJ33T)! - feat(workflow): add support for dynamic schemas in agent steps
+
+- [#659](https://github.com/VoltAgent/voltagent/pull/659) [`c4d13f2`](https://github.com/VoltAgent/voltagent/commit/c4d13f2be129013eed6392990863ae85cdbd8855) Thanks [@marinoska](https://github.com/marinoska)! - Add first-class support for client-side tool calls and Vercel AI hooks integration.
+
+  This enables tools to run in the browser (no execute function) while the model remains on the server. Tool calls are surfaced to the client via Vercel AI hooks (useChat/useAssistant), executed with access to browser APIs, and their results are sent back to the model using addToolResult with the original toolCallId.
+
+  Highlights:
+  - Define a client-side tool by omitting the execute function.
+  - Automatic interception of tool calls on the client via onToolCall in useChat/useAssistant.
+  - Report outputs and errors back to the model via addToolResult(toolCallId, payload), preserving conversation state.
+  - Example added/updated: examples/with-client-side-tools (Next.js + Vercel AI).
+
+  Docs:
+  - README: Clarifies client-side tool support and where it fits in the stack.
+  - website/docs/agents/tools.md: New/updated “Client-Side Tools” section, end-to-end flow with useChat/useAssistant, addToolResult usage, and error handling.
+
+## 1.1.25
+
+### Patch Changes
+
+- [#648](https://github.com/VoltAgent/voltagent/pull/648) [`882480d`](https://github.com/VoltAgent/voltagent/commit/882480debb10575d16e9752b9fead136fe6a7050) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add input and output to OperationContext for improved observability
+
+  ## What Changed
+
+  Added `input` and `output` fields to `OperationContext`, making them accessible throughout the agent's execution lifecycle.
+
+  ## New Fields in OperationContext
+
+  ```typescript
+  export type OperationContext = {
+    // ... existing fields
+
+    /** Input provided to the agent operation (string, UIMessages, or BaseMessages) */
+    input?: string | UIMessage[] | BaseMessage[];
+
+    /** Output generated by the agent operation (text or object) */
+    output?: string | object;
+  };
+  ```
+
+  ## Usage in Tools and Hooks
+
+  ```typescript
+  // Access input and output in tools
+  const myTool = createTool({
+    name: "exampleTool",
+    parameters: z.object({}),
+    async execute(args, context) {
+      // Access the original input
+      console.log("Original input:", context.input);
+
+      return { status: "ok" };
+    },
+  });
+
+  // Access in hooks
+  const agent = new Agent({
+    hooks: {
+      onEnd: async ({ context }) => {
+        // Both input and output are available
+        console.log("Input:", context.input);
+        console.log("Output:", context.output);
+      },
+    },
+  });
+  ```
+
+  ## Why This Matters
+  - **Better Debugging**: Tools and hooks can now see both the original input and final output
+  - **Enhanced Observability**: Full context available for logging and monitoring
+  - **Consistent with Tracing**: Aligns with how AgentTraceContext already handles input/output for OpenTelemetry
+  - **No Breaking Changes**: Existing code continues to work; these are new optional fields
+
+## 1.1.24
+
+### Patch Changes
+
+- [#641](https://github.com/VoltAgent/voltagent/pull/641) [`4c42bf7`](https://github.com/VoltAgent/voltagent/commit/4c42bf72834d3cd45ff5246ef65d7b08470d6a8e) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: introduce managed memory - ready-made cloud storage for VoltAgent
+
+  ## What Changed for You
+
+  VoltAgent now offers a managed memory solution that eliminates the need to run your own database infrastructure. The new `@voltagent/voltagent-memory` package provides a `ManagedMemoryAdapter` that connects to VoltOps Managed Memory service, perfect for pilots, demos, and production workloads.
+
+  ## New Package: @voltagent/voltagent-memory
+
+  ### Automatic Setup (Recommended)
+
+  Get your credentials from [console.voltagent.dev/memory/managed-memory](https://console.voltagent.dev/memory/managed-memory) and set environment variables:
+
+  ```bash
+  # .env
+  VOLTAGENT_PUBLIC_KEY=pk_...
+  VOLTAGENT_SECRET_KEY=sk_...
+  ```
+
+  ```typescript
+  import { Agent, Memory } from "@voltagent/core";
+  import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
+  import { openai } from "@ai-sdk/openai";
+
+  // Adapter automatically uses VoltOps credentials from environment
+  const agent = new Agent({
+    name: "Assistant",
+    instructions: "You are a helpful assistant",
+    model: openai("gpt-4o-mini"),
+    memory: new Memory({
+      storage: new ManagedMemoryAdapter({
+        databaseName: "production-memory",
+      }),
+    }),
+  });
+
+  // Use like any other agent - memory is automatically persisted
+  const result = await agent.generateText("Hello!", {
+    userId: "user-123",
+    conversationId: "conv-456",
+  });
+  ```
+
+  ### Manual Setup
+
+  Pass a `VoltOpsClient` instance explicitly:
+
+  ```typescript
+  import { Agent, Memory, VoltOpsClient } from "@voltagent/core";
+  import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
+  import { openai } from "@ai-sdk/openai";
+
+  const voltOpsClient = new VoltOpsClient({
+    publicKey: process.env.VOLTAGENT_PUBLIC_KEY!,
+    secretKey: process.env.VOLTAGENT_SECRET_KEY!,
+  });
+
+  const agent = new Agent({
+    name: "Assistant",
+    instructions: "You are a helpful assistant",
+    model: openai("gpt-4o-mini"),
+    memory: new Memory({
+      storage: new ManagedMemoryAdapter({
+        databaseName: "production-memory",
+        voltOpsClient, // explicit client
+      }),
+    }),
+  });
+  ```
+
+  ### Vector Storage (Optional)
+
+  Enable semantic search with `ManagedMemoryVectorAdapter`:
+
+  ```typescript
+  import { ManagedMemoryAdapter, ManagedMemoryVectorAdapter } from "@voltagent/voltagent-memory";
+  import { AiSdkEmbeddingAdapter, Memory } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+
+  const memory = new Memory({
+    storage: new ManagedMemoryAdapter({
+      databaseName: "production-memory",
+    }),
+    embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+    vector: new ManagedMemoryVectorAdapter({
+      databaseName: "production-memory",
+    }),
+  });
+  ```
+
+  ## Key Features
+  - **Zero Infrastructure**: No need to provision or manage databases
+  - **Quick Setup**: Create a managed memory database in under 3 minutes from VoltOps Console
+  - **Framework Parity**: Works identically to local Postgres, LibSQL, or Supabase adapters
+  - **Production Ready**: Managed infrastructure with reliability guardrails
+  - **Multi-Region**: Available in US (Virginia) and EU (Germany)
+
+  ## Getting Started
+  1. **Install the package**:
+
+  ```bash
+  npm install @voltagent/voltagent-memory
+  # or
+  pnpm add @voltagent/voltagent-memory
+  ```
+
+  2. **Create a managed database**:
+     - Navigate to [console.voltagent.dev/memory/managed-memory](https://console.voltagent.dev/memory/managed-memory)
+     - Click **Create Database**
+     - Enter a name and select region (US or EU)
+     - Copy your VoltOps API keys from Settings
+  3. **Configure environment variables**:
+
+  ```bash
+  VOLTAGENT_PUBLIC_KEY=pk_...
+  VOLTAGENT_SECRET_KEY=sk_...
+  ```
+
+  4. **Use the adapter**:
+
+  ```typescript
+  import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
+  import { Memory } from "@voltagent/core";
+
+  const memory = new Memory({
+    storage: new ManagedMemoryAdapter({
+      databaseName: "your-database-name",
+    }),
+  });
+  ```
+
+  ## Why This Matters
+  - **Faster Prototyping**: Launch pilots without database setup
+  - **Reduced Complexity**: No infrastructure management overhead
+  - **Consistent Experience**: Same StorageAdapter interface across all memory providers
+  - **Scalable Path**: Start with managed memory, migrate to self-hosted when needed
+  - **Multi-Region Support**: Deploy close to your users in US or EU
+
+  ## Migration Notes
+
+  Existing agents using local storage adapters (InMemory, LibSQL, Postgres, Supabase) continue to work unchanged. Managed memory is an optional addition that provides a cloud-hosted alternative for teams who prefer not to manage their own database infrastructure.
+
+- [#637](https://github.com/VoltAgent/voltagent/pull/637) [`b7ee693`](https://github.com/VoltAgent/voltagent/commit/b7ee6936280b5d09b893db6500ad58b4ac80eaf2) Thanks [@marinoska](https://github.com/marinoska)! - - Introduced tests and documentation for the `ToolDeniedError`.
+  - Added a feature to terminate the process flow when the `onToolStart` hook triggers a `ToolDeniedError`.
+  - Enhanced error handling mechanisms to ensure proper flow termination in specific error scenarios.
+
+## 1.1.23
+
+### Patch Changes
+
+- [#632](https://github.com/VoltAgent/voltagent/pull/632) [`9bd1cf5`](https://github.com/VoltAgent/voltagent/commit/9bd1cf5ab0b0ff54f2bc301a40a486b36d76c3f4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: ensure agents expose their default in-memory storage so observability APIs can read it
+  fix: keep tool call inputs intact when persisted so VoltOps observability shows them instead of empty payloads
+
+## 1.1.22
+
+### Patch Changes
+
+- [#629](https://github.com/VoltAgent/voltagent/pull/629) [`3e64b9c`](https://github.com/VoltAgent/voltagent/commit/3e64b9ce58d0e91bc272f491be2c1932a005ef48) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add memory observability
+
+## 1.1.21
+
+### Patch Changes
+
+- [#625](https://github.com/VoltAgent/voltagent/pull/625) [`ec76c47`](https://github.com/VoltAgent/voltagent/commit/ec76c47a9533fd4bcf9ffd22153e3d99248f00fa) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `onPrepareModelMessages` hook
+  - ensure `onPrepareMessages` now receives the sanitized UI payload while exposing `rawMessages` for audit or metadata recovery without sending it to the LLM.
+  - introduce `onPrepareModelMessages` so developers can tweak the final provider-facing message array (e.g. add guardrails, adapt to provider quirks) after conversion.
+
+  ```ts
+  const hooks = createHooks({
+    onPrepareMessages: ({ messages, rawMessages }) => ({
+      messages: messages.map((msg) =>
+        messageHelpers.addTimestampToMessage(msg, new Date().toISOString())
+      ),
+      rawMessages, // still available for logging/analytics
+    }),
+    onPrepareModelMessages: ({ modelMessages }) => ({
+      modelMessages: modelMessages.map((message, idx) =>
+        idx === modelMessages.length - 1 && message.role === "assistant"
+          ? {
+              ...message,
+              content: [
+                ...message.content,
+                { type: "text", text: "Please keep the summary under 200 words." },
+              ],
+            }
+          : message
+      ),
+    }),
+  });
+  ```
+
+- [#625](https://github.com/VoltAgent/voltagent/pull/625) [`ec76c47`](https://github.com/VoltAgent/voltagent/commit/ec76c47a9533fd4bcf9ffd22153e3d99248f00fa) Thanks [@omeraplak](https://github.com/omeraplak)! - - preserve Anthropic-compatible providerOptions on system messages - #593
+
+  ```ts
+  const agent = new Agent({
+    name: "Cacheable System",
+    model: anthropic("claude-3-7-sonnet-20250219"),
+    instructions: {
+      type: "chat",
+      messages: [
+        {
+          role: "system",
+          content: "remember to use cached context",
+          providerOptions: {
+            anthropic: { cacheControl: { type: "ephemeral", ttl: "5m" } },
+          },
+        },
+      ],
+    },
+  });
+
+  await agent.generateText("ping"); // providerOptions now flow through unchanged
+  ```
+
+- [#623](https://github.com/VoltAgent/voltagent/pull/623) [`0d91d90`](https://github.com/VoltAgent/voltagent/commit/0d91d9081381a6c259188209cd708293271e5e3e) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: allow constructing `VoltAgent` without passing an `agents` map so workflows-only setups boot without boilerplate.
+
+## 1.1.20
+
+### Patch Changes
+
+- [#621](https://github.com/VoltAgent/voltagent/pull/621) [`f4fa7e2`](https://github.com/VoltAgent/voltagent/commit/f4fa7e297fec2f602c9a24a0c77e645aa971f2b9) Thanks [@omeraplak](https://github.com/omeraplak)! - ## @voltagent/core
+  - Folded the serverless runtime entry point into the main build – importing `@voltagent/core` now auto-detects the runtime and provisions either the Node or serverless observability pipeline.
+  - Rebuilt serverless observability on top of `BasicTracerProvider`, fetch-based OTLP exporters, and an execution-context `waitUntil` hook. Exports run with exponential backoff, never block the response, and automatically reuse VoltOps credentials (or fall back to the in-memory span/log store) so VoltOps Console transparently swaps to HTTP polling when WebSockets are unavailable.
+  - Hardened the runtime utilities for Workers/Functions: added universal `randomUUID`, base64, and event-emitter helpers, and taught the default logger to emit OpenTelemetry logs without relying on Node globals. This removes the last Node-only dependencies from the serverless bundle.
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { serverlessHono } from "@voltagent/serverless-hono";
+  import { openai } from "@ai-sdk/openai";
+
+  import { weatherTool } from "./tools";
+
+  const assistant = new Agent({
+    name: "serverless-assistant",
+    instructions: "You are a helpful assistant.",
+    model: openai("gpt-4o-mini"),
+  });
+
+  const voltAgent = new VoltAgent({
+    agents: { assistant },
+    serverless: serverlessHono(),
+  });
+
+  export default voltAgent.serverless().toCloudflareWorker();
+  ```
+
+  ## @voltagent/serverless-hono
+  - Renamed the edge provider to **serverless** and upgraded it to power any fetch-based runtime (Cloudflare Workers, Vercel Edge Functions, Deno Deploy, Netlify Functions).
+  - Wrapped the Cloudflare adapter in a first-class `HonoServerlessProvider` that installs a scoped `waitUntil` bridge, reuses the shared routing layer, and exposes a `/ws` health stub so VoltOps Console can cleanly fall back to polling.
+  - Dropped the manual environment merge – Workers should now enable the `nodejs_compat_populate_process_env` flag (documented in the new deployment guide) instead of calling `mergeProcessEnv` themselves.
+
+  ## @voltagent/server-core
+  - Reworked the observability handlers around the shared storage API, including a new `POST /setup-observability` helper that writes VoltOps keys into `.env` and expanded trace/log queries that match the serverless storage contract.
+
+  ## @voltagent/cli
+  - Added `volt deploy --target <cloudflare|vercel|netlify>` to scaffold the right config files. The Cloudflare template now ships with the required compatibility flags (`nodejs_compat`, `nodejs_compat_populate_process_env`, `no_handle_cross_request_promise_resolution`) so new projects run on Workers without extra tweaking.
+
+- [#620](https://github.com/VoltAgent/voltagent/pull/620) [`415cc82`](https://github.com/VoltAgent/voltagent/commit/415cc822938e5cc1e925438ad21e88f4295984c1) Thanks [@marinoska](https://github.com/marinoska)! - Workflows can be streamed directly into `useChat` by converting raw events
+  (`workflow-start`, `workflow-complete`, etc.) into `data-*` UI messages via
+  `toUIMessageStreamResponse`.
+
+  Related to #589
+
 ## 1.1.19
 
 ### Patch Changes
@@ -4893,6 +5494,8 @@
     // Optional: Configure connection pool
     maxConnections: 10,
 
+    // Optional: Set storage limit for messages
+    storageLimit: 100,
 
     // Optional: Enable debug logging for development
     debug: process.env.NODE_ENV === "development",
@@ -5592,6 +6195,17 @@
 
 ## Package: @voltagent/a2a-server
 
+## 1.0.2
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+
 ## 1.0.1
 
 ### Patch Changes
@@ -5633,6 +6247,70 @@
 ---
 
 ## Package: @voltagent/cli
+
+## 0.1.13
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+  - @voltagent/evals@1.0.3
+  - @voltagent/sdk@1.0.1
+
+## 0.1.12
+
+### Patch Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add eval commands
+
+- Updated dependencies [[`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b), [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b)]:
+  - @voltagent/evals@1.0.0
+  - @voltagent/sdk@1.0.0
+
+## 0.1.11
+
+### Patch Changes
+
+- [#621](https://github.com/VoltAgent/voltagent/pull/621) [`f4fa7e2`](https://github.com/VoltAgent/voltagent/commit/f4fa7e297fec2f602c9a24a0c77e645aa971f2b9) Thanks [@omeraplak](https://github.com/omeraplak)! - ## @voltagent/core
+  - Folded the serverless runtime entry point into the main build – importing `@voltagent/core` now auto-detects the runtime and provisions either the Node or serverless observability pipeline.
+  - Rebuilt serverless observability on top of `BasicTracerProvider`, fetch-based OTLP exporters, and an execution-context `waitUntil` hook. Exports run with exponential backoff, never block the response, and automatically reuse VoltOps credentials (or fall back to the in-memory span/log store) so VoltOps Console transparently swaps to HTTP polling when WebSockets are unavailable.
+  - Hardened the runtime utilities for Workers/Functions: added universal `randomUUID`, base64, and event-emitter helpers, and taught the default logger to emit OpenTelemetry logs without relying on Node globals. This removes the last Node-only dependencies from the serverless bundle.
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { serverlessHono } from "@voltagent/serverless-hono";
+  import { openai } from "@ai-sdk/openai";
+
+  import { weatherTool } from "./tools";
+
+  const assistant = new Agent({
+    name: "serverless-assistant",
+    instructions: "You are a helpful assistant.",
+    model: openai("gpt-4o-mini"),
+  });
+
+  const voltAgent = new VoltAgent({
+    agents: { assistant },
+    serverless: serverlessHono(),
+  });
+
+  export default voltAgent.serverless().toCloudflareWorker();
+  ```
+
+  ## @voltagent/serverless-hono
+  - Renamed the edge provider to **serverless** and upgraded it to power any fetch-based runtime (Cloudflare Workers, Vercel Edge Functions, Deno Deploy, Netlify Functions).
+  - Wrapped the Cloudflare adapter in a first-class `HonoServerlessProvider` that installs a scoped `waitUntil` bridge, reuses the shared routing layer, and exposes a `/ws` health stub so VoltOps Console can cleanly fall back to polling.
+  - Dropped the manual environment merge – Workers should now enable the `nodejs_compat_populate_process_env` flag (documented in the new deployment guide) instead of calling `mergeProcessEnv` themselves.
+
+  ## @voltagent/server-core
+  - Reworked the observability handlers around the shared storage API, including a new `POST /setup-observability` helper that writes VoltOps keys into `.env` and expanded trace/log queries that match the serverless storage contract.
+
+  ## @voltagent/cli
+  - Added `volt deploy --target <cloudflare|vercel|netlify>` to scaffold the right config files. The Cloudflare template now ships with the required compatibility flags (`nodejs_compat`, `nodejs_compat_populate_process_env`, `no_handle_cross_request_promise_resolution`) so new projects run on Workers without extra tweaking.
 
 ## 0.1.10
 
@@ -5767,6 +6445,15 @@
 ---
 
 ## Package: create-voltagent-app
+
+## 0.2.11
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
 
 ## 0.2.10
 
@@ -6029,6 +6716,28 @@
 
 ## Package: @voltagent/docs-mcp
 
+## 1.0.21
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+
+## 1.0.16
+
+### Patch Changes
+
+- [#627](https://github.com/VoltAgent/voltagent/pull/627) [`0dafbf0`](https://github.com/VoltAgent/voltagent/commit/0dafbf06deb0190de5d865ac522127b2702f42ca) Thanks [@Theadd](https://github.com/Theadd)! - fix(docs-mcp): update JSON Schema target to draft-7 for tool compatibilityfix(docs): update JSON Schema target to draft-7 for tool compatibility
+
+  The MCP tool schemas were using JSON Schema draft-2020-12 features that weren't supported by the current validator. Updated to explicitly use draft-7 format for better compatibility.The MCP tool schemas were using JSON Schema draft-2020-12 features that weren't supported by the current validator. Updated to explicitly use draft-7 format for better compatibility.
+  - Changed z.toJSONSchema() to use draft-7 target- Changed z.toJSONSchema() to use draft-7 target
+  - Fixed tool registration failures due to schema validation errors- Fixed tool registration failures due to schema validation errors
+  - Removed dependency on unsupported $dynamicRef feature- Removed dependency on unsupported $dynamicRef feature
+
+  Fixes #626
+
 ## 1.0.14
 
 ### Patch Changes
@@ -6252,7 +6961,57 @@
 
 ---
 
+## Package: @voltagent/evals
+
+## 1.0.3
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+  - @voltagent/scorers@1.0.1
+  - @voltagent/sdk@1.0.1
+
+## 1.0.2
+
+### Patch Changes
+
+- [`d5170ce`](https://github.com/VoltAgent/voltagent/commit/d5170ced80fbc9fd2de03bb7eaff1cb31424d618) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add runtime payload support for evals
+
+## 1.0.1
+
+### Patch Changes
+
+- [#690](https://github.com/VoltAgent/voltagent/pull/690) [`c8f9032`](https://github.com/VoltAgent/voltagent/commit/c8f9032fd806efbd22da9c8bd0a10f59a388fb7b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: allow experiment scorer configs to declare their own `id`, so `passCriteria` entries that target `scorerId` work reliably and scorer summaries use the caller-provided identifiers.
+
+## 1.0.0
+
+### Major Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: initial release
+
+### Patch Changes
+
+- Updated dependencies [[`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b), [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b)]:
+  - @voltagent/scorers@1.0.0
+  - @voltagent/sdk@1.0.0
+
+---
+
 ## Package: @voltagent/internal
+
+## 0.0.12
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
 
 ## 0.0.11
 
@@ -6467,6 +7226,15 @@
 
 ## Package: @voltagent/langfuse-exporter
 
+## 1.1.3
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+
 ## 1.1.2
 
 ### Patch Changes
@@ -6679,6 +7447,83 @@
 ---
 
 ## Package: @voltagent/libsql
+
+## 1.0.9
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+
+## 1.0.8
+
+### Patch Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - ## What Changed
+
+  Removed automatic message pruning functionality from all storage adapters (PostgreSQL, Supabase, LibSQL, and InMemory). Previously, messages were automatically deleted when the count exceeded `storageLimit` (default: 100 messages per conversation).
+
+  ## Why This Change
+
+  Users reported unexpected data loss when their conversation history exceeded the storage limit. Many users expect their conversation history to be preserved indefinitely rather than automatically deleted. This change gives users full control over their data retention policies.
+
+  ## Migration Guide
+
+  ### Before
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      storageLimit: 200, // Messages auto-deleted after 200
+    }),
+  });
+  ```
+
+  ### After
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      // No storageLimit - all messages preserved
+    }),
+  });
+  ```
+
+  ### If You Need Message Cleanup
+
+  Implement your own cleanup logic using the `clearMessages()` method:
+
+  ```ts
+  // Clear all messages for a conversation
+  await memory.clearMessages(userId, conversationId);
+
+  // Clear all messages for a user
+  await memory.clearMessages(userId);
+  ```
+
+  ## Affected Packages
+  - `@voltagent/core` - Removed `storageLimit` from types
+  - `@voltagent/postgres` - Removed from PostgreSQL adapter
+  - `@voltagent/supabase` - Removed from Supabase adapter
+  - `@voltagent/libsql` - Removed from LibSQL adapter
+
+  ## Impact
+  - ✅ No more unexpected data loss
+  - ✅ Users have full control over message retention
+  - ⚠️ Databases may grow larger over time (consider implementing manual cleanup)
+  - ⚠️ Breaking change: `storageLimit` parameter no longer accepted
+
+## 1.0.7
+
+### Patch Changes
+
+- [#629](https://github.com/VoltAgent/voltagent/pull/629) [`3e64b9c`](https://github.com/VoltAgent/voltagent/commit/3e64b9ce58d0e91bc272f491be2c1932a005ef48) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add memory observability
 
 ## 1.0.6
 
@@ -6952,6 +7797,17 @@
 
 ## Package: @voltagent/logger
 
+## 1.0.3
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+
 ## 1.0.2
 
 ### Patch Changes
@@ -7050,6 +7906,35 @@
 
 ## Package: @voltagent/mcp-server
 
+## 1.0.3
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+
+## 1.0.2
+
+### Patch Changes
+
+- [#659](https://github.com/VoltAgent/voltagent/pull/659) [`c4d13f2`](https://github.com/VoltAgent/voltagent/commit/c4d13f2be129013eed6392990863ae85cdbd8855) Thanks [@marinoska](https://github.com/marinoska)! - Add first-class support for client-side tool calls and Vercel AI hooks integration.
+
+  This enables tools to run in the browser (no execute function) while the model remains on the server. Tool calls are surfaced to the client via Vercel AI hooks (useChat/useAssistant), executed with access to browser APIs, and their results are sent back to the model using addToolResult with the original toolCallId.
+
+  Highlights:
+  - Define a client-side tool by omitting the execute function.
+  - Automatic interception of tool calls on the client via onToolCall in useChat/useAssistant.
+  - Report outputs and errors back to the model via addToolResult(toolCallId, payload), preserving conversation state.
+  - Example added/updated: examples/with-client-side-tools (Next.js + Vercel AI).
+
+  Docs:
+  - README: Clarifies client-side tool support and where it fits in the stack.
+  - website/docs/agents/tools.md: New/updated “Client-Side Tools” section, end-to-end flow with useChat/useAssistant, addToolResult usage, and error handling.
+
 ## 1.0.1
 
 ### Patch Changes
@@ -7136,6 +8021,173 @@
 ---
 
 ## Package: @voltagent/postgres
+
+## 1.0.10
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+
+## 1.0.9
+
+### Patch Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - ## What Changed
+
+  Removed automatic message pruning functionality from all storage adapters (PostgreSQL, Supabase, LibSQL, and InMemory). Previously, messages were automatically deleted when the count exceeded `storageLimit` (default: 100 messages per conversation).
+
+  ## Why This Change
+
+  Users reported unexpected data loss when their conversation history exceeded the storage limit. Many users expect their conversation history to be preserved indefinitely rather than automatically deleted. This change gives users full control over their data retention policies.
+
+  ## Migration Guide
+
+  ### Before
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      storageLimit: 200, // Messages auto-deleted after 200
+    }),
+  });
+  ```
+
+  ### After
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      // No storageLimit - all messages preserved
+    }),
+  });
+  ```
+
+  ### If You Need Message Cleanup
+
+  Implement your own cleanup logic using the `clearMessages()` method:
+
+  ```ts
+  // Clear all messages for a conversation
+  await memory.clearMessages(userId, conversationId);
+
+  // Clear all messages for a user
+  await memory.clearMessages(userId);
+  ```
+
+  ## Affected Packages
+  - `@voltagent/core` - Removed `storageLimit` from types
+  - `@voltagent/postgres` - Removed from PostgreSQL adapter
+  - `@voltagent/supabase` - Removed from Supabase adapter
+  - `@voltagent/libsql` - Removed from LibSQL adapter
+
+  ## Impact
+  - ✅ No more unexpected data loss
+  - ✅ Users have full control over message retention
+  - ⚠️ Databases may grow larger over time (consider implementing manual cleanup)
+  - ⚠️ Breaking change: `storageLimit` parameter no longer accepted
+
+## 1.0.8
+
+### Patch Changes
+
+- [#641](https://github.com/VoltAgent/voltagent/pull/641) [`4c42bf7`](https://github.com/VoltAgent/voltagent/commit/4c42bf72834d3cd45ff5246ef65d7b08470d6a8e) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add PostgresVectorAdapter for semantic search with vanilla PostgreSQL
+
+  ## What Changed for You
+
+  The `@voltagent/postgres` package now includes `PostgresVectorAdapter` for storing and querying vector embeddings using vanilla PostgreSQL (no extensions required). This enables semantic search capabilities for conversation history, allowing agents to retrieve contextually relevant messages based on meaning rather than just keywords.
+
+  ## New: PostgresVectorAdapter
+
+  ```typescript
+  import { Agent, Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+  import { PostgresMemoryAdapter, PostgresVectorAdapter } from "@voltagent/postgres";
+  import { openai } from "@ai-sdk/openai";
+
+  const memory = new Memory({
+    storage: new PostgresMemoryAdapter({
+      connectionString: process.env.DATABASE_URL,
+    }),
+    embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+    vector: new PostgresVectorAdapter({
+      connectionString: process.env.DATABASE_URL,
+    }),
+  });
+
+  const agent = new Agent({
+    name: "Assistant",
+    instructions: "You are a helpful assistant with semantic memory",
+    model: openai("gpt-4o-mini"),
+    memory,
+  });
+
+  // Semantic search automatically enabled with userId + conversationId
+  const result = await agent.generateText("What did we discuss about the project?", {
+    userId: "user-123",
+    conversationId: "conv-456",
+  });
+  ```
+
+  ## Key Features
+  - **No Extensions Required**: Works with vanilla PostgreSQL (no pgvector needed)
+  - **BYTEA Storage**: Vectors stored efficiently as binary data using PostgreSQL's native BYTEA type
+  - **In-Memory Similarity**: Cosine similarity computed in-memory for accurate results
+  - **Automatic Setup**: Creates `voltagent_vectors` table and indexes automatically
+  - **Configurable**: Customize table name, vector dimensions, cache size, and retry logic
+  - **Production Ready**: Connection pooling, exponential backoff, LRU caching
+
+  ## Configuration Options
+
+  ```typescript
+  const vectorAdapter = new PostgresVectorAdapter({
+    connectionString: process.env.DATABASE_URL,
+
+    // Optional: customize table name (default: "voltagent_vector")
+    tablePrefix: "custom_vector",
+
+    // Optional: vector dimensions (default: 1536 for text-embedding-3-small)
+    maxVectorDimensions: 1536,
+
+    // Optional: LRU cache size (default: 100)
+    cacheSize: 100,
+
+    // Optional: connection pool size (default: 10)
+    maxConnections: 10,
+  });
+  ```
+
+  ## How It Works
+  1. **Embedding Generation**: Messages are converted to vector embeddings using your chosen embedding model
+  2. **Binary Storage**: Vectors are serialized to binary (BYTEA) and stored in PostgreSQL
+  3. **In-Memory Similarity**: When searching, all vectors are loaded and cosine similarity is computed in-memory
+  4. **Context Merging**: Relevant messages are merged into conversation context automatically
+
+  ## Why This Matters
+  - **Better Context Retrieval**: Find relevant past conversations even with different wording
+  - **Unified Storage**: Keep vectors and messages in the same PostgreSQL database
+  - **Zero Extensions**: Works with any PostgreSQL instance (12+), no extension installation needed
+  - **Cost Effective**: No separate vector database needed (Pinecone, Weaviate, etc.)
+  - **Familiar Tools**: Use standard PostgreSQL management and monitoring tools
+  - **Framework Parity**: Same `VectorStorageAdapter` interface as other providers
+
+  ## Performance Notes
+
+  This adapter loads all vectors into memory for similarity computation, which works well for:
+  - **Small to medium datasets** (< 10,000 vectors)
+  - **Development and prototyping**
+  - **Applications where extension installation is not possible**
+
+  For large-scale production workloads with millions of vectors, consider specialized vector databases or PostgreSQL with pgvector extension for database-level similarity operations.
+
+  ## Migration Notes
+
+  Existing PostgreSQL memory adapters continue to work without changes. Vector storage is optional and only activates when you configure both `embedding` and `vector` in the Memory constructor.
 
 ## 1.0.7
 
@@ -7647,7 +8699,57 @@
 
 ---
 
+## Package: @voltagent/scorers
+
+## 1.0.1
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+  - @voltagent/core@1.1.30
+
+## 1.0.0
+
+### Major Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: initial release
+
+### Patch Changes
+
+- Updated dependencies [[`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b), [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b)]:
+  - @voltagent/core@1.1.27
+
+---
+
 ## Package: @voltagent/sdk
+
+## 1.0.1
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+  - @voltagent/core@1.1.30
+
+## 1.0.0
+
+### Major Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add dataset/evals/experiments functions
+
+### Patch Changes
+
+- Updated dependencies [[`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b), [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b)]:
+  - @voltagent/core@1.1.27
 
 ## 0.1.7-next.0
 
@@ -7757,6 +8859,174 @@
 ---
 
 ## Package: @voltagent/server-core
+
+## 1.0.19
+
+### Patch Changes
+
+- [`907cc30`](https://github.com/VoltAgent/voltagent/commit/907cc30b8cbe655ae6e79fd25494f246663fd8ad) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core dependency
+
+## 1.0.18
+
+### Patch Changes
+
+- Updated dependencies [[`461ecec`](https://github.com/VoltAgent/voltagent/commit/461ecec60aa90b56a413713070b6e9f43efbd74b)]:
+  - @voltagent/core@1.1.31
+
+## 1.0.17
+
+### Patch Changes
+
+- [#709](https://github.com/VoltAgent/voltagent/pull/709) [`8b838ec`](https://github.com/VoltAgent/voltagent/commit/8b838ecf085f13efacb94897063de5e7087861e6) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add defaultPrivate option to AuthProvider for protecting all routes by default
+
+  ## The Problem
+
+  When using VoltAgent with third-party auth providers (like Clerk, Auth0, or custom providers), custom routes added via `configureApp` were public by default. This meant:
+  - Only routes explicitly in `PROTECTED_ROUTES` required authentication
+  - Custom endpoints needed manual middleware to be protected
+  - The `publicRoutes` property couldn't make all routes private by default
+
+  This was especially problematic when integrating with enterprise auth systems where security-by-default is expected.
+
+  ## The Solution
+
+  Added `defaultPrivate` option to `AuthProvider` interface, enabling two authentication modes:
+  - **Opt-In Mode** (default, `defaultPrivate: false`): Only specific routes require auth
+  - **Opt-Out Mode** (`defaultPrivate: true`): All routes require auth unless explicitly listed in `publicRoutes`
+
+  ## Usage Example
+
+  ### Protecting All Routes with Clerk
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      auth: jwtAuth({
+        secret: process.env.CLERK_JWT_KEY,
+        defaultPrivate: true, // 🔒 Protect all routes by default
+        publicRoutes: ["GET /health", "POST /webhooks/clerk"],
+        mapUser: (payload) => ({
+          id: payload.sub,
+          email: payload.email,
+        }),
+      }),
+      configureApp: (app) => {
+        // ✅ Public (in publicRoutes)
+        app.get("/health", (c) => c.json({ status: "ok" }));
+
+        // 🔒 Protected automatically (defaultPrivate: true)
+        app.get("/api/user/data", (c) => {
+          const user = c.get("authenticatedUser");
+          return c.json({ user });
+        });
+      },
+    }),
+  });
+  ```
+
+  ### Default Behavior (Backward Compatible)
+
+  ```typescript
+  // Without defaultPrivate, behavior is unchanged
+  auth: jwtAuth({
+    secret: process.env.JWT_SECRET,
+    // defaultPrivate: false (default)
+  });
+
+  // Custom routes are public unless you add your own middleware
+  configureApp: (app) => {
+    app.get("/api/data", (c) => {
+      // This is PUBLIC by default
+      return c.json({ data: "anyone can access" });
+    });
+  };
+  ```
+
+  ## Benefits
+  - ✅ **Fail-safe security**: Routes are protected by default when enabled
+  - ✅ **No manual middleware**: Custom endpoints automatically protected
+  - ✅ **Perfect for third-party auth**: Ideal for Clerk, Auth0, Supabase
+  - ✅ **Backward compatible**: No breaking changes, opt-in feature
+  - ✅ **Fine-grained control**: Use `publicRoutes` to selectively allow access
+
+## 1.0.16
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+  - @voltagent/core@1.1.30
+
+## 1.0.15
+
+### Patch Changes
+
+- [#637](https://github.com/VoltAgent/voltagent/pull/637) [`b7ee693`](https://github.com/VoltAgent/voltagent/commit/b7ee6936280b5d09b893db6500ad58b4ac80eaf2) Thanks [@marinoska](https://github.com/marinoska)! - - Introduced tests and documentation for the `ToolDeniedError`.
+  - Added a feature to terminate the process flow when the `onToolStart` hook triggers a `ToolDeniedError`.
+  - Enhanced error handling mechanisms to ensure proper flow termination in specific error scenarios.
+- Updated dependencies [[`4c42bf7`](https://github.com/VoltAgent/voltagent/commit/4c42bf72834d3cd45ff5246ef65d7b08470d6a8e), [`b7ee693`](https://github.com/VoltAgent/voltagent/commit/b7ee6936280b5d09b893db6500ad58b4ac80eaf2)]:
+  - @voltagent/core@1.1.24
+
+## 1.0.14
+
+### Patch Changes
+
+- [`ca6160a`](https://github.com/VoltAgent/voltagent/commit/ca6160a2f5098f296729dcd842a013558d14eeb8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: updates endpoint
+
+## 1.0.13
+
+### Patch Changes
+
+- [#629](https://github.com/VoltAgent/voltagent/pull/629) [`3e64b9c`](https://github.com/VoltAgent/voltagent/commit/3e64b9ce58d0e91bc272f491be2c1932a005ef48) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add memory observability
+
+## 1.0.12
+
+### Patch Changes
+
+- [#621](https://github.com/VoltAgent/voltagent/pull/621) [`f4fa7e2`](https://github.com/VoltAgent/voltagent/commit/f4fa7e297fec2f602c9a24a0c77e645aa971f2b9) Thanks [@omeraplak](https://github.com/omeraplak)! - ## @voltagent/core
+  - Folded the serverless runtime entry point into the main build – importing `@voltagent/core` now auto-detects the runtime and provisions either the Node or serverless observability pipeline.
+  - Rebuilt serverless observability on top of `BasicTracerProvider`, fetch-based OTLP exporters, and an execution-context `waitUntil` hook. Exports run with exponential backoff, never block the response, and automatically reuse VoltOps credentials (or fall back to the in-memory span/log store) so VoltOps Console transparently swaps to HTTP polling when WebSockets are unavailable.
+  - Hardened the runtime utilities for Workers/Functions: added universal `randomUUID`, base64, and event-emitter helpers, and taught the default logger to emit OpenTelemetry logs without relying on Node globals. This removes the last Node-only dependencies from the serverless bundle.
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { serverlessHono } from "@voltagent/serverless-hono";
+  import { openai } from "@ai-sdk/openai";
+
+  import { weatherTool } from "./tools";
+
+  const assistant = new Agent({
+    name: "serverless-assistant",
+    instructions: "You are a helpful assistant.",
+    model: openai("gpt-4o-mini"),
+  });
+
+  const voltAgent = new VoltAgent({
+    agents: { assistant },
+    serverless: serverlessHono(),
+  });
+
+  export default voltAgent.serverless().toCloudflareWorker();
+  ```
+
+  ## @voltagent/serverless-hono
+  - Renamed the edge provider to **serverless** and upgraded it to power any fetch-based runtime (Cloudflare Workers, Vercel Edge Functions, Deno Deploy, Netlify Functions).
+  - Wrapped the Cloudflare adapter in a first-class `HonoServerlessProvider` that installs a scoped `waitUntil` bridge, reuses the shared routing layer, and exposes a `/ws` health stub so VoltOps Console can cleanly fall back to polling.
+  - Dropped the manual environment merge – Workers should now enable the `nodejs_compat_populate_process_env` flag (documented in the new deployment guide) instead of calling `mergeProcessEnv` themselves.
+
+  ## @voltagent/server-core
+  - Reworked the observability handlers around the shared storage API, including a new `POST /setup-observability` helper that writes VoltOps keys into `.env` and expanded trace/log queries that match the serverless storage contract.
+
+  ## @voltagent/cli
+  - Added `volt deploy --target <cloudflare|vercel|netlify>` to scaffold the right config files. The Cloudflare template now ships with the required compatibility flags (`nodejs_compat`, `nodejs_compat_populate_process_env`, `no_handle_cross_request_promise_resolution`) so new projects run on Workers without extra tweaking.
 
 ## 1.0.11
 
@@ -8178,6 +9448,700 @@
 ---
 
 ## Package: @voltagent/server-hono
+
+## 1.2.1
+
+### Patch Changes
+
+- [#728](https://github.com/VoltAgent/voltagent/pull/728) [`3952b4b`](https://github.com/VoltAgent/voltagent/commit/3952b4b2f4315eba80a06ba2596b74e00bf57735) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: automatic detection and display of custom routes in console logs and Swagger UI
+
+  Custom routes added via `configureApp` callback are now automatically detected and displayed in both server startup logs and Swagger UI documentation.
+
+  ## What Changed
+
+  Previously, only OpenAPI-registered routes were visible in:
+  - Server startup console logs
+  - Swagger UI documentation (`/ui`)
+
+  Now **all custom routes** are automatically detected, including:
+  - Regular Hono routes (`app.get()`, `app.post()`, etc.)
+  - OpenAPI routes with full documentation
+  - Routes with path parameters (`:id`, `{id}`)
+
+  ## Usage Example
+
+  ```typescript
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      configureApp: (app) => {
+        // These routes are now automatically detected!
+        app.get("/api/health", (c) => c.json({ status: "ok" }));
+        app.post("/api/calculate", async (c) => {
+          const { a, b } = await c.req.json();
+          return c.json({ result: a + b });
+        });
+      },
+    }),
+  });
+  ```
+
+  ## Console Output
+
+  ```
+  ══════════════════════════════════════════════════
+    VOLTAGENT SERVER STARTED SUCCESSFULLY
+  ══════════════════════════════════════════════════
+    ✓ HTTP Server:  http://localhost:3141
+    ✓ Swagger UI:   http://localhost:3141/ui
+
+    ✓ Registered Endpoints: 2 total
+
+      Custom Endpoints
+        GET    /api/health
+        POST   /api/calculate
+  ══════════════════════════════════════════════════
+  ```
+
+  ## Improvements
+  - ✅ Extracts routes from `app.routes` array (includes all Hono routes)
+  - ✅ Merges with OpenAPI document routes for descriptions
+  - ✅ Filters out built-in VoltAgent paths using exact matching (not regex)
+  - ✅ Custom routes like `/agents-dashboard` or `/workflows-manager` are now correctly detected
+  - ✅ Normalizes path formatting (removes duplicate slashes)
+  - ✅ Handles both `:param` and `{param}` path parameter formats
+  - ✅ Adds custom routes to Swagger UI with auto-generated schemas
+  - ✅ Comprehensive test coverage (44 unit tests)
+
+  ## Implementation Details
+
+  The `extractCustomEndpoints()` function now:
+  1. Extracts all routes from `app.routes` (regular Hono routes)
+  2. Merges with OpenAPI document routes (for descriptions)
+  3. Deduplicates and filters built-in VoltAgent routes
+  4. Returns a complete list of custom endpoints
+
+  The `getEnhancedOpenApiDoc()` function:
+  1. Adds custom routes to OpenAPI document for Swagger UI
+  2. Generates response schemas for undocumented routes
+  3. Preserves existing OpenAPI documentation
+  4. Supports path parameters and request bodies
+
+- Updated dependencies [[`59da0b5`](https://github.com/VoltAgent/voltagent/commit/59da0b587cd72ff6065fa7fde9fcaecf0a92d830)]:
+  - @voltagent/core@1.1.34
+
+## 1.2.0
+
+### Minor Changes
+
+- [#720](https://github.com/VoltAgent/voltagent/pull/720) [`91c7269`](https://github.com/VoltAgent/voltagent/commit/91c7269bb703e4e0786d6afe179b2fd986e9d95a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: simplify CORS configuration and ensure custom routes are auth-protected
+
+  ## Breaking Changes
+
+  ### CORS Configuration
+
+  CORS configuration has been simplified. Instead of configuring CORS in `configureApp`, use the new `cors` field:
+
+  **Before:**
+
+  ```typescript
+  server: honoServer({
+    configureApp: (app) => {
+      app.use(
+        "*",
+        cors({
+          origin: "https://your-domain.com",
+          credentials: true,
+        })
+      );
+
+      app.get("/api/health", (c) => c.json({ status: "ok" }));
+    },
+  });
+  ```
+
+  **After (Simple global CORS):**
+
+  ```typescript
+  server: honoServer({
+    cors: {
+      origin: "https://your-domain.com",
+      credentials: true,
+    },
+    configureApp: (app) => {
+      app.get("/api/health", (c) => c.json({ status: "ok" }));
+    },
+  });
+  ```
+
+  **After (Route-specific CORS):**
+
+  ```typescript
+  import { cors } from "hono/cors";
+
+  server: honoServer({
+    cors: false, // Disable default CORS for route-specific control
+
+    configureApp: (app) => {
+      // Different CORS for different routes
+      app.use("/agents/*", cors({ origin: "https://agents.com" }));
+      app.use("/api/public/*", cors({ origin: "*" }));
+
+      app.get("/api/health", (c) => c.json({ status: "ok" }));
+    },
+  });
+  ```
+
+  ### Custom Routes Authentication
+
+  Custom routes added via `configureApp` are now registered AFTER authentication middleware. This means:
+  - **Opt-in mode** (default): Custom routes follow the same auth rules as built-in routes
+  - **Opt-out mode** (`defaultPrivate: true`): Custom routes are automatically protected
+
+  **Before:** Custom routes bypassed authentication unless you manually added auth middleware.
+
+  **After:** Custom routes inherit authentication behavior automatically.
+
+  **Example with opt-out mode:**
+
+  ```typescript
+  server: honoServer({
+    auth: jwtAuth({
+      secret: process.env.JWT_SECRET,
+      defaultPrivate: true, // Protect all routes by default
+      publicRoutes: ["GET /api/health"],
+    }),
+    configureApp: (app) => {
+      // This is now automatically protected
+      app.get("/api/user/profile", (c) => {
+        const user = c.get("authenticatedUser");
+        return c.json({ user }); // user is guaranteed to exist
+      });
+    },
+  });
+  ```
+
+  ## Why This Change?
+  1. **Security**: Custom routes are no longer accidentally left unprotected
+  2. **Simplicity**: CORS configuration is now a simple config field for common cases
+  3. **Flexibility**: Advanced users can still use route-specific CORS with `cors: false`
+  4. **Consistency**: Custom routes follow the same authentication rules as built-in routes
+
+### Patch Changes
+
+- Updated dependencies [[`efe4be6`](https://github.com/VoltAgent/voltagent/commit/efe4be634f52aaef00d6b188a9146b1ad00b5968)]:
+  - @voltagent/core@1.1.33
+
+## 1.1.0
+
+### Minor Changes
+
+- [#681](https://github.com/VoltAgent/voltagent/pull/681) [`683318f`](https://github.com/VoltAgent/voltagent/commit/683318f8671d7c5028d51169650555d2694afd05) Thanks [@ekas-7](https://github.com/ekas-7)! - feat: add support for custom endpoints
+
+### Patch Changes
+
+- Updated dependencies [[`3a1d214`](https://github.com/VoltAgent/voltagent/commit/3a1d214790cf49c5020eac3e9155a6daab2ff1db)]:
+  - @voltagent/core@1.1.32
+
+## 1.0.26
+
+### Patch Changes
+
+- [`907cc30`](https://github.com/VoltAgent/voltagent/commit/907cc30b8cbe655ae6e79fd25494f246663fd8ad) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: @voltagent/core dependency
+
+- Updated dependencies [[`907cc30`](https://github.com/VoltAgent/voltagent/commit/907cc30b8cbe655ae6e79fd25494f246663fd8ad)]:
+  - @voltagent/server-core@1.0.19
+
+## 1.0.25
+
+### Patch Changes
+
+- [#714](https://github.com/VoltAgent/voltagent/pull/714) [`f20cdf1`](https://github.com/VoltAgent/voltagent/commit/f20cdf1c9cc84daa6c4002c1dfa2c2085f2ed2ca) Thanks [@{...}](https://github.com/{...})! - fix: auth middleware now preserves conversationId and all client options
+
+  ## The Problem
+
+  When using custom auth providers with VoltAgent, the auth middleware was completely replacing the `body.options` object instead of merging with it. This caused critical client-provided options to be lost, including:
+  - `conversationId` - essential for conversation continuity and hooks
+  - `temperature`, `maxSteps`, `topP` - LLM configuration parameters
+  - Any other options sent by the client in the request body
+
+  This happened because the middleware created a brand new `options` object containing only auth-related fields (`context.user` and `userId`), completely discarding the original `body.options`.
+
+  **Example of the bug:**
+
+  ```typescript
+  // Client sends:
+  {
+    input: "Hello",
+    options: {
+      conversationId: "conv-abc-123",
+      temperature: 0.7
+    }
+  }
+
+  // After auth middleware (BEFORE FIX):
+  {
+    input: "Hello",
+    options: {
+      // ❌ conversationId LOST!
+      // ❌ temperature LOST!
+      context: { user: {...} },
+      userId: "user-123"
+    }
+  }
+
+  // Result: conversationId missing in onStart hook's context
+  ```
+
+  This was especially problematic when:
+  - Using hooks that depend on `conversationId` (like `onStart`, `onEnd`)
+  - Configuring LLM parameters from the client side
+  - Tracking conversations across multiple agent calls
+
+  ## The Solution
+
+  Changed the auth middleware to **merge** auth data into the existing `body.options` instead of replacing it. Now all client options are preserved while auth context is properly added.
+
+  **After the fix:**
+
+  ```typescript
+  // Client sends:
+  {
+    input: "Hello",
+    options: {
+      conversationId: "conv-abc-123",
+      temperature: 0.7
+    }
+  }
+
+  // After auth middleware (AFTER FIX):
+  {
+    input: "Hello",
+    options: {
+      ...body.options,  // ✅ All original options preserved
+      conversationId: "conv-abc-123",  // ✅ Preserved
+      temperature: 0.7,  // ✅ Preserved
+      context: {
+        ...body.options?.context,  // ✅ Existing context merged
+    // ✅ Auth user added
+      },
+      userId: "user-123"  // ✅ Auth userId added
+    }
+  }
+
+  // Result: conversationId properly available in hooks!
+  ```
+
+  ## Technical Changes
+
+  **Before (packages/server-hono/src/auth/middleware.ts:82-90):**
+
+  ```typescript
+  options: {
+    context: {
+      ...body.context,
+      user,
+    },
+    userId: user.id || user.sub,
+  }
+  // ❌ Creates NEW options object, loses body.options
+  ```
+
+  **After:**
+
+  ```typescript
+  options: {
+    ...body.options,  // ✅ Preserve all existing options
+    context: {
+      ...body.options?.context,  // ✅ Merge existing context
+      ...body.context,
+      user,
+    },
+    userId: user.id || user.sub,
+  }
+  // ✅ Merges auth data into existing options
+  ```
+
+  ## Impact
+  - ✅ **Fixes missing conversationId in hooks**: `onStart`, `onEnd`, and other hooks now receive the correct `conversationId` from client
+  - ✅ **Preserves LLM configuration**: Client-side `temperature`, `maxSteps`, `topP`, etc. are no longer lost
+  - ✅ **Context merging works correctly**: Both custom context and auth user context coexist
+  - ✅ **Backward compatible**: Existing code continues to work, only fixes the broken behavior
+  - ✅ **Proper fallback chain**: `userId` uses `user.id` → `user.sub` → `body.options.userId`
+
+  ## Testing
+
+  Added comprehensive test suite (`packages/server-hono/src/auth/middleware.spec.ts`) with 12 test cases covering:
+  - conversationId preservation
+  - Multiple options preservation
+  - Context merging
+  - userId priority logic
+  - Empty options handling
+  - Public routes
+  - Authentication failures
+
+  All tests passing ✅
+
+## 1.0.24
+
+### Patch Changes
+
+- Updated dependencies [[`461ecec`](https://github.com/VoltAgent/voltagent/commit/461ecec60aa90b56a413713070b6e9f43efbd74b)]:
+  - @voltagent/core@1.1.31
+  - @voltagent/server-core@1.0.18
+
+## 1.0.23
+
+### Patch Changes
+
+- [#709](https://github.com/VoltAgent/voltagent/pull/709) [`8b838ec`](https://github.com/VoltAgent/voltagent/commit/8b838ecf085f13efacb94897063de5e7087861e6) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add defaultPrivate option to AuthProvider for protecting all routes by default
+
+  ## The Problem
+
+  When using VoltAgent with third-party auth providers (like Clerk, Auth0, or custom providers), custom routes added via `configureApp` were public by default. This meant:
+  - Only routes explicitly in `PROTECTED_ROUTES` required authentication
+  - Custom endpoints needed manual middleware to be protected
+  - The `publicRoutes` property couldn't make all routes private by default
+
+  This was especially problematic when integrating with enterprise auth systems where security-by-default is expected.
+
+  ## The Solution
+
+  Added `defaultPrivate` option to `AuthProvider` interface, enabling two authentication modes:
+  - **Opt-In Mode** (default, `defaultPrivate: false`): Only specific routes require auth
+  - **Opt-Out Mode** (`defaultPrivate: true`): All routes require auth unless explicitly listed in `publicRoutes`
+
+  ## Usage Example
+
+  ### Protecting All Routes with Clerk
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer, jwtAuth } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      auth: jwtAuth({
+        secret: process.env.CLERK_JWT_KEY,
+        defaultPrivate: true, // 🔒 Protect all routes by default
+        publicRoutes: ["GET /health", "POST /webhooks/clerk"],
+        mapUser: (payload) => ({
+          id: payload.sub,
+          email: payload.email,
+        }),
+      }),
+      configureApp: (app) => {
+        // ✅ Public (in publicRoutes)
+        app.get("/health", (c) => c.json({ status: "ok" }));
+
+        // 🔒 Protected automatically (defaultPrivate: true)
+        app.get("/api/user/data", (c) => {
+          const user = c.get("authenticatedUser");
+          return c.json({ user });
+        });
+      },
+    }),
+  });
+  ```
+
+  ### Default Behavior (Backward Compatible)
+
+  ```typescript
+  // Without defaultPrivate, behavior is unchanged
+  auth: jwtAuth({
+    secret: process.env.JWT_SECRET,
+    // defaultPrivate: false (default)
+  });
+
+  // Custom routes are public unless you add your own middleware
+  configureApp: (app) => {
+    app.get("/api/data", (c) => {
+      // This is PUBLIC by default
+      return c.json({ data: "anyone can access" });
+    });
+  };
+  ```
+
+  ## Benefits
+  - ✅ **Fail-safe security**: Routes are protected by default when enabled
+  - ✅ **No manual middleware**: Custom endpoints automatically protected
+  - ✅ **Perfect for third-party auth**: Ideal for Clerk, Auth0, Supabase
+  - ✅ **Backward compatible**: No breaking changes, opt-in feature
+  - ✅ **Fine-grained control**: Use `publicRoutes` to selectively allow access
+
+- [`5a0728d`](https://github.com/VoltAgent/voltagent/commit/5a0728d888b48169cdadabb62641cdcf437f4ee4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: correct CORS middleware detection to use actual function name 'cors2'
+
+  Fixed a critical bug where custom CORS middleware was not being properly detected, causing both custom and default CORS to be applied simultaneously. This resulted in the default CORS (`origin: "*"`) overwriting custom CORS headers on actual POST/GET requests, while OPTIONS (preflight) requests worked correctly.
+
+  ## The Problem
+
+  The middleware detection logic was checking for `middleware.name === "cors"`, but Hono's cors middleware function is actually named `"cors2"`. This caused:
+  - Detection to always fail → `userConfiguredCors` stayed `false`
+  - Default CORS (`app.use("*", cors())`) was applied even when users configured custom CORS
+  - **Both** middlewares executed: custom CORS on specific paths + default CORS on `"*"`
+  - OPTIONS requests returned correct custom CORS headers ✅
+  - POST/GET requests had custom headers **overwritten** by default CORS (`*`) ❌
+
+  ## The Solution
+
+  Updated the detection logic to check for the actual function name:
+
+  ```typescript
+  // Before: middleware.name === "cors"
+  // After:  middleware.name === "cors2"
+  ```
+
+  Now when users configure custom CORS in `configureApp`, it's properly detected and default CORS is skipped entirely.
+
+  ## Impact
+  - Custom CORS configurations now work correctly for **all** request types (OPTIONS, POST, GET, etc.)
+  - No more default CORS overwriting custom CORS headers
+  - Fixes browser CORS errors when using custom origins with credentials
+  - Maintains backward compatibility - default CORS still applies when no custom CORS is configured
+
+  ## Example
+
+  This now works as expected:
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+  import { cors } from "hono/cors";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      configureApp: (app) => {
+        app.use(
+          "/agents/*",
+          cors({
+            origin: "http://localhost:3001",
+            credentials: true,
+          })
+        );
+      },
+    }),
+  });
+  ```
+
+  Both OPTIONS and POST requests now return:
+  - `Access-Control-Allow-Origin: http://localhost:3001` ✅
+  - `Access-Control-Allow-Credentials: true` ✅
+
+- Updated dependencies [[`8b838ec`](https://github.com/VoltAgent/voltagent/commit/8b838ecf085f13efacb94897063de5e7087861e6)]:
+  - @voltagent/server-core@1.0.17
+
+## 1.0.22
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/server-core@1.0.16
+  - @voltagent/a2a-server@1.0.2
+  - @voltagent/mcp-server@1.0.3
+  - @voltagent/internal@0.0.12
+  - @voltagent/core@1.1.30
+
+## 1.0.21
+
+### Patch Changes
+
+- [#703](https://github.com/VoltAgent/voltagent/pull/703) [`fbbb349`](https://github.com/VoltAgent/voltagent/commit/fbbb34932aeeaf6cede30228ded03df43df415ad) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve CORS middleware execution order issue preventing custom CORS configuration
+
+  Fixed a critical issue where custom CORS middleware configured in `configureApp` was not being applied because the default CORS middleware was registered before user configuration.
+
+  ## The Problem
+
+  When users configured custom CORS settings in `configureApp`, their configuration was ignored:
+  - Default CORS middleware (`origin: "*"`) was applied before `configureApp` was called
+  - Hono middleware executes in registration order, so default CORS handled OPTIONS requests first
+  - Custom CORS middleware never executed, causing incorrect CORS headers in responses
+
+  ## The Solution
+  - Restructured middleware execution order to call `configureApp` **first**
+  - Added detection logic to identify when users configure custom CORS
+  - Default CORS now only applies if user hasn't configured custom CORS
+  - Custom CORS configuration takes full control when present
+
+  ## Impact
+  - Custom CORS configurations in `configureApp` now work correctly
+  - Users can specify custom origins, headers, methods, and credentials
+  - Maintains backward compatibility - default CORS still applies when no custom CORS is configured
+  - Updated documentation with middleware execution order and CORS configuration examples
+
+  ## Example Usage
+
+  ```typescript
+  import { VoltAgent } from "@voltagent/core";
+  import { honoServer } from "@voltagent/server-hono";
+  import { cors } from "hono/cors";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      configureApp: (app) => {
+        // Custom CORS configuration now works correctly
+        app.use(
+          "*",
+          cors({
+            origin: "https://your-domain.com",
+            allowHeaders: ["X-Custom-Header", "Content-Type"],
+            allowMethods: ["POST", "GET", "OPTIONS"],
+            credentials: true,
+          })
+        );
+      },
+    }),
+  });
+  ```
+
+## 1.0.20
+
+### Patch Changes
+
+- [#696](https://github.com/VoltAgent/voltagent/pull/696) [`69bc5bf`](https://github.com/VoltAgent/voltagent/commit/69bc5bf1c0ccedd65964f9b878cc57318b82a8a4) Thanks [@fav-devs](https://github.com/fav-devs)! - Add hostname configuration option to honoServer() to support IPv6 and dual-stack networking.
+
+  The honoServer() function now accepts a `hostname` option that allows configuring which network interface the server binds to. This fixes deployment issues on platforms like Railway that require IPv6 binding for private networking.
+
+  **Example usage:**
+
+  ```typescript
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents,
+    server: honoServer({
+      port: 8080,
+      hostname: "::", // Binds to IPv6/dual-stack
+    }),
+  });
+  ```
+
+  **Options:**
+  - `"0.0.0.0"` - Binds to all IPv4 interfaces (default, maintains backward compatibility)
+  - `"::"` - Binds to all IPv6 interfaces (dual-stack on most systems)
+  - `"localhost"` or `"127.0.0.1"` - Only localhost access
+
+  Fixes #694
+
+## 1.0.19
+
+### Patch Changes
+
+- [#695](https://github.com/VoltAgent/voltagent/pull/695) [`66a1bff`](https://github.com/VoltAgent/voltagent/commit/66a1bfff1c7258c79935af4e4361b2fc043d2d1f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add hostname configuration support to honoServer - #694
+
+  ## The Problem
+
+  The `honoServer()` function hardcoded `hostname: "0.0.0.0"` which prevented binding to IPv6 addresses. This caused deployment issues on platforms like Railway that require IPv6 or dual-stack binding for private networking.
+
+  ## The Solution
+
+  Added a `hostname` configuration option to `HonoServerConfig` that allows users to specify which network interface to bind to. The default remains `"0.0.0.0"` for backward compatibility.
+
+  ## Usage Examples
+
+  **Default behavior (IPv4 only):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+    }),
+  });
+  // Binds to 0.0.0.0 (all IPv4 interfaces)
+  ```
+
+  **IPv6 dual-stack (recommended for Railway, Fly.io):**
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+      hostname: "::", // Binds to both IPv4 and IPv6
+    }),
+  });
+  ```
+
+  **Localhost only:**
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: 3141,
+      hostname: "127.0.0.1", // Local development only
+    }),
+  });
+  ```
+
+  **Environment-based configuration:**
+
+  ```typescript
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      port: parseInt(process.env.PORT || "3141"),
+      hostname: process.env.HOSTNAME || "::", // Default to dual-stack
+    }),
+  });
+  ```
+
+  This change is fully backward compatible and enables VoltAgent to work seamlessly on modern cloud platforms with IPv6 networking.
+
+## 1.0.18
+
+### Patch Changes
+
+- [#676](https://github.com/VoltAgent/voltagent/pull/676) [`8781956`](https://github.com/VoltAgent/voltagent/commit/8781956ad86ec731684f0ca92ef28c65f26e1229) Thanks [@venatir](https://github.com/venatir)! - fix(auth-context): retain context in response body and options for user authentication
+
+- Updated dependencies [[`78b9727`](https://github.com/VoltAgent/voltagent/commit/78b9727e85a31fd8eaa9c333de373d982f58b04f), [`6d00793`](https://github.com/VoltAgent/voltagent/commit/6d007938d31c6d928185153834661c50227af326), [`7fef3a7`](https://github.com/VoltAgent/voltagent/commit/7fef3a7ea1b3f7f8c780a528d3c3abce312f3be9), [`c4d13f2`](https://github.com/VoltAgent/voltagent/commit/c4d13f2be129013eed6392990863ae85cdbd8855)]:
+  - @voltagent/core@1.1.26
+  - @voltagent/mcp-server@1.0.2
+
+## 1.0.17
+
+### Patch Changes
+
+- [#664](https://github.com/VoltAgent/voltagent/pull/664) [`f46aae9`](https://github.com/VoltAgent/voltagent/commit/f46aae9784b6a7e86a33b55d59d90a8f4f1489f4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: vendored Hono OpenAPI adapters to eliminate pnpm alias requirement and auto-select Zod v3/v4 support; docs now clarify that installing `zod` is sufficient. #651
+
+## 1.0.16
+
+### Patch Changes
+
+- [#637](https://github.com/VoltAgent/voltagent/pull/637) [`b7ee693`](https://github.com/VoltAgent/voltagent/commit/b7ee6936280b5d09b893db6500ad58b4ac80eaf2) Thanks [@marinoska](https://github.com/marinoska)! - - Introduced tests and documentation for the `ToolDeniedError`.
+  - Added a feature to terminate the process flow when the `onToolStart` hook triggers a `ToolDeniedError`.
+  - Enhanced error handling mechanisms to ensure proper flow termination in specific error scenarios.
+- Updated dependencies [[`4c42bf7`](https://github.com/VoltAgent/voltagent/commit/4c42bf72834d3cd45ff5246ef65d7b08470d6a8e), [`b7ee693`](https://github.com/VoltAgent/voltagent/commit/b7ee6936280b5d09b893db6500ad58b4ac80eaf2)]:
+  - @voltagent/core@1.1.24
+  - @voltagent/server-core@1.0.15
+
+## 1.0.15
+
+### Patch Changes
+
+- [`ca6160a`](https://github.com/VoltAgent/voltagent/commit/ca6160a2f5098f296729dcd842a013558d14eeb8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: updates endpoint
+
+- Updated dependencies [[`ca6160a`](https://github.com/VoltAgent/voltagent/commit/ca6160a2f5098f296729dcd842a013558d14eeb8)]:
+  - @voltagent/server-core@1.0.14
+
+## 1.0.14
+
+### Patch Changes
+
+- [#629](https://github.com/VoltAgent/voltagent/pull/629) [`3e64b9c`](https://github.com/VoltAgent/voltagent/commit/3e64b9ce58d0e91bc272f491be2c1932a005ef48) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add memory observability
+
+- Updated dependencies [[`3e64b9c`](https://github.com/VoltAgent/voltagent/commit/3e64b9ce58d0e91bc272f491be2c1932a005ef48)]:
+  - @voltagent/server-core@1.0.13
+  - @voltagent/core@1.1.22
 
 ## 1.0.13
 
@@ -8897,7 +10861,203 @@
 
 ---
 
+## Package: @voltagent/serverless-hono
+
+## 1.0.5
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/server-core@1.0.16
+  - @voltagent/internal@0.0.12
+
+## 1.0.4
+
+### Patch Changes
+
+- [#701](https://github.com/VoltAgent/voltagent/pull/701) [`c4f01e6`](https://github.com/VoltAgent/voltagent/commit/c4f01e6691b4841c11d4127525011bb2edbe1e26) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: observability spans terminating prematurely on Vercel Edge and Deno Deploy
+
+  ## The Problem
+
+  Observability spans were being cut short on Vercel Edge and Deno Deploy runtimes because the `toVercelEdge()` and `toDeno()` adapters didn't implement `waitUntil` support. Unlike `toCloudflareWorker()`, which properly extracted and set up `waitUntil` from the execution context, these adapters would terminate async operations (like span exports) as soon as the response was returned.
+
+  This caused the observability pipeline's `FetchTraceExporter` and `FetchLogExporter` to have their export promises cancelled mid-flight, resulting in incomplete or missing observability data.
+
+  ## The Solution
+
+  Refactored all serverless adapters to use a new `withWaitUntil()` helper utility that:
+  - Extracts `waitUntil` from the runtime context (Cloudflare's `executionCtx`, Vercel's `context`, or Deno's `info`)
+  - Sets it as `globalThis.___voltagent_wait_until` for the observability exporters to use
+  - Returns a cleanup function that properly restores previous state
+  - Handles errors gracefully and supports nested calls
+
+  Now all three adapters (`toCloudflareWorker`, `toVercelEdge`, `toDeno`) use the same battle-tested pattern:
+
+  ```ts
+  const cleanup = withWaitUntil(context);
+  try {
+    return await processRequest(request);
+  } finally {
+    cleanup();
+  }
+  ```
+
+  ## Impact
+  - ✅ Observability spans now export successfully on Vercel Edge Runtime
+  - ✅ Observability spans now export successfully on Deno Deploy
+  - ✅ Consistent `waitUntil` behavior across all serverless platforms
+  - ✅ DRY principle: eliminated duplicate code across adapters
+  - ✅ Comprehensive test coverage with 11 unit tests covering edge cases, nested calls, and error scenarios
+
+  ## Technical Details
+
+  The fix introduces:
+  - `utils/wait-until-wrapper.ts`: Reusable `withWaitUntil()` helper
+  - `utils/wait-until-wrapper.spec.ts`: Complete test suite (11/11 passing)
+  - Updated `toCloudflareWorker()`: Simplified using helper
+  - **Fixed** `toVercelEdge()`: Now properly supports `waitUntil`
+  - **Fixed** `toDeno()`: Now properly supports `waitUntil`
+
+## 1.0.3
+
+### Patch Changes
+
+- [`ca6160a`](https://github.com/VoltAgent/voltagent/commit/ca6160a2f5098f296729dcd842a013558d14eeb8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: updates endpoint
+
+- Updated dependencies [[`ca6160a`](https://github.com/VoltAgent/voltagent/commit/ca6160a2f5098f296729dcd842a013558d14eeb8)]:
+  - @voltagent/server-core@1.0.14
+
+## 1.0.2
+
+### Patch Changes
+
+- [#629](https://github.com/VoltAgent/voltagent/pull/629) [`3e64b9c`](https://github.com/VoltAgent/voltagent/commit/3e64b9ce58d0e91bc272f491be2c1932a005ef48) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add memory observability
+
+- Updated dependencies [[`3e64b9c`](https://github.com/VoltAgent/voltagent/commit/3e64b9ce58d0e91bc272f491be2c1932a005ef48)]:
+  - @voltagent/server-core@1.0.13
+
+## 1.0.1
+
+### Patch Changes
+
+- [#621](https://github.com/VoltAgent/voltagent/pull/621) [`f4fa7e2`](https://github.com/VoltAgent/voltagent/commit/f4fa7e297fec2f602c9a24a0c77e645aa971f2b9) Thanks [@omeraplak](https://github.com/omeraplak)! - ## @voltagent/core
+  - Folded the serverless runtime entry point into the main build – importing `@voltagent/core` now auto-detects the runtime and provisions either the Node or serverless observability pipeline.
+  - Rebuilt serverless observability on top of `BasicTracerProvider`, fetch-based OTLP exporters, and an execution-context `waitUntil` hook. Exports run with exponential backoff, never block the response, and automatically reuse VoltOps credentials (or fall back to the in-memory span/log store) so VoltOps Console transparently swaps to HTTP polling when WebSockets are unavailable.
+  - Hardened the runtime utilities for Workers/Functions: added universal `randomUUID`, base64, and event-emitter helpers, and taught the default logger to emit OpenTelemetry logs without relying on Node globals. This removes the last Node-only dependencies from the serverless bundle.
+
+  ```ts
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import { serverlessHono } from "@voltagent/serverless-hono";
+  import { openai } from "@ai-sdk/openai";
+
+  import { weatherTool } from "./tools";
+
+  const assistant = new Agent({
+    name: "serverless-assistant",
+    instructions: "You are a helpful assistant.",
+    model: openai("gpt-4o-mini"),
+  });
+
+  const voltAgent = new VoltAgent({
+    agents: { assistant },
+    serverless: serverlessHono(),
+  });
+
+  export default voltAgent.serverless().toCloudflareWorker();
+  ```
+
+  ## @voltagent/serverless-hono
+  - Renamed the edge provider to **serverless** and upgraded it to power any fetch-based runtime (Cloudflare Workers, Vercel Edge Functions, Deno Deploy, Netlify Functions).
+  - Wrapped the Cloudflare adapter in a first-class `HonoServerlessProvider` that installs a scoped `waitUntil` bridge, reuses the shared routing layer, and exposes a `/ws` health stub so VoltOps Console can cleanly fall back to polling.
+  - Dropped the manual environment merge – Workers should now enable the `nodejs_compat_populate_process_env` flag (documented in the new deployment guide) instead of calling `mergeProcessEnv` themselves.
+
+  ## @voltagent/server-core
+  - Reworked the observability handlers around the shared storage API, including a new `POST /setup-observability` helper that writes VoltOps keys into `.env` and expanded trace/log queries that match the serverless storage contract.
+
+  ## @voltagent/cli
+  - Added `volt deploy --target <cloudflare|vercel|netlify>` to scaffold the right config files. The Cloudflare template now ships with the required compatibility flags (`nodejs_compat`, `nodejs_compat_populate_process_env`, `no_handle_cross_request_promise_resolution`) so new projects run on Workers without extra tweaking.
+
+- Updated dependencies [[`f4fa7e2`](https://github.com/VoltAgent/voltagent/commit/f4fa7e297fec2f602c9a24a0c77e645aa971f2b9)]:
+  - @voltagent/server-core@1.0.12
+
+---
+
 ## Package: @voltagent/supabase
+
+## 1.0.6
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+
+## 1.0.5
+
+### Patch Changes
+
+- [#674](https://github.com/VoltAgent/voltagent/pull/674) [`5aa84b5`](https://github.com/VoltAgent/voltagent/commit/5aa84b5bcf57d19bbe33cc791f0892c96bb3944b) Thanks [@omeraplak](https://github.com/omeraplak)! - ## What Changed
+
+  Removed automatic message pruning functionality from all storage adapters (PostgreSQL, Supabase, LibSQL, and InMemory). Previously, messages were automatically deleted when the count exceeded `storageLimit` (default: 100 messages per conversation).
+
+  ## Why This Change
+
+  Users reported unexpected data loss when their conversation history exceeded the storage limit. Many users expect their conversation history to be preserved indefinitely rather than automatically deleted. This change gives users full control over their data retention policies.
+
+  ## Migration Guide
+
+  ### Before
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      storageLimit: 200, // Messages auto-deleted after 200
+    }),
+  });
+  ```
+
+  ### After
+
+  ```ts
+  const memory = new Memory({
+    storage: new PostgreSQLMemoryAdapter({
+      connection: process.env.DATABASE_URL,
+      // No storageLimit - all messages preserved
+    }),
+  });
+  ```
+
+  ### If You Need Message Cleanup
+
+  Implement your own cleanup logic using the `clearMessages()` method:
+
+  ```ts
+  // Clear all messages for a conversation
+  await memory.clearMessages(userId, conversationId);
+
+  // Clear all messages for a user
+  await memory.clearMessages(userId);
+  ```
+
+  ## Affected Packages
+  - `@voltagent/core` - Removed `storageLimit` from types
+  - `@voltagent/postgres` - Removed from PostgreSQL adapter
+  - `@voltagent/supabase` - Removed from Supabase adapter
+  - `@voltagent/libsql` - Removed from LibSQL adapter
+
+  ## Impact
+  - ✅ No more unexpected data loss
+  - ✅ Users have full control over message retention
+  - ⚠️ Databases may grow larger over time (consider implementing manual cleanup)
+  - ⚠️ Breaking change: `storageLimit` parameter no longer accepted
 
 ## 1.0.4
 
@@ -9397,6 +11557,7 @@
     const memory = new SupabaseMemory({
       client: supabaseClient,
       tableName: "voltagent_memory", // Optional
+      storageLimit: 150, // Optional: Custom storage limit
       debug: false, // Optional: Debug logging
     });
 
@@ -9664,6 +11825,17 @@
 ---
 
 ## Package: @voltagent/vercel-ai-exporter
+
+## 1.0.2
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/sdk@1.0.1
 
 ## 1.0.1
 
@@ -9973,5 +12145,165 @@
   We're combining the flexibility of code with the clarity of visual tools (like our **currently live [VoltOps LLM Observability Platform](https://console.voltagent.dev/)**) to make AI development easier, clearer, and more powerful. Join us as we build the future of AI in JavaScript!
 
   Explore the [Docs](https://voltagent.dev/docs/) and join our [Discord community](https://s.voltagent.dev/discord)!
+
+---
+
+## Package: @voltagent/voltagent-memory
+
+## 0.1.2
+
+### Patch Changes
+
+- [#693](https://github.com/VoltAgent/voltagent/pull/693) [`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e) Thanks [@marinoska](https://github.com/marinoska)! - - Added support for provider-defined tools (e.g. `openai.tools.webSearch()`)
+  - Update tool normalization to pass through provider tool metadata untouched.
+  - Added support for provider-defined tools both as standalone tool and within a toolkit.
+  - Upgraded dependency: `ai` → `^5.0.76`
+- Updated dependencies [[`f9aa8b8`](https://github.com/VoltAgent/voltagent/commit/f9aa8b8980a9efa53b6a83e6ba2a6db765a4fd0e)]:
+  - @voltagent/internal@0.0.12
+
+## 0.1.1
+
+### Patch Changes
+
+- [#641](https://github.com/VoltAgent/voltagent/pull/641) [`4c42bf7`](https://github.com/VoltAgent/voltagent/commit/4c42bf72834d3cd45ff5246ef65d7b08470d6a8e) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: introduce managed memory - ready-made cloud storage for VoltAgent
+
+  ## What Changed for You
+
+  VoltAgent now offers a managed memory solution that eliminates the need to run your own database infrastructure. The new `@voltagent/voltagent-memory` package provides a `ManagedMemoryAdapter` that connects to VoltOps Managed Memory service, perfect for pilots, demos, and production workloads.
+
+  ## New Package: @voltagent/voltagent-memory
+
+  ### Automatic Setup (Recommended)
+
+  Get your credentials from [console.voltagent.dev/memory/managed-memory](https://console.voltagent.dev/memory/managed-memory) and set environment variables:
+
+  ```bash
+  # .env
+  VOLTAGENT_PUBLIC_KEY=pk_...
+  VOLTAGENT_SECRET_KEY=sk_...
+  ```
+
+  ```typescript
+  import { Agent, Memory } from "@voltagent/core";
+  import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
+  import { openai } from "@ai-sdk/openai";
+
+  // Adapter automatically uses VoltOps credentials from environment
+  const agent = new Agent({
+    name: "Assistant",
+    instructions: "You are a helpful assistant",
+    model: openai("gpt-4o-mini"),
+    memory: new Memory({
+      storage: new ManagedMemoryAdapter({
+        databaseName: "production-memory",
+      }),
+    }),
+  });
+
+  // Use like any other agent - memory is automatically persisted
+  const result = await agent.generateText("Hello!", {
+    userId: "user-123",
+    conversationId: "conv-456",
+  });
+  ```
+
+  ### Manual Setup
+
+  Pass a `VoltOpsClient` instance explicitly:
+
+  ```typescript
+  import { Agent, Memory, VoltOpsClient } from "@voltagent/core";
+  import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
+  import { openai } from "@ai-sdk/openai";
+
+  const voltOpsClient = new VoltOpsClient({
+    publicKey: process.env.VOLTAGENT_PUBLIC_KEY!,
+    secretKey: process.env.VOLTAGENT_SECRET_KEY!,
+  });
+
+  const agent = new Agent({
+    name: "Assistant",
+    instructions: "You are a helpful assistant",
+    model: openai("gpt-4o-mini"),
+    memory: new Memory({
+      storage: new ManagedMemoryAdapter({
+        databaseName: "production-memory",
+        voltOpsClient, // explicit client
+      }),
+    }),
+  });
+  ```
+
+  ### Vector Storage (Optional)
+
+  Enable semantic search with `ManagedMemoryVectorAdapter`:
+
+  ```typescript
+  import { ManagedMemoryAdapter, ManagedMemoryVectorAdapter } from "@voltagent/voltagent-memory";
+  import { AiSdkEmbeddingAdapter, Memory } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+
+  const memory = new Memory({
+    storage: new ManagedMemoryAdapter({
+      databaseName: "production-memory",
+    }),
+    embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+    vector: new ManagedMemoryVectorAdapter({
+      databaseName: "production-memory",
+    }),
+  });
+  ```
+
+  ## Key Features
+  - **Zero Infrastructure**: No need to provision or manage databases
+  - **Quick Setup**: Create a managed memory database in under 3 minutes from VoltOps Console
+  - **Framework Parity**: Works identically to local Postgres, LibSQL, or Supabase adapters
+  - **Production Ready**: Managed infrastructure with reliability guardrails
+  - **Multi-Region**: Available in US (Virginia) and EU (Germany)
+
+  ## Getting Started
+  1. **Install the package**:
+
+  ```bash
+  npm install @voltagent/voltagent-memory
+  # or
+  pnpm add @voltagent/voltagent-memory
+  ```
+
+  2. **Create a managed database**:
+     - Navigate to [console.voltagent.dev/memory/managed-memory](https://console.voltagent.dev/memory/managed-memory)
+     - Click **Create Database**
+     - Enter a name and select region (US or EU)
+     - Copy your VoltOps API keys from Settings
+  3. **Configure environment variables**:
+
+  ```bash
+  VOLTAGENT_PUBLIC_KEY=pk_...
+  VOLTAGENT_SECRET_KEY=sk_...
+  ```
+
+  4. **Use the adapter**:
+
+  ```typescript
+  import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
+  import { Memory } from "@voltagent/core";
+
+  const memory = new Memory({
+    storage: new ManagedMemoryAdapter({
+      databaseName: "your-database-name",
+    }),
+  });
+  ```
+
+  ## Why This Matters
+  - **Faster Prototyping**: Launch pilots without database setup
+  - **Reduced Complexity**: No infrastructure management overhead
+  - **Consistent Experience**: Same StorageAdapter interface across all memory providers
+  - **Scalable Path**: Start with managed memory, migrate to self-hosted when needed
+  - **Multi-Region Support**: Deploy close to your users in US or EU
+
+  ## Migration Notes
+
+  Existing agents using local storage adapters (InMemory, LibSQL, Postgres, Supabase) continue to work unchanged. Managed memory is an optional addition that provides a cloud-hosted alternative for teams who prefer not to manage their own database infrastructure.
 
 ---

@@ -1,5 +1,190 @@
 # @voltagent/server-hono
 
+## 1.2.1
+
+### Patch Changes
+
+- [#728](https://github.com/VoltAgent/voltagent/pull/728) [`3952b4b`](https://github.com/VoltAgent/voltagent/commit/3952b4b2f4315eba80a06ba2596b74e00bf57735) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: automatic detection and display of custom routes in console logs and Swagger UI
+
+  Custom routes added via `configureApp` callback are now automatically detected and displayed in both server startup logs and Swagger UI documentation.
+
+  ## What Changed
+
+  Previously, only OpenAPI-registered routes were visible in:
+  - Server startup console logs
+  - Swagger UI documentation (`/ui`)
+
+  Now **all custom routes** are automatically detected, including:
+  - Regular Hono routes (`app.get()`, `app.post()`, etc.)
+  - OpenAPI routes with full documentation
+  - Routes with path parameters (`:id`, `{id}`)
+
+  ## Usage Example
+
+  ```typescript
+  import { honoServer } from "@voltagent/server-hono";
+
+  new VoltAgent({
+    agents: { myAgent },
+    server: honoServer({
+      configureApp: (app) => {
+        // These routes are now automatically detected!
+        app.get("/api/health", (c) => c.json({ status: "ok" }));
+        app.post("/api/calculate", async (c) => {
+          const { a, b } = await c.req.json();
+          return c.json({ result: a + b });
+        });
+      },
+    }),
+  });
+  ```
+
+  ## Console Output
+
+  ```
+  ══════════════════════════════════════════════════
+    VOLTAGENT SERVER STARTED SUCCESSFULLY
+  ══════════════════════════════════════════════════
+    ✓ HTTP Server:  http://localhost:3141
+    ✓ Swagger UI:   http://localhost:3141/ui
+
+    ✓ Registered Endpoints: 2 total
+
+      Custom Endpoints
+        GET    /api/health
+        POST   /api/calculate
+  ══════════════════════════════════════════════════
+  ```
+
+  ## Improvements
+  - ✅ Extracts routes from `app.routes` array (includes all Hono routes)
+  - ✅ Merges with OpenAPI document routes for descriptions
+  - ✅ Filters out built-in VoltAgent paths using exact matching (not regex)
+  - ✅ Custom routes like `/agents-dashboard` or `/workflows-manager` are now correctly detected
+  - ✅ Normalizes path formatting (removes duplicate slashes)
+  - ✅ Handles both `:param` and `{param}` path parameter formats
+  - ✅ Adds custom routes to Swagger UI with auto-generated schemas
+  - ✅ Comprehensive test coverage (44 unit tests)
+
+  ## Implementation Details
+
+  The `extractCustomEndpoints()` function now:
+  1. Extracts all routes from `app.routes` (regular Hono routes)
+  2. Merges with OpenAPI document routes (for descriptions)
+  3. Deduplicates and filters built-in VoltAgent routes
+  4. Returns a complete list of custom endpoints
+
+  The `getEnhancedOpenApiDoc()` function:
+  1. Adds custom routes to OpenAPI document for Swagger UI
+  2. Generates response schemas for undocumented routes
+  3. Preserves existing OpenAPI documentation
+  4. Supports path parameters and request bodies
+
+- Updated dependencies [[`59da0b5`](https://github.com/VoltAgent/voltagent/commit/59da0b587cd72ff6065fa7fde9fcaecf0a92d830)]:
+  - @voltagent/core@1.1.34
+
+## 1.2.0
+
+### Minor Changes
+
+- [#720](https://github.com/VoltAgent/voltagent/pull/720) [`91c7269`](https://github.com/VoltAgent/voltagent/commit/91c7269bb703e4e0786d6afe179b2fd986e9d95a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: simplify CORS configuration and ensure custom routes are auth-protected
+
+  ## Breaking Changes
+
+  ### CORS Configuration
+
+  CORS configuration has been simplified. Instead of configuring CORS in `configureApp`, use the new `cors` field:
+
+  **Before:**
+
+  ```typescript
+  server: honoServer({
+    configureApp: (app) => {
+      app.use(
+        "*",
+        cors({
+          origin: "https://your-domain.com",
+          credentials: true,
+        })
+      );
+
+      app.get("/api/health", (c) => c.json({ status: "ok" }));
+    },
+  });
+  ```
+
+  **After (Simple global CORS):**
+
+  ```typescript
+  server: honoServer({
+    cors: {
+      origin: "https://your-domain.com",
+      credentials: true,
+    },
+    configureApp: (app) => {
+      app.get("/api/health", (c) => c.json({ status: "ok" }));
+    },
+  });
+  ```
+
+  **After (Route-specific CORS):**
+
+  ```typescript
+  import { cors } from "hono/cors";
+
+  server: honoServer({
+    cors: false, // Disable default CORS for route-specific control
+
+    configureApp: (app) => {
+      // Different CORS for different routes
+      app.use("/agents/*", cors({ origin: "https://agents.com" }));
+      app.use("/api/public/*", cors({ origin: "*" }));
+
+      app.get("/api/health", (c) => c.json({ status: "ok" }));
+    },
+  });
+  ```
+
+  ### Custom Routes Authentication
+
+  Custom routes added via `configureApp` are now registered AFTER authentication middleware. This means:
+  - **Opt-in mode** (default): Custom routes follow the same auth rules as built-in routes
+  - **Opt-out mode** (`defaultPrivate: true`): Custom routes are automatically protected
+
+  **Before:** Custom routes bypassed authentication unless you manually added auth middleware.
+
+  **After:** Custom routes inherit authentication behavior automatically.
+
+  **Example with opt-out mode:**
+
+  ```typescript
+  server: honoServer({
+    auth: jwtAuth({
+      secret: process.env.JWT_SECRET,
+      defaultPrivate: true, // Protect all routes by default
+      publicRoutes: ["GET /api/health"],
+    }),
+    configureApp: (app) => {
+      // This is now automatically protected
+      app.get("/api/user/profile", (c) => {
+        const user = c.get("authenticatedUser");
+        return c.json({ user }); // user is guaranteed to exist
+      });
+    },
+  });
+  ```
+
+  ## Why This Change?
+  1. **Security**: Custom routes are no longer accidentally left unprotected
+  2. **Simplicity**: CORS configuration is now a simple config field for common cases
+  3. **Flexibility**: Advanced users can still use route-specific CORS with `cors: false`
+  4. **Consistency**: Custom routes follow the same authentication rules as built-in routes
+
+### Patch Changes
+
+- Updated dependencies [[`efe4be6`](https://github.com/VoltAgent/voltagent/commit/efe4be634f52aaef00d6b188a9146b1ad00b5968)]:
+  - @voltagent/core@1.1.33
+
 ## 1.1.0
 
 ### Minor Changes

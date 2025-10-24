@@ -12,7 +12,7 @@ import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { Tool } from "../tool";
-import { Agent, stripExcessiveFieldsInUIMessages } from "./agent";
+import { Agent, renameProviderOptions } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
 import { ToolDeniedError } from "./errors";
 
@@ -577,6 +577,166 @@ describe("Agent", () => {
       expect(result.added).toHaveLength(1); // VoltAgent allows adding same tool
       const tools = agent.getTools();
       expect(tools).toHaveLength(1); // But only keeps one instance
+    });
+  });
+
+  describe("Agent as Tool (toTool)", () => {
+    it("should convert agent to tool with default parameters", () => {
+      const agent = new Agent({
+        name: "WriterAgent",
+        id: "writer",
+        purpose: "Writes blog posts",
+        instructions: "You are a skilled writer",
+        model: mockModel as any,
+      });
+
+      const tool = agent.toTool();
+
+      expect(tool).toBeDefined();
+      expect(tool.name).toBe("writer_tool");
+      expect(tool.description).toBe("Writes blog posts");
+      expect(tool.parameters).toBeDefined();
+    });
+
+    it("should convert agent to tool with custom options", () => {
+      const agent = new Agent({
+        name: "EditorAgent",
+        id: "editor",
+        instructions: "You are a skilled editor",
+        model: mockModel as any,
+      });
+
+      const customSchema = z.object({
+        content: z.string().describe("The content to edit"),
+        style: z.enum(["formal", "casual"]).describe("The editing style"),
+      });
+
+      const tool = agent.toTool({
+        name: "custom_editor",
+        description: "Custom editor tool",
+        parametersSchema: customSchema,
+      });
+
+      expect(tool.name).toBe("custom_editor");
+      expect(tool.description).toBe("Custom editor tool");
+      expect(tool.parameters).toBe(customSchema);
+    });
+
+    it("should execute agent when tool is called", async () => {
+      const agent = new Agent({
+        name: "WriterAgent",
+        id: "writer",
+        instructions: "You are a writer",
+        model: mockModel as any,
+      });
+
+      // Mock the generateText result
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Generated blog post",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 20,
+          totalTokens: 30,
+        },
+        finishReason: "stop",
+        warnings: [],
+        rawResponse: undefined,
+        messages: [] as any,
+        steps: [],
+        toolCalls: [],
+        toolResults: [],
+        response: {
+          id: "test-id",
+          modelId: "test-model",
+          timestamp: new Date(),
+        },
+      } as any);
+
+      const tool = agent.toTool();
+
+      expect(tool.execute).toBeDefined();
+
+      const result = await tool.execute?.({ prompt: "Write about AI" });
+
+      expect(result).toBeDefined();
+      expect(result.text).toBe("Generated blog post");
+      expect(result.usage).toBeDefined();
+      expect(vi.mocked(ai.generateText)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: mockModel,
+        }),
+      );
+    });
+
+    it("should pass context through when executing agent tool", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        id: "test",
+        instructions: "Test agent",
+        model: mockModel as any,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Response",
+        usage: { inputTokens: 5, outputTokens: 5, totalTokens: 10 },
+        finishReason: "stop",
+        warnings: [],
+        rawResponse: undefined,
+        messages: [] as any,
+        steps: [],
+        toolCalls: [],
+        toolResults: [],
+        response: {
+          id: "test-id",
+          modelId: "test-model",
+          timestamp: new Date(),
+        },
+      } as any);
+
+      const tool = agent.toTool();
+
+      const mockContext = {
+        conversationId: "conv-123",
+        userId: "user-456",
+      };
+
+      await tool.execute?.({ prompt: "Test" }, mockContext as any);
+
+      expect(vi.mocked(ai.generateText)).toHaveBeenCalled();
+      // The generateText should be called with options containing the context
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0];
+      expect(callArgs).toBeDefined();
+    });
+
+    it("should work in supervisor pattern with multiple agent tools", () => {
+      const writerAgent = new Agent({
+        name: "Writer",
+        id: "writer",
+        purpose: "Writes content",
+        instructions: "Write blog posts",
+        model: mockModel as any,
+      });
+
+      const editorAgent = new Agent({
+        name: "Editor",
+        id: "editor",
+        purpose: "Edits content",
+        instructions: "Edit and improve content",
+        model: mockModel as any,
+      });
+
+      const supervisorAgent = new Agent({
+        name: "Supervisor",
+        id: "supervisor",
+        instructions: "Coordinate writer and editor",
+        model: mockModel as any,
+        tools: [writerAgent.toTool(), editorAgent.toTool()],
+      });
+
+      const tools = supervisorAgent.getTools();
+      expect(tools).toHaveLength(2);
+      expect(tools.map((t) => t.name)).toContain("writer_tool");
+      expect(tools.map((t) => t.name)).toContain("editor_tool");
     });
   });
 
@@ -1478,75 +1638,34 @@ describe("Agent", () => {
   });
 
   describe("Message cleanup (temporary fix)", () => {
-    it("stripExcessiveFieldsInUIMessages removes provider fields from text parts only", () => {
-      const uiMessages: ai.UIMessage[] = [
+    it("renameProviderOptions should convert providerOptions to providerMetadata in content parts", () => {
+      const input: ModelMessage[] = [
         {
-          role: "assistant",
-          parts: [
-            {
-              type: "text",
-              text: "Hello!",
-              // @ts-expect-error - simulate extra fields coming from UI layer / provider
-              providerMetadata: { any: "value" },
-              // @ts-expect-error - simulate extra fields coming from upstream
-              providerOptions: { also: "present" },
-            },
-            // Non-text part that may legitimately carry provider metadata
-            {
-              type: "tool-result",
-              toolCallId: "call-1",
-              toolName: "someTool",
-              result: { ok: true },
-              // @ts-expect-error - simulate provider metadata that should be preserved on non-text parts
-              providerMetadata: { keep: true },
-            } as any,
-          ],
+          role: "user",
+          content: [{ type: "text", text: "hi", providerOptions: { foo: "bar" } } as any],
         },
       ];
 
-      const cleaned = stripExcessiveFieldsInUIMessages(uiMessages);
-      expect(cleaned).toHaveLength(1);
-      expect(cleaned[0].parts).toHaveLength(2);
-
-      // First part should be a clean text part with no extra keys
-      const textPart = cleaned[0].parts[0] as ai.TextUIPart;
-      expect(textPart).toEqual({ type: "text", text: "Hello!" });
-
-      // Second part should be untouched (non-text)
-      const toolResultPart = cleaned[0].parts[1] as any;
-      expect(toolResultPart.type).toBe("tool-result");
-      expect(toolResultPart.providerMetadata).toEqual({ keep: true });
+      const out = renameProviderOptions(input);
+      const firstMsg = out[0];
+      expect(Array.isArray(firstMsg.content)).toBe(true);
+      const firstPart = (firstMsg.content as any[])[0];
+      expect(firstPart.providerOptions).toBeUndefined();
+      expect(firstPart.providerMetadata).toEqual({ foo: "bar" });
     });
 
-    it("convertToModelMessages on cleaned messages produces valid ModelMessage without providerOptions on text", () => {
-      const uiMessages: ai.UIMessage[] = [
-        {
-          role: "assistant",
-          id: "id",
-          parts: [
-            {
-              type: "text",
-              text: "Hello!",
-              providerMetadata: {},
-            },
-          ],
-        },
-      ];
+    it("renameProviderOptions should leave messages unchanged when no providerOptions present", () => {
+      const input: ModelMessage[] = [{ role: "user", content: [{ type: "text", text: "hello" }] }];
 
-      const cleaned = stripExcessiveFieldsInUIMessages(uiMessages);
-      const modelMessages = ai.convertToModelMessages(cleaned);
+      const out = renameProviderOptions(input);
+      expect(out).toEqual(input);
+    });
 
-      expect(Array.isArray(modelMessages)).toBe(true);
-      expect(modelMessages).toHaveLength(1);
-      const mm = modelMessages[0] as ModelMessage;
-      expect(mm.role).toBe("assistant");
-      // Ensure text content part has no providerOptions
-      // ModelMessage content is an array of parts
-      const content = (mm as any).content as Array<any>;
-      expect(Array.isArray(content)).toBe(true);
-      expect(content[0]).toEqual({ type: "text", text: "Hello!" });
-      // And it should not contain providerOptions
-      expect((content[0] as any).providerOptions).toBeUndefined();
+    it("renameProviderOptions should ignore messages where content is not an array", () => {
+      const input: ModelMessage[] = [{ role: "user", content: "plain string content" as any }];
+
+      const out = renameProviderOptions(input);
+      expect(out[0].content).toBe("plain string content");
     });
   });
 

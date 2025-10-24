@@ -10,7 +10,6 @@ import type {
   GenerateTextResult,
   LanguageModel,
   StepResult,
-  TextUIPart,
   ToolSet,
   UIMessage,
 } from "ai";
@@ -198,25 +197,27 @@ export interface GenerateObjectResultWithContext<T> extends GenerateObjectResult
 }
 
 /**
- * Removes UI-only or excessive fields (like providerOptions, providerMetadata)
- * from all text parts in UI messages before conversion.
+ * Renames providerOptions nack to providerMetadata
+ * in all content parts in model messages after conversion by convertToModelMessages.
  * temporary fix for https://github.com/vercel/ai/issues/9731
  */
-export function stripExcessiveFieldsInUIMessages(
-  uiMessages: ReadonlyArray<UIMessage>,
-): UIMessage[] {
-  function isTextUIPart(p: UIMessage["parts"][number]): p is TextUIPart {
-    return typeof p === "object" && p !== null && (p as { type?: unknown }).type === "text";
-  }
+const convertToModelMessagesFix = (uiMessages: UIMessage[]) => {
+  return renameProviderOptions(convertToModelMessages(uiMessages));
+};
 
-  return uiMessages.map((msg) => {
-    if (!Array.isArray(msg.parts)) return msg;
+export function renameProviderOptions(messages: ModelMessage[]): ModelMessage[] {
+  return messages.map((msg) => {
+    if (!Array.isArray(msg.content)) return msg;
 
-    const parts = msg.parts?.map((part) =>
-      isTextUIPart(part) ? ({ type: "text", text: part.text } as TextUIPart) : part,
-    );
+    const content = msg.content.map((part) => {
+      if (part && typeof part === "object" && "providerOptions" in part) {
+        const { providerOptions, ...rest } = part;
+        return { ...rest, providerMetadata: providerOptions };
+      }
+      return part;
+    });
 
-    return { ...msg, parts };
+    return { ...msg, content } as ModelMessage;
   });
 }
 
@@ -612,6 +613,12 @@ export class Agent {
         // Add usage to span
         this.setTraceContextUsage(oc.traceContext, result.usage);
         oc.traceContext.setOutput(finalText);
+        oc.traceContext.setFinishReason(result.finishReason);
+
+        // Check if stopped by maxSteps
+        if (result.steps && result.steps.length >= maxSteps) {
+          oc.traceContext.setStopConditionMet(result.steps.length, maxSteps);
+        }
 
         // Set output in operation context
         oc.output = finalText;
@@ -836,6 +843,13 @@ export class Agent {
               guardrailSet.output.length > 0 ? { ...finalResult, text: finalText } : finalResult;
 
             oc.traceContext.setOutput(finalText);
+            oc.traceContext.setFinishReason(finalResult.finishReason);
+
+            // Check if stopped by maxSteps
+            const steps = finalResult.steps;
+            if (steps && steps.length >= maxSteps) {
+              oc.traceContext.setStopConditionMet(steps.length, maxSteps);
+            }
 
             // Set output in operation context
             oc.output = finalText;
@@ -1676,7 +1690,8 @@ export class Agent {
 
     // Convert UIMessages to ModelMessages for the LLM
     const hooks = this.getMergedHooks(options);
-    let messages = convertToModelMessages(stripExcessiveFieldsInUIMessages(uiMessages));
+    let messages = convertToModelMessagesFix(uiMessages);
+
     if (hooks.onPrepareModelMessages) {
       const result = await hooks.onPrepareModelMessages({
         modelMessages: messages,
@@ -2524,7 +2539,7 @@ export class Agent {
           ? input
           : Array.isArray(input) && (input as any[])[0]?.content !== undefined
             ? (input as BaseMessage[])
-            : convertToModelMessages(stripExcessiveFieldsInUIMessages(input as UIMessage[]));
+            : convertToModelMessagesFix(input as UIMessage[]);
 
       // Execute retriever with the span context
       const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {
@@ -3350,6 +3365,83 @@ export class Agent {
     }
 
     return this.memory ?? this.memoryManager.getMemory();
+  }
+
+  /**
+   * Convert this agent into a tool that can be used by other agents.
+   * This enables supervisor/coordinator patterns where one agent can delegate
+   * work to other specialized agents.
+   *
+   * @param options - Optional configuration for the tool
+   * @param options.name - Custom name for the tool (defaults to `${agent.id}_tool`)
+   * @param options.description - Custom description (defaults to agent's purpose or auto-generated)
+   * @param options.parametersSchema - Custom input schema (defaults to { prompt: string })
+   *
+   * @returns A Tool instance that executes this agent
+   *
+   * @example
+   * ```typescript
+   * const writerAgent = new Agent({
+   *   id: "writer",
+   *   purpose: "Writes blog posts",
+   *   // ... other config
+   * });
+   *
+   * const editorAgent = new Agent({
+   *   id: "editor",
+   *   purpose: "Edits content",
+   *   // ... other config
+   * });
+   *
+   * // Supervisor agent that uses both as tools
+   * const supervisorAgent = new Agent({
+   *   id: "supervisor",
+   *   instructions: "First call writer, then editor",
+   *   tools: [
+   *     writerAgent.toTool(),
+   *     editorAgent.toTool()
+   *   ]
+   * });
+   * ```
+   */
+  public toTool(options?: {
+    name?: string;
+    description?: string;
+    parametersSchema?: z.ZodObject<any>;
+  }): Tool<any, any> {
+    const toolName = options?.name || `${this.id}_tool`;
+    const toolDescription =
+      options?.description || this.purpose || `Executes the ${this.name} agent to complete a task`;
+
+    const parametersSchema =
+      options?.parametersSchema ||
+      z.object({
+        prompt: z.string().describe("The prompt or task to send to the agent"),
+      });
+
+    return createTool({
+      name: toolName,
+      description: toolDescription,
+      parameters: parametersSchema,
+      execute: async (args, context) => {
+        // Extract the prompt from args
+        const prompt = (args as any).prompt || args;
+
+        // Generate response using this agent
+        const result = await this.generateText(prompt, {
+          // Pass through the operation context if available
+          parentOperationContext: context,
+          conversationId: context?.conversationId,
+          userId: context?.userId,
+        });
+
+        // Return the text result
+        return {
+          text: result.text,
+          usage: result.usage,
+        };
+      },
+    });
   }
 
   /**

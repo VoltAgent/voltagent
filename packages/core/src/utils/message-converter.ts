@@ -3,7 +3,7 @@
  */
 
 import type { AssistantModelMessage, ModelMessage, ToolModelMessage } from "@ai-sdk/provider-utils";
-import type { UIMessage } from "ai";
+import type { FileUIPart, ReasoningUIPart, TextUIPart, ToolUIPart, UIMessage } from "ai";
 import { bytesToBase64 } from "./base64";
 import { randomUUID } from "./id";
 
@@ -50,13 +50,13 @@ export async function convertResponseMessagesToUIMessages(
                 type: "reasoning",
                 text: contentPart.text,
                 ...(contentPart.providerOptions
-                  ? { providerMetadata: contentPart.providerOptions as any }
+                  ? { providerMetadata: contentPart.providerOptions }
                   : {}),
                 ...((contentPart as any).id ? { reasoningId: (contentPart as any).id } : {}),
                 ...((contentPart as any).confidence
                   ? { reasoningConfidence: (contentPart as any).confidence }
                   : {}),
-              });
+              } satisfies ReasoningUIPart);
             }
             break;
           }
@@ -67,13 +67,13 @@ export async function convertResponseMessagesToUIMessages(
               state: "input-available" as const,
               input: contentPart.input || {},
               ...(contentPart.providerOptions
-                ? { callProviderMetadata: contentPart.providerOptions as any }
+                ? { callProviderMetadata: contentPart.providerOptions }
                 : {}),
               ...(contentPart.providerExecuted != null
                 ? { providerExecuted: contentPart.providerExecuted }
                 : {}),
-            };
-            uiMessage.parts.push(toolPart as any);
+            } satisfies ToolUIPart;
+            uiMessage.parts.push(toolPart);
             toolPartsById.set(contentPart.toolCallId, toolPart);
             break;
           }
@@ -92,8 +92,8 @@ export async function convertResponseMessagesToUIMessages(
                 input: {},
                 output: contentPart.output,
                 providerExecuted: true,
-              };
-              uiMessage.parts.push(resultPart as any);
+              } satisfies ToolUIPart;
+              uiMessage.parts.push(resultPart);
               toolPartsById.set(contentPart.toolCallId, resultPart);
             }
             break;
@@ -112,7 +112,7 @@ export async function convertResponseMessagesToUIMessages(
               type: "file",
               mediaType: contentPart.mediaType,
               url,
-            });
+            } satisfies FileUIPart);
             break;
           }
         }
@@ -132,8 +132,8 @@ export async function convertResponseMessagesToUIMessages(
             input: {},
             output: toolResult.output,
             providerExecuted: false,
-          };
-          uiMessage.parts.push(resultPart as any);
+          } satisfies ToolUIPart;
+          uiMessage.parts.push(resultPart);
           toolPartsById.set(toolResult.toolCallId, resultPart);
         }
       }
@@ -146,23 +146,18 @@ export async function convertResponseMessagesToUIMessages(
 function pushTextPart(
   parts: UIMessage["parts"],
   text: string,
-  providerOptions?: Record<string, unknown>,
+  providerOptions?: Record<string, any>,
 ) {
-  const prev = parts.at(-1) as any;
-  if (
-    prev &&
-    typeof prev?.type === "string" &&
-    prev.type.startsWith("tool-") &&
-    prev.state === "output-available"
-  ) {
-    parts.push({ type: "step-start" } as any);
+  const prev = parts.at(-1);
+  if (prev?.type?.startsWith("tool-") && "state" in prev && prev.state === "output-available") {
+    parts.push({ type: "step-start" } satisfies UIMessage["parts"][number]);
   }
 
   parts.push({
     type: "text",
     text,
-    ...(providerOptions ? { providerMetadata: providerOptions as any } : {}),
-  });
+    ...(providerOptions ? { providerMetadata: providerOptions } : {}),
+  } satisfies TextUIPart);
 }
 
 /**
@@ -192,7 +187,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
                   input: {},
                   output: part.output,
                   providerExecuted: false,
-                } as any,
+                } satisfies ToolUIPart,
               ],
             });
           }
@@ -214,7 +209,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
           type: "text",
           text: message.content,
           ...(message.providerOptions ? { providerMetadata: message.providerOptions as any } : {}),
-        });
+        } satisfies TextUIPart);
       }
       uiMessages.push(ui);
       continue;
@@ -229,9 +224,9 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
               type: "text",
               text: contentPart.text,
               ...(contentPart.providerOptions
-                ? { providerMetadata: contentPart.providerOptions as any }
+                ? { providerMetadata: contentPart.providerOptions }
                 : {}),
-            });
+            } satisfies TextUIPart);
           }
           break;
         }
@@ -247,7 +242,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
               ...((contentPart as any).confidence
                 ? { reasoningConfidence: (contentPart as any).confidence }
                 : {}),
-            });
+            } satisfies ReasoningUIPart);
           }
           break;
         }
@@ -263,7 +258,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
             ...(contentPart.providerExecuted != null
               ? { providerExecuted: contentPart.providerExecuted }
               : {}),
-          } as any);
+          } satisfies ToolUIPart);
           break;
         }
         case "tool-result": {
@@ -275,7 +270,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
             output: contentPart.output,
             // tool-result in assistant message content indicates provider execution
             providerExecuted: true,
-          } as any);
+          } satisfies ToolUIPart);
           break;
         }
         case "image": {
@@ -303,9 +298,9 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
             mediaType,
             url,
             ...(contentPart.providerOptions
-              ? { providerMetadata: contentPart.providerOptions as any }
+              ? { providerMetadata: contentPart.providerOptions }
               : {}),
-          });
+          } satisfies FileUIPart);
           break;
         }
         case "file": {
@@ -328,9 +323,9 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
             mediaType: contentPart.mediaType,
             url,
             ...(contentPart.providerOptions
-              ? { providerMetadata: contentPart.providerOptions as any }
+              ? { providerMetadata: contentPart.providerOptions }
               : {}),
-          });
+          } satisfies FileUIPart);
           break;
         }
         default:
