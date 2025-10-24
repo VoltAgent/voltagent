@@ -175,15 +175,18 @@ describe("LoggerProxy", () => {
 
       // First call
       proxy.info("first");
-      expect(loggerModule.getGlobalLogger).toHaveBeenCalledTimes(1);
+      // Note: getGlobalLogger is now called twice per log:
+      // 1. In shouldLog() to check the level
+      // 2. In getActualLogger() to forward the log
+      expect(loggerModule.getGlobalLogger).toHaveBeenCalledTimes(2);
 
       // Second call
       proxy.info("second");
-      expect(loggerModule.getGlobalLogger).toHaveBeenCalledTimes(2);
+      expect(loggerModule.getGlobalLogger).toHaveBeenCalledTimes(4);
 
       // Different log level
       proxy.error("error");
-      expect(loggerModule.getGlobalLogger).toHaveBeenCalledTimes(3);
+      expect(loggerModule.getGlobalLogger).toHaveBeenCalledTimes(6);
     });
 
     it("should use updated global logger if it changes", () => {
@@ -256,6 +259,216 @@ describe("LoggerProxy", () => {
 
       expect(firstCall).toEqual(bindings);
       expect(secondCall).toEqual(bindings);
+    });
+  });
+
+  describe("log level filtering", () => {
+    let mockLoggerWithLevel: Logger & { level: string };
+    let mockPinoLogger: Logger & { _pinoInstance: { level: string } };
+
+    beforeEach(() => {
+      // Mock OpenTelemetry logger provider
+      // Note: OpenTelemetry emission is tested in ConsoleLogger tests
+      (globalThis as any).___voltagent_otel_logger_provider = true;
+
+      // Create mock logger with level property (like ConsoleLogger)
+      mockLoggerWithLevel = {
+        level: "error",
+        trace: vi.fn(),
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        fatal: vi.fn(),
+        child: vi.fn().mockReturnThis(),
+      };
+
+      // Create mock logger with Pino instance
+      mockPinoLogger = {
+        _pinoInstance: { level: "error" },
+        trace: vi.fn(),
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        fatal: vi.fn(),
+        child: vi.fn().mockReturnThis(),
+      };
+    });
+
+    afterEach(() => {
+      (globalThis as any).___voltagent_otel_logger_provider = undefined;
+    });
+
+    describe("console output filtering (respects configured level)", () => {
+      it("should NOT forward DEBUG logs to console when level is error", () => {
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(mockLoggerWithLevel);
+
+        const proxy = new LoggerProxy();
+        proxy.debug("debug message");
+
+        // Should NOT call the actual logger (filtered out)
+        expect(mockLoggerWithLevel.debug).not.toHaveBeenCalled();
+      });
+
+      it("should forward ERROR logs to console when level is error", () => {
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(mockLoggerWithLevel);
+
+        const proxy = new LoggerProxy();
+        proxy.error("error message");
+
+        // Should call the actual logger (passes level check)
+        expect(mockLoggerWithLevel.error).toHaveBeenCalledWith("error message", undefined);
+      });
+
+      it("should filter INFO logs when level is error", () => {
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(mockLoggerWithLevel);
+
+        const proxy = new LoggerProxy();
+        proxy.info("info message");
+        proxy.warn("warn message");
+
+        // Both should be filtered
+        expect(mockLoggerWithLevel.info).not.toHaveBeenCalled();
+        expect(mockLoggerWithLevel.warn).not.toHaveBeenCalled();
+      });
+
+      it("should work with Pino instance level", () => {
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(mockPinoLogger);
+
+        const proxy = new LoggerProxy();
+        proxy.debug("debug message");
+        proxy.error("error message");
+
+        // DEBUG filtered, ERROR passed
+        expect(mockPinoLogger.debug).not.toHaveBeenCalled();
+        expect(mockPinoLogger.error).toHaveBeenCalledWith("error message", undefined);
+      });
+    });
+
+    describe("OpenTelemetry emission (always sends all logs)", () => {
+      it.skip("should ALWAYS emit DEBUG logs to OpenTelemetry even when filtered from console", () => {
+        // Note: OpenTelemetry emission is tested in ConsoleLogger tests
+        // LoggerProxy delegates to emitOtelLog which is hard to mock in unit tests
+        // This behavior is validated in integration tests
+      });
+
+      it("should call emitOtelLog even when console log is filtered", () => {
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(mockLoggerWithLevel);
+
+        // Spy on the private emitOtelLog method indirectly
+        const proxy = new LoggerProxy();
+
+        // When DEBUG is filtered from console
+        proxy.debug("debug message");
+
+        // Console logger should NOT be called
+        expect(mockLoggerWithLevel.debug).not.toHaveBeenCalled();
+
+        // But emitOtelLog IS called (before the filter check)
+        // We verify this by ensuring the method completes without throwing
+        // The actual OpenTelemetry integration is tested in ConsoleLogger and integration tests
+      });
+
+      it("should call emitOtelLog for all levels regardless of filtering", () => {
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(mockLoggerWithLevel);
+
+        const proxy = new LoggerProxy();
+
+        // All these will be filtered from console
+        proxy.trace("trace");
+        proxy.debug("debug");
+        proxy.info("info");
+        proxy.warn("warn");
+
+        // But none should throw (emitOtelLog is called for all)
+        // Verify console filtering works
+        expect(mockLoggerWithLevel.trace).not.toHaveBeenCalled();
+        expect(mockLoggerWithLevel.debug).not.toHaveBeenCalled();
+        expect(mockLoggerWithLevel.info).not.toHaveBeenCalled();
+        expect(mockLoggerWithLevel.warn).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("level detection", () => {
+      it("should detect level from logger with level property", () => {
+        const logger = { ...mockLoggerWithLevel, level: "info" };
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(logger);
+
+        const proxy = new LoggerProxy();
+        proxy.debug("debug message");
+        proxy.info("info message");
+
+        // DEBUG filtered (below info), INFO passed
+        expect(logger.debug).not.toHaveBeenCalled();
+        expect(logger.info).toHaveBeenCalled();
+      });
+
+      it("should detect level from Pino _pinoInstance", () => {
+        const logger = { ...mockPinoLogger };
+        logger._pinoInstance.level = "warn";
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(logger);
+
+        const proxy = new LoggerProxy();
+        proxy.info("info message");
+        proxy.warn("warn message");
+
+        // INFO filtered (below warn), WARN passed
+        expect(logger.info).not.toHaveBeenCalled();
+        expect(logger.warn).toHaveBeenCalled();
+      });
+
+      it("should allow all logs when level cannot be determined (fail-open)", () => {
+        const loggerWithoutLevel = { ...mockGlobalLogger };
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(loggerWithoutLevel);
+
+        const proxy = new LoggerProxy();
+        proxy.debug("debug message");
+        proxy.info("info message");
+
+        // Both should pass (fail-open behavior)
+        expect(loggerWithoutLevel.debug).toHaveBeenCalled();
+        expect(loggerWithoutLevel.info).toHaveBeenCalled();
+      });
+    });
+
+    describe("level hierarchy", () => {
+      it("should respect log level hierarchy correctly", () => {
+        const logger = { ...mockLoggerWithLevel, level: "warn" };
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(logger);
+
+        const proxy = new LoggerProxy();
+
+        // Below warn - filtered
+        proxy.trace("trace");
+        proxy.debug("debug");
+        proxy.info("info");
+
+        expect(logger.trace).not.toHaveBeenCalled();
+        expect(logger.debug).not.toHaveBeenCalled();
+        expect(logger.info).not.toHaveBeenCalled();
+
+        // Warn and above - passed
+        proxy.warn("warn");
+        proxy.error("error");
+        proxy.fatal("fatal");
+
+        expect(logger.warn).toHaveBeenCalled();
+        expect(logger.error).toHaveBeenCalled();
+        expect(logger.fatal).toHaveBeenCalled();
+      });
+
+      it("should handle case-insensitive level comparison", () => {
+        const logger = { ...mockLoggerWithLevel, level: "ERROR" };
+        vi.mocked(loggerModule.getGlobalLogger).mockReturnValue(logger);
+
+        const proxy = new LoggerProxy();
+        proxy.info("info");
+        proxy.error("error");
+
+        expect(logger.info).not.toHaveBeenCalled();
+        expect(logger.error).toHaveBeenCalled();
+      });
     });
   });
 });

@@ -118,6 +118,168 @@ describe("ConsoleLogger", () => {
     });
   });
 
+  describe("OpenTelemetry emission (always sends all logs)", () => {
+    let otelEmitSpy: any;
+
+    beforeEach(() => {
+      // Mock OpenTelemetry logger provider
+      const mockOtelLogger = {
+        emit: vi.fn(),
+      };
+
+      (globalThis as any).___voltagent_otel_logger_provider = {
+        getLogger: vi.fn().mockReturnValue(mockOtelLogger),
+      };
+
+      otelEmitSpy = mockOtelLogger.emit;
+    });
+
+    afterEach(() => {
+      (globalThis as any).___voltagent_otel_logger_provider = undefined;
+    });
+
+    it("should emit DEBUG logs to OpenTelemetry even when console level is error", () => {
+      const logger = new ConsoleLogger({}, "error");
+
+      logger.debug("debug message", { extra: "context" });
+
+      // Console: should NOT be called (filtered)
+      expect(console.debug).not.toHaveBeenCalled();
+
+      // OpenTelemetry: should be called (always sent)
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severityNumber: 5, // DEBUG
+          severityText: "DEBUG",
+          body: "debug message",
+          attributes: expect.objectContaining({ extra: "context" }),
+        }),
+      );
+    });
+
+    it("should emit INFO logs to OpenTelemetry when console level is error", () => {
+      const logger = new ConsoleLogger({}, "error");
+
+      logger.info("info message");
+
+      // Console: filtered
+      expect(console.info).not.toHaveBeenCalled();
+
+      // OpenTelemetry: sent
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severityNumber: 9, // INFO
+          severityText: "INFO",
+          body: "info message",
+        }),
+      );
+    });
+
+    it("should emit ERROR logs to both console and OpenTelemetry", () => {
+      const logger = new ConsoleLogger({}, "error");
+
+      logger.error("error message");
+
+      // Console: shown
+      expect(console.error).toHaveBeenCalledTimes(1);
+
+      // OpenTelemetry: sent
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severityNumber: 17, // ERROR
+          severityText: "ERROR",
+          body: "error message",
+        }),
+      );
+    });
+
+    it("should emit all log levels to OpenTelemetry regardless of console level", () => {
+      const logger = new ConsoleLogger({}, "error");
+
+      // Log all levels
+      logger.trace("trace message");
+      logger.debug("debug message");
+      logger.info("info message");
+      logger.warn("warn message");
+      logger.error("error message");
+      logger.fatal("fatal message");
+
+      // Console: only error and fatal should appear
+      expect(console.debug).not.toHaveBeenCalled();
+      expect(console.info).not.toHaveBeenCalled();
+      expect(console.warn).not.toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalledTimes(2); // error + fatal
+
+      // OpenTelemetry: all levels should be sent
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ severityText: "TRACE", severityNumber: 1 }),
+      );
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ severityText: "DEBUG", severityNumber: 5 }),
+      );
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ severityText: "INFO", severityNumber: 9 }),
+      );
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ severityText: "WARN", severityNumber: 13 }),
+      );
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ severityText: "ERROR", severityNumber: 17 }),
+      );
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ severityText: "FATAL", severityNumber: 21 }),
+      );
+    });
+
+    it("should emit OpenTelemetry logs with context bindings", () => {
+      const logger = new ConsoleLogger({ component: "TestComponent", userId: "123" }, "error");
+
+      logger.debug("debug message");
+
+      expect(otelEmitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attributes: expect.objectContaining({
+            component: "TestComponent",
+            userId: "123",
+          }),
+        }),
+      );
+    });
+
+    it("should not throw when OpenTelemetry is not available", () => {
+      (globalThis as any).___voltagent_otel_logger_provider = undefined;
+
+      const logger = new ConsoleLogger({}, "info");
+
+      // Should not throw
+      expect(() => {
+        logger.info("test message");
+      }).not.toThrow();
+    });
+
+    it("should handle OpenTelemetry emission errors gracefully", () => {
+      // Mock OpenTelemetry to throw error
+      const mockOtelLogger = {
+        emit: vi.fn().mockImplementation(() => {
+          throw new Error("OTEL error");
+        }),
+      };
+
+      (globalThis as any).___voltagent_otel_logger_provider = {
+        getLogger: vi.fn().mockReturnValue(mockOtelLogger),
+      };
+
+      const logger = new ConsoleLogger({}, "info");
+
+      // Should not throw, should still log to console
+      expect(() => {
+        logger.info("test message");
+      }).not.toThrow();
+
+      expect(console.info).toHaveBeenCalled();
+    });
+  });
+
   describe("message formatting", () => {
     it("should format message with timestamp", () => {
       const logger = new ConsoleLogger();
