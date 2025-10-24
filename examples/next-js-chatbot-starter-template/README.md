@@ -43,62 +43,6 @@ A production-ready chatbot application built with Next.js 15, VoltAgent, and the
 
 ## Architecture Overview
 
-### System Architecture
-
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        UI[Chat Interface Component]
-        UC[useChat Hook - AI SDK]
-    end
-
-    subgraph "API Layer"
-        API[/api/chat Route]
-        VAL[Request Validation]
-        AUTH[AI Config Validation]
-    end
-
-    subgraph "Agent Layer"
-        AGENT[VoltAgent Chatbot Agent]
-        MEM[Memory System]
-        TOOLS[Tool Registry]
-    end
-
-    subgraph "AI Provider Layer"
-        OPENAI[OpenAI]
-        ANTHROPIC[Anthropic]
-        GOOGLE[Google AI]
-        GROQ[Groq]
-    end
-
-    subgraph "Storage Layer"
-        INMEM[In-Memory Storage]
-        LIBSQL[(LibSQL Database)]
-        POSTGRES[(PostgreSQL)]
-    end
-
-    UI --> UC
-    UC -->|POST /api/chat| API
-    API --> VAL
-    VAL --> AUTH
-    AUTH --> AGENT
-    AGENT --> MEM
-    AGENT --> TOOLS
-    AGENT -->|API Call| OPENAI
-    AGENT -->|API Call| ANTHROPIC
-    AGENT -->|API Call| GOOGLE
-    AGENT -->|API Call| GROQ
-    MEM -.->|Current| INMEM
-    MEM -.->|Optional| LIBSQL
-    MEM -.->|Optional| POSTGRES
-    AGENT -->|SSE Stream| API
-    API -->|Response Stream| UC
-    UC --> UI
-
-    style UI fill:#10b981,stroke:#059669,color:#fff
-    style AGENT fill:#10b981,stroke:#059669,color:#fff
-    style API fill:#0ea5e9,stroke:#0284c7,color:#fff
-```
 
 ### Request Flow
 
