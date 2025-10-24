@@ -1,8 +1,8 @@
 {
   "name": "voltagent-example-with-agent-tool",
+  "description": "Example showing how to use agents as tools in a supervisor pattern",
   "version": "1.0.0",
   "author": "",
-  "description": "Example showing how to use agents as tools in a supervisor pattern",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
     "@voltagent/core": "^1.1.33",
@@ -17,9 +17,9 @@
   "keywords": [
     "agent",
     "ai",
-    "voltagent",
+    "multi-agent",
     "supervisor",
-    "multi-agent"
+    "voltagent"
   ],
   "license": "MIT",
   "private": true,
