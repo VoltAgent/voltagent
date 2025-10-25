@@ -5,8 +5,8 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
     "@voltagent/cli": "^0.1.14",
-    "@voltagent/core": "^1.1.36",
-    "@voltagent/libsql": "^1.0.9",
+    "@voltagent/core": "^1.1.37",
+    "@voltagent/libsql": "^1.0.10",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.2",
     "ai": "^5.0.76",

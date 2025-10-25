@@ -5,9 +5,9 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
     "@voltagent/cli": "^0.1.14",
-    "@voltagent/core": "^1.1.36",
+    "@voltagent/core": "^1.1.37",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/postgres": "^1.0.10",
+    "@voltagent/postgres": "^1.0.11",
     "@voltagent/server-hono": "^1.2.2"
   },
   "devDependencies": {
