@@ -93,18 +93,21 @@ ADD COLUMN IF NOT EXISTS cancellation JSONB;
 
 ### Postgres Users
 
-New deployments get the columns automatically. For existing tables, run:
-
-```sql
-ALTER TABLE voltagent_workflow_states
-ADD COLUMN IF NOT EXISTS events JSONB,
-ADD COLUMN IF NOT EXISTS output JSONB,
-ADD COLUMN IF NOT EXISTS cancellation JSONB;
-```
+No action required - migrations run automatically on next initialization.
 
 ### In-Memory Users
 
 No action required - automatically supported.
+
+### VoltAgent Managed Memory Users
+
+No action required - migrations run automatically on first request per managed memory database after API deployment. The API has been updated to:
+
+- Include new columns in ManagedMemoryProvisioner CREATE TABLE statements (new databases)
+- Run automatic column addition migration for existing databases (lazy migration on first request)
+- Update PostgreSQL memory adapter to persist and retrieve events, output, and cancellation fields
+
+**Zero-downtime deployment:** Existing managed memory databases will be migrated lazily when first accessed after the API update.
 
 ## Impact
 

@@ -5,6 +5,7 @@
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import type { z } from "zod";
+import type { OperationContext } from "../agent/types";
 import { EmbeddingAdapterNotConfiguredError, VectorAdapterNotConfiguredError } from "./errors";
 import type {
   Conversation,
@@ -67,8 +68,9 @@ export class Memory {
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
+    context?: OperationContext,
   ): Promise<UIMessage[]> {
-    return this.storage.getMessages(userId, conversationId, options);
+    return this.storage.getMessages(userId, conversationId, options, context);
   }
 
   /**
@@ -81,32 +83,46 @@ export class Memory {
   /**
    * Add a single message (alias for consistency with existing API)
    */
-  async addMessage(message: UIMessage, userId: string, conversationId: string): Promise<void> {
+  async addMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void> {
     // If embedding is configured, auto-embed the message
     if (this.embedding && this.vector) {
       await this.embedAndStoreMessage(message, userId, conversationId);
     }
 
-    await this.storage.addMessage(message, userId, conversationId);
+    await this.storage.addMessage(message, userId, conversationId, context);
   }
 
   /**
    * Add multiple messages in batch
    */
-  async addMessages(messages: UIMessage[], userId: string, conversationId: string): Promise<void> {
+  async addMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void> {
     // If embedding is configured, auto-embed the messages
     if (this.embedding && this.vector) {
       await this.embedAndStoreMessages(messages, userId, conversationId);
     }
 
-    await this.storage.addMessages(messages, userId, conversationId);
+    await this.storage.addMessages(messages, userId, conversationId, context);
   }
 
   /**
    * Clear messages for a user
    */
-  async clearMessages(userId: string, conversationId?: string): Promise<void> {
-    return this.storage.clearMessages(userId, conversationId);
+  async clearMessages(
+    userId: string,
+    conversationId?: string,
+    context?: OperationContext,
+  ): Promise<void> {
+    return this.storage.clearMessages(userId, conversationId, context);
   }
 
   // ============================================================================
@@ -882,6 +898,7 @@ Remember:
     context?: {
       logger?: Logger;
     },
+    operationContext?: OperationContext,
   ): Promise<void> {
     if (!userId || !conversationId) return;
 
@@ -900,8 +917,8 @@ Remember:
         });
       }
 
-      // Add message to conversation
-      await this.addMessage(message, userId, conversationId);
+      // Add message to conversation with OperationContext
+      await this.addMessage(message, userId, conversationId, operationContext);
     } catch (error) {
       // Log error
       logger?.error?.(
@@ -928,6 +945,7 @@ Remember:
       semanticThreshold?: number;
       mergeStrategy?: "prepend" | "append" | "interleave";
     },
+    operationContext?: OperationContext,
   ): Promise<UIMessage[]> {
     const logger = options?.logger || this.logger;
 
@@ -949,10 +967,15 @@ Remember:
           },
         );
       } else {
-        // Regular message retrieval
-        messages = await this.getMessages(userId, conversationId, {
-          limit: options?.limit,
-        });
+        // Regular message retrieval with OperationContext
+        messages = await this.getMessages(
+          userId,
+          conversationId,
+          {
+            limit: options?.limit,
+          },
+          operationContext,
+        );
       }
 
       logger?.debug?.(`[Memory] Read successful (${messages.length} records)`);

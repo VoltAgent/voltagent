@@ -5,6 +5,7 @@
 
 import type { UIMessage } from "ai";
 import type { z } from "zod";
+import type { OperationContext } from "../agent/types";
 
 // ============================================================================
 // Core Types (Re-exported from existing memory system)
@@ -302,14 +303,25 @@ export interface VectorItem {
  */
 export interface StorageAdapter {
   // Message operations
-  addMessage(message: UIMessage, userId: string, conversationId: string): Promise<void>;
-  addMessages(messages: UIMessage[], userId: string, conversationId: string): Promise<void>;
+  addMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void>;
+  addMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void>;
   getMessages(
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
+    context?: OperationContext,
   ): Promise<UIMessage[]>;
-  clearMessages(userId: string, conversationId?: string): Promise<void>;
+  clearMessages(userId: string, conversationId?: string, context?: OperationContext): Promise<void>;
 
   // Conversation operations
   createConversation(input: CreateConversationInput): Promise<Conversation>;
