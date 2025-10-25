@@ -116,6 +116,23 @@ export {
   ConversationNotFoundError,
 } from "./memory";
 
+// Rate Limiting exports
+export { RateLimitExceededError } from "./rate-limit/errors";
+export { FixedWindowCounterLimiter } from "./rate-limit/limiters/fixed-window";
+export { RateLimitManager } from "./rate-limit/manager";
+export type {
+  AgentRateLimitConfig,
+  LLMRateLimitConfig,
+  RateLimitConfig,
+  RateLimitContext,
+  RateLimiter,
+  RateLimitExceededAction,
+  RateLimitScope,
+  RateLimitStats,
+  RateLimitStrategy,
+  ToolRateLimitConfig,
+} from "./rate-limit/types";
+
 // Export adapters from subdirectories
 export { InMemoryStorageAdapter } from "./memory/adapters/storage/in-memory";
 export { InMemoryVectorAdapter } from "./memory/adapters/vector/in-memory";
