@@ -37,6 +37,7 @@ import { ActionType, buildAgentLogMessage } from "../logger/message-builder";
 import type { Memory, MemoryUpdateMode } from "../memory";
 import { MemoryManager } from "../memory/manager/memory-manager";
 import { type VoltAgentObservability, createVoltAgentObservability } from "../observability";
+import { RateLimitManager } from "../rate-limit/manager";
 import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit } from "../tool";
@@ -322,6 +323,7 @@ export class Agent {
   private defaultObservability?: VoltAgentObservability;
   private readonly toolManager: ToolManager;
   private readonly subAgentManager: SubAgentManager;
+  private readonly rateLimitManager?: RateLimitManager;
   private readonly voltOpsClient?: VoltOpsClient;
   private readonly prompts?: PromptHelper;
   private readonly evalConfig?: AgentEvalConfig;
@@ -390,6 +392,17 @@ export class Agent {
       options.subAgents || [],
       this.supervisorConfig,
     );
+
+    // Initialize rate limit manager if configuration provided
+    if (options.rateLimits) {
+      this.rateLimitManager = new RateLimitManager(this.id, options.rateLimits, this.logger);
+      this.logger.debug("Rate limit manager initialized", {
+        event: LogEvents.AGENT_CREATED,
+        agentId: this.id,
+        hasLLMRateLimit: !!options.rateLimits.llm,
+        hasToolRateLimits: !!options.rateLimits.tools,
+      });
+    }
 
     // Initialize prompts helper with VoltOpsClient (agent's own or global)
     // Priority 1: Agent's own VoltOpsClient
@@ -500,6 +513,24 @@ export class Agent {
           maxSteps,
           tools: tools ? Object.keys(tools) : [],
         });
+
+        // Rate limit check before LLM call
+        if (this.rateLimitManager) {
+          // Extract provider from model if available
+          const provider = this.extractProviderFromModel(model);
+          const modelId = modelName;
+
+          await this.rateLimitManager.checkLLMRateLimit({
+            provider,
+            model: modelId,
+          });
+
+          methodLogger.debug("Rate limit check passed for LLM call", {
+            event: LogEvents.AGENT_GENERATION_STARTED,
+            provider,
+            model: modelId,
+          });
+        }
 
         // Extract VoltAgent-specific options
         const {
@@ -714,6 +745,24 @@ export class Agent {
 
         // Setup abort signal listener
         this.setupAbortSignalListener(oc);
+
+        // Rate limit check before LLM call
+        if (this.rateLimitManager) {
+          // Extract provider from model if available
+          const provider = this.extractProviderFromModel(model);
+          const modelId = modelName;
+
+          await this.rateLimitManager.checkLLMRateLimit({
+            provider,
+            model: modelId,
+          });
+
+          methodLogger.debug("Rate limit check passed for stream call", {
+            event: LogEvents.AGENT_STREAM_STARTED,
+            provider,
+            model: modelId,
+          });
+        }
 
         // Extract VoltAgent-specific options
         const {
@@ -1643,6 +1692,19 @@ export class Agent {
       input: [...this.inputGuardrails, ...optionInput],
       output: [...this.outputGuardrails, ...optionOutput],
     };
+  }
+
+  /**
+   * Extract provider name from AI SDK model
+   * Returns the provider identifier for rate limiting purposes
+   */
+  private extractProviderFromModel(model: LanguageModel): string {
+    // AI SDK models have a 'provider' property that identifies the provider
+    // e.g., "google.generative-ai", "openai", "anthropic"
+    if (typeof model === "object" && model !== null && "provider" in model) {
+      return String(model.provider);
+    }
+    return "unknown";
   }
 
   /**
@@ -2731,6 +2793,16 @@ export class Agent {
             try {
               // Call tool start hook - can throw ToolDeniedError
               await hooks.onToolStart?.({ agent: this, tool, context: oc, args });
+
+              // Rate limit check before tool execution
+              if (this.rateLimitManager) {
+                await this.rateLimitManager.checkToolRateLimit(tool.name);
+
+                oc.logger.debug("Rate limit check passed for tool execution", {
+                  event: LogEvents.AGENT_STEP_TOOL_CALL,
+                  toolName: tool.name,
+                });
+              }
 
               // Execute tool with OperationContext directly
               if (!tool.execute) {

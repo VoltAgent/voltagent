@@ -18,17 +18,15 @@ import type { Voice } from "../voice/types";
 import type { VoltOpsClient } from "../voltops/client";
 import type { Agent } from "./agent";
 import type { CancellationError, VoltAgentError } from "./errors";
-import type { LLMProvider } from "./providers";
-import type { BaseTool } from "./providers";
-import type { StepWithContent } from "./providers";
+import type { BaseTool, LLMProvider, StepWithContent } from "./providers";
 import type { UsageInfo } from "./providers/base/types";
-import type { SubAgentConfig } from "./subagent/types";
-import type { VoltAgentTextStreamPart } from "./subagent/types";
+import type { SubAgentConfig, VoltAgentTextStreamPart } from "./subagent/types";
 
 import type { Logger } from "@voltagent/internal";
 import type { LocalScorerDefinition, SamplingPolicy } from "../eval/runtime";
 import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
 import type { VoltAgentObservability } from "../observability";
+import type { AgentRateLimitConfig } from "../rate-limit/types";
 import type {
   DynamicValue,
   DynamicValueOptions,
@@ -476,6 +474,29 @@ export type AgentOptions = {
 
   // Live evaluation configuration
   eval?: AgentEvalConfig;
+
+  // Rate limiting configuration
+  /**
+   * Rate limiting configuration for controlling request frequency
+   * Helps prevent exceeding API rate limits and manage costs
+   *
+   * @example
+   * ```typescript
+   * rateLimits: {
+   *   llm: {
+   *     maxRequestsPerMinute: 10,
+   *     strategy: 'fixed_window',
+   *     onExceeded: 'delay'
+   *   },
+   *   tools: {
+   *     'search_tool': {
+   *       maxRequestsPerMinute: 5
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  rateLimits?: AgentRateLimitConfig;
 };
 
 export type AgentEvalOperationType =
