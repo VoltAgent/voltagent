@@ -1,0 +1,49 @@
+{
+  "name": "next-js-chatbot-starter-template",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.37",
+    "@ai-sdk/google": "^2.0.23",
+    "@ai-sdk/groq": "^2.0.24",
+    "@ai-sdk/openai": "^2.0.10",
+    "@ai-sdk/react": "^1.0.16",
+    "@libsql/client": "^0.15.0",
+    "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@voltagent/core": "workspace:*",
+    "@voltagent/libsql": "workspace:*",
+    "@voltagent/server-hono": "workspace:*",
+    "ai": "^5.0.76",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "import-in-the-middle": "^1.14.2",
+    "libsql": "^0.5.17",
+    "lucide-react": "^0.460.0",
+    "nanoid": "^5.1.6",
+    "next": "16.0.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "require-in-the-middle": "^7.5.2",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

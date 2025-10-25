@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --emerald-50: #ecfdf5;
+  --emerald-100: #d1fae5;
+  --emerald-500: #10b981;
+  --emerald-600: #059669;
+  --emerald-900: #064e3b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a1f1c;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Custom scrollbar for messages */
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+/* Smooth animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-animate {
+  animation: slideInUp 0.3s ease-out;
+}
+
+/* Code block styling */
+pre {
+  overflow-x: auto;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+code {
+  font-family: var(--font-geist-mono), monospace;
+}
