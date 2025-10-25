@@ -1,5 +1,6 @@
 import type { UIMessage } from "ai";
 import { describe, expectTypeOf, it } from "vitest";
+import type { OperationContext } from "../agent/types";
 import {
   type Conversation,
   ConversationAlreadyExistsError,
@@ -129,14 +130,18 @@ describe("Memory V2 Type System", () => {
     it("should enforce UIMessage type for addMessage", () => {
       const adapter: StorageAdapter = mockStorageAdapter;
 
-      expectTypeOf(adapter.addMessage).parameters.toMatchTypeOf<[UIMessage, string, string]>();
+      expectTypeOf(adapter.addMessage).parameters.toMatchTypeOf<
+        [UIMessage, string, string, OperationContext?]
+      >();
       expectTypeOf(adapter.addMessage).returns.toMatchTypeOf<Promise<void>>();
     });
 
     it("should enforce UIMessage array for addMessages", () => {
       const adapter: StorageAdapter = mockStorageAdapter;
 
-      expectTypeOf(adapter.addMessages).parameters.toMatchTypeOf<[UIMessage[], string, string]>();
+      expectTypeOf(adapter.addMessages).parameters.toMatchTypeOf<
+        [UIMessage[], string, string, OperationContext?]
+      >();
       expectTypeOf(adapter.addMessages).returns.toMatchTypeOf<Promise<void>>();
     });
 

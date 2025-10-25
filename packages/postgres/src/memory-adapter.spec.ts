@@ -114,7 +114,7 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
   // Test Setup
   // ============================================================================
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset all mocks
     vi.clearAllMocks();
 
@@ -152,6 +152,10 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       tablePrefix: "test",
       debug: false,
     });
+
+    // Wait for initialization to complete before tests run
+    // @ts-expect-error - accessing private property for testing
+    await adapter.initPromise;
   });
 
   afterEach(async () => {
