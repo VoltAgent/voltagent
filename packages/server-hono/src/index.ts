@@ -22,3 +22,6 @@ export { jwtAuth } from "./auth";
 
 // Export custom endpoint utilities
 export { extractCustomEndpoints, getEnhancedOpenApiDoc } from "./utils/custom-endpoints";
+
+// Export app factory for middleware integrations (e.g., NestJS, Express)
+export { createApp as createVoltAgentApp } from "./app-factory";

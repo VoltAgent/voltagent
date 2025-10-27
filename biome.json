@@ -38,6 +38,9 @@
     "formatter": {
       "quoteStyle": "double",
       "semicolons": "always"
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
     }
   },
   "files": {
