@@ -314,9 +314,9 @@ Related docs: [Retrieval API](https://voltagent.dev/docs/rag/retrieval-api), [RA
 
 ### Tools & MCP
 
-#### ⭐ [AI Agent with Type-Safe Tools](https://github.com/VoltAgent/voltagent/tree/main/examples/with-tools)
+#### ⭐ [AI Agent with Tools](https://github.com/VoltAgent/voltagent/tree/main/examples/with-tools)
 
-Shows how to create type-safe tools using Zod schemas, with support for cancellation signals and streaming results. Includes tool definition, parameter validation, and error handling.
+Shows how to create tools using Zod schemas, with support for cancellation signals and streaming results. Includes tool definition, parameter validation, and error handling.
 
 ```bash
 npm create voltagent@latest -- --example with-tools
@@ -448,7 +448,7 @@ Related docs: [Working Memory](https://voltagent.dev/docs/agents/memory/working-
 
 - [Memory Overview](https://voltagent.dev/docs/agents/memory/overview)
 
-#### ⭐ [AI Agent with Managed Memory](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voltagent-managed-memory)
+#### ⭐ [AI Agent with VoltAgent Managed Memory](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voltagent-managed-memory)
 
 Uses VoltAgent's managed memory service through a REST adapter. Shows configuration, authentication, and integrating cloud-hosted memory for deployments requiring reliability and automatic scaling.
 
@@ -606,26 +606,6 @@ Related docs: [Voice Integration](https://voltagent.dev/docs/agents/voice)
 
 ### Observability & Evaluation
 
-#### ⭐ [AI Agent with OpenTelemetry Tracing](https://github.com/VoltAgent/voltagent/tree/main/examples/sdk-trace-example)
-
-Implements OpenTelemetry distributed tracing with export to VoltOps. Shows trace instrumentation, span creation, context propagation, and visualization in VoltOps dashboards for monitoring and debugging.
-
-```bash
-npm create voltagent@latest -- --example sdk-trace-example
-```
-
-Related docs: [Observability Overview](https://voltagent.dev/docs/observability/overview)
-
-#### ⭐ [AI Agent with Custom Telemetry Exporter](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voltagent-exporter)
-
-Exports agent traces, events, and metrics to external observability platforms. Shows exporter configuration, custom formatters, batching strategies, and connecting to monitoring infrastructure.
-
-```bash
-npm create voltagent@latest -- --example with-voltagent-exporter
-```
-
-Related docs: [Observability Overview](https://voltagent.dev/docs/observability/overview)
-
 #### ⭐ [AI Agent with Live Evaluations](https://github.com/VoltAgent/voltagent/tree/main/examples/with-live-evals)
 
 Runs real-time evaluations against agents during development. Shows defining evaluation criteria, running assessments during testing, and iterating based on feedback.
@@ -646,7 +626,7 @@ npm create voltagent@latest -- --example with-offline-evals
 
 Related docs: [Offline Evaluations](https://voltagent.dev/docs/evals/offline-evaluations)
 
-#### ⭐ [AI Agent with ViteVal Framework](https://github.com/VoltAgent/voltagent/tree/main/examples/with-viteval)
+#### ⭐ [AI Agent with Viteval Framework](https://github.com/VoltAgent/voltagent/tree/main/examples/with-viteval)
 
 Integrates ViteVal's evaluation framework to test and score agent prompts and responses. Shows ViteVal setup, metric definition, evaluation execution, and result analysis.
 
