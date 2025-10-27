@@ -16,17 +16,19 @@
 
 </div>
 
-Each folder here contains a runnable example demonstrating how to build or integrate an AI Agent using [VoltAgent](https://github.com/VoltAgent/voltagent). These projects demonstrate RAG retrieval, typed tools, persistent memory, supervisor-subagent orchestration, workflows, MCP tool integration, and voice/UX integrations. Use them as reference implementations or starting points for your applications.
+Each folder here contains a runnable example demonstrating how to build or integrate an AI Agent using [VoltAgent](https://github.com/VoltAgent/voltagent).
+
+These projects demonstrate RAG retrieval, typed tools, persistent memory, supervisor-subagent orchestration, workflows, MCP tool integration, and voice/UX integrations. Use them as reference implementations or starting points for your applications.
 
 VoltAgent is a TypeScript-based framework for building AI agents with modern tooling. Get started with the [tutorial](https://voltagent.dev/tutorial/introduction/) to learn the fundamentals and build your first agent.
 
 ## What You'll Build
 
-- **RAG & Retrieval** — Vector search with Pinecone, Chroma, Qdrant, and Postgres
-- **Typed Tools** — Zod-validated tools, MCP servers, and external API integrations
-- **Memory Systems** — Working memory, persistent storage, and context management
-- **Multi-Agent Orchestration** — Supervisor patterns, sub-agents, and workflows
-- **Deployments** — Next.js, Cloudflare Workers, Netlify Functions, and more
+- **RAG & Retrieval** — Vector search with Pinecone, Chroma, Qdrant, and Postgres.
+- **Typed Tools** — Zod-validated tools, MCP servers, and external API integration.
+- **Memory Systems** — Working memory, persistent storage, and context management.
+- **Multi-Agent Orchestration** — Supervisor patterns, sub-agents, and workflows.
+- **Deployments** — Next.js, Cloudflare Workers, Netlify Functions, and more.
 
 ## Featured Examples
 
@@ -54,8 +56,6 @@ npm run dev
 
 📖 [Full tutorial](https://voltagent.dev/examples/agents/whatsapp-ai-agent)
 
----
-
 ### [YouTube to Blog Agent](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)
 
 Converts YouTube videos into Markdown blog posts. Uses a supervisor agent coordinating specialized sub-agents with MCP tools, shared working memory, and VoltOps observability.
@@ -80,8 +80,6 @@ npm run dev
 
 📖 [Full tutorial](https://voltagent.dev/examples/agents/youtube-blog-agent)
 
----
-
 ### [AI Ads Generator Agent](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator)
 
 Generates Instagram ads by analyzing landing pages with BrowserBase Stagehand. Extracts brand identity, messaging, and visual elements, then creates ads using Google Gemini AI.
@@ -105,8 +103,6 @@ npm run dev
 ```
 
 📖 [Full tutorial](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)
-
----
 
 ### [AI Recipe Generator Agent](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator)
 
@@ -134,8 +130,6 @@ npm run dev
 
 📹 [Video walkthrough](https://youtu.be/KjV1c6AhlfY)
 
----
-
 ### [AI Research Assistant Agent](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant)
 
 A multi-agent research workflow where specialized AI agents collaborate to research topics and generate reports. Features type-safe data flow and structured coordination patterns.
@@ -162,434 +156,559 @@ npm run dev
 
 📹 [Video walkthrough](https://youtu.be/j6KAUaoZMy4)
 
----
-
 ## All Examples
 
-### Getting Started
+#### ⭐ [AI Agent Base Starter](https://github.com/VoltAgent/voltagent/tree/main/examples/base)
 
-- **[AI Agent Base Starter](https://github.com/VoltAgent/voltagent/tree/main/examples/base)** — A minimal AI agent project with a single agent, in-memory storage, and a development server. Shows the core framework structure and basic agent configuration.
-  ```bash
-  npm create voltagent@latest -- --example base
-  ```
+A minimal AI agent project with a single agent, in-memory storage, and a development server. Shows the core framework structure and basic agent configuration.
+
+```bash
+npm create voltagent@latest -- --example base
+```
 
 ### AI Providers
 
-- **[AI Agent with Anthropic Claude](https://github.com/VoltAgent/voltagent/tree/main/examples/with-anthropic)** — Integrates Claude models (Sonnet, Opus, Haiku) using the Vercel AI SDK. Shows configuration, streaming responses, and patterns for working with Anthropic's language models.
+#### ⭐ [AI Agent with Anthropic Claude](https://github.com/VoltAgent/voltagent/tree/main/examples/with-anthropic)
 
-  ```bash
-  npm create voltagent@latest -- --example with-anthropic
-  ```
+Integrates Claude models (Sonnet, Opus, Haiku) using the Vercel AI SDK. Shows configuration, streaming responses, and patterns for working with Anthropic's language models.
 
-  📚 Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers) • [Agent Overview](https://voltagent.dev/docs/agents/overview)
+```bash
+npm create voltagent@latest -- --example with-anthropic
+```
 
-- **[AI Agent with Google Gemini](https://github.com/VoltAgent/voltagent/tree/main/examples/with-google-ai)** — Connects to Google's Gemini models for multimodal AI. Demonstrates image inputs, API configuration, and using Gemini's reasoning features in agent workflows.
+Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
 
-  ```bash
-  npm create voltagent@latest -- --example with-google-ai
-  ```
+#### ⭐ [AI Agent with Google Gemini](https://github.com/VoltAgent/voltagent/tree/main/examples/with-google-ai)
 
-  📚 Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers) • [Multi-Modal Agents](https://voltagent.dev/docs/agents/multi-modal)
+Connects to Google's Gemini models for multimodal AI. Demonstrates image inputs, API configuration, and using Gemini's reasoning features in agent workflows.
 
-- **[AI Agent with Google Vertex AI](https://github.com/VoltAgent/voltagent/tree/main/examples/with-google-vertex-ai)** — Integrates with Google Cloud's Vertex AI platform. Includes service account setup, model selection, and deployment patterns for GCP infrastructure.
+```bash
+npm create voltagent@latest -- --example with-google-ai
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-google-vertex-ai
-  ```
+Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
 
-  📚 Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
+#### ⭐ [AI Agent with Google Vertex AI](https://github.com/VoltAgent/voltagent/tree/main/examples/with-google-vertex-ai)
 
-- **[AI Agent with Groq](https://github.com/VoltAgent/voltagent/tree/main/examples/with-groq-ai)** — Uses Groq's LPU architecture for low-latency inference. Supports Llama, Mixtral, and other open-source models for real-time applications.
+Integrates with Google Cloud's Vertex AI platform. Includes service account setup, model selection, and deployment patterns for GCP infrastructure.
 
-  ```bash
-  npm create voltagent@latest -- --example with-groq-ai
-  ```
+```bash
+npm create voltagent@latest -- --example with-google-vertex-ai
+```
 
-  📚 Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
+Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
 
-- **[AI Agent with xAI Grok](https://github.com/VoltAgent/voltagent/tree/main/examples/with-xsai)** — Integrates xAI's Grok models. Shows API configuration, model parameters, and building agents with access to real-time knowledge.
+#### ⭐ [AI Agent with Groq](https://github.com/VoltAgent/voltagent/tree/main/examples/with-groq-ai)
 
-  ```bash
-  npm create voltagent@latest -- --example with-xsai
-  ```
+Uses Groq's LPU architecture for low-latency inference. Supports Llama, Mixtral, and other open-source models for real-time applications.
 
-  📚 Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
+```bash
+npm create voltagent@latest -- --example with-groq-ai
+```
 
-- **[AI Agent with Amazon Bedrock](https://github.com/VoltAgent/voltagent/tree/main/examples/with-amazon-bedrock)** — Accesses foundation models from Amazon, Anthropic, Cohere, and others through AWS Bedrock. Shows credential configuration and model selection for AWS deployments.
+Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
 
-  ```bash
-  npm create voltagent@latest -- --example with-amazon-bedrock
-  ```
+#### ⭐ [AI Agent with xAI Grok](https://github.com/VoltAgent/voltagent/tree/main/examples/with-xsai)
 
-  📚 Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
+Integrates xAI's Grok models. Shows API configuration, model parameters, and building agents with access to real-time knowledge.
 
-- **[AI Agent with Vercel AI SDK](https://github.com/VoltAgent/voltagent/tree/main/examples/with-vercel-ai)** — Uses the Vercel AI SDK for streaming, function calling, and multi-provider support. Shows edge-optimized deployments and streaming patterns for web applications.
-  ```bash
-  npm create voltagent@latest -- --example with-vercel-ai
-  ```
-  📚 Related docs: [Vercel AI Integration](https://voltagent.dev/docs/integrations/vercel-ai) • [AI Providers](https://voltagent.dev/docs/agents/providers)
+```bash
+npm create voltagent@latest -- --example with-xsai
+```
+
+Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
+
+#### ⭐ [AI Agent with Amazon Bedrock](https://github.com/VoltAgent/voltagent/tree/main/examples/with-amazon-bedrock)
+
+Accesses foundation models from Amazon, Anthropic, Cohere, and others through AWS Bedrock. Shows credential configuration and model selection for AWS deployments.
+
+```bash
+npm create voltagent@latest -- --example with-amazon-bedrock
+```
+
+Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
+
+#### ⭐ [AI Agent with Vercel AI SDK](https://github.com/VoltAgent/voltagent/tree/main/examples/with-vercel-ai)
+
+Uses the Vercel AI SDK for streaming, function calling, and multi-provider support. Shows edge-optimized deployments and streaming patterns for web applications.
+
+```bash
+npm create voltagent@latest -- --example with-vercel-ai
+```
+
+Related docs: [AI Providers](https://voltagent.dev/docs/agents/providers)
 
 ### RAG & Vector Search
 
-- **[AI Agent with Chroma Vector Database](https://github.com/VoltAgent/voltagent/tree/main/examples/with-chroma)** — Implements RAG with Chroma's open-source vector database. Compares automatic retrieval patterns versus tool-driven approaches, including document ingestion and semantic search.
+#### ⭐ [AI Agent with Chroma Vector Database](https://github.com/VoltAgent/voltagent/tree/main/examples/with-chroma)
 
-  ```bash
-  npm create voltagent@latest -- --example with-chroma
-  ```
+Implements RAG with Chroma's open-source vector database. Compares automatic retrieval patterns versus tool-driven approaches, including document ingestion and semantic search.
 
-  📚 Related docs: [Chroma Integration](https://voltagent.dev/docs/rag/chroma) • [RAG Overview](https://voltagent.dev/docs/rag/overview)
+```bash
+npm create voltagent@latest -- --example with-chroma
+```
 
-- **[AI Agent with Pinecone](https://github.com/VoltAgent/voltagent/tree/main/examples/with-pinecone)** — RAG using Pinecone's managed vector database. Shows namespace management, metadata filtering, hybrid search, and scaling patterns for high-traffic applications.
+Related docs: [Chroma Integration](https://voltagent.dev/docs/rag/chroma), [RAG Overview](https://voltagent.dev/docs/rag/overview)
 
-  ```bash
-  npm create voltagent@latest -- --example with-pinecone
-  ```
+#### ⭐ [AI Agent with Pinecone](https://github.com/VoltAgent/voltagent/tree/main/examples/with-pinecone)
 
-  📚 Related docs: [Pinecone Integration](https://voltagent.dev/docs/rag/pinecone) • [RAG Overview](https://voltagent.dev/docs/rag/overview)
+RAG using Pinecone's managed vector database. Shows namespace management, metadata filtering, hybrid search, and scaling patterns for high-traffic applications.
 
-- **[AI Agent with Qdrant](https://github.com/VoltAgent/voltagent/tree/main/examples/with-qdrant)** — Implements RAG with Qdrant vector search. Shows retriever-on-every-turn versus LLM-decides-when-to-search patterns, including filtering and payload handling.
+```bash
+npm create voltagent@latest -- --example with-pinecone
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-qdrant
-  ```
+Related docs: [Pinecone Integration](https://voltagent.dev/docs/rag/pinecone)
 
-  📚 Related docs: [Qdrant Integration](https://voltagent.dev/docs/rag/qdrant) • [Custom Retrievers](https://voltagent.dev/docs/rag/custom-retrievers)
+- [RAG Overview](https://voltagent.dev/docs/rag/overview)
 
-- **[AI Agent with PostgreSQL pgvector](https://github.com/VoltAgent/voltagent/tree/main/examples/with-postgres)** — Uses PostgreSQL with pgvector extension for vector similarity search alongside relational data. Shows schema design and similarity search queries.
+#### ⭐ [AI Agent with Qdrant](https://github.com/VoltAgent/voltagent/tree/main/examples/with-qdrant)
 
-  ```bash
-  npm create voltagent@latest -- --example with-postgres
-  ```
+Implements RAG with Qdrant vector search. Shows retriever-on-every-turn versus LLM-decides-when-to-search patterns, including filtering and payload handling.
 
-  📚 Related docs: [PostgreSQL Memory](https://voltagent.dev/docs/agents/memory/postgres) • [Semantic Search](https://voltagent.dev/docs/agents/memory/semantic-search)
+```bash
+npm create voltagent@latest -- --example with-qdrant
+```
 
-- **[AI Agent with Vector Search](https://github.com/VoltAgent/voltagent/tree/main/examples/with-vector-search)** — Core semantic search implementation. Shows embedding generation, vector storage, and automatic context recall from past conversations and documents.
+Related docs: [Qdrant Integration](https://voltagent.dev/docs/rag/qdrant), [RAG Overview](https://voltagent.dev/docs/rag/overview)
 
-  ```bash
-  npm create voltagent@latest -- --example with-vector-search
-  ```
+#### ⭐ [AI Agent with PostgreSQL pgvector](https://github.com/VoltAgent/voltagent/tree/main/examples/with-postgres)
 
-  📚 Related docs: [Semantic Search](https://voltagent.dev/docs/agents/memory/semantic-search) • [Memory Overview](https://voltagent.dev/docs/agents/memory/overview)
+Uses PostgreSQL with pgvector extension for vector similarity search alongside relational data. Shows schema design and similarity search queries.
 
-- **[RAG Chatbot AI Agent](https://github.com/VoltAgent/voltagent/tree/main/examples/with-rag-chatbot)** — A conversational AI agent grounded in your knowledge base. Features document citations, source attribution, and context-aware responses combining retrieval with generation.
+```bash
+npm create voltagent@latest -- --example with-postgres
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-rag-chatbot
-  ```
+Related docs: [PostgreSQL Integration](https://voltagent.dev/docs/rag/postgres), [RAG Overview](https://voltagent.dev/docs/rag/overview)
 
-  📚 Related docs: [RAG Overview](https://voltagent.dev/docs/rag/overview) • [Custom Retrievers](https://voltagent.dev/docs/rag/custom-retrievers)
+#### ⭐ [AI Agent with Vector Search](https://github.com/VoltAgent/voltagent/tree/main/examples/with-vector-search)
 
-- **[AI Agent with Retrieval API](https://github.com/VoltAgent/voltagent/tree/main/examples/with-retrieval)** — Minimal example demonstrating VoltAgent's retriever API. Shows how retrievers connect to agents, embedding handling, and controlling retrieval timing in conversation flow.
-  ```bash
-  npm create voltagent@latest -- --example with-retrieval
-  ```
-  📚 Related docs: [Custom Retrievers](https://voltagent.dev/docs/rag/custom-retrievers) • [RAG Overview](https://voltagent.dev/docs/rag/overview)
+Core semantic search implementation. Shows embedding generation, vector storage, and automatic context recall from past conversations and documents.
+
+```bash
+npm create voltagent@latest -- --example with-vector-search
+```
+
+Related docs: [Vector Search](https://voltagent.dev/docs/rag/vector-search), [RAG Overview](https://voltagent.dev/docs/rag/overview)
+
+#### ⭐ [RAG Chatbot AI Agent](https://github.com/VoltAgent/voltagent/tree/main/examples/with-rag-chatbot)
+
+A conversational AI agent grounded in your knowledge base. Features document citations, source attribution, and context-aware responses combining retrieval with generation.
+
+```bash
+npm create voltagent@latest -- --example with-rag-chatbot
+```
+
+Related docs: [RAG Chatbot](https://voltagent.dev/docs/rag/chatbot), [RAG Overview](https://voltagent.dev/docs/rag/overview)
+
+#### ⭐ [AI Agent with Retrieval API](https://github.com/VoltAgent/voltagent/tree/main/examples/with-retrieval)
+
+Minimal example demonstrating VoltAgent's retriever API. Shows how retrievers connect to agents, embedding handling, and controlling retrieval timing in conversation flow.
+
+```bash
+npm create voltagent@latest -- --example with-retrieval
+```
+
+Related docs: [Retrieval API](https://voltagent.dev/docs/rag/retrieval-api), [RAG Overview](https://voltagent.dev/docs/rag/overview)
 
 ### Tools & MCP
 
-- **[AI Agent with Type-Safe Tools](https://github.com/VoltAgent/voltagent/tree/main/examples/with-tools)** — Shows how to create type-safe tools using Zod schemas, with support for cancellation signals and streaming results. Includes tool definition, parameter validation, and error handling.
+#### ⭐ [AI Agent with Type-Safe Tools](https://github.com/VoltAgent/voltagent/tree/main/examples/with-tools)
 
-  ```bash
-  npm create voltagent@latest -- --example with-tools
-  ```
+Shows how to create type-safe tools using Zod schemas, with support for cancellation signals and streaming results. Includes tool definition, parameter validation, and error handling.
 
-  📚 Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools) • [Tools Overview](https://voltagent.dev/docs/tools/overview)
+```bash
+npm create voltagent@latest -- --example with-tools
+```
 
-- **[AI Agent with MCP Client](https://github.com/VoltAgent/voltagent/tree/main/examples/with-mcp)** — Connects to Model Context Protocol (MCP) servers to enable agents to discover and call standardized tools. Shows client-side integration, server discovery, and tool enumeration.
+Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools), [Tools Overview](https://voltagent.dev/docs/tools/overview)
 
-  ```bash
-  npm create voltagent@latest -- --example with-mcp
-  ```
+#### ⭐ [AI Agent with MCP Client](https://github.com/VoltAgent/voltagent/tree/main/examples/with-mcp)
 
-  📚 Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
+Connects to Model Context Protocol (MCP) servers to enable agents to discover and call standardized tools. Shows client-side integration, server discovery, and tool enumeration.
 
-- **[AI Agent as MCP Server](https://github.com/VoltAgent/voltagent/tree/main/examples/with-mcp-server)** — Implements an MCP server that exposes custom tools following the Model Context Protocol specification. Shows server implementation, tool registration, and authentication.
+```bash
+npm create voltagent@latest -- --example with-mcp
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-mcp-server
-  ```
+Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
 
-  📚 Related docs: [MCP Server](https://voltagent.dev/docs/agents/mcp/mcp-server)
+#### ⭐ [AI Agent as MCP Server](https://github.com/VoltAgent/voltagent/tree/main/examples/with-mcp-server)
 
-- **[AI Agent with Composio MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-composio-mcp)** — Accesses pre-built integrations through Composio's MCP server. Shows authentication, browsing available actions, and executing workflows for email, calendar, CRM, and other tools.
+Implements an MCP server that exposes custom tools following the Model Context Protocol specification. Shows server implementation, tool registration, and authentication.
 
-  ```bash
-  npm create voltagent@latest -- --example with-composio-mcp
-  ```
+```bash
+npm create voltagent@latest -- --example with-mcp-server
+```
 
-  📚 Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
+Related docs: [MCP Server](https://voltagent.dev/docs/agents/mcp/mcp-server)
 
-- **[AI Agent with Google Drive MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-google-drive-mcp)** — Enables agents to browse, read, and interact with Google Drive files through an MCP server. Shows Drive API integration, OAuth authentication, and permission handling.
+#### ⭐ [AI Agent with Composio MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-composio-mcp)
 
-  ```bash
-  npm create voltagent@latest -- --example with-google-drive-mcp
-  ```
+Accesses pre-built integrations through Composio's MCP server. Shows authentication, browsing available actions, and executing workflows for email, calendar, CRM, and other tools.
 
-  📚 Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
+```bash
+npm create voltagent@latest -- --example with-composio-mcp
+```
 
-- **[AI Agent with Hugging Face MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-hugging-face-mcp)** — Accesses Hugging Face's models and datasets through MCP. Shows searching the Hugging Face Hub, loading models, running inference, and accessing datasets.
+Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
 
-  ```bash
-  npm create voltagent@latest -- --example with-hugging-face-mcp
-  ```
+#### ⭐ [AI Agent with Google Drive MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-google-drive-mcp)
 
-  📚 Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
+Enables agents to browse, read, and interact with Google Drive files through an MCP server. Shows Drive API integration, OAuth authentication, and permission handling.
 
-- **[AI Agent with Peaka MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-peaka-mcp)** — Integrates Peaka's data connectivity platform through MCP. Shows connecting to multiple data sources, executing queries, and retrieving data through a unified interface.
+```bash
+npm create voltagent@latest -- --example with-google-drive-mcp
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-peaka-mcp
-  ```
+Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
 
-  📚 Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
+#### ⭐ [AI Agent with Hugging Face MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-hugging-face-mcp)
 
-- **[AI Agent with Zapier MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-zapier-mcp)** — Triggers Zapier workflows from agents using Zapier's MCP integration. Shows authentication, discovering available Zaps, and executing automated workflows across apps and services.
+Accesses Hugging Face's models and datasets through MCP. Shows searching the Hugging Face Hub, loading models, running inference, and accessing datasets.
 
-  ```bash
-  npm create voltagent@latest -- --example with-zapier-mcp
-  ```
+```bash
+npm create voltagent@latest -- --example with-hugging-face-mcp
+```
 
-  📚 Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
+Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
 
-- **[AI Agent with Tavily Search](https://github.com/VoltAgent/voltagent/tree/main/examples/with-tavily-search)** — Augments agent responses with real-time web search results using Tavily's API. Shows search query formulation, result filtering, and integration of web knowledge into responses.
+#### ⭐ [AI Agent with Peaka MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-peaka-mcp)
 
-  ```bash
-  npm create voltagent@latest -- --example with-tavily-search
-  ```
+Integrates Peaka's data connectivity platform through MCP. Shows connecting to multiple data sources, executing queries, and retrieving data through a unified interface.
 
-  📚 Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools)
+```bash
+npm create voltagent@latest -- --example with-peaka-mcp
+```
 
-- **[AI Agent with Playwright Browser Automation](https://github.com/VoltAgent/voltagent/tree/main/examples/with-playwright)** — Web automation tools using Playwright for browser control. Shows configuring headless browsers, navigating pages, extracting data, and handling dynamic content through agent-callable tools.
+Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
 
-  ```bash
-  npm create voltagent@latest -- --example with-playwright
-  ```
+#### ⭐ [AI Agent with Zapier MCP](https://github.com/VoltAgent/voltagent/tree/main/examples/with-zapier-mcp)
 
-  📚 Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools)
+Triggers Zapier workflows from agents using Zapier's MCP integration. Shows authentication, discovering available Zaps, and executing automated workflows across apps and services.
 
-- **[AI Agent with Client-Side Tools](https://github.com/VoltAgent/voltagent/tree/main/examples/with-client-side-tools)** — Implements secure client-side tool execution in Next.js. Shows client-server architecture for tool calling, type safety across boundaries, and security considerations for client-initiated actions.
+```bash
+npm create voltagent@latest -- --example with-zapier-mcp
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-client-side-tools
-  ```
+Related docs: [MCP Integration](https://voltagent.dev/docs/agents/mcp/mcp)
 
-  📚 Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools)
+#### ⭐ [AI Agent with Tavily Search](https://github.com/VoltAgent/voltagent/tree/main/examples/with-tavily-search)
 
-- **[AI Agent with Thinking Tool](https://github.com/VoltAgent/voltagent/tree/main/examples/with-thinking-tool)** — Implements structured reasoning by providing agents with a dedicated "thinking" tool. Shows defining thinking steps, capturing reasoning traces, and improving response quality through deliberate cognitive processes.
-  ```bash
-  npm create voltagent@latest -- --example with-thinking-tool
-  ```
-  📚 Related docs: [Reasoning Tool](https://voltagent.dev/docs/tools/reasoning-tool)
+Augments agent responses with real-time web search results using Tavily's API. Shows search query formulation, result filtering, and integration of web knowledge into responses.
+
+```bash
+npm create voltagent@latest -- --example with-tavily-search
+```
+
+Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools)
+
+#### ⭐ [AI Agent with Playwright Browser Automation](https://github.com/VoltAgent/voltagent/tree/main/examples/with-playwright)
+
+Web automation tools using Playwright for browser control. Shows configuring headless browsers, navigating pages, extracting data, and handling dynamic content through agent-callable tools.
+
+```bash
+npm create voltagent@latest -- --example with-playwright
+```
+
+Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools)
+
+#### ⭐ [AI Agent with Client-Side Tools](https://github.com/VoltAgent/voltagent/tree/main/examples/with-client-side-tools)
+
+Implements secure client-side tool execution in Next.js. Shows client-server architecture for tool calling, type safety across boundaries, and security considerations for client-initiated actions.
+
+```bash
+npm create voltagent@latest -- --example with-client-side-tools
+```
+
+Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools)
+
+#### ⭐ [AI Agent with Thinking Tool](https://github.com/VoltAgent/voltagent/tree/main/examples/with-thinking-tool)
+
+Implements structured reasoning by providing agents with a dedicated "thinking" tool. Shows defining thinking steps, capturing reasoning traces, and improving response quality through deliberate cognitive processes.
+
+```bash
+npm create voltagent@latest -- --example with-thinking-tool
+```
+
+Related docs: [Reasoning Tool](https://voltagent.dev/docs/tools/reasoning-tool)
 
 ### Memory & State
 
-- **[AI Agent with Working Memory](https://github.com/VoltAgent/voltagent/tree/main/examples/with-working-memory)** — Implements per-conversation memory with read and update tools. Shows memory structure design, automatic fact extraction, and memory updates to enhance conversation continuity.
+#### ⭐ [AI Agent with Working Memory](https://github.com/VoltAgent/voltagent/tree/main/examples/with-working-memory)
 
-  ```bash
-  npm create voltagent@latest -- --example with-working-memory
-  ```
+Implements per-conversation memory with read and update tools. Shows memory structure design, automatic fact extraction, and memory updates to enhance conversation continuity.
 
-  📚 Related docs: [Working Memory](https://voltagent.dev/docs/agents/memory/working-memory) • [Memory Overview](https://voltagent.dev/docs/agents/memory/overview)
+```bash
+npm create voltagent@latest -- --example with-working-memory
+```
 
-- **[AI Agent with Managed Memory](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voltagent-managed-memory)** — Uses VoltAgent's managed memory service through a REST adapter. Shows configuration, authentication, and integrating cloud-hosted memory for deployments requiring reliability and automatic scaling.
+Related docs: [Working Memory](https://voltagent.dev/docs/agents/memory/working-memory)
 
-  ```bash
-  npm create voltagent@latest -- --example with-voltagent-managed-memory
-  ```
+- [Memory Overview](https://voltagent.dev/docs/agents/memory/overview)
 
-  📚 Related docs: [Managed Memory](https://voltagent.dev/docs/agents/memory/managed-memory)
+#### ⭐ [AI Agent with Managed Memory](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voltagent-managed-memory)
 
-- **[AI Agent with Turso Database](https://github.com/VoltAgent/voltagent/tree/main/examples/with-turso)** — Persists agent memory using Turso's edge-distributed LibSQL database. Shows Turso configuration, schema design for memory storage, and edge replication for global performance with SQLite compatibility.
+Uses VoltAgent's managed memory service through a REST adapter. Shows configuration, authentication, and integrating cloud-hosted memory for deployments requiring reliability and automatic scaling.
 
-  ```bash
-  npm create voltagent@latest -- --example with-turso
-  ```
+```bash
+npm create voltagent@latest -- --example with-voltagent-managed-memory
+```
 
-  📚 Related docs: [LibSQL Memory](https://voltagent.dev/docs/agents/memory/libsql)
+Related docs: [Managed Memory](https://voltagent.dev/docs/agents/memory/managed-memory)
 
-- **[AI Agent with Supabase](https://github.com/VoltAgent/voltagent/tree/main/examples/with-supabase)** — Integrates Supabase for authentication, database storage, and real-time subscriptions. Shows setting up Supabase client, implementing Row Level Security, and building database-backed tools with authentication.
-  ```bash
-  npm create voltagent@latest -- --example with-supabase
-  ```
-  📚 Related docs: [Supabase Memory](https://voltagent.dev/docs/agents/memory/supabase)
+#### ⭐ [AI Agent with Turso Database](https://github.com/VoltAgent/voltagent/tree/main/examples/with-turso)
+
+Persists agent memory using Turso's edge-distributed LibSQL database. Shows Turso configuration, schema design for memory storage, and edge replication for global performance with SQLite compatibility.
+
+```bash
+npm create voltagent@latest -- --example with-turso
+```
+
+Related docs: [LibSQL Memory](https://voltagent.dev/docs/agents/memory/libsql)
+
+#### ⭐ [AI Agent with Supabase](https://github.com/VoltAgent/voltagent/tree/main/examples/with-supabase)
+
+Integrates Supabase for authentication, database storage, and real-time subscriptions. Shows setting up Supabase client, implementing Row Level Security, and building database-backed tools with authentication.
+
+```bash
+npm create voltagent@latest -- --example with-supabase
+```
+
+Related docs: [Supabase Memory](https://voltagent.dev/docs/agents/memory/supabase)
 
 ### Multi-Agent & Workflows
 
-- **[Multi-Agent System with Sub-Agents](https://github.com/VoltAgent/voltagent/tree/main/examples/with-subagents)** — Implements a supervisor pattern where a main agent orchestrates multiple specialized sub-agents. Shows agent composition, task delegation, result aggregation, and coordination patterns for multi-agent systems.
+#### ⭐ [Multi-Agent System with Sub-Agents](https://github.com/VoltAgent/voltagent/tree/main/examples/with-subagents)
 
-  ```bash
-  npm create voltagent@latest -- --example with-subagents
-  ```
+Implements a supervisor pattern where a main agent orchestrates multiple specialized sub-agents. Shows agent composition, task delegation, result aggregation, and coordination patterns for multi-agent systems.
 
-  📚 Related docs: [Sub-Agents](https://voltagent.dev/docs/agents/subagents)
+```bash
+npm create voltagent@latest -- --example with-subagents
+```
 
-- **[AI Agent with Workflows](https://github.com/VoltAgent/voltagent/tree/main/examples/with-workflow)** — Structured multi-step workflows using createWorkflowChain with support for human-in-the-loop approvals. Shows defining workflow stages, handling transitions, implementing approval gates, and managing long-running processes.
+Related docs: [Sub-Agents](https://voltagent.dev/docs/agents/subagents)
 
-  ```bash
-  npm create voltagent@latest -- --example with-workflow
-  ```
+#### ⭐ [AI Agent with Workflows](https://github.com/VoltAgent/voltagent/tree/main/examples/with-workflow)
 
-  📚 Related docs: [Workflows Overview](https://voltagent.dev/docs/workflows/overview) • [Workflow Streaming](https://voltagent.dev/docs/workflows/streaming) • [Workflow Hooks](https://voltagent.dev/docs/workflows/hooks)
+Structured multi-step workflows using createWorkflowChain with support for human-in-the-loop approvals. Shows defining workflow stages, handling transitions, implementing approval gates, and managing long-running processes.
 
-- **[AI Agent HTTP Server for Agent-to-Agent Communication](https://github.com/VoltAgent/voltagent/tree/main/examples/with-a2a-server)** — Exposes agents over HTTP APIs for agent-to-agent communication. Shows REST API design for agents, authentication, request/response handling, and patterns for building agent microservices.
+```bash
+npm create voltagent@latest -- --example with-workflow
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-a2a-server
-  ```
+Related docs: [Workflows Overview](https://voltagent.dev/docs/workflows/overview)
 
-  📚 Related docs: [A2A Server](https://voltagent.dev/docs/agents/a2a/a2a-server) • [API Overview](https://voltagent.dev/docs/api/overview)
+#### ⭐ [AI Agent HTTP Server for Agent-to-Agent Communication](https://github.com/VoltAgent/voltagent/tree/main/examples/with-a2a-server)
 
-- **[AI Agent for GitHub Repository Analysis](https://github.com/VoltAgent/voltagent/tree/main/examples/github-repo-analyzer)** — Agents that read, analyze, and summarize GitHub repositories. Shows GitHub API integration, code structure analysis, documentation extraction, and generating repository summaries.
-  ```bash
-  npm create voltagent@latest -- --example github-repo-analyzer
-  ```
-  📚 Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools)
+Exposes agents over HTTP APIs for agent-to-agent communication. Shows REST API design for agents, authentication, request/response handling, and patterns for building agent microservices.
+
+```bash
+npm create voltagent@latest -- --example with-a2a-server
+```
+
+Related docs: [A2A Server](https://voltagent.dev/docs/agents/a2a/a2a-server)
+
+#### ⭐ [AI Agent for GitHub Repository Analysis](https://github.com/VoltAgent/voltagent/tree/main/examples/github-repo-analyzer)
+
+Agents that read, analyze, and summarize GitHub repositories. Shows GitHub API integration, code structure analysis, documentation extraction, and generating repository summaries.
+
+```bash
+npm create voltagent@latest -- --example github-repo-analyzer
+```
+
+Related docs: [Agent Tools](https://voltagent.dev/docs/agents/tools)
 
 ### Deployment & Frameworks
 
-- **[AI Agent with Next.js](https://github.com/VoltAgent/voltagent/tree/main/examples/with-nextjs)** — Full-stack AI agent application using Next.js with React UI components, agent API routes, and streaming responses. Shows app router integration, server actions, streaming UI updates, and deployment patterns.
+#### ⭐ [AI Agent with Next.js](https://github.com/VoltAgent/voltagent/tree/main/examples/with-nextjs)
 
-  ```bash
-  npm create voltagent@latest -- --example with-nextjs
-  ```
+Full-stack AI agent application using Next.js with React UI components, agent API routes, and streaming responses. Shows app router integration, server actions, streaming UI updates, and deployment patterns.
 
-  📚 Related docs: [Next.js Integration](https://voltagent.dev/docs/integrations/nextjs) • [Deployment Overview](https://voltagent.dev/docs/deployment/overview)
+```bash
+npm create voltagent@latest -- --example with-nextjs
+```
 
-- **[AI Agent with Nuxt](https://github.com/VoltAgent/voltagent/tree/main/examples/with-nuxt)** — Vue-based front-end with Nuxt communicating with VoltAgent APIs. Shows Nuxt 3 setup, API integration, SSR considerations, and building interactive chat interfaces with Vue components.
+Related docs: [Deployment Overview](https://voltagent.dev/docs/deployment/overview)
 
-  ```bash
-  npm create voltagent@latest -- --example with-nuxt
-  ```
+#### ⭐ [AI Agent with Nuxt](https://github.com/VoltAgent/voltagent/tree/main/examples/with-nuxt)
 
-  📚 Related docs: [Deployment Overview](https://voltagent.dev/docs/deployment/overview)
+Vue-based front-end with Nuxt communicating with VoltAgent APIs. Shows Nuxt 3 setup, API integration, SSR considerations, and building interactive chat interfaces with Vue components.
 
-- **[AI Agent on Cloudflare Workers](https://github.com/VoltAgent/voltagent/tree/main/examples/with-cloudflare-workers)** — Deploys agents on Cloudflare Workers using the Hono adapter. Shows Workers configuration, Hono integration, edge runtime limitations, and optimizations for serverless edge computing.
+```bash
+npm create voltagent@latest -- --example with-nuxt
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-cloudflare-workers
-  ```
+Related docs: [Deployment Overview](https://voltagent.dev/docs/deployment/overview)
 
-  📚 Related docs: [Cloudflare Workers](https://voltagent.dev/docs/deployment/cloudflare-workers)
+#### ⭐ [AI Agent on Cloudflare Workers](https://github.com/VoltAgent/voltagent/tree/main/examples/with-cloudflare-workers)
 
-- **[AI Agent on Netlify Functions](https://github.com/VoltAgent/voltagent/tree/main/examples/with-netlify-functions)** — Deploys serverless agent APIs on Netlify's platform. Shows Netlify Functions setup, environment configuration, deployment workflows, and integration patterns for adding AI agent capabilities.
+Deploys agents on Cloudflare Workers using the Hono adapter. Shows Workers configuration, Hono integration, edge runtime limitations, and optimizations for serverless edge computing.
 
-  ```bash
-  npm create voltagent@latest -- --example with-netlify-functions
-  ```
+```bash
+npm create voltagent@latest -- --example with-cloudflare-workers
+```
 
-  📚 Related docs: [Netlify Functions](https://voltagent.dev/docs/deployment/netlify-functions)
+Related docs: [Cloudflare Workers](https://voltagent.dev/docs/deployment/cloudflare-workers)
 
-- **[AI Agent with Custom REST Endpoints](https://github.com/VoltAgent/voltagent/tree/main/examples/with-custom-endpoints)** — Extends VoltAgent server with custom REST endpoints alongside standard agent routes. Shows route registration, middleware integration, custom handlers, and maintaining consistent API design.
-  ```bash
-  npm create voltagent@latest -- --example with-custom-endpoints
-  ```
-  📚 Related docs: [Custom Endpoints](https://voltagent.dev/docs/api/custom-endpoints) • [API Overview](https://voltagent.dev/docs/api/overview)
+#### ⭐ [AI Agent on Netlify Functions](https://github.com/VoltAgent/voltagent/tree/main/examples/with-netlify-functions)
+
+Deploys serverless agent APIs on Netlify's platform. Shows Netlify Functions setup, environment configuration, deployment workflows, and integration patterns for adding AI agent capabilities.
+
+```bash
+npm create voltagent@latest -- --example with-netlify-functions
+```
+
+Related docs: [Netlify Functions](https://voltagent.dev/docs/deployment/netlify-functions)
+
+#### ⭐ [AI Agent with Custom REST Endpoints](https://github.com/VoltAgent/voltagent/tree/main/examples/with-custom-endpoints)
+
+Extends VoltAgent server with custom REST endpoints alongside standard agent routes. Shows route registration, middleware integration, custom handlers, and maintaining consistent API design.
+
+```bash
+npm create voltagent@latest -- --example with-custom-endpoints
+```
+
+Related docs: [Custom Endpoints](https://voltagent.dev/docs/api/custom-endpoints)
 
 ### Voice & Audio
 
-- **[AI Agent with ElevenLabs Text-to-Speech](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voice-elevenlabs)** — Converts agent text responses to speech using ElevenLabs' text-to-speech API. Shows ElevenLabs integration, audio streaming, voice selection, and optimizing for low-latency voice generation.
+#### ⭐ [AI Agent with ElevenLabs Text-to-Speech](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voice-elevenlabs)
 
-  ```bash
-  npm create voltagent@latest -- --example with-voice-elevenlabs
-  ```
+Converts agent text responses to speech using ElevenLabs' text-to-speech API. Shows ElevenLabs integration, audio streaming, voice selection, and optimizing for low-latency voice generation.
 
-  📚 Related docs: [Voice Integration](https://voltagent.dev/docs/agents/voice)
+```bash
+npm create voltagent@latest -- --example with-voice-elevenlabs
+```
 
-- **[AI Agent with OpenAI Text-to-Speech](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voice-openai)** — Generates speech from agent responses using OpenAI's text-to-speech voices. Shows OpenAI TTS integration, audio format handling, streaming, and voice parameter customization.
+Related docs: [Voice Integration](https://voltagent.dev/docs/agents/voice)
 
-  ```bash
-  npm create voltagent@latest -- --example with-voice-openai
-  ```
+#### ⭐ [AI Agent with OpenAI Text-to-Speech](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voice-openai)
 
-  📚 Related docs: [Voice Integration](https://voltagent.dev/docs/agents/voice)
+Generates speech from agent responses using OpenAI's text-to-speech voices. Shows OpenAI TTS integration, audio format handling, streaming, and voice parameter customization.
 
-- **[AI Agent with xAI Audio](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voice-xsai)** — Implements voice output using xAI's audio models. Shows xAI audio API setup, voice configuration, and generating speech output with xAI's platform.
-  ```bash
-  npm create voltagent@latest -- --example with-voice-xsai
-  ```
-  📚 Related docs: [Voice Integration](https://voltagent.dev/docs/agents/voice)
+```bash
+npm create voltagent@latest -- --example with-voice-openai
+```
+
+Related docs: [Voice Integration](https://voltagent.dev/docs/agents/voice)
+
+#### ⭐ [AI Agent with xAI Audio](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voice-xsai)
+
+Implements voice output using xAI's audio models. Shows xAI audio API setup, voice configuration, and generating speech output with xAI's platform.
+
+```bash
+npm create voltagent@latest -- --example with-voice-xsai
+```
+
+Related docs: [Voice Integration](https://voltagent.dev/docs/agents/voice)
 
 ### Observability & Evaluation
 
-- **[AI Agent with OpenTelemetry Tracing](https://github.com/VoltAgent/voltagent/tree/main/examples/sdk-trace-example)** — Implements OpenTelemetry distributed tracing with export to VoltOps. Shows trace instrumentation, span creation, context propagation, and visualization in VoltOps dashboards for monitoring and debugging.
+#### ⭐ [AI Agent with OpenTelemetry Tracing](https://github.com/VoltAgent/voltagent/tree/main/examples/sdk-trace-example)
 
-  ```bash
-  npm create voltagent@latest -- --example sdk-trace-example
-  ```
+Implements OpenTelemetry distributed tracing with export to VoltOps. Shows trace instrumentation, span creation, context propagation, and visualization in VoltOps dashboards for monitoring and debugging.
 
-  📚 Related docs: [Observability Overview](https://voltagent.dev/docs/observability/overview) • [Developer Console](https://voltagent.dev/docs/observability/developer-console)
+```bash
+npm create voltagent@latest -- --example sdk-trace-example
+```
 
-- **[AI Agent with Custom Telemetry Exporter](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voltagent-exporter)** — Exports agent traces, events, and metrics to external observability platforms. Shows exporter configuration, custom formatters, batching strategies, and connecting to monitoring infrastructure.
+Related docs: [Observability Overview](https://voltagent.dev/docs/observability/overview)
 
-  ```bash
-  npm create voltagent@latest -- --example with-voltagent-exporter
-  ```
+#### ⭐ [AI Agent with Custom Telemetry Exporter](https://github.com/VoltAgent/voltagent/tree/main/examples/with-voltagent-exporter)
 
-  📚 Related docs: [Observability Overview](https://voltagent.dev/docs/observability/overview) • [Logging](https://voltagent.dev/docs/observability/logging)
+Exports agent traces, events, and metrics to external observability platforms. Shows exporter configuration, custom formatters, batching strategies, and connecting to monitoring infrastructure.
 
-- **[AI Agent with Live Evaluations](https://github.com/VoltAgent/voltagent/tree/main/examples/with-live-evals)** — Runs real-time evaluations against agents during development. Shows defining evaluation criteria, running assessments during testing, and iterating based on feedback.
+```bash
+npm create voltagent@latest -- --example with-voltagent-exporter
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-live-evals
-  ```
+Related docs: [Observability Overview](https://voltagent.dev/docs/observability/overview)
 
-  📚 Related docs: [Live Evaluations](https://voltagent.dev/docs/evals/live-evaluations) • [Evals Overview](https://voltagent.dev/docs/evals/overview) • [Prebuilt Scorers](https://voltagent.dev/docs/evals/prebuilt-scorers)
+#### ⭐ [AI Agent with Live Evaluations](https://github.com/VoltAgent/voltagent/tree/main/examples/with-live-evals)
 
-- **[AI Agent with Offline Evaluations](https://github.com/VoltAgent/voltagent/tree/main/examples/with-offline-evals)** — Builds regression test suites using batch datasets. Shows dataset creation, batch evaluation execution, scoring metrics, and integration with CI/CD pipelines for systematic testing.
+Runs real-time evaluations against agents during development. Shows defining evaluation criteria, running assessments during testing, and iterating based on feedback.
 
-  ```bash
-  npm create voltagent@latest -- --example with-offline-evals
-  ```
+```bash
+npm create voltagent@latest -- --example with-live-evals
+```
 
-  📚 Related docs: [Offline Evaluations](https://voltagent.dev/docs/evals/offline-evaluations) • [Datasets](https://voltagent.dev/docs/evals/datasets) • [Custom Scorers](https://voltagent.dev/docs/evals/building-custom-scorers)
+Related docs: [Live Evaluations](https://voltagent.dev/docs/evals/live-evaluations)
 
-- **[AI Agent with ViteVal Framework](https://github.com/VoltAgent/voltagent/tree/main/examples/with-viteval)** — Integrates ViteVal's evaluation framework to test and score agent prompts and responses. Shows ViteVal setup, metric definition, evaluation execution, and result analysis.
-  ```bash
-  npm create voltagent@latest -- --example with-viteval
-  ```
-  📚 Related docs: [Using with ViteVal](https://voltagent.dev/docs/evals/using-with-viteval)
+#### ⭐ [AI Agent with Offline Evaluations](https://github.com/VoltAgent/voltagent/tree/main/examples/with-offline-evals)
+
+Builds regression test suites using batch datasets. Shows dataset creation, batch evaluation execution, scoring metrics, and integration with CI/CD pipelines for systematic testing.
+
+```bash
+npm create voltagent@latest -- --example with-offline-evals
+```
+
+Related docs: [Offline Evaluations](https://voltagent.dev/docs/evals/offline-evaluations)
+
+#### ⭐ [AI Agent with ViteVal Framework](https://github.com/VoltAgent/voltagent/tree/main/examples/with-viteval)
+
+Integrates ViteVal's evaluation framework to test and score agent prompts and responses. Shows ViteVal setup, metric definition, evaluation execution, and result analysis.
+
+```bash
+npm create voltagent@latest -- --example with-viteval
+```
+
+Related docs: [Using with ViteVal](https://voltagent.dev/docs/evals/using-with-viteval)
 
 ### Advanced Patterns
 
-- **[AI Agent with Dynamic Parameters](https://github.com/VoltAgent/voltagent/tree/main/examples/with-dynamic-parameters)** — Implements runtime parameter validation and injection using Zod schemas. Shows dynamic schema generation, parameter validation, conditional parameters, and runtime type checking.
+#### ⭐ [AI Agent with Dynamic Parameters](https://github.com/VoltAgent/voltagent/tree/main/examples/with-dynamic-parameters)
 
-  ```bash
-  npm create voltagent@latest -- --example with-dynamic-parameters
-  ```
+Implements runtime parameter validation and injection using Zod schemas. Shows dynamic schema generation, parameter validation, conditional parameters, and runtime type checking.
 
-  📚 Related docs: [Dynamic Agents](https://voltagent.dev/docs/agents/dynamic-agents)
+```bash
+npm create voltagent@latest -- --example with-dynamic-parameters
+```
 
-- **[AI Agent with Dynamic Prompts](https://github.com/VoltAgent/voltagent/tree/main/examples/with-dynamic-prompts)** — Builds prompts programmatically from templates and live data sources. Shows template systems, data interpolation, conditional prompt sections, and prompt versioning strategies.
+Related docs: [Dynamic Agents](https://voltagent.dev/docs/agents/dynamic-agents)
 
-  ```bash
-  npm create voltagent@latest -- --example with-dynamic-prompts
-  ```
+#### ⭐ [AI Agent with Dynamic Prompts](https://github.com/VoltAgent/voltagent/tree/main/examples/with-dynamic-prompts)
 
-  📚 Related docs: [Prompts](https://voltagent.dev/docs/agents/prompts)
+Builds prompts programmatically from templates and live data sources. Shows template systems, data interpolation, conditional prompt sections, and prompt versioning strategies.
 
-- **[AI Agent with Output Guardrails](https://github.com/VoltAgent/voltagent/tree/main/examples/with-guardrails)** — Implements output validation and schema enforcement. Shows output validators, content filtering, schema validation, and fallback strategies for failed validations.
+```bash
+npm create voltagent@latest -- --example with-dynamic-prompts
+```
 
-  ```bash
-  npm create voltagent@latest -- --example with-guardrails
-  ```
+Related docs: [Prompts](https://voltagent.dev/docs/agents/prompts)
 
-  📚 Related docs: [Guardrails Overview](https://voltagent.dev/docs/guardrails/overview) • [Built-in Guardrails](https://voltagent.dev/docs/guardrails/built-in)
+#### ⭐ [AI Agent with Output Guardrails](https://github.com/VoltAgent/voltagent/tree/main/examples/with-guardrails)
 
-- **[AI Agent with Lifecycle Hooks](https://github.com/VoltAgent/voltagent/tree/main/examples/with-hooks)** — Uses lifecycle hooks and middleware for cross-cutting concerns. Shows hook registration, execution order, state passing, and common patterns for authentication and observability.
+Implements output validation and schema enforcement. Shows output validators, content filtering, schema validation, and fallback strategies for failed validations.
 
-  ```bash
-  npm create voltagent@latest -- --example with-hooks
-  ```
+```bash
+npm create voltagent@latest -- --example with-guardrails
+```
 
-  📚 Related docs: [Agent Hooks](https://voltagent.dev/docs/agents/hooks) • [Workflow Hooks](https://voltagent.dev/docs/workflows/hooks)
+Related docs: [Guardrails Overview](https://voltagent.dev/docs/guardrails/overview)
 
-- **[AI Agent with JWT Authentication](https://github.com/VoltAgent/voltagent/tree/main/examples/with-jwt-auth)** — Secures agent endpoints with JWT token verification. Shows JWT validation, token extraction, role-based access control, and integration with auth providers for multi-tenant applications.
-  ```bash
-  npm create voltagent@latest -- --example with-jwt-auth
-  ```
-  📚 Related docs: [Authentication](https://voltagent.dev/docs/api/authentication) • [API Overview](https://voltagent.dev/docs/api/overview)
+#### ⭐ [AI Agent with Lifecycle Hooks](https://github.com/VoltAgent/voltagent/tree/main/examples/with-hooks)
 
----
+Uses lifecycle hooks and middleware for cross-cutting concerns. Shows hook registration, execution order, state passing, and common patterns for authentication and observability.
+
+```bash
+npm create voltagent@latest -- --example with-hooks
+```
+
+Related docs: [Agent Hooks](https://voltagent.dev/docs/agents/hooks)
+
+- [Workflow Hooks](https://voltagent.dev/docs/workflows/hooks)
+
+#### ⭐ [AI Agent with JWT Authentication](https://github.com/VoltAgent/voltagent/tree/main/examples/with-jwt-auth)
+
+Secures agent endpoints with JWT token verification. Shows JWT validation, token extraction, role-based access control, and integration with auth providers for multi-tenant applications.
+
+```bash
+npm create voltagent@latest -- --example with-jwt-auth
+```
+
+Related docs: [Authentication](https://voltagent.dev/docs/api/authentication)
 
 ## Quick Start
 
@@ -607,7 +726,3 @@ npm run dev
 - 📚 [Voltagent Documentation](https://voltagent.dev/docs/)
 - 🌐 [VoltAgent Core Framework](https://github.com/VoltAgent/voltagent)
 - 💬 [Discord Community](https://discord.gg/voltagent)
-
-## Contributing
-
-Contributions welcome. See [contributing guide](./CONTRIBUTING.md).
