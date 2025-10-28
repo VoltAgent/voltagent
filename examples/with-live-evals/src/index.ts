@@ -1,5 +1,15 @@
 import { openai } from "@ai-sdk/openai";
-import VoltAgent, { Agent, VoltAgentObservability, buildScorer } from "@voltagent/core";
+import VoltAgent, {
+  Agent,
+  VoltAgentObservability,
+  andAgent,
+  andThen,
+  buildScorer,
+  createWorkflow,
+  InMemoryStorageAdapter,
+  Memory,
+  type WorkflowEvalScorerConfig,
+} from "@voltagent/core";
 import {
   createAnswerCorrectnessScorer,
   createAnswerRelevancyScorer,
@@ -148,6 +158,198 @@ Provide a score from 0 to 1 and explain your reasoning.`;
   })
   .build();
 
+const contextAssemblerScorer = buildScorer({
+  id: "context-assembler",
+  label: "Context Assembly",
+})
+  .score(({ payload, results }) => {
+    const rawOutput = typeof payload.output === "string" ? payload.output : "";
+    let parsed: { question?: unknown; context?: unknown } = {};
+    try {
+      parsed = rawOutput ? (JSON.parse(rawOutput) as typeof parsed) : {};
+    } catch {
+      parsed = {};
+    }
+
+    const question = typeof parsed.question === "string" ? parsed.question.trim() : "";
+    const contextList = Array.isArray(parsed.context) ? parsed.context : [];
+    const sanitizedContext = contextList.filter(
+      (item): item is string => typeof item === "string" && item.trim().length > 0,
+    );
+
+    const hasQuestion = question.length > 0;
+    const hasContext = sanitizedContext.length > 0;
+
+    const raw = results.raw;
+    raw.contextAssembler = {
+      hasQuestion,
+      contextCount: sanitizedContext.length,
+    };
+    results.raw = raw;
+
+    const score = hasQuestion && hasContext ? 1 : 0;
+
+    return {
+      score,
+      metadata: {
+        hasQuestion,
+        contextCount: sanitizedContext.length,
+      },
+    };
+  })
+  .reason(({ results, score }) => {
+    const snapshot = results.raw.contextAssembler as
+      | { hasQuestion?: boolean; contextCount?: number }
+      | undefined;
+
+    if (!snapshot) {
+      return {
+        reason: "No context assembly data recorded for this step.",
+      };
+    }
+
+    if (!score || score < 1) {
+      const missing: string[] = [];
+      if (!snapshot.hasQuestion) {
+        missing.push("question");
+      }
+      if (!snapshot.contextCount) {
+        missing.push("context snippets");
+      }
+      return {
+        reason: `Missing ${missing.join(" and ")} in step output.`,
+      };
+    }
+
+    return {
+      reason: `Captured ${snapshot.contextCount ?? 0} context snippet(s) for downstream steps.`,
+    };
+  })
+  .build();
+
+const createLiveEvalScorers = (): Record<string, WorkflowEvalScorerConfig> => ({
+  keyword: {
+    scorer: keywordMatchScorer,
+    params: {
+      keyword: "voltagent",
+    },
+  },
+  exactMatch: {
+    scorer: scorers.exactMatch,
+    params: {
+      expected: referenceAnswer,
+    },
+  },
+  factuality: {
+    scorer: factualityScorer,
+    buildPayload: (context) => ({
+      input: context.input,
+      output: context.output,
+      expected: referenceAnswer,
+    }),
+  },
+  answerCorrectness: {
+    scorer: answerCorrectnessScorer,
+    buildPayload: () => ({
+      expected: referenceAnswer,
+    }),
+  },
+  answerRelevancy: {
+    scorer: answerRelevancyScorer,
+    buildPayload: () => ({
+      context: referenceAnswer,
+    }),
+  },
+  summary: {
+    scorer: summaryScorer,
+    buildPayload: () => ({
+      input: referenceSummarySource,
+      expected: referenceSummary,
+    }),
+  },
+  translation: {
+    scorer: translationScorer,
+    buildPayload: () => ({
+      input: referenceTranslationSource,
+      expected: referenceTranslationExpected,
+    }),
+    buildParams: () => ({
+      language: "Spanish",
+    }),
+  },
+  humor: {
+    scorer: humorScorer,
+  },
+  possible: {
+    scorer: possibleScorer,
+  },
+  contextPrecision: {
+    scorer: contextPrecisionScorer,
+    buildPayload: () => ({
+      context: referenceContextSnippets,
+      expected: referenceAnswer,
+    }),
+  },
+  contextRecall: {
+    scorer: contextRecallScorer,
+    buildPayload: () => ({
+      expected: referenceAnswer,
+      context: referenceContextSnippets,
+    }),
+  },
+  contextRelevancy: {
+    scorer: contextRelevancyScorer,
+    buildPayload: () => ({
+      context: referenceContextSnippets,
+    }),
+  },
+  moderation: {
+    scorer: createModerationScorer({
+      model: moderationModel,
+      threshold: 0.5,
+    }),
+  },
+  helpfulness: {
+    scorer: helpfulnessJudgeScorer,
+    params: {
+      criteria: "Reward answers that are specific to VoltAgent features and actionable guidance.",
+    },
+  },
+  levenshtein: {
+    scorer: scorers.levenshtein,
+    params: {
+      expected: referenceAnswer,
+    },
+  },
+  numericDiff: {
+    scorer: scorers.numericDiff,
+    params: {
+      expected: numericBaseline.expected,
+      output: numericBaseline.output,
+    },
+  },
+  jsonDiff: {
+    scorer: scorers.jsonDiff,
+    params: {
+      expected: referenceJson,
+      output: referenceJson,
+    },
+  },
+  listContains: {
+    scorer: scorers.listContains,
+    params: {
+      expected: referenceEntities,
+      output: [...referenceEntities, "extra-note"],
+    },
+  },
+});
+
+const createGatherStepScorers = (): Record<string, WorkflowEvalScorerConfig> => ({
+  assembler: {
+    scorer: contextAssemblerScorer,
+  },
+});
+
 const supportAgent = new Agent({
   name: "live-scorer-demo",
   instructions:
@@ -155,136 +357,86 @@ const supportAgent = new Agent({
   model: openai("gpt-4o-mini"),
   eval: {
     sampling: { type: "ratio", rate: 1 },
-    scorers: {
-      keyword: {
-        scorer: keywordMatchScorer,
-        params: {
-          keyword: "voltagent",
-        },
-      },
-      exactMatch: {
-        scorer: scorers.exactMatch,
-        params: {
-          expected: referenceAnswer,
-        },
-      },
-      factuality: {
-        scorer: factualityScorer,
-        buildPayload: (context) => ({
-          input: context.input,
-          output: context.output,
-          expected: referenceAnswer,
-        }),
-      },
-      answerCorrectness: {
-        scorer: answerCorrectnessScorer,
-        buildPayload: () => ({
-          expected: referenceAnswer,
-        }),
-      },
-      answerRelevancy: {
-        scorer: answerRelevancyScorer,
-        buildPayload: () => ({
-          context: referenceAnswer,
-        }),
-      },
-      summary: {
-        scorer: summaryScorer,
-        buildPayload: () => ({
-          input: referenceSummarySource,
-          expected: referenceSummary,
-        }),
-      },
-      translation: {
-        scorer: translationScorer,
-        buildPayload: () => ({
-          input: referenceTranslationSource,
-          expected: referenceTranslationExpected,
-        }),
-        buildParams: () => ({
-          language: "Spanish",
-        }),
-      },
-      humor: {
-        scorer: humorScorer,
-      },
-      possible: {
-        scorer: possibleScorer,
-      },
-      contextPrecision: {
-        scorer: contextPrecisionScorer,
-        buildPayload: () => ({
-          context: referenceContextSnippets,
-          expected: referenceAnswer,
-        }),
-      },
-      contextRecall: {
-        scorer: contextRecallScorer,
-        buildPayload: () => ({
-          expected: referenceAnswer,
-          context: referenceContextSnippets,
-        }),
-      },
-      contextRelevancy: {
-        scorer: contextRelevancyScorer,
-        buildPayload: () => ({
-          context: referenceContextSnippets,
-        }),
-      },
-      moderation: {
-        scorer: createModerationScorer({
-          model: moderationModel,
-          threshold: 0.5,
-        }),
-      },
-      helpfulness: {
-        scorer: helpfulnessJudgeScorer,
-        params: {
-          criteria:
-            "Reward answers that are specific to VoltAgent features and actionable guidance.",
-        },
-      },
-      levenshtein: {
-        scorer: scorers.levenshtein,
-        params: {
-          expected: referenceAnswer,
-        },
-      },
-      numericDiff: {
-        scorer: scorers.numericDiff,
-        params: {
-          expected: numericBaseline.expected,
-          output: numericBaseline.output,
-        },
-      },
-      jsonDiff: {
-        scorer: scorers.jsonDiff,
-        params: {
-          expected: referenceJson,
-          output: referenceJson,
-        },
-      },
-      listContains: {
-        scorer: scorers.listContains,
-        params: {
-          expected: referenceEntities,
-          output: [...referenceEntities, "extra-note"],
-        },
-      },
-    },
+    scorers: createLiveEvalScorers(),
   },
 });
 
+const workflowResponder = new Agent({
+  id: "workflow-responder",
+  name: "workflow-responder",
+  instructions:
+    "You are a support assistant that only answers using VoltAgent documentation provided in the workflow context.",
+  model: openai("gpt-4o-mini"),
+});
+
+const supportWorkflow = createWorkflow(
+  {
+    id: "support-live-evals",
+    name: "Support Workflow with Live Evals",
+    purpose: "Answer VoltAgent support questions and score results in real time.",
+    input: z.object({ question: z.string() }),
+    result: z.string(),
+    memory: new Memory({ storage: new InMemoryStorageAdapter() }),
+    observability,
+    /* eval: {
+      sampling: { type: "ratio", rate: 1 },
+      scorers: createLiveEvalScorers(),
+    }, */
+  },
+  andThen({
+    id: "gather-context",
+    execute: async ({ data }) => ({
+      question: data.question,
+      context: referenceContextSnippets,
+    }),
+    eval: {
+      scorers: createGatherStepScorers(),
+    },
+  }),
+  andAgent(
+    async ({ data }) => {
+      const context = data.context as string[];
+      return `You are a VoltAgent support specialist.
+
+Use the provided context snippets to answer the user's question accurately.
+
+Context:
+${context.map((snippet) => `- ${snippet}`).join("\n")}
+
+Question: ${data.question}
+
+Provide a concise answer.`;
+    },
+    workflowResponder,
+    {
+      schema: z.object({
+        answer: z.string().describe("Support answer for the user question."),
+      }),
+      /*  eval: {
+        sampling: { type: "ratio", rate: 1 },
+        scorers: createLiveEvalScorers(),
+      }, */
+    },
+  ),
+  andThen({
+    id: "finalize-answer",
+    execute: async ({ data }) => data.answer,
+  }),
+);
+
 new VoltAgent({
   agents: { support: supportAgent },
+  workflows: { support: supportWorkflow },
   server: honoServer(),
   observability,
 });
 
 (async () => {
   const question = "How can I enable live eval scorers in VoltAgent?";
-  const result = await supportAgent.generateText(question);
+  /*  const result = await supportAgent.generateText(question); */
+  const workflowRun = await supportWorkflow.run({ question });
 
   console.log("Question:\n", question, "\n");
-  console.log("Agent response:\n", result.text, "\n");
+  /*  console.log("Agent response:\n", result.text, "\n"); */
+  console.log("Workflow response:\n", workflowRun.result, "\n");
 })();

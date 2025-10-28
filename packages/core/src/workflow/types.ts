@@ -9,6 +9,7 @@ import type { UserContext } from "../agent/types";
 import type { Memory } from "../memory";
 import type { VoltAgentObservability } from "../observability";
 import type { WorkflowExecutionContext } from "./context";
+import type { WorkflowEvalConfig } from "./eval/types";
 import type { WorkflowState } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import type { WorkflowStep } from "./steps";
@@ -371,6 +372,10 @@ export type WorkflowConfig<
    * If not provided, will use global observability or create a default one
    */
   observability?: VoltAgentObservability;
+  /**
+   * Live evaluation configuration for workflow executions and optional per-step scorers
+   */
+  eval?: WorkflowEvalConfig;
 };
 
 /**
@@ -419,6 +424,10 @@ export type Workflow<
    * Observability instance for OpenTelemetry integration
    */
   observability?: VoltAgentObservability;
+  /**
+   * Live evaluation configuration applied to this workflow (including per-step overrides)
+   */
+  evalConfig?: WorkflowEvalConfig;
   /**
    * Get the full state of the workflow including all steps
    * @returns The serialized workflow state

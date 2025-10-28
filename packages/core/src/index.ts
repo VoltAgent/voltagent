@@ -20,6 +20,16 @@ export type {
   WorkflowStats,
   WorkflowTimelineEvent,
   RegisteredWorkflow,
+  WorkflowEvalConfig,
+  WorkflowEvalScorerConfig,
+  WorkflowEvalScorerFactory,
+  WorkflowEvalScorerReference,
+  WorkflowEvalResult,
+  WorkflowEvalSamplingPolicy,
+  WorkflowEvalOperationType,
+  WorkflowEvalPayload,
+  WorkflowEvalContext,
+  WorkflowEvalStepConfig,
 } from "./workflow";
 // Export new Agent from agent.ts
 export {
