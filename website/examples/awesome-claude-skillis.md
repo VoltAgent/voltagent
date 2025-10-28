@@ -4,35 +4,7 @@
 
 ## Introduction
 
-Claude Skills are folders that contain instructions, scripts, and resources. Each skill teaches Claude how to perform a specific task. Skills can include executable code that runs during task execution.
-
-Claude scans available skills and loads only what it needs for the current task. This design allows you to maintain hundreds of skills without performance impact.
-
-### How Skills Work
-
-**Composition**
-Skills use markdown files and folders. If you can write documentation, you can create a skill.
-
-**Loading Behavior**
-Claude scans available skills and loads only what the current task requires. Multiple skills can run simultaneously.
-
-**Distribution**
-A skill is a folder. Copy it to share it. The format works across all Claude platforms.
-
-**Execution**
-Skills can include code that runs during task completion. This provides more reliable results than instructions alone.
-
-### Use Cases
-
-Skills can handle document creation (Excel, PowerPoint, Word), brand guideline enforcement, code testing, deployment workflows, pull request reviews, and data analysis. Multiple skills can run together for complex tasks.
-
-### Requirements
-
-Skills require a Pro, Max, Team, or Enterprise subscription. Enable them in Claude settings. API usage requires the Code Execution Tool beta.
-
-### Security
-
-Skills can execute code on your system. Review skills before use and only install from trusted sources. Treat skills like any other software you install.
+Claude Skills are folders with instructions, scripts, and resources that teach Claude specific tasks. Skills can include executable code and are loaded only when needed, allowing you to maintain hundreds without performance impact. Multiple skills can run together for complex tasks like document creation, code testing, and data analysis.
 
 ### Creating a Skill
 
@@ -75,23 +47,7 @@ When testing an API:
 - Confirm nested objects have correct structure
 ```
 
-See the [template-skill](https://github.com/anthropics/skills/tree/main/template-skill) and [creation guide](https://support.claude.com/en/articles/12512198-how-to-create-custom-skills) for more details.
-
-**Packaging**
-
-To distribute:
-
-1. Folder name must match the skill name
-2. Create a ZIP file with the skill folder as root
-3. Verify all referenced files exist in the package
-
-**Best Practices**
-
-- Focus on specific, repeatable tasks
-- Include context for when Claude should use the skill
-- Add example inputs and outputs
-- Avoid hardcoding sensitive information
-- Test incrementally
+See the [official repo](https://github.com/anthropics/skills) and [creation guide](https://support.claude.com/en/articles/12512198-how-to-create-custom-skills) for more details.
 
 ### About This Collection
 
@@ -244,15 +200,3 @@ To add a skill, submit a pull request with:
 
 - Skill name and
 - Repository or download link
-
----
-
-## Resources
-
-- [Official Claude Skills Announcement](https://www.anthropic.com/news/skills)
-- [Claude Skills Documentation](https://docs.anthropic.com/)
-- [Official Skills Examples (GitHub)](https://github.com/anthropics/claude-skills)
-
-## License
-
-This collection is [CC0](https://creativecommons.org/publicdomain/zero/1.0/) - free to use however you want.
