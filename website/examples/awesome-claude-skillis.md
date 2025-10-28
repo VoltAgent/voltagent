@@ -103,7 +103,7 @@ This repository collects Claude Skills from Anthropic and the community. Use it 
 
 ### Document Creation
 
-|                                                                 |                                                                                                                                  |                                                    |
+| Skill                                                           |                                                                                                                                  | Description                                        |
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
 | [**docx**](https://github.com/anthropics/skills/tree/main/docx) | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/docx) | Create, edit, and analyze Word documents           |
 | [**pptx**](https://github.com/anthropics/skills/tree/main/pptx) | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/pptx) | Create, edit, and analyze PowerPoint presentations |
@@ -112,7 +112,7 @@ This repository collects Claude Skills from Anthropic and the community. Use it 
 
 ### Creative and Design
 
-|                                                                                           |                                                                                                                                               |
+| Skill                                                                                     |                                                                                                                                               | Description                                                        |
 | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | [**algorithmic-art**](https://github.com/anthropics/skills/tree/main/algorithmic-art)     | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/algorithmic-art)   | Create generative art using p5.js with seeded randomness           |
 | [**canvas-design**](https://github.com/anthropics/skills/tree/main/canvas-design)         | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/canvas-design)     | Design visual art in PNG and PDF formats                           |
@@ -121,7 +121,7 @@ This repository collects Claude Skills from Anthropic and the community. Use it 
 
 ### Development
 
-|                                                                                           |                                                                                                                                               |
+| Skill                                                                                     |                                                                                                                                               | Description                                                    |
 | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | [**artifacts-builder**](https://github.com/anthropics/skills/tree/main/artifacts-builder) | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/artifacts-builder) | Build complex claude.ai HTML artifacts with React and Tailwind |
 | [**mcp-builder**](https://github.com/anthropics/skills/tree/main/mcp-builder)             | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/mcp-builder)       | Create MCP servers to integrate external APIs and services     |
@@ -129,29 +129,23 @@ This repository collects Claude Skills from Anthropic and the community. Use it 
 
 ### Branding and Communication
 
-|                                                                                         |                                                                                                                                              |
+| Skill                                                                                   |                                                                                                                                              | Description                                                |
 | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | [**brand-guidelines**](https://github.com/anthropics/skills/tree/main/brand-guidelines) | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/brand-guidelines) | Apply Anthropic's brand colors and typography to artifacts |
 | [**internal-comms**](https://github.com/anthropics/skills/tree/main/internal-comms)     | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/internal-comms)   | Write status reports, newsletters, and FAQs                |
 
 ### Meta
 
-|                                                                                     |                                                                                                                                            |
+| Skill                                                                               |                                                                                                                                            | Description                                                 |
 | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
 | [**skill-creator**](https://github.com/anthropics/skills/tree/main/skill-creator)   | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/skill-creator)  | Guide for creating skills that extend Claude's capabilities |
 | [**template-skill**](https://github.com/anthropics/skills/tree/main/template-skill) | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/anthropics/skills/tree/main/template-skill) | Basic template for creating new skills                      |
 
 ## Community Skills
 
-### Skill Collections
-
-|                                                                                           |                                                                                                                                  |                                                   |
-| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| [**Composio Awesome Claude Skills**](https://github.com/ComposioHQ/awesome-claude-skills) | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/ComposioHQ/awesome-claude-skills) | Collection of Claude skill examples from Composio |
-
 ### Productivity and Collaboration
 
-|                                                                                                                            |                                                                                                                                                                       |                                                        |
+| Skill                                                                                                                      |                                                                                                                                                                       | Description                                            |
 | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | [**Notion Skills for Claude**](https://www.notion.so/notiondevs/Notion-Skills-for-Claude-28da4445d27180c7af1df7d8615723d0) | -                                                                                                                                                                     | Skills for working with Notion                         |
 | [**superpowers-lab**](https://github.com/obra/superpowers-lab)                                                             | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/obra/superpowers-lab)                                                  | Lab environment for Claude superpowers                 |
@@ -175,7 +169,7 @@ This repository collects Claude Skills from Anthropic and the community. Use it 
 
 ### Development and Testing
 
-|                                                                                                                           |                                                                                                                                                                    |                                                           |
+| Skill                                                                                                                     |                                                                                                                                                                    | Description                                               |
 | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
 | [**ios-simulator-skill**](https://github.com/conorluddy/ios-simulator-skill)                                              | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/conorluddy/ios-simulator-skill)                                     | Control iOS Simulator (also by ComposioHQ)                |
 | [**ffuf-claude-skill**](https://github.com/jthack/ffuf_claude_skill)                                                      | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/jthack/ffuf_claude_skill)                                           | Web fuzzing with ffuf (also by ComposioHQ)                |
@@ -203,7 +197,7 @@ This repository collects Claude Skills from Anthropic and the community. Use it 
 
 ### Specialized Domains
 
-|                                                                                                         |                                                                                                                                             |                                         |
+| Skill                                                                                                   |                                                                                                                                             | Description                             |
 | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
 | [**claude-scientific-skills**](https://github.com/K-Dense-AI/claude-scientific-skills)                  | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/K-Dense-AI/claude-scientific-skills)         | Scientific research and analysis skills |
 | [**claude-win11-speckit-update-skill**](https://github.com/NotMyself/claude-win11-speckit-update-skill) | [![Source Code](https://img.shields.io/badge/source-code-blue?logo=github)](https://github.com/NotMyself/claude-win11-speckit-update-skill) | Windows 11 system management            |
@@ -212,41 +206,37 @@ This repository collects Claude Skills from Anthropic and the community. Use it 
 
 ## Articles and Tutorials
 
-### Official Documentation
+### 📚 Official
 
 - [Claude Skills Quickstart](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/quickstart) - Get started with Claude Skills
 - [Claude Skills Best Practices](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices) - Best practices for creating skills
 - [Skills Cookbook](https://github.com/anthropics/claude-cookbooks/blob/main/skills/README.md) - Skills examples and guides
+- [What Are Skills](https://support.claude.com/en/articles/12512176-what-are-skills) - Introduction to Claude Skills
 - [Using Skills in Claude](https://support.claude.com/en/articles/12512180-using-skills-in-claude) - How to use skills in Claude
 - [How to Create Custom Skills](https://support.claude.com/en/articles/12512198-how-to-create-custom-skills) - Step-by-step guide to creating skills
 - [Create a Skill Through Conversation](https://support.claude.com/en/articles/12599426-how-to-create-a-skill-with-claude-through-conversation) - Create skills by talking to Claude
-
-### Official Articles
-
+- [Claude for Financial Services Skills](https://support.claude.com/en/articles/12663107-claude-for-financial-services-skills) - Industry-specific skills for financial services
 - [Equipping Agents for the Real World with Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) - Technical deep dive into agent skills
 - [Teach Claude Your Way of Working](https://support.claude.com/en/articles/12580051-teach-claude-your-way-of-working-using-skills) - Customize Claude with your workflow
 
-### Community Articles
+### 👥 Community
 
 - [Simon Willison: Claude Skills](https://simonwillison.net/2025/Oct/16/claude-skills/) - Introduction to Claude Skills
 - [Nick Nisi: Claude Skills](https://nicknisi.com/posts/claude-skills/) - Getting started with Claude Skills
 - [Young Leaders: Claude Skills, Commands, Subagents, Plugins](https://www.youngleaders.tech/p/claude-skills-commands-subagents-plugins) - Comparison of Claude features
 
-### Official Videos
+### 🎥 Videos
 
-- [Video Tutorial 1](https://www.youtube.com/watch?v=421T2iWTQio)
-- [Video Tutorial 2](https://www.youtube.com/watch?v=G-5bInklwRQ)
-- [Video Tutorial 3](https://www.youtube.com/watch?v=46zQX7PSHfU)
-- [Video Tutorial 4](https://www.youtube.com/watch?v=IoqpBKrNaZI)
-
-### Community Videos
-
-- [Community Tutorial 1](https://www.youtube.com/watch?v=QpGWaWH1DxY)
-- [Community Tutorial 2](https://www.youtube.com/watch?v=WKFFFumnzYI)
-- [Community Tutorial 3](https://www.youtube.com/watch?v=FOqbS_llAms)
-- [Community Tutorial 4](https://www.youtube.com/watch?v=v1y5EUSQ8WA)
-- [Community Tutorial 5](https://www.youtube.com/watch?v=M8yaR-wNGj0)
-- [Community Tutorial 6](https://www.youtube.com/watch?v=MZZCW179nKM)
+- [Claude Skills Tutorial](https://www.youtube.com/watch?v=421T2iWTQio)
+- [Getting Started with Claude Skills](https://www.youtube.com/watch?v=G-5bInklwRQ)
+- [Building Custom Skills](https://www.youtube.com/watch?v=46zQX7PSHfU)
+- [Claude Skills Deep Dive](https://www.youtube.com/watch?v=IoqpBKrNaZI)
+- [Skills in Practice](https://www.youtube.com/watch?v=QpGWaWH1DxY)
+- [Advanced Skill Patterns](https://www.youtube.com/watch?v=WKFFFumnzYI)
+- [Skill Development Workflow](https://www.youtube.com/watch?v=FOqbS_llAms)
+- [Real-World Skills Examples](https://www.youtube.com/watch?v=v1y5EUSQ8WA)
+- [Skill Best Practices](https://www.youtube.com/watch?v=M8yaR-wNGj0)
+- [Skills Integration Guide](https://www.youtube.com/watch?v=MZZCW179nKM)
 
 ## Contributing
 
@@ -254,8 +244,6 @@ To add a skill, submit a pull request with:
 
 - Skill name and
 - Repository or download link
-- Usage examples
-- Setup requirements (if any)
 
 ---
 
