@@ -2,7 +2,7 @@
 id: 6
 slug: chatgpt-app
 title: ChatGPT App With VoltAgent
-description: Deploy the VoltAgent-based AI agent, expose it over MCP, and connect it to ChatGPT Apps using the Apps SDK.
+description: Deploy the VoltAgent-based AI agent, expose it over MCP, and connect it to ChatGPT Apps.
 repository: https://github.com/VoltAgent/voltagent/tree/main/examples/with-mcp-server
 ---
 
