@@ -127,8 +127,6 @@ You should see:
 - Use `http://localhost:3141` as the base URL to inspect agents, tools, prompts, and resources. VoltOps Console at https://console.voltagent.dev lists the MCP endpoints once the server is online.
 - Trigger the `expense-approval` workflow; for amounts over $500, the example’s elicitation adapter simulates a manager granting approval.
 
-![VoltOps MCP Console](https://cdn.voltagent.dev/examples/with-mcp-server/voltops-console.png)
-
 ### Connect to ChatGPT
 
 #### Publish the local server
@@ -141,8 +139,6 @@ ngrok http 3141
 ```
 
 Keep the tunnel running; the VoltAgent example listens on `3141`, so the default command already forwards the correct port.
-
-![ngrok tunnel](https://cdn.voltagent.dev/examples/shared/ngrok-dashboard.png)
 
 #### Create the ChatGPT connector
 
