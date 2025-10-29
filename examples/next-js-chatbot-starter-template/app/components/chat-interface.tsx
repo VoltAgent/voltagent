@@ -3,10 +3,10 @@
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
-import { AlertCircle, Bot, Loader2, Send, Sparkles, User, Wrench } from "lucide-react";
+import { AlertCircle, Loader2, Send, User, Wrench } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { MessageContent } from "./message-content";
 
 export function ChatInterface() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -17,10 +17,6 @@ export function ChatInterface() {
     api: "/api/chat",
     onError: (err: Error) => {
       console.error("Chat error:", err);
-      toast.error("Failed to send message. Please try again.");
-    },
-    onFinish: () => {
-      toast.success("Response complete");
     },
   });
 
@@ -74,7 +70,7 @@ export function ChatInterface() {
           textContent += part.text;
         }
         // Handle tool-invocation parts (AI SDK v5 structure)
-        if ("type" in part && part.type === "tool-invocation") {
+        if ("type" in part && typeof part.type === "string" && part.type.startsWith("tool-")) {
           toolParts.push(part);
         }
       }
@@ -86,8 +82,14 @@ export function ChatInterface() {
         className={`flex gap-3 ${isUser ? "justify-end" : ""} message-animate`}
       >
         {!isUser && (
-          <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20 flex items-center justify-center">
-            <Bot className="w-5 h-5 text-white" strokeWidth={2.5} />
+          <div className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden ">
+            <Image
+              src="/voltagent.png"
+              alt="VoltAgent"
+              width={36}
+              height={36}
+              className="object-cover"
+            />
           </div>
         )}
 
@@ -99,17 +101,15 @@ export function ChatInterface() {
                 : "bg-[#0f2a26] text-white border border-emerald-900/30 shadow-black/10"
             }`}
           >
-            {textContent && (
-              <div className="whitespace-pre-wrap leading-relaxed">{textContent}</div>
-            )}
+            {textContent && <MessageContent content={textContent} isUser={isUser} />}
 
             {/* Display tool calls if present */}
             {toolParts.length > 0 && (
               <div className={`${textContent ? "mt-3" : ""} space-y-2`}>
                 {toolParts.map((tool: any, toolIndex: number) => {
-                  const toolName = tool.toolName || "Tool";
-                  const hasResult = "result" in tool;
-                  const toolKey = tool.toolCallId || `tool-${toolIndex}`;
+                  const toolName = (tool as any).toolName || tool.type || "Tool";
+                  const hasResult = "output" in tool || "result" in tool;
+                  const toolKey = (tool as any).toolCallId || `tool-${toolIndex}`;
 
                   return (
                     <div
@@ -122,7 +122,7 @@ export function ChatInterface() {
                       </div>
                       {hasResult ? (
                         <pre className="text-xs overflow-x-auto bg-black/20 p-2 rounded border border-white/5">
-                          {JSON.stringify(tool.result, null, 2)}
+                          {JSON.stringify((tool as any).output || (tool as any).result, null, 2)}
                         </pre>
                       ) : (
                         <div className="text-xs opacity-70 flex items-center gap-2">
@@ -153,10 +153,10 @@ export function ChatInterface() {
   };
 
   const examplePrompts = [
-    { icon: "💡", text: "Explain quantum computing" },
-    { icon: "🎨", text: "Help me write a story" },
-    { icon: "🔧", text: "Debug my JavaScript code" },
-    { icon: "📊", text: "Analyze this data" },
+    { text: "Explain quantum computing" },
+    { text: "Help me write a story" },
+    { text: "Debug my JavaScript code" },
+    { text: "Analyze this data" },
   ];
 
   const handlePromptClick = (promptText: string) => {
@@ -171,7 +171,7 @@ export function ChatInterface() {
       <div className="flex-shrink-0 border-b border-emerald-900/30 bg-[#0a1f1c]/80 backdrop-blur-sm px-6 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative w-11 h-11 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/25">
+            <div className="relative w-11 h-11 rounded-full overflow-hidden ">
               <Image
                 src="/voltagent.png"
                 alt="VoltAgent"
@@ -201,7 +201,7 @@ export function ChatInterface() {
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/30 mb-6">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden  mb-6">
               <Image
                 src="/voltagent.png"
                 alt="VoltAgent"
@@ -209,9 +209,6 @@ export function ChatInterface() {
                 height={80}
                 className="object-cover"
               />
-              <div className="absolute -top-1 -right-1">
-                <Sparkles className="w-6 h-6 text-emerald-300 animate-pulse" />
-              </div>
             </div>
             <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">
               Welcome to VoltAgent
@@ -230,7 +227,6 @@ export function ChatInterface() {
                   className="px-4 py-3 rounded-xl bg-[#0f2a26] border border-emerald-900/30 hover:border-emerald-700/50 hover:bg-[#132f2a] text-left transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{prompt.icon}</span>
                     <span className="text-sm text-emerald-100 group-hover:text-white transition-colors">
                       {prompt.text}
                     </span>
@@ -259,8 +255,14 @@ export function ChatInterface() {
         {/* Loading indicator when streaming */}
         {isLoading && messages.length > 0 && (
           <div className="flex gap-3 message-animate">
-            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20 flex items-center justify-center">
-              <Bot className="w-5 h-5 text-white" strokeWidth={2.5} />
+            <div className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden ">
+              <Image
+                src="/voltagent.png"
+                alt="VoltAgent"
+                width={36}
+                height={36}
+                className="object-cover"
+              />
             </div>
             <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#0f2a26] border border-emerald-900/30">
               <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />

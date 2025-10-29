@@ -78,3 +78,121 @@ pre {
 code {
   font-family: var(--font-geist-mono), monospace;
 }
+
+/* Markdown content styling */
+.markdown-content {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: #e5e7eb;
+}
+
+/* Code syntax highlighting overrides for dark theme */
+.markdown-content pre code.hljs {
+  background: transparent;
+  padding: 0;
+  display: block;
+}
+
+.markdown-content .hljs {
+  color: #e5e7eb;
+  background: #0d1117;
+}
+
+.markdown-content .hljs-comment,
+.markdown-content .hljs-quote {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.markdown-content .hljs-keyword,
+.markdown-content .hljs-selector-tag,
+.markdown-content .hljs-subst {
+  color: #ff7b72;
+}
+
+.markdown-content .hljs-number,
+.markdown-content .hljs-literal,
+.markdown-content .hljs-variable,
+.markdown-content .hljs-template-variable,
+.markdown-content .hljs-tag .hljs-attr {
+  color: #79c0ff;
+}
+
+.markdown-content .hljs-string,
+.markdown-content .hljs-doctag {
+  color: #a5d6ff;
+}
+
+.markdown-content .hljs-title,
+.markdown-content .hljs-section,
+.markdown-content .hljs-selector-id {
+  color: #d2a8ff;
+  font-weight: bold;
+}
+
+.markdown-content .hljs-subst {
+  font-weight: normal;
+}
+
+.markdown-content .hljs-type,
+.markdown-content .hljs-class .hljs-title {
+  color: #ffa657;
+  font-weight: bold;
+}
+
+.markdown-content .hljs-tag,
+.markdown-content .hljs-name,
+.markdown-content .hljs-attribute {
+  color: #7ee787;
+  font-weight: normal;
+}
+
+.markdown-content .hljs-regexp,
+.markdown-content .hljs-link {
+  color: #a5d6ff;
+}
+
+.markdown-content .hljs-symbol,
+.markdown-content .hljs-bullet {
+  color: #ffa657;
+}
+
+.markdown-content .hljs-built_in,
+.markdown-content .hljs-builtin-name {
+  color: #ffa657;
+}
+
+.markdown-content .hljs-meta {
+  color: #79c0ff;
+}
+
+.markdown-content .hljs-deletion {
+  background: #490202;
+}
+
+.markdown-content .hljs-addition {
+  background: #1c4220;
+}
+
+.markdown-content .hljs-emphasis {
+  font-style: italic;
+}
+
+.markdown-content .hljs-strong {
+  font-weight: bold;
+}
+
+/* Ensure proper spacing in markdown lists */
+.markdown-content ul ul,
+.markdown-content ol ul,
+.markdown-content ul ol,
+.markdown-content ol ol {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Task lists */
+.markdown-content input[type="checkbox"] {
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
