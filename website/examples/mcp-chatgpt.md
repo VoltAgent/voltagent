@@ -110,7 +110,7 @@ Install dependencies and start the development server:
 
 ```bash
 pnpm install
-pnpm --filter voltagent-example-with-mcp-server dev
+pnpm dev
 ```
 
 You should see:
