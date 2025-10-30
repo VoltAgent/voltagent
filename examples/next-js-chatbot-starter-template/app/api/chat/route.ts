@@ -1,7 +1,6 @@
 import { chatbotAgent } from "@/lib/agent";
 import { validateAIConfig } from "@/lib/ai/config";
 import type { ChatRequest } from "@/lib/types/api";
-import { streamText } from "ai";
 
 export async function POST(req: Request) {
   try {

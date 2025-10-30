@@ -55,7 +55,7 @@ export function MessageContent({ content, isUser }: MessageContentProps) {
           li: ({ children }) => <li className="leading-relaxed pl-1">{children}</li>,
 
           // Code blocks
-          code: ({ node, className, children, ...props }: any) => {
+          code: ({ className, children, ...props }: React.ComponentPropsWithoutRef<"code">) => {
             const match = /language-(\w+)/.exec(className || "");
             const lang = match ? match[1] : "";
             const inline = !className;
@@ -139,6 +139,7 @@ export function MessageContent({ content, isUser }: MessageContentProps) {
 
           // Images
           img: ({ src, alt }) => (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={src}
               alt={alt || ""}

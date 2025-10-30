@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
-import type { UIMessage } from "ai";
 import { AlertCircle, Loader2, Send, User, Wrench } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -48,18 +47,21 @@ export function ChatInterface() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (inputValue.trim()) {
-        handleSubmit(e as any);
+        handleSubmit(e as React.FormEvent<HTMLTextAreaElement>);
       }
     }
   };
 
-  const renderMessage = (message: UIMessage, index: number) => {
+  const renderMessage = (
+    message: ReturnType<typeof useChat>["messages"][number],
+    index: number,
+  ) => {
     const isUser = message.role === "user";
     const parts = message.parts || [];
 
     // Extract text content and tool information from parts
     let textContent = "";
-    const toolParts: any[] = [];
+    const toolParts: Array<Record<string, unknown>> = [];
 
     for (const part of parts) {
       if (typeof part === "string") {
@@ -71,7 +73,7 @@ export function ChatInterface() {
         }
         // Handle tool-invocation parts (AI SDK v5 structure)
         if ("type" in part && typeof part.type === "string" && part.type.startsWith("tool-")) {
-          toolParts.push(part);
+          toolParts.push(part as Record<string, unknown>);
         }
       }
     }
@@ -106,10 +108,10 @@ export function ChatInterface() {
             {/* Display tool calls if present */}
             {toolParts.length > 0 && (
               <div className={`${textContent ? "mt-3" : ""} space-y-2`}>
-                {toolParts.map((tool: any, toolIndex: number) => {
-                  const toolName = (tool as any).toolName || tool.type || "Tool";
+                {toolParts.map((tool: Record<string, unknown>, toolIndex: number) => {
+                  const toolName = (tool.toolName as string) || (tool.type as string) || "Tool";
                   const hasResult = "output" in tool || "result" in tool;
-                  const toolKey = (tool as any).toolCallId || `tool-${toolIndex}`;
+                  const toolKey = (tool.toolCallId as string) || `tool-${toolIndex}`;
 
                   return (
                     <div
@@ -122,7 +124,7 @@ export function ChatInterface() {
                       </div>
                       {hasResult ? (
                         <pre className="text-xs overflow-x-auto bg-black/20 p-2 rounded border border-white/5">
-                          {JSON.stringify((tool as any).output || (tool as any).result, null, 2)}
+                          {JSON.stringify(tool.output || tool.result, null, 2)}
                         </pre>
                       ) : (
                         <div className="text-xs opacity-70 flex items-center gap-2">
@@ -236,7 +238,7 @@ export function ChatInterface() {
             </div>
           </div>
         ) : (
-          messages.map((message, index) => renderMessage(message as any, index))
+          messages.map((message, index) => renderMessage(message, index))
         )}
 
         {/* Error message */}

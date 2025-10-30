@@ -28,7 +28,7 @@ export const calculatorTool = createTool({
         result,
         success: true,
       };
-    } catch (_error) {
+    } catch {
       return {
         expression,
         error: "Invalid mathematical expression",

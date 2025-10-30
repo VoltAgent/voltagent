@@ -40,7 +40,7 @@ export const dateTimeTool = createTool({
         unix: Math.floor(now.getTime() / 1000),
         success: true,
       };
-    } catch (_error) {
+    } catch {
       return {
         error: `Invalid timezone: ${timezone}`,
         success: false,
