@@ -136,9 +136,15 @@ export class MemoryManager {
           }
 
           // Add message to conversation using Memory V2's saveMessageWithContext
-          await this.conversationMemory?.saveMessageWithContext(message, userId, conversationId, {
-            logger: memoryLogger,
-          });
+          await this.conversationMemory?.saveMessageWithContext(
+            message,
+            userId,
+            conversationId,
+            {
+              logger: memoryLogger,
+            },
+            context, // Pass OperationContext to Memory
+          );
         }
       });
 
@@ -226,7 +232,12 @@ export class MemoryManager {
           });
         } else {
           // Use regular message retrieval
-          messages = await this.conversationMemory.getMessages(userId, conversationId, { limit });
+          messages = await this.conversationMemory.getMessages(
+            userId,
+            conversationId,
+            { limit },
+            context, // Pass OperationContext to Memory
+          );
         }
       }
 
@@ -275,7 +286,12 @@ export class MemoryManager {
     });
 
     try {
-      const messages = await this.conversationMemory.getMessages(userId, conversationId, { limit });
+      const messages = await this.conversationMemory.getMessages(
+        userId,
+        conversationId,
+        { limit },
+        context, // Pass OperationContext to Memory
+      );
 
       memoryLogger.debug(`[Memory] Search successful (${messages.length} records)`, {
         event: LogEvents.MEMORY_OPERATION_COMPLETED,
@@ -376,9 +392,14 @@ export class MemoryManager {
     try {
       // Get UIMessages from memory directly - no conversion needed!
       // Filter to only get user and assistant messages (exclude tool, system, etc.)
-      messages = await this.conversationMemory.getMessages(userId, conversationId, {
-        limit: contextLimit,
-      });
+      messages = await this.conversationMemory.getMessages(
+        userId,
+        conversationId,
+        {
+          limit: contextLimit,
+        },
+        context, // Pass OperationContext to Memory
+      );
 
       context.logger.debug(
         `[Memory] Fetched messages from memory. Message Count: ${messages.length}`,

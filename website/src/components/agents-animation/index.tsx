@@ -1033,10 +1033,13 @@ export function AgentsAnimation({ className }: { className?: string }) {
   );
 }
 
+// Halloween themed icons
+const PumpkinIcon = () => <span className="text-2xl">🎃</span>;
+
 // Replace the Icons object at the bottom of the file
 const Icons = {
-  lightning: BoltIcon,
-  voltAgent: BoltIcon,
+  lightning: PumpkinIcon,
+  voltAgent: PumpkinIcon,
   chat: ChatBubbleLeftRightIcon,
   api: CommandLineIcon,
   webhook: ArrowPathIcon,

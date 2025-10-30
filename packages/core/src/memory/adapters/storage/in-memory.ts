@@ -5,6 +5,7 @@
 
 import { deepClone } from "@voltagent/internal/utils";
 import type { UIMessage } from "ai";
+import type { OperationContext } from "../../../agent/types";
 import { ConversationAlreadyExistsError, ConversationNotFoundError } from "../../errors";
 import type {
   Conversation,
@@ -48,7 +49,12 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   /**
    * Add a single message
    */
-  async addMessage(message: UIMessage, userId: string, conversationId: string): Promise<void> {
+  async addMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+    _context?: OperationContext,
+  ): Promise<void> {
     // Create user's messages container if it doesn't exist
     if (!this.storage[userId]) {
       this.storage[userId] = {};
@@ -74,9 +80,14 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   /**
    * Add multiple messages
    */
-  async addMessages(messages: UIMessage[], userId: string, conversationId: string): Promise<void> {
+  async addMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void> {
     for (const message of messages) {
-      await this.addMessage(message, userId, conversationId);
+      await this.addMessage(message, userId, conversationId, context);
     }
   }
 
@@ -87,6 +98,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
+    _context?: OperationContext,
   ): Promise<UIMessage[]> {
     const { limit = 100, before, after, roles } = options || {};
 
@@ -128,7 +140,11 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   /**
    * Clear messages for a user
    */
-  async clearMessages(userId: string, conversationId?: string): Promise<void> {
+  async clearMessages(
+    userId: string,
+    conversationId?: string,
+    _context?: OperationContext,
+  ): Promise<void> {
     if (!this.storage[userId]) {
       return;
     }

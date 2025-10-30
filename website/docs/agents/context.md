@@ -16,9 +16,9 @@ The `context` field in `OperationContext` is a Map that passes custom data throu
 Here's how `context` flows through an agent operation:
 
 ```
-You → Agent → Hooks → Tools → Retrievers → Sub-Agents
-     ↑                                              ↓
-     ← ← ← ← ← context flows everywhere ← ← ← ← ←
+You → Agent → Hooks → Tools → Retrievers → Memory → Sub-Agents
+     ↑                                                        ↓
+     ← ← ← ← ← ← context flows everywhere ← ← ← ← ← ← ← ← ←
 ```
 
 ## Initialize context
@@ -729,3 +729,72 @@ hooks: createHooks({
   },
 });
 ```
+
+## Memory Adapters
+
+Custom memory adapters can access `OperationContext` to implement cross-cutting concerns like multi-tenancy, logging, and access control without modifying core adapter logic.
+
+### Example: Multi-Tenant Data Isolation
+
+Custom memory adapters can read user-provided context to implement tenant-scoped data access:
+
+```typescript
+import { InMemoryStorageAdapter } from "@voltagent/core";
+import type { OperationContext, GetMessagesOptions, UIMessage } from "@voltagent/core/agent";
+
+class TenantMemoryAdapter extends InMemoryStorageAdapter {
+  async getMessages(
+    userId: string,
+    conversationId: string,
+    options?: GetMessagesOptions,
+    context?: OperationContext
+  ): Promise<UIMessage[]> {
+    // Read tenant ID from user-provided context
+    const tenantId = context?.context.get("tenantId") as string;
+
+    if (!tenantId) {
+      throw new Error("Tenant ID is required");
+    }
+
+    // Create tenant-scoped user ID
+    const scopedUserId = `${tenantId}:${userId}`;
+
+    // Log access for audit trail
+    context?.logger.info("Tenant memory access", {
+      tenantId,
+      userId,
+      scopedUserId,
+      traceId: context.traceContext.getTraceId(),
+    });
+
+    // Use scoped user ID to isolate tenant data
+    return super.getMessages(scopedUserId, conversationId, options, context);
+  }
+}
+
+// Use the adapter
+const agent = new Agent({
+  memory: new Memory({ storage: new TenantMemoryAdapter() }),
+});
+
+// Tenant A: user-123's data
+await agent.generateText("Show my history", {
+  userId: "user-123",
+  context: { tenantId: "company-abc" }, // Stores as "company-abc:user-123"
+});
+
+// Tenant B: same user ID, but different tenant = different data
+await agent.generateText("Show my history", {
+  userId: "user-123",
+  context: { tenantId: "company-xyz" }, // Stores as "company-xyz:user-123"
+});
+```
+
+**What this enables:**
+
+- **Data isolation** between tenants using composite keys
+- **Per-request tenant context** without adapter reconfiguration
+- **Audit logging** with full operation context
+- **Flexible access control** based on runtime values
+
+All memory adapters (InMemory, Postgres, LibSQL, Supabase) support `OperationContext` as an optional parameter.

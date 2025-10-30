@@ -169,17 +169,29 @@ const result = await agent.generateText("What preferences did I mention?", {
 Implement the `StorageAdapter` interface to use custom databases:
 
 ```ts
-import type { StorageAdapter, UIMessage, Conversation } from "@voltagent/core";
+import type { StorageAdapter, UIMessage, Conversation, OperationContext } from "@voltagent/core";
 
 export class MyStorageAdapter implements StorageAdapter {
-  async addMessage(msg: UIMessage, userId: string, conversationId: string): Promise<void> {
+  async addMessage(
+    msg: UIMessage,
+    userId: string,
+    conversationId: string,
+    context?: OperationContext // Optional: access operation context
+  ): Promise<void> {
+    // Access user-provided context values
+    const tenantId = context?.context.get("tenantId");
+
+    // Use logger and tracing
+    context?.logger.info("Storing message", { userId, tenantId });
+
     // Store message in your database
   }
 
   async getMessages(
     userId: string,
     conversationId: string,
-    options?: { limit?: number }
+    options?: { limit?: number },
+    context?: OperationContext // Optional: access operation context
   ): Promise<UIMessage[]> {
     // Retrieve messages in chronological order (oldest first)
     return [];
@@ -199,6 +211,64 @@ Required methods:
 - Conversations: `createConversation`, `getConversation`, `getConversations`, `getConversationsByUserId`, `queryConversations`, `updateConversation`, `deleteConversation`
 - Working memory: `getWorkingMemory`, `setWorkingMemory`, `deleteWorkingMemory`
 - Workflow state: `getWorkflowState`, `setWorkflowState`, `updateWorkflowState`, `getSuspendedWorkflowStates`
+
+### Advanced: Context-Aware Adapters
+
+Custom adapters can access `OperationContext` for dynamic, per-request behavior:
+
+```ts
+import { InMemoryStorageAdapter } from "@voltagent/core";
+import type { OperationContext } from "@voltagent/core/agent";
+
+class TenantMemoryAdapter extends InMemoryStorageAdapter {
+  async getMessages(
+    userId: string,
+    conversationId: string,
+    options?: GetMessagesOptions,
+    context?: OperationContext
+  ): Promise<UIMessage[]> {
+    // Read tenant from user-provided context
+    const tenantId = context?.context.get("tenantId") as string;
+
+    if (!tenantId) {
+      throw new Error("Tenant ID required");
+    }
+
+    // Create tenant-scoped user ID
+    const scopedUserId = `${tenantId}:${userId}`;
+
+    // Log with tracing
+    context?.logger.info("Tenant memory access", {
+      tenantId,
+      userId,
+      scopedUserId,
+    });
+
+    // Use scoped ID for data isolation
+    return super.getMessages(scopedUserId, conversationId, options, context);
+  }
+}
+
+// Use the adapter
+const agent = new Agent({
+  memory: new Memory({ storage: new TenantMemoryAdapter() }),
+});
+
+// Pass tenant per request
+await agent.generateText("Query", {
+  userId: "user-123",
+  context: { tenantId: "company-abc" }, // Different tenant = different data
+});
+```
+
+**Use cases for context-aware adapters:**
+
+- **Multi-tenancy**: Isolate data by tenant using composite keys
+- **Audit logging**: Track all memory access with full context
+- **Access control**: Validate permissions before queries
+- **Dynamic behavior**: Adjust queries based on runtime values
+
+See [Operation Context](../context.md#memory-adapters) for more examples and patterns.
 
 ## Learn More
 
