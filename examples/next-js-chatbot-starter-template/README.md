@@ -27,6 +27,7 @@ A production-ready chatbot application built with Next.js 15, VoltAgent, and the
 - **Real-Time Streaming** - Server-sent events (SSE) streaming with the Vercel AI SDK for responsive interactions
 - **Conversation Memory** - Configurable memory system with in-memory storage (with optional persistent storage adapters)
 - **Tool Integration** - Pre-built tools for calculations, date/time queries, and random number generation
+- **VoltOps Console** - Built-in debugging and monitoring with singleton VoltAgent instance (port 3141)
 - **Modern Interface** - Responsive chat UI with VoltAgent branding and dark theme
 - **TypeScript Support** - Fully typed codebase for enhanced developer experience and code safety
 - **Extensible Design** - Clean architecture with modular components for easy customization
@@ -701,6 +702,69 @@ npm run start        # Start production server
 npm run lint         # Run ESLint for code quality checks
 npm run type-check   # Run TypeScript compiler checks
 ```
+
+## VoltOps Console Debugging
+
+This template includes VoltOps console support for debugging and monitoring your AI agents in real-time.
+
+### Features
+
+- **Real-time Agent Monitoring** - View agent execution traces and performance metrics
+- **Tool Invocation Tracking** - Debug tool calls and responses
+- **Memory Inspection** - Examine conversation history and memory state
+- **OpenTelemetry Integration** - Comprehensive observability out of the box
+
+### Accessing VoltOps Console
+
+1. **Start the development server:**
+
+   ```bash
+   npm run dev
+   ```
+
+2. **VoltOps server starts automatically on port 3141**
+   - The singleton VoltAgent instance ensures the debugging port opens correctly
+   - Console URL: `http://localhost:3141`
+
+3. **Implementation Details:**
+   The template uses a singleton pattern to ensure the VoltOps debugging server persists across Next.js hot reloads:
+
+   ```typescript
+   // lib/agent/index.ts
+   function getVoltAgentInstance() {
+     if (!globalThis.voltAgentInstance) {
+       globalThis.voltAgentInstance = new VoltAgent({
+         agents: { chatbotAgent },
+         server: honoServer(),
+       });
+     }
+     return globalThis.voltAgentInstance;
+   }
+   ```
+
+### Why Singleton Pattern?
+
+In Next.js development mode, hot module replacement can cause multiple VoltAgent instances to be created, leading to:
+
+- Port 3141 conflicts
+- Multiple debugging servers
+- Inconsistent trace data
+
+The singleton pattern ensures a single VoltAgent instance across the application lifecycle, maintaining stable debugging capabilities.
+
+### Troubleshooting VoltOps
+
+**Port 3141 not opening:**
+
+- Ensure `@voltagent/server-hono` is installed: `npm install @voltagent/server-hono`
+- Check if another process is using port 3141: `lsof -ti:3141`
+- Restart the development server
+
+**Console not showing data:**
+
+- Verify the agent is being used (make a chat request)
+- Check browser console for WebSocket connection errors
+- Ensure you're accessing `http://localhost:3141` (not https)
 
 ## API Reference
 
