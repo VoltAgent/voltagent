@@ -1,5 +1,27 @@
 # @voltagent/core
 
+## 1.1.38
+
+### Patch Changes
+
+- [#744](https://github.com/VoltAgent/voltagent/pull/744) [`e9e467a`](https://github.com/VoltAgent/voltagent/commit/e9e467a433a0fe0ba14f56554fc65fccce1cb888) Thanks [@marinoska](https://github.com/marinoska)! - Refactor ToolManager into hierarchical architecture with BaseToolManager and ToolkitManager
+
+  Introduces new class hierarchy for improved tool management:
+  - **BaseToolManager**: Abstract base class with core tool management functionality
+  - **ToolManager**: Main manager supporting standalone tools, provider tools, and toolkits
+  - **ToolkitManager**: Specialized manager for toolkit-scoped tools (no nested toolkits)
+
+  Features:
+  - Enhanced type-safe tool categorization with type guards
+  - Conflict detection for toolkit tools
+  - Reorganized tool preparation process - moved `prepareToolsForExecution` logic from agent into ToolManager, simplifying agent code
+
+  Public API remains compatible.
+
+- [#752](https://github.com/VoltAgent/voltagent/pull/752) [`002ebad`](https://github.com/VoltAgent/voltagent/commit/002ebad1e95a82998c1693b3998b683d5bb04bb2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: forward AI SDK tool call metadata (including `toolCallId`) to server-side tool executions - #746
+
+  Tool wrappers now receive the full options object from the AI SDK, so custom tools and hook listeners can access `toolCallId`, abort signals, and other metadata. We also propagate the real call id to OpenTelemetry spans. Existing tools keep working (the extra argument is optional), but they can now inspect the third `options` parameter if they need richer context.
+
 ## 1.1.37
 
 ### Patch Changes
