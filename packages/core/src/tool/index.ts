@@ -1,4 +1,4 @@
-import type { Tool as VercelTool } from "ai";
+import type { ToolCallOptions, Tool as VercelTool } from "ai";
 import { v4 as uuidv4 } from "uuid";
 import type { z } from "zod";
 import type { BaseTool, ToolSchema } from "../agent/providers/base/types";
@@ -104,6 +104,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   readonly execute?: (
     args: z.infer<T>,
     context?: OperationContext,
+    options?: ToolCallOptions,
   ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
 
   /**

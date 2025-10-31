@@ -1,4 +1,5 @@
 import type { Logger } from "@voltagent/internal";
+import type { ToolCallOptions } from "ai";
 import type { ApiToolInfo } from "../../agent/types";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
 import type { AgentTool, ProviderTool, VercelTool } from "../index";
@@ -45,14 +46,16 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
   }
 
   public prepareToolsForExecution(
-    createToolExecuteFunction: (tool: AgentTool) => (args: any) => Promise<any>,
+    createToolExecuteFunction: (
+      tool: AgentTool,
+    ) => (args: any, options: ToolCallOptions) => Promise<any>,
   ): Record<string, any> {
     const tools: Record<
       string,
       | {
           description: string;
           inputSchema: any;
-          execute?: (args: any) => Promise<any>;
+          execute?: (args: any, options: ToolCallOptions) => Promise<any>;
         }
       | ProviderTool
     > = {};

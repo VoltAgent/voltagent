@@ -10,6 +10,7 @@ import type {
   GenerateTextResult,
   LanguageModel,
   StepResult,
+  ToolCallOptions,
   ToolSet,
   UIMessage,
 } from "ai";
@@ -2686,8 +2687,8 @@ export class Agent {
   private createToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
-  ): (tool: BaseTool) => (args: any) => Promise<any> {
-    return (tool: BaseTool) => async (args: any) => {
+  ): (tool: BaseTool) => (args: any, options: ToolCallOptions) => Promise<any> {
+    return (tool: BaseTool) => async (args: any, options: ToolCallOptions) => {
       // Event tracking now handled by OpenTelemetry spans
       // Create tool span using TraceContext
       const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
@@ -2715,7 +2716,7 @@ export class Agent {
           if (!tool.execute) {
             throw new Error(`Tool ${tool.name} does not have "execute" method`);
           }
-          const result = await tool.execute(args, oc);
+          const result = await tool.execute(args, oc, options);
           const validatedResult = await this.validateToolOutput(result, tool);
 
           // End OTEL span
