@@ -63,7 +63,12 @@ import {
 } from "./eval";
 import type { AgentHooks } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
-import type { BaseMessage, BaseTool, StepWithContent } from "./providers/base/types";
+import type {
+  BaseMessage,
+  BaseTool,
+  StepWithContent,
+  ToolExecuteOptions,
+} from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
@@ -2707,7 +2712,7 @@ export class Agent {
 
       aiTools[tool.name] = {
         ...aiTools[tool.name],
-        execute: async (args: any) => {
+        execute: async (args: any, options: ToolExecuteOptions) => {
           // Event tracking now handled by OpenTelemetry spans
 
           // Create tool span using TraceContext
@@ -2736,7 +2741,7 @@ export class Agent {
               if (!tool.execute) {
                 throw new Error(`Tool ${tool.name} does not have "execute" method`);
               }
-              const result = await tool.execute(args, oc);
+              const result = await tool.execute(args, oc, options);
               const validatedResult = await this.validateToolOutput(result, tool);
 
               // End OTEL span
