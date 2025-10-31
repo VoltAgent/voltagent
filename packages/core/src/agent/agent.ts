@@ -2693,7 +2693,14 @@ export class Agent {
     hooks: AgentHooks,
   ): (tool: BaseTool) => (args: any, options?: ToolExecuteOptions) => Promise<any> {
     return (tool: BaseTool) => async (args: any, options?: ToolExecuteOptions) => {
-      const toolCallId = options?.toolCallId ?? randomUUID();
+      const baseOptions = (options ?? {}) as Partial<ToolExecuteOptions>;
+      const executionOptions: ToolExecuteOptions = {
+        ...baseOptions,
+        toolCallId: baseOptions.toolCallId ?? randomUUID(),
+        messages: baseOptions.messages ?? [],
+        operationContext: oc,
+      };
+      const toolCallId = executionOptions.toolCallId;
 
       // Event tracking now handled by OpenTelemetry spans
       const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
@@ -2715,13 +2722,19 @@ export class Agent {
       return await oc.traceContext.withSpan(toolSpan, async () => {
         try {
           // Call tool start hook - can throw ToolDeniedError
-          await hooks.onToolStart?.({ agent: this, tool, context: oc, args, options });
+          await hooks.onToolStart?.({
+            agent: this,
+            tool,
+            context: oc,
+            args,
+            options: executionOptions,
+          });
 
           // Execute tool with OperationContext directly
           if (!tool.execute) {
             throw new Error(`Tool ${tool.name} does not have "execute" method`);
           }
-          const result = await tool.execute(args, oc, options);
+          const result = await tool.execute(args, oc, executionOptions);
           const validatedResult = await this.validateToolOutput(result, tool);
 
           // End OTEL span
@@ -2736,7 +2749,7 @@ export class Agent {
             output: validatedResult,
             error: undefined,
             context: oc,
-            options,
+            options: executionOptions,
           });
 
           return result;
@@ -2755,7 +2768,7 @@ export class Agent {
             output: undefined,
             error: errorResult as any,
             context: oc,
-            options,
+            options: executionOptions,
           });
 
           if (isToolDeniedError(e)) {
