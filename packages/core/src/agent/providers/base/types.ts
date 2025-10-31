@@ -1,5 +1,6 @@
 import type {
   DataContent as AISDKDataContent,
+  ToolCallOptions as AIToolCallOptions,
   AssistantContent,
   ModelMessage,
   ToolContent,
@@ -240,27 +241,26 @@ export type BaseMessage = ModelMessage;
 export type ToolSchema = z.ZodType;
 
 // Base tool types
-export type ToolExecuteOptions = {
+export type ToolExecuteOptions = AIToolCallOptions & {
   /**
-   * Optional AbortController for cancelling the execution and accessing the signal
+   * Optional AbortController for cancelling the execution and accessing the signal.
+   * Prefer using the provided abortSignal, but we keep this for backward compatibility.
    */
   abortController?: AbortController;
 
   /**
-   * @deprecated Use abortController.signal instead. This field will be removed in a future version.
-   * Optional AbortSignal to abort the execution
+   * @deprecated Use abortController.signal or options.abortSignal instead. This field will be removed in a future version.
    */
   signal?: AbortSignal;
 
   /**
    * The operation context associated with the agent invocation triggering this tool execution.
-   * Provides access to operation-specific state like context.
-   * The context includes a logger with full execution context (userId, conversationId, executionId).
+   * Provides access to operation-specific state like context and logging metadata.
    */
   operationContext?: OperationContext;
 
   /**
-   * Additional options can be added in the future
+   * Additional options can be added in the future.
    */
   [key: string]: any;
 };

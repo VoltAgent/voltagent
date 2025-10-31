@@ -10,7 +10,6 @@ import type {
   GenerateTextResult,
   LanguageModel,
   StepResult,
-  ToolCallOptions,
   ToolSet,
   UIMessage,
 } from "ai";
@@ -64,7 +63,12 @@ import {
 } from "./eval";
 import type { AgentHooks } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
-import type { BaseMessage, BaseTool, StepWithContent } from "./providers/base/types";
+import type {
+  BaseMessage,
+  BaseTool,
+  StepWithContent,
+  ToolExecuteOptions,
+} from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
@@ -2687,15 +2691,16 @@ export class Agent {
   private createToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
-  ): (tool: BaseTool) => (args: any, options: ToolCallOptions) => Promise<any> {
-    return (tool: BaseTool) => async (args: any, options: ToolCallOptions) => {
+  ): (tool: BaseTool) => (args: any, options?: ToolExecuteOptions) => Promise<any> {
+    return (tool: BaseTool) => async (args: any, options?: ToolExecuteOptions) => {
+      const toolCallId = options?.toolCallId ?? randomUUID();
+
       // Event tracking now handled by OpenTelemetry spans
-      // Create tool span using TraceContext
       const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
         label: tool.name,
         attributes: {
           "tool.name": tool.name,
-          "tool.call.id": randomUUID(),
+          "tool.call.id": toolCallId,
           input: args ? safeStringify(args) : undefined,
         },
         kind: SpanKind.CLIENT,
@@ -2707,10 +2712,10 @@ export class Agent {
       oc.systemContext.set("parentToolSpan", toolSpan);
 
       // Execute tool and handle span lifecycle
-      return oc.traceContext.withSpan(toolSpan, async () => {
+      return await oc.traceContext.withSpan(toolSpan, async () => {
         try {
           // Call tool start hook - can throw ToolDeniedError
-          await hooks.onToolStart?.({ agent: this, tool, context: oc, args });
+          await hooks.onToolStart?.({ agent: this, tool, context: oc, args, options });
 
           // Execute tool with OperationContext directly
           if (!tool.execute) {
@@ -2724,8 +2729,6 @@ export class Agent {
           toolSpan.setStatus({ code: SpanStatusCode.OK });
           toolSpan.end();
 
-          // Event tracking now handled by OpenTelemetry spans
-
           // Call tool end hook
           await hooks.onToolEnd?.({
             agent: this,
@@ -2733,12 +2736,13 @@ export class Agent {
             output: validatedResult,
             error: undefined,
             context: oc,
+            options,
           });
 
           return result;
         } catch (e) {
           const error = e instanceof Error ? e : new Error(String(e));
-          //POJO error
+          // POJO error
           const errorResult = { error: true, ...error };
 
           toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
@@ -2751,6 +2755,7 @@ export class Agent {
             output: undefined,
             error: errorResult as any,
             context: oc,
+            options,
           });
 
           if (isToolDeniedError(e)) {
@@ -2762,7 +2767,7 @@ export class Agent {
           // End the span if it was created
           oc.traceContext.endChildSpan(toolSpan, "completed", {});
         }
-      }); // End of withSpan
+      });
     };
   }
 

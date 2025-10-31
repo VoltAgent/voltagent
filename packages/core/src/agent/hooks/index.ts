@@ -3,6 +3,7 @@ import type { UIMessage } from "ai";
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../agent";
 import type { AbortError, CancellationError, VoltAgentError } from "../errors";
+import type { ToolExecuteOptions } from "../providers/base/types";
 import type { AgentOperationOutput, OperationContext } from "../types";
 
 // Argument Object Interfaces (old API restored, adapted for AI SDK types)
@@ -34,6 +35,7 @@ export interface OnToolStartHookArgs {
   tool: AgentTool;
   context: OperationContext;
   args: any;
+  options?: ToolExecuteOptions;
 }
 
 export interface OnToolEndHookArgs {
@@ -44,6 +46,7 @@ export interface OnToolEndHookArgs {
   /** The error if the tool execution failed. */
   error: VoltAgentError | AbortError | undefined;
   context: OperationContext;
+  options?: ToolExecuteOptions;
 }
 
 export interface OnPrepareMessagesHookArgs {
