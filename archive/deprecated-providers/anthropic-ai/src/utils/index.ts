@@ -10,6 +10,7 @@ import type {
   StepWithContent,
   VoltAgentError,
 } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal";
 import { z } from "zod";
 
 /**
@@ -330,7 +331,7 @@ export function createStepFromChunk(chunk: {
       type: "tool_call",
       name: chunk.toolName,
       arguments: chunk.args,
-      content: JSON.stringify([
+      content: safeStringify([
         {
           type: "tool-call",
           toolCallId: chunk.toolCallId,
@@ -349,7 +350,7 @@ export function createStepFromChunk(chunk: {
       type: "tool_result",
       name: chunk.toolName,
       result: chunk.result,
-      content: JSON.stringify([
+      content: safeStringify([
         {
           type: "tool-result",
           toolCallId: chunk.toolCallId,
