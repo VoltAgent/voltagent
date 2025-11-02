@@ -14,7 +14,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "tailwindcss": "^4.1.16"
   },
   "private": true,
   "scripts": {

@@ -1387,6 +1387,9 @@ importers:
       prettier:
         specifier: ^3.5.3
         version: 3.6.2
+      tailwindcss:
+        specifier: ^4.1.16
+        version: 4.1.16
 
   examples/with-offline-evals:
     dependencies:
@@ -11020,8 +11023,8 @@ packages:
       reka-ui: 2.5.1(typescript@5.9.2)(vue@3.5.22)
       scule: 1.3.0
       tailwind-merge: 3.3.1
-      tailwind-variants: 3.1.1(tailwind-merge@3.3.1)(tailwindcss@4.1.14)
-      tailwindcss: 4.1.14
+      tailwind-variants: 3.1.1(tailwind-merge@3.3.1)(tailwindcss@4.1.16)
+      tailwindcss: 4.1.16
       tinyglobby: 0.2.15
       typescript: 5.9.2
       unplugin: 2.3.10
@@ -17067,7 +17070,7 @@ packages:
       react-syntax-highlighter: 15.6.6(react@19.1.1)
       sonner: 2.0.7(react-dom@19.1.1)(react@19.1.1)
       tailwind-merge: 3.3.1
-      tailwindcss: 4.1.14
+      tailwindcss: 4.1.16
       tw-animate-css: 1.4.0
       zod: 4.1.11
     transitivePeerDependencies:
@@ -32092,7 +32095,7 @@ packages:
   /tailwind-merge@3.3.1:
     resolution: {integrity: sha512-gBXpgUm/3rp1lMZZrM/w7D8GKqshif0zAymAhbCyIt8KMe+0v9DQ7cdYLR4FHH/cKpdTXb+A/tKKU3eolfsI+g==}
 
-  /tailwind-variants@3.1.1(tailwind-merge@3.3.1)(tailwindcss@4.1.14):
+  /tailwind-variants@3.1.1(tailwind-merge@3.3.1)(tailwindcss@4.1.16):
     resolution: {integrity: sha512-ftLXe3krnqkMHsuBTEmaVUXYovXtPyTK7ckEfDRXS8PBZx0bAUas+A0jYxuKA5b8qg++wvQ3d2MQ7l/xeZxbZQ==}
     engines: {node: '>=16.x', pnpm: '>=7.x'}
     peerDependencies:
@@ -32103,7 +32106,7 @@ packages:
         optional: true
     dependencies:
       tailwind-merge: 3.3.1
-      tailwindcss: 4.1.14
+      tailwindcss: 4.1.16
     dev: false
 
   /tailwindcss@4.1.11:
@@ -32112,6 +32115,10 @@ packages:
 
   /tailwindcss@4.1.14:
     resolution: {integrity: sha512-b7pCxjGO98LnxVkKjaZSDeNuljC4ueKUddjENJOADtubtdo8llTaJy7HwBMeLNSSo2N5QIAgklslK1+Ir8r6CA==}
+    dev: false
+
+  /tailwindcss@4.1.16:
+    resolution: {integrity: sha512-pONL5awpaQX4LN5eiv7moSiSPd/DLDzKVRJz8Q9PgzmAdd1R4307GQS2ZpfiN7ZmekdQrfhZZiSE5jkLR4WNaA==}
 
   /tapable@2.2.2:
     resolution: {integrity: sha512-Re10+NauLTMCudc7T5WLFLAwDhQ0JWdrMK+9B2M8zR5hRExKmsRDCBA7/aV/pNJFltmBFO5BAMlQFi/vq3nKOg==}

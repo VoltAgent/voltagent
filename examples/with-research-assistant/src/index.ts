@@ -52,7 +52,7 @@ import { z } from "zod";
           `
           I'm writing a research report on ${topic} and need help coming up with diverse search queries.
 Please generate a list of 3 search queries that would be useful for writing a research report on ${topic}. These queries can be in various formats, from simple keywords to more complex phrases. Do not add any formatting or numbering to the queries. `,
-          { provider: { temperature: 1 } },
+          { providerOptions: { openai: { temperature: 1 } } },
         );
 
         return { text: result.text };
