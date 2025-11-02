@@ -442,27 +442,30 @@ export function processResponseContent(content: ContentBlock[]): {
  */
 export function generateVoltError(message: string, error: unknown, stage: string): VoltAgentError {
   if (error instanceof APIError) {
-    if (error.error.type === "error") {
+    const apiError = error as APIError;
+    const errorData = apiError.error as any;
+
+    if (errorData && typeof errorData === "object" && errorData.type === "error") {
       return {
-        message: error.error.error.message || message,
-        originalError: error,
-        code: error.status,
+        message: errorData.error?.message || message,
+        originalError: apiError,
+        code: apiError.status,
         metadata: {
-          request_id: error.request_id,
-          headers: error.headers,
-          cause: error.cause,
+          request_id: apiError.request_id,
+          headers: apiError.headers,
+          cause: apiError.cause,
         },
         stage,
       };
     }
     return {
       message,
-      originalError: error,
-      code: error.status,
+      originalError: apiError,
+      code: apiError.status,
       metadata: {
-        request_id: error.request_id,
-        headers: error.headers,
-        cause: error.cause,
+        request_id: apiError.request_id,
+        headers: apiError.headers,
+        cause: apiError.cause,
       },
       stage,
     };
