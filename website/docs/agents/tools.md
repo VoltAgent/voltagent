@@ -150,9 +150,11 @@ const debugTool = createTool({
 });
 ```
 
-The `options` parameter includes all `OperationContext` fields plus a `toolContext` object:
+The `options` parameter includes all `OperationContext` fields plus an **optional** `toolContext` object:
 
-**Tool execution context (`toolContext`):**
+**Tool execution context (`toolContext?` - optional):**
+
+> **Note:** `toolContext` is always populated when your tool is called from a VoltAgent agent. It may be `undefined` when called from external systems (e.g., MCP servers). Always use optional chaining: `options?.toolContext?.name`.
 
 - `toolContext.name`: Name of the tool being executed
 - `toolContext.callId`: Unique identifier for this specific tool call (from AI SDK)

@@ -510,6 +510,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
           hooks,
@@ -724,6 +725,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
           hooks,
@@ -1191,6 +1193,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
           hooks,
@@ -1414,6 +1417,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
           hooks,

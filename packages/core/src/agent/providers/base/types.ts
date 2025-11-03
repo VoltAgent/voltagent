@@ -263,8 +263,11 @@ export type ToolExecuteOptions = Partial<OperationContext> & {
    * Tool execution context containing all tool-specific metadata.
    * Includes both AI SDK fields (callId, messages, abortSignal) and
    * VoltAgent metadata (name).
+   *
+   * Optional for external callers (e.g., MCP servers) that may not have tool metadata.
+   * When called from VoltAgent's agent, this is always populated.
    */
-  toolContext: ToolContext;
+  toolContext?: ToolContext;
 
   /**
    * Optional AbortController for cancelling the execution and accessing the signal.

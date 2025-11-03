@@ -204,12 +204,14 @@ The `options` parameter in tool `execute` functions combines `ToolExecuteOptions
 - `input` - Original input to the agent
 - `isActive` - Whether operation is still active
 
-**Tool-specific context (from `toolContext`):**
+**Tool-specific context (from `toolContext?` - optional):**
 
-- `toolContext.name` - Name of the tool being executed
-- `toolContext.callId` - Unique identifier for this tool call (from AI SDK)
-- `toolContext.messages` - Message history at tool call time (from AI SDK)
-- `toolContext.abortSignal` - Abort signal for cancellation (from AI SDK)
+> **Note:** `toolContext` is always populated when your tool is called from a VoltAgent agent. It may be `undefined` when called externally.
+
+- `toolContext?.name` - Name of the tool being executed
+- `toolContext?.callId` - Unique identifier for this tool call (from AI SDK)
+- `toolContext?.messages` - Message history at tool call time (from AI SDK)
+- `toolContext?.abortSignal` - Abort signal for cancellation (from AI SDK)
 
 ```typescript
 // Example: Authorization check using context
