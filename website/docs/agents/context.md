@@ -204,11 +204,12 @@ The `options` parameter in tool `execute` functions combines `ToolExecuteOptions
 - `input` - Original input to the agent
 - `isActive` - Whether operation is still active
 
-**From AI SDK ToolCallOptions:**
+**Tool-specific context (from `toolContext`):**
 
-- `toolCallId` - Unique identifier for this tool call
-- `messages` - Message history at tool call time
-- `abortSignal` - Abort signal for cancellation
+- `toolContext.name` - Name of the tool being executed
+- `toolContext.callId` - Unique identifier for this tool call (from AI SDK)
+- `toolContext.messages` - Message history at tool call time (from AI SDK)
+- `toolContext.abortSignal` - Abort signal for cancellation (from AI SDK)
 
 ```typescript
 // Example: Authorization check using context
@@ -226,8 +227,9 @@ const sensitiveDataTool = createTool({
       throw new Error("Unauthorized: Admin role required");
     }
 
-    // Log access with full context
-    options?.logger?.warn(`Sensitive data accessed: ${dataType}`, {
+    // Log access with full context including tool name
+    const toolName = options?.toolContext?.name;
+    options?.logger?.warn(`${toolName}: Sensitive data accessed: ${dataType}`, {
       userId: options?.userId,
       operationId: options?.operationId,
     });
@@ -682,7 +684,7 @@ const counterTool = createTool({
   description: "Increments a counter",
   parameters: z.object({}),
   execute: async (_, options) => {
-    const ctx = options.operationContext?.context;
+    const ctx = options?.context;
     if (ctx) {
       const count = (ctx.get("counter") || 0) + 1;
       ctx.set("counter", count);
@@ -843,13 +845,13 @@ const agent = new Agent({
 // Tenant A: user-123's data
 await agent.generateText("Show my history", {
   userId: "user-123",
-  context: { tenantId: "company-abc" }, // Stores as "company-abc:user-123"
+  context: new Map([["tenantId", "company-abc"]]), // Stores as "company-abc:user-123"
 });
 
 // Tenant B: same user ID, but different tenant = different data
 await agent.generateText("Show my history", {
   userId: "user-123",
-  context: { tenantId: "company-xyz" }, // Stores as "company-xyz:user-123"
+  context: new Map([["tenantId", "company-xyz"]]), // Stores as "company-xyz:user-123"
 });
 ```
 

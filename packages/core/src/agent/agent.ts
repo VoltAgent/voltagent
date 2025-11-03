@@ -2694,14 +2694,19 @@ export class Agent {
   ): (tool: BaseTool) => (args: any, options?: ToolExecuteOptions) => Promise<any> {
     return (tool: BaseTool) => async (args: any, options?: ToolExecuteOptions) => {
       const baseOptions = (options ?? {}) as Partial<ToolExecuteOptions>;
-      // Merge OperationContext fields into options for backward compatibility
+      const toolCallId = baseOptions.toolContext?.callId ?? randomUUID();
+
+      // Merge OperationContext fields into options with toolContext structure
       const executionOptions: ToolExecuteOptions = {
         ...oc,
         ...baseOptions,
-        toolCallId: baseOptions.toolCallId ?? randomUUID(),
-        messages: baseOptions.messages ?? [],
+        toolContext: {
+          name: tool.name,
+          callId: toolCallId,
+          messages: baseOptions.toolContext?.messages || [],
+          abortSignal: baseOptions.toolContext?.abortSignal,
+        },
       };
-      const toolCallId = executionOptions.toolCallId;
 
       // Event tracking now handled by OpenTelemetry spans
       const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {

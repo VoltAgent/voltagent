@@ -1,6 +1,5 @@
 import type {
   DataContent as AISDKDataContent,
-  ToolCallOptions as AIToolCallOptions,
   AssistantContent,
   ModelMessage,
   ToolContent,
@@ -240,25 +239,44 @@ export type BaseMessage = ModelMessage;
 // Schema types
 export type ToolSchema = z.ZodType;
 
+/**
+ * Tool execution context containing all tool-specific metadata.
+ * Encapsulates both AI SDK fields and VoltAgent metadata for better organization.
+ */
+export type ToolContext = {
+  /** Name of the tool being executed */
+  name: string;
+
+  /** Unique identifier for this specific tool call (from AI SDK) */
+  callId: string;
+
+  /** Message history at the time of tool call (from AI SDK) */
+  messages: any[];
+
+  /** Abort signal for detecting cancellation (from AI SDK) */
+  abortSignal?: AbortSignal;
+};
+
 // Base tool types
-export type ToolExecuteOptions = AIToolCallOptions &
-  Partial<OperationContext> & {
-    /**
-     * Optional AbortController for cancelling the execution and accessing the signal.
-     * Prefer using the provided abortSignal, but we keep this for backward compatibility.
-     */
-    abortController?: AbortController;
+export type ToolExecuteOptions = Partial<OperationContext> & {
+  /**
+   * Tool execution context containing all tool-specific metadata.
+   * Includes both AI SDK fields (callId, messages, abortSignal) and
+   * VoltAgent metadata (name).
+   */
+  toolContext: ToolContext;
 
-    /**
-     * @deprecated Use abortController.signal or options.abortSignal instead. This field will be removed in a future version.
-     */
-    signal?: AbortSignal;
+  /**
+   * Optional AbortController for cancelling the execution and accessing the signal.
+   * Prefer using toolContext.abortSignal.
+   */
+  abortController?: AbortController;
 
-    /**
-     * Additional options can be added in the future.
-     */
-    [key: string]: any;
-  };
+  /**
+   * Additional options can be added in the future.
+   */
+  [key: string]: any;
+};
 
 export type BaseTool = Tool<any, any>;
 

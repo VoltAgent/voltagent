@@ -120,6 +120,12 @@ const debugTool = createTool({
     message: z.string().describe("Debug message to log"),
   }),
   execute: async (args, options) => {
+    // Access tool context (tool-specific metadata)
+    const { name, callId, messages } = options?.toolContext || {};
+    console.log("Tool name:", name);
+    console.log("Tool call ID:", callId);
+    console.log("Message history length:", messages?.length);
+
     // Access operation metadata directly from options
     console.log("Operation ID:", options?.operationId);
     console.log("User ID:", options?.userId);
@@ -131,8 +137,8 @@ const debugTool = createTool({
     // Access user-defined context Map
     const customValue = options?.context?.get("customKey");
 
-    // Use the operation-scoped logger
-    options?.logger?.info(`Logging: ${args.message}`);
+    // Use the operation-scoped logger with tool name
+    options?.logger?.info(`${name}: Logging ${args.message}`);
 
     // Check if operation is still active
     if (!options?.isActive) {
@@ -144,7 +150,14 @@ const debugTool = createTool({
 });
 ```
 
-The `options` parameter includes all `OperationContext` fields plus AI SDK tool options:
+The `options` parameter includes all `OperationContext` fields plus a `toolContext` object:
+
+**Tool execution context (`toolContext`):**
+
+- `toolContext.name`: Name of the tool being executed
+- `toolContext.callId`: Unique identifier for this specific tool call (from AI SDK)
+- `toolContext.messages`: Message history at the time of tool call (from AI SDK)
+- `toolContext.abortSignal`: Abort signal for detecting cancellation (from AI SDK)
 
 **From OperationContext:**
 
@@ -160,13 +173,7 @@ The `options` parameter includes all `OperationContext` fields plus AI SDK tool 
 - `traceContext`: OpenTelemetry trace context
 - `elicitation`: Optional function for requesting user input
 
-**From AI SDK ToolCallOptions:**
-
-- `toolCallId`: Unique identifier for this specific tool call
-- `messages`: Message history at the time of tool call
-- `abortSignal`: Signal for detecting cancellation
-
-> **Note:** Since `ToolExecuteOptions` extends `Partial<OperationContext>`, you can name the second parameter anything you like (`options`, `context`, `ctx`, etc.) - JavaScript doesn't enforce parameter names.
+> - Since `ToolExecuteOptions` extends `Partial<OperationContext>`, you can name the second parameter anything you like (`options`, `context`, `ctx`, etc.)
 
 ## Cancellation with AbortController
 

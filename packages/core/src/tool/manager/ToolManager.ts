@@ -73,6 +73,7 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
 
       tools[tool.name] = {
         ...tools[tool.name],
+        description: tool.description,
         execute: createToolExecuteFunction(tool), // End of execute function
       };
     }
