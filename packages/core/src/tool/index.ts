@@ -1,9 +1,11 @@
+import type { ProviderOptions } from "@ai-sdk/provider-utils";
 import type { Tool as VercelTool } from "ai";
 import { v4 as uuidv4 } from "uuid";
 import type { z } from "zod";
 import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
 import { LoggerProxy } from "../logger";
 export type { Tool as VercelTool } from "ai";
+export type { ProviderOptions } from "@ai-sdk/provider-utils";
 
 // Export ToolManager and related types
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
@@ -53,6 +55,22 @@ export type ToolOptions<
   outputSchema?: O;
 
   /**
+   * Provider-specific options for the tool.
+   * Enables provider-specific functionality like cache control.
+   *
+   * @example
+   * ```typescript
+   * // Anthropic cache control
+   * providerOptions: {
+   *   anthropic: {
+   *     cacheControl: { type: 'ephemeral' }
+   *   }
+   * }
+   * ```
+   */
+  providerOptions?: ProviderOptions;
+
+  /**
    * Function to execute when the tool is called.
    * @param args - The arguments passed to the tool
    * @param options - Optional execution options including context, abort signals, etc.
@@ -92,6 +110,12 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
    * Tool output schema
    */
   readonly outputSchema?: O;
+
+  /**
+   * Provider-specific options for the tool.
+   * Enables provider-specific functionality like cache control.
+   */
+  readonly providerOptions?: ProviderOptions;
 
   /**
    * Internal discriminator to make runtime/type checks simpler across module boundaries.
@@ -137,6 +161,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
     this.description = options.description || "";
     this.parameters = options.parameters;
     this.outputSchema = options.outputSchema;
+    this.providerOptions = options.providerOptions;
     this.execute = options.execute;
   }
 }

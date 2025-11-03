@@ -41,8 +41,40 @@ Each tool has:
 - **description**: Explains what the tool does (the model uses this to decide when to call it)
 - **parameters**: Input schema defined with Zod
 - **execute**: Function that runs when the tool is called
+- **providerOptions** (optional): Provider-specific options for advanced features
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
+
+### Provider-Specific Options
+
+You can pass provider-specific options to enable advanced features like caching. Currently supported providers include Anthropic, OpenAI, Google, and others.
+
+#### Anthropic Cache Control
+
+Anthropic's prompt caching can reduce costs and latency for repeated tool calls:
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const cityAttractionsTool = createTool({
+  name: "get_city_attractions",
+  description: "Get tourist attractions for a city",
+  parameters: z.object({
+    city: z.string().describe("The city name"),
+  }),
+  providerOptions: {
+    anthropic: {
+      cacheControl: { type: "ephemeral" },
+    },
+  },
+  execute: async ({ city }) => {
+    return await fetchAttractions(city);
+  },
+});
+```
+
+The `cacheControl` option tells Anthropic to cache the tool definition, improving performance for subsequent calls. Learn more about [Anthropic's cache control](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic#cache-control).
 
 ## Using Tools with Agents
 
