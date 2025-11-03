@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.1.39
+
+### Patch Changes
+
+- [#757](https://github.com/VoltAgent/voltagent/pull/757) [`a0509c4`](https://github.com/VoltAgent/voltagent/commit/a0509c493b85619c7eafb2eebd2257c348868133) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: evals & guardrails observability issue
+
 ## 1.1.38
 
 ### Patch Changes

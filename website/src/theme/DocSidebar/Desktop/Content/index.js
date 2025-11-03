@@ -3,6 +3,7 @@ import { translate } from "@docusaurus/Translate";
 import { useLocation } from "@docusaurus/router";
 import { ThemeClassNames } from "@docusaurus/theme-common";
 import { useAnnouncementBar, useScrollPosition } from "@docusaurus/theme-common/internal";
+import { BoltIcon } from "@heroicons/react/24/solid";
 import DocSidebarItems from "@theme/DocSidebarItems";
 import SearchBar from "@theme/SearchBar";
 import clsx from "clsx";
@@ -38,7 +39,9 @@ export default function DocSidebarDesktopContent({ path, sidebar, className }) {
             className={styles.sidebarLogo}
           >
             <div className={styles.logoContainer}>
-              <div className={styles.logoIcon}>🎃</div>
+              <div className={styles.logoIcon}>
+                <BoltIcon className={styles.boltIcon} />
+              </div>
               <span className={styles.logoText}>{isVoltOpsDoc ? "voltops" : "voltagent"}</span>
               <span className={styles.frameworkText}>
                 {isVoltOpsDoc ? "Observability" : "Framework"}

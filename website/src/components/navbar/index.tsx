@@ -85,10 +85,10 @@ export default function Navbar() {
       <div className={styles.navbarInner}>
         <div className={styles.navbarLeft}>
           <Link to="/" className={styles.logoLink}>
-            {/* <div className="flex items-center border-solid border-1 border-main-emerald rounded-full  p-1">
+            <div className="flex items-center border-solid border-1 border-main-emerald rounded-full  p-1">
               <BoltIcon className="w-4 h-4  text-main-emerald" />
-            </div> */}
-            🎃<span className={styles.logoText}>voltagent</span>
+            </div>
+            <span className={styles.logoText}>voltagent</span>
           </Link>
           <div className={`${styles.navLinks} ${isMenuOpen ? styles.navLinksOpen : ""}`}>
             <div className={`${styles.navLink} group relative`}>
