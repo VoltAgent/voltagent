@@ -534,6 +534,106 @@ Allowed `code` values:
 - `TOOL_QUOTA_EXCEEDED`
 - Custom codes (e.g., `"TOOL_REGION_BLOCKED"`)
 
+### Multi-modal Tool Results
+
+Tools can return images and media content to the LLM using the `toModelOutput` function. This enables visual workflows where tools can provide screenshots, generated images, or other media for the LLM to analyze.
+
+**Supported Providers:** Anthropic, OpenAI
+
+#### Screenshot Tool Example
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+import fs from "fs";
+
+const screenshotTool = createTool({
+  name: "take_screenshot",
+  description: "Takes a screenshot of the screen",
+  parameters: z.object({
+    region: z.string().optional().describe("Region to capture"),
+  }),
+  execute: async ({ region }) => {
+    // Take screenshot and return base64
+    const imageData = fs.readFileSync("./screenshot.png").toString("base64");
+
+    return {
+      type: "image",
+      data: imageData,
+      timestamp: new Date().toISOString(),
+    };
+  },
+  // Convert output to multi-modal content for LLM
+  toModelOutput: (result) => ({
+    type: "content",
+    value: [
+      {
+        type: "text",
+        text: `Screenshot captured at ${result.timestamp}`,
+      },
+      {
+        type: "media",
+        data: result.data,
+        mediaType: "image/png",
+      },
+    ],
+  }),
+});
+```
+
+#### Return Formats
+
+The `toModelOutput` function can return different content types:
+
+**Text only:**
+
+```ts
+toModelOutput: (output) => ({
+  type: "text",
+  value: "Operation completed successfully",
+});
+```
+
+**JSON data:**
+
+```ts
+toModelOutput: (output) => ({
+  type: "json",
+  value: { status: "success", data: output },
+});
+```
+
+**Multi-modal (text + image):**
+
+```ts
+toModelOutput: (output) => ({
+  type: "content",
+  value: [
+    { type: "text", text: "Here is the image:" },
+    { type: "media", data: output.base64, mediaType: "image/png" },
+  ],
+});
+```
+
+**Error handling:**
+
+```ts
+toModelOutput: (output) => {
+  if (output.error) {
+    return {
+      type: "error-text",
+      value: `Failed: ${output.error}`,
+    };
+  }
+  return {
+    type: "text",
+    value: output.result,
+  };
+};
+```
+
+Learn more: [AI SDK Multi-modal Tool Results](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#multi-modal-tool-results)
+
 ## Best Practices
 
 ### Clear Descriptions

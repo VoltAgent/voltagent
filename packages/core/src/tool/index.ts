@@ -4,6 +4,28 @@ import { v4 as uuidv4 } from "uuid";
 import type { z } from "zod";
 import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
 import { LoggerProxy } from "../logger";
+
+/**
+ * JSON value types (matches AI SDK's JSONValue)
+ */
+type JSONValue = string | number | boolean | null | { [key: string]: JSONValue } | Array<JSONValue>;
+
+/**
+ * Tool result output format for multi-modal content.
+ * Matches AI SDK's LanguageModelV2ToolResultOutput type.
+ */
+export type ToolResultOutput =
+  | { type: "text"; value: string }
+  | { type: "json"; value: JSONValue }
+  | { type: "error-text"; value: string }
+  | { type: "error-json"; value: JSONValue }
+  | {
+      type: "content";
+      value: Array<
+        { type: "text"; text: string } | { type: "media"; data: string; mediaType: string }
+      >;
+    };
+
 export type { Tool as VercelTool } from "ai";
 export type { ProviderOptions } from "@ai-sdk/provider-utils";
 
@@ -71,6 +93,26 @@ export type ToolOptions<
   providerOptions?: ProviderOptions;
 
   /**
+   * Optional function to convert tool output to multi-modal content.
+   * Enables returning images, media, or structured content to the LLM.
+   *
+   * Supported by: Anthropic, OpenAI
+   *
+   * @example
+   * ```typescript
+   * // Return image + text
+   * toModelOutput: (result) => ({
+   *   type: 'content',
+   *   value: [
+   *     { type: 'text', text: 'Screenshot taken' },
+   *     { type: 'media', data: result.base64Image, mediaType: 'image/png' }
+   *   ]
+   * })
+   * ```
+   */
+  toModelOutput?: (output: O extends ToolSchema ? z.infer<O> : unknown) => ToolResultOutput;
+
+  /**
    * Function to execute when the tool is called.
    * @param args - The arguments passed to the tool
    * @param options - Optional execution options including context, abort signals, etc.
@@ -118,6 +160,14 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   readonly providerOptions?: ProviderOptions;
 
   /**
+   * Optional function to convert tool output to multi-modal content.
+   * Enables returning images, media, or structured content to the LLM.
+   */
+  readonly toModelOutput?: (
+    output: O extends ToolSchema ? z.infer<O> : unknown,
+  ) => ToolResultOutput;
+
+  /**
    * Internal discriminator to make runtime/type checks simpler across module boundaries.
    * Marking our Tool instances with a stable string avoids instanceof issues.
    */
@@ -162,6 +212,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
     this.parameters = options.parameters;
     this.outputSchema = options.outputSchema;
     this.providerOptions = options.providerOptions;
+    this.toModelOutput = options.toModelOutput;
     this.execute = options.execute;
   }
 }

@@ -65,6 +65,7 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
         description: tool.description,
         inputSchema: tool.parameters, // AI SDK will convert this to JSON Schema internally
         providerOptions: tool.providerOptions, // Pass provider-specific options to AI SDK
+        toModelOutput: tool.toModelOutput, // Pass multi-modal output converter to AI SDK
       };
 
       // client side tools don't have execute function
