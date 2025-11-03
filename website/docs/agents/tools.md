@@ -41,8 +41,40 @@ Each tool has:
 - **description**: Explains what the tool does (the model uses this to decide when to call it)
 - **parameters**: Input schema defined with Zod
 - **execute**: Function that runs when the tool is called
+- **providerOptions** (optional): Provider-specific options for advanced features
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
+
+### Provider-Specific Options
+
+You can pass provider-specific options to enable advanced features like caching. Currently supported providers include Anthropic, OpenAI, Google, and others.
+
+#### Anthropic Cache Control
+
+Anthropic's prompt caching can reduce costs and latency for repeated tool calls:
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const cityAttractionsTool = createTool({
+  name: "get_city_attractions",
+  description: "Get tourist attractions for a city",
+  parameters: z.object({
+    city: z.string().describe("The city name"),
+  }),
+  providerOptions: {
+    anthropic: {
+      cacheControl: { type: "ephemeral" },
+    },
+  },
+  execute: async ({ city }) => {
+    return await fetchAttractions(city);
+  },
+});
+```
+
+The `cacheControl` option tells Anthropic to cache the tool definition, improving performance for subsequent calls. Learn more about [Anthropic's cache control](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic#cache-control).
 
 ## Using Tools with Agents
 
@@ -501,6 +533,106 @@ Allowed `code` values:
 - `TOOL_PLAN_REQUIRED`
 - `TOOL_QUOTA_EXCEEDED`
 - Custom codes (e.g., `"TOOL_REGION_BLOCKED"`)
+
+### Multi-modal Tool Results
+
+Tools can return images and media content to the LLM using the `toModelOutput` function. This enables visual workflows where tools can provide screenshots, generated images, or other media for the LLM to analyze.
+
+**Supported Providers:** Anthropic, OpenAI
+
+#### Screenshot Tool Example
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+import fs from "fs";
+
+const screenshotTool = createTool({
+  name: "take_screenshot",
+  description: "Takes a screenshot of the screen",
+  parameters: z.object({
+    region: z.string().optional().describe("Region to capture"),
+  }),
+  execute: async ({ region }) => {
+    // Take screenshot and return base64
+    const imageData = fs.readFileSync("./screenshot.png").toString("base64");
+
+    return {
+      type: "image",
+      data: imageData,
+      timestamp: new Date().toISOString(),
+    };
+  },
+  // Convert output to multi-modal content for LLM
+  toModelOutput: (result) => ({
+    type: "content",
+    value: [
+      {
+        type: "text",
+        text: `Screenshot captured at ${result.timestamp}`,
+      },
+      {
+        type: "media",
+        data: result.data,
+        mediaType: "image/png",
+      },
+    ],
+  }),
+});
+```
+
+#### Return Formats
+
+The `toModelOutput` function can return different content types:
+
+**Text only:**
+
+```ts
+toModelOutput: (output) => ({
+  type: "text",
+  value: "Operation completed successfully",
+});
+```
+
+**JSON data:**
+
+```ts
+toModelOutput: (output) => ({
+  type: "json",
+  value: { status: "success", data: output },
+});
+```
+
+**Multi-modal (text + image):**
+
+```ts
+toModelOutput: (output) => ({
+  type: "content",
+  value: [
+    { type: "text", text: "Here is the image:" },
+    { type: "media", data: output.base64, mediaType: "image/png" },
+  ],
+});
+```
+
+**Error handling:**
+
+```ts
+toModelOutput: (output) => {
+  if (output.error) {
+    return {
+      type: "error-text",
+      value: `Failed: ${output.error}`,
+    };
+  }
+  return {
+    type: "text",
+    value: output.result,
+  };
+};
+```
+
+Learn more: [AI SDK Multi-modal Tool Results](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#multi-modal-tool-results)
 
 ## Best Practices
 
