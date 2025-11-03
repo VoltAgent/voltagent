@@ -2694,11 +2694,12 @@ export class Agent {
   ): (tool: BaseTool) => (args: any, options?: ToolExecuteOptions) => Promise<any> {
     return (tool: BaseTool) => async (args: any, options?: ToolExecuteOptions) => {
       const baseOptions = (options ?? {}) as Partial<ToolExecuteOptions>;
+      // Merge OperationContext fields into options for backward compatibility
       const executionOptions: ToolExecuteOptions = {
+        ...oc,
         ...baseOptions,
         toolCallId: baseOptions.toolCallId ?? randomUUID(),
         messages: baseOptions.messages ?? [],
-        operationContext: oc,
       };
       const toolCallId = executionOptions.toolCallId;
 
@@ -2730,11 +2731,11 @@ export class Agent {
             options: executionOptions,
           });
 
-          // Execute tool with OperationContext directly
+          // Execute tool with merged options
           if (!tool.execute) {
             throw new Error(`Tool ${tool.name} does not have "execute" method`);
           }
-          const result = await tool.execute(args, oc, executionOptions);
+          const result = await tool.execute(args, executionOptions);
           const validatedResult = await this.validateToolOutput(result, tool);
 
           // End OTEL span
@@ -3392,16 +3393,20 @@ export class Agent {
       name: toolName,
       description: toolDescription,
       parameters: parametersSchema,
-      execute: async (args, context) => {
+      execute: async (args, options) => {
         // Extract the prompt from args
         const prompt = (args as any).prompt || args;
+
+        // Extract OperationContext from options if available
+        // Since ToolExecuteOptions extends Partial<OperationContext>, we can extract the fields
+        const oc = options as OperationContext | undefined;
 
         // Generate response using this agent
         const result = await this.generateText(prompt, {
           // Pass through the operation context if available
-          parentOperationContext: context,
-          conversationId: context?.conversationId,
-          userId: context?.userId,
+          parentOperationContext: oc,
+          conversationId: options?.conversationId,
+          userId: options?.userId,
         });
 
         // Return the text result

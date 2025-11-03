@@ -241,29 +241,24 @@ export type BaseMessage = ModelMessage;
 export type ToolSchema = z.ZodType;
 
 // Base tool types
-export type ToolExecuteOptions = AIToolCallOptions & {
-  /**
-   * Optional AbortController for cancelling the execution and accessing the signal.
-   * Prefer using the provided abortSignal, but we keep this for backward compatibility.
-   */
-  abortController?: AbortController;
+export type ToolExecuteOptions = AIToolCallOptions &
+  Partial<OperationContext> & {
+    /**
+     * Optional AbortController for cancelling the execution and accessing the signal.
+     * Prefer using the provided abortSignal, but we keep this for backward compatibility.
+     */
+    abortController?: AbortController;
 
-  /**
-   * @deprecated Use abortController.signal or options.abortSignal instead. This field will be removed in a future version.
-   */
-  signal?: AbortSignal;
+    /**
+     * @deprecated Use abortController.signal or options.abortSignal instead. This field will be removed in a future version.
+     */
+    signal?: AbortSignal;
 
-  /**
-   * The operation context associated with the agent invocation triggering this tool execution.
-   * Provides access to operation-specific state like context and logging metadata.
-   */
-  operationContext?: OperationContext;
-
-  /**
-   * Additional options can be added in the future.
-   */
-  [key: string]: any;
-};
+    /**
+     * Additional options can be added in the future.
+     */
+    [key: string]: any;
+  };
 
 export type BaseTool = Tool<any, any>;
 

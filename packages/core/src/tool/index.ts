@@ -2,7 +2,6 @@ import type { Tool as VercelTool } from "ai";
 import { v4 as uuidv4 } from "uuid";
 import type { z } from "zod";
 import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
-import type { OperationContext } from "../agent/types";
 import { LoggerProxy } from "../logger";
 export type { Tool as VercelTool } from "ai";
 
@@ -54,11 +53,12 @@ export type ToolOptions<
   outputSchema?: O;
 
   /**
-   * Function to execute when the tool is called
+   * Function to execute when the tool is called.
+   * @param args - The arguments passed to the tool
+   * @param options - Optional execution options including context, abort signals, etc.
    */
   execute?: (
     args: z.infer<T>,
-    context?: OperationContext,
     options?: ToolExecuteOptions,
   ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
 };
@@ -100,11 +100,12 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   readonly type = "user-defined" as const;
 
   /**
-   * Function to execute when the tool is called
+   * Function to execute when the tool is called.
+   * @param args - The arguments passed to the tool
+   * @param options - Optional execution options including context, abort signals, etc.
    */
   readonly execute?: (
     args: z.infer<T>,
-    context?: OperationContext,
     options?: ToolExecuteOptions,
   ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
 

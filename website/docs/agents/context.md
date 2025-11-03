@@ -120,9 +120,9 @@ context.set("language", "English");
 await agent.generateText("Hello!", { context });
 ```
 
-## Tools Access context
+## Tools Access Context
 
-Tools can read and write to `context` through their options:
+Tools receive the full operation context through the second parameter (`options`), which includes all `OperationContext` fields directly accessible:
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -135,17 +135,29 @@ const loggerTool = createTool({
     message: z.string(),
   }),
   execute: async ({ message }, options) => {
-    // Read from context
-    const language = options?.operationContext?.context?.get("language");
-    const requestId = options?.operationContext?.context?.get("requestId");
+    // Access user-defined context directly
+    const language = options?.context?.get("language");
+    const requestId = options?.context?.get("requestId");
+
+    // Access operation metadata
+    const userId = options?.userId;
+    const operationId = options?.operationId;
+
+    // Use the operation-scoped logger
+    options?.logger?.info(`[${requestId}] User ${userId}: ${message}`);
 
     console.log(`[${requestId}] Language ${language}: ${message}`);
 
     // Write to context
-    const ctx = options?.operationContext?.context;
+    const ctx = options?.context;
     if (ctx) {
       const logs = ctx.get("logs") || [];
-      logs.push({ message, timestamp: new Date().toISOString() });
+      logs.push({
+        message,
+        timestamp: new Date().toISOString(),
+        userId,
+        operationId,
+      });
       ctx.set("logs", logs);
     }
 
@@ -167,11 +179,62 @@ context.set("requestId", "req-456");
 
 const response = await agentWithTool.generateText("Log this: Hello world!", {
   context,
+  userId: "user123",
 });
 
 // Check what was logged
 const logs = response.context?.get("logs");
 console.log("All logs:", logs);
+```
+
+### What's Available in Tool Options?
+
+The `options` parameter in tool `execute` functions combines `ToolExecuteOptions` and `Partial<OperationContext>`:
+
+**From OperationContext:**
+
+- `operationId` - Unique operation identifier
+- `userId` - User identifier (if provided)
+- `conversationId` - Conversation identifier (if provided)
+- `context` - User-defined context Map (read/write)
+- `systemContext` - Internal system context Map
+- `logger` - Operation-scoped logger with full context
+- `abortController` - For operation cancellation
+- `traceContext` - OpenTelemetry trace context
+- `input` - Original input to the agent
+- `isActive` - Whether operation is still active
+
+**From AI SDK ToolCallOptions:**
+
+- `toolCallId` - Unique identifier for this tool call
+- `messages` - Message history at tool call time
+- `abortSignal` - Abort signal for cancellation
+
+```typescript
+// Example: Authorization check using context
+const sensitiveDataTool = createTool({
+  name: "get_sensitive_data",
+  description: "Retrieves sensitive user data",
+  parameters: z.object({
+    dataType: z.string(),
+  }),
+  execute: async ({ dataType }, options) => {
+    // Check user role from context
+    const userRole = options?.context?.get("userRole");
+
+    if (userRole !== "admin") {
+      throw new Error("Unauthorized: Admin role required");
+    }
+
+    // Log access with full context
+    options?.logger?.warn(`Sensitive data accessed: ${dataType}`, {
+      userId: options?.userId,
+      operationId: options?.operationId,
+    });
+
+    return await fetchSensitiveData(dataType);
+  },
+});
 ```
 
 ## Access Input and Output in Context

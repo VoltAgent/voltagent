@@ -108,9 +108,9 @@ const response = await agent.generateText("Calculate 123 * 456", {
 });
 ```
 
-## OperationContext
+## Accessing Operation Context
 
-The `execute` function receives an `OperationContext` as its second parameter, providing access to operation metadata and control mechanisms.
+The `execute` function receives a `ToolExecuteOptions` object as its second parameter, which extends `Partial<OperationContext>` and provides access to all operation metadata and control mechanisms.
 
 ```ts
 const debugTool = createTool({
@@ -119,20 +119,23 @@ const debugTool = createTool({
   parameters: z.object({
     message: z.string().describe("Debug message to log"),
   }),
-  execute: async (args, context) => {
-    // Access operation metadata
-    console.log("Operation ID:", context?.operationId);
-    console.log("User ID:", context?.userId);
-    console.log("Conversation ID:", context?.conversationId);
+  execute: async (args, options) => {
+    // Access operation metadata directly from options
+    console.log("Operation ID:", options?.operationId);
+    console.log("User ID:", options?.userId);
+    console.log("Conversation ID:", options?.conversationId);
 
     // Access the original input
-    console.log("Original input:", context?.input);
+    console.log("Original input:", options?.input);
 
-    // Access custom context values
-    const customValue = context?.context.get("customKey");
+    // Access user-defined context Map
+    const customValue = options?.context?.get("customKey");
+
+    // Use the operation-scoped logger
+    options?.logger?.info(`Logging: ${args.message}`);
 
     // Check if operation is still active
-    if (!context?.isActive) {
+    if (!options?.isActive) {
       throw new Error("Operation has been cancelled");
     }
 
@@ -141,7 +144,9 @@ const debugTool = createTool({
 });
 ```
 
-The `OperationContext` contains:
+The `options` parameter includes all `OperationContext` fields plus AI SDK tool options:
+
+**From OperationContext:**
 
 - `operationId`: Unique identifier for this operation
 - `userId`: Optional user identifier
@@ -155,6 +160,14 @@ The `OperationContext` contains:
 - `traceContext`: OpenTelemetry trace context
 - `elicitation`: Optional function for requesting user input
 
+**From AI SDK ToolCallOptions:**
+
+- `toolCallId`: Unique identifier for this specific tool call
+- `messages`: Message history at the time of tool call
+- `abortSignal`: Signal for detecting cancellation
+
+> **Note:** Since `ToolExecuteOptions` extends `Partial<OperationContext>`, you can name the second parameter anything you like (`options`, `context`, `ctx`, etc.) - JavaScript doesn't enforce parameter names.
+
 ## Cancellation with AbortController
 
 Tools can respond to cancellation signals and cancel the entire operation when needed.
@@ -166,8 +179,8 @@ const searchTool = createTool({
   parameters: z.object({
     query: z.string().describe("The search query"),
   }),
-  execute: async (args, context) => {
-    const abortController = context?.abortController;
+  execute: async (args, options) => {
+    const abortController = options?.abortController;
     const signal = abortController?.signal;
 
     // Check if already aborted
@@ -543,7 +556,7 @@ execute: async (args) => {
 For long-running operations, implement timeouts using `AbortController`.
 
 ```ts
-execute: async (args, context) => {
+execute: async (args, options) => {
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => {
     timeoutController.abort("Operation timed out");
@@ -551,7 +564,7 @@ execute: async (args, context) => {
 
   try {
     // Listen to parent abort if provided
-    const parentController = context?.abortController;
+    const parentController = options?.abortController;
     if (parentController?.signal) {
       parentController.signal.addEventListener("abort", () => {
         timeoutController.abort("Parent operation aborted");

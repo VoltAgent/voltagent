@@ -50,6 +50,72 @@ const agent = new Agent({
 // Now the agent can use the 'get_weather' tool when asked about weather.
 ```
 
+## Accessing Operation Context in Tools
+
+Tools can access operation metadata, user context, and control mechanisms through the second parameter:
+
+```typescript
+import { Agent, createTool } from "@voltagent/core";
+import { z } from "zod";
+import { openai } from "@ai-sdk/openai";
+
+// Tool that uses operation context
+const contextAwareWeatherTool = createTool({
+  name: "get_weather",
+  description: "Fetches weather with user preferences",
+  parameters: z.object({
+    location: z.string().describe("The city name"),
+  }),
+  execute: async ({ location }, options) => {
+    // Access user-defined context
+    const units = options?.context?.get("preferredUnits") || "celsius";
+    const userId = options?.userId;
+
+    // Use operation-scoped logger
+    options?.logger?.info(`Fetching weather for ${location} in ${units}`);
+
+    // Check abort signal
+    if (options?.abortSignal?.aborted) {
+      throw new Error("Request was cancelled");
+    }
+
+    // Call weather API with user preferences
+    const response = await fetch(
+      `https://api.weather.com/current?city=${location}&units=${units}`,
+      { signal: options?.abortSignal }
+    );
+
+    return await response.json();
+  },
+});
+
+// Use the tool with context
+const context = new Map();
+context.set("preferredUnits", "fahrenheit");
+
+const agent = new Agent({
+  name: "WeatherAgent",
+  instructions: "An agent that respects user preferences",
+  model: openai("gpt-4o-mini"),
+  tools: [contextAwareWeatherTool],
+});
+
+const response = await agent.generateText("What's the weather in Paris?", {
+  userId: "user123",
+  context,
+});
+```
+
+The `options` parameter includes:
+
+- **Operation metadata**: `operationId`, `userId`, `conversationId`
+- **User context**: `context` (Map for custom data)
+- **Control mechanisms**: `abortController`, `abortSignal`
+- **Logging**: `logger` (operation-scoped logger)
+- **AI SDK data**: `toolCallId`, `messages`
+
+For more details, see the [Tools documentation](/docs/agents/tools#accessing-operation-context).
+
 ## Tool Output Schema Validation
 
 VoltAgent supports optional output schema validation for tools. This feature ensures that tool outputs conform to a predefined structure, providing several benefits:

@@ -1,7 +1,29 @@
 ---
-"@voltagent/core": patch
+"@voltagent/core": minor
 ---
 
-fix: expose AI SDK tool metadata (e.g. toolCallId, abort signal) via ToolExecuteOptions - #746
+feat: simplify tool execution API by merging OperationContext into ToolExecuteOptions
 
-Server-side tool wrappers now pass the full AI SDK `ToolCallOptions` object through to custom tools and hook listeners. That means `options.toolCallId`, `options.messages`, and `options.abortSignal` are populated, and we inject `options.operationContext` so the agent context is still available. The change is backward compatible (`tool.execute` keeps the same signature), but tooling and observability now see the real call id instead of a random UUID.
+**Migration:**
+
+```typescript
+// Before (still works!)
+execute: async ({ location }, context) => {
+  const userId = context?.userId;
+  const logger = context?.logger;
+};
+
+// After (recommended - cleaner!)
+execute: async ({ location }, options) => {
+  const userId = options?.userId;
+  const logger = options?.logger;
+  const userContext = options?.context; // User-defined context Map
+};
+```
+
+**Benefits:**
+
+- ✅ Cleaner API - single options parameter with everything
+- ✅ Better IntelliSense - all fields visible in one type
+- ✅ More flexible - easier to add new options in future
+- ✅ Aligned with AI SDK patterns
