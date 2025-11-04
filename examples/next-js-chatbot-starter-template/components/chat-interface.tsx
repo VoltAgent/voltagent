@@ -17,37 +17,41 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Response } from "@/components/ai-elements/response";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+} from "@/components/ai-elements/tool";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, getToolName, isToolUIPart } from "ai";
 import { Bot, Send, Sparkles } from "lucide-react";
 
 export function ChatInterface() {
-  const { messages, append, isLoading, error } = useChat({
-    api: "/api/chat",
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+    }),
     onError: (err: Error) => {
       console.error("Chat error:", err);
     },
   });
 
   const examplePrompts = [
-    "Explain quantum computing",
-    "Help me write a story",
-    "Debug my JavaScript code",
-    "Analyze this data",
+    "What is 2 + 2?",
+    "What's the current date and time?",
+    "Generate a random number between 1 and 100",
+    "What's the weather like?",
   ];
 
   const handlePromptClick = (suggestion: string) => {
-    append({
-      role: "user",
-      content: suggestion,
-    });
+    sendMessage({ text: suggestion });
   };
 
   const handleSubmit = (message: PromptInputMessage) => {
     if (message.text) {
-      append({
-        role: "user",
-        content: message.text,
-      });
+      sendMessage({ text: message.text });
     }
   };
 
@@ -103,7 +107,7 @@ export function ChatInterface() {
           ) : (
             <>
               {messages.map((message) => {
-                const role = message.role === "data" ? "assistant" : message.role;
+                const role = message.role;
                 return (
                   <Message key={message.id} from={role}>
                     <MessageAvatar
@@ -115,13 +119,38 @@ export function ChatInterface() {
                       name={role === "user" ? "You" : "AI"}
                     />
                     <MessageContent variant="flat">
-                      <Response>{message.content}</Response>
+                      {/* Render message parts */}
+                      {message.parts?.map((part, idx) => {
+                        // Render text parts
+                        if (part.type === "text" && "text" in part) {
+                          return <Response key={`text-${message.id}-${idx}`}>{part.text}</Response>;
+                        }
+
+                        // Render tool invocation parts
+                        if (isToolUIPart(part)) {
+                          const toolName = getToolName(part);
+
+                          return (
+                            <Tool key={part.toolCallId} defaultOpen>
+                              <ToolHeader title={toolName} type={part.type} state={part.state} />
+                              <ToolContent>
+                                <>
+                                  {part.input && <ToolInput input={part.input} />}
+                                  <ToolOutput output={part.output} errorText={part.errorText} />
+                                </>
+                              </ToolContent>
+                            </Tool>
+                          );
+                        }
+
+                        return null;
+                      })}
                     </MessageContent>
                   </Message>
                 );
               })}
 
-              {isLoading && (
+              {status === "streaming" && (
                 <Message from="assistant">
                   <MessageAvatar src="https://avatar.vercel.sh/volt" name="AI" />
                   <MessageContent variant="flat">

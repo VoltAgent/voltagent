@@ -31,43 +31,14 @@ export async function POST(req: Request) {
       });
     }
 
-    const lastMessage = messages[messages.length - 1];
-
-    if (!lastMessage.content || typeof lastMessage.content !== "string") {
-      return new Response(JSON.stringify({ error: "Message content is required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // Stream text from the chatbot agent with proper context
-    const result = await chatbotAgent.streamText([lastMessage], {
+    // Stream response with tool invocations support
+    const result = await chatbotAgent.streamText(messages, {
       userId,
       conversationId,
     });
 
-    // Convert VoltAgent's text stream to AI SDK's data stream format
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of result.textStream) {
-            // Encode in AI SDK's data stream format
-            const data = `0:${JSON.stringify(chunk)}\n`;
-            controller.enqueue(new TextEncoder().encode(data));
-          }
-          controller.close();
-        } catch (error) {
-          controller.error(error);
-        }
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked",
-      },
-    });
+    // Use toUIMessageStreamResponse to properly handle tool calls
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error("Chat API error:", error);
 
