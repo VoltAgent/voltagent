@@ -406,16 +406,16 @@ describe("SubAgentManager", () => {
         context: { problem: "simple math" },
       });
 
+      // Always returns array for consistent API
       expect(Array.isArray(result)).toBe(true);
-      if (Array.isArray(result)) {
-        expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(
-          expect.objectContaining({
-            agentName: "Math Agent",
-            response: expect.stringContaining("Math Agent"),
-          }),
-        );
-      }
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          agentName: "Math Agent",
+          response: expect.stringContaining("Math Agent"),
+          usage: expect.any(Object),
+        }),
+      );
     });
 
     it("should return error when no valid agents found", async () => {

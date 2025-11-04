@@ -3048,11 +3048,13 @@ export class Agent {
 
             // Check if this tool result indicates a subagent bail (early termination)
             const toolResult = part.output;
-            if (toolResult && typeof toolResult === "object") {
-              // Check for single delegate result with bail
-              if ("bailed" in toolResult && (toolResult as any).bailed === true) {
-                const agentName = (toolResult as any).agentName || "unknown";
-                const response = String((toolResult as any).response || "");
+            if (Array.isArray(toolResult)) {
+              // Check for bailed result in results array
+              const bailedResult = toolResult.find((r: any) => r.bailed === true);
+
+              if (bailedResult) {
+                const agentName = bailedResult.agentName || "unknown";
+                const response = String(bailedResult.response || "");
 
                 oc.logger.info("Subagent bailed during stream - aborting supervisor stream", {
                   event: LogEvents.AGENT_STEP_TOOL_RESULT,
@@ -3069,36 +3071,6 @@ export class Agent {
                 // Abort the stream with BailError to signal early termination
                 oc.abortController.abort(createBailError(agentName, response));
                 return; // Stop processing this step
-              }
-
-              // Check for multiple delegates with any bailed result
-              if ("results" in toolResult && Array.isArray((toolResult as any).results)) {
-                const bailedResult = (toolResult as any).results.find(
-                  (r: any) => r.bailed === true,
-                );
-                if (bailedResult) {
-                  const agentName = bailedResult.agentName || "unknown";
-                  const response = String(bailedResult.response || "");
-
-                  oc.logger.info(
-                    "Subagent bailed in multi-delegate during stream - aborting supervisor stream",
-                    {
-                      event: LogEvents.AGENT_STEP_TOOL_RESULT,
-                      agentName,
-                      bailed: true,
-                    },
-                  );
-
-                  // Store bailed result for retrieval in onFinish
-                  oc.systemContext.set("bailedResult", {
-                    agentName,
-                    response,
-                  });
-
-                  // Abort the stream with BailError to signal early termination
-                  oc.abortController.abort(createBailError(agentName, response));
-                  return; // Stop processing this step
-                }
               }
             }
           } else if (part.type === "tool-error") {

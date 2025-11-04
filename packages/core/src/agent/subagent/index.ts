@@ -645,14 +645,6 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           // Add OpenTelemetry span attributes for observability UI
           const currentSpan = trace.getActiveSpan();
           if (currentSpan) {
-            // Add event (keeping for backward compatibility)
-            currentSpan.addEvent("supervisor.handoff.bailed", {
-              "voltagent.supervisor.name": sourceAgent.name,
-              "voltagent.subagent.name": targetAgent.name,
-              "voltagent.result.length": finalResult.length,
-              "voltagent.result.transformed": bailedResult !== undefined,
-            });
-
             // Add attributes to current span (subagent span)
             currentSpan.setAttribute("bailed", true);
             currentSpan.setAttribute("bail.supervisor", sourceAgent.name);
@@ -878,27 +870,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
             };
           });
 
-          // Handle single agent case - return OBJECT for createStepHandler
-          if (agents.length === 1) {
-            const singleResult = structuredResults[0];
-            if (singleResult.bailed) {
-              return {
-                ...singleResult,
-                note: "Subagent produced final output. No further processing needed.",
-              };
-            }
-            return singleResult;
-          }
-
-          // Multiple agents case - return array
-          const anyBailed = results.some((r) => r.bailed);
-          if (anyBailed) {
-            return {
-              results: structuredResults,
-              note: "One or more subagents produced final output. No further processing needed.",
-            };
-          }
-
+          // Always return array for consistent API
           return structuredResults;
         } catch (error) {
           logger.error("Error in delegate_task tool execution", { error });

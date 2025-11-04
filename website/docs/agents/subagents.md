@@ -441,24 +441,14 @@ This tool is automatically added to supervisor agents and handles delegation.
   - Calls the `handoffTask` (or `handoffToMultiple`) method internally
   - Passes the supervisor's agent ID (`parentAgentId`) and history entry ID (`parentHistoryEntryId`) for observability
 - **Returns**:
-  - **For single agent**: An object with the result:
-    ```ts
-    {
-      agentName: string; // Name of the sub-agent that executed the task
-      response: string; // The text result returned by the sub-agent
-      usage?: UsageInfo; // Token usage information
-      bailed?: boolean; // True if onHandoffComplete called bail()
-      note?: string; // Present when bailed: "Subagent produced final output..."
-    }
-    ```
-  - **For multiple agents**: An array of result objects:
+  - **Always returns an array** of result objects (even for single agent):
     ```ts
     [
       {
-        agentName: string;
-        response: string;
-        usage?: UsageInfo;
-        bailed?: boolean;
+        agentName: string; // Name of the sub-agent that executed the task
+        response: string; // The text result returned by the sub-agent
+        usage?: UsageInfo; // Token usage information
+        bailed?: boolean; // True if onHandoffComplete called bail()
       },
       // ... more results if multiple agents were targeted
     ]
