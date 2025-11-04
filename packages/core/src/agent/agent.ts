@@ -52,7 +52,9 @@ import type { VoltOpsClient } from "../voltops/client";
 import type { PromptContent, PromptHelper } from "../voltops/types";
 import {
   createAbortError,
+  createBailError,
   createVoltAgentError,
+  isBailError,
   isClientHTTPError,
   isToolDeniedError,
 } from "./errors";
@@ -68,6 +70,7 @@ import type {
   BaseTool,
   StepWithContent,
   ToolExecuteOptions,
+  UsageInfo,
 } from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
@@ -623,6 +626,69 @@ export class Agent {
           context: oc.context,
         });
       } catch (error) {
+        // Check if this is a BailError (subagent early termination via abort)
+        if (isBailError(error as Error)) {
+          // Retrieve bailed result from systemContext
+          const bailedResult = oc.systemContext.get("bailedResult") as
+            | { agentName: string; response: string }
+            | undefined;
+
+          if (bailedResult) {
+            methodLogger.info("Using bailed subagent result as final output (from abort)", {
+              event: LogEvents.AGENT_GENERATION_COMPLETED,
+              agentName: bailedResult.agentName,
+              bailed: true,
+            });
+
+            const usageInfo: UsageInfo = {
+              promptTokens: 0,
+              completionTokens: 0,
+              totalTokens: 0,
+            };
+
+            // Apply guardrails to bailed result
+            const finalText = await executeOutputGuardrails({
+              output: bailedResult.response,
+              operationContext: oc,
+              guardrails: guardrailSet.output,
+              operation: "generateText",
+              agent: this,
+              metadata: {
+                usage: usageInfo,
+                finishReason: "bail" as any,
+                warnings: null,
+              },
+            });
+
+            // Call onEnd hook
+            await this.getMergedHooks(options).onEnd?.({
+              conversationId: oc.conversationId || "",
+              agent: this,
+              output: {
+                text: finalText,
+                usage: usageInfo,
+                providerResponse: undefined as any,
+                finishReason: "bail" as any,
+                warnings: undefined,
+                context: oc.context,
+              },
+              error: undefined,
+              context: oc,
+            });
+
+            // Return bailed result as successful generation
+            return {
+              text: finalText,
+              usage: usageInfo,
+              finishReason: "bail" as any,
+              warnings: undefined,
+              response: {} as any,
+              operationContext: oc,
+              context: oc.context,
+            } as any;
+          }
+        }
+
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
       }
@@ -765,6 +831,19 @@ export class Agent {
             // The error might be directly the error or wrapped in { error: ... }
             const actualError = (errorData as any)?.error || errorData;
 
+            // Check if this is a BailError (subagent early termination)
+            // This is not a real error - it's a signal that execution should stop
+            if (isBailError(actualError)) {
+              methodLogger.info("Stream aborted due to subagent bail (not an error)", {
+                agentName: actualError.agentName,
+                event: LogEvents.AGENT_GENERATION_COMPLETED,
+              });
+
+              // Don't log as error, don't call error hooks
+              // onFinish will be called and will handle span ending with correct finish reason
+              return;
+            }
+
             // Log the error
             methodLogger.error("Stream error occurred", {
               error: actualError,
@@ -802,7 +881,37 @@ export class Agent {
             const usage = convertUsage(finalResult.totalUsage);
             let finalText: string;
 
-            if (guardrailPipeline) {
+            // Check if we aborted due to subagent bail (early termination)
+            const bailedResult = oc.systemContext.get("bailedResult") as
+              | { agentName: string; response: string }
+              | undefined;
+
+            if (bailedResult) {
+              // Use the bailed result instead of the supervisor's output
+              methodLogger.info("Using bailed subagent result as final output", {
+                event: LogEvents.AGENT_GENERATION_COMPLETED,
+                agentName: bailedResult.agentName,
+                bailed: true,
+              });
+
+              // Apply guardrails to bailed result
+              if (guardrailSet.output.length > 0) {
+                finalText = await executeOutputGuardrails({
+                  output: bailedResult.response,
+                  operationContext: oc,
+                  guardrails: guardrailSet.output,
+                  operation: "streamText",
+                  agent: this,
+                  metadata: {
+                    usage,
+                    finishReason: "bail" as any,
+                    warnings: finalResult.warnings ?? null,
+                  },
+                });
+              } else {
+                finalText = bailedResult.response;
+              }
+            } else if (guardrailPipeline) {
               finalText = await sanitizedTextPromise;
             } else if (guardrailSet.output.length > 0) {
               finalText = await executeOutputGuardrails({
@@ -825,7 +934,13 @@ export class Agent {
               guardrailSet.output.length > 0 ? { ...finalResult, text: finalText } : finalResult;
 
             oc.traceContext.setOutput(finalText);
-            oc.traceContext.setFinishReason(finalResult.finishReason);
+
+            // Set finish reason - override to "stop" if bailed (not "error")
+            if (bailedResult) {
+              oc.traceContext.setFinishReason("stop" as any);
+            } else {
+              oc.traceContext.setFinishReason(finalResult.finishReason);
+            }
 
             // Check if stopped by maxSteps
             const steps = finalResult.steps;
@@ -903,6 +1018,48 @@ export class Agent {
         const agent = this;
 
         const createBaseFullStream = (): AsyncIterable<VoltAgentTextStreamPart> => {
+          // Wrap the base stream with abort handling
+          const wrapWithAbortHandling = async function* (
+            baseStream: AsyncIterable<VoltAgentTextStreamPart>,
+          ): AsyncIterable<VoltAgentTextStreamPart> {
+            const iterator = baseStream[Symbol.asyncIterator]();
+
+            try {
+              while (true) {
+                // Check if aborted before reading next chunk
+                if (oc.abortController.signal.aborted) {
+                  // Clean exit - stream is done
+                  return;
+                }
+
+                // Try to read next chunk - may throw if stream is aborted
+                let iterResult: IteratorResult<VoltAgentTextStreamPart>;
+                try {
+                  iterResult = await iterator.next();
+                } catch (error) {
+                  // If aborted, reader.read() may throw AbortError - treat as clean exit
+                  if (oc.abortController.signal.aborted) {
+                    return; // Clean exit, no error propagation
+                  }
+                  // Other errors should propagate to user code
+                  throw error;
+                }
+
+                const { done, value } = iterResult;
+
+                if (done) {
+                  return;
+                }
+
+                yield value;
+              }
+            } finally {
+              // No manual cleanup needed - AI SDK's AsyncIterableStream handles
+              // its own cleanup when the generator returns. Calling iterator.return()
+              // would cause ERR_INVALID_STATE since the reader is already detached.
+            }
+          };
+
           if (agent.subAgentManager.hasSubAgents()) {
             const createMergedFullStream =
               async function* (): AsyncIterable<VoltAgentTextStreamPart> {
@@ -913,7 +1070,12 @@ export class Agent {
 
                 const writeParentStream = async () => {
                   try {
-                    for await (const part of result.fullStream) {
+                    // Wrap AI SDK stream with abort handling before iterating
+                    // This ensures the loop exits cleanly when abort is triggered
+                    const abortAwareParentStream = wrapWithAbortHandling(result.fullStream);
+
+                    for await (const part of abortAwareParentStream) {
+                      // No manual abort check needed - wrapper handles it
                       await writer.write(part as VoltAgentTextStreamPart);
                     }
                   } finally {
@@ -926,6 +1088,11 @@ export class Agent {
 
                 try {
                   while (true) {
+                    // Check abort before reading
+                    if (oc.abortController.signal.aborted) {
+                      break;
+                    }
+
                     const { done, value } = await reader.read();
                     if (done) break;
                     if (value !== undefined) {
@@ -942,7 +1109,8 @@ export class Agent {
             return createMergedFullStream();
           }
 
-          return result.fullStream;
+          // For non-subagent case, wrap the stream with abort handling
+          return wrapWithAbortHandling(result.fullStream);
         };
 
         const guardrailContext = guardrailStreamingEnabled
@@ -969,10 +1137,28 @@ export class Agent {
             if (typeof sanitized === "string" && sanitized.length > 0) {
               return sanitized;
             }
-            return await result.text;
+            // Wait for AI SDK text first (stream must complete)
+            const aiSdkText = await result.text;
+
+            // NOW check for bailed result (set during stream processing)
+            const bailedResult = oc.systemContext.get("bailedResult") as
+              | { agentName: string; response: string }
+              | undefined;
+            return bailedResult?.response || aiSdkText;
           });
         } else {
-          sanitizedTextPromise = result.text;
+          // Wrap result.text with custom Promise that checks for bailed result
+          // IMPORTANT: Wait for AI SDK text first (stream must complete/abort)
+          // This ensures createStepHandler has processed tool results and set bailedResult
+          sanitizedTextPromise = result.text.then((aiSdkText) => {
+            // NOW check if bailed (set by createStepHandler during stream processing)
+            const bailedResult = oc.systemContext.get("bailedResult") as
+              | { agentName: string; response: string }
+              | undefined;
+
+            // Return bailed subagent's result instead of supervisor's (if bailed)
+            return bailedResult?.response || aiSdkText;
+          });
         }
 
         const getGuardrailAwareFullStream = (): AsyncIterable<VoltAgentTextStreamPart> => {
@@ -2853,6 +3039,62 @@ export class Agent {
                 part.output && typeof part.output === "object" && "error" in part.output,
               ),
             });
+
+            // Check if this tool result indicates a subagent bail (early termination)
+            const toolResult = part.output;
+            if (toolResult && typeof toolResult === "object") {
+              // Check for single delegate result with bail
+              if ("bailed" in toolResult && (toolResult as any).bailed === true) {
+                const agentName = (toolResult as any).agentName || "unknown";
+                const response = String((toolResult as any).response || "");
+
+                oc.logger.info("Subagent bailed during stream - aborting supervisor stream", {
+                  event: LogEvents.AGENT_STEP_TOOL_RESULT,
+                  agentName,
+                  bailed: true,
+                });
+
+                // Store bailed result for retrieval in onFinish
+                oc.systemContext.set("bailedResult", {
+                  agentName,
+                  response,
+                });
+
+                // Abort the stream with BailError to signal early termination
+                oc.abortController.abort(createBailError(agentName, response));
+                return; // Stop processing this step
+              }
+
+              // Check for multiple delegates with any bailed result
+              if ("results" in toolResult && Array.isArray((toolResult as any).results)) {
+                const bailedResult = (toolResult as any).results.find(
+                  (r: any) => r.bailed === true,
+                );
+                if (bailedResult) {
+                  const agentName = bailedResult.agentName || "unknown";
+                  const response = String(bailedResult.response || "");
+
+                  oc.logger.info(
+                    "Subagent bailed in multi-delegate during stream - aborting supervisor stream",
+                    {
+                      event: LogEvents.AGENT_STEP_TOOL_RESULT,
+                      agentName,
+                      bailed: true,
+                    },
+                  );
+
+                  // Store bailed result for retrieval in onFinish
+                  oc.systemContext.set("bailedResult", {
+                    agentName,
+                    response,
+                  });
+
+                  // Abort the stream with BailError to signal early termination
+                  oc.abortController.abort(createBailError(agentName, response));
+                  return; // Stop processing this step
+                }
+              }
+            }
           } else if (part.type === "tool-error") {
             oc.logger.debug(`Step: Tool '${part.toolName}' error`, {
               event: LogEvents.AGENT_STEP_TOOL_RESULT,
@@ -2911,6 +3153,10 @@ export class Agent {
         await options.hooks?.onHandoff?.(...args);
         await this.hooks.onHandoff?.(...args);
       },
+      onHandoffComplete: async (...args) => {
+        await options.hooks?.onHandoffComplete?.(...args);
+        await this.hooks.onHandoffComplete?.(...args);
+      },
       onToolStart: async (...args) => {
         await options.hooks?.onToolStart?.(...args);
         await this.hooks.onToolStart?.(...args);
@@ -2940,38 +3186,66 @@ export class Agent {
       // Mark operation as inactive
       oc.isActive = false;
 
-      if (isClientHTTPError(signal.reason)) {
-        oc.cancellationError = signal.reason;
-      } else {
-        const abortReason = match(signal.reason)
-          .with(P.string, (reason) => reason)
-          .with({ message: P.string }, (reason) => reason.message)
-          .otherwise(() => "Operation cancelled");
-        oc.cancellationError = createAbortError(abortReason);
-      }
-      // Track cancellation in OpenTelemetry
-      if (oc.traceContext) {
-        const rootSpan = oc.traceContext.getRootSpan();
-        rootSpan.setAttribute("agent.state", "cancelled");
-        rootSpan.setAttribute("cancelled", true);
-        rootSpan.setAttribute("cancellation.reason", oc.cancellationError.message);
-        rootSpan.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: oc.cancellationError.message,
-        });
-        rootSpan.recordException(oc.cancellationError);
-        rootSpan.end();
-      }
+      // Check if this is a bail (early termination from subagent)
+      const isBail = isBailError(signal.reason as Error);
 
-      // Call onEnd hook with cancellation error
-      const hooks = this.getMergedHooks();
-      await hooks.onEnd?.({
-        conversationId: oc.conversationId || "",
-        agent: this,
-        output: undefined,
-        error: oc.cancellationError,
-        context: oc,
-      });
+      if (isBail) {
+        // Bail is not an error - it's a successful early termination
+        // Get the bailed result from systemContext
+        const bailedResult = oc.systemContext.get("bailedResult") as
+          | { agentName: string; response: string }
+          | undefined;
+
+        if (oc.traceContext && bailedResult) {
+          const rootSpan = oc.traceContext.getRootSpan();
+          // Mark as completed, not cancelled
+          rootSpan.setAttribute("agent.state", "completed");
+          rootSpan.setAttribute("bailed", true);
+          rootSpan.setAttribute("bail.subagent", bailedResult.agentName);
+          // Set output so it appears in observability UI
+          rootSpan.setAttribute("output", bailedResult.response);
+          // Set finish reason
+          rootSpan.setAttribute("ai.response.finish_reason", "bail");
+          // Span status is OK (success), not ERROR
+          rootSpan.setStatus({ code: SpanStatusCode.OK });
+          rootSpan.end();
+        }
+      } else {
+        // Normal abort/cancellation - treat as error
+        if (isClientHTTPError(signal.reason)) {
+          oc.cancellationError = signal.reason;
+        } else {
+          const abortReason = match(signal.reason)
+            .with(P.string, (reason) => reason)
+            .with({ message: P.string }, (reason) => reason.message)
+            .otherwise(() => "Operation cancelled");
+          oc.cancellationError = createAbortError(abortReason);
+        }
+
+        // Track cancellation in OpenTelemetry
+        if (oc.traceContext) {
+          const rootSpan = oc.traceContext.getRootSpan();
+          rootSpan.setAttribute("agent.state", "cancelled");
+          rootSpan.setAttribute("cancelled", true);
+          rootSpan.setAttribute("cancellation.reason", oc.cancellationError.message);
+          rootSpan.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: oc.cancellationError.message,
+          });
+          rootSpan.recordException(oc.cancellationError);
+          rootSpan.end();
+        }
+
+        // Call onEnd hook with cancellation error
+        const hooks = this.getMergedHooks();
+        await hooks.onEnd?.({
+          conversationId: oc.conversationId || "",
+          agent: this,
+          output: undefined,
+          error: oc.cancellationError,
+          context: oc,
+        });
+      }
     });
   }
 
@@ -2984,6 +3258,18 @@ export class Agent {
     options?: BaseGenerationOptions,
     startTime?: number,
   ): Promise<never> {
+    // Check if this is a BailError (subagent early termination)
+    // This should be handled gracefully, not as an error
+    if (isBailError(error)) {
+      // BailError should have been handled in onFinish/onError callbacks
+      // If we reach here, something went wrong - log and re-throw
+      oc.logger.warn("BailError reached handleError - this should not happen", {
+        agentName: error.agentName,
+        event: LogEvents.AGENT_GENERATION_FAILED,
+      });
+      throw error;
+    }
+
     // Check if cancelled
     if (!oc.isActive && oc.cancellationError) {
       throw oc.cancellationError;

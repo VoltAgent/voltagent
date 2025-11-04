@@ -1,4 +1,4 @@
-import type { Span } from "@opentelemetry/api";
+import { type Span, trace } from "@opentelemetry/api";
 import { safeStringify } from "@voltagent/internal/utils";
 import type { UIDataTypes, UIMessage, UIMessageStreamWriter, UITools } from "ai";
 import { z } from "zod";
@@ -13,6 +13,7 @@ import type {
   StreamObjectOptions,
   StreamTextOptions,
 } from "../agent";
+import type { UsageInfo } from "../providers/base/types";
 import type { OperationContext, SupervisorConfig } from "../types";
 import type { SubAgentStateData } from "../types";
 import type {
@@ -309,7 +310,8 @@ ${guidelinesText}
   }): Promise<{
     result: string;
     messages: UIMessage[];
-    usage?: any;
+    usage?: UsageInfo;
+    bailed?: boolean;
   }> {
     const {
       task,
@@ -451,8 +453,11 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           writeSubagentFullStream();
         }
 
-        // Get the final result
-        finalResult = await response.text;
+        // Get the final result - check for bailed result first
+        const bailedResultFromContext = parentOperationContext?.systemContext?.get(
+          "bailedResult",
+        ) as { agentName: string; response: string } | undefined;
+        finalResult = bailedResultFromContext?.response || (await response.text);
         usage = await response.usage;
 
         const assistantMessage: UIMessage = {
@@ -534,8 +539,11 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           writeSubagentFullStream();
         }
 
-        // Get the final result
-        finalResult = await response.text;
+        // Get the final result - check for bailed result first
+        const bailedResultFromContext = parentOperationContext?.systemContext?.get(
+          "bailedResult",
+        ) as { agentName: string; response: string } | undefined;
+        finalResult = bailedResultFromContext?.response || (await response.text);
         usage = await response.usage;
 
         const assistantMessage: UIMessage = {
@@ -594,6 +602,85 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       } else {
         // This should never happen due to exhaustive type checking
         throw new Error("Unknown subagent configuration type");
+      }
+
+      // Call onHandoffComplete hook on SOURCE agent (supervisor) if available
+      if (sourceAgent?.hooks?.onHandoffComplete) {
+        let bailed = false;
+        let bailedResult: string | undefined;
+
+        // Create bail function that can be called by the hook
+        const bail = (transformedResult?: string) => {
+          bailed = true;
+          bailedResult = transformedResult;
+        };
+
+        try {
+          // Call the hook with all relevant information
+          await sourceAgent.hooks.onHandoffComplete({
+            agent: targetAgent,
+            sourceAgent,
+            result: finalResult,
+            messages: finalMessages,
+            usage,
+            context: parentOperationContext || ({} as OperationContext),
+            bail,
+          });
+        } catch (error) {
+          // If hook throws error, log and continue normally (don't bail)
+          const logger = parentOperationContext?.logger || getGlobalLogger();
+          logger.error("Error in onHandoffComplete hook", { error });
+        }
+
+        // Check if hook called bail()
+        if (bailed) {
+          const logger = parentOperationContext?.logger || getGlobalLogger();
+          logger.info("Supervisor bailed after handoff", {
+            supervisorAgent: sourceAgent.name,
+            subAgent: targetAgent.name,
+            transformed: bailedResult !== undefined,
+            resultLength: finalResult.length,
+          });
+
+          // Add OpenTelemetry span attributes for observability UI
+          const currentSpan = trace.getActiveSpan();
+          if (currentSpan) {
+            // Add event (keeping for backward compatibility)
+            currentSpan.addEvent("supervisor.handoff.bailed", {
+              "voltagent.supervisor.name": sourceAgent.name,
+              "voltagent.subagent.name": targetAgent.name,
+              "voltagent.result.length": finalResult.length,
+              "voltagent.result.transformed": bailedResult !== undefined,
+            });
+
+            // Add attributes to current span (subagent span)
+            currentSpan.setAttribute("bailed", true);
+            currentSpan.setAttribute("bail.supervisor", sourceAgent.name);
+            currentSpan.setAttribute("bail.transformed", bailedResult !== undefined);
+
+            // Set output attribute so it appears in observability UI
+            const outputToSet = bailedResult !== undefined ? bailedResult : finalResult;
+            currentSpan.setAttribute("output", outputToSet);
+          }
+
+          // Add attributes to supervisor root span for observability
+          if (parentOperationContext?.traceContext) {
+            const rootSpan = parentOperationContext.traceContext.getRootSpan();
+            if (rootSpan) {
+              rootSpan.setAttribute("bailed", true);
+              rootSpan.setAttribute("bail.subagent", targetAgent.name);
+              rootSpan.setAttribute("bail.transformed", bailedResult !== undefined);
+            }
+          }
+
+          // Return with bailed flag and possibly transformed result
+          return {
+            result: bailedResult !== undefined ? bailedResult : finalResult,
+            messages: finalMessages,
+            usage,
+            bailed: true,
+          };
+        }
       }
 
       return {
@@ -656,7 +743,8 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     Array<{
       result: string;
       messages: UIMessage[];
-      usage?: any;
+      usage?: UsageInfo;
+      bailed?: boolean;
     }>
   > {
     const { targetAgents, conversationId, ...restOptions } = options;
@@ -786,8 +874,30 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
               agentName: this.extractAgentName(agents[index]),
               response: result.result,
               usage: result.usage,
+              bailed: result.bailed,
             };
           });
+
+          // Handle single agent case - return OBJECT for createStepHandler
+          if (agents.length === 1) {
+            const singleResult = structuredResults[0];
+            if (singleResult.bailed) {
+              return {
+                ...singleResult,
+                note: "Subagent produced final output. No further processing needed.",
+              };
+            }
+            return singleResult;
+          }
+
+          // Multiple agents case - return array
+          const anyBailed = results.some((r) => r.bailed);
+          if (anyBailed) {
+            return {
+              results: structuredResults,
+              note: "One or more subagents produced final output. No further processing needed.",
+            };
+          }
 
           return structuredResults;
         } catch (error) {
