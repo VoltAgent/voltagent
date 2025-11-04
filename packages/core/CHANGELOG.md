@@ -1,5 +1,425 @@
 # @voltagent/core
 
+## 1.2.0
+
+### Minor Changes
+
+- [#761](https://github.com/VoltAgent/voltagent/pull/761) [`0d13b73`](https://github.com/VoltAgent/voltagent/commit/0d13b73db5e6d1d144229bda9657abb776fafab4) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `onHandoffComplete` hook for early termination in supervisor/subagent workflows
+
+  ## The Problem
+
+  When using the supervisor/subagent pattern, subagents **always** return to the supervisor for processing, even when they generate final outputs (like JSON structures or reports) that need no additional handling. This causes unnecessary token consumption.
+
+  **Current flow**:
+
+  ```
+  Supervisor → SubAgent (generates 2K token JSON) → Supervisor (processes JSON) → User
+                                                      ↑ Wastes ~2K tokens
+  ```
+
+  **Example impact**:
+  - Current: ~2,650 tokens per request
+  - With bail: ~560 tokens per request
+  - Savings: **79%** (~2,000 tokens / ~$0.020 per request)
+
+  ## The Solution
+
+  Added `onHandoffComplete` hook that allows supervisors to intercept subagent results and optionally **bail** (skip supervisor processing) when the subagent produces final output.
+
+  **New flow**:
+
+  ```
+  Supervisor → SubAgent → bail() → User ✅
+  ```
+
+  ## API
+
+  The hook receives a `bail()` function that can be called to terminate early:
+
+  ```typescript
+  const supervisor = new Agent({
+    name: "Workout Supervisor",
+    subAgents: [exerciseAgent, workoutBuilder],
+    hooks: {
+      onHandoffComplete: async ({ agent, result, bail, context }) => {
+        // Workout Builder produces final JSON - no processing needed
+        if (agent.name === "Workout Builder") {
+          context.logger?.info("Final output received, bailing");
+          bail(); // Skip supervisor, return directly to user
+          return;
+        }
+
+        // Large result - bail to save tokens
+        if (result.length > 2000) {
+          context.logger?.warn("Large result, bailing to save tokens");
+          bail();
+          return;
+        }
+
+        // Transform and bail
+        if (agent.name === "Report Generator") {
+          const transformed = `# Final Report\n\n${result}\n\n---\nGenerated at: ${new Date().toISOString()}`;
+          bail(transformed); // Bail with transformed result
+          return;
+        }
+
+        // Default: continue to supervisor for processing
+      },
+    },
+  });
+  ```
+
+  ## Hook Arguments
+
+  ```typescript
+  interface OnHandoffCompleteHookArgs {
+    agent: Agent; // Target agent (subagent)
+    sourceAgent: Agent; // Source agent (supervisor)
+    result: string; // Subagent's output
+    messages: UIMessage[]; // Full conversation messages
+    usage?: UsageInfo; // Token usage info
+    context: OperationContext; // Operation context
+    bail: (transformedResult?: string) => void; // Call to bail
+  }
+  ```
+
+  ## Features
+  - ✅ **Clean API**: No return value needed, just call `bail()`
+  - ✅ **True early termination**: Supervisor execution stops immediately, no LLM calls wasted
+  - ✅ **Conditional bail**: Decide based on agent, result content, size, etc.
+  - ✅ **Optional transformation**: `bail(newResult)` to transform before bailing
+  - ✅ **Observability**: Automatic logging and OpenTelemetry events with visual indicators
+  - ✅ **Backward compatible**: Existing code works without changes
+  - ✅ **Error handling**: Hook errors logged, flow continues normally
+
+  ## How Bail Works (Implementation Details)
+
+  When `bail()` is called in the `onHandoffComplete` hook:
+
+  **1. Hook Level** (`packages/core/src/agent/subagent/index.ts`):
+  - Sets `bailed: true` flag in handoff return value
+  - Adds OpenTelemetry span attributes to both supervisor and subagent spans
+  - Logs the bail event with metadata
+
+  **2. Tool Level** (`delegate_task` tool):
+  - Includes `bailed: true` in tool result structure
+  - Adds note: "One or more subagents produced final output. No further processing needed."
+
+  **3. Step Handler Level** (`createStepHandler` in `agent.ts`):
+  - Detects bail during step execution when tool results arrive
+  - Creates `BailError` and aborts execution via `abortController.abort(bailError)`
+  - Stores bailed result in `systemContext` for retrieval
+  - **Works for both `generateText` and `streamText`**
+
+  **4. Catch Block Level** (method-specific handling):
+  - **generateText**: Catches `BailError`, retrieves bailed result from `systemContext`, applies guardrails, calls hooks, returns as successful generation
+  - **streamText**: `onError` catches `BailError` gracefully (not logged as error), `onFinish` retrieves and uses bailed result
+
+  This unified abort-based implementation ensures true early termination for all generation methods.
+
+  ### Stream Support (NEW)
+
+  **For `streamText` supervisors:**
+
+  When a subagent bails during streaming, the supervisor stream is immediately aborted using a `BailError`:
+  1. **Detection during streaming** (`createStepHandler`):
+     - Tool results are checked in `onStepFinish` handler
+     - If `bailed: true` found, `BailError` is created and stream is aborted via `abortController.abort(bailError)`
+     - Bailed result stored in `systemContext` for retrieval in `onFinish`
+  2. **Graceful error handling** (`streamText` onError):
+     - `BailError` is detected and handled gracefully (not logged as error)
+     - Error hooks are NOT called for bail
+     - Stream abort is treated as successful early termination
+  3. **Final result** (`streamText` onFinish):
+     - Bailed result retrieved from `systemContext`
+     - Output guardrails applied to bailed result
+     - `onEnd` hook called with bailed result
+
+  **Benefits for streaming:**
+  - ✅ Stream stops immediately when bail detected (no wasted supervisor chunks)
+  - ✅ No unnecessary LLM calls after bail
+  - ✅ Works with `fullStreamEventForwarding` - subagent chunks already forwarded
+  - ✅ Clean abort semantic with `BailError` class
+  - ✅ Graceful handling - not treated as error
+
+  **Supported methods:**
+  - ✅ `generateText` - Aborts execution during step handler, catches `BailError` and returns bailed result
+  - ✅ `streamText` - Aborts stream during step handler, handles `BailError` in `onError` and `onFinish`
+  - ❌ `generateObject` - No tool support, bail not applicable
+  - ❌ `streamObject` - No tool support, bail not applicable
+
+  **Key difference from initial implementation:**
+  - ❌ **OLD**: Post-execution check in `generateText` (after AI SDK completes) - redundant
+  - ✅ **NEW**: Unified abort mechanism in `createStepHandler` - works for both methods, stops execution immediately
+
+  ## Use Cases
+
+  Perfect for scenarios where specialized subagents generate final outputs:
+  1. **JSON/Structured data generators**: Workout builders, report generators
+  2. **Large content producers**: Document creators, data exports
+  3. **Token optimization**: Skip processing for expensive results
+  4. **Business logic**: Conditional routing based on result characteristics
+
+  ## Observability
+
+  When bail occurs, both logging and OpenTelemetry tracking provide full visibility:
+
+  **Logging:**
+  - Log event: `Supervisor bailed after handoff`
+  - Includes: supervisor name, subagent name, result length, transformation status
+
+  **OpenTelemetry:**
+  - Span event: `supervisor.handoff.bailed` (for timeline events)
+  - Span attributes added to **both supervisor and subagent spans**:
+    - `bailed`: `true`
+    - `bail.supervisor`: supervisor agent name (on subagent span)
+    - `bail.subagent`: subagent name (on supervisor span)
+    - `bail.transformed`: `true` if result was transformed
+
+  **Console Visualization:**
+  Bailed subagents are visually distinct in the observability react-flow view:
+  - Purple border with shadow (`border-purple-500 shadow-purple-600/50`)
+  - "⚡ BAILED" badge in the header (shows "⚡ BAILED (T)" if transformed)
+  - Tooltip showing which supervisor initiated the bail
+  - Node opacity remains at 1.0 (fully visible)
+  - Status badge shows "BAILED" with purple styling instead of error
+  - Details panel shows "Early Termination" info section with supervisor info
+
+  ## Type Safety Improvements
+
+  Also improved type safety by replacing `usage?: any` with proper `UsageInfo` type:
+
+  ```typescript
+  export type UsageInfo = {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    cachedInputTokens?: number;
+    reasoningTokens?: number;
+  };
+  ```
+
+  This provides:
+  - ✅ Better autocomplete in IDEs
+  - ✅ Compile-time type checking
+  - ✅ Clear documentation of available fields
+
+  ## Breaking Changes
+
+  None - this is a purely additive feature. The `UsageInfo` type structure is fully compatible with existing code.
+
+### Patch Changes
+
+- [#754](https://github.com/VoltAgent/voltagent/pull/754) [`c80d18f`](https://github.com/VoltAgent/voltagent/commit/c80d18f344ee37c16f52495edb88c72f74701610) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: encapsulate tool-specific metadata in toolContext + prevent AI SDK context collision
+
+  ## Changes
+
+  ### 1. Tool Context Encapsulation
+
+  Tool-specific metadata now organized under optional `toolContext` field for better separation and future-proofing.
+
+  **Migration:**
+
+  ```typescript
+  // Before
+  execute: async ({ location }, options) => {
+    // Fields were flat (planned, not released)
+  };
+
+  // After
+  execute: async ({ location }, options) => {
+    const { name, callId, messages, abortSignal } = options?.toolContext || {};
+
+    // Session context remains flat
+    const userId = options?.userId;
+    const logger = options?.logger;
+    const context = options?.context;
+  };
+  ```
+
+  ### 2. AI SDK Context Field Protection
+
+  Explicitly exclude `context` from being spread into AI SDK calls to prevent future naming collisions if AI SDK renames `experimental_context` → `context`.
+
+  ## Benefits
+  - ✅ Better organization - tool metadata in one place
+  - ✅ Clearer separation - session context vs tool context
+  - ✅ Future-proof - easy to add new tool metadata fields
+  - ✅ Namespace safety - no collision with OperationContext or AI SDK fields
+  - ✅ Backward compatible - `toolContext` is optional for external callers (MCP servers)
+  - ✅ Protected from AI SDK breaking changes
+
+- [#754](https://github.com/VoltAgent/voltagent/pull/754) [`c80d18f`](https://github.com/VoltAgent/voltagent/commit/c80d18f344ee37c16f52495edb88c72f74701610) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add multi-modal tool results support with toModelOutput - #722
+
+  Tools can now return images, media, and rich content to AI models using the `toModelOutput` function.
+
+  ## The Problem
+
+  AI agents couldn't receive visual information from tools - everything had to be text or JSON. This limited use cases like:
+  - Computer use agents that need to see screenshots
+  - Image analysis workflows
+  - Visual debugging tools
+  - Any tool that produces media output
+
+  ## The Solution
+
+  Added `toModelOutput?: (output) => ToolResultOutput` to tool options. This function transforms your tool's output into a format the AI model can understand, including images and media.
+
+  ```typescript
+  import { createTool } from "@voltagent/core";
+  import fs from "fs";
+
+  const screenshotTool = createTool({
+    name: "take_screenshot",
+    description: "Takes a screenshot of the screen",
+    parameters: z.object({
+      region: z.string().optional().describe("Region to capture"),
+    }),
+    execute: async ({ region }) => {
+      const imageData = fs.readFileSync("./screenshot.png").toString("base64");
+      return {
+        type: "image",
+        data: imageData,
+        timestamp: new Date().toISOString(),
+      };
+    },
+    toModelOutput: (result) => ({
+      type: "content",
+      value: [
+        { type: "text", text: `Screenshot captured at ${result.timestamp}` },
+        { type: "media", data: result.data, mediaType: "image/png" },
+      ],
+    }),
+  });
+  ```
+
+  ## Return Formats
+
+  The `toModelOutput` function can return multiple formats:
+
+  **Text output:**
+
+  ```typescript
+  toModelOutput: (result) => ({
+    type: "text",
+    value: result.summary,
+  });
+  ```
+
+  **JSON output:**
+
+  ```typescript
+  toModelOutput: (result) => ({
+    type: "json",
+    value: { status: "success", data: result },
+  });
+  ```
+
+  **Multi-modal content (text + media):**
+
+  ```typescript
+  toModelOutput: (result) => ({
+    type: "content",
+    value: [
+      { type: "text", text: "Analysis complete" },
+      { type: "media", data: result.imageBase64, mediaType: "image/png" },
+    ],
+  });
+  ```
+
+  **Error handling:**
+
+  ```typescript
+  toModelOutput: (result) => ({
+    type: "error-text",
+    value: result.errorMessage,
+  });
+  ```
+
+  ## Impact
+  - **Visual AI Workflows**: Build computer use agents that can see and interact with UIs
+  - **Image Generation**: Tools can return generated images directly to the model
+  - **Debugging**: Return screenshots and visual debugging information
+  - **Rich Responses**: Combine text explanations with visual evidence
+
+  ## Usage with Anthropic
+
+  ```typescript
+  const agent = createAgent({
+    name: "visual-assistant",
+    tools: [screenshotTool],
+    model: anthropic("claude-3-5-sonnet-20241022"),
+  });
+
+  const result = await agent.generateText({
+    prompt: "Take a screenshot and describe what you see",
+  });
+  // Agent receives both text and image, can analyze the screenshot
+  ```
+
+  See [AI SDK documentation](https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#multi-modal-tool-results) for more details on multi-modal tool results.
+
+- [#754](https://github.com/VoltAgent/voltagent/pull/754) [`c80d18f`](https://github.com/VoltAgent/voltagent/commit/c80d18f344ee37c16f52495edb88c72f74701610) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add providerOptions support to tools for provider-specific features - #759
+
+  Tools can now accept `providerOptions` to enable provider-specific features like Anthropic's cache control. This aligns VoltAgent tools with the AI SDK's tool API.
+
+  ## The Problem
+
+  Users wanted to use provider-specific features like Anthropic's prompt caching to reduce costs and latency, but VoltAgent's `createTool()` didn't support the `providerOptions` field that AI SDK tools have.
+
+  ## The Solution
+
+  **What Changed:**
+  - Added `providerOptions?: ProviderOptions` field to `ToolOptions` type
+  - VoltAgent tools now accept and pass through provider options to the AI SDK
+  - Supports all provider-specific features: cache control, reasoning settings, etc.
+
+  **What Gets Enabled:**
+
+  ```typescript
+  import { createTool } from "@voltagent/core";
+  import { z } from "zod";
+
+  const cityAttractionsTool = createTool({
+    name: "get_city_attractions",
+    description: "Get tourist attractions for a city",
+    parameters: z.object({
+      city: z.string().describe("The city name"),
+    }),
+    providerOptions: {
+      anthropic: {
+        cacheControl: { type: "ephemeral" },
+      },
+    },
+    execute: async ({ city }) => {
+      return await fetchAttractions(city);
+    },
+  });
+  ```
+
+  ## Impact
+  - **Cost Optimization:** Anthropic cache control reduces API costs for repeated tool calls
+  - **Future-Proof:** Any new provider features work automatically
+  - **Type-Safe:** Uses official AI SDK `ProviderOptions` type
+  - **Zero Breaking Changes:** Optional field, fully backward compatible
+
+  ## Usage
+
+  Use with any provider that supports provider-specific options:
+
+  ```typescript
+  const agent = new Agent({
+    name: "Travel Assistant",
+    model: anthropic("claude-3-5-sonnet"),
+    tools: [cityAttractionsTool], // Tool with cacheControl enabled
+  });
+
+  await agent.generateText("What are the top attractions in Paris?");
+  // Tool definition cached by Anthropic for improved performance
+  ```
+
+  Learn more: [Anthropic Cache Control](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic#cache-control)
+
 ## 1.1.39
 
 ### Patch Changes
