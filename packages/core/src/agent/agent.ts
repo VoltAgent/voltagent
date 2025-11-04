@@ -1,4 +1,9 @@
-import type { ModelMessage, ProviderOptions, SystemModelMessage } from "@ai-sdk/provider-utils";
+import type {
+  ModelMessage,
+  ProviderOptions,
+  SystemModelMessage,
+  ToolCallOptions,
+} from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
 import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
@@ -2881,20 +2886,21 @@ export class Agent {
   private createToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
-  ): (tool: BaseTool) => (args: any, options?: ToolExecuteOptions) => Promise<any> {
-    return (tool: BaseTool) => async (args: any, options?: ToolExecuteOptions) => {
-      const baseOptions = (options ?? {}) as Partial<ToolExecuteOptions>;
-      const toolCallId = baseOptions.toolContext?.callId ?? randomUUID();
+  ): (tool: BaseTool) => (args: any, options?: ToolCallOptions) => Promise<any> {
+    return (tool: BaseTool) => async (args: any, options?: ToolCallOptions) => {
+      // AI SDK passes ToolCallOptions with fields: toolCallId, messages, abortSignal
+      const toolCallId = options?.toolCallId ?? randomUUID();
+      const messages = options?.messages ?? [];
+      const abortSignal = options?.abortSignal;
 
-      // Merge OperationContext fields into options with toolContext structure
+      // Convert ToolCallOptions to ToolExecuteOptions by merging with OperationContext
       const executionOptions: ToolExecuteOptions = {
         ...oc,
-        ...baseOptions,
         toolContext: {
           name: tool.name,
           callId: toolCallId,
-          messages: baseOptions.toolContext?.messages || [],
-          abortSignal: baseOptions.toolContext?.abortSignal,
+          messages: messages,
+          abortSignal: abortSignal,
         },
       };
 
