@@ -72,6 +72,8 @@ describe("Server Utils", () => {
       expect(calls).toContain("VOLTAGENT SERVER STARTED");
       expect(calls).toContain("http://localhost:3000");
       expect(calls).toContain("pnpm volt tunnel 3000");
+      expect(calls).toContain("secure HTTPS tunnel for teammates");
+      expect(calls).toContain("https://voltagent.dev/docs/deployment/local-tunnel/");
     });
 
     it("should display VoltOps Console link", () => {

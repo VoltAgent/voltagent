@@ -76,7 +76,10 @@ export function printServerStartup(port: number, options: ServerStartupOptions =
     `${colors.green}  ✓ ${colors.bright}HTTP Server:  ${colors.reset}${colors.white}http://localhost:${port}${colors.reset}`,
   );
   console.log(
-    `${colors.blue}  ↪ ${colors.bright}Share it:    ${colors.reset}${colors.white}pnpm volt tunnel ${port}${colors.reset}`,
+    `${colors.blue}  ↪ ${colors.bright}Share it:    ${colors.reset}${colors.white}pnpm volt tunnel ${port}${colors.reset} ${colors.dim}(secure HTTPS tunnel for teammates)${colors.reset}`,
+  );
+  console.log(
+    `${colors.blue}     ${colors.dim}Docs:${colors.reset} https://voltagent.dev/docs/deployment/local-tunnel/`,
   );
 
   if (shouldEnableSwaggerUI) {

@@ -43,7 +43,11 @@ The server starts automatically and displays:
   VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
+  ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
+     Docs: https://voltagent.dev/docs/deployment/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
+
+  Test your agents with VoltOps Console: https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
