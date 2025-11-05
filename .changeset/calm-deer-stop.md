@@ -1,5 +1,6 @@
 ---
 "@voltagent/cli": patch
+"@voltagent/server-core": patch
 ---
 
 feat: add tunnel command
