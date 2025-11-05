@@ -122,16 +122,13 @@ export const captureWhoamiEvent = (options: { numVoltPackages: number }) => {
 };
 
 // Function to capture tunnel command usage
-export const captureTunnelEvent = (options: { url: string; port: number }) => {
+export const captureTunnelEvent = () => {
   if (isTelemetryDisabled()) return;
 
   client.capture({
     distinctId: getMachineId(),
     event: "cli_tunnel_opened",
     properties: {
-      tunnel_url: options.url,
-      port: options.port,
-      machine_id: getMachineId(),
       ...getOSInfo(),
     },
   });

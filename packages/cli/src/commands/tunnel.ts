@@ -27,7 +27,7 @@ export const registerTunnelCommand = (program: Command) => {
         const url = tunnel.url;
 
         spinner.succeed(`Tunnel ready at ${chalk.cyan(url)}`);
-        captureTunnelEvent({ url, port });
+        captureTunnelEvent();
         console.log();
         console.log(chalk.gray("Press Ctrl+C to close the tunnel when you are finished."));
         console.log(
