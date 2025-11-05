@@ -4,7 +4,7 @@
 
 feat: add tunnel command
 
-## New: `voltagent tunnel`
+## New: `volt tunnel`
 
 Expose your local VoltAgent server over a secure public URL with a single command:
 
