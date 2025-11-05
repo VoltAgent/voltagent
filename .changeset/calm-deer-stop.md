@@ -1,5 +1,5 @@
 ---
-["@voltagent/cli"]: patch
+"@voltagent/cli": patch
 ---
 
 feat: add tunnel command
