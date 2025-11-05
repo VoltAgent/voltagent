@@ -141,6 +141,12 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Triggers",
+      customProps: {
+        badge: {
+          label: "New",
+          variant: "accent",
+        },
+      },
       items: ["triggers/overview", "triggers/usage"],
     },
     {
@@ -197,6 +203,7 @@ const sidebars: SidebarsConfig = {
         "deployment/overview",
         "deployment/cloudflare-workers",
         "deployment/netlify-functions",
+        "deployment/local-tunnel",
       ],
     },
     {

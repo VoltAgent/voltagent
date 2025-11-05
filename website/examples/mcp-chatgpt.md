@@ -131,14 +131,14 @@ You should see:
 
 #### Publish the local server
 
-Because ChatGPT only talks to HTTPS endpoints, tunnel your development server before you move into the Apps SDK flow. A quick option is [ngrok](https://ngrok.com):
+Because ChatGPT only talks to HTTPS endpoints, tunnel your development server before you move into the Apps SDK flow. Run the VoltAgent CLI tunnel command:
 
 ```bash
-ngrok http 3141
-# Forwarding: https://<subdomain>.ngrok.app -> http://127.0.0.1:3141
+pnpm volt tunnel 3141
+# Forwarding: https://<slug>.tunnel.voltagent.dev -> http://127.0.0.1:3141
 ```
 
-Keep the tunnel running; the VoltAgent example listens on `3141`, so the default command already forwards the correct port.
+Keep the tunnel running; the VoltAgent example listens on `3141`, so the default command already forwards the correct port. (You can omit the `3141` argument to rely on the default.) See the [Local Tunnel guide](https://voltagent.dev/docs/deployment/local-tunnel/) for more options (including `npx` usage).
 
 #### Create the ChatGPT connector
 
@@ -148,7 +148,7 @@ Open ChatGPT, head to **Settings → Apps**, and work through the following:
 2. **Create the connector record.** Choose **Connectors → Create**, then point the form at your tunnel:
    - _Name_: `VoltAgent Expense MCP`
    - _Description_: `Expense approval workflow, prompts, and helper tools powered by VoltAgent.`
-   - _URL_: `https://<subdomain>.ngrok.app/mcp/voltagent-example/mcp`
+   - _URL_: `https://<slug>.tunnel.voltagent.dev/mcp/voltagent-example/mcp`
 3. **Skip auth while testing.** Leave authentication off until the service is hosted in production.
 
 ![ChatGPT Connector Form](https://cdn.voltagent.dev/website/examples/mcp-chatgpt/7-mcp.webp)

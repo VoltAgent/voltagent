@@ -30,6 +30,8 @@ const agent = new Agent({
 
 new VoltAgent({
   agents: { agent },
-  server: honoServer(),
+  server: honoServer({
+    tunnel: {},
+  }),
   logger,
 });

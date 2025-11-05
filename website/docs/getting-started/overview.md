@@ -21,6 +21,8 @@ VoltAgent provides a complete platform for developing and monitoring AI agents t
 
 With the core framework, you can build intelligent agents with memory, tools, and multi-step workflows while connecting to any AI provider. Create sophisticated multi-agent systems where specialized agents work together under supervisor coordination.
 
+> Need to share a running agent with someone outside your network? Use the new [`volt tunnel`](/docs/deployment/local-tunnel) command to expose `localhost` over an HTTPS URL in seconds.
+
 import DocCardList from '@theme/DocCardList';
 
 <DocCardList className="three-columns" items={[

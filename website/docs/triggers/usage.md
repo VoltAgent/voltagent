@@ -89,18 +89,18 @@ We'll configure the server and destination here.
   - **Server Name**: Name for your server
     → Example: `Production server`
   - **URL**: Your server URL where agents are hosted
-    → In this example, we're running locally with ngrok: `https://your-ngrok-url.ngrok.io`
+    → In this example, we're running locally via Volt Tunnel: `https://swift-cobra-12.tunnel.voltagent.dev`
 
 Click **Create Server** to save and select the server you just created.
 
 :::tip Running locally?
-Use ngrok to expose your local server:
+Open a secure tunnel with the VoltAgent CLI:
 
 ```bash
-ngrok http 3141
+pnpm volt tunnel 3141
 ```
 
-Then use the ngrok URL (e.g., `https://abc123.ngrok.io`) as your server URL.
+This prints an HTTPS forwarding URL (e.g., `https://swift-cobra-12.tunnel.voltagent.dev`). Use that value as the server URL. You can omit the `3141` argument to use the default port. [Learn more](https://voltagent.dev/docs/deployment/local-tunnel/).
 :::
 
 - **Select an Agent**: Choose the agent or workflow you want to trigger from your available agents.
