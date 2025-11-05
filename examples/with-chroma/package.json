@@ -6,7 +6,7 @@
     "@chroma-core/default-embed": "^0.1.8",
     "@chroma-core/ollama": "^0.1.7",
     "@chroma-core/openai": "^0.1.7",
-    "@voltagent/cli": "^0.1.14",
+    "@voltagent/cli": "^0.1.15",
     "@voltagent/core": "^1.2.0",
     "@voltagent/libsql": "^1.0.10",
     "@voltagent/logger": "^1.0.4",

@@ -8,7 +8,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@voltagent/core": "^1.2.0",
-    "@voltagent/server-core": "^1.0.20",
+    "@voltagent/server-core": "^1.0.21",
     "@voltagent/server-hono": "^1.2.2",
     "hono": "^4.7.7",
     "reflect-metadata": "^0.2.0",

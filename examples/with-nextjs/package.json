@@ -6,7 +6,7 @@
     "@ai-sdk/react": "^2.0.8",
     "@libsql/client": "^0.15.0",
     "@tailwindcss/postcss": "^4.1.4",
-    "@voltagent/cli": "^0.1.14",
+    "@voltagent/cli": "^0.1.15",
     "@voltagent/core": "^1.2.0",
     "@voltagent/libsql": "^1.0.10",
     "@voltagent/logger": "^1.0.4",

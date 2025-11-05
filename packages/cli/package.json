@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/cli",
   "description": "CLI tool for VoltAgent applications",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "bin": {
     "volt": "dist/index.js"
   },

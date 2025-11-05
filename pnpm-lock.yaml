@@ -114,7 +114,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -176,7 +176,7 @@ importers:
         specifier: ^24.2.1
         version: 24.2.1
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       tsx:
         specifier: ^4.19.3
@@ -320,7 +320,7 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -357,7 +357,7 @@ importers:
         specifier: ^2.0.6
         version: 2.0.6(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -403,7 +403,7 @@ importers:
         specifier: ^0.1.7
         version: 0.1.7(chromadb@3.0.12)(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -526,7 +526,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -563,7 +563,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -600,7 +600,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -637,7 +637,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -674,7 +674,7 @@ importers:
         specifier: ^2.0.13
         version: 2.0.13(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -803,7 +803,7 @@ importers:
         specifier: ^3.0.25
         version: 3.0.25(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -840,7 +840,7 @@ importers:
         specifier: ^2.0.18
         version: 2.0.18(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -877,7 +877,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@4.1.11)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -908,7 +908,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -945,7 +945,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1022,7 +1022,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1090,7 +1090,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1161,7 +1161,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@4.1.11)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1204,7 +1204,7 @@ importers:
         specifier: ^1.2.0
         version: link:../../packages/core
       '@voltagent/server-core':
-        specifier: ^1.0.20
+        specifier: ^1.0.21
         version: link:../../packages/server-core
       '@voltagent/server-hono':
         specifier: ^1.2.2
@@ -1290,7 +1290,7 @@ importers:
         specifier: ^4.1.4
         version: 4.1.11
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1394,7 +1394,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1431,7 +1431,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1471,7 +1471,7 @@ importers:
         specifier: ^6.1.1
         version: 6.1.2
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1523,7 +1523,7 @@ importers:
         specifier: ^1.51.1
         version: 1.54.2
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1572,7 +1572,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1612,7 +1612,7 @@ importers:
         specifier: ^1.15.0
         version: 1.15.0(typescript@5.9.2)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1652,7 +1652,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1689,7 +1689,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1723,7 +1723,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1757,7 +1757,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1794,7 +1794,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1834,7 +1834,7 @@ importers:
         specifier: ^2.49.4
         version: 2.55.0
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1871,7 +1871,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1908,7 +1908,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1945,7 +1945,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -1982,7 +1982,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2019,7 +2019,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2056,7 +2056,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2093,7 +2093,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2148,7 +2148,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2188,7 +2188,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2234,7 +2234,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2280,7 +2280,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2354,7 +2354,7 @@ importers:
         specifier: ^2.49.4
         version: 2.58.0
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2394,7 +2394,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2431,7 +2431,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
@@ -2468,7 +2468,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/cli':
-        specifier: ^0.1.14
+        specifier: ^0.1.15
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.0
