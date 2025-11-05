@@ -27,7 +27,7 @@ The command:
 
 1. Connects to the VoltAgent tunnel relay (`https://tunnel.voltagent.dev`)
 2. Forwards requests to `http://localhost:3141`
-3. Prints the public HTTPS URL (for example `https://swift-cobra-12.tunnel.voltagent.dev`)
+3. Prints the public HTTPS URL (for example `https://your-tunnel-address.tunnel.voltagent.dev`)
 4. Keeps the tunnel open until you press `Ctrl+C`
 
 > 💡 You can omit the port (`pnpm volt tunnel`) to use the default `3141`.

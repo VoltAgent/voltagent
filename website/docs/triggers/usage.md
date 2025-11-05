@@ -89,7 +89,7 @@ We'll configure the server and destination here.
   - **Server Name**: Name for your server
     → Example: `Production server`
   - **URL**: Your server URL where agents are hosted
-    → In this example, we're running locally via Volt Tunnel: `https://swift-cobra-12.tunnel.voltagent.dev`
+    → In this example, we're running locally via Volt Tunnel: `https://your-tunnel-address.tunnel.voltagent.dev`
 
 Click **Create Server** to save and select the server you just created.
 
@@ -100,7 +100,7 @@ Open a secure tunnel with the VoltAgent CLI:
 pnpm volt tunnel 3141
 ```
 
-This prints an HTTPS forwarding URL (e.g., `https://swift-cobra-12.tunnel.voltagent.dev`). Use that value as the server URL. You can omit the `3141` argument to use the default port. [Learn more](https://voltagent.dev/docs/deployment/local-tunnel/).
+This prints an HTTPS forwarding URL (e.g., `https://your-tunnel-address.tunnel.voltagent.dev`). Use that value as the server URL. You can omit the `3141` argument to use the default port. [Learn more](https://voltagent.dev/docs/deployment/local-tunnel/).
 :::
 
 - **Select an Agent**: Choose the agent or workflow you want to trigger from your available agents.

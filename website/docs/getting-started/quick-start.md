@@ -185,7 +185,7 @@ Then expose your local server:
 pnpm volt tunnel 3141
 ```
 
-The command prints an HTTPS URL (for example `https://swift-cobra-12.tunnel.voltagent.dev`) that forwards traffic to your local port until you press `Ctrl+C`. You can also run it ad‑hoc without installing dependencies:
+The command prints an HTTPS URL (for example `https://your-tunnel-address.tunnel.voltagent.dev`) that forwards traffic to your local port until you press `Ctrl+C`. You can also run it ad‑hoc without installing dependencies:
 
 > Tip: skipping the port (`pnpm volt tunnel`) uses the default `3141`.
 
