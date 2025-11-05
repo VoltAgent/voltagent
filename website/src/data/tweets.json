@@ -120,15 +120,6 @@
           "id_str": "18080585",
           "name": "MongoDB",
           "screen_name": "MongoDB"
-        },
-        {
-          "indices": [
-            80,
-            94
-          ],
-          "id_str": "1789820062867570688",
-          "name": "supermemory",
-          "screen_name": "supermemoryai"
         }
       ],
       "symbols": [],
@@ -207,15 +198,6 @@
           "id_str": "1912724805406863360",
           "name": "voltagent",
           "screen_name": "voltagent_dev"
-        },
-        {
-          "indices": [
-            42,
-            52
-          ],
-          "id_str": "1861308613563949057",
-          "name": "Mastra",
-          "screen_name": "mastra_ai"
         }
       ],
       "symbols": [],
@@ -737,7 +719,7 @@
     },
     "user": {
       "id_str": "79119874",
-      "name": "🍺 ikehaya@TVアニメ「クリプトニンジャ咲耶」",
+      "name": "🍺 ikehaya@アニメ作る人",
       "screen_name": "IHayato",
       "profile_image_url_https": "https://pbs.twimg.com/profile_images/1613769723065532416/FMH_NlQh_normal.png",
       "profile_image_shape": "Circle",

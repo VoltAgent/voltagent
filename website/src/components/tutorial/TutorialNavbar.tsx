@@ -22,7 +22,7 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
       {/* GitHub Banner */}
       <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-emerald-500 to-emerald-500 backdrop-blur-sm border-0 border-b border-solid border-emerald-500/20">
         <Link
-          to="https://github.com/VoltAgent/voltagent"
+          to="https://voltagent.dev/launch-week-november-25/"
           className="block w-full no-underline hover:bg-gradient-to-r hover:from-emerald-400/10 hover:to-emerald-500/10 transition-all duration-300"
           target="_blank"
           rel="noopener noreferrer"
@@ -30,7 +30,8 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
           <div className="w-full">
             <div className="flex items-center justify-center text-center py-2">
               <span className="text-xs sm:text-sm font-medium text-emerald-500">
-                ⭐ We're open source – a GitHub star means a lot to us. Thank you for the support! ❤️
+                {/* ⭐ We're open source – a GitHub star means a lot to us. Thank you for the support! ❤️ */}
+                🚀 Launch Week 2 is live – New features dropping daily
               </span>
             </div>
           </div>

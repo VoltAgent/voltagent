@@ -271,7 +271,8 @@ const config: Config = {
     announcementBar: {
       id: "support_us",
       content:
-        "<a target='_blank' rel='noopener noreferrer' href='https://github.com/VoltAgent/voltagent/stargazers'>⭐ We're open source – a GitHub star means a lot to us. Thank you for the support! ❤️ </a>",
+        // "<a target='_blank' rel='noopener noreferrer' href='https://github.com/VoltAgent/voltagent/stargazers'>⭐ We're open source – a GitHub star means a lot to us. Thank you for the support! ❤️ </a>",
+        "<a target='_blank' rel='noopener noreferrer' href='https://voltagent.dev/launch-week-november-25/'>🚀 Launch Week 2 is live – New features dropping daily</a>",
       backgroundColor: "transparent",
       textColor: "#10B981 !important",
       isCloseable: true,
