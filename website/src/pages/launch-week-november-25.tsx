@@ -93,11 +93,20 @@ const Day1 = () => (
 
 const Day2 = () => (
   <DayComponent
-    enabled={false}
-    date="DAY 2 | WEDNESDAY, NOVEMBER 6, 2025"
-    title=""
-    description=""
-  />
+    enabled={true}
+    date="DAY 2 | NOVEMBER 6, 2025"
+    title="Evals - Test and Monitor Your AI Agents"
+    description="Run offline evaluations against test datasets and monitor live agent performance with customizable scorers. Catch regressions before they ship with integrated VoltOps telemetry."
+    detailsLink="https://voltagent.dev/docs/evals/overview/"
+  >
+    <div className="rounded-md border-solid p-1 border-2 border-emerald-600 flex items-center justify-center relative overflow-hidden">
+      <img
+        src="https://cdn.voltagent.dev/website/showcase/evals.png"
+        alt="Evals Feature Preview"
+        className="object-cover w-full h-full rounded-md border border-gray-800"
+      />
+    </div>
+  </DayComponent>
 );
 
 const Day3 = () => (
