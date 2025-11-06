@@ -42,6 +42,7 @@ Each tool has:
 - **parameters**: Input schema defined with Zod
 - **execute**: Function that runs when the tool is called
 - **providerOptions** (optional): Provider-specific options for advanced features
+- **tags** (optional): Optional user-defined tags for organizing or labeling tools.
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
 

@@ -295,4 +295,27 @@ describe("Tool", () => {
       expect(result?.data.total).toBe(3);
     });
   });
+
+  describe("tags", () => {
+    it("should preserve tags when provided via createTool", () => {
+      const tool = createTool({
+        name: "taggedTool",
+        description: "tool with tags",
+        parameters: z.object({}),
+        tags: ["utility", "demo"],
+      });
+
+      expect(tool.tags).toEqual(["utility", "demo"]);
+    });
+
+    it("should have undefined tags when not provided", () => {
+      const tool = new Tool({
+        name: "untaggedTool",
+        description: "tool without tags",
+        parameters: z.object({}),
+      });
+
+      expect(tool.tags).toBeUndefined();
+    });
+  });
 });
