@@ -51,6 +51,12 @@ export interface PostgreSQLMemoryOptions {
   tablePrefix?: string;
 
   /**
+   * PostgreSQL schema to use for all tables
+   * @default "public"
+   */
+  schema?: string;
+
+  /**
    * Whether to enable debug logging
    * @default false
    */
@@ -65,12 +71,14 @@ export interface PostgreSQLMemoryOptions {
 export class PostgreSQLMemoryAdapter implements StorageAdapter {
   private pool: Pool;
   private tablePrefix: string;
+  private schema: string;
   private initialized = false;
   private initPromise: Promise<void> | null = null;
   private debug: boolean;
 
   constructor(options: PostgreSQLMemoryOptions) {
     this.tablePrefix = options.tablePrefix ?? "voltagent_memory";
+    this.schema = options.schema ?? "public";
     this.debug = options.debug ?? false;
 
     // Create PostgreSQL connection pool
@@ -106,6 +114,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   }
 
   /**
+   * Get fully qualified table name with schema
+   */
+  private getTableName(tableName: string): string {
+    if (this.schema && this.schema !== "public") {
+      return `"${this.schema}"."${tableName}"`;
+    }
+    return tableName;
+  }
+
+  /**
    * Initialize database schema
    */
   private async initialize(): Promise<void> {
@@ -120,9 +138,15 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const conversationsTable = `${this.tablePrefix}_conversations`;
-      const messagesTable = `${this.tablePrefix}_messages`;
-      const usersTable = `${this.tablePrefix}_users`;
+      // Create schema if it doesn't exist and it's not the default public schema
+      if (this.schema && this.schema !== "public") {
+        await client.query(`CREATE SCHEMA IF NOT EXISTS "${this.schema}"`);
+        this.log(`Ensured schema "${this.schema}" exists`);
+      }
+
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      const usersTable = this.getTableName(`${this.tablePrefix}_users`);
 
       // Create users table (for user-level working memory)
       await client.query(`
@@ -163,7 +187,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       `);
 
       // Create workflow states table
-      const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+      const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
       await client.query(`
         CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
           id TEXT PRIMARY KEY,
@@ -261,7 +285,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const messagesTable = `${this.tablePrefix}_messages`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
 
       // Ensure conversation exists
       const conversation = await this.getConversation(conversationId);
@@ -306,7 +330,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const messagesTable = `${this.tablePrefix}_messages`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
 
       // Ensure conversation exists
       const conversation = await this.getConversation(conversationId);
@@ -360,7 +384,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const messagesTable = `${this.tablePrefix}_messages`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
       const { limit, before, after, roles } = options || {};
 
       // Debug: Parsed options
@@ -537,8 +561,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const messagesTable = `${this.tablePrefix}_messages`;
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       if (conversationId) {
         // Clear messages for specific conversation
@@ -579,7 +603,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       // Check if conversation already exists
       const existing = await this.getConversation(input.id);
@@ -628,7 +652,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       const result = await client.query(`SELECT * FROM ${conversationsTable} WHERE id = $1`, [id]);
 
@@ -659,7 +683,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       const result = await client.query(
         `SELECT * FROM ${conversationsTable} WHERE resource_id = $1 ORDER BY updated_at DESC`,
@@ -698,7 +722,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
       let sql = `SELECT * FROM ${conversationsTable} WHERE 1=1`;
       const params: any[] = [];
       let paramCount = 1;
@@ -762,7 +786,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
       const conversation = await this.getConversation(id);
       if (!conversation) {
         throw new ConversationNotFoundError(id);
@@ -829,7 +853,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       await client.query(`DELETE FROM ${conversationsTable} WHERE id = $1`, [id]);
 
@@ -861,7 +885,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       if (params.scope === "user" && params.userId) {
-        const usersTable = `${this.tablePrefix}_users`;
+        const usersTable = this.getTableName(`${this.tablePrefix}_users`);
         const result = await client.query(`SELECT metadata FROM ${usersTable} WHERE id = $1`, [
           params.userId,
         ]);
@@ -906,7 +930,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       if (params.scope === "user" && params.userId) {
-        const usersTable = `${this.tablePrefix}_users`;
+        const usersTable = this.getTableName(`${this.tablePrefix}_users`);
         const now = new Date().toISOString();
 
         // Check if user exists
@@ -965,7 +989,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       if (params.scope === "user" && params.userId) {
-        const usersTable = `${this.tablePrefix}_users`;
+        const usersTable = this.getTableName(`${this.tablePrefix}_users`);
         const result = await client.query(`SELECT metadata FROM ${usersTable} WHERE id = $1`, [
           params.userId,
         ]);
@@ -1001,7 +1025,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null> {
     await this.initPromise;
 
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
     const result = await this.pool.query(`SELECT * FROM ${workflowStatesTable} WHERE id = $1`, [
       executionId,
     ]);
@@ -1034,7 +1058,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void> {
     await this.initPromise;
 
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
     const client = await this.pool.connect();
 
     try {
@@ -1111,7 +1135,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async getSuspendedWorkflowStates(workflowId: string): Promise<WorkflowStateEntry[]> {
     await this.initPromise;
 
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
     const result = await this.pool.query(
       `SELECT * FROM ${workflowStatesTable} WHERE workflow_id = $1 AND status = $2 ORDER BY created_at DESC`,
       [workflowId, "suspended"],
@@ -1144,8 +1168,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * Updates messages with user_id='default' to use the actual user_id from their conversation
    */
   private async migrateDefaultUserIds(_client: PoolClient): Promise<void> {
-    const messagesTableName = `${this.tablePrefix}_messages`;
-    const conversationsTableName = `${this.tablePrefix}_conversations`;
+    const messagesTableName = this.getTableName(`${this.tablePrefix}_messages`);
+    const conversationsTableName = this.getTableName(`${this.tablePrefix}_conversations`);
 
     try {
       // First, check if there are any messages with default user_id
@@ -1201,7 +1225,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * This migration adds support for events, output, and cancellation tracking
    */
   private async addWorkflowStateColumns(client: PoolClient): Promise<void> {
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
 
     try {
       // Check which columns exist
@@ -1256,7 +1280,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * This allows existing tables to support both old and new message formats
    */
   private async addUIMessageColumnsToMessagesTable(client: PoolClient): Promise<void> {
-    const messagesTableName = `${this.tablePrefix}_messages`;
+    const messagesTableName = this.getTableName(`${this.tablePrefix}_messages`);
 
     try {
       // Check which columns exist
