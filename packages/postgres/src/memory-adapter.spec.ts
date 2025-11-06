@@ -1396,3 +1396,340 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
     });
   });
 });
+
+// ============================================================================
+// Schema Management Functions Tests
+// ============================================================================
+
+describe.sequential("PostgreSQLMemoryAdapter - Schema Management Functions", () => {
+  let adapter: PostgreSQLMemoryAdapter;
+
+  // Mock functions
+  const mockQuery = vi.fn();
+  const mockRelease = vi.fn();
+  const mockConnect = vi.fn();
+  const mockPoolQuery = vi.fn();
+  const mockEnd = vi.fn();
+
+  const mockEmptyResult = () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+  };
+
+  const mockInitialization = () => {
+    mockEmptyResult(); // BEGIN
+
+    // CREATE SCHEMA (for custom schema)
+    mockEmptyResult();
+
+    mockEmptyResult(); // CREATE TABLE users
+    mockEmptyResult(); // CREATE TABLE conversations
+    mockEmptyResult(); // CREATE TABLE messages
+    mockEmptyResult(); // CREATE TABLE workflow_states
+
+    // CREATE INDEX (6 indexes)
+    for (let i = 0; i < 6; i++) {
+      mockEmptyResult();
+    }
+
+    // addUIMessageColumnsToMessagesTable - query for checking columns
+    mockQuery.mockResolvedValueOnce({ rows: [{ column_name: "parts" }] });
+
+    // addWorkflowStateColumns - query for checking columns
+    mockQuery.mockResolvedValueOnce({ rows: [{ column_name: "events" }] });
+
+    mockEmptyResult(); // COMMIT
+
+    // migrateDefaultUserIds - check for default user_id
+    mockPoolQuery.mockResolvedValueOnce({ rows: [{ count: "0" }] });
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+
+    const mockClient = {
+      query: mockQuery,
+      release: mockRelease,
+    };
+
+    mockConnect.mockResolvedValue(mockClient);
+
+    vi.mocked(Pool).mockImplementation(
+      () =>
+        ({
+          connect: mockConnect,
+          query: mockPoolQuery,
+          end: mockEnd,
+        }) as any,
+    );
+
+    mockInitialization();
+
+    adapter = new PostgreSQLMemoryAdapter({
+      connection: {
+        host: "localhost",
+        port: 5432,
+        database: "test",
+        user: "test",
+        password: "test",
+      },
+      schema: "test_schema",
+      tablePrefix: "test_prefix",
+      debug: false,
+    });
+
+    // @ts-expect-error - accessing private property for testing
+    await adapter.initPromise;
+  });
+
+  afterEach(async () => {
+    await adapter.close();
+  });
+
+  it("should get schema name", () => {
+    const schemaName = adapter.getSchemaName();
+    expect(schemaName).toBe("test_schema");
+  });
+
+  it("should get table prefix", () => {
+    const tablePrefix = adapter.getTablePrefix();
+    expect(tablePrefix).toBe("test_prefix");
+  });
+
+  it("should list all tables in schema", async () => {
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [
+        { table_name: "test_prefix_users" },
+        { table_name: "test_prefix_conversations" },
+        { table_name: "test_prefix_messages" },
+        { table_name: "other_table" },
+      ],
+    });
+
+    const tables = await adapter.listTables();
+    expect(tables).toEqual([
+      "test_prefix_users",
+      "test_prefix_conversations",
+      "test_prefix_messages",
+      "other_table",
+    ]);
+
+    expect(mockPoolQuery).toHaveBeenCalledWith(
+      expect.stringContaining("FROM information_schema.tables"),
+      ["test_schema"],
+    );
+  });
+
+  it("should list only managed tables", async () => {
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [
+        { table_name: "test_prefix_users" },
+        { table_name: "test_prefix_conversations" },
+        { table_name: "test_prefix_messages" },
+        { table_name: "test_prefix_workflow_states" },
+      ],
+    });
+
+    const tables = await adapter.listManagedTables();
+    expect(tables).toHaveLength(4);
+    expect(tables.every((t) => t.startsWith("test_prefix"))).toBe(true);
+
+    expect(mockPoolQuery).toHaveBeenCalledWith(expect.stringContaining("table_name LIKE"), [
+      "test_schema",
+      "test_prefix%",
+    ]);
+  });
+
+  it("should check if table exists", async () => {
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [{ exists: true }],
+    });
+
+    const exists = await adapter.tableExists("test_prefix_users");
+    expect(exists).toBe(true);
+
+    expect(mockPoolQuery).toHaveBeenCalledWith(expect.stringContaining("SELECT EXISTS"), [
+      "test_schema",
+      "test_prefix_users",
+    ]);
+  });
+
+  it("should check if table does not exist", async () => {
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [{ exists: false }],
+    });
+
+    const exists = await adapter.tableExists("nonexistent_table");
+    expect(exists).toBe(false);
+  });
+
+  it("should get table statistics", async () => {
+    // Mock row count query
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [{ count: "150" }],
+    });
+
+    // Mock size query
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          total_size: "256 kB",
+          index_size: "64 kB",
+          table_size: "192 kB",
+        },
+      ],
+    });
+
+    const stats = await adapter.getTableStats("test_prefix_conversations");
+
+    expect(stats.rowCount).toBe(150);
+    expect(stats.totalSize).toBe("256 kB");
+    expect(stats.indexSize).toBe("64 kB");
+    expect(stats.tableSize).toBe("192 kB");
+  });
+
+  it("should get table indexes", async () => {
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          index_name: "test_prefix_conversations_pkey",
+          column_names: ["id"],
+          is_unique: true,
+          is_primary: true,
+        },
+        {
+          index_name: "idx_test_prefix_conversations_user_id",
+          column_names: ["user_id"],
+          is_unique: false,
+          is_primary: false,
+        },
+      ],
+    });
+
+    const indexes = await adapter.getTableIndexes("test_prefix_conversations");
+
+    expect(indexes).toHaveLength(2);
+    expect(indexes[0].indexName).toBe("test_prefix_conversations_pkey");
+    expect(indexes[0].isPrimary).toBe(true);
+    expect(indexes[1].indexName).toBe("idx_test_prefix_conversations_user_id");
+    expect(indexes[1].isPrimary).toBe(false);
+  });
+
+  it("should get table schema information", async () => {
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          column_name: "id",
+          data_type: "text",
+          is_nullable: "NO",
+          column_default: null,
+          character_maximum_length: null,
+        },
+        {
+          column_name: "title",
+          data_type: "text",
+          is_nullable: "NO",
+          column_default: null,
+          character_maximum_length: null,
+        },
+        {
+          column_name: "metadata",
+          data_type: "jsonb",
+          is_nullable: "NO",
+          column_default: null,
+          character_maximum_length: null,
+        },
+      ],
+    });
+
+    const schema = await adapter.getTableSchema("test_prefix_conversations");
+
+    expect(schema).toHaveLength(3);
+    expect(schema[0].columnName).toBe("id");
+    expect(schema[0].dataType).toBe("text");
+    expect(schema[0].isNullable).toBe(false);
+    expect(schema[1].columnName).toBe("title");
+    expect(schema[2].columnName).toBe("metadata");
+    expect(schema[2].dataType).toBe("jsonb");
+  });
+
+  it("should truncate all managed tables", async () => {
+    // Mock list managed tables
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [
+        { table_name: "test_prefix_users" },
+        { table_name: "test_prefix_conversations" },
+        { table_name: "test_prefix_messages" },
+      ],
+    });
+
+    // Mock transaction
+    mockEmptyResult(); // BEGIN
+    mockEmptyResult(); // TRUNCATE table 1
+    mockEmptyResult(); // TRUNCATE table 2
+    mockEmptyResult(); // TRUNCATE table 3
+    mockEmptyResult(); // COMMIT
+
+    await adapter.truncateManagedTables();
+
+    // Verify TRUNCATE was called for each table
+    const truncateCalls = mockQuery.mock.calls.filter((call) => call[0].includes("TRUNCATE TABLE"));
+    expect(truncateCalls.length).toBe(3);
+  });
+
+  it("should drop all managed tables", async () => {
+    // Mock list managed tables
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [{ table_name: "test_prefix_users" }, { table_name: "test_prefix_conversations" }],
+    });
+
+    // Mock transaction
+    mockEmptyResult(); // BEGIN
+    mockEmptyResult(); // DROP table 1
+    mockEmptyResult(); // DROP table 2
+    mockEmptyResult(); // COMMIT
+
+    await adapter.dropManagedTables();
+
+    // Verify DROP was called for each table
+    const dropCalls = mockQuery.mock.calls.filter((call) => call[0].includes("DROP TABLE"));
+    expect(dropCalls.length).toBe(2);
+  });
+
+  it("should execute raw SQL query", async () => {
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [
+        { id: 1, name: "Test" },
+        { id: 2, name: "Test 2" },
+      ],
+    });
+
+    const results = await adapter.executeRawQuery("SELECT * FROM custom_table WHERE status = $1", [
+      "active",
+    ]);
+
+    expect(results).toHaveLength(2);
+    expect(results[0].id).toBe(1);
+    expect(mockPoolQuery).toHaveBeenCalledWith("SELECT * FROM custom_table WHERE status = $1", [
+      "active",
+    ]);
+  });
+
+  it("should vacuum analyze managed tables", async () => {
+    // Mock list managed tables
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [{ table_name: "test_prefix_users" }, { table_name: "test_prefix_conversations" }],
+    });
+
+    // Mock VACUUM ANALYZE calls (they don't run in transactions)
+    mockPoolQuery.mockResolvedValueOnce({ rows: [] }); // VACUUM table 1
+    mockPoolQuery.mockResolvedValueOnce({ rows: [] }); // VACUUM table 2
+
+    await adapter.vacuumAnalyzeManagedTables();
+
+    // Verify VACUUM ANALYZE was called for each table
+    const vacuumCalls = mockPoolQuery.mock.calls.filter((call) =>
+      call[0].includes("VACUUM ANALYZE"),
+    );
+    expect(vacuumCalls.length).toBe(2);
+  });
+});
