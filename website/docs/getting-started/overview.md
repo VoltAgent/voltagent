@@ -150,6 +150,36 @@ const analysisWorkflow = createWorkflowChain({
   });
 ```
 
+### Actions & Integrations
+
+Connect agent or workflow outputs to external systems without writing custom plumbing. VoltOps ships with an **Actions** catalog (first release: Airtable) that you can explore from the console, test in place, and then call directly from code.
+
+- Use the **Actions** drawer in VoltOps Console to pick an integration, select a credential, and provide sample payload values.
+- Run the real provider test from the drawer, inspect the response, and copy the generated SDK snippet.
+- Paste the snippet into your agent or workflow and replace the sample values with runtime data.
+
+```ts
+import { createVoltOpsClient } from "@voltagent/core";
+
+const voltops = createVoltOpsClient({
+  publicKey: process.env.VOLT_PUBLIC_KEY!,
+  secretKey: process.env.VOLT_SECRET_KEY!,
+});
+
+await voltops.actions.airtable.createRecord({
+  credentialId: "cred_abc123",
+  baseId: "appXXXXXXXXXXXXXX",
+  tableId: "tblYYYYYYYYYYYY",
+  fields: {
+    Name: "Ada Lovelace",
+    Email: "ada@example.com",
+  },
+  typecast: true,
+});
+```
+
+Bindings run inside VoltOps with observability, retries, and can be attached to agents or workflows using JSON transform templates. Additional providers will land in the same experience.
+
 ### VoltOps LLM Observability Platform
 
 VoltAgent comes with built-in [VoltOps](/voltops-llm-observability-docs/) LLM observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.

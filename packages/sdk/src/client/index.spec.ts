@@ -69,7 +69,7 @@ describe("VoltAgentCoreAPI", () => {
       });
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      const result = await api.createEvalRun({ experimentId: "exp-1" });
+      const result = await api.evals.runs.create({ experimentId: "exp-1" });
 
       expect(fetchMock).toHaveBeenCalledWith(
         "https://api.voltagent.dev/evals/runs",
@@ -91,7 +91,7 @@ describe("VoltAgentCoreAPI", () => {
       });
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      await expect(api.createEvalRun({})).rejects.toMatchObject({
+      await expect(api.evals.runs.create({})).rejects.toMatchObject({
         status: 401,
         message: "Unauthorized",
       });
@@ -119,7 +119,7 @@ describe("VoltAgentCoreAPI", () => {
       };
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      await api.appendEvalResults("run-123", payload);
+      await api.evals.runs.appendResults("run-123", payload);
 
       expect(fetchMock).toHaveBeenCalledWith(
         "https://api.voltagent.dev/evals/runs/run-123/results",
@@ -171,7 +171,7 @@ describe("VoltAgentCoreAPI", () => {
       };
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      await api.appendEvalResults("run-456", payload);
+      await api.evals.runs.appendResults("run-456", payload);
 
       expect(safeStringify).toHaveBeenCalledWith(payload);
     });
@@ -196,7 +196,7 @@ describe("VoltAgentCoreAPI", () => {
       };
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      const result = await api.completeEvalRun("run-123", payload);
+      const result = await api.evals.runs.complete("run-123", payload);
 
       expect(fetchMock).toHaveBeenCalledWith(
         "https://api.voltagent.dev/evals/runs/run-123/complete",
@@ -223,7 +223,7 @@ describe("VoltAgentCoreAPI", () => {
       };
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      const result = await api.failEvalRun("run-123", payload);
+      const result = await api.evals.runs.fail("run-123", payload);
 
       expect(fetchMock).toHaveBeenCalledWith(
         "https://api.voltagent.dev/evals/runs/run-123/fail",
@@ -263,7 +263,7 @@ describe("VoltAgentCoreAPI", () => {
       });
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      const response = await api.getEvalDataset("dataset-1");
+      const response = await api.evals.datasets.get("dataset-1");
 
       expect(fetchMock).toHaveBeenCalledWith(
         "https://api.voltagent.dev/evals/datasets/dataset-1",
@@ -283,7 +283,7 @@ describe("VoltAgentCoreAPI", () => {
       });
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      await api.listEvalDatasets();
+      await api.evals.datasets.list();
 
       expect(fetchMock).toHaveBeenCalledWith(
         "https://api.voltagent.dev/evals/datasets",
@@ -300,7 +300,7 @@ describe("VoltAgentCoreAPI", () => {
       });
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      await api.listEvalDatasets("Capitals");
+      await api.evals.datasets.list("Capitals");
 
       expect(fetchMock).toHaveBeenCalledWith(
         "https://api.voltagent.dev/evals/datasets?name=Capitals",
@@ -334,7 +334,7 @@ describe("VoltAgentCoreAPI", () => {
       });
 
       const api = new VoltAgentCoreAPI(defaultOptions);
-      const response = await api.listEvalDatasetItems("dataset-1", "version-1", {
+      const response = await api.evals.datasets.listItems("dataset-1", "version-1", {
         limit: 20,
         offset: 5,
         search: "Paris",

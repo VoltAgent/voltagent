@@ -1,6 +1,6 @@
 # Overview
 
-Triggers determine when your agents and workflows start running. They connect agents to external services or time-based schedules, responding to messages, emails, database changes, or recurring events.
+Triggers determine when your agents and workflows start running. They connect agents to external services or time-based schedules, responding to messages, emails, database changes, or recurring events. When you need to push agent output **out** to SaaS systems, pair triggers with [VoltOps Actions](../actions/overview.md), which share the same credential system and observability.
 
 ## How Triggers Work
 

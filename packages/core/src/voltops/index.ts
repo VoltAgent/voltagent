@@ -34,6 +34,8 @@ export type {
   VoltOpsCompleteEvalRunRequest,
   VoltOpsCreateScorerRequest,
   VoltOpsScorerSummary,
+  VoltOpsActionExecutionResult,
+  VoltOpsAirtableCreateRecordParams,
 } from "./types";
 
 // Export prompt manager implementation
@@ -47,6 +49,9 @@ export { createSimpleTemplateEngine } from "./template-engine";
 
 // Export factory function for backward compatibility
 export { createVoltOpsClient } from "./client";
+
+// Export actions client
+export { VoltOpsActionsClient, type VoltOpsActionsTransport } from "./actions/client";
 
 /**
  * Re-export for convenience - main entry point

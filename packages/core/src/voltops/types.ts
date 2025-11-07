@@ -130,6 +130,110 @@ export type CachedPrompt = {
   ttl: number;
 };
 
+export interface VoltOpsActionExecutionResult {
+  actionId: string;
+  provider: string;
+  requestPayload: Record<string, unknown>;
+  responsePayload: unknown;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface VoltOpsAirtableCreateRecordParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  fields: Record<string, unknown>;
+  typecast?: boolean;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableUpdateRecordParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  fields?: Record<string, unknown>;
+  typecast?: boolean;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableDeleteRecordParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableGetRecordParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableListRecordsParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  view?: string;
+  filterByFormula?: string;
+  maxRecords?: number;
+  pageSize?: number;
+  offset?: string;
+  fields?: string[];
+  sort?: Array<{ field: string; direction?: "asc" | "desc" }>;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export type VoltOpsActionsApi = {
+  airtable: {
+    createRecord: (
+      params: VoltOpsAirtableCreateRecordParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    updateRecord: (
+      params: VoltOpsAirtableUpdateRecordParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteRecord: (
+      params: VoltOpsAirtableDeleteRecordParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    getRecord: (params: VoltOpsAirtableGetRecordParams) => Promise<VoltOpsActionExecutionResult>;
+    listRecords: (
+      params: VoltOpsAirtableListRecordsParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
+};
+
+export interface VoltOpsEvalsApi {
+  runs: {
+    create(payload?: VoltOpsCreateEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+    appendResults(
+      runId: string,
+      payload: VoltOpsAppendEvalRunResultsRequest,
+    ): Promise<VoltOpsEvalRunSummary>;
+    complete(runId: string, payload: VoltOpsCompleteEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+    fail(runId: string, payload: VoltOpsFailEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+  };
+  scorers: {
+    create(payload: VoltOpsCreateScorerRequest): Promise<VoltOpsScorerSummary>;
+  };
+}
+
 /**
  * API response for prompt fetch operations
  * Simplified format matching the desired response structure
@@ -284,6 +388,10 @@ export interface VoltOpsCompleteEvalRunRequest {
   error?: VoltOpsEvalRunErrorPayload;
 }
 
+export interface VoltOpsFailEvalRunRequest {
+  error: VoltOpsEvalRunErrorPayload;
+}
+
 export interface VoltOpsCreateScorerRequest {
   id: string;
   name: string;
@@ -316,26 +424,14 @@ export interface VoltOpsClient {
   /** Configuration options */
   options: VoltOpsClientOptions & { baseUrl: string };
 
+  /** Actions client for third-party integrations */
+  actions: VoltOpsActionsApi;
+
+  /** Evaluations API surface */
+  evals: VoltOpsEvalsApi;
+
   /** Create a prompt helper for agent instructions */
   createPromptHelper(agentId: string, historyEntryId?: string): PromptHelper;
-
-  /** Create a new evaluation run in VoltOps */
-  createEvalRun(payload?: VoltOpsCreateEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
-
-  /** Append evaluation results to an existing run */
-  appendEvalRunResults(
-    runId: string,
-    payload: VoltOpsAppendEvalRunResultsRequest,
-  ): Promise<VoltOpsEvalRunSummary>;
-
-  /** Complete an evaluation run */
-  completeEvalRun(
-    runId: string,
-    payload: VoltOpsCompleteEvalRunRequest,
-  ): Promise<VoltOpsEvalRunSummary>;
-
-  /** Upsert a scorer definition */
-  createEvalScorer(payload: VoltOpsCreateScorerRequest): Promise<VoltOpsScorerSummary>;
 
   /** List managed memory databases available to the project */
   listManagedMemoryDatabases(): Promise<ManagedMemoryDatabaseSummary[]>;

@@ -19,6 +19,7 @@ import type {
   WorkflowStateEntry,
 } from "../memory/types";
 import { AgentRegistry } from "../registries/agent-registry";
+import { VoltOpsActionsClient } from "./actions/client";
 // VoltAgentExporter removed - migrated to OpenTelemetry
 import { VoltOpsPromptManagerImpl } from "./prompt-manager";
 import type {
@@ -47,6 +48,8 @@ import type {
   VoltOpsCreateEvalRunRequest,
   VoltOpsCreateScorerRequest,
   VoltOpsEvalRunSummary,
+  VoltOpsEvalsApi,
+  VoltOpsFailEvalRunRequest,
   VoltOpsPromptManager,
   VoltOpsScorerSummary,
 } from "./types";
@@ -60,6 +63,8 @@ export class VoltOpsClient implements IVoltOpsClient {
   // observability removed - now handled by VoltAgentObservability
   public readonly prompts?: VoltOpsPromptManager;
   public readonly managedMemory: ManagedMemoryVoltOpsClient;
+  public readonly actions: VoltOpsActionsClient;
+  public readonly evals: VoltOpsEvalsApi;
   private readonly logger: Logger;
 
   private get fetchImpl(): typeof fetch {
@@ -87,6 +92,18 @@ export class VoltOpsClient implements IVoltOpsClient {
 
     this.logger = new LoggerProxy({ component: "voltops-client" });
     this.managedMemory = this.createManagedMemoryClient();
+    this.actions = new VoltOpsActionsClient(this);
+    this.evals = {
+      runs: {
+        create: this.createEvalRun.bind(this),
+        appendResults: this.appendEvalRunResults.bind(this),
+        complete: this.completeEvalRun.bind(this),
+        fail: this.failEvalRun.bind(this),
+      },
+      scorers: {
+        create: this.createEvalScorer.bind(this),
+      },
+    };
 
     // Check if keys are valid (not empty and have correct prefixes)
     const hasValidKeys =
@@ -198,6 +215,23 @@ export class VoltOpsClient implements IVoltOpsClient {
     };
   }
 
+  public async sendRequest(path: string, init?: RequestInit): Promise<Response> {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const url = `${this.getApiUrl()}${normalizedPath}`;
+    const headers = {
+      ...this.getAuthHeaders(),
+      ...(init?.headers ?? {}),
+    };
+
+    const requestInit: RequestInit = {
+      method: "GET",
+      ...init,
+      headers,
+    };
+
+    return await this.fetchImpl(url, requestInit);
+  }
+
   // getObservabilityExporter removed - observability now handled by VoltAgentObservability
 
   /**
@@ -207,14 +241,14 @@ export class VoltOpsClient implements IVoltOpsClient {
     return this.prompts;
   }
 
-  public async createEvalRun(
+  private async createEvalRun(
     payload: VoltOpsCreateEvalRunRequest = {},
   ): Promise<VoltOpsEvalRunSummary> {
     const response = await this.request<unknown>("POST", "/evals/runs", payload);
     return this.normalizeRunSummary(response);
   }
 
-  public async appendEvalRunResults(
+  private async appendEvalRunResults(
     runId: string,
     payload: VoltOpsAppendEvalRunResultsRequest,
   ): Promise<VoltOpsEvalRunSummary> {
@@ -226,7 +260,7 @@ export class VoltOpsClient implements IVoltOpsClient {
     return this.normalizeRunSummary(response);
   }
 
-  public async completeEvalRun(
+  private async completeEvalRun(
     runId: string,
     payload: VoltOpsCompleteEvalRunRequest,
   ): Promise<VoltOpsEvalRunSummary> {
@@ -238,7 +272,19 @@ export class VoltOpsClient implements IVoltOpsClient {
     return this.normalizeRunSummary(response);
   }
 
-  public async createEvalScorer(
+  private async failEvalRun(
+    runId: string,
+    payload: VoltOpsFailEvalRunRequest,
+  ): Promise<VoltOpsEvalRunSummary> {
+    const response = await this.request<unknown>(
+      "POST",
+      `/evals/runs/${encodeURIComponent(runId)}/fail`,
+      payload,
+    );
+    return this.normalizeRunSummary(response);
+  }
+
+  private async createEvalScorer(
     payload: VoltOpsCreateScorerRequest,
   ): Promise<VoltOpsScorerSummary> {
     const response = await this.request<unknown>("POST", "/evals/scorers", payload);
