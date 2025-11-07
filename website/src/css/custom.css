@@ -4357,14 +4357,13 @@ code .token.coord {
   border-radius: 12px !important;
   padding: 0.875rem !important;
   margin: 1.5rem 0 !important;
-    color: #f59e0ba1 !important;
+  color: #f59e0ba1 !important;
 }
 
 .theme-admonition-warning .admonition-content p {
   color: #f59e0ba1 !important;
   line-height: 1.6 !important;
 }
-
 
 /* Info Admonition */
 .theme-admonition-info {
