@@ -145,7 +145,9 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
+      const baseConversationsTable = `${this.tablePrefix}_conversations`;
       const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      const baseMessagesTable = `${this.tablePrefix}_messages`;
       const usersTable = this.getTableName(`${this.tablePrefix}_users`);
 
       // Create users table (for user-level working memory)
@@ -188,6 +190,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
       // Create workflow states table
       const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
+      const baseWorkflowStatesTable = `${this.tablePrefix}_workflow_states`;
       await client.query(`
         CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
           id TEXT PRIMARY KEY,
@@ -208,32 +211,32 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
       // Create indexes for better performance
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_user_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseConversationsTable}_user_id 
         ON ${conversationsTable}(user_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_resource_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseConversationsTable}_resource_id 
         ON ${conversationsTable}(resource_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${messagesTable}_conversation_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseMessagesTable}_conversation_id 
         ON ${messagesTable}(conversation_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${messagesTable}_created_at 
+        CREATE INDEX IF NOT EXISTS idx_${baseMessagesTable}_created_at 
         ON ${messagesTable}(created_at)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_workflow_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseWorkflowStatesTable}_workflow_id 
         ON ${workflowStatesTable}(workflow_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_status 
+        CREATE INDEX IF NOT EXISTS idx_${baseWorkflowStatesTable}_status 
         ON ${workflowStatesTable}(status)
       `);
 
