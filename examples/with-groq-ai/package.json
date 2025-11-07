@@ -2,7 +2,7 @@
   "name": "voltagent-example-groq-ai",
   "author": "",
   "dependencies": {
-    "@ai-sdk/groq": "^2.0.18",
+    "@ai-sdk/groq": "^2.0.24",
     "@voltagent/cli": "^0.1.15",
     "@voltagent/core": "^1.2.0",
     "@voltagent/libsql": "^1.0.10",

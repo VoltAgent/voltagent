@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-anthropic",
   "author": "",
   "dependencies": {
-    "@ai-sdk/anthropic": "^2.0.6",
+    "@ai-sdk/anthropic": "^2.0.37",
     "@voltagent/cli": "^0.1.15",
     "@voltagent/core": "^1.2.0",
     "@voltagent/libsql": "^1.0.10",
