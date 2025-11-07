@@ -44,6 +44,7 @@ For more details on network binding configuration, see the [Server Architecture]
 ## Tooling
 
 - The VoltAgent CLI can scaffold deployment files (Wrangler config, Netlify/Vercel templates, etc.).
+- Use `volt tunnel` during development to share a local server over HTTPS without deploying (see [Local Tunnel guide](/docs/deployment/local-tunnel)).
 - The `examples/` directory contains ready-to-run templates, including Cloudflare Workers and Netlify Functions setups.
 
 ## Guides

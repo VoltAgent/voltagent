@@ -378,36 +378,32 @@ async function runEvalScorers(host: AgentEvalHost, args: RunEvalScorersArgs): Pr
         `eval.scorer.${definition.id}`,
         {
           kind: SpanKind.INTERNAL,
-          attributes: { "span.type": "scorer" },
+          attributes: {
+            "span.type": "scorer",
+            "voltagent.label": definition.name ?? descriptor.key ?? definition.id,
+            "entity.id": host.id,
+            "entity.type": "agent",
+            "entity.name": host.name,
+            "eval.scorer.id": definition.id,
+            "eval.scorer.key": descriptor.key,
+            "eval.scorer.name": definition.name ?? definition.id,
+            "eval.scorer.kind": "live",
+            "eval.scorer.status": "running",
+            "eval.operation.id": storagePayload.operationId,
+            "eval.operation.type": storagePayload.operationType,
+            "eval.trace.id": storagePayload.traceId,
+            "eval.source.span_id": storagePayload.spanId,
+            "eval.trigger_source": config.triggerSource ?? "live",
+            "eval.environment": config.environment,
+            ...(storagePayload.userId ? { "user.id": storagePayload.userId } : {}),
+            ...(storagePayload.conversationId
+              ? { "conversation.id": storagePayload.conversationId }
+              : {}),
+          },
           links,
         },
         parentContext,
       );
-
-      span.setAttributes({
-        "voltagent.label": definition.name ?? descriptor.key ?? definition.id,
-        "entity.id": host.id,
-        "entity.type": "agent",
-        "entity.name": host.name,
-        "eval.scorer.id": definition.id,
-        "eval.scorer.key": descriptor.key,
-        "eval.scorer.name": definition.name ?? definition.id,
-        "eval.scorer.kind": "live",
-        "eval.scorer.status": "running",
-        "eval.operation.id": storagePayload.operationId,
-        "eval.operation.type": storagePayload.operationType,
-        "eval.trace.id": storagePayload.traceId,
-        "eval.source.span_id": storagePayload.spanId,
-        "eval.trigger_source": config.triggerSource ?? "live",
-        "eval.environment": config.environment,
-      });
-
-      if (storagePayload.userId) {
-        span.setAttribute("user.id", storagePayload.userId);
-      }
-      if (storagePayload.conversationId) {
-        span.setAttribute("conversation.id", storagePayload.conversationId);
-      }
 
       span.addEvent("eval.scorer.started");
       const spanContext = trace.setSpan(parentContext, span);

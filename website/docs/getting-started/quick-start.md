@@ -149,6 +149,8 @@ When you run the `dev` command, `tsx` will compile and run your code. You should
   VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
+  ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
+     Docs: https://voltagent.dev/docs/deployment/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
 
   Test your agents with VoltOps Console: https://console.voltagent.dev
@@ -168,6 +170,30 @@ Your agent is now running! To interact with it:
 You should receive a response from your AI agent in the chat window. This confirms that your VoltAgent application is set up correctly and communicating with the LLM.
 
 The `dev` script uses `tsx watch`, so it will automatically restart if you make changes to your code in the `src` directory. Press `Ctrl+C` in the terminal to stop the agent.
+
+### Share Your Local Server (Optional)
+
+When you need to demo your agent remotely or receive external webhooks, install the VoltAgent CLI and open a tunnel:
+
+```bash title="Install the CLI (adds a volt script and dev dependency)"
+npx @voltagent/cli init
+```
+
+Then expose your local server:
+
+```bash
+pnpm volt tunnel 3141
+```
+
+The command prints an HTTPS URL (for example `https://your-tunnel-address.tunnel.voltagent.dev`) that forwards traffic to your local port until you press `Ctrl+C`. You can also run it ad‑hoc without installing dependencies:
+
+> Tip: skipping the port (`pnpm volt tunnel`) uses the default `3141`.
+
+```bash
+npx @voltagent/cli tunnel 3141
+```
+
+See the [Local Tunnel guide](/docs/deployment/local-tunnel) for details and limitations.
 
 ### Build for Production
 
@@ -452,6 +478,8 @@ When you run the `dev` command, `tsx` will compile and run your code. You should
   VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
+  ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
+     Docs: https://voltagent.dev/docs/deployment/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
 
   Test your agents with VoltOps Console: https://console.voltagent.dev

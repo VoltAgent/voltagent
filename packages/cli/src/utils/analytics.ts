@@ -121,4 +121,17 @@ export const captureWhoamiEvent = (options: { numVoltPackages: number }) => {
   });
 };
 
+// Function to capture tunnel command usage
+export const captureTunnelEvent = () => {
+  if (isTelemetryDisabled()) return;
+
+  client.capture({
+    distinctId: getMachineId(),
+    event: "cli_tunnel_opened",
+    properties: {
+      ...getOSInfo(),
+    },
+  });
+};
+
 export default client;

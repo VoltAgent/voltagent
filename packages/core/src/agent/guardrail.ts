@@ -287,7 +287,8 @@ export async function runInputGuardrails(
       {
         label: guardrail.name,
         attributes: {
-          "entity.type": NodeType.GUARDRAIL,
+          // entity.type and entity.id are inherited from parent via commonAttributes
+          "guardrail.type": NodeType.GUARDRAIL,
           "guardrail.direction": "input",
           "guardrail.operation": operation,
           "guardrail.index": index,
@@ -425,7 +426,8 @@ export async function runOutputGuardrails<TOutput>({
         {
           label: guardrail.name,
           attributes: {
-            "entity.type": NodeType.GUARDRAIL,
+            // entity.type and entity.id are inherited from parent via commonAttributes
+            "guardrail.type": NodeType.GUARDRAIL,
             "guardrail.direction": "output",
             "guardrail.operation": operation,
             "guardrail.index": index,

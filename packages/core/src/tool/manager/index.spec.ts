@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ToolExecuteOptions } from "../../agent/providers/base/types";
 import { type AgentTool, type ProviderTool, Tool, ToolManager, createTool } from "../index";
 import { createToolkit } from "../toolkit";
 import type { Toolkit } from "../toolkit";
@@ -233,7 +234,7 @@ describe("ToolManager", () => {
       const serverToolEntry = preparedTools[mockTool1.name] as {
         description: string;
         inputSchema: unknown;
-        execute?: (args: any) => Promise<any>;
+        execute?: (args: any, options?: ToolExecuteOptions) => Promise<any>;
       };
 
       expect(createToolExecuteFunction).toHaveBeenCalledTimes(1);
@@ -243,8 +244,9 @@ describe("ToolManager", () => {
       expect(serverToolEntry.execute).toBe(wrappedExecute);
 
       const args = { payload: "value" };
-      await expect(serverToolEntry.execute?.(args)).resolves.toBe("wrapped-result");
-      expect(wrappedExecute).toHaveBeenCalledWith(args);
+      const options = { toolCallId: "call-123" } as ToolExecuteOptions;
+      await expect(serverToolEntry.execute?.(args, options)).resolves.toBe("wrapped-result");
+      expect(wrappedExecute).toHaveBeenCalledWith(args, options);
     });
 
     it("should skip execute wrapper for client-side tools", () => {
@@ -260,7 +262,7 @@ describe("ToolManager", () => {
       const clientToolEntry = preparedTools[clientTool.name] as {
         description: string;
         inputSchema: unknown;
-        execute?: (args: any) => Promise<any>;
+        execute?: (args: any, options?: ToolExecuteOptions) => Promise<any>;
       };
 
       expect(createToolExecuteFunction).not.toHaveBeenCalled();

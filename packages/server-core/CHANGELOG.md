@@ -1,5 +1,21 @@
 # @voltagent/server-core
 
+## 1.0.21
+
+### Patch Changes
+
+- [#767](https://github.com/VoltAgent/voltagent/pull/767) [`cc1f5c0`](https://github.com/VoltAgent/voltagent/commit/cc1f5c032cd891ed4df0b718885f70853c344690) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add tunnel command
+
+  ## New: `volt tunnel`
+
+  Expose your local VoltAgent server over a secure public URL with a single command:
+
+  ```bash
+  pnpm volt tunnel 3141
+  ```
+
+  The CLI handles tunnel creation for `localhost:3141` and keeps the connection alive until you press `Ctrl+C`. You can omit the port argument to use the default.
+
 ## 1.0.20
 
 ### Patch Changes

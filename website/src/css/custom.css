@@ -4254,7 +4254,7 @@ code .token.coord {
 
 /* Admonition Styles */
 .theme-admonition-tip {
-  background-color: rgba(16, 185, 129, 0.08) !important;
+  background-color: #000000 !important;
   border: 1px solid rgba(16, 185, 129, 0.3) !important;
   border-radius: 6px !important;
   padding: 0.875rem !important;
@@ -4275,7 +4275,7 @@ code .token.coord {
 }
 
 [data-theme="dark"] .theme-admonition-tip {
-  background-color: rgba(16, 185, 129, 0.08) !important;
+  background-color: #000000 !important;
 }
 
 [data-theme="dark"] .theme-admonition-tip .admonition-content p {
@@ -4299,7 +4299,7 @@ code .token.coord {
 
 /* Note Admonition */
 .theme-admonition-note {
-  background-color: rgba(59, 130, 246, 0.08) !important;
+  background-color: #000000 !important;
   border: 1px solid rgba(59, 130, 246, 0.3) !important;
   border-radius: 6px !important;
   padding: 1rem !important;
@@ -4338,7 +4338,7 @@ code .token.coord {
 }
 
 [data-theme="dark"] .theme-admonition-note {
-  background-color: rgba(59, 130, 246, 0.08) !important;
+  background-color: #000000 !important;
 }
 
 [data-theme="dark"] .theme-admonition-note .admonition-content p {
@@ -4347,7 +4347,7 @@ code .token.coord {
 
 /* Warning Admonition */
 .theme-admonition-warning {
-  background-color: rgba(234, 179, 8, 0.08) !important;
+  background-color: #000000 !important;
   border: 1px solid rgba(234, 179, 8, 0.3) !important;
   border-radius: 6px !important;
   padding: 0.875rem !important;
@@ -4361,7 +4361,7 @@ code .token.coord {
 
 /* Info Admonition */
 .theme-admonition-info {
-  background-color: rgba(96, 165, 250, 0.08) !important;
+  background-color: #000000 !important;
   border: 1px solid rgba(96, 165, 250, 0.3) !important;
   border-radius: 6px !important;
   padding: 0.875rem !important;
@@ -4375,7 +4375,7 @@ code .token.coord {
 
 /* Danger Admonition */
 .theme-admonition-danger {
-  background-color: rgba(239, 68, 68, 0.08) !important;
+  background-color: #000000 !important;
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
   border-radius: 6px !important;
   padding: 0.875rem !important;
@@ -4389,7 +4389,7 @@ code .token.coord {
 
 /* Caution Admonition */
 .theme-admonition-caution {
-  background-color: rgba(245, 158, 11, 0.08) !important;
+  background-color: #000000 !important;
   border: 1px solid rgba(245, 158, 11, 0.3) !important;
   border-radius: 6px !important;
   padding: 0.875rem !important;
@@ -4403,7 +4403,7 @@ code .token.coord {
 
 /* Important Admonition */
 .theme-admonition-important {
-  background-color: rgba(139, 92, 246, 0.08) !important;
+  background-color: #000000 !important;
   border: 1px solid rgba(139, 92, 246, 0.3) !important;
   border-radius: 6px !important;
   padding: 0.875rem !important;
@@ -4548,6 +4548,19 @@ code .token.coord {
   font-weight: 600 !important;
 }
 
+/* Level 2 category headers (Storage Adapters, SCORERS, etc.) - same size as level 1 */
+.theme-doc-sidebar-item-category-level-2 .menu__list-item-collapsible .menu__link {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+}
+
+.theme-doc-sidebar-item-category-level-2 > .menu__list-item-collapsible > .menu__link {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+}
+
 [data-theme="dark"] .menu__list-item-collapsible .menu__link::before {
   color: rgb(16, 185, 129) !important;
 }
@@ -4615,6 +4628,8 @@ code .token.coord {
 .menu__list .menu__list .menu__list-item-collapsible .menu__link {
   padding-left: 1rem !important;
   color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
 }
 
 [data-theme="dark"] .menu__list .menu__list .menu__list-item-collapsible .menu__link {
@@ -4788,8 +4803,8 @@ aside.theme-doc-sidebar-container .menu {
   border-radius: 12px !important;
   padding: 4px !important;
 
-  /*   border: 1px solid rgba(226, 232, 240, 0.8) !important; 
-  background-color: rgba(236, 228, 232, 0.334) !important; 
+  /*   border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  background-color: rgba(236, 228, 232, 0.334) !important;
  */
 }
 
@@ -4800,10 +4815,28 @@ aside.theme-doc-sidebar-container .menu {
   /* bg-gray-800/25 */
 }
 
+/* Documentation Videos */
+.markdown video {
+  border-radius: 12px !important;
+  padding: 4px !important;
+}
+
+[data-theme="dark"] .markdown video {
+  border: 1px solid rgba(70, 76, 85, 0.8) !important;
+  /* slate-700 with opacity */
+  background-color: rgba(19, 19, 20, 0.25) !important;
+  /* bg-gray-800/25 */
+}
+
 /* Right Sidebar (Table of Contents) Styles */
 .table-of-contents {
   padding-left: 0 !important;
-  border: none !important;
+  border-left: none !important;
+}
+
+[data-theme="dark"] .table-of-contents {
+  border-left: none !important;
+  padding-left: 0 !important;
 }
 
 .table-of-contents li {
@@ -4883,24 +4916,40 @@ nav.table-of-contents .table-of-contents__link--active,
 
 /* Article Content Link Styles */
 .markdown a {
-  color: #00d992 !important; /* main-emerald color */
+  color: #10b981 !important; /* main-emerald color */
   font-weight: normal !important;
   transition: all 0.2s ease;
-  border-bottom: 1px solid transparent !important;
   text-decoration: none !important;
+  padding-bottom: 1px !important;
+  border-bottom: 1px solid #10b981 !important;
 }
 
 .markdown a:hover {
-  border-bottom: 1px solid #00d992 !important;
-  color: #00d992 !important;
+  color: #10b981 !important;
+  opacity: 0.8;
 }
 
 [data-theme="dark"] .markdown a {
-  color: #00d992 !important;
+  color: #10b981 !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid #10b981 !important;
 }
 
 [data-theme="dark"] .markdown a:hover {
-  border-bottom: 1px solid #00d992 !important;
+  opacity: 0.8;
+}
+
+/* Article Content Bold Styles */
+.markdown strong,
+.markdown b {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+[data-theme="dark"] .markdown strong,
+[data-theme="dark"] .markdown b {
+  color: #ffffff !important;
+  font-weight: 600 !important;
 }
 
 /* Remove Heading Link Styles */

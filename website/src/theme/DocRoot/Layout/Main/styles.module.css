@@ -83,7 +83,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(148, 191, 174, 0.75);
+  color: #10b981 !important;
   padding-right: 2rem;
   margin-top: 50px;
 }

@@ -85,8 +85,8 @@ describe("createRetrieverTool", () => {
       },
     };
 
-    // Act
-    await tool.execute({ query }, operationContext);
+    // Act - operationContext can be passed as options since ToolExecuteOptions extends Partial<OperationContext>
+    await tool.execute({ query }, operationContext as any);
 
     // Assert
     expect(mockRetriever.retrieve).toHaveBeenCalledWith(

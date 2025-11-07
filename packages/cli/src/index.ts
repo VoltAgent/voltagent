@@ -7,6 +7,7 @@ import { registerDeployCommand } from "./commands/deploy";
 import { registerEvalCommand } from "./commands/eval";
 import { registerInitCommand } from "./commands/init";
 import { registerMCPCommand } from "./commands/mcp";
+import { registerTunnelCommand } from "./commands/tunnel";
 import { registerUpdateCommand } from "./commands/update";
 import { registerWhoamiCommand } from "./commands/whoami";
 import { captureError } from "./utils/analytics";
@@ -30,6 +31,7 @@ const createCLI = () => {
   registerMCPCommand(program);
   registerDeployCommand(program);
   registerEvalCommand(program);
+  registerTunnelCommand(program);
 
   return program;
 };

@@ -1,3 +1,4 @@
+import type { ToolCallOptions } from "@ai-sdk/provider-utils";
 import type { Logger } from "@voltagent/internal";
 import type { ApiToolInfo } from "../../agent/types";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
@@ -45,14 +46,16 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
   }
 
   public prepareToolsForExecution(
-    createToolExecuteFunction: (tool: AgentTool) => (args: any) => Promise<any>,
+    createToolExecuteFunction: (
+      tool: AgentTool,
+    ) => (args: any, options?: ToolCallOptions) => Promise<any>,
   ): Record<string, any> {
     const tools: Record<
       string,
       | {
           description: string;
           inputSchema: any;
-          execute?: (args: any) => Promise<any>;
+          execute?: (args: any, options?: ToolCallOptions) => Promise<any>;
         }
       | ProviderTool
     > = {};
@@ -61,6 +64,8 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
       tools[tool.name] = {
         description: tool.description,
         inputSchema: tool.parameters, // AI SDK will convert this to JSON Schema internally
+        providerOptions: tool.providerOptions, // Pass provider-specific options to AI SDK
+        toModelOutput: tool.toModelOutput, // Pass multi-modal output converter to AI SDK
       };
 
       // client side tools don't have execute function
@@ -70,6 +75,7 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
 
       tools[tool.name] = {
         ...tools[tool.name],
+        description: tool.description,
         execute: createToolExecuteFunction(tool), // End of execute function
       };
     }

@@ -85,10 +85,10 @@ export default function Navbar() {
       <div className={styles.navbarInner}>
         <div className={styles.navbarLeft}>
           <Link to="/" className={styles.logoLink}>
-            {/* <div className="flex items-center border-solid border-1 border-main-emerald rounded-full  p-1">
+            <div className="flex items-center border-solid border-1 border-main-emerald rounded-full  p-1">
               <BoltIcon className="w-4 h-4  text-main-emerald" />
-            </div> */}
-            🎃<span className={styles.logoText}>voltagent</span>
+            </div>
+            <span className={styles.logoText}>voltagent</span>
           </Link>
           <div className={`${styles.navLinks} ${isMenuOpen ? styles.navLinksOpen : ""}`}>
             <div className={`${styles.navLink} group relative`}>
@@ -266,12 +266,12 @@ export default function Navbar() {
                         </div>
                       </div>
                     </Link>
-                    <Link to="/launch-week-june-25/" className="no-underline">
+                    <Link to="/launch-week-november-25/" className="no-underline">
                       <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20">
                         <RocketLaunchIcon className="w-5 h-5 mr-3 ml-1 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                         <div className="min-w-0 font-['Inter']">
                           <div className="text-sm font-semibold whitespace-nowrap !text-white group-hover:!text-white transition-colors duration-200">
-                            Launch Week #1
+                            Launch Week #2
                           </div>
                           <div className="text-xs font-normal text-gray-500 whitespace-nowrap">
                             Explore our product launch updates
@@ -564,12 +564,12 @@ export default function Navbar() {
                   </div>
                 </div>
               </Link>
-              <Link to="/launch-week-june-25/" className="no-underline">
+              <Link to="/launch-week-november-25/" className="no-underline">
                 <div className="group p-3 pl-8 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-b-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.01] hover:shadow-md hover:shadow-slate-900/20">
                   <RocketLaunchIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]  transition-all duration-200" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
-                      Launch Week #1
+                      Launch Week #2
                     </div>
                     <div className="text-xs font-normal text-gray-400">
                       Explore our product launch updates

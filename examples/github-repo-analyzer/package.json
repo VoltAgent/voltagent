@@ -4,7 +4,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
     "@octokit/rest": "^21.0.0",
-    "@voltagent/core": "^1.1.37",
+    "@voltagent/core": "^1.2.0",
     "@voltagent/libsql": "^1.0.10",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.2",
@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
-    "@voltagent/cli": "^0.1.14",
+    "@voltagent/cli": "^0.1.15",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },

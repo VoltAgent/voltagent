@@ -33,9 +33,12 @@ When you run a VoltAgent application locally, it exposes a local server (typical
     ══════════════════════════════════════════════════
       VOLTAGENT SERVER STARTED SUCCESSFULLY
     ══════════════════════════════════════════════════
-      ✓ HTTP Server: http://localhost:3141
+      ✓ HTTP Server:  http://localhost:3141
+      ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
+         Docs: https://voltagent.dev/docs/deployment/local-tunnel/
+      ✓ Swagger UI:   http://localhost:3141/ui
 
-      VoltOps Platform:    https://console.voltagent.dev
+      Test your agents with VoltOps Console: https://console.voltagent.dev
     ══════════════════════════════════════════════════
     [VoltAgent] All packages are up to date
     ```

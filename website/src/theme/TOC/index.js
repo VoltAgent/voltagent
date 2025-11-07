@@ -86,7 +86,7 @@ export default function TOC({ toc, ...props }) {
                 }
                 
                 .table-of-contents__link--active {
-                    color: #94bfaebf !important;
+                    color: #10b981 !important;
                     font-weight: 500;
                     background: transparent !important;
                     padding-left: 0.25rem;
@@ -100,19 +100,19 @@ export default function TOC({ toc, ...props }) {
                 }
 
                 :root[data-theme='dark'] .table-of-contents__link--active {
-                    color: #94bfaebf !important;
+                    color: #10b981 !important;
                     background: transparent !important;
                 }
 
                 .table-of-contents__link:hover:not(.table-of-contents__link--active) {
-                    color: #94bfaebf !important;
+                    color: #10b981 !important;
                     background: transparent !important;
                     padding-left: 0.25rem;
                     padding-right: 0.25rem;
                 }
 
                 :root[data-theme='dark'] .table-of-contents__link:hover:not(.table-of-contents__link--active) {
-                    color: #94bfaebf !important;
+                    color: #10b981 !important;
                     background: transparent !important;
                 }
                 
