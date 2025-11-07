@@ -945,7 +945,7 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       vi.clearAllMocks();
     });
 
-    it("should use default schema (public) and default table prefix", async () => {
+    it("should use implicit schema (resolved via search_path) and default table prefix", async () => {
       const mockClient = {
         query: mockQuery,
         release: mockRelease,
@@ -1310,9 +1310,7 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
         (call) => typeof call[0] === "string" && call[0].includes("CREATE TABLE IF NOT EXISTS"),
       );
 
-      const usersTableCall = createTableCalls.find(
-        (call) => call[0].includes("test_users") && !call[0].includes('"public".'),
-      );
+      const usersTableCall = createTableCalls.find((call) => call[0].includes("test_users"));
 
       expect(usersTableCall).toBeTruthy();
     });
@@ -1486,8 +1484,27 @@ describe.sequential("PostgreSQLMemoryAdapter - Schema Management Functions", () 
   });
 
   it("should get schema name", () => {
-    const schemaName = adapter.getSchemaName();
+    const schemaName = adapter.getSchemaName() as string;
     expect(schemaName).toBe("test_schema");
+  });
+
+  it("should return undefined schema when not specified", async () => {
+    const adapter2 = new PostgreSQLMemoryAdapter({
+      connection: {
+        host: "localhost",
+        port: 5432,
+        database: "test",
+        user: "test",
+        password: "test",
+      },
+      tablePrefix: "test_prefix",
+    });
+
+    // @ts-expect-error - private property access for test
+    await adapter2.initPromise;
+
+    expect(adapter2.getSchemaName()).toBeUndefined();
+    await adapter2.close();
   });
 
   it("should get table prefix", () => {

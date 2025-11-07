@@ -71,14 +71,14 @@ export interface PostgreSQLMemoryOptions {
 export class PostgreSQLMemoryAdapter implements StorageAdapter {
   private pool: Pool;
   private tablePrefix: string;
-  private schema: string;
+  private schema: string | undefined;
   private initialized = false;
   private initPromise: Promise<void> | null = null;
   private debug: boolean;
 
   constructor(options: PostgreSQLMemoryOptions) {
     this.tablePrefix = options.tablePrefix ?? "voltagent_memory";
-    this.schema = options.schema ?? "public";
+    this.schema = options.schema;
     this.debug = options.debug ?? false;
 
     // Create PostgreSQL connection pool
@@ -117,7 +117,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * Get fully qualified table name with schema
    */
   private getTableName(tableName: string): string {
-    if (this.schema && this.schema !== "public") {
+    if (this.schema) {
       return `"${this.schema}"."${tableName}"`;
     }
     return tableName;
@@ -1173,7 +1173,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   /**
    * Get the current schema name being used by the adapter
    */
-  getSchemaName(): string {
+  getSchemaName(): string | undefined {
     return this.schema;
   }
 
@@ -1191,13 +1191,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async listTables(): Promise<string[]> {
     await this.initPromise;
 
+    const schemaCondition = this.schema ? "table_schema = $1" : "table_schema = current_schema()";
+    const params = this.schema ? [this.schema] : [];
+
     const result = await this.pool.query(
-      `SELECT table_name 
-       FROM information_schema.tables 
-       WHERE table_schema = $1 
-       AND table_type = 'BASE TABLE'
-       ORDER BY table_name`,
-      [this.schema],
+      `SELECT table_name
+     FROM information_schema.tables
+     WHERE ${schemaCondition}
+     AND table_type = 'BASE TABLE'
+     ORDER BY table_name`,
+      params,
     );
 
     return result.rows.map((row) => row.table_name);
@@ -1209,14 +1212,17 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async listManagedTables(): Promise<string[]> {
     await this.initPromise;
 
+    const schemaCondition = this.schema ? "table_schema = $1" : "table_schema = current_schema()";
+    const params = this.schema ? [this.schema, `${this.tablePrefix}%`] : [`${this.tablePrefix}%`];
+
     const result = await this.pool.query(
-      `SELECT table_name 
-       FROM information_schema.tables 
-       WHERE table_schema = $1 
-       AND table_type = 'BASE TABLE'
-       AND table_name LIKE $2
-       ORDER BY table_name`,
-      [this.schema, `${this.tablePrefix}%`],
+      `SELECT table_name
+     FROM information_schema.tables
+     WHERE ${schemaCondition}
+     AND table_type = 'BASE TABLE'
+     AND table_name LIKE $${this.schema ? 2 : 1}
+     ORDER BY table_name`,
+      params,
     );
 
     return result.rows.map((row) => row.table_name);
@@ -1228,16 +1234,28 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async tableExists(tableName: string): Promise<boolean> {
     await this.initPromise;
 
-    const result = await this.pool.query(
-      `SELECT EXISTS (
-         SELECT 1 
-         FROM information_schema.tables 
-         WHERE table_schema = $1 
+    if (this.schema) {
+      const result = await this.pool.query(
+        `SELECT EXISTS (
+         SELECT 1
+         FROM information_schema.tables
+         WHERE table_schema = $1
          AND table_name = $2
        ) as exists`,
-      [this.schema, tableName],
+        [this.schema, tableName],
+      );
+      return result.rows[0].exists;
+    }
+    // Use current_schema() when no explicit schema is provided
+    const result = await this.pool.query(
+      `SELECT EXISTS (
+         SELECT 1
+         FROM information_schema.tables
+         WHERE table_schema = current_schema()
+         AND table_name = $1
+       ) as exists`,
+      [tableName],
     );
-
     return result.rows[0].exists;
   }
 
@@ -1263,7 +1281,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
          pg_size_pretty(pg_total_relation_size($1)) as total_size,
          pg_size_pretty(pg_indexes_size($1)) as index_size,
          pg_size_pretty(pg_relation_size($1)) as table_size`,
-      [this.schema !== "public" ? `${this.schema}.${tableName}` : tableName],
+      [this.schema ? `${this.schema}.${tableName}` : tableName],
     );
 
     return {
@@ -1287,8 +1305,9 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   > {
     await this.initPromise;
 
-    const result = await this.pool.query(
-      `SELECT 
+    if (this.schema) {
+      const result = await this.pool.query(
+        `SELECT 
          i.relname as index_name,
          array_agg(a.attname ORDER BY array_position(ix.indkey, a.attnum)) as column_names,
          ix.indisunique as is_unique,
@@ -1303,7 +1322,33 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
        AND t.relkind = 'r'
        GROUP BY i.relname, ix.indisunique, ix.indisprimary
        ORDER BY i.relname`,
-      [tableName, this.schema],
+        [tableName, this.schema],
+      );
+
+      return result.rows.map((row) => ({
+        indexName: row.index_name,
+        columnNames: row.column_names,
+        isUnique: row.is_unique,
+        isPrimary: row.is_primary,
+      }));
+    }
+    const result = await this.pool.query(
+      `SELECT 
+         i.relname as index_name,
+         array_agg(a.attname ORDER BY array_position(ix.indkey, a.attnum)) as column_names,
+         ix.indisunique as is_unique,
+         ix.indisprimary as is_primary
+       FROM pg_class t
+       JOIN pg_index ix ON t.oid = ix.indrelid
+       JOIN pg_class i ON i.oid = ix.indexrelid
+       JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+       JOIN pg_namespace n ON n.oid = t.relnamespace
+       WHERE t.relname = $1
+       AND n.nspname = current_schema()
+       AND t.relkind = 'r'
+       GROUP BY i.relname, ix.indisunique, ix.indisprimary
+       ORDER BY i.relname`,
+      [tableName],
     );
 
     return result.rows.map((row) => ({
@@ -1328,6 +1373,29 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   > {
     await this.initPromise;
 
+    if (this.schema) {
+      const result = await this.pool.query(
+        `SELECT 
+         column_name,
+         data_type,
+         is_nullable,
+         column_default,
+         character_maximum_length
+       FROM information_schema.columns
+       WHERE table_schema = $1
+       AND table_name = $2
+       ORDER BY ordinal_position`,
+        [this.schema, tableName],
+      );
+
+      return result.rows.map((row) => ({
+        columnName: row.column_name,
+        dataType: row.data_type,
+        isNullable: row.is_nullable === "YES",
+        defaultValue: row.column_default,
+        characterMaximumLength: row.character_maximum_length,
+      }));
+    }
     const result = await this.pool.query(
       `SELECT 
          column_name,
@@ -1336,10 +1404,10 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
          column_default,
          character_maximum_length
        FROM information_schema.columns
-       WHERE table_schema = $1 
-       AND table_name = $2
+       WHERE table_schema = current_schema()
+       AND table_name = $1
        ORDER BY ordinal_position`,
-      [this.schema, tableName],
+      [tableName],
     );
 
     return result.rows.map((row) => ({
@@ -1499,52 +1567,46 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * This migration adds support for events, output, and cancellation tracking
    */
   private async addWorkflowStateColumns(client: PoolClient): Promise<void> {
-    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
+    // Use base table name for information_schema queries
+    const baseTable = `${this.tablePrefix}_workflow_states`;
+    const schemaCondition = this.schema ? "table_schema = $1" : "table_schema = current_schema()";
+    const params = this.schema ? [this.schema, baseTable] : [baseTable];
 
     try {
-      // Check which columns exist
       const columnCheck = await client.query(
         `
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = $1
-        `,
-        [workflowStatesTable],
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1}
+      `,
+        params,
       );
 
       const existingColumns = columnCheck.rows.map((row) => row.column_name);
 
-      // Add events column if it doesn't exist
       if (!existingColumns.includes("events")) {
         try {
-          await client.query(`ALTER TABLE ${workflowStatesTable} ADD COLUMN events JSONB`);
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN events JSONB`);
           this.log("Added 'events' column to workflow_states table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
-      // Add output column if it doesn't exist
       if (!existingColumns.includes("output")) {
         try {
-          await client.query(`ALTER TABLE ${workflowStatesTable} ADD COLUMN output JSONB`);
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN output JSONB`);
           this.log("Added 'output' column to workflow_states table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
-      // Add cancellation column if it doesn't exist
       if (!existingColumns.includes("cancellation")) {
         try {
-          await client.query(`ALTER TABLE ${workflowStatesTable} ADD COLUMN cancellation JSONB`);
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN cancellation JSONB`,
+          );
           this.log("Added 'cancellation' column to workflow_states table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
     } catch (error) {
-      // Log warning but don't throw - existing deployments without these columns will still work
       this.log("Failed to add workflow state columns (non-critical):", error);
     }
   }
@@ -1554,77 +1616,71 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * This allows existing tables to support both old and new message formats
    */
   private async addUIMessageColumnsToMessagesTable(client: PoolClient): Promise<void> {
-    const messagesTableName = this.getTableName(`${this.tablePrefix}_messages`);
+    const baseTable = `${this.tablePrefix}_messages`;
+    const schemaCondition = this.schema ? "table_schema = $1" : "table_schema = current_schema()";
+    const params = this.schema ? [this.schema, baseTable] : [baseTable];
 
     try {
-      // Check which columns exist
       const columnCheck = await client.query(
         `
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = $1
-        `,
-        [messagesTableName],
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1}
+      `,
+        params,
       );
 
       const existingColumns = columnCheck.rows.map((row) => row.column_name);
 
-      // Add new columns if they don't exist
       if (!existingColumns.includes("parts")) {
         try {
-          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN parts JSONB`);
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN parts JSONB`);
           this.log("Added 'parts' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       if (!existingColumns.includes("metadata")) {
         try {
-          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN metadata JSONB`);
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN metadata JSONB`,
+          );
           this.log("Added 'metadata' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       if (!existingColumns.includes("format_version")) {
         try {
           await client.query(
-            `ALTER TABLE ${messagesTableName} ADD COLUMN format_version INTEGER DEFAULT 2`,
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN format_version INTEGER DEFAULT 2`,
           );
           this.log("Added 'format_version' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       if (!existingColumns.includes("user_id")) {
         try {
           await client.query(
-            `ALTER TABLE ${messagesTableName} ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default'`,
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default'`,
           );
           this.log("Added 'user_id' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       // Make content and type nullable for new format
       if (existingColumns.includes("content")) {
         const contentInfo = await client.query(
           `
-          SELECT is_nullable
-          FROM information_schema.columns
-          WHERE table_name = $1 AND column_name = 'content'
-          `,
-          [messagesTableName],
+        SELECT is_nullable
+        FROM information_schema.columns
+        WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1} AND column_name = 'content'
+        `,
+          params,
         );
 
         if (contentInfo.rows[0]?.is_nullable === "NO") {
           try {
             await client.query(
-              `ALTER TABLE ${messagesTableName} ALTER COLUMN content DROP NOT NULL`,
+              `ALTER TABLE ${this.getTableName(baseTable)} ALTER COLUMN content DROP NOT NULL`,
             );
             this.log("Made 'content' column nullable");
           } catch (e) {
@@ -1636,16 +1692,18 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       if (existingColumns.includes("type")) {
         const typeInfo = await client.query(
           `
-          SELECT is_nullable
-          FROM information_schema.columns
-          WHERE table_name = $1 AND column_name = 'type'
-          `,
-          [messagesTableName],
+        SELECT is_nullable
+        FROM information_schema.columns
+        WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1} AND column_name = 'type'
+        `,
+          params,
         );
 
         if (typeInfo.rows[0]?.is_nullable === "NO") {
           try {
-            await client.query(`ALTER TABLE ${messagesTableName} ALTER COLUMN type DROP NOT NULL`);
+            await client.query(
+              `ALTER TABLE ${this.getTableName(baseTable)} ALTER COLUMN type DROP NOT NULL`,
+            );
             this.log("Made 'type' column nullable");
           } catch (e) {
             this.log("Error making type nullable:", e);
@@ -1656,7 +1714,6 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       this.log("UIMessage columns migration completed for messages table");
     } catch (error) {
       this.log("Error in UIMessage columns migration (non-critical):", error);
-      // Don't throw - this is not critical for new installations
     }
   }
 }
