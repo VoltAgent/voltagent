@@ -1,5 +1,5 @@
 ---
-"@voltagent/postgres": major
+"@voltagent/postgres": minor
 ---
 
 feat(postgres-memory-adapter): add schema configuration support
