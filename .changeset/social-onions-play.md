@@ -4,10 +4,9 @@
 
 feat(postgres-memory-adapter): add schema configuration support
 
-Adds support for defining a custom PostgreSQL schema during adapter initialization.
-By default, the schema is set to `public`. Users can now query and mutate tables
-within a specific schema through new helper functions.
+Add support for defining a custom PostgreSQL schema during adapter initialization.
+Defaults to undefined (uses the database’s default schema if not provided).
 
-Includes tests for schema configuration and related functions.
+Includes tests for schema configuration.
 
 Resolves #763
