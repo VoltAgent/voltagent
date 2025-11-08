@@ -1209,23 +1209,13 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   /**
    * List all tables managed by this adapter (with the configured table prefix)
    */
-  async listManagedTables(): Promise<string[]> {
-    await this.initPromise;
-
-    const schemaCondition = this.schema ? "table_schema = $1" : "table_schema = current_schema()";
-    const params = this.schema ? [this.schema, `${this.tablePrefix}%`] : [`${this.tablePrefix}%`];
-
-    const result = await this.pool.query(
-      `SELECT table_name
-     FROM information_schema.tables
-     WHERE ${schemaCondition}
-     AND table_type = 'BASE TABLE'
-     AND table_name LIKE $${this.schema ? 2 : 1}
-     ORDER BY table_name`,
-      params,
-    );
-
-    return result.rows.map((row) => row.table_name);
+  private listManagedTables(): string[] {
+    return [
+      this.getTableName(`${this.tablePrefix}_users`),
+      this.getTableName(`${this.tablePrefix}_conversations`),
+      this.getTableName(`${this.tablePrefix}_messages`),
+      this.getTableName(`${this.tablePrefix}_workflow_states`),
+    ];
   }
 
   /**
@@ -1426,16 +1416,15 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async dropManagedTables(): Promise<void> {
     await this.initPromise;
 
-    const tables = await this.listManagedTables();
+    const tables = this.listManagedTables();
 
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
 
       for (const tableName of tables) {
-        const fullTableName = this.getTableName(tableName);
-        await client.query(`DROP TABLE IF EXISTS ${fullTableName} CASCADE`);
-        this.log(`Dropped table ${fullTableName}`);
+        await client.query(`DROP TABLE IF EXISTS ${tableName} CASCADE`);
+        this.log(`Dropped table ${tableName}`);
       }
 
       await client.query("COMMIT");
@@ -1454,16 +1443,15 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async truncateManagedTables(): Promise<void> {
     await this.initPromise;
 
-    const tables = await this.listManagedTables();
+    const tables = this.listManagedTables();
 
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
 
       for (const tableName of tables) {
-        const fullTableName = this.getTableName(tableName);
-        await client.query(`TRUNCATE TABLE ${fullTableName} CASCADE`);
-        this.log(`Truncated table ${fullTableName}`);
+        await client.query(`TRUNCATE TABLE ${tableName} CASCADE`);
+        this.log(`Truncated table ${tableName}`);
       }
 
       await client.query("COMMIT");
@@ -1493,13 +1481,12 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async vacuumAnalyzeManagedTables(): Promise<void> {
     await this.initPromise;
 
-    const tables = await this.listManagedTables();
+    const tables = this.listManagedTables();
 
     for (const tableName of tables) {
-      const fullTableName = this.getTableName(tableName);
       // VACUUM cannot run inside a transaction block
-      await this.pool.query(`VACUUM ANALYZE ${fullTableName}`);
-      this.log(`Vacuumed and analyzed table ${fullTableName}`);
+      await this.pool.query(`VACUUM ANALYZE ${tableName}`);
+      this.log(`Vacuumed and analyzed table ${tableName}`);
     }
 
     this.log(`Vacuumed and analyzed ${tables.length} managed tables`);

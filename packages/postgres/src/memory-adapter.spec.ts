@@ -1536,23 +1536,16 @@ describe.sequential("PostgreSQLMemoryAdapter - Schema Management Functions", () 
     );
   });
 
-  it("should list only managed tables", async () => {
-    mockPoolQuery.mockResolvedValueOnce({
-      rows: [
-        { table_name: "test_prefix_users" },
-        { table_name: "test_prefix_conversations" },
-        { table_name: "test_prefix_messages" },
-        { table_name: "test_prefix_workflow_states" },
-      ],
-    });
+  it("should list only managed tables", () => {
+    // @ts-expect-error - accessing private method for testing
+    const tables = adapter.listManagedTables();
 
-    const tables = await adapter.listManagedTables();
     expect(tables).toHaveLength(4);
-    expect(tables.every((t) => t.startsWith("test_prefix"))).toBe(true);
-
-    expect(mockPoolQuery).toHaveBeenCalledWith(expect.stringContaining("table_name LIKE"), [
-      "test_schema",
-      "test_prefix%",
+    expect(tables).toEqual([
+      '"test_schema"."test_prefix_users"',
+      '"test_schema"."test_prefix_conversations"',
+      '"test_schema"."test_prefix_messages"',
+      '"test_schema"."test_prefix_workflow_states"',
     ]);
   });
 
@@ -1670,46 +1663,35 @@ describe.sequential("PostgreSQLMemoryAdapter - Schema Management Functions", () 
   });
 
   it("should truncate all managed tables", async () => {
-    // Mock list managed tables
-    mockPoolQuery.mockResolvedValueOnce({
-      rows: [
-        { table_name: "test_prefix_users" },
-        { table_name: "test_prefix_conversations" },
-        { table_name: "test_prefix_messages" },
-      ],
-    });
-
     // Mock transaction
     mockEmptyResult(); // BEGIN
     mockEmptyResult(); // TRUNCATE table 1
     mockEmptyResult(); // TRUNCATE table 2
     mockEmptyResult(); // TRUNCATE table 3
+    mockEmptyResult(); // TRUNCATE table 4
     mockEmptyResult(); // COMMIT
 
     await adapter.truncateManagedTables();
 
-    // Verify TRUNCATE was called for each table
+    // Verify TRUNCATE was called for each table (4 managed tables)
     const truncateCalls = mockQuery.mock.calls.filter((call) => call[0].includes("TRUNCATE TABLE"));
-    expect(truncateCalls.length).toBe(3);
+    expect(truncateCalls.length).toBe(4);
   });
 
   it("should drop all managed tables", async () => {
-    // Mock list managed tables
-    mockPoolQuery.mockResolvedValueOnce({
-      rows: [{ table_name: "test_prefix_users" }, { table_name: "test_prefix_conversations" }],
-    });
-
     // Mock transaction
     mockEmptyResult(); // BEGIN
     mockEmptyResult(); // DROP table 1
     mockEmptyResult(); // DROP table 2
+    mockEmptyResult(); // DROP table 3
+    mockEmptyResult(); // DROP table 4
     mockEmptyResult(); // COMMIT
 
     await adapter.dropManagedTables();
 
-    // Verify DROP was called for each table
+    // Verify DROP was called for each table (4 managed tables)
     const dropCalls = mockQuery.mock.calls.filter((call) => call[0].includes("DROP TABLE"));
-    expect(dropCalls.length).toBe(2);
+    expect(dropCalls.length).toBe(4);
   });
 
   it("should execute raw SQL query", async () => {
@@ -1732,21 +1714,185 @@ describe.sequential("PostgreSQLMemoryAdapter - Schema Management Functions", () 
   });
 
   it("should vacuum analyze managed tables", async () => {
-    // Mock list managed tables
-    mockPoolQuery.mockResolvedValueOnce({
-      rows: [{ table_name: "test_prefix_users" }, { table_name: "test_prefix_conversations" }],
-    });
-
     // Mock VACUUM ANALYZE calls (they don't run in transactions)
     mockPoolQuery.mockResolvedValueOnce({ rows: [] }); // VACUUM table 1
     mockPoolQuery.mockResolvedValueOnce({ rows: [] }); // VACUUM table 2
+    mockPoolQuery.mockResolvedValueOnce({ rows: [] }); // VACUUM table 3
+    mockPoolQuery.mockResolvedValueOnce({ rows: [] }); // VACUUM table 4
 
     await adapter.vacuumAnalyzeManagedTables();
 
-    // Verify VACUUM ANALYZE was called for each table
+    // Verify VACUUM ANALYZE was called for each table (4 managed tables)
     const vacuumCalls = mockPoolQuery.mock.calls.filter((call) =>
       call[0].includes("VACUUM ANALYZE"),
     );
-    expect(vacuumCalls.length).toBe(2);
+    expect(vacuumCalls.length).toBe(4);
+  });
+
+  it("should handle undefined schema in listTables", async () => {
+    // Create adapter without schema
+    mockInitialization();
+    const adapterNoSchema = new PostgreSQLMemoryAdapter({
+      connection: {
+        host: "localhost",
+        port: 5432,
+        database: "test",
+        user: "test",
+        password: "test",
+      },
+      tablePrefix: "test",
+    });
+
+    // @ts-expect-error - accessing private property for testing
+    await adapterNoSchema.initPromise;
+
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [{ table_name: "test_users" }, { table_name: "test_conversations" }],
+    });
+
+    const tables = await adapterNoSchema.listTables();
+    expect(tables).toHaveLength(2);
+
+    // Verify query uses current_schema() when schema is not specified
+    expect(mockPoolQuery).toHaveBeenCalledWith(expect.stringContaining("current_schema()"), []);
+
+    await adapterNoSchema.close();
+  });
+
+  it("should handle undefined schema in tableExists", async () => {
+    // Create adapter without schema
+    mockInitialization();
+    const adapterNoSchema = new PostgreSQLMemoryAdapter({
+      connection: {
+        host: "localhost",
+        port: 5432,
+        database: "test",
+        user: "test",
+        password: "test",
+      },
+      tablePrefix: "test",
+    });
+
+    // @ts-expect-error - accessing private property for testing
+    await adapterNoSchema.initPromise;
+
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [{ exists: true }],
+    });
+
+    const exists = await adapterNoSchema.tableExists("test_users");
+    expect(exists).toBe(true);
+
+    // Verify query uses current_schema() when schema is not specified
+    expect(mockPoolQuery).toHaveBeenCalledWith(expect.stringContaining("current_schema()"), [
+      "test_users",
+    ]);
+
+    await adapterNoSchema.close();
+  });
+
+  it("should handle undefined schema in getTableIndexes", async () => {
+    // Create adapter without schema
+    mockInitialization();
+    const adapterNoSchema = new PostgreSQLMemoryAdapter({
+      connection: {
+        host: "localhost",
+        port: 5432,
+        database: "test",
+        user: "test",
+        password: "test",
+      },
+      tablePrefix: "test",
+    });
+
+    // @ts-expect-error - accessing private property for testing
+    await adapterNoSchema.initPromise;
+
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          index_name: "test_users_pkey",
+          column_names: ["id"],
+          is_unique: true,
+          is_primary: true,
+        },
+      ],
+    });
+
+    const indexes = await adapterNoSchema.getTableIndexes("test_users");
+    expect(indexes).toHaveLength(1);
+
+    // Verify query uses current_schema() when schema is not specified
+    expect(mockPoolQuery).toHaveBeenCalledWith(expect.stringContaining("current_schema()"), [
+      "test_users",
+    ]);
+
+    await adapterNoSchema.close();
+  });
+
+  it("should handle undefined schema in getTableSchema", async () => {
+    // Create adapter without schema
+    mockInitialization();
+    const adapterNoSchema = new PostgreSQLMemoryAdapter({
+      connection: {
+        host: "localhost",
+        port: 5432,
+        database: "test",
+        user: "test",
+        password: "test",
+      },
+      tablePrefix: "test",
+    });
+
+    // @ts-expect-error - accessing private property for testing
+    await adapterNoSchema.initPromise;
+
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          column_name: "id",
+          data_type: "text",
+          is_nullable: "NO",
+          column_default: null,
+          character_maximum_length: null,
+        },
+      ],
+    });
+
+    const schema = await adapterNoSchema.getTableSchema("test_users");
+    expect(schema).toHaveLength(1);
+
+    // Verify query uses current_schema() when schema is not specified
+    expect(mockPoolQuery).toHaveBeenCalledWith(expect.stringContaining("current_schema()"), [
+      "test_users",
+    ]);
+
+    await adapterNoSchema.close();
+  });
+
+  it("should return proper table names for listManagedTables without schema", () => {
+    // Create adapter without schema
+    mockInitialization();
+    const adapterNoSchema = new PostgreSQLMemoryAdapter({
+      connection: {
+        host: "localhost",
+        port: 5432,
+        database: "test",
+        user: "test",
+        password: "test",
+      },
+      tablePrefix: "test",
+    });
+
+    // @ts-expect-error - accessing private method and property for testing
+    const tables = adapterNoSchema.listManagedTables();
+
+    expect(tables).toHaveLength(4);
+    expect(tables).toEqual([
+      "test_users",
+      "test_conversations",
+      "test_messages",
+      "test_workflow_states",
+    ]);
   });
 });
