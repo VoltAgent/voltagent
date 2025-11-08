@@ -1,7 +1,8 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
+import { createComposio, createVoltOpsMcpServer } from "./config";
 import {
   createAirtableRecordTool,
   deleteAirtableRecordTool,
@@ -29,10 +30,44 @@ const airtableAgent = new Agent({
   ],
 });
 
-new VoltAgent({
-  agents: {
-    airtableAgent,
-  },
-  logger,
-  server: honoServer(),
+async function bootstrap() {
+  const actionsMcp = new MCPConfiguration({
+    servers: {
+      airtable: createVoltOpsMcpServer(),
+      composio: createComposio(),
+    },
+  });
+
+  const voltopsTools = await actionsMcp.getToolsets();
+
+  const mcpActionsAgent = new Agent({
+    name: "VoltOps MCP Actions Agent",
+    instructions:
+      "You orchestrate Airtable syncs exclusively through the VoltOps MCP tools (airtable_create_record, airtable_list_records, etc.). Always pick the appropriate tool and feed it the payload requested by the user.",
+    model: openai("gpt-4o-mini"),
+    tools: voltopsTools.airtable.getTools(),
+  });
+
+  const composioActionsAgent = new Agent({
+    name: "Composio MCP Actions Agent",
+    instructions:
+      "You orchestrate Airtable syncs exclusively through the VoltOps MCP tools (airtable_create_record, airtable_list_records, etc.). Always pick the appropriate tool and feed it the payload requested by the user.",
+    model: openai("gpt-4o-mini"),
+    tools: voltopsTools.composio.getTools(),
+  });
+
+  new VoltAgent({
+    agents: {
+      airtableAgent,
+      mcpActionsAgent,
+      composioActionsAgent,
+    },
+    logger,
+    server: honoServer(),
+  });
+}
+
+bootstrap().catch((error) => {
+  logger.error("Failed to start VoltAgent with VoltOps actions", { error });
+  process.exitCode = 1;
 });

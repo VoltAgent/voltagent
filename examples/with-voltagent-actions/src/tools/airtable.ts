@@ -85,7 +85,6 @@ export const createAirtableRecordTool = createTool({
       fields,
       typecast,
       returnFieldsByFieldId,
-      projectId: actionsConfig.projectId ?? undefined,
     });
 
     return wrapActionResult(result);
@@ -147,7 +146,6 @@ export const listAirtableRecordsTool = createTool({
       fields,
       sort,
       returnFieldsByFieldId,
-      projectId: actionsConfig.projectId ?? undefined,
     });
 
     return wrapActionResult(result);
@@ -190,7 +188,6 @@ export const updateAirtableRecordTool = createTool({
       fields,
       typecast,
       returnFieldsByFieldId,
-      projectId: actionsConfig.projectId ?? undefined,
     });
 
     return wrapActionResult(result);
@@ -227,7 +224,6 @@ export const deleteAirtableRecordTool = createTool({
       baseId: effectiveBaseId,
       tableId: effectiveTableId,
       recordId,
-      projectId: actionsConfig.projectId ?? undefined,
     });
 
     return wrapActionResult(result);
@@ -266,7 +262,6 @@ export const getAirtableRecordTool = createTool({
       tableId: effectiveTableId,
       recordId,
       returnFieldsByFieldId,
-      projectId: actionsConfig.projectId ?? undefined,
     });
 
     return wrapActionResult(result);

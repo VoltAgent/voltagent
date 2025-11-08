@@ -55,6 +55,7 @@ This example shows how to expose **VoltOps Actions** as VoltAgent tools so your 
   - `deleteAirtableRecord`
   - `getAirtableRecord`
 - A shared VoltOps Actions client configured with your Volt console keys & Airtable credential.
+- An optional **MCP-powered agent** that connects to VoltOps via `MCPConfiguration` and exposes the hosted Airtable tools (`airtable_create_record`, `airtable_list_records`, etc.) without custom TypeScript glue.
 
 ### Prerequisites
 
@@ -102,8 +103,6 @@ AIRTABLE_CREDENTIAL_ID=cred_xxx
 AIRTABLE_BASE_ID=appxxxxxxxxxxxxxx
 AIRTABLE_TABLE_ID=tblxxxxxxxxxxxxxx
 
-# Optional: associate action runs with a Volt project
-VOLTOPS_PROJECT_ID=proj_xxx
 ```
 
 Any missing required value will throw during startup so you don’t accidentally run with an incomplete configuration.
@@ -114,7 +113,7 @@ Any missing required value will throw during startup so you don’t accidentally
 with-voltagent-actions
 ├── src
 │   ├── config.ts              # Loads env variables & instantiates the VoltOps Actions client
-│   ├── index.ts               # Creates the agent and wires up the VoltAgent server
+│   ├── index.ts               # Creates the agents (SDK + MCP) and wires up the VoltAgent server
 │   └── tools
 │       └── airtable.ts        # createTool definitions that call VoltOps actions
 ├── package.json
@@ -125,6 +124,7 @@ with-voltagent-actions
 ## Key Ideas
 
 - VoltOps Actions give you hosted, observable integrations. You call them through the SDK (`@voltagent/sdk`), but the experience inside the agent feels like any other Volt tool.
+- If you prefer the MCP tool discovery model, the example also shows how to build an `MCPConfiguration` pointing at VoltOps (`https://api.voltagent.dev/mcp?service=airtable`) and pass the resulting tools directly to an agent.
 - You can reuse the same pattern for Gmail, Slack, GitHub, etc. – just swap the action ID and parameters.
 - Tools return rich metadata (request + response payloads) so you can inspect what happened or feed it back into the conversation.
 
