@@ -52,7 +52,7 @@ export interface PostgreSQLMemoryOptions {
 
   /**
    * PostgreSQL schema to use for all tables
-   * @default "public"
+   * @default undefined
    */
   schema?: string;
 
