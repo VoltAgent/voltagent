@@ -1084,14 +1084,7 @@ export class Agent {
                       await writer.write(part as VoltAgentTextStreamPart);
                     }
                   } finally {
-                    // Ensure the merged stream is closed when the parent stream finishes.
-                    // This allows the reader loop below to exit with done=true and lets
-                    // callers (e.g., SSE) observe completion.
-                    try {
-                      await writer.close();
-                    } catch (_) {
-                      // Ignore double-close or stream state errors
-                    }
+                    // noop, writer closed after draining merged stream
                   }
                 };
 
@@ -1114,6 +1107,7 @@ export class Agent {
                 } finally {
                   reader.releaseLock();
                   await parentPromise;
+                  await writer.close();
                 }
               };
 
