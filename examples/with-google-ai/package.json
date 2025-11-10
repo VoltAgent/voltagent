@@ -2,7 +2,7 @@
   "name": "voltagent-example-gemini-ai",
   "author": "",
   "dependencies": {
-    "@ai-sdk/google": "^2.0.13",
+    "@ai-sdk/google": "^2.0.23",
     "@voltagent/cli": "^0.1.15",
     "@voltagent/core": "^1.2.0",
     "@voltagent/libsql": "^1.0.10",
