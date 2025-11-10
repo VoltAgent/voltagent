@@ -36,11 +36,12 @@ const baseHeaders: Record<string, string> = {
   "X-Secret-Key": secretKey,
 };
 
-export function createVoltOpsMcpServer(service = "airtable") {
-  const normalizedService = service.trim().toLowerCase();
+export function createVoltOpsMcpServer() {
+  const url = `${baseUrl}/mcp/slack`;
+
   return {
     type: "streamable-http" as const,
-    url: `${baseUrl}/mcp?service=${encodeURIComponent(normalizedService)}`,
+    url,
     requestInit: {
       headers: { ...baseHeaders },
     },

@@ -34,6 +34,7 @@ async function bootstrap() {
   const actionsMcp = new MCPConfiguration({
     servers: {
       airtable: createVoltOpsMcpServer(),
+      slack: createVoltOpsMcpServer(),
       composio: createComposio(),
     },
   });
@@ -48,6 +49,14 @@ async function bootstrap() {
     tools: voltopsTools.airtable.getTools(),
   });
 
+  const slackActionsAgent = new Agent({
+    name: "VoltOps Slack MCP Agent",
+    instructions:
+      "You orchestrate Slack workflows exclusively through the VoltOps Slack MCP tools (slack_post_message, slack_get_message_permalink, etc.). Always use the tool that best matches the user's request.",
+    model: openai("gpt-4o-mini"),
+    tools: voltopsTools.slack.getTools(),
+  });
+
   const composioActionsAgent = new Agent({
     name: "Composio MCP Actions Agent",
     instructions:
@@ -60,6 +69,7 @@ async function bootstrap() {
     agents: {
       airtableAgent,
       mcpActionsAgent,
+      slackActionsAgent,
       composioActionsAgent,
     },
     logger,

@@ -124,7 +124,7 @@ with-voltagent-actions
 ## Key Ideas
 
 - VoltOps Actions give you hosted, observable integrations. You call them through the SDK (`@voltagent/sdk`), but the experience inside the agent feels like any other Volt tool.
-- If you prefer the MCP tool discovery model, the example also shows how to build an `MCPConfiguration` pointing at VoltOps (`https://api.voltagent.dev/mcp?service=airtable`) and pass the resulting tools directly to an agent.
+- If you prefer the MCP tool discovery model, the example also shows how to build an `MCPConfiguration` pointing at VoltOps (`https://api.voltagent.dev/mcp/airtable` or `…/mcp/slack`) and pass the resulting tools directly to an agent.
 - You can reuse the same pattern for Gmail, Slack, GitHub, etc. – just swap the action ID and parameters.
 - Tools return rich metadata (request + response payloads) so you can inspect what happened or feed it back into the conversation.
 
