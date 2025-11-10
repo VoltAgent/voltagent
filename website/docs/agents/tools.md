@@ -42,8 +42,63 @@ Each tool has:
 - **parameters**: Input schema defined with Zod
 - **execute**: Function that runs when the tool is called
 - **providerOptions** (optional): Provider-specific options for advanced features
+- **tags** (optional): User-defined tags for organizing, categorizing, or filtering tools
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
+
+### Tool Tags
+
+Tags are optional string labels that help organize and categorize tools.
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+// Example: Database tools with tags
+const queryTool = createTool({
+  name: "query_database",
+  description: "Execute a read-only SQL query",
+  tags: ["database", "read-only", "sql"],
+  parameters: z.object({
+    query: z.string().describe("SQL query to execute"),
+  }),
+  execute: async ({ query }) => {
+    // Execute query
+    return { results: [] };
+  },
+});
+
+const updateTool = createTool({
+  name: "update_record",
+  description: "Update database records",
+  tags: ["database", "write", "sql", "destructive"],
+  parameters: z.object({
+    table: z.string().describe("Table name"),
+    id: z.string().describe("Record ID"),
+    data: z.record(z.unknown()).describe("Data to update"),
+  }),
+  execute: async ({ table, id, data }) => {
+    // Update record
+    return { success: true };
+  },
+});
+
+// Example: External API tools
+const weatherTool = createTool({
+  name: "get_weather",
+  description: "Get current weather data",
+  tags: ["weather", "external-api", "read-only"],
+  parameters: z.object({
+    location: z.string().describe("City name"),
+  }),
+  execute: async ({ location }) => {
+    // Fetch weather
+    return { temperature: 72, conditions: "sunny" };
+  },
+});
+```
+
+Tags are included in OpenTelemetry spans and visible in the VoltAgent observability dashboard, making it easy to analyze tool usage patterns and debug agent behavior.
 
 ### Provider-Specific Options
 
@@ -477,6 +532,48 @@ const agent = new Agent({
   model: openai("gpt-4o"),
   tools: [weatherTool],
   hooks: hooks,
+});
+```
+
+### Using Tags with Hooks
+
+Tool tags can be accessed in hooks for implementing custom logic like access control or conditional behavior:
+
+```ts
+import { createHooks, ToolDeniedError } from "@voltagent/core";
+
+const hooks = createHooks({
+  onToolStart({ tool, context }) {
+    // Check if tool has destructive tag and user has permission
+    if (tool.tags?.includes("destructive")) {
+      const userRole = context.context.get("userRole");
+      if (userRole !== "admin") {
+        throw new ToolDeniedError({
+          toolName: tool.name,
+          message: "Admin permission required for destructive operations",
+          code: "TOOL_FORBIDDEN",
+        });
+      }
+    }
+
+    // Log tools by category
+    if (tool.tags?.includes("external-api")) {
+      console.log(`Calling external API: ${tool.name}`);
+    }
+  },
+});
+
+const agent = new Agent({
+  name: "Controlled Assistant",
+  instructions: "An assistant with tag-based access control",
+  model: openai("gpt-4o"),
+  tools: [queryTool, updateTool, weatherTool],
+  hooks: hooks,
+});
+
+// Usage with context
+const response = await agent.generateText("Update the user record", {
+  context: { userRole: "admin" }, // Admin can use destructive tools
 });
 ```
 

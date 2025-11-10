@@ -36,6 +36,11 @@ export type {
   VoltOpsScorerSummary,
   VoltOpsActionExecutionResult,
   VoltOpsAirtableCreateRecordParams,
+  VoltOpsAirtableUpdateRecordParams,
+  VoltOpsAirtableDeleteRecordParams,
+  VoltOpsAirtableGetRecordParams,
+  VoltOpsAirtableListRecordsParams,
+  VoltOpsActionsApi,
 } from "./types";
 
 // Export prompt manager implementation

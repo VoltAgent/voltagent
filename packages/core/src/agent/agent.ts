@@ -201,6 +201,8 @@ export type GenerateTextResultWithContext<
   context: Map<string | symbol, unknown>;
 };
 
+type LLMOperation = "streamText" | "generateText" | "streamObject" | "generateObject";
+
 /**
  * Extended GenerateObjectResult that includes context
  */
@@ -529,24 +531,55 @@ export class Agent {
           ...aiSDKOptions
         } = options || {};
 
-        const result = await generateText({
-          model,
+        const llmSpan = this.createLLMSpan(oc, {
+          operation: "generateText",
+          modelName,
+          isStreaming: false,
           messages,
           tools,
-          // Default values
-          temperature: this.temperature,
-          maxOutputTokens: this.maxOutputTokens,
-          maxRetries: 3,
-          stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
-          // User overrides from AI SDK options
-          ...aiSDKOptions,
-          // Experimental output if provided
-          experimental_output,
-          // Provider-specific options
           providerOptions,
-          // VoltAgent controlled (these should not be overridden)
-          abortSignal: oc.abortController.signal,
-          onStepFinish: this.createStepHandler(oc, options),
+          callOptions: {
+            temperature: aiSDKOptions?.temperature ?? this.temperature,
+            maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
+            topP: aiSDKOptions?.topP,
+          },
+        });
+        const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+
+        let result!: GenerateTextResult<ToolSet, unknown>;
+        try {
+          result = await oc.traceContext.withSpan(llmSpan, () =>
+            generateText({
+              model,
+              messages,
+              tools,
+              // Default values
+              temperature: this.temperature,
+              maxOutputTokens: this.maxOutputTokens,
+              maxRetries: 3,
+              stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+              // User overrides from AI SDK options
+              ...aiSDKOptions,
+              // Experimental output if provided
+              experimental_output,
+              // Provider-specific options
+              providerOptions,
+              // VoltAgent controlled (these should not be overridden)
+              abortSignal: oc.abortController.signal,
+              onStepFinish: this.createStepHandler(oc, options),
+            }),
+          );
+        } catch (error) {
+          finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
+          throw error;
+        }
+
+        const resolvedProviderUsage = result.usage
+          ? await Promise.resolve(result.usage)
+          : undefined;
+        finalizeLLMSpan(SpanStatusCode.OK, {
+          usage: resolvedProviderUsage,
+          finishReason: result.finishReason,
         });
 
         await persistQueue.flush(buffer, oc);
@@ -813,6 +846,21 @@ export class Agent {
         let guardrailPipeline: GuardrailPipeline | null = null;
         let sanitizedTextPromise!: Promise<string>;
 
+        const llmSpan = this.createLLMSpan(oc, {
+          operation: "streamText",
+          modelName,
+          isStreaming: true,
+          messages,
+          tools,
+          providerOptions,
+          callOptions: {
+            temperature: aiSDKOptions?.temperature ?? this.temperature,
+            maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
+            topP: aiSDKOptions?.topP,
+          },
+        });
+        const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+
         const result = streamText({
           model,
           messages,
@@ -854,6 +902,10 @@ export class Agent {
               error: actualError,
               agentName: this.name,
               modelName: this.getModelName(),
+            });
+
+            finalizeLLMSpan(SpanStatusCode.ERROR, {
+              message: (actualError as Error)?.message,
             });
 
             // History update removed - using OpenTelemetry only
@@ -1004,6 +1056,11 @@ export class Agent {
                   : undefined,
                 toolCalls: finalResult.toolCalls,
               },
+            });
+
+            finalizeLLMSpan(SpanStatusCode.OK, {
+              usage: finalResult.totalUsage,
+              finishReason: finalResult.finishReason,
             });
 
             oc.traceContext.end("completed");
@@ -2100,6 +2157,165 @@ export class Agent {
     enqueueEvalScoringHelper(this.createEvalHost(), args);
   }
 
+  private createLLMSpan(
+    oc: OperationContext,
+    params: {
+      operation: LLMOperation;
+      modelName: string;
+      isStreaming: boolean;
+      messages?: Array<{ role: string; content: unknown }>;
+      tools?: ToolSet;
+      providerOptions?: ProviderOptions;
+      callOptions?: Record<string, unknown>;
+    },
+  ): Span {
+    const attributes = this.buildLLMSpanAttributes(params);
+    return oc.traceContext.createChildSpan(`llm:${params.operation}`, "llm", {
+      kind: SpanKind.CLIENT,
+      attributes,
+    });
+  }
+
+  private createLLMSpanFinalizer(span: Span) {
+    let ended = false;
+    return (
+      status: SpanStatusCode,
+      details?: {
+        message?: string;
+        usage?: LanguageModelUsage | UsageInfo | null;
+        finishReason?: FinishReason | string | null;
+      },
+    ) => {
+      if (ended) {
+        return;
+      }
+      if (details?.usage) {
+        this.recordLLMUsage(span, details.usage);
+      }
+      if (details?.finishReason) {
+        span.setAttribute("llm.finish_reason", String(details.finishReason));
+      }
+      if (details?.message) {
+        span.setStatus({ code: status, message: details.message });
+      } else {
+        span.setStatus({ code: status });
+      }
+      span.end();
+      ended = true;
+    };
+  }
+
+  private buildLLMSpanAttributes(params: {
+    operation: LLMOperation;
+    modelName: string;
+    isStreaming: boolean;
+    messages?: Array<{ role: string; content: unknown }>;
+    tools?: ToolSet;
+    providerOptions?: ProviderOptions;
+    callOptions?: Record<string, unknown>;
+  }): Record<string, any> {
+    const attrs: Record<string, any> = {
+      "llm.operation": params.operation,
+      "llm.model": params.modelName,
+      "llm.stream": params.isStreaming,
+    };
+
+    const provider = params.modelName.includes("/") ? params.modelName.split("/")[0] : undefined;
+    if (provider) {
+      attrs["llm.provider"] = provider;
+    }
+
+    const callOptions = params.callOptions ?? {};
+    const maybeNumber = (value: unknown): number | undefined => {
+      if (typeof value === "number") {
+        return Number.isFinite(value) ? value : undefined;
+      }
+      if (typeof value === "string") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    };
+
+    const temperature = maybeNumber(callOptions.temperature ?? callOptions.temp);
+    if (temperature !== undefined) {
+      attrs["llm.temperature"] = temperature;
+    }
+    const maxOutputTokens = maybeNumber(callOptions.maxOutputTokens);
+    if (maxOutputTokens !== undefined) {
+      attrs["llm.max_output_tokens"] = maxOutputTokens;
+    }
+    const topP = maybeNumber(callOptions.topP);
+    if (topP !== undefined) {
+      attrs["llm.top_p"] = topP;
+    }
+    if (callOptions.stop !== undefined) {
+      attrs["llm.stop_condition"] = safeStringify(callOptions.stop);
+    }
+
+    if (params.messages && params.messages.length > 0) {
+      attrs["llm.messages.count"] = params.messages.length;
+      const trimmedMessages = params.messages.slice(-10);
+      attrs["llm.messages"] = safeStringify(
+        trimmedMessages.map((msg) => ({ role: msg.role, content: msg.content })),
+      );
+    }
+
+    if (params.tools) {
+      const toolNames = Object.keys(params.tools);
+      attrs["llm.tools.count"] = toolNames.length;
+      if (toolNames.length > 0) {
+        attrs["llm.tools"] = toolNames.join(",");
+      }
+    }
+
+    if (params.providerOptions) {
+      attrs["llm.provider_options"] = safeStringify(params.providerOptions);
+    }
+
+    return attrs;
+  }
+
+  private recordLLMUsage(span: Span, usage?: LanguageModelUsage | UsageInfo | null): void {
+    if (!usage) {
+      return;
+    }
+
+    const coerce = (value: unknown): number | undefined => {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === "string") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    };
+
+    const promptTokens =
+      coerce((usage as any).promptTokens) ??
+      coerce((usage as any).prompt) ??
+      coerce((usage as any).inputTokens) ??
+      coerce((usage as any).input_tokens);
+    const completionTokens =
+      coerce((usage as any).completionTokens) ??
+      coerce((usage as any).completion) ??
+      coerce((usage as any).outputTokens) ??
+      coerce((usage as any).output_tokens);
+    const totalTokens =
+      coerce((usage as any).totalTokens) ?? (promptTokens ?? 0) + (completionTokens ?? 0);
+
+    if (promptTokens !== undefined) {
+      span.setAttribute("llm.usage.prompt_tokens", promptTokens);
+    }
+    if (completionTokens !== undefined) {
+      span.setAttribute("llm.usage.completion_tokens", completionTokens);
+    }
+    if (totalTokens !== undefined) {
+      span.setAttribute("llm.usage.total_tokens", totalTokens);
+    }
+  }
+
   private createEvalHost(): AgentEvalHost {
     return {
       id: this.id,
@@ -2905,11 +3121,15 @@ export class Agent {
       };
 
       // Event tracking now handled by OpenTelemetry spans
+      const toolTags = (tool as { tags?: string[] | undefined }).tags;
       const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
         label: tool.name,
         attributes: {
           "tool.name": tool.name,
           "tool.call.id": toolCallId,
+          "tool.description": tool.description,
+          ...(toolTags && toolTags.length > 0 ? { "tool.tags": safeStringify(toolTags) } : {}),
+          "tool.parameters": safeStringify(tool.parameters),
           input: args ? safeStringify(args) : undefined,
         },
         kind: SpanKind.CLIENT,
