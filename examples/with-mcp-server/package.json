@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-mcp-server",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
-    "@voltagent/core": "^1.2.0",
+    "@voltagent/core": "^1.2.1",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/mcp-server": "^1.0.3",
     "@voltagent/server-hono": "^1.2.2",

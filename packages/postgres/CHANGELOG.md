@@ -1,5 +1,18 @@
 # @voltagent/postgres
 
+## 1.1.0
+
+### Minor Changes
+
+- [#773](https://github.com/VoltAgent/voltagent/pull/773) [`35290d9`](https://github.com/VoltAgent/voltagent/commit/35290d9331c846f8274325ad698da0c2cda54530) Thanks [@hyperion912](https://github.com/hyperion912)! - feat(postgres-memory-adapter): add schema configuration support
+
+  Add support for defining a custom PostgreSQL schema during adapter initialization.
+  Defaults to undefined (uses the database’s default schema if not provided).
+
+  Includes tests for schema configuration.
+
+  Resolves #763
+
 ## 1.0.11
 
 ### Patch Changes
