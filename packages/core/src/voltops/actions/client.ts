@@ -6,6 +6,9 @@ import type {
   VoltOpsAirtableGetRecordParams,
   VoltOpsAirtableListRecordsParams,
   VoltOpsAirtableUpdateRecordParams,
+  VoltOpsSlackDeleteMessageParams,
+  VoltOpsSlackPostMessageParams,
+  VoltOpsSlackSearchMessagesParams,
 } from "../types";
 
 export interface VoltOpsActionsTransport {
@@ -62,8 +65,21 @@ export class VoltOpsActionsClient {
       params: VoltOpsAirtableListRecordsParams,
     ) => Promise<VoltOpsActionExecutionResult>;
   };
+  public readonly slack: {
+    postMessage: (params: VoltOpsSlackPostMessageParams) => Promise<VoltOpsActionExecutionResult>;
+    deleteMessage: (
+      params: VoltOpsSlackDeleteMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    searchMessages: (
+      params: VoltOpsSlackSearchMessagesParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
 
-  constructor(private readonly transport: VoltOpsActionsTransport) {
+  constructor(
+    private readonly transport: VoltOpsActionsTransport,
+    options?: { useProjectEndpoint?: boolean },
+  ) {
+    this.useProjectEndpoint = options?.useProjectEndpoint ?? false;
     this.airtable = {
       createRecord: this.createAirtableRecord.bind(this),
       updateRecord: this.updateAirtableRecord.bind(this),
@@ -71,6 +87,17 @@ export class VoltOpsActionsClient {
       getRecord: this.getAirtableRecord.bind(this),
       listRecords: this.listAirtableRecords.bind(this),
     };
+    this.slack = {
+      postMessage: this.postSlackMessage.bind(this),
+      deleteMessage: this.deleteSlackMessage.bind(this),
+      searchMessages: this.searchSlackMessages.bind(this),
+    };
+  }
+
+  private readonly useProjectEndpoint: boolean;
+
+  private get actionExecutionPath(): string {
+    return this.useProjectEndpoint ? "/actions/project/run" : "/actions/execute";
   }
 
   private async createAirtableRecord(
@@ -307,7 +334,191 @@ export class VoltOpsActionsClient {
       },
     };
 
-    const response = await this.postActionExecution("/actions/execute", payload);
+    const response = await this.postActionExecution(this.actionExecutionPath, payload);
+    return this.mapActionExecution(response);
+  }
+
+  private async postSlackMessage(
+    params: VoltOpsSlackPostMessageParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const channelId = params.channelId
+      ? this.normalizeIdentifier(params.channelId, "channelId")
+      : null;
+    const channelLabel =
+      params.channelLabel !== undefined && params.channelLabel !== null
+        ? this.normalizeString(params.channelLabel)
+        : null;
+    const defaultThreadTs =
+      params.defaultThreadTs !== undefined && params.defaultThreadTs !== null
+        ? this.normalizeString(params.defaultThreadTs)
+        : null;
+
+    const config =
+      channelId || channelLabel || defaultThreadTs
+        ? {
+            channelId,
+            channelLabel,
+            defaultThreadTs,
+          }
+        : undefined;
+
+    const input: Record<string, unknown> = {};
+    if (params.targetType) {
+      input.targetType = params.targetType;
+    }
+    if (params.channelId) {
+      input.channelId = params.channelId;
+    }
+    if (params.channelName) {
+      input.channelName = params.channelName;
+    }
+    if (params.userId) {
+      input.userId = params.userId;
+    }
+    if (params.userName) {
+      input.userName = params.userName;
+    }
+    if (params.text !== undefined) {
+      input.text = params.text;
+    }
+    if (params.blocks !== undefined) {
+      input.blocks = params.blocks;
+    }
+    if (params.attachments !== undefined) {
+      input.attachments = params.attachments;
+    }
+    if (params.threadTs !== undefined) {
+      input.threadTs = params.threadTs;
+    }
+    if (params.metadata !== undefined) {
+      input.metadata = params.metadata;
+    }
+    if (params.linkNames !== undefined) {
+      input.linkNames = params.linkNames;
+    }
+    if (params.unfurlLinks !== undefined) {
+      input.unfurlLinks = params.unfurlLinks;
+    }
+    if (params.unfurlMedia !== undefined) {
+      input.unfurlMedia = params.unfurlMedia;
+    }
+
+    return this.executeSlackAction({
+      actionId: params.actionId ?? "slack.postMessage",
+      credentialId,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async deleteSlackMessage(
+    params: VoltOpsSlackDeleteMessageParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const channelId = this.normalizeIdentifier(params.channelId, "channelId");
+    const messageTs = this.normalizeIdentifier(params.messageTs, "messageTs");
+
+    const config = {
+      channelId,
+      channelLabel: null,
+      defaultThreadTs: null,
+    };
+
+    const input: Record<string, unknown> = {
+      channelId,
+      messageTs,
+    };
+    if (params.threadTs) {
+      input.threadTs = params.threadTs;
+    }
+
+    return this.executeSlackAction({
+      actionId: params.actionId ?? "slack.deleteMessage",
+      credentialId,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async searchSlackMessages(
+    params: VoltOpsSlackSearchMessagesParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const query = this.trimString(params.query);
+    if (!query) {
+      throw new VoltOpsActionError("query must be provided", 400);
+    }
+
+    const input: Record<string, unknown> = {
+      query,
+    };
+
+    if (params.sort) {
+      input.sort = params.sort;
+    }
+    if (params.sortDirection) {
+      input.sortDirection = params.sortDirection;
+    }
+    const channelIds = this.sanitizeStringArray(params.channelIds);
+    if (channelIds) {
+      input.channelIds = channelIds;
+    }
+    if (params.limit !== undefined) {
+      input.limit = params.limit;
+    }
+
+    return this.executeSlackAction({
+      actionId: params.actionId ?? "slack.searchMessages",
+      credentialId,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config: null,
+      input,
+    });
+  }
+
+  private async executeSlackAction(options: {
+    actionId: string;
+    credentialId: string;
+    catalogId?: string;
+    projectId?: string | null;
+    config?: Record<string, unknown> | null;
+    input?: Record<string, unknown>;
+  }): Promise<VoltOpsActionExecutionResult> {
+    const payload: Record<string, unknown> = {
+      credentialId: options.credentialId,
+      catalogId: options.catalogId ?? undefined,
+      actionId: options.actionId,
+      projectId: options.projectId ?? undefined,
+      config:
+        options.config === undefined
+          ? undefined
+          : options.config === null
+            ? null
+            : { slack: options.config },
+      payload: {
+        input: options.input ?? {},
+      },
+    };
+
+    const response = await this.postActionExecution(this.actionExecutionPath, payload);
     return this.mapActionExecution(response);
   }
 
@@ -418,9 +629,20 @@ export class VoltOpsActionsClient {
       throw new VoltOpsActionError(message, 0, error);
     }
 
-    const contentType = response.headers.get("content-type") ?? "";
-    const isJson = contentType.includes("application/json");
-    const data = isJson ? await response.json() : undefined;
+    const contentType =
+      typeof response.headers?.get === "function"
+        ? (response.headers.get("content-type") ?? "")
+        : "";
+    const canParseJson = typeof response.json === "function";
+    const isJson = contentType.includes("application/json") || (!contentType && canParseJson);
+    let data: unknown;
+    if (isJson && canParseJson) {
+      try {
+        data = await response.json();
+      } catch {
+        data = undefined;
+      }
+    }
 
     if (!response.ok) {
       const baseMessage = `VoltOps action request failed with status ${response.status}`;
@@ -432,7 +654,23 @@ export class VoltOpsActionsClient {
       );
     }
 
-    return (data as ActionExecutionResponse | undefined) ?? {};
+    const payload = this.unwrapActionResponse(data);
+    return payload ?? {};
+  }
+
+  private unwrapActionResponse(data: unknown): ActionExecutionResponse | undefined {
+    if (!data || typeof data !== "object") {
+      return undefined;
+    }
+    const record = data as Record<string, unknown>;
+    const inner =
+      record.data && typeof record.data === "object"
+        ? (record.data as Record<string, unknown>)
+        : null;
+    if (inner) {
+      return inner as ActionExecutionResponse;
+    }
+    return record as ActionExecutionResponse;
   }
 
   private mapActionExecution(payload: ActionExecutionResponse): VoltOpsActionExecutionResult {

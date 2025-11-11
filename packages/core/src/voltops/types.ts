@@ -201,6 +201,45 @@ export interface VoltOpsAirtableListRecordsParams {
   projectId?: string | null;
 }
 
+export interface VoltOpsSlackBaseParams {
+  credentialId: string;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsSlackPostMessageParams extends VoltOpsSlackBaseParams {
+  channelId?: string;
+  channelName?: string;
+  channelLabel?: string | null;
+  defaultThreadTs?: string | null;
+  targetType?: "conversation" | "user";
+  userId?: string;
+  userName?: string;
+  text?: string;
+  blocks?: unknown;
+  attachments?: unknown;
+  threadTs?: string;
+  metadata?: Record<string, unknown>;
+  linkNames?: boolean;
+  unfurlLinks?: boolean;
+  unfurlMedia?: boolean;
+}
+
+export interface VoltOpsSlackDeleteMessageParams extends VoltOpsSlackBaseParams {
+  channelId: string;
+  messageTs: string;
+  threadTs?: string;
+}
+
+export interface VoltOpsSlackSearchMessagesParams extends VoltOpsSlackBaseParams {
+  query: string;
+  sort?: "relevance" | "timestamp";
+  sortDirection?: "asc" | "desc";
+  channelIds?: string[];
+  limit?: number;
+}
+
 export type VoltOpsActionsApi = {
   airtable: {
     createRecord: (
@@ -215,6 +254,15 @@ export type VoltOpsActionsApi = {
     getRecord: (params: VoltOpsAirtableGetRecordParams) => Promise<VoltOpsActionExecutionResult>;
     listRecords: (
       params: VoltOpsAirtableListRecordsParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
+  slack: {
+    postMessage: (params: VoltOpsSlackPostMessageParams) => Promise<VoltOpsActionExecutionResult>;
+    deleteMessage: (
+      params: VoltOpsSlackDeleteMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    searchMessages: (
+      params: VoltOpsSlackSearchMessagesParams,
     ) => Promise<VoltOpsActionExecutionResult>;
   };
 };

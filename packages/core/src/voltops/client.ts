@@ -92,7 +92,7 @@ export class VoltOpsClient implements IVoltOpsClient {
 
     this.logger = new LoggerProxy({ component: "voltops-client" });
     this.managedMemory = this.createManagedMemoryClient();
-    this.actions = new VoltOpsActionsClient(this);
+    this.actions = new VoltOpsActionsClient(this, { useProjectEndpoint: true });
     this.evals = {
       runs: {
         create: this.createEvalRun.bind(this),

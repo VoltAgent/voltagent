@@ -40,6 +40,9 @@ export type {
   VoltOpsAirtableDeleteRecordParams,
   VoltOpsAirtableGetRecordParams,
   VoltOpsAirtableListRecordsParams,
+  VoltOpsSlackPostMessageParams,
+  VoltOpsSlackDeleteMessageParams,
+  VoltOpsSlackSearchMessagesParams,
   VoltOpsActionsApi,
 } from "./types";
 
