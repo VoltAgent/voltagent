@@ -20,7 +20,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@voltagent/cli": "^0.1.15",
-    "@voltagent/core": "^1.2.1",
+    "@voltagent/core": "^1.2.2",
     "@voltagent/libsql": "^1.0.10",
     "@voltagent/server-hono": "^1.2.2",
     "@xyflow/react": "^12.9.2",

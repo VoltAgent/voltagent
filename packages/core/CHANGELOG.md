@@ -1,5 +1,29 @@
 # @voltagent/core
 
+## 1.2.2
+
+### Patch Changes
+
+- [#785](https://github.com/VoltAgent/voltagent/pull/785) [`f4b9524`](https://github.com/VoltAgent/voltagent/commit/f4b9524ea24b7dfc7e863547d5ee01e876524eba) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: the `/agents/:id/text` response to always include tool calling data. Previously we only bubbled up the last step's `toolCalls`/`toolResults`, so multi-step providers (like `ollama-ai-provider-v2`) returned empty arrays even though the tool actually ran. We now aggregate tool activity across every step before returning the result, restoring parity with GPT-style providers and matching the AI SDK output.
+
+- [#783](https://github.com/VoltAgent/voltagent/pull/783) [`46597cf`](https://github.com/VoltAgent/voltagent/commit/46597cf5a6ff8ff1ff5b8a61ab45c4195049f550) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: unwrap provider-executed tool outputs when persisting conversation history so Anthropic’s `server_tool_use` IDs stay unique on replay
+
+- [#786](https://github.com/VoltAgent/voltagent/pull/786) [`f262b51`](https://github.com/VoltAgent/voltagent/commit/f262b51f0a65923d6dfac4f410b37f54a7f81cd2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: ensure sub-agent metadata is persisted alongside supervisor history so supervisor conversations know which sub-agent produced each tool event and memory record. You can now filter historical events the same way you handle live streams:
+
+  ```ts
+  const memoryMessages = await memory.getMessages(userId, conversationId);
+
+  const formatterSteps = memoryMessages.filter(
+    (message) => message.metadata?.subAgentId === "Formatter"
+  );
+
+  for (const message of formatterSteps) {
+    console.log(`[${message.metadata?.subAgentName}]`, message.parts);
+  }
+  ```
+
+  The same metadata also exists on live `fullStream` chunks, so you can keep the streaming UI and the historical memory explorer in sync.
+
 ## 1.2.1
 
 ### Patch Changes
