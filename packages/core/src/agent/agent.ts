@@ -298,6 +298,11 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   // maxOutputTokens, temperature, topP, topK,
   // presencePenalty, frequencyPenalty, stopSequences,
   // seed, maxRetries, abortSignal, headers
+  /**
+   * Optional explicit stop sequences to pass through to the underlying provider.
+   * Mirrors the `stop` option supported by ai-sdk `generateText/streamText`.
+   */
+  stop?: string | string[];
 }
 
 export type GenerateTextOptions = BaseGenerationOptions;
