@@ -319,10 +319,10 @@ pre code,
   --docs-h1: 24px;
   /* Keep h2 same as h1 per request */
   --docs-h2: calc(var(--docs-h1) * 0.9);
-  --docs-h3: calc(var(--docs-h1) * 0.833333);
-  --docs-h4: calc(var(--docs-h1) * 0.75);
+  --docs-h3: calc(var(--docs-h1) * 0.75);
+  --docs-h4: calc(var(--docs-h1) * 0.708333);
   --docs-h5: calc(var(--docs-h1) * 0.666667);
-  --docs-h6: calc(var(--docs-h1) * 0.583333);
+  --docs-h6: calc(var(--docs-h1) * 0.625);
 }
 
 /* Increase specificity to override mobile `.markdown h*` rules */
@@ -4255,7 +4255,7 @@ code .token.coord {
 /* Admonition Styles */
 .theme-admonition-tip {
   background-color: #000000 !important;
-  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  border: 1px solid #10b981 !important;
   border-radius: 6px !important;
   padding: 0.875rem !important;
   margin: 1.5rem 0 !important;
@@ -4287,6 +4287,11 @@ code .token.coord {
   width: 1.1rem !important;
   height: 1.1rem !important;
 }
+.theme-admonition-tip svg {
+  fill: #10b981 !important;
+  width: 1.1rem !important;
+  height: 1.1rem !important;
+}
 
 .theme-admonition-tip .admonition-heading {
   display: none !important;
@@ -4300,7 +4305,7 @@ code .token.coord {
 /* Note Admonition */
 .theme-admonition-note {
   background-color: #000000 !important;
-  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border: 1px solid #288db8 !important;
   border-radius: 6px !important;
   padding: 1rem !important;
   margin: 1rem 0 !important;
@@ -4309,7 +4314,7 @@ code .token.coord {
   align-items: flex-start !important;
   gap: 0.75rem !important;
   box-shadow: none !important;
-  color: #bae6fd !important;
+  color: #288db8 !important;
 }
 
 .theme-admonition-note .admonition-icon {
@@ -4320,7 +4325,7 @@ code .token.coord {
   display: none !important;
 }
 .theme-admonition-note svg {
-  fill: #38bdf8 !important;
+  fill: #288db8 !important;
   width: 1.1rem !important;
   height: 1.1rem !important;
 }
@@ -4348,14 +4353,15 @@ code .token.coord {
 /* Warning Admonition */
 .theme-admonition-warning {
   background-color: #000000 !important;
-  border: 1px solid rgba(234, 179, 8, 0.3) !important;
-  border-radius: 6px !important;
+  border: 1px solid #f59e0ba1 !important;
+  border-radius: 12px !important;
   padding: 0.875rem !important;
   margin: 1.5rem 0 !important;
+  color: #f59e0ba1 !important;
 }
 
 .theme-admonition-warning .admonition-content p {
-  color: #e6edf3 !important;
+  color: #f59e0ba1 !important;
   line-height: 1.6 !important;
 }
 

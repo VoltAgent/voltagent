@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.2.1
+
+### Patch Changes
+
+- [`65e3317`](https://github.com/VoltAgent/voltagent/commit/65e331786645a124f16f06d08dfa55a675959bc8) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add tags support for tools
+
 ## 1.2.0
 
 ### Minor Changes

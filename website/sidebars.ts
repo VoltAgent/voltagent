@@ -147,7 +147,17 @@ const sidebars: SidebarsConfig = {
           variant: "accent",
         },
       },
-      items: ["triggers/overview", "triggers/usage", "actions/overview", "actions/airtable"],
+      items: [
+        "triggers/overview",
+        "triggers/usage",
+        {
+          type: "category",
+          label: "Providers",
+          items: ["triggers/airtable"],
+        },
+        "actions/overview",
+        "actions/airtable",
+      ],
     },
     {
       type: "category",

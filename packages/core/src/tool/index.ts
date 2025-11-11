@@ -77,6 +77,11 @@ export type ToolOptions<
   outputSchema?: O;
 
   /**
+   * Optional user-defined tags for organizing or labeling tools.
+   */
+  tags?: string[];
+
+  /**
    * Provider-specific options for the tool.
    * Enables provider-specific functionality like cache control.
    *
@@ -154,6 +159,11 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   readonly outputSchema?: O;
 
   /**
+   * Optional user-defined tags for organizing or labeling tools.
+   */
+  readonly tags?: string[];
+
+  /**
    * Provider-specific options for the tool.
    * Enables provider-specific functionality like cache control.
    */
@@ -211,6 +221,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
     this.description = options.description || "";
     this.parameters = options.parameters;
     this.outputSchema = options.outputSchema;
+    this.tags = options.tags;
     this.providerOptions = options.providerOptions;
     this.toModelOutput = options.toModelOutput;
     this.execute = options.execute;

@@ -895,4 +895,502 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       expect(suspended.every((s) => s.status === "suspended")).toBe(true);
     });
   });
+
+  // ============================================================================
+  // Schema Tests - Testing schema creation and table naming
+  // ============================================================================
+
+  describe.sequential("PostgreSQLMemoryAdapter - Schema Validation", () => {
+    let adapter: PostgreSQLMemoryAdapter;
+
+    // Mock functions
+    const mockQuery = vi.fn();
+    const mockRelease = vi.fn();
+    const mockConnect = vi.fn();
+    const mockPoolQuery = vi.fn();
+    const mockEnd = vi.fn();
+
+    /**
+     * Mock an empty database result
+     */
+    const mockEmptyResult = () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+    };
+
+    /**
+     * Mock database initialization queries
+     */
+    const mockInitialization = () => {
+      mockEmptyResult(); // BEGIN
+      mockEmptyResult(); // CREATE TABLE users
+      mockEmptyResult(); // CREATE TABLE conversations
+      mockEmptyResult(); // CREATE TABLE messages
+      mockEmptyResult(); // CREATE TABLE workflow_states
+
+      // CREATE INDEX (6 indexes)
+      for (let i = 0; i < 6; i++) {
+        mockEmptyResult();
+      }
+
+      // addUIMessageColumnsToMessagesTable (fails but is caught)
+      mockQuery.mockRejectedValueOnce(new Error("column already exists"));
+
+      mockEmptyResult(); // COMMIT
+    };
+
+    afterEach(async () => {
+      if (adapter) {
+        await adapter.close();
+      }
+      vi.clearAllMocks();
+    });
+
+    it("should use implicit schema (resolved via search_path) and default table prefix", async () => {
+      const mockClient = {
+        query: mockQuery,
+        release: mockRelease,
+      };
+
+      mockConnect.mockResolvedValue(mockClient);
+
+      vi.mocked(Pool).mockImplementation(
+        () =>
+          ({
+            connect: mockConnect,
+            query: mockPoolQuery,
+            end: mockEnd,
+          }) as any,
+      );
+
+      mockInitialization();
+
+      adapter = new PostgreSQLMemoryAdapter({
+        connection: {
+          host: "localhost",
+          port: 5432,
+          database: "test",
+          user: "test",
+          password: "test",
+        },
+      });
+
+      // @ts-expect-error - accessing private property for testing
+      await adapter.initPromise;
+
+      // Check that tables were created without schema prefix (public schema)
+      const calls = mockQuery.mock.calls;
+
+      // Find CREATE TABLE calls
+      const createTableCalls = calls.filter(
+        (call) => typeof call[0] === "string" && call[0].includes("CREATE TABLE IF NOT EXISTS"),
+      );
+
+      expect(createTableCalls.length).toBeGreaterThan(0);
+
+      // Verify default table names (no schema prefix for public schema)
+      const usersTableCall = createTableCalls.find((call) =>
+        call[0].includes("voltagent_memory_users"),
+      );
+      const conversationsTableCall = createTableCalls.find((call) =>
+        call[0].includes("voltagent_memory_conversations"),
+      );
+      const messagesTableCall = createTableCalls.find((call) =>
+        call[0].includes("voltagent_memory_messages"),
+      );
+
+      expect(usersTableCall).toBeTruthy();
+      expect(conversationsTableCall).toBeTruthy();
+      expect(messagesTableCall).toBeTruthy();
+
+      // Verify no schema prefix for public schema
+      expect(usersTableCall?.[0]).not.toContain('"public".');
+    });
+
+    it("should use custom schema with proper quoting", async () => {
+      const mockClient = {
+        query: mockQuery,
+        release: mockRelease,
+      };
+
+      mockConnect.mockResolvedValue(mockClient);
+
+      vi.mocked(Pool).mockImplementation(
+        () =>
+          ({
+            connect: mockConnect,
+            query: mockPoolQuery,
+            end: mockEnd,
+          }) as any,
+      );
+
+      mockEmptyResult(); // BEGIN
+      mockEmptyResult(); // CREATE SCHEMA
+      mockEmptyResult(); // CREATE TABLE users
+      mockEmptyResult(); // CREATE TABLE conversations
+      mockEmptyResult(); // CREATE TABLE messages
+      mockEmptyResult(); // CREATE TABLE workflow_states
+
+      // CREATE INDEX (6 indexes)
+      for (let i = 0; i < 6; i++) {
+        mockEmptyResult();
+      }
+
+      mockQuery.mockRejectedValueOnce(new Error("column already exists"));
+      mockEmptyResult(); // COMMIT
+
+      adapter = new PostgreSQLMemoryAdapter({
+        connection: {
+          host: "localhost",
+          port: 5432,
+          database: "test",
+          user: "test",
+          password: "test",
+        },
+        schema: "custom_schema",
+        tablePrefix: "my_prefix",
+      });
+
+      // @ts-expect-error - accessing private property for testing
+      await adapter.initPromise;
+
+      const calls = mockQuery.mock.calls;
+
+      // Verify schema creation
+      const createSchemaCall = calls.find(
+        (call) =>
+          typeof call[0] === "string" &&
+          call[0].includes('CREATE SCHEMA IF NOT EXISTS "custom_schema"'),
+      );
+      expect(createSchemaCall).toBeTruthy();
+
+      // Verify table names with schema prefix and custom table prefix
+      const createTableCalls = calls.filter(
+        (call) => typeof call[0] === "string" && call[0].includes("CREATE TABLE IF NOT EXISTS"),
+      );
+
+      const usersTableCall = createTableCalls.find((call) =>
+        call[0].includes('"custom_schema"."my_prefix_users"'),
+      );
+      const conversationsTableCall = createTableCalls.find((call) =>
+        call[0].includes('"custom_schema"."my_prefix_conversations"'),
+      );
+      const messagesTableCall = createTableCalls.find((call) =>
+        call[0].includes('"custom_schema"."my_prefix_messages"'),
+      );
+      const workflowStatesTableCall = createTableCalls.find((call) =>
+        call[0].includes('"custom_schema"."my_prefix_workflow_states"'),
+      );
+
+      expect(usersTableCall).toBeTruthy();
+      expect(conversationsTableCall).toBeTruthy();
+      expect(messagesTableCall).toBeTruthy();
+      expect(workflowStatesTableCall).toBeTruthy();
+    });
+
+    it("should create all required tables with proper structure", async () => {
+      const mockClient = {
+        query: mockQuery,
+        release: mockRelease,
+      };
+
+      mockConnect.mockResolvedValue(mockClient);
+
+      vi.mocked(Pool).mockImplementation(
+        () =>
+          ({
+            connect: mockConnect,
+            query: mockPoolQuery,
+            end: mockEnd,
+          }) as any,
+      );
+
+      mockInitialization();
+
+      adapter = new PostgreSQLMemoryAdapter({
+        connection: {
+          host: "localhost",
+          port: 5432,
+          database: "test",
+          user: "test",
+          password: "test",
+        },
+        tablePrefix: "test",
+      });
+
+      // @ts-expect-error - accessing private property for testing
+      await adapter.initPromise;
+
+      const calls = mockQuery.mock.calls;
+
+      // Verify users table structure
+      const usersTableCall = calls.find(
+        (call) =>
+          typeof call[0] === "string" &&
+          call[0].includes("CREATE TABLE IF NOT EXISTS") &&
+          call[0].includes("test_users"),
+      );
+      expect(usersTableCall).toBeTruthy();
+      expect(usersTableCall?.[0]).toContain("id TEXT PRIMARY KEY");
+      expect(usersTableCall?.[0]).toContain("metadata JSONB");
+      expect(usersTableCall?.[0]).toContain("created_at TIMESTAMPTZ");
+      expect(usersTableCall?.[0]).toContain("updated_at TIMESTAMPTZ");
+
+      // Verify conversations table structure
+      const conversationsTableCall = calls.find(
+        (call) =>
+          typeof call[0] === "string" &&
+          call[0].includes("CREATE TABLE IF NOT EXISTS") &&
+          call[0].includes("test_conversations"),
+      );
+      expect(conversationsTableCall).toBeTruthy();
+      expect(conversationsTableCall?.[0]).toContain("id TEXT PRIMARY KEY");
+      expect(conversationsTableCall?.[0]).toContain("resource_id TEXT NOT NULL");
+      expect(conversationsTableCall?.[0]).toContain("user_id TEXT NOT NULL");
+      expect(conversationsTableCall?.[0]).toContain("title TEXT NOT NULL");
+      expect(conversationsTableCall?.[0]).toContain("metadata JSONB NOT NULL");
+      expect(conversationsTableCall?.[0]).toContain("created_at TIMESTAMPTZ");
+      expect(conversationsTableCall?.[0]).toContain("updated_at TIMESTAMPTZ");
+
+      // Verify messages table structure
+      const messagesTableCall = calls.find(
+        (call) =>
+          typeof call[0] === "string" &&
+          call[0].includes("CREATE TABLE IF NOT EXISTS") &&
+          call[0].includes("test_messages"),
+      );
+      expect(messagesTableCall).toBeTruthy();
+      expect(messagesTableCall?.[0]).toContain("conversation_id TEXT NOT NULL");
+      expect(messagesTableCall?.[0]).toContain("message_id TEXT NOT NULL");
+      expect(messagesTableCall?.[0]).toContain("user_id TEXT NOT NULL");
+      expect(messagesTableCall?.[0]).toContain("role TEXT NOT NULL");
+      expect(messagesTableCall?.[0]).toContain("parts JSONB");
+      expect(messagesTableCall?.[0]).toContain("metadata JSONB");
+      expect(messagesTableCall?.[0]).toContain("format_version INTEGER DEFAULT 2");
+      expect(messagesTableCall?.[0]).toContain("PRIMARY KEY (conversation_id, message_id)");
+      expect(messagesTableCall?.[0]).toContain("REFERENCES");
+      expect(messagesTableCall?.[0]).toContain("ON DELETE CASCADE");
+
+      // Verify workflow_states table structure
+      const workflowStatesTableCall = calls.find(
+        (call) =>
+          typeof call[0] === "string" &&
+          call[0].includes("CREATE TABLE IF NOT EXISTS") &&
+          call[0].includes("test_workflow_states"),
+      );
+      expect(workflowStatesTableCall).toBeTruthy();
+      expect(workflowStatesTableCall?.[0]).toContain("id TEXT PRIMARY KEY");
+      expect(workflowStatesTableCall?.[0]).toContain("workflow_id TEXT NOT NULL");
+      expect(workflowStatesTableCall?.[0]).toContain("workflow_name TEXT NOT NULL");
+      expect(workflowStatesTableCall?.[0]).toContain("status TEXT NOT NULL");
+      expect(workflowStatesTableCall?.[0]).toContain("suspension JSONB");
+      expect(workflowStatesTableCall?.[0]).toContain("events JSONB");
+      expect(workflowStatesTableCall?.[0]).toContain("output JSONB");
+      expect(workflowStatesTableCall?.[0]).toContain("cancellation JSONB");
+      expect(workflowStatesTableCall?.[0]).toContain("user_id TEXT");
+      expect(workflowStatesTableCall?.[0]).toContain("conversation_id TEXT");
+      expect(workflowStatesTableCall?.[0]).toContain("metadata JSONB");
+    });
+
+    it("should create all required indexes", async () => {
+      const mockClient = {
+        query: mockQuery,
+        release: mockRelease,
+      };
+
+      mockConnect.mockResolvedValue(mockClient);
+
+      vi.mocked(Pool).mockImplementation(
+        () =>
+          ({
+            connect: mockConnect,
+            query: mockPoolQuery,
+            end: mockEnd,
+          }) as any,
+      );
+
+      mockInitialization();
+
+      adapter = new PostgreSQLMemoryAdapter({
+        connection: {
+          host: "localhost",
+          port: 5432,
+          database: "test",
+          user: "test",
+          password: "test",
+        },
+        tablePrefix: "test",
+      });
+
+      // @ts-expect-error - accessing private property for testing
+      await adapter.initPromise;
+
+      const calls = mockQuery.mock.calls;
+
+      // Find all index creation calls
+      const indexCalls = calls.filter(
+        (call) => typeof call[0] === "string" && call[0].includes("CREATE INDEX IF NOT EXISTS"),
+      );
+
+      // Should have 6 indexes based on the initialization mock
+      expect(indexCalls.length).toBeGreaterThanOrEqual(6);
+
+      // Verify specific indexes exist
+      const userIdIndex = indexCalls.find(
+        (call) => call[0].includes("idx_") && call[0].includes("user_id"),
+      );
+      const resourceIdIndex = indexCalls.find(
+        (call) => call[0].includes("idx_") && call[0].includes("resource_id"),
+      );
+      const conversationIdIndex = indexCalls.find(
+        (call) => call[0].includes("idx_") && call[0].includes("conversation_id"),
+      );
+      const createdAtIndex = indexCalls.find(
+        (call) => call[0].includes("idx_") && call[0].includes("created_at"),
+      );
+      const workflowIdIndex = indexCalls.find(
+        (call) => call[0].includes("idx_") && call[0].includes("workflow_id"),
+      );
+      const statusIndex = indexCalls.find(
+        (call) => call[0].includes("idx_") && call[0].includes("status"),
+      );
+
+      expect(userIdIndex).toBeTruthy();
+      expect(resourceIdIndex).toBeTruthy();
+      expect(conversationIdIndex).toBeTruthy();
+      expect(createdAtIndex).toBeTruthy();
+      expect(workflowIdIndex).toBeTruthy();
+      expect(statusIndex).toBeTruthy();
+    });
+
+    it("should handle schema that is public explicitly", async () => {
+      const mockClient = {
+        query: mockQuery,
+        release: mockRelease,
+      };
+
+      mockConnect.mockResolvedValue(mockClient);
+
+      vi.mocked(Pool).mockImplementation(
+        () =>
+          ({
+            connect: mockConnect,
+            query: mockPoolQuery,
+            end: mockEnd,
+          }) as any,
+      );
+
+      mockInitialization();
+
+      adapter = new PostgreSQLMemoryAdapter({
+        connection: {
+          host: "localhost",
+          port: 5432,
+          database: "test",
+          user: "test",
+          password: "test",
+        },
+        schema: "public",
+        tablePrefix: "test",
+      });
+
+      // @ts-expect-error - accessing private property for testing
+      await adapter.initPromise;
+
+      const calls = mockQuery.mock.calls;
+
+      // Verify that CREATE SCHEMA is NOT called for public schema
+      const createSchemaCall = calls.find(
+        (call) =>
+          typeof call[0] === "string" && call[0].includes('CREATE SCHEMA IF NOT EXISTS "public"'),
+      );
+      expect(createSchemaCall).toBeFalsy();
+
+      // Verify tables are created without schema prefix
+      const createTableCalls = calls.filter(
+        (call) => typeof call[0] === "string" && call[0].includes("CREATE TABLE IF NOT EXISTS"),
+      );
+
+      const usersTableCall = createTableCalls.find((call) => call[0].includes("test_users"));
+
+      expect(usersTableCall).toBeTruthy();
+    });
+
+    it("should use connection string format", async () => {
+      const mockClient = {
+        query: mockQuery,
+        release: mockRelease,
+      };
+
+      mockConnect.mockResolvedValue(mockClient);
+
+      const mockPoolConstructor = vi.fn().mockReturnValue({
+        connect: mockConnect,
+        query: mockPoolQuery,
+        end: mockEnd,
+      });
+
+      vi.mocked(Pool).mockImplementation(mockPoolConstructor as any);
+
+      mockInitialization();
+
+      const connectionString = "postgresql://user:pass@localhost:5432/testdb";
+
+      adapter = new PostgreSQLMemoryAdapter({
+        connection: connectionString,
+        tablePrefix: "test",
+      });
+
+      // @ts-expect-error - accessing private property for testing
+      await adapter.initPromise;
+
+      // Verify Pool was created with connection string
+      expect(mockPoolConstructor).toHaveBeenCalledWith(
+        expect.objectContaining({
+          connectionString,
+          max: 10, // default maxConnections
+        }),
+      );
+    });
+
+    it("should use custom maxConnections", async () => {
+      const mockClient = {
+        query: mockQuery,
+        release: mockRelease,
+      };
+
+      mockConnect.mockResolvedValue(mockClient);
+
+      const mockPoolConstructor = vi.fn().mockReturnValue({
+        connect: mockConnect,
+        query: mockPoolQuery,
+        end: mockEnd,
+      });
+
+      vi.mocked(Pool).mockImplementation(mockPoolConstructor as any);
+
+      mockInitialization();
+
+      adapter = new PostgreSQLMemoryAdapter({
+        connection: {
+          host: "localhost",
+          port: 5432,
+          database: "test",
+          user: "test",
+          password: "test",
+        },
+        maxConnections: 25,
+        tablePrefix: "test",
+      });
+
+      // @ts-expect-error - accessing private property for testing
+      await adapter.initPromise;
+
+      // Verify Pool was created with custom maxConnections
+      expect(mockPoolConstructor).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max: 25,
+        }),
+      );
+    });
+  });
 });

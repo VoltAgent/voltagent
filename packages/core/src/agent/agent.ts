@@ -542,6 +542,7 @@ export class Agent {
             temperature: aiSDKOptions?.temperature ?? this.temperature,
             maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
             topP: aiSDKOptions?.topP,
+            stop: aiSDKOptions?.stop ?? options?.stop,
           },
         });
         const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
@@ -857,6 +858,7 @@ export class Agent {
             temperature: aiSDKOptions?.temperature ?? this.temperature,
             maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
             topP: aiSDKOptions?.topP,
+            stop: aiSDKOptions?.stop ?? options?.stop,
           },
         });
         const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
@@ -904,9 +906,7 @@ export class Agent {
               modelName: this.getModelName(),
             });
 
-            finalizeLLMSpan(SpanStatusCode.ERROR, {
-              message: (actualError as Error)?.message,
-            });
+            finalizeLLMSpan(SpanStatusCode.ERROR, { message: (actualError as Error)?.message });
 
             // History update removed - using OpenTelemetry only
 
@@ -926,6 +926,14 @@ export class Agent {
             // The onError callback should return void for AI SDK compatibility
           },
           onFinish: async (finalResult) => {
+            const providerUsage = finalResult.usage
+              ? await Promise.resolve(finalResult.usage)
+              : undefined;
+            finalizeLLMSpan(SpanStatusCode.OK, {
+              usage: providerUsage,
+              finishReason: finalResult.finishReason,
+            });
+
             await persistQueue.flush(buffer, oc);
 
             // History update removed - using OpenTelemetry only
@@ -1141,7 +1149,14 @@ export class Agent {
                       await writer.write(part as VoltAgentTextStreamPart);
                     }
                   } finally {
-                    // noop, writer closed after draining merged stream
+                    // Ensure the merged stream is closed when the parent stream finishes.
+                    // This allows the reader loop below to exit with done=true and lets
+                    // callers (e.g., SSE) observe completion.
+                    try {
+                      await writer.close();
+                    } catch (_) {
+                      // Ignore double-close or stream state errors
+                    }
                   }
                 };
 
@@ -2170,10 +2185,11 @@ export class Agent {
     },
   ): Span {
     const attributes = this.buildLLMSpanAttributes(params);
-    return oc.traceContext.createChildSpan(`llm:${params.operation}`, "llm", {
+    const span = oc.traceContext.createChildSpan(`llm:${params.operation}`, "llm", {
       kind: SpanKind.CLIENT,
       attributes,
     });
+    return span;
   }
 
   private createLLMSpanFinalizer(span: Span) {
@@ -2219,8 +2235,7 @@ export class Agent {
       "llm.model": params.modelName,
       "llm.stream": params.isStreaming,
     };
-
-    const provider = params.modelName.includes("/") ? params.modelName.split("/")[0] : undefined;
+    const provider = params.modelName?.includes("/") ? params.modelName.split("/")[0] : undefined;
     if (provider) {
       attrs["llm.provider"] = provider;
     }
@@ -2237,7 +2252,7 @@ export class Agent {
       return undefined;
     };
 
-    const temperature = maybeNumber(callOptions.temperature ?? callOptions.temp);
+    const temperature = maybeNumber(callOptions.temperature ?? callOptions.temp ?? undefined);
     if (temperature !== undefined) {
       attrs["llm.temperature"] = temperature;
     }
@@ -2252,15 +2267,16 @@ export class Agent {
     if (callOptions.stop !== undefined) {
       attrs["llm.stop_condition"] = safeStringify(callOptions.stop);
     }
-
     if (params.messages && params.messages.length > 0) {
       attrs["llm.messages.count"] = params.messages.length;
       const trimmedMessages = params.messages.slice(-10);
       attrs["llm.messages"] = safeStringify(
-        trimmedMessages.map((msg) => ({ role: msg.role, content: msg.content })),
+        trimmedMessages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
       );
     }
-
     if (params.tools) {
       const toolNames = Object.keys(params.tools);
       attrs["llm.tools.count"] = toolNames.length;
@@ -2268,11 +2284,9 @@ export class Agent {
         attrs["llm.tools"] = toolNames.join(",");
       }
     }
-
     if (params.providerOptions) {
       attrs["llm.provider_options"] = safeStringify(params.providerOptions);
     }
-
     return attrs;
   }
 
@@ -2303,7 +2317,9 @@ export class Agent {
       coerce((usage as any).outputTokens) ??
       coerce((usage as any).output_tokens);
     const totalTokens =
-      coerce((usage as any).totalTokens) ?? (promptTokens ?? 0) + (completionTokens ?? 0);
+      coerce((usage as any).totalTokens) ??
+      coerce((usage as any).total_tokens) ??
+      (promptTokens ?? 0) + (completionTokens ?? 0);
 
     if (promptTokens !== undefined) {
       span.setAttribute("llm.usage.prompt_tokens", promptTokens);

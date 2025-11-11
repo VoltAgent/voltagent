@@ -51,6 +51,12 @@ export interface PostgreSQLMemoryOptions {
   tablePrefix?: string;
 
   /**
+   * PostgreSQL schema to use for all tables
+   * @default undefined
+   */
+  schema?: string;
+
+  /**
    * Whether to enable debug logging
    * @default false
    */
@@ -65,12 +71,14 @@ export interface PostgreSQLMemoryOptions {
 export class PostgreSQLMemoryAdapter implements StorageAdapter {
   private pool: Pool;
   private tablePrefix: string;
+  private schema: string | undefined;
   private initialized = false;
   private initPromise: Promise<void> | null = null;
   private debug: boolean;
 
   constructor(options: PostgreSQLMemoryOptions) {
     this.tablePrefix = options.tablePrefix ?? "voltagent_memory";
+    this.schema = options.schema;
     this.debug = options.debug ?? false;
 
     // Create PostgreSQL connection pool
@@ -106,6 +114,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   }
 
   /**
+   * Get fully qualified table name with schema
+   */
+  private getTableName(tableName: string): string {
+    if (this.schema) {
+      return `"${this.schema}"."${tableName}"`;
+    }
+    return tableName;
+  }
+
+  /**
    * Initialize database schema
    */
   private async initialize(): Promise<void> {
@@ -120,9 +138,17 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const conversationsTable = `${this.tablePrefix}_conversations`;
-      const messagesTable = `${this.tablePrefix}_messages`;
-      const usersTable = `${this.tablePrefix}_users`;
+      // Create schema if it doesn't exist and it's not the default public schema
+      if (this.schema && this.schema !== "public") {
+        await client.query(`CREATE SCHEMA IF NOT EXISTS "${this.schema}"`);
+        this.log(`Ensured schema "${this.schema}" exists`);
+      }
+
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
+      const baseConversationsTable = `${this.tablePrefix}_conversations`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      const baseMessagesTable = `${this.tablePrefix}_messages`;
+      const usersTable = this.getTableName(`${this.tablePrefix}_users`);
 
       // Create users table (for user-level working memory)
       await client.query(`
@@ -163,7 +189,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       `);
 
       // Create workflow states table
-      const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+      const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
+      const baseWorkflowStatesTable = `${this.tablePrefix}_workflow_states`;
       await client.query(`
         CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
           id TEXT PRIMARY KEY,
@@ -184,32 +211,32 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
       // Create indexes for better performance
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_user_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseConversationsTable}_user_id 
         ON ${conversationsTable}(user_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_resource_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseConversationsTable}_resource_id 
         ON ${conversationsTable}(resource_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${messagesTable}_conversation_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseMessagesTable}_conversation_id 
         ON ${messagesTable}(conversation_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${messagesTable}_created_at 
+        CREATE INDEX IF NOT EXISTS idx_${baseMessagesTable}_created_at 
         ON ${messagesTable}(created_at)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_workflow_id 
+        CREATE INDEX IF NOT EXISTS idx_${baseWorkflowStatesTable}_workflow_id 
         ON ${workflowStatesTable}(workflow_id)
       `);
 
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_status 
+        CREATE INDEX IF NOT EXISTS idx_${baseWorkflowStatesTable}_status 
         ON ${workflowStatesTable}(status)
       `);
 
@@ -261,7 +288,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const messagesTable = `${this.tablePrefix}_messages`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
 
       // Ensure conversation exists
       const conversation = await this.getConversation(conversationId);
@@ -306,7 +333,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const messagesTable = `${this.tablePrefix}_messages`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
 
       // Ensure conversation exists
       const conversation = await this.getConversation(conversationId);
@@ -360,7 +387,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const messagesTable = `${this.tablePrefix}_messages`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
       const { limit, before, after, roles } = options || {};
 
       // Debug: Parsed options
@@ -537,8 +564,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const messagesTable = `${this.tablePrefix}_messages`;
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       if (conversationId) {
         // Clear messages for specific conversation
@@ -579,7 +606,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       // Check if conversation already exists
       const existing = await this.getConversation(input.id);
@@ -628,7 +655,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       const result = await client.query(`SELECT * FROM ${conversationsTable} WHERE id = $1`, [id]);
 
@@ -659,7 +686,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       const result = await client.query(
         `SELECT * FROM ${conversationsTable} WHERE resource_id = $1 ORDER BY updated_at DESC`,
@@ -698,7 +725,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
       let sql = `SELECT * FROM ${conversationsTable} WHERE 1=1`;
       const params: any[] = [];
       let paramCount = 1;
@@ -762,7 +789,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     try {
       await client.query("BEGIN");
 
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
       const conversation = await this.getConversation(id);
       if (!conversation) {
         throw new ConversationNotFoundError(id);
@@ -829,7 +856,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
     const client = await this.pool.connect();
     try {
-      const conversationsTable = `${this.tablePrefix}_conversations`;
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
 
       await client.query(`DELETE FROM ${conversationsTable} WHERE id = $1`, [id]);
 
@@ -861,7 +888,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       if (params.scope === "user" && params.userId) {
-        const usersTable = `${this.tablePrefix}_users`;
+        const usersTable = this.getTableName(`${this.tablePrefix}_users`);
         const result = await client.query(`SELECT metadata FROM ${usersTable} WHERE id = $1`, [
           params.userId,
         ]);
@@ -906,7 +933,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       if (params.scope === "user" && params.userId) {
-        const usersTable = `${this.tablePrefix}_users`;
+        const usersTable = this.getTableName(`${this.tablePrefix}_users`);
         const now = new Date().toISOString();
 
         // Check if user exists
@@ -965,7 +992,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       }
 
       if (params.scope === "user" && params.userId) {
-        const usersTable = `${this.tablePrefix}_users`;
+        const usersTable = this.getTableName(`${this.tablePrefix}_users`);
         const result = await client.query(`SELECT metadata FROM ${usersTable} WHERE id = $1`, [
           params.userId,
         ]);
@@ -1001,7 +1028,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null> {
     await this.initPromise;
 
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
     const result = await this.pool.query(`SELECT * FROM ${workflowStatesTable} WHERE id = $1`, [
       executionId,
     ]);
@@ -1034,7 +1061,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void> {
     await this.initPromise;
 
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
     const client = await this.pool.connect();
 
     try {
@@ -1111,7 +1138,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   async getSuspendedWorkflowStates(workflowId: string): Promise<WorkflowStateEntry[]> {
     await this.initPromise;
 
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
     const result = await this.pool.query(
       `SELECT * FROM ${workflowStatesTable} WHERE workflow_id = $1 AND status = $2 ORDER BY created_at DESC`,
       [workflowId, "suspended"],
@@ -1144,8 +1171,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * Updates messages with user_id='default' to use the actual user_id from their conversation
    */
   private async migrateDefaultUserIds(_client: PoolClient): Promise<void> {
-    const messagesTableName = `${this.tablePrefix}_messages`;
-    const conversationsTableName = `${this.tablePrefix}_conversations`;
+    const messagesTableName = this.getTableName(`${this.tablePrefix}_messages`);
+    const conversationsTableName = this.getTableName(`${this.tablePrefix}_conversations`);
 
     try {
       // First, check if there are any messages with default user_id
@@ -1201,52 +1228,46 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * This migration adds support for events, output, and cancellation tracking
    */
   private async addWorkflowStateColumns(client: PoolClient): Promise<void> {
-    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    // Use base table name for information_schema queries
+    const baseTable = `${this.tablePrefix}_workflow_states`;
+    const schemaCondition = this.schema ? "table_schema = $1" : "table_schema = current_schema()";
+    const params = this.schema ? [this.schema, baseTable] : [baseTable];
 
     try {
-      // Check which columns exist
       const columnCheck = await client.query(
         `
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = $1
-        `,
-        [workflowStatesTable],
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1}
+      `,
+        params,
       );
 
       const existingColumns = columnCheck.rows.map((row) => row.column_name);
 
-      // Add events column if it doesn't exist
       if (!existingColumns.includes("events")) {
         try {
-          await client.query(`ALTER TABLE ${workflowStatesTable} ADD COLUMN events JSONB`);
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN events JSONB`);
           this.log("Added 'events' column to workflow_states table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
-      // Add output column if it doesn't exist
       if (!existingColumns.includes("output")) {
         try {
-          await client.query(`ALTER TABLE ${workflowStatesTable} ADD COLUMN output JSONB`);
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN output JSONB`);
           this.log("Added 'output' column to workflow_states table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
-      // Add cancellation column if it doesn't exist
       if (!existingColumns.includes("cancellation")) {
         try {
-          await client.query(`ALTER TABLE ${workflowStatesTable} ADD COLUMN cancellation JSONB`);
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN cancellation JSONB`,
+          );
           this.log("Added 'cancellation' column to workflow_states table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
     } catch (error) {
-      // Log warning but don't throw - existing deployments without these columns will still work
       this.log("Failed to add workflow state columns (non-critical):", error);
     }
   }
@@ -1256,77 +1277,71 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
    * This allows existing tables to support both old and new message formats
    */
   private async addUIMessageColumnsToMessagesTable(client: PoolClient): Promise<void> {
-    const messagesTableName = `${this.tablePrefix}_messages`;
+    const baseTable = `${this.tablePrefix}_messages`;
+    const schemaCondition = this.schema ? "table_schema = $1" : "table_schema = current_schema()";
+    const params = this.schema ? [this.schema, baseTable] : [baseTable];
 
     try {
-      // Check which columns exist
       const columnCheck = await client.query(
         `
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = $1
-        `,
-        [messagesTableName],
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1}
+      `,
+        params,
       );
 
       const existingColumns = columnCheck.rows.map((row) => row.column_name);
 
-      // Add new columns if they don't exist
       if (!existingColumns.includes("parts")) {
         try {
-          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN parts JSONB`);
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN parts JSONB`);
           this.log("Added 'parts' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       if (!existingColumns.includes("metadata")) {
         try {
-          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN metadata JSONB`);
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN metadata JSONB`,
+          );
           this.log("Added 'metadata' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       if (!existingColumns.includes("format_version")) {
         try {
           await client.query(
-            `ALTER TABLE ${messagesTableName} ADD COLUMN format_version INTEGER DEFAULT 2`,
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN format_version INTEGER DEFAULT 2`,
           );
           this.log("Added 'format_version' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       if (!existingColumns.includes("user_id")) {
         try {
           await client.query(
-            `ALTER TABLE ${messagesTableName} ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default'`,
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default'`,
           );
           this.log("Added 'user_id' column to messages table");
-        } catch (_e) {
-          // Column might already exist
-        }
+        } catch (_e) {}
       }
 
       // Make content and type nullable for new format
       if (existingColumns.includes("content")) {
         const contentInfo = await client.query(
           `
-          SELECT is_nullable
-          FROM information_schema.columns
-          WHERE table_name = $1 AND column_name = 'content'
-          `,
-          [messagesTableName],
+        SELECT is_nullable
+        FROM information_schema.columns
+        WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1} AND column_name = 'content'
+        `,
+          params,
         );
 
         if (contentInfo.rows[0]?.is_nullable === "NO") {
           try {
             await client.query(
-              `ALTER TABLE ${messagesTableName} ALTER COLUMN content DROP NOT NULL`,
+              `ALTER TABLE ${this.getTableName(baseTable)} ALTER COLUMN content DROP NOT NULL`,
             );
             this.log("Made 'content' column nullable");
           } catch (e) {
@@ -1338,16 +1353,18 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       if (existingColumns.includes("type")) {
         const typeInfo = await client.query(
           `
-          SELECT is_nullable
-          FROM information_schema.columns
-          WHERE table_name = $1 AND column_name = 'type'
-          `,
-          [messagesTableName],
+        SELECT is_nullable
+        FROM information_schema.columns
+        WHERE ${schemaCondition} AND table_name = $${this.schema ? 2 : 1} AND column_name = 'type'
+        `,
+          params,
         );
 
         if (typeInfo.rows[0]?.is_nullable === "NO") {
           try {
-            await client.query(`ALTER TABLE ${messagesTableName} ALTER COLUMN type DROP NOT NULL`);
+            await client.query(
+              `ALTER TABLE ${this.getTableName(baseTable)} ALTER COLUMN type DROP NOT NULL`,
+            );
             this.log("Made 'type' column nullable");
           } catch (e) {
             this.log("Error making type nullable:", e);
@@ -1358,7 +1375,6 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       this.log("UIMessage columns migration completed for messages table");
     } catch (error) {
       this.log("Error in UIMessage columns migration (non-critical):", error);
-      // Don't throw - this is not critical for new installations
     }
   }
 }

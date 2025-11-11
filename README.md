@@ -37,12 +37,11 @@ English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i1
 
 <br/>
 
-<!-- <div align="center">
-<a href="https://voltagent.dev/">
-<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
-</a>
+<div align="center">
+⭐ Like what we're doing? Give us a star ⬆️
+</div>
 
-</div> -->
+<br/>
 
 **VoltAgent** is an open source TypeScript framework for building and orchestrating AI agents.
 You can build production-ready agents with memory, workflows, tools, and built-in LLM observability.
