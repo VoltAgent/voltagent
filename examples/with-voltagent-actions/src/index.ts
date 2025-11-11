@@ -33,8 +33,8 @@ const airtableAgent = new Agent({
 async function bootstrap() {
   const actionsMcp = new MCPConfiguration({
     servers: {
-      airtable: createVoltOpsMcpServer(),
-      slack: createVoltOpsMcpServer(),
+      airtable: createVoltOpsMcpServer("airtable"),
+      slack: createVoltOpsMcpServer("slack"),
       composio: createComposio(),
     },
   });

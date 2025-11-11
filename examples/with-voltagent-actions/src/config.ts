@@ -36,8 +36,16 @@ const baseHeaders: Record<string, string> = {
   "X-Secret-Key": secretKey,
 };
 
-export function createVoltOpsMcpServer() {
-  const url = `${baseUrl}/mcp/slack`;
+const MCP_ENDPOINTS: Record<string, string> = {
+  airtable: "mcp/airtable",
+  slack: "mcp/slack",
+  all: "mcp",
+};
+
+export function createVoltOpsMcpServer(service = "airtable") {
+  const normalizedService = service.trim().toLowerCase();
+  const endpoint = MCP_ENDPOINTS[normalizedService] ?? MCP_ENDPOINTS.airtable;
+  const url = endpoint === "mcp" ? `${baseUrl}/mcp` : `${baseUrl}/${endpoint}`;
 
   return {
     type: "streamable-http" as const,
