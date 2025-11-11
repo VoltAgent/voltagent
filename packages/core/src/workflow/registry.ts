@@ -1,6 +1,7 @@
 import { LoggerProxy } from "../logger";
 import { SimpleEventEmitter } from "../utils/simple-event-emitter";
 import { serializeWorkflowStep } from "./core";
+import type { WorkflowEvalConfig } from "./eval/types";
 import type { Workflow, WorkflowExecutionResult, WorkflowSuspendController } from "./types";
 
 /**
@@ -14,6 +15,7 @@ export interface RegisteredWorkflow {
   inputSchema?: any; // Store the input schema for API access
   suspendSchema?: any; // Store the suspend schema for API access
   resumeSchema?: any; // Store the resume schema for API access
+  evalConfig?: WorkflowEvalConfig;
 }
 
 /**
@@ -66,6 +68,7 @@ export class WorkflowRegistry extends SimpleEventEmitter {
       inputSchema: workflow.inputSchema,
       suspendSchema: workflow.suspendSchema,
       resumeSchema: workflow.resumeSchema,
+      evalConfig: workflow.evalConfig,
     };
 
     this.workflows.set(workflow.id, registeredWorkflow);
