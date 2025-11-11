@@ -1,20 +1,5 @@
 {
   "name": "voltagent-example-with-ollama",
-  "private": true,
-  "type": "module",
-  "license": "MIT",
-  "keywords": [
-    "agent",
-    "ai",
-    "voltagent",
-    "ollama"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src/index.ts",
-    "start": "tsx --env-file=.env ./src/index.ts",
-    "volt": "volt"
-  },
   "dependencies": {
     "@voltagent/cli": "^0.1.15",
     "@voltagent/core": "^1.2.1",
@@ -28,5 +13,20 @@
     "@types/node": "^24.2.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
-  }
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "ollama",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src/index.ts",
+    "start": "tsx --env-file=.env ./src/index.ts",
+    "volt": "volt"
+  },
+  "type": "module"
 }
