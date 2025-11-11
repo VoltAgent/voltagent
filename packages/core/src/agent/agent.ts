@@ -90,7 +90,7 @@ import {
   normalizeInputGuardrailList,
   normalizeOutputGuardrailList,
 } from "./guardrail";
-import { MemoryPersistQueue } from "./memory-persist-queue";
+import { AGENT_METADATA_CONTEXT_KEY, MemoryPersistQueue } from "./memory-persist-queue";
 import { sanitizeMessagesForModel } from "./message-normalizer";
 import {
   type GuardrailPipeline,
@@ -2097,6 +2097,10 @@ export class Agent {
       QUEUE_CONTEXT_KEY,
       new MemoryPersistQueue(this.memoryManager, { debounceMs: 200, logger }),
     );
+    systemContext.set(AGENT_METADATA_CONTEXT_KEY, {
+      agentId: this.id,
+      agentName: this.name,
+    });
 
     const elicitationHandler = options?.elicitation ?? options?.parentOperationContext?.elicitation;
 

@@ -13,6 +13,10 @@ import type {
   StreamObjectOptions,
   StreamTextOptions,
 } from "../agent";
+import {
+  type AgentMetadataContextValue,
+  SUBAGENT_TOOL_CALL_METADATA_KEY,
+} from "../memory-persist-queue";
 import type { UsageInfo } from "../providers/base/types";
 import type { OperationContext, SupervisorConfig } from "../types";
 import type { SubAgentStateData } from "../types";
@@ -440,6 +444,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
                   subAgentId: targetAgent.id,
                   subAgentName: targetAgent.name,
                 };
+                this.registerToolCallMetadata(parentOperationContext, enrichedPart, targetAgent);
                 await fullStreamWriter.write(enrichedPart);
               }
             } catch (error) {
@@ -526,6 +531,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
                   subAgentId: targetAgent.id,
                   subAgentName: targetAgent.name,
                 };
+                this.registerToolCallMetadata(parentOperationContext, enrichedPart, targetAgent);
                 await fullStreamWriter.write(enrichedPart);
               }
             } catch (error) {
@@ -927,5 +933,31 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
 
       return subAgentData;
     });
+  }
+
+  private registerToolCallMetadata(
+    oc: OperationContext | undefined,
+    part: { type?: string; toolCallId?: string },
+    agent: Agent,
+  ): void {
+    if (!oc || !part?.type || !part.type.startsWith("tool-") || !part.toolCallId) {
+      return;
+    }
+
+    let metadataMap = oc.systemContext.get(SUBAGENT_TOOL_CALL_METADATA_KEY) as
+      | Map<string, AgentMetadataContextValue>
+      | undefined;
+
+    if (!metadataMap) {
+      metadataMap = new Map();
+      oc.systemContext.set(SUBAGENT_TOOL_CALL_METADATA_KEY, metadataMap);
+    }
+
+    if (!metadataMap.has(part.toolCallId)) {
+      metadataMap.set(part.toolCallId, {
+        agentId: agent.id,
+        agentName: agent.name,
+      });
+    }
   }
 }
