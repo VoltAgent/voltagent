@@ -80,8 +80,7 @@ export const createCustomerRecord = createTool({
 ```
 
 Agents can now call `createCustomerRecord` during planning and VoltOps keeps an immutable log of each
-invocation (request/response/metadata). The [with-voltagent-actions example](/examples/with-voltagent-actions/)
-contains a full setup with Airtable tools plus a UI to test payloads.
+invocation (request/response/metadata).
 
 ## Next steps
 
