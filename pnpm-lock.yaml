@@ -1594,6 +1594,40 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-ollama:
+    dependencies:
+      '@voltagent/cli':
+        specifier: ^0.1.15
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.2.1
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^1.0.4
+        version: link:../../packages/logger
+      '@voltagent/server-hono':
+        specifier: ^1.2.2
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^5.0.76
+        version: 5.0.76(zod@3.25.76)
+      ollama-ai-provider-v2:
+        specifier: ^1.5.3
+        version: 1.5.3(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-peaka-mcp:
     dependencies:
       '@ai-sdk/openai':
@@ -29799,6 +29833,17 @@ packages:
 
   /ohash@2.0.11:
     resolution: {integrity: sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ==}
+
+  /ollama-ai-provider-v2@1.5.3(zod@3.25.76):
+    resolution: {integrity: sha512-LnpvKuxNJyE+cB03cfUjFJnaiBJoUqz3X97GFc71gz09gOdrxNh1AsVBxrpw3uX5aiMxRIWPOZ8god0dHSChsg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^4.0.16
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.16(zod@3.25.76)
+      zod: 3.25.76
+    dev: false
 
   /ollama-ai-provider@1.2.0(zod@3.25.76):
     resolution: {integrity: sha512-jTNFruwe3O/ruJeppI/quoOUxG7NA6blG3ZyQj3lei4+NnJo7bi3eIRWqlVpRlu/mbzbFXeJSBuYQWF6pzGKww==}

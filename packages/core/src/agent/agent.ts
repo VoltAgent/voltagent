@@ -216,7 +216,12 @@ function cloneGenerateTextResultWithContext<
   OUTPUT = any,
 >(
   result: GenerateTextResult<TOOLS, OUTPUT>,
-  overrides: Pick<GenerateTextResultWithContext<TOOLS, OUTPUT>, "text" | "context">,
+  overrides: Partial<
+    Pick<
+      GenerateTextResultWithContext<TOOLS, OUTPUT>,
+      "text" | "context" | "toolCalls" | "toolResults"
+    >
+  >,
 ): GenerateTextResultWithContext<TOOLS, OUTPUT> {
   const prototype = Object.getPrototypeOf(result);
   const clone = Object.create(prototype) as GenerateTextResultWithContext<TOOLS, OUTPUT>;
@@ -588,6 +593,9 @@ export class Agent {
           finishReason: result.finishReason,
         });
 
+        const { toolCalls: aggregatedToolCalls, toolResults: aggregatedToolResults } =
+          this.collectToolDataFromResult(result);
+
         await persistQueue.flush(buffer, oc);
 
         const usageInfo = convertUsage(result.usage);
@@ -633,7 +641,7 @@ export class Agent {
             duration: Date.now() - startTime,
             finishReason: result.finishReason,
             usage: result.usage,
-            toolCalls: result.toolCalls?.length || 0,
+            toolCalls: aggregatedToolCalls.length,
             text: finalText,
           },
         );
@@ -658,7 +666,7 @@ export class Agent {
           metadata: {
             finishReason: result.finishReason,
             usage: result.usage ? JSON.parse(safeStringify(result.usage)) : undefined,
-            toolCalls: result.toolCalls,
+            toolCalls: aggregatedToolCalls,
           },
         });
 
@@ -668,6 +676,8 @@ export class Agent {
         return cloneGenerateTextResultWithContext(result, {
           text: finalText,
           context: oc.context,
+          toolCalls: aggregatedToolCalls,
+          toolResults: aggregatedToolResults,
         });
       } catch (error) {
         // Check if this is a BailError (subagent early termination via abort)
@@ -1976,6 +1986,23 @@ export class Agent {
       model,
       tools,
       maxSteps,
+    };
+  }
+
+  private collectToolDataFromResult<TOOLS extends ToolSet, OUTPUT>(
+    result: GenerateTextResult<TOOLS, OUTPUT>,
+  ): {
+    toolCalls: GenerateTextResult<TOOLS, OUTPUT>["toolCalls"];
+    toolResults: GenerateTextResult<TOOLS, OUTPUT>["toolResults"];
+  } {
+    const steps = result.steps ?? [];
+
+    const stepToolCalls = steps.flatMap((step) => step.toolCalls ?? []);
+    const stepToolResults = steps.flatMap((step) => step.toolResults ?? []);
+
+    return {
+      toolCalls: stepToolCalls.length > 0 ? stepToolCalls : result.toolCalls,
+      toolResults: stepToolResults.length > 0 ? stepToolResults : result.toolResults,
     };
   }
 
