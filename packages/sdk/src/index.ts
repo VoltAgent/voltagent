@@ -1,5 +1,4 @@
 import { VoltOpsClient as CoreVoltOpsClient } from "@voltagent/core";
-import type { VoltAgentClientOptions } from "./types";
 
 export { VoltAgentCoreAPI } from "./client";
 
