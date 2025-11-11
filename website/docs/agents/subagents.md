@@ -329,6 +329,24 @@ This allows you to:
 - Filter events by specific sub-agent
 - Apply different handling logic based on the event source
 
+#### Filtering Historical Conversations
+
+Sub-agent metadata is also persisted in memory, so you can apply the same filtering logic when you replay a conversation later:
+
+```ts
+const messages = await memory.getMessages(userId, conversationId);
+
+const writerMessages = messages.filter(
+  (message) => message.metadata?.subAgentName === "WriterAgent"
+);
+
+for (const message of writerMessages) {
+  console.log(`[${message.metadata?.subAgentName}]`, message.parts);
+}
+```
+
+Every `UIMessage` in memory now includes the `metadata.subAgentId` and `metadata.subAgentName` fields, making it easy to render supervisor history the same way you render live streams.
+
 ### Complete System Message Override
 
 Provide a custom `systemMessage` to replace the default template:
