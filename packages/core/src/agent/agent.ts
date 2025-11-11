@@ -2001,8 +2001,8 @@ export class Agent {
     const stepToolResults = steps.flatMap((step) => step.toolResults ?? []);
 
     return {
-      toolCalls: stepToolCalls.length > 0 ? stepToolCalls : result.toolCalls,
-      toolResults: stepToolResults.length > 0 ? stepToolResults : result.toolResults,
+      toolCalls: stepToolCalls.length > 0 ? stepToolCalls : (result.toolCalls ?? []),
+      toolResults: stepToolResults.length > 0 ? stepToolResults : (result.toolResults ?? []),
     };
   }
 
