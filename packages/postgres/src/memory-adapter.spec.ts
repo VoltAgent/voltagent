@@ -64,9 +64,10 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
     mockEmptyResult(); // CREATE TABLE conversations
     mockEmptyResult(); // CREATE TABLE messages
     mockEmptyResult(); // CREATE TABLE workflow_states
+    mockEmptyResult(); // CREATE TABLE steps
 
-    // CREATE INDEX (6 indexes)
-    for (let i = 0; i < 6; i++) {
+    // CREATE INDEX (8 indexes)
+    for (let i = 0; i < 8; i++) {
       mockEmptyResult();
     }
 
@@ -337,17 +338,22 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
     it("should clear all messages for a user (no conversationId)", async () => {
       const tx = mockTransaction();
       mockEmptyResult(); // DELETE by subquery
+      mockEmptyResult(); // DELETE steps by subquery
       tx.commit();
 
       await adapter.clearMessages("user-1");
 
-      const last = mockQuery.mock.calls[mockQuery.mock.calls.length - 2]; // DELETE is before COMMIT
-      const sql: string = last[0];
-      const params: any[] = last[1];
-      expect(sql).toContain(
+      const messageDelete = mockQuery.mock.calls[mockQuery.mock.calls.length - 3];
+      expect(messageDelete[0]).toContain(
         "DELETE FROM test_messages\n           WHERE conversation_id IN (\n             SELECT id FROM test_conversations WHERE user_id = $1\n           )",
       );
-      expect(params).toEqual(["user-1"]);
+      expect(messageDelete[1]).toEqual(["user-1"]);
+
+      const stepsDelete = mockQuery.mock.calls[mockQuery.mock.calls.length - 2];
+      expect(stepsDelete[0]).toContain(
+        "DELETE FROM test_steps\n           WHERE conversation_id IN (\n             SELECT id FROM test_conversations WHERE user_id = $1\n           )",
+      );
+      expect(stepsDelete[1]).toEqual(["user-1"]);
     });
   });
 
@@ -926,9 +932,10 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       mockEmptyResult(); // CREATE TABLE conversations
       mockEmptyResult(); // CREATE TABLE messages
       mockEmptyResult(); // CREATE TABLE workflow_states
+      mockEmptyResult(); // CREATE TABLE steps
 
-      // CREATE INDEX (6 indexes)
-      for (let i = 0; i < 6; i++) {
+      // CREATE INDEX (8 indexes)
+      for (let i = 0; i < 8; i++) {
         mockEmptyResult();
       }
 
@@ -1029,13 +1036,16 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       mockEmptyResult(); // CREATE TABLE conversations
       mockEmptyResult(); // CREATE TABLE messages
       mockEmptyResult(); // CREATE TABLE workflow_states
+      mockEmptyResult(); // CREATE TABLE steps
 
-      // CREATE INDEX (6 indexes)
-      for (let i = 0; i < 6; i++) {
+      // CREATE INDEX (8 indexes)
+      for (let i = 0; i < 8; i++) {
         mockEmptyResult();
       }
 
+      // addUIMessageColumnsToMessagesTable (fails but is caught)
       mockQuery.mockRejectedValueOnce(new Error("column already exists"));
+
       mockEmptyResult(); // COMMIT
 
       adapter = new PostgreSQLMemoryAdapter({

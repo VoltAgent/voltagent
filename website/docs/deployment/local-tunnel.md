@@ -81,7 +81,7 @@ Example output:
 Add a prefix to organize multiple tunnels:
 
 ```bash title="Open tunnels with prefixes"
-pnpm volt tunnel 3141 --prefix web
+pnpm volt tunnel 3141 --prefix agent
 pnpm volt tunnel 8080 --prefix api
 ```
 

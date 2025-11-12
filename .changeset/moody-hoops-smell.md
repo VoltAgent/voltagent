@@ -54,8 +54,8 @@ pnpm volt tunnel 3141
 Added `--prefix` flag to organize multiple tunnels with custom subdomain prefixes:
 
 ```bash
-pnpm volt tunnel 3141 --prefix web
-# → https://web-john-doe.tunnel.voltagent.dev
+pnpm volt tunnel 3141 --prefix agent
+# → https://agent-john-doe.tunnel.voltagent.dev
 
 pnpm volt tunnel 8080 --prefix api
 # → https://api-john-doe.tunnel.voltagent.dev
