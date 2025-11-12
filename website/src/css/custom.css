@@ -4252,173 +4252,310 @@ code .token.coord {
   font-weight: 700;
 }
 
-/* Admonition Styles */
+/* Admonition Styles - Matching custom Admonition component */
 .theme-admonition-tip {
-  background-color: #000000 !important;
-  border: 1px solid #10b981 !important;
-  border-radius: 6px !important;
-  padding: 0.875rem !important;
-  margin: 1.5rem 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  gap: 0.5rem !important;
-  box-shadow: none !important;
-  color: #10b981 !important;
-}
-
-.theme-admonition-tip .admonition-content p {
-  margin: 0 !important;
-  font-size: 0.875rem !important;
-  line-height: 1.6 !important;
-  color: #e6edf3 !important;
-}
-
-[data-theme="dark"] .theme-admonition-tip {
-  background-color: #000000 !important;
-}
-
-[data-theme="dark"] .theme-admonition-tip .admonition-content p {
-  color: #e6edf3 !important;
-}
-
-.theme-admonition-tip svg {
-  fill: #10b981 !important;
-  width: 1.1rem !important;
-  height: 1.1rem !important;
-}
-.theme-admonition-tip svg {
-  fill: #10b981 !important;
-  width: 1.1rem !important;
-  height: 1.1rem !important;
-}
-
-.theme-admonition-tip .admonition-heading {
-  display: none !important;
-}
-
-.theme-admonition-tip .admonition-content {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* Note Admonition */
-.theme-admonition-note {
-  background-color: #000000 !important;
-  border: 1px solid #288db8 !important;
-  border-radius: 6px !important;
+  background-color: rgba(16, 185, 129, 0.05) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+  border-radius: 0.5rem !important;
   padding: 1rem !important;
   margin: 1rem 0 !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-start !important;
-  gap: 0.75rem !important;
+  gap: 0.25rem !important;
   box-shadow: none !important;
-  color: #288db8 !important;
+}
+
+.theme-admonition-tip .admonition-icon {
+  flex-shrink: 0 !important;
+  margin-top: 0.125rem !important;
+}
+
+.theme-admonition-tip svg {
+  color: rgb(16, 185, 129) !important;
+  fill: currentColor !important;
+  stroke: none !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+.theme-admonition-tip .admonition-heading,
+.theme-admonition-tip .admonition-heading h5 {
+  display: block !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(16, 185, 129) !important;
+}
+
+.theme-admonition-tip .admonition-content {
+  flex: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.theme-admonition-tip .admonition-content p {
+  margin-bottom: 0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.625 !important;
+  color: var(--ifm-font-color-base) !important;
+}
+
+/* Note Admonition */
+.theme-admonition-note {
+  background-color: rgba(96, 165, 250, 0.05) !important;
+  border: 1px solid rgba(96, 165, 250, 0.2) !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 0.25rem !important;
+  box-shadow: none !important;
 }
 
 .theme-admonition-note .admonition-icon {
-  display: none !important;
+  flex-shrink: 0 !important;
+  margin-top: 0.125rem !important;
 }
 
-.theme-admonition-note .admonition-heading {
-  display: none !important;
-}
 .theme-admonition-note svg {
-  fill: #288db8 !important;
-  width: 1.1rem !important;
-  height: 1.1rem !important;
+  color: rgb(96, 165, 250) !important;
+  fill: currentColor !important;
+  stroke: none !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+.theme-admonition-note .admonition-heading,
+.theme-admonition-note .admonition-heading h5 {
+  display: block !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(96, 165, 250) !important;
 }
 
 .theme-admonition-note .admonition-content {
+  flex: 1 !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
 .theme-admonition-note .admonition-content p {
-  margin: 0 !important;
+  margin-bottom: 0 !important;
   font-size: 0.875rem !important;
-  line-height: 1.6 !important;
-  color: #e6edf3 !important;
-}
-
-[data-theme="dark"] .theme-admonition-note {
-  background-color: #000000 !important;
-}
-
-[data-theme="dark"] .theme-admonition-note .admonition-content p {
-  color: #e6edf3 !important;
+  line-height: 1.625 !important;
+  color: var(--ifm-font-color-base) !important;
 }
 
 /* Warning Admonition */
 .theme-admonition-warning {
-  background-color: #000000 !important;
-  border: 1px solid #f59e0ba1 !important;
-  border-radius: 12px !important;
-  padding: 0.875rem !important;
-  margin: 1.5rem 0 !important;
-  color: #f59e0ba1 !important;
+  background-color: rgba(251, 191, 36, 0.05) !important;
+  border: 1px solid rgba(251, 191, 36, 0.2) !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 0.25rem !important;
+  box-shadow: none !important;
+}
+
+.theme-admonition-warning .admonition-icon {
+  flex-shrink: 0 !important;
+  margin-top: 0.125rem !important;
+}
+
+.theme-admonition-warning svg {
+  color: rgb(251, 191, 36) !important;
+  fill: currentColor !important;
+  stroke: none !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+.theme-admonition-warning .admonition-heading,
+.theme-admonition-warning .admonition-heading h5 {
+  display: block !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(251, 191, 36) !important;
+}
+
+.theme-admonition-warning .admonition-content {
+  flex: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .theme-admonition-warning .admonition-content p {
-  color: #f59e0ba1 !important;
-  line-height: 1.6 !important;
+  margin-bottom: 0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.625 !important;
+  color: var(--ifm-font-color-base) !important;
 }
 
 /* Info Admonition */
 .theme-admonition-info {
-  background-color: #000000 !important;
-  border: 1px solid rgba(96, 165, 250, 0.3) !important;
-  border-radius: 6px !important;
-  padding: 0.875rem !important;
-  margin: 1.5rem 0 !important;
+  background-color: rgba(156, 163, 175, 0.05) !important;
+  border: 1px solid rgba(156, 163, 175, 0.2) !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 0.25rem !important;
+  box-shadow: none !important;
+}
+
+.theme-admonition-info .admonition-icon {
+  flex-shrink: 0 !important;
+  margin-top: 0.125rem !important;
+}
+
+.theme-admonition-info svg {
+  color: rgb(156, 163, 175) !important;
+  fill: currentColor !important;
+  stroke: none !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+.theme-admonition-info .admonition-heading,
+.theme-admonition-info .admonition-heading h5 {
+  display: block !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(156, 163, 175) !important;
+}
+
+.theme-admonition-info .admonition-content {
+  flex: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .theme-admonition-info .admonition-content p {
-  color: #e6edf3 !important;
-  line-height: 1.6 !important;
+  margin-bottom: 0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.625 !important;
+  color: var(--ifm-font-color-base) !important;
 }
 
 /* Danger Admonition */
 .theme-admonition-danger {
-  background-color: #000000 !important;
-  border: 1px solid rgba(239, 68, 68, 0.3) !important;
-  border-radius: 6px !important;
-  padding: 0.875rem !important;
-  margin: 1.5rem 0 !important;
+  background-color: rgba(239, 68, 68, 0.05) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 0.25rem !important;
+  box-shadow: none !important;
+}
+
+.theme-admonition-danger .admonition-icon {
+  flex-shrink: 0 !important;
+  margin-top: 0.125rem !important;
+}
+
+.theme-admonition-danger svg {
+  color: rgb(239, 68, 68) !important;
+  fill: currentColor !important;
+  stroke: none !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+.theme-admonition-danger .admonition-heading,
+.theme-admonition-danger .admonition-heading h5 {
+  display: block !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(239, 68, 68) !important;
+}
+
+.theme-admonition-danger .admonition-content {
+  flex: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .theme-admonition-danger .admonition-content p {
-  color: #e6edf3 !important;
-  line-height: 1.6 !important;
+  margin-bottom: 0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.625 !important;
+  color: var(--ifm-font-color-base) !important;
 }
 
 /* Caution Admonition */
 .theme-admonition-caution {
-  background-color: #000000 !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-  border-radius: 6px !important;
-  padding: 0.875rem !important;
-  margin: 1.5rem 0 !important;
+  background-color: rgba(245, 158, 11, 0.05) !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 0.25rem !important;
+  box-shadow: none !important;
+}
+
+.theme-admonition-caution .admonition-icon {
+  flex-shrink: 0 !important;
+  margin-top: 0.125rem !important;
+}
+
+.theme-admonition-caution svg {
+  color: rgb(245, 158, 11) !important;
+  fill: currentColor !important;
+  stroke: none !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+.theme-admonition-caution .admonition-heading,
+.theme-admonition-caution .admonition-heading h5 {
+  display: block !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(245, 158, 11) !important;
+}
+
+.theme-admonition-caution .admonition-content {
+  flex: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .theme-admonition-caution .admonition-content p {
-  color: #e6edf3 !important;
-  line-height: 1.6 !important;
-}
-
-/* Important Admonition */
-.theme-admonition-important {
-  background-color: #000000 !important;
-  border: 1px solid rgba(139, 92, 246, 0.3) !important;
-  border-radius: 6px !important;
-  padding: 0.875rem !important;
-  margin: 1.5rem 0 !important;
-}
-
-.theme-admonition-important .admonition-content p {
-  color: #e6edf3 !important;
-  line-height: 1.6 !important;
+  margin-bottom: 0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.625 !important;
+  color: var(--ifm-font-color-base) !important;
 }
 
 /* Sidebar Navigation Styles */
@@ -4948,14 +5085,14 @@ nav.table-of-contents .table-of-contents__link--active,
 /* Article Content Bold Styles */
 .markdown strong,
 .markdown b {
-  color: #ffffff !important;
-  font-weight: 600 !important;
+  color: #f2f2f2 !important;
+  font-weight: 500 !important;
 }
 
 [data-theme="dark"] .markdown strong,
 [data-theme="dark"] .markdown b {
-  color: #ffffff !important;
-  font-weight: 600 !important;
+  color: #f2f2f2 !important;
+  font-weight: 500 !important;
 }
 
 /* Remove Heading Link Styles */

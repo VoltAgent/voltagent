@@ -11,7 +11,7 @@ For complete trigger setup and usage instructions, see the [Usage Guide](https:/
 - Sync data between systems
 - Run content management workflows
 
-## Authentication
+## Setting Credentials
 
 To set up Airtable authentication:
 
@@ -142,3 +142,16 @@ Airtable has rate limits on API requests. Setting too aggressive polling interva
 - **Lower intervals** = faster response, higher API usage, more polling operations
 - **Higher intervals** = slower response, lower API usage, fewer polling operations
   :::
+
+## Add Target to Activate Binding
+
+After creating your Airtable trigger, you need to add a target (agent or workflow) to activate the binding. For detailed instructions on:
+
+- Adding targets to activate bindings
+- Mapping trigger data to agent inputs
+- Testing triggers with sample payloads
+- Deploying and monitoring triggers
+
+See the [Add Target to Activate Binding](https://voltagent.dev/docs/triggers/usage/#step-3-add-target-to-activate-binding).
+
+These steps are the same for all trigger providers.

@@ -153,7 +153,7 @@ const sidebars: SidebarsConfig = {
         {
           type: "category",
           label: "Providers",
-          items: ["triggers/airtable"],
+          items: ["triggers/airtable", "triggers/github"],
         },
         "actions/overview",
         "actions/airtable",
