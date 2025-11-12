@@ -13,7 +13,9 @@ import type { SearchResult, VectorItem } from "../memory/adapters/vector/types";
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   WorkflowStateEntry,
   WorkingMemoryScope,
@@ -612,6 +614,12 @@ export interface ManagedMemoryClearMessagesInput {
   conversationId?: string;
 }
 
+export interface ManagedMemoryGetConversationStepsInput {
+  conversationId: string;
+  userId: string;
+  options?: GetConversationStepsOptions;
+}
+
 export interface ManagedMemoryStoreVectorInput {
   id: string;
   vector: number[];
@@ -682,6 +690,14 @@ export interface ManagedMemoryWorkflowStatesClient {
   listSuspended(databaseId: string, workflowId: string): Promise<WorkflowStateEntry[]>;
 }
 
+export interface ManagedMemoryStepsClient {
+  save(databaseId: string, steps: ConversationStepRecord[]): Promise<void>;
+  list(
+    databaseId: string,
+    input: ManagedMemoryGetConversationStepsInput,
+  ): Promise<ConversationStepRecord[]>;
+}
+
 export interface ManagedMemoryVectorsClient {
   store(databaseId: string, input: ManagedMemoryStoreVectorInput): Promise<void>;
   storeBatch(databaseId: string, input: ManagedMemoryStoreVectorsBatchInput): Promise<void>;
@@ -698,5 +714,6 @@ export interface ManagedMemoryVoltOpsClient {
   conversations: ManagedMemoryConversationsClient;
   workingMemory: ManagedMemoryWorkingMemoryClient;
   workflowStates: ManagedMemoryWorkflowStatesClient;
+  steps: ManagedMemoryStepsClient;
   vectors: ManagedMemoryVectorsClient;
 }

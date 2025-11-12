@@ -28,6 +28,7 @@ import {
   WORKFLOW_ROUTES,
   executeA2ARequest,
   getConversationMessagesHandler,
+  getConversationStepsHandler,
   handleChatStream,
   handleCheckUpdates,
   handleExecuteWorkflow,
@@ -407,6 +408,26 @@ export function registerObservabilityRoutes(app: Hono, deps: ServerProviderDeps,
       before: before && !Number.isNaN(before.getTime()) ? before : undefined,
       after: after && !Number.isNaN(after.getTime()) ? after : undefined,
       roles: query.roles ? query.roles.split(",") : undefined,
+    });
+
+    if (!result.success) {
+      return c.json(result, result.error === "Conversation not found" ? 404 : 500);
+    }
+
+    return c.json(result, 200);
+  });
+
+  app.get(OBSERVABILITY_MEMORY_ROUTES.getConversationSteps.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    logger.debug(`[serverless] GET /observability/memory/conversations/${conversationId}/steps`, {
+      query,
+    });
+
+    const result = await getConversationStepsHandler(deps, conversationId, {
+      agentId: query.agentId,
+      limit: query.limit ? Number.parseInt(query.limit, 10) : undefined,
+      operationId: query.operationId,
     });
 
     if (!result.success) {

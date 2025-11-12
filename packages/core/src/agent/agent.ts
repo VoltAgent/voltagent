@@ -81,6 +81,7 @@ export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import type { SamplingPolicy } from "../eval/runtime";
+import type { ConversationStepRecord } from "../memory/types";
 import { ConversationBuffer } from "./conversation-buffer";
 import {
   type NormalizedInputGuardrail,
@@ -90,7 +91,11 @@ import {
   normalizeInputGuardrailList,
   normalizeOutputGuardrailList,
 } from "./guardrail";
-import { AGENT_METADATA_CONTEXT_KEY, MemoryPersistQueue } from "./memory-persist-queue";
+import {
+  AGENT_METADATA_CONTEXT_KEY,
+  type AgentMetadataContextValue,
+  MemoryPersistQueue,
+} from "./memory-persist-queue";
 import { sanitizeMessagesForModel } from "./message-normalizer";
 import {
   type GuardrailPipeline,
@@ -117,6 +122,7 @@ import type {
 
 const BUFFER_CONTEXT_KEY = Symbol("conversationBuffer");
 const QUEUE_CONTEXT_KEY = Symbol("memoryPersistQueue");
+const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
 
 // ============================================================================
 // Types
@@ -596,6 +602,8 @@ export class Agent {
         const { toolCalls: aggregatedToolCalls, toolResults: aggregatedToolResults } =
           this.collectToolDataFromResult(result);
 
+        this.recordStepResults(result.steps, oc);
+
         await persistQueue.flush(buffer, oc);
 
         const usageInfo = convertUsage(result.usage);
@@ -729,6 +737,8 @@ export class Agent {
               error: undefined,
               context: oc,
             });
+
+            this.recordStepResults(undefined, oc);
 
             // Return bailed result as successful generation
             return {
@@ -1014,6 +1024,8 @@ export class Agent {
               guardrailSet.output.length > 0 ? { ...finalResult, text: finalText } : finalResult;
 
             oc.traceContext.setOutput(finalText);
+
+            this.recordStepResults(finalResult.steps, oc);
 
             // Set finish reason - override to "stop" if bailed (not "error")
             if (bailedResult) {
@@ -2076,6 +2088,7 @@ export class Agent {
       parentAgentId: options?.parentAgentId,
       input,
     });
+    traceContext.getRootSpan().setAttribute("voltagent.operation_id", operationId);
 
     // Use parent's AbortController if available, otherwise create new one
     const abortController =
@@ -3366,6 +3379,172 @@ export class Agent {
       const hooks = this.getMergedHooks(options);
       await hooks.onStepFinish?.({ agent: this, step: event, context: oc });
     };
+  }
+
+  private recordStepResults(
+    steps: ReadonlyArray<StepResult<ToolSet>> | undefined,
+    oc: OperationContext,
+  ): void {
+    const storedSteps =
+      (steps && steps.length > 0 ? steps : undefined) ||
+      (oc.systemContext.get("conversationSteps") as StepResult<ToolSet>[] | undefined);
+
+    if (!storedSteps?.length) {
+      return;
+    }
+
+    if (!oc.conversationSteps) {
+      oc.conversationSteps = [];
+    }
+
+    const previouslyPersistedCount =
+      (oc.systemContext.get(STEP_PERSIST_COUNT_KEY) as number | undefined) ?? 0;
+    const newSteps = storedSteps.slice(previouslyPersistedCount);
+
+    if (!newSteps.length) {
+      return;
+    }
+
+    oc.systemContext.set(STEP_PERSIST_COUNT_KEY, previouslyPersistedCount + newSteps.length);
+
+    if (oc.conversationId) {
+      const rootSpan = oc.traceContext.getRootSpan();
+      rootSpan.setAttribute("conversation.id", oc.conversationId);
+      rootSpan.setAttribute("voltagent.conversation_id", oc.conversationId);
+    }
+
+    const agentMetadata = oc.systemContext.get(AGENT_METADATA_CONTEXT_KEY) as
+      | AgentMetadataContextValue
+      | undefined;
+    const subAgentMetadata =
+      oc.parentAgentId && agentMetadata
+        ? {
+            subAgentId: agentMetadata.agentId,
+            subAgentName: agentMetadata.agentName,
+          }
+        : undefined;
+
+    const stepRecords: ConversationStepRecord[] = [];
+    let recordTimestamp = new Date().toISOString();
+
+    newSteps.forEach((step, offset) => {
+      const usage = convertUsage(step.usage);
+      const stepIndex = previouslyPersistedCount + offset;
+
+      const trimmedText = step.text?.trim();
+      if (trimmedText) {
+        oc.conversationSteps?.push({
+          id: randomUUID(),
+          type: "text",
+          content: trimmedText,
+          role: "assistant",
+          usage,
+          ...(subAgentMetadata ?? {}),
+        });
+
+        if (oc.userId && oc.conversationId) {
+          stepRecords.push({
+            id: randomUUID(),
+            conversationId: oc.conversationId,
+            userId: oc.userId,
+            agentId: this.id,
+            agentName: this.name,
+            operationId: oc.operationId,
+            stepIndex,
+            type: "text",
+            role: "assistant",
+            content: trimmedText,
+            usage,
+            subAgentId: subAgentMetadata?.subAgentId,
+            subAgentName: subAgentMetadata?.subAgentName,
+            createdAt: recordTimestamp,
+          });
+        }
+      }
+
+      if (step.toolCalls?.length) {
+        for (const toolCall of step.toolCalls) {
+          oc.conversationSteps?.push({
+            id: toolCall.toolCallId || randomUUID(),
+            type: "tool_call",
+            content: safeStringify(toolCall.input ?? {}),
+            role: "assistant",
+            name: toolCall.toolName,
+            arguments: (toolCall as { input?: Record<string, unknown> }).input || {},
+            usage,
+            ...(subAgentMetadata ?? {}),
+          });
+
+          if (oc.userId && oc.conversationId) {
+            stepRecords.push({
+              id: toolCall.toolCallId || randomUUID(),
+              conversationId: oc.conversationId,
+              userId: oc.userId,
+              agentId: this.id,
+              agentName: this.name,
+              operationId: oc.operationId,
+              stepIndex,
+              type: "tool_call",
+              role: "assistant",
+              arguments: (toolCall as { input?: Record<string, unknown> }).input || {},
+              usage,
+              subAgentId: subAgentMetadata?.subAgentId,
+              subAgentName: subAgentMetadata?.subAgentName,
+              createdAt: recordTimestamp,
+            });
+          }
+        }
+      }
+
+      if (step.toolResults?.length) {
+        for (const toolResult of step.toolResults) {
+          oc.conversationSteps?.push({
+            id: toolResult.toolCallId || randomUUID(),
+            type: "tool_result",
+            content: safeStringify(toolResult.output),
+            role: "assistant",
+            name: toolResult.toolName,
+            result: toolResult.output,
+            usage,
+            ...(subAgentMetadata ?? {}),
+          });
+
+          if (oc.userId && oc.conversationId) {
+            stepRecords.push({
+              id: toolResult.toolCallId || randomUUID(),
+              conversationId: oc.conversationId,
+              userId: oc.userId,
+              agentId: this.id,
+              agentName: this.name,
+              operationId: oc.operationId,
+              stepIndex,
+              type: "tool_result",
+              role: "assistant",
+              result: toolResult.output ?? null,
+              usage,
+              subAgentId: subAgentMetadata?.subAgentId,
+              subAgentName: subAgentMetadata?.subAgentName,
+              createdAt: recordTimestamp,
+            });
+          }
+        }
+      }
+
+      // Refresh timestamp for multi-step batches to maintain ordering while avoiding identical references
+      recordTimestamp = new Date().toISOString();
+    });
+
+    if (stepRecords.length > 0 && oc.userId && oc.conversationId) {
+      void this.memoryManager
+        .saveConversationSteps(oc, stepRecords, oc.userId, oc.conversationId)
+        .catch((error) => {
+          oc.logger.debug("Failed to persist conversation steps", {
+            error,
+            conversationId: oc.conversationId,
+            userId: oc.userId,
+          });
+        });
+    }
   }
 
   /**

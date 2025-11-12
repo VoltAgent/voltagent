@@ -9,7 +9,9 @@ import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@volt
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
   WorkflowStateEntry,
@@ -149,6 +151,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
       const baseMessagesTable = `${this.tablePrefix}_messages`;
       const usersTable = this.getTableName(`${this.tablePrefix}_users`);
+      const stepsTable = this.getTableName(`${this.tablePrefix}_steps`);
+      const baseStepsTable = `${this.tablePrefix}_steps`;
 
       // Create users table (for user-level working memory)
       await client.query(`
@@ -209,6 +213,28 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
         )
       `);
 
+      // Create conversation steps table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS ${stepsTable} (
+          id TEXT PRIMARY KEY,
+          conversation_id TEXT NOT NULL REFERENCES ${conversationsTable}(id) ON DELETE CASCADE,
+          user_id TEXT NOT NULL,
+          agent_id TEXT NOT NULL,
+          agent_name TEXT,
+          operation_id TEXT,
+          step_index INTEGER NOT NULL,
+          type TEXT NOT NULL,
+          role TEXT NOT NULL,
+          content TEXT,
+          arguments JSONB,
+          result JSONB,
+          usage JSONB,
+          sub_agent_id TEXT,
+          sub_agent_name TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+        )
+      `);
+
       // Create indexes for better performance
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_${baseConversationsTable}_user_id 
@@ -238,6 +264,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_${baseWorkflowStatesTable}_status 
         ON ${workflowStatesTable}(status)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${baseStepsTable}_conversation 
+        ON ${stepsTable}(conversation_id, step_index)
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_${baseStepsTable}_operation 
+        ON ${stepsTable}(conversation_id, operation_id)
       `);
 
       // Run migration for existing tables
@@ -364,6 +400,86 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
       await client.query("COMMIT");
       this.log(`Added ${messages.length} messages to conversation ${conversationId}`);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (steps.length === 0) {
+      return;
+    }
+
+    await this.initPromise;
+
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const stepsTable = this.getTableName(`${this.tablePrefix}_steps`);
+
+      for (const step of steps) {
+        await client.query(
+          `INSERT INTO ${stepsTable} (
+             id,
+             conversation_id,
+             user_id,
+             agent_id,
+             agent_name,
+             operation_id,
+             step_index,
+             type,
+             role,
+             content,
+             arguments,
+             result,
+             usage,
+             sub_agent_id,
+             sub_agent_name,
+             created_at
+           ) VALUES (
+             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+           )
+           ON CONFLICT (id) DO UPDATE SET
+             conversation_id = EXCLUDED.conversation_id,
+             user_id = EXCLUDED.user_id,
+             agent_id = EXCLUDED.agent_id,
+             agent_name = EXCLUDED.agent_name,
+             operation_id = EXCLUDED.operation_id,
+             step_index = EXCLUDED.step_index,
+             type = EXCLUDED.type,
+             role = EXCLUDED.role,
+             content = EXCLUDED.content,
+             arguments = EXCLUDED.arguments,
+             result = EXCLUDED.result,
+             usage = EXCLUDED.usage,
+             sub_agent_id = EXCLUDED.sub_agent_id,
+             sub_agent_name = EXCLUDED.sub_agent_name,
+             created_at = EXCLUDED.created_at`,
+          [
+            step.id,
+            step.conversationId,
+            step.userId,
+            step.agentId,
+            step.agentName ?? null,
+            step.operationId ?? null,
+            step.stepIndex,
+            step.type,
+            step.role,
+            step.content ?? null,
+            step.arguments ? safeStringify(step.arguments) : null,
+            step.result ? safeStringify(step.result) : null,
+            step.usage ? safeStringify(step.usage) : null,
+            step.subAgentId ?? null,
+            step.subAgentName ?? null,
+            step.createdAt ?? new Date().toISOString(),
+          ],
+        );
+      }
+
+      await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -554,6 +670,60 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     }
   }
 
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    await this.initPromise;
+
+    const client = await this.pool.connect();
+    try {
+      const stepsTable = this.getTableName(`${this.tablePrefix}_steps`);
+      const conditions: string[] = ["conversation_id = $1", "user_id = $2"];
+      const values: Array<string | number> = [conversationId, userId];
+      let paramIndex = values.length;
+
+      if (options?.operationId) {
+        paramIndex += 1;
+        conditions.push(`operation_id = $${paramIndex}`);
+        values.push(options.operationId);
+      }
+
+      let query = `SELECT * FROM ${stepsTable} WHERE ${conditions.join(" AND ")} ORDER BY step_index ASC`;
+
+      if (options?.limit && options.limit > 0) {
+        paramIndex += 1;
+        query += ` LIMIT $${paramIndex}`;
+        values.push(options.limit);
+      }
+
+      const result = await client.query(query, values);
+
+      return result.rows.map((row) => ({
+        id: row.id,
+        conversationId: row.conversation_id,
+        userId: row.user_id,
+        agentId: row.agent_id,
+        agentName: row.agent_name ?? undefined,
+        operationId: row.operation_id ?? undefined,
+        stepIndex:
+          typeof row.step_index === "number" ? row.step_index : Number(row.step_index ?? 0),
+        type: row.type,
+        role: row.role,
+        content: row.content ?? undefined,
+        arguments: row.arguments ?? undefined,
+        result: row.result ?? undefined,
+        usage: row.usage ?? undefined,
+        subAgentId: row.sub_agent_id ?? undefined,
+        subAgentName: row.sub_agent_name ?? undefined,
+        createdAt: row.created_at ?? new Date().toISOString(),
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
   /**
    * Clear messages for a user
    */
@@ -566,6 +736,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
       const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
       const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
+      const stepsTable = this.getTableName(`${this.tablePrefix}_steps`);
 
       if (conversationId) {
         // Clear messages for specific conversation
@@ -573,10 +744,21 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           `DELETE FROM ${messagesTable} WHERE conversation_id = $1 AND user_id = $2`,
           [conversationId, userId],
         );
+        await client.query(
+          `DELETE FROM ${stepsTable} WHERE conversation_id = $1 AND user_id = $2`,
+          [conversationId, userId],
+        );
       } else {
         // Clear all messages for the user
         await client.query(
           `DELETE FROM ${messagesTable}
+           WHERE conversation_id IN (
+             SELECT id FROM ${conversationsTable} WHERE user_id = $1
+           )`,
+          [userId],
+        );
+        await client.query(
+          `DELETE FROM ${stepsTable}
            WHERE conversation_id IN (
              SELECT id FROM ${conversationsTable} WHERE user_id = $1
            )`,

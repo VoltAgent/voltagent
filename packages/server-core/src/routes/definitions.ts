@@ -775,6 +775,28 @@ export const OBSERVABILITY_MEMORY_ROUTES = {
       },
     },
   },
+  getConversationSteps: {
+    method: "get" as const,
+    path: "/observability/memory/conversations/:conversationId/steps",
+    summary: "Get conversation steps",
+    description: "Fetch the recorded agent steps for a specific conversation stored in memory.",
+    tags: ["Observability", "Memory"],
+    operationId: "getConversationSteps",
+    responses: {
+      200: {
+        description: "Successfully retrieved conversation steps",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve conversation steps due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   getWorkingMemory: {
     method: "get" as const,
     path: "/observability/memory/working-memory",

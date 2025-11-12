@@ -183,7 +183,8 @@ export * from "./voice";
 // TelemetryExporter removed - migrated to OpenTelemetry
 export * from "./voltops";
 export * from "./eval/runtime";
-export type { UsageInfo, StreamPart } from "./agent/providers";
+export type { UsageInfo, StreamPart, MessageRole } from "./agent/providers";
+export type { ConversationStepRecord, GetConversationStepsOptions } from "./memory/types";
 export type {
   VoltAgentOptions,
   IServerProvider,

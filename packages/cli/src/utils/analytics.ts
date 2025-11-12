@@ -122,13 +122,53 @@ export const captureWhoamiEvent = (options: { numVoltPackages: number }) => {
 };
 
 // Function to capture tunnel command usage
-export const captureTunnelEvent = () => {
+export const captureTunnelEvent = (options?: {
+  authenticated?: boolean;
+  has_paid_plan?: boolean;
+  plan_name?: string;
+  has_prefix?: boolean;
+}) => {
   if (isTelemetryDisabled()) return;
 
   client.capture({
     distinctId: getMachineId(),
     event: "cli_tunnel_opened",
     properties: {
+      authenticated: options?.authenticated ?? false,
+      has_paid_plan: options?.has_paid_plan ?? false,
+      plan_name: options?.plan_name ?? "free",
+      has_prefix: options?.has_prefix ?? false,
+      machine_id: getMachineId(),
+      ...getOSInfo(),
+    },
+  });
+};
+
+// Function to capture login events
+export const captureLoginEvent = (options: { success: boolean; error?: string }) => {
+  if (isTelemetryDisabled()) return;
+
+  client.capture({
+    distinctId: getMachineId(),
+    event: "cli_login",
+    properties: {
+      success: options.success,
+      error_message: options.error,
+      machine_id: getMachineId(),
+      ...getOSInfo(),
+    },
+  });
+};
+
+// Function to capture logout events
+export const captureLogoutEvent = () => {
+  if (isTelemetryDisabled()) return;
+
+  client.capture({
+    distinctId: getMachineId(),
+    event: "cli_logout",
+    properties: {
+      machine_id: getMachineId(),
       ...getOSInfo(),
     },
   });

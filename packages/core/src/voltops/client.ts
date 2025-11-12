@@ -14,6 +14,7 @@ import type { SearchResult, VectorItem } from "../memory/adapters/vector/types";
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
   GetMessagesOptions,
   WorkflowStateEntry,
@@ -31,6 +32,7 @@ import type {
   ManagedMemoryCredentialListResult,
   ManagedMemoryDatabaseSummary,
   ManagedMemoryDeleteVectorsInput,
+  ManagedMemoryGetConversationStepsInput,
   ManagedMemoryGetMessagesInput,
   ManagedMemorySearchVectorsInput,
   ManagedMemorySetWorkingMemoryInput,
@@ -373,6 +375,10 @@ export class VoltOpsClient implements IVoltOpsClient {
         update: (databaseId, input) => this.updateManagedMemoryWorkflowState(databaseId, input),
         listSuspended: (databaseId, workflowId) =>
           this.getManagedMemorySuspendedWorkflowStates(databaseId, workflowId),
+      },
+      steps: {
+        save: (databaseId, steps) => this.saveManagedMemoryConversationSteps(databaseId, steps),
+        list: (databaseId, input) => this.getManagedMemoryConversationSteps(databaseId, input),
       },
       vectors: {
         store: (databaseId, input) => this.storeManagedMemoryVector(databaseId, input),
@@ -828,6 +834,48 @@ export class VoltOpsClient implements IVoltOpsClient {
     }
 
     return payload.data?.workflowStates ?? [];
+  }
+
+  private async saveManagedMemoryConversationSteps(
+    databaseId: string,
+    steps: ConversationStepRecord[],
+  ): Promise<void> {
+    if (!steps || steps.length === 0) {
+      return;
+    }
+
+    const payload = await this.request<{ success: boolean }>(
+      "POST",
+      `/managed-memory/projects/databases/${databaseId}/steps`,
+      { steps },
+    );
+
+    if (!payload?.success) {
+      throw new Error("Failed to save managed memory conversation steps via VoltOps");
+    }
+  }
+
+  private async getManagedMemoryConversationSteps(
+    databaseId: string,
+    input: ManagedMemoryGetConversationStepsInput,
+  ): Promise<ConversationStepRecord[]> {
+    const query = this.buildQueryString({
+      conversationId: input.conversationId,
+      userId: input.userId,
+      operationId: input.options?.operationId,
+      limit: input.options?.limit,
+    });
+
+    const payload = await this.request<{
+      success: boolean;
+      data?: { steps?: ConversationStepRecord[] };
+    }>("GET", `/managed-memory/projects/databases/${databaseId}/steps${query}`);
+
+    if (!payload?.success) {
+      throw new Error("Failed to fetch managed memory conversation steps via VoltOps");
+    }
+
+    return payload.data?.steps ?? [];
   }
 
   /**

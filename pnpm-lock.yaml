@@ -2812,6 +2812,9 @@ importers:
       commander:
         specifier: ^11.1.0
         version: 11.1.0
+      configstore:
+        specifier: ^7.1.0
+        version: 7.1.0
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -2833,6 +2836,9 @@ importers:
       npm-check-updates:
         specifier: ^17.1.18
         version: 17.1.18
+      open:
+        specifier: ^10.0.0
+        version: 10.2.0
       ora:
         specifier: ^5.4.1
         version: 5.4.1
@@ -19114,7 +19120,6 @@ packages:
     dependencies:
       stubborn-fs: 1.2.5
       when-exit: 2.1.4
-    dev: true
 
   /autoevals@0.0.131:
     resolution: {integrity: sha512-F+3lraja+Ms7n1M2cpWl65N7AYx4sPocRW454H5HlSGabYMfuFOUxw8IXmEYDkQ38BxtZ0Wd5ZAQj9RF59YJWw==}
@@ -20721,7 +20726,6 @@ packages:
       dot-prop: 9.0.0
       graceful-fs: 4.2.11
       xdg-basedir: 5.1.0
-    dev: true
 
   /consola@3.4.2:
     resolution: {integrity: sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA==}
@@ -33825,7 +33829,6 @@ packages:
 
   /stubborn-fs@1.2.5:
     resolution: {integrity: sha512-H2N9c26eXjzL/S/K+i/RHHcFanE74dptvvjM8iwzwbVcWY/zjBbgRqF3K0DY4+OD+uTTASTBvDoxPDaPN02D7g==}
-    dev: true
 
   /stubs@3.0.0:
     resolution: {integrity: sha512-PdHt7hHUJKxvTCgbKX9C1V/ftOcjJQgz8BZwNfV5c4B6dcGqlpelTbJ999jBGZ2jYiPAwcX5dP6oBwVlBlUbxw==}
@@ -36524,7 +36527,6 @@ packages:
 
   /when-exit@2.1.4:
     resolution: {integrity: sha512-4rnvd3A1t16PWzrBUcSDZqcAmsUIy4minDXT/CZ8F2mVDgd65i4Aalimgz1aQkRGU0iH5eT5+6Rx2TK8o443Pg==}
-    dev: true
 
   /which@1.3.1:
     resolution: {integrity: sha512-HxJdYWq1MTIQbJ3nw0cqssHoTNU267KlrDuGZ1WYlxDStUtKUhOaJmh112/TZmHxxUfuJqPXSOm7tDyas0OSIQ==}
@@ -36802,7 +36804,6 @@ packages:
   /xdg-basedir@5.1.0:
     resolution: {integrity: sha512-GCPAHLvrIH13+c0SuacwvRYj2SxJXQ4kaVTT5xgL3kPrz56XxkF21IGhjSE1+W0aw7gpBWRGXLCPnPby6lSpmQ==}
     engines: {node: '>=12'}
-    dev: true
 
   /xml-name-validator@4.0.0:
     resolution: {integrity: sha512-ICP2e+jsHvAj2E2lIHxa5tjXRlKDJo4IdvPvCXbXQGdzSfmSpNVyIKMvoZHjDY9DP0zV17iI85o90vRFXNccRw==}

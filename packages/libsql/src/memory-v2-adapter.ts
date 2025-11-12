@@ -15,7 +15,9 @@ import {
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
   WorkflowStateEntry,
@@ -167,6 +169,7 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
     const messagesTable = `${this.tablePrefix}_messages`;
     const usersTable = `${this.tablePrefix}_users`;
     const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const stepsTable = `${this.tablePrefix}_steps`;
 
     // Set PRAGMA settings for better concurrency
     // Execute individually to handle errors gracefully
@@ -251,6 +254,27 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
         updated_at TEXT NOT NULL
       )`,
 
+        // Create conversation steps table
+        `CREATE TABLE IF NOT EXISTS ${stepsTable} (
+        id TEXT PRIMARY KEY,
+        conversation_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        agent_id TEXT NOT NULL,
+        agent_name TEXT,
+        operation_id TEXT,
+        step_index INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT,
+        arguments TEXT,
+        result TEXT,
+        usage TEXT,
+        sub_agent_id TEXT,
+        sub_agent_name TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (conversation_id) REFERENCES ${conversationsTable}(id) ON DELETE CASCADE
+      )`,
+
         // Create indexes for better performance
         `CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_user_id ON ${conversationsTable}(user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_resource_id ON ${conversationsTable}(resource_id)`,
@@ -258,6 +282,8 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
         `CREATE INDEX IF NOT EXISTS idx_${messagesTable}_created_at ON ${messagesTable}(created_at)`,
         `CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_workflow_id ON ${workflowStatesTable}(workflow_id)`,
         `CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_status ON ${workflowStatesTable}(status)`,
+        `CREATE INDEX IF NOT EXISTS idx_${stepsTable}_conversation ON ${stepsTable}(conversation_id, step_index)`,
+        `CREATE INDEX IF NOT EXISTS idx_${stepsTable}_operation ON ${stepsTable}(conversation_id, operation_id)`,
       ]);
     }, "initialize database schema");
 
@@ -578,6 +604,75 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
     }, "add batch messages");
   }
 
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (steps.length === 0) return;
+
+    await this.initialize();
+    const stepsTable = `${this.tablePrefix}_steps`;
+
+    await this.executeWithRetry(async () => {
+      await this.client.batch(
+        steps.map((step) => {
+          const createdAt = step.createdAt ?? new Date().toISOString();
+          return {
+            sql: `INSERT INTO ${stepsTable} (
+              id,
+              conversation_id,
+              user_id,
+              agent_id,
+              agent_name,
+              operation_id,
+              step_index,
+              type,
+              role,
+              content,
+              arguments,
+              result,
+              usage,
+              sub_agent_id,
+              sub_agent_name,
+              created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              conversation_id = excluded.conversation_id,
+              user_id = excluded.user_id,
+              agent_id = excluded.agent_id,
+              agent_name = excluded.agent_name,
+              operation_id = excluded.operation_id,
+              step_index = excluded.step_index,
+              type = excluded.type,
+              role = excluded.role,
+              content = excluded.content,
+              arguments = excluded.arguments,
+              result = excluded.result,
+              usage = excluded.usage,
+              sub_agent_id = excluded.sub_agent_id,
+              sub_agent_name = excluded.sub_agent_name,
+              created_at = excluded.created_at`,
+            args: [
+              step.id,
+              step.conversationId,
+              step.userId,
+              step.agentId,
+              step.agentName ?? null,
+              step.operationId ?? null,
+              step.stepIndex,
+              step.type,
+              step.role,
+              step.content ?? null,
+              step.arguments ? safeStringify(step.arguments) : null,
+              step.result ? safeStringify(step.result) : null,
+              step.usage ? safeStringify(step.usage) : null,
+              step.subAgentId ?? null,
+              step.subAgentName ?? null,
+              createdAt,
+            ],
+          };
+        }),
+      );
+    }, "save conversation steps");
+  }
+
   /**
    * Get messages with optional filtering
    */
@@ -671,6 +766,66 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
     });
   }
 
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    await this.initialize();
+
+    const stepsTable = `${this.tablePrefix}_steps`;
+    const limit = options?.limit && options.limit > 0 ? options.limit : undefined;
+
+    let sql = `SELECT * FROM ${stepsTable} WHERE conversation_id = ? AND user_id = ?`;
+    const args: any[] = [conversationId, userId];
+
+    if (options?.operationId) {
+      sql += " AND operation_id = ?";
+      args.push(options.operationId);
+    }
+
+    sql += " ORDER BY step_index ASC";
+    if (limit !== undefined) {
+      sql += " LIMIT ?";
+      args.push(limit);
+    }
+
+    const result = await this.client.execute({ sql, args });
+
+    const parseJsonField = (value: unknown) => {
+      if (typeof value !== "string" || value.length === 0) {
+        return undefined;
+      }
+      try {
+        return JSON.parse(value);
+      } catch {
+        return undefined;
+      }
+    };
+
+    return result.rows.map((row) => ({
+      id: row.id as string,
+      conversationId: row.conversation_id as string,
+      userId: row.user_id as string,
+      agentId: row.agent_id as string,
+      agentName: (row.agent_name as string) ?? undefined,
+      operationId: (row.operation_id as string) ?? undefined,
+      stepIndex:
+        typeof row.step_index === "number"
+          ? (row.step_index as number)
+          : Number(row.step_index ?? 0),
+      type: row.type as ConversationStepRecord["type"],
+      role: row.role as ConversationStepRecord["role"],
+      content: (row.content as string) ?? undefined,
+      arguments: parseJsonField(row.arguments),
+      result: parseJsonField(row.result),
+      usage: parseJsonField(row.usage),
+      subAgentId: (row.sub_agent_id as string) ?? undefined,
+      subAgentName: (row.sub_agent_name as string) ?? undefined,
+      createdAt: (row.created_at as string) ?? new Date().toISOString(),
+    }));
+  }
+
   /**
    * Clear messages for a user
    */
@@ -679,6 +834,7 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
 
     const messagesTable = `${this.tablePrefix}_messages`;
     const conversationsTable = `${this.tablePrefix}_conversations`;
+    const stepsTable = `${this.tablePrefix}_steps`;
 
     if (conversationId) {
       // Clear messages for specific conversation
@@ -686,10 +842,21 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
         sql: `DELETE FROM ${messagesTable} WHERE conversation_id = ? AND user_id = ?`,
         args: [conversationId, userId],
       });
+      await this.client.execute({
+        sql: `DELETE FROM ${stepsTable} WHERE conversation_id = ? AND user_id = ?`,
+        args: [conversationId, userId],
+      });
     } else {
       // Clear all messages for the user
       await this.client.execute({
         sql: `DELETE FROM ${messagesTable}
+              WHERE conversation_id IN (
+                SELECT id FROM ${conversationsTable} WHERE user_id = ?
+              )`,
+        args: [userId],
+      });
+      await this.client.execute({
+        sql: `DELETE FROM ${stepsTable}
               WHERE conversation_id IN (
                 SELECT id FROM ${conversationsTable} WHERE user_id = ?
               )`,
