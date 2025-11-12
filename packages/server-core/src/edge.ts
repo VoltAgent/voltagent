@@ -37,6 +37,7 @@ export {
   listMemoryUsersHandler,
   listMemoryConversationsHandler,
   getConversationMessagesHandler,
+  getConversationStepsHandler,
   getWorkingMemoryHandler,
 } from "./handlers/memory-observability.handlers";
 

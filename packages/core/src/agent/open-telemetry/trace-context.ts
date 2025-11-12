@@ -154,7 +154,7 @@ export class AgentTraceContext {
    */
   createChildSpan(
     name: string,
-    type: "tool" | "memory" | "retriever" | "embedding" | "vector" | "agent" | "guardrail",
+    type: "tool" | "memory" | "retriever" | "embedding" | "vector" | "agent" | "guardrail" | "llm",
     options?: {
       label?: string;
       attributes?: Record<string, any>;
@@ -181,7 +181,7 @@ export class AgentTraceContext {
   createChildSpanWithParent(
     parentSpan: Span,
     name: string,
-    type: "tool" | "memory" | "retriever" | "embedding" | "vector" | "agent" | "guardrail",
+    type: "tool" | "memory" | "retriever" | "embedding" | "vector" | "agent" | "guardrail" | "llm",
     options?: {
       label?: string;
       attributes?: Record<string, any>;

@@ -10,7 +10,9 @@ import { ConversationAlreadyExistsError, ConversationNotFoundError } from "../..
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
   StoredUIMessage,
@@ -41,6 +43,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   private users: Map<string, UserInfo> = new Map();
   private workflowStates: Map<string, WorkflowStateEntry> = new Map();
   private workflowStatesByWorkflow: Map<string, Set<string>> = new Map();
+  private conversationSteps = new Map<string, Map<string, ConversationStepRecord[]>>();
 
   // ============================================================================
   // Message Operations
@@ -137,6 +140,52 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     });
   }
 
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    for (const step of steps) {
+      const userSteps = this.getOrCreateUserSteps(step.userId);
+      const conversationSteps = this.getOrCreateConversationSteps(userSteps, step.conversationId);
+      const record = { ...step };
+      const existingIndex = conversationSteps.findIndex((item) => item.id === step.id);
+      if (existingIndex >= 0) {
+        conversationSteps[existingIndex] = record;
+      } else {
+        conversationSteps.push(record);
+      }
+      conversationSteps.sort((a, b) => a.stepIndex - b.stepIndex);
+    }
+  }
+
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    const userSteps = this.conversationSteps.get(userId);
+    if (!userSteps) {
+      return [];
+    }
+    const conversationSteps = userSteps.get(conversationId);
+    if (!conversationSteps) {
+      return [];
+    }
+
+    let steps = conversationSteps;
+    if (options?.operationId) {
+      steps = steps.filter((step) => step.operationId === options.operationId);
+    }
+
+    if (options?.limit && options.limit > 0 && steps.length > options.limit) {
+      steps = steps.slice(steps.length - options.limit);
+    }
+
+    return steps.map((step) => ({
+      ...step,
+      arguments: step.arguments ? { ...step.arguments } : step.arguments,
+      result: step.result ? { ...step.result } : step.result,
+      usage: step.usage ? { ...step.usage } : step.usage,
+    }));
+  }
+
   /**
    * Clear messages for a user
    */
@@ -154,9 +203,17 @@ export class InMemoryStorageAdapter implements StorageAdapter {
       if (this.storage[userId][conversationId]) {
         this.storage[userId][conversationId] = [];
       }
+      const userSteps = this.conversationSteps.get(userId);
+      if (userSteps) {
+        userSteps.delete(conversationId);
+        if (userSteps.size === 0) {
+          this.conversationSteps.delete(userId);
+        }
+      }
     } else {
       // Clear all messages for the user
       this.storage[userId] = {};
+      this.conversationSteps.delete(userId);
     }
   }
 
@@ -481,6 +538,27 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     };
   }
 
+  private getOrCreateUserSteps(userId: string): Map<string, ConversationStepRecord[]> {
+    let userSteps = this.conversationSteps.get(userId);
+    if (!userSteps) {
+      userSteps = new Map();
+      this.conversationSteps.set(userId, userSteps);
+    }
+    return userSteps;
+  }
+
+  private getOrCreateConversationSteps(
+    userSteps: Map<string, ConversationStepRecord[]>,
+    conversationId: string,
+  ): ConversationStepRecord[] {
+    let steps = userSteps.get(conversationId);
+    if (!steps) {
+      steps = [];
+      userSteps.set(conversationId, steps);
+    }
+    return steps;
+  }
+
   /**
    * Clear all data
    */
@@ -490,5 +568,6 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     this.users.clear();
     this.workflowStates.clear();
     this.workflowStatesByWorkflow.clear();
+    this.conversationSteps.clear();
   }
 }

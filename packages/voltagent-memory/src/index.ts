@@ -2,7 +2,9 @@ import {
   AgentRegistry,
   type Conversation,
   type ConversationQueryOptions,
+  type ConversationStepRecord,
   type CreateConversationInput,
+  type GetConversationStepsOptions,
   type GetMessagesOptions,
   type SearchResult,
   type StorageAdapter,
@@ -199,6 +201,34 @@ export class ManagedMemoryAdapter implements StorageAdapter {
         safeStringify({ userId, conversationId, options }),
       );
       return client.managedMemory.messages.list(database.id, { userId, conversationId, options });
+    });
+  }
+
+  saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (!steps.length) {
+      return Promise.resolve();
+    }
+
+    return this.withClientContext(async ({ client, database }) => {
+      this.log(
+        "Saving managed memory conversation steps",
+        safeStringify({ count: steps.length, conversationId: steps[0]?.conversationId }),
+      );
+      await client.managedMemory.steps.save(database.id, steps);
+    }).then(() => undefined);
+  }
+
+  getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    return this.withClientContext(({ client, database }) => {
+      this.log(
+        "Fetching managed memory conversation steps",
+        safeStringify({ userId, conversationId, options }),
+      );
+      return client.managedMemory.steps.list(database.id, { userId, conversationId, options });
     });
   }
 

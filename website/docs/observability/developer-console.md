@@ -198,6 +198,19 @@ Within the detail view, you'll typically find a visual representation of the age
 <!-- This GIF should showcase navigating the detailed view of a specific agent run, highlighting the sequence of steps, function calls, and tool usage in the timeline or graph. -->
 <!-- ![Inspecting Agent Run Timeline](placeholder-inspect-timeline.gif) -->
 
+#### Memory Explorer (Messages & Steps)
+
+The Memory Explorer now includes two tabs:
+
+- **Messages**: Conversation history scoped to the selected user/conversation.
+- **Steps**: Structured agent execution steps (LLM text + tool invocations) scoped to the active trace. When you pick a trace in Observability, the Steps tab automatically follows that selection so you can correlate logs, traces, and memory without re-filtering.
+
+Additional details:
+
+- Sub-agents show up inline (each step carries `agentId`/`subAgentId` metadata).
+- Adapters that implement `saveConversationSteps`/`getConversationSteps` (InMemory, LibSQL, Postgres, Supabase, Managed Memory, etc.) stream step data. Other adapters will display a notice: “Conversation steps are not supported by this memory adapter.”
+- Requests in the Steps tab do not auto-retry; the UI surfaces the latest snapshot so you can refresh manually if you’re replaying executions.
+
 #### Message & Log Inspection
 
 You can usually select individual steps in the execution trace to inspect the details, such as:

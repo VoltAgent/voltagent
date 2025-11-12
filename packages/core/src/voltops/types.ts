@@ -13,7 +13,9 @@ import type { SearchResult, VectorItem } from "../memory/adapters/vector/types";
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   WorkflowStateEntry,
   WorkingMemoryScope,
@@ -129,6 +131,158 @@ export type CachedPrompt = {
   /** Time to live in milliseconds */
   ttl: number;
 };
+
+export interface VoltOpsActionExecutionResult {
+  actionId: string;
+  provider: string;
+  requestPayload: Record<string, unknown>;
+  responsePayload: unknown;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface VoltOpsAirtableCreateRecordParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  fields: Record<string, unknown>;
+  typecast?: boolean;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableUpdateRecordParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  fields?: Record<string, unknown>;
+  typecast?: boolean;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableDeleteRecordParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableGetRecordParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableListRecordsParams {
+  credentialId: string;
+  baseId: string;
+  tableId: string;
+  view?: string;
+  filterByFormula?: string;
+  maxRecords?: number;
+  pageSize?: number;
+  offset?: string;
+  fields?: string[];
+  sort?: Array<{ field: string; direction?: "asc" | "desc" }>;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsSlackBaseParams {
+  credentialId: string;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsSlackPostMessageParams extends VoltOpsSlackBaseParams {
+  channelId?: string;
+  channelName?: string;
+  channelLabel?: string | null;
+  defaultThreadTs?: string | null;
+  targetType?: "conversation" | "user";
+  userId?: string;
+  userName?: string;
+  text?: string;
+  blocks?: unknown;
+  attachments?: unknown;
+  threadTs?: string;
+  metadata?: Record<string, unknown>;
+  linkNames?: boolean;
+  unfurlLinks?: boolean;
+  unfurlMedia?: boolean;
+}
+
+export interface VoltOpsSlackDeleteMessageParams extends VoltOpsSlackBaseParams {
+  channelId: string;
+  messageTs: string;
+  threadTs?: string;
+}
+
+export interface VoltOpsSlackSearchMessagesParams extends VoltOpsSlackBaseParams {
+  query: string;
+  sort?: "relevance" | "timestamp";
+  sortDirection?: "asc" | "desc";
+  channelIds?: string[];
+  limit?: number;
+}
+
+export type VoltOpsActionsApi = {
+  airtable: {
+    createRecord: (
+      params: VoltOpsAirtableCreateRecordParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    updateRecord: (
+      params: VoltOpsAirtableUpdateRecordParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteRecord: (
+      params: VoltOpsAirtableDeleteRecordParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    getRecord: (params: VoltOpsAirtableGetRecordParams) => Promise<VoltOpsActionExecutionResult>;
+    listRecords: (
+      params: VoltOpsAirtableListRecordsParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
+  slack: {
+    postMessage: (params: VoltOpsSlackPostMessageParams) => Promise<VoltOpsActionExecutionResult>;
+    deleteMessage: (
+      params: VoltOpsSlackDeleteMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    searchMessages: (
+      params: VoltOpsSlackSearchMessagesParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
+};
+
+export interface VoltOpsEvalsApi {
+  runs: {
+    create(payload?: VoltOpsCreateEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+    appendResults(
+      runId: string,
+      payload: VoltOpsAppendEvalRunResultsRequest,
+    ): Promise<VoltOpsEvalRunSummary>;
+    complete(runId: string, payload: VoltOpsCompleteEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+    fail(runId: string, payload: VoltOpsFailEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+  };
+  scorers: {
+    create(payload: VoltOpsCreateScorerRequest): Promise<VoltOpsScorerSummary>;
+  };
+}
 
 /**
  * API response for prompt fetch operations
@@ -284,6 +438,10 @@ export interface VoltOpsCompleteEvalRunRequest {
   error?: VoltOpsEvalRunErrorPayload;
 }
 
+export interface VoltOpsFailEvalRunRequest {
+  error: VoltOpsEvalRunErrorPayload;
+}
+
 export interface VoltOpsCreateScorerRequest {
   id: string;
   name: string;
@@ -316,26 +474,14 @@ export interface VoltOpsClient {
   /** Configuration options */
   options: VoltOpsClientOptions & { baseUrl: string };
 
+  /** Actions client for third-party integrations */
+  actions: VoltOpsActionsApi;
+
+  /** Evaluations API surface */
+  evals: VoltOpsEvalsApi;
+
   /** Create a prompt helper for agent instructions */
   createPromptHelper(agentId: string, historyEntryId?: string): PromptHelper;
-
-  /** Create a new evaluation run in VoltOps */
-  createEvalRun(payload?: VoltOpsCreateEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
-
-  /** Append evaluation results to an existing run */
-  appendEvalRunResults(
-    runId: string,
-    payload: VoltOpsAppendEvalRunResultsRequest,
-  ): Promise<VoltOpsEvalRunSummary>;
-
-  /** Complete an evaluation run */
-  completeEvalRun(
-    runId: string,
-    payload: VoltOpsCompleteEvalRunRequest,
-  ): Promise<VoltOpsEvalRunSummary>;
-
-  /** Upsert a scorer definition */
-  createEvalScorer(payload: VoltOpsCreateScorerRequest): Promise<VoltOpsScorerSummary>;
 
   /** List managed memory databases available to the project */
   listManagedMemoryDatabases(): Promise<ManagedMemoryDatabaseSummary[]>;
@@ -468,6 +614,12 @@ export interface ManagedMemoryClearMessagesInput {
   conversationId?: string;
 }
 
+export interface ManagedMemoryGetConversationStepsInput {
+  conversationId: string;
+  userId: string;
+  options?: GetConversationStepsOptions;
+}
+
 export interface ManagedMemoryStoreVectorInput {
   id: string;
   vector: number[];
@@ -538,6 +690,14 @@ export interface ManagedMemoryWorkflowStatesClient {
   listSuspended(databaseId: string, workflowId: string): Promise<WorkflowStateEntry[]>;
 }
 
+export interface ManagedMemoryStepsClient {
+  save(databaseId: string, steps: ConversationStepRecord[]): Promise<void>;
+  list(
+    databaseId: string,
+    input: ManagedMemoryGetConversationStepsInput,
+  ): Promise<ConversationStepRecord[]>;
+}
+
 export interface ManagedMemoryVectorsClient {
   store(databaseId: string, input: ManagedMemoryStoreVectorInput): Promise<void>;
   storeBatch(databaseId: string, input: ManagedMemoryStoreVectorsBatchInput): Promise<void>;
@@ -554,5 +714,6 @@ export interface ManagedMemoryVoltOpsClient {
   conversations: ManagedMemoryConversationsClient;
   workingMemory: ManagedMemoryWorkingMemoryClient;
   workflowStates: ManagedMemoryWorkflowStatesClient;
+  steps: ManagedMemoryStepsClient;
   vectors: ManagedMemoryVectorsClient;
 }

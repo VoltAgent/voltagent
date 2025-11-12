@@ -14,6 +14,14 @@ export class FakeVoltOpsClient implements VoltOpsClientLike {
   readonly completeCalls: Array<{ runId: string; payload: CompleteEvalRunRequest }> = [];
   readonly failCalls: Array<{ runId: string; payload: FailEvalRunRequest }> = [];
   private runCounter = 0;
+  public readonly evals = {
+    runs: {
+      create: this.createEvalRun.bind(this),
+      appendResults: this.appendEvalResults.bind(this),
+      complete: this.completeEvalRun.bind(this),
+      fail: this.failEvalRun.bind(this),
+    },
+  };
 
   async createEvalRun(payload: CreateEvalRunRequest = {}): Promise<EvalRunSummary> {
     this.createCalls.push(payload);

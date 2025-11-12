@@ -15,6 +15,7 @@ import { Tool } from "../tool";
 import { Agent, renameProviderOptions } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
 import { ToolDeniedError } from "./errors";
+import { createHooks } from "./hooks";
 
 // Mock the AI SDK functions while preserving core converters
 vi.mock("ai", async () => {
@@ -251,6 +252,103 @@ describe("Agent", () => {
       expect(result.context).toBeDefined();
       expect(result.context.get("userId")).toBe("user123");
       expect(result.context.get("sessionId")).toBe("session456");
+    });
+
+    it("records provider steps on the conversation context", async () => {
+      let capturedSteps: any[] | undefined;
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+        hooks: createHooks({
+          onEnd: ({ context }) => {
+            capturedSteps = context.conversationSteps ? [...context.conversationSteps] : undefined;
+          },
+        }),
+      });
+
+      const stepResult = {
+        content: [],
+        text: "Partial reasoning",
+        reasoning: [],
+        reasoningText: undefined,
+        files: [],
+        sources: [],
+        toolCalls: [
+          {
+            type: "tool-call",
+            toolCallId: "call-1",
+            toolName: "search",
+            input: { query: "docs" },
+          },
+        ],
+        staticToolCalls: [],
+        dynamicToolCalls: [],
+        toolResults: [
+          {
+            type: "tool-result",
+            toolCallId: "call-1",
+            toolName: "search",
+            input: { query: "docs" },
+            output: { result: 42 },
+          },
+        ],
+        staticToolResults: [],
+        dynamicToolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 1,
+          outputTokens: 2,
+          totalTokens: 3,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "resp-1",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        providerMetadata: undefined,
+      };
+
+      const mockResponse = {
+        text: "Final response",
+        content: [{ type: "text", text: "Final response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: stepResult.toolCalls,
+        toolResults: stepResult.toolResults,
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [stepResult],
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      await agent.generateText("Hello, world!");
+
+      expect(capturedSteps).toBeDefined();
+      expect(capturedSteps).toHaveLength(3);
+      const types = capturedSteps?.map((step) => step.type);
+      expect(types).toEqual(expect.arrayContaining(["text", "tool_call", "tool_result"]));
+      const callStep = capturedSteps?.find((step) => step.type === "tool_call");
+      expect(callStep?.arguments).toEqual({ query: "docs" });
+      const resultStep = capturedSteps?.find((step) => step.type === "tool_result");
+      expect(resultStep?.result).toEqual({ result: 42 });
     });
 
     it("should sanitize messages before invoking onPrepareMessages hook", async () => {

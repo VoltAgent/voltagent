@@ -10,9 +10,11 @@ import { EmbeddingAdapterNotConfiguredError, VectorAdapterNotConfiguredError } f
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
   Document,
   EmbeddingAdapter,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   MemoryConfig,
   MemoryStorageMetadata,
@@ -80,6 +82,12 @@ export class Memory {
     await this.addMessage(message, userId, conversationId);
   }
 
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (this.storage.saveConversationSteps) {
+      await this.storage.saveConversationSteps(steps);
+    }
+  }
+
   /**
    * Add a single message (alias for consistency with existing API)
    */
@@ -123,6 +131,17 @@ export class Memory {
     context?: OperationContext,
   ): Promise<void> {
     return this.storage.clearMessages(userId, conversationId, context);
+  }
+
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    if (!this.storage.getConversationSteps) {
+      return [];
+    }
+    return this.storage.getConversationSteps(userId, conversationId, options);
   }
 
   // ============================================================================

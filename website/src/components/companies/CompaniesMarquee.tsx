@@ -71,14 +71,16 @@ export const CompaniesMarquee = () => {
   const renderRow = (logos: LogoItem[], reverse = false) => {
     const duplicated = [...logos, ...logos, ...logos];
     return (
-      <div className="relative mb-4 sm:mb-6">
+      <div className="relative mb-4 sm:mb-6" style={{ perspective: "1000px" }}>
         <div
           className="flex overflow-hidden"
           style={{
             maxWidth: "100%",
+            overflowX: "hidden",
+            overflowY: "visible",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
-            WebkitOverflowScrolling: "touch",
+            isolation: "isolate",
             WebkitMaskImage:
               "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
             maskImage:
@@ -115,32 +117,52 @@ export const CompaniesMarquee = () => {
       <style>{`
         @keyframes scrollLeft {
           0% {
-            transform: translateX(0);
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
           }
           100% {
-            transform: translateX(-33.33%);
+            transform: translate3d(-33.33%, 0, 0);
+            -webkit-transform: translate3d(-33.33%, 0, 0);
           }
         }
 
         @keyframes scrollRight {
           0% {
-            transform: translateX(-33.33%);
+            transform: translate3d(-33.33%, 0, 0);
+            -webkit-transform: translate3d(-33.33%, 0, 0);
           }
           100% {
-            transform: translateX(0);
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
           }
         }
 
         .scroll-left-animation {
           animation: scrollLeft 40s linear infinite;
+          -webkit-animation: scrollLeft 40s linear infinite;
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
 
         .scroll-right-animation {
           animation: scrollRight 40s linear infinite;
+          -webkit-animation: scrollRight 40s linear infinite;
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
 
-        .companies-marquee svg,
+        .companies-marquee svg {
+          display: block;
+          width: auto;
+          height: auto;
+          max-width: 100%;
+          max-height: 100%;
+        }
+
         .companies-marquee svg * {
+          vector-effect: non-scaling-stroke;
         }
       `}</style>
       <div className="companies-marquee relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">

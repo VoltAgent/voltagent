@@ -3,7 +3,7 @@
   "description": "A VoltAgent application",
   "version": "0.1.1",
   "dependencies": {
-    "@ai-sdk/google": "^2.0.13",
+    "@ai-sdk/google": "^2.0.23",
     "@ai-sdk/openai": "^2.0.52",
     "@browserbasehq/sdk": "^2.6.0",
     "@browserbasehq/stagehand": "^2.5.0",

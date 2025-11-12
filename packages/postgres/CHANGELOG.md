@@ -1,5 +1,28 @@
 # @voltagent/postgres
 
+## 1.1.1
+
+### Patch Changes
+
+- [#787](https://github.com/VoltAgent/voltagent/pull/787) [`5e81d65`](https://github.com/VoltAgent/voltagent/commit/5e81d6568ba3bee26083ca2a8e5d31f158e36fc0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add full conversation step persistence across the stack:
+  - Core now exposes managed-memory step APIs, and the VoltAgent managed memory adapter persists/retrieves steps through VoltOps.
+  - LibSQL, PostgreSQL, Supabase, and server handlers provision the new `_steps` table, wire up DTOs/routes, and surface the data in Observability/Steps UI (including managed-memory backends).
+
+  fixes: #613
+
+## 1.1.0
+
+### Minor Changes
+
+- [#773](https://github.com/VoltAgent/voltagent/pull/773) [`35290d9`](https://github.com/VoltAgent/voltagent/commit/35290d9331c846f8274325ad698da0c2cda54530) Thanks [@hyperion912](https://github.com/hyperion912)! - feat(postgres-memory-adapter): add schema configuration support
+
+  Add support for defining a custom PostgreSQL schema during adapter initialization.
+  Defaults to undefined (uses the database’s default schema if not provided).
+
+  Includes tests for schema configuration.
+
+  Resolves #763
+
 ## 1.0.11
 
 ### Patch Changes

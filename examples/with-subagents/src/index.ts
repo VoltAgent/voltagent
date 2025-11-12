@@ -61,7 +61,7 @@ const supervisorAgent = new Agent({
   subAgents: [contentCreatorAgent, formatterAgent],
   supervisorConfig: {
     fullStreamEventForwarding: {
-      types: ["tool-call", "tool-result"],
+      types: ["tool-call", "tool-result", "text-delta"],
     },
   },
 });

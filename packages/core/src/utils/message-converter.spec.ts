@@ -189,6 +189,41 @@ describe("convertResponseMessagesToUIMessages", () => {
     });
   });
 
+  it("merges provider-executed tool call + result from same assistant message", async () => {
+    const messages: AssistantModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-789",
+            toolName: "search",
+            input: { query: "news" },
+            providerExecuted: true,
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-789",
+            toolName: "search",
+            output: { results: ["link"] },
+          },
+        ],
+      },
+    ];
+
+    const result = await convertResponseMessagesToUIMessages(messages);
+    expect(result).toHaveLength(1);
+    expect(result[0].parts).toHaveLength(1);
+    expect(result[0].parts[0]).toEqual({
+      type: "tool-search",
+      toolCallId: "call-789",
+      state: "output-available",
+      input: { query: "news" },
+      output: { results: ["link"] },
+      providerExecuted: true,
+    });
+  });
+
   it("should handle file attachments with URL", async () => {
     const messages: AssistantModelMessage[] = [
       {
@@ -559,6 +594,41 @@ describe("convertModelMessagesToUIMessages (AI SDK v5)", () => {
       toolCallId: "tool-1",
       state: "output-available",
       output: { hits: ["a", "b"] },
+    });
+  });
+
+  it("merges provider-executed tool result within a single assistant message", () => {
+    const messages: ModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-provider",
+            toolName: "web_search",
+            input: { query: "news" },
+            providerExecuted: true,
+          },
+          {
+            type: "tool-result",
+            toolCallId: "call-provider",
+            toolName: "web_search",
+            output: { results: ["item"] },
+          },
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].parts).toHaveLength(1);
+    expect(ui[0].parts[0]).toEqual({
+      type: "tool-web_search",
+      toolCallId: "call-provider",
+      state: "output-available",
+      input: { query: "news" },
+      output: { results: ["item"] },
+      providerExecuted: true,
     });
   });
 

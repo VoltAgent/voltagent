@@ -122,6 +122,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Tavily Search](./with-tavily-search) — Augment answers with web results from Tavily.
 - [Thinking Tool](./with-thinking-tool) — Structured reasoning via a dedicated “thinking” tool and schema.
 - [Tools](./with-tools) — Author Zod‑typed tools with cancellation and streaming support.
+- [VoltOps Actions + Airtable](./with-voltagent-actions) — Call VoltOps Actions as tools to create and list Airtable records.
 - [Turso](./with-turso) — Persist memory on LibSQL/Turso with simple setup.
 - [Vector Search](./with-vector-search) — Semantic memory with embeddings and automatic recall during chats.
 - [Vercel AI](./with-vercel-ai) — VoltAgent with Vercel AI SDK provider and streaming.

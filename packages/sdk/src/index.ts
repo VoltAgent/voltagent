@@ -1,6 +1,11 @@
+import { VoltOpsClient as CoreVoltOpsClient } from "@voltagent/core";
+
 export { VoltAgentCoreAPI } from "./client";
+
+export class VoltOpsClient extends CoreVoltOpsClient {}
 export { VoltOpsRestClient } from "./evals";
 export { VoltAgentObservabilitySDK } from "./observability";
+export { VoltOpsActionsClient } from "@voltagent/core";
 export type {
   VoltAgentClientOptions,
   ApiError,
@@ -29,3 +34,7 @@ export type {
   ResolveExperimentIdOptions,
   ResolveExperimentIdResult,
 } from "./types";
+export type {
+  VoltOpsActionExecutionResult,
+  VoltOpsAirtableCreateRecordParams,
+} from "@voltagent/core";

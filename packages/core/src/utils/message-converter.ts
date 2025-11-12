@@ -78,24 +78,35 @@ export async function convertResponseMessagesToUIMessages(
             break;
           }
           case "tool-result": {
+            const assignOutput = (target: ToolUIPart) => {
+              target.state = "output-available";
+              target.output = contentPart.output;
+              target.providerExecuted = true;
+            };
+
             const existing = toolPartsById.get(contentPart.toolCallId);
             if (existing) {
-              existing.state = "output-available";
-              existing.output = contentPart.output;
-              // providerExecuted is true for provider-executed results
-              existing.providerExecuted = true;
-            } else {
-              const resultPart = {
-                type: `tool-${contentPart.toolName}` as const,
-                toolCallId: contentPart.toolCallId,
-                state: "output-available" as const,
-                input: {},
-                output: contentPart.output,
-                providerExecuted: true,
-              } satisfies ToolUIPart;
-              uiMessage.parts.push(resultPart);
-              toolPartsById.set(contentPart.toolCallId, resultPart);
+              assignOutput(existing);
+              break;
             }
+
+            const fallback = findExistingToolPart(uiMessage.parts, contentPart.toolCallId);
+            if (fallback) {
+              assignOutput(fallback);
+              toolPartsById.set(contentPart.toolCallId, fallback);
+              break;
+            }
+
+            const resultPart = {
+              type: `tool-${contentPart.toolName}` as const,
+              toolCallId: contentPart.toolCallId,
+              state: "output-available" as const,
+              input: {},
+              output: contentPart.output,
+              providerExecuted: true,
+            } satisfies ToolUIPart;
+            uiMessage.parts.push(resultPart);
+            toolPartsById.set(contentPart.toolCallId, resultPart);
             break;
           }
           case "file": {
@@ -160,6 +171,21 @@ function pushTextPart(
   } satisfies TextUIPart);
 }
 
+function findExistingToolPart(parts: UIMessage["parts"], toolCallId: string) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i] as ToolUIPart | undefined;
+    if (
+      part &&
+      typeof part.type === "string" &&
+      part.type.startsWith("tool-") &&
+      part.toolCallId === toolCallId
+    ) {
+      return part;
+    }
+  }
+  return undefined;
+}
+
 /**
  * Convert input ModelMessages (AI SDK) to UIMessage array used by VoltAgent.
  * - Preserves roles (user/assistant/system). Tool messages are represented as
@@ -168,6 +194,47 @@ function pushTextPart(
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: conversion mirrors AI SDK logic
 export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMessage[] {
   const uiMessages: UIMessage[] = [];
+  const toolPartsById = new Map<string, ToolUIPart>();
+
+  const assignToolResult = (
+    toolCallId: string,
+    output: unknown,
+    providerExecuted: boolean,
+    partsToSearch?: UIMessage["parts"],
+  ) => {
+    const existing = toolPartsById.get(toolCallId);
+    if (existing) {
+      existing.state = "output-available";
+      existing.output = output;
+      existing.providerExecuted = providerExecuted;
+      return true;
+    }
+
+    if (partsToSearch) {
+      const fallback = findExistingToolPart(partsToSearch, toolCallId);
+      if (fallback) {
+        fallback.state = "output-available";
+        fallback.output = output;
+        fallback.providerExecuted = providerExecuted;
+        toolPartsById.set(toolCallId, fallback);
+        return true;
+      }
+    }
+
+    const globalFallback = findExistingToolPart(
+      uiMessages.flatMap((msg) => msg.parts),
+      toolCallId,
+    );
+    if (globalFallback) {
+      globalFallback.state = "output-available";
+      globalFallback.output = output;
+      globalFallback.providerExecuted = providerExecuted;
+      toolPartsById.set(toolCallId, globalFallback);
+      return true;
+    }
+
+    return false;
+  };
 
   for (const message of messages) {
     // Handle tool role separately by translating to assistant tool parts
@@ -176,7 +243,12 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
       if (Array.isArray(message.content)) {
         for (const part of message.content) {
           if (part.type === "tool-result") {
-            uiMessages.push({
+            const merged = assignToolResult(part.toolCallId, part.output, false);
+            if (merged) {
+              continue;
+            }
+
+            const toolMessage: UIMessage = {
               id: randomUUID(),
               role: "assistant",
               parts: [
@@ -189,7 +261,9 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
                   providerExecuted: false,
                 } satisfies ToolUIPart,
               ],
-            });
+            };
+            uiMessages.push(toolMessage);
+            toolPartsById.set(part.toolCallId, toolMessage.parts[0] as ToolUIPart);
           }
         }
       }
@@ -247,7 +321,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
           break;
         }
         case "tool-call": {
-          ui.parts.push({
+          const toolPart = {
             type: `tool-${contentPart.toolName}` as const,
             toolCallId: contentPart.toolCallId,
             state: "input-available" as const,
@@ -258,19 +332,31 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
             ...(contentPart.providerExecuted != null
               ? { providerExecuted: contentPart.providerExecuted }
               : {}),
-          } satisfies ToolUIPart);
+          } satisfies ToolUIPart;
+          ui.parts.push(toolPart);
+          toolPartsById.set(contentPart.toolCallId, toolPart);
           break;
         }
         case "tool-result": {
-          ui.parts.push({
-            type: `tool-${contentPart.toolName}` as const,
-            toolCallId: contentPart.toolCallId,
-            state: "output-available" as const,
-            input: {},
-            output: contentPart.output,
-            // tool-result in assistant message content indicates provider execution
-            providerExecuted: true,
-          } satisfies ToolUIPart);
+          const merged = assignToolResult(
+            contentPart.toolCallId,
+            contentPart.output,
+            true,
+            ui.parts,
+          );
+
+          if (!merged) {
+            const resultPart = {
+              type: `tool-${contentPart.toolName}` as const,
+              toolCallId: contentPart.toolCallId,
+              state: "output-available" as const,
+              input: {},
+              output: contentPart.output,
+              providerExecuted: true,
+            } satisfies ToolUIPart;
+            ui.parts.push(resultPart);
+            toolPartsById.set(contentPart.toolCallId, resultPart);
+          }
           break;
         }
         case "image": {

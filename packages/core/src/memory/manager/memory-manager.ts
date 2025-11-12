@@ -19,7 +19,7 @@ import { InMemoryStorageAdapter } from "../../memory/adapters/storage/in-memory"
 // Import AgentTraceContext for proper span hierarchy
 import type { AgentTraceContext } from "../../agent/open-telemetry/trace-context";
 
-import type { MemoryOptions } from "../types";
+import type { ConversationStepRecord, MemoryOptions } from "../types";
 
 /**
  * MemoryManager - Simplified version for conversation management only
@@ -174,6 +174,51 @@ export class MemoryManager {
           error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         },
       );
+    }
+  }
+
+  async saveConversationSteps(
+    context: OperationContext,
+    steps: ConversationStepRecord[],
+    userId?: string,
+    conversationId?: string,
+  ): Promise<void> {
+    if (!this.conversationMemory?.saveConversationSteps || !userId || !conversationId) {
+      return;
+    }
+    if (steps.length === 0) {
+      return;
+    }
+
+    const trace = context.traceContext;
+    const span = trace.createChildSpan("memory.steps.write", "memory", {
+      label: "Persist Conversation Steps",
+      attributes: {
+        "memory.operation": "write_steps",
+        "memory.step.count": steps.length,
+        conversationId,
+        userId,
+      },
+    });
+
+    try {
+      await trace.withSpan(span, async () => {
+        await this.conversationMemory?.saveConversationSteps?.(steps);
+      });
+      trace.endChildSpan(span, "completed", {
+        attributes: {
+          "memory.steps_saved": steps.length,
+          conversationId,
+          userId,
+        },
+      });
+    } catch (error) {
+      trace.endChildSpan(span, "error", { error: error as Error });
+      context.logger.error("Failed to save conversation steps", {
+        error,
+        conversationId,
+        userId,
+      });
     }
   }
 

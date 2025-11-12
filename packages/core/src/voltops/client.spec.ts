@@ -353,6 +353,142 @@ describe("VoltOpsClient", () => {
       expectTypeOf(client).toMatchTypeOf<IVoltOpsClient>();
     });
   });
+
+  describe("actions client", () => {
+    const originalFetch = globalThis.fetch;
+    let fetchMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            actionId: "airtable.createRecord",
+            provider: "airtable",
+            requestPayload: {},
+            responsePayload: { id: "rec123" },
+            metadata: null,
+          },
+        }),
+      });
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+    });
+
+    afterAll(() => {
+      globalThis.fetch = originalFetch;
+    });
+
+    it("should execute Airtable createRecord via project endpoint", async () => {
+      const result = await client.actions.airtable.createRecord({
+        credentialId: "cred-airtable",
+        baseId: "base123",
+        tableId: "table456",
+        fields: { Name: "Ada" },
+      });
+
+      expect(result.actionId).toBe("airtable.createRecord");
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://api.voltops.com/actions/project/run",
+        expect.objectContaining({
+          method: "POST",
+        }),
+      );
+      const body = JSON.parse(fetchMock.mock.calls[0][1]?.body ?? "{}");
+      expect(body.actionId).toBe("airtable.createRecord");
+      expect(body.config.airtable).toEqual({
+        baseId: "base123",
+        tableId: "table456",
+        typecast: false,
+        returnFieldsByFieldId: false,
+      });
+      expect(body.payload.input.fields).toEqual({ Name: "Ada" });
+    });
+
+    it("should execute Slack postMessage via project endpoint", async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            actionId: "slack.postMessage",
+            provider: "slack",
+            requestPayload: {},
+            responsePayload: { ok: true },
+          },
+        }),
+      });
+
+      const result = await client.actions.slack.postMessage({
+        credentialId: "cred-slack",
+        channelId: "C123",
+        text: "Hello world",
+      });
+
+      expect(result.provider).toBe("slack");
+      const requestBody = JSON.parse(fetchMock.mock.calls[0][1]?.body ?? "{}");
+      expect(requestBody.actionId).toBe("slack.postMessage");
+      expect(requestBody.config.slack).toEqual({
+        channelId: "C123",
+        channelLabel: null,
+        defaultThreadTs: null,
+      });
+      expect(requestBody.payload.input.text).toBe("Hello world");
+    });
+
+    it("should execute Slack deleteMessage via project endpoint", async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            actionId: "slack.deleteMessage",
+            provider: "slack",
+            requestPayload: {},
+            responsePayload: { ok: true },
+          },
+        }),
+      });
+
+      await client.actions.slack.deleteMessage({
+        credentialId: "cred-slack",
+        channelId: "C999",
+        messageTs: "1720472000.000200",
+      });
+
+      const body = JSON.parse(fetchMock.mock.calls[0][1]?.body ?? "{}");
+      expect(body.actionId).toBe("slack.deleteMessage");
+      expect(body.config.slack.channelId).toBe("C999");
+      expect(body.payload.input.messageTs).toBe("1720472000.000200");
+    });
+
+    it("should execute Slack searchMessages without slack config", async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            actionId: "slack.searchMessages",
+            provider: "slack",
+            requestPayload: {},
+            responsePayload: { ok: true },
+          },
+        }),
+      });
+
+      await client.actions.slack.searchMessages({
+        credentialId: "cred-slack",
+        query: '"outage" in:C123',
+        limit: 10,
+      });
+
+      const body = JSON.parse(fetchMock.mock.calls[0][1]?.body ?? "{}");
+      expect(body.actionId).toBe("slack.searchMessages");
+      expect(body.config).toBeNull();
+      expect(body.payload.input.query).toBe('"outage" in:C123');
+      expect(body.payload.input.limit).toBe(10);
+    });
+  });
 });
 
 describe("createVoltOpsClient", () => {

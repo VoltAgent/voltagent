@@ -81,6 +81,7 @@ export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import type { SamplingPolicy } from "../eval/runtime";
+import type { ConversationStepRecord } from "../memory/types";
 import { ConversationBuffer } from "./conversation-buffer";
 import {
   type NormalizedInputGuardrail,
@@ -90,7 +91,11 @@ import {
   normalizeInputGuardrailList,
   normalizeOutputGuardrailList,
 } from "./guardrail";
-import { MemoryPersistQueue } from "./memory-persist-queue";
+import {
+  AGENT_METADATA_CONTEXT_KEY,
+  type AgentMetadataContextValue,
+  MemoryPersistQueue,
+} from "./memory-persist-queue";
 import { sanitizeMessagesForModel } from "./message-normalizer";
 import {
   type GuardrailPipeline,
@@ -117,6 +122,7 @@ import type {
 
 const BUFFER_CONTEXT_KEY = Symbol("conversationBuffer");
 const QUEUE_CONTEXT_KEY = Symbol("memoryPersistQueue");
+const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
 
 // ============================================================================
 // Types
@@ -201,6 +207,8 @@ export type GenerateTextResultWithContext<
   context: Map<string | symbol, unknown>;
 };
 
+type LLMOperation = "streamText" | "generateText" | "streamObject" | "generateObject";
+
 /**
  * Extended GenerateObjectResult that includes context
  */
@@ -214,7 +222,12 @@ function cloneGenerateTextResultWithContext<
   OUTPUT = any,
 >(
   result: GenerateTextResult<TOOLS, OUTPUT>,
-  overrides: Pick<GenerateTextResultWithContext<TOOLS, OUTPUT>, "text" | "context">,
+  overrides: Partial<
+    Pick<
+      GenerateTextResultWithContext<TOOLS, OUTPUT>,
+      "text" | "context" | "toolCalls" | "toolResults"
+    >
+  >,
 ): GenerateTextResultWithContext<TOOLS, OUTPUT> {
   const prototype = Object.getPrototypeOf(result);
   const clone = Object.create(prototype) as GenerateTextResultWithContext<TOOLS, OUTPUT>;
@@ -296,6 +309,11 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   // maxOutputTokens, temperature, topP, topK,
   // presencePenalty, frequencyPenalty, stopSequences,
   // seed, maxRetries, abortSignal, headers
+  /**
+   * Optional explicit stop sequences to pass through to the underlying provider.
+   * Mirrors the `stop` option supported by ai-sdk `generateText/streamText`.
+   */
+  stop?: string | string[];
 }
 
 export type GenerateTextOptions = BaseGenerationOptions;
@@ -529,25 +547,62 @@ export class Agent {
           ...aiSDKOptions
         } = options || {};
 
-        const result = await generateText({
-          model,
+        const llmSpan = this.createLLMSpan(oc, {
+          operation: "generateText",
+          modelName,
+          isStreaming: false,
           messages,
           tools,
-          // Default values
-          temperature: this.temperature,
-          maxOutputTokens: this.maxOutputTokens,
-          maxRetries: 3,
-          stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
-          // User overrides from AI SDK options
-          ...aiSDKOptions,
-          // Experimental output if provided
-          experimental_output,
-          // Provider-specific options
           providerOptions,
-          // VoltAgent controlled (these should not be overridden)
-          abortSignal: oc.abortController.signal,
-          onStepFinish: this.createStepHandler(oc, options),
+          callOptions: {
+            temperature: aiSDKOptions?.temperature ?? this.temperature,
+            maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
+            topP: aiSDKOptions?.topP,
+            stop: aiSDKOptions?.stop ?? options?.stop,
+          },
         });
+        const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+
+        let result!: GenerateTextResult<ToolSet, unknown>;
+        try {
+          result = await oc.traceContext.withSpan(llmSpan, () =>
+            generateText({
+              model,
+              messages,
+              tools,
+              // Default values
+              temperature: this.temperature,
+              maxOutputTokens: this.maxOutputTokens,
+              maxRetries: 3,
+              stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+              // User overrides from AI SDK options
+              ...aiSDKOptions,
+              // Experimental output if provided
+              experimental_output,
+              // Provider-specific options
+              providerOptions,
+              // VoltAgent controlled (these should not be overridden)
+              abortSignal: oc.abortController.signal,
+              onStepFinish: this.createStepHandler(oc, options),
+            }),
+          );
+        } catch (error) {
+          finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
+          throw error;
+        }
+
+        const resolvedProviderUsage = result.usage
+          ? await Promise.resolve(result.usage)
+          : undefined;
+        finalizeLLMSpan(SpanStatusCode.OK, {
+          usage: resolvedProviderUsage,
+          finishReason: result.finishReason,
+        });
+
+        const { toolCalls: aggregatedToolCalls, toolResults: aggregatedToolResults } =
+          this.collectToolDataFromResult(result);
+
+        this.recordStepResults(result.steps, oc);
 
         await persistQueue.flush(buffer, oc);
 
@@ -594,7 +649,7 @@ export class Agent {
             duration: Date.now() - startTime,
             finishReason: result.finishReason,
             usage: result.usage,
-            toolCalls: result.toolCalls?.length || 0,
+            toolCalls: aggregatedToolCalls.length,
             text: finalText,
           },
         );
@@ -619,7 +674,7 @@ export class Agent {
           metadata: {
             finishReason: result.finishReason,
             usage: result.usage ? JSON.parse(safeStringify(result.usage)) : undefined,
-            toolCalls: result.toolCalls,
+            toolCalls: aggregatedToolCalls,
           },
         });
 
@@ -629,6 +684,8 @@ export class Agent {
         return cloneGenerateTextResultWithContext(result, {
           text: finalText,
           context: oc.context,
+          toolCalls: aggregatedToolCalls,
+          toolResults: aggregatedToolResults,
         });
       } catch (error) {
         // Check if this is a BailError (subagent early termination via abort)
@@ -680,6 +737,8 @@ export class Agent {
               error: undefined,
               context: oc,
             });
+
+            this.recordStepResults(undefined, oc);
 
             // Return bailed result as successful generation
             return {
@@ -813,6 +872,22 @@ export class Agent {
         let guardrailPipeline: GuardrailPipeline | null = null;
         let sanitizedTextPromise!: Promise<string>;
 
+        const llmSpan = this.createLLMSpan(oc, {
+          operation: "streamText",
+          modelName,
+          isStreaming: true,
+          messages,
+          tools,
+          providerOptions,
+          callOptions: {
+            temperature: aiSDKOptions?.temperature ?? this.temperature,
+            maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
+            topP: aiSDKOptions?.topP,
+            stop: aiSDKOptions?.stop ?? options?.stop,
+          },
+        });
+        const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+
         const result = streamText({
           model,
           messages,
@@ -856,6 +931,8 @@ export class Agent {
               modelName: this.getModelName(),
             });
 
+            finalizeLLMSpan(SpanStatusCode.ERROR, { message: (actualError as Error)?.message });
+
             // History update removed - using OpenTelemetry only
 
             // Event tracking now handled by OpenTelemetry spans
@@ -874,6 +951,14 @@ export class Agent {
             // The onError callback should return void for AI SDK compatibility
           },
           onFinish: async (finalResult) => {
+            const providerUsage = finalResult.usage
+              ? await Promise.resolve(finalResult.usage)
+              : undefined;
+            finalizeLLMSpan(SpanStatusCode.OK, {
+              usage: providerUsage,
+              finishReason: finalResult.finishReason,
+            });
+
             await persistQueue.flush(buffer, oc);
 
             // History update removed - using OpenTelemetry only
@@ -940,6 +1025,8 @@ export class Agent {
 
             oc.traceContext.setOutput(finalText);
 
+            this.recordStepResults(finalResult.steps, oc);
+
             // Set finish reason - override to "stop" if bailed (not "error")
             if (bailedResult) {
               oc.traceContext.setFinishReason("stop" as any);
@@ -1004,6 +1091,11 @@ export class Agent {
                   : undefined,
                 toolCalls: finalResult.toolCalls,
               },
+            });
+
+            finalizeLLMSpan(SpanStatusCode.OK, {
+              usage: finalResult.totalUsage,
+              finishReason: finalResult.finishReason,
             });
 
             oc.traceContext.end("completed");
@@ -1084,7 +1176,14 @@ export class Agent {
                       await writer.write(part as VoltAgentTextStreamPart);
                     }
                   } finally {
-                    // noop, writer closed after draining merged stream
+                    // Ensure the merged stream is closed when the parent stream finishes.
+                    // This allows the reader loop below to exit with done=true and lets
+                    // callers (e.g., SSE) observe completion.
+                    try {
+                      await writer.close();
+                    } catch (_) {
+                      // Ignore double-close or stream state errors
+                    }
                   }
                 };
 
@@ -1902,6 +2001,23 @@ export class Agent {
     };
   }
 
+  private collectToolDataFromResult<TOOLS extends ToolSet, OUTPUT>(
+    result: GenerateTextResult<TOOLS, OUTPUT>,
+  ): {
+    toolCalls: GenerateTextResult<TOOLS, OUTPUT>["toolCalls"];
+    toolResults: GenerateTextResult<TOOLS, OUTPUT>["toolResults"];
+  } {
+    const steps = result.steps ?? [];
+
+    const stepToolCalls = steps.flatMap((step) => step.toolCalls ?? []);
+    const stepToolResults = steps.flatMap((step) => step.toolResults ?? []);
+
+    return {
+      toolCalls: stepToolCalls.length > 0 ? stepToolCalls : (result.toolCalls ?? []),
+      toolResults: stepToolResults.length > 0 ? stepToolResults : (result.toolResults ?? []),
+    };
+  }
+
   /**
    * Create execution context
    */
@@ -1972,6 +2088,7 @@ export class Agent {
       parentAgentId: options?.parentAgentId,
       input,
     });
+    traceContext.getRootSpan().setAttribute("voltagent.operation_id", operationId);
 
     // Use parent's AbortController if available, otherwise create new one
     const abortController =
@@ -1993,6 +2110,10 @@ export class Agent {
       QUEUE_CONTEXT_KEY,
       new MemoryPersistQueue(this.memoryManager, { debounceMs: 200, logger }),
     );
+    systemContext.set(AGENT_METADATA_CONTEXT_KEY, {
+      agentId: this.id,
+      agentName: this.name,
+    });
 
     const elicitationHandler = options?.elicitation ?? options?.parentOperationContext?.elicitation;
 
@@ -2098,6 +2219,166 @@ export class Agent {
 
   private enqueueEvalScoring(args: EnqueueEvalScoringArgs): void {
     enqueueEvalScoringHelper(this.createEvalHost(), args);
+  }
+
+  private createLLMSpan(
+    oc: OperationContext,
+    params: {
+      operation: LLMOperation;
+      modelName: string;
+      isStreaming: boolean;
+      messages?: Array<{ role: string; content: unknown }>;
+      tools?: ToolSet;
+      providerOptions?: ProviderOptions;
+      callOptions?: Record<string, unknown>;
+    },
+  ): Span {
+    const attributes = this.buildLLMSpanAttributes(params);
+    const span = oc.traceContext.createChildSpan(`llm:${params.operation}`, "llm", {
+      kind: SpanKind.CLIENT,
+      attributes,
+    });
+    return span;
+  }
+
+  private createLLMSpanFinalizer(span: Span) {
+    let ended = false;
+    return (
+      status: SpanStatusCode,
+      details?: {
+        message?: string;
+        usage?: LanguageModelUsage | UsageInfo | null;
+        finishReason?: FinishReason | string | null;
+      },
+    ) => {
+      if (ended) {
+        return;
+      }
+      if (details?.usage) {
+        this.recordLLMUsage(span, details.usage);
+      }
+      if (details?.finishReason) {
+        span.setAttribute("llm.finish_reason", String(details.finishReason));
+      }
+      if (details?.message) {
+        span.setStatus({ code: status, message: details.message });
+      } else {
+        span.setStatus({ code: status });
+      }
+      span.end();
+      ended = true;
+    };
+  }
+
+  private buildLLMSpanAttributes(params: {
+    operation: LLMOperation;
+    modelName: string;
+    isStreaming: boolean;
+    messages?: Array<{ role: string; content: unknown }>;
+    tools?: ToolSet;
+    providerOptions?: ProviderOptions;
+    callOptions?: Record<string, unknown>;
+  }): Record<string, any> {
+    const attrs: Record<string, any> = {
+      "llm.operation": params.operation,
+      "llm.model": params.modelName,
+      "llm.stream": params.isStreaming,
+    };
+    const provider = params.modelName?.includes("/") ? params.modelName.split("/")[0] : undefined;
+    if (provider) {
+      attrs["llm.provider"] = provider;
+    }
+
+    const callOptions = params.callOptions ?? {};
+    const maybeNumber = (value: unknown): number | undefined => {
+      if (typeof value === "number") {
+        return Number.isFinite(value) ? value : undefined;
+      }
+      if (typeof value === "string") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    };
+
+    const temperature = maybeNumber(callOptions.temperature ?? callOptions.temp ?? undefined);
+    if (temperature !== undefined) {
+      attrs["llm.temperature"] = temperature;
+    }
+    const maxOutputTokens = maybeNumber(callOptions.maxOutputTokens);
+    if (maxOutputTokens !== undefined) {
+      attrs["llm.max_output_tokens"] = maxOutputTokens;
+    }
+    const topP = maybeNumber(callOptions.topP);
+    if (topP !== undefined) {
+      attrs["llm.top_p"] = topP;
+    }
+    if (callOptions.stop !== undefined) {
+      attrs["llm.stop_condition"] = safeStringify(callOptions.stop);
+    }
+    if (params.messages && params.messages.length > 0) {
+      attrs["llm.messages.count"] = params.messages.length;
+      const trimmedMessages = params.messages.slice(-10);
+      attrs["llm.messages"] = safeStringify(
+        trimmedMessages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+      );
+    }
+    if (params.tools) {
+      const toolNames = Object.keys(params.tools);
+      attrs["llm.tools.count"] = toolNames.length;
+      if (toolNames.length > 0) {
+        attrs["llm.tools"] = toolNames.join(",");
+      }
+    }
+    if (params.providerOptions) {
+      attrs["llm.provider_options"] = safeStringify(params.providerOptions);
+    }
+    return attrs;
+  }
+
+  private recordLLMUsage(span: Span, usage?: LanguageModelUsage | UsageInfo | null): void {
+    if (!usage) {
+      return;
+    }
+
+    const coerce = (value: unknown): number | undefined => {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === "string") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    };
+
+    const promptTokens =
+      coerce((usage as any).promptTokens) ??
+      coerce((usage as any).prompt) ??
+      coerce((usage as any).inputTokens) ??
+      coerce((usage as any).input_tokens);
+    const completionTokens =
+      coerce((usage as any).completionTokens) ??
+      coerce((usage as any).completion) ??
+      coerce((usage as any).outputTokens) ??
+      coerce((usage as any).output_tokens);
+    const totalTokens =
+      coerce((usage as any).totalTokens) ??
+      coerce((usage as any).total_tokens) ??
+      (promptTokens ?? 0) + (completionTokens ?? 0);
+
+    if (promptTokens !== undefined) {
+      span.setAttribute("llm.usage.prompt_tokens", promptTokens);
+    }
+    if (completionTokens !== undefined) {
+      span.setAttribute("llm.usage.completion_tokens", completionTokens);
+    }
+    if (totalTokens !== undefined) {
+      span.setAttribute("llm.usage.total_tokens", totalTokens);
+    }
   }
 
   private createEvalHost(): AgentEvalHost {
@@ -2905,11 +3186,15 @@ export class Agent {
       };
 
       // Event tracking now handled by OpenTelemetry spans
+      const toolTags = (tool as { tags?: string[] | undefined }).tags;
       const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
         label: tool.name,
         attributes: {
           "tool.name": tool.name,
           "tool.call.id": toolCallId,
+          "tool.description": tool.description,
+          ...(toolTags && toolTags.length > 0 ? { "tool.tags": safeStringify(toolTags) } : {}),
+          "tool.parameters": safeStringify(tool.parameters),
           input: args ? safeStringify(args) : undefined,
         },
         kind: SpanKind.CLIENT,
@@ -3094,6 +3379,172 @@ export class Agent {
       const hooks = this.getMergedHooks(options);
       await hooks.onStepFinish?.({ agent: this, step: event, context: oc });
     };
+  }
+
+  private recordStepResults(
+    steps: ReadonlyArray<StepResult<ToolSet>> | undefined,
+    oc: OperationContext,
+  ): void {
+    const storedSteps =
+      (steps && steps.length > 0 ? steps : undefined) ||
+      (oc.systemContext.get("conversationSteps") as StepResult<ToolSet>[] | undefined);
+
+    if (!storedSteps?.length) {
+      return;
+    }
+
+    if (!oc.conversationSteps) {
+      oc.conversationSteps = [];
+    }
+
+    const previouslyPersistedCount =
+      (oc.systemContext.get(STEP_PERSIST_COUNT_KEY) as number | undefined) ?? 0;
+    const newSteps = storedSteps.slice(previouslyPersistedCount);
+
+    if (!newSteps.length) {
+      return;
+    }
+
+    oc.systemContext.set(STEP_PERSIST_COUNT_KEY, previouslyPersistedCount + newSteps.length);
+
+    if (oc.conversationId) {
+      const rootSpan = oc.traceContext.getRootSpan();
+      rootSpan.setAttribute("conversation.id", oc.conversationId);
+      rootSpan.setAttribute("voltagent.conversation_id", oc.conversationId);
+    }
+
+    const agentMetadata = oc.systemContext.get(AGENT_METADATA_CONTEXT_KEY) as
+      | AgentMetadataContextValue
+      | undefined;
+    const subAgentMetadata =
+      oc.parentAgentId && agentMetadata
+        ? {
+            subAgentId: agentMetadata.agentId,
+            subAgentName: agentMetadata.agentName,
+          }
+        : undefined;
+
+    const stepRecords: ConversationStepRecord[] = [];
+    let recordTimestamp = new Date().toISOString();
+
+    newSteps.forEach((step, offset) => {
+      const usage = convertUsage(step.usage);
+      const stepIndex = previouslyPersistedCount + offset;
+
+      const trimmedText = step.text?.trim();
+      if (trimmedText) {
+        oc.conversationSteps?.push({
+          id: randomUUID(),
+          type: "text",
+          content: trimmedText,
+          role: "assistant",
+          usage,
+          ...(subAgentMetadata ?? {}),
+        });
+
+        if (oc.userId && oc.conversationId) {
+          stepRecords.push({
+            id: randomUUID(),
+            conversationId: oc.conversationId,
+            userId: oc.userId,
+            agentId: this.id,
+            agentName: this.name,
+            operationId: oc.operationId,
+            stepIndex,
+            type: "text",
+            role: "assistant",
+            content: trimmedText,
+            usage,
+            subAgentId: subAgentMetadata?.subAgentId,
+            subAgentName: subAgentMetadata?.subAgentName,
+            createdAt: recordTimestamp,
+          });
+        }
+      }
+
+      if (step.toolCalls?.length) {
+        for (const toolCall of step.toolCalls) {
+          oc.conversationSteps?.push({
+            id: toolCall.toolCallId || randomUUID(),
+            type: "tool_call",
+            content: safeStringify(toolCall.input ?? {}),
+            role: "assistant",
+            name: toolCall.toolName,
+            arguments: (toolCall as { input?: Record<string, unknown> }).input || {},
+            usage,
+            ...(subAgentMetadata ?? {}),
+          });
+
+          if (oc.userId && oc.conversationId) {
+            stepRecords.push({
+              id: toolCall.toolCallId || randomUUID(),
+              conversationId: oc.conversationId,
+              userId: oc.userId,
+              agentId: this.id,
+              agentName: this.name,
+              operationId: oc.operationId,
+              stepIndex,
+              type: "tool_call",
+              role: "assistant",
+              arguments: (toolCall as { input?: Record<string, unknown> }).input || {},
+              usage,
+              subAgentId: subAgentMetadata?.subAgentId,
+              subAgentName: subAgentMetadata?.subAgentName,
+              createdAt: recordTimestamp,
+            });
+          }
+        }
+      }
+
+      if (step.toolResults?.length) {
+        for (const toolResult of step.toolResults) {
+          oc.conversationSteps?.push({
+            id: toolResult.toolCallId || randomUUID(),
+            type: "tool_result",
+            content: safeStringify(toolResult.output),
+            role: "assistant",
+            name: toolResult.toolName,
+            result: toolResult.output,
+            usage,
+            ...(subAgentMetadata ?? {}),
+          });
+
+          if (oc.userId && oc.conversationId) {
+            stepRecords.push({
+              id: toolResult.toolCallId || randomUUID(),
+              conversationId: oc.conversationId,
+              userId: oc.userId,
+              agentId: this.id,
+              agentName: this.name,
+              operationId: oc.operationId,
+              stepIndex,
+              type: "tool_result",
+              role: "assistant",
+              result: toolResult.output ?? null,
+              usage,
+              subAgentId: subAgentMetadata?.subAgentId,
+              subAgentName: subAgentMetadata?.subAgentName,
+              createdAt: recordTimestamp,
+            });
+          }
+        }
+      }
+
+      // Refresh timestamp for multi-step batches to maintain ordering while avoiding identical references
+      recordTimestamp = new Date().toISOString();
+    });
+
+    if (stepRecords.length > 0 && oc.userId && oc.conversationId) {
+      void this.memoryManager
+        .saveConversationSteps(oc, stepRecords, oc.userId, oc.conversationId)
+        .catch((error) => {
+          oc.logger.debug("Failed to persist conversation steps", {
+            error,
+            conversationId: oc.conversationId,
+            userId: oc.userId,
+          });
+        });
+    }
   }
 
   /**

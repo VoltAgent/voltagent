@@ -9,7 +9,9 @@ import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@volt
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
   WorkflowStateEntry,
@@ -192,8 +194,13 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
         .select("events, output, cancellation")
         .limit(1);
 
+      const { error: stepsTableError } = await this.client
+        .from(`${this.baseTableName}_steps`)
+        .select("id")
+        .limit(1);
+
       // If any query fails, migration is needed
-      return !!messagesError || !!conversationsError || !!workflowEventsError;
+      return !!messagesError || !!conversationsError || !!workflowEventsError || !!stepsTableError;
     } catch {
       return true;
     }
@@ -209,6 +216,7 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
     const messagesTable = `${this.baseTableName}_messages`;
     const usersTable = `${this.baseTableName}_users`;
     const workflowStatesTable = `${this.baseTableName}_workflow_states`;
+    const stepsTable = `${this.baseTableName}_steps`;
 
     // Check if this is a fresh installation
     const isFreshInstall = await this.checkFreshInstallation();
@@ -290,6 +298,32 @@ ON ${workflowStatesTable}(workflow_id);
 CREATE INDEX IF NOT EXISTS idx_${workflowStatesTable}_status 
 ON ${workflowStatesTable}(status);
 
+-- Create conversation steps table
+CREATE TABLE IF NOT EXISTS ${stepsTable} (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES ${conversationsTable}(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  agent_name TEXT,
+  operation_id TEXT,
+  step_index INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT,
+  arguments JSONB,
+  result JSONB,
+  usage JSONB,
+  sub_agent_id TEXT,
+  sub_agent_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_${stepsTable}_conversation 
+ON ${stepsTable}(conversation_id, step_index);
+
+CREATE INDEX IF NOT EXISTS idx_${stepsTable}_operation 
+ON ${stepsTable}(conversation_id, operation_id);
+
 ========================================
 END OF SQL
 ========================================
@@ -318,6 +352,7 @@ END OF SQL
     const conversationsTable = `${this.baseTableName}_conversations`;
     const usersTable = `${this.baseTableName}_users`;
     const workflowStatesTable = `${this.baseTableName}_workflow_states`;
+    const stepsTable = `${this.baseTableName}_steps`;
 
     console.log(`
 ========================================
@@ -387,8 +422,33 @@ WHERE m.conversation_id = c.id
   AND m.user_id IS NULL
   AND c.user_id IS NOT NULL;
 
+-- Step 7: Create conversation steps table
+CREATE TABLE IF NOT EXISTS ${stepsTable} (
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES ${conversationsTable}(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  agent_name TEXT,
+  operation_id TEXT,
+  step_index INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT,
+  arguments JSONB,
+  result JSONB,
+  usage JSONB,
+  sub_agent_id TEXT,
+  sub_agent_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
 
--- Step 6: Create indexes for all tables
+CREATE INDEX IF NOT EXISTS idx_${stepsTable}_conversation 
+ON ${stepsTable}(conversation_id, step_index);
+
+CREATE INDEX IF NOT EXISTS idx_${stepsTable}_operation 
+ON ${stepsTable}(conversation_id, operation_id);
+
+-- Step 8: Create indexes for base tables
 CREATE INDEX IF NOT EXISTS idx_${conversationsTable}_user_id 
 ON ${conversationsTable}(user_id);
 
@@ -488,6 +548,42 @@ END OF MIGRATION SQL
     this.log(`Added ${messages.length} messages to conversation ${conversationId}`);
   }
 
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (steps.length === 0) {
+      return;
+    }
+
+    await this.initialize();
+
+    const stepsTable = `${this.baseTableName}_steps`;
+    const rows = steps.map((step) => ({
+      id: step.id,
+      conversation_id: step.conversationId,
+      user_id: step.userId,
+      agent_id: step.agentId,
+      agent_name: step.agentName ?? null,
+      operation_id: step.operationId ?? null,
+      step_index: step.stepIndex,
+      type: step.type,
+      role: step.role,
+      content: step.content ?? null,
+      arguments: step.arguments ?? null,
+      result: step.result ?? null,
+      usage: step.usage ?? null,
+      sub_agent_id: step.subAgentId ?? null,
+      sub_agent_name: step.subAgentName ?? null,
+      created_at: step.createdAt ?? new Date().toISOString(),
+    }));
+
+    const { error } = await this.client
+      .from(stepsTable)
+      .upsert(rows, { onConflict: "id", ignoreDuplicates: false });
+
+    if (error) {
+      throw new Error(`Failed to save conversation steps: ${error.message}`);
+    }
+  }
+
   /**
    * Get messages with optional filtering
    */
@@ -541,16 +637,35 @@ END OF MIGRATION SQL
 
       // Check for new format first (parts column exists and has value)
       if (row.parts !== undefined && row.parts !== null) {
-        // New format - use parts directly
-        parts = row.parts;
+        // IMPORTANT: Supabase returns JSONB as string, PostgreSQL pg library returns as object
+        if (typeof row.parts === "string") {
+          try {
+            parts = JSON.parse(row.parts);
+          } catch (e) {
+            console.error(`Failed to parse parts for message ${row.message_id}:`, e);
+            parts = [];
+          }
+        } else {
+          parts = row.parts;
+        }
       }
       // Check for old format (content column exists and has value)
       else if (row.content !== undefined && row.content !== null) {
         // Old format - convert content to parts
+        // Handle string serialization for old format too
+        let content = row.content;
+        if (typeof content === "string") {
+          try {
+            content = JSON.parse(content);
+          } catch (_e) {
+            // Keep as string if parsing fails
+          }
+        }
+
         if (row.type === "image") {
-          parts = [{ type: "image", image: row.content }];
+          parts = [{ type: "image", image: content }];
         } else {
-          parts = [{ type: "text", text: row.content }];
+          parts = [{ type: "text", text: content }];
         }
       } else {
         // No content at all
@@ -566,6 +681,55 @@ END OF MIGRATION SQL
     });
   }
 
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    await this.initialize();
+
+    const stepsTable = `${this.baseTableName}_steps`;
+    let query = this.client
+      .from(stepsTable)
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .eq("user_id", userId)
+      .order("step_index", { ascending: true });
+
+    if (options?.operationId) {
+      query = query.eq("operation_id", options.operationId);
+    }
+
+    if (options?.limit && options.limit > 0) {
+      query = query.limit(options.limit);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to fetch conversation steps: ${error.message}`);
+    }
+
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      conversationId: row.conversation_id,
+      userId: row.user_id,
+      agentId: row.agent_id,
+      agentName: row.agent_name ?? undefined,
+      operationId: row.operation_id ?? undefined,
+      stepIndex: row.step_index ?? 0,
+      type: row.type,
+      role: row.role,
+      content: row.content ?? undefined,
+      arguments: row.arguments ?? undefined,
+      result: row.result ?? undefined,
+      usage: row.usage ?? undefined,
+      subAgentId: row.sub_agent_id ?? undefined,
+      subAgentName: row.sub_agent_name ?? undefined,
+      createdAt: row.created_at ?? new Date().toISOString(),
+    }));
+  }
+
   /**
    * Clear messages for a user
    */
@@ -573,6 +737,7 @@ END OF MIGRATION SQL
     await this.initialize();
 
     const messagesTable = `${this.baseTableName}_messages`;
+    const stepsTable = `${this.baseTableName}_steps`;
 
     if (conversationId) {
       // Clear messages for specific conversation
@@ -584,6 +749,16 @@ END OF MIGRATION SQL
 
       if (error) {
         throw new Error(`Failed to clear messages: ${error.message}`);
+      }
+
+      const { error: stepsError } = await this.client
+        .from(stepsTable)
+        .delete()
+        .eq("conversation_id", conversationId)
+        .eq("user_id", userId);
+
+      if (stepsError) {
+        throw new Error(`Failed to clear conversation steps: ${stepsError.message}`);
       }
     } else {
       // Clear all messages for the user
@@ -609,6 +784,15 @@ END OF MIGRATION SQL
 
         if (error) {
           throw new Error(`Failed to clear messages: ${error.message}`);
+        }
+
+        const { error: stepsError } = await this.client
+          .from(stepsTable)
+          .delete()
+          .in("conversation_id", conversationIds);
+
+        if (stepsError) {
+          throw new Error(`Failed to clear conversation steps: ${stepsError.message}`);
         }
       }
     }

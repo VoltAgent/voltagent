@@ -25,6 +25,13 @@ VoltAgent's `Memory` class stores conversation history and optional semantic sea
 - Auto-creates conversations on first message
 - Configurable message limits (oldest pruned first)
 
+### Conversation Steps
+
+- Every LLM/text/tool step can be recorded with metadata (operationId, agent/sub-agent IDs, usage, tool arguments/results).
+- VoltOps Observability consumes these records to render the Memory Explorer “Steps” tab and to correlate traces/logs with memory.
+- Adapters that implement the step APIs persist sub-agent activity alongside primary agent steps, so hierarchies stay visible.
+- If an adapter does not support steps, the console warns with “Conversation steps are not supported by this memory adapter.”
+
 ### Semantic Search (Optional)
 
 - Requires `embedding` + `vector` adapters
@@ -207,8 +214,11 @@ export class MyStorageAdapter implements StorageAdapter {
 
 Required methods:
 
+- If you want Memory Explorer’s Steps tab (and Observability APIs) to work, make sure your adapter persists conversation steps by implementing the methods below. Otherwise VoltAgent will surface the “Conversation steps are not supported by this memory adapter.” warning.
+
 - Messages: `addMessage`, `addMessages`, `getMessages`, `clearMessages`
 - Conversations: `createConversation`, `getConversation`, `getConversations`, `getConversationsByUserId`, `queryConversations`, `updateConversation`, `deleteConversation`
+- Conversation steps: `saveConversationSteps`, `getConversationSteps`
 - Working memory: `getWorkingMemory`, `setWorkingMemory`, `deleteWorkingMemory`
 - Workflow state: `getWorkflowState`, `setWorkflowState`, `updateWorkflowState`, `getSuspendedWorkflowStates`
 

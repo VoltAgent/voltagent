@@ -2,12 +2,12 @@
   "name": "voltagent-example-gemini-ai",
   "author": "",
   "dependencies": {
-    "@ai-sdk/google": "^2.0.13",
-    "@voltagent/cli": "^0.1.15",
-    "@voltagent/core": "^1.2.0",
-    "@voltagent/libsql": "^1.0.10",
+    "@ai-sdk/google": "^2.0.23",
+    "@voltagent/cli": "^0.1.16",
+    "@voltagent/core": "^1.2.3",
+    "@voltagent/libsql": "^1.0.11",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.2",
+    "@voltagent/server-hono": "^1.2.3",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
   },
