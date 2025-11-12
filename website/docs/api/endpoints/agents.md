@@ -219,6 +219,122 @@ curl -X POST http://localhost:3141/agents/assistant/text \
   }'
 ```
 
+### Using experimental_output for Structured Generation
+
+The `/text`, `/stream`, and `/chat` endpoints support structured output generation using the `experimental_output` option. Unlike the `/object` endpoint, this allows you to get structured data **while maintaining full tool calling capabilities**.
+
+**Key Differences:**
+
+| Feature           | `/object` endpoint | `experimental_output` with `/text` |
+| ----------------- | ------------------ | ---------------------------------- |
+| Structured output | ✅                 | ✅                                 |
+| Tool calling      | ❌                 | ✅                                 |
+
+**Request Body with experimental_output:**
+
+```json
+{
+  "input": "Create a recipe for pasta carbonara",
+  "options": {
+    "experimental_output": {
+      "type": "object",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "ingredients": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "steps": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "prepTime": { "type": "number" }
+        },
+        "required": ["name", "ingredients", "steps"]
+      }
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "text": "Here is a classic pasta carbonara recipe...",
+    "experimental_output": {
+      "name": "Classic Pasta Carbonara",
+      "ingredients": [
+        "400g spaghetti",
+        "200g guanciale or pancetta",
+        "4 large eggs",
+        "100g Pecorino Romano cheese",
+        "Black pepper"
+      ],
+      "steps": [
+        "Bring a large pot of salted water to boil",
+        "Cook pasta according to package directions",
+        "While pasta cooks, dice guanciale and cook until crispy",
+        "Beat eggs with grated cheese and black pepper",
+        "Drain pasta, reserving 1 cup pasta water",
+        "Off heat, toss pasta with guanciale and fat",
+        "Add egg mixture, tossing quickly with pasta water"
+      ],
+      "prepTime": 20
+    },
+    "usage": {
+      "promptTokens": 145,
+      "completionTokens": 238,
+      "totalTokens": 383
+    },
+    "finishReason": "stop",
+    "toolCalls": [],
+    "toolResults": []
+  }
+}
+```
+
+**cURL Example:**
+
+```bash
+curl -X POST http://localhost:3141/agents/assistant/text \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Create a recipe for pasta carbonara",
+    "options": {
+      "experimental_output": {
+        "type": "object",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "ingredients": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "prepTime": { "type": "number" }
+          },
+          "required": ["name", "ingredients"]
+        }
+      }
+    }
+  }'
+```
+
+**Supported Types:**
+
+- `"object"` - Returns structured JSON conforming to the provided schema
+- `"text"` - Returns constrained text output
+
+**When to Use:**
+
+- Use `experimental_output` when you need structured output AND tool calling
+- Use `/object` endpoint for simple data extraction without tools
+
 ## Stream Text (Raw)
 
 Generate a text response and stream raw fullStream data via Server-Sent Events (SSE). This endpoint provides direct access to all stream events for custom implementations.

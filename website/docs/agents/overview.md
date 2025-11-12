@@ -144,7 +144,7 @@ for await (const partial of stream.partialObjectStream) {
 
 #### Option 2: experimental_output (Schema + Agent Features)
 
-Use `experimental_output` with `generateText`/`streamText` to get structured data **while still using tools, memory, and all agent capabilities**.
+Use `experimental_output` with `generateText`/`streamText` to get structured data **while still using tools and all agent capabilities**.
 
 ```ts
 import { Output } from "ai";
@@ -156,7 +156,7 @@ const recipeSchema = z.object({
   prepTime: z.number(),
 });
 
-// With generateText - supports tool calling and memory
+// With generateText - supports tool calling
 const result = await agent.generateText("Create a pasta recipe", {
   experimental_output: Output.object({ schema: recipeSchema }),
 });
@@ -247,6 +247,38 @@ The server exposes the following REST endpoints:
 | `/chat`          | POST   | SSE           | UI message stream for ai-sdk's useChat hook                    |
 | `/object`        | POST   | JSON          | Complete structured object at once                             |
 | `/stream-object` | POST   | SSE           | Streaming partial objects                                      |
+
+### Structured Output via HTTP
+
+You can use `experimental_output` with the text endpoints (`/text`, `/stream`, `/chat`) to get structured data while maintaining tool calling capabilities. Add the `experimental_output` field to the `options` object in your request:
+
+```typescript
+const response = await fetch("http://localhost:3141/agents/assistant/text", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    input: "Create a recipe",
+    options: {
+      experimental_output: {
+        type: "object",
+        schema: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            ingredients: { type: "array", items: { type: "string" } },
+          },
+          required: ["name"],
+        },
+      },
+    },
+  }),
+});
+
+const data = await response.json();
+console.log(data.data.experimental_output); // Structured object
+```
+
+For detailed API reference and examples, see [Agent Endpoints - experimental_output](../api/endpoints/agents.md#using-experimental_output-for-structured-generation).
 
 ### Calling from Next.js API Route
 

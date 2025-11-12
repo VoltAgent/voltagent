@@ -91,6 +91,7 @@ export async function handleGenerateText(
         finishReason: result.finishReason,
         toolCalls: result.toolCalls,
         toolResults: result.toolResults,
+        ...(result.experimental_output && { experimental_output: result.experimental_output }),
       },
     };
   } catch (error) {
