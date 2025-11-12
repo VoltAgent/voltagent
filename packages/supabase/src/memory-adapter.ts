@@ -637,16 +637,35 @@ END OF MIGRATION SQL
 
       // Check for new format first (parts column exists and has value)
       if (row.parts !== undefined && row.parts !== null) {
-        // New format - use parts directly
-        parts = row.parts;
+        // IMPORTANT: Supabase returns JSONB as string, PostgreSQL pg library returns as object
+        if (typeof row.parts === "string") {
+          try {
+            parts = JSON.parse(row.parts);
+          } catch (e) {
+            console.error(`Failed to parse parts for message ${row.message_id}:`, e);
+            parts = [];
+          }
+        } else {
+          parts = row.parts;
+        }
       }
       // Check for old format (content column exists and has value)
       else if (row.content !== undefined && row.content !== null) {
         // Old format - convert content to parts
+        // Handle string serialization for old format too
+        let content = row.content;
+        if (typeof content === "string") {
+          try {
+            content = JSON.parse(content);
+          } catch (_e) {
+            // Keep as string if parsing fails
+          }
+        }
+
         if (row.type === "image") {
-          parts = [{ type: "image", image: row.content }];
+          parts = [{ type: "image", image: content }];
         } else {
-          parts = [{ type: "text", text: row.content }];
+          parts = [{ type: "text", text: content }];
         }
       } else {
         // No content at all
