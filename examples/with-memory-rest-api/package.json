@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
-    "@voltagent/cli": "^0.1.15",
-    "@voltagent/core": "^1.2.2",
+    "@voltagent/cli": "^0.1.16",
+    "@voltagent/core": "^1.2.3",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/postgres": "^1.1.0",
-    "@voltagent/server-hono": "^1.2.2"
+    "@voltagent/postgres": "^1.1.1",
+    "@voltagent/server-hono": "^1.2.3"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",

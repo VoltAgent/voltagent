@@ -3,10 +3,10 @@
   "author": "",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
-    "@voltagent/cli": "^0.1.15",
-    "@voltagent/core": "^1.2.2",
+    "@voltagent/cli": "^0.1.16",
+    "@voltagent/core": "^1.2.3",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.2",
+    "@voltagent/server-hono": "^1.2.3",
     "ai": "^5.0.76"
   },
   "devDependencies": {
