@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
-    "@voltagent/core": "^1.2.3",
+    "@voltagent/core": "^1.2.4",
     "@voltagent/serverless-hono": "^1.0.6",
     "ai": "^5.0.76",
     "hono": "^4.7.7",
