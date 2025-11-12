@@ -1373,7 +1373,7 @@ importers:
         specifier: ^1.2.3
         version: link:../../packages/core
       '@voltagent/server-core':
-        specifier: ^1.0.23
+        specifier: ^1.0.24
         version: link:../../packages/server-core
       '@voltagent/server-hono':
         specifier: ^1.2.3
