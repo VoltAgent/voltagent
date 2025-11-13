@@ -87,7 +87,7 @@ After configuring credentials, you need to specify which emails to monitor.
 
 <video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
-  <source src="https://cdn.voltagent.dev/console/trigger/gmail/configuration.mp4" type="video/mp4" />
+  <source src="https://cdn.voltagent.dev/console/trigger/gmail/gmail-configuration.mp4" type="video/mp4" />
   Your browser does not support the video tag.
 </video>
 
