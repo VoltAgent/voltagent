@@ -21,6 +21,10 @@ import { messageHelpers } from "@voltagent/core";
 import { isTextContent, extractText, MessageContentBuilder } from "@voltagent/core/utils";
 ```
 
+:::info Understanding Message Types
+VoltAgent uses different message types for different purposes. For a comprehensive guide on **MessageContent**, **UIMessage**, and **VoltAgentTextStreamPart**, see [Understanding Message Types](/docs/agents/message-types).
+:::
+
 ## Working with UIMessage
 
 All extractor and checker functions (`extractText`, `extractTextParts`, `extractImageParts`, `extractFileParts`, `hasTextPart`, `hasImagePart`, `hasFilePart`, `getContentLength`) support **both MessageContent and UIMessage** using TypeScript overloads.

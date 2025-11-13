@@ -47,6 +47,7 @@ const sidebars: SidebarsConfig = {
         },
         "agents/a2a/a2a-server",
         "agents/hooks",
+        "agents/message-types",
         "agents/multi-modal",
         "agents/providers",
         "agents/subagents",
