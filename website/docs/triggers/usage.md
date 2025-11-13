@@ -33,7 +33,7 @@ data.records:write
 schema.bases:read
 ```
 
-After pasting the token, click **Save credentials** proceed to trigger options.
+After pasting the token, click **Save credentials** to proceed to trigger options.
 
 ## Step 2: Trigger Configuration
 
