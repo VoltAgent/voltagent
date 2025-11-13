@@ -22,7 +22,7 @@ import { isTextContent, extractText, MessageContentBuilder } from "@voltagent/co
 ```
 
 :::info Understanding Message Types
-VoltAgent uses different message types for different purposes. For a comprehensive guide on **MessageContent**, **UIMessage**, and **VoltAgentTextStreamPart**, see [Understanding Message Types](/docs/agents/message-types).
+VoltAgent uses different message types for different purposes. For a comprehensive guide on **MessageContent**, **UIMessage**, and **VoltAgentTextStreamPart**, see [Understanding Message Types](../agents/message-types.md).
 :::
 
 ## Working with UIMessage
