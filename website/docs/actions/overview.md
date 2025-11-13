@@ -1,4 +1,4 @@
-# VoltOps Actions Overview
+# Overview
 
 VoltOps Actions provide managed integrations (Airtable, Gmail, Slack, …) that you can trigger from
 agents, workflows, or the VoltOps API. Instead of wiring every SaaS API yourself you define the

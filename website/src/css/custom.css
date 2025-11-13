@@ -188,6 +188,7 @@ html[data-theme="dark"] .theme-doc-markdown p {
   background-color: var(--sidebar-badge-accent-bg);
   color: var(--sidebar-badge-accent-color);
   border-color: rgba(16, 185, 129, 0.18);
+  text-transform: none !important;
 }
 
 /* Code blocks */
