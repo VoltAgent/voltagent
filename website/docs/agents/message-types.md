@@ -515,9 +515,9 @@ for await (const part of stream.fullStream) {
 ## Related Documentation
 
 - [Message Helpers](/docs/utils/message-helpers) - Utilities for working with both MessageContent and UIMessage
-- [Memory Guide](/docs/memory) - How memory uses UIMessage format
+- [Memory Guide](/docs/agents/memory) - How memory uses UIMessage format
 - [Agent Hooks](/docs/agents/hooks) - UIMessage transformation in hooks
-- [Streaming](/docs/agents/streaming) - Working with VoltAgentTextStreamPart
+- [API Streaming](/docs/api/streaming) - Working with VoltAgentTextStreamPart
 
 ---
 
