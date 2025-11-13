@@ -1,5 +1,5 @@
 ---
-"@voltagent/core": minor
+"@voltagent/core": patch
 ---
 
 feat: enhanced message-helpers to support both MessageContent and UIMessage using TypeScript overloads - #796
