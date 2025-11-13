@@ -316,5 +316,252 @@ describe("Message Helpers", () => {
       expect(messageHelpers.MessageContentBuilder).toBeDefined();
       expect(messageHelpers.addTimestampToMessage).toBeDefined();
     });
+
+    it("should export overloaded functions that work with both MessageContent and UIMessage", () => {
+      expect(messageHelpers.extractText).toBeDefined();
+      expect(messageHelpers.extractTextParts).toBeDefined();
+      expect(messageHelpers.extractImageParts).toBeDefined();
+      expect(messageHelpers.extractFileParts).toBeDefined();
+      expect(messageHelpers.hasTextPart).toBeDefined();
+      expect(messageHelpers.hasImagePart).toBeDefined();
+      expect(messageHelpers.hasFilePart).toBeDefined();
+      expect(messageHelpers.getContentLength).toBeDefined();
+    });
+  });
+
+  describe("UIMessage Overload Support", () => {
+    describe("extractText with UIMessage", () => {
+      it("should extract text from UIMessage with single text part", () => {
+        const message: UIMessage = {
+          id: "msg-1",
+          role: "user",
+          parts: [{ type: "text", text: "Hello, world!" }],
+        } as UIMessage;
+        expect(extractText(message)).toBe("Hello, world!");
+      });
+
+      it("should extract and join multiple text parts", () => {
+        const message: UIMessage = {
+          id: "msg-2",
+          role: "user",
+          parts: [
+            { type: "text", text: "Hello, " },
+            { type: "text", text: "world!" },
+          ],
+        } as UIMessage;
+        expect(extractText(message)).toBe("Hello, world!");
+      });
+
+      it("should extract only text parts from mixed content", () => {
+        const message: UIMessage = {
+          id: "msg-3",
+          role: "user",
+          parts: [
+            { type: "text", text: "Check this: " },
+            { type: "file", url: "data:image/png;base64,xxx", mediaType: "image/png" },
+            { type: "text", text: "cool image!" },
+          ],
+        } as UIMessage;
+        expect(extractText(message)).toBe("Check this: cool image!");
+      });
+
+      it("should return empty string for message with no text parts", () => {
+        const message: UIMessage = {
+          id: "msg-4",
+          role: "assistant",
+          parts: [{ type: "file", url: "data:image/png;base64,xxx", mediaType: "image/png" }],
+        } as UIMessage;
+        expect(extractText(message)).toBe("");
+      });
+
+      it("should return empty string for message with no parts", () => {
+        const message: UIMessage = {
+          id: "msg-5",
+          role: "user",
+          parts: [],
+        } as UIMessage;
+        expect(extractText(message)).toBe("");
+      });
+
+      it("should handle undefined or null parts gracefully", () => {
+        const message1 = { id: "msg-6", role: "user" } as UIMessage;
+        const message2 = { id: "msg-7", role: "user", parts: null } as any;
+        expect(extractText(message1)).toBe("");
+        expect(extractText(message2)).toBe("");
+      });
+    });
+
+    describe("extractTextParts with UIMessage", () => {
+      it("should extract text parts array", () => {
+        const message: UIMessage = {
+          id: "msg-8",
+          role: "user",
+          parts: [
+            { type: "text", text: "First" },
+            { type: "file", url: "data:image/png;base64,xxx", mediaType: "image/png" },
+            { type: "text", text: "Second" },
+          ],
+        } as UIMessage;
+        const textParts = extractTextParts(message);
+        expect(textParts).toHaveLength(2);
+        expect(textParts[0]).toEqual({ type: "text", text: "First" });
+        expect(textParts[1]).toEqual({ type: "text", text: "Second" });
+      });
+
+      it("should return empty array when no text parts", () => {
+        const message: UIMessage = {
+          id: "msg-9",
+          role: "assistant",
+          parts: [{ type: "file", url: "data:image/png;base64,xxx", mediaType: "image/png" }],
+        } as UIMessage;
+        expect(extractTextParts(message)).toEqual([]);
+      });
+    });
+
+    describe("extractImageParts with UIMessage", () => {
+      it("should extract image file parts", () => {
+        const message: UIMessage = {
+          id: "msg-10",
+          role: "user",
+          parts: [
+            { type: "text", text: "Check these:" },
+            { type: "file", url: "data:image/png;base64,aaa", mediaType: "image/png" },
+            { type: "file", url: "data:image/jpeg;base64,bbb", mediaType: "image/jpeg" },
+            { type: "file", url: "data:application/pdf;base64,ccc", mediaType: "application/pdf" },
+          ],
+        } as UIMessage;
+        const imageParts = extractImageParts(message);
+        expect(imageParts).toHaveLength(2);
+        expect(imageParts[0].mediaType).toBe("image/png");
+        expect(imageParts[1].mediaType).toBe("image/jpeg");
+      });
+
+      it("should return empty array when no image parts", () => {
+        const message: UIMessage = {
+          id: "msg-11",
+          role: "user",
+          parts: [{ type: "text", text: "No images" }],
+        } as UIMessage;
+        expect(extractImageParts(message)).toEqual([]);
+      });
+    });
+
+    describe("extractFileParts with UIMessage", () => {
+      it("should extract all file parts", () => {
+        const message: UIMessage = {
+          id: "msg-12",
+          role: "user",
+          parts: [
+            { type: "text", text: "Files:" },
+            { type: "file", url: "data:image/png;base64,aaa", mediaType: "image/png" },
+            { type: "file", url: "data:application/pdf;base64,bbb", mediaType: "application/pdf" },
+          ],
+        } as UIMessage;
+        const fileParts = extractFileParts(message);
+        expect(fileParts).toHaveLength(2);
+        expect(fileParts[0].mediaType).toBe("image/png");
+        expect(fileParts[1].mediaType).toBe("application/pdf");
+      });
+    });
+
+    describe("hasTextPart with UIMessage", () => {
+      it("should return true when message has text parts", () => {
+        const message: UIMessage = {
+          id: "msg-15",
+          role: "user",
+          parts: [
+            { type: "text", text: "Hello" },
+            { type: "file", url: "data:image/png;base64,xxx", mediaType: "image/png" },
+          ],
+        } as UIMessage;
+        expect(hasTextPart(message)).toBe(true);
+      });
+
+      it("should return false when message has no text parts", () => {
+        const message: UIMessage = {
+          id: "msg-16",
+          role: "user",
+          parts: [{ type: "file", url: "data:image/png;base64,xxx", mediaType: "image/png" }],
+        } as UIMessage;
+        expect(hasTextPart(message)).toBe(false);
+      });
+
+      it("should return false for empty parts array", () => {
+        const message: UIMessage = { id: "msg-17", role: "user", parts: [] } as UIMessage;
+        expect(hasTextPart(message)).toBe(false);
+      });
+    });
+
+    describe("hasImagePart with UIMessage", () => {
+      it("should return true when message has image parts", () => {
+        const message: UIMessage = {
+          id: "msg-18",
+          role: "user",
+          parts: [
+            { type: "text", text: "Look:" },
+            { type: "file", url: "data:image/png;base64,xxx", mediaType: "image/png" },
+          ],
+        } as UIMessage;
+        expect(hasImagePart(message)).toBe(true);
+      });
+
+      it("should return false when message has file parts but not images", () => {
+        const message: UIMessage = {
+          id: "msg-19",
+          role: "user",
+          parts: [
+            { type: "file", url: "data:application/pdf;base64,xxx", mediaType: "application/pdf" },
+          ],
+        } as UIMessage;
+        expect(hasImagePart(message)).toBe(false);
+      });
+    });
+
+    describe("hasFilePart with UIMessage", () => {
+      it("should return true when message has file parts", () => {
+        const message: UIMessage = {
+          id: "msg-20",
+          role: "user",
+          parts: [
+            { type: "file", url: "data:application/pdf;base64,xxx", mediaType: "application/pdf" },
+          ],
+        } as UIMessage;
+        expect(hasFilePart(message)).toBe(true);
+      });
+
+      it("should return false when message has no file parts", () => {
+        const message: UIMessage = {
+          id: "msg-21",
+          role: "user",
+          parts: [{ type: "text", text: "No files" }],
+        } as UIMessage;
+        expect(hasFilePart(message)).toBe(false);
+      });
+    });
+
+    describe("getContentLength with UIMessage", () => {
+      it("should return the number of parts", () => {
+        const message: UIMessage = {
+          id: "msg-24",
+          role: "user",
+          parts: [
+            { type: "text", text: "Hello" },
+            { type: "file", url: "data:image/png;base64,xxx", mediaType: "image/png" },
+            { type: "text", text: "world" },
+          ],
+        } as UIMessage;
+        expect(getContentLength(message)).toBe(3);
+      });
+
+      it("should return 0 for empty parts array", () => {
+        const message: UIMessage = { id: "msg-25", role: "user", parts: [] } as UIMessage;
+        expect(getContentLength(message)).toBe(0);
+      });
+
+      it("should return 0 for undefined parts", () => {
+        const message = { id: "msg-26", role: "user" } as UIMessage;
+        expect(getContentLength(message)).toBe(0);
+      });
+    });
   });
 });
