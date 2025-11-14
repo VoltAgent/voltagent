@@ -78,7 +78,7 @@ Use OAuth 2.0 for team environments, production deployments, or credential rotat
 
 ### Record Created
 
-Triggers when a new record is added to the configured table. The trigger polls your Airtable base at the specified interval and detects new records by comparing the trigger field value against the last known value.
+Triggers when a new record is added to the configured table. The trigger polls your Airtable base at the specified interval and detects new records by comparing the trigger field value against the last known value (see [Configuration Parameters](#configuration-parameters) for details).
 
 **Payload Structure**:
 

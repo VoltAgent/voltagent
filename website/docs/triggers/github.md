@@ -100,37 +100,6 @@ After configuring credentials, you need to specify which repository and events t
 
 Select the credential you created and configure the repository settings:
 
-- **Owner**: Enter the GitHub repository owner (username or organization name)
-- **Repository**: Enter the repository name within the owner's account
-- **Branch Filter (Optional)**: Provide a branch name to restrict push events. Leave blank to allow all branches
-
-VoltOps listens for events from this repository and configures the GitHub webhook automatically.
-
-## Add Target to Activate Binding
-
-After configuring your GitHub trigger, you need to add a target (agent or workflow) to activate the binding. For detailed instructions on:
-
-- Adding targets to activate bindings
-- Mapping trigger data to agent inputs
-- Testing triggers with sample payloads
-- Deploying and monitoring triggers
-
-See the [Add Target to Activate Binding section](https://voltagent.dev/docs/triggers/usage/#step-3-add-target-to-activate-binding). These steps are the same for all trigger providers.
-
-## Event Types
-
-GitHub triggers support all GitHub webhook events. VoltOps configures the webhook when you create a trigger. No manual webhook setup is required.
-
-When creating a trigger in VoltOps Console, you can select which events to listen for. The trigger will only execute when the selected events occur.
-
-GitHub webhook events include:
-
-<GitHubEventTypes />
-
-## Configuration Parameters
-
-After setting up authentication in **Step 1 (Connection)**, configure the trigger options in **Step 2 (Configuration)**.
-
 ### Owner
 
 Enter the GitHub repository owner (username or organization name).
@@ -150,6 +119,27 @@ Restrict **push events** to a specific branch. Leave blank to allow all branches
 :::note
 The branch filter only applies to **push events**. Other events (pull requests, issues, releases, etc.) are not affected by this filter.
 :::
+
+## Event Types
+
+GitHub triggers support all GitHub webhook events. VoltOps configures the webhook when you create a trigger. No manual webhook setup is required.
+
+When creating a trigger in VoltOps Console, you can select which events to listen for. The trigger will only execute when the selected events occur.
+
+GitHub webhook events include:
+
+<GitHubEventTypes />
+
+## Add Target to Activate Binding
+
+After configuring your GitHub trigger, you need to add a target (agent or workflow) to activate the binding. For detailed instructions on:
+
+- Adding targets to activate bindings
+- Mapping trigger data to agent inputs
+- Testing triggers with sample payloads
+- Deploying and monitoring triggers
+
+See the [Add Target to Activate Binding section](https://voltagent.dev/docs/triggers/usage/#step-3-add-target-to-activate-binding). These steps are the same for all trigger providers.
 
 ## GitHub Enterprise Support
 
