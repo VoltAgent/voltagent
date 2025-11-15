@@ -62,17 +62,34 @@ export interface TriggerHandlerContext<TPayload = unknown> {
   triggerContext: Map<string | symbol, unknown>;
 }
 
-export type TriggerHandlerResult =
-  | undefined
-  | {
-      status?: number;
-      body?: unknown;
-      headers?: Record<string, string>;
-    };
+export type TriggerHandlerBody =
+  | string
+  | number
+  | boolean
+  | null
+  | Record<string, unknown>
+  | unknown[];
+
+export interface TriggerHandlerResponse {
+  status?: number;
+  body?: TriggerHandlerBody;
+  headers?: Record<string, string>;
+}
+
+// biome-ignore lint/suspicious/noConfusingVoidType: trigger handlers may return void for default responses
+export type TriggerHandlerResult = void | TriggerHandlerBody | TriggerHandlerResponse;
+
+/**
+ * @deprecated Use {@link TriggerHandlerResult}. This alias remains for backwards compatibility.
+ */
+export type TriggerHandlerReturn =
+  | TriggerHandlerResult
+  | Promise<TriggerHandlerResult>
+  | Promise<void>;
 
 export type TriggerHandler<TPayload = unknown> = (
   context: TriggerHandlerContext<TPayload>,
-) => Promise<TriggerHandlerResult> | TriggerHandlerResult;
+) => TriggerHandlerReturn;
 
 export type VoltAgentTriggerConfig<TPayload = unknown> =
   | TriggerHandler<TPayload>

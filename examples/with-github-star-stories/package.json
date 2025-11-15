@@ -1,34 +1,34 @@
 {
   "name": "voltagent-example-github-star-stories",
-  "private": true,
   "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "tsx watch --env-file=.env ./src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "volt": "volt"
-  },
-  "keywords": [
-    "ai",
-    "agent",
-    "voltagent",
-    "github",
-    "discord"
-  ],
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
-    "@octokit/rest": "^21.0.2",
+    "@octokit/rest": "^21.0.0",
     "@voltagent/cli": "^0.1.16",
     "@voltagent/core": "^1.2.5",
-    "@voltagent/server-hono": "^1.2.3",
     "@voltagent/logger": "^1.0.4",
-    "dotenv": "^16.4.7",
+    "@voltagent/server-hono": "^1.2.3",
+    "dotenv": "^16.4.5",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
-  }
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "discord",
+    "github",
+    "voltagent"
+  ],
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src/index.ts",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
 }

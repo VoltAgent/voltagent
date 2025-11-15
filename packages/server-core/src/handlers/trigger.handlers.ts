@@ -29,6 +29,12 @@ export interface TriggerHandlerHttpResponse {
   headers?: Record<string, string>;
 }
 
+const hasOwn = (value: object, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(value, key);
+
+const hasResponseMetadata = (value: Record<string, unknown>): boolean =>
+  hasOwn(value, "status") || hasOwn(value, "body") || hasOwn(value, "headers");
+
 function extractPayload(body: unknown): unknown {
   if (!isPlainObject(body)) {
     return body;
@@ -73,15 +79,32 @@ function buildEnvelope(
 }
 
 function normalizeResult(result: TriggerHandlerResult | undefined): TriggerHandlerHttpResponse {
-  if (!result) {
+  if (typeof result === "undefined") {
     return { status: 200, body: { success: true } };
   }
 
-  return {
-    status: result.status ?? 200,
-    body: result.body ?? { success: true },
-    headers: result.headers,
-  };
+  if (isPlainObject(result) && hasResponseMetadata(result)) {
+    const status = (result.status as number | undefined) ?? 200;
+    const bodyProvided = hasOwn(result, "body");
+    return {
+      status,
+      body: bodyProvided ? result.body : { success: true },
+      headers: result.headers as Record<string, string> | undefined,
+    };
+  }
+
+  if (
+    typeof result === "string" ||
+    typeof result === "number" ||
+    typeof result === "boolean" ||
+    result === null ||
+    Array.isArray(result) ||
+    isPlainObject(result)
+  ) {
+    return { status: 200, body: result };
+  }
+
+  return { status: 200, body: result };
 }
 
 function extractMetadata(body: unknown): Record<string, unknown> | undefined {

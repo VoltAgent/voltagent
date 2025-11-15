@@ -93,16 +93,14 @@ new VoltAgent({
       await storytellerAgent.generateText("selam");
     });
 
-    on.cron.schedule(async ({ payload }) => {
+    on.cron.schedule(({ payload }) => {
       console.log({ payload });
-
-      await storytellerAgent.generateText("selam");
     });
 
-    on.airtable.recordCreated(async ({ payload, event }) => {
+    on.airtable.recordCreated(({ payload, event }) => {
       console.log({ payload, event });
 
-      await storytellerAgent.generateText("selam");
+      return { status: 422, body: { hede: 2 } };
     });
   }),
   logger,
