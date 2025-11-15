@@ -14,6 +14,7 @@ import {
   registerLogRoutes,
   registerMcpRoutes,
   registerObservabilityRoutes,
+  registerTriggerRoutes,
   registerUpdateRoutes,
   registerWorkflowRoutes,
 } from "./routes";
@@ -56,6 +57,7 @@ export async function createApp(
   registerLogRoutes(app as any, deps, logger);
   registerUpdateRoutes(app as any, deps, logger);
   registerObservabilityRoutes(app as any, deps, logger);
+  registerTriggerRoutes(app as any, deps, logger);
   // Cast preserves compatibility when multiple copies of core types exist at build time.
   registerMcpRoutes(app as any, deps as any, logger);
   registerA2ARoutes(app as any, deps as any, logger);

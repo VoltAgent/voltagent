@@ -40,8 +40,10 @@ import {
   textRoute,
 } from "./agent.routes";
 import { getLogsRoute } from "./log.routes";
+import { registerTriggerRoutes } from "./trigger.routes";
 export { registerMcpRoutes } from "./mcp.routes";
 export { registerA2ARoutes } from "./a2a.routes";
+export { registerTriggerRoutes } from "./trigger.routes";
 
 /**
  * Register agent routes

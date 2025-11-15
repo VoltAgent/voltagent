@@ -13,7 +13,7 @@ const baseUrl = rawBaseUrl.endsWith("/") ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
 const publicKey = getRequiredEnv("VOLTAGENT_PUBLIC_KEY");
 const secretKey = getRequiredEnv("VOLTAGENT_SECRET_KEY");
 
-const credentialId = getRequiredEnv("AIRTABLE_CREDENTIAL_ID");
+const credential = { id: getRequiredEnv("AIRTABLE_CREDENTIAL_ID") };
 const baseId = getRequiredEnv("AIRTABLE_BASE_ID");
 const tableId = getRequiredEnv("AIRTABLE_TABLE_ID");
 
@@ -25,7 +25,7 @@ export const actionsClient = new VoltOpsClient({
 
 export const actionsConfig = {
   airtable: {
-    credentialId,
+    credential,
     baseId,
     tableId,
   },

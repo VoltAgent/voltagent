@@ -2,10 +2,27 @@ import { safeStringify } from "@voltagent/internal";
 import type {
   VoltOpsActionExecutionResult,
   VoltOpsAirtableCreateRecordParams,
+  VoltOpsAirtableCredential,
   VoltOpsAirtableDeleteRecordParams,
   VoltOpsAirtableGetRecordParams,
   VoltOpsAirtableListRecordsParams,
   VoltOpsAirtableUpdateRecordParams,
+  VoltOpsDiscordChannelMessageParams,
+  VoltOpsDiscordChannelType,
+  VoltOpsDiscordConfig,
+  VoltOpsDiscordCreateChannelParams,
+  VoltOpsDiscordCredential,
+  VoltOpsDiscordDeleteChannelParams,
+  VoltOpsDiscordGetChannelParams,
+  VoltOpsDiscordListChannelsParams,
+  VoltOpsDiscordListMembersParams,
+  VoltOpsDiscordListMessagesParams,
+  VoltOpsDiscordMemberRoleParams,
+  VoltOpsDiscordReactionParams,
+  VoltOpsDiscordSendMessageParams,
+  VoltOpsDiscordSendWebhookMessageParams,
+  VoltOpsDiscordUpdateChannelParams,
+  VoltOpsSlackCredential,
   VoltOpsSlackDeleteMessageParams,
   VoltOpsSlackPostMessageParams,
   VoltOpsSlackSearchMessagesParams,
@@ -39,7 +56,7 @@ interface ActionExecutionResponse {
 
 interface ExecuteAirtableActionOptions {
   actionId: string;
-  credentialId: string;
+  credential: VoltOpsAirtableCredential;
   baseId: string;
   tableId: string;
   catalogId?: string;
@@ -74,6 +91,43 @@ export class VoltOpsActionsClient {
       params: VoltOpsSlackSearchMessagesParams,
     ) => Promise<VoltOpsActionExecutionResult>;
   };
+  public readonly discord: {
+    sendMessage: (params: VoltOpsDiscordSendMessageParams) => Promise<VoltOpsActionExecutionResult>;
+    sendWebhookMessage: (
+      params: VoltOpsDiscordSendWebhookMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteMessage: (
+      params: VoltOpsDiscordChannelMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    getMessage: (
+      params: VoltOpsDiscordChannelMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    listMessages: (
+      params: VoltOpsDiscordListMessagesParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    addReaction: (params: VoltOpsDiscordReactionParams) => Promise<VoltOpsActionExecutionResult>;
+    removeReaction: (params: VoltOpsDiscordReactionParams) => Promise<VoltOpsActionExecutionResult>;
+    createChannel: (
+      params: VoltOpsDiscordCreateChannelParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    updateChannel: (
+      params: VoltOpsDiscordUpdateChannelParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteChannel: (
+      params: VoltOpsDiscordDeleteChannelParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    getChannel: (params: VoltOpsDiscordGetChannelParams) => Promise<VoltOpsActionExecutionResult>;
+    listChannels: (
+      params: VoltOpsDiscordListChannelsParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    listMembers: (params: VoltOpsDiscordListMembersParams) => Promise<VoltOpsActionExecutionResult>;
+    addMemberRole: (
+      params: VoltOpsDiscordMemberRoleParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    removeMemberRole: (
+      params: VoltOpsDiscordMemberRoleParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
 
   constructor(
     private readonly transport: VoltOpsActionsTransport,
@@ -92,6 +146,23 @@ export class VoltOpsActionsClient {
       deleteMessage: this.deleteSlackMessage.bind(this),
       searchMessages: this.searchSlackMessages.bind(this),
     };
+    this.discord = {
+      sendMessage: this.sendDiscordMessage.bind(this),
+      sendWebhookMessage: this.sendDiscordWebhookMessage.bind(this),
+      deleteMessage: this.deleteDiscordMessage.bind(this),
+      getMessage: this.getDiscordMessage.bind(this),
+      listMessages: this.listDiscordMessages.bind(this),
+      addReaction: this.addDiscordReaction.bind(this),
+      removeReaction: this.removeDiscordReaction.bind(this),
+      createChannel: this.createDiscordChannel.bind(this),
+      updateChannel: this.updateDiscordChannel.bind(this),
+      deleteChannel: this.deleteDiscordChannel.bind(this),
+      getChannel: this.getDiscordChannel.bind(this),
+      listChannels: this.listDiscordChannels.bind(this),
+      listMembers: this.listDiscordMembers.bind(this),
+      addMemberRole: this.addDiscordMemberRole.bind(this),
+      removeMemberRole: this.removeDiscordMemberRole.bind(this),
+    };
   }
 
   private readonly useProjectEndpoint: boolean;
@@ -107,7 +178,7 @@ export class VoltOpsActionsClient {
       throw new VoltOpsActionError("params must be provided", 400);
     }
 
-    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const credential = this.ensureAirtableCredential(params.credential);
     const baseId = this.normalizeIdentifier(params.baseId, "baseId");
     const tableId = this.normalizeIdentifier(params.tableId, "tableId");
     const fields = this.ensureRecord(params.fields, "fields");
@@ -128,7 +199,7 @@ export class VoltOpsActionsClient {
 
     return this.executeAirtableAction({
       actionId: params.actionId ?? "airtable.createRecord",
-      credentialId,
+      credential,
       baseId,
       tableId,
       catalogId: params.catalogId,
@@ -146,7 +217,7 @@ export class VoltOpsActionsClient {
       throw new VoltOpsActionError("params must be provided", 400);
     }
 
-    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const credential = this.ensureAirtableCredential(params.credential);
     const baseId = this.normalizeIdentifier(params.baseId, "baseId");
     const tableId = this.normalizeIdentifier(params.tableId, "tableId");
     const recordId = this.normalizeIdentifier(params.recordId, "recordId");
@@ -171,7 +242,7 @@ export class VoltOpsActionsClient {
 
     return this.executeAirtableAction({
       actionId: params.actionId ?? "airtable.updateRecord",
-      credentialId,
+      credential,
       baseId,
       tableId,
       catalogId: params.catalogId,
@@ -189,7 +260,7 @@ export class VoltOpsActionsClient {
       throw new VoltOpsActionError("params must be provided", 400);
     }
 
-    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const credential = this.ensureAirtableCredential(params.credential);
     const baseId = this.normalizeIdentifier(params.baseId, "baseId");
     const tableId = this.normalizeIdentifier(params.tableId, "tableId");
     const recordId = this.normalizeIdentifier(params.recordId, "recordId");
@@ -200,7 +271,7 @@ export class VoltOpsActionsClient {
 
     return this.executeAirtableAction({
       actionId: params.actionId ?? "airtable.deleteRecord",
-      credentialId,
+      credential,
       baseId,
       tableId,
       catalogId: params.catalogId,
@@ -216,7 +287,7 @@ export class VoltOpsActionsClient {
       throw new VoltOpsActionError("params must be provided", 400);
     }
 
-    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const credential = this.ensureAirtableCredential(params.credential);
     const baseId = this.normalizeIdentifier(params.baseId, "baseId");
     const tableId = this.normalizeIdentifier(params.tableId, "tableId");
     const recordId = this.normalizeIdentifier(params.recordId, "recordId");
@@ -231,7 +302,7 @@ export class VoltOpsActionsClient {
 
     return this.executeAirtableAction({
       actionId: params.actionId ?? "airtable.getRecord",
-      credentialId,
+      credential,
       baseId,
       tableId,
       catalogId: params.catalogId,
@@ -248,7 +319,7 @@ export class VoltOpsActionsClient {
       throw new VoltOpsActionError("params must be provided", 400);
     }
 
-    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const credential = this.ensureAirtableCredential(params.credential);
     const baseId = this.normalizeIdentifier(params.baseId, "baseId");
     const tableId = this.normalizeIdentifier(params.tableId, "tableId");
 
@@ -289,7 +360,7 @@ export class VoltOpsActionsClient {
 
     return this.executeAirtableAction({
       actionId: params.actionId ?? "airtable.listRecords",
-      credentialId,
+      credential,
       baseId,
       tableId,
       catalogId: params.catalogId,
@@ -322,7 +393,7 @@ export class VoltOpsActionsClient {
     }
 
     const payload: Record<string, unknown> = {
-      credentialId: options.credentialId,
+      credential: options.credential,
       catalogId: options.catalogId ?? undefined,
       actionId: options.actionId,
       projectId: options.projectId ?? undefined,
@@ -345,7 +416,7 @@ export class VoltOpsActionsClient {
       throw new VoltOpsActionError("params must be provided", 400);
     }
 
-    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const credential = this.ensureSlackCredential(params.credential);
     const channelId = params.channelId
       ? this.normalizeIdentifier(params.channelId, "channelId")
       : null;
@@ -410,7 +481,7 @@ export class VoltOpsActionsClient {
 
     return this.executeSlackAction({
       actionId: params.actionId ?? "slack.postMessage",
-      credentialId,
+      credential,
       catalogId: params.catalogId,
       projectId: params.projectId,
       config,
@@ -425,7 +496,7 @@ export class VoltOpsActionsClient {
       throw new VoltOpsActionError("params must be provided", 400);
     }
 
-    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const credential = this.ensureSlackCredential(params.credential);
     const channelId = this.normalizeIdentifier(params.channelId, "channelId");
     const messageTs = this.normalizeIdentifier(params.messageTs, "messageTs");
 
@@ -445,7 +516,7 @@ export class VoltOpsActionsClient {
 
     return this.executeSlackAction({
       actionId: params.actionId ?? "slack.deleteMessage",
-      credentialId,
+      credential,
       catalogId: params.catalogId,
       projectId: params.projectId,
       config,
@@ -460,7 +531,7 @@ export class VoltOpsActionsClient {
       throw new VoltOpsActionError("params must be provided", 400);
     }
 
-    const credentialId = this.normalizeIdentifier(params.credentialId, "credentialId");
+    const credential = this.ensureSlackCredential(params.credential);
     const query = this.trimString(params.query);
     if (!query) {
       throw new VoltOpsActionError("query must be provided", 400);
@@ -486,7 +557,7 @@ export class VoltOpsActionsClient {
 
     return this.executeSlackAction({
       actionId: params.actionId ?? "slack.searchMessages",
-      credentialId,
+      credential,
       catalogId: params.catalogId,
       projectId: params.projectId,
       config: null,
@@ -496,14 +567,14 @@ export class VoltOpsActionsClient {
 
   private async executeSlackAction(options: {
     actionId: string;
-    credentialId: string;
+    credential: VoltOpsSlackCredential;
     catalogId?: string;
     projectId?: string | null;
     config?: Record<string, unknown> | null;
     input?: Record<string, unknown>;
   }): Promise<VoltOpsActionExecutionResult> {
     const payload: Record<string, unknown> = {
-      credentialId: options.credentialId,
+      credential: options.credential,
       catalogId: options.catalogId ?? undefined,
       actionId: options.actionId,
       projectId: options.projectId ?? undefined,
@@ -520,6 +591,712 @@ export class VoltOpsActionsClient {
 
     const response = await this.postActionExecution(this.actionExecutionPath, payload);
     return this.mapActionExecution(response);
+  }
+
+  private async sendDiscordMessage(
+    params: VoltOpsDiscordSendMessageParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const { input, configDefaults } = this.buildDiscordMessageInput(params);
+    const config = this.mergeDiscordConfig(configDefaults, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.sendMessage",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async sendDiscordWebhookMessage(
+    params: VoltOpsDiscordSendWebhookMessageParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const { input, configDefaults } = this.buildDiscordMessageInput(params);
+
+    const username = this.trimString(params.username);
+    if (username) {
+      input.username = username;
+    }
+    const avatarUrl = this.trimString(params.avatarUrl);
+    if (avatarUrl) {
+      input.avatarUrl = avatarUrl;
+    }
+
+    const config = this.mergeDiscordConfig(configDefaults, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.sendWebhookMessage",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async deleteDiscordMessage(
+    params: VoltOpsDiscordChannelMessageParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const channelId = this.normalizeIdentifier(params.channelId, "channelId");
+    const messageId = this.normalizeIdentifier(params.messageId, "messageId");
+
+    const input: Record<string, unknown> = {
+      channelId,
+      messageId,
+    };
+
+    const config = this.mergeDiscordConfig({ channelId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.deleteMessage",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async getDiscordMessage(
+    params: VoltOpsDiscordChannelMessageParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const channelId = this.normalizeIdentifier(params.channelId, "channelId");
+    const messageId = this.normalizeIdentifier(params.messageId, "messageId");
+
+    const input: Record<string, unknown> = {
+      channelId,
+      messageId,
+    };
+
+    const config = this.mergeDiscordConfig({ channelId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.getMessage",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async listDiscordMessages(
+    params: VoltOpsDiscordListMessagesParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const channelId = this.normalizeIdentifier(params.channelId, "channelId");
+    const limit = this.normalizePositiveInteger(params.limit, "limit");
+    const before = this.trimString(params.before);
+    const after = this.trimString(params.after);
+
+    const input: Record<string, unknown> = {
+      channelId,
+    };
+    if (typeof limit === "number") {
+      input.limit = limit;
+    }
+    if (before) {
+      input.before = before;
+    }
+    if (after) {
+      input.after = after;
+    }
+
+    const config = this.mergeDiscordConfig({ channelId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.listMessages",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async addDiscordReaction(
+    params: VoltOpsDiscordReactionParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    return this.handleDiscordReaction(params, "discord.reactToMessage");
+  }
+
+  private async removeDiscordReaction(
+    params: VoltOpsDiscordReactionParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    return this.handleDiscordReaction(params, "discord.removeReaction");
+  }
+
+  private async handleDiscordReaction(
+    params: VoltOpsDiscordReactionParams,
+    defaultActionId: string,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const channelId = this.normalizeIdentifier(params.channelId, "channelId");
+    const messageId = this.normalizeIdentifier(params.messageId, "messageId");
+    const emoji = this.normalizeIdentifier(params.emoji, "emoji");
+
+    const input: Record<string, unknown> = {
+      channelId,
+      messageId,
+      emoji,
+    };
+
+    const config = this.mergeDiscordConfig({ channelId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? defaultActionId,
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async createDiscordChannel(
+    params: VoltOpsDiscordCreateChannelParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const guildId = this.normalizeIdentifier(params.guildId, "guildId");
+    const name = this.normalizeIdentifier(params.name, "name");
+    const channelType = this.normalizeDiscordChannelType(params.type);
+    const topic = this.trimString(params.topic);
+
+    const input: Record<string, unknown> = {
+      guildId,
+      name,
+    };
+    if (channelType) {
+      input.type = channelType;
+    }
+    if (topic) {
+      input.topic = topic;
+    }
+
+    const config = this.mergeDiscordConfig({ guildId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.createChannel",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async updateDiscordChannel(
+    params: VoltOpsDiscordUpdateChannelParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const channelId = this.normalizeIdentifier(params.channelId, "channelId");
+    const name = this.trimString(params.name);
+    const topic = this.trimString(params.topic);
+    const archived = typeof params.archived === "boolean" ? params.archived : undefined;
+    const locked = typeof params.locked === "boolean" ? params.locked : undefined;
+
+    const input: Record<string, unknown> = {
+      channelId,
+    };
+    if (name) {
+      input.name = name;
+    }
+    if (topic) {
+      input.topic = topic;
+    }
+    if (archived !== undefined) {
+      input.archived = archived;
+    }
+    if (locked !== undefined) {
+      input.locked = locked;
+    }
+
+    const config = this.mergeDiscordConfig({ channelId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.updateChannel",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async deleteDiscordChannel(
+    params: VoltOpsDiscordDeleteChannelParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const channelId = this.normalizeIdentifier(params.channelId, "channelId");
+
+    const input: Record<string, unknown> = {
+      channelId,
+    };
+
+    const config = this.mergeDiscordConfig({ channelId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.deleteChannel",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async getDiscordChannel(
+    params: VoltOpsDiscordGetChannelParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const channelId = this.normalizeIdentifier(params.channelId, "channelId");
+
+    const config = this.mergeDiscordConfig({ channelId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.getChannel",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input: {
+        channelId,
+      },
+    });
+  }
+
+  private async listDiscordChannels(
+    params: VoltOpsDiscordListChannelsParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const guildId = this.normalizeIdentifier(params.guildId, "guildId");
+
+    const config = this.mergeDiscordConfig({ guildId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.listChannels",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input: {
+        guildId,
+      },
+    });
+  }
+
+  private async listDiscordMembers(
+    params: VoltOpsDiscordListMembersParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const guildId = this.normalizeIdentifier(params.guildId, "guildId");
+    const limit = this.normalizePositiveInteger(params.limit, "limit");
+    const after = this.trimString(params.after);
+
+    const input: Record<string, unknown> = {
+      guildId,
+    };
+    if (typeof limit === "number") {
+      input.limit = limit;
+    }
+    if (after) {
+      input.after = after;
+    }
+
+    const config = this.mergeDiscordConfig({ guildId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? "discord.listMembers",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input,
+    });
+  }
+
+  private async addDiscordMemberRole(
+    params: VoltOpsDiscordMemberRoleParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    return this.handleDiscordMemberRole(params, "discord.addMemberRole");
+  }
+
+  private async removeDiscordMemberRole(
+    params: VoltOpsDiscordMemberRoleParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    return this.handleDiscordMemberRole(params, "discord.removeMemberRole");
+  }
+
+  private async handleDiscordMemberRole(
+    params: VoltOpsDiscordMemberRoleParams,
+    defaultActionId: string,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureDiscordCredential(params.credential);
+    const guildId = this.normalizeIdentifier(params.guildId, "guildId");
+    const userId = this.normalizeIdentifier(params.userId, "userId");
+    const roleId = this.normalizeIdentifier(params.roleId, "roleId");
+
+    const config = this.mergeDiscordConfig({ guildId, userId, roleId }, params.config);
+
+    return this.executeDiscordAction({
+      actionId: params.actionId ?? defaultActionId,
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      config,
+      input: {
+        guildId,
+        userId,
+        roleId,
+      },
+    });
+  }
+
+  private async executeDiscordAction(options: {
+    actionId: string;
+    credential: VoltOpsDiscordCredential;
+    catalogId?: string;
+    projectId?: string | null;
+    config?: VoltOpsDiscordConfig | null;
+    input?: Record<string, unknown>;
+  }): Promise<VoltOpsActionExecutionResult> {
+    let normalizedConfig: VoltOpsDiscordConfig | null | undefined;
+    if (options.config === undefined) {
+      normalizedConfig = undefined;
+    } else if (options.config === null) {
+      normalizedConfig = null;
+    } else {
+      normalizedConfig = this.mergeDiscordConfig(options.config, undefined);
+    }
+
+    const payload: Record<string, unknown> = {
+      credential: options.credential,
+      catalogId: options.catalogId ?? undefined,
+      actionId: options.actionId,
+      projectId: options.projectId ?? undefined,
+      config:
+        normalizedConfig === undefined
+          ? undefined
+          : normalizedConfig === null
+            ? null
+            : { discord: normalizedConfig },
+      payload: {
+        input: options.input ?? {},
+      },
+    };
+
+    const response = await this.postActionExecution(this.actionExecutionPath, payload);
+    return this.mapActionExecution(response);
+  }
+
+  private buildDiscordMessageInput(params: VoltOpsDiscordSendMessageParams): {
+    input: Record<string, unknown>;
+    configDefaults?: VoltOpsDiscordConfig;
+  } {
+    const guildId = this.optionalIdentifier(params.guildId);
+    const channelId = this.optionalIdentifier(params.channelId);
+    const threadId = this.optionalIdentifier(params.threadId);
+    const content = this.trimString(params.content);
+    const embeds =
+      params.embeds === undefined || params.embeds === null
+        ? undefined
+        : this.ensureArray(params.embeds, "embeds");
+    const components =
+      params.components === undefined || params.components === null
+        ? undefined
+        : this.ensureArray(params.components, "components");
+    const allowedMentions =
+      params.allowedMentions === undefined || params.allowedMentions === null
+        ? undefined
+        : this.ensureRecord(params.allowedMentions, "allowedMentions");
+    const legacyMessageId =
+      typeof (params as { messageId?: unknown }).messageId === "string"
+        ? ((params as { messageId?: string }).messageId ?? undefined)
+        : undefined;
+    const replyToMessageId = this.optionalIdentifier(params.replyToMessageId ?? legacyMessageId);
+
+    if (!content && (!embeds || embeds.length === 0) && (!components || components.length === 0)) {
+      throw new VoltOpsActionError(
+        "Provide at least one of content, embeds, or components for Discord messages",
+        400,
+      );
+    }
+
+    const input: Record<string, unknown> = {};
+    if (guildId) {
+      input.guildId = guildId;
+    }
+    if (channelId) {
+      input.channelId = channelId;
+    }
+    if (threadId) {
+      input.threadId = threadId;
+    }
+    if (content) {
+      input.content = content;
+    }
+    if (embeds && embeds.length > 0) {
+      input.embeds = embeds;
+    }
+    if (components && components.length > 0) {
+      input.components = components;
+    }
+    if (typeof params.tts === "boolean") {
+      input.tts = params.tts;
+    }
+    if (allowedMentions) {
+      input.allowedMentions = allowedMentions;
+    }
+    if (replyToMessageId) {
+      input.replyToMessageId = replyToMessageId;
+    }
+
+    const configDefaults =
+      guildId || channelId || threadId
+        ? {
+            guildId,
+            channelId,
+            threadId,
+          }
+        : undefined;
+
+    return { input, configDefaults };
+  }
+
+  private mergeDiscordConfig(
+    base?: VoltOpsDiscordConfig | null,
+    override?: VoltOpsDiscordConfig | null,
+  ): VoltOpsDiscordConfig | null | undefined {
+    if (base === null || override === null) {
+      return null;
+    }
+
+    const normalized: VoltOpsDiscordConfig = {};
+    const apply = (source?: VoltOpsDiscordConfig | null) => {
+      if (!source) {
+        return;
+      }
+      const guildId = this.optionalIdentifier(source.guildId);
+      if (guildId) {
+        normalized.guildId = guildId;
+      }
+      const channelId = this.optionalIdentifier(source.channelId);
+      if (channelId) {
+        normalized.channelId = channelId;
+      }
+      const threadId = this.optionalIdentifier(source.threadId);
+      if (threadId) {
+        normalized.threadId = threadId;
+      }
+      const userId = this.optionalIdentifier(source.userId);
+      if (userId) {
+        normalized.userId = userId;
+      }
+      const roleId = this.optionalIdentifier(source.roleId);
+      if (roleId) {
+        normalized.roleId = roleId;
+      }
+    };
+
+    apply(base ?? undefined);
+    apply(override ?? undefined);
+
+    return Object.keys(normalized).length > 0 ? normalized : undefined;
+  }
+
+  private optionalIdentifier(value: unknown): string | undefined {
+    const trimmed = this.trimString(value);
+    return trimmed ?? undefined;
+  }
+
+  private ensureArray(value: unknown, field: string): unknown[] {
+    if (!Array.isArray(value)) {
+      throw new VoltOpsActionError(`${field} must be an array`, 400);
+    }
+    return value;
+  }
+
+  private normalizeDiscordChannelType(value: unknown): VoltOpsDiscordChannelType | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    const trimmed = this.trimString(value);
+    if (!trimmed) {
+      throw new VoltOpsActionError(
+        "type must be one of text, voice, announcement, category, or forum",
+        400,
+      );
+    }
+    const normalized = trimmed.toLowerCase();
+    const allowed: VoltOpsDiscordChannelType[] = [
+      "text",
+      "voice",
+      "announcement",
+      "category",
+      "forum",
+    ];
+    if (allowed.includes(normalized as VoltOpsDiscordChannelType)) {
+      return normalized as VoltOpsDiscordChannelType;
+    }
+    throw new VoltOpsActionError(
+      "type must be one of text, voice, announcement, category, or forum",
+      400,
+    );
+  }
+
+  private ensureAirtableCredential(
+    value: VoltOpsAirtableCredential | null | undefined,
+  ): VoltOpsAirtableCredential {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new VoltOpsActionError("credential must be an object", 400);
+    }
+    const record = value as Record<string, unknown>;
+    const metadata = this.normalizeCredentialMetadata(record.metadata);
+    const storedId = this.trimString(
+      typeof (record as any).credentialId === "string"
+        ? ((record as any).credentialId as string)
+        : typeof (record as any).id === "string"
+          ? ((record as any).id as string)
+          : undefined,
+    );
+    if (storedId) {
+      return metadata ? { credentialId: storedId, metadata } : { credentialId: storedId };
+    }
+    const apiKey = this.trimString(record.apiKey);
+    if (apiKey) {
+      return metadata ? { apiKey, metadata } : { apiKey };
+    }
+    throw new VoltOpsActionError(
+      "credential.id or credential.apiKey must be provided for Airtable actions",
+      400,
+    );
+  }
+
+  private ensureSlackCredential(
+    value: VoltOpsSlackCredential | null | undefined,
+  ): VoltOpsSlackCredential {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new VoltOpsActionError("credential must be an object", 400);
+    }
+    const record = value as Record<string, unknown>;
+    const metadata = this.normalizeCredentialMetadata(record.metadata);
+    const storedId = this.trimString(
+      typeof (record as any).credentialId === "string"
+        ? ((record as any).credentialId as string)
+        : typeof (record as any).id === "string"
+          ? ((record as any).id as string)
+          : undefined,
+    );
+    if (storedId) {
+      return metadata ? { credentialId: storedId, metadata } : { credentialId: storedId };
+    }
+    const botToken = this.trimString(record.botToken);
+    if (botToken) {
+      return metadata ? { botToken, metadata } : { botToken };
+    }
+    throw new VoltOpsActionError(
+      "credential.id or credential.botToken must be provided for Slack actions",
+      400,
+    );
+  }
+
+  private ensureDiscordCredential(
+    value: VoltOpsDiscordCredential | null | undefined,
+  ): VoltOpsDiscordCredential {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new VoltOpsActionError("credential must be an object", 400);
+    }
+    const record = value as Record<string, unknown>;
+    const metadata = this.normalizeCredentialMetadata(record.metadata);
+    const storedId = this.trimString(
+      typeof (record as any).credentialId === "string"
+        ? ((record as any).credentialId as string)
+        : typeof (record as any).id === "string"
+          ? ((record as any).id as string)
+          : undefined,
+    );
+    if (storedId) {
+      return metadata ? { credentialId: storedId, metadata } : { credentialId: storedId };
+    }
+    const botToken = this.trimString(record.botToken);
+    if (botToken) {
+      return metadata ? { botToken, metadata } : { botToken };
+    }
+    const webhookUrl = this.trimString(record.webhookUrl);
+    if (webhookUrl) {
+      return metadata ? { webhookUrl, metadata } : { webhookUrl };
+    }
+    throw new VoltOpsActionError(
+      "credential must include id, botToken, or webhookUrl for Discord actions",
+      400,
+    );
+  }
+
+  private normalizeCredentialMetadata(metadata: unknown): Record<string, unknown> | undefined {
+    if (metadata === undefined || metadata === null) {
+      return undefined;
+    }
+    if (typeof metadata !== "object" || Array.isArray(metadata)) {
+      throw new VoltOpsActionError("credential.metadata must be an object", 400);
+    }
+    return metadata as Record<string, unknown>;
   }
 
   private normalizeIdentifier(value: unknown, field: string): string {

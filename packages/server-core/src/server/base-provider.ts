@@ -4,10 +4,11 @@
  */
 
 import type { Server } from "node:http";
-import type { IServerProvider, ServerProviderDeps } from "@voltagent/core";
+import type { IServerProvider, RegisteredTrigger, ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import type { WebSocketServer } from "ws";
 import { A2A_ROUTES, MCP_ROUTES } from "../routes/definitions";
+import type { ServerEndpointSummary } from "../types/server";
 import { portManager } from "../utils/port-manager";
 import { printServerStartup } from "../utils/server-utils";
 import { createWebSocketServer, setupWebSocketUpgrade } from "../websocket/setup";
@@ -178,8 +179,8 @@ export abstract class BaseServerProvider implements IServerProvider {
     });
   }
 
-  private collectFeatureEndpoints(): Array<{ method: string; path: string; group?: string }> {
-    const endpoints: Array<{ method: string; path: string; group?: string }> = [];
+  private collectFeatureEndpoints(): ServerEndpointSummary[] {
+    const endpoints: ServerEndpointSummary[] = [];
     const seen = new Set<string>();
 
     const addRoutes = (
@@ -212,6 +213,21 @@ export abstract class BaseServerProvider implements IServerProvider {
       a2aRegistry && typeof a2aRegistry.list === "function" ? a2aRegistry.list() : [];
     if (registeredA2AServers.length > 0) {
       addRoutes(A2A_ROUTES, "A2A Endpoints");
+    }
+
+    const registeredTriggers: RegisteredTrigger[] = this.deps.triggerRegistry?.list?.() ?? [];
+    if (registeredTriggers.length > 0) {
+      registeredTriggers.forEach((trigger) => {
+        endpoints.push({
+          method: trigger.method.toUpperCase(),
+          path: trigger.path,
+          group: "Trigger Endpoints",
+          name: trigger.name,
+          description: trigger.summary ?? trigger.description ?? trigger.definition?.description,
+        });
+      });
+    } else {
+      this.logger.info("[volt] No trigger endpoints discovered during startup");
     }
 
     return endpoints;

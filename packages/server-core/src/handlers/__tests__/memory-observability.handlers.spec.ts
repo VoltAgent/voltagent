@@ -58,6 +58,15 @@ function createDepsWithAgents(agents: Agent[]): ServerProviderDeps {
       activeExecutions: new Map(),
       resumeSuspendedWorkflow: vi.fn(),
     },
+    triggerRegistry: {
+      list: vi.fn().mockReturnValue([]),
+      register: vi.fn(),
+      registerMany: vi.fn(),
+      get: vi.fn(),
+      getByPath: vi.fn(),
+      unregister: vi.fn(),
+      clear: vi.fn(),
+    } as any,
     logger,
   } as unknown as ServerProviderDeps;
 }

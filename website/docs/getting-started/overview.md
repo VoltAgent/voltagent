@@ -167,7 +167,7 @@ const voltops = createVoltOpsClient({
 });
 
 await voltops.actions.airtable.createRecord({
-  credentialId: "cred_abc123",
+  credential: { credentialId: "cred_abc123" },
   baseId: "appXXXXXXXXXXXXXX",
   tableId: "tblYYYYYYYYYYYY",
   fields: {

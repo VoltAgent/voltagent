@@ -34,7 +34,7 @@ const voltops = new VoltOpsClient({
 });
 
 const record = await voltops.actions.airtable.createRecord({
-  credentialId: "cred_123",
+  credential: { credentialId: "cred_123" },
   baseId: "appAbCdEf123",
   tableId: "tblXyZ987",
   fields: {
@@ -45,6 +45,11 @@ const record = await voltops.actions.airtable.createRecord({
 });
 
 console.log(record.responsePayload);
+
+await voltops.actions.discord.sendMessage({
+  credential: { botToken: process.env.DISCORD_BOT_TOKEN! },
+  content: "Inline credentials for the win!",
+});
 ```
 
 You can also [test actions directly from the console](https://console.voltagent.dev/actions) by
@@ -70,7 +75,7 @@ export const createCustomerRecord = createTool({
   }),
   execute: async ({ name, email }) => {
     return await voltops.actions.airtable.createRecord({
-      credentialId: process.env.AIRTABLE_CREDENTIAL_ID!,
+      credential: { credentialId: process.env.AIRTABLE_CREDENTIAL_ID! },
       baseId: process.env.AIRTABLE_BASE_ID!,
       tableId: process.env.AIRTABLE_TABLE_ID!,
       fields: { Name: name, Email: email },

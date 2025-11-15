@@ -24,9 +24,11 @@ import {
   AGENT_ROUTES,
   OBSERVABILITY_MEMORY_ROUTES,
   OBSERVABILITY_ROUTES,
+  type TriggerHttpRequestContext,
   UPDATE_ROUTES,
   WORKFLOW_ROUTES,
   executeA2ARequest,
+  executeTriggerHandler,
   getConversationMessagesHandler,
   getConversationStepsHandler,
   handleChatStream,
@@ -70,6 +72,24 @@ async function readJsonBody<T>(c: any, logger: Logger): Promise<T | undefined> {
     logger.warn("Invalid JSON body received", { error, path: c.req.path });
     return undefined;
   }
+}
+
+function extractHeaders(
+  headers: Headers | NodeJS.Dict<string | string[] | undefined>,
+): Record<string, string> {
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+
+  const result: Record<string, string> = {};
+  Object.entries(headers).forEach(([key, value]) => {
+    if (typeof value === "string") {
+      result[key] = value;
+    } else if (Array.isArray(value)) {
+      result[key] = value.join(", ");
+    }
+  });
+  return result;
 }
 
 function parseContextCandidate(candidate: unknown): A2ARequestContext | undefined {
@@ -463,6 +483,38 @@ export function registerObservabilityRoutes(app: Hono, deps: ServerProviderDeps,
     }
 
     return c.json(result, 200);
+  });
+}
+
+export function registerTriggerRoutes(app: Hono, deps: ServerProviderDeps, logger: Logger) {
+  const triggers = deps.triggerRegistry.list();
+  triggers.forEach((trigger) => {
+    const method = trigger.method ?? "post";
+    const handler = async (c: any) => {
+      const body = await readJsonBody<unknown>(c, logger);
+      const context: TriggerHttpRequestContext = {
+        body,
+        headers: extractHeaders(c.req.raw?.headers ?? new Headers()),
+        query: Object.fromEntries(c.req.query()),
+        raw: c.req.raw,
+      };
+      const response = await executeTriggerHandler(trigger, context, deps, logger);
+      return c.json(response.body ?? { success: true }, response.status, response.headers);
+    };
+
+    if (typeof (app as any)[method] !== "function") {
+      logger.warn(
+        `Skipping trigger ${trigger.name}: method ${method} is not supported in the serverless adapter`,
+      );
+      return;
+    }
+
+    (app as any)[method](trigger.path, handler);
+    logger.info("[volt] Trigger route registered", {
+      trigger: trigger.name,
+      method: method.toUpperCase(),
+      path: trigger.path,
+    });
   });
 }
 

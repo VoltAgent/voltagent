@@ -4,7 +4,7 @@
   "version": "1.0.24",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@voltagent/core": "^1.2.3",
+    "@voltagent/core": "^1.2.5",
     "@voltagent/internal": "^0.0.12",
     "ai": "^5.0.76",
     "jsonwebtoken": "^9.0.2",

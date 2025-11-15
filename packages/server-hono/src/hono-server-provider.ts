@@ -116,7 +116,7 @@ export class HonoServerProvider extends BaseServerProvider {
       this.running = true;
 
       // Collect all endpoints (feature + custom)
-      let allEndpoints: Array<{ method: string; path: string; group?: string }> = [];
+      let allEndpoints = this.collectFeatureEndpoints();
 
       // Get base feature endpoints
       const addRoutes = (

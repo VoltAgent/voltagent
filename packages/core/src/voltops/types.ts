@@ -140,8 +140,31 @@ export interface VoltOpsActionExecutionResult {
   metadata?: Record<string, unknown> | null;
 }
 
-export interface VoltOpsAirtableCreateRecordParams {
+type VoltOpsCredentialMetadata = {
+  metadata?: Record<string, unknown>;
+};
+
+type VoltOpsStoredCredentialRef = {
   credentialId: string;
+} & VoltOpsCredentialMetadata;
+
+type WithCredentialMetadata<T> = T & VoltOpsCredentialMetadata;
+
+export type VoltOpsAirtableCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{ apiKey: string }>;
+
+export type VoltOpsSlackCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{ botToken: string }>;
+
+export type VoltOpsDiscordCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{ botToken: string }>
+  | WithCredentialMetadata<{ webhookUrl: string }>;
+
+export interface VoltOpsAirtableCreateRecordParams {
+  credential: VoltOpsAirtableCredential;
   baseId: string;
   tableId: string;
   fields: Record<string, unknown>;
@@ -153,7 +176,7 @@ export interface VoltOpsAirtableCreateRecordParams {
 }
 
 export interface VoltOpsAirtableUpdateRecordParams {
-  credentialId: string;
+  credential: VoltOpsAirtableCredential;
   baseId: string;
   tableId: string;
   recordId: string;
@@ -166,7 +189,7 @@ export interface VoltOpsAirtableUpdateRecordParams {
 }
 
 export interface VoltOpsAirtableDeleteRecordParams {
-  credentialId: string;
+  credential: VoltOpsAirtableCredential;
   baseId: string;
   tableId: string;
   recordId: string;
@@ -176,7 +199,7 @@ export interface VoltOpsAirtableDeleteRecordParams {
 }
 
 export interface VoltOpsAirtableGetRecordParams {
-  credentialId: string;
+  credential: VoltOpsAirtableCredential;
   baseId: string;
   tableId: string;
   recordId: string;
@@ -187,7 +210,7 @@ export interface VoltOpsAirtableGetRecordParams {
 }
 
 export interface VoltOpsAirtableListRecordsParams {
-  credentialId: string;
+  credential: VoltOpsAirtableCredential;
   baseId: string;
   tableId: string;
   view?: string;
@@ -204,7 +227,7 @@ export interface VoltOpsAirtableListRecordsParams {
 }
 
 export interface VoltOpsSlackBaseParams {
-  credentialId: string;
+  credential: VoltOpsSlackCredential;
   actionId?: string;
   catalogId?: string;
   projectId?: string | null;
@@ -242,6 +265,98 @@ export interface VoltOpsSlackSearchMessagesParams extends VoltOpsSlackBaseParams
   limit?: number;
 }
 
+export type VoltOpsDiscordChannelType = "text" | "voice" | "announcement" | "category" | "forum";
+
+export interface VoltOpsDiscordConfig {
+  guildId?: string;
+  channelId?: string;
+  threadId?: string;
+  userId?: string;
+  roleId?: string;
+}
+
+export interface VoltOpsDiscordBaseParams {
+  credential: VoltOpsDiscordCredential;
+  catalogId?: string;
+  projectId?: string | null;
+  actionId?: string;
+  config?: VoltOpsDiscordConfig | null;
+}
+
+export interface VoltOpsDiscordSendMessageParams extends VoltOpsDiscordBaseParams {
+  guildId?: string;
+  channelId?: string;
+  threadId?: string;
+  content?: string;
+  embeds?: unknown[];
+  components?: unknown[];
+  tts?: boolean;
+  allowedMentions?: Record<string, unknown>;
+  replyToMessageId?: string;
+}
+
+export interface VoltOpsDiscordSendWebhookMessageParams extends VoltOpsDiscordSendMessageParams {
+  username?: string;
+  avatarUrl?: string;
+}
+
+export interface VoltOpsDiscordChannelMessageParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+  messageId: string;
+}
+
+export interface VoltOpsDiscordListMessagesParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+  limit?: number;
+  before?: string;
+  after?: string;
+}
+
+export interface VoltOpsDiscordReactionParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+  messageId: string;
+  emoji: string;
+}
+
+export interface VoltOpsDiscordCreateChannelParams extends VoltOpsDiscordBaseParams {
+  guildId: string;
+  name: string;
+  type?: VoltOpsDiscordChannelType;
+  topic?: string;
+}
+
+export interface VoltOpsDiscordUpdateChannelParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+  name?: string;
+  topic?: string;
+  archived?: boolean;
+  locked?: boolean;
+}
+
+export interface VoltOpsDiscordDeleteChannelParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+}
+
+export interface VoltOpsDiscordGetChannelParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+}
+
+export interface VoltOpsDiscordListChannelsParams extends VoltOpsDiscordBaseParams {
+  guildId: string;
+}
+
+export interface VoltOpsDiscordListMembersParams extends VoltOpsDiscordBaseParams {
+  guildId: string;
+  limit?: number;
+  after?: string;
+}
+
+export interface VoltOpsDiscordMemberRoleParams extends VoltOpsDiscordBaseParams {
+  guildId: string;
+  userId: string;
+  roleId: string;
+}
+
 export type VoltOpsActionsApi = {
   airtable: {
     createRecord: (
@@ -265,6 +380,43 @@ export type VoltOpsActionsApi = {
     ) => Promise<VoltOpsActionExecutionResult>;
     searchMessages: (
       params: VoltOpsSlackSearchMessagesParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
+  discord: {
+    sendMessage: (params: VoltOpsDiscordSendMessageParams) => Promise<VoltOpsActionExecutionResult>;
+    sendWebhookMessage: (
+      params: VoltOpsDiscordSendWebhookMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteMessage: (
+      params: VoltOpsDiscordChannelMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    getMessage: (
+      params: VoltOpsDiscordChannelMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    listMessages: (
+      params: VoltOpsDiscordListMessagesParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    addReaction: (params: VoltOpsDiscordReactionParams) => Promise<VoltOpsActionExecutionResult>;
+    removeReaction: (params: VoltOpsDiscordReactionParams) => Promise<VoltOpsActionExecutionResult>;
+    createChannel: (
+      params: VoltOpsDiscordCreateChannelParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    updateChannel: (
+      params: VoltOpsDiscordUpdateChannelParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteChannel: (
+      params: VoltOpsDiscordDeleteChannelParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    getChannel: (params: VoltOpsDiscordGetChannelParams) => Promise<VoltOpsActionExecutionResult>;
+    listChannels: (
+      params: VoltOpsDiscordListChannelsParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    listMembers: (params: VoltOpsDiscordListMembersParams) => Promise<VoltOpsActionExecutionResult>;
+    addMemberRole: (
+      params: VoltOpsDiscordMemberRoleParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    removeMemberRole: (
+      params: VoltOpsDiscordMemberRoleParams,
     ) => Promise<VoltOpsActionExecutionResult>;
   };
 };

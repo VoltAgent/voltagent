@@ -9,7 +9,7 @@
   "devDependencies": {
     "@types/pg": "^8.15.2",
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^1.2.3",
+    "@voltagent/core": "^1.2.5",
     "ai": "^5.0.76"
   },
   "exports": {

@@ -64,14 +64,22 @@ export function setupObservabilityListeners(): void {
             // For root spans, check entity.id
             const eventEntityId = event.span?.attributes?.["entity.id"];
             const eventEntityType = event.span?.attributes?.["entity.type"];
+            const spanType = event.span?.attributes?.["span.type"];
+
+            // Always forward trigger root spans so agent filters still see them
+            const isTriggerSpan = spanType === "trigger";
 
             // Filter by entity ID
-            if (eventEntityId !== connection.entityId) {
+            if (!isTriggerSpan && eventEntityId !== connection.entityId) {
               return; // Skip this connection
             }
 
             // Additionally filter by type if specified
-            if (connection.entityType && eventEntityType !== connection.entityType) {
+            if (
+              !isTriggerSpan &&
+              connection.entityType &&
+              eventEntityType !== connection.entityType
+            ) {
               return; // Skip if type doesn't match
             }
           }

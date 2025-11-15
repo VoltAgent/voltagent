@@ -79,7 +79,7 @@ export const createAirtableRecordTool = createTool({
     const effectiveTableId = resolveTableId(tableId);
 
     const result = await actionsClient.actions.airtable.createRecord({
-      credentialId: actionsConfig.airtable.credentialId,
+      credential: actionsConfig.airtable.credential,
       baseId: effectiveBaseId,
       tableId: effectiveTableId,
       fields,
@@ -135,7 +135,7 @@ export const listAirtableRecordsTool = createTool({
     const effectiveTableId = resolveTableId(tableId);
 
     const result = await actionsClient.actions.airtable.listRecords({
-      credentialId: actionsConfig.airtable.credentialId,
+      credential: actionsConfig.airtable.credential,
       baseId: effectiveBaseId,
       tableId: effectiveTableId,
       view,
@@ -181,7 +181,7 @@ export const updateAirtableRecordTool = createTool({
     const effectiveTableId = resolveTableId(tableId);
 
     const result = await actionsClient.actions.airtable.updateRecord({
-      credentialId: actionsConfig.airtable.credentialId,
+      credential: actionsConfig.airtable.credential,
       baseId: effectiveBaseId,
       tableId: effectiveTableId,
       recordId,
@@ -220,7 +220,7 @@ export const deleteAirtableRecordTool = createTool({
     const effectiveTableId = resolveTableId(tableId);
 
     const result = await actionsClient.actions.airtable.deleteRecord({
-      credentialId: actionsConfig.airtable.credentialId,
+      credential: actionsConfig.airtable.credential,
       baseId: effectiveBaseId,
       tableId: effectiveTableId,
       recordId,
@@ -257,7 +257,7 @@ export const getAirtableRecordTool = createTool({
     const effectiveTableId = resolveTableId(tableId);
 
     const result = await actionsClient.actions.airtable.getRecord({
-      credentialId: actionsConfig.airtable.credentialId,
+      credential: actionsConfig.airtable.credential,
       baseId: effectiveBaseId,
       tableId: effectiveTableId,
       recordId,

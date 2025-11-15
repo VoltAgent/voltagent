@@ -83,6 +83,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 
 - [Base Starter](./base) — Minimal VoltAgent starter with a single agent, memory, and dev server.
 - [GitHub Repo Analyzer](./github-repo-analyzer) — Agents read repository code and summarize insights/issues from GitHub projects.
+- [GitHub Star Stories](./with-github-star-stories) — Celebrate new GitHub stars with enriched profiles, AI-written stories, and VoltOps Discord actions.
 - [SDK Trace Example](./sdk-trace-example) — OpenTelemetry tracing wired to VoltOps so you can inspect spans and events.
 - [Agent‑to‑Agent Server](./with-a2a-server) — Expose agents over HTTP so other agents/services can call them.
 - [Amazon Bedrock](./with-amazon-bedrock) — Run AWS Bedrock models by configuring credentials and providers in VoltAgent.

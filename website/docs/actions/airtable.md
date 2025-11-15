@@ -30,13 +30,23 @@ const voltops = new VoltOpsClient({
 });
 
 await voltops.actions.airtable.createRecord({
-  credentialId: process.env.AIRTABLE_CREDENTIAL_ID!,
+  credential: { credentialId: process.env.AIRTABLE_CREDENTIAL_ID! },
   baseId: process.env.AIRTABLE_BASE_ID!,
   tableId: process.env.AIRTABLE_TABLE_ID!,
   fields: {
     Name: "Ada Lovelace",
     Role: "Researcher",
     Status: "Ready",
+  },
+});
+
+// No stored credential? Pass your access token inline instead
+await voltops.actions.airtable.createRecord({
+  credential: { apiKey: process.env.AIRTABLE_API_KEY! },
+  baseId: process.env.AIRTABLE_BASE_ID!,
+  tableId: process.env.AIRTABLE_TABLE_ID!,
+  fields: {
+    Name: "Grace Hopper",
   },
 });
 ```
@@ -71,7 +81,7 @@ export const createAirtableRecordTool = createTool({
   }),
   execute: async ({ fields, baseId, tableId }) => {
     const result = await voltops.actions.airtable.createRecord({
-      credentialId: process.env.AIRTABLE_CREDENTIAL_ID!,
+      credential: { credentialId: process.env.AIRTABLE_CREDENTIAL_ID! },
       baseId: baseId ?? process.env.AIRTABLE_BASE_ID!,
       tableId: tableId ?? process.env.AIRTABLE_TABLE_ID!,
       fields,
