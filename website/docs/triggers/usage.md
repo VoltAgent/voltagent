@@ -66,125 +66,60 @@ Set the following trigger options based on your Airtable base structure:
 
 Click **Next** to review your settings, then create the binding with **Draft** status. Next, we'll need to add targets next to activate it.
 
-## Step 3: Add Target to Activate Binding
+## Step 3: Choose Where Events Should Go
 
-After creating your binding, you need to add targets that will execute when the trigger fires. Targets are the agents or workflows hosted on a server that will process the trigger events.
+Configure targets in the single **Delivery** section—no mapping UI or manual transforms required. VoltOps forwards the raw event payload exactly as shown in the Console preview, and your VoltAgent instance receives it under the matching trigger group.
 
-Click **Add Your First Target** to open the target configuration modal with three tabs: **Target**, **Mapping**, and **Review**.
+### Option A — VoltAgent Server (default)
 
-### Target
+1. Select one of your registered VoltAgent servers (or click **+ New** to register one).
+2. The endpoint path auto-fills with the expected route for the trigger (e.g., `/triggers/github/star`). Leave it as-is unless you’ve customized your server.
+3. Pick the HTTP method (POST is the default) and add optional headers if needed.
 
-We'll configure the server and destination here.
+### Option B — Volt Tunnel
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+Running locally? Choose **Volt Tunnel** instead of a server. The UI lists every active tunnel in your organization, so you can forward events to `https://<subdomain>.tunnel.voltagent.dev` without copying URLs around. The same default path logic applies.
 
-  <source src="https://cdn.voltagent.dev/console/trigger/step-4-1.mp4" type="video/mp4" />
-  Your browser does not support the video tag.
-</video>
-
-<br/>
-<br/>
-
-- **Agent Server**: First, click **+ New** to add a new server to host your agents and workflows. This opens the **Create Agent Server** modal with the following fields:
-  - **Server Name**: Name for your server
-    → Example: `Production server`
-  - **URL**: Your server URL where agents are hosted
-    → In this example, we're running locally via Volt Tunnel: `https://your-tunnel-address.tunnel.voltagent.dev`
-
-Click **Create Server** to save and select the server you just created.
-
-:::tip Running locally?
-Open a secure tunnel with the VoltAgent CLI:
+:::tip Open a tunnel in one command
 
 ```bash
 pnpm volt tunnel 3141
 ```
 
-This prints an HTTPS forwarding URL (e.g., `https://your-tunnel-address.tunnel.voltagent.dev`). Use that value as the server URL. You can omit the `3141` argument to use the default port. [Learn more](https://voltagent.dev/docs/deployment/local-tunnel/).
+This gives you a secure HTTPS URL such as `https://happy-cat-42.tunnel.voltagent.dev`. Use it as the delivery target. [More details](https://voltagent.dev/docs/deployment/local-tunnel/).
 :::
 
-- **Select an Agent**: Choose the agent or workflow you want to trigger from your available agents.
+### Option C — Custom HTTPS URL
 
-Click **Next** to proceed to the Mapping tab.
+If you want to hit a third-party webhook, select **Custom URL** and paste any HTTPS endpoint. VoltOps handles retries and timeout limits for you.
 
-### Mapping
+### Mapping & handler DX
 
-The Mapping tab is where you transform the Airtable trigger payload into the format your agent expects. This involves capturing sample data from Airtable and mapping it to your agent's input structure.
+Trigger handlers are pure functions that receive the raw event data and metadata. Use the `createTriggers` helper to register handlers via dot-access syntax:
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+```ts
+import { VoltAgent, createTriggers } from "@voltagent/core";
 
-  <source src="https://cdn.voltagent.dev/console/trigger/step-4-2.mp4" type="video/mp4" />
-  Your browser does not support the video tag.
-</video>
+new VoltAgent({
+  // ...
+  triggers: createTriggers((on) => {
+    on.airtable.recordCreated(async ({ payload, event, headers, trigger }) => {
+      console.log("New record data:", payload);
+      console.log("Full event envelope:", event);
+      console.log("HTTP headers:", headers);
+      console.log("Trigger metadata:", trigger);
 
-<br/>
-<br/>
-
-The mapping flow has 3 steps:
-
-##### **1. Capture Sample Data**
-
-To create the mapping, you first need to capture a live payload from Airtable.
-
-Click **Start Test Session**. The system will start listening for Airtable event with a countdown timer.
-
-:::tip Now trigger your Airtable:
-
-1. Go to your Airtable base
-2. Add a new record to the table you configured
-3. The system automatically captures the payload
-   :::
-
-Once captured, you'll see **Sample Captured** with a green checkmark. The **Captured Payload** section displays the data structure:
-
-```json
-{
-  "provider": "airtable",
-  "record": {
-    "id": "rec7Nyu70ri1UNIz",
-    "createdTime": "2025-10-31T12:52:29.000Z",
-    "fields": {
-      "Label": "Test Trigger",
-      "Created": "2025-10-31T12:52:29.000Z"
-    },
-    "pollAtAt": "2025-10-31T12:53:00.629Z"
-  }
-}
+      // Optionally customize the HTTP response (defaults to 200 + { success: true })
+      return {
+        status: 202,
+        body: { received: true },
+      };
+    });
+  }),
+});
 ```
 
-#### **2. Map Fields to Agent Input**
-
-Now you'll map the captured Airtable data to your agent's expected input format.
-
-**Captured Payload** - Shows the Airtable record data you just captured
-
-**Mapping Template** - Shows your agent's input structure
-
-:::tip How to map fields
-
-Click on any property in the Captured Payload (left side), and it will insert `{{ path }}` into the mapping template at your cursor position.
-
-For example, clicking on `"Label": "Test Trigger"` in the captured payload inserts `{{record.fields.Label}}` into your template.
-
-```json
-{
-  "input": {
-    "labelValue": "{{ input.record.fields.Label }}"
-  }
-}
-```
-
-:::
-
-#### **3. Preview and Test**
-
-Now you can preview and test your mapping configuration.
-
-**Preview** - Review the final transformed payload based on your captured sample data and mapping template.
-
-**Test** - Click **Send Test Request** to send the mapped payload to your agent. The system will execute your agent and display the response.
-
-If the test succeeds, your mapping is ready to use.
+Whenever VoltOps sends an event to your server or tunnel, the handler runs with the exact payload you inspected during trigger setup—no additional mapping code required.
 
 ## Step 4: Activate Binding and Test
 

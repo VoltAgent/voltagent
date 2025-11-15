@@ -5,7 +5,7 @@ import type {
   ToolCallOptions,
 } from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
-import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
+import { SpanKind, SpanStatusCode, context as otelContext } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
 import type {
@@ -42,6 +42,7 @@ import { ActionType, buildAgentLogMessage } from "../logger/message-builder";
 import type { Memory, MemoryUpdateMode } from "../memory";
 import { MemoryManager } from "../memory/manager/memory-manager";
 import { type VoltAgentObservability, createVoltAgentObservability } from "../observability";
+import { TRIGGER_CONTEXT_KEY } from "../observability/context-keys";
 import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit } from "../tool";
@@ -2068,6 +2069,15 @@ export class Agent {
     } else {
       // No context provided anywhere; create a fresh one
       context = new Map();
+    }
+
+    const activeTriggerContext = otelContext.active().getValue(TRIGGER_CONTEXT_KEY);
+    if (activeTriggerContext instanceof Map) {
+      for (const [key, value] of activeTriggerContext.entries()) {
+        if (!context.has(key)) {
+          context.set(key, value);
+        }
+      }
     }
 
     const logger = this.getContextualLogger(options?.parentAgentId).child({

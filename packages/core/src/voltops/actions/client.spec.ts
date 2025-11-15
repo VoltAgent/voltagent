@@ -33,7 +33,7 @@ describe("VoltOpsActionsClient", () => {
     const client = new VoltOpsActionsClient({ sendRequest });
 
     const result = await client.airtable.createRecord({
-      credentialId: "cred-123",
+      credential: { credentialId: "cred-123" },
       baseId: "base",
       tableId: "table",
       fields: { Name: "Jane" },
@@ -49,7 +49,7 @@ describe("VoltOpsActionsClient", () => {
 
     const parsedBody = init?.body ? JSON.parse(init.body as string) : null;
     expect(parsedBody).toMatchObject({
-      credentialId: "cred-123",
+      credential: { credentialId: "cred-123" },
       actionId: "airtable.createRecord",
       config: {
         airtable: {
@@ -96,7 +96,7 @@ describe("VoltOpsActionsClient", () => {
     const client = new VoltOpsActionsClient({ sendRequest });
 
     await client.airtable.updateRecord({
-      credentialId: "cred-123",
+      credential: { credentialId: "cred-123" },
       baseId: "base",
       tableId: "table",
       recordId: "rec_123",
@@ -145,7 +145,7 @@ describe("VoltOpsActionsClient", () => {
     const client = new VoltOpsActionsClient({ sendRequest });
 
     await client.airtable.deleteRecord({
-      credentialId: "cred-123",
+      credential: { credentialId: "cred-123" },
       baseId: "base",
       tableId: "table",
       recordId: "rec_123",
@@ -181,7 +181,7 @@ describe("VoltOpsActionsClient", () => {
     const client = new VoltOpsActionsClient({ sendRequest });
 
     await client.airtable.getRecord({
-      credentialId: "cred-123",
+      credential: { credentialId: "cred-123" },
       baseId: "base",
       tableId: "table",
       recordId: "rec_123",
@@ -219,7 +219,7 @@ describe("VoltOpsActionsClient", () => {
     const client = new VoltOpsActionsClient({ sendRequest });
 
     await client.airtable.listRecords({
-      credentialId: "cred-123",
+      credential: { credentialId: "cred-123" },
       baseId: "base",
       tableId: "table",
       view: "Grid view",
@@ -267,7 +267,7 @@ describe("VoltOpsActionsClient", () => {
 
     await expect(
       client.airtable.createRecord({
-        credentialId: "",
+        credential: undefined as any,
         baseId: "base",
         tableId: "table",
         fields: {},
@@ -281,7 +281,7 @@ describe("VoltOpsActionsClient", () => {
 
     await expect(
       client.airtable.updateRecord({
-        credentialId: "cred-123",
+        credential: { credentialId: "cred-123" },
         baseId: "base",
         tableId: "table",
         recordId: "",

@@ -837,6 +837,43 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-github-star-stories:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.52
+        version: 2.0.53(zod@3.25.76)
+      '@octokit/rest':
+        specifier: ^21.0.0
+        version: 21.1.1
+      '@voltagent/cli':
+        specifier: ^0.1.16
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.2.5
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^1.0.4
+        version: link:../../packages/logger
+      '@voltagent/server-hono':
+        specifier: ^1.2.3
+        version: link:../../packages/server-hono
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-google-ai:
     dependencies:
       '@ai-sdk/google':
@@ -3101,7 +3138,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.2.3
+        specifier: ^1.2.5
         version: link:../core
       '@voltagent/logger':
         specifier: ^1.0.3
@@ -3170,7 +3207,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.2.3
+        specifier: ^1.2.5
         version: link:../core
       ai:
         specifier: ^5.0.76
@@ -3214,7 +3251,7 @@ importers:
         specifier: ^1.12.1
         version: 1.17.2
       '@voltagent/core':
-        specifier: ^1.2.3
+        specifier: ^1.2.5
         version: link:../core
       '@voltagent/internal':
         specifier: ^0.0.12
@@ -3257,7 +3294,7 @@ importers:
         specifier: ^1.0.2
         version: link:../a2a-server
       '@voltagent/core':
-        specifier: ^1.2.3
+        specifier: ^1.2.5
         version: link:../core
       '@voltagent/internal':
         specifier: ^0.0.12
@@ -3266,7 +3303,7 @@ importers:
         specifier: ^1.0.3
         version: link:../mcp-server
       '@voltagent/server-core':
-        specifier: ^1.0.22
+        specifier: ^1.0.24
         version: link:../server-core
       fetch-to-node:
         specifier: ^2.1.0
@@ -3294,7 +3331,7 @@ importers:
         specifier: ^0.0.12
         version: link:../internal
       '@voltagent/server-core':
-        specifier: ^1.0.22
+        specifier: ^1.0.24
         version: link:../server-core
       hono:
         specifier: ^4.7.7
@@ -3316,7 +3353,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.2.3
+        specifier: ^1.2.5
         version: link:../core
       '@voltagent/logger':
         specifier: ^1.0.3
@@ -3369,7 +3406,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.2.3
+        specifier: ^1.2.5
         version: link:../core
       ai:
         specifier: ^5.0.76

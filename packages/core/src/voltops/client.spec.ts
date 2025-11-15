@@ -381,7 +381,7 @@ describe("VoltOpsClient", () => {
 
     it("should execute Airtable createRecord via project endpoint", async () => {
       const result = await client.actions.airtable.createRecord({
-        credentialId: "cred-airtable",
+        credential: { credentialId: "cred-airtable" },
         baseId: "base123",
         tableId: "table456",
         fields: { Name: "Ada" },
@@ -420,7 +420,7 @@ describe("VoltOpsClient", () => {
       });
 
       const result = await client.actions.slack.postMessage({
-        credentialId: "cred-slack",
+        credential: { credentialId: "cred-slack" },
         channelId: "C123",
         text: "Hello world",
       });
@@ -451,7 +451,7 @@ describe("VoltOpsClient", () => {
       });
 
       await client.actions.slack.deleteMessage({
-        credentialId: "cred-slack",
+        credential: { credentialId: "cred-slack" },
         channelId: "C999",
         messageTs: "1720472000.000200",
       });
@@ -477,7 +477,7 @@ describe("VoltOpsClient", () => {
       });
 
       await client.actions.slack.searchMessages({
-        credentialId: "cred-slack",
+        credential: { credentialId: "cred-slack" },
         query: '"outage" in:C123',
         limit: 10,
       });

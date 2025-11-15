@@ -12,6 +12,8 @@ import {
   createVoltAgentObservability,
 } from "./observability";
 import { AgentRegistry } from "./registries/agent-registry";
+import { TriggerRegistry } from "./triggers/registry";
+import type { VoltAgentTriggerConfig, VoltAgentTriggersConfig } from "./triggers/types";
 import type { IServerProvider, IServerlessProvider, VoltAgentOptions } from "./types";
 import { isServerlessRuntime } from "./utils/runtime";
 import { isValidVoltOpsKeys } from "./utils/voltops-validation";
@@ -35,12 +37,16 @@ export class VoltAgent {
   private readonly a2aServers = new Set<A2AServerLike>();
   private readonly a2aServerRegistry = new A2AServerRegistry();
   private readonly ensureEnvironmentBinding: (env?: Record<string, unknown>) => void;
+  private readonly triggerRegistry: TriggerRegistry;
+  private readonly agentRefs: Record<string, Agent>;
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
+    this.triggerRegistry = TriggerRegistry.getInstance();
     this.ensureEnvironmentBinding = () => {
       this.ensureEnvironment();
     };
+    this.agentRefs = options.agents ?? {};
 
     // Initialize logger
     this.logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
@@ -83,6 +89,7 @@ export class VoltAgent {
 
     // ✅ NOW register agents - they can access global telemetry exporter
     this.registerAgents(options.agents);
+    this.registerTriggers(options.triggers);
 
     // Register workflows if provided
     if (options.workflows) {
@@ -103,6 +110,7 @@ export class VoltAgent {
         a2a: {
           registry: this.a2aServerRegistry,
         },
+        triggerRegistry: this.triggerRegistry,
         ensureEnvironment: this.ensureEnvironmentBinding,
       });
     }
@@ -120,6 +128,7 @@ export class VoltAgent {
         a2a: {
           registry: this.a2aServerRegistry,
         },
+        triggerRegistry: this.triggerRegistry,
         ensureEnvironment: this.ensureEnvironmentBinding,
       });
     }
@@ -298,6 +307,36 @@ export class VoltAgent {
   /**
    * Register an agent
    */
+  public registerTrigger(name: string, config: VoltAgentTriggerConfig): void {
+    const normalized =
+      typeof config === "function"
+        ? {
+            handler: config,
+          }
+        : config;
+
+    const registration = this.triggerRegistry.register(name, {
+      ...normalized,
+      metadata: {
+        ...(normalized.metadata ?? {}),
+        agents: this.agentRefs,
+      },
+    });
+
+    this.logger.info("[VoltAgent] Trigger registered", {
+      name: registration.name,
+      method: registration.method.toUpperCase(),
+      path: registration.path,
+    });
+  }
+
+  public registerTriggers(triggers?: VoltAgentTriggersConfig): void {
+    if (!triggers) {
+      return;
+    }
+    Object.entries(triggers).forEach(([name, config]) => this.registerTrigger(name, config));
+  }
+
   public registerAgent(agent: Agent): void {
     // Register the agent
     this.registry.registerAgent(agent);

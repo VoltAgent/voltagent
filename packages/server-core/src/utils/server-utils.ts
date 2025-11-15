@@ -89,14 +89,40 @@ export function printServerStartup(port: number, options: ServerStartupOptions =
   }
 
   // Check if custom endpoints were registered
-  if (options.customEndpoints && options.customEndpoints.length > 0) {
+  const allEndpoints = options.customEndpoints ?? [];
+  const triggerEndpoints = allEndpoints.filter(
+    (endpoint) => endpoint.group === "Trigger Endpoints",
+  );
+  const otherEndpoints = allEndpoints.filter((endpoint) => endpoint.group !== "Trigger Endpoints");
+
+  if (triggerEndpoints.length > 0) {
     console.log();
     console.log(
-      `${colors.green}  ✓ ${colors.bright}Registered Endpoints: ${colors.reset}${colors.dim}${options.customEndpoints.length} total${colors.reset}`,
+      `${colors.magenta}  ⚡ ${colors.bright}Trigger Routes:${colors.reset} ${colors.dim}${triggerEndpoints.length} registered${colors.reset}`,
+    );
+
+    triggerEndpoints.forEach((endpoint) => {
+      const nameText = endpoint.name
+        ? `${colors.white}${endpoint.name}${colors.reset}`
+        : `${colors.white}${endpoint.path}${colors.reset}`;
+      const pathText = endpoint.name ? `${colors.dim}${endpoint.path}${colors.reset}` : "";
+      console.log(
+        `${colors.dim}      ${(endpoint.method || "POST").toUpperCase().padEnd(6)} ${colors.reset}${nameText} ${pathText}`,
+      );
+      if (endpoint.description) {
+        console.log(`${colors.dim}                ${endpoint.description}${colors.reset}`);
+      }
+    });
+  }
+
+  if (otherEndpoints.length > 0) {
+    console.log();
+    console.log(
+      `${colors.green}  ✓ ${colors.bright}Registered Endpoints: ${colors.reset}${colors.dim}${otherEndpoints.length} total${colors.reset}`,
     );
 
     const groupMap = new Map<string, ServerEndpointSummary[]>();
-    options.customEndpoints.forEach((endpoint) => {
+    otherEndpoints.forEach((endpoint) => {
       const groupLabel = endpoint.group?.trim() || "Custom Endpoints";
       if (!groupMap.has(groupLabel)) {
         groupMap.set(groupLabel, []);
@@ -108,24 +134,31 @@ export function printServerStartup(port: number, options: ServerStartupOptions =
 
     groupMap.forEach((endpoints, groupLabel) => {
       console.log();
-      console.log(`${colors.bright}${colors.white}    ${groupLabel}${colors.reset}`);
+      console.log(
+        `${colors.bright}${colors.white}    ${groupLabel}${colors.reset}${colors.dim} (${endpoints.length})${colors.reset}`,
+      );
 
-      const methodGroups: Record<string, string[]> = {};
+      const methodGroups: Record<string, ServerEndpointSummary[]> = {};
       endpoints.forEach((endpoint) => {
         const method = (endpoint.method ?? "").toUpperCase();
         const normalizedMethod = method.length > 0 ? method : "GET";
         if (!methodGroups[normalizedMethod]) {
           methodGroups[normalizedMethod] = [];
         }
-        methodGroups[normalizedMethod].push(endpoint.path);
+        methodGroups[normalizedMethod].push(endpoint);
       });
 
       methodOrder.forEach((method) => {
         if (methodGroups[method]) {
-          methodGroups[method].forEach((path) => {
+          methodGroups[method].forEach((endpoint) => {
+            const pathText = `${colors.white}${endpoint.path}${colors.reset}`;
+            const nameText = endpoint.name ? `${colors.dim} (${endpoint.name})${colors.reset}` : "";
             console.log(
-              `${colors.dim}      ${method.padEnd(6)} ${colors.reset}${colors.white}${path}${colors.reset}`,
+              `${colors.dim}      ${method.padEnd(6)} ${colors.reset}${pathText}${nameText}`,
             );
+            if (endpoint.description) {
+              console.log(`${colors.dim}                ${endpoint.description}${colors.reset}`);
+            }
           });
         }
       });
