@@ -68,7 +68,7 @@ Click **Next** to review your settings, then create the binding with **Draft** s
 
 ## Step 3: Choose Where Events Should Go
 
-Targets are now configured in a single **Delivery** section—no mapping or transforms required. VoltOps forwards the raw payload to the destination you pick, and your VoltAgent instance receives it under the corresponding trigger group.
+Configure targets in the single **Delivery** section—no mapping UI or manual transforms required. VoltOps forwards the raw event payload exactly as shown in the Console preview, and your VoltAgent instance receives it under the matching trigger group.
 
 ### Option A — VoltAgent Server (default)
 
@@ -93,9 +93,9 @@ This gives you a secure HTTPS URL such as `https://happy-cat-42.tunnel.voltagent
 
 If you want to hit a third-party webhook, select **Custom URL** and paste any HTTPS endpoint. VoltOps handles retries and timeout limits for you.
 
-### What to put in your agent
+### Mapping & handler DX
 
-Use the `createTriggers` helper to register handlers with dot-access syntax:
+Trigger handlers are pure functions that receive the raw event data and metadata. Use the `createTriggers` helper to register handlers via dot-access syntax:
 
 ```ts
 import { VoltAgent, createTriggers } from "@voltagent/core";
@@ -103,14 +103,23 @@ import { VoltAgent, createTriggers } from "@voltagent/core";
 new VoltAgent({
   // ...
   triggers: createTriggers((on) => {
-    on.github.star(async ({ payload }) => {
-      console.log("GitHub star payload:", payload);
+    on.airtable.recordCreated(async ({ payload, event, headers, trigger }) => {
+      console.log("New record data:", payload);
+      console.log("Full event envelope:", event);
+      console.log("HTTP headers:", headers);
+      console.log("Trigger metadata:", trigger);
+
+      // Optionally customize the HTTP response (defaults to 200 + { success: true })
+      return {
+        status: 202,
+        body: { received: true },
+      };
     });
   }),
 });
 ```
 
-Whenever VoltOps sends an event to your server/tunnel, this handler runs with the payload you saw in the Console preview.
+Whenever VoltOps sends an event to your server or tunnel, the handler runs with the exact payload you inspected during trigger setup—no additional mapping code required.
 
 ## Step 4: Activate Binding and Test
 
