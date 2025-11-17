@@ -129,7 +129,7 @@ export function Hero() {
                 onMouseEnter={() => setShowHeart(true)}
                 onMouseLeave={() => setShowHeart(false)}
               >
-                Open Source
+                The Complete
                 {showHeart && (
                   <span className="absolute -right-8 top-1 animate-pulse">
                     <HeartIcon className="w-6 h-6 text-main-emerald" />
@@ -144,12 +144,12 @@ export function Hero() {
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            TypeScript AI Agent
+            AI Agent Engineering
             <LineShadowText
-              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 ml-2 landing-sm:ml-0 italic"
+              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 italic"
               shadowColor={"#00d992"}
             >
-              Framework
+              Platform
             </LineShadowText>
           </h1>
 
@@ -159,8 +159,18 @@ export function Hero() {
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            Escape no-code limits and scratch-built overhead. Build, customize, and orchestrate AI
-            agents with full control, speed, and a great DevEx.
+            <span className="text-main-emerald">Build</span> agents with open-source TypeScript
+            framework.
+            <br className="mb-1" />
+            <span className="text-main-emerald">Debug</span> with complete LLM observability,
+            traces, and evals.
+            <br className="mb-1" />
+            <span className="text-main-emerald">Automate</span> agents with triggers and actions.
+            <br />
+            <br />
+            <span className="text-white font-semibold text-lg">
+              Ship enterprise-grade multi-agents end-to-end, full code control, no black boxes.
+            </span>
           </p>
 
           {/* Get Started button and command */}
