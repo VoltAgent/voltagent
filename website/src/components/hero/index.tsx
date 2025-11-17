@@ -1,6 +1,5 @@
 import Link from "@docusaurus/Link";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
-import { HeartIcon } from "@heroicons/react/24/solid";
 import { useEffect, useRef, useState } from "react";
 import { AgentsAnimation } from "../agents-animation";
 import { LineShadowText } from "../magicui/line-shadow-text";
@@ -9,7 +8,6 @@ export function Hero() {
   const [isVisible, setIsVisible] = useState(false);
   const [commandText, setCommandText] = useState("npm create voltagent-app@latest");
   const [isTyping, setIsTyping] = useState(false);
-  const [showHeart, setShowHeart] = useState(false);
   const originalCommand = "npm create voltagent-app@latest";
   const typingTimerRef = useRef(null);
 
@@ -113,30 +111,8 @@ export function Hero() {
         {/* Left Column: Text and Buttons */}
         <div>
           {/* Main Heading */}
-          <h2
-            className={`text-2xl text-left mb-2 font-bold transition-all duration-1000 tracking-[-0.025em] ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-          >
-            <Link
-              href="https://github.com/voltagent/voltagent/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-main-emerald no-underline hover:no-underline"
-            >
-              <span
-                className="inline-block relative"
-                onMouseEnter={() => setShowHeart(true)}
-                onMouseLeave={() => setShowHeart(false)}
-              >
-                The Complete
-                {showHeart && (
-                  <span className="absolute -right-8 top-1 animate-pulse">
-                    <HeartIcon className="w-6 h-6 text-main-emerald" />
-                  </span>
-                )}
-              </span>
-            </Link>
+          <h2 className="text-2xl   text-left mb-0 text-main-emerald  transition-all duration-1000 tracking-[-0.025em]">
+            The Complete
           </h2>
 
           <h1
@@ -144,31 +120,34 @@ export function Hero() {
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            AI Agent Engineering
+            AI Agent
             <LineShadowText
-              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 italic"
+              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 ml-3 italic"
               shadowColor={"#00d992"}
             >
               Platform
             </LineShadowText>
+            <br />
+            <span className="text-gray-400 italic text-4xl  font-normal">for real world apps</span>
           </h1>
 
           {/* Subheading */}
           <p
-            className={`text-base sm:text-lg md:text-xl text-gray-400 text-left mb-12 transition-all duration-1000 delay-300 ${
+            className={`text-base sm:text-lg md:text-xl text-gray-400  text-left mb-12 transition-all duration-1000 delay-300 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <span className="text-main-emerald">Build</span> agents with open-source TypeScript
-            framework.
+            <span className="text-white font-semibold">Build</span> agents with open-source
+            TypeScript framework.
             <br className="mb-1" />
-            <span className="text-main-emerald">Debug</span> with complete LLM observability,
+            <span className="text-white font-semibold">Debug</span> with complete LLM observability,
             traces, and evals.
             <br className="mb-1" />
-            <span className="text-main-emerald">Automate</span> agents with triggers and actions.
+            <span className="text-white font-semibold">Automate</span> agents with triggers and
+            actions.
             <br />
             <br />
-            <span className="text-white font-semibold text-lg">
+            <span className="text-white text-base sm:text-lg md:text-xl">
               Ship enterprise-grade multi-agents end-to-end, full code control, no black boxes.
             </span>
           </p>
