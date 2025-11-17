@@ -108,43 +108,41 @@ export function Hero() {
     <div className="relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
       <div className="mt-16 md:mt-24" />
       <div className="grid xs:grid-cols-1 mx-4 lg:mx-0 lg:grid-cols-2 gap-8 items-center">
-        {/* Left Column: Text and Buttons */}
         <div>
-          {/* Main Heading */}
-          <h2 className="text-2xl   text-left mb-0 text-main-emerald  transition-all duration-1000 tracking-[-0.025em]">
-            The Complete
+          <h2 className="text-2xl text-left mb-2 text-main-emerald transition-all duration-1000 tracking-[-0.025em]">
+            A Full-Code
           </h2>
 
           <h1
-            className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-bold text-left mb-6 transition-all duration-1000 tracking-[-0.025em] ${
+            className={`text-4xl sm:text-4xl text-neutral-100 md:text-5xl font-bold text-left mb-6 transition-all duration-1000 tracking-[-0.025em] ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            AI Agent
+            AI Engineering Platform Alternative to
             <LineShadowText
-              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 ml-3 italic"
+              className="text-main-emerald landing-md:mt-2 ml-3 italic"
               shadowColor={"#00d992"}
             >
-              Platform
+              n8n
             </LineShadowText>
-            <br />
-            <span className="text-gray-400 italic text-4xl  font-normal">for real world apps</span>
           </h1>
 
-          {/* Subheading */}
           <p
-            className={`text-base sm:text-lg md:text-xl text-gray-400  text-left mb-12 transition-all duration-1000 delay-300 ${
+            className={`text-base sm:text-lg md:text-xl text-gray-400 text-left mb-12 transition-all duration-1000 delay-300 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
             <span className="text-white font-semibold">Build</span> agents with open-source
-            TypeScript framework.
+            <span className="text-white font-semibold"> TypeScript </span>framework.
             <br className="mb-1" />
-            <span className="text-white font-semibold">Debug</span> with complete LLM observability,
-            traces, and evals.
+            <span className="text-white font-semibold">Debug</span> with complete{" "}
+            <span className="text-white ">LLM observability</span>,{" "}
+            <span className="text-white ">traces</span>, and{" "}
+            <span className="text-white ">evals</span>.
             <br className="mb-1" />
-            <span className="text-white font-semibold">Automate</span> agents with triggers and
-            actions.
+            <span className="text-white ">Automate</span> agents with{" "}
+            <span className="text-white ">triggers</span> and{" "}
+            <span className="text-white ">actions</span>.
             <br />
             <br />
             <span className="text-white text-base sm:text-lg md:text-xl">
@@ -152,7 +150,6 @@ export function Hero() {
             </span>
           </p>
 
-          {/* Get Started button and command */}
           <div
             className={`flex flex-col sm:flex-row items-center sm:items-start justify-center sm:justify-start gap-4 mb-12 transition-all duration-1000 delay-500 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
@@ -160,7 +157,7 @@ export function Hero() {
           >
             <Link
               to="/docs/"
-              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm text-main-emerald cursor-pointer bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 rounded-md transition duration-300 flex items-center outline-none  justify-center sm:justify-start gap-2 hover:bg-[#0e2c24] no-underline"
+              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm text-main-emerald cursor-pointer bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-[#0e2c24] no-underline"
             >
               <ChevronRightIcon className="landing-xs:w-4 landing-xs:h-4 landing-md:w-6 landing-md:h-6" />
               Get Started
@@ -183,7 +180,6 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Right Column: Animation */}
         <div className="landing-xs:pl-0 landing-md:pl-12 h-full items-center">
           <AgentsAnimation />
         </div>
