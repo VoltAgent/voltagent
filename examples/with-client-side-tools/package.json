@@ -5,7 +5,7 @@
     "@ai-sdk/openai": "^2.0.52",
     "@ai-sdk/react": "^2.0.8",
     "@libsql/client": "^0.15.0",
-    "@voltagent/core": "^1.2.5",
+    "@voltagent/core": "^1.2.6",
     "@voltagent/vercel-ai": "^1.0.0",
     "@voltagent/vercel-ui": "^1.0.1",
     "ai": "^5.0.76",

@@ -3,10 +3,10 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
     "@voltagent/a2a-server": "^1.0.2",
-    "@voltagent/core": "^1.2.5",
+    "@voltagent/core": "^1.2.6",
     "@voltagent/internal": "^0.0.12",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.3",
+    "@voltagent/server-hono": "^1.2.4",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
   },
