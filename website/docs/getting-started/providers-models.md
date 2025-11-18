@@ -264,6 +264,9 @@ GOOGLE_GENERATIVE_AI_API_KEY=your-key
 # Groq
 GROQ_API_KEY=your-key
 
+# Cerebras
+CEREBRAS_API_KEY=your-key
+
 # And so on...
 ```
 
