@@ -5,7 +5,7 @@
     "@ai-sdk/openai": "^2.0.52",
     "@octokit/rest": "^21.0.0",
     "@voltagent/cli": "^0.1.16",
-    "@voltagent/core": "^1.2.6",
+    "@voltagent/core": "^1.2.7",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.4",
     "dotenv": "^16.4.5",
