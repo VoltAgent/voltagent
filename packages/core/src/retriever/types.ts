@@ -1,3 +1,4 @@
+import type { OperationContext } from "../agent/types";
 import type { Logger } from "../logger";
 
 /**
@@ -31,12 +32,15 @@ export type RetrieverOptions = {
 };
 
 /**
- * Options passed to retrieve method
+ * Options passed to retrieve method.
+ * Includes all operation context fields for user-specific and context-aware retrieval.
  */
-export interface RetrieveOptions {
+export interface RetrieveOptions extends Partial<OperationContext> {
   /**
    * User-managed context map for this specific retrieval operation
    * Can be used to store metadata, results, or any custom data
+   *
+   * Inherited from OperationContext but explicitly documented here for clarity
    */
   context?: Map<string | symbol, unknown>;
 
@@ -44,8 +48,26 @@ export interface RetrieveOptions {
    * Optional logger instance for this retrieval operation.
    * Provides execution-scoped logging with full context.
    * Available when retriever is called from an agent or workflow context.
+   *
+   * Inherited from OperationContext but explicitly documented here for clarity
    */
   logger?: Logger;
+
+  /**
+   * Optional user identifier for user-specific retrieval.
+   * Can be used to filter results by user or implement multi-tenant retrieval.
+   *
+   * Inherited from OperationContext
+   */
+  userId?: string;
+
+  /**
+   * Optional conversation identifier for conversation-aware retrieval.
+   * Can be used to retrieve conversation-specific context or history.
+   *
+   * Inherited from OperationContext
+   */
+  conversationId?: string;
 }
 
 /**

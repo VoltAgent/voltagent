@@ -138,6 +138,81 @@ class APIRetriever extends BaseRetriever {
 }
 ```
 
+## User-Specific Retrieval
+
+Retrieve personalized content based on user context. The `options` parameter includes `userId`, `conversationId`, and more:
+
+```ts
+class UserSpecificRetriever extends BaseRetriever {
+  async retrieve(input, options) {
+    const query = typeof input === "string" ? input : input[input.length - 1].content;
+
+    // Access user context from options
+    const { userId, conversationId } = options;
+
+    // Filter results by user
+    const results = await this.pool.query(
+      `
+      SELECT title, content
+      FROM documents
+      WHERE user_id = $1
+        AND search_vector @@ plainto_tsquery($2)
+      ORDER BY ts_rank(search_vector, plainto_tsquery($2)) DESC
+      LIMIT 5
+    `,
+      [userId, query]
+    );
+
+    return results.rows.map((r) => `${r.title}: ${r.content}`).join("\n\n");
+  }
+}
+```
+
+**Available Context Fields:**
+
+- `userId` - Current user identifier
+- `conversationId` - Current conversation identifier
+- `context` - User-managed context map
+- `logger` - Execution-scoped logger
+- `operationId` - Unique operation identifier
+- `abortController` - For cancellation support
+
+### Multi-Tenant Vector Database
+
+Use different namespaces or indexes per user:
+
+```ts
+class MultiTenantRetriever extends BaseRetriever {
+  constructor(private pinecone: PineconeClient) {
+    super({
+      toolName: "search_knowledge",
+      toolDescription: "Search user's private knowledge base",
+    });
+  }
+
+  async retrieve(input, options) {
+    const query = typeof input === "string" ? input : input[input.length - 1].content;
+    const { userId } = options;
+
+    if (!userId) {
+      throw new Error("userId is required for retrieval");
+    }
+
+    // Use user-specific namespace
+    const namespace = `user-${userId}`;
+
+    // Query with user's namespace
+    const results = await this.pinecone.query({
+      vector: await this.embed(query),
+      namespace,
+      topK: 5,
+    });
+
+    return results.matches.map((m) => m.metadata.text).join("\n\n");
+  }
+}
+```
+
 ## Track Sources (Optional)
 
 Want to show users where the information came from? Use `context` to track sources:
@@ -166,7 +241,9 @@ class SourceTrackingRetriever extends BaseRetriever {
 }
 
 // Use it
-const response = await agent.generateText("How do I deploy?");
+const response = await agent.generateText("How do I deploy?", {
+  userId: "user-123",
+});
 console.log("Answer:", response.text);
 
 // Check what sources were used

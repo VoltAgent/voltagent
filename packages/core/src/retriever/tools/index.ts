@@ -48,12 +48,10 @@ export const createRetrieverTool = (
       query: z.string().describe("The search query to find relevant information"),
     }),
     execute: async ({ query }, options?: ToolExecuteOptions) => {
-      // Extract context and logger from options (which now includes OperationContext fields)
-      const context = options?.context;
-      const logger = options?.logger;
+      // Pass complete options to retriever for access to userId, conversationId, etc.
       const startTime = Date.now();
 
-      logger?.debug(
+      options?.logger?.debug(
         buildRetrieverLogMessage(toolName, ActionType.START, "search started"),
         buildLogContext(ResourceType.RETRIEVER, toolName, ActionType.START, {
           event: LogEvents.RETRIEVER_SEARCH_STARTED,
@@ -62,12 +60,9 @@ export const createRetrieverTool = (
       );
 
       try {
-        const result = await retriever.retrieve(query, {
-          context,
-          logger,
-        });
+        const result = await retriever.retrieve(query, options ?? {});
 
-        logger?.debug(
+        options?.logger?.debug(
           buildRetrieverLogMessage(toolName, ActionType.COMPLETE, "search completed"),
           buildLogContext(ResourceType.RETRIEVER, toolName, ActionType.COMPLETE, {
             event: LogEvents.RETRIEVER_SEARCH_COMPLETED,
@@ -78,7 +73,7 @@ export const createRetrieverTool = (
 
         return result;
       } catch (error) {
-        logger?.error(
+        options?.logger?.error(
           buildRetrieverLogMessage(toolName, ActionType.ERROR, "search failed"),
           buildLogContext(ResourceType.RETRIEVER, toolName, ActionType.ERROR, {
             event: LogEvents.RETRIEVER_SEARCH_FAILED,
