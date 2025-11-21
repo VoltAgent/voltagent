@@ -135,5 +135,4 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Managed Memory](./with-voltagent-managed-memory) — Production‑grade memory via VoltOps Managed Memory REST adapter.
 - [Workflow](./with-workflow) — Build multi‑step flows with createWorkflowChain and human‑in‑the‑loop.
 - [Working Memory](./with-working-memory) — Persist per‑conversation/user facts with built‑in read/update tools.
-- [xAI](./with-xsai) — Use xAI Grok models as an LLM provider.
 - [Zapier (MCP)](./with-zapier-mcp) — Trigger Zapier actions through MCP from your agents.
