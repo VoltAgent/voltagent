@@ -756,6 +756,10 @@ export class Agent {
 
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
+      } finally {
+        // Ensure all spans are exported before returning (critical for serverless)
+        // Uses waitUntil if available to avoid blocking
+        await this.getObservability().flushOnFinish();
       }
     });
   }
@@ -907,7 +911,7 @@ export class Agent {
           // VoltAgent controlled (these should not be overridden)
           abortSignal: oc.abortController.signal,
           onStepFinish: this.createStepHandler(oc, options),
-          onError: (errorData) => {
+          onError: async (errorData) => {
             // Handle nested error structure from OpenAI and other providers
             // The error might be directly the error or wrapped in { error: ... }
             const actualError = (errorData as any)?.error || errorData;
@@ -950,6 +954,11 @@ export class Agent {
 
             // Don't re-throw - let the error be part of the stream
             // The onError callback should return void for AI SDK compatibility
+            // Ensure spans are flushed on error
+            // Uses waitUntil if available to avoid blocking
+            await this.getObservability()
+              .flushOnFinish()
+              .catch(() => {});
           },
           onFinish: async (finalResult) => {
             const providerUsage = finalResult.usage
@@ -1100,6 +1109,10 @@ export class Agent {
             });
 
             oc.traceContext.end("completed");
+
+            // Ensure all spans are exported on finish
+            // Uses waitUntil if available to avoid blocking
+            await this.getObservability().flushOnFinish();
           },
         });
 
@@ -1396,7 +1409,13 @@ export class Agent {
         return resultWithContext;
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
+        // Ensure spans are exported on pre-stream errors
+        await this.getObservability()
+          .flushOnFinish()
+          .catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
+      } finally {
+        // No need to flush here for streams - handled in onFinish/onError
       }
     });
   }
@@ -1620,6 +1639,10 @@ export class Agent {
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
+      } finally {
+        // Ensure all spans are exported before returning (critical for serverless)
+        // Uses waitUntil if available to avoid blocking
+        await this.getObservability().flushOnFinish();
       }
     });
   }
@@ -1738,7 +1761,7 @@ export class Agent {
           providerOptions,
           // VoltAgent controlled
           abortSignal: oc.abortController.signal,
-          onError: (errorData) => {
+          onError: async (errorData) => {
             // Handle nested error structure from OpenAI and other providers
             // The error might be directly the error or wrapped in { error: ... }
             const actualError = (errorData as any)?.error || errorData;
@@ -1768,6 +1791,11 @@ export class Agent {
 
             // Don't re-throw - let the error be part of the stream
             // The onError callback should return void for AI SDK compatibility
+            // Ensure spans are flushed on error
+            // Uses waitUntil if available to avoid blocking
+            await this.getObservability()
+              .flushOnFinish()
+              .catch(() => {});
           },
           onFinish: async (finalResult: any) => {
             try {
@@ -1874,6 +1902,10 @@ export class Agent {
               });
 
               oc.traceContext.end("completed");
+
+              // Ensure all spans are exported on finish
+              // Uses waitUntil if available to avoid blocking
+              await this.getObservability().flushOnFinish();
             } catch (error) {
               rejectGuardrailObject?.(error);
               throw error;
@@ -1916,7 +1948,13 @@ export class Agent {
         return resultWithContext;
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
+        // Ensure spans are exported on pre-stream errors
+        await this.getObservability()
+          .flushOnFinish()
+          .catch(() => {});
         return this.handleError(error as Error, oc, options, 0);
+      } finally {
+        // No need to flush here for streams - handled in onFinish/onError
       }
     });
   }

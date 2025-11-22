@@ -492,13 +492,28 @@ export function registerTriggerRoutes(app: Hono, deps: ServerProviderDeps, logge
     const method = trigger.method ?? "post";
     const handler = async (c: any) => {
       const body = await readJsonBody<unknown>(c, logger);
+      const queryParams = c.req.query();
       const context: TriggerHttpRequestContext = {
         body,
         headers: extractHeaders(c.req.raw?.headers ?? new Headers()),
-        query: Object.fromEntries(c.req.query()),
+        query:
+          queryParams && typeof queryParams === "object"
+            ? { ...queryParams }
+            : ({} as Record<string, string>),
         raw: c.req.raw,
       };
+
       const response = await executeTriggerHandler(trigger, context, deps, logger);
+
+      // Ensure spans are flushed (using waitUntil if available)
+      // This is critical for serverless environments to avoid orphan spans
+      const observability = deps.observability as any;
+      if (observability?.flushOnFinish) {
+        await observability.flushOnFinish();
+      } else if (observability?.forceFlush) {
+        await observability.forceFlush();
+      }
+
       return c.json(response.body ?? { success: true }, response.status, response.headers);
     };
 

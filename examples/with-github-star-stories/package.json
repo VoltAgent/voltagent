@@ -8,7 +8,9 @@
     "@voltagent/core": "^1.2.7",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.4",
+    "@voltagent/serverless-hono": "^1.0.7",
     "dotenv": "^16.4.5",
+    "wrangler": "^3.38.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -28,7 +30,9 @@
     "build": "tsc",
     "dev": "tsx watch --env-file=.env ./src/index.ts",
     "start": "node dist/index.js",
-    "volt": "volt"
+    "volt": "volt",
+    "preview": "tsc && wrangler dev --local",
+    "deploy": "wrangler deploy"
   },
   "type": "module"
 }

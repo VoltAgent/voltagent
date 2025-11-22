@@ -100,6 +100,7 @@ export class VoltAgentService {
       a2a: {
         registry: (this.voltAgent as any).a2aServerRegistry,
       },
+      triggerRegistry: (this.voltAgent as any).triggerRegistry,
     };
   }
 

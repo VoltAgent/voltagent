@@ -2,11 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Tool, createTool } from "./index";
 
-// Mock UUID generation
-vi.mock("uuid", () => ({
-  v4: vi.fn().mockReturnValue("mock-uuid"),
-}));
-
 describe("Tool", () => {
   describe("constructor", () => {
     it("should initialize with provided options", () => {
@@ -35,7 +30,7 @@ describe("Tool", () => {
       expect(tool.execute).toEqual(options.execute);
     });
 
-    it("should generate UUID if id is not provided", () => {
+    it("should default id to name if id is not provided", () => {
       const options = {
         name: "testTool",
         parameters: z.object({}),
@@ -45,7 +40,7 @@ describe("Tool", () => {
 
       const tool = new Tool(options);
 
-      expect(tool.id).toBe("mock-uuid");
+      expect(tool.id).toBe("testTool");
     });
 
     it("should handle minimal options", () => {

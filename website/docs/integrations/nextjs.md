@@ -78,7 +78,7 @@ Create the main chat API route with the agent and singleton defined inline in `a
 ```typescript title="app/api/chat/route.ts"
 import { after } from "next/server";
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, VoltAgent, createTool, setWaitUntil } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
@@ -137,17 +137,8 @@ export async function POST(req: Request) {
 
     const result = await agent.streamText([lastMessage]);
 
-    // CRITICAL for Vercel/serverless: Ensure observability spans are exported before function terminates
-    const observability = voltAgent.getObservability();
-    if (observability) {
-      after(async () => {
-        // Wait for stream to complete
-        await result.finishReason;
-
-        // Force export all pending spans
-        await observability.forceFlush();
-      });
-    }
+    // Enable non-blocking OTel export for Vercel/serverless
+    setWaitUntil(after);
 
     return result.toUIMessageStreamResponse();
   } catch (error) {
@@ -304,25 +295,23 @@ Serverless functions terminate immediately after sending the response. This can 
 - ❌ Missing agent completion metadata
 - ❌ Incomplete observability data
 
-### The Solution: Using `after()`
+### The Solution: Using `setWaitUntil` with `after()`
 
-Next.js 15+ provides the `after()` API to execute code after the response is sent but before the function terminates. This is already included in the API route example above:
+Next.js 15+ provides the `after()` API to execute code after the response is sent but before the function terminates. VoltAgent provides a helper `setWaitUntil` to leverage this for non-blocking observability exports.
+
+Update your API route as follows:
 
 ```typescript
 import { after } from "next/server";
+import { setWaitUntil } from "@voltagent/core"; // Import the helper
 
 export async function POST(req: Request) {
+  // Enable non-blocking OTel export
+  // This ensures spans are flushed in the background without blocking the response
+  setWaitUntil(after);
+
   // ... your agent logic
   const result = await agent.streamText([lastMessage]);
-
-  // Flush spans before function terminates
-  const observability = voltAgent.getObservability();
-  if (observability) {
-    after(async () => {
-      await result.finishReason; // Wait for stream completion
-      await observability.forceFlush(); // Export all spans
-    });
-  }
 
   return result.toUIMessageStreamResponse();
 }
@@ -330,9 +319,9 @@ export async function POST(req: Request) {
 
 ### Why This Works
 
-1. **`await result.finishReason`**: Ensures the AI SDK stream completes and the root span ends with `agent.state = completed`
-2. **`await observability.forceFlush()`**: Forces the BatchSpanProcessor to immediately export all pending spans
-3. **`after()` wrapper**: Keeps the Vercel function alive until the async work completes
+1. **`setWaitUntil(after)`**: Registers the Next.js `after` function as the global `waitUntil` handler for VoltAgent.
+2. **Automatic Flushing**: The agent automatically detects when execution finishes (or streams complete) and schedules the span export using the registered `waitUntil`.
+3. **Non-Blocking**: The response is sent immediately to the user, while the span export happens in the background, ensuring no latency penalty.
 
 ### Requirements
 

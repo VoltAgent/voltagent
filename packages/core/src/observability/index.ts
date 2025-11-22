@@ -114,4 +114,7 @@ export {
   type Tracer,
   trace,
   context,
+  propagation,
+  ROOT_CONTEXT,
 } from "@opentelemetry/api";
+export * from "./wait-until";

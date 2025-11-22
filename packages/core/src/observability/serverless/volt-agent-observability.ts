@@ -19,12 +19,13 @@ import {
 } from "@opentelemetry/sdk-logs";
 import {
   BasicTracerProvider,
-  SimpleSpanProcessor,
+  BatchSpanProcessor,
   type SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 
+import { AsyncHooksContextManager } from "@opentelemetry/context-async-hooks";
 import { InMemoryStorageAdapter } from "../adapters/in-memory-adapter";
 import { StorageLogProcessor, WebSocketLogProcessor } from "../logs";
 import { LocalStorageSpanProcessor } from "../processors/local-storage-span-processor";
@@ -224,6 +225,12 @@ export class ServerlessVoltAgentObservability {
       spanProcessors,
     });
 
+    // Explicitly set ContextManager for Serverless runtime
+    // We use AsyncHooksContextManager to ensure parity with Node.js behavior
+    const contextManager = new AsyncHooksContextManager();
+    contextManager.enable();
+    context.setGlobalContextManager(contextManager);
+
     trace.setGlobalTracerProvider(provider);
 
     const tracer = provider.getTracer(
@@ -400,6 +407,36 @@ export class ServerlessVoltAgentObservability {
     await this.loggerProvider.forceFlush();
   }
 
+  /**
+   * Flushes spans without blocking the response if waitUntil is available.
+   * This is the preferred method to call at the end of a request.
+   */
+  async flushOnFinish(): Promise<void> {
+    const waitUntil = (globalThis as ObservabilityGlobals).___voltagent_wait_until;
+
+    if (waitUntil) {
+      try {
+        // If waitUntil is available (Cloudflare/Vercel), schedule flush in background
+        // and return immediately to unblock the response.
+        waitUntil(
+          this.forceFlush().catch((err) => {
+            // eslint-disable-next-line no-console
+            console.warn("[voltagent] Background flush failed", err);
+          }),
+        );
+        return;
+      } catch (error) {
+        // If waitUntil fails (e.g. DataCloneError or context issues), fall back to blocking flush
+        // This ensures spans are exported even if the optimized path fails
+        // eslint-disable-next-line no-console
+        console.warn("[voltagent] waitUntil failed, falling back to blocking flush", error);
+      }
+    }
+
+    // Fallback: Must wait for flush to ensure data is sent
+    await this.forceFlush();
+  }
+
   getProvider(): BasicTracerProvider {
     return this.provider;
   }
@@ -462,7 +499,14 @@ function createRemoteSpanProcessor(
 
   const exporter = new FetchTraceExporter(config.traces);
 
-  let processor: SpanProcessor = new SimpleSpanProcessor(exporter);
+  // Use BatchSpanProcessor for better performance and reliability
+  // We rely on flushOnFinish() to export spans at the end of execution
+  let processor: SpanProcessor = new BatchSpanProcessor(exporter, {
+    // Don't keep the process alive for the export timer
+    scheduledDelayMillis: 1000,
+    // Export quickly if we have enough spans
+    maxExportBatchSize: 64,
+  });
 
   if (config.sampling?.strategy && config.sampling.strategy !== "always") {
     processor = new SamplingWrapperProcessor(

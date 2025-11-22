@@ -1,4 +1,5 @@
 import { supervisorAgent, voltAgent } from "@/voltagent";
+import { setWaitUntil } from "@voltagent/core";
 import { after } from "next/server";
 
 export async function POST(req: Request) {
@@ -7,24 +8,16 @@ export async function POST(req: Request) {
 
     const lastMessage = messages[messages.length - 1];
 
+    // Enable non-blocking OTel export for Vercel/serverless
+    // This ensures spans are flushed in the background without blocking the response
+    setWaitUntil(after);
+
     // Stream text from the supervisor agent with proper context
     // The agent accepts UIMessage[] directly
     const result = await supervisorAgent.streamText([lastMessage], {
       userId,
       conversationId,
     });
-
-    // CRITICAL for Vercel: Ensure spans are exported before function terminates
-    const observability = voltAgent.getObservability();
-    if (observability) {
-      after(async () => {
-        // Wait for stream to complete (ensures root span.end() is called)
-        await result.finishReason;
-
-        // Force export all pending spans with updated attributes
-        await observability.forceFlush();
-      });
-    }
 
     // Use the native AI SDK method from the agent result
     return result.toUIMessageStreamResponse();

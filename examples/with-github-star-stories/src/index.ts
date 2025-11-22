@@ -4,22 +4,23 @@ import { Octokit } from "@octokit/rest";
 import { Agent, VoltAgent, VoltOpsClient, createTool, createTriggers } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
+import { serverlessHono } from "@voltagent/serverless-hono";
 import { z } from "zod";
 
-const logger = createPinoLogger({
-  name: "github-star-stories",
-  level: "info",
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN,
+  userAgent: "volt-github-star-stories",
 });
 
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
   secretKey: process.env.VOLTAGENT_SECRET_KEY,
-  baseUrl: "http://localhost:3003",
+  baseUrl: "https://api-omer-aplak.tunnel.voltagent.dev",
 });
 
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN,
-  userAgent: "volt-github-star-stories",
+const logger = createPinoLogger({
+  name: "github-star-stories",
+  level: "info",
 });
 
 const fetchGithubProfileTool = createTool({
@@ -30,6 +31,7 @@ const fetchGithubProfileTool = createTool({
   }),
   execute: async ({ username }: { username: string }) => {
     const response = await octokit.users.getByUsername({ username });
+
     return {
       login: response.data.login,
       name: response.data.name ?? response.data.login,
@@ -77,31 +79,35 @@ When the user says "celebrate <username>", do the following:
 Return the same story in your final response.`,
 });
 
-new VoltAgent({
+/* const voltAgent = new VoltAgent({
   agents: {
     storyteller: storytellerAgent,
   },
-  server: honoServer(),
   triggers: createTriggers((on) => {
-    on.github.star(async ({ payload, event, trigger, headers }) => {
-      console.log({
-        payload,
-        event,
-        trigger,
-        headers,
-      });
-      await storytellerAgent.generateText("selam");
-    });
-
-    on.cron.schedule(({ payload }) => {
-      console.log({ payload });
-    });
-
-    on.airtable.recordCreated(({ payload, event }) => {
-      console.log({ payload, event });
-
-      return { status: 422, body: { hede: 2 } };
+    on.github.star(async ({ payload }) => {
+      console.log(payload);
+      const starPayload = payload as { action: "created" | "removed"; sender: { login: string } };
+      if (starPayload.action !== "created") return { skip: true, reason: "Unstarred" };
+      await storytellerAgent.generateText(`celebrate '${starPayload?.sender?.login}'`);
     });
   }),
   logger,
+  server: honoServer(), 
+}); */
+const voltAgent = new VoltAgent({
+  agents: {
+    storyteller: storytellerAgent,
+  },
+  triggers: createTriggers((on) => {
+    on.github.star(async ({ payload }) => {
+      console.log(payload);
+      const starPayload = payload as { action: "created" | "removed"; sender: { login: string } };
+      if (starPayload.action !== "created") return { skip: true, reason: "Unstarred" };
+      await storytellerAgent.generateText(`celebrate '${starPayload?.sender?.login}'`);
+    });
+  }),
+  logger,
+  serverless: serverlessHono(),
 });
+
+export default voltAgent.serverless().toCloudflareWorker();

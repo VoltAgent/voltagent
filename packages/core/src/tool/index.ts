@@ -1,6 +1,5 @@
 import type { ProviderOptions } from "@ai-sdk/provider-utils";
 import type { Tool as VercelTool } from "ai";
-import { v4 as uuidv4 } from "uuid";
 import type { z } from "zod";
 import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
 import { LoggerProxy } from "../logger";
@@ -216,7 +215,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
       throw new Error(`Tool '${options.name}' parameters schema is required`);
     }
 
-    this.id = options.id || uuidv4();
+    this.id = options.id ?? options.name;
     this.name = options.name;
     this.description = options.description || "";
     this.parameters = options.parameters;
