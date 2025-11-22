@@ -18,6 +18,7 @@ import {
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 import clsx from "clsx";
 import React, { forwardRef, useRef, useState, useEffect } from "react";
+import { AirtableLogo, GitHubLogo, GmailLogo, SlackLogo } from "../../../static/img/logos";
 import { AnimatedBeam } from "../magicui/animated-beam";
 
 // Beat types mapping for different node types
@@ -747,42 +748,42 @@ export function AgentsAnimation({ className }: { className?: string }) {
         <div className="absolute left-0 flex flex-col justify-center h-full space-y-4">
           <Node
             ref={userPromptRef}
-            label="Prompts"
+            label="Airtable"
             type="input"
-            description="Direct text queries from users to the agent"
+            description="Connect to Airtable databases and spreadsheets"
             nodeId="userPrompt"
           >
-            <Icons.chat className="h-5 w-5 text-[#00d992]" />
+            <AirtableLogo className="h-5 w-5" />
           </Node>
 
           <Node
             ref={apiCallRef}
-            label="API Calls"
+            label="GitHub"
             type="input"
-            description="External API integrations that feed data to the agent"
+            description="Integrate with GitHub repositories and workflows"
             nodeId="apiCall"
           >
-            <Icons.api className="h-5 w-5 text-[#00d992]" />
+            <GitHubLogo className="h-5 w-5 text-white" />
           </Node>
 
           <Node
             ref={webhookRef}
-            label="Webhooks"
+            label="Slack"
             type="input"
-            description="Real-time event-driven data from external services"
+            description="Connect to Slack channels and messaging"
             nodeId="webhook"
           >
-            <Icons.webhook className="h-5 w-5 text-[#00d992]" />
+            <SlackLogo className="h-5 w-5" />
           </Node>
 
           <Node
             ref={contextRef}
-            label="Context"
+            label="Gmail"
             type="input"
-            description="Persistent state and conversation history"
+            description="Integrate with Gmail for email automation"
             nodeId="context"
           >
-            <Icons.memory className="h-5 w-5 text-[#00d992]" />
+            <GmailLogo className="h-5 w-5" />
           </Node>
         </div>
 
