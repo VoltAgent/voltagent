@@ -2,9 +2,9 @@
   "name": "voltagent-example-with-ollama",
   "dependencies": {
     "@voltagent/cli": "^0.1.16",
-    "@voltagent/core": "^1.2.8",
+    "@voltagent/core": "^1.2.9",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.4",
+    "@voltagent/server-hono": "^1.2.5",
     "ai": "^5.0.76",
     "ollama-ai-provider-v2": "^1.5.3",
     "zod": "^3.25.76"

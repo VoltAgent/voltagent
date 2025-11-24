@@ -5,10 +5,10 @@
     "@ai-sdk/openai": "^2.0.52",
     "@qdrant/js-client-rest": "^1.15.0",
     "@voltagent/cli": "^0.1.16",
-    "@voltagent/core": "^1.2.8",
+    "@voltagent/core": "^1.2.9",
     "@voltagent/libsql": "^1.0.12",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.4",
+    "@voltagent/server-hono": "^1.2.5",
     "ai": "^5.0.76",
     "openai": "^4.91.0",
     "zod": "^3.25.76"
