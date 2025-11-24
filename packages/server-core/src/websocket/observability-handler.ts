@@ -14,6 +14,7 @@ interface ObservabilityConnection {
   ws: IWebSocket;
   entityId?: string; // Optional entity filter
   entityType?: "agent" | "workflow"; // Optional entity type filter
+  user?: any; // Authenticated user info
 }
 
 // Store WebSocket connections for observability
@@ -137,6 +138,7 @@ export function handleObservabilityConnection(
   ws: IWebSocket,
   request: any,
   _deps: ServerProviderDeps,
+  user?: any,
 ): void {
   // Parse entity filters from URL query parameters
   let entityId: string | undefined;
@@ -160,6 +162,7 @@ export function handleObservabilityConnection(
     ws,
     entityId,
     entityType,
+    user,
   });
 
   // Send initial connection success message with filter info

@@ -1,5 +1,5 @@
 import type { AuthProvider } from "@voltagent/server-core";
-import { requiresAuth } from "@voltagent/server-core";
+import { hasConsoleAccess, isDevRequest, requiresAuth } from "@voltagent/server-core";
 import type { Context, Next } from "hono";
 
 /**
@@ -14,8 +14,29 @@ export function createAuthMiddleware(authProvider: AuthProvider<Request>) {
     const method = c.req.method;
 
     // Check if this route requires authentication
-    if (!requiresAuth(method, path, authProvider.publicRoutes, authProvider.defaultPrivate)) {
+    const needsAuth = requiresAuth(
+      method,
+      path,
+      authProvider.publicRoutes,
+      authProvider.defaultPrivate,
+    );
+
+    if (!needsAuth) {
       // Public route, no auth needed
+      return next();
+    }
+
+    // Console Access Check (for observability and system routes)
+    if (path.startsWith("/observability/") || path.startsWith("/updates")) {
+      if (hasConsoleAccess(c.req.raw)) {
+        return next();
+      }
+    }
+
+    // Development bypass: Allow requests with x-voltagent-dev header in development
+    const devBypass = isDevRequest(c.req.raw);
+
+    if (devBypass) {
       return next();
     }
 

@@ -1,131 +1,78 @@
 /**
- * Auth utility functions that can be reused across different server implementations
+ * Authentication utility functions
  */
 
 /**
- * Extract Bearer token from Authorization header
- * @param authHeader The Authorization header value
- * @returns The token if found, undefined otherwise
+ * Check if request is from development environment
+ *
+ * Requires BOTH client header AND non-production environment for security.
+ * This prevents production bypass while allowing local development.
+ *
+ * @param req - The incoming HTTP request
+ * @returns True if both dev header and non-production environment are present
+ *
+ * @example
+ * // Local development with header (typical case)
+ * NODE_ENV=undefined + x-voltagent-dev=true → true (auth bypassed)
+ *
+ * // Development with header (playground)
+ * NODE_ENV=development + x-voltagent-dev=true → true (auth bypassed)
+ *
+ * // Development without header (testing auth)
+ * NODE_ENV=undefined + no header → false (auth required)
+ *
+ * // Production with header (attacker attempt)
+ * NODE_ENV=production + x-voltagent-dev=true → false (auth required)
+ *
+ * @security
+ * - Client header alone: Cannot bypass in production
+ * - Non-production env alone: Developer can still test auth
+ * - Both required: Selective bypass for DX
+ * - Production is strictly protected (NODE_ENV=production)
  */
-export function extractBearerToken(authHeader: string | undefined | null): string | undefined {
-  if (!authHeader || typeof authHeader !== "string") {
-    return undefined;
-  }
+export function isDevRequest(req: Request): boolean {
+  const hasDevHeader = req.headers.get("x-voltagent-dev") === "true";
+  // Treat undefined/empty NODE_ENV as development (only production is strict)
+  const isDevEnv = process.env.NODE_ENV !== "production";
 
-  if (authHeader.startsWith("Bearer ")) {
-    return authHeader.substring(7);
-  }
-
-  return undefined;
+  return hasDevHeader && isDevEnv;
 }
 
 /**
- * Extract token from various sources
- * @param headers Headers object or map
- * @param cookies Optional cookies object
- * @param query Optional query parameters
- * @returns The token if found, undefined otherwise
+ * Check if request has valid Console access
+ * Works in both development and production environments
+ *
+ * @param req - The incoming HTTP request
+ * @returns True if request has valid console access
+ *
+ * @example
+ * // Development with dev header
+ * NODE_ENV=development + x-voltagent-dev=true → true
+ *
+ * // Production with console key
+ * NODE_ENV=production + x-console-access-key=valid-key → true
+ *
+ * // Production without key
+ * NODE_ENV=production + no key → false
+ *
+ * @security
+ * - In development: Uses existing dev bypass
+ * - In production: Requires matching console access key
+ * - Key must match VOLTAGENT_CONSOLE_ACCESS_KEY env var
  */
-export function extractToken(
-  headers: Record<string, string | string[] | undefined> | Headers,
-  cookies?: Record<string, string>,
-  query?: Record<string, string | string[] | undefined>,
-): string | undefined {
-  // Try Authorization header first
-  let authHeader: string | undefined;
-
-  if (headers instanceof Headers) {
-    authHeader = headers.get("authorization") || headers.get("Authorization") || undefined;
-  } else {
-    authHeader =
-      headers.authorization ||
-      headers.Authorization ||
-      (Array.isArray(headers.authorization) ? headers.authorization[0] : undefined) ||
-      (Array.isArray(headers.Authorization) ? headers.Authorization[0] : undefined);
+export function hasConsoleAccess(req: Request): boolean {
+  // 1. Development bypass (existing system)
+  if (isDevRequest(req)) {
+    return true;
   }
 
-  const bearerToken = extractBearerToken(authHeader);
-  if (bearerToken) {
-    return bearerToken;
+  // 2. Console Access Key check (for production)
+  const consoleKey = req.headers.get("x-console-access-key");
+  const configuredKey = process.env.VOLTAGENT_CONSOLE_ACCESS_KEY;
+
+  if (configuredKey && consoleKey === configuredKey) {
+    return true;
   }
 
-  // Try cookie
-  if (cookies?.token) {
-    return cookies.token;
-  }
-
-  // Try query parameter
-  if (query?.token) {
-    return Array.isArray(query.token) ? query.token[0] : query.token;
-  }
-
-  return undefined;
-}
-
-/**
- * Create user context object for injection into requests
- * @param user The authenticated user object
- * @param existingContext Optional existing context to merge with
- * @returns The user context object
- */
-export function createUserContext(
-  user: any,
-  existingContext?: Record<string, any>,
-): Record<string, any> {
-  const context: Record<string, any> = {
-    ...existingContext,
-    user,
-  };
-
-  // Add userId at root level if available
-  if (user.id) {
-    context.userId = user.id;
-  } else if (user.sub) {
-    context.userId = user.sub;
-  }
-
-  return context;
-}
-
-/**
- * Inject user context into request body
- * @param body The original request body
- * @param user The authenticated user
- * @returns The modified body with user context
- */
-export function injectUserIntoBody(body: any, user: any): any {
-  if (!body || typeof body !== "object") {
-    return {
-      context: { user },
-      userId: user.id || user.sub,
-    };
-  }
-
-  return {
-    ...body,
-    context: {
-      ...body.context,
-      user,
-    },
-    // Set userId if available and not already set
-    ...(user.id && !body.userId && { userId: user.id }),
-    ...(user.sub && !user.id && !body.userId && { userId: user.sub }),
-  };
-}
-
-/**
- * Create a standardized auth error response
- * @param message The error message
- * @param statusCode The HTTP status code
- * @returns The error response object
- */
-export function createAuthErrorResponse(
-  message: string,
-  statusCode = 401,
-): { success: false; error: string; statusCode: number } {
-  return {
-    success: false,
-    error: message,
-    statusCode,
-  };
+  return false;
 }

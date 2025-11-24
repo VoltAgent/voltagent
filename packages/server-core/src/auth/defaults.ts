@@ -15,53 +15,109 @@ export const DEFAULT_PUBLIC_ROUTES = [
   "GET /workflows", // List all workflows
   "GET /workflows/:id", // Get workflow details
 
-  // Logs and monitoring
-  "GET /logs", // Get logs
-  "GET /logs/stream", // Stream logs (WebSocket)
-
   // API documentation
   "GET /doc", // OpenAPI spec
   "GET /ui", // Swagger UI
   "GET /", // Landing page
 
-  // Health checks
-  "GET /health", // Health check endpoint
+  // MCP (public discovery)
+  "GET /mcp/servers",
+  "GET /mcp/servers/:serverId",
+  "GET /mcp/servers/:serverId/tools",
+
+  // A2A (agent-to-agent discovery)
+  "GET /agents/:id/card",
 ];
 
 /**
  * Routes that require authentication by default
- * These are the actual execution endpoints
+ * These endpoints execute operations, modify state, or access sensitive data
  */
 export const PROTECTED_ROUTES = [
-  // Agent execution endpoints
+  // ========================================
+  // AGENT EXECUTION (User Data)
+  // ========================================
   "POST /agents/:id/text", // generateText
   "POST /agents/:id/stream", // streamText
   "POST /agents/:id/chat", // chatStream
   "POST /agents/:id/object", // generateObject
   "POST /agents/:id/stream-object", // streamObject
+  "WS /ws/agents/:id", // WebSocket connection
 
-  // Workflow execution endpoints
+  // ========================================
+  // WORKFLOW EXECUTION (User Data)
+  // ========================================
   "POST /workflows/:id/run", // Run workflow
   "POST /workflows/:id/stream", // Stream workflow execution
-  "POST /workflows/:id/suspend", // Suspend workflow
-  "POST /workflows/:id/resume", // Resume workflow
 
-  // WebSocket connections for agents
-  "WS /ws/agents/:id", // Agent WebSocket connection
+  // ========================================
+  // WORKFLOW CONTROL (State Modification)
+  // ========================================
+  "POST /workflows/:id/executions/:executionId/suspend", // Suspend execution
+  "POST /workflows/:id/executions/:executionId/resume", // Resume execution
+  "POST /workflows/:id/executions/:executionId/cancel", // Cancel execution
+
+  // ========================================
+  // OBSERVABILITY (Admin/Internal Tooling)
+  // Covers all observability endpoints:
+  // - /observability/traces
+  // - /observability/spans/:id
+  // - /observability/logs
+  // - /observability/memory/*
+  // ========================================
+  "/observability/*", // All methods (GET, POST, PUT, DELETE)
+
+  // ========================================
+  // SYSTEM UPDATES (Critical Security)
+  // ========================================
+  "GET /updates", // Check for updates (admin only)
+  "POST /updates", // Install all updates
+  "POST /updates/:packageName", // Install single package
 ];
 
 /**
  * Check if a path matches a route pattern
+ *
+ * Supports multiple pattern types:
+ * - Exact match: "/agents" matches "/agents"
+ * - Parameters: "/agents/:id" matches "/agents/123"
+ * - Trailing wildcard: "/observability/*" matches "/observability/traces" and "/observability/memory/users"
+ * - Double-star: "/api/**" matches "/api" and all children
+ *
  * @param path The actual request path (e.g., "/agents/123")
- * @param pattern The route pattern (e.g., "/agents/:id")
+ * @param pattern The route pattern (e.g., "/agents/:id" or "/observability/*")
  * @returns True if the path matches the pattern
+ *
+ * @example
+ * pathMatches("/observability/traces", "/observability/*") → true
+ * pathMatches("/observability/memory/users", "/observability/*") → true
+ * pathMatches("/api/traces", "/observability/*") → false
  */
 export function pathMatches(path: string, pattern: string): boolean {
-  // Remove method prefix if present
+  // Remove method prefix if present (e.g., "GET /path")
   const routeParts = pattern.split(" ");
   const routePattern = routeParts.length === 2 ? routeParts[1] : pattern;
 
-  // Simple pattern matching for parameters
+  // ========================================
+  // WILDCARD SUPPORT
+  // ========================================
+
+  // Trailing wildcard: /observability/* matches /observability/anything/deep
+  if (routePattern.endsWith("/*")) {
+    const prefix = routePattern.slice(0, -2); // Remove '/*'
+    // Must have at least one more segment after prefix
+    return path.startsWith(`${prefix}/`) && path.length > prefix.length + 1;
+  }
+
+  // Double-star: /api/** matches /api and all children
+  if (routePattern.includes("/**")) {
+    const prefix = routePattern.replace("/**", "");
+    return path === prefix || path.startsWith(`${prefix}/`);
+  }
+
+  // ========================================
+  // PARAMETER & EXACT MATCHING
+  // ========================================
   const patternParts = routePattern.split("/");
   const pathParts = path.split("/");
 
@@ -73,14 +129,14 @@ export function pathMatches(path: string, pattern: string): boolean {
     const patternPart = patternParts[i];
     const pathPart = pathParts[i];
 
-    // Skip parameter parts (e.g., :id)
+    // Dynamic parameter (e.g., :id, :executionId)
     if (patternPart.startsWith(":")) {
       continue;
     }
 
-    // Wildcard matching
+    // Single-segment wildcard
     if (patternPart === "*") {
-      return true;
+      continue;
     }
 
     // Exact match required
@@ -106,13 +162,12 @@ export function requiresAuth(
   publicRoutes?: string[],
   defaultPrivate?: boolean,
 ): boolean {
-  const fullRoute = `${method.toUpperCase()} ${path}`;
-
   // Check if it's a default public route
   for (const publicRoute of DEFAULT_PUBLIC_ROUTES) {
     if (publicRoute.includes(" ")) {
       // Route with method specified
-      if (fullRoute === publicRoute || pathMatches(path, publicRoute)) {
+      const [routeMethod, routePath] = publicRoute.split(" ");
+      if (method.toUpperCase() === routeMethod && pathMatches(path, routePath)) {
         return false; // Public route, no auth required
       }
     } else {
@@ -128,7 +183,8 @@ export function requiresAuth(
     for (const publicRoute of publicRoutes) {
       if (publicRoute.includes(" ")) {
         // Route with method specified
-        if (fullRoute === publicRoute || pathMatches(path, publicRoute)) {
+        const [routeMethod, routePath] = publicRoute.split(" ");
+        if (method.toUpperCase() === routeMethod && pathMatches(path, routePath)) {
           return false; // Public route, no auth required
         }
       } else {
@@ -159,5 +215,6 @@ export function requiresAuth(
   // Default: Use defaultPrivate to determine behavior for unknown routes
   // When defaultPrivate is true, all routes require auth unless explicitly made public
   // When defaultPrivate is false/undefined, custom endpoints work without auth (current behavior)
-  return defaultPrivate ?? false;
+  const result = defaultPrivate ?? false;
+  return result;
 }

@@ -30,6 +30,28 @@ describe("Auth Defaults", () => {
       expect(pathMatches("/webhooks/stripe", "/webhooks/*")).toBe(true);
     });
 
+    it("should match trailing wildcard /* for deep paths", () => {
+      expect(pathMatches("/observability/traces", "/observability/*")).toBe(true);
+      expect(pathMatches("/observability/memory/users", "/observability/*")).toBe(true);
+      expect(pathMatches("/observability/memory/conversations/123", "/observability/*")).toBe(true);
+      expect(pathMatches("/observability/spans/abc-123", "/observability/*")).toBe(true);
+    });
+
+    it("should not match trailing wildcard /* for exact prefix without slash", () => {
+      expect(pathMatches("/observability", "/observability/*")).toBe(false);
+    });
+
+    it("should match double-star /** for exact path and all children", () => {
+      expect(pathMatches("/api", "/api/**")).toBe(true);
+      expect(pathMatches("/api/users", "/api/**")).toBe(true);
+      expect(pathMatches("/api/users/123/posts", "/api/**")).toBe(true);
+    });
+
+    it("should not match double-star /** for different paths", () => {
+      expect(pathMatches("/other", "/api/**")).toBe(false);
+      expect(pathMatches("/other/api", "/api/**")).toBe(false);
+    });
+
     it("should handle method prefix in pattern", () => {
       expect(pathMatches("/agents", "GET /agents")).toBe(true);
       expect(pathMatches("/agents/123", "POST /agents/:id")).toBe(true);
@@ -47,7 +69,6 @@ describe("Auth Defaults", () => {
       it("should not require auth for default public routes", () => {
         expect(requiresAuth("GET", "/agents")).toBe(false);
         expect(requiresAuth("GET", "/workflows")).toBe(false);
-        expect(requiresAuth("GET", "/health")).toBe(false);
         expect(requiresAuth("GET", "/doc")).toBe(false);
         expect(requiresAuth("GET", "/ui")).toBe(false);
         expect(requiresAuth("GET", "/")).toBe(false);
@@ -56,6 +77,16 @@ describe("Auth Defaults", () => {
       it("should not require auth for public routes with parameters", () => {
         expect(requiresAuth("GET", "/agents/my-agent")).toBe(false);
         expect(requiresAuth("GET", "/workflows/my-workflow")).toBe(false);
+      });
+
+      it("should not require auth for MCP discovery endpoints", () => {
+        expect(requiresAuth("GET", "/mcp/servers")).toBe(false);
+        expect(requiresAuth("GET", "/mcp/servers/my-server")).toBe(false);
+        expect(requiresAuth("GET", "/mcp/servers/my-server/tools")).toBe(false);
+      });
+
+      it("should not require auth for A2A agent card endpoint", () => {
+        expect(requiresAuth("GET", "/agents/my-agent/card")).toBe(false);
       });
     });
 
@@ -70,6 +101,30 @@ describe("Auth Defaults", () => {
       it("should require auth for workflow execution endpoints", () => {
         expect(requiresAuth("POST", "/workflows/my-workflow/run")).toBe(true);
         expect(requiresAuth("POST", "/workflows/123/stream")).toBe(true);
+      });
+
+      it("should require auth for workflow control endpoints", () => {
+        expect(requiresAuth("POST", "/workflows/my-workflow/executions/exec-123/suspend")).toBe(
+          true,
+        );
+        expect(requiresAuth("POST", "/workflows/abc/executions/exec-456/resume")).toBe(true);
+        expect(requiresAuth("POST", "/workflows/test/executions/exec-789/cancel")).toBe(true);
+      });
+
+      it("should require auth for all observability endpoints via wildcard", () => {
+        expect(requiresAuth("GET", "/observability/traces")).toBe(true);
+        expect(requiresAuth("GET", "/observability/spans/abc-123")).toBe(true);
+        expect(requiresAuth("GET", "/observability/logs")).toBe(true);
+        expect(requiresAuth("GET", "/observability/memory/users")).toBe(true);
+        expect(requiresAuth("POST", "/observability/memory/conversations")).toBe(true);
+        expect(requiresAuth("DELETE", "/observability/spans/123")).toBe(true);
+      });
+
+      it("should require auth for system update endpoints", () => {
+        expect(requiresAuth("GET", "/updates")).toBe(true);
+        expect(requiresAuth("POST", "/updates")).toBe(true);
+        expect(requiresAuth("POST", "/updates/package-name")).toBe(true);
+        expect(requiresAuth("POST", "/updates/@voltagent-core")).toBe(true);
       });
 
       it("should be case-insensitive for HTTP methods", () => {
@@ -132,7 +187,6 @@ describe("Auth Defaults", () => {
       it("should keep default public routes public even with defaultPrivate", () => {
         expect(requiresAuth("GET", "/agents", undefined, true)).toBe(false);
         expect(requiresAuth("GET", "/workflows", undefined, true)).toBe(false);
-        expect(requiresAuth("GET", "/health", undefined, true)).toBe(false);
         expect(requiresAuth("GET", "/doc", undefined, true)).toBe(false);
         expect(requiresAuth("GET", "/ui", undefined, true)).toBe(false);
       });
