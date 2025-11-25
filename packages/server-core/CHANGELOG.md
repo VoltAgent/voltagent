@@ -1,5 +1,14 @@
 # @voltagent/server-core
 
+## 1.0.27
+
+### Patch Changes
+
+- [`2cb5464`](https://github.com/VoltAgent/voltagent/commit/2cb5464f15a6e2b2e7b5649c1db3ed7298b633eb) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: trigger duplicate span issue
+
+- Updated dependencies [[`148f550`](https://github.com/VoltAgent/voltagent/commit/148f550ceafa412534fd2d1c4cfb44c8255636ab)]:
+  - @voltagent/core@1.2.10
+
 ## 1.0.26
 
 ### Patch Changes
