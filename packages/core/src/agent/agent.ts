@@ -2893,35 +2893,13 @@ export class Agent {
       }
 
       if (promptContent.type === "text") {
-        let content = promptContent.text || "";
-
-        // Add toolkit instructions
-        content = this.addToolkitInstructions(content);
-
-        // Add markdown instruction
-        if (this.markdown) {
-          content = `${content}\n\nUse markdown to format your answers.`;
-        }
-
-        // Add retriever context
-        if (retrieverContext) {
-          content = `${content}\n\nRelevant Context:\n${retrieverContext}`;
-        }
-
-        // Add working memory context
-        if (workingMemoryContext) {
-          content = `${content}${workingMemoryContext}`;
-        }
-
-        // Add supervisor instructions if needed
-        if (this.subAgentManager.hasSubAgents()) {
-          const agentsMemory = await this.prepareAgentsMemory(oc);
-          content = this.subAgentManager.generateSupervisorSystemMessage(
-            content,
-            agentsMemory,
-            this.supervisorConfig,
-          );
-        }
+        const baseContent = promptContent.text || "";
+        const content = await this.enrichInstructions(
+          baseContent,
+          retrieverContext,
+          workingMemoryContext,
+          oc,
+        );
 
         return {
           role: "system",
@@ -2931,7 +2909,46 @@ export class Agent {
     }
 
     // Default string instructions
-    let content = typeof resolvedInstructions === "string" ? resolvedInstructions : "";
+    const baseContent = typeof resolvedInstructions === "string" ? resolvedInstructions : "";
+    const content = await this.enrichInstructions(
+      baseContent,
+      retrieverContext,
+      workingMemoryContext,
+      oc,
+    );
+
+    return {
+      role: "system",
+      content: `You are ${this.name}. ${content}`,
+    };
+  }
+
+  /**
+   * Add toolkit instructions
+   */
+  private addToolkitInstructions(baseInstructions: string): string {
+    const toolkits = this.toolManager.getToolkits();
+    let toolInstructions = "";
+
+    for (const toolkit of toolkits) {
+      if (toolkit.addInstructions && toolkit.instructions) {
+        toolInstructions += `\n\n${toolkit.instructions}`;
+      }
+    }
+
+    return baseInstructions + toolInstructions;
+  }
+
+  /**
+   * Enrich instructions with additional context and modifiers
+   */
+  private async enrichInstructions(
+    baseContent: string,
+    retrieverContext: string | null,
+    workingMemoryContext: string | null,
+    oc: OperationContext,
+  ): Promise<string> {
+    let content = baseContent;
 
     // Add toolkit instructions
     content = this.addToolkitInstructions(content);
@@ -2961,26 +2978,7 @@ export class Agent {
       );
     }
 
-    return {
-      role: "system",
-      content: `You are ${this.name}. ${content}`,
-    };
-  }
-
-  /**
-   * Add toolkit instructions
-   */
-  private addToolkitInstructions(baseInstructions: string): string {
-    const toolkits = this.toolManager.getToolkits();
-    let toolInstructions = "";
-
-    for (const toolkit of toolkits) {
-      if (toolkit.addInstructions && toolkit.instructions) {
-        toolInstructions += `\n\n${toolkit.instructions}`;
-      }
-    }
-
-    return baseInstructions + toolInstructions;
+    return content;
   }
 
   /**

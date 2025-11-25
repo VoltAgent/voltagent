@@ -1971,4 +1971,444 @@ describe("Agent", () => {
       expect(callCount).toBe(3);
     });
   });
+
+  describe("enrichInstructions", () => {
+    it("should add toolkit instructions when toolkits are present", async () => {
+      const toolkit = {
+        name: "test-toolkit",
+        addInstructions: true,
+        instructions: "Toolkit specific instructions",
+        tools: [
+          new Tool({
+            name: "toolkit-tool",
+            description: "A tool from toolkit",
+            parameters: z.object({}),
+            execute: vi.fn(),
+          }),
+        ],
+      };
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        toolkits: [toolkit],
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+      const enriched = await (agent as any).enrichInstructions(
+        "Base content",
+        null,
+        null,
+        operationContext,
+      );
+
+      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Toolkit specific instructions");
+    });
+
+    it("should add markdown instruction when markdown is enabled", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        markdown: true,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+      const enriched = await (agent as any).enrichInstructions(
+        "Base content",
+        null,
+        null,
+        operationContext,
+      );
+
+      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Use markdown to format your answers");
+    });
+
+    it("should add retriever context when provided", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+      const retrieverContext = "This is relevant context from retriever";
+      const enriched = await (agent as any).enrichInstructions(
+        "Base content",
+        retrieverContext,
+        null,
+        operationContext,
+      );
+
+      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Relevant Context:");
+      expect(enriched).toContain(retrieverContext);
+    });
+
+    it("should add working memory context when provided", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+      const workingMemoryContext = "\n\nWorking memory: Recent important info";
+      const enriched = await (agent as any).enrichInstructions(
+        "Base content",
+        null,
+        workingMemoryContext,
+        operationContext,
+      );
+
+      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Working memory: Recent important info");
+    });
+
+    it("should handle all null contexts gracefully", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+      const enriched = await (agent as any).enrichInstructions(
+        "Base content",
+        null,
+        null,
+        operationContext,
+      );
+
+      expect(enriched).toBe("Base content");
+    });
+
+    it("should combine multiple enrichments correctly", async () => {
+      const toolkit = {
+        name: "test-toolkit",
+        addInstructions: true,
+        instructions: "Toolkit instructions",
+        tools: [
+          new Tool({
+            name: "toolkit-tool",
+            description: "Tool",
+            parameters: z.object({}),
+            execute: vi.fn(),
+          }),
+        ],
+      };
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        toolkits: [toolkit],
+        markdown: true,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+      const enriched = await (agent as any).enrichInstructions(
+        "Base content",
+        "Retriever context",
+        "\n\nWorking memory context",
+        operationContext,
+      );
+
+      // Verify all components are present
+      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Toolkit instructions");
+      expect(enriched).toContain("Use markdown to format your answers");
+      expect(enriched).toContain("Relevant Context:");
+      expect(enriched).toContain("Retriever context");
+      expect(enriched).toContain("Working memory context");
+
+      // Verify order is preserved
+      const markdownIndex = enriched.indexOf("Use markdown");
+      const retrieverIndex = enriched.indexOf("Relevant Context:");
+      const workingMemoryIndex = enriched.indexOf("Working memory context");
+
+      expect(markdownIndex).toBeLessThan(retrieverIndex);
+      expect(retrieverIndex).toBeLessThan(workingMemoryIndex);
+    });
+
+    it("should add supervisor instructions when sub-agents are present", async () => {
+      const subAgent = new Agent({
+        name: "SubAgent",
+        instructions: "Sub agent instructions",
+        model: mockModel as any,
+      });
+
+      const agent = new Agent({
+        name: "SupervisorAgent",
+        instructions: "Supervisor instructions",
+        model: mockModel as any,
+        agents: [subAgent],
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+
+      // Mock prepareAgentsMemory to avoid complex setup
+      vi.spyOn(agent as any, "prepareAgentsMemory").mockResolvedValue("Agents memory");
+
+      const enriched = await (agent as any).enrichInstructions(
+        "Base content",
+        null,
+        null,
+        operationContext,
+      );
+
+      // Should contain supervisor-related content
+      expect(enriched).toContain("Base content");
+      // The supervisor message would be added by subAgentManager.generateSupervisorSystemMessage
+    });
+
+    it("should handle empty base content", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        markdown: true,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+      const enriched = await (agent as any).enrichInstructions(
+        "",
+        "Retriever context",
+        null,
+        operationContext,
+      );
+
+      expect(enriched).toContain("Use markdown to format your answers");
+      expect(enriched).toContain("Retriever context");
+    });
+
+    it("should preserve content when no enrichments are needed", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        markdown: false, // No markdown
+        toolkits: [], // No toolkits
+        // No sub-agents by default
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+      const originalContent = "This is the original untouched content";
+      const enriched = await (agent as any).enrichInstructions(
+        originalContent,
+        null, // No retriever context
+        null, // No working memory
+        operationContext,
+      );
+
+      expect(enriched).toBe(originalContent);
+    });
+  });
+
+  describe("getSystemMessage integration", () => {
+    it("should use enrichInstructions for text prompt type", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: {
+          type: "text" as const,
+          text: "Text prompt instructions",
+        },
+        model: mockModel as any,
+        markdown: true,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+
+      // Spy on enrichInstructions to verify it's called
+      const enrichSpy = vi.spyOn(agent as any, "enrichInstructions");
+
+      const systemMessage = await (agent as any).getSystemMessage(
+        "user input",
+        operationContext,
+        {},
+      );
+
+      expect(enrichSpy).toHaveBeenCalledOnce();
+      expect(enrichSpy).toHaveBeenCalledWith(
+        "Text prompt instructions",
+        null,
+        null,
+        operationContext,
+      );
+
+      expect(systemMessage).toMatchObject({
+        role: "system",
+        content: expect.stringContaining("You are TestAgent"),
+      });
+      expect(systemMessage.content).toContain("Text prompt instructions");
+      expect(systemMessage.content).toContain("Use markdown to format your answers");
+    });
+
+    it("should use enrichInstructions for default string instructions", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "String instructions",
+        model: mockModel as any,
+        markdown: true,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+
+      // Spy on enrichInstructions to verify it's called
+      const enrichSpy = vi.spyOn(agent as any, "enrichInstructions");
+
+      const systemMessage = await (agent as any).getSystemMessage(
+        "user input",
+        operationContext,
+        {},
+      );
+
+      expect(enrichSpy).toHaveBeenCalledOnce();
+      expect(enrichSpy).toHaveBeenCalledWith("String instructions", null, null, operationContext);
+
+      expect(systemMessage).toMatchObject({
+        role: "system",
+        content: expect.stringContaining("You are TestAgent"),
+      });
+      expect(systemMessage.content).toContain("String instructions");
+      expect(systemMessage.content).toContain("Use markdown to format your answers");
+    });
+
+    it("should produce identical output for text type and string with same content", async () => {
+      const instructionContent = "Same instructions for both";
+
+      // Agent with text type prompt
+      const textAgent = new Agent({
+        name: "TestAgent",
+        instructions: {
+          type: "text" as const,
+          text: instructionContent,
+        },
+        model: mockModel as any,
+        markdown: true,
+      });
+
+      // Agent with string instructions
+      const stringAgent = new Agent({
+        name: "TestAgent",
+        instructions: instructionContent,
+        model: mockModel as any,
+        markdown: true,
+      });
+
+      const textContext = (textAgent as any).createOperationContext("test");
+      const stringContext = (stringAgent as any).createOperationContext("test");
+
+      const textSystemMessage = await (textAgent as any).getSystemMessage(
+        "user input",
+        textContext,
+        {},
+      );
+
+      const stringSystemMessage = await (stringAgent as any).getSystemMessage(
+        "user input",
+        stringContext,
+        {},
+      );
+
+      // Both should produce identical system messages
+      expect(textSystemMessage.content).toBe(stringSystemMessage.content);
+    });
+
+    it("should handle chat type prompts without using enrichInstructions", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: {
+          type: "chat" as const,
+          messages: [
+            { role: "system", content: "You are a helpful assistant" },
+            { role: "user", content: "Example user message" },
+            { role: "assistant", content: "Example response" },
+          ],
+        },
+        model: mockModel as any,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+
+      // Spy on enrichInstructions to verify it's NOT called for chat type
+      const enrichSpy = vi.spyOn(agent as any, "enrichInstructions");
+
+      const systemMessages = await (agent as any).getSystemMessage(
+        "user input",
+        operationContext,
+        {},
+      );
+
+      expect(enrichSpy).not.toHaveBeenCalled();
+      expect(Array.isArray(systemMessages)).toBe(true);
+      expect(systemMessages).toHaveLength(3);
+      expect(systemMessages[0].role).toBe("system");
+      expect(systemMessages[0].content).toBe("You are a helpful assistant");
+    });
+
+    it("should handle dynamic instructions correctly", async () => {
+      const dynamicFn = vi.fn().mockResolvedValue("Dynamic content");
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: dynamicFn,
+        model: mockModel as any,
+        markdown: true,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test");
+
+      const systemMessage = await (agent as any).getSystemMessage("user input", operationContext, {
+        context: { testData: "test" },
+      });
+
+      // Dynamic functions are called with context and prompts
+      expect(dynamicFn).toHaveBeenCalledOnce();
+      const callArg = dynamicFn.mock.calls[0][0];
+      expect(callArg).toHaveProperty("context");
+      expect(callArg).toHaveProperty("prompts");
+
+      expect(systemMessage).toMatchObject({
+        role: "system",
+        content: expect.stringContaining("You are TestAgent"),
+      });
+      expect(systemMessage.content).toContain("Dynamic content");
+      expect(systemMessage.content).toContain("Use markdown to format your answers");
+    });
+
+    it("should add retriever context correctly through enrichInstructions", async () => {
+      // Create mock retriever
+      const mockRetriever = {
+        retrieve: vi.fn().mockResolvedValue("Retrieved context for query"),
+      };
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        retriever: mockRetriever as any,
+      });
+
+      const operationContext = (agent as any).createOperationContext("test query");
+
+      // Mock getRetrieverContext to return specific context
+      vi.spyOn(agent as any, "getRetrieverContext").mockResolvedValue(
+        "Retrieved context for query",
+      );
+
+      const systemMessage = await (agent as any).getSystemMessage(
+        "test query",
+        operationContext,
+        {},
+      );
+
+      expect(systemMessage.content).toContain("Base instructions");
+      expect(systemMessage.content).toContain("Relevant Context:");
+      expect(systemMessage.content).toContain("Retrieved context for query");
+    });
+  });
 });
