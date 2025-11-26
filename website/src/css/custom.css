@@ -988,7 +988,8 @@ footer .hoverLink:hover {
 }
 
 @keyframes zap {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
     filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.8));
