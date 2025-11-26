@@ -3047,7 +3047,7 @@ export class Agent {
       const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {
         if (!this.retriever) return null;
         return await this.retriever.retrieve(retrieverInput, {
-          context: oc.context,
+          ...oc,
           logger: retrieverLogger,
         });
       });
