@@ -631,7 +631,7 @@
     "user": {
       "id_str": "691253",
       "name": "Seth Rose",
-      "screen_name": "TheSethRose",
+      "screen_name": "sethrose",
       "profile_image_url_https": "https://pbs.twimg.com/profile_images/1980430209074581504/MRTJmflB_normal.jpg",
       "profile_image_shape": "Circle",
       "verified": false,
@@ -853,7 +853,7 @@
       "profile_image_url_https": "https://pbs.twimg.com/profile_images/1644898947272671233/7959WGOK_normal.jpg",
       "profile_image_shape": "Circle",
       "verified": false,
-      "is_blue_verified": false
+      "is_blue_verified": true
     },
     "photos": [
       {

@@ -1,11 +1,13 @@
 import Link from "@docusaurus/Link";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
+import { BoltIcon } from "@heroicons/react/24/solid";
 import { useEffect, useRef, useState } from "react";
 import { AgentsAnimation } from "../agents-animation";
 import { LineShadowText } from "../magicui/line-shadow-text";
 
 export function Hero() {
   const [isVisible, setIsVisible] = useState(false);
+  const [showHeart, setShowHeart] = useState(false);
   const [commandText, setCommandText] = useState("npm create voltagent-app@latest");
   const [isTyping, setIsTyping] = useState(false);
   const originalCommand = "npm create voltagent-app@latest";
@@ -109,21 +111,44 @@ export function Hero() {
       <div className="mt-16 md:mt-24" />
       <div className="grid xs:grid-cols-1 mx-4 lg:mx-0 lg:grid-cols-2 gap-8 items-center">
         <div>
-          <h2 className="text-2xl text-left mb-2 text-main-emerald transition-all duration-1000 tracking-[-0.025em]">
-            A Full-Code
-          </h2>
-
-          <h1
-            className={`text-4xl sm:text-4xl text-neutral-100 md:text-5xl font-bold text-left mb-6 transition-all duration-1000 tracking-[-0.025em] ${
+          {/* Main Heading */}
+          <h2
+            className={`text-2xl text-left mb-2 font-bold transition-all duration-1000 tracking-[-0.025em] ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            AI Engineering Platform Alternative to
+            <Link
+              href="https://github.com/voltagent/voltagent/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-main-emerald no-underline hover:no-underline"
+            >
+              <span
+                className="inline-block relative"
+                onMouseEnter={() => setShowHeart(true)}
+                onMouseLeave={() => setShowHeart(false)}
+              >
+                Event-Driven
+                {showHeart && (
+                  <span className="absolute -right-8 top-1 animate-[zap_1.5s_ease-in-out_infinite]">
+                    <BoltIcon className="w-6 h-6 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
+                  </span>
+                )}
+              </span>
+            </Link>
+          </h2>
+
+          <h1
+            className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-bold text-left mb-6 transition-all duration-1000 tracking-[-0.025em] ${
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
+          >
+            TypeScript AI Agent
             <LineShadowText
-              className="text-main-emerald landing-md:mt-2 ml-3 italic"
+              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 ml-2 landing-sm:ml-0 italic"
               shadowColor={"#00d992"}
             >
-              n8n
+              Framework
             </LineShadowText>
           </h1>
 
