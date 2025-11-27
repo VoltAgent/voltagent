@@ -102,7 +102,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     conversationId: string,
     options?: GetMessagesOptions,
     _context?: OperationContext,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     const { limit = 100, before, after, roles } = options || {};
 
     // Get user's messages or return empty array
@@ -135,8 +135,17 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     return messages.map((msg) => {
       const cloned = deepClone(msg);
       // Remove storage-specific fields to return clean UIMessage
-      const { createdAt, userId: msgUserId, conversationId: msgConvId, ...uiMessage } = cloned;
-      return uiMessage as UIMessage;
+      const { userId: msgUserId, conversationId: msgConvId, ...uiMessage } = cloned;
+
+      // Ensure metadata exists
+      if (!uiMessage.metadata) {
+        uiMessage.metadata = {};
+      }
+
+      // Add createdAt to metadata
+      (uiMessage.metadata as any).createdAt = cloned.createdAt;
+
+      return uiMessage as UIMessage<{ createdAt: Date }>;
     });
   }
 

@@ -591,7 +591,7 @@ END OF MIGRATION SQL
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     await this.initialize();
 
     const messagesTable = `${this.baseTableName}_messages`;
@@ -676,7 +676,10 @@ END OF MIGRATION SQL
         id: row.message_id,
         role: row.role as "system" | "user" | "assistant",
         parts,
-        metadata: row.metadata || {},
+        metadata: {
+          ...(row.metadata || {}),
+          createdAt: row.created_at ? new Date(row.created_at) : undefined,
+        },
       };
     });
   }

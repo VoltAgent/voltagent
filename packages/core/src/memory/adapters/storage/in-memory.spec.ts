@@ -487,13 +487,15 @@ describe("InMemoryStorageAdapter", () => {
         expect(limited).toHaveLength(2);
       });
 
-      it("should return clean UIMessage without storage metadata", async () => {
+      it("should return UIMessage with createdAt in metadata", async () => {
         // Act
         const messages = await storage.getMessages(userId, conversationId);
 
         // Assert
         messages.forEach((msg) => {
-          expect(msg).not.toHaveProperty("createdAt");
+          expect(msg.metadata).toBeDefined();
+          expect(msg.metadata).toHaveProperty("createdAt");
+          expect(msg.metadata?.createdAt).toBeInstanceOf(Date);
           expect(msg).not.toHaveProperty("userId");
           expect(msg).not.toHaveProperty("conversationId");
         });

@@ -680,7 +680,7 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     await this.initialize();
 
     const messagesTable = `${this.tablePrefix}_messages`;
@@ -757,11 +757,15 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
         parts = [];
       }
 
+      const metadata = row.metadata ? JSON.parse(row.metadata as string) : {};
       return {
         id: row.message_id as string,
         role: row.role as "system" | "user" | "assistant",
         parts,
-        metadata: row.metadata ? JSON.parse(row.metadata as string) : undefined,
+        metadata: {
+          ...metadata,
+          createdAt: row.created_at ? new Date(row.created_at as string) : undefined,
+        },
       };
     });
   }

@@ -240,7 +240,7 @@ export class MemoryManager {
       traceContext?: AgentTraceContext; // TraceContext for proper span hierarchy
       parentMemorySpan?: Span; // Parent memory span for proper nesting
     },
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     if (!this.conversationMemory || !userId) {
       return [];
     }
@@ -252,7 +252,7 @@ export class MemoryManager {
 
     try {
       // Use Memory V2 to get messages with optional semantic search
-      let messages: UIMessage[] = [];
+      let messages: UIMessage<{ createdAt: Date }>[] = [];
 
       if (conversationId && userId) {
         // Check if semantic search is requested
@@ -277,12 +277,12 @@ export class MemoryManager {
           });
         } else {
           // Use regular message retrieval
-          messages = await this.conversationMemory.getMessages(
+          messages = (await this.conversationMemory.getMessages(
             userId,
             conversationId,
             { limit },
             context, // Pass OperationContext to Memory
-          );
+          )) as UIMessage<{ createdAt: Date }>[];
         }
       }
 
@@ -320,7 +320,7 @@ export class MemoryManager {
     userId?: string,
     conversationId?: string,
     limit?: number,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     if (!this.conversationMemory || !userId || !conversationId) {
       return [];
     }
@@ -418,7 +418,7 @@ export class MemoryManager {
     userId?: string,
     conversationIdParam?: string,
     contextLimit = 10,
-  ): Promise<{ messages: UIMessage[]; conversationId: string }> {
+  ): Promise<{ messages: UIMessage<{ createdAt: Date }>[]; conversationId: string }> {
     // Use the provided conversationId or generate a new one
     const conversationId = conversationIdParam || randomUUID();
 
@@ -432,19 +432,19 @@ export class MemoryManager {
     }
 
     // 🎯 CRITICAL: Always load conversation context (conversation continuity is essential)
-    let messages: UIMessage[] = [];
+    let messages: UIMessage<{ createdAt: Date }>[] = [];
 
     try {
       // Get UIMessages from memory directly - no conversion needed!
       // Filter to only get user and assistant messages (exclude tool, system, etc.)
-      messages = await this.conversationMemory.getMessages(
+      messages = (await this.conversationMemory.getMessages(
         userId,
         conversationId,
         {
           limit: contextLimit,
         },
         context, // Pass OperationContext to Memory
-      );
+      )) as UIMessage<{ createdAt: Date }>[];
 
       context.logger.debug(
         `[Memory] Fetched messages from memory. Message Count: ${messages.length}`,
@@ -748,10 +748,11 @@ export class MemoryManager {
     logger: Logger,
     traceContext?: AgentTraceContext,
     parentMemorySpan?: Span,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     if (!this.conversationMemory?.hasVectorSupport?.()) {
       logger.debug("Vector support not available, falling back to regular retrieval");
-      return this.conversationMemory?.getMessages(userId, conversationId, { limit }) || [];
+      return ((await this.conversationMemory?.getMessages(userId, conversationId, { limit })) ||
+        []) as UIMessage<{ createdAt: Date }>[];
     }
 
     // Get adapter info for logging

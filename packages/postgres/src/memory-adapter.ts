@@ -495,7 +495,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     userId: string,
     conversationId: string,
     options?: GetMessagesOptions,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     await this.initPromise;
 
     // Debug: Method entry
@@ -647,7 +647,10 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           id: row.message_id,
           role: row.role as "system" | "user" | "assistant",
           parts,
-          metadata: row.metadata,
+          metadata: {
+            ...(row.metadata || {}),
+            createdAt: row.created_at instanceof Date ? row.created_at : new Date(row.created_at),
+          },
         };
 
         // Debug: Final message structure

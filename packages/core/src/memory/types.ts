@@ -347,7 +347,7 @@ export interface StorageAdapter {
     conversationId: string,
     options?: GetMessagesOptions,
     context?: OperationContext,
-  ): Promise<UIMessage[]>;
+  ): Promise<UIMessage<{ createdAt: Date }>[]>;
   clearMessages(userId: string, conversationId?: string, context?: OperationContext): Promise<void>;
 
   // Conversation operations
