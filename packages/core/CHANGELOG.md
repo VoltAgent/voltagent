@@ -1,5 +1,64 @@
 # @voltagent/core
 
+## 1.2.11
+
+### Patch Changes
+
+- [#817](https://github.com/VoltAgent/voltagent/pull/817) [`decfda5`](https://github.com/VoltAgent/voltagent/commit/decfda5898128ef9097cd1dc456ca563ee49def1) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: pass complete OperationContext to retrievers when used as object instances
+
+  ## The Problem
+
+  When a retriever was assigned directly to an agent as an object instance (e.g., `retriever: myRetriever`), it wasn't receiving the `userId` and `conversationId` from the OperationContext. This prevented user-specific and conversation-aware retrieval when retrievers were used in this way, even though these fields were correctly passed when retrievers were used as tools.
+
+  ## The Solution
+
+  Updated the `getRetrieverContext` method in the Agent class to pass the complete OperationContext to retrievers, ensuring consistency between tool-based and object-based retriever usage.
+
+  ## What Changed
+
+  ```typescript
+  // Before - only partial context was passed
+  return await this.retriever.retrieve(retrieverInput, {
+    context: oc.context,
+    logger: retrieverLogger,
+  });
+
+  // After - complete OperationContext is passed
+  return await this.retriever.retrieve(retrieverInput, {
+    ...oc,
+    logger: retrieverLogger,
+  });
+  ```
+
+  ## Impact
+  - **Consistent behavior:** Retrievers now receive `userId` and `conversationId` regardless of how they're configured
+  - **User-specific retrieval:** Enables filtering results by user in multi-tenant scenarios
+  - **Conversation awareness:** Retrievers can now access conversation context when used as object instances
+  - **No breaking changes:** This is a backward-compatible fix that adds missing context fields
+
+- [#820](https://github.com/VoltAgent/voltagent/pull/820) [`c5e0c89`](https://github.com/VoltAgent/voltagent/commit/c5e0c89554d85c895e3d6cbfc83ad47bd53a1b9f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: expose createdAt in memory.getMessages
+
+  ## What Changed
+
+  The `createdAt` timestamp is now exposed in the `metadata` object of messages retrieved via `memory.getMessages()`. This ensures that the creation time of messages is accessible across all storage adapters (`InMemory`, `Supabase`, `LibSQL`, `PostgreSQL`).
+
+  ## Usage
+
+  You can now access the `createdAt` timestamp from the message metadata:
+
+  ```typescript
+  const messages = await memory.getMessages(userId, conversationId);
+
+  messages.forEach((message) => {
+    console.log(`Message ID: ${message.id}`);
+    console.log(`Created At: ${message.metadata?.createdAt}`);
+  });
+  ```
+
+  This change aligns the behavior of all storage adapters and ensures consistent access to message timestamps.
+
+- [`53ff6bf`](https://github.com/VoltAgent/voltagent/commit/53ff6bfcae59e0f72dc4de6f8550241392e25864) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: voltops actions serverless fetch usage
+
 ## 1.2.10
 
 ### Patch Changes

@@ -1,5 +1,30 @@
 # @voltagent/postgres
 
+## 1.1.3
+
+### Patch Changes
+
+- [#820](https://github.com/VoltAgent/voltagent/pull/820) [`c5e0c89`](https://github.com/VoltAgent/voltagent/commit/c5e0c89554d85c895e3d6cbfc83ad47bd53a1b9f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: expose createdAt in memory.getMessages
+
+  ## What Changed
+
+  The `createdAt` timestamp is now exposed in the `metadata` object of messages retrieved via `memory.getMessages()`. This ensures that the creation time of messages is accessible across all storage adapters (`InMemory`, `Supabase`, `LibSQL`, `PostgreSQL`).
+
+  ## Usage
+
+  You can now access the `createdAt` timestamp from the message metadata:
+
+  ```typescript
+  const messages = await memory.getMessages(userId, conversationId);
+
+  messages.forEach((message) => {
+    console.log(`Message ID: ${message.id}`);
+    console.log(`Created At: ${message.metadata?.createdAt}`);
+  });
+  ```
+
+  This change aligns the behavior of all storage adapters and ensures consistent access to message timestamps.
+
 ## 1.1.2
 
 ### Patch Changes
