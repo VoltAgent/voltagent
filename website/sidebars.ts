@@ -14,11 +14,19 @@ const sidebars: SidebarsConfig = {
   docs: [
     {
       type: "category",
-      label: "Getting Started",
+      label: "Get Started",
       collapsed: true,
       items: [
         "getting-started/overview",
-        "getting-started/quick-start",
+        {
+          type: "category",
+          label: "Quick Start",
+          link: {
+            type: "doc",
+            id: "getting-started/quick-start",
+          },
+          items: ["getting-started/quick-start", "getting-started/manual-setup"],
+        },
         "getting-started/mcp-docs-server",
         {
           type: "link",
