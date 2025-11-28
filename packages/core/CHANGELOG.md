@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.2.12
+
+### Patch Changes
+
+- [`28661fc`](https://github.com/VoltAgent/voltagent/commit/28661fc24f945b0e52c12703a5a09a033317d8fa) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enable persistence for live evaluations
+
 ## 1.2.11
 
 ### Patch Changes

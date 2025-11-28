@@ -1,5 +1,14 @@
 # @voltagent/server-core
 
+## 1.0.28
+
+### Patch Changes
+
+- [`28661fc`](https://github.com/VoltAgent/voltagent/commit/28661fc24f945b0e52c12703a5a09a033317d8fa) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enable persistence for live evaluations
+
+- Updated dependencies [[`28661fc`](https://github.com/VoltAgent/voltagent/commit/28661fc24f945b0e52c12703a5a09a033317d8fa)]:
+  - @voltagent/core@1.2.12
+
 ## 1.0.27
 
 ### Patch Changes
