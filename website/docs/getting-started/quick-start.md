@@ -7,10 +7,12 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import ApiKeyButton from '@site/src/components/docs-widgets/ApiKeyButton';
 import StepSection from '@site/src/components/docs-widgets/StepSection';
+import WorkflowDiagramFlow from '@site/src/components/docs-widgets/WorkflowDiagramFlow';
+import SectionDivider from '@site/src/components/docs-widgets/SectionDivider';
 
 # Automatic Setup
 
-Build and run your first AI agent with VoltAgent. You'll create a simple agent that can understand and respond to questions, then explore production-ready features used by enterprise teams.
+Create and run your first AI agent with VoltAgent. You'll set up a project, configure an AI provider, and test your agent with the VoltOps console.
 
 <StepSection stepNumber={1} title="Create New Project">
 
@@ -156,6 +158,33 @@ You should receive a response, you've successfully created your first AI agent t
 
 </StepSection>
 
+<SectionDivider>
+  Up to this point, you created and tested a basic working AI agent. The next step shows how to connect it to external events and services.
+</SectionDivider>
+
+<StepSection stepNumber={4} title="Add Triggers and Actions (Optional)">
+
+You now have a working AI agent that responds to messages. VoltAgent also supports event-driven workflows.
+
+- [VoltAgent Triggers](/docs/triggers/overview/) listen for external events like GitHub webhooks or cron schedules.
+- [Voltagent Actions](/docs/actions/overview/) send data to external services like Discord or Slack.
+
+Together, they let your agent react to events and take actions automatically.
+
+The diagram below shows an event-driven agent example: a GitHub star event triggers the agent, which generates a message and sends it to Discord.
+
+<WorkflowDiagramFlow />
+
+**Workflow steps:**
+
+1. **Trigger** - Captures a GitHub star webhook event
+2. **AI Agent** - Generates a message based on the event
+3. **Action** - Sends the message to Discord
+
+To implement this workflow with your agent, go to the [VoltAgent Console Get Started Guide](https://console.voltagent.dev/get-started) and continue from Step 4.
+
+</StepSection>
+
 ## Additional Features
 
 ### Share Your Local Server (Optional)
@@ -215,11 +244,11 @@ pnpm start
 
 The `build` script invokes **tsdown**, which bundles your TypeScript entrypoint (and any sibling directories such as `./workflows` or `./tools`) into `dist/index.js`. This extra step keeps the Node ESM loader from throwing `ERR_UNSUPPORTED_DIR_IMPORT` while preserving extensionless imports during development.
 
-### Explore and Run Your Workflow from the Console
+### Run the Example Workflow
 
-Your new project isn't just an agent; it's a powerful automation engine. We've included an expense approval workflow example to get you started, and you can run it directly from the VoltOps console.
+The generated project includes an expense approval workflow example. You can run it from the VoltOps console.
 
-This workflow demonstrates how to chain together all the core steps of VoltAgent:
+This workflow uses the following VoltAgent workflow steps:
 
 - **Data Transformation** (`andThen`)
 - **AI Agent Calls** (`andAgent`)
@@ -255,22 +284,15 @@ This workflow demonstrates how to chain together all the core steps of VoltAgent
 }
 ```
 
-5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
-
-This interactive experience is a great way to understand how to build and test complex automations with VoltAgent without needing to modify your code for every run.
+5.  **View the Results:** After execution, inspect the logs for each step and see the output in the console.
 
 ## Next Steps
 
-Ready to build real AI agents? Follow our step-by-step tutorial:
-
-- **[Start the Tutorial](/tutorial/introduction)** - Learn to build agents with tools, memory, and real-world integrations
-
-Or explore specific topics:
-
-- Explore [Agent](../agents/overview.md) options
-- Learn about [Memory](../agents/memory/overview.md)
-- Check out [Tool Creation](../agents/tools.md) for more advanced use cases
+- [Tutorial](/tutorial/introduction) - Build agents with tools, memory, and integrations
+- [Agent Configuration](../agents/overview.md) - Agent options and settings
+- [Memory](../agents/memory/overview.md) - Conversation history and persistence
+- [Tools](../agents/tools.md) - Create custom tools for your agent
 
 ---
 
-**Prefer manual configuration?** See the [Manual Setup](./manual-setup.md) guide for step-by-step instructions to create a VoltAgent project from scratch.
+For manual project setup without the CLI, see the [Manual Setup](./manual-setup.md) guide.

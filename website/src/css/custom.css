@@ -152,10 +152,19 @@ article h4 {
   margin-bottom: 1rem;
   /* Docs paragraph color (dark mode) */
 }
+ .theme-doc-markdown .section-divider p {
+  margin-bottom: 0 !important;
+}
 
 /* Set docs paragraph color in dark theme */
 html[data-theme="dark"] .theme-doc-markdown p {
   color: #b2b2b2 !important;
+}
+/* Set docs paragraph color in dark theme */
+html[data-theme="dark"] .theme-doc-markdown .section-divider p {
+  color: #a7f3d0 !important;
+  font-weight: 500 !important;
+
 }
 
 /* Strong/bold text */
