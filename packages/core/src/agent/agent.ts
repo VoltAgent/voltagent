@@ -55,6 +55,7 @@ import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, ToolExecutionResult, Toolkit, VercelTool } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
+import { type TrafficRequestMetadata, getTrafficController } from "../traffic/traffic-controller";
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
@@ -582,6 +583,17 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     options?: GenerateTextOptions<OUTPUT>,
   ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
+    const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
+    return controller.handleText({
+      metadata: this.buildTrafficMetadata(), // Pass model/provider info for future rate limiting keys
+      execute: () => this.executeGenerateText(input, options), // Defer actual execution so controller can schedule it
+    });
+  }
+
+  private async executeGenerateText<OUTPUT extends OutputSpec = OutputSpec>(
+    input: string | UIMessage[] | BaseMessage[],
+    options?: GenerateTextOptions<OUTPUT>,
+  ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -1033,6 +1045,17 @@ export class Agent {
    * Stream text response
    */
   async streamText(
+    input: string | UIMessage[] | BaseMessage[],
+    options?: StreamTextOptions,
+  ): Promise<StreamTextResultWithContext> {
+    const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
+    return controller.handleStream({
+      metadata: this.buildTrafficMetadata(), // Include identifiers to support per-provider/model policies later
+      execute: () => this.executeStreamText(input, options), // Actual streaming work happens after the controller dequeues us
+    });
+  }
+
+  private async executeStreamText(
     input: string | UIMessage[] | BaseMessage[],
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
@@ -5245,6 +5268,24 @@ export class Agent {
    */
   private calculateMaxSteps(): number {
     return this.subAgentManager.calculateMaxSteps(this.maxSteps);
+  }
+
+  private buildTrafficMetadata(): TrafficRequestMetadata {
+    // Capture provider if the model object exposes it; fallback is undefined to avoid bad assumptions
+    const provider =
+      typeof this.model === "object" &&
+      this.model !== null &&
+      "provider" in this.model &&
+      typeof (this.model as any).provider === "string"
+        ? ((this.model as any).provider as string)
+        : undefined;
+
+    return {
+      agentId: this.id, // Identify which agent issued the request
+      agentName: this.name, // Human-readable label for logs/metrics
+      model: this.getModelName(), // Used for future capacity policies
+      provider, // Allows per-provider throttling later
+    };
   }
 
   /**
