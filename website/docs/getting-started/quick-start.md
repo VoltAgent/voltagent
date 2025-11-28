@@ -6,12 +6,15 @@ slug: /quick-start
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import ApiKeyButton from '@site/src/components/docs-widgets/ApiKeyButton';
+import StepSection from '@site/src/components/docs-widgets/StepSection';
 
 # Automatic Setup
 
-The quickest way to create a VoltAgent application is using our CLI tool. Be sure your environment is running **Node.js 20.19 or newer** so the generated tsdown build works without ESM resolution issues.
+Build and run your first AI agent with VoltAgent. You'll create a simple agent that can understand and respond to questions, then explore production-ready features used by enterprise teams.
 
-You can quickly create a new project using the `create-voltagent-app` CLI tool:
+<StepSection stepNumber={1} title="Create New Project">
+
+Run the following command to create a new VoltAgent project:
 
 <Tabs>
   <TabItem value="npm" label="npm" default>
@@ -37,52 +40,17 @@ pnpm create voltagent-app my-agent-app
   </TabItem>
 </Tabs>
 
-After running the command, you'll see the VoltAgent Generator welcome screen:
-
-```
- _    __      ____  ___                    __
-| |  / /___  / / /_/   | ____ ____  ____  / /_
-| | / / __ \/ / __/ /| |/ __ `/ _ \/ __ \/ __/
-| |/ / /_/ / / /_/ ___ / /_/ /  __/ / / / /_
-|___/\____/_/\__/_/  |_\__, /\___/_/ /_/\__/
-                      /____/
-
-   ╭───────────────────────────────────────────────╮
-   │                                               │
-   │   Welcome to VoltAgent Generator!             │
-   │                                               │
-   │   Create powerful AI agents with VoltAgent.   │
-   │                                               │
-   ╰───────────────────────────────────────────────╯
-
-Let's create your next AI application...
-
-
-? What is your project named? (my-voltagent-app) _
-```
-
-The CLI will guide you through the setup process:
-
-1. **Project Name**: Choose a name for your project
-2. **AI Provider**: Select from OpenAI, Anthropic, Google, Groq, Mistral, or Ollama (local)
-3. **API Key** (optional): Enter your API key or skip to add it later
-4. **Package Manager**: Choose from installed package managers (npm, yarn, or pnpm)
-5. **IDE Configuration**: Optionally configure MCP Docs Server for your IDE
-
-The tool will automatically:
-
-- Create project files and structure (including a `tsdown.config.ts` build configuration)
-- Generate a `.env` file with your API key (if provided)
-- Initialize a git repository
-- Install dependencies
-
-Once the setup is complete, navigate to your project directory:
+The CLI will prompt you for project name, AI provider, and API key. Once complete:
 
 ```bash
-cd my-voltagent-app
+cd my-agent-app
 ```
 
-### Add Your API Key
+**Requirements:** Node.js 20.19 or newer
+
+</StepSection>
+
+<StepSection stepNumber={2} title="Configure and Start">
 
 If you skipped API key entry during setup, create or edit the `.env` file in your project root and add your API key:
 
@@ -134,11 +102,7 @@ MISTRAL_API_KEY=your-api-key-here
   </TabItem>
 </Tabs>
 
-:::warning Security Note
-Never commit your `.env` file to version control. The file is automatically added to `.gitignore` to prevent accidental exposure of your API keys.
-:::
-
-### Start Your Application
+Now start the development server:
 
 <Tabs>
   <TabItem value="npm" label="npm" default>
@@ -164,7 +128,7 @@ pnpm dev
   </TabItem>
 </Tabs>
 
-When you run the `dev` command, `tsx` will compile and run your code. You should see the VoltAgent server startup message in your terminal:
+You should see the VoltAgent server startup message:
 
 ```bash
 ══════════════════════════════════════════════════
@@ -179,19 +143,20 @@ When you run the `dev` command, `tsx` will compile and run your code. You should
 ══════════════════════════════════════════════════
 ```
 
-Your agent is now running! To interact with it:
+</StepSection>
 
-1.  **Open the Console:** Click the [`https://console.voltagent.dev`](https://console.voltagent.dev) link in your terminal output (or copy-paste it into your browser).
-2.  **Find Your Agent:** On the VoltOps LLM Observability Platform page, you should see your agent listed (e.g., "my-agent").
-3.  **Open Agent Details:** Click on your agent's name.
-4.  **Start Chatting:** On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
-5.  **Send a Message:** Type a message like "Hello" and press Enter.
+<StepSection stepNumber={3} title="Test Your Agent">
+
+1. Open [`https://console.voltagent.dev`](https://console.voltagent.dev) and click **Agents & Workflows** in the sidebar to find your agent.
+2. Open it, click the chat icon in the bottom right corner, and try asking _"What's the weather in San Francisco?"_
+
+You should receive a response, you've successfully created your first AI agent that understand and generate responses.
 
 ![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
-You should receive a response from your AI agent in the chat window. This confirms that your VoltAgent application is set up correctly and communicating with the LLM.
+</StepSection>
 
-The `dev` script uses `tsx watch`, so it will automatically restart if you make changes to your code in the `src` directory. Press `Ctrl+C` in the terminal to stop the agent.
+## Additional Features
 
 ### Share Your Local Server (Optional)
 
