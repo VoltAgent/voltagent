@@ -1,3 +1,5 @@
+import { BoltIcon, CheckIcon, CpuChipIcon, SignalIcon } from "@heroicons/react/24/outline";
+import { StarIcon } from "@heroicons/react/24/solid";
 import React, { memo, useRef, useState, useEffect, useCallback } from "react";
 import { AnimatedBeam } from "./AnimatedBeam";
 
@@ -95,29 +97,25 @@ const GitHubStarNode = memo(
       <div ref={ref} className="relative flex-shrink-0 flex flex-col items-center">
         <div
           className={`
-        relative w-20 h-20 rounded-full border-2 bg-[#0d0e10]
+        relative w-14 h-14 rounded-full border-2 bg-[#0d0e10]
         flex items-center justify-center
         transition-all duration-500
         ${isActive || isCompleted ? "border-yellow-400/70" : "border-gray-700/30"}
       `}
         >
-          <div className="flex items-center gap-1">
-            <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-0.5">
+            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
             </svg>
-            <svg
-              className={`w-5 h-5 transition-all duration-300 ${
+            <StarIcon
+              className={`w-3.5 h-3.5 transition-all duration-300 ${
                 isActive || isCompleted ? "text-yellow-400" : "text-gray-400"
               }`}
-              fill="currentColor"
-              viewBox="0 0 24 24"
               style={isActive ? { animation: "spinStar 1s ease-in-out" } : undefined}
-            >
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
+            />
           </div>
         </div>
-        <div className="text-gray-500 text-[11px] mt-2 text-center">External Event</div>
+        <div className="text-gray-500 text-[14px] mt-1.5 text-center">External Event</div>
       </div>
     );
   }),
@@ -137,70 +135,66 @@ const StepNode = memo(
     }
   >(({ isActive, isCompleted, step, title, subtitle, icon }, ref) => {
     return (
-      <div ref={ref} className="relative w-[150px] flex-shrink-0">
-        <AnimatedBorder isActive={!!isActive} />
-        <div
-          className={`
-        relative border-2 rounded-lg p-4 bg-[#0d0e10] h-full
-        transition-all duration-500
-        ${
-          isActive
-            ? "border-transparent"
-            : isCompleted
-              ? "border-cyan-500/70"
-              : "border-gray-700/30"
-        }
-      `}
-        >
-          {/* Step Number Badge - Inside top-left */}
-          <div className="absolute top-2 left-2 z-10">
-            <div
-              className={`
-            w-5 h-5 rounded-full flex items-center justify-center
-            transition-all duration-500
-            ${
-              isActive || isCompleted
-                ? "bg-cyan-500/20 border border-cyan-500/50"
-                : "bg-gray-600/80"
-            }
-          `}
-            >
-              {isCompleted ? (
-                <svg
-                  className="w-3 h-3 text-cyan-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <span
-                  className={`text-[10px] font-bold ${isActive ? "text-cyan-400" : "text-white"}`}
-                >
-                  {step}
-                </span>
-              )}
+      <div ref={ref} className="flex flex-col items-center flex-shrink-0">
+        {/* Card with animated border */}
+        <div className="relative w-[110px]">
+          <AnimatedBorder isActive={!!isActive} />
+          <div
+            className={`
+          relative border-2 rounded-lg p-2.5 bg-[#0d0e10] h-full
+          transition-all duration-500
+          ${
+            isActive
+              ? "border-transparent"
+              : isCompleted
+                ? "border-cyan-500/70"
+                : "border-gray-700/30"
+          }
+        `}
+          >
+            {/* Step Number Badge - Inside top-left */}
+            <div className="absolute top-1.5 left-1.5 z-10">
+              <div
+                className={`
+              w-4 h-4 rounded-full flex items-center justify-center
+              transition-all duration-500
+              ${
+                isActive || isCompleted
+                  ? "bg-cyan-500/20 border border-cyan-500/50"
+                  : "bg-gray-600/80"
+              }
+            `}
+              >
+                {isCompleted ? (
+                  <CheckIcon className="w-2.5 h-2.5 text-cyan-400" strokeWidth={3} />
+                ) : (
+                  <span
+                    className={`text-[8px] font-bold ${isActive ? "text-cyan-400" : "text-white"}`}
+                  >
+                    {step}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="flex justify-center my-2">
-            <div
-              className={`transition-colors duration-300 ${
-                isActive || isCompleted ? "text-cyan-400" : "text-gray-400"
-              }`}
-            >
-              {icon}
+            <div className="flex justify-center my-1">
+              <div
+                className={`transition-colors duration-300 ${
+                  isActive || isCompleted ? "text-cyan-400" : "text-gray-400"
+                }`}
+              >
+                {icon}
+              </div>
             </div>
-          </div>
-          <div className="text-center">
-            <div className="text-md font-medium text-gray-200 transition-colors duration-300">
-              {title}
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-200 transition-colors duration-300">
+                {title}
+              </div>
             </div>
-            <div className="text-gray-500 text-xs mt-1">{subtitle}</div>
           </div>
         </div>
+        {/* Subtitle - completely outside the card and animated border */}
+        <div className="text-gray-500 text-[14px] mt-2 text-center">{subtitle}</div>
       </div>
     );
   }),
@@ -213,14 +207,14 @@ const DiscordNode = memo(
       <div ref={ref} className="relative flex-shrink-0 flex flex-col items-center">
         <div
           className={`
-        relative w-20 h-20 rounded-full border-2 bg-[#0d0e10]
+        relative w-14 h-14 rounded-full border-2 bg-[#0d0e10]
         flex items-center justify-center
         transition-all duration-500
         ${isActive || isCompleted ? "border-[#5865F2]/70" : "border-gray-700/30"}
       `}
         >
           <svg
-            className={`w-8 h-8 transition-all duration-300 ${
+            className={`w-6 h-6 transition-all duration-300 ${
               isActive || isCompleted ? "text-[#5865F2]" : "text-gray-400"
             }`}
             fill="currentColor"
@@ -230,7 +224,7 @@ const DiscordNode = memo(
             <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
           </svg>
         </div>
-        <div className="text-gray-500 text-[11px] mt-2 text-center">Received Message</div>
+        <div className="text-gray-500 text-[14px] mt-1.5 text-center">Received Message</div>
       </div>
     );
   }),
@@ -314,21 +308,7 @@ export const WorkflowDiagramFlow: React.FC = () => {
               subtitle="Captures webhook"
               isActive={phase === 2}
               isCompleted={phase > 2}
-              icon={
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.348 14.652a3.75 3.75 0 010-5.304m5.304 0a3.75 3.75 0 010 5.304m-7.425 2.121a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-                  />
-                </svg>
-              }
+              icon={<SignalIcon className="w-5 h-5" />}
             />
 
             {/* AI Agent Node */}
@@ -339,21 +319,7 @@ export const WorkflowDiagramFlow: React.FC = () => {
               subtitle="Generates message"
               isActive={phase === 3}
               isCompleted={phase > 3}
-              icon={
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z"
-                  />
-                </svg>
-              }
+              icon={<CpuChipIcon className="w-5 h-5" />}
             />
 
             {/* Action Node */}
@@ -364,21 +330,7 @@ export const WorkflowDiagramFlow: React.FC = () => {
               subtitle="Sends message"
               isActive={phase === 4}
               isCompleted={phase > 4}
-              icon={
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
-                  />
-                </svg>
-              }
+              icon={<BoltIcon className="w-5 h-5" />}
             />
 
             {/* Discord Node */}
@@ -389,16 +341,18 @@ export const WorkflowDiagramFlow: React.FC = () => {
               containerRef={mainContainerRef}
               fromRef={githubRef}
               toRef={triggerRef}
-              startXOffset={40}
-              endXOffset={-75}
+              startXOffset={28}
+              startYOffset={-10}
+              endXOffset={-55}
+              endYOffset={-10}
               pathColor="rgba(107, 114, 128, 0.25)"
               gradientStartColor="transparent"
               gradientStopColor="transparent"
               particleColor="#9ca3af"
-              particleSize={2.5}
+              particleSize={2}
               particleSpeed={2}
               particleCount={3}
-              pathWidth={2}
+              pathWidth={1.5}
               curvature={0}
               duration={4}
               showParticles={phase === 1}
@@ -408,16 +362,18 @@ export const WorkflowDiagramFlow: React.FC = () => {
               containerRef={mainContainerRef}
               fromRef={triggerRef}
               toRef={agentRef}
-              startXOffset={75}
-              endXOffset={-75}
+              startXOffset={55}
+              startYOffset={-10}
+              endXOffset={-55}
+              endYOffset={-10}
               pathColor="rgba(107, 114, 128, 0.25)"
               gradientStartColor="transparent"
               gradientStopColor="transparent"
               particleColor="#9ca3af"
-              particleSize={2.5}
+              particleSize={2}
               particleSpeed={2}
               particleCount={3}
-              pathWidth={2}
+              pathWidth={1.5}
               curvature={0}
               duration={4}
               showParticles={phase === 2}
@@ -427,16 +383,18 @@ export const WorkflowDiagramFlow: React.FC = () => {
               containerRef={mainContainerRef}
               fromRef={agentRef}
               toRef={discordRef}
-              startXOffset={75}
-              endXOffset={-75}
+              startXOffset={55}
+              startYOffset={-10}
+              endXOffset={-55}
+              endYOffset={-10}
               pathColor="rgba(107, 114, 128, 0.25)"
               gradientStartColor="transparent"
               gradientStopColor="transparent"
               particleColor="#9ca3af"
-              particleSize={2.5}
+              particleSize={2}
               particleSpeed={2}
               particleCount={3}
-              pathWidth={2}
+              pathWidth={1.5}
               curvature={0}
               duration={4}
               showParticles={phase === 3}
@@ -446,16 +404,18 @@ export const WorkflowDiagramFlow: React.FC = () => {
               containerRef={mainContainerRef}
               fromRef={discordRef}
               toRef={actionRef}
-              startXOffset={75}
-              endXOffset={-40}
+              startXOffset={55}
+              startYOffset={-10}
+              endXOffset={-28}
+              endYOffset={-10}
               pathColor="rgba(107, 114, 128, 0.25)"
               gradientStartColor="transparent"
               gradientStopColor="transparent"
               particleColor="#9ca3af"
-              particleSize={2.5}
+              particleSize={2}
               particleSpeed={2}
               particleCount={3}
-              pathWidth={2}
+              pathWidth={1.5}
               curvature={0}
               duration={4}
               showParticles={phase === 4}

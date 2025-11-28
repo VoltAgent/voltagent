@@ -9,6 +9,7 @@ import ApiKeyButton from '@site/src/components/docs-widgets/ApiKeyButton';
 import StepSection from '@site/src/components/docs-widgets/StepSection';
 import WorkflowDiagramFlow from '@site/src/components/docs-widgets/WorkflowDiagramFlow';
 import SectionDivider from '@site/src/components/docs-widgets/SectionDivider';
+import ExpandableCode from '@site/src/components/docs-widgets/ExpandableCode';
 
 # Automatic Setup
 
@@ -181,9 +182,128 @@ The diagram below shows an event-driven agent example: a GitHub star event trigg
 2. **AI Agent** - Generates a message based on the event
 3. **Action** - Sends the message to Discord
 
-To implement this workflow with your agent, go to the [VoltAgent Console Get Started Guide](https://console.voltagent.dev/get-started) and continue from Step 4.
+To implement this workflow with your agent, go to the VoltAgent Console [Get Started Guide](https://console.voltagent.dev/get-started) and continue from Step 4.
 
 </StepSection>
+
+## Running Your First Human-in-the-Loop Workflow
+
+Workflows chain multiple steps (data transformations, API calls, AI agent interactions) into a single execution. Unlike a standalone agent that responds to one message at a time, workflows coordinate multi-step processes.
+
+The generated project includes an expense approval workflow that demonstrates **suspend/resume** functionality. Workflows can pause execution, wait for human input, and then continue.
+
+**How it works:**
+
+- Expenses under $500 are auto-approved by the system
+- Expenses over $500 suspend and wait for manager approval
+
+<ExpandableCode title="src/workflows/index.ts" previewLines={15}>
+
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+export const expenseApprovalWorkflow = createWorkflowChain({
+  id: "expense-approval",
+  name: "Expense Approval Workflow",
+  purpose: "Process expense reports with manager approval for high amounts",
+
+  input: z.object({
+    employeeId: z.string(),
+    amount: z.number(),
+    category: z.string(),
+    description: z.string(),
+  }),
+  result: z.object({
+    status: z.enum(["approved", "rejected"]),
+    approvedBy: z.string(),
+    finalAmount: z.number(),
+  }),
+})
+  // Step 1: Validate expense and check if approval needed
+  .andThen({
+    id: "check-approval-needed",
+    resumeSchema: z.object({
+      approved: z.boolean(),
+      managerId: z.string(),
+      comments: z.string().optional(),
+      adjustedAmount: z.number().optional(),
+    }),
+    execute: async ({ data, suspend, resumeData }) => {
+      // If resuming with manager's decision
+      if (resumeData) {
+        return {
+          ...data,
+          approved: resumeData.approved,
+          approvedBy: resumeData.managerId,
+          finalAmount: resumeData.adjustedAmount || data.amount,
+        };
+      }
+
+      // Expenses over $500 require manager approval
+      if (data.amount > 500) {
+        await suspend("Manager approval required", {
+          employeeId: data.employeeId,
+          requestedAmount: data.amount,
+          category: data.category,
+        });
+      }
+
+      // Auto-approve small expenses
+      return {
+        ...data,
+        approved: true,
+        approvedBy: "system",
+        finalAmount: data.amount,
+      };
+    },
+  })
+  // Step 2: Process the final decision
+  .andThen({
+    id: "process-decision",
+    execute: async ({ data }) => {
+      return {
+        status: data.approved ? "approved" : "rejected",
+        approvedBy: data.approvedBy,
+        finalAmount: data.finalAmount,
+      };
+    },
+  });
+```
+
+</ExpandableCode>
+
+Key concepts:
+
+- **`suspend()`** pauses the workflow and stores its state
+- **`resumeData`** contains the input provided when the workflow resumes
+- **`resumeSchema`** defines the expected shape of resume data using Zod
+
+### Run the Workflow
+
+Open the [Workflows page](https://console.voltagent.dev/workflows), select **"Expense Approval Workflow"**, and click **"Test Workflow"**. Enter input and click **"Execute Workflow"**.
+
+For automatic approval (under $500):
+
+```json
+{
+  "employeeId": "EMP-123",
+  "amount": 250,
+  "category": "office-supplies",
+  "description": "New laptop mouse and keyboard"
+}
+```
+
+For manual review (over $500):
+
+```json
+{
+  "employeeId": "EMP-456",
+  "amount": 750,
+  "category": "travel",
+  "description": "Flight tickets for client meeting"
+}
+```
 
 ## Additional Features
 
