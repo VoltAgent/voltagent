@@ -21,6 +21,17 @@ export type {
   WorkflowTimelineEvent,
   RegisteredWorkflow,
 } from "./workflow";
+export {
+  // Surface traffic controller so downstream consumers can route agent calls through the shared scheduler
+  TrafficController,
+  getTrafficController,
+  type RateLimitConfig,
+  type RateLimitKey,
+  type RateLimitOptions,
+  type TrafficRequest,
+  type TrafficRequestMetadata,
+  type TrafficRequestType,
+} from "./traffic/traffic-controller";
 // Export new Agent from agent.ts
 export {
   Agent,
