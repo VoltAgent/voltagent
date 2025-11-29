@@ -1,6 +1,3 @@
-import type { Logger } from "@voltagent/internal";
-import { randomUUID } from "../utils/id";
-
 type Scheduler = (callback: () => void) => void;
 type BivariantHandler<TArgs extends unknown[]> = {
   bivarianceHack(...args: TArgs): void;
@@ -13,10 +10,18 @@ interface RateLimitBucket {
   lastRefill: number;
 }
 
+type NormalizedRateLimit = {
+  capacity: number;
+  refillPerMs: number;
+};
+
 export interface RateLimitOptions {
   capacity: number;
   refillPerSecond: number;
 }
+
+export type RateLimitKey = string;
+export type RateLimitConfig = Record<RateLimitKey, RateLimitOptions>;
 
 export type TrafficRequestType = "text" | "stream";
 
@@ -33,17 +38,17 @@ export interface TrafficRequest<TResponse> {
 }
 
 interface QueuedRequest<TResponse = unknown> {
-  id: string;
   type: TrafficRequestType;
   request: TrafficRequest<TResponse>;
   resolve: BivariantHandler<[TResponse | PromiseLike<TResponse>]>;
   reject: BivariantHandler<[reason?: unknown]>;
+  etaMs?: number;
+  rateLimitKey?: string;
 }
 
 export interface TrafficControllerOptions {
-  logger?: Logger;
   maxConcurrent?: number;
-  rateLimit?: RateLimitOptions;
+  rateLimits?: RateLimitConfig;
 }
 
 // Centralized traffic controller responsible for scheduling LLM calls.
@@ -52,32 +57,17 @@ export interface TrafficControllerOptions {
 export class TrafficController {
   private readonly scheduler: Scheduler;
   private readonly maxConcurrent: number;
-  private readonly rateLimit?: { capacity: number; refillPerMs: number };
+  private readonly rateLimits?: Map<string, NormalizedRateLimit>;
   private readonly rateLimitBuckets = new Map<string, RateLimitBucket>();
-  private logger?: Logger;
   private queue: QueuedRequest[] = [];
   private activeCount = 0;
   private drainScheduled = false;
   private refillTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(options: TrafficControllerOptions = {}) {
-    this.logger = options.logger; // Allow caller to plug in their logger for observability
     this.maxConcurrent = options.maxConcurrent ?? Number.POSITIVE_INFINITY; // Concurrency guard; defaults to no cap for now
+    this.rateLimits = this.normalizeRateLimits(options.rateLimits);
     this.scheduler = this.createScheduler(); // Select scheduler once so the rest of the code can stay simple
-    if (
-      options.rateLimit &&
-      options.rateLimit.capacity > 0 &&
-      options.rateLimit.refillPerSecond > 0
-    ) {
-      this.rateLimit = {
-        capacity: options.rateLimit.capacity,
-        refillPerMs: options.rateLimit.refillPerSecond / 1000, // Convert to ms once so the math later stays simple
-      };
-    }
-  }
-
-  setLogger(logger?: Logger): void {
-    this.logger = logger; // Update logger when the singleton is reused across agents
   }
 
   handleText<TResponse>(request: TrafficRequest<TResponse>): Promise<TResponse> {
@@ -107,18 +97,10 @@ export class TrafficController {
     return new Promise<TResponse>((resolve, reject) => {
       // Collect the work item and metadata
       this.queue.push({
-        id: randomUUID(),
         type,
         request,
         resolve,
         reject,
-      });
-
-      // Emit trace-friendly breadcrumb for observability
-      this.logger?.debug?.("[TrafficController] enqueued", {
-        type,
-        queueSize: this.queue.length,
-        metadata: request.metadata,
       });
 
       // Kick the drain loop to start handling work
@@ -152,13 +134,6 @@ export class TrafficController {
       this.queue.shift(); // Remove after we've confirmed we can process
       this.activeCount++; // Track in-flight work to enforce concurrency guard
 
-      this.logger?.debug?.("[TrafficController] dispatch", {
-        type: next.type,
-        queueSize: this.queue.length,
-        active: this.activeCount,
-        metadata: next.request.metadata,
-      });
-
       void this.runRequest(next); // Fire off processing without blocking the loop
     }
   }
@@ -168,37 +143,52 @@ export class TrafficController {
       return false;
     }
 
-    if (!this.rateLimit) {
-      return true; // No rate limit configured
+    const rateLimitConfig = this.getRateLimitConfig(next.request.metadata);
+    if (!rateLimitConfig) {
+      next.rateLimitKey = undefined;
+      next.etaMs = 0;
+      return true; // No rate limit configured for this key
     }
 
-    // Token bucket guard: only proceed when a token is available
-    const bucket = this.getRateLimitBucket(next.request.metadata);
+    const bucket = this.getRateLimitBucket(rateLimitConfig.key, rateLimitConfig.limit);
     if (bucket.tokens < 1) {
-      this.scheduleRefill(); // Ensure we retry as soon as tokens are replenished
+      next.rateLimitKey = rateLimitConfig.key;
+      next.etaMs = this.computeEtaMs(bucket, rateLimitConfig.limit, rateLimitConfig.key, next);
+      this.scheduleRefill(rateLimitConfig.limit); // Ensure we retry as soon as tokens are replenished
       return false;
     }
 
     bucket.tokens -= 1; // Consume a token for this dispatch
+    next.rateLimitKey = rateLimitConfig.key;
+    next.etaMs = 0;
     return true;
   }
 
-  private getRateLimitBucket(metadata?: TrafficRequestMetadata): RateLimitBucket {
-    const rateLimit = this.rateLimit;
-    if (!rateLimit) {
-      throw new Error("Rate limit bucket requested without rate limit configuration");
+  private getRateLimitConfig(
+    metadata?: TrafficRequestMetadata,
+  ): { key: string; limit: NormalizedRateLimit } | undefined {
+    if (!this.rateLimits || this.rateLimits.size === 0) {
+      return undefined;
     }
 
-    const key = this.buildRateLimitKey(metadata); // Group by provider+model so they share limits
+    const key = this.buildRateLimitKey(metadata);
+    const limit = this.rateLimits.get(key);
+    if (!limit) {
+      return undefined;
+    }
+
+    return { key, limit };
+  }
+
+  private getRateLimitBucket(key: string, limit: NormalizedRateLimit): RateLimitBucket {
     const now = Date.now(); // Snapshot time once to avoid drift within this method
     let bucket = this.rateLimitBuckets.get(key); // Reuse the bucket if it already exists
 
     if (!bucket) {
-      // First request for this key: create a fresh bucket at full capacity
       bucket = {
-        tokens: rateLimit.capacity,
-        capacity: rateLimit.capacity,
-        refillPerMs: rateLimit.refillPerMs,
+        tokens: limit.capacity,
+        capacity: limit.capacity,
+        refillPerMs: limit.refillPerMs,
         lastRefill: now,
       };
       this.rateLimitBuckets.set(key, bucket);
@@ -215,18 +205,68 @@ export class TrafficController {
     return bucket;
   }
 
+  private computeEtaMs(
+    bucket: RateLimitBucket,
+    limit: NormalizedRateLimit,
+    key: string,
+    current: QueuedRequest,
+  ): number {
+    const missingTokens = Math.max(0, 1 - bucket.tokens);
+    const waitForToken =
+      missingTokens > 0 && limit.refillPerMs > 0 ? Math.ceil(missingTokens / limit.refillPerMs) : 0;
+    const queuedAhead = this.countQueuedAheadWithKey(key, current);
+    const extraForQueue =
+      queuedAhead > 0 && limit.refillPerMs > 0 ? Math.ceil(queuedAhead / limit.refillPerMs) : 0;
+    return waitForToken + extraForQueue;
+  }
+
+  private countQueuedAheadWithKey(key: string, current: QueuedRequest): number {
+    let count = 0;
+    for (const item of this.queue) {
+      if (item === current) {
+        break;
+      }
+
+      const itemKey = this.buildRateLimitKey(item.request.metadata);
+      if (itemKey === key) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  private normalizeRateLimits(
+    rateLimits?: RateLimitConfig,
+  ): Map<string, NormalizedRateLimit> | undefined {
+    if (!rateLimits) {
+      return undefined;
+    }
+
+    const normalized = new Map<string, NormalizedRateLimit>();
+    for (const [key, config] of Object.entries(rateLimits)) {
+      if (config.capacity > 0 && config.refillPerSecond > 0) {
+        normalized.set(key, {
+          capacity: config.capacity,
+          refillPerMs: config.refillPerSecond / 1000,
+        });
+      }
+    }
+
+    return normalized.size > 0 ? normalized : undefined;
+  }
+
   private buildRateLimitKey(metadata?: TrafficRequestMetadata): string {
     const provider = metadata?.provider ?? "default-provider";
     const model = metadata?.model ?? "default-model";
     return `${provider}::${model}`;
   }
 
-  private scheduleRefill(): void {
-    if (this.refillTimeout || !this.rateLimit) {
+  private scheduleRefill(limit: NormalizedRateLimit): void {
+    if (this.refillTimeout) {
       return;
     }
 
-    const delayMs = Math.max(1, Math.ceil(1 / this.rateLimit.refillPerMs)); // Wait long enough for at least one token
+    const delayMs = Math.max(1, Math.ceil(1 / limit.refillPerMs)); // Wait long enough for at least one token
     this.refillTimeout = setTimeout(() => {
       this.refillTimeout = undefined; // Allow future refills to be scheduled
       this.scheduleDrain(); // Try draining again now that tokens should exist
@@ -246,22 +286,16 @@ export class TrafficController {
   }
 }
 
-declare global {
-  // eslint-disable-next-line no-var
-  var ___voltagent_traffic_controller: TrafficController | undefined;
-}
+let singletonController: TrafficController | undefined;
 
 /**
  * Retrieve the shared traffic controller instance.
  */
 export function getTrafficController(options?: TrafficControllerOptions): TrafficController {
-  if (!globalThis.___voltagent_traffic_controller) {
+  if (!singletonController) {
     // Create a singleton controller so all agents share the same queue/scheduling behavior
-    globalThis.___voltagent_traffic_controller = new TrafficController(options);
-  } else if (options?.logger) {
-    // Update logger when caller provides a new one, keeping the singleton instance alive
-    globalThis.___voltagent_traffic_controller.setLogger(options.logger);
+    singletonController = new TrafficController(options);
   }
 
-  return globalThis.___voltagent_traffic_controller;
+  return singletonController;
 }
