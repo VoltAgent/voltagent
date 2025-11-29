@@ -661,7 +661,7 @@ export class Agent {
               // Default values
               temperature: this.temperature,
               maxOutputTokens: this.maxOutputTokens,
-              maxRetries: 3,
+              maxRetries: 0,
               stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
               // User overrides from AI SDK options
               ...aiSDKOptions,
@@ -1022,7 +1022,7 @@ export class Agent {
           // Default values
           temperature: this.temperature,
           maxOutputTokens: this.maxOutputTokens,
-          maxRetries: 3,
+          maxRetries: 0, // Retry via traffic controller to avoid provider-level storms
           stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
           // User overrides from AI SDK options
           ...aiSDKOptions,
@@ -1573,6 +1573,18 @@ export class Agent {
     schema: T,
     options?: GenerateObjectOptions,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
+    const controller = getTrafficController({ logger: this.logger });
+    return controller.handleText({
+      metadata: this.buildTrafficMetadata(),
+      execute: () => this.executeGenerateObject(input, schema, options),
+    });
+  }
+
+  private async executeGenerateObject<T extends z.ZodType>(
+    input: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    options?: GenerateObjectOptions,
+  ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -1671,7 +1683,7 @@ export class Agent {
           // Default values
           maxOutputTokens: this.maxOutputTokens,
           temperature: this.temperature,
-          maxRetries: 3,
+          maxRetries: 0,
           // User overrides from AI SDK options
           ...aiSDKOptions,
           // Provider-specific options
@@ -1817,6 +1829,18 @@ export class Agent {
     schema: T,
     options?: StreamObjectOptions,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
+    const controller = getTrafficController({ logger: this.logger });
+    return controller.handleStream({
+      metadata: this.buildTrafficMetadata(),
+      execute: () => this.executeStreamObject(input, schema, options),
+    });
+  }
+
+  private async executeStreamObject<T extends z.ZodType>(
+    input: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    options?: StreamObjectOptions,
+  ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
 
@@ -1921,7 +1945,7 @@ export class Agent {
           // Default values
           maxOutputTokens: this.maxOutputTokens,
           temperature: this.temperature,
-          maxRetries: 3,
+          maxRetries: 0,
           // User overrides from AI SDK options
           ...aiSDKOptions,
           // Provider-specific options
