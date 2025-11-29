@@ -446,16 +446,18 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     options?: GenerateTextOptions,
   ): Promise<GenerateTextResultWithContext> {
-    const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
+    const controller = getTrafficController(); // Use shared controller so all agent calls flow through central queue/metrics
+    const trafficMetadata = this.buildTrafficMetadata();
     return controller.handleText({
-      metadata: this.buildTrafficMetadata(), // Pass model/provider info for future rate limiting keys
-      execute: () => this.executeGenerateText(input, options), // Defer actual execution so controller can schedule it
+      metadata: trafficMetadata, // Pass model/provider info for future rate limiting keys
+      execute: () => this.executeGenerateText(input, options, trafficMetadata), // Defer actual execution so controller can schedule it
     });
   }
 
   private async executeGenerateText(
     input: string | UIMessage[] | BaseMessage[],
     options?: GenerateTextOptions,
+    trafficMetadata?: TrafficRequestMetadata,
   ): Promise<GenerateTextResultWithContext> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
@@ -579,6 +581,11 @@ export class Agent {
 
         let result!: GenerateTextResult<ToolSet, unknown>;
         try {
+          methodLogger.info("[AI SDK] Calling generateText", {
+            messageCount: messages.length,
+            modelName,
+            tools: tools ? Object.keys(tools) : [],
+          });
           result = await oc.traceContext.withSpan(llmSpan, () =>
             generateText({
               model,
@@ -600,6 +607,13 @@ export class Agent {
               onStepFinish: this.createStepHandler(oc, options),
             }),
           );
+          methodLogger.info("[AI SDK] Received generateText result", {
+            finishReason: result.finishReason,
+            usage: result.usage ? safeStringify(result.usage) : undefined,
+            stepCount: result.steps?.length ?? 0,
+            rawResult: safeStringify(result),
+          });
+          this.updateTrafficControllerRateLimits(result.response, trafficMetadata, methodLogger);
         } catch (error) {
           finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
           throw error;
@@ -784,16 +798,18 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
-    const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
+    const controller = getTrafficController(); // Same controller handles streaming to keep ordering/backpressure consistent
+    const trafficMetadata = this.buildTrafficMetadata();
     return controller.handleStream({
-      metadata: this.buildTrafficMetadata(), // Include identifiers to support per-provider/model policies later
-      execute: () => this.executeStreamText(input, options), // Actual streaming work happens after the controller dequeues us
+      metadata: trafficMetadata, // Include identifiers to support per-provider/model policies later
+      execute: () => this.executeStreamText(input, options, trafficMetadata), // Actual streaming work happens after the controller dequeues us
     });
   }
 
   private async executeStreamText(
     input: string | UIMessage[] | BaseMessage[],
     options?: StreamTextOptions,
+    trafficMetadata?: TrafficRequestMetadata,
   ): Promise<StreamTextResultWithContext> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
@@ -917,6 +933,11 @@ export class Agent {
         });
         const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
+        methodLogger.info("[AI SDK] Calling streamText", {
+          messageCount: messages.length,
+          modelName,
+          tools: tools ? Object.keys(tools) : [],
+        });
         const result = streamText({
           model,
           messages,
@@ -985,6 +1006,17 @@ export class Agent {
               .catch(() => {});
           },
           onFinish: async (finalResult) => {
+            methodLogger.info("[AI SDK] streamText finished", {
+              finishReason: finalResult.finishReason,
+              usage: finalResult.totalUsage ? safeStringify(finalResult.totalUsage) : undefined,
+              stepCount: finalResult.steps?.length ?? 0,
+              rawResult: safeStringify(finalResult),
+            });
+            this.updateTrafficControllerRateLimits(
+              finalResult.response,
+              trafficMetadata,
+              methodLogger,
+            );
             const providerUsage = finalResult.usage
               ? await Promise.resolve(finalResult.usage)
               : undefined;
@@ -1537,6 +1569,11 @@ export class Agent {
           ...aiSDKOptions
         } = options || {};
 
+        methodLogger.info("[AI SDK] Calling generateObject", {
+          messageCount: messages.length,
+          modelName,
+          schemaName,
+        });
         const result = await generateObject({
           model,
           messages,
@@ -1552,6 +1589,12 @@ export class Agent {
           providerOptions,
           // VoltAgent controlled
           abortSignal: oc.abortController.signal,
+        });
+        methodLogger.info("[AI SDK] Received generateObject result", {
+          finishReason: result.finishReason,
+          usage: result.usage ? safeStringify(result.usage) : undefined,
+          warnings: result.warnings,
+          rawResult: safeStringify(result),
         });
 
         const usageInfo = convertUsage(result.usage);
@@ -1770,6 +1813,11 @@ export class Agent {
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
         let rejectGuardrailObject: ((reason: unknown) => void) | undefined;
 
+        methodLogger.info("[AI SDK] Calling streamObject", {
+          messageCount: messages.length,
+          modelName,
+          schemaName,
+        });
         const result = streamObject({
           model,
           messages,
@@ -1823,6 +1871,11 @@ export class Agent {
           },
           onFinish: async (finalResult: any) => {
             try {
+              methodLogger.info("[AI SDK] streamObject finished", {
+                finishReason: finalResult.finishReason,
+                usage: finalResult.usage ? safeStringify(finalResult.usage) : undefined,
+                rawResult: safeStringify(finalResult),
+              });
               const usageInfo = convertUsage(finalResult.usage as any);
               let finalObject = finalResult.object as z.infer<T>;
               if (guardrailSet.output.length > 0) {
@@ -3861,6 +3914,48 @@ export class Agent {
       model: this.getModelName(), // Used for future capacity policies
       provider, // Allows per-provider throttling later
     };
+  }
+
+  private updateTrafficControllerRateLimits(
+    response: unknown,
+    metadata: TrafficRequestMetadata | undefined,
+    logger?: Logger,
+  ): void {
+    if (!response || typeof response !== "object") {
+      logger?.debug?.("[Traffic] No response object available for rate limit update");
+      return;
+    }
+
+    const responseWithHeaders = response as { headers?: unknown } | null;
+    const headers = responseWithHeaders?.headers;
+    if (!headers) {
+      logger?.debug?.("[Traffic] Response missing headers; skipping rate limit update");
+      return;
+    }
+
+    const controller = getTrafficController();
+    const updateResult = controller.updateRateLimitFromHeaders(
+      metadata ?? this.buildTrafficMetadata(),
+      headers,
+    );
+
+    if (!updateResult) {
+      logger?.debug?.("[Traffic] No rate limit headers applied from response");
+      return;
+    }
+
+    const refillPerSecond = updateResult.normalized.refillPerMs * 1000;
+    logger?.info?.("[Traffic] Applied rate limit from response headers", {
+      rateLimitKey: updateResult.key,
+      capacity: updateResult.normalized.capacity,
+      refillPerSecond,
+      appliedTokens: updateResult.appliedTokens,
+      headers: {
+        limitRequests: updateResult.headerSnapshot.limitRequests,
+        remainingRequests: updateResult.headerSnapshot.remainingRequests,
+        resetRequestsMs: updateResult.headerSnapshot.resetRequestsMs,
+      },
+    });
   }
 
   /**
