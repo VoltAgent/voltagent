@@ -48,7 +48,11 @@ import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
-import { type TrafficRequestMetadata, getTrafficController } from "../traffic/traffic-controller";
+import {
+  type TrafficPriority,
+  type TrafficRequestMetadata,
+  getTrafficController,
+} from "../traffic/traffic-controller";
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
@@ -265,6 +269,11 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   conversationId?: string;
   context?: ContextInput;
   elicitation?: (request: unknown) => Promise<unknown>;
+  /**
+   * Optional priority override for scheduling.
+   * Defaults to agent-level priority when omitted.
+   */
+  trafficPriority?: TrafficPriority;
 
   // Parent tracking
   parentAgentId?: string;
@@ -350,6 +359,7 @@ export class Agent {
   readonly voice?: Voice;
   readonly retriever?: BaseRetriever;
   readonly supervisorConfig?: SupervisorConfig;
+  private readonly trafficPriority: TrafficPriority;
   private readonly context?: Map<string | symbol, unknown>;
 
   private readonly logger: Logger;
@@ -375,6 +385,7 @@ export class Agent {
     this.temperature = options.temperature;
     this.maxOutputTokens = options.maxOutputTokens;
     this.maxSteps = options.maxSteps || 5;
+    this.trafficPriority = options.trafficPriority ?? "P1";
     this.stopWhen = options.stopWhen;
     this.markdown = options.markdown ?? false;
     this.voice = options.voice;
@@ -450,7 +461,7 @@ export class Agent {
   ): Promise<GenerateTextResultWithContext> {
     const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
     const buildRequest = (modelOverride?: LanguageModel) => ({
-      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model), // Pass model/provider info for future rate limiting keys
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options), // Pass model/provider info for future rate limiting keys
       execute: () =>
         this.executeGenerateText(input, this.mergeOptionsWithModel(options, modelOverride)), // Defer actual execution so controller can schedule it
       createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
@@ -807,7 +818,7 @@ export class Agent {
   ): Promise<StreamTextResultWithContext> {
     const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
     const buildRequest = (modelOverride?: LanguageModel) => ({
-      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model), // Include identifiers to support per-provider/model policies later
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options), // Include identifiers to support per-provider/model policies later
       execute: () =>
         this.executeStreamText(input, this.mergeOptionsWithModel(options, modelOverride)), // Actual streaming work happens after the controller dequeues us
       createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
@@ -1498,7 +1509,7 @@ export class Agent {
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
     const buildRequest = (modelOverride?: LanguageModel) => ({
-      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model),
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
       execute: () =>
         this.executeGenerateObject(
           input,
@@ -1758,7 +1769,7 @@ export class Agent {
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
     const buildRequest = (modelOverride?: LanguageModel) => ({
-      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model),
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
       execute: () =>
         this.executeStreamObject(input, schema, this.mergeOptionsWithModel(options, modelOverride)),
       createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
@@ -2202,6 +2213,7 @@ export class Agent {
   ): OperationContext {
     const operationId = randomUUID();
     const startTimeDate = new Date();
+    const priority = this.resolveTrafficPriority(options);
 
     // Prefer reusing an existing context instance to preserve reference across calls/subagents
     const runtimeContext = toContextMap(options?.context);
@@ -2303,6 +2315,7 @@ export class Agent {
       logger,
       conversationSteps: options?.parentOperationContext?.conversationSteps || [],
       abortController,
+      priority,
       userId: options?.userId,
       conversationId: options?.conversationId,
       parentAgentId: options?.parentAgentId,
@@ -3942,17 +3955,43 @@ export class Agent {
     return this.subAgentManager.calculateMaxSteps(this.maxSteps);
   }
 
+  private resolveTrafficPriority(options?: BaseGenerationOptions): TrafficPriority {
+    const normalize = (value?: TrafficPriority): TrafficPriority | undefined => {
+      if (value === "P0" || value === "P1" || value === "P2") {
+        return value;
+      }
+      return undefined;
+    };
+
+    const parentPriority = normalize(options?.parentOperationContext?.priority);
+    const localPriority = normalize(options?.trafficPriority) ?? this.trafficPriority ?? "P1";
+
+    if (parentPriority) {
+      return this.pickHigherPriority(parentPriority, localPriority);
+    }
+
+    return localPriority;
+  }
+
+  private pickHigherPriority(a: TrafficPriority, b: TrafficPriority): TrafficPriority {
+    const rank: Record<TrafficPriority, number> = { P0: 0, P1: 1, P2: 2 };
+    return rank[a] <= rank[b] ? a : b;
+  }
+
   private buildTrafficMetadata(
     modelOverride?: LanguageModel | DynamicValue<LanguageModel>,
+    options?: BaseGenerationOptions,
   ): TrafficRequestMetadata {
     const provider =
       this.resolveProvider(modelOverride) ?? this.resolveProvider(this.model) ?? undefined;
+    const priority = this.resolveTrafficPriority(options);
 
     return {
       agentId: this.id, // Identify which agent issued the request
       agentName: this.name, // Human-readable label for logs/metrics
       model: this.getModelName(modelOverride), // Used for future capacity policies
       provider, // Allows per-provider throttling later
+      priority,
     };
   }
 
