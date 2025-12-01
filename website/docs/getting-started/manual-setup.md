@@ -1,5 +1,5 @@
 ---
-title: Add to Existing Project
+title: Create from scratch
 slug: /manual-setup
 ---
 
@@ -9,9 +9,9 @@ import ApiKeyButton from '@site/src/components/docs-widgets/ApiKeyButton';
 import StepSection from '@site/src/components/docs-widgets/StepSection';
 import ExpandableCode from '@site/src/components/docs-widgets/ExpandableCode';
 
-# Add to Existing Project
+# Create from scratch
 
-Add VoltAgent to an existing TypeScript project. This guide walks through setting up the configuration, installing dependencies, and creating your first agent. To start from scratch, see [Create New AI Agent](https://voltagent.dev/docs/quick-start/) guide.
+Add VoltAgent to an existing TypeScript project. This guide walks through setting up the configuration, installing dependencies, and creating your first agent. To start from scratch, see [Create with VoltAgent CLI](https://voltagent.dev/docs/quick-start/) guide.
 
 <br/>
 
