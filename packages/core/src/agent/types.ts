@@ -29,6 +29,7 @@ import type { Logger } from "@voltagent/internal";
 import type { LocalScorerDefinition, SamplingPolicy } from "../eval/runtime";
 import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
 import type { VoltAgentObservability } from "../observability";
+import type { TrafficPriority } from "../traffic/traffic-controller";
 import type {
   DynamicValue,
   DynamicValueOptions,
@@ -466,6 +467,11 @@ export type AgentOptions = {
   temperature?: number;
   maxOutputTokens?: number;
   maxSteps?: number;
+  /**
+   * Default scheduling priority for this agent's LLM calls.
+   * Defaults to P1 when unspecified.
+   */
+  trafficPriority?: TrafficPriority;
   /**
    * Default stop condition for step execution (ai-sdk `stopWhen`).
    * Per-call `stopWhen` in method options overrides this.
@@ -923,6 +929,9 @@ export type OperationContext = {
 
   /** Conversation steps for building full message history including tool calls/results */
   conversationSteps?: StepWithContent[];
+
+  /** Scheduling priority propagated from parent calls */
+  priority?: TrafficPriority;
 
   /** AbortController for cancelling the operation and accessing the signal */
   abortController: AbortController;
