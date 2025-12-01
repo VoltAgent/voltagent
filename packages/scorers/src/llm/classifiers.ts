@@ -93,6 +93,7 @@ async function evaluateChoice(args: EvaluateChoiceArgs): Promise<ChoiceAnalysis>
   const agent = new Agent({
     name: `${scorerId}-judge`,
     model,
+    trafficPriority: "P2",
     instructions: judgeInstructions ?? buildDefaultChoiceInstructions(Object.keys(choices)),
   });
 
