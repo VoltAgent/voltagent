@@ -51,7 +51,7 @@ The CLI will prompt you for project name, AI provider, and API key. Once complet
 cd my-agent-app
 ```
 
-:::note
+:::info requirement
 Be sure your environment is running Node.js 20.19 or newer so the generated tsdown build works without ESM resolution issues.
 :::
 

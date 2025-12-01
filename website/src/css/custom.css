@@ -4861,7 +4861,6 @@ main[class*="docMainContainer_"] article {
 .theme-doc-markdown {
   width: 100% !important;
   max-width: var(--docs-reading-width, 1000px) !important;
-  padding: 1.5rem 0 !important;
 }
 
 @media (max-width: 996px) {
@@ -5749,5 +5748,22 @@ html[data-theme="dark"] .three-columns .card p {
 @media (max-width: 768px) {
   .three-columns {
     grid-template-columns: 1fr;
+  }
+}
+
+/* CopyPageDropdown positioning */
+.copy-page-dropdown-wrapper {
+  position: absolute;
+  top: 0.5rem;
+  right: 0;
+  z-index: 10;
+}
+
+@media (max-width: 996px) {
+  .copy-page-dropdown-wrapper {
+    position: static;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
   }
 }
