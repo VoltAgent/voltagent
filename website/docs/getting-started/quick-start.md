@@ -160,7 +160,7 @@ You should receive a response, you've successfully created your first AI agent t
 </StepSection>
 
 <SectionDivider>
-  Up to this point, you created and tested a basic working AI agent. The next step shows how to connect it to external events and services.
+  Up to this point, you created and tested a basic working AI agent. The next steps show how to connect it to external events, services, and using workflows.
 </SectionDivider>
 
 <StepSection stepNumber={4} title="Add Triggers and Actions (Optional)">
@@ -185,6 +185,8 @@ The diagram below shows an event-driven agent example: a GitHub star event trigg
 To implement this workflow with your agent, go to the VoltAgent Console [Get Started Guide](https://console.voltagent.dev/get-started) and continue from Step 4.
 
 </StepSection>
+
+<StepSection stepNumber={5} title="Run a Workflow">
 
 ## Running Your First Human-in-the-Loop Workflow
 
@@ -310,9 +312,9 @@ VoltAgent workflows support multiple step types:
 - [`andTap`](https://voltagent.dev/docs/workflows/steps/and-tap/) - side effects without modifying data
   :::
 
-## Additional Features
+</StepSection>
 
-### Share Your Local Server (Optional)
+<StepSection stepNumber={6} title="Share Your Local Server">
 
 When you need to demo your agent remotely or receive external webhooks, install the VoltAgent CLI and open a tunnel:
 
@@ -334,9 +336,11 @@ The command prints an HTTPS URL (for example `https://your-tunnel-address.tunnel
 npx @voltagent/cli tunnel 3141
 ```
 
-See the [Local Tunnel guide](/docs/deployment/local-tunnel) for details and limitations.
+See the [Local Tunnel guide](https://voltagent.dev/docs/deployment/local-tunnel/) for details.
 
-### Build for Production
+</StepSection>
+
+<StepSection stepNumber={7} title="Build for Production">
 
 When you're ready to deploy, bundle the app and run the compiled JavaScript with Node:
 
@@ -368,6 +372,8 @@ pnpm start
 </Tabs>
 
 The `build` script invokes **tsdown**, which bundles your TypeScript entrypoint (and any sibling directories such as `./workflows` or `./tools`) into `dist/index.js`. This extra step keeps the Node ESM loader from throwing `ERR_UNSUPPORTED_DIR_IMPORT` while preserving extensionless imports during development.
+
+</StepSection>
 
 ## Next Steps
 
