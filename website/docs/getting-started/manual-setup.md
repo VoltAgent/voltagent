@@ -5,25 +5,31 @@ slug: /manual-setup
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import ApiKeyButton from '@site/src/components/docs-widgets/ApiKeyButton';
+import StepSection from '@site/src/components/docs-widgets/StepSection';
+import ExpandableCode from '@site/src/components/docs-widgets/ExpandableCode';
 
 # Add to Existing Project
 
-Follow these steps to create a new TypeScript project and add VoltAgent:
+Add VoltAgent to an existing TypeScript project. This guide walks through setting up the configuration, installing dependencies, and creating your first agent. To start from scratch, see [Create New AI Agent](https://voltagent.dev/docs/quick-start/) guide.
 
-Create a new project directory:
+<br/>
+
+<StepSection stepNumber={1} title="Create Project Directory">
+
+Create a new project directory and initialize npm:
 
 ```bash
 mkdir my-voltagent-project
 cd my-voltagent-project
-```
-
-Initialize a new npm project:
-
-```bash
 npm init -y
 ```
 
-Create a basic TypeScript configuration file (tsconfig.json):
+</StepSection>
+
+<StepSection stepNumber={2} title="Configure TypeScript">
+
+Create a `tsconfig.json` file:
 
 ```json
 {
@@ -51,7 +57,11 @@ export default defineConfig({
 });
 ```
 
-## Install Dependencies
+</StepSection>
+
+<StepSection stepNumber={3} title="Install Dependencies">
+
+Install VoltAgent packages and development tools:
 
 <Tabs>
   <TabItem value="npm" label="npm" default>
@@ -89,13 +99,19 @@ pnpm add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/log
   </TabItem>
 </Tabs>
 
-Create a source directory:
+</StepSection>
+
+<StepSection stepNumber={4} title="Create Your Agent">
+
+Create the source directory and agent file:
 
 ```bash
 mkdir src
 ```
 
-Create a basic agent in `src/index.ts`:
+Create `src/index.ts`:
+
+<ExpandableCode title="src/index.ts" previewLines={12}>
 
 ```typescript
 import { VoltAgent, Agent, Memory } from "@voltagent/core";
@@ -132,14 +148,63 @@ new VoltAgent({
 });
 ```
 
-Create a `.env` file and add your OpenAI API key:
+</ExpandableCode>
+
+</StepSection>
+
+<StepSection stepNumber={5} title="Configure Environment">
+
+Create a `.env` file and add your API key:
+
+<Tabs>
+  <TabItem value="openai" label="OpenAI" default>
 
 ```bash
-# Make sure to replace 'your_openai_api_key' with your actual key
-OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_KEY=your-api-key-here
 ```
 
-Add the following to your package.json:
+<ApiKeyButton provider="OpenAI" href="https://platform.openai.com/api-keys" />
+
+  </TabItem>
+  <TabItem value="anthropic" label="Anthropic">
+
+```bash
+ANTHROPIC_API_KEY=your-api-key-here
+```
+
+<ApiKeyButton provider="Anthropic" href="https://console.anthropic.com/settings/keys" />
+
+  </TabItem>
+  <TabItem value="google" label="Google Gemini">
+
+```bash
+GOOGLE_GENERATIVE_AI_API_KEY=your-api-key-here
+```
+
+<ApiKeyButton provider="Google" href="https://aistudio.google.com/app/apikey" />
+
+  </TabItem>
+  <TabItem value="groq" label="Groq">
+
+```bash
+GROQ_API_KEY=your-api-key-here
+```
+
+<ApiKeyButton provider="Groq" href="https://console.groq.com/keys" />
+
+  </TabItem>
+  <TabItem value="mistral" label="Mistral">
+
+```bash
+MISTRAL_API_KEY=your-api-key-here
+```
+
+<ApiKeyButton provider="Mistral" href="https://console.mistral.ai/api-keys" />
+
+  </TabItem>
+</Tabs>
+
+Add the following to your `package.json`:
 
 ```json
 "type": "module",
@@ -147,11 +212,9 @@ Add the following to your package.json:
   "build": "tsdown",
   "dev": "tsx watch --env-file=.env ./src",
   "start": "node dist/index.js",
-  "volt": "volt" // Requires @voltagent/cli
+  "volt": "volt"
 }
 ```
-
-`npm run build` (or `yarn build` / `pnpm build`) bundles your sources with tsdown before handing the output to Node via `npm start`.
 
 Your project structure should now look like this:
 
@@ -167,7 +230,9 @@ my-voltagent-project/
 └── .voltagent/ (created automatically when you run the agent)
 ```
 
-## Run Your Agent
+</StepSection>
+
+<StepSection stepNumber={6} title="Run Your Agent">
 
 <Tabs>
   <TabItem value="npm" label="npm" default>
@@ -193,7 +258,7 @@ pnpm dev
   </TabItem>
 </Tabs>
 
-When you run the `dev` command, `tsx` will compile and run your code. You should see the VoltAgent server startup message in your terminal:
+You should see the VoltAgent server startup message:
 
 ```bash
 ══════════════════════════════════════════════════
@@ -208,26 +273,21 @@ When you run the `dev` command, `tsx` will compile and run your code. You should
 ══════════════════════════════════════════════════
 ```
 
-Your agent is now running! To interact with it:
+</StepSection>
 
-1.  **Open the Console:** Click the `https://console.voltagent.dev` link in your terminal output (or copy-paste it into your browser).
-2.  **Find Your Agent:** On the VoltOps LLM Observability Platform page, you should see your agent listed (e.g., "my-agent").
-3.  **Open Agent Details:** Click on your agent's name.
-4.  **Start Chatting:** On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
-5.  **Send a Message:** Type a message like "Hello" and press Enter.
+<StepSection stepNumber={7} title="Test Your Agent">
 
-You should receive a response from your AI agent in the chat window. This confirms that your VoltAgent application is set up correctly and communicating with the LLM.
+Open [`https://console.voltagent.dev`](https://console.voltagent.dev) and click **Agents & Workflows** in the sidebar to find your agent.
 
-The `dev` script uses `tsx watch`, so it will automatically restart if you make changes to your code in the `src` directory. Press `Ctrl+C` in the terminal to stop the agent.
+Select it, click the chat icon in the bottom right corner, and try sending a message like _"Hello"_.
+
+You should receive a response from your AI agent. The `dev` script uses `tsx watch`, so it will automatically restart if you make changes to your code.
+
+</StepSection>
 
 ## Next Steps
 
-Ready to build real AI agents? Follow our step-by-step tutorial:
-
-- **[Start the Tutorial](/tutorial/introduction)** - Learn to build agents with tools, memory, and real-world integrations
-
-Or explore specific topics:
-
-- Explore [Agent](../agents/overview.md) options
-- Learn about [Memory](../agents/memory/overview.md)
-- Check out [Tool Creation](../agents/tools.md) for more advanced use cases
+- [Tutorial](/tutorial/introduction) - Build agents with tools, memory, and integrations
+- [Agent Configuration](../agents/overview.md) - Agent options and settings
+- [Memory](../agents/memory/overview.md) - Conversation history and persistence
+- [Tools](../agents/tools.md) - Create custom tools for your agent
