@@ -304,6 +304,8 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
 
   // Provider-specific options
   providerOptions?: ProviderOptions;
+  // Optional per-call model override (used for fallbacks)
+  model?: LanguageModel;
 
   // Experimental output (for structured generation)
   experimental_output?: ReturnType<typeof Output.object> | ReturnType<typeof Output.text>;
@@ -446,12 +448,15 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     options?: GenerateTextOptions,
   ): Promise<GenerateTextResultWithContext> {
-    const controller = getTrafficController(); // Use shared controller so all agent calls flow through central queue/metrics
-    const trafficMetadata = this.buildTrafficMetadata();
-    return controller.handleText({
-      metadata: trafficMetadata, // Pass model/provider info for future rate limiting keys
-      execute: () => this.executeGenerateText(input, options, trafficMetadata), // Defer actual execution so controller can schedule it
+    const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
+    const buildRequest = (modelOverride?: LanguageModel) => ({
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model), // Pass model/provider info for future rate limiting keys
+      execute: () =>
+        this.executeGenerateText(input, this.mergeOptionsWithModel(options, modelOverride)), // Defer actual execution so controller can schedule it
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
     });
+
+    return controller.handleText(buildRequest(options?.model));
   }
 
   private async executeGenerateText(
@@ -485,7 +490,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const contextLimit = options?.contextLimit;
 
         // Add model attributes and all options
@@ -560,8 +565,10 @@ export class Agent {
           tools: userTools,
           experimental_output,
           providerOptions,
+          model: _model, // Exclude model so aiSDKOptions doesn't override resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
         const llmSpan = this.createLLMSpan(oc, {
           operation: "generateText",
@@ -798,12 +805,15 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
-    const controller = getTrafficController(); // Same controller handles streaming to keep ordering/backpressure consistent
-    const trafficMetadata = this.buildTrafficMetadata();
-    return controller.handleStream({
-      metadata: trafficMetadata, // Include identifiers to support per-provider/model policies later
-      execute: () => this.executeStreamText(input, options, trafficMetadata), // Actual streaming work happens after the controller dequeues us
+    const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
+    const buildRequest = (modelOverride?: LanguageModel) => ({
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model), // Include identifiers to support per-provider/model policies later
+      execute: () =>
+        this.executeStreamText(input, this.mergeOptionsWithModel(options, modelOverride)), // Actual streaming work happens after the controller dequeues us
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
     });
+
+    return controller.handleStream(buildRequest(options?.model));
   }
 
   private async executeStreamText(
@@ -839,7 +849,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const contextLimit = options?.contextLimit;
 
         // Add model attributes to root span if TraceContext exists
@@ -909,8 +919,10 @@ export class Agent {
           onFinish: userOnFinish,
           experimental_output,
           providerOptions,
+          model: _model, // Exclude model from aiSDKOptions to avoid overriding resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
         const guardrailStreamingEnabled = guardrailSet.output.length > 0;
 
@@ -1485,10 +1497,18 @@ export class Agent {
     options?: GenerateObjectOptions,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
-    return controller.handleText({
-      metadata: this.buildTrafficMetadata(),
-      execute: () => this.executeGenerateObject(input, schema, options),
+    const buildRequest = (modelOverride?: LanguageModel) => ({
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model),
+      execute: () =>
+        this.executeGenerateObject(
+          input,
+          schema,
+          this.mergeOptionsWithModel(options, modelOverride),
+        ),
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
     });
+
+    return controller.handleText(buildRequest(options?.model));
   }
 
   private async executeGenerateObject<T extends z.ZodType>(
@@ -1519,7 +1539,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const schemaName = schema.description || "unknown";
 
         // Add model attributes and all options
@@ -1578,8 +1598,10 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           providerOptions,
+          model: _model, // Exclude model so spread does not override resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
         methodLogger.info("[AI SDK] Calling generateObject", {
           messageCount: messages.length,
@@ -1735,10 +1757,14 @@ export class Agent {
     options?: StreamObjectOptions,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
-    return controller.handleStream({
-      metadata: this.buildTrafficMetadata(),
-      execute: () => this.executeStreamObject(input, schema, options),
+    const buildRequest = (modelOverride?: LanguageModel) => ({
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model),
+      execute: () =>
+        this.executeStreamObject(input, schema, this.mergeOptionsWithModel(options, modelOverride)),
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
     });
+
+    return controller.handleStream(buildRequest(options?.model));
   }
 
   private async executeStreamObject<T extends z.ZodType>(
@@ -1770,7 +1796,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const schemaName = schema.description || "unknown";
 
         // Add model attributes and all options
@@ -1830,8 +1856,10 @@ export class Agent {
           tools: userTools,
           onFinish: userOnFinish,
           providerOptions,
+          model: _model, // Exclude model so aiSDKOptions cannot override resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
         let guardrailObjectPromise!: Promise<z.infer<T>>;
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
@@ -1866,7 +1894,7 @@ export class Agent {
             methodLogger.error("Stream object error occurred", {
               error: actualError,
               agentName: this.name,
-              modelName: this.getModelName(),
+              modelName: this.getModelName(model),
               schemaName: schemaName,
             });
 
@@ -2121,8 +2149,9 @@ export class Agent {
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
 
-    // Resolve dynamic values
-    const model = await this.resolveValue(this.model, oc);
+    // Resolve dynamic values (allow per-call model override for fallbacks)
+    const selectedModel = options?.model ?? this.model;
+    const model = await this.resolveValue(selectedModel, oc);
     const dynamicToolList = (await this.resolveValue(this.dynamicTools, oc)) || [];
 
     // Merge agent tools with option tools
@@ -3270,6 +3299,20 @@ export class Agent {
     return value;
   }
 
+  private mergeOptionsWithModel(
+    options: BaseGenerationOptions | undefined,
+    modelOverride?: LanguageModel,
+  ): BaseGenerationOptions | undefined {
+    if (!options && modelOverride === undefined) {
+      return undefined;
+    }
+
+    return {
+      ...(options ?? {}),
+      ...(modelOverride !== undefined ? { model: modelOverride } : {}),
+    };
+  }
+
   /**
    * Prepare tools with execution context
    */
@@ -3922,20 +3965,16 @@ export class Agent {
     return this.subAgentManager.calculateMaxSteps(this.maxSteps);
   }
 
-  private buildTrafficMetadata(): TrafficRequestMetadata {
-    // Capture provider if the model object exposes it; fallback is undefined to avoid bad assumptions
+  private buildTrafficMetadata(
+    modelOverride?: LanguageModel | DynamicValue<LanguageModel>,
+  ): TrafficRequestMetadata {
     const provider =
-      typeof this.model === "object" &&
-      this.model !== null &&
-      "provider" in this.model &&
-      typeof (this.model as any).provider === "string"
-        ? ((this.model as any).provider as string)
-        : undefined;
+      this.resolveProvider(modelOverride) ?? this.resolveProvider(this.model) ?? undefined;
 
     return {
       agentId: this.id, // Identify which agent issued the request
       agentName: this.name, // Human-readable label for logs/metrics
-      model: this.getModelName(), // Used for future capacity policies
+      model: this.getModelName(modelOverride), // Used for future capacity policies
       provider, // Allows per-provider throttling later
     };
   }
@@ -3982,17 +4021,33 @@ export class Agent {
     });
   }
 
+  private resolveProvider(
+    model: LanguageModel | DynamicValue<LanguageModel> | undefined,
+  ): string | undefined {
+    if (
+      model &&
+      typeof model === "object" &&
+      "provider" in model &&
+      typeof (model as any).provider === "string"
+    ) {
+      return (model as any).provider;
+    }
+
+    return undefined;
+  }
+
   /**
    * Get the model name
    */
-  public getModelName(): string {
-    if (typeof this.model === "function") {
+  public getModelName(modelOverride?: LanguageModel | DynamicValue<LanguageModel>): string {
+    const selectedModel = modelOverride ?? this.model;
+    if (typeof selectedModel === "function") {
       return "dynamic";
     }
-    if (typeof this.model === "string") {
-      return this.model;
+    if (typeof selectedModel === "string") {
+      return selectedModel;
     }
-    return this.model.modelId || "unknown";
+    return selectedModel.modelId || "unknown";
   }
 
   /**
