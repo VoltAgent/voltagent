@@ -109,6 +109,7 @@ export function createContextPrecisionScorer<
       const agent = new Agent({
         name: "context-precision-evaluator",
         model,
+        trafficPriority: "P2",
         instructions: "You evaluate if context was useful for arriving at the answer",
       });
 

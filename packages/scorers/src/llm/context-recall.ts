@@ -120,6 +120,7 @@ export function createContextRecallScorer<
       const agent = new Agent({
         name: "context-recall-evaluator",
         model,
+        trafficPriority: "P2",
         instructions: "You evaluate how well provided context supports factual statements",
       });
 

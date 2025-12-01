@@ -84,6 +84,7 @@ export function createAnswerCorrectnessScorer<
     const agent = new Agent({
       name: "answer-correctness-classifier",
       model,
+      trafficPriority: "P2",
       instructions: "You classify statements for answer correctness evaluation",
     });
 
