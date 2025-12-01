@@ -144,6 +144,7 @@ export function createContextRelevancyScorer<
       const agent = new Agent({
         name: "context-relevancy-evaluator",
         model,
+        trafficPriority: "P2",
         instructions: "You evaluate how relevant provided context is to answering questions",
       });
 

@@ -44,6 +44,7 @@ export {
   type RateLimitOptions,
   type TrafficRequest,
   type TrafficRequestMetadata,
+  type TrafficPriority,
   type TrafficRequestType,
 } from "./traffic/traffic-controller";
 // Export new Agent from agent.ts

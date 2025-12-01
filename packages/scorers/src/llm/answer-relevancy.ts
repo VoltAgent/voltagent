@@ -119,6 +119,7 @@ export function createAnswerRelevancyScorer<
     const agent = new Agent({
       name: "question-generator",
       model,
+      trafficPriority: "P2",
       instructions: "You generate questions from answers to evaluate relevancy",
     });
 

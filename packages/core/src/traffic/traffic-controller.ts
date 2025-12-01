@@ -58,11 +58,14 @@ export type RateLimitUpdateResult = {
 
 export type TrafficRequestType = "text" | "stream";
 
+export type TrafficPriority = "P0" | "P1" | "P2";
+
 export interface TrafficRequestMetadata {
   agentId?: string;
   agentName?: string;
   model?: string;
   provider?: string;
+  priority?: TrafficPriority;
 }
 
 export interface TrafficRequest<TResponse> {
@@ -90,6 +93,7 @@ interface QueuedRequest<TResponse = unknown> {
   attempt?: number;
   circuitKey?: string;
   circuitStatus?: CircuitStateStatus;
+  priority: TrafficPriority;
 }
 
 export interface TrafficControllerOptions {
@@ -111,7 +115,12 @@ export class TrafficController {
   private readonly rateLimitBuckets = new Map<string, RateLimitBucket>();
   private readonly circuitBreakers = new Map<string, CircuitState>();
   private readonly fallbackChains: Map<string, string[]>;
-  private queue: QueuedRequest[] = [];
+  private readonly priorityOrder: TrafficPriority[] = ["P0", "P1", "P2"];
+  private readonly queues: Record<TrafficPriority, QueuedRequest[]> = {
+    P0: [],
+    P1: [],
+    P2: [],
+  };
   private activeCount = 0;
   private drainScheduled = false;
   private refillTimeout?: ReturnType<typeof setTimeout>;
@@ -164,18 +173,20 @@ export class TrafficController {
   ): Promise<TResponse> {
     // Each request gets a promise so callers can await their own result
     return new Promise<TResponse>((resolve, reject) => {
+      const priority = this.resolvePriority(request.metadata);
       // Collect the work item and metadata
-      this.queue.push({
+      this.getQueue(priority).push({
         type,
         request,
         resolve,
         reject,
         attempt: 1,
+        priority,
       });
 
       this.logDebug("[TrafficController] enqueue", {
         type,
-        queueSize: this.queue.length,
+        queueSize: this.getQueueSize(),
         metadata: request.metadata,
       });
 
@@ -190,11 +201,11 @@ export class TrafficController {
     }
 
     this.drainScheduled = true; // Prevent redundant scheduling when many requests arrive at once
-    this.logDebug("[TrafficController] scheduleDrain", { queueSize: this.queue.length });
+    this.logDebug("[TrafficController] scheduleDrain", { queueSize: this.getQueueSize() });
     this.scheduler(() => {
       this.drainScheduled = false;
       this.logDebug("[TrafficController] drainLoopStart", {
-        queueSize: this.queue.length,
+        queueSize: this.getQueueSize(),
         active: this.activeCount,
       });
       this.drainQueue(); // Drain asynchronously so we never block the caller's tick
@@ -203,35 +214,52 @@ export class TrafficController {
 
   private drainQueue(): void {
     // Pull as many items as we can until we hit capacity or rate limits
-    while (this.queue.length > 0) {
-      const next = this.queue[0]; // Peek without removing so we only dequeue when we can process
-      if (!next) {
-        break;
+    while (this.hasQueuedWork()) {
+      if (this.activeCount >= this.maxConcurrent) {
+        return;
       }
 
-      const decision = this.getProcessDecision(next);
-      if (decision === "wait") {
-        return; // Stop early; drain will be rescheduled once capacity frees up
+      let selected: { item: QueuedRequest; priority: TrafficPriority } | undefined;
+      let skippedItem = false;
+
+      for (const priority of this.priorityOrder) {
+        const queue = this.getQueue(priority);
+        if (queue.length === 0) {
+          continue;
+        }
+
+        const candidate = queue[0];
+        const decision = this.getProcessDecision(candidate);
+        if (decision === "process") {
+          selected = { item: candidate, priority };
+          break;
+        }
+
+        if (decision === "skip") {
+          queue.shift(); // Remove rejected item
+          skippedItem = true;
+          break; // Re-evaluate from highest priority after removing
+        }
+
+        // If wait, try lower priorities in the same drain cycle
       }
 
-      this.queue.shift(); // Remove after we've confirmed we can process
-      if (decision === "skip") {
-        continue; // Already handled (e.g., circuit open with no fallback)
+      if (selected) {
+        const { item, priority } = selected;
+        this.getQueue(priority).shift();
+        this.activeCount++; // Track in-flight work to enforce concurrency guard
+        this.markCircuitTrial(item); // Reserve the half-open trial slot if needed
+
+        void this.runRequest(item); // Fire off processing without blocking the loop
+        continue;
       }
 
-      this.activeCount++; // Track in-flight work to enforce concurrency guard
-      this.markCircuitTrial(next); // Reserve the half-open trial slot if needed
+      if (skippedItem) {
+        continue; // We removed a blocked item; re-evaluate queues
+      }
 
-      this.logDebug("[TrafficController] dispatch", {
-        type: next.type,
-        queueSize: this.queue.length,
-        active: this.activeCount,
-        etaMs: next.etaMs,
-        rateLimitKey: next.rateLimitKey,
-        metadata: next.request.metadata,
-      });
-
-      void this.runRequest(next); // Fire off processing without blocking the loop
+      // No runnable work right now; exit until capacity/rate-limit changes
+      return;
     }
   }
 
@@ -391,21 +419,24 @@ export class TrafficController {
 
   private countQueuedAheadWithKey(key: string, current: QueuedRequest, logDetails = false): number {
     let count = 0;
-    for (const item of this.queue) {
-      if (item === current) {
-        break;
-      }
+    for (const priority of this.priorityOrder) {
+      const queue = this.getQueue(priority);
+      for (const item of queue) {
+        if (item === current) {
+          return count;
+        }
 
-      const itemKey = this.buildRateLimitKey(item.request.metadata);
-      if (itemKey === key) {
-        count += 1;
+        const itemKey = this.buildRateLimitKey(item.request.metadata);
+        if (itemKey === key) {
+          count += 1;
+        }
       }
     }
     if (logDetails) {
       this.logDebug("[TrafficController] countQueuedAheadWithKey", {
         key,
         count,
-        queueSize: this.queue.length,
+        queueSize: this.getQueueSize(),
       });
     }
     return count;
@@ -786,6 +817,31 @@ export class TrafficController {
     return unit === "ms" ? value : value * 1000;
   }
 
+  private resolvePriority(metadata?: TrafficRequestMetadata): TrafficPriority {
+    const candidate = metadata?.priority;
+    if (candidate === "P0" || candidate === "P1" || candidate === "P2") {
+      return candidate;
+    }
+
+    return "P1";
+  }
+
+  private getQueue(priority: TrafficPriority): QueuedRequest[] {
+    return this.queues[priority];
+  }
+
+  private hasQueuedWork(): boolean {
+    return this.priorityOrder.some((priority) => this.getQueue(priority).length > 0);
+  }
+
+  private getQueueSize(): number {
+    let size = 0;
+    for (const priority of this.priorityOrder) {
+      size += this.getQueue(priority).length;
+    }
+    return size;
+  }
+
   private scheduleRefill(limit: NormalizedRateLimit): void {
     if (this.refillTimeout) {
       return;
@@ -796,7 +852,7 @@ export class TrafficController {
     this.refillTimeout = setTimeout(() => {
       this.refillTimeout = undefined; // Allow future refills to be scheduled
       this.logDebug("[TrafficController] refillTimeoutFired", {
-        queueSize: this.queue.length,
+        queueSize: this.getQueueSize(),
         active: this.activeCount,
       });
       this.scheduleDrain(); // Try draining again now that tokens should exist
@@ -884,7 +940,6 @@ export class TrafficController {
   }
 
   private async runRequest<TResponse>(item: QueuedRequest<TResponse>): Promise<void> {
-
     const attempt = item.attempt ?? 1;
 
     this.logDebug("[TrafficController] runRequest start", {
@@ -892,7 +947,7 @@ export class TrafficController {
       rateLimitKey: item.rateLimitKey,
       etaMs: item.etaMs,
       active: this.activeCount,
-      queueSize: this.queue.length,
+      queueSize: this.getQueueSize(),
     });
 
     try {
@@ -918,7 +973,7 @@ export class TrafficController {
       this.logDebug("[TrafficController] runRequest complete", {
         type: item.type,
         active: this.activeCount,
-        queueSize: this.queue.length,
+        queueSize: this.getQueueSize(),
       });
       this.scheduleDrain(); // Immediately try to pull the next request
     }
@@ -1070,7 +1125,8 @@ export class TrafficController {
     });
 
     setTimeout(() => {
-      this.queue.push({
+      const retryPriority = item.priority;
+      this.getQueue(retryPriority).push({
         ...item,
         attempt: nextAttempt,
         etaMs: undefined,

@@ -257,6 +257,7 @@ async function runModerationJudge(args: {
   const agent = new Agent({
     name: "moderation-judge",
     model,
+    trafficPriority: "P2",
     instructions:
       "You are a safety classifier. Respond with JSON that matches the provided schema containing flagged, scores, and reason.",
   });
