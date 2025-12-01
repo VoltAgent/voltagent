@@ -2241,7 +2241,6 @@ describe("Agent", () => {
 
       expect(systemMessage).toMatchObject({
         role: "system",
-        content: expect.stringContaining("You are TestAgent"),
       });
       expect(systemMessage.content).toContain("Text prompt instructions");
       expect(systemMessage.content).toContain("Use markdown to format your answers");
@@ -2271,7 +2270,6 @@ describe("Agent", () => {
 
       expect(systemMessage).toMatchObject({
         role: "system",
-        content: expect.stringContaining("You are TestAgent"),
       });
       expect(systemMessage.content).toContain("String instructions");
       expect(systemMessage.content).toContain("Use markdown to format your answers");
@@ -2374,7 +2372,6 @@ describe("Agent", () => {
 
       expect(systemMessage).toMatchObject({
         role: "system",
-        content: expect.stringContaining("You are TestAgent"),
       });
       expect(systemMessage.content).toContain("Dynamic content");
       expect(systemMessage.content).toContain("Use markdown to format your answers");

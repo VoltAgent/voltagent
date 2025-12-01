@@ -2903,7 +2903,7 @@ export class Agent {
 
         return {
           role: "system",
-          content: `You are ${this.name}. ${content}`,
+          content: `${content}`,
         };
       }
     }
@@ -2919,7 +2919,7 @@ export class Agent {
 
     return {
       role: "system",
-      content: `You are ${this.name}. ${content}`,
+      content: `${content}`,
     };
   }
 
