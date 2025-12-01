@@ -503,7 +503,7 @@ configureApp: (app) => {
 
 ## Authentication for Custom Endpoints
 
-**Important**: Custom routes added via `configureApp` are registered AFTER the authentication middleware. This means when you configure an auth provider, your custom routes automatically inherit the same authentication behavior as VoltAgent's built-in routes.
+**Important**: Custom routes added via `configureApp` are registered AFTER the authentication middleware. This means when you configure an auth provider, your custom routes automatically inherit the same authentication behavior as VoltAgent's built-in routes. When `defaultPrivate: true` is set, all custom routes are protected by default unless explicitly listed in `publicRoutes`.
 
 ### How Authentication Works with Custom Routes
 
