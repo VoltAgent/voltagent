@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 1.2.13
+
+### Patch Changes
+
+- [#825](https://github.com/VoltAgent/voltagent/pull/825) [`fd1428b`](https://github.com/VoltAgent/voltagent/commit/fd1428b73abfcac29c238e0cee5229ff227cb72b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: remove redundant "You are ${this.name}" prefix from system prompt construction - #813
+
+  The system prompt construction in `Agent` class was redundantly prepending "You are ${this.name}" even when the user provided their own system prompt. This change removes the prefix, allowing the user's instructions to be used exactly as provided.
+
 ## 1.2.12
 
 ### Patch Changes

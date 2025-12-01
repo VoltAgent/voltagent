@@ -1,5 +1,33 @@
 # @voltagent/server-core
 
+## 1.0.29
+
+### Patch Changes
+
+- [#824](https://github.com/VoltAgent/voltagent/pull/824) [`92f8d46`](https://github.com/VoltAgent/voltagent/commit/92f8d466db683f5c8bc000d034c441fc3b9e3ad5) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: ensure `jwtAuth` respects `defaultPrivate` option
+
+  The `jwtAuth` helper function was ignoring the `defaultPrivate` option, causing custom routes to remain public even when `defaultPrivate: true` was set. This change ensures that the option is correctly passed to the authentication provider, enforcing security on all routes by default when enabled.
+
+  ## Example
+
+  ```typescript
+  // Custom routes are now properly secured
+  server: honoServer({
+    auth: jwtAuth({
+      secret: "...",
+      defaultPrivate: true, // Now correctly enforces auth on all routes
+      publicRoutes: ["GET /health"],
+    }),
+    configureApp: (app) => {
+      // This route is now protected (returns 401 without token)
+      app.get("/api/protected", (c) => c.json({ message: "Protected" }));
+    },
+  }),
+  ```
+
+- Updated dependencies [[`fd1428b`](https://github.com/VoltAgent/voltagent/commit/fd1428b73abfcac29c238e0cee5229ff227cb72b)]:
+  - @voltagent/core@1.2.13
+
 ## 1.0.28
 
 ### Patch Changes
