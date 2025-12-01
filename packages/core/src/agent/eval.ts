@@ -711,6 +711,7 @@ function buildEvalPayload(
     rawOutput: output,
     userId: oc.userId,
     conversationId: oc.conversationId,
+    tenantId: oc.tenantId,
     traceId: spanContext.traceId,
     spanId: spanContext.spanId,
     metadata,
