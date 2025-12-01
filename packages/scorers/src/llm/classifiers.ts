@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { extractTenantId } from "./utils";
 
 type ChoiceId = string;
 
@@ -97,8 +98,10 @@ async function evaluateChoice(args: EvaluateChoiceArgs): Promise<ChoiceAnalysis>
     instructions: judgeInstructions ?? buildDefaultChoiceInstructions(Object.keys(choices)),
   });
 
+  const tenantId = extractTenantId(context);
   const response = await agent.generateObject(prompt, CHOICE_RESPONSE_SCHEMA, {
     maxOutputTokens,
+    tenantId,
   });
 
   const { choice, reason } = extractChoiceFromResponse(response.object, choices, scorerId);

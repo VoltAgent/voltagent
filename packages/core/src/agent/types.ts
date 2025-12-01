@@ -644,6 +644,7 @@ export interface AgentEvalPayload {
   rawOutput?: unknown;
   userId?: string;
   conversationId?: string;
+  tenantId?: string;
   traceId: string;
   spanId: string;
   metadata?: Record<string, unknown>;
@@ -1059,6 +1060,9 @@ export type OperationContext = {
 
   /** Optional conversation identifier associated with this operation */
   conversationId?: string;
+
+  /** Optional tenant identifier propagated across nested operations */
+  tenantId?: string;
 
   /** User-managed context map for this operation */
   readonly context: Map<string | symbol, unknown>;

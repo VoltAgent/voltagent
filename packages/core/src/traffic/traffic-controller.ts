@@ -5,6 +5,9 @@ type Scheduler = (callback: () => void) => void;
 type BivariantHandler<TArgs extends unknown[]> = {
   bivarianceHack(...args: TArgs): void;
 }["bivarianceHack"];
+type BivariantFunction<TArgs extends unknown[], TReturn> = {
+  bivarianceHack(...args: TArgs): TReturn;
+}["bivarianceHack"];
 
 type RetryReason = "rateLimit" | "serverError" | "timeout";
 
@@ -40,6 +43,18 @@ export interface RateLimitOptions {
   refillPerSecond: number;
 }
 
+export type TenantUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+};
+
+type UsageCounters = {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+};
+
 export type RateLimitKey = string;
 export type RateLimitConfig = Record<RateLimitKey, RateLimitOptions>;
 
@@ -66,12 +81,18 @@ export interface TrafficRequestMetadata {
   model?: string;
   provider?: string;
   priority?: TrafficPriority;
+  tenantId?: string;
 }
 
 export interface TrafficRequest<TResponse> {
+  tenantId: string;
   metadata?: TrafficRequestMetadata;
   execute: () => Promise<TResponse>;
   createFallbackRequest?: (modelId: string) => TrafficRequest<TResponse> | undefined;
+  extractUsage?: BivariantFunction<
+    [response: TResponse],
+    Promise<UsageCounters | undefined> | UsageCounters | undefined
+  >;
 }
 
 type CircuitStateStatus = "closed" | "open" | "half-open";
@@ -94,6 +115,11 @@ interface QueuedRequest<TResponse = unknown> {
   circuitKey?: string;
   circuitStatus?: CircuitStateStatus;
   priority: TrafficPriority;
+  tenantId: string;
+  extractUsage?: BivariantFunction<
+    [response: TResponse],
+    Promise<UsageCounters | undefined> | UsageCounters | undefined
+  >;
 }
 
 export interface TrafficControllerOptions {
@@ -124,6 +150,7 @@ export class TrafficController {
   private activeCount = 0;
   private drainScheduled = false;
   private refillTimeout?: ReturnType<typeof setTimeout>;
+  private readonly tenantUsage = new Map<string, TenantUsage>();
   private readonly logger: Logger;
 
   private logDebug(message: string, details?: Record<string, unknown>): void {
@@ -158,6 +185,11 @@ export class TrafficController {
     return this.enqueue("stream", request);
   }
 
+  getTenantUsage(tenantId: string): TenantUsage | undefined {
+    const usage = this.tenantUsage.get(tenantId);
+    return usage ? { ...usage } : undefined;
+  }
+
   private createScheduler(): Scheduler {
     // Prefer queueMicrotask to keep the drain loop snappy without starving the event loop
     if (typeof queueMicrotask === "function") {
@@ -174,6 +206,11 @@ export class TrafficController {
     // Each request gets a promise so callers can await their own result
     return new Promise<TResponse>((resolve, reject) => {
       const priority = this.resolvePriority(request.metadata);
+      this.logger.debug("Enqueuing LLM request", {
+        tenantId: request.tenantId,
+        type,
+        priority,
+      });
       // Collect the work item and metadata
       this.getQueue(priority).push({
         type,
@@ -182,6 +219,8 @@ export class TrafficController {
         reject,
         attempt: 1,
         priority,
+        tenantId: request.tenantId,
+        extractUsage: request.extractUsage,
       });
 
       this.logDebug("[TrafficController] enqueue", {
@@ -931,6 +970,66 @@ export class TrafficController {
     this.circuitBreakers.set(key, state);
   }
 
+  private recordUsageFromResult<TResponse>(
+    item: QueuedRequest<TResponse>,
+    result: TResponse,
+  ): void {
+    const extractor = item.extractUsage ?? item.request.extractUsage;
+    if (!extractor) {
+      return;
+    }
+
+    try {
+      const usageCandidate = extractor(result);
+      if (!usageCandidate) {
+        return;
+      }
+
+      if (this.isPromiseLike(usageCandidate)) {
+        void Promise.resolve(usageCandidate)
+          .then((usage) => {
+            if (usage) {
+              this.incrementTenantUsage(item.tenantId, usage);
+            }
+          })
+          .catch((error) => {
+            this.logger.debug("Failed to record tenant usage", { tenantId: item.tenantId, error });
+          });
+        return;
+      }
+
+      this.incrementTenantUsage(item.tenantId, usageCandidate as UsageCounters);
+    } catch (error) {
+      this.logger.debug("Failed to record tenant usage", { tenantId: item.tenantId, error });
+    }
+  }
+
+  private incrementTenantUsage(tenantId: string, usage: UsageCounters): void {
+    const current = this.tenantUsage.get(tenantId) ?? {
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+    };
+    const inputTokens = usage.inputTokens ?? 0;
+    const outputTokens = usage.outputTokens ?? 0;
+    const totalTokens = usage.totalTokens ?? inputTokens + outputTokens;
+    const updated: TenantUsage = {
+      inputTokens: current.inputTokens + inputTokens,
+      outputTokens: current.outputTokens + outputTokens,
+      totalTokens: current.totalTokens + totalTokens,
+    };
+    this.tenantUsage.set(tenantId, updated);
+    this.logger.debug("Recorded tenant usage", { tenantId, usage: updated });
+  }
+
+  private isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+    return (
+      typeof value === "object" &&
+      value !== null &&
+      typeof (value as PromiseLike<unknown>).then === "function"
+    );
+  }
+
   private isCircuitBreakerStatus(status?: number): boolean {
     if (status === 429) {
       return true;
@@ -953,12 +1052,7 @@ export class TrafficController {
     try {
       const result = await item.request.execute(); // Execute the user's operation
       this.recordCircuitSuccess(item.request.metadata);
-      // Log raw result coming back from the underlying handler (e.g., AI SDK)
-      this.logDebug("[TrafficController] runRequest result", {
-        type: item.type,
-        rateLimitKey: item.rateLimitKey,
-        result,
-      });
+      this.recordUsageFromResult(item, result);
       item.resolve(result); // Deliver successful result back to the waiting caller
     } catch (error) {
       this.recordCircuitFailure(item.request.metadata, error);

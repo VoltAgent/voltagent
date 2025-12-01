@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { extractTenantId } from "./utils";
 
 const CONTEXT_RELEVANCY_PROMPT = `Analyze the provided context and identify which parts are relevant to answering the given question. For each context sentence or passage, determine its relevance level.
 
@@ -152,13 +153,16 @@ export function createContextRelevancyScorer<
       const contextText = Array.isArray(payload.context)
         ? payload.context.join("\n")
         : payload.context;
+      const tenantId = extractTenantId(context);
 
       const prompt = CONTEXT_RELEVANCY_PROMPT.replace("{{question}}", payload.input).replace(
         "{{context}}",
         contextText,
       );
 
-      const response = await agent.generateObject(prompt, CONTEXT_RELEVANCY_SCHEMA);
+      const response = await agent.generateObject(prompt, CONTEXT_RELEVANCY_SCHEMA, {
+        tenantId,
+      });
       const evaluations = response.object.evaluations;
 
       context.results.raw.contextRelevancyEvaluations = evaluations;

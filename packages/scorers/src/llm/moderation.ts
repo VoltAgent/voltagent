@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { extractTenantId } from "./utils";
 
 export interface ModerationScorerOptions {
   id?: string;
@@ -245,6 +246,7 @@ async function runModerationJudge(args: {
     typeof context.results.prepare === "string"
       ? context.results.prepare
       : normalizeText(context.payload.output);
+  const tenantId = extractTenantId(context);
 
   const prompt = await buildPrompt({
     output: normalizedOutput,
@@ -264,6 +266,7 @@ async function runModerationJudge(args: {
 
   const response = await agent.generateObject(prompt, schema, {
     maxOutputTokens,
+    tenantId,
   });
 
   const parsed = mapModerationResponse(response.object, threshold, schema);

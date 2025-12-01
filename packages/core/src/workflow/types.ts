@@ -229,6 +229,10 @@ export interface WorkflowRunOptions {
    */
   conversationId?: string;
   /**
+   * Tenant identifier propagated to agent steps and subcalls
+   */
+  tenantId?: string;
+  /**
    * The user ID, this can be used to track the current user in a workflow
    */
   userId?: string;
