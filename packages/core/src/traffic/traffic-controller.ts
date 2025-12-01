@@ -11,11 +11,17 @@ type RetryReason = "rateLimit" | "serverError" | "timeout";
 const MAX_RETRY_ATTEMPTS = 3;
 const TIMEOUT_RETRY_ATTEMPTS = 2;
 const RATE_LIMIT_BASE_BACKOFF_MS = 500;
+const CIRCUIT_FAILURE_THRESHOLD = 5;
+const CIRCUIT_FAILURE_WINDOW_MS = 10_000;
+const CIRCUIT_COOLDOWN_MS = 30_000;
 const SERVER_ERROR_BASE_BACKOFF_MS = 1000;
 const TIMEOUT_BASE_BACKOFF_MS = 750;
 const RATE_LIMIT_JITTER_FACTOR = 0.35;
 const SERVER_ERROR_JITTER_FACTOR = 0.8;
 const TIMEOUT_JITTER_FACTOR = 0.5;
+const DEFAULT_FALLBACK_CHAINS: Record<string, string[]> = {
+  "gpt-4o": ["gpt-4o-mini", "gpt-3.5"],
+};
 
 interface RateLimitBucket {
   tokens: number;
@@ -62,6 +68,16 @@ export interface TrafficRequestMetadata {
 export interface TrafficRequest<TResponse> {
   metadata?: TrafficRequestMetadata;
   execute: () => Promise<TResponse>;
+  createFallbackRequest?: (modelId: string) => TrafficRequest<TResponse> | undefined;
+}
+
+type CircuitStateStatus = "closed" | "open" | "half-open";
+
+interface CircuitState {
+  status: CircuitStateStatus;
+  failureTimestamps: number[];
+  openedAt?: number;
+  trialInFlight?: boolean;
 }
 
 interface QueuedRequest<TResponse = unknown> {
@@ -72,13 +88,18 @@ interface QueuedRequest<TResponse = unknown> {
   etaMs?: number;
   rateLimitKey?: string;
   attempt?: number;
+  circuitKey?: string;
+  circuitStatus?: CircuitStateStatus;
 }
 
 export interface TrafficControllerOptions {
   maxConcurrent?: number;
   rateLimits?: RateLimitConfig;
   logger?: Logger;
+  fallbackChains?: Record<string, string[]>;
 }
+
+type ProcessDecision = "process" | "skip" | "wait";
 
 // Centralized traffic controller responsible for scheduling LLM calls.
 // Provides a FIFO queue with a non-blocking scheduler and entrypoints
@@ -88,6 +109,8 @@ export class TrafficController {
   private readonly maxConcurrent: number;
   private rateLimits?: Map<string, NormalizedRateLimit>;
   private readonly rateLimitBuckets = new Map<string, RateLimitBucket>();
+  private readonly circuitBreakers = new Map<string, CircuitState>();
+  private readonly fallbackChains: Map<string, string[]>;
   private queue: QueuedRequest[] = [];
   private activeCount = 0;
   private drainScheduled = false;
@@ -103,6 +126,7 @@ export class TrafficController {
   constructor(options: TrafficControllerOptions = {}) {
     this.maxConcurrent = options.maxConcurrent ?? Number.POSITIVE_INFINITY;
     this.rateLimits = this.normalizeRateLimits(options.rateLimits);
+    this.fallbackChains = this.normalizeFallbackChains(options.fallbackChains);
     this.scheduler = this.createScheduler();
 
     // NEW LOGGER (from c2 commit)
@@ -184,12 +208,19 @@ export class TrafficController {
       if (!next) {
         break;
       }
-      if (!this.canProcess(next)) {
+
+      const decision = this.getProcessDecision(next);
+      if (decision === "wait") {
         return; // Stop early; drain will be rescheduled once capacity frees up
       }
 
       this.queue.shift(); // Remove after we've confirmed we can process
+      if (decision === "skip") {
+        continue; // Already handled (e.g., circuit open with no fallback)
+      }
+
       this.activeCount++; // Track in-flight work to enforce concurrency guard
+      this.markCircuitTrial(next); // Reserve the half-open trial slot if needed
 
       this.logDebug("[TrafficController] dispatch", {
         type: next.type,
@@ -204,13 +235,18 @@ export class TrafficController {
     }
   }
 
-  private canProcess(next: QueuedRequest): boolean {
+  private getProcessDecision(next: QueuedRequest): ProcessDecision {
+    const circuitDecision = this.evaluateCircuitBreaker(next);
+    if (circuitDecision !== "process") {
+      return circuitDecision;
+    }
+
     if (this.activeCount >= this.maxConcurrent) {
       this.logDebug("[TrafficController] throttle concurrency", {
         active: this.activeCount,
         maxConcurrent: this.maxConcurrent,
       });
-      return false;
+      return "wait";
     }
 
     const rateLimitConfig = this.getRateLimitConfig(next.request.metadata);
@@ -220,7 +256,7 @@ export class TrafficController {
       });
       next.rateLimitKey = undefined;
       next.etaMs = 0;
-      return true; // No rate limit configured for this key
+      return "process"; // No rate limit configured for this key
     }
 
     const queuedAhead = this.countQueuedAheadWithKey(
@@ -245,7 +281,7 @@ export class TrafficController {
         queuedAhead,
       });
       this.scheduleRefill(rateLimitConfig.limit); // Ensure we retry as soon as tokens are replenished
-      return false;
+      return "wait";
     }
 
     bucket.tokens -= 1; // Consume a token for this dispatch
@@ -256,7 +292,7 @@ export class TrafficController {
     });
     next.rateLimitKey = rateLimitConfig.key;
     next.etaMs = 0;
-    return true;
+    return "process";
   }
 
   private getRateLimitConfig(
@@ -375,6 +411,146 @@ export class TrafficController {
     return count;
   }
 
+  private evaluateCircuitBreaker(next: QueuedRequest): ProcessDecision {
+    return this.evaluateCircuitBreakerForRequest(next, new Set<string>());
+  }
+
+  private evaluateCircuitBreakerForRequest(
+    next: QueuedRequest,
+    visitedModels: Set<string>,
+  ): ProcessDecision {
+    const key = this.buildRateLimitKey(next.request.metadata);
+    next.circuitKey = key;
+
+    const currentModel = next.request.metadata?.model;
+    if (currentModel) {
+      visitedModels.add(currentModel);
+    }
+
+    const evaluation = this.evaluateCircuitState(key);
+    next.circuitStatus = evaluation.state;
+
+    if (evaluation.allowRequest) {
+      return "process";
+    }
+
+    const fallbackModel = this.findFallbackModel(next.request.metadata, visitedModels);
+    if (fallbackModel && next.request.createFallbackRequest) {
+      const fallbackRequest = next.request.createFallbackRequest(fallbackModel);
+      if (fallbackRequest) {
+        this.logger.warn("Circuit open; attempting fallback model", {
+          fromModel: currentModel,
+          fallbackModel,
+          provider: next.request.metadata?.provider,
+        });
+        next.request = fallbackRequest;
+        next.attempt = 1;
+        next.rateLimitKey = undefined;
+        next.etaMs = undefined;
+        next.circuitKey = undefined;
+        next.circuitStatus = undefined;
+        return this.evaluateCircuitBreakerForRequest(next, visitedModels);
+      }
+    }
+
+    const retryAfterMs = evaluation.retryAfterMs ?? CIRCUIT_COOLDOWN_MS;
+    this.logger.warn("Circuit open; rejecting request", {
+      circuitKey: key,
+      retryAfterMs,
+      metadata: next.request.metadata,
+    });
+    next.reject(
+      new CircuitBreakerOpenError(
+        `Circuit open for ${key}; retry after ${retryAfterMs}ms`,
+        next.request.metadata,
+        retryAfterMs,
+      ),
+    );
+    return "skip";
+  }
+
+  private evaluateCircuitState(key: string): {
+    allowRequest: boolean;
+    state: CircuitStateStatus;
+    retryAfterMs?: number;
+  } {
+    const state = this.circuitBreakers.get(key);
+    if (!state) {
+      return { allowRequest: true, state: "closed" };
+    }
+
+    const now = Date.now();
+
+    if (state.status === "open") {
+      const elapsed = state.openedAt ? now - state.openedAt : 0;
+      if (elapsed >= CIRCUIT_COOLDOWN_MS) {
+        state.status = "half-open";
+        state.trialInFlight = false;
+        state.failureTimestamps = [];
+        this.circuitBreakers.set(key, state);
+        return { allowRequest: true, state: state.status };
+      }
+      return {
+        allowRequest: false,
+        state: state.status,
+        retryAfterMs: Math.max(0, CIRCUIT_COOLDOWN_MS - elapsed),
+      };
+    }
+
+    if (state.status === "half-open") {
+      if (state.trialInFlight) {
+        return { allowRequest: false, state: state.status };
+      }
+      return { allowRequest: true, state: state.status };
+    }
+
+    return { allowRequest: true, state: state.status };
+  }
+
+  private findFallbackModel(
+    metadata: TrafficRequestMetadata | undefined,
+    visitedModels: Set<string>,
+  ): string | undefined {
+    const currentModel = metadata?.model;
+    if (!currentModel) {
+      return undefined;
+    }
+
+    const chain = this.fallbackChains.get(currentModel);
+    if (!chain) {
+      return undefined;
+    }
+
+    const provider = metadata?.provider;
+    for (const candidate of chain) {
+      if (visitedModels.has(candidate)) {
+        continue;
+      }
+
+      const candidateKey = this.buildRateLimitKey({ provider, model: candidate });
+      const evaluation = this.evaluateCircuitState(candidateKey);
+      if (evaluation.allowRequest) {
+        visitedModels.add(candidate);
+        return candidate;
+      }
+    }
+
+    return undefined;
+  }
+
+  private markCircuitTrial(next: QueuedRequest): void {
+    const key = next.circuitKey;
+    if (!key) {
+      return;
+    }
+
+    const state = this.circuitBreakers.get(key);
+    if (state && state.status === "half-open" && !state.trialInFlight) {
+      state.trialInFlight = true;
+      this.circuitBreakers.set(key, state);
+    }
+  }
+
   private normalizeRateLimits(
     rateLimits?: RateLimitConfig,
   ): Map<string, NormalizedRateLimit> | undefined {
@@ -393,6 +569,21 @@ export class TrafficController {
     }
 
     return normalized.size > 0 ? normalized : undefined;
+  }
+
+  private normalizeFallbackChains(
+    fallbackChains?: Record<string, string[]>,
+  ): Map<string, string[]> {
+    const configuredChains = fallbackChains ?? DEFAULT_FALLBACK_CHAINS;
+    const normalized = new Map<string, string[]>();
+
+    for (const [model, chain] of Object.entries(configuredChains)) {
+      if (Array.isArray(chain) && chain.length > 0) {
+        normalized.set(model, [...chain]);
+      }
+    }
+
+    return normalized;
   }
 
   private buildRateLimitKey(metadata?: TrafficRequestMetadata): string {
@@ -612,6 +803,86 @@ export class TrafficController {
     }, delayMs);
   }
 
+  private recordCircuitSuccess(metadata?: TrafficRequestMetadata): void {
+    const key = this.buildRateLimitKey(metadata);
+    if (this.circuitBreakers.has(key)) {
+      this.circuitBreakers.delete(key);
+    }
+  }
+
+  private recordCircuitFailure(metadata: TrafficRequestMetadata | undefined, error: unknown): void {
+    const status = this.extractStatusCode(error);
+    if (!this.isCircuitBreakerStatus(status)) {
+      this.resetCircuitFailures(metadata);
+      return;
+    }
+
+    const key = this.buildRateLimitKey(metadata);
+    const now = Date.now();
+    const state =
+      this.circuitBreakers.get(key) ??
+      ({
+        status: "closed",
+        failureTimestamps: [],
+      } as CircuitState);
+
+    const recentFailures = state.failureTimestamps.filter(
+      (timestamp) => now - timestamp <= CIRCUIT_FAILURE_WINDOW_MS,
+    );
+    recentFailures.push(now);
+
+    if (state.status === "half-open") {
+      state.status = "open";
+      state.openedAt = now;
+      state.trialInFlight = false;
+      state.failureTimestamps = [now];
+      this.circuitBreakers.set(key, state);
+      this.logger.warn("Circuit reopened after half-open failure", {
+        circuitKey: key,
+        statusCode: status,
+      });
+      return;
+    }
+
+    state.failureTimestamps = recentFailures;
+    if (state.failureTimestamps.length >= CIRCUIT_FAILURE_THRESHOLD) {
+      state.status = "open";
+      state.openedAt = now;
+      state.trialInFlight = false;
+      this.logger.warn("Circuit opened after consecutive failures", {
+        circuitKey: key,
+        failureCount: state.failureTimestamps.length,
+        statusCode: status,
+      });
+    }
+
+    this.circuitBreakers.set(key, state);
+  }
+
+  private resetCircuitFailures(metadata?: TrafficRequestMetadata): void {
+    const key = this.buildRateLimitKey(metadata);
+    const state = this.circuitBreakers.get(key);
+    if (!state) {
+      return;
+    }
+
+    state.failureTimestamps = [];
+    if (state.status !== "open") {
+      state.status = "closed";
+      state.trialInFlight = false;
+    }
+
+    this.circuitBreakers.set(key, state);
+  }
+
+  private isCircuitBreakerStatus(status?: number): boolean {
+    if (status === 429) {
+      return true;
+    }
+
+    return status !== undefined && status >= 500 && status < 600;
+  }
+
   private async runRequest<TResponse>(item: QueuedRequest<TResponse>): Promise<void> {
 
     const attempt = item.attempt ?? 1;
@@ -626,6 +897,7 @@ export class TrafficController {
 
     try {
       const result = await item.request.execute(); // Execute the user's operation
+      this.recordCircuitSuccess(item.request.metadata);
       // Log raw result coming back from the underlying handler (e.g., AI SDK)
       this.logDebug("[TrafficController] runRequest result", {
         type: item.type,
@@ -634,6 +906,7 @@ export class TrafficController {
       });
       item.resolve(result); // Deliver successful result back to the waiting caller
     } catch (error) {
+      this.recordCircuitFailure(item.request.metadata, error);
       const retryPlan = this.buildRetryPlan(error, attempt);
       if (retryPlan) {
         this.scheduleRetry(item, attempt + 1, retryPlan.delayMs, retryPlan.reason);
@@ -802,6 +1075,8 @@ export class TrafficController {
         attempt: nextAttempt,
         etaMs: undefined,
         rateLimitKey: undefined,
+        circuitKey: undefined,
+        circuitStatus: undefined,
       });
       this.scheduleDrain();
     }, delayMs);
@@ -809,6 +1084,18 @@ export class TrafficController {
 }
 
 let singletonController: TrafficController | undefined;
+
+export class CircuitBreakerOpenError extends Error {
+  readonly retryAfterMs?: number;
+  readonly metadata?: TrafficRequestMetadata;
+
+  constructor(message: string, metadata?: TrafficRequestMetadata, retryAfterMs?: number) {
+    super(message);
+    this.name = "CircuitBreakerOpenError";
+    this.metadata = metadata;
+    this.retryAfterMs = retryAfterMs;
+  }
+}
 
 /**
  * Retrieve the shared traffic controller instance.

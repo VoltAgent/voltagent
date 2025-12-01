@@ -412,6 +412,8 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
 
   // Provider-specific options
   providerOptions?: ProviderOptions;
+  // Optional per-call model override (used for fallbacks)
+  model?: LanguageModel | string;
 
   // Structured output (for schema-guided generation)
   output?: OutputSpec;
@@ -584,15 +586,27 @@ export class Agent {
     options?: GenerateTextOptions<OUTPUT>,
   ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
     const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
-    return controller.handleText({
-      metadata: this.buildTrafficMetadata(), // Pass model/provider info for future rate limiting keys
-      execute: () => this.executeGenerateText(input, options), // Defer actual execution so controller can schedule it
-    });
+    const buildRequest = (modelOverride?: LanguageModel | string) => {
+      const trafficMetadata = this.buildTrafficMetadata(modelOverride ?? options?.model);
+      return {
+        metadata: trafficMetadata, // Pass model/provider info for future rate limiting keys
+        execute: () =>
+          this.executeGenerateText(
+            input,
+            this.mergeOptionsWithModel(options, modelOverride),
+            trafficMetadata,
+          ), // Defer actual execution so controller can schedule it
+        createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+      };
+    };
+
+    return controller.handleText(buildRequest(options?.model));
   }
 
   private async executeGenerateText<OUTPUT extends OutputSpec = OutputSpec>(
     input: string | UIMessage[] | BaseMessage[],
     options?: GenerateTextOptions<OUTPUT>,
+    trafficMetadata?: TrafficRequestMetadata,
   ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
@@ -716,8 +730,10 @@ export class Agent {
               tools: userTools,
               output,
               providerOptions,
+              model: _model, // Exclude model so aiSDKOptions doesn't override resolved model
               ...aiSDKOptions
             } = options || {};
+            void _model;
 
             const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
               | ToolChoice<Record<string, unknown>>
@@ -1067,11 +1083,21 @@ export class Agent {
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
     const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
-    const trafficMetadata = this.buildTrafficMetadata();
-    return controller.handleStream({
-      metadata: trafficMetadata, // Include identifiers to support per-provider/model policies later
-      execute: () => this.executeStreamText(input, options, trafficMetadata), // Actual streaming work happens after the controller dequeues us
-    });
+    const buildRequest = (modelOverride?: LanguageModel | string) => {
+      const trafficMetadata = this.buildTrafficMetadata(modelOverride ?? options?.model);
+      return {
+        metadata: trafficMetadata, // Include identifiers to support per-provider/model policies later
+        execute: () =>
+          this.executeStreamText(
+            input,
+            this.mergeOptionsWithModel(options, modelOverride),
+            trafficMetadata,
+          ), // Actual streaming work happens after the controller dequeues us
+        createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+      };
+    };
+
+    return controller.handleStream(buildRequest(options?.model));
   }
 
   private async executeStreamText(
@@ -1271,8 +1297,10 @@ export class Agent {
           onFinish: userOnFinish,
           output,
           providerOptions,
+          model: _model, // Exclude model from aiSDKOptions to avoid overriding resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
         const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
           | ToolChoice<Record<string, unknown>>
@@ -2010,6 +2038,26 @@ export class Agent {
     schema: T,
     options?: GenerateObjectOptions,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
+    const controller = getTrafficController({ logger: this.logger });
+    const buildRequest = (modelOverride?: LanguageModel | string) => ({
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model),
+      execute: () =>
+        this.executeGenerateObject(
+          input,
+          schema,
+          this.mergeOptionsWithModel(options, modelOverride),
+        ),
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+    });
+
+    return controller.handleText(buildRequest(options?.model));
+  }
+
+  private async executeGenerateObject<T extends z.ZodType>(
+    input: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    options?: GenerateObjectOptions,
+  ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -2110,8 +2158,10 @@ export class Agent {
               tools: userTools,
               output: _output,
               providerOptions,
+              model: _model, // Exclude model so spread does not override resolved model
               ...aiSDKOptions
             } = options || {};
+            void _model;
 
             const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
               oc,
@@ -2336,6 +2386,26 @@ export class Agent {
     schema: T,
     options?: StreamObjectOptions,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
+    const controller = getTrafficController({ logger: this.logger });
+    const buildRequest = (modelOverride?: LanguageModel | string) => ({
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model),
+      execute: () =>
+        this.executeStreamObject(
+          input,
+          schema,
+          this.mergeOptionsWithModel(options, modelOverride),
+        ),
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+    });
+
+    return controller.handleStream(buildRequest(options?.model));
+  }
+
+  private async executeStreamObject<T extends z.ZodType>(
+    input: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    options?: StreamObjectOptions,
+  ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
 
@@ -2471,8 +2541,10 @@ export class Agent {
           onFinish: userOnFinish,
           output: _output,
           providerOptions,
+          model: _model, // Exclude model so aiSDKOptions cannot override resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
         let guardrailObjectPromise!: Promise<z.infer<T>>;
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
@@ -2914,7 +2986,9 @@ export class Agent {
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
 
-    const modelName = this.getModelName();
+    const selectedModel = options?.model ?? this.model;
+    const model = await this.resolveValue(selectedModel, oc);
+    const modelName = this.getModelName(model);
     const dynamicToolList = (await this.resolveValue(this.dynamicTools, oc)) || [];
 
     // Merge agent tools with option tools
@@ -4206,6 +4280,20 @@ export class Agent {
     return value;
   }
 
+  private mergeOptionsWithModel<T extends BaseGenerationOptions>(
+    options: T | undefined,
+    modelOverride?: LanguageModel | string,
+  ): T | undefined {
+    if (!options && modelOverride === undefined) {
+      return undefined;
+    }
+
+    return {
+      ...(options ?? {}),
+      ...(modelOverride !== undefined ? { model: modelOverride } : {}),
+    } as T;
+  }
+
   private getModelCandidates(): AgentModelConfig[] {
     if (Array.isArray(this.model)) {
       if (this.model.length === 0) {
@@ -5329,20 +5417,13 @@ export class Agent {
     return this.subAgentManager.calculateMaxSteps(this.maxSteps);
   }
 
-  private buildTrafficMetadata(): TrafficRequestMetadata {
-    // Capture provider if the model object exposes it; fallback is undefined to avoid bad assumptions
+  private buildTrafficMetadata(modelOverride?: AgentModelValue): TrafficRequestMetadata {
     const provider =
-      typeof this.model === "object" &&
-      this.model !== null &&
-      "provider" in this.model &&
-      typeof (this.model as any).provider === "string"
-        ? ((this.model as any).provider as string)
-        : undefined;
-
+      this.resolveProvider(modelOverride) ?? this.resolveProvider(this.model) ?? undefined;
     return {
       agentId: this.id, // Identify which agent issued the request
       agentName: this.name, // Human-readable label for logs/metrics
-      model: this.getModelName(), // Used for future capacity policies
+      model: this.getModelName(modelOverride), // Used for future capacity policies
       provider, // Allows per-provider throttling later
     };
   }
@@ -5389,12 +5470,43 @@ export class Agent {
     });
   }
 
+  private resolveProvider(model: AgentModelValue | undefined): string | undefined {
+    if (
+      model &&
+      typeof model === "object" &&
+      !Array.isArray(model) &&
+      "provider" in model &&
+      typeof (model as any).provider === "string"
+    ) {
+      return (model as any).provider;
+    }
+
+    return undefined;
+  }
+
   /**
    * Get the model name.
    * Pass a resolved model to return its modelId (useful for dynamic models).
    */
-  public getModelName(model?: LanguageModel | string): string {
-    if (model) {
+  public getModelName(model?: AgentModelValue): string {
+    if (model !== undefined) {
+      if (Array.isArray(model)) {
+        const primary = model.find((entry) => entry.enabled !== false) ?? model[0];
+        if (!primary) {
+          return "unknown";
+        }
+        const modelValue = primary.model;
+        if (typeof modelValue === "function") {
+          return "dynamic";
+        }
+        if (typeof modelValue === "string") {
+          return modelValue;
+        }
+        return modelValue.modelId || "unknown";
+      }
+      if (typeof model === "function") {
+        return "dynamic";
+      }
       if (typeof model === "string") {
         return model;
       }
