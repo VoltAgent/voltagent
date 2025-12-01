@@ -188,14 +188,9 @@ To implement this workflow with your agent, go to the VoltAgent Console [Get Sta
 
 ## Running Your First Human-in-the-Loop Workflow
 
-Workflows chain multiple steps (data transformations, API calls, AI agent interactions) into a single execution. Unlike a standalone agent that responds to one message at a time, workflows coordinate multi-step processes.
+[Workflows](https://voltagent.dev/docs/workflows/overview/) chain multiple steps (data transformations, API calls, AI agent interactions) into a single execution. Unlike a standalone agent that responds to one message at a time, workflows coordinate multi-step processes.
 
-The generated project includes an expense approval workflow that demonstrates **suspend/resume** functionality. Workflows can pause execution, wait for human input, and then continue.
-
-**How it works:**
-
-- Expenses under $500 are auto-approved by the system
-- Expenses over $500 suspend and wait for manager approval
+The generated project includes an expense approval workflow that demonstrates [suspend/resume](https://voltagent.dev/docs/workflows/suspend-resume/) functionality. Workflows can pause execution, wait for human input, and then continue.
 
 <ExpandableCode title="src/workflows/index.ts" previewLines={15}>
 
@@ -273,17 +268,16 @@ export const expenseApprovalWorkflow = createWorkflowChain({
 
 </ExpandableCode>
 
-Key concepts:
+### Run the example workflow
 
-- **`suspend()`** pauses the workflow and stores its state
-- **`resumeData`** contains the input provided when the workflow resumes
-- **`resumeSchema`** defines the expected shape of resume data using Zod
+Open the [Workflows page](https://console.voltagent.dev/workflows) in console, select **"Expense Approval Workflow"**, and click **"Test Workflow"**. Enter input and click **"Execute Workflow"**.
 
-### Run the Workflow
+This workflow simulates an expense approval process where certain decisions require human input before continuing:
 
-Open the [Workflows page](https://console.voltagent.dev/workflows), select **"Expense Approval Workflow"**, and click **"Test Workflow"**. Enter input and click **"Execute Workflow"**.
+- Expenses under $500 are auto-approved by the system
+- Expenses over $500 trigger a suspend, pausing the workflow until a manager approves or rejects
 
-For automatic approval (under $500):
+**Auto-approval example** (under $500):
 
 ```json
 {
@@ -294,7 +288,7 @@ For automatic approval (under $500):
 }
 ```
 
-For manual review (over $500):
+**Manual review example** (over $500):
 
 ```json
 {
@@ -304,6 +298,17 @@ For manual review (over $500):
   "description": "Flight tickets for client meeting"
 }
 ```
+
+:::tip Workflow Step Types
+VoltAgent workflows support multiple step types:
+
+- [`andThen`](https://voltagent.dev/docs/workflows/steps/and-then/) - sequential data transformation (used in this example)
+- [`andAgent`](https://voltagent.dev/docs/workflows/steps/and-agent/) - AI agent calls
+- [`andAll`](https://voltagent.dev/docs/workflows/steps/and-all/) - parallel processing
+- [`andRace`](https://voltagent.dev/docs/workflows/steps/and-race/) - racing operations
+- [`andWhen`](https://voltagent.dev/docs/workflows/steps/and-when/) - conditional logic
+- [`andTap`](https://voltagent.dev/docs/workflows/steps/and-tap/) - side effects without modifying data
+  :::
 
 ## Additional Features
 
@@ -363,48 +368,6 @@ pnpm start
 </Tabs>
 
 The `build` script invokes **tsdown**, which bundles your TypeScript entrypoint (and any sibling directories such as `./workflows` or `./tools`) into `dist/index.js`. This extra step keeps the Node ESM loader from throwing `ERR_UNSUPPORTED_DIR_IMPORT` while preserving extensionless imports during development.
-
-### Run the Example Workflow
-
-The generated project includes an expense approval workflow example. You can run it from the VoltOps console.
-
-This workflow uses the following VoltAgent workflow steps:
-
-- **Data Transformation** (`andThen`)
-- **AI Agent Calls** (`andAgent`)
-- **Parallel Processing** (`andAll`)
-- **Racing Operations** (`andRace`)
-- **Conditional Logic** (`andWhen`)
-
-#### How to Run the Workflow
-
-![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)
-
-1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
-2.  **Select Your Project:** Use the project selector on the page to choose your newly created project (e.g., "my-agent-app").
-3.  **Find and Run the Workflow:** You will see **"Expense Approval Workflow"** listed. Click on it to open the detail page, then click the **"Run"** button.
-4.  **Provide Input:** An input form will appear. The workflow expects a JSON object with expense details. Try one of the following inputs to see how it works:
-    - For automatic approval (under $100):
-
-```json
-{
-  "amount": 75,
-  "category": "office supplies",
-  "description": "Notebooks and pens for team meeting"
-}
-```
-
-    -   For manual review (over $100):
-
-```json
-{
-  "amount": 450,
-  "category": "equipment",
-  "description": "New monitor for development workstation"
-}
-```
-
-5.  **View the Results:** After execution, inspect the logs for each step and see the output in the console.
 
 ## Next Steps
 
