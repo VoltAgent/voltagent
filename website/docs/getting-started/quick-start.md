@@ -1,5 +1,5 @@
 ---
-title: Create New AI Agent
+title: Create with VoltAgent CLI
 slug: /quick-start
 ---
 
@@ -11,7 +11,7 @@ import WorkflowDiagramFlow from '@site/src/components/docs-widgets/WorkflowDiagr
 import SectionDivider from '@site/src/components/docs-widgets/SectionDivider';
 import ExpandableCode from '@site/src/components/docs-widgets/ExpandableCode';
 
-# Create New AI Agent
+# Create with VoltAgent CLI
 
 Build your first AI agent with VoltAgent. This guide covers creating an agent, connecting it to external events, running workflows, and deploying to production.
 
@@ -389,4 +389,4 @@ The `build` script invokes **tsdown**, which bundles your TypeScript entrypoint 
 
 ---
 
-To add VoltAgent to an existing project, see [Add to Existing Project](./manual-setup.md).
+To add VoltAgent to an existing project, see [Create from scratch](./manual-setup.md).

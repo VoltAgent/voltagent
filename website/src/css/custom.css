@@ -152,7 +152,7 @@ article h4 {
   margin-bottom: 1rem;
   /* Docs paragraph color (dark mode) */
 }
- .theme-doc-markdown .section-divider p {
+.theme-doc-markdown .section-divider p {
   margin-bottom: 0 !important;
 }
 
@@ -164,7 +164,6 @@ html[data-theme="dark"] .theme-doc-markdown p {
 html[data-theme="dark"] .theme-doc-markdown .section-divider p {
   color: #a7f3d0 !important;
   font-weight: 500 !important;
-
 }
 
 /* Strong/bold text */
