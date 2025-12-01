@@ -1,11 +1,12 @@
 ---
+title: Add to Existing Project
 slug: /manual-setup
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Manual Setup
+# Add to Existing Project
 
 Follow these steps to create a new TypeScript project and add VoltAgent:
 

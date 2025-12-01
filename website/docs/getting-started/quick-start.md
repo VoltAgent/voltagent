@@ -1,5 +1,5 @@
 ---
-title: Automatic Setup
+title: Create New AI Agent
 slug: /quick-start
 ---
 
@@ -11,11 +11,13 @@ import WorkflowDiagramFlow from '@site/src/components/docs-widgets/WorkflowDiagr
 import SectionDivider from '@site/src/components/docs-widgets/SectionDivider';
 import ExpandableCode from '@site/src/components/docs-widgets/ExpandableCode';
 
-# Automatic Setup
+# Create New AI Agent
 
-Create and run your first AI agent with VoltAgent. You'll set up a project, configure an AI provider, and test your agent with the VoltOps console.
+Build your first AI agent with VoltAgent. This guide covers creating an agent, connecting it to external events, running workflows, and deploying to production.
 
-<StepSection stepNumber={1} title="Create New Project">
+<br/>
+
+<StepSection stepNumber={1}  title="Create New Project">
 
 Run the following command to create a new VoltAgent project:
 
@@ -49,7 +51,9 @@ The CLI will prompt you for project name, AI provider, and API key. Once complet
 cd my-agent-app
 ```
 
-**Requirements:** Node.js 20.19 or newer
+:::note
+Be sure your environment is running Node.js 20.19 or newer so the generated tsdown build works without ESM resolution issues.
+:::
 
 </StepSection>
 
@@ -150,10 +154,11 @@ You should see the VoltAgent server startup message:
 
 <StepSection stepNumber={3} title="Test Your Agent">
 
-1. Open [`https://console.voltagent.dev`](https://console.voltagent.dev) and click **Agents & Workflows** in the sidebar to find your agent.
-2. Open it, click the chat icon in the bottom right corner, and try asking _"What's the weather in San Francisco?"_
+Open [`https://console.voltagent.dev`](https://console.voltagent.dev) and click **Agents & Workflows** in the sidebar to find your agent.
 
-You should receive a response, you've successfully created your first AI agent that understand and generate responses.
+Select it, click the chat icon in the bottom right corner, and try asking _"What's the weather in San Francisco?"_
+
+You should receive a response, you've successfully created your first basic AI agent that understand and generate responses.
 
 ![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
@@ -384,4 +389,4 @@ The `build` script invokes **tsdown**, which bundles your TypeScript entrypoint 
 
 ---
 
-For manual project setup without the CLI, see the [Manual Setup](./manual-setup.md) guide.
+To add VoltAgent to an existing project, see [Add to Existing Project](./manual-setup.md).
