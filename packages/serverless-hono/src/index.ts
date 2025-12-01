@@ -15,4 +15,11 @@ export {
   type NetlifyFunctionHandler,
   type NetlifyFunctionResult,
 } from "./netlify-function";
+export {
+  createAwsLambdaHandler,
+  type AwsLambdaEvent,
+  type AwsLambdaHandler,
+  type AwsLambdaResult,
+  type AwsLambdaContext,
+} from "./aws-lambda";
 export default serverlessHono;

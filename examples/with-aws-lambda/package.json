@@ -1,0 +1,51 @@
+{
+  "name": "voltagent-example-aws-lambda",
+  "description": "VoltAgent example deployed to AWS Lambda",
+  "version": "1.0.0",
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^3.0.0",
+    "@aws-sdk/credential-providers": "~3.799.0",
+    "@voltagent/core": "^1.1.23",
+    "@voltagent/serverless-hono": "^1.0.3",
+    "ai": "^5.0.12",
+    "hono": "^4.7.7",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^24.2.1",
+    "aws-cdk": "^2.173.4",
+    "aws-cdk-lib": "^2.173.4",
+    "constructs": "^10.4.2",
+    "serverless": "^4.6.7",
+    "serverless-offline": "^15.2.1",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "aws",
+    "bedrock",
+    "lambda",
+    "serverless",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "build:sam": "pnpm build && sam build",
+    "build:cdk": "pnpm build && cdk synth",
+    "deploy:sam": "pnpm build:sam && sam deploy",
+    "deploy:cdk": "pnpm build:cdk && cdk deploy",
+    "deploy:serverless": "pnpm build && serverless deploy",
+    "dev:sam": "pnpm build && sam local start-api",
+    "dev:serverless": "pnpm build && serverless offline",
+    "typecheck": "tsc --noEmit",
+    "volt": "volt"
+  },
+  "type": "module"
+}

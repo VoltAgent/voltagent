@@ -9,7 +9,7 @@ You can run VoltAgent in classic Node.js servers or in serverless (edge) runtime
 
 - **Server (Node.js)** – use `@voltagent/server-hono` (or another HTTP layer) and deploy on any host such as Fly.io, Render, AWS, Railway. Note: For IPv6-enabled platforms like Railway and Fly.io, configure `hostname: "::"` for dual-stack networking.
 - **Serverless (edge runtimes)** – run VoltAgent on platforms like Cloudflare Workers, Vercel Edge, or Deno Deploy for low latency responses while using the shared serverless provider.
-- **Serverless Functions** – deploy to Node-based functions such as Netlify Functions when you need Node compatibility but prefer managed cold starts over dedicated servers.
+- **Serverless Functions** – deploy to Node-based functions such as AWS Lambda or Netlify Functions when you need Node compatibility but prefer managed cold starts over dedicated servers.
 - **Hybrid** – keep heavy work on a Node server and expose lightweight endpoints from the edge.
 
 ## When to pick which?
@@ -49,6 +49,7 @@ For more details on network binding configuration, see the [Server Architecture]
 
 ## Guides
 
+- [AWS Lambda](./aws-lambda.md)
 - [Cloudflare Workers](./cloudflare-workers.md)
 - [Netlify Functions](./netlify-functions.md)
 - Vercel Edge and Deno Deploy guides will follow soon.
