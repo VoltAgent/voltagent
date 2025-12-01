@@ -315,6 +315,7 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   // Context
   userId?: string;
   conversationId?: string;
+  tenantId?: string;
   context?: ContextInput;
   elicitation?: (request: unknown) => Promise<unknown>;
   /**
@@ -531,8 +532,10 @@ export class Agent {
     const buildRequest = (
       modelOverride?: LanguageModel,
     ): TrafficRequest<GenerateTextResultWithContext<ToolSet, OUTPUT>> => {
+      const tenantId = this.resolveTenantId(options);
       const trafficMetadata = this.buildTrafficMetadata(modelOverride ?? options?.model, options);
       return {
+        tenantId,
         metadata: trafficMetadata, // Pass model/provider info for future rate limiting keys
         execute: () =>
           this.executeGenerateText(
@@ -540,6 +543,7 @@ export class Agent {
             this.mergeOptionsWithModel(options, modelOverride),
             trafficMetadata,
           ), // Defer actual execution so controller can schedule it
+        extractUsage: (result) => this.extractUsageFromResponse(result),
         createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
       };
     };
@@ -904,10 +908,13 @@ export class Agent {
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
     const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
+    const tenantId = this.resolveTenantId(options);
     const buildRequest = (modelOverride?: LanguageModel) => ({
+      tenantId,
       metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options), // Include identifiers to support per-provider/model policies later
       execute: () =>
         this.executeStreamText(input, this.mergeOptionsWithModel(options, modelOverride)), // Actual streaming work happens after the controller dequeues us
+      extractUsage: (result: StreamTextResultWithContext) => this.extractUsageFromResponse(result),
       createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
     });
 
@@ -1612,7 +1619,9 @@ export class Agent {
     options?: GenerateObjectOptions,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
+    const tenantId = this.resolveTenantId(options);
     const buildRequest = (modelOverride?: LanguageModel) => ({
+      tenantId,
       metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
       execute: () =>
         this.executeGenerateObject(
@@ -1620,6 +1629,8 @@ export class Agent {
           schema,
           this.mergeOptionsWithModel(options, modelOverride),
         ),
+      extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
+        this.extractUsageFromResponse(result),
       createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
     });
 
@@ -1878,10 +1889,14 @@ export class Agent {
     options?: StreamObjectOptions,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
+    const tenantId = this.resolveTenantId(options);
     const buildRequest = (modelOverride?: LanguageModel) => ({
+      tenantId,
       metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
       execute: () =>
         this.executeStreamObject(input, schema, this.mergeOptionsWithModel(options, modelOverride)),
+      extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
+        this.extractUsageFromResponse(result),
       createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
     });
 
@@ -2335,6 +2350,7 @@ export class Agent {
     const operationId = randomUUID();
     const startTimeDate = new Date();
     const priority = this.resolveTrafficPriority(options);
+    const tenantId = this.resolveTenantId(options);
 
     // Prefer reusing an existing context instance to preserve reference across calls/subagents
     const runtimeContext = toContextMap(options?.context);
@@ -2385,6 +2401,7 @@ export class Agent {
       operationId,
       userId: options?.userId,
       conversationId: options?.conversationId,
+      tenantId,
       executionId: operationId,
     });
 
@@ -2399,6 +2416,9 @@ export class Agent {
       parentAgentId: options?.parentAgentId,
       input,
     });
+    if (tenantId) {
+      traceContext.getRootSpan().setAttribute("tenant.id", tenantId);
+    }
     traceContext.getRootSpan().setAttribute("voltagent.operation_id", operationId);
 
     // Use parent's AbortController if available, otherwise create new one
@@ -2439,6 +2459,7 @@ export class Agent {
       priority,
       userId: options?.userId,
       conversationId: options?.conversationId,
+      tenantId,
       parentAgentId: options?.parentAgentId,
       traceContext,
       startTime: startTimeDate,
@@ -4123,6 +4144,19 @@ export class Agent {
     return localPriority;
   }
 
+  private resolveTenantId(options?: BaseGenerationOptions): string {
+    const parentTenant = options?.parentOperationContext?.tenantId;
+    if (parentTenant) {
+      return parentTenant;
+    }
+
+    if (options?.tenantId) {
+      return options.tenantId;
+    }
+
+    return "default";
+  }
+
   private pickHigherPriority(a: TrafficPriority, b: TrafficPriority): TrafficPriority {
     const rank: Record<TrafficPriority, number> = { P0: 0, P1: 1, P2: 2 };
     return rank[a] <= rank[b] ? a : b;
@@ -4142,6 +4176,7 @@ export class Agent {
       model: this.getModelName(modelOverride), // Used for future capacity policies
       provider, // Allows per-provider throttling later
       priority,
+      tenantId: this.resolveTenantId(options),
     };
   }
 
@@ -4185,6 +4220,36 @@ export class Agent {
         resetRequestsMs: updateResult.headerSnapshot.resetRequestsMs,
       },
     });
+  }
+
+  private extractUsageFromResponse(
+    result:
+      | {
+          usage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined>;
+          totalUsage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined>;
+        }
+      | undefined,
+  ): Promise<LanguageModelUsage | undefined> | LanguageModelUsage | undefined {
+    if (!result) {
+      return undefined;
+    }
+
+    const usageCandidate =
+      (result as { totalUsage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined> })
+        ?.totalUsage ??
+      (result as { usage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined> })?.usage;
+
+    if (!usageCandidate) {
+      return undefined;
+    }
+
+    if (
+      typeof (usageCandidate as PromiseLike<LanguageModelUsage | undefined>).then === "function"
+    ) {
+      return (usageCandidate as Promise<LanguageModelUsage | undefined>).catch(() => undefined);
+    }
+
+    return usageCandidate as LanguageModelUsage;
   }
 
   private resolveProvider(
