@@ -79,7 +79,6 @@ const scrollAnimation = `
 
 const testimonialTweetIds = [
   "1916955895709503681",
-  "1930715579155202268",
   "1929706642851193172",
   "1917264060225044707",
   "1950536117549486550",
@@ -89,7 +88,6 @@ const testimonialTweetIds = [
   "1924303206794059823",
   "1923352273452671399",
   "1920502438215250259",
-  "1952223435469566004",
   "1924058575485403362",
   "1916757463426302247",
   "1915200495461028321",
@@ -491,21 +489,30 @@ export function Testimonials() {
                   isTweetsRowPaused ? "animation-paused" : ""
                 }`}
               >
-                {seamlessMixedContent.map((item, index) => (
-                  <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
-                    {item.type === "tweet" ? (
-                      <StaticTweet tweet={tweetsData?.[item.id]} />
-                    ) : (
-                      <LinkedInPost
-                        profileImage={item.data.profileImage}
-                        name={item.data.name}
-                        title={item.data.title}
-                        content={item.data.content}
-                        url={item.data.url}
-                      />
-                    )}
-                  </div>
-                ))}
+                {seamlessMixedContent
+                  .filter((item) => {
+                    // Filter out tweets that don't exist or are missing required data
+                    if (item.type === "tweet") {
+                      const tweet = tweetsData?.[item.id];
+                      return tweet?.id_str && tweet.user;
+                    }
+                    return true;
+                  })
+                  .map((item, index) => (
+                    <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
+                      {item.type === "tweet" ? (
+                        <StaticTweet tweet={tweetsData?.[item.id]} />
+                      ) : (
+                        <LinkedInPost
+                          profileImage={item.data.profileImage}
+                          name={item.data.name}
+                          title={item.data.title}
+                          content={item.data.content}
+                          url={item.data.url}
+                        />
+                      )}
+                    </div>
+                  ))}
               </div>
             </div>
           </div>
