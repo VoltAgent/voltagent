@@ -13,7 +13,7 @@ export default function StepSection({
 }: StepSectionProps): JSX.Element {
   return (
     <div className="step-section mb-12 ">
-      <div className="flex flex-col xl:flex-row  lg:gap-12">
+      <div className="flex flex-col xl:flex-row  lg:gap-10">
         {/* Left side - Step number and title */}
         <div
           className="flex items-center xl:items-start gap-3 mb-4 xl:mb-0 xl:flex-shrink-0"
