@@ -1,6 +1,7 @@
 ---
 title: Create from scratch
 slug: /manual-setup
+hide_table_of_contents: true
 ---
 
 import Tabs from '@theme/Tabs';

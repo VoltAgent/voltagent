@@ -1,6 +1,7 @@
 ---
 title: Create with VoltAgent CLI
 slug: /quick-start
+hide_table_of_contents: true
 ---
 
 import Tabs from '@theme/Tabs';
@@ -415,7 +416,5 @@ The `build` script invokes **tsdown**, which bundles your TypeScript entrypoint 
 - [Agent Configuration](../agents/overview.md) - Agent options and settings
 - [Memory](../agents/memory/overview.md) - Conversation history and persistence
 - [Tools](../agents/tools.md) - Create custom tools for your agent
-
----
 
 To add VoltAgent to an existing project, see [Create from scratch](./manual-setup.md).
