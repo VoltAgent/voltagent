@@ -11,6 +11,7 @@ import StepSection from '@site/src/components/docs-widgets/StepSection';
 import WorkflowDiagramFlow from '@site/src/components/docs-widgets/WorkflowDiagramFlow';
 import SectionDivider from '@site/src/components/docs-widgets/SectionDivider';
 import ExpandableCode from '@site/src/components/docs-widgets/ExpandableCode';
+import EnterpriseCard from '@site/src/components/docs-widgets/EnterpriseCard';
 
 # Create with VoltAgent CLI
 
@@ -164,13 +165,13 @@ You should see the VoltAgent server startup message:
 <br/>
 <br/>
 
-https://cdn.voltagent.dev/docs/media/get-started/step-5-workflow.mp4
-
 Open [`https://console.voltagent.dev`](https://console.voltagent.dev) and click **Agents & Workflows** in the sidebar to find your agent.
 
 Select it, click the chat icon in the bottom right corner, and try asking _"What's the weather in San Francisco?"_
 
 You should receive a response, you've successfully created your first basic AI agent that understand and generate responses.
+
+<EnterpriseCard />
 
 </StepSection>
 

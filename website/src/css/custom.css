@@ -5100,6 +5100,14 @@ nav.table-of-contents .table-of-contents__link--active,
   border-bottom: 1px solid #10b981 !important;
 }
 
+[data-theme="dark"] .markdown .unstyled-anchor  {
+  color: #B2B2B2 !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid #9ca3af33 !important;
+  font-weight: 500 !important;
+  padding-bottom: 10px !important;
+}
+
 [data-theme="dark"] .markdown .api-key-button a {
   border-bottom: 0 !important;
 }
