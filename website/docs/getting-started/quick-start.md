@@ -154,13 +154,22 @@ You should see the VoltAgent server startup message:
 
 <StepSection stepNumber={3} title="Test Your Agent">
 
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
+
+  <source src="https://cdn.voltagent.dev/docs/media/get-started/step-3-test.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+<br/>
+<br/>
+
+https://cdn.voltagent.dev/docs/media/get-started/step-5-workflow.mp4
+
 Open [`https://console.voltagent.dev`](https://console.voltagent.dev) and click **Agents & Workflows** in the sidebar to find your agent.
 
 Select it, click the chat icon in the bottom right corner, and try asking _"What's the weather in San Francisco?"_
 
 You should receive a response, you've successfully created your first basic AI agent that understand and generate responses.
-
-![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
 </StepSection>
 
@@ -188,6 +197,15 @@ The diagram below shows an event-driven agent example: a GitHub star event trigg
 3. **Action** - Sends the message to Discord
 
 To implement this workflow with your agent, go to the VoltAgent Console [Get Started Guide](https://console.voltagent.dev/get-started) and continue from Step 4.
+
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
+
+  <source src="https://cdn.voltagent.dev/docs/media/get-started/step-4-triggers.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+<br/>
+<br/>
 
 </StepSection>
 
@@ -274,6 +292,17 @@ export const expenseApprovalWorkflow = createWorkflowChain({
 ```
 
 </ExpandableCode>
+
+<br/>
+
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
+
+  <source src="https://cdn.voltagent.dev/docs/media/get-started/step-5-workflow.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+<br/>
+<br/>
 
 ### Run the example workflow
 
