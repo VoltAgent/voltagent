@@ -10,7 +10,7 @@ You'll need [VoltOps Console](https://console.voltagent.dev/) access, a VoltAgen
 
 To set up a trigger, you first need to select a provider and configure its credentials.
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/step-1-connection.mp4" type="video/mp4" />
   Your browser does not support the video tag.
@@ -39,7 +39,7 @@ After pasting the token, click **Save credentials** to proceed to trigger option
 
 After configuring credentials, you need to specify which Airtable base, table, and field to monitor for new records. These settings determine when and how the trigger fires.
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/step-2-configuration.mp4" type="video/mp4" />
   Your browser does not support the video tag.
@@ -70,7 +70,7 @@ Click **Next** to review your settings, then create the binding with **Draft** s
 
 After creating your binding, you need to add targets that will execute when the trigger fires. Click **Add Your First Target** to open the target configuration wizard.
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/setup-target.mp4" type="video/mp4" />
   Your browser does not support the video tag.
@@ -227,7 +227,7 @@ After configuring all settings, click **Create target** to save the delivery tar
 
 Now that your binding and target are configured, you can activate the trigger and test it with real data from Airtable. We'll verify the trigger execution by checking the agent's activity in VoltOps Console.
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/final-step.mp4" type="video/mp4" />
   Your browser does not support the video tag.

@@ -19,7 +19,7 @@ To set up Airtable authentication:
 2. Select Airtable as the provider and click **New credential**
 3. Choose between Personal Access Token or OAuth 2.0 and follow the instructions below.
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/airtable-credentials.mp4" type="video/mp4" />
   Your browser does not support the video tag.

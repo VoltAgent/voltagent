@@ -22,7 +22,7 @@ The Cron trigger requires only a schedule configuration. No credentials are need
 2. Select Cron Trigger as the provider
 3. Configure your cron expression and timezone
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/cron/cron-setup.mp4" type="video/mp4" />
   Your browser does not support the video tag.

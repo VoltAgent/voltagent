@@ -23,7 +23,7 @@ To set up Gmail authentication, you need to create a credential. This is configu
 3. In the **Connection** step, either select an existing credential or create a new one
 4. Choose between OAuth 2.0 or Service Account and follow the instructions below.
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/gmail/gmail-credentials.mp4" type="video/mp4" />
   Your browser does not support the video tag.
@@ -85,7 +85,7 @@ Enter the values from your downloaded JSON key file:
 
 After configuring credentials, you need to specify which emails to monitor.
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/gmail/gmail-configuration.mp4" type="video/mp4" />
   Your browser does not support the video tag.

@@ -25,7 +25,7 @@ To set up GitHub authentication, you need to create a credential. This is config
 3. In the **Connection** step, either select an existing credential or create a new one
 4. Choose between Personal Access Token or OAuth 2.0 and follow the instructions below.
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/github/github-credentials.mp4" type="video/mp4" />
   Your browser does not support the video tag.
@@ -89,7 +89,7 @@ Use OAuth 2.0 for team environments, production deployments, or credential rotat
 
 After configuring credentials, you need to specify which repository and events to monitor.
 
-<video autoPlay loop muted playsInline style={{width: '100%', height: 'auto'}}>
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
   <source src="https://cdn.voltagent.dev/console/trigger/github/configuration.mp4" type="video/mp4" />
   Your browser does not support the video tag.
