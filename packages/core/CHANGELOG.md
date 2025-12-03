@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.2.14
+
+### Patch Changes
+
+- [#830](https://github.com/VoltAgent/voltagent/pull/830) [`972889f`](https://github.com/VoltAgent/voltagent/commit/972889f68a0973f80cd981c3322043c11df5f223) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: tool error handling to return structured, JSON-safe payloads instead of crashing on circular axios errors. #829
+
 ## 1.2.13
 
 ### Patch Changes
