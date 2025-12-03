@@ -56,6 +56,7 @@ import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
 import type { PromptContent, PromptHelper } from "../voltops/types";
+import { buildToolErrorResult } from "./error-utils";
 import {
   createAbortError,
   createBailError,
@@ -3288,8 +3289,16 @@ export class Agent {
           return result;
         } catch (e) {
           const error = e instanceof Error ? e : new Error(String(e));
-          // POJO error
-          const errorResult = { error: true, ...error };
+          const voltAgentError = createVoltAgentError(error, {
+            stage: "tool_execution",
+            toolError: {
+              toolCallId,
+              toolName: tool.name,
+              toolExecutionError: error,
+              toolArguments: args,
+            },
+          });
+          const errorResult = buildToolErrorResult(error, toolCallId, tool.name);
 
           toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
           toolSpan.recordException(error);
@@ -3299,7 +3308,7 @@ export class Agent {
             agent: this,
             tool,
             output: undefined,
-            error: errorResult as any,
+            error: voltAgentError,
             context: oc,
             options: executionOptions,
           });

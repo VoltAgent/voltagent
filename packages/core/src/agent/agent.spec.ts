@@ -678,6 +678,98 @@ describe("Agent", () => {
     });
   });
 
+  describe("Tool Execution", () => {
+    it("serializes tool errors and forwards them to hooks", async () => {
+      const onToolEnd = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: createHooks({ onToolEnd }),
+      });
+
+      const failingTool = new Tool({
+        name: "failing-tool",
+        description: "Always throws",
+        parameters: z.object({}),
+        execute: async () => {
+          throw new Error("Tool failure");
+        },
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(failingTool);
+      const result = await execute({});
+
+      expect(result).toMatchObject({
+        error: true,
+        message: "Tool failure",
+        name: "Error",
+        toolName: "failing-tool",
+      });
+      expect(result).toHaveProperty("stack");
+
+      expect(onToolEnd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: failingTool,
+          output: undefined,
+          error: expect.objectContaining({
+            message: "Tool failure",
+            stage: "tool_execution",
+          }),
+        }),
+      );
+
+      operationContext.traceContext.end("completed");
+    });
+
+    it("sanitizes circular error payloads from tools", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      const circular: any = {};
+      circular.self = circular;
+
+      const failingTool = new Tool({
+        name: "circular-tool",
+        description: "Throws with circular payload",
+        parameters: z.object({}),
+        execute: async () => {
+          const err = new Error("Circular failure");
+          (err as any).config = circular;
+          throw err;
+        },
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(failingTool);
+      const result = await execute({});
+
+      expect(result).toMatchObject({
+        error: true,
+        name: "Error",
+        message: "Circular failure",
+        toolName: "circular-tool",
+      });
+      expect(typeof result.config).toBe("string");
+
+      operationContext.traceContext.end("completed");
+    });
+  });
+
   describe("Agent as Tool (toTool)", () => {
     it("should convert agent to tool with default parameters", () => {
       const agent = new Agent({
