@@ -37,6 +37,15 @@ const formatterAgent = new Agent({
   instructions: "Formats and styles text content",
   model: openai("gpt-4o-mini"),
 });
+
+// Give sub-agents a concise purpose to control what the supervisor sees
+const summarizerAgent = new Agent({
+  name: "Summarizer",
+  purpose: "Summarize long support tickets",
+  instructions:
+    "Read the conversation and produce a concise summary highlighting blockers and owners",
+  model: openai("gpt-4o-mini"),
+});
 ```
 
 ### Creating a Supervisor Agent
@@ -51,7 +60,7 @@ const supervisorAgent = new Agent({
   name: "Supervisor",
   instructions: "Coordinates between content creation and formatting agents",
   model: openai("gpt-4o-mini"),
-  subAgents: [contentCreatorAgent, formatterAgent],
+  subAgents: [contentCreatorAgent, formatterAgent, summarizerAgent],
 });
 ```
 
@@ -64,6 +73,12 @@ See: [Advanced Configuration](#advanced-configuration)
 ## Customizing Supervisor Behavior
 
 Supervisor agents use an automatically generated system message that includes guidelines for managing sub-agents. Customize this behavior using the `supervisorConfig` option.
+
+### Purpose vs. Instructions (what the supervisor sees)
+
+- The supervisor lists sub-agents in a `<specialized_agents>` block using the sub-agent `purpose` when provided; if `purpose` is missing, it falls back to `instructions`, and if both are missing it uses `"Dynamic instructions"`.
+- Set a short `purpose` to avoid leaking long/verbose instructions into the supervisor’s prompt and to keep the prompt small. The full `instructions` still run for the sub-agent itself when delegated.
+- If you leave `purpose` empty, expect the supervisor prompt to include the entire `instructions` string for that sub-agent.
 
 :::info Default System Message
 See the [generateSupervisorSystemMessage implementation](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/subagent/index.ts#L131) on GitHub.

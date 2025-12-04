@@ -160,6 +160,22 @@ describe("SubAgentManager", () => {
       expect(message).toContain("You are a writing expert");
     });
 
+    it("should prefer purpose over instructions when listing specialized agents", () => {
+      subAgentManager.addSubAgent(
+        createMockAgentWithStubs({
+          id: "agent-purpose",
+          name: "Purpose Agent",
+          purpose: "Summarize support tickets",
+          instructions: "This verbose instruction should not be shown",
+        }),
+      );
+
+      const message = subAgentManager.generateSupervisorSystemMessage("Base instructions", "");
+
+      expect(message).toContain("Summarize support tickets");
+      expect(message).not.toContain("This verbose instruction should not be shown");
+    });
+
     it("should use custom system message when provided", () => {
       // Need at least one agent for supervisor config to apply
       subAgentManager.addSubAgent(mockAgent1);

@@ -147,10 +147,13 @@ export class SubAgentManager {
    */
   private extractAgentPurpose(agentConfig: SubAgentConfig): string {
     const agent = this.extractAgent(agentConfig);
-    if (typeof agent.instructions === "string") {
-      return agent.purpose ?? agent.instructions;
+    if (agent.purpose) {
+      return agent.purpose;
     }
-    return agent.purpose ?? "Dynamic instructions";
+    if (typeof agent.instructions === "string") {
+      return agent.instructions;
+    }
+    return "Dynamic instructions";
   }
 
   /**
