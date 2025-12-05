@@ -6,6 +6,7 @@ export interface TabData {
   description?: string;
   features?: string[];
   fullImage?: boolean;
+  footerText?: string;
 }
 
 export const tabsData: TabData[] = [
@@ -13,67 +14,75 @@ export const tabsData: TabData[] = [
     id: "framework",
     label: "Framework",
     icon: "code",
-    code: `import { VoltAgent, Agent, createTriggers } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
+    code: `import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent, createTriggers } from "@voltagent/core";
+import { createPinoLogger } from "@voltagent/logger";
+import { honoServer } from "@voltagent/server-hono";
+import { weatherTool } from "./tools/weather";
 
-// Step 1: Create the Slack Agent
+const logger = createPinoLogger({ name: "with-slack", level: "info" });
+
 const slackAgent = new Agent({
   name: "slack-agent",
-  description: "A helpful Slack assistant",
-  llm: new VercelAIProvider(),
-  model: openai("gpt-4o"),
-  markdown: true,
+  instructions: "You are a Slack assistant.",
+  tools: [weatherTool],
+  model: openai("gpt-4o-mini"),
 });
 
-// Step 2: Set up VoltAgent with Triggers
 new VoltAgent({
   agents: { slackAgent },
+  server: honoServer(),
+  logger,
   triggers: createTriggers((on) => {
-    // Step 3: Handle incoming Slack messages
     on.slack.messagePosted(async ({ payload, agents }) => {
-      const { channel, thread_ts, ts, text } = payload;
+      const event = (payload as SlackMessagePayload | undefined) ?? {};
+      const channelId = event.channel;
+      const threadTs = event.thread_ts ?? event.ts;
+      const text = event.text ?? "";
+      const userId = event.user ?? "unknown-user";
 
-      // Step 4: Generate AI response
-      const response = await agents.slackAgent.generateText(
-        \`Channel: \${channel}, Message: \${text}\`
+      if (!channelId || !text) {
+        logger.warn("Missing channel or text in Slack payload");
+        return;
+      }
+
+      await agents.slackAgent.generateText(
+        \`Slack channel: \${channelId}\\n\` +
+        \`Thread: \${threadTs ?? "new thread"}\\n\` +
+        \`User: <@\${userId}>\\n\` +
+        \`Message: \${text}\\n\` +
+        \`If the user asks for weather, call getWeather.\`
       );
-
-      // Step 5: Send reply back to Slack
-      await voltOps.actions.slack.postMessage({
-        channelId: channel,
-        text: response,
-        threadTs: thread_ts ?? ts,
-      });
     });
   }),
 });`,
+    footerText: "Build AI agents with a type-safe, modular TypeScript framework",
   },
   {
     id: "observability",
     label: "Observability",
     icon: "chart",
     fullImage: true,
+    footerText: "Monitor and debug your AI agents with real-time observability",
   },
   {
     id: "evals",
     label: "Evals",
     icon: "check",
-    code: `import { Agent } from "@voltagent/core";
+    code: `import { Agent, VoltAgentObservability } from "@voltagent/core";
 import { createModerationScorer } from "@voltagent/scorers";
 import { openai } from "@ai-sdk/openai";
+
+const observability = new VoltAgentObservability();
 
 const agent = new Agent({
   name: "support-agent",
   instructions: "Answer customer questions about products.",
   model: openai("gpt-4o"),
-
-  // Configure live evaluations
   eval: {
     triggerSource: "production",
     environment: "prod-us-east",
     sampling: { type: "ratio", rate: 0.1 },
-
     scorers: {
       moderation: {
         scorer: createModerationScorer({
@@ -81,15 +90,10 @@ const agent = new Agent({
           threshold: 0.5,
         }),
       },
-      helpfulness: {
-        scorer: createHelpfulnessScorer(),
-      },
-      accuracy: {
-        scorer: createAccuracyScorer(),
-      },
     },
   },
 });`,
+    footerText: "Evaluate agent responses with customizable scorers in production",
   },
   {
     id: "triggers",
@@ -120,6 +124,7 @@ new VoltAgent({
     });
   }),
 });`,
+    footerText: "React to events from Slack, GitHub, Airtable, and webhooks automatically",
   },
   {
     id: "actions",
@@ -149,6 +154,7 @@ const agent = new Agent({
   name: "data-agent",
   tools: [createAirtableRecord],
 });`,
+    footerText: "Execute actions on external services like Airtable, Slack, and more",
   },
   {
     id: "monitoring",
@@ -181,34 +187,35 @@ await voltOps.alerts.create({
   channels: ["pagerduty"],
   severity: "critical",
 });`,
+    footerText: "Set up alerts for latency, errors, and custom metrics",
   },
   {
     id: "prompts",
     label: "Prompts",
     icon: "message",
-    code: `import { VoltOps } from "@voltagent/voltops";
+    code: `import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
 
-const voltOps = new VoltOps();
-
-// Create a managed prompt
-const prompt = await voltOps.prompts.create({
-  name: "customer-support",
-  template: \`You are a helpful customer support agent.
-
-Customer: {{customer_name}}
-Issue: {{issue_description}}
-
-Respond professionally and helpfully.\`,
-  variables: ["customer_name", "issue_description"],
+const voltOpsClient = new VoltOpsClient({
+  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+  secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
-// Use the prompt in your agent
-const response = await agent.generateText(
-  await voltOps.prompts.render("customer-support", {
-    customer_name: "John Doe",
-    issue_description: "Can't login to my account",
-  })
-);`,
+const agent = new Agent({
+  name: "MyAgent",
+  model: openai("gpt-4o-mini"),
+  instructions: async ({ prompts }) => {
+    return await prompts.getPrompt({
+      promptName: "test",
+    });
+  },
+});
+
+new VoltAgent({
+  agents: { agent },
+  voltOpsClient: voltOpsClient,
+});`,
+    footerText: "Manage and version prompts centrally with VoltOps",
   },
   {
     id: "guardrails",
@@ -247,5 +254,14 @@ const agent = new Agent({
     ],
   },
 });`,
+    footerText:
+      "Protect your agents with content moderation, PII detection, and topic restrictions",
+  },
+  {
+    id: "deployment",
+    label: "Deployment",
+    icon: "zap",
+    fullImage: true,
+    footerText: "Deploy your agents to production with one command",
   },
 ];

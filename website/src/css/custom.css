@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Smooth fade animation for showcase */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* You can override the default Infima variables here. */
 
 :root {
@@ -5784,14 +5794,12 @@ html[data-theme="dark"] .three-columns .card p {
   border: none !important;
   border-radius: 0 !important;
   margin: 0 !important;
-  height: 100% !important;
 }
 
 .showcase-code-block .theme-code-block pre {
   border-radius: 0 !important;
   margin: 0 !important;
-  padding: 0.5rem !important;
-  min-height: 100% !important;
+  padding: 0.25rem !important;
   font-size: 11px !important;
 }
 
