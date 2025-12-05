@@ -55,7 +55,7 @@ export function FeatureShowcase() {
                     style={{ border: "none", outline: "none", boxShadow: "none" }}
                     className={`
                       flex-1 flex items-center justify-center gap-2 p-2 md:p-4 font-medium
-                      transition-all duration-500 ease-in-out cursor-pointer
+                      transition-all duration-700 ease-in-out cursor-pointer
                       ${
                         isHighlighted
                           ? "bg-zinc-800/40 text-emerald-400"
@@ -65,12 +65,12 @@ export function FeatureShowcase() {
                   >
                     {Icon && (
                       <Icon
-                        className={`w-4 h-4 transition-colors duration-500 ease-in-out ${
+                        className={`w-4 h-4 transition-colors duration-700 ease-in-out ${
                           isHighlighted ? "text-emerald-400" : ""
                         }`}
                       />
                     )}
-                    <span className="transition-colors duration-500 ease-in-out text-xs md:text-sm">
+                    <span className="transition-colors duration-700 ease-in-out text-xs md:text-sm">
                       {tab.label}
                     </span>
                   </button>
@@ -79,12 +79,12 @@ export function FeatureShowcase() {
             </div>
 
             {/* Tab Description */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-4 px-4 md:px-6 py-3 md:py-4 transition-all duration-500 ease-in-out bg-zinc-800/40">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-4 px-4 md:px-6 py-3 md:py-4 transition-all duration-700 ease-in-out bg-zinc-800/40">
               <p
                 key={displayTabData?.id}
                 className="text-xs md:text-sm text-zinc-100 m-0"
                 style={{
-                  animation: "fadeIn 0.5s ease-in-out",
+                  animation: "fadeIn 0.7s ease-in-out",
                 }}
               >
                 {displayTabData?.footerText ||
@@ -105,7 +105,7 @@ export function FeatureShowcase() {
             key={displayTabData?.id}
             className="bg-black"
             style={{
-              animation: "fadeIn 0.5s ease-in-out",
+              animation: "fadeIn 0.7s ease-in-out",
             }}
           >
             {displayTabData?.fullImage ? (
