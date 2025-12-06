@@ -86,6 +86,46 @@ export interface HonoServerConfig {
   configureApp?: (app: OpenAPIHonoType) => void | Promise<void>;
 
   /**
+   * Full app configuration that provides access to app, routes, and middlewares.
+   * When this is set, configureApp will not be executed.
+   * This allows you to control the exact order of route and middleware registration.
+   *
+   * @example
+   * ```typescript
+   * configureFullApp: ({ app, routes, middlewares }) => {
+   *   // Apply middleware first
+   *   middlewares.cors();
+   *   middlewares.auth();
+   *
+   *   // Register routes in custom order
+   *   routes.agents();
+   *   routes.custom();
+   *   routes.workflows();
+   * }
+   * ```
+   */
+  configureFullApp?: (params: {
+    app: OpenAPIHonoType;
+    routes: {
+      agents: () => void;
+      workflows: () => void;
+      logs: () => void;
+      updates: () => void;
+      observability: () => void;
+      triggers: () => void;
+      mcp: () => void;
+      a2a: () => void;
+      doc: () => void;
+      ui: () => void;
+    };
+    middlewares: {
+      cors: () => void;
+      auth: () => void;
+      landingPage: () => void;
+    };
+  }) => void | Promise<void>;
+
+  /**
    * Authentication provider for protecting agent/workflow execution endpoints
    * When provided, execution endpoints will require valid authentication
    */
