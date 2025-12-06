@@ -13,7 +13,7 @@
     "@voltagent/server-hono": "^1.2.5",
     "ai": "^5.0.76",
     "import-in-the-middle": "^1.14.2",
-    "next": "16.0.0",
+    "next": "^16.0.7",
     "npm-check-updates": "^17.1.18",
     "postcss": "^8.5.3",
     "react": "19.2.0",

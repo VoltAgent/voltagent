@@ -9,7 +9,7 @@
     "@voltagent/vercel-ai": "^1.0.0",
     "@voltagent/vercel-ui": "^1.0.1",
     "ai": "^5.0.76",
-    "next": "16.0.0",
+    "next": "^16.0.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "zod": "^3.25.76"
