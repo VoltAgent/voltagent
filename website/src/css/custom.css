@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Smooth fade animation for showcase */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* You can override the default Infima variables here. */
 
 :root {
@@ -5774,3 +5784,49 @@ html[data-theme="dark"] .three-columns .card p {
     margin-bottom: 1rem;
   }
 }
+
+/* Feature Showcase CodeBlock styling */
+.showcase-code-block {
+  overflow: auto !important;
+}
+
+.showcase-code-block .theme-code-block {
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+.showcase-code-block .theme-code-block pre {
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0.25rem !important;
+  font-size: 11px !important;
+}
+
+.showcase-code-block .theme-code-block pre code {
+  font-size: 11px !important;
+}
+
+.showcase-code-block .theme-code-block code {
+  font-size: 11px !important;
+}
+
+.showcase-code-block .prism-code {
+  font-size: 11px !important;
+}
+
+.showcase-code-block [class*="codeBlockLines"] {
+  font-size: 11px !important;
+}
+
+/* Hide copy button in showcase */
+.showcase-code-block button[class*="copyButton"],
+.showcase-code-block button[class*="clean-btn"] {
+  display: none !important;
+}
+
+/* Hide title in showcase code blocks */
+.showcase-code-block [class*="codeBlockTitle"] {
+  display: none !important;
+}
+

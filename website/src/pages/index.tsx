@@ -4,6 +4,7 @@ import Layout from "@theme/Layout";
 import { AgentsDetail } from "../components/agents-detail";
 import { CommunitySection } from "../components/community-section";
 import { CompaniesMarquee } from "../components/companies/CompaniesMarquee";
+import { FeatureShowcase } from "../components/feature-showcase";
 import { FeaturedBlog } from "../components/featured-blog";
 import { Hero } from "../components/hero";
 import { Integrations } from "../components/integrations";
@@ -63,12 +64,11 @@ export default function Home(): JSX.Element {
           </div>
 
           <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
-
           <Hero />
+          <FeatureShowcase />
           <CompaniesMarquee />
-
-          <TwoBlocks />
-          <LivePreview />
+          {/*   <TwoBlocks />
+          <LivePreview /> */}
 
           <div className="relative">
             <AgentsDetail />
