@@ -101,18 +101,18 @@ export async function createApp(
     routes.mcp();
     routes.a2a();
 
+    // Allow user to configure the app with custom routes and middleware
+    if (config.configureApp) {
+      await config.configureApp(app);
+      logger.debug("Custom app configuration applied");
+    }
+
     // Setup Swagger UI and OpenAPI documentation AFTER custom routes are registered
     // This ensures custom endpoints are included in the documentation
     routes.ui();
 
     // Setup enhanced OpenAPI documentation that includes custom endpoints
     routes.doc();
-
-    // Allow user to configure the app with custom routes and middleware
-    if (config.configureApp) {
-      await config.configureApp(app);
-      logger.debug("Custom app configuration applied");
-    }
   }
 
   return { app };
