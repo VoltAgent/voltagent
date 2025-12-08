@@ -1,16 +1,16 @@
 import {
+  ArrowTopRightOnSquareIcon,
   BellIcon,
   BoltIcon,
   ChartBarIcon,
   ChatBubbleLeftIcon,
   CheckCircleIcon,
-  ChevronRightIcon,
   CodeBracketIcon,
   PlayIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import CodeBlock from "@theme/CodeBlock";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { tabsData } from "./mock-data";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -30,6 +30,16 @@ export function FeatureShowcase() {
 
   const activeTabData = tabsData.find((tab) => tab.id === activeTab);
   const displayTabData = hoveredTab ? tabsData.find((tab) => tab.id === hoveredTab) : activeTabData;
+
+  // Preload all images when component mounts
+  useEffect(() => {
+    tabsData.forEach((tab) => {
+      if (tab.image) {
+        const img = new Image();
+        img.src = tab.image;
+      }
+    });
+  }, []);
 
   return (
     <section className="relative z-10 pb-16 ">
@@ -80,39 +90,32 @@ export function FeatureShowcase() {
 
             {/* Tab Description */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-4 px-4 md:px-6 py-3 md:py-4 transition-all duration-700 ease-in-out bg-zinc-800/40">
-              <p
-                key={displayTabData?.id}
-                className="text-xs md:text-sm text-zinc-100 m-0"
-                style={{
-                  animation: "fadeIn 0.7s ease-in-out",
-                }}
-              >
+              <p className="text-xs md:text-sm text-zinc-100 m-0">
                 {displayTabData?.footerText ||
                   "Start building production-ready AI agents in minutes"}
               </p>
               <a
-                href="/docs"
+                href={displayTabData?.docLink || "/docs"}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-xs md:text-sm text-zinc-100 hover:text-white no-underline flex items-center gap-1 transition-colors"
               >
                 Documentation
-                <ChevronRightIcon className="w-4 h-4" />
+                <ArrowTopRightOnSquareIcon className="w-4 h-4" />
               </a>
             </div>
           </div>
 
           {/* Content Area */}
-          <div
-            key={displayTabData?.id}
-            className="bg-black"
-            style={{
-              animation: "fadeIn 0.7s ease-in-out",
-            }}
-          >
+          <div className="bg-black">
             {displayTabData?.fullImage ? (
               /* Full Image Layout */
               <div className="h-[300px] md:h-[600px]">
                 <img
-                  src="https://cdn.voltagent.dev/website/showcase/evals.png"
+                  src={
+                    displayTabData?.image ||
+                    "https://cdn.voltagent.dev/website/feature-showcase/framework.png"
+                  }
                   alt={`${displayTabData?.id} preview`}
                   className="w-full h-full object-cover object-top"
                 />
@@ -123,7 +126,10 @@ export function FeatureShowcase() {
                 {/* Preview Image - Top on mobile, Right on desktop */}
                 <div className="block lg:hidden h-[200px]">
                   <img
-                    src="https://cdn.voltagent.dev/website/showcase/evals.png"
+                    src={
+                      displayTabData?.image ||
+                      "https://cdn.voltagent.dev/website/feature-showcase/framework.png"
+                    }
                     alt={`${displayTabData?.id} preview`}
                     className="w-full h-full object-cover object-left-top"
                   />
@@ -137,7 +143,10 @@ export function FeatureShowcase() {
                 {/* Preview Image - Desktop only */}
                 <div className="hidden lg:block h-[600px] order-2">
                   <img
-                    src="https://cdn.voltagent.dev/website/showcase/evals.png"
+                    src={
+                      displayTabData?.image ||
+                      "https://cdn.voltagent.dev/website/feature-showcase/framework.png"
+                    }
                     alt={`${displayTabData?.id} preview`}
                     className="w-full h-full object-cover object-left-top"
                   />

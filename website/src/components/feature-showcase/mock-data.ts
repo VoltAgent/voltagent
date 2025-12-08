@@ -2,11 +2,13 @@ export interface TabData {
   id: string;
   label: string;
   icon: string;
+  image?: string;
   code?: string;
   description?: string;
   features?: string[];
   fullImage?: boolean;
   footerText?: string;
+  docLink?: string;
 }
 
 export const tabsData: TabData[] = [
@@ -14,6 +16,7 @@ export const tabsData: TabData[] = [
     id: "framework",
     label: "Framework",
     icon: "code",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/framework.png",
     code: `import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createTriggers } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
@@ -57,18 +60,22 @@ new VoltAgent({
   }),
 });`,
     footerText: "Build AI agents with a type-safe, modular TypeScript framework",
+    docLink: "/docs",
   },
   {
     id: "observability",
     label: "Observability",
     icon: "chart",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/dashboard.png",
     fullImage: true,
     footerText: "Monitor and debug your AI agents with real-time observability",
+    docLink: "/voltops-llm-observability-docs",
   },
   {
     id: "evals",
     label: "Evals",
     icon: "check",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/evals.png",
     code: `import { Agent, VoltAgentObservability } from "@voltagent/core";
 import { createModerationScorer } from "@voltagent/scorers";
 import { openai } from "@ai-sdk/openai";
@@ -94,11 +101,13 @@ const agent = new Agent({
   },
 });`,
     footerText: "Evaluate agent responses with customizable scorers in production",
+    docLink: "/docs/evals/overview",
   },
   {
     id: "triggers",
     label: "Triggers",
     icon: "zap",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/trigger.png",
     code: `import { VoltAgent, createTriggers } from "@voltagent/core";
 
 new VoltAgent({
@@ -125,11 +134,13 @@ new VoltAgent({
   }),
 });`,
     footerText: "React to events from Slack, GitHub, Airtable, and webhooks automatically",
+    docLink: "/docs/triggers/overview",
   },
   {
     id: "actions",
     label: "Actions",
     icon: "play",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/actions.png",
     code: `import { Agent, createTool } from "@voltagent/core";
 import { voltOps } from "@voltagent/voltops";
 
@@ -155,11 +166,13 @@ const agent = new Agent({
   tools: [createAirtableRecord],
 });`,
     footerText: "Execute actions on external services like Airtable, Slack, and more",
+    docLink: "/docs/actions/overview",
   },
   {
     id: "monitoring",
     label: "Monitoring",
     icon: "bell",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/monitoring.png",
     code: `import { VoltOps } from "@voltagent/voltops";
 
 const voltOps = new VoltOps();
@@ -188,11 +201,13 @@ await voltOps.alerts.create({
   severity: "critical",
 });`,
     footerText: "Set up alerts for latency, errors, and custom metrics",
+    docLink: "/docs/quick-start",
   },
   {
     id: "prompts",
     label: "Prompts",
     icon: "message",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/prompts.png",
     code: `import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
 
@@ -216,11 +231,13 @@ new VoltAgent({
   voltOpsClient: voltOpsClient,
 });`,
     footerText: "Manage and version prompts centrally with VoltOps",
+    docLink: "/docs/agents/prompts#voltops-prompt-management",
   },
   {
     id: "guardrails",
     label: "Guardrails",
     icon: "shield",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/guardrails.png",
     code: `import { Agent, createGuardrail } from "@voltagent/core";
 import {
   contentModerationGuardrail,
@@ -256,12 +273,15 @@ const agent = new Agent({
 });`,
     footerText:
       "Protect your agents with content moderation, PII detection, and topic restrictions",
+    docLink: "/docs/guardrails/overview",
   },
   {
     id: "deployment",
     label: "Deployment",
     icon: "zap",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/deployment.png",
     fullImage: true,
     footerText: "Deploy your agents to production with one command",
+    docLink: "/docs/deployment/overview",
   },
 ];
