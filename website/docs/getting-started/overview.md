@@ -79,6 +79,12 @@ type: 'link',
 href: '/docs/guardrails/overview/',
 label: 'Guardrails',
 description: 'Add safety checks and validation layers to ensure your agents behave correctly and safely.'
+},
+{
+type: 'link',
+href: '/docs/deployment/voltops/',
+label: 'Deployment',
+description: 'Deploy your agents to production with one-click GitHub integration and managed infrastructure.'
 }
 ]} />
 

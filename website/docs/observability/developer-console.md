@@ -257,3 +257,7 @@ Notes:
 - **OpenTelemetry base:** The new system uses OpenTelemetry under the hood and exports via OTLP HTTP.
 - **No extra usage overhead:** Export is lazy-initialized and batched; local debugging stays instant.
 - **Prompts still optional:** `VoltOpsClient` now focuses on prompt management. Use it only if you want dynamic prompts.
+
+### Deploy to Production
+
+Ready to deploy your agent? [VoltOps Deploy](/docs/deployment/voltops/) offers one-click GitHub integration, automatic builds, and managed infrastructure for your VoltAgent projects.

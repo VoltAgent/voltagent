@@ -5,6 +5,10 @@ description: Deployment options for VoltAgent apps across serverful and serverle
 
 You can run VoltAgent in classic Node.js servers or in serverless (edge) runtimes. This section explains the options and links to detailed guides.
 
+:::tip VoltOps Deploy
+Looking for the easiest way to deploy? [VoltOps Deploy](./voltops.md) offers one-click GitHub integration, automatic builds, and managed infrastructure for your VoltAgent projects.
+:::
+
 ## Supported scenarios
 
 - **Server (Node.js)** – use `@voltagent/server-hono` (or another HTTP layer) and deploy on any host such as Fly.io, Render, AWS, Railway. Note: For IPv6-enabled platforms like Railway and Fly.io, configure `hostname: "::"` for dual-stack networking.
@@ -49,6 +53,7 @@ For more details on network binding configuration, see the [Server Architecture]
 
 ## Guides
 
+- [VoltOps Deploy](./voltops.md) - Managed deployment with GitHub integration
 - [Cloudflare Workers](./cloudflare-workers.md)
 - [Netlify Functions](./netlify-functions.md)
 - Vercel Edge and Deno Deploy guides will follow soon.

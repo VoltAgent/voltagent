@@ -244,6 +244,16 @@ const sidebars: SidebarsConfig = {
       collapsed: true,
       items: [
         "deployment/overview",
+        {
+          type: "doc",
+          id: "deployment/voltops",
+          customProps: {
+            badge: {
+              label: "New",
+              variant: "accent",
+            },
+          },
+        },
         "deployment/cloudflare-workers",
         "deployment/netlify-functions",
         "deployment/local-tunnel",
