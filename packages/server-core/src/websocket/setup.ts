@@ -8,6 +8,7 @@ import type { Socket } from "node:net";
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import { WebSocketServer } from "ws";
+import { requiresAuth } from "../auth/defaults";
 import type { AuthProvider } from "../auth/types";
 import { handleWebSocketConnection } from "./handlers";
 
@@ -117,25 +118,44 @@ export function setupWebSocketUpgrade(
             // Set a pseudo user for console access
             user = { id: "console", type: "console-access" };
           } else {
-            // For other WebSocket paths, try to authenticate with JWT
-            // Extract token from query params (common for WebSocket auth)
-            const token = url.searchParams.get("token");
-            if (token) {
-              try {
-                user = await auth.verifyToken(token);
-              } catch (error) {
-                logger?.debug("[WebSocket] Token verification failed:", { error });
-                // For non-observability paths, reject if auth fails
-                socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-                socket.destroy();
-                return;
+            // For other WebSocket paths, check console access first (console always has access)
+            const hasConsoleAccess = hasWebSocketConsoleAccess(req);
+            if (hasConsoleAccess) {
+              user = { id: "console", type: "console-access" };
+            } else {
+              // Check if this WebSocket path requires authentication
+              const needsAuth = requiresAuth("WS", path, auth.publicRoutes, auth.defaultPrivate);
+
+              if (needsAuth) {
+                // Route requires authentication - verify JWT token
+                const token = url.searchParams.get("token");
+                if (token) {
+                  try {
+                    user = await auth.verifyToken(token);
+                  } catch (error) {
+                    logger?.debug("[WebSocket] Token verification failed:", { error });
+                    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+                    socket.destroy();
+                    return;
+                  }
+                } else {
+                  // No token provided for protected route
+                  logger?.debug("[WebSocket] No token provided for protected WebSocket");
+                  socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+                  socket.destroy();
+                  return;
+                }
+              } else {
+                // Public route - optionally verify token if provided
+                const token = url.searchParams.get("token");
+                if (token) {
+                  try {
+                    user = await auth.verifyToken(token);
+                  } catch {
+                    // Ignore token errors on public routes
+                  }
+                }
               }
-            } else if (auth.defaultPrivate) {
-              // If auth is required by default and no token provided
-              logger?.debug("[WebSocket] No token provided for protected WebSocket");
-              socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-              socket.destroy();
-              return;
             }
           }
         } catch (error) {
