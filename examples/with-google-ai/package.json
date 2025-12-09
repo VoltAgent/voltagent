@@ -3,11 +3,11 @@
   "author": "",
   "dependencies": {
     "@ai-sdk/google": "^2.0.23",
-    "@voltagent/cli": "^0.1.16",
+    "@voltagent/cli": "^0.1.17",
     "@voltagent/core": "^1.2.16",
     "@voltagent/libsql": "^1.0.13",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.5",
+    "@voltagent/server-hono": "^1.2.6",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
   },
