@@ -1,7 +1,7 @@
 {
   "name": "create-voltagent-app",
   "description": "Create VoltAgent applications with one command",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "bin": {
     "create-voltagent": "./dist/index.js",
     "create-voltagent-app": "./dist/index.js"

@@ -624,6 +624,7 @@ export function createWorkflow<
     purpose,
     hooks,
     input,
+    result,
     suspendSchema,
     resumeSchema,
     memory: workflowMemory,
@@ -1787,6 +1788,7 @@ export function createWorkflow<
     purpose: purpose ?? "No purpose provided",
     steps: steps as BaseStep[],
     inputSchema: input,
+    resultSchema: result,
     suspendSchema: effectiveSuspendSchema as SUSPEND_SCHEMA,
     resumeSchema: effectiveResumeSchema as RESUME_SCHEMA,
     // ✅ Always expose memory for registry access
@@ -1801,6 +1803,7 @@ export function createWorkflow<
         stepsCount: steps.length,
         steps: steps.map((step, index) => serializeWorkflowStep(step, index)),
         inputSchema: input,
+        resultSchema: result,
         suspendSchema: effectiveSuspendSchema,
         resumeSchema: effectiveResumeSchema,
       };
