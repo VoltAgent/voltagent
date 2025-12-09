@@ -68,7 +68,7 @@ export const CompaniesMarquee = () => {
   const renderRow = (logos: LogoItem[], reverse = false) => {
     const duplicated = [...logos, ...logos, ...logos];
     return (
-      <div className="relative mb-4 sm:mb-6" style={{ perspective: "1000px" }}>
+      <div className="relative mb-4 sm:mb-6  overflow-hidden" style={{ perspective: "1000px" }}>
         <div
           className="flex overflow-hidden"
           style={{
@@ -162,7 +162,7 @@ export const CompaniesMarquee = () => {
           vector-effect: non-scaling-stroke;
         }
       `}</style>
-      <div className="companies-marquee relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
+      <div className="companies-marquee relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:my-16 landing-md:my-36">
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white/60">
             Used and Tested by Developers at

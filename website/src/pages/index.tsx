@@ -66,11 +66,9 @@ export default function Home(): JSX.Element {
           <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
           <Hero />
           <FeatureShowcase />
-          <CompaniesMarquee />
-          {/*   <TwoBlocks />
-          <LivePreview /> */}
 
           <div className="relative">
+            <CompaniesMarquee />
             <AgentsDetail />
             <Testimonials />
             <SupervisorAgent />

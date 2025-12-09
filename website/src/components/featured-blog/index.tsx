@@ -36,39 +36,39 @@ type BlogPost = {
 const REAL_POSTS: BlogPost[] = [
   {
     id: "1",
-    title: "Building Google Drive Chatbot with Composio MCP",
+    title: "LLM Evaluation - Measuring AI Model Performance",
     excerpt:
-      "Learn how to build a powerful Google Drive chatbot using Composio MCP for seamless document interaction and AI-powered search.",
-    date: getDateFromSlugDir("2025-04-28-building-google-drive-chatbot"),
+      "Learn practical approaches to evaluate large language models, from automatic metrics to human assessment.",
+    date: getDateFromSlugDir("2025-07-20-llm-evaluation"),
     author: {
       name: "Necati Ozmen",
       avatar: "https://avatars.githubusercontent.com/u/18739364?v=4",
     },
-    slug: "building-google-drive-chatbot-with-composio-mcp",
+    slug: "llm-evaluation",
   },
   {
     id: "2",
-    title: "Vercel AI LLM Observability",
+    title: "Vector Databases and LLM's - Why They Need Each Other",
     excerpt:
-      "Deep dive into LLM observability tools for Vercel AI applications, monitoring performance and debugging complex AI workflows.",
-    date: getDateFromSlugDir("2025-06-03-vercel-ai-observability"),
+      "Understanding how vector databases and LLMs work together, why they complement each other.",
+    date: getDateFromSlugDir("2025-09-08-vector-databases-llms"),
+    author: {
+      name: "Necati Ozmen",
+      avatar: "https://avatars.githubusercontent.com/u/18739364?v=4",
+    },
+    slug: "vector-database",
+  },
+  {
+    id: "3",
+    title: "LLM Guardrails - Safe and Secure AI",
+    excerpt:
+      "Discover practical ways to make your AI applications safer and more reliable with LLM guardrails.",
+    date: getDateFromSlugDir("2025-08-07-llm-guardrails"),
     author: {
       name: "Omer Aplak",
       avatar: "https://avatars.githubusercontent.com/u/1110414?v=4",
     },
-    slug: "vercel-ai-llm-observability",
-  },
-  {
-    id: "3",
-    title: "TypeScript AI Agent Framework",
-    excerpt:
-      "Build powerful AI agents with TypeScript using our comprehensive framework designed for modern development workflows.",
-    date: getDateFromSlugDir("2025-07-29-ts-ai-agent"),
-    author: {
-      name: "VoltAgent Team",
-      avatar: "https://avatars.githubusercontent.com/u/201282378?s=200&v=4",
-    },
-    slug: "typescript-ai-agent-framework",
+    slug: "llm-guardrails",
   },
 ];
 
