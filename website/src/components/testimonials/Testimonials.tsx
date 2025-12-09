@@ -279,6 +279,13 @@ const articles = [
     excerpt: "0からTypeScriptでAIエージェントを開発する実践チュートリアル【React/VoltAgent】",
     url: "https://www.youtube.com/watch?v=Jw3AqIYNLbs",
   },
+  {
+    title: "Create MCP HTTP Server from Scratch with VoltAgent (No Studio)",
+    type: "youtube" as const,
+    videoId: "3jg0OWao0lY",
+    excerpt: "Create MCP HTTP Server from Scratch with VoltAgent (No Studio)",
+    url: "https://www.youtube.com/watch?v=3jg0OWao0lY&t=1227s",
+  },
 ];
 
 export function Testimonials() {
