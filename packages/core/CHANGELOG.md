@@ -1,5 +1,34 @@
 # @voltagent/core
 
+## 1.2.16
+
+### Patch Changes
+
+- [#839](https://github.com/VoltAgent/voltagent/pull/839) [`93e5a8e`](https://github.com/VoltAgent/voltagent/commit/93e5a8ed03d2335d845436752b476881c24931ba) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: expose resultSchema in workflow API response
+
+  Previously, when calling the workflow API endpoint (e.g., `GET /workflows/{id}`), the response included `inputSchema`, `suspendSchema`, and `resumeSchema`, but was missing `resultSchema` (the output schema).
+
+  Now, workflows properly expose their result schema alongside other schemas:
+
+  ```json
+  {
+    "inputSchema": {
+      "type": "object",
+      "properties": { "name": { "type": "string" } },
+      "required": ["name"]
+    },
+    "resultSchema": {
+      "type": "object",
+      "properties": { "greeting": { "type": "string" } },
+      "required": ["greeting"]
+    },
+    "suspendSchema": { "type": "unknown" },
+    "resumeSchema": { "type": "unknown" }
+  }
+  ```
+
+  This allows API consumers to understand the expected output format of a workflow, enabling better client-side validation and documentation generation.
+
 ## 1.2.15
 
 ### Patch Changes
