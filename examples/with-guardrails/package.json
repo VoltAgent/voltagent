@@ -6,7 +6,7 @@
     "@voltagent/cli": "^0.1.17",
     "@voltagent/core": "^1.2.17",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.7",
+    "@voltagent/server-hono": "^1.2.8",
     "ai": "^5.0.76"
   },
   "devDependencies": {

@@ -8,7 +8,7 @@
     "@voltagent/internal": "^0.0.12",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/sdk": "^1.0.2",
-    "@voltagent/server-hono": "^1.2.7",
+    "@voltagent/server-hono": "^1.2.8",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
   },

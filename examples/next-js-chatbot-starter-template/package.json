@@ -22,7 +22,7 @@
     "@voltagent/cli": "^0.1.17",
     "@voltagent/core": "^1.2.17",
     "@voltagent/libsql": "^1.0.14",
-    "@voltagent/server-hono": "^1.2.7",
+    "@voltagent/server-hono": "^1.2.8",
     "@xyflow/react": "^12.9.2",
     "ai": "^5.0.76",
     "class-variance-authority": "^0.7.1",
