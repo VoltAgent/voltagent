@@ -5,10 +5,10 @@
     "@ai-sdk/openai": "^2.0.52",
     "@supabase/supabase-js": "^2.49.4",
     "@voltagent/cli": "^0.1.17",
-    "@voltagent/core": "^1.2.16",
+    "@voltagent/core": "^1.2.17",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.6",
-    "@voltagent/supabase": "^1.0.10",
+    "@voltagent/server-hono": "^1.2.7",
+    "@voltagent/supabase": "^1.0.11",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
   },
