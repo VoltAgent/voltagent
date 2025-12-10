@@ -111,7 +111,6 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Centralized Coordination */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "centralized",
@@ -138,7 +137,6 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Specialized Agent Roles */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "specialized",

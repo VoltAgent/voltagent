@@ -122,17 +122,14 @@ export default function Navbar() {
                       </span>
                     </div>
                   </Link>
-                  <div className="group p-3 -mx-1 hover:bg-slate-800 text-[#DCDCDC] flex items-center justify-between transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
-                    <div className="flex items-center font-['Inter']">
+                  <Link to="/voltops/deployment/" className="no-underline">
+                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
                       <CloudArrowUpIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
-                      <span className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
+                      <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         Deployment
                       </span>
                     </div>
-                    <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full font-['Inter'] font-normal">
-                      Soon
-                    </span>
-                  </div>
+                  </Link>
 
                   <div className="group p-3 -mx-1 hover:bg-slate-800 text-[#DCDCDC] flex items-center justify-between transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20">
                     <div className="flex items-center font-['Inter']">
@@ -395,15 +392,14 @@ export default function Navbar() {
                   </span>
                 </div>
               </Link>
-              <div className="p-3 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-all border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 rounded-b-lg">
-                <div className="flex items-center font-['Inter']">
+              <Link to="/voltops/deployment/" className="no-underline">
+                <div className="p-3 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 rounded-b-lg">
                   <CloudArrowUpIcon className="w-5 h-5 mr-2 text-[#00d992]" />
-                  <span className="text-sm font-semibold">Deployment</span>
+                  <span className="text-sm font-['Inter'] font-semibold !text-white">
+                    Deployment
+                  </span>
                 </div>
-                <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full font-['Inter'] font-normal">
-                  Soon
-                </span>
-              </div>
+              </Link>
 
               <div className="p-3 hover:bg-slate-800/50 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-slate-600 rounded-b-md">
                 <div className="flex items-center font-['Inter']">
