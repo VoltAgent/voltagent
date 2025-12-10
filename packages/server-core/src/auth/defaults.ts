@@ -45,6 +45,12 @@ export const PROTECTED_ROUTES = [
   "WS /ws/agents/:id", // WebSocket connection
 
   // ========================================
+  // TOOL EXECUTION (User Data)
+  // ========================================
+  "GET /tools", // List tools (protected by default)
+  "POST /tools/:name/execute",
+
+  // ========================================
   // WORKFLOW EXECUTION (User Data)
   // ========================================
   "POST /workflows/:id/run", // Run workflow

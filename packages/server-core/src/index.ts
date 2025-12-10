@@ -22,6 +22,7 @@ export * from "./a2a/types";
 export * from "./handlers/agent.handlers";
 export * from "./handlers/agent-additional.handlers";
 export * from "./handlers/workflow.handlers";
+export * from "./handlers/tool.handlers";
 export * from "./handlers/log.handlers";
 export * from "./handlers/update.handlers";
 export * from "./handlers/observability.handlers";

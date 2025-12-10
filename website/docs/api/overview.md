@@ -84,6 +84,11 @@ Get the raw OpenAPI 3.1 spec at [`http://localhost:3141/doc`](http://localhost:3
 - `POST /workflows/:id/executions/:executionId/resume` - Resume execution
 - `GET /workflows/:id/executions/:executionId/state` - Get execution state
 
+### Tool Endpoints
+
+- `GET /tools` - List all registered tools (across agents)
+- `POST /tools/:name/execute` - Execute a tool directly over HTTP
+
 ### Observability & Logs
 
 - `POST /setup-observability` - Configure `.env` with VoltAgent keys

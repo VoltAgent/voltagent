@@ -24,6 +24,7 @@ import {
   AGENT_ROUTES,
   OBSERVABILITY_MEMORY_ROUTES,
   OBSERVABILITY_ROUTES,
+  TOOL_ROUTES,
   type TriggerHttpRequestContext,
   UPDATE_ROUTES,
   WORKFLOW_ROUTES,
@@ -33,6 +34,7 @@ import {
   getConversationStepsHandler,
   handleChatStream,
   handleCheckUpdates,
+  handleExecuteTool,
   handleExecuteWorkflow,
   handleGenerateObject,
   handleGenerateText,
@@ -44,6 +46,7 @@ import {
   handleGetWorkflowState,
   handleGetWorkflows,
   handleInstallUpdates,
+  handleListTools,
   handleListWorkflowRuns,
   handleResumeWorkflow,
   handleStreamObject,
@@ -291,6 +294,26 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
     const executionId = c.req.param("executionId");
     const response = await handleGetWorkflowState(workflowId, executionId, deps, logger);
     const status = response.success ? 200 : response.error?.includes("not found") ? 404 : 500;
+    return c.json(response, status);
+  });
+}
+
+export function registerToolRoutes(app: Hono, deps: ServerProviderDeps, logger: Logger) {
+  app.get(TOOL_ROUTES.listTools.path, async (c) => {
+    const response = await handleListTools(deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  app.post(TOOL_ROUTES.executeTool.path, async (c) => {
+    const toolName = c.req.param("name");
+    const body = await readJsonBody(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+
+    const response = await handleExecuteTool(toolName, body, deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
     return c.json(response, status);
   });
 }

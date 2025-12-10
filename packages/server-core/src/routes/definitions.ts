@@ -850,11 +850,64 @@ export const OBSERVABILITY_MEMORY_ROUTES = {
 } as const;
 
 /**
+ * Tool route definitions
+ */
+export const TOOL_ROUTES = {
+  listTools: {
+    method: "get" as const,
+    path: "/tools",
+    summary: "List all tools",
+    description:
+      "Retrieve a list of all tools registered across agents. Includes name, description, parameters, and owning agent metadata.",
+    tags: ["Tools"],
+    operationId: "listTools",
+    responses: {
+      200: {
+        description: "Successfully retrieved list of tools",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve tools due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  executeTool: {
+    method: "post" as const,
+    path: "/tools/:name/execute",
+    summary: "Execute a tool directly",
+    description:
+      "Execute a registered tool directly via HTTP without going through the agent chat flow. Accepts tool input and optional context metadata.",
+    tags: ["Tools"],
+    operationId: "executeTool",
+    responses: {
+      200: {
+        description: "Successfully executed tool",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request or tool input",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Tool not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to execute tool due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+} as const;
+
+/**
  * All route definitions combined
  */
 export const ALL_ROUTES = {
   ...AGENT_ROUTES,
   ...WORKFLOW_ROUTES,
+  ...TOOL_ROUTES,
   ...LOG_ROUTES,
   ...UPDATE_ROUTES,
   ...OBSERVABILITY_ROUTES,

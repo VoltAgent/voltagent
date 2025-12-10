@@ -100,6 +100,8 @@ const weatherTool = createTool({
 
 Tags are included in OpenTelemetry spans and visible in the VoltAgent observability dashboard, making it easy to analyze tool usage patterns and debug agent behavior.
 
+Tool tags also flow through the REST tool endpoints (`GET /tools` and `POST /tools/:name/execute` responses), so you can build frontend tooling or access control based on tags.
+
 ### Provider-Specific Options
 
 You can pass provider-specific options to enable advanced features like caching. Currently supported providers include Anthropic, OpenAI, Google, and others.
