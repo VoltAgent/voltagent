@@ -6,7 +6,7 @@
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^3.0.0",
     "@aws-sdk/credential-providers": "~3.799.0",
-    "@voltagent/core": "~1.2.17",
+    "@voltagent/core": "~1.2.18",
     "@voltagent/libsql": "^1.0.14",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.8",

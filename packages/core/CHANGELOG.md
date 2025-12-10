@@ -1,5 +1,54 @@
 # @voltagent/core
 
+## 1.2.18
+
+### Patch Changes
+
+- [`9e215c6`](https://github.com/VoltAgent/voltagent/commit/9e215c69bce4e4fd3d96adb12b4ba98e3a5fcdb4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: schema serialization for workflows and tools when projects use Zod 4.
+
+  ## The Problem
+
+  Zod 4 changed its internal `_def` shape (e.g., `type` instead of `typeName`, `shape` as an object, `element` for arrays). Our lightweight `zodSchemaToJsonUI` only understood the Zod 3 layout, so Zod 4 workflows/tools exposed `inputSchema`/`resultSchema` as `{ type: "unknown" }` in `/workflows/{id}` and tool metadata.
+
+  ## The Solution
+
+  Teach `zodSchemaToJsonUI` both v3 and v4 shapes: look at `_def.type` as well as `_def.typeName`, handle v4 object `shape`, array `element`, enum entries, optional/default unwrap, and record value types. Default values are picked up whether they’re stored as a function (v3) or a raw value (v4).
+
+  ## Impact
+
+  API consumers and UIs now see real input/result/output schemas for Zod 4-authored workflows and tools instead of `{ type: "unknown" }`, restoring schema-driven rendering and validation.
+
+- [`7e40045`](https://github.com/VoltAgent/voltagent/commit/7e40045656d6868eb5ca337aad5c6a20532dad17) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Gmail actions to VoltOps SDK client
+  - Added `actions.gmail.sendEmail`, `replyToEmail`, `searchEmail`, `getEmail`, `getThread`
+  - Supports inline or stored credentials (OAuth refresh token or service account)
+
+  Usage:
+
+  ```ts
+  import { VoltOpsClient } from "@voltagent/core";
+
+  const voltops = new VoltOpsClient({
+    publicKey: "<public-key>",
+    secretKey: "<secret-key>",
+  });
+
+  await voltops.actions.gmail.sendEmail({
+    credential: { credentialId: "<gmail-credential-id>" },
+    to: ["teammate@example.com"],
+    cc: ["manager@example.com"],
+    subject: "Status update",
+    bodyType: "text",
+    body: "All systems operational.",
+    attachments: [
+      {
+        filename: "notes.txt",
+        content: "YmFzZTY0LWNvbnRlbnQ=",
+        contentType: "text/plain",
+      },
+    ],
+  });
+  ```
+
 ## 1.2.17
 
 ### Patch Changes
