@@ -220,7 +220,9 @@ Required methods:
 - Conversations: `createConversation`, `getConversation`, `getConversations`, `getConversationsByUserId`, `queryConversations`, `updateConversation`, `deleteConversation`
 - Conversation steps: `saveConversationSteps`, `getConversationSteps`
 - Working memory: `getWorkingMemory`, `setWorkingMemory`, `deleteWorkingMemory`
-- Workflow state: `getWorkflowState`, `setWorkflowState`, `updateWorkflowState`, `getSuspendedWorkflowStates`
+- Workflow state: `getWorkflowState`, `queryWorkflowRuns`, `setWorkflowState`, `updateWorkflowState`, `getSuspendedWorkflowStates`
+
+Use `queryWorkflowRuns({ workflowId?, status?, from?, to?, limit?, offset? })` for filtered/paginated listings (ordered by newest first).
 
 ### Advanced: Context-Aware Adapters
 

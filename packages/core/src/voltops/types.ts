@@ -809,6 +809,15 @@ export interface ManagedMemorySetWorkingMemoryInput extends ManagedMemoryWorking
   content: string;
 }
 
+export interface ManagedMemoryQueryWorkflowRunsInput {
+  workflowId?: string;
+  status?: WorkflowStateEntry["status"];
+  from?: Date;
+  to?: Date;
+  limit?: number;
+  offset?: number;
+}
+
 export interface ManagedMemoryWorkflowStateUpdateInput {
   executionId: string;
   updates: Partial<WorkflowStateEntry>;
@@ -839,6 +848,14 @@ export interface ManagedMemoryWorkflowStatesClient {
   get(databaseId: string, executionId: string): Promise<WorkflowStateEntry | null>;
   set(databaseId: string, executionId: string, state: WorkflowStateEntry): Promise<void>;
   update(databaseId: string, input: ManagedMemoryWorkflowStateUpdateInput): Promise<void>;
+  list(
+    databaseId: string,
+    input: ManagedMemoryQueryWorkflowRunsInput,
+  ): Promise<WorkflowStateEntry[]>;
+  query(
+    databaseId: string,
+    input: ManagedMemoryQueryWorkflowRunsInput,
+  ): Promise<WorkflowStateEntry[]>;
   listSuspended(databaseId: string, workflowId: string): Promise<WorkflowStateEntry[]>;
 }
 

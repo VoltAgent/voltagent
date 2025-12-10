@@ -34,6 +34,7 @@ import type {
   ManagedMemoryDeleteVectorsInput,
   ManagedMemoryGetConversationStepsInput,
   ManagedMemoryGetMessagesInput,
+  ManagedMemoryQueryWorkflowRunsInput,
   ManagedMemorySearchVectorsInput,
   ManagedMemorySetWorkingMemoryInput,
   ManagedMemoryStoreVectorInput,
@@ -373,8 +374,13 @@ export class VoltOpsClient implements IVoltOpsClient {
         set: (databaseId, executionId, state) =>
           this.setManagedMemoryWorkflowState(databaseId, executionId, state),
         update: (databaseId, input) => this.updateManagedMemoryWorkflowState(databaseId, input),
+        list: (databaseId, input) => this.getManagedMemoryWorkflowStates(databaseId, input),
+        query: (databaseId, input) => this.getManagedMemoryWorkflowStates(databaseId, input),
         listSuspended: (databaseId, workflowId) =>
-          this.getManagedMemorySuspendedWorkflowStates(databaseId, workflowId),
+          this.getManagedMemoryWorkflowStates(databaseId, {
+            workflowId,
+            status: "suspended",
+          }),
       },
       steps: {
         save: (databaseId, steps) => this.saveManagedMemoryConversationSteps(databaseId, steps),
@@ -818,11 +824,18 @@ export class VoltOpsClient implements IVoltOpsClient {
     }
   }
 
-  private async getManagedMemorySuspendedWorkflowStates(
+  private async getManagedMemoryWorkflowStates(
     databaseId: string,
-    workflowId: string,
+    input: ManagedMemoryQueryWorkflowRunsInput,
   ): Promise<WorkflowStateEntry[]> {
-    const query = this.buildQueryString({ workflowId });
+    const query = this.buildQueryString({
+      workflowId: input.workflowId,
+      status: input.status,
+      from: input.from?.toISOString(),
+      to: input.to?.toISOString(),
+      limit: input.limit,
+      offset: input.offset,
+    });
 
     const payload = await this.request<{
       success: boolean;
@@ -830,7 +843,7 @@ export class VoltOpsClient implements IVoltOpsClient {
     }>("GET", `/managed-memory/projects/databases/${databaseId}/workflow-states${query}`);
 
     if (!payload?.success) {
-      throw new Error("Failed to fetch suspended managed memory workflow states via VoltOps");
+      throw new Error("Failed to fetch managed memory workflow states via VoltOps");
     }
 
     return payload.data?.workflowStates ?? [];

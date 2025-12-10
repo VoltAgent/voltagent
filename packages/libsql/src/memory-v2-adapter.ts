@@ -1262,6 +1262,81 @@ export class LibSQLMemoryAdapter implements StorageAdapter {
   }
 
   /**
+   * Query workflow states with optional filters
+   */
+  async queryWorkflowRuns(query: {
+    workflowId?: string;
+    status?: WorkflowStateEntry["status"];
+    from?: Date;
+    to?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<WorkflowStateEntry[]> {
+    await this.initialize();
+
+    const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
+    const conditions: string[] = [];
+    const args: any[] = [];
+
+    if (query.workflowId) {
+      conditions.push("workflow_id = ?");
+      args.push(query.workflowId);
+    }
+
+    if (query.status) {
+      conditions.push("status = ?");
+      args.push(query.status);
+    }
+
+    if (query.from) {
+      conditions.push("created_at >= ?");
+      args.push(query.from.toISOString());
+    }
+
+    if (query.to) {
+      conditions.push("created_at <= ?");
+      args.push(query.to.toISOString());
+    }
+
+    let sql = `SELECT * FROM ${workflowStatesTable}`;
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(" AND ")}`;
+    }
+    sql += " ORDER BY created_at DESC";
+
+    if (query.limit !== undefined) {
+      sql += " LIMIT ?";
+      args.push(query.limit);
+    }
+
+    if (query.offset !== undefined) {
+      sql += " OFFSET ?";
+      args.push(query.offset);
+    }
+
+    const result = await this.client.execute({
+      sql,
+      args,
+    });
+
+    return result.rows.map((row) => ({
+      id: row.id as string,
+      workflowId: row.workflow_id as string,
+      workflowName: row.workflow_name as string,
+      status: row.status as WorkflowStateEntry["status"],
+      suspension: row.suspension ? JSON.parse(row.suspension as string) : undefined,
+      events: row.events ? JSON.parse(row.events as string) : undefined,
+      output: row.output ? JSON.parse(row.output as string) : undefined,
+      cancellation: row.cancellation ? JSON.parse(row.cancellation as string) : undefined,
+      userId: row.user_id as string | undefined,
+      conversationId: row.conversation_id as string | undefined,
+      metadata: row.metadata ? JSON.parse(row.metadata as string) : undefined,
+      createdAt: new Date(row.created_at as string),
+      updatedAt: new Date(row.updated_at as string),
+    }));
+  }
+
+  /**
    * Set workflow state
    */
   async setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void> {

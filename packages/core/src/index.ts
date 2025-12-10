@@ -239,6 +239,7 @@ export type {
   ManagedMemoryUpdateConversationInput,
   ManagedMemoryWorkingMemoryInput,
   ManagedMemorySetWorkingMemoryInput,
+  ManagedMemoryQueryWorkflowRunsInput,
   ManagedMemoryWorkflowStateUpdateInput,
   ManagedMemoryMessagesClient,
   ManagedMemoryConversationsClient,

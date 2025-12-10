@@ -278,6 +278,33 @@ export const WORKFLOW_ROUTES = {
       },
     },
   },
+  listWorkflowRuns: {
+    method: "get" as const,
+    path: "/workflows/executions",
+    summary: "List workflow executions (query-driven)",
+    description:
+      "Retrieve workflow executions using query params (workflowId, status, from, to, limit, offset) without path parameters.",
+    tags: ["Workflow Management"],
+    operationId: "listWorkflowRuns",
+    responses: {
+      200: {
+        description: "Successfully retrieved workflow executions",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid query parameters",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Workflow not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve workflow executions due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   executeWorkflow: {
     method: "post" as const,
     path: "/workflows/:id/execute",

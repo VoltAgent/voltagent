@@ -22,6 +22,7 @@ import type {
   SearchResult,
   StorageAdapter,
   VectorAdapter,
+  WorkflowRunQuery,
   WorkflowStateEntry,
   WorkingMemoryConfig,
   WorkingMemorySummary,
@@ -1107,6 +1108,13 @@ Remember:
    */
   async getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null> {
     return this.storage.getWorkflowState(executionId);
+  }
+
+  /**
+   * Query workflow states with filters
+   */
+  async queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
+    return this.storage.queryWorkflowRuns(query);
   }
 
   /**

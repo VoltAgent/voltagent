@@ -416,6 +416,7 @@ These remain public unless `defaultPrivate: true`:
 - `GET /agents` - List agents
 - `GET /agents/:id` - Get agent details
 - `GET /workflows` - List workflows
+- `GET /workflows/executions` - List workflow executions
 - `GET /workflows/:id` - Get workflow details
 
 #### Documentation

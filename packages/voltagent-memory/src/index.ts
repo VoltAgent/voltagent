@@ -362,6 +362,20 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     });
   }
 
+  queryWorkflowRuns(query: {
+    workflowId?: string;
+    status?: WorkflowStateEntry["status"];
+    from?: Date;
+    to?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<WorkflowStateEntry[]> {
+    return this.withClientContext(({ client, database }) => {
+      this.log("Querying managed memory workflow states", safeStringify(query));
+      return client.managedMemory.workflowStates.query(database.id, query);
+    });
+  }
+
   setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void> {
     return this.withClientContext(async ({ client, database }) => {
       this.log("Setting managed memory workflow state", safeStringify({ executionId }));

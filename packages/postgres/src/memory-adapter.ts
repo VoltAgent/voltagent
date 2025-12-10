@@ -1241,6 +1241,79 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   }
 
   /**
+   * Query workflow states with optional filters
+   */
+  async queryWorkflowRuns(query: {
+    workflowId?: string;
+    status?: WorkflowStateEntry["status"];
+    from?: Date;
+    to?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<WorkflowStateEntry[]> {
+    await this.initPromise;
+
+    const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (query.workflowId) {
+      conditions.push(`workflow_id = $${paramIndex++}`);
+      params.push(query.workflowId);
+    }
+
+    if (query.status) {
+      conditions.push(`status = $${paramIndex++}`);
+      params.push(query.status);
+    }
+
+    if (query.from) {
+      conditions.push(`created_at >= $${paramIndex++}`);
+      params.push(query.from);
+    }
+
+    if (query.to) {
+      conditions.push(`created_at <= $${paramIndex++}`);
+      params.push(query.to);
+    }
+
+    let sql = `SELECT * FROM ${workflowStatesTable}`;
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(" AND ")}`;
+    }
+    sql += " ORDER BY created_at DESC";
+
+    if (query.limit !== undefined) {
+      sql += ` LIMIT $${paramIndex++}`;
+      params.push(query.limit);
+    }
+
+    if (query.offset !== undefined) {
+      sql += ` OFFSET $${paramIndex++}`;
+      params.push(query.offset);
+    }
+
+    const result = await this.pool.query(sql, params);
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      workflowId: row.workflow_id,
+      workflowName: row.workflow_name,
+      status: row.status as WorkflowStateEntry["status"],
+      suspension: row.suspension || undefined,
+      events: row.events || undefined,
+      output: row.output || undefined,
+      cancellation: row.cancellation || undefined,
+      userId: row.user_id || undefined,
+      conversationId: row.conversation_id || undefined,
+      metadata: row.metadata || undefined,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    }));
+  }
+
+  /**
    * Set workflow state
    */
   async setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void> {

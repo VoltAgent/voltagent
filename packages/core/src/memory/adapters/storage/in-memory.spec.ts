@@ -10,6 +10,7 @@ import {
   createTestUIMessage,
   extractMessageTexts,
 } from "../../test-utils";
+import type { WorkflowStateEntry } from "../../types";
 import { InMemoryStorageAdapter } from "./in-memory";
 
 describe("InMemoryStorageAdapter", () => {
@@ -556,6 +557,99 @@ describe("InMemoryStorageAdapter", () => {
         // Act & Assert - should not throw
         await expect(storage.clearMessages("non-existent-user")).resolves.toBeUndefined();
       });
+    });
+  });
+
+  describe("Workflow State Operations", () => {
+    const baseState = (overrides: Partial<WorkflowStateEntry> = {}): WorkflowStateEntry => ({
+      id: "exec-1",
+      workflowId: "workflow-123",
+      workflowName: "Test Workflow",
+      status: "running",
+      createdAt: new Date("2024-01-01T00:00:00Z"),
+      updatedAt: new Date("2024-01-01T00:00:00Z"),
+      ...overrides,
+    });
+
+    it("should return workflow states for a workflow ordered by creation time", async () => {
+      const workflowId = "workflow-123";
+      const olderState = baseState({ id: "exec-older" });
+      const newerState = baseState({
+        id: "exec-newer",
+        status: "completed",
+        createdAt: new Date("2024-02-01T00:00:00Z"),
+        updatedAt: new Date("2024-02-01T00:00:00Z"),
+      });
+      const otherWorkflowState = baseState({
+        id: "exec-other",
+        workflowId: "another-workflow",
+      });
+
+      await storage.setWorkflowState(olderState.id, olderState);
+      await storage.setWorkflowState(newerState.id, newerState);
+      await storage.setWorkflowState(otherWorkflowState.id, otherWorkflowState);
+
+      const result = await storage.queryWorkflowRuns({ workflowId });
+
+      expect(result.map((state) => state.id)).toEqual(["exec-newer", "exec-older"]);
+      expect(result.every((state) => state.workflowId === workflowId)).toBe(true);
+    });
+
+    it("should return empty array when workflow has no states", async () => {
+      const result = await storage.queryWorkflowRuns({ workflowId: "missing-workflow" });
+      expect(result).toEqual([]);
+    });
+
+    it("should filter workflow states by status", async () => {
+      await storage.setWorkflowState(
+        "exec-running",
+        baseState({ id: "exec-running", status: "running" }),
+      );
+      await storage.setWorkflowState(
+        "exec-completed",
+        baseState({ id: "exec-completed", status: "completed" }),
+      );
+
+      const result = await storage.queryWorkflowRuns({ status: "completed" });
+      expect(result).toHaveLength(1);
+      expect(result[0]?.id).toBe("exec-completed");
+    });
+
+    it("should respect from/to and pagination", async () => {
+      await storage.setWorkflowState(
+        "exec-1",
+        baseState({
+          id: "exec-1",
+          createdAt: new Date("2024-01-01T00:00:00Z"),
+          updatedAt: new Date("2024-01-01T00:00:00Z"),
+        }),
+      );
+      await storage.setWorkflowState(
+        "exec-2",
+        baseState({
+          id: "exec-2",
+          createdAt: new Date("2024-02-01T00:00:00Z"),
+          updatedAt: new Date("2024-02-01T00:00:00Z"),
+        }),
+      );
+      await storage.setWorkflowState(
+        "exec-3",
+        baseState({
+          id: "exec-3",
+          createdAt: new Date("2024-03-01T00:00:00Z"),
+          updatedAt: new Date("2024-03-01T00:00:00Z"),
+        }),
+      );
+
+      const result = await storage.queryWorkflowRuns({
+        workflowId: "workflow-123",
+        from: new Date("2024-02-01T00:00:00Z"),
+        to: new Date("2024-03-01T00:00:00Z"),
+        limit: 1,
+        offset: 0,
+      });
+
+      expect(result.map((s) => s.id)).toEqual(["exec-3"]);
     });
   });
 

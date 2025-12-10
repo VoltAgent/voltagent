@@ -1,13 +1,13 @@
 import { Memory } from "@voltagent/core";
 import type { Agent, Logger, ServerProviderDeps, VoltOpsClient } from "@voltagent/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { InMemoryStorageAdapter } from "../../../../core/src/memory/adapters/storage/in-memory";
+import { InMemoryStorageAdapter } from "../../../core/src/memory/adapters/storage/in-memory";
 import {
   getConversationMessagesHandler,
   getWorkingMemoryHandler,
   listMemoryConversationsHandler,
   listMemoryUsersHandler,
-} from "../memory-observability.handlers";
+} from "./memory-observability.handlers";
 
 function createAgentWithMemory(agentId: string, agentName: string, memory: Memory): Agent {
   return {

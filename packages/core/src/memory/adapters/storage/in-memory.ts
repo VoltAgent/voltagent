@@ -466,6 +466,56 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   }
 
   /**
+   * Query workflow states with optional filters
+   */
+  async queryWorkflowRuns(query: {
+    workflowId?: string;
+    status?: WorkflowStateEntry["status"];
+    from?: Date;
+    to?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<WorkflowStateEntry[]> {
+    const states: WorkflowStateEntry[] = [];
+
+    if (query.workflowId) {
+      const executionIds = this.workflowStatesByWorkflow.get(query.workflowId);
+      if (executionIds) {
+        for (const id of executionIds) {
+          const state = this.workflowStates.get(id);
+          if (state) {
+            states.push(deepClone(state));
+          }
+        }
+      }
+    } else {
+      for (const state of this.workflowStates.values()) {
+        states.push(deepClone(state));
+      }
+    }
+
+    const filtered = states
+      .filter((state) => {
+        if (query.status && state.status !== query.status) {
+          return false;
+        }
+        if (query.from && state.createdAt < query.from) {
+          return false;
+        }
+        if (query.to && state.createdAt > query.to) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const start = query.offset ?? 0;
+    const end = query.limit ? start + query.limit : undefined;
+
+    return filtered.slice(start, end);
+  }
+
+  /**
    * Set workflow state
    */
   async setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void> {

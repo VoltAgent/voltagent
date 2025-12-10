@@ -900,6 +900,52 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       expect(suspended).toHaveLength(2);
       expect(suspended.every((s) => s.status === "suspended")).toBe(true);
     });
+
+    it("should query workflow runs with filters and pagination", async () => {
+      // Clear calls from initialization migrations that use pool.query
+      mockPoolQuery.mockClear();
+
+      mockPoolQueryResult([
+        {
+          id: "exec-2",
+          workflow_id: "workflow-1",
+          workflow_name: "Workflow 1",
+          status: "completed",
+          suspension: null,
+          events: null,
+          output: null,
+          cancellation: null,
+          user_id: null,
+          conversation_id: null,
+          metadata: null,
+          created_at: new Date("2024-01-02T00:00:00Z"),
+          updated_at: new Date("2024-01-02T00:00:00Z"),
+        },
+      ]);
+
+      const result = await adapter.queryWorkflowRuns({
+        workflowId: "workflow-1",
+        status: "completed",
+        from: new Date("2024-01-01T00:00:00Z"),
+        to: new Date("2024-01-03T00:00:00Z"),
+        limit: 10,
+        offset: 5,
+      });
+
+      expect(result).toHaveLength(1);
+      expect(mockPoolQuery).toHaveBeenCalledTimes(1);
+      const [sql, params] = mockPoolQuery.mock.calls[0];
+      expect(sql).toContain("WHERE workflow_id = $1 AND status = $2 AND created_at >=");
+      expect(sql).toContain("ORDER BY created_at DESC");
+      expect(params).toEqual([
+        "workflow-1",
+        "completed",
+        new Date("2024-01-01T00:00:00Z"),
+        new Date("2024-01-03T00:00:00Z"),
+        10,
+        5,
+      ]);
+    });
   });
 
   // ============================================================================

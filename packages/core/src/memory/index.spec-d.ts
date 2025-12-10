@@ -52,6 +52,7 @@ describe("Memory V2 Type System", () => {
     setWorkingMemory: async () => {},
     deleteWorkingMemory: async () => {},
     getWorkflowState: async () => null,
+    queryWorkflowRuns: async () => [],
     setWorkflowState: async () => {},
     updateWorkflowState: async () => {},
     getSuspendedWorkflowStates: async () => [],

@@ -44,6 +44,7 @@ import {
   handleGetWorkflowState,
   handleGetWorkflows,
   handleInstallUpdates,
+  handleListWorkflowRuns,
   handleResumeWorkflow,
   handleStreamObject,
   handleStreamText,
@@ -276,6 +277,13 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
     }
     const response = await handleResumeWorkflow(workflowId, executionId, body, deps, logger);
     return c.json(response, response.success ? 200 : 500);
+  });
+
+  app.get(WORKFLOW_ROUTES.listWorkflowRuns.path, async (c) => {
+    const query = c.req.query();
+    const response = await handleListWorkflowRuns(undefined, query, deps, logger);
+    const status = response.success ? 200 : response.error?.includes("not found") ? 404 : 500;
+    return c.json(response, status);
   });
 
   app.get(WORKFLOW_ROUTES.getWorkflowState.path, async (c) => {

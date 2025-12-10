@@ -31,6 +31,7 @@ export {
   handleStreamWorkflow,
   handleSuspendWorkflow,
   handleResumeWorkflow,
+  handleListWorkflowRuns,
   handleGetWorkflowState,
 } from "./handlers/workflow.handlers";
 export {

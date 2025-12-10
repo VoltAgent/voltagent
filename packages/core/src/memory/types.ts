@@ -168,6 +168,15 @@ export interface WorkflowStateEntry {
   updatedAt: Date;
 }
 
+export interface WorkflowRunQuery {
+  workflowId?: string;
+  status?: WorkflowStateEntry["status"];
+  from?: Date;
+  to?: Date;
+  limit?: number;
+  offset?: number;
+}
+
 // ============================================================================
 // Working Memory Types
 // ============================================================================
@@ -394,6 +403,7 @@ export interface StorageAdapter {
 
   // Workflow State operations
   getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null>;
+  queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]>;
   setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void>;
   updateWorkflowState(executionId: string, updates: Partial<WorkflowStateEntry>): Promise<void>;
   getSuspendedWorkflowStates(workflowId: string): Promise<WorkflowStateEntry[]>;

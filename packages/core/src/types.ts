@@ -102,6 +102,7 @@ export interface ServerProviderDeps {
     getWorkflowsForApi(): unknown[];
     getWorkflowDetailForApi(id: string): unknown;
     getWorkflowCount(): number;
+    getAllWorkflowIds(): string[];
     on(event: string, handler: (...args: any[]) => void): void;
     off(event: string, handler: (...args: any[]) => void): void;
     activeExecutions: Map<string, WorkflowSuspendController>;
