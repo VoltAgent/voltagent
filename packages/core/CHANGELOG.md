@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 1.2.19
+
+### Patch Changes
+
+- [`da5b0a1`](https://github.com/VoltAgent/voltagent/commit/da5b0a1992cf5fe9b65cb8bd0cb97a19ce22958f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add postgres action
+
+  Add a Postgres “execute query” action end‑to‑end: API provider with timeouts/SSL, credential creation, default catalog entry and console test payloads, plus VoltOps SDK/MCP snippets and client typings.
+
 ## 1.2.18
 
 ### Patch Changes

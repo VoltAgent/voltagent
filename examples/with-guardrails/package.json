@@ -4,7 +4,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
     "@voltagent/cli": "^0.1.17",
-    "@voltagent/core": "^1.2.18",
+    "@voltagent/core": "^1.2.19",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.8",
     "ai": "^5.0.76"
