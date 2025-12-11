@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-ollama",
   "dependencies": {
     "@voltagent/cli": "^0.1.17",
-    "@voltagent/core": "^1.2.19",
+    "@voltagent/core": "^1.2.20",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.8",
     "ai": "^5.0.76",
