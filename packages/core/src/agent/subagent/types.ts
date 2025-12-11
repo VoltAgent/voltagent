@@ -145,9 +145,32 @@ export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<s
     subAgentId?: string;
 
     /**
+     * Optional identifier for the agent that actually executed the step
+     * (same as subAgentId for first-level handoffs)
+     */
+    executingAgentId?: string;
+
+    /**
      * Optional name of the subagent that generated this event
      */
     subAgentName?: string;
+
+    /**
+     * Optional name of the agent that actually executed the step
+     * (same as subAgentName for first-level handoffs)
+     */
+    executingAgentName?: string;
+
+    /**
+     * Parent agent reference when forwarded through supervisors
+     */
+    parentAgentId?: string;
+    parentAgentName?: string;
+
+    /**
+     * Ordered list of agent names from supervisor -> executing agent
+     */
+    agentPath?: string[];
   };
 
 /**

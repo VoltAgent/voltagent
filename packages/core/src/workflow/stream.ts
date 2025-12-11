@@ -183,6 +183,26 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
         metadata.subAgentName = part.subAgentName;
       }
 
+      if (part.executingAgentId) {
+        metadata.executingAgentId = part.executingAgentId;
+      }
+
+      if (part.executingAgentName) {
+        metadata.executingAgentName = part.executingAgentName;
+      }
+
+      if (part.parentAgentId) {
+        metadata.parentAgentId = part.parentAgentId;
+      }
+
+      if (part.parentAgentName) {
+        metadata.parentAgentName = part.parentAgentName;
+      }
+
+      if (part.agentPath) {
+        metadata.agentPath = part.agentPath;
+      }
+
       let input: DangerouslyAllowAny | undefined;
       let output: DangerouslyAllowAny | undefined;
       let status: WorkflowStreamEvent["status"] | undefined;

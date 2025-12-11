@@ -14,6 +14,7 @@ import type {
   StreamTextOptions,
 } from "../agent";
 import {
+  AGENT_METADATA_CONTEXT_KEY,
   type AgentMetadataContextValue,
   SUBAGENT_TOOL_CALL_METADATA_KEY,
 } from "../memory-persist-queue";
@@ -391,6 +392,10 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       if (this.isDirectAgent(targetAgentConfig)) {
         // Direct agent - use streamText by default
         const response = await targetAgent.streamText(messages, baseOptions);
+        const forwardingMetadata = this.buildForwardingMetadata(
+          targetAgent,
+          parentOperationContext,
+        );
 
         // Get the UI stream writer from operationContext if available
         const uiStreamWriter = parentOperationContext?.systemContext?.get(
@@ -412,10 +417,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           // Apply type filters from supervisor config
           const enrichedStream = createMetadataEnrichedStream(
             subagentUIStream,
-            {
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            },
+            forwardingMetadata,
             this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
           );
 
@@ -444,8 +446,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
                 // Add subagent metadata to each part
                 const enrichedPart = {
                   ...part,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
+                  ...forwardingMetadata,
                 };
                 this.registerToolCallMetadata(parentOperationContext, enrichedPart, targetAgent);
                 await fullStreamWriter.write(enrichedPart);
@@ -478,6 +479,10 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         // StreamText configuration
         const options: StreamTextOptions = { ...baseOptions, ...targetAgentConfig.options };
         const response = await targetAgent.streamText(messages, options);
+        const forwardingMetadata = this.buildForwardingMetadata(
+          targetAgent,
+          parentOperationContext,
+        );
 
         // Get the UI stream writer from operationContext if available
         const uiStreamWriter = parentOperationContext?.systemContext?.get(
@@ -499,10 +504,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           // Apply type filters from supervisor config
           const enrichedStream = createMetadataEnrichedStream(
             subagentUIStream,
-            {
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            },
+            forwardingMetadata,
             this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
           );
 
@@ -531,8 +533,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
                 // Add subagent metadata to each part
                 const enrichedPart = {
                   ...part,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
+                  ...forwardingMetadata,
                 };
                 this.registerToolCallMetadata(parentOperationContext, enrichedPart, targetAgent);
                 await fullStreamWriter.write(enrichedPart);
@@ -936,6 +937,22 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
 
       return subAgentData;
     });
+  }
+
+  private buildForwardingMetadata(agent: Agent, oc?: OperationContext) {
+    const parentMetadata = oc?.systemContext?.get(AGENT_METADATA_CONTEXT_KEY) as
+      | AgentMetadataContextValue
+      | undefined;
+
+    return {
+      subAgentId: agent.id,
+      subAgentName: agent.name,
+      executingAgentId: agent.id,
+      executingAgentName: agent.name,
+      parentAgentId: parentMetadata?.agentId,
+      parentAgentName: parentMetadata?.agentName,
+      agentPath: parentMetadata ? [parentMetadata.agentName, agent.name] : [agent.name],
+    };
   }
 
   private registerToolCallMetadata(

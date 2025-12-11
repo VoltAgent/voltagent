@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Agent } from "../agent";
+import { AGENT_METADATA_CONTEXT_KEY } from "../memory-persist-queue";
 import { SubAgentManager } from "./index";
 import {
   createMockAgent,
@@ -550,6 +551,54 @@ describe("SubAgentManager", () => {
 
       // Verify the stream was processed with filters
       expect(mockMerge).toHaveBeenCalled();
+    });
+
+    it("should forward executing sub-agent metadata to the parent fullStream", async () => {
+      const forwarded: any[] = [];
+      const fullStreamWriter = {
+        write: vi.fn(async (chunk: any) => {
+          forwarded.push(chunk);
+        }),
+      };
+
+      const parentOperationContext = {
+        systemContext: new Map([
+          ["fullStreamWriter", fullStreamWriter],
+          [AGENT_METADATA_CONTEXT_KEY, { agentId: "parent-agent", agentName: "Parent Agent" }],
+        ]),
+      } as any;
+
+      const subAgent = createMockAgent({ id: "sub-agent-a", name: "Sub-Agent A" });
+      const mockStream = createMockStream([
+        mockStreamEvents.toolCall("call-1", "toolA", { foo: "bar" }),
+        mockStreamEvents.toolResult("call-1", "toolA", { ok: true }),
+      ]);
+
+      vi.spyOn(subAgent, "streamText").mockResolvedValue({
+        fullStream: mockStream,
+        toUIMessageStream: vi.fn(),
+        text: Promise.resolve("done"),
+        usage: Promise.resolve({}),
+      } as any);
+
+      await subAgentManager.handoffTask({
+        task: "Test task",
+        targetAgent: subAgent,
+        parentOperationContext,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(forwarded.length).toBeGreaterThanOrEqual(2);
+      const toolCallPart = forwarded[0];
+
+      expect(toolCallPart.subAgentId).toBe("sub-agent-a");
+      expect(toolCallPart.subAgentName).toBe("Sub-Agent A");
+      expect(toolCallPart.executingAgentId).toBe("sub-agent-a");
+      expect(toolCallPart.executingAgentName).toBe("Sub-Agent A");
+      expect(toolCallPart.parentAgentId).toBe("parent-agent");
+      expect(toolCallPart.parentAgentName).toBe("Parent Agent");
+      expect(toolCallPart.agentPath).toEqual(["Parent Agent", "Sub-Agent A"]);
     });
   });
 

@@ -537,7 +537,7 @@ const coordinator = new Agent({
 const response = await coordinator.streamText("Research and write about AI");
 for await (const chunk of response.fullStream) {
   if (chunk.subAgentId && chunk.subAgentName) {
-    console.log(`[${chunk.subAgentName}] ${chunk.type}`);
+    console.log(`[${chunk.agentPath?.join(" > ") ?? chunk.subAgentName}] ${chunk.type}`);
   }
 }
 ```

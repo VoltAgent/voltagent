@@ -59,11 +59,11 @@ export function createMetadataEnrichedStream<T = any>(
               type: SUBAGENT_DATA_EVENT_TYPE,
               // Don't include id to prevent overwriting in AI SDK - each delta should be a new part
               data: {
-                subAgentName: metadata.subAgentName,
-                subAgentId: metadata.subAgentId,
-                originalType: chunkObj.type,
-                // Include all original chunk data
+                // Include original chunk first so metadata can override it
                 ...chunkObj,
+                ...metadata,
+                // Preserve the original event type for consumers
+                originalType: chunkObj.type,
               },
             };
 

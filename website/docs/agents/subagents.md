@@ -278,35 +278,36 @@ if (response.status === "error") {
 
 #### Using with fullStream
 
-When using `fullStream`, the configuration controls what you receive from sub-agents:
+When using `fullStream`, the configuration controls what you receive from sub-agents. VoltAgent
+forwards metadata onto each forwarded chunk so you can attribute every event:
+
+- `subAgentId` / `subAgentName`: the sub-agent that produced the chunk
+- `executingAgentId` / `executingAgentName`: same as above (reserved for nested handoffs)
+- `parentAgentId` / `parentAgentName`: the supervisor that forwarded the chunk
+- `agentPath`: ordered names from supervisor → executing agent
+
+This metadata is only on the streamed events (fullStream / UI streams); it is **not** sent back to
+the model provider or injected into the LLM messages.
 
 ```ts
 // Stream with full event details
-const result = await supervisorAgent.streamText("Create and edit content", {
-  fullStream: true,
-});
+const result = await supervisorAgent.streamText("Create and edit content");
 
 // Process different event types
 for await (const event of result.fullStream) {
-  switch (event.type) {
-    case "tool-call":
-      console.log(
-        `${event.subAgentName ? `[${event.subAgentName}] ` : ""}Tool called: ${event.data.toolName}`
-      );
-      break;
-    case "tool-result":
-      console.log(
-        `${event.subAgentName ? `[${event.subAgentName}] ` : ""}Tool result: ${event.data.result}`
-      );
-      break;
-    case "text-delta":
-      // Only appears if included in types array
-      console.log(`Text: ${event.data}`);
-      break;
-    case "reasoning":
-      // Only appears if included in types array
-      console.log(`Reasoning: ${event.data}`);
-      break;
+  if (event.type === "tool-call") {
+    if (event.subAgentName) {
+      console.log(`[${event.subAgentName}] Tool called: ${event.toolName}`);
+    }
+  } else if (event.type === "tool-result") {
+    if (event.subAgentName) {
+      console.log(`[${event.subAgentName}] Tool result:`, event.output);
+    }
+  } else if (event.type === "text-delta") {
+    // Only appears if included in types array
+    if (event.subAgentName) {
+      console.log(`[${event.subAgentName}] Text: ${event.text ?? event.delta ?? ""}`);
+    }
   }
 }
 ```
@@ -316,25 +317,24 @@ for await (const event of result.fullStream) {
 Identify which events come from sub-agents by checking for `subAgentId` and `subAgentName` properties:
 
 ```ts
-const result = await supervisorAgent.streamText("Create and edit content", {
-  fullStream: true,
-});
+const result = await supervisorAgent.streamText("Create and edit content");
 
 for await (const event of result.fullStream) {
-  // Check if this event is from a sub-agent
   if (event.subAgentId && event.subAgentName) {
-    console.log(`Event from sub-agent ${event.subAgentName}:`);
+    console.log(
+      `Event from sub-agent ${event.subAgentName} (path: ${event.agentPath?.join(" > ")})`
+    );
     console.log(`  Type: ${event.type}`);
-    console.log(`  Data:`, event.data);
-
-    // Filter by specific sub-agent
-    if (event.subAgentName === "WriterAgent") {
-      // Handle writer agent events specifically
-    }
-  } else {
-    // This is from the supervisor agent itself
-    console.log(`Supervisor event: ${event.type}`);
+    console.log(`  Payload:`, {
+      toolName: event.toolName,
+      output: event.output,
+      text: (event as { text?: string }).text,
+    });
+    continue;
   }
+
+  // This is from the supervisor agent itself
+  console.log(`Supervisor event: ${event.type}`);
 }
 ```
 
@@ -790,13 +790,10 @@ When using `toUIMessageStream()`, subagent text appears as `data-subagent-stream
 ```ts
 const result = await supervisor.streamText("Create workout");
 
-// With text-delta forwarding enabled:
-// Subagent text chunks are accumulated and displayed as a collapsible box
-// with the subagent's name (e.g., "Workout Builder")
-
 for await (const message of result.toUIMessageStream()) {
-  // Message parts include grouped subagent output
-  // Rendered automatically in observability UI
+  // Message parts include grouped subagent output; each subagent chunk carries:
+  // subAgentId, subAgentName, executingAgent*, parentAgent*, agentPath
+  // These parts are emitted as `data-subagent-stream` entries.
 }
 ```
 
