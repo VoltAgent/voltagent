@@ -99,41 +99,41 @@ export default function Navbar() {
               <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-emerald-500/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[280px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="p-3">
                   <Link to="/docs/" className="no-underline">
-                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
-                      <CubeIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
+                    <div className="group p-3 -mx-1 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg mb-2">
+                      <CubeIcon className="w-5 h-5 mr-3 ml-1 !text-[#9ca3af] group-hover:!text-[#00d992] transition-all duration-200" />
                       <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         VoltAgent Core Framework
                       </span>
                     </div>
                   </Link>
                   <Link to="/voltops-llm-observability/" className="no-underline">
-                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
-                      <ComputerDesktopIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
+                    <div className="group p-3 -mx-1 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg mb-2">
+                      <ComputerDesktopIcon className="w-5 h-5 mr-3 ml-1 !text-[#9ca3af] group-hover:!text-[#00d992] transition-all duration-200" />
                       <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         VoltOps LLM Observability
                       </span>
                     </div>
                   </Link>
-                  <Link to="/ai-agent-marketplace/" className="no-underline">
-                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
-                      <ShoppingCartIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
-                      <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
-                        Marketplace
-                      </span>
-                    </div>
-                  </Link>
                   <Link to="/voltops/deployment/" className="no-underline">
-                    <div className="group p-3 -mx-1 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 mb-2">
-                      <CloudArrowUpIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
+                    <div className="group p-3 -mx-1 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg mb-2">
+                      <CloudArrowUpIcon className="w-5 h-5 mr-3 ml-1 !text-[#9ca3af] group-hover:!text-[#00d992] transition-all duration-200" />
                       <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         Deployment
                       </span>
                     </div>
                   </Link>
+                  <Link to="/ai-agent-marketplace/" className="no-underline">
+                    <div className="group p-3 -mx-1 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-lg mb-2">
+                      <ShoppingCartIcon className="w-5 h-5 mr-3 ml-1 !text-[#9ca3af] group-hover:!text-[#00d992] transition-all duration-200" />
+                      <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
+                        Marketplace
+                      </span>
+                    </div>
+                  </Link>
 
-                  <div className="group p-3 -mx-1 hover:bg-slate-800 text-[#DCDCDC] flex items-center justify-between transition-all duration-200 rounded-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20">
+                  <div className="group p-3 -mx-1 text-[#DCDCDC] flex items-center justify-between transition-all duration-200 rounded-lg">
                     <div className="flex items-center font-['Inter']">
-                      <PuzzlePieceIcon className="w-5 h-5 mr-3 ml-1 text-[#00d992]  transition-all duration-200" />
+                      <PuzzlePieceIcon className="w-5 h-5 mr-3 ml-1 !text-[#9ca3af] group-hover:!text-[#00d992] transition-all duration-200" />
                       <span className="text-sm font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                         Agentic App Builder
                       </span>
@@ -385,36 +385,33 @@ export default function Navbar() {
             </button>
             <div id="mobile-products-dropdown" className="hidden  mt-4 mb-2 ">
               <Link to="/voltops-llm-observability/" className="no-underline">
-                <div className="group p-3 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-t-lg border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20">
-                  <ComputerDesktopIcon className="w-5 h-5 mr-2 text-[#00d992]  transition-all duration-200" />
+                <div className="group p-3 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200 rounded-t-lg">
+                  <ComputerDesktopIcon className="w-5 h-5 mr-2 text-gray-400 group-hover:text-[#00d992] transition-all duration-200" />
                   <span className="text-sm font-['Inter'] font-semibold !text-white group-hover:!text-white transition-colors duration-200">
                     VoltOps LLM Observability
                   </span>
                 </div>
               </Link>
               <Link to="/voltops/deployment/" className="no-underline">
-                <div className="p-3 hover:bg-slate-800 cursor-pointer text-[#DCDCDC] flex items-center transition-all border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-slate-600 hover:scale-[1.02] hover:shadow-md hover:shadow-slate-900/20 rounded-b-lg">
-                  <CloudArrowUpIcon className="w-5 h-5 mr-2 text-[#00d992]" />
+                <div className="group p-3 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200">
+                  <CloudArrowUpIcon className="w-5 h-5 mr-2 text-gray-400 group-hover:text-[#00d992] transition-all duration-200" />
                   <span className="text-sm font-['Inter'] font-semibold !text-white">
                     Deployment
                   </span>
                 </div>
               </Link>
 
-              <div className="p-3 hover:bg-slate-800/50 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-slate-600 rounded-b-md">
-                <div className="flex items-center font-['Inter']">
-                  <ShoppingCartIcon className="w-5 h-5 mr-2 text-[#00d992]" />
-                  <Link
-                    to="/ai-agent-marketplace/"
-                    className="text-sm no-underline text-inherit font-['Inter'] font-semibold"
-                  >
+              <Link to="/ai-agent-marketplace/" className="no-underline">
+                <div className="group p-3 cursor-pointer text-[#DCDCDC] flex items-center transition-all duration-200">
+                  <ShoppingCartIcon className="w-5 h-5 mr-2 text-gray-400 group-hover:text-[#00d992] transition-all duration-200" />
+                  <span className="text-sm font-['Inter'] font-semibold !text-white">
                     Marketplace
-                  </Link>
+                  </span>
                 </div>
-              </div>
-              <div className="p-3 hover:bg-slate-800/50 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-slate-600">
+              </Link>
+              <div className="group p-3 cursor-pointer text-[#DCDCDC] flex items-center justify-between transition-all duration-200">
                 <div className="flex items-center font-['Inter']">
-                  <PuzzlePieceIcon className="w-5 h-5 mr-2 text-[#00d992]" />
+                  <PuzzlePieceIcon className="w-5 h-5 mr-2 text-gray-400 group-hover:text-[#00d992] transition-all duration-200" />
                   <span className="text-sm font-semibold">Agentic App Builder</span>
                 </div>
                 <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full font-['Inter'] font-normal">

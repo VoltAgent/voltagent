@@ -2,6 +2,7 @@ import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
 import {
   ArrowRightIcon,
+  ChevronDownIcon,
   CloudArrowUpIcon,
   DocumentTextIcon,
   GlobeAltIcon,
@@ -9,8 +10,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { DotPattern } from "@site/src/components/ui/dot-pattern";
 import Layout from "@theme/Layout";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import type React from "react";
+import { useState } from "react";
 
 // Reusable components
 const Section = ({
@@ -62,31 +64,93 @@ const Button = ({
 };
 
 // Feature data
+// FAQ Component
+const FAQItem = ({
+  question,
+  answer,
+  isOpen,
+  onClick,
+}: {
+  question: string;
+  answer: string;
+  isOpen: boolean;
+  onClick: () => void;
+}) => (
+  <div className="border-b border-gray-800/50 last:border-b-0">
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full py-5 flex items-center justify-between text-left bg-transparent border-none cursor-pointer"
+    >
+      <span className="text-base md:text-lg font-medium text-white">{question}</span>
+      <ChevronDownIcon
+        className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+          isOpen ? "rotate-180" : ""
+        }`}
+      />
+    </button>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="overflow-hidden"
+        >
+          <p className="pb-5 text-lg text-gray-400 mb-0 leading-relaxed">{answer}</p>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
+// FAQ data
+const faqData = [
+  {
+    question: "Can I only deploy AI agents built with VoltAgent?",
+    answer:
+      "Yes, VoltOps Deployment is specifically designed for AI agents built with the VoltAgent framework. This tight integration allows us to provide optimized performance, seamless observability, and deep monitoring capabilities that wouldn't be possible with generic deployment platforms.",
+  },
+  {
+    question: "How is VoltOps Deployment different from VoltAgent?",
+    answer:
+      "VoltAgent is the open-source TypeScript framework for building AI agents and agent workflows. VoltOps Deployment is the managed service for running those agents at scale in production.",
+  },
+  {
+    question: "How is VoltOps Deployment different from self-hosting?",
+    answer:
+      "VoltOps Deployment handles infrastructure management, SSL certificates, scaling, and monitoring automatically. If you prefer full control, VoltOps also offers a self-hosted version for LLM observability that you can run on your own infrastructure. VoltOps Deployment is ideal for teams who want to focus on building agents rather than managing infrastructure.",
+  },
+];
+
 const features = [
   {
     title: "Real-time Logs",
     description:
       "Monitor build progress and application logs in real-time. Debug issues, track agent activity, and analyze performance directly from your dashboard.",
     icon: DocumentTextIcon,
-    image: "/voltops/log-1.png",
+    image: "https://cdn.voltagent.dev/website/deployment/logs.png",
   },
   {
     title: "Custom Domain & SSL",
     description:
       "Connect your own domain with CNAME configuration. Automatic SSL certificate provisioning and renewal included at no extra cost.",
     icon: GlobeAltIcon,
-    image: "/voltops/domain-3.png",
+    image: "https://cdn.voltagent.dev/website/deployment/domain.png",
   },
   {
     title: "Basic Authentication",
     description:
       "Password-protect your deployments with HTTP Basic Auth. Control access to your agents and ensure only authorized users can interact with them.",
     icon: LockClosedIcon,
-    image: "/voltops/security-2.png",
+    image: "https://cdn.voltagent.dev/website/deployment/security.png",
   },
 ];
 
 export default function DeploymentPage(): JSX.Element {
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+
   return (
     <Layout>
       <Head>
@@ -169,7 +233,7 @@ export default function DeploymentPage(): JSX.Element {
                 className="relative"
               >
                 <img
-                  src="/voltops/dep-5.png"
+                  src="https://cdn.voltagent.dev/website/deployment/hero.png"
                   alt="VoltOps Deployment Dashboard"
                   className="w-full h-auto rounded-xl object-cover"
                 />
@@ -227,7 +291,7 @@ export default function DeploymentPage(): JSX.Element {
         </Section>
 
         {/* FAQ Section */}
-        {/*         <Section className="relative">
+        <Section className="relative">
           <Container className="relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -235,17 +299,10 @@ export default function DeploymentPage(): JSX.Element {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="flex flex-col items-center"
             >
-              <div className="mb-12 text-center">
-                <h2 className="text-2xl md:text-4xl font-bold text-white mb-4">
-                  Frequently Asked <span className="text-emerald-400">Questions</span>
-                </h2>
-                <p className="max-w-2xl text-lg text-gray-400 mx-auto">
-                  Everything you need to know about deploying with VoltOps.
-                </p>
-              </div>
+              <h2 className="text-2xl md:text-4xl font-bold text-white mb-8">F.A.Q</h2>
 
-              <div className="w-full max-w-3xl">
-                <div className="bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-emerald-500/20 rounded-2xl p-6 md:p-8">
+              <div className="w-full max-w-4xl">
+                <div className="bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-gray-700/50 rounded-2xl p-6 md:p-8">
                   {faqData.map((faq, index) => (
                     <FAQItem
                       key={faq.question}
@@ -259,7 +316,7 @@ export default function DeploymentPage(): JSX.Element {
               </div>
             </motion.div>
           </Container>
-        </Section> */}
+        </Section>
       </main>
     </Layout>
   );
