@@ -140,7 +140,6 @@ export function createCopilotKitHandler(options: CopilotKitHandlerOptions) {
 
 /**
  * Convenience helper: register CopilotKit routes on a Hono-like app using VoltAgent agents.
- * Mirrors Mastra's `registerCopilotKit`, but remains framework-agnostic.
  */
 export function registerCopilotKitRoutes(options: RegisterCopilotKitRoutesOptions) {
   const path = options.path ?? "/copilotkit";
