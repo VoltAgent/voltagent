@@ -182,10 +182,10 @@
   top: 64px;
   left: 0;
   right: 0;
-  background-color: #08121b;
+  background-color: #080f11;
   padding: 32px 24px;
   border-bottom: 1px solid #1a2533;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Inter", sans-serif;
   flex-direction: column;
   gap: 24px;
   align-items: flex-start;
@@ -205,12 +205,13 @@
 .mobileNavLink {
   text-decoration: none;
   color: #bdbdbd;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 600;
   transition: color 0.2s;
-  font-family: "IBM Plex Mono", monospace !important;
+  font-family: "Inter", sans-serif !important;
   width: 100%;
   display: block;
+  text-align: left;
 }
 
 .mobileNavLink.active {
@@ -277,10 +278,10 @@
 }
 
 .mobileNavLink button {
-  font-family: "IBM Plex Mono", monospace !important;
+  font-family: "Inter", sans-serif !important;
   font-weight: 600;
   color: #bdbdbd;
-  font-size: 14px;
+  font-size: 18px;
 }
 
 .mobileNavLink button:hover {

@@ -279,7 +279,7 @@ const agent = new Agent({
     id: "deployment",
     label: "Deployment",
     icon: "zap",
-    image: "https://cdn.voltagent.dev/website/feature-showcase/deployment.png",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/deployment-4.png",
     fullImage: true,
     footerText: "Deploy your agents to production with one command",
     docLink: "/docs/deployment/overview",
