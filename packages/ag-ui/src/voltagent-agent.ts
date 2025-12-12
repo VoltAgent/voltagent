@@ -166,7 +166,8 @@ export class VoltAgentAGUI extends AbstractAgent {
       };
     });
 
-    return stream$ as ReturnType<AbstractAgent["run"]>;
+    // Cast through unknown to avoid rxjs type mismatches across hoisted versions
+    return stream$ as unknown as ReturnType<AbstractAgent["run"]>;
   }
 
   private buildStreamOptions(
