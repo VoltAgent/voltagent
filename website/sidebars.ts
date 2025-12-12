@@ -231,7 +231,7 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "UI",
       collapsed: true,
-      items: ["ui/ai-sdk-integration"],
+      items: ["ui/ai-sdk-integration", "ui/copilotkit"],
     },
     {
       type: "category",

@@ -97,6 +97,8 @@
   },
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "examples/*/client",
+    "examples/*/server"
   ]
 }
