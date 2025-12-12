@@ -60,7 +60,8 @@
       "website/src/data/tweets.json",
       ".wrangler",
       "packages/server-hono/src/vendor",
-      "examples/with-nuxt"
+      "examples/with-nuxt",
+      "examples/with-assistant-ui"
     ]
   },
   "overrides": [
