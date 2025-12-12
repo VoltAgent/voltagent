@@ -1,5 +1,12 @@
 # @voltagent/core
 
+## 1.2.21
+
+### Patch Changes
+
+- [#855](https://github.com/VoltAgent/voltagent/pull/855) [`cd500ea`](https://github.com/VoltAgent/voltagent/commit/cd500ea0c71879c4ddbf5662b47758752595cc7d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add google drive and google calendar actions methods and expose trigger DSL events
+  - The trigger DSL now supports Google Calendar (`on.googleCalendar.*`) and Google Drive (`on.googleDrive.*`) events alongside the new action helpers.
+
 ## 1.2.20
 
 ### Patch Changes

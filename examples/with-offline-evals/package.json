@@ -4,7 +4,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
     "@voltagent/cli": "^0.1.17",
-    "@voltagent/core": "^1.2.20",
+    "@voltagent/core": "^1.2.21",
     "@voltagent/evals": "^1.0.4",
     "@voltagent/scorers": "^1.0.2",
     "@voltagent/sdk": "^1.0.2",

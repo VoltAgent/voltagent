@@ -8,7 +8,7 @@
     "@playwright/browser-webkit": "1.51.1",
     "@playwright/test": "^1.51.1",
     "@voltagent/cli": "^0.1.17",
-    "@voltagent/core": "^1.2.20",
+    "@voltagent/core": "^1.2.21",
     "@voltagent/libsql": "^1.0.14",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.8",
