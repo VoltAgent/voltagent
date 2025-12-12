@@ -206,7 +206,7 @@
   text-decoration: none;
   color: #bdbdbd;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 400;
   transition: color 0.2s;
   font-family: "Inter", sans-serif !important;
   width: 100%;
@@ -279,7 +279,7 @@
 
 .mobileNavLink button {
   font-family: "Inter", sans-serif !important;
-  font-weight: 600;
+  font-weight: 400;
   color: #bdbdbd;
   font-size: 18px;
 }
