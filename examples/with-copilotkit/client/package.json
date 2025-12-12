@@ -8,8 +8,8 @@
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.1.2",
     "typescript": "^5.8.2",
     "vite": "^7.2.7"

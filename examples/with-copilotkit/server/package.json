@@ -2,7 +2,7 @@
   "name": "voltagent-with-copilotkit-server",
   "version": "0.0.0",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.85",
+    "@ai-sdk/openai": "^2.0.52",
     "@copilotkit/runtime": "^1.50.0",
     "@voltagent/ag-ui": "^0.0.1",
     "@voltagent/cli": "^0.1.17",
@@ -12,7 +12,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "tsx": "^4.19.2",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
   "private": true,

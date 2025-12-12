@@ -16,8 +16,8 @@
     "next": "^16.0.7",
     "npm-check-updates": "^17.1.18",
     "postcss": "^8.5.3",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "require-in-the-middle": "^7.5.2",
     "tailwindcss": "^4.1.4",
     "zod": "^3.25.76"
