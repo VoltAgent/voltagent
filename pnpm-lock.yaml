@@ -883,7 +883,7 @@ importers:
         specifier: ^1.50.0
         version: 1.50.0(@langchain/core@0.3.70)(openai@5.23.2)
       '@voltagent/ag-ui':
-        specifier: ^0.0.1
+        specifier: ^0.1.0
         version: link:../../../packages/ag-ui
       '@voltagent/cli':
         specifier: ^0.1.17
