@@ -18,6 +18,7 @@ You can build production-ready agents with memory, workflows, tools, and built-i
 VoltAgent provides a complete platform for developing and monitoring AI agents through two complementary tools.
 
 For end-to-end walkthroughs (e.g., Slack agent), see the [Recipes & Guides](/recipes-and-guides/) section.
+Need a frontend? Check the [UI integration guides](/docs/ui/overview/) for ready-made chat UIs (AI SDK, CopilotKit, Assistant UI) backed by VoltAgent.
 
 ### Core Framework
 
