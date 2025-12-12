@@ -163,6 +163,28 @@ export type VoltOpsDiscordCredential =
   | WithCredentialMetadata<{ botToken: string }>
   | WithCredentialMetadata<{ webhookUrl: string }>;
 
+export type VoltOpsGoogleCalendarCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{
+      accessToken?: string;
+      refreshToken?: string;
+      clientId?: string;
+      clientSecret?: string;
+      tokenType?: string;
+      expiresAt?: string;
+    }>;
+
+export type VoltOpsGoogleDriveCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{
+      accessToken?: string;
+      refreshToken?: string;
+      clientId?: string;
+      clientSecret?: string;
+      tokenType?: string;
+      expiresAt?: string;
+    }>;
+
 export type VoltOpsPostgresCredential =
   | VoltOpsStoredCredentialRef
   | WithCredentialMetadata<{
@@ -459,6 +481,114 @@ export interface VoltOpsGmailGetThreadParams extends VoltOpsGmailBaseParams {
   format?: "full" | "minimal" | "raw" | "metadata";
 }
 
+export interface VoltOpsGoogleCalendarBaseParams {
+  credential: VoltOpsGoogleCalendarCredential;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsGoogleCalendarCreateParams extends VoltOpsGoogleCalendarBaseParams {
+  calendarId?: string;
+  summary: string;
+  start: { dateTime: string; timeZone?: string | null };
+  end: { dateTime: string; timeZone?: string | null };
+  description?: string;
+  location?: string;
+  status?: string;
+  attendees?: Array<{ email: string; optional?: boolean; comment?: string }>;
+}
+
+export interface VoltOpsGoogleCalendarUpdateParams extends VoltOpsGoogleCalendarBaseParams {
+  eventId: string;
+  calendarId?: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  status?: string;
+  start?: { dateTime: string; timeZone?: string | null } | null;
+  end?: { dateTime: string; timeZone?: string | null } | null;
+  attendees?: Array<{ email: string; optional?: boolean; comment?: string }>;
+}
+
+export interface VoltOpsGoogleCalendarDeleteParams extends VoltOpsGoogleCalendarBaseParams {
+  eventId: string;
+  calendarId?: string;
+}
+
+export interface VoltOpsGoogleCalendarListParams extends VoltOpsGoogleCalendarBaseParams {
+  calendarId?: string;
+  timeMin?: string;
+  timeMax?: string;
+  maxResults?: number;
+  pageToken?: string;
+  q?: string;
+  showDeleted?: boolean;
+  singleEvents?: boolean;
+  orderBy?: string;
+}
+
+export interface VoltOpsGoogleCalendarGetParams extends VoltOpsGoogleCalendarBaseParams {
+  eventId: string;
+  calendarId?: string;
+}
+
+export interface VoltOpsGoogleDriveBaseParams {
+  credential: VoltOpsGoogleDriveCredential;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsGoogleDriveListParams extends VoltOpsGoogleDriveBaseParams {
+  q?: string;
+  pageSize?: number;
+  pageToken?: string;
+  orderBy?: string;
+  includeTrashed?: boolean;
+}
+
+export interface VoltOpsGoogleDriveGetFileParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+}
+
+export interface VoltOpsGoogleDriveDownloadParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+}
+
+export interface VoltOpsGoogleDriveUploadParams extends VoltOpsGoogleDriveBaseParams {
+  name: string;
+  mimeType?: string;
+  parents?: string[];
+  content?: string;
+  isBase64?: boolean;
+}
+
+export interface VoltOpsGoogleDriveCreateFolderParams extends VoltOpsGoogleDriveBaseParams {
+  name: string;
+  parents?: string[];
+}
+
+export interface VoltOpsGoogleDriveMoveParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+  newParentId: string;
+  removeAllParents?: boolean;
+}
+
+export interface VoltOpsGoogleDriveCopyParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+  destinationParentId?: string;
+  name?: string;
+}
+
+export interface VoltOpsGoogleDriveDeleteParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+}
+
+export interface VoltOpsGoogleDriveShareParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+}
+
 export type VoltOpsActionsApi = {
   airtable: {
     createRecord: (
@@ -527,6 +657,38 @@ export type VoltOpsActionsApi = {
     searchEmail: (params: VoltOpsGmailSearchParams) => Promise<VoltOpsActionExecutionResult>;
     getEmail: (params: VoltOpsGmailGetEmailParams) => Promise<VoltOpsActionExecutionResult>;
     getThread: (params: VoltOpsGmailGetThreadParams) => Promise<VoltOpsActionExecutionResult>;
+  };
+  googlecalendar: {
+    createEvent: (
+      params: VoltOpsGoogleCalendarCreateParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    updateEvent: (
+      params: VoltOpsGoogleCalendarUpdateParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteEvent: (
+      params: VoltOpsGoogleCalendarDeleteParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    listEvents: (params: VoltOpsGoogleCalendarListParams) => Promise<VoltOpsActionExecutionResult>;
+    getEvent: (params: VoltOpsGoogleCalendarGetParams) => Promise<VoltOpsActionExecutionResult>;
+  };
+  googledrive: {
+    listFiles: (params: VoltOpsGoogleDriveListParams) => Promise<VoltOpsActionExecutionResult>;
+    getFileMetadata: (
+      params: VoltOpsGoogleDriveGetFileParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    downloadFile: (
+      params: VoltOpsGoogleDriveDownloadParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    uploadFile: (params: VoltOpsGoogleDriveUploadParams) => Promise<VoltOpsActionExecutionResult>;
+    createFolder: (
+      params: VoltOpsGoogleDriveCreateFolderParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    moveFile: (params: VoltOpsGoogleDriveMoveParams) => Promise<VoltOpsActionExecutionResult>;
+    copyFile: (params: VoltOpsGoogleDriveCopyParams) => Promise<VoltOpsActionExecutionResult>;
+    deleteFile: (params: VoltOpsGoogleDriveDeleteParams) => Promise<VoltOpsActionExecutionResult>;
+    shareFilePublic: (
+      params: VoltOpsGoogleDriveShareParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
   };
   postgres: {
     executeQuery: (params: VoltOpsPostgresExecuteParams) => Promise<VoltOpsActionExecutionResult>;

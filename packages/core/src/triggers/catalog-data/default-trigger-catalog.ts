@@ -147,4 +147,151 @@ export const DEFAULT_TRIGGER_CATALOG = [
       },
     ],
   },
+  {
+    triggerId: "google-calendar",
+    dslTriggerId: "google-calendar",
+    displayName: "Google Calendar",
+    service: "GoogleCalendar",
+    category: "Productivity",
+    authType: "oauth2",
+    deliveryModes: ["polling"],
+    metadata: {
+      description:
+        "React to Google Calendar events such as created, updated, started, or cancelled meetings.",
+    },
+    version: "1.0.0",
+    events: [
+      {
+        key: "googlecalendar.eventCreated",
+        displayName: "Event created",
+        description:
+          "Trigger when a new Google Calendar event is created on the selected calendar.",
+        deliveryMode: "polling",
+        defaultConfig: {
+          provider: {
+            type: "googlecalendar",
+            calendarId: "primary",
+            triggerType: "eventCreated",
+            matchTerm: null,
+            expandRecurringEvents: false,
+            pollIntervalSeconds: 60,
+          },
+        },
+      },
+      {
+        key: "googlecalendar.eventUpdated",
+        displayName: "Event updated",
+        description:
+          "Trigger when an existing Google Calendar event is updated (title, time, description, etc.).",
+        deliveryMode: "polling",
+        defaultConfig: {
+          provider: {
+            type: "googlecalendar",
+            calendarId: "primary",
+            triggerType: "eventUpdated",
+            matchTerm: null,
+            expandRecurringEvents: false,
+            pollIntervalSeconds: 60,
+          },
+        },
+      },
+      {
+        key: "googlecalendar.eventCancelled",
+        displayName: "Event cancelled",
+        description: "Trigger when an event is cancelled on the selected calendar.",
+        deliveryMode: "polling",
+        defaultConfig: {
+          provider: {
+            type: "googlecalendar",
+            calendarId: "primary",
+            triggerType: "eventCancelled",
+            matchTerm: null,
+            expandRecurringEvents: false,
+            pollIntervalSeconds: 60,
+          },
+        },
+      },
+      {
+        key: "googlecalendar.eventStarted",
+        displayName: "Event started",
+        description:
+          "Trigger when an event start time occurs (includes recurring instances when expanded).",
+        deliveryMode: "polling",
+        defaultConfig: {
+          provider: {
+            type: "googlecalendar",
+            calendarId: "primary",
+            triggerType: "eventStarted",
+            matchTerm: null,
+            expandRecurringEvents: true,
+            pollIntervalSeconds: 60,
+          },
+        },
+      },
+      {
+        key: "googlecalendar.eventEnded",
+        displayName: "Event ended",
+        description: "Trigger when an event end time is reached.",
+        deliveryMode: "polling",
+        defaultConfig: {
+          provider: {
+            type: "googlecalendar",
+            calendarId: "primary",
+            triggerType: "eventEnded",
+            matchTerm: null,
+            expandRecurringEvents: true,
+            pollIntervalSeconds: 60,
+          },
+        },
+      },
+    ],
+  },
+  {
+    triggerId: "google-drive",
+    dslTriggerId: "google-drive",
+    displayName: "Google Drive",
+    service: "GoogleDrive",
+    category: "Storage",
+    authType: "oauth2",
+    deliveryModes: ["polling"],
+    metadata: {
+      description:
+        "Detect file or folder changes in Google Drive, similar to Activepieces and n8n.",
+    },
+    version: "1.0.0",
+    events: [
+      {
+        key: "googledrive.fileChanged",
+        displayName: "File created or updated",
+        description:
+          "Trigger when a file in Google Drive is created or updated, optionally filtered by MIME types.",
+        deliveryMode: "polling",
+        defaultConfig: {
+          provider: {
+            type: "googledrive",
+            triggerType: "fileChanged",
+            folderId: null,
+            matchMimeTypes: null,
+            pollIntervalSeconds: 60,
+          },
+        },
+      },
+      {
+        key: "googledrive.folderChanged",
+        displayName: "Folder content changed",
+        description:
+          "Trigger when items in a specific folder are added or updated in Google Drive.",
+        deliveryMode: "polling",
+        defaultConfig: {
+          provider: {
+            type: "googledrive",
+            triggerType: "folderChanged",
+            folderId: null,
+            matchMimeTypes: null,
+            pollIntervalSeconds: 60,
+          },
+        },
+      },
+    ],
+  },
 ] as const satisfies readonly DefaultTriggerCatalogEntry[];

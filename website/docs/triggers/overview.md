@@ -54,13 +54,15 @@ Here are some examples of what you can build:
 
 ## Supported Trigger Providers
 
-| Type         | Description                                         | Delivery Method |
-| ------------ | --------------------------------------------------- | --------------- |
-| **Slack**    | Monitor workspace messages and channels             | Webhook         |
-| **Gmail**    | Watch for emails with specific labels               | Polling         |
-| **Airtable** | Detect record changes in bases and tables           | Polling         |
-| **GitHub**   | Respond to repository events (PRs, issues, commits) | Webhook         |
-| **Schedule** | Execute on cron expressions                         | Time-based      |
+| Type                | Description                                            | Delivery Method |
+| ------------------- | ------------------------------------------------------ | --------------- |
+| **Slack**           | Monitor workspace messages and channels                | Webhook         |
+| **Gmail**           | Watch for emails with specific labels                  | Polling         |
+| **Google Calendar** | React to calendar events (created, updated, cancelled) | Polling         |
+| **Google Drive**    | Detect file or folder changes                          | Polling         |
+| **Airtable**        | Detect record changes in bases and tables              | Polling         |
+| **GitHub**          | Respond to repository events (PRs, issues, commits)    | Webhook         |
+| **Schedule**        | Execute on cron expressions                            | Time-based      |
 
 ## Next Steps
 

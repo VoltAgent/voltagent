@@ -28,6 +28,22 @@ import type {
   VoltOpsGmailReplyParams,
   VoltOpsGmailSearchParams,
   VoltOpsGmailSendEmailParams,
+  VoltOpsGoogleCalendarCreateParams,
+  VoltOpsGoogleCalendarCredential,
+  VoltOpsGoogleCalendarDeleteParams,
+  VoltOpsGoogleCalendarGetParams,
+  VoltOpsGoogleCalendarListParams,
+  VoltOpsGoogleCalendarUpdateParams,
+  VoltOpsGoogleDriveCopyParams,
+  VoltOpsGoogleDriveCreateFolderParams,
+  VoltOpsGoogleDriveCredential,
+  VoltOpsGoogleDriveDeleteParams,
+  VoltOpsGoogleDriveDownloadParams,
+  VoltOpsGoogleDriveGetFileParams,
+  VoltOpsGoogleDriveListParams,
+  VoltOpsGoogleDriveMoveParams,
+  VoltOpsGoogleDriveShareParams,
+  VoltOpsGoogleDriveUploadParams,
   VoltOpsPostgresCredential,
   VoltOpsPostgresExecuteParams,
   VoltOpsSlackCredential,
@@ -143,6 +159,38 @@ export class VoltOpsActionsClient {
     getEmail: (params: VoltOpsGmailGetEmailParams) => Promise<VoltOpsActionExecutionResult>;
     getThread: (params: VoltOpsGmailGetThreadParams) => Promise<VoltOpsActionExecutionResult>;
   };
+  public readonly googlecalendar: {
+    createEvent: (
+      params: VoltOpsGoogleCalendarCreateParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    updateEvent: (
+      params: VoltOpsGoogleCalendarUpdateParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteEvent: (
+      params: VoltOpsGoogleCalendarDeleteParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    listEvents: (params: VoltOpsGoogleCalendarListParams) => Promise<VoltOpsActionExecutionResult>;
+    getEvent: (params: VoltOpsGoogleCalendarGetParams) => Promise<VoltOpsActionExecutionResult>;
+  };
+  public readonly googledrive: {
+    listFiles: (params: VoltOpsGoogleDriveListParams) => Promise<VoltOpsActionExecutionResult>;
+    getFileMetadata: (
+      params: VoltOpsGoogleDriveGetFileParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    downloadFile: (
+      params: VoltOpsGoogleDriveDownloadParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    uploadFile: (params: VoltOpsGoogleDriveUploadParams) => Promise<VoltOpsActionExecutionResult>;
+    createFolder: (
+      params: VoltOpsGoogleDriveCreateFolderParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    moveFile: (params: VoltOpsGoogleDriveMoveParams) => Promise<VoltOpsActionExecutionResult>;
+    copyFile: (params: VoltOpsGoogleDriveCopyParams) => Promise<VoltOpsActionExecutionResult>;
+    deleteFile: (params: VoltOpsGoogleDriveDeleteParams) => Promise<VoltOpsActionExecutionResult>;
+    shareFilePublic: (
+      params: VoltOpsGoogleDriveShareParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
   public readonly postgres: {
     executeQuery: (params: VoltOpsPostgresExecuteParams) => Promise<VoltOpsActionExecutionResult>;
   };
@@ -187,6 +235,24 @@ export class VoltOpsActionsClient {
       searchEmail: this.searchGmailEmails.bind(this),
       getEmail: this.getGmailEmail.bind(this),
       getThread: this.getGmailThread.bind(this),
+    };
+    this.googlecalendar = {
+      createEvent: this.createCalendarEvent.bind(this),
+      updateEvent: this.updateCalendarEvent.bind(this),
+      deleteEvent: this.deleteCalendarEvent.bind(this),
+      listEvents: this.listCalendarEvents.bind(this),
+      getEvent: this.getCalendarEvent.bind(this),
+    };
+    this.googledrive = {
+      listFiles: this.listDriveFiles.bind(this),
+      getFileMetadata: this.getDriveFileMetadata.bind(this),
+      downloadFile: this.downloadDriveFile.bind(this),
+      uploadFile: this.uploadDriveFile.bind(this),
+      createFolder: this.createDriveFolder.bind(this),
+      moveFile: this.moveDriveFile.bind(this),
+      copyFile: this.copyDriveFile.bind(this),
+      deleteFile: this.deleteDriveFile.bind(this),
+      shareFilePublic: this.shareDriveFilePublic.bind(this),
     };
     this.postgres = {
       executeQuery: this.executePostgresQuery.bind(this),
@@ -771,6 +837,419 @@ export class VoltOpsActionsClient {
       projectId: params.projectId,
       input,
     });
+  }
+
+  private async createCalendarEvent(
+    params: VoltOpsGoogleCalendarCreateParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureGoogleCalendarCredential(params.credential);
+    const calendarId = this.trimString(params.calendarId) ?? "primary";
+    const summary = this.trimString(params.summary);
+    if (!summary) {
+      throw new VoltOpsActionError("summary must be provided", 400);
+    }
+    const start = this.normalizeCalendarDateTime(params.start, "start");
+    const end = this.normalizeCalendarDateTime(params.end, "end");
+    if (!start || !end) {
+      throw new VoltOpsActionError("start and end must be provided", 400);
+    }
+
+    const input: Record<string, unknown> = {
+      calendarId,
+      summary,
+      start,
+      end,
+    };
+
+    const description = this.trimString(params.description);
+    if (description) input.description = description;
+    const location = this.trimString(params.location);
+    if (location) input.location = location;
+    const status = this.trimString(params.status);
+    if (status) input.status = status;
+    const attendees = this.normalizeCalendarAttendees(params.attendees);
+    if (attendees) input.attendees = attendees;
+
+    return this.postActionExecution(this.actionExecutionPath, {
+      credential,
+      catalogId: params.catalogId ?? undefined,
+      actionId: params.actionId ?? "calendar.createEvent",
+      projectId: params.projectId ?? undefined,
+      payload: { input },
+    }).then((response) => this.mapActionExecution(response));
+  }
+
+  private async listDriveFiles(
+    params: VoltOpsGoogleDriveListParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleDriveCredential(params.credential);
+
+    const input: Record<string, unknown> = {};
+    const q = this.trimString(params.q);
+    if (q) input.q = q;
+    const orderBy = this.trimString(params.orderBy);
+    if (orderBy) input.orderBy = orderBy;
+    const pageSize = this.normalizePositiveInteger(params.pageSize, "pageSize");
+    if (pageSize !== undefined) input.pageSize = pageSize;
+    const pageToken = this.trimString(params.pageToken);
+    if (pageToken) input.pageToken = pageToken;
+    if (typeof params.includeTrashed === "boolean") {
+      input.includeTrashed = params.includeTrashed;
+    }
+
+    return this.executeGoogleDriveAction({
+      actionId: params.actionId ?? "drive.listFiles",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      input,
+    });
+  }
+
+  private async getDriveFileMetadata(
+    params: VoltOpsGoogleDriveGetFileParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleDriveCredential(params.credential);
+    const fileId = this.normalizeIdentifier(params.fileId, "fileId");
+
+    return this.executeGoogleDriveAction({
+      actionId: params.actionId ?? "drive.getFileMetadata",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      input: { fileId },
+    });
+  }
+
+  private async downloadDriveFile(
+    params: VoltOpsGoogleDriveDownloadParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleDriveCredential(params.credential);
+    const fileId = this.normalizeIdentifier(params.fileId, "fileId");
+
+    return this.executeGoogleDriveAction({
+      actionId: params.actionId ?? "drive.downloadFile",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      input: { fileId },
+    });
+  }
+
+  private async uploadDriveFile(
+    params: VoltOpsGoogleDriveUploadParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleDriveCredential(params.credential);
+    const name = this.trimString(params.name);
+    if (!name) {
+      throw new VoltOpsActionError("name must be provided", 400);
+    }
+
+    const input: Record<string, unknown> = { name };
+    const mimeType = this.trimString(params.mimeType);
+    if (mimeType) input.mimeType = mimeType;
+    const parents = this.normalizeStringArray(params.parents);
+    if (parents) input.parents = parents;
+    const content = this.trimString(params.content);
+    if (content) input.content = content;
+    if (typeof params.isBase64 === "boolean") {
+      input.isBase64 = params.isBase64;
+    }
+
+    return this.executeGoogleDriveAction({
+      actionId: params.actionId ?? "drive.uploadFile",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      input,
+    });
+  }
+
+  private async createDriveFolder(
+    params: VoltOpsGoogleDriveCreateFolderParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleDriveCredential(params.credential);
+    const name = this.trimString(params.name);
+    if (!name) {
+      throw new VoltOpsActionError("name must be provided", 400);
+    }
+
+    const input: Record<string, unknown> = { name };
+    const parents = this.normalizeStringArray(params.parents);
+    if (parents) input.parents = parents;
+
+    return this.executeGoogleDriveAction({
+      actionId: params.actionId ?? "drive.createFolder",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      input,
+    });
+  }
+
+  private async moveDriveFile(
+    params: VoltOpsGoogleDriveMoveParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleDriveCredential(params.credential);
+    const fileId = this.normalizeIdentifier(params.fileId, "fileId");
+    const newParentId = this.normalizeIdentifier(params.newParentId, "newParentId");
+
+    const input: Record<string, unknown> = { fileId, newParentId };
+    if (typeof params.removeAllParents === "boolean") {
+      input.removeAllParents = params.removeAllParents;
+    }
+
+    return this.executeGoogleDriveAction({
+      actionId: params.actionId ?? "drive.moveFile",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      input,
+    });
+  }
+
+  private async copyDriveFile(
+    params: VoltOpsGoogleDriveCopyParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleDriveCredential(params.credential);
+    const fileId = this.normalizeIdentifier(params.fileId, "fileId");
+
+    const input: Record<string, unknown> = { fileId };
+    const destinationParentId = this.trimString(params.destinationParentId);
+    if (destinationParentId) input.destinationParentId = destinationParentId;
+    const name = this.trimString(params.name);
+    if (name) input.name = name;
+
+    return this.executeGoogleDriveAction({
+      actionId: params.actionId ?? "drive.copyFile",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      input,
+    });
+  }
+
+  private async deleteDriveFile(
+    params: VoltOpsGoogleDriveDeleteParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleDriveCredential(params.credential);
+    const fileId = this.normalizeIdentifier(params.fileId, "fileId");
+
+    return this.executeGoogleDriveAction({
+      actionId: params.actionId ?? "drive.deleteFile",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      input: { fileId },
+    });
+  }
+
+  private async shareDriveFilePublic(
+    params: VoltOpsGoogleDriveShareParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleDriveCredential(params.credential);
+    const fileId = this.normalizeIdentifier(params.fileId, "fileId");
+
+    return this.executeGoogleDriveAction({
+      actionId: params.actionId ?? "drive.shareFilePublic",
+      credential,
+      catalogId: params.catalogId,
+      projectId: params.projectId,
+      input: { fileId },
+    });
+  }
+
+  private async executeGoogleDriveAction(options: {
+    actionId: string;
+    credential: VoltOpsGoogleDriveCredential;
+    catalogId?: string;
+    projectId?: string | null;
+    input?: Record<string, unknown>;
+  }): Promise<VoltOpsActionExecutionResult> {
+    const payload: Record<string, unknown> = {
+      credential: options.credential,
+      catalogId: options.catalogId ?? undefined,
+      actionId: options.actionId,
+      projectId: options.projectId ?? undefined,
+      payload: {
+        input: options.input ?? {},
+      },
+    };
+
+    const response = await this.postActionExecution(this.actionExecutionPath, payload);
+    return this.mapActionExecution(response);
+  }
+
+  private async updateCalendarEvent(
+    params: VoltOpsGoogleCalendarUpdateParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+
+    const credential = this.ensureGoogleCalendarCredential(params.credential);
+    const calendarId = this.trimString(params.calendarId) ?? "primary";
+    const eventId = this.trimString(params.eventId);
+    if (!eventId) {
+      throw new VoltOpsActionError("eventId must be provided", 400);
+    }
+
+    const input: Record<string, unknown> = {
+      calendarId,
+      eventId,
+    };
+
+    const summary = this.trimString(params.summary);
+    if (summary) input.summary = summary;
+    const description = this.trimString(params.description);
+    if (description) input.description = description;
+    const location = this.trimString(params.location);
+    if (location) input.location = location;
+    const status = this.trimString(params.status);
+    if (status) input.status = status;
+    const start = this.normalizeCalendarDateTime(params.start, "start", { optional: true });
+    if (start) input.start = start;
+    const end = this.normalizeCalendarDateTime(params.end, "end", { optional: true });
+    if (end) input.end = end;
+    const attendees = this.normalizeCalendarAttendees(params.attendees);
+    if (attendees) input.attendees = attendees;
+
+    return this.postActionExecution(this.actionExecutionPath, {
+      credential,
+      catalogId: params.catalogId ?? undefined,
+      actionId: params.actionId ?? "calendar.updateEvent",
+      projectId: params.projectId ?? undefined,
+      payload: { input },
+    }).then((response) => this.mapActionExecution(response));
+  }
+
+  private async deleteCalendarEvent(
+    params: VoltOpsGoogleCalendarDeleteParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleCalendarCredential(params.credential);
+    const calendarId = this.trimString(params.calendarId) ?? "primary";
+    const eventId = this.trimString(params.eventId);
+    if (!eventId) {
+      throw new VoltOpsActionError("eventId must be provided", 400);
+    }
+
+    const input: Record<string, unknown> = {
+      calendarId,
+      eventId,
+    };
+
+    return this.postActionExecution(this.actionExecutionPath, {
+      credential,
+      catalogId: params.catalogId ?? undefined,
+      actionId: params.actionId ?? "calendar.deleteEvent",
+      projectId: params.projectId ?? undefined,
+      payload: { input },
+    }).then((response) => this.mapActionExecution(response));
+  }
+
+  private async listCalendarEvents(
+    params: VoltOpsGoogleCalendarListParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleCalendarCredential(params.credential);
+    const calendarId = this.trimString(params.calendarId) ?? "primary";
+
+    const input: Record<string, unknown> = {
+      calendarId,
+    };
+    const timeMin = this.trimString(params.timeMin);
+    if (timeMin) input.timeMin = timeMin;
+    const timeMax = this.trimString(params.timeMax);
+    if (timeMax) input.timeMax = timeMax;
+    const maxResults = this.normalizePositiveInteger(params.maxResults, "maxResults", {
+      allowZero: false,
+    });
+    if (typeof maxResults === "number") {
+      input.maxResults = maxResults;
+    }
+    const pageToken = this.trimString(params.pageToken);
+    if (pageToken) input.pageToken = pageToken;
+    const q = this.trimString(params.q);
+    if (q) input.q = q;
+    if (typeof params.showDeleted === "boolean") {
+      input.showDeleted = params.showDeleted;
+    }
+    if (typeof params.singleEvents === "boolean") {
+      input.singleEvents = params.singleEvents;
+    }
+    const orderBy = this.trimString(params.orderBy);
+    if (orderBy) input.orderBy = orderBy;
+
+    return this.postActionExecution(this.actionExecutionPath, {
+      credential,
+      catalogId: params.catalogId ?? undefined,
+      actionId: params.actionId ?? "calendar.listEvents",
+      projectId: params.projectId ?? undefined,
+      payload: { input },
+    }).then((response) => this.mapActionExecution(response));
+  }
+
+  private async getCalendarEvent(
+    params: VoltOpsGoogleCalendarGetParams,
+  ): Promise<VoltOpsActionExecutionResult> {
+    if (!params || typeof params !== "object") {
+      throw new VoltOpsActionError("params must be provided", 400);
+    }
+    const credential = this.ensureGoogleCalendarCredential(params.credential);
+    const calendarId = this.trimString(params.calendarId) ?? "primary";
+    const eventId = this.trimString(params.eventId);
+    if (!eventId) {
+      throw new VoltOpsActionError("eventId must be provided", 400);
+    }
+
+    const input: Record<string, unknown> = {
+      calendarId,
+      eventId,
+    };
+
+    return this.postActionExecution(this.actionExecutionPath, {
+      credential,
+      catalogId: params.catalogId ?? undefined,
+      actionId: params.actionId ?? "calendar.getEvent",
+      projectId: params.projectId ?? undefined,
+      payload: { input },
+    }).then((response) => this.mapActionExecution(response));
   }
 
   private async executePostgresQuery(
@@ -1623,6 +2102,102 @@ export class VoltOpsActionsClient {
     return payload as VoltOpsGmailCredential;
   }
 
+  private ensureGoogleCalendarCredential(
+    value: VoltOpsGoogleCalendarCredential | null | undefined,
+  ): VoltOpsGoogleCalendarCredential {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new VoltOpsActionError("credential must be an object", 400);
+    }
+
+    const record = value as Record<string, unknown>;
+    const metadata = this.normalizeCredentialMetadata(record.metadata);
+    const storedId = this.trimString(
+      typeof (record as any).credentialId === "string"
+        ? ((record as any).credentialId as string)
+        : typeof (record as any).id === "string"
+          ? ((record as any).id as string)
+          : undefined,
+    );
+    if (storedId) {
+      return metadata ? { credentialId: storedId, metadata } : { credentialId: storedId };
+    }
+
+    const accessToken = this.trimString(record.accessToken ?? (record as any).token);
+    const refreshToken = this.trimString(record.refreshToken);
+    const clientId = this.trimString(record.clientId);
+    const clientSecret = this.trimString(record.clientSecret);
+    if (!accessToken && (!refreshToken || !clientId || !clientSecret)) {
+      throw new VoltOpsActionError(
+        "credential must include credentialId, accessToken, or refreshToken + clientId + clientSecret for Google Calendar actions",
+        400,
+      );
+    }
+
+    const tokenType = this.trimString(record.tokenType);
+    const expiresAt = this.trimString(record.expiresAt);
+
+    const payload: VoltOpsGoogleCalendarCredential = {};
+    if (accessToken) payload.accessToken = accessToken;
+    if (refreshToken) payload.refreshToken = refreshToken;
+    if (clientId) payload.clientId = clientId;
+    if (clientSecret) payload.clientSecret = clientSecret;
+    if (tokenType) payload.tokenType = tokenType;
+    if (expiresAt) payload.expiresAt = expiresAt;
+    if (metadata) {
+      payload.metadata = metadata;
+    }
+
+    return payload;
+  }
+
+  private ensureGoogleDriveCredential(
+    value: VoltOpsGoogleDriveCredential | null | undefined,
+  ): VoltOpsGoogleDriveCredential {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new VoltOpsActionError("credential must be an object", 400);
+    }
+
+    const record = value as Record<string, unknown>;
+    const metadata = this.normalizeCredentialMetadata(record.metadata);
+    const storedId = this.trimString(
+      typeof (record as any).credentialId === "string"
+        ? ((record as any).credentialId as string)
+        : typeof (record as any).id === "string"
+          ? ((record as any).id as string)
+          : undefined,
+    );
+    if (storedId) {
+      return metadata ? { credentialId: storedId, metadata } : { credentialId: storedId };
+    }
+
+    const accessToken = this.trimString(record.accessToken ?? (record as any).token);
+    const refreshToken = this.trimString(record.refreshToken);
+    const clientId = this.trimString(record.clientId);
+    const clientSecret = this.trimString(record.clientSecret);
+    if (!accessToken && (!refreshToken || !clientId || !clientSecret)) {
+      throw new VoltOpsActionError(
+        "credential must include credentialId, accessToken, or refreshToken + clientId + clientSecret for Google Drive actions",
+        400,
+      );
+    }
+
+    const tokenType = this.trimString(record.tokenType);
+    const expiresAt = this.trimString(record.expiresAt);
+
+    const payload: VoltOpsGoogleDriveCredential = {};
+    if (accessToken) payload.accessToken = accessToken;
+    if (refreshToken) payload.refreshToken = refreshToken;
+    if (clientId) payload.clientId = clientId;
+    if (clientSecret) payload.clientSecret = clientSecret;
+    if (tokenType) payload.tokenType = tokenType;
+    if (expiresAt) payload.expiresAt = expiresAt;
+    if (metadata) {
+      payload.metadata = metadata;
+    }
+
+    return payload;
+  }
+
   private ensurePostgresCredential(
     value: VoltOpsPostgresCredential | null | undefined,
   ): VoltOpsPostgresCredential {
@@ -1723,6 +2298,16 @@ export class VoltOpsActionsClient {
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
     return entries.length > 0 ? entries : undefined;
+  }
+
+  private normalizeStringArray(value: unknown): string[] | null {
+    if (!Array.isArray(value)) {
+      return null;
+    }
+    const entries = value
+      .map((item) => this.trimString(item))
+      .filter((item): item is string => Boolean(item));
+    return entries.length > 0 ? entries : null;
   }
 
   private sanitizeSortArray(
@@ -1826,6 +2411,65 @@ export class VoltOpsActionsClient {
     }
 
     return entries;
+  }
+
+  private normalizeCalendarDateTime(
+    value: unknown,
+    field: string,
+    options?: { optional?: boolean },
+  ): { dateTime: string; timeZone?: string | null } | null {
+    if (value === undefined || value === null) {
+      if (options?.optional) {
+        return null;
+      }
+      throw new VoltOpsActionError(`${field} must be provided`, 400);
+    }
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new VoltOpsActionError(`${field} must be an object`, 400);
+    }
+    const record = value as Record<string, unknown>;
+    const dateTime = this.trimString(record.dateTime ?? (record as any).date_time);
+    if (!dateTime) {
+      if (options?.optional) {
+        return null;
+      }
+      throw new VoltOpsActionError(`${field}.dateTime must be provided`, 400);
+    }
+    const timeZone = this.trimString(record.timeZone ?? (record as any).time_zone);
+    return {
+      dateTime,
+      timeZone: timeZone ?? undefined,
+    };
+  }
+
+  private normalizeCalendarAttendees(
+    value: unknown,
+  ): Array<{ email: string; optional?: boolean; comment?: string }> | undefined {
+    if (!Array.isArray(value)) {
+      return undefined;
+    }
+    const attendees: Array<{ email: string; optional?: boolean; comment?: string }> = [];
+    for (const candidate of value) {
+      if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+        continue;
+      }
+      const email = this.trimString((candidate as Record<string, unknown>).email);
+      if (!email) {
+        continue;
+      }
+      const optionalRaw = (candidate as Record<string, unknown>).optional;
+      const optional = typeof optionalRaw === "boolean" ? optionalRaw : undefined;
+      const comment = this.trimString((candidate as Record<string, unknown>).comment);
+      const attendee: { email: string; optional?: boolean; comment?: string } = { email };
+      if (optional !== undefined) {
+        attendee.optional = optional;
+      }
+      if (comment) {
+        attendee.comment = comment;
+      }
+      attendees.push(attendee);
+    }
+    return attendees.length ? attendees : undefined;
   }
 
   private normalizeGmailBodyType(value: unknown): "text" | "html" {
