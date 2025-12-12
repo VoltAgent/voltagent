@@ -1,26 +1,26 @@
 {
   "name": "voltagent-with-copilotkit-server",
-  "private": true,
   "version": "0.0.0",
-  "type": "module",
-   "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src",
-    "start": "node dist/index.js",
-    "volt": "volt"
-  },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.85",
     "@copilotkit/runtime": "^1.50.0",
     "@voltagent/ag-ui": "^0.0.1",
+    "@voltagent/cli": "^0.1.17",
     "@voltagent/core": "^1.2.21",
     "@voltagent/server-hono": "^1.2.8",
-    "@voltagent/cli": "^0.1.17",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "tsx": "^4.19.2",
     "typescript": "^5.8.2"
-  }
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
 }

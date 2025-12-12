@@ -2,20 +2,19 @@
   "name": "@voltagent/ag-ui",
   "description": "AG-UI adapter for VoltAgent agents and CopilotKit runtimes.",
   "version": "0.0.1",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "license": "MIT",
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "lint": "biome check .",
-    "lint:fix": "biome check . --write",
-    "publint": "publint --strict",
-    "test": "vitest"
+  "dependencies": {
+    "rxjs": "7.8.1"
+  },
+  "devDependencies": {
+    "@ag-ui/client": "^0.0.41",
+    "@ag-ui/core": "^0.0.37",
+    "@copilotkit/runtime": "^1.10.5",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@voltagent/core": "^1.2.20",
+    "@voltagent/internal": "^0.0.12",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
   },
   "exports": {
     ".": {
@@ -29,26 +28,27 @@
       }
     }
   },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "peerDependencies": {
     "@ag-ui/client": ">=0.0.37",
     "@ag-ui/core": ">=0.0.37",
-    "@voltagent/internal": "^0.0.12",
+    "@copilotkit/runtime": "^1.10.5",
     "@voltagent/core": ">=1.0.0",
-    "@copilotkit/runtime": "^1.10.5",
-    "rxjs": "7.8.1"
-  },
-  "dependencies": {
-    "rxjs": "7.8.1"
-  },
-  "devDependencies": {
-    "@ag-ui/client": "^0.0.41",
-    "@ag-ui/core": "^0.0.37",
-    "@vitest/coverage-v8": "^3.2.4",
     "@voltagent/internal": "^0.0.12",
-    "@voltagent/core": "^1.2.20",
-    "@copilotkit/runtime": "^1.10.5",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.2",
-    "vitest": "^3.2.4"
-  }
+    "rxjs": "7.8.1"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "publint": "publint --strict",
+    "test": "vitest"
+  },
+  "types": "dist/index.d.ts"
 }

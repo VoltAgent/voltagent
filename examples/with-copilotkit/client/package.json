@@ -1,14 +1,6 @@
 {
   "name": "voltagent-copilotkit-client",
-  "private": true,
   "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "echo \"no lint configured\""
-  },
   "dependencies": {
     "@copilotkit/react-core": "^1.50.0",
     "@copilotkit/react-ui": "^1.50.0",
@@ -21,5 +13,13 @@
     "@vitejs/plugin-react": "^5.1.2",
     "typescript": "^5.8.2",
     "vite": "^7.2.7"
-  }
+  },
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "lint": "echo \"no lint configured\"",
+    "preview": "vite preview"
+  },
+  "type": "module"
 }
