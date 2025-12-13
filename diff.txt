@@ -1,0 +1,2570 @@
+diff --git a/commits.txt b/commits.txt
+new file mode 100644
+index 00000000..73fd43c5
+--- /dev/null
++++ b/commits.txt
+@@ -0,0 +1,6 @@
++e8443df2
++9503a0a6
++293fe825
++a88ecd67
++66d74dd2
++53f34370
+\ No newline at end of file
+diff --git a/examples/with-client-side-tools/next-env.d.ts b/examples/with-client-side-tools/next-env.d.ts
+index 1b3be084..9edff1c7 100644
+--- a/examples/with-client-side-tools/next-env.d.ts
++++ b/examples/with-client-side-tools/next-env.d.ts
+@@ -1,5 +1,6 @@
+ /// <reference types="next" />
+ /// <reference types="next/image-types/global" />
++import "./.next/types/routes.d.ts";
+ 
+ // NOTE: This file should not be edited
+ // see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+diff --git a/examples/with-client-side-tools/tsconfig.json b/examples/with-client-side-tools/tsconfig.json
+index 3697fcb9..0fca67d3 100644
+--- a/examples/with-client-side-tools/tsconfig.json
++++ b/examples/with-client-side-tools/tsconfig.json
+@@ -1,6 +1,10 @@
+ {
+   "compilerOptions": {
+-    "lib": ["dom", "dom.iterable", "esnext"],
++    "lib": [
++      "dom",
++      "dom.iterable",
++      "esnext"
++    ],
+     "allowJs": true,
+     "skipLibCheck": true,
+     "strict": true,
+@@ -11,7 +15,7 @@
+     "resolveJsonModule": true,
+     "isolatedModules": true,
+     "sourceMap": true,
+-    "jsx": "preserve",
++    "jsx": "react-jsx",
+     "incremental": true,
+     "plugins": [
+       {
+@@ -19,10 +23,20 @@
+       }
+     ],
+     "paths": {
+-      "@/*": ["./*"]
++      "@/*": [
++        "./*"
++      ]
+     },
+     "target": "ES2017"
+   },
+-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+-  "exclude": ["node_modules"]
++  "include": [
++    "next-env.d.ts",
++    "**/*.ts",
++    "**/*.tsx",
++    ".next/types/**/*.ts",
++    ".next/dev/types/**/*.ts"
++  ],
++  "exclude": [
++    "node_modules"
++  ]
+ }
+diff --git a/examples/with-netlify-functions/netlify/functions/voltagent.js b/examples/with-netlify-functions/netlify/functions/voltagent.js
+new file mode 100644
+index 00000000..0ec386b8
+--- /dev/null
++++ b/examples/with-netlify-functions/netlify/functions/voltagent.js
+@@ -0,0 +1,4 @@
++import { createNetlifyFunctionHandler } from "@voltagent/serverless-hono";
++import { getVoltAgent } from "../../src/index";
++const voltAgent = getVoltAgent();
++export const handler = createNetlifyFunctionHandler(voltAgent);
+diff --git a/examples/with-netlify-functions/src/index.js b/examples/with-netlify-functions/src/index.js
+new file mode 100644
+index 00000000..af385b50
+--- /dev/null
++++ b/examples/with-netlify-functions/src/index.js
+@@ -0,0 +1,17 @@
++import { openai } from "@ai-sdk/openai";
++import { Agent, VoltAgent } from "@voltagent/core";
++import { serverlessHono } from "@voltagent/serverless-hono";
++import { weatherTool } from "./tools";
++const agent = new Agent({
++  name: "netlify-function-agent",
++  instructions: "Help the user quickly and call tools when needed.",
++  model: openai("gpt-4o-mini"),
++  tools: [weatherTool],
++});
++const voltAgent = new VoltAgent({
++  agents: { agent },
++  serverless: serverlessHono(),
++});
++export function getVoltAgent() {
++  return voltAgent;
++}
+diff --git a/examples/with-netlify-functions/src/tools/index.js b/examples/with-netlify-functions/src/tools/index.js
+new file mode 100644
+index 00000000..d1c5bf43
+--- /dev/null
++++ b/examples/with-netlify-functions/src/tools/index.js
+@@ -0,0 +1,26 @@
++import { createTool } from "@voltagent/core";
++import z from "zod";
++export const weatherTool = createTool({
++  id: "get-weather",
++  name: "getWeather",
++  description: "Return a mock weather report for the requested location",
++  parameters: z.object({
++    location: z.string().describe("City or location to look up"),
++  }),
++  execute: async ({ location }, context) => {
++    context?.logger.info(`Fetching weather for ${location}`);
++    const mockWeatherData = {
++      location,
++      temperature: Math.floor(Math.random() * 30) + 5,
++      condition: ["Sunny", "Cloudy", "Rainy", "Snowy", "Partly Cloudy"][
++        Math.floor(Math.random() * 5)
++      ],
++      humidity: Math.floor(Math.random() * 60) + 30,
++      windSpeed: Math.floor(Math.random() * 30),
++    };
++    return {
++      weather: mockWeatherData,
++      message: `Current weather in ${location}: ${mockWeatherData.temperature}°C and ${mockWeatherData.condition.toLowerCase()} with ${mockWeatherData.humidity}% humidity and wind speed of ${mockWeatherData.windSpeed} km/h.`,
++    };
++  },
++});
+diff --git a/packages/core/src/agent/agent.ts b/packages/core/src/agent/agent.ts
+index 95a6a413..2486335c 100644
+--- a/packages/core/src/agent/agent.ts
++++ b/packages/core/src/agent/agent.ts
+@@ -48,6 +48,11 @@ import type { BaseRetriever } from "../retriever/retriever";
+ import type { Tool, Toolkit } from "../tool";
+ import { createTool } from "../tool";
+ import { ToolManager } from "../tool/manager";
++import {
++  type TrafficPriority,
++  type TrafficRequestMetadata,
++  getTrafficController,
++} from "../traffic/traffic-controller";
+ import { randomUUID } from "../utils/id";
+ import { convertModelMessagesToUIMessages } from "../utils/message-converter";
+ import { NodeType, createNodeId } from "../utils/node-utils";
+@@ -262,8 +267,14 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
+   // Context
+   userId?: string;
+   conversationId?: string;
++  tenantId?: string;
+   context?: ContextInput;
+   elicitation?: (request: unknown) => Promise<unknown>;
++  /**
++   * Optional priority override for scheduling.
++   * Defaults to agent-level priority when omitted.
++   */
++  trafficPriority?: TrafficPriority;
+ 
+   // Parent tracking
+   parentAgentId?: string;
+@@ -303,6 +314,8 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
+ 
+   // Provider-specific options
+   providerOptions?: ProviderOptions;
++  // Optional per-call model override (used for fallbacks)
++  model?: LanguageModel;
+ 
+   // Experimental output (for structured generation)
+   experimental_output?: ReturnType<typeof Output.object> | ReturnType<typeof Output.text>;
+@@ -347,6 +360,7 @@ export class Agent {
+   readonly voice?: Voice;
+   readonly retriever?: BaseRetriever;
+   readonly supervisorConfig?: SupervisorConfig;
++  private readonly trafficPriority: TrafficPriority;
+   private readonly context?: Map<string | symbol, unknown>;
+ 
+   private readonly logger: Logger;
+@@ -372,6 +386,7 @@ export class Agent {
+     this.temperature = options.temperature;
+     this.maxOutputTokens = options.maxOutputTokens;
+     this.maxSteps = options.maxSteps || 5;
++    this.trafficPriority = options.trafficPriority ?? "P1";
+     this.stopWhen = options.stopWhen;
+     this.markdown = options.markdown ?? false;
+     this.voice = options.voice;
+@@ -444,6 +459,26 @@ export class Agent {
+   async generateText(
+     input: string | UIMessage[] | BaseMessage[],
+     options?: GenerateTextOptions,
++  ): Promise<GenerateTextResultWithContext> {
++    const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
++    const tenantId = this.resolveTenantId(options);
++    const buildRequest = (modelOverride?: LanguageModel) => ({
++      tenantId,
++      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options), // Pass model/provider info for future rate limiting keys
++      execute: () =>
++        this.executeGenerateText(input, this.mergeOptionsWithModel(options, modelOverride)), // Defer actual execution so controller can schedule it
++      extractUsage: (result: GenerateTextResultWithContext) =>
++        this.extractUsageFromResponse(result),
++      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
++    });
++
++    return controller.handleText(buildRequest(options?.model));
++  }
++
++  private async executeGenerateText(
++    input: string | UIMessage[] | BaseMessage[],
++    options?: GenerateTextOptions,
++    trafficMetadata?: TrafficRequestMetadata,
+   ): Promise<GenerateTextResultWithContext> {
+     const startTime = Date.now();
+     const oc = this.createOperationContext(input, options);
+@@ -471,7 +506,7 @@ export class Agent {
+           options,
+         );
+ 
+-        const modelName = this.getModelName();
++        const modelName = this.getModelName(model);
+         const contextLimit = options?.contextLimit;
+ 
+         // Add model attributes and all options
+@@ -546,8 +581,10 @@ export class Agent {
+           tools: userTools,
+           experimental_output,
+           providerOptions,
++          model: _model, // Exclude model so aiSDKOptions doesn't override resolved model
+           ...aiSDKOptions
+         } = options || {};
++        void _model;
+ 
+         const llmSpan = this.createLLMSpan(oc, {
+           operation: "generateText",
+@@ -567,6 +604,11 @@ export class Agent {
+ 
+         let result!: GenerateTextResult<ToolSet, unknown>;
+         try {
++          methodLogger.info("[AI SDK] Calling generateText", {
++            messageCount: messages.length,
++            modelName,
++            tools: tools ? Object.keys(tools) : [],
++          });
+           result = await oc.traceContext.withSpan(llmSpan, () =>
+             generateText({
+               model,
+@@ -575,7 +617,7 @@ export class Agent {
+               // Default values
+               temperature: this.temperature,
+               maxOutputTokens: this.maxOutputTokens,
+-              maxRetries: 3,
++              maxRetries: 0,
+               stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+               // User overrides from AI SDK options
+               ...aiSDKOptions,
+@@ -588,6 +630,13 @@ export class Agent {
+               onStepFinish: this.createStepHandler(oc, options),
+             }),
+           );
++          methodLogger.info("[AI SDK] Received generateText result", {
++            finishReason: result.finishReason,
++            usage: result.usage ? safeStringify(result.usage) : undefined,
++            stepCount: result.steps?.length ?? 0,
++            rawResult: safeStringify(result),
++          });
++          this.updateTrafficControllerRateLimits(result.response, trafficMetadata, methodLogger);
+         } catch (error) {
+           finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
+           throw error;
+@@ -771,6 +820,25 @@ export class Agent {
+   async streamText(
+     input: string | UIMessage[] | BaseMessage[],
+     options?: StreamTextOptions,
++  ): Promise<StreamTextResultWithContext> {
++    const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
++    const tenantId = this.resolveTenantId(options);
++    const buildRequest = (modelOverride?: LanguageModel) => ({
++      tenantId,
++      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options), // Include identifiers to support per-provider/model policies later
++      execute: () =>
++        this.executeStreamText(input, this.mergeOptionsWithModel(options, modelOverride)), // Actual streaming work happens after the controller dequeues us
++      extractUsage: (result: StreamTextResultWithContext) => this.extractUsageFromResponse(result),
++      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
++    });
++
++    return controller.handleStream(buildRequest(options?.model));
++  }
++
++  private async executeStreamText(
++    input: string | UIMessage[] | BaseMessage[],
++    options?: StreamTextOptions,
++    trafficMetadata?: TrafficRequestMetadata,
+   ): Promise<StreamTextResultWithContext> {
+     const startTime = Date.now();
+     const oc = this.createOperationContext(input, options);
+@@ -800,7 +868,7 @@ export class Agent {
+           options,
+         );
+ 
+-        const modelName = this.getModelName();
++        const modelName = this.getModelName(model);
+         const contextLimit = options?.contextLimit;
+ 
+         // Add model attributes to root span if TraceContext exists
+@@ -870,8 +938,10 @@ export class Agent {
+           onFinish: userOnFinish,
+           experimental_output,
+           providerOptions,
++          model: _model, // Exclude model from aiSDKOptions to avoid overriding resolved model
+           ...aiSDKOptions
+         } = options || {};
++        void _model;
+ 
+         const guardrailStreamingEnabled = guardrailSet.output.length > 0;
+ 
+@@ -894,6 +964,11 @@ export class Agent {
+         });
+         const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+ 
++        methodLogger.info("[AI SDK] Calling streamText", {
++          messageCount: messages.length,
++          modelName,
++          tools: tools ? Object.keys(tools) : [],
++        });
+         const result = streamText({
+           model,
+           messages,
+@@ -901,7 +976,7 @@ export class Agent {
+           // Default values
+           temperature: this.temperature,
+           maxOutputTokens: this.maxOutputTokens,
+-          maxRetries: 3,
++          maxRetries: 0, // Retry via traffic controller to avoid provider-level storms
+           stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+           // User overrides from AI SDK options
+           ...aiSDKOptions,
+@@ -962,6 +1037,17 @@ export class Agent {
+               .catch(() => {});
+           },
+           onFinish: async (finalResult) => {
++            methodLogger.info("[AI SDK] streamText finished", {
++              finishReason: finalResult.finishReason,
++              usage: finalResult.totalUsage ? safeStringify(finalResult.totalUsage) : undefined,
++              stepCount: finalResult.steps?.length ?? 0,
++              rawResult: safeStringify(finalResult),
++            });
++            this.updateTrafficControllerRateLimits(
++              finalResult.response,
++              trafficMetadata,
++              methodLogger,
++            );
+             const providerUsage = finalResult.usage
+               ? await Promise.resolve(finalResult.usage)
+               : undefined;
+@@ -1428,6 +1514,30 @@ export class Agent {
+     input: string | UIMessage[] | BaseMessage[],
+     schema: T,
+     options?: GenerateObjectOptions,
++  ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
++    const controller = getTrafficController({ logger: this.logger });
++    const tenantId = this.resolveTenantId(options);
++    const buildRequest = (modelOverride?: LanguageModel) => ({
++      tenantId,
++      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
++      execute: () =>
++        this.executeGenerateObject(
++          input,
++          schema,
++          this.mergeOptionsWithModel(options, modelOverride),
++        ),
++      extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
++        this.extractUsageFromResponse(result),
++      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
++    });
++
++    return controller.handleText(buildRequest(options?.model));
++  }
++
++  private async executeGenerateObject<T extends z.ZodType>(
++    input: string | UIMessage[] | BaseMessage[],
++    schema: T,
++    options?: GenerateObjectOptions,
+   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
+     const startTime = Date.now();
+     const oc = this.createOperationContext(input, options);
+@@ -1452,7 +1562,7 @@ export class Agent {
+           options,
+         );
+ 
+-        const modelName = this.getModelName();
++        const modelName = this.getModelName(model);
+         const schemaName = schema.description || "unknown";
+ 
+         // Add model attributes and all options
+@@ -1511,9 +1621,16 @@ export class Agent {
+           maxSteps: userMaxSteps,
+           tools: userTools,
+           providerOptions,
++          model: _model, // Exclude model so spread does not override resolved model
+           ...aiSDKOptions
+         } = options || {};
++        void _model;
+ 
++        methodLogger.info("[AI SDK] Calling generateObject", {
++          messageCount: messages.length,
++          modelName,
++          schemaName,
++        });
+         const result = await generateObject({
+           model,
+           messages,
+@@ -1522,7 +1639,7 @@ export class Agent {
+           // Default values
+           maxOutputTokens: this.maxOutputTokens,
+           temperature: this.temperature,
+-          maxRetries: 3,
++          maxRetries: 0,
+           // User overrides from AI SDK options
+           ...aiSDKOptions,
+           // Provider-specific options
+@@ -1530,6 +1647,12 @@ export class Agent {
+           // VoltAgent controlled
+           abortSignal: oc.abortController.signal,
+         });
++        methodLogger.info("[AI SDK] Received generateObject result", {
++          finishReason: result.finishReason,
++          usage: result.usage ? safeStringify(result.usage) : undefined,
++          warnings: result.warnings,
++          rawResult: safeStringify(result),
++        });
+ 
+         const usageInfo = convertUsage(result.usage);
+         const finalObject = await executeOutputGuardrails({
+@@ -1655,6 +1778,26 @@ export class Agent {
+     input: string | UIMessage[] | BaseMessage[],
+     schema: T,
+     options?: StreamObjectOptions,
++  ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
++    const controller = getTrafficController({ logger: this.logger });
++    const tenantId = this.resolveTenantId(options);
++    const buildRequest = (modelOverride?: LanguageModel) => ({
++      tenantId,
++      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
++      execute: () =>
++        this.executeStreamObject(input, schema, this.mergeOptionsWithModel(options, modelOverride)),
++      extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
++        this.extractUsageFromResponse(result),
++      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
++    });
++
++    return controller.handleStream(buildRequest(options?.model));
++  }
++
++  private async executeStreamObject<T extends z.ZodType>(
++    input: string | UIMessage[] | BaseMessage[],
++    schema: T,
++    options?: StreamObjectOptions,
+   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
+     const startTime = Date.now();
+     const oc = this.createOperationContext(input, options);
+@@ -1680,7 +1823,7 @@ export class Agent {
+           options,
+         );
+ 
+-        const modelName = this.getModelName();
++        const modelName = this.getModelName(model);
+         const schemaName = schema.description || "unknown";
+ 
+         // Add model attributes and all options
+@@ -1740,13 +1883,20 @@ export class Agent {
+           tools: userTools,
+           onFinish: userOnFinish,
+           providerOptions,
++          model: _model, // Exclude model so aiSDKOptions cannot override resolved model
+           ...aiSDKOptions
+         } = options || {};
++        void _model;
+ 
+         let guardrailObjectPromise!: Promise<z.infer<T>>;
+         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
+         let rejectGuardrailObject: ((reason: unknown) => void) | undefined;
+ 
++        methodLogger.info("[AI SDK] Calling streamObject", {
++          messageCount: messages.length,
++          modelName,
++          schemaName,
++        });
+         const result = streamObject({
+           model,
+           messages,
+@@ -1755,7 +1905,7 @@ export class Agent {
+           // Default values
+           maxOutputTokens: this.maxOutputTokens,
+           temperature: this.temperature,
+-          maxRetries: 3,
++          maxRetries: 0,
+           // User overrides from AI SDK options
+           ...aiSDKOptions,
+           // Provider-specific options
+@@ -1771,7 +1921,7 @@ export class Agent {
+             methodLogger.error("Stream object error occurred", {
+               error: actualError,
+               agentName: this.name,
+-              modelName: this.getModelName(),
++              modelName: this.getModelName(model),
+               schemaName: schemaName,
+             });
+ 
+@@ -1800,6 +1950,11 @@ export class Agent {
+           },
+           onFinish: async (finalResult: any) => {
+             try {
++              methodLogger.info("[AI SDK] streamObject finished", {
++                finishReason: finalResult.finishReason,
++                usage: finalResult.usage ? safeStringify(finalResult.usage) : undefined,
++                rawResult: safeStringify(finalResult),
++              });
+               const usageInfo = convertUsage(finalResult.usage as any);
+               let finalObject = finalResult.object as z.infer<T>;
+               if (guardrailSet.output.length > 0) {
+@@ -2021,8 +2176,9 @@ export class Agent {
+     // Calculate maxSteps (use provided option or calculate based on subagents)
+     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
+ 
+-    // Resolve dynamic values
+-    const model = await this.resolveValue(this.model, oc);
++    // Resolve dynamic values (allow per-call model override for fallbacks)
++    const selectedModel = options?.model ?? this.model;
++    const model = await this.resolveValue(selectedModel, oc);
+     const dynamicToolList = (await this.resolveValue(this.dynamicTools, oc)) || [];
+ 
+     // Merge agent tools with option tools
+@@ -2073,6 +2229,8 @@ export class Agent {
+   ): OperationContext {
+     const operationId = randomUUID();
+     const startTimeDate = new Date();
++    const priority = this.resolveTrafficPriority(options);
++    const tenantId = this.resolveTenantId(options);
+ 
+     // Prefer reusing an existing context instance to preserve reference across calls/subagents
+     const runtimeContext = toContextMap(options?.context);
+@@ -2123,6 +2281,7 @@ export class Agent {
+       operationId,
+       userId: options?.userId,
+       conversationId: options?.conversationId,
++      tenantId,
+       executionId: operationId,
+     });
+ 
+@@ -2137,6 +2296,9 @@ export class Agent {
+       parentAgentId: options?.parentAgentId,
+       input,
+     });
++    if (tenantId) {
++      traceContext.getRootSpan().setAttribute("tenant.id", tenantId);
++    }
+     traceContext.getRootSpan().setAttribute("voltagent.operation_id", operationId);
+ 
+     // Use parent's AbortController if available, otherwise create new one
+@@ -2174,8 +2336,10 @@ export class Agent {
+       logger,
+       conversationSteps: options?.parentOperationContext?.conversationSteps || [],
+       abortController,
++      priority,
+       userId: options?.userId,
+       conversationId: options?.conversationId,
++      tenantId,
+       parentAgentId: options?.parentAgentId,
+       traceContext,
+       startTime: startTimeDate,
+@@ -3147,6 +3311,20 @@ export class Agent {
+     return value;
+   }
+ 
++  private mergeOptionsWithModel(
++    options: BaseGenerationOptions | undefined,
++    modelOverride?: LanguageModel,
++  ): BaseGenerationOptions | undefined {
++    if (!options && modelOverride === undefined) {
++      return undefined;
++    }
++
++    return {
++      ...(options ?? {}),
++      ...(modelOverride !== undefined ? { model: modelOverride } : {}),
++    };
++  }
++
+   /**
+    * Prepare tools with execution context
+    */
+@@ -3799,17 +3977,159 @@ export class Agent {
+     return this.subAgentManager.calculateMaxSteps(this.maxSteps);
+   }
+ 
++  private resolveTrafficPriority(options?: BaseGenerationOptions): TrafficPriority {
++    const normalize = (value?: TrafficPriority): TrafficPriority | undefined => {
++      if (value === "P0" || value === "P1" || value === "P2") {
++        return value;
++      }
++      return undefined;
++    };
++
++    const parentPriority = normalize(options?.parentOperationContext?.priority);
++    const localPriority = normalize(options?.trafficPriority) ?? this.trafficPriority ?? "P1";
++
++    if (parentPriority) {
++      return this.pickHigherPriority(parentPriority, localPriority);
++    }
++
++    return localPriority;
++  }
++
++  private resolveTenantId(options?: BaseGenerationOptions): string {
++    const parentTenant = options?.parentOperationContext?.tenantId;
++    if (parentTenant) {
++      return parentTenant;
++    }
++
++    if (options?.tenantId) {
++      return options.tenantId;
++    }
++
++    return "default";
++  }
++
++  private pickHigherPriority(a: TrafficPriority, b: TrafficPriority): TrafficPriority {
++    const rank: Record<TrafficPriority, number> = { P0: 0, P1: 1, P2: 2 };
++    return rank[a] <= rank[b] ? a : b;
++  }
++
++  private buildTrafficMetadata(
++    modelOverride?: LanguageModel | DynamicValue<LanguageModel>,
++    options?: BaseGenerationOptions,
++  ): TrafficRequestMetadata {
++    const provider =
++      this.resolveProvider(modelOverride) ?? this.resolveProvider(this.model) ?? undefined;
++    const priority = this.resolveTrafficPriority(options);
++
++    return {
++      agentId: this.id, // Identify which agent issued the request
++      agentName: this.name, // Human-readable label for logs/metrics
++      model: this.getModelName(modelOverride), // Used for future capacity policies
++      provider, // Allows per-provider throttling later
++      priority,
++      tenantId: this.resolveTenantId(options),
++    };
++  }
++
++  private updateTrafficControllerRateLimits(
++    response: unknown,
++    metadata: TrafficRequestMetadata | undefined,
++    logger?: Logger,
++  ): void {
++    if (!response || typeof response !== "object") {
++      logger?.debug?.("[Traffic] No response object available for rate limit update");
++      return;
++    }
++
++    const responseWithHeaders = response as { headers?: unknown } | null;
++    const headers = responseWithHeaders?.headers;
++    if (!headers) {
++      logger?.debug?.("[Traffic] Response missing headers; skipping rate limit update");
++      return;
++    }
++
++    const controller = getTrafficController();
++    const updateResult = controller.updateRateLimitFromHeaders(
++      metadata ?? this.buildTrafficMetadata(),
++      headers,
++    );
++
++    if (!updateResult) {
++      logger?.debug?.("[Traffic] No rate limit headers applied from response");
++      return;
++    }
++
++    const refillPerSecond = updateResult.normalized.refillPerMs * 1000;
++    logger?.info?.("[Traffic] Applied rate limit from response headers", {
++      rateLimitKey: updateResult.key,
++      capacity: updateResult.normalized.capacity,
++      refillPerSecond,
++      appliedTokens: updateResult.appliedTokens,
++      headers: {
++        limitRequests: updateResult.headerSnapshot.limitRequests,
++        remainingRequests: updateResult.headerSnapshot.remainingRequests,
++        resetRequestsMs: updateResult.headerSnapshot.resetRequestsMs,
++      },
++    });
++  }
++
++  private extractUsageFromResponse(
++    result:
++      | {
++          usage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined>;
++          totalUsage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined>;
++        }
++      | undefined,
++  ): Promise<LanguageModelUsage | undefined> | LanguageModelUsage | undefined {
++    if (!result) {
++      return undefined;
++    }
++
++    const usageCandidate =
++      (result as { totalUsage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined> })
++        ?.totalUsage ??
++      (result as { usage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined> })?.usage;
++
++    if (!usageCandidate) {
++      return undefined;
++    }
++
++    if (
++      typeof (usageCandidate as PromiseLike<LanguageModelUsage | undefined>).then === "function"
++    ) {
++      return (usageCandidate as Promise<LanguageModelUsage | undefined>).catch(() => undefined);
++    }
++
++    return usageCandidate as LanguageModelUsage;
++  }
++
++  private resolveProvider(
++    model: LanguageModel | DynamicValue<LanguageModel> | undefined,
++  ): string | undefined {
++    if (
++      model &&
++      typeof model === "object" &&
++      "provider" in model &&
++      typeof (model as any).provider === "string"
++    ) {
++      return (model as any).provider;
++    }
++
++    return undefined;
++  }
++
+   /**
+    * Get the model name
+    */
+-  public getModelName(): string {
+-    if (typeof this.model === "function") {
++  public getModelName(modelOverride?: LanguageModel | DynamicValue<LanguageModel>): string {
++    const selectedModel = modelOverride ?? this.model;
++    if (typeof selectedModel === "function") {
+       return "dynamic";
+     }
+-    if (typeof this.model === "string") {
+-      return this.model;
++    if (typeof selectedModel === "string") {
++      return selectedModel;
+     }
+-    return this.model.modelId || "unknown";
++    return selectedModel.modelId || "unknown";
+   }
+ 
+   /**
+diff --git a/packages/core/src/agent/eval.ts b/packages/core/src/agent/eval.ts
+index 9e4fe9f2..de712505 100644
+--- a/packages/core/src/agent/eval.ts
++++ b/packages/core/src/agent/eval.ts
+@@ -711,6 +711,7 @@ function buildEvalPayload(
+     rawOutput: output,
+     userId: oc.userId,
+     conversationId: oc.conversationId,
++    tenantId: oc.tenantId,
+     traceId: spanContext.traceId,
+     spanId: spanContext.spanId,
+     metadata,
+diff --git a/packages/core/src/agent/types.ts b/packages/core/src/agent/types.ts
+index dd5fb29d..add69edf 100644
+--- a/packages/core/src/agent/types.ts
++++ b/packages/core/src/agent/types.ts
+@@ -29,6 +29,7 @@ import type { Logger } from "@voltagent/internal";
+ import type { LocalScorerDefinition, SamplingPolicy } from "../eval/runtime";
+ import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
+ import type { VoltAgentObservability } from "../observability";
++import type { TrafficPriority } from "../traffic/traffic-controller";
+ import type {
+   DynamicValue,
+   DynamicValueOptions,
+@@ -456,6 +457,11 @@ export type AgentOptions = {
+   temperature?: number;
+   maxOutputTokens?: number;
+   maxSteps?: number;
++  /**
++   * Default scheduling priority for this agent's LLM calls.
++   * Defaults to P1 when unspecified.
++   */
++  trafficPriority?: TrafficPriority;
+   /**
+    * Default stop condition for step execution (ai-sdk `stopWhen`).
+    * Per-call `stopWhen` in method options overrides this.
+@@ -493,6 +499,7 @@ export interface AgentEvalPayload {
+   rawOutput?: unknown;
+   userId?: string;
+   conversationId?: string;
++  tenantId?: string;
+   traceId: string;
+   spanId: string;
+   metadata?: Record<string, unknown>;
+@@ -890,6 +897,9 @@ export type OperationContext = {
+   /** Optional conversation identifier associated with this operation */
+   conversationId?: string;
+ 
++  /** Optional tenant identifier propagated across nested operations */
++  tenantId?: string;
++
+   /** User-managed context map for this operation */
+   readonly context: Map<string | symbol, unknown>;
+ 
+@@ -914,6 +924,9 @@ export type OperationContext = {
+   /** Conversation steps for building full message history including tool calls/results */
+   conversationSteps?: StepWithContent[];
+ 
++  /** Scheduling priority propagated from parent calls */
++  priority?: TrafficPriority;
++
+   /** AbortController for cancelling the operation and accessing the signal */
+   abortController: AbortController;
+ 
+diff --git a/packages/core/src/index.ts b/packages/core/src/index.ts
+index 8753f039..0aef165a 100644
+--- a/packages/core/src/index.ts
++++ b/packages/core/src/index.ts
+@@ -21,6 +21,19 @@ export type {
+   WorkflowTimelineEvent,
+   RegisteredWorkflow,
+ } from "./workflow";
++export {
++  // Surface traffic controller so downstream consumers can route agent calls through the shared scheduler
++  TrafficController,
++  CircuitBreakerOpenError,
++  getTrafficController,
++  type RateLimitConfig,
++  type RateLimitKey,
++  type RateLimitOptions,
++  type TrafficRequest,
++  type TrafficRequestMetadata,
++  type TrafficPriority,
++  type TrafficRequestType,
++} from "./traffic/traffic-controller";
+ // Export new Agent from agent.ts
+ export {
+   Agent,
+diff --git a/packages/core/src/traffic/traffic-controller.spec.ts b/packages/core/src/traffic/traffic-controller.spec.ts
+new file mode 100644
+index 00000000..9b89d4b8
+--- /dev/null
++++ b/packages/core/src/traffic/traffic-controller.spec.ts
+@@ -0,0 +1,87 @@
++import { describe, expect, it, vi } from "vitest";
++import { TrafficController } from "./traffic-controller";
++
++describe("TrafficController priority scheduling", () => {
++  it("prioritizes P0 over lower priorities when runnable", async () => {
++    const controller = new TrafficController({ maxConcurrent: 1 });
++    const order: string[] = [];
++
++    const p1 = controller.handleText({
++      metadata: { provider: "p", model: "m1", priority: "P1" },
++      execute: async () => {
++        order.push("P1");
++        return "P1";
++      },
++    });
++
++    const p2 = controller.handleText({
++      metadata: { provider: "p", model: "m2", priority: "P2" },
++      execute: async () => {
++        order.push("P2");
++        return "P2";
++      },
++    });
++
++    const p0 = controller.handleText({
++      metadata: { provider: "p", model: "m0", priority: "P0" },
++      execute: async () => {
++        order.push("P0");
++        return "P0";
++      },
++    });
++
++    await Promise.all([p0, p1, p2]);
++
++    expect(order[0]).toBe("P0");
++    expect(order).toEqual(["P0", "P1", "P2"]);
++  });
++
++  it("allows lower priorities to proceed when a higher priority request is rate limited", async () => {
++    vi.useFakeTimers();
++
++    try {
++      const controller = new TrafficController({
++        maxConcurrent: 1,
++        rateLimits: {
++          "p0::m0": { capacity: 1, refillPerSecond: 1 },
++        },
++      });
++
++      // Exhaust the bucket for the P0 key so it initially waits
++      const buckets = (controller as unknown as { rateLimitBuckets: Map<string, any> })
++        .rateLimitBuckets;
++      buckets.set("p0::m0", {
++        tokens: 0,
++        capacity: 1,
++        refillPerMs: 1 / 1000,
++        lastRefill: Date.now(),
++      });
++
++      const order: string[] = [];
++
++      const p0 = controller.handleText({
++        metadata: { provider: "p0", model: "m0", priority: "P0" },
++        execute: async () => {
++          order.push("P0");
++          return "P0";
++        },
++      });
++
++      const p1 = controller.handleText({
++        metadata: { provider: "p1", model: "m1", priority: "P1" },
++        execute: async () => {
++          order.push("P1");
++          return "P1";
++        },
++      });
++
++      await vi.runAllTimersAsync();
++      await Promise.all([p0, p1]);
++
++      expect(order[0]).toBe("P1");
++      expect(order[1]).toBe("P0");
++    } finally {
++      vi.useRealTimers();
++    }
++  });
++});
+diff --git a/packages/core/src/traffic/traffic-controller.ts b/packages/core/src/traffic/traffic-controller.ts
+new file mode 100644
+index 00000000..8d82e8a5
+--- /dev/null
++++ b/packages/core/src/traffic/traffic-controller.ts
+@@ -0,0 +1,1260 @@
++import type { Logger } from "../logger";
++import { LoggerProxy } from "../logger";
++
++type Scheduler = (callback: () => void) => void;
++type BivariantHandler<TArgs extends unknown[]> = {
++  bivarianceHack(...args: TArgs): void;
++}["bivarianceHack"];
++type BivariantFunction<TArgs extends unknown[], TReturn> = {
++  bivarianceHack(...args: TArgs): TReturn;
++}["bivarianceHack"];
++
++type RetryReason = "rateLimit" | "serverError" | "timeout";
++
++const MAX_RETRY_ATTEMPTS = 3;
++const TIMEOUT_RETRY_ATTEMPTS = 2;
++const RATE_LIMIT_BASE_BACKOFF_MS = 500;
++const CIRCUIT_FAILURE_THRESHOLD = 5;
++const CIRCUIT_FAILURE_WINDOW_MS = 10_000;
++const CIRCUIT_COOLDOWN_MS = 30_000;
++const SERVER_ERROR_BASE_BACKOFF_MS = 1000;
++const TIMEOUT_BASE_BACKOFF_MS = 750;
++const RATE_LIMIT_JITTER_FACTOR = 0.35;
++const SERVER_ERROR_JITTER_FACTOR = 0.8;
++const TIMEOUT_JITTER_FACTOR = 0.5;
++const DEFAULT_FALLBACK_CHAINS: Record<string, string[]> = {
++  "gpt-4o": ["gpt-4o-mini", "gpt-3.5"],
++};
++
++interface RateLimitBucket {
++  tokens: number;
++  capacity: number;
++  refillPerMs: number;
++  lastRefill: number;
++}
++
++type NormalizedRateLimit = {
++  capacity: number;
++  refillPerMs: number;
++};
++
++export interface RateLimitOptions {
++  capacity: number;
++  refillPerSecond: number;
++}
++
++export type TenantUsage = {
++  inputTokens: number;
++  outputTokens: number;
++  totalTokens: number;
++};
++
++type UsageCounters = {
++  inputTokens?: number;
++  outputTokens?: number;
++  totalTokens?: number;
++};
++
++export type RateLimitKey = string;
++export type RateLimitConfig = Record<RateLimitKey, RateLimitOptions>;
++
++type RateLimitHeaderSnapshot = {
++  limitRequests: number;
++  remainingRequests?: number;
++  resetRequestsMs: number;
++};
++
++export type RateLimitUpdateResult = {
++  key: string;
++  headerSnapshot: RateLimitHeaderSnapshot;
++  normalized: NormalizedRateLimit;
++  appliedTokens: number;
++};
++
++export type TrafficRequestType = "text" | "stream";
++
++export type TrafficPriority = "P0" | "P1" | "P2";
++
++export interface TrafficRequestMetadata {
++  agentId?: string;
++  agentName?: string;
++  model?: string;
++  provider?: string;
++  priority?: TrafficPriority;
++  tenantId?: string;
++}
++
++export interface TrafficRequest<TResponse> {
++  tenantId: string;
++  metadata?: TrafficRequestMetadata;
++  execute: () => Promise<TResponse>;
++  createFallbackRequest?: (modelId: string) => TrafficRequest<TResponse> | undefined;
++  extractUsage?: BivariantFunction<
++    [response: TResponse],
++    Promise<UsageCounters | undefined> | UsageCounters | undefined
++  >;
++}
++
++type CircuitStateStatus = "closed" | "open" | "half-open";
++
++interface CircuitState {
++  status: CircuitStateStatus;
++  failureTimestamps: number[];
++  openedAt?: number;
++  trialInFlight?: boolean;
++}
++
++interface QueuedRequest<TResponse = unknown> {
++  type: TrafficRequestType;
++  request: TrafficRequest<TResponse>;
++  resolve: BivariantHandler<[TResponse | PromiseLike<TResponse>]>;
++  reject: BivariantHandler<[reason?: unknown]>;
++  etaMs?: number;
++  rateLimitKey?: string;
++  attempt?: number;
++  circuitKey?: string;
++  circuitStatus?: CircuitStateStatus;
++  priority: TrafficPriority;
++  tenantId: string;
++  extractUsage?: BivariantFunction<
++    [response: TResponse],
++    Promise<UsageCounters | undefined> | UsageCounters | undefined
++  >;
++}
++
++export interface TrafficControllerOptions {
++  maxConcurrent?: number;
++  rateLimits?: RateLimitConfig;
++  logger?: Logger;
++  fallbackChains?: Record<string, string[]>;
++}
++
++type ProcessDecision = "process" | "skip" | "wait";
++
++// Centralized traffic controller responsible for scheduling LLM calls.
++// Provides a FIFO queue with a non-blocking scheduler and entrypoints
++// for text and stream traffic.
++export class TrafficController {
++  private readonly scheduler: Scheduler;
++  private readonly maxConcurrent: number;
++  private rateLimits?: Map<string, NormalizedRateLimit>;
++  private readonly rateLimitBuckets = new Map<string, RateLimitBucket>();
++  private readonly circuitBreakers = new Map<string, CircuitState>();
++  private readonly fallbackChains: Map<string, string[]>;
++  private readonly priorityOrder: TrafficPriority[] = ["P0", "P1", "P2"];
++  private readonly queues: Record<TrafficPriority, QueuedRequest[]> = {
++    P0: [],
++    P1: [],
++    P2: [],
++  };
++  private activeCount = 0;
++  private drainScheduled = false;
++  private refillTimeout?: ReturnType<typeof setTimeout>;
++  private readonly tenantUsage = new Map<string, TenantUsage>();
++  private readonly logger: Logger;
++
++  private logDebug(message: string, details?: Record<string, unknown>): void {
++    if (typeof console?.debug === "function") {
++      console.debug(message, details);
++    }
++  }
++
++  constructor(options: TrafficControllerOptions = {}) {
++    this.maxConcurrent = options.maxConcurrent ?? Number.POSITIVE_INFINITY;
++    this.rateLimits = this.normalizeRateLimits(options.rateLimits);
++    this.fallbackChains = this.normalizeFallbackChains(options.fallbackChains);
++    this.scheduler = this.createScheduler();
++
++    // NEW LOGGER (from c2 commit)
++    this.logger = new LoggerProxy({ component: "traffic-controller" }, options.logger);
++
++    // INIT LOG (from HEAD) — rewritten to use the new logger
++    this.logger.debug("[TrafficController] init", {
++      maxConcurrent: this.maxConcurrent,
++      rateLimits: this.rateLimits ? Array.from(this.rateLimits.entries()) : undefined,
++    });
++  }
++
++  handleText<TResponse>(request: TrafficRequest<TResponse>): Promise<TResponse> {
++    // Route text generation requests into the queue so all LLM calls share the same scheduler
++    return this.enqueue("text", request);
++  }
++
++  handleStream<TResponse>(request: TrafficRequest<TResponse>): Promise<TResponse> {
++    // Route streaming requests through the same queue to preserve ordering/backpressure rules
++    return this.enqueue("stream", request);
++  }
++
++  getTenantUsage(tenantId: string): TenantUsage | undefined {
++    const usage = this.tenantUsage.get(tenantId);
++    return usage ? { ...usage } : undefined;
++  }
++
++  private createScheduler(): Scheduler {
++    // Prefer queueMicrotask to keep the drain loop snappy without starving the event loop
++    if (typeof queueMicrotask === "function") {
++      return queueMicrotask;
++    }
++
++    return (callback: () => void) => setTimeout(callback, 0);
++  }
++
++  private enqueue<TResponse>(
++    type: TrafficRequestType,
++    request: TrafficRequest<TResponse>,
++  ): Promise<TResponse> {
++    // Each request gets a promise so callers can await their own result
++    return new Promise<TResponse>((resolve, reject) => {
++      const priority = this.resolvePriority(request.metadata);
++      this.logger.debug("Enqueuing LLM request", {
++        tenantId: request.tenantId,
++        type,
++        priority,
++      });
++      // Collect the work item and metadata
++      this.getQueue(priority).push({
++        type,
++        request,
++        resolve,
++        reject,
++        attempt: 1,
++        priority,
++        tenantId: request.tenantId,
++        extractUsage: request.extractUsage,
++      });
++
++      this.logDebug("[TrafficController] enqueue", {
++        type,
++        queueSize: this.getQueueSize(),
++        metadata: request.metadata,
++      });
++
++      // Kick the drain loop to start handling work
++      this.scheduleDrain();
++    });
++  }
++
++  private scheduleDrain(): void {
++    if (this.drainScheduled) {
++      return;
++    }
++
++    this.drainScheduled = true; // Prevent redundant scheduling when many requests arrive at once
++    this.logDebug("[TrafficController] scheduleDrain", { queueSize: this.getQueueSize() });
++    this.scheduler(() => {
++      this.drainScheduled = false;
++      this.logDebug("[TrafficController] drainLoopStart", {
++        queueSize: this.getQueueSize(),
++        active: this.activeCount,
++      });
++      this.drainQueue(); // Drain asynchronously so we never block the caller's tick
++    });
++  }
++
++  private drainQueue(): void {
++    // Pull as many items as we can until we hit capacity or rate limits
++    while (this.hasQueuedWork()) {
++      if (this.activeCount >= this.maxConcurrent) {
++        return;
++      }
++
++      let selected: { item: QueuedRequest; priority: TrafficPriority } | undefined;
++      let skippedItem = false;
++
++      for (const priority of this.priorityOrder) {
++        const queue = this.getQueue(priority);
++        if (queue.length === 0) {
++          continue;
++        }
++
++        const candidate = queue[0];
++        const decision = this.getProcessDecision(candidate);
++        if (decision === "process") {
++          selected = { item: candidate, priority };
++          break;
++        }
++
++        if (decision === "skip") {
++          queue.shift(); // Remove rejected item
++          skippedItem = true;
++          break; // Re-evaluate from highest priority after removing
++        }
++
++        // If wait, try lower priorities in the same drain cycle
++      }
++
++      if (selected) {
++        const { item, priority } = selected;
++        this.getQueue(priority).shift();
++        this.activeCount++; // Track in-flight work to enforce concurrency guard
++        this.markCircuitTrial(item); // Reserve the half-open trial slot if needed
++
++        void this.runRequest(item); // Fire off processing without blocking the loop
++        continue;
++      }
++
++      if (skippedItem) {
++        continue; // We removed a blocked item; re-evaluate queues
++      }
++
++      // No runnable work right now; exit until capacity/rate-limit changes
++      return;
++    }
++  }
++
++  private getProcessDecision(next: QueuedRequest): ProcessDecision {
++    const circuitDecision = this.evaluateCircuitBreaker(next);
++    if (circuitDecision !== "process") {
++      return circuitDecision;
++    }
++
++    if (this.activeCount >= this.maxConcurrent) {
++      this.logDebug("[TrafficController] throttle concurrency", {
++        active: this.activeCount,
++        maxConcurrent: this.maxConcurrent,
++      });
++      return "wait";
++    }
++
++    const rateLimitConfig = this.getRateLimitConfig(next.request.metadata);
++    if (!rateLimitConfig) {
++      this.logDebug("[TrafficController] no rate limit match", {
++        metadata: next.request.metadata,
++      });
++      next.rateLimitKey = undefined;
++      next.etaMs = 0;
++      return "process"; // No rate limit configured for this key
++    }
++
++    const queuedAhead = this.countQueuedAheadWithKey(
++      rateLimitConfig.key,
++      next,
++      /*logDetails*/ true,
++    );
++    const bucket = this.getRateLimitBucket(rateLimitConfig.key, rateLimitConfig.limit);
++    if (bucket.tokens < 1) {
++      next.rateLimitKey = rateLimitConfig.key;
++      next.etaMs = this.computeEtaMs(
++        bucket,
++        rateLimitConfig.limit,
++        rateLimitConfig.key,
++        next,
++        queuedAhead,
++      );
++      this.logDebug("[TrafficController] throttle rate", {
++        key: rateLimitConfig.key,
++        tokens: bucket.tokens,
++        etaMs: next.etaMs,
++        queuedAhead,
++      });
++      this.scheduleRefill(rateLimitConfig.limit); // Ensure we retry as soon as tokens are replenished
++      return "wait";
++    }
++
++    bucket.tokens -= 1; // Consume a token for this dispatch
++    this.logDebug("[TrafficController] token consumed", {
++      key: rateLimitConfig.key,
++      remaining: bucket.tokens,
++      capacity: bucket.capacity,
++    });
++    next.rateLimitKey = rateLimitConfig.key;
++    next.etaMs = 0;
++    return "process";
++  }
++
++  private getRateLimitConfig(
++    metadata?: TrafficRequestMetadata,
++  ): { key: string; limit: NormalizedRateLimit } | undefined {
++    if (!this.rateLimits || this.rateLimits.size === 0) {
++      return undefined;
++    }
++
++    const key = this.buildRateLimitKey(metadata);
++    const limit = this.rateLimits.get(key);
++    if (!limit) {
++      return undefined;
++    }
++
++    this.logDebug("[TrafficController] rateLimitConfig hit", { key });
++    return { key, limit };
++  }
++
++  private getRateLimitBucket(key: string, limit: NormalizedRateLimit): RateLimitBucket {
++    const now = Date.now(); // Snapshot time once to avoid drift within this method
++    let bucket = this.rateLimitBuckets.get(key); // Reuse the bucket if it already exists
++
++    if (!bucket) {
++      bucket = {
++        tokens: limit.capacity,
++        capacity: limit.capacity,
++        refillPerMs: limit.refillPerMs,
++        lastRefill: now,
++      };
++      this.rateLimitBuckets.set(key, bucket);
++      this.logDebug("[TrafficController] bucket create", {
++        key,
++        capacity: bucket.capacity,
++        refillPerMs: bucket.refillPerMs,
++      });
++      return bucket;
++    }
++
++    if (
++      bucket.capacity !== limit.capacity ||
++      Math.abs(bucket.refillPerMs - limit.refillPerMs) > Number.EPSILON
++    ) {
++      bucket.capacity = limit.capacity;
++      bucket.refillPerMs = limit.refillPerMs;
++      bucket.tokens = Math.min(bucket.tokens, bucket.capacity);
++      bucket.lastRefill = now;
++      this.logDebug("[TrafficController] bucket sync with new limit", {
++        key,
++        capacity: bucket.capacity,
++        refillPerMs: bucket.refillPerMs,
++      });
++    }
++
++    const elapsedMs = Math.max(0, now - bucket.lastRefill);
++    if (elapsedMs > 0 && bucket.tokens < bucket.capacity) {
++      const refilled = elapsedMs * bucket.refillPerMs; // Refill based on elapsed time
++      bucket.tokens = Math.min(bucket.capacity, bucket.tokens + refilled); // Cap at bucket capacity
++      bucket.lastRefill = now; // Mark refill time for the next calculation
++      this.logDebug("[TrafficController] bucket refill", {
++        key,
++        elapsedMs,
++        tokens: bucket.tokens,
++      });
++    }
++
++    return bucket;
++  }
++
++  private computeEtaMs(
++    bucket: RateLimitBucket,
++    limit: NormalizedRateLimit,
++    key: string,
++    current: QueuedRequest,
++    queuedAhead?: number,
++  ): number {
++    const missingTokens = Math.max(0, 1 - bucket.tokens);
++    const waitForToken =
++      missingTokens > 0 && limit.refillPerMs > 0 ? Math.ceil(missingTokens / limit.refillPerMs) : 0;
++    const aheadCount =
++      typeof queuedAhead === "number"
++        ? queuedAhead
++        : this.countQueuedAheadWithKey(key, current, /*logDetails*/ false);
++    const extraForQueue =
++      aheadCount > 0 && limit.refillPerMs > 0 ? Math.ceil(aheadCount / limit.refillPerMs) : 0;
++    this.logDebug("[TrafficController] computeEtaMs", {
++      key,
++      missingTokens,
++      waitForToken,
++      aheadCount,
++      extraForQueue,
++      eta: waitForToken + extraForQueue,
++    });
++    return waitForToken + extraForQueue;
++  }
++
++  private countQueuedAheadWithKey(key: string, current: QueuedRequest, logDetails = false): number {
++    let count = 0;
++    for (const priority of this.priorityOrder) {
++      const queue = this.getQueue(priority);
++      for (const item of queue) {
++        if (item === current) {
++          return count;
++        }
++
++        const itemKey = this.buildRateLimitKey(item.request.metadata);
++        if (itemKey === key) {
++          count += 1;
++        }
++      }
++    }
++    if (logDetails) {
++      this.logDebug("[TrafficController] countQueuedAheadWithKey", {
++        key,
++        count,
++        queueSize: this.getQueueSize(),
++      });
++    }
++    return count;
++  }
++
++  private evaluateCircuitBreaker(next: QueuedRequest): ProcessDecision {
++    return this.evaluateCircuitBreakerForRequest(next, new Set<string>());
++  }
++
++  private evaluateCircuitBreakerForRequest(
++    next: QueuedRequest,
++    visitedModels: Set<string>,
++  ): ProcessDecision {
++    const key = this.buildRateLimitKey(next.request.metadata);
++    next.circuitKey = key;
++
++    const currentModel = next.request.metadata?.model;
++    if (currentModel) {
++      visitedModels.add(currentModel);
++    }
++
++    const evaluation = this.evaluateCircuitState(key);
++    next.circuitStatus = evaluation.state;
++
++    if (evaluation.allowRequest) {
++      return "process";
++    }
++
++    const fallbackModel = this.findFallbackModel(next.request.metadata, visitedModels);
++    if (fallbackModel && next.request.createFallbackRequest) {
++      const fallbackRequest = next.request.createFallbackRequest(fallbackModel);
++      if (fallbackRequest) {
++        this.logger.warn("Circuit open; attempting fallback model", {
++          fromModel: currentModel,
++          fallbackModel,
++          provider: next.request.metadata?.provider,
++        });
++        next.request = fallbackRequest;
++        next.attempt = 1;
++        next.rateLimitKey = undefined;
++        next.etaMs = undefined;
++        next.circuitKey = undefined;
++        next.circuitStatus = undefined;
++        return this.evaluateCircuitBreakerForRequest(next, visitedModels);
++      }
++    }
++
++    const retryAfterMs = evaluation.retryAfterMs ?? CIRCUIT_COOLDOWN_MS;
++    this.logger.warn("Circuit open; rejecting request", {
++      circuitKey: key,
++      retryAfterMs,
++      metadata: next.request.metadata,
++    });
++    next.reject(
++      new CircuitBreakerOpenError(
++        `Circuit open for ${key}; retry after ${retryAfterMs}ms`,
++        next.request.metadata,
++        retryAfterMs,
++      ),
++    );
++    return "skip";
++  }
++
++  private evaluateCircuitState(key: string): {
++    allowRequest: boolean;
++    state: CircuitStateStatus;
++    retryAfterMs?: number;
++  } {
++    const state = this.circuitBreakers.get(key);
++    if (!state) {
++      return { allowRequest: true, state: "closed" };
++    }
++
++    const now = Date.now();
++
++    if (state.status === "open") {
++      const elapsed = state.openedAt ? now - state.openedAt : 0;
++      if (elapsed >= CIRCUIT_COOLDOWN_MS) {
++        state.status = "half-open";
++        state.trialInFlight = false;
++        state.failureTimestamps = [];
++        this.circuitBreakers.set(key, state);
++        return { allowRequest: true, state: state.status };
++      }
++      return {
++        allowRequest: false,
++        state: state.status,
++        retryAfterMs: Math.max(0, CIRCUIT_COOLDOWN_MS - elapsed),
++      };
++    }
++
++    if (state.status === "half-open") {
++      if (state.trialInFlight) {
++        return { allowRequest: false, state: state.status };
++      }
++      return { allowRequest: true, state: state.status };
++    }
++
++    return { allowRequest: true, state: state.status };
++  }
++
++  private findFallbackModel(
++    metadata: TrafficRequestMetadata | undefined,
++    visitedModels: Set<string>,
++  ): string | undefined {
++    const currentModel = metadata?.model;
++    if (!currentModel) {
++      return undefined;
++    }
++
++    const chain = this.fallbackChains.get(currentModel);
++    if (!chain) {
++      return undefined;
++    }
++
++    const provider = metadata?.provider;
++    for (const candidate of chain) {
++      if (visitedModels.has(candidate)) {
++        continue;
++      }
++
++      const candidateKey = this.buildRateLimitKey({ provider, model: candidate });
++      const evaluation = this.evaluateCircuitState(candidateKey);
++      if (evaluation.allowRequest) {
++        visitedModels.add(candidate);
++        return candidate;
++      }
++    }
++
++    return undefined;
++  }
++
++  private markCircuitTrial(next: QueuedRequest): void {
++    const key = next.circuitKey;
++    if (!key) {
++      return;
++    }
++
++    const state = this.circuitBreakers.get(key);
++    if (state && state.status === "half-open" && !state.trialInFlight) {
++      state.trialInFlight = true;
++      this.circuitBreakers.set(key, state);
++    }
++  }
++
++  private normalizeRateLimits(
++    rateLimits?: RateLimitConfig,
++  ): Map<string, NormalizedRateLimit> | undefined {
++    if (!rateLimits) {
++      return undefined;
++    }
++
++    const normalized = new Map<string, NormalizedRateLimit>();
++    for (const [key, config] of Object.entries(rateLimits)) {
++      if (config.capacity > 0 && config.refillPerSecond > 0) {
++        normalized.set(key, {
++          capacity: config.capacity,
++          refillPerMs: config.refillPerSecond / 1000,
++        });
++      }
++    }
++
++    return normalized.size > 0 ? normalized : undefined;
++  }
++
++  private normalizeFallbackChains(
++    fallbackChains?: Record<string, string[]>,
++  ): Map<string, string[]> {
++    const configuredChains = fallbackChains ?? DEFAULT_FALLBACK_CHAINS;
++    const normalized = new Map<string, string[]>();
++
++    for (const [model, chain] of Object.entries(configuredChains)) {
++      if (Array.isArray(chain) && chain.length > 0) {
++        normalized.set(model, [...chain]);
++      }
++    }
++
++    return normalized;
++  }
++
++  private buildRateLimitKey(metadata?: TrafficRequestMetadata): string {
++    const provider = metadata?.provider ?? "default-provider";
++    const model = metadata?.model ?? "default-model";
++    return `${provider}::${model}`;
++  }
++
++  /**
++   * Update (or bootstrap) rate limit buckets based on provider response headers.
++   * This lets the controller adopt server-issued limits without static config.
++   */
++  updateRateLimitFromHeaders(
++    metadata: TrafficRequestMetadata | undefined,
++    headers: unknown,
++  ): RateLimitUpdateResult | undefined {
++    const headerInfo = this.extractRateLimitHeaders(headers);
++    if (!headerInfo) {
++      this.logDebug("[TrafficController] no rate limit headers found on response", {
++        metadata,
++      });
++      return undefined;
++    }
++
++    const normalized = this.normalizeHeaderRateLimit(headerInfo);
++    if (!normalized) {
++      this.logDebug("[TrafficController] rate limit headers present but invalid", {
++        headerInfo,
++      });
++      return undefined;
++    }
++
++    const key = this.buildRateLimitKey(metadata);
++    if (!this.rateLimits) {
++      this.rateLimits = new Map();
++    }
++    this.rateLimits.set(key, normalized);
++
++    const now = Date.now();
++    const remainingTokens = this.coerceRemaining(headerInfo.remainingRequests, normalized.capacity);
++    const existingBucket = this.rateLimitBuckets.get(key);
++    const tokens = remainingTokens ?? existingBucket?.tokens ?? normalized.capacity;
++
++    if (existingBucket) {
++      existingBucket.capacity = normalized.capacity;
++      existingBucket.refillPerMs = normalized.refillPerMs;
++      existingBucket.tokens = Math.min(tokens, normalized.capacity);
++      existingBucket.lastRefill = now;
++    } else {
++      this.rateLimitBuckets.set(key, {
++        tokens: Math.min(tokens, normalized.capacity),
++        capacity: normalized.capacity,
++        refillPerMs: normalized.refillPerMs,
++        lastRefill: now,
++      });
++    }
++
++    this.logDebug("[TrafficController] rateLimit updated from headers", {
++      key,
++      capacity: normalized.capacity,
++      refillPerMs: normalized.refillPerMs,
++      remaining: remainingTokens,
++    });
++
++    // If we just refilled tokens, try draining again.
++    this.scheduleDrain();
++
++    return {
++      key,
++      headerSnapshot: headerInfo,
++      normalized,
++      appliedTokens: Math.min(tokens, normalized.capacity),
++    };
++  }
++
++  private extractRateLimitHeaders(headers: unknown): RateLimitHeaderSnapshot | undefined {
++    const getHeader = this.createHeaderLookup(headers);
++    if (!getHeader) {
++      return undefined;
++    }
++
++    const limitRequests = this.parseNumberHeader(getHeader, "x-ratelimit-limit-requests");
++    const resetRequestsMs = this.parseDurationHeaderToMs(getHeader, "x-ratelimit-reset-requests");
++
++    if (
++      limitRequests === undefined ||
++      limitRequests <= 0 ||
++      resetRequestsMs === undefined ||
++      resetRequestsMs <= 0
++    ) {
++      return undefined;
++    }
++
++    const remainingRequests = this.parseNumberHeader(getHeader, "x-ratelimit-remaining-requests");
++
++    return {
++      limitRequests,
++      remainingRequests,
++      resetRequestsMs,
++    };
++  }
++
++  private normalizeHeaderRateLimit(
++    snapshot: RateLimitHeaderSnapshot,
++  ): NormalizedRateLimit | undefined {
++    if (snapshot.limitRequests <= 0 || snapshot.resetRequestsMs <= 0) {
++      return undefined;
++    }
++
++    return {
++      capacity: snapshot.limitRequests,
++      refillPerMs: snapshot.limitRequests / snapshot.resetRequestsMs,
++    };
++  }
++
++  private coerceRemaining(remaining: number | undefined, capacity: number): number | undefined {
++    if (remaining === undefined) {
++      return undefined;
++    }
++
++    const parsed = Number(remaining);
++    if (!Number.isFinite(parsed)) {
++      return undefined;
++    }
++
++    return Math.max(0, Math.min(capacity, Math.floor(parsed)));
++  }
++
++  private createHeaderLookup(headers: unknown): ((name: string) => string | undefined) | undefined {
++    if (!headers) {
++      return undefined;
++    }
++
++    const maybeHeaders = headers as { get?: (name: string) => unknown };
++    if (typeof maybeHeaders?.get === "function") {
++      return (name: string) => {
++        const value = maybeHeaders.get?.(name);
++        return value === undefined || value === null ? undefined : String(value);
++      };
++    }
++
++    if (typeof headers === "object") {
++      const entries = Object.entries(headers as Record<string, unknown>);
++      if (entries.length === 0) {
++        return undefined;
++      }
++
++      return (name: string) => {
++        const target = name.toLowerCase();
++        for (const [key, value] of entries) {
++          if (typeof key === "string" && key.toLowerCase() === target) {
++            if (Array.isArray(value)) {
++              const first = value[0];
++              return first === undefined || first === null ? undefined : String(first);
++            }
++            return value === undefined || value === null ? undefined : String(value);
++          }
++        }
++        return undefined;
++      };
++    }
++
++    return undefined;
++  }
++
++  private parseNumberHeader(
++    getHeader: (name: string) => string | undefined,
++    name: string,
++  ): number | undefined {
++    const raw = getHeader(name);
++    if (raw === undefined) {
++      return undefined;
++    }
++
++    const parsed = Number(raw);
++    return Number.isFinite(parsed) ? parsed : undefined;
++  }
++
++  private parseDurationHeaderToMs(
++    getHeader: (name: string) => string | undefined,
++    name: string,
++  ): number | undefined {
++    const raw = getHeader(name);
++    if (!raw) {
++      return undefined;
++    }
++
++    const trimmed = raw.trim();
++    const match = trimmed.match(/^(-?\d+(?:\.\d+)?)(ms|s)?$/i);
++    if (!match) {
++      return undefined;
++    }
++
++    const value = Number(match[1]);
++    if (!Number.isFinite(value) || value <= 0) {
++      return undefined;
++    }
++
++    const unit = (match[2] || "s").toLowerCase();
++    return unit === "ms" ? value : value * 1000;
++  }
++
++  private resolvePriority(metadata?: TrafficRequestMetadata): TrafficPriority {
++    const candidate = metadata?.priority;
++    if (candidate === "P0" || candidate === "P1" || candidate === "P2") {
++      return candidate;
++    }
++
++    return "P1";
++  }
++
++  private getQueue(priority: TrafficPriority): QueuedRequest[] {
++    return this.queues[priority];
++  }
++
++  private hasQueuedWork(): boolean {
++    return this.priorityOrder.some((priority) => this.getQueue(priority).length > 0);
++  }
++
++  private getQueueSize(): number {
++    let size = 0;
++    for (const priority of this.priorityOrder) {
++      size += this.getQueue(priority).length;
++    }
++    return size;
++  }
++
++  private scheduleRefill(limit: NormalizedRateLimit): void {
++    if (this.refillTimeout) {
++      return;
++    }
++
++    const delayMs = Math.max(1, Math.ceil(1 / limit.refillPerMs)); // Wait long enough for at least one token
++    this.logDebug("[TrafficController] scheduleRefill", { delayMs });
++    this.refillTimeout = setTimeout(() => {
++      this.refillTimeout = undefined; // Allow future refills to be scheduled
++      this.logDebug("[TrafficController] refillTimeoutFired", {
++        queueSize: this.getQueueSize(),
++        active: this.activeCount,
++      });
++      this.scheduleDrain(); // Try draining again now that tokens should exist
++    }, delayMs);
++  }
++
++  private recordCircuitSuccess(metadata?: TrafficRequestMetadata): void {
++    const key = this.buildRateLimitKey(metadata);
++    if (this.circuitBreakers.has(key)) {
++      this.circuitBreakers.delete(key);
++    }
++  }
++
++  private recordCircuitFailure(metadata: TrafficRequestMetadata | undefined, error: unknown): void {
++    const status = this.extractStatusCode(error);
++    if (!this.isCircuitBreakerStatus(status)) {
++      this.resetCircuitFailures(metadata);
++      return;
++    }
++
++    const key = this.buildRateLimitKey(metadata);
++    const now = Date.now();
++    const state =
++      this.circuitBreakers.get(key) ??
++      ({
++        status: "closed",
++        failureTimestamps: [],
++      } as CircuitState);
++
++    const recentFailures = state.failureTimestamps.filter(
++      (timestamp) => now - timestamp <= CIRCUIT_FAILURE_WINDOW_MS,
++    );
++    recentFailures.push(now);
++
++    if (state.status === "half-open") {
++      state.status = "open";
++      state.openedAt = now;
++      state.trialInFlight = false;
++      state.failureTimestamps = [now];
++      this.circuitBreakers.set(key, state);
++      this.logger.warn("Circuit reopened after half-open failure", {
++        circuitKey: key,
++        statusCode: status,
++      });
++      return;
++    }
++
++    state.failureTimestamps = recentFailures;
++    if (state.failureTimestamps.length >= CIRCUIT_FAILURE_THRESHOLD) {
++      state.status = "open";
++      state.openedAt = now;
++      state.trialInFlight = false;
++      this.logger.warn("Circuit opened after consecutive failures", {
++        circuitKey: key,
++        failureCount: state.failureTimestamps.length,
++        statusCode: status,
++      });
++    }
++
++    this.circuitBreakers.set(key, state);
++  }
++
++  private resetCircuitFailures(metadata?: TrafficRequestMetadata): void {
++    const key = this.buildRateLimitKey(metadata);
++    const state = this.circuitBreakers.get(key);
++    if (!state) {
++      return;
++    }
++
++    state.failureTimestamps = [];
++    if (state.status !== "open") {
++      state.status = "closed";
++      state.trialInFlight = false;
++    }
++
++    this.circuitBreakers.set(key, state);
++  }
++
++  private recordUsageFromResult<TResponse>(
++    item: QueuedRequest<TResponse>,
++    result: TResponse,
++  ): void {
++    const extractor = item.extractUsage ?? item.request.extractUsage;
++    if (!extractor) {
++      return;
++    }
++
++    try {
++      const usageCandidate = extractor(result);
++      if (!usageCandidate) {
++        return;
++      }
++
++      if (this.isPromiseLike(usageCandidate)) {
++        void Promise.resolve(usageCandidate)
++          .then((usage) => {
++            if (usage) {
++              this.incrementTenantUsage(item.tenantId, usage);
++            }
++          })
++          .catch((error) => {
++            this.logger.debug("Failed to record tenant usage", { tenantId: item.tenantId, error });
++          });
++        return;
++      }
++
++      this.incrementTenantUsage(item.tenantId, usageCandidate as UsageCounters);
++    } catch (error) {
++      this.logger.debug("Failed to record tenant usage", { tenantId: item.tenantId, error });
++    }
++  }
++
++  private incrementTenantUsage(tenantId: string, usage: UsageCounters): void {
++    const current = this.tenantUsage.get(tenantId) ?? {
++      inputTokens: 0,
++      outputTokens: 0,
++      totalTokens: 0,
++    };
++    const inputTokens = usage.inputTokens ?? 0;
++    const outputTokens = usage.outputTokens ?? 0;
++    const totalTokens = usage.totalTokens ?? inputTokens + outputTokens;
++    const updated: TenantUsage = {
++      inputTokens: current.inputTokens + inputTokens,
++      outputTokens: current.outputTokens + outputTokens,
++      totalTokens: current.totalTokens + totalTokens,
++    };
++    this.tenantUsage.set(tenantId, updated);
++    this.logger.debug("Recorded tenant usage", { tenantId, usage: updated });
++  }
++
++  private isPromiseLike(value: unknown): value is PromiseLike<unknown> {
++    return (
++      typeof value === "object" &&
++      value !== null &&
++      typeof (value as PromiseLike<unknown>).then === "function"
++    );
++  }
++
++  private isCircuitBreakerStatus(status?: number): boolean {
++    if (status === 429) {
++      return true;
++    }
++
++    return status !== undefined && status >= 500 && status < 600;
++  }
++
++  private async runRequest<TResponse>(item: QueuedRequest<TResponse>): Promise<void> {
++    const attempt = item.attempt ?? 1;
++
++    this.logDebug("[TrafficController] runRequest start", {
++      type: item.type,
++      rateLimitKey: item.rateLimitKey,
++      etaMs: item.etaMs,
++      active: this.activeCount,
++      queueSize: this.getQueueSize(),
++    });
++
++    try {
++      const result = await item.request.execute(); // Execute the user's operation
++      this.recordCircuitSuccess(item.request.metadata);
++      this.recordUsageFromResult(item, result);
++      item.resolve(result); // Deliver successful result back to the waiting caller
++    } catch (error) {
++      this.recordCircuitFailure(item.request.metadata, error);
++      const retryPlan = this.buildRetryPlan(error, attempt);
++      if (retryPlan) {
++        this.scheduleRetry(item, attempt + 1, retryPlan.delayMs, retryPlan.reason);
++      } else {
++        item.reject(error); // Surface failures to the caller
++      }
++    } finally {
++      this.activeCount = Math.max(0, this.activeCount - 1); // Ensure counter never underflows
++      this.logDebug("[TrafficController] runRequest complete", {
++        type: item.type,
++        active: this.activeCount,
++        queueSize: this.getQueueSize(),
++      });
++      this.scheduleDrain(); // Immediately try to pull the next request
++    }
++  }
++
++  private buildRetryPlan(
++    error: unknown,
++    attempt: number,
++  ): { delayMs: number; reason: RetryReason } | undefined {
++    const reason = this.getRetryReason(error);
++    if (!reason) {
++      return undefined;
++    }
++
++    const maxAttempts = reason === "timeout" ? TIMEOUT_RETRY_ATTEMPTS : MAX_RETRY_ATTEMPTS;
++    if (attempt >= maxAttempts) {
++      return undefined;
++    }
++
++    return {
++      reason,
++      delayMs: this.computeBackoffDelay(reason, attempt),
++    };
++  }
++
++  private getRetryReason(error: unknown): RetryReason | undefined {
++    const statusCode = this.extractStatusCode(error);
++    if (statusCode === 429) {
++      return "rateLimit";
++    }
++
++    if (statusCode !== undefined && statusCode >= 500 && statusCode < 600) {
++      return "serverError";
++    }
++
++    if (statusCode === 408 || this.isTimeoutError(error)) {
++      return "timeout";
++    }
++
++    return undefined;
++  }
++
++  private extractStatusCode(error: unknown): number | undefined {
++    if (!error || typeof error !== "object") {
++      return undefined;
++    }
++
++    const candidate = error as { status?: unknown; statusCode?: unknown; httpStatus?: unknown };
++    const directStatus =
++      this.coerceStatus(candidate.status) ??
++      this.coerceStatus(candidate.statusCode) ??
++      this.coerceStatus(candidate.httpStatus);
++    if (directStatus !== undefined) {
++      return directStatus;
++    }
++
++    const responseStatus = (error as { response?: { status?: unknown } }).response?.status;
++    const normalizedResponseStatus = this.coerceStatus(responseStatus);
++    if (normalizedResponseStatus !== undefined) {
++      return normalizedResponseStatus;
++    }
++
++    const causeStatus = (error as { cause?: { status?: unknown; statusCode?: unknown } }).cause;
++    if (causeStatus) {
++      const normalizedCauseStatus =
++        this.coerceStatus(causeStatus.status) ?? this.coerceStatus(causeStatus.statusCode);
++      if (normalizedCauseStatus !== undefined) {
++        return normalizedCauseStatus;
++      }
++    }
++
++    return undefined;
++  }
++
++  private isTimeoutError(error: unknown): boolean {
++    const candidates = [error, (error as { cause?: unknown })?.cause];
++
++    for (const candidate of candidates) {
++      if (!candidate || typeof candidate !== "object") {
++        continue;
++      }
++
++      const timeoutCode = (candidate as { code?: unknown }).code;
++      if (typeof timeoutCode === "string" && timeoutCode.toLowerCase().includes("timeout")) {
++        return true;
++      }
++
++      const name = (candidate as { name?: unknown }).name;
++      if (typeof name === "string" && name.toLowerCase().includes("timeout")) {
++        return true;
++      }
++
++      const message = (candidate as { message?: unknown }).message;
++      if (typeof message === "string" && message.toLowerCase().includes("timeout")) {
++        return true;
++      }
++    }
++
++    return false;
++  }
++
++  private coerceStatus(value: unknown): number | undefined {
++    if (typeof value === "number" && Number.isFinite(value)) {
++      return value;
++    }
++
++    if (typeof value === "string") {
++      const parsed = Number(value);
++      if (Number.isFinite(parsed)) {
++        return parsed;
++      }
++    }
++
++    return undefined;
++  }
++
++  private computeBackoffDelay(reason: RetryReason, attempt: number): number {
++    const base =
++      reason === "serverError"
++        ? SERVER_ERROR_BASE_BACKOFF_MS
++        : reason === "timeout"
++          ? TIMEOUT_BASE_BACKOFF_MS
++          : RATE_LIMIT_BASE_BACKOFF_MS;
++
++    const jitterFactor =
++      reason === "serverError"
++        ? SERVER_ERROR_JITTER_FACTOR
++        : reason === "timeout"
++          ? TIMEOUT_JITTER_FACTOR
++          : RATE_LIMIT_JITTER_FACTOR;
++
++    const exponential = base * 2 ** Math.max(0, attempt - 1);
++    const jitter = exponential * jitterFactor * Math.random();
++    return Math.max(1, Math.round(exponential + jitter));
++  }
++
++  private scheduleRetry<TResponse>(
++    item: QueuedRequest<TResponse>,
++    nextAttempt: number,
++    delayMs: number,
++    reason: RetryReason,
++  ): void {
++    this.logger.debug("Retrying request through controller", {
++      reason,
++      delayMs,
++      attempt: nextAttempt,
++      maxAttempts: reason === "timeout" ? TIMEOUT_RETRY_ATTEMPTS : MAX_RETRY_ATTEMPTS,
++      metadata: item.request.metadata,
++    });
++
++    setTimeout(() => {
++      const retryPriority = item.priority;
++      this.getQueue(retryPriority).push({
++        ...item,
++        attempt: nextAttempt,
++        etaMs: undefined,
++        rateLimitKey: undefined,
++        circuitKey: undefined,
++        circuitStatus: undefined,
++      });
++      this.scheduleDrain();
++    }, delayMs);
++  }
++}
++
++let singletonController: TrafficController | undefined;
++
++export class CircuitBreakerOpenError extends Error {
++  readonly retryAfterMs?: number;
++  readonly metadata?: TrafficRequestMetadata;
++
++  constructor(message: string, metadata?: TrafficRequestMetadata, retryAfterMs?: number) {
++    super(message);
++    this.name = "CircuitBreakerOpenError";
++    this.metadata = metadata;
++    this.retryAfterMs = retryAfterMs;
++  }
++}
++
++/**
++ * Retrieve the shared traffic controller instance.
++ */
++export function getTrafficController(options?: TrafficControllerOptions): TrafficController {
++  if (!singletonController) {
++    // Create a singleton controller so all agents share the same queue/scheduling behavior
++    singletonController = new TrafficController(options);
++  }
++
++  return singletonController;
++}
+diff --git a/packages/core/src/workflow/core.ts b/packages/core/src/workflow/core.ts
+index 3136511c..2b273d58 100644
+--- a/packages/core/src/workflow/core.ts
++++ b/packages/core/src/workflow/core.ts
+@@ -827,6 +827,9 @@ export function createWorkflow<
+ 
+     // Wrap entire execution in root span
+     const rootSpan = traceContext.getRootSpan();
++    if (options?.tenantId) {
++      rootSpan.setAttribute("tenant.id", options.tenantId);
++    }
+ 
+     // Add workflow state snapshot for remote observability
+     const workflowState = {
+@@ -848,6 +851,7 @@ export function createWorkflow<
+         executionId,
+         userId: options?.userId,
+         conversationId: options?.conversationId,
++        tenantId: options?.tenantId,
+         traceId: rootSpan.spanContext().traceId,
+         spanId: rootSpan.spanContext().spanId,
+       });
+diff --git a/packages/core/src/workflow/internal/state.ts b/packages/core/src/workflow/internal/state.ts
+index 71fa602d..2de12528 100644
+--- a/packages/core/src/workflow/internal/state.ts
++++ b/packages/core/src/workflow/internal/state.ts
+@@ -23,6 +23,7 @@ export type WorkflowState<INPUT, RESULT> = {
+   executionId: string;
+   conversationId?: string;
+   userId?: string;
++  tenantId?: string;
+   context?: UserContext;
+   active: number;
+   startAt: Date;
+@@ -132,6 +133,7 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
+       active: config?.active ?? 0,
+       userId: config?.userId,
+       conversationId: config?.conversationId,
++      tenantId: config?.tenantId,
+       context: config?.context,
+       startAt: new Date(),
+       endAt: null,
+diff --git a/packages/core/src/workflow/internal/utils.ts b/packages/core/src/workflow/internal/utils.ts
+index fc39530b..42250d82 100644
+--- a/packages/core/src/workflow/internal/utils.ts
++++ b/packages/core/src/workflow/internal/utils.ts
+@@ -32,6 +32,7 @@ export function convertWorkflowStateToParam<INPUT>(
+     executionId: state.executionId,
+     conversationId: state.conversationId,
+     userId: state.userId,
++    tenantId: state.tenantId,
+     context: state.context,
+     active: state.active,
+     startAt: state.startAt,
+diff --git a/packages/core/src/workflow/steps/and-agent.ts b/packages/core/src/workflow/steps/and-agent.ts
+index bc46c148..14af9b8f 100644
+--- a/packages/core/src/workflow/steps/and-agent.ts
++++ b/packages/core/src/workflow/steps/and-agent.ts
+@@ -66,6 +66,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
+           context: restConfig.context ?? state.context,
+           conversationId: restConfig.conversationId ?? state.conversationId,
+           userId: restConfig.userId ?? state.userId,
++          tenantId: restConfig.tenantId ?? state.tenantId,
+           // No parentSpan when there's no workflow context
+         });
+         // Accumulate usage if available (no workflow context)
+@@ -92,6 +93,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
+           context: restConfig.context ?? state.context,
+           conversationId: restConfig.conversationId ?? state.conversationId,
+           userId: restConfig.userId ?? state.userId,
++          tenantId: restConfig.tenantId ?? state.tenantId,
+           // Pass the current step span as parent for proper span hierarchy
+           parentSpan: state.workflowContext?.currentStepSpan,
+         });
+diff --git a/packages/core/src/workflow/types.ts b/packages/core/src/workflow/types.ts
+index f7eed282..49bfd8cb 100644
+--- a/packages/core/src/workflow/types.ts
++++ b/packages/core/src/workflow/types.ts
+@@ -214,6 +214,10 @@ export interface WorkflowRunOptions {
+    * The conversation ID, this can be used to track the current conversation in a workflow
+    */
+   conversationId?: string;
++  /**
++   * Tenant identifier propagated to agent steps and subcalls
++   */
++  tenantId?: string;
+   /**
+    * The user ID, this can be used to track the current user in a workflow
+    */
+diff --git a/packages/scorers/src/llm/answer-correctness.ts b/packages/scorers/src/llm/answer-correctness.ts
+index 2111fa31..d66cc007 100644
+--- a/packages/scorers/src/llm/answer-correctness.ts
++++ b/packages/scorers/src/llm/answer-correctness.ts
+@@ -7,6 +7,7 @@ import {
+ import { safeStringify } from "@voltagent/internal/utils";
+ import type { LanguageModel } from "ai";
+ import { z } from "zod";
++import { extractTenantId } from "./utils";
+ 
+ const ANSWER_CORRECTNESS_PROMPT = `Given a ground truth and an answer, analyze each statement in the answer and classify them in one of the following categories:
+ 
+@@ -84,15 +85,17 @@ export function createAnswerCorrectnessScorer<
+     const agent = new Agent({
+       name: "answer-correctness-classifier",
+       model,
++      trafficPriority: "P2",
+       instructions: "You classify statements for answer correctness evaluation",
+     });
+ 
++    const tenantId = extractTenantId(context);
+     const payload = resolvePayload(context, buildPayload);
+     const prompt = ANSWER_CORRECTNESS_PROMPT.replace("{{question}}", payload.input)
+       .replace("{{answer}}", payload.output)
+       .replace("{{ground_truth}}", payload.expected);
+ 
+-    const response = await agent.generateObject(prompt, CLASSIFICATION_SCHEMA);
++    const response = await agent.generateObject(prompt, CLASSIFICATION_SCHEMA, { tenantId });
+     const normalized = normalizeClassification(response.object);
+ 
+     return {
+diff --git a/packages/scorers/src/llm/answer-relevancy.ts b/packages/scorers/src/llm/answer-relevancy.ts
+index a3de2237..d9bda1c9 100644
+--- a/packages/scorers/src/llm/answer-relevancy.ts
++++ b/packages/scorers/src/llm/answer-relevancy.ts
+@@ -8,6 +8,7 @@ import {
+ import { safeStringify } from "@voltagent/internal/utils";
+ import type { LanguageModel } from "ai";
+ import { z } from "zod";
++import { extractTenantId } from "./utils";
+ 
+ const QUESTION_GEN_PROMPT = `Generate a question for the given answer and Identify if answer is noncommittal. Give noncommittal as 1 if the answer is noncommittal and 0 if the answer is committal. A noncommittal answer is one that is evasive, vague, or ambiguous. For example, "I don't know" or "I'm not sure" are noncommittal answers
+ 
+@@ -119,9 +120,11 @@ export function createAnswerRelevancyScorer<
+     const agent = new Agent({
+       name: "question-generator",
+       model,
++      trafficPriority: "P2",
+       instructions: "You generate questions from answers to evaluate relevancy",
+     });
+ 
++    const tenantId = extractTenantId(context);
+     const payload = resolvePayload(context, buildPayload);
+     const questions: GeneratedQuestion[] = [];
+ 
+@@ -131,7 +134,7 @@ export function createAnswerRelevancyScorer<
+         payload.context,
+       );
+ 
+-      const response = await agent.generateObject(prompt, QUESTION_SCHEMA);
++      const response = await agent.generateObject(prompt, QUESTION_SCHEMA, { tenantId });
+       questions.push({
+         question: response.object.question,
+         noncommittal: response.object.noncommittal === 1,
+diff --git a/packages/scorers/src/llm/classifiers.ts b/packages/scorers/src/llm/classifiers.ts
+index 1bca4239..a327e20d 100644
+--- a/packages/scorers/src/llm/classifiers.ts
++++ b/packages/scorers/src/llm/classifiers.ts
+@@ -7,6 +7,7 @@ import {
+ } from "@voltagent/core";
+ import { safeStringify } from "@voltagent/internal/utils";
+ import { z } from "zod";
++import { extractTenantId } from "./utils";
+ 
+ type ChoiceId = string;
+ 
+@@ -93,11 +94,14 @@ async function evaluateChoice(args: EvaluateChoiceArgs): Promise<ChoiceAnalysis>
+   const agent = new Agent({
+     name: `${scorerId}-judge`,
+     model,
++    trafficPriority: "P2",
+     instructions: judgeInstructions ?? buildDefaultChoiceInstructions(Object.keys(choices)),
+   });
+ 
++  const tenantId = extractTenantId(context);
+   const response = await agent.generateObject(prompt, CHOICE_RESPONSE_SCHEMA, {
+     maxOutputTokens,
++    tenantId,
+   });
+ 
+   const { choice, reason } = extractChoiceFromResponse(response.object, choices, scorerId);
+diff --git a/packages/scorers/src/llm/context-precision.ts b/packages/scorers/src/llm/context-precision.ts
+index d31b5b85..ba680f56 100644
+--- a/packages/scorers/src/llm/context-precision.ts
++++ b/packages/scorers/src/llm/context-precision.ts
+@@ -7,6 +7,7 @@ import {
+ import { safeStringify } from "@voltagent/internal/utils";
+ import type { LanguageModel } from "ai";
+ import { z } from "zod";
++import { extractTenantId } from "./utils";
+ 
+ const CONTEXT_PRECISION_PROMPT = `Given question, answer and context verify if the context was useful in arriving at the given answer. Give verdict as "1" if useful and "0" if not with json output.
+ 
+@@ -109,6 +110,7 @@ export function createContextPrecisionScorer<
+       const agent = new Agent({
+         name: "context-precision-evaluator",
+         model,
++        trafficPriority: "P2",
+         instructions: "You evaluate if context was useful for arriving at the answer",
+       });
+ 
+@@ -116,12 +118,15 @@ export function createContextPrecisionScorer<
+       const contextText = Array.isArray(payload.context)
+         ? payload.context.join("\n")
+         : payload.context;
++      const tenantId = extractTenantId(context);
+ 
+       const prompt = CONTEXT_PRECISION_PROMPT.replace("{{question}}", payload.input)
+         .replace("{{context}}", contextText)
+         .replace("{{answer}}", payload.output);
+ 
+-      const response = await agent.generateObject(prompt, CONTEXT_PRECISION_SCHEMA);
++      const response = await agent.generateObject(prompt, CONTEXT_PRECISION_SCHEMA, {
++        tenantId,
++      });
+ 
+       context.results.raw.contextPrecisionVerdict = response.object;
+ 
+diff --git a/packages/scorers/src/llm/context-recall.ts b/packages/scorers/src/llm/context-recall.ts
+index e6e86510..2c6053fc 100644
+--- a/packages/scorers/src/llm/context-recall.ts
++++ b/packages/scorers/src/llm/context-recall.ts
+@@ -7,6 +7,7 @@ import {
+ import { safeStringify } from "@voltagent/internal/utils";
+ import type { LanguageModel } from "ai";
+ import { z } from "zod";
++import { extractTenantId } from "./utils";
+ 
+ const CONTEXT_RECALL_EXTRACT_PROMPT = `Given the context and ground truth (expected output), extract all factual statements from the ground truth.
+ 
+@@ -120,6 +121,7 @@ export function createContextRecallScorer<
+       const agent = new Agent({
+         name: "context-recall-evaluator",
+         model,
++        trafficPriority: "P2",
+         instructions: "You evaluate how well provided context supports factual statements",
+       });
+ 
+@@ -127,6 +129,7 @@ export function createContextRecallScorer<
+       const contextText = Array.isArray(payload.context)
+         ? payload.context.join("\n")
+         : payload.context;
++      const tenantId = extractTenantId(context);
+ 
+       // Extract statements from expected output
+       const extractPrompt = CONTEXT_RECALL_EXTRACT_PROMPT.replace(
+@@ -134,7 +137,9 @@ export function createContextRecallScorer<
+         contextText,
+       ).replace("{{expected}}", payload.expected);
+ 
+-      const extractResponse = await agent.generateObject(extractPrompt, EXTRACT_SCHEMA);
++      const extractResponse = await agent.generateObject(extractPrompt, EXTRACT_SCHEMA, {
++        tenantId,
++      });
+       const statements = extractResponse.object.statements;
+ 
+       if (statements.length === 0) {
+@@ -152,7 +157,9 @@ export function createContextRecallScorer<
+           contextText,
+         ).replace("{{statement}}", statement);
+ 
+-        const verifyResponse = await agent.generateObject(verifyPrompt, VERIFY_SCHEMA);
++        const verifyResponse = await agent.generateObject(verifyPrompt, VERIFY_SCHEMA, {
++          tenantId,
++        });
+         verdicts.push({
+           statement,
+           verdict: verifyResponse.object.verdict,
+diff --git a/packages/scorers/src/llm/context-relevancy.ts b/packages/scorers/src/llm/context-relevancy.ts
+index ee882b5b..aca608b2 100644
+--- a/packages/scorers/src/llm/context-relevancy.ts
++++ b/packages/scorers/src/llm/context-relevancy.ts
+@@ -7,6 +7,7 @@ import {
+ import { safeStringify } from "@voltagent/internal/utils";
+ import type { LanguageModel } from "ai";
+ import { z } from "zod";
++import { extractTenantId } from "./utils";
+ 
+ const CONTEXT_RELEVANCY_PROMPT = `Analyze the provided context and identify which parts are relevant to answering the given question. For each context sentence or passage, determine its relevance level.
+ 
+@@ -144,6 +145,7 @@ export function createContextRelevancyScorer<
+       const agent = new Agent({
+         name: "context-relevancy-evaluator",
+         model,
++        trafficPriority: "P2",
+         instructions: "You evaluate how relevant provided context is to answering questions",
+       });
+ 
+@@ -151,13 +153,16 @@ export function createContextRelevancyScorer<
+       const contextText = Array.isArray(payload.context)
+         ? payload.context.join("\n")
+         : payload.context;
++      const tenantId = extractTenantId(context);
+ 
+       const prompt = CONTEXT_RELEVANCY_PROMPT.replace("{{question}}", payload.input).replace(
+         "{{context}}",
+         contextText,
+       );
+ 
+-      const response = await agent.generateObject(prompt, CONTEXT_RELEVANCY_SCHEMA);
++      const response = await agent.generateObject(prompt, CONTEXT_RELEVANCY_SCHEMA, {
++        tenantId,
++      });
+       const evaluations = response.object.evaluations;
+ 
+       context.results.raw.contextRelevancyEvaluations = evaluations;
+diff --git a/packages/scorers/src/llm/moderation.ts b/packages/scorers/src/llm/moderation.ts
+index 03563bfe..1055927f 100644
+--- a/packages/scorers/src/llm/moderation.ts
++++ b/packages/scorers/src/llm/moderation.ts
+@@ -7,6 +7,7 @@ import {
+ } from "@voltagent/core";
+ import { safeStringify } from "@voltagent/internal/utils";
+ import { z } from "zod";
++import { extractTenantId } from "./utils";
+ 
+ export interface ModerationScorerOptions {
+   id?: string;
+@@ -220,6 +221,7 @@ async function runModerationJudge(args: {
+     typeof context.results.prepare === "string"
+       ? context.results.prepare
+       : normalizeText(context.payload.output);
++  const tenantId = extractTenantId(context);
+ 
+   const prompt = await buildPrompt({
+     output: normalizedOutput,
+@@ -232,12 +234,14 @@ async function runModerationJudge(args: {
+   const agent = new Agent({
+     name: "moderation-judge",
+     model,
++    trafficPriority: "P2",
+     instructions:
+       "You are a safety classifier. Respond with JSON that matches the provided schema containing flagged, scores, and reason.",
+   });
+ 
+   const response = await agent.generateObject(prompt, MODERATION_SCHEMA, {
+     maxOutputTokens,
++    tenantId,
+   });
+ 
+   const parsed = mapModerationResponse(response.object, threshold);
+diff --git a/packages/scorers/src/llm/utils.ts b/packages/scorers/src/llm/utils.ts
+new file mode 100644
+index 00000000..75e886e3
+--- /dev/null
++++ b/packages/scorers/src/llm/utils.ts
+@@ -0,0 +1,14 @@
++import type { BuilderPrepareContext, BuilderScoreContext } from "@voltagent/core";
++
++type TenantAwareContext = BuilderScoreContext<Record<string, unknown>, Record<string, unknown>> &
++  BuilderPrepareContext<Record<string, unknown>, Record<string, unknown>>;
++
++export function extractTenantId(
++  context:
++    | BuilderScoreContext<Record<string, unknown>, Record<string, unknown>>
++    | BuilderPrepareContext<Record<string, unknown>, Record<string, unknown>>
++    | TenantAwareContext,
++): string | undefined {
++  const candidate = (context.payload as { tenantId?: unknown })?.tenantId;
++  return typeof candidate === "string" ? candidate : undefined;
++}

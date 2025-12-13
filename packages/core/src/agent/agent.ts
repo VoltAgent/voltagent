@@ -5537,12 +5537,23 @@ export class Agent {
       return;
     }
 
-    const refillPerSecond = updateResult.normalized.refillPerMs * 1000;
+    const now = Date.now();
+    const effectiveRemaining = Math.max(
+      0,
+      updateResult.state.remaining - updateResult.state.reserved,
+    );
+    const resetInMs = Math.max(0, updateResult.state.resetAt - now);
+    const nextAllowedInMs = Math.max(0, updateResult.state.nextAllowedAt - now);
     logger?.info?.("[Traffic] Applied rate limit from response headers", {
       rateLimitKey: updateResult.key,
-      capacity: updateResult.normalized.capacity,
-      refillPerSecond,
-      appliedTokens: updateResult.appliedTokens,
+      limit: updateResult.state.limit,
+      remaining: updateResult.state.remaining,
+      reserved: updateResult.state.reserved,
+      effectiveRemaining,
+      resetAt: updateResult.state.resetAt,
+      resetInMs,
+      nextAllowedAt: updateResult.state.nextAllowedAt,
+      nextAllowedInMs,
       headers: {
         limitRequests: updateResult.headerSnapshot.limitRequests,
         remainingRequests: updateResult.headerSnapshot.remainingRequests,

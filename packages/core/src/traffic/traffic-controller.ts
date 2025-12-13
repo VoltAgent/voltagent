@@ -22,20 +22,20 @@ const TIMEOUT_BASE_BACKOFF_MS = 750;
 const RATE_LIMIT_JITTER_FACTOR = 0.35;
 const SERVER_ERROR_JITTER_FACTOR = 0.8;
 const TIMEOUT_JITTER_FACTOR = 0.5;
+const RATE_LIMIT_EXHAUSTION_BUFFER = 1;
+const RATE_LIMIT_PROBE_DELAY_MS = 50;
+const RATE_LIMIT_MIN_PACE_INTERVAL_MS = 10;
+const RATE_LIMIT_NEXT_ALLOWED_UPDATE_THRESHOLD_MS = 10;
 const DEFAULT_FALLBACK_CHAINS: Record<string, string[]> = {
   "gpt-4o": ["gpt-4o-mini", "gpt-3.5"],
 };
 
-interface RateLimitBucket {
-  tokens: number;
-  capacity: number;
-  refillPerMs: number;
-  lastRefill: number;
-}
-
-type NormalizedRateLimit = {
-  capacity: number;
-  refillPerMs: number;
+type RateLimitWindowState = {
+  limit: number;
+  remaining: number;
+  resetAt: number;
+  reserved: number;
+  nextAllowedAt: number;
 };
 
 export interface RateLimitOptions {
@@ -60,15 +60,14 @@ export type RateLimitConfig = Record<RateLimitKey, RateLimitOptions>;
 
 type RateLimitHeaderSnapshot = {
   limitRequests: number;
-  remainingRequests?: number;
+  remainingRequests: number;
   resetRequestsMs: number;
 };
 
 export type RateLimitUpdateResult = {
   key: string;
   headerSnapshot: RateLimitHeaderSnapshot;
-  normalized: NormalizedRateLimit;
-  appliedTokens: number;
+  state: RateLimitWindowState;
 };
 
 export type TrafficRequestType = "text" | "stream";
@@ -137,8 +136,7 @@ type ProcessDecision = "process" | "skip" | "wait";
 export class TrafficController {
   private readonly scheduler: Scheduler;
   private readonly maxConcurrent: number;
-  private rateLimits?: Map<string, NormalizedRateLimit>;
-  private readonly rateLimitBuckets = new Map<string, RateLimitBucket>();
+  private readonly rateLimitStates = new Map<string, RateLimitWindowState>();
   private readonly circuitBreakers = new Map<string, CircuitState>();
   private readonly fallbackChains: Map<string, string[]>;
   private readonly priorityOrder: TrafficPriority[] = ["P0", "P1", "P2"];
@@ -149,7 +147,8 @@ export class TrafficController {
   };
   private activeCount = 0;
   private drainScheduled = false;
-  private refillTimeout?: ReturnType<typeof setTimeout>;
+  private wakeUpTimeout?: ReturnType<typeof setTimeout>;
+  private wakeUpAt?: number;
   private readonly tenantUsage = new Map<string, TenantUsage>();
   private readonly logger: Logger;
 
@@ -161,7 +160,6 @@ export class TrafficController {
 
   constructor(options: TrafficControllerOptions = {}) {
     this.maxConcurrent = options.maxConcurrent ?? Number.POSITIVE_INFINITY;
-    this.rateLimits = this.normalizeRateLimits(options.rateLimits);
     this.fallbackChains = this.normalizeFallbackChains(options.fallbackChains);
     this.scheduler = this.createScheduler();
 
@@ -171,7 +169,7 @@ export class TrafficController {
     // INIT LOG (from HEAD) — rewritten to use the new logger
     this.logger.debug("[TrafficController] init", {
       maxConcurrent: this.maxConcurrent,
-      rateLimits: this.rateLimits ? Array.from(this.rateLimits.entries()) : undefined,
+      rateLimitKeys: Array.from(this.rateLimitStates.keys()),
     });
   }
 
@@ -316,8 +314,8 @@ export class TrafficController {
       return "wait";
     }
 
-    const rateLimitConfig = this.getRateLimitConfig(next.request.metadata);
-    if (!rateLimitConfig) {
+    const rateLimitState = this.getRateLimitState(next.request.metadata);
+    if (!rateLimitState) {
       this.logDebug("[TrafficController] no rate limit match", {
         metadata: next.request.metadata,
       });
@@ -326,159 +324,93 @@ export class TrafficController {
       return "process"; // No rate limit configured for this key
     }
 
-    const queuedAhead = this.countQueuedAheadWithKey(
-      rateLimitConfig.key,
-      next,
-      /*logDetails*/ true,
-    );
-    const bucket = this.getRateLimitBucket(rateLimitConfig.key, rateLimitConfig.limit);
-    if (bucket.tokens < 1) {
-      next.rateLimitKey = rateLimitConfig.key;
-      next.etaMs = this.computeEtaMs(
-        bucket,
-        rateLimitConfig.limit,
-        rateLimitConfig.key,
-        next,
-        queuedAhead,
-      );
+    const { key, state } = rateLimitState;
+    const now = Date.now();
+    const effectiveRemaining = Math.max(0, state.remaining - state.reserved);
+    const probeAt = state.resetAt + RATE_LIMIT_PROBE_DELAY_MS;
+
+    if (effectiveRemaining <= RATE_LIMIT_EXHAUSTION_BUFFER) {
+      next.rateLimitKey = key;
+      next.etaMs = Math.max(0, probeAt - now);
       this.logDebug("[TrafficController] throttle rate", {
-        key: rateLimitConfig.key,
-        tokens: bucket.tokens,
+        key,
+        remaining: state.remaining,
+        reserved: state.reserved,
+        resetAt: state.resetAt,
+        nextAllowedAt: state.nextAllowedAt,
+        effectiveRemaining,
         etaMs: next.etaMs,
-        queuedAhead,
       });
-      this.scheduleRefill(rateLimitConfig.limit); // Ensure we retry as soon as tokens are replenished
+
+      if (now < probeAt) {
+        this.scheduleRateLimitWakeUpAt(probeAt);
+        return "wait";
+      }
+
+      // Window has expired, but we have not observed a newer header snapshot yet.
+      // Allow a single probe request (no in-flight reservations) to refresh headers.
+      if (state.reserved > 0) {
+        return "wait";
+      }
+    }
+
+    if (now < state.nextAllowedAt) {
+      next.rateLimitKey = key;
+      next.etaMs = Math.max(0, state.nextAllowedAt - now);
+      this.logDebug("[TrafficController] throttle rate", {
+        key,
+        remaining: state.remaining,
+        reserved: state.reserved,
+        resetAt: state.resetAt,
+        nextAllowedAt: state.nextAllowedAt,
+        effectiveRemaining,
+        etaMs: next.etaMs,
+      });
+      this.scheduleRateLimitWakeUpAt(Math.min(state.resetAt, state.nextAllowedAt));
       return "wait";
     }
 
-    bucket.tokens -= 1; // Consume a token for this dispatch
-    this.logDebug("[TrafficController] token consumed", {
-      key: rateLimitConfig.key,
-      remaining: bucket.tokens,
-      capacity: bucket.capacity,
-    });
-    next.rateLimitKey = rateLimitConfig.key;
+    // Allow request: reserve one slot until we receive headers (or completion).
+    state.reserved += 1;
+    next.rateLimitKey = key;
     next.etaMs = 0;
+
+    const remainingWindowMs = Math.max(0, state.resetAt - now);
+    const intervalMs = Math.max(
+      RATE_LIMIT_MIN_PACE_INTERVAL_MS,
+      Math.ceil(remainingWindowMs / Math.max(effectiveRemaining, 1)),
+    );
+    const candidateNextAllowedAt = Math.max(state.nextAllowedAt, now + intervalMs);
+    const shouldUpdateNextAllowedAt =
+      state.nextAllowedAt <= now ||
+      candidateNextAllowedAt >= state.nextAllowedAt + RATE_LIMIT_NEXT_ALLOWED_UPDATE_THRESHOLD_MS;
+    if (shouldUpdateNextAllowedAt) {
+      state.nextAllowedAt = candidateNextAllowedAt;
+    }
+
+    this.logDebug("[TrafficController] rate limit reserved", {
+      key,
+      remaining: state.remaining,
+      reserved: state.reserved,
+      resetAt: state.resetAt,
+      nextAllowedAt: state.nextAllowedAt,
+      intervalMs,
+      effectiveRemaining,
+    });
     return "process";
   }
 
-  private getRateLimitConfig(
+  private getRateLimitState(
     metadata?: TrafficRequestMetadata,
-  ): { key: string; limit: NormalizedRateLimit } | undefined {
-    if (!this.rateLimits || this.rateLimits.size === 0) {
-      return undefined;
-    }
-
+  ): { key: string; state: RateLimitWindowState } | undefined {
     const key = this.buildRateLimitKey(metadata);
-    const limit = this.rateLimits.get(key);
-    if (!limit) {
+    const state = this.rateLimitStates.get(key);
+    if (!state) {
       return undefined;
     }
 
-    this.logDebug("[TrafficController] rateLimitConfig hit", { key });
-    return { key, limit };
-  }
-
-  private getRateLimitBucket(key: string, limit: NormalizedRateLimit): RateLimitBucket {
-    const now = Date.now(); // Snapshot time once to avoid drift within this method
-    let bucket = this.rateLimitBuckets.get(key); // Reuse the bucket if it already exists
-
-    if (!bucket) {
-      bucket = {
-        tokens: limit.capacity,
-        capacity: limit.capacity,
-        refillPerMs: limit.refillPerMs,
-        lastRefill: now,
-      };
-      this.rateLimitBuckets.set(key, bucket);
-      this.logDebug("[TrafficController] bucket create", {
-        key,
-        capacity: bucket.capacity,
-        refillPerMs: bucket.refillPerMs,
-      });
-      return bucket;
-    }
-
-    if (
-      bucket.capacity !== limit.capacity ||
-      Math.abs(bucket.refillPerMs - limit.refillPerMs) > Number.EPSILON
-    ) {
-      bucket.capacity = limit.capacity;
-      bucket.refillPerMs = limit.refillPerMs;
-      bucket.tokens = Math.min(bucket.tokens, bucket.capacity);
-      bucket.lastRefill = now;
-      this.logDebug("[TrafficController] bucket sync with new limit", {
-        key,
-        capacity: bucket.capacity,
-        refillPerMs: bucket.refillPerMs,
-      });
-    }
-
-    const elapsedMs = Math.max(0, now - bucket.lastRefill);
-    if (elapsedMs > 0 && bucket.tokens < bucket.capacity) {
-      const refilled = elapsedMs * bucket.refillPerMs; // Refill based on elapsed time
-      bucket.tokens = Math.min(bucket.capacity, bucket.tokens + refilled); // Cap at bucket capacity
-      bucket.lastRefill = now; // Mark refill time for the next calculation
-      this.logDebug("[TrafficController] bucket refill", {
-        key,
-        elapsedMs,
-        tokens: bucket.tokens,
-      });
-    }
-
-    return bucket;
-  }
-
-  private computeEtaMs(
-    bucket: RateLimitBucket,
-    limit: NormalizedRateLimit,
-    key: string,
-    current: QueuedRequest,
-    queuedAhead?: number,
-  ): number {
-    const missingTokens = Math.max(0, 1 - bucket.tokens);
-    const waitForToken =
-      missingTokens > 0 && limit.refillPerMs > 0 ? Math.ceil(missingTokens / limit.refillPerMs) : 0;
-    const aheadCount =
-      typeof queuedAhead === "number"
-        ? queuedAhead
-        : this.countQueuedAheadWithKey(key, current, /*logDetails*/ false);
-    const extraForQueue =
-      aheadCount > 0 && limit.refillPerMs > 0 ? Math.ceil(aheadCount / limit.refillPerMs) : 0;
-    this.logDebug("[TrafficController] computeEtaMs", {
-      key,
-      missingTokens,
-      waitForToken,
-      aheadCount,
-      extraForQueue,
-      eta: waitForToken + extraForQueue,
-    });
-    return waitForToken + extraForQueue;
-  }
-
-  private countQueuedAheadWithKey(key: string, current: QueuedRequest, logDetails = false): number {
-    let count = 0;
-    for (const priority of this.priorityOrder) {
-      const queue = this.getQueue(priority);
-      for (const item of queue) {
-        if (item === current) {
-          return count;
-        }
-
-        const itemKey = this.buildRateLimitKey(item.request.metadata);
-        if (itemKey === key) {
-          count += 1;
-        }
-      }
-    }
-    if (logDetails) {
-      this.logDebug("[TrafficController] countQueuedAheadWithKey", {
-        key,
-        count,
-        queueSize: this.getQueueSize(),
-      });
-    }
-    return count;
+    this.logDebug("[TrafficController] rateLimitState hit", { key });
+    return { key, state };
   }
 
   private evaluateCircuitBreaker(next: QueuedRequest): ProcessDecision {
@@ -621,26 +553,6 @@ export class TrafficController {
     }
   }
 
-  private normalizeRateLimits(
-    rateLimits?: RateLimitConfig,
-  ): Map<string, NormalizedRateLimit> | undefined {
-    if (!rateLimits) {
-      return undefined;
-    }
-
-    const normalized = new Map<string, NormalizedRateLimit>();
-    for (const [key, config] of Object.entries(rateLimits)) {
-      if (config.capacity > 0 && config.refillPerSecond > 0) {
-        normalized.set(key, {
-          capacity: config.capacity,
-          refillPerMs: config.refillPerSecond / 1000,
-        });
-      }
-    }
-
-    return normalized.size > 0 ? normalized : undefined;
-  }
-
   private normalizeFallbackChains(
     fallbackChains?: Record<string, string[]>,
   ): Map<string, string[]> {
@@ -663,7 +575,7 @@ export class TrafficController {
   }
 
   /**
-   * Update (or bootstrap) rate limit buckets based on provider response headers.
+   * Update (or bootstrap) rate limit window state based on provider response headers.
    * This lets the controller adopt server-issued limits without static config.
    */
   updateRateLimitFromHeaders(
@@ -678,54 +590,54 @@ export class TrafficController {
       return undefined;
     }
 
-    const normalized = this.normalizeHeaderRateLimit(headerInfo);
-    if (!normalized) {
+    const key = this.buildRateLimitKey(metadata);
+    const now = Date.now();
+    const limit = headerInfo.limitRequests;
+    const remaining = this.coerceRemaining(headerInfo.remainingRequests, limit);
+    if (remaining === undefined) {
       this.logDebug("[TrafficController] rate limit headers present but invalid", {
         headerInfo,
       });
       return undefined;
     }
 
-    const key = this.buildRateLimitKey(metadata);
-    if (!this.rateLimits) {
-      this.rateLimits = new Map();
-    }
-    this.rateLimits.set(key, normalized);
+    const existing = this.rateLimitStates.get(key);
+    const resetAtCandidate = now + headerInfo.resetRequestsMs;
+    const resetAt = existing ? Math.max(existing.resetAt, resetAtCandidate) : resetAtCandidate;
+    const reserved = Math.max(0, existing?.reserved ?? 0);
+    const remainingFromHeaders = Math.min(limit, remaining);
+    const isSameWindow = Boolean(existing && now < existing.resetAt);
+    const nextRemaining = isSameWindow
+      ? Math.min(existing?.remaining ?? remainingFromHeaders, remainingFromHeaders)
+      : remainingFromHeaders;
+    const effectiveRemaining = Math.max(0, nextRemaining - reserved);
+    const state: RateLimitWindowState = {
+      limit,
+      remaining: nextRemaining,
+      resetAt,
+      reserved,
+      nextAllowedAt: existing?.nextAllowedAt ?? now,
+    };
 
-    const now = Date.now();
-    const remainingTokens = this.coerceRemaining(headerInfo.remainingRequests, normalized.capacity);
-    const existingBucket = this.rateLimitBuckets.get(key);
-    const tokens = remainingTokens ?? existingBucket?.tokens ?? normalized.capacity;
-
-    if (existingBucket) {
-      existingBucket.capacity = normalized.capacity;
-      existingBucket.refillPerMs = normalized.refillPerMs;
-      existingBucket.tokens = Math.min(tokens, normalized.capacity);
-      existingBucket.lastRefill = now;
-    } else {
-      this.rateLimitBuckets.set(key, {
-        tokens: Math.min(tokens, normalized.capacity),
-        capacity: normalized.capacity,
-        refillPerMs: normalized.refillPerMs,
-        lastRefill: now,
-      });
-    }
+    this.rateLimitStates.set(key, state);
 
     this.logDebug("[TrafficController] rateLimit updated from headers", {
       key,
-      capacity: normalized.capacity,
-      refillPerMs: normalized.refillPerMs,
-      remaining: remainingTokens,
+      limit: state.limit,
+      remaining: state.remaining,
+      reserved: state.reserved,
+      effectiveRemaining,
+      resetAt: state.resetAt,
+      nextAllowedAt: state.nextAllowedAt,
     });
 
-    // If we just refilled tokens, try draining again.
+    // Try draining again in case this update unblocks queued work.
     this.scheduleDrain();
 
     return {
       key,
       headerSnapshot: headerInfo,
-      normalized,
-      appliedTokens: Math.min(tokens, normalized.capacity),
+      state,
     };
   }
 
@@ -736,36 +648,23 @@ export class TrafficController {
     }
 
     const limitRequests = this.parseNumberHeader(getHeader, "x-ratelimit-limit-requests");
+    const remainingRequests = this.parseNumberHeader(getHeader, "x-ratelimit-remaining-requests");
     const resetRequestsMs = this.parseDurationHeaderToMs(getHeader, "x-ratelimit-reset-requests");
 
     if (
       limitRequests === undefined ||
       limitRequests <= 0 ||
+      remainingRequests === undefined ||
       resetRequestsMs === undefined ||
       resetRequestsMs <= 0
     ) {
       return undefined;
     }
 
-    const remainingRequests = this.parseNumberHeader(getHeader, "x-ratelimit-remaining-requests");
-
     return {
       limitRequests,
       remainingRequests,
       resetRequestsMs,
-    };
-  }
-
-  private normalizeHeaderRateLimit(
-    snapshot: RateLimitHeaderSnapshot,
-  ): NormalizedRateLimit | undefined {
-    if (snapshot.limitRequests <= 0 || snapshot.resetRequestsMs <= 0) {
-      return undefined;
-    }
-
-    return {
-      capacity: snapshot.limitRequests,
-      refillPerMs: snapshot.limitRequests / snapshot.resetRequestsMs,
     };
   }
 
@@ -842,18 +741,78 @@ export class TrafficController {
     }
 
     const trimmed = raw.trim();
-    const match = trimmed.match(/^(-?\d+(?:\.\d+)?)(ms|s)?$/i);
-    if (!match) {
+    if (!trimmed) {
       return undefined;
     }
 
-    const value = Number(match[1]);
-    if (!Number.isFinite(value) || value <= 0) {
+    const simpleMatch = trimmed.match(/^(\d+(?:\.\d+)?)(ms|s|m|h)?$/i);
+    if (simpleMatch) {
+      const value = Number(simpleMatch[1]);
+      if (!Number.isFinite(value) || value <= 0) {
+        return undefined;
+      }
+
+      const unit = (simpleMatch[2] ?? "s").toLowerCase();
+      switch (unit) {
+        case "ms":
+          return value;
+        case "s":
+          return value * 1000;
+        case "m":
+          return value * 60 * 1000;
+        case "h":
+          return value * 60 * 60 * 1000;
+        default:
+          return undefined;
+      }
+    }
+
+    // Compound durations like "1m30.951s"
+    const segmentRegex = /(\d+(?:\.\d+)?)(ms|s|m|h)/gi;
+    let totalMs = 0;
+    let matched = false;
+
+    segmentRegex.lastIndex = 0;
+    let segment: RegExpExecArray | null = segmentRegex.exec(trimmed);
+    while (segment !== null) {
+      matched = true;
+      const value = Number(segment[1]);
+      if (!Number.isFinite(value) || value < 0) {
+        return undefined;
+      }
+
+      const unit = segment[2].toLowerCase();
+      switch (unit) {
+        case "ms":
+          totalMs += value;
+          break;
+        case "s":
+          totalMs += value * 1000;
+          break;
+        case "m":
+          totalMs += value * 60 * 1000;
+          break;
+        case "h":
+          totalMs += value * 60 * 60 * 1000;
+          break;
+        default:
+          return undefined;
+      }
+
+      segment = segmentRegex.exec(trimmed);
+    }
+
+    if (!matched || totalMs <= 0) {
       return undefined;
     }
 
-    const unit = (match[2] || "s").toLowerCase();
-    return unit === "ms" ? value : value * 1000;
+    segmentRegex.lastIndex = 0;
+    const leftover = trimmed.replace(segmentRegex, "").trim();
+    if (leftover) {
+      return undefined;
+    }
+
+    return totalMs;
   }
 
   private resolvePriority(metadata?: TrafficRequestMetadata): TrafficPriority {
@@ -881,21 +840,59 @@ export class TrafficController {
     return size;
   }
 
-  private scheduleRefill(limit: NormalizedRateLimit): void {
-    if (this.refillTimeout) {
+  private scheduleRateLimitWakeUpAt(wakeUpAt: number): void {
+    if (!Number.isFinite(wakeUpAt)) {
       return;
     }
 
-    const delayMs = Math.max(1, Math.ceil(1 / limit.refillPerMs)); // Wait long enough for at least one token
-    this.logDebug("[TrafficController] scheduleRefill", { delayMs });
-    this.refillTimeout = setTimeout(() => {
-      this.refillTimeout = undefined; // Allow future refills to be scheduled
-      this.logDebug("[TrafficController] refillTimeoutFired", {
+    const now = Date.now();
+    const targetAt = Math.max(now, wakeUpAt);
+
+    if (this.wakeUpTimeout && this.wakeUpAt !== undefined && this.wakeUpAt <= targetAt) {
+      return;
+    }
+
+    if (this.wakeUpTimeout) {
+      clearTimeout(this.wakeUpTimeout);
+      this.wakeUpTimeout = undefined;
+    }
+
+    this.wakeUpAt = targetAt;
+    const delayMs = Math.max(1, Math.ceil(targetAt - now));
+    this.logDebug("[TrafficController] scheduleRateLimitWakeUp", { delayMs, wakeUpAt: targetAt });
+    this.wakeUpTimeout = setTimeout(() => {
+      this.wakeUpTimeout = undefined;
+      this.wakeUpAt = undefined;
+      this.logDebug("[TrafficController] rateLimitWakeUpFired", {
         queueSize: this.getQueueSize(),
         active: this.activeCount,
       });
-      this.scheduleDrain(); // Try draining again now that tokens should exist
+      this.scheduleDrain();
     }, delayMs);
+  }
+
+  private releaseRateLimitReservation(key: string | undefined): void {
+    if (!key) {
+      return;
+    }
+
+    const state = this.rateLimitStates.get(key);
+    if (!state) {
+      return;
+    }
+
+    if (state.reserved <= 0) {
+      return;
+    }
+
+    state.reserved = Math.max(0, state.reserved - 1);
+    this.logDebug("[TrafficController] rate limit released", {
+      key,
+      reserved: state.reserved,
+      remaining: state.remaining,
+      resetAt: state.resetAt,
+      nextAllowedAt: state.nextAllowedAt,
+    });
   }
 
   private recordCircuitSuccess(metadata?: TrafficRequestMetadata): void {
@@ -1063,6 +1060,7 @@ export class TrafficController {
         item.reject(error); // Surface failures to the caller
       }
     } finally {
+      this.releaseRateLimitReservation(item.rateLimitKey);
       this.activeCount = Math.max(0, this.activeCount - 1); // Ensure counter never underflows
       this.logDebug("[TrafficController] runRequest complete", {
         type: item.type,
