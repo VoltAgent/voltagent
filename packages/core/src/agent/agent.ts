@@ -48,6 +48,11 @@ import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
+import {
+  type TrafficPriority,
+  type TrafficRequestMetadata,
+  getTrafficController,
+} from "../traffic/traffic-controller";
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
@@ -262,8 +267,14 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   // Context
   userId?: string;
   conversationId?: string;
+  tenantId?: string;
   context?: ContextInput;
   elicitation?: (request: unknown) => Promise<unknown>;
+  /**
+   * Optional priority override for scheduling.
+   * Defaults to agent-level priority when omitted.
+   */
+  trafficPriority?: TrafficPriority;
 
   // Parent tracking
   parentAgentId?: string;
@@ -303,6 +314,8 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
 
   // Provider-specific options
   providerOptions?: ProviderOptions;
+  // Optional per-call model override (used for fallbacks)
+  model?: LanguageModel;
 
   // Experimental output (for structured generation)
   experimental_output?: ReturnType<typeof Output.object> | ReturnType<typeof Output.text>;
@@ -347,6 +360,7 @@ export class Agent {
   readonly voice?: Voice;
   readonly retriever?: BaseRetriever;
   readonly supervisorConfig?: SupervisorConfig;
+  private readonly trafficPriority: TrafficPriority;
   private readonly context?: Map<string | symbol, unknown>;
 
   private readonly logger: Logger;
@@ -372,6 +386,7 @@ export class Agent {
     this.temperature = options.temperature;
     this.maxOutputTokens = options.maxOutputTokens;
     this.maxSteps = options.maxSteps || 5;
+    this.trafficPriority = options.trafficPriority ?? "P1";
     this.stopWhen = options.stopWhen;
     this.markdown = options.markdown ?? false;
     this.voice = options.voice;
@@ -445,6 +460,26 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     options?: GenerateTextOptions,
   ): Promise<GenerateTextResultWithContext> {
+    const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
+    const tenantId = this.resolveTenantId(options);
+    const buildRequest = (modelOverride?: LanguageModel) => ({
+      tenantId,
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options), // Pass model/provider info for future rate limiting keys
+      execute: () =>
+        this.executeGenerateText(input, this.mergeOptionsWithModel(options, modelOverride)), // Defer actual execution so controller can schedule it
+      extractUsage: (result: GenerateTextResultWithContext) =>
+        this.extractUsageFromResponse(result),
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+    });
+
+    return controller.handleText(buildRequest(options?.model));
+  }
+
+  private async executeGenerateText(
+    input: string | UIMessage[] | BaseMessage[],
+    options?: GenerateTextOptions,
+    trafficMetadata?: TrafficRequestMetadata,
+  ): Promise<GenerateTextResultWithContext> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -471,7 +506,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const contextLimit = options?.contextLimit;
 
         // Add model attributes and all options
@@ -546,8 +581,10 @@ export class Agent {
           tools: userTools,
           experimental_output,
           providerOptions,
+          model: _model, // Exclude model so aiSDKOptions doesn't override resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
         const llmSpan = this.createLLMSpan(oc, {
           operation: "generateText",
@@ -567,6 +604,11 @@ export class Agent {
 
         let result!: GenerateTextResult<ToolSet, unknown>;
         try {
+          methodLogger.info("[AI SDK] Calling generateText", {
+            messageCount: messages.length,
+            modelName,
+            tools: tools ? Object.keys(tools) : [],
+          });
           result = await oc.traceContext.withSpan(llmSpan, () =>
             generateText({
               model,
@@ -575,7 +617,7 @@ export class Agent {
               // Default values
               temperature: this.temperature,
               maxOutputTokens: this.maxOutputTokens,
-              maxRetries: 3,
+              maxRetries: 0,
               stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
               // User overrides from AI SDK options
               ...aiSDKOptions,
@@ -588,6 +630,13 @@ export class Agent {
               onStepFinish: this.createStepHandler(oc, options),
             }),
           );
+          methodLogger.info("[AI SDK] Received generateText result", {
+            finishReason: result.finishReason,
+            usage: result.usage ? safeStringify(result.usage) : undefined,
+            stepCount: result.steps?.length ?? 0,
+            rawResult: safeStringify(result),
+          });
+          this.updateTrafficControllerRateLimits(result.response, trafficMetadata, methodLogger);
         } catch (error) {
           finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
           throw error;
@@ -772,6 +821,25 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
+    const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
+    const tenantId = this.resolveTenantId(options);
+    const buildRequest = (modelOverride?: LanguageModel) => ({
+      tenantId,
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options), // Include identifiers to support per-provider/model policies later
+      execute: () =>
+        this.executeStreamText(input, this.mergeOptionsWithModel(options, modelOverride)), // Actual streaming work happens after the controller dequeues us
+      extractUsage: (result: StreamTextResultWithContext) => this.extractUsageFromResponse(result),
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+    });
+
+    return controller.handleStream(buildRequest(options?.model));
+  }
+
+  private async executeStreamText(
+    input: string | UIMessage[] | BaseMessage[],
+    options?: StreamTextOptions,
+    trafficMetadata?: TrafficRequestMetadata,
+  ): Promise<StreamTextResultWithContext> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
 
@@ -800,7 +868,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const contextLimit = options?.contextLimit;
 
         // Add model attributes to root span if TraceContext exists
@@ -870,8 +938,10 @@ export class Agent {
           onFinish: userOnFinish,
           experimental_output,
           providerOptions,
+          model: _model, // Exclude model from aiSDKOptions to avoid overriding resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
         const guardrailStreamingEnabled = guardrailSet.output.length > 0;
 
@@ -894,6 +964,11 @@ export class Agent {
         });
         const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
+        methodLogger.info("[AI SDK] Calling streamText", {
+          messageCount: messages.length,
+          modelName,
+          tools: tools ? Object.keys(tools) : [],
+        });
         const result = streamText({
           model,
           messages,
@@ -901,7 +976,7 @@ export class Agent {
           // Default values
           temperature: this.temperature,
           maxOutputTokens: this.maxOutputTokens,
-          maxRetries: 3,
+          maxRetries: 0, // Retry via traffic controller to avoid provider-level storms
           stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
           // User overrides from AI SDK options
           ...aiSDKOptions,
@@ -962,6 +1037,17 @@ export class Agent {
               .catch(() => {});
           },
           onFinish: async (finalResult) => {
+            methodLogger.info("[AI SDK] streamText finished", {
+              finishReason: finalResult.finishReason,
+              usage: finalResult.totalUsage ? safeStringify(finalResult.totalUsage) : undefined,
+              stepCount: finalResult.steps?.length ?? 0,
+              rawResult: safeStringify(finalResult),
+            });
+            this.updateTrafficControllerRateLimits(
+              finalResult.response,
+              trafficMetadata,
+              methodLogger,
+            );
             const providerUsage = finalResult.usage
               ? await Promise.resolve(finalResult.usage)
               : undefined;
@@ -1429,6 +1515,30 @@ export class Agent {
     schema: T,
     options?: GenerateObjectOptions,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
+    const controller = getTrafficController({ logger: this.logger });
+    const tenantId = this.resolveTenantId(options);
+    const buildRequest = (modelOverride?: LanguageModel) => ({
+      tenantId,
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
+      execute: () =>
+        this.executeGenerateObject(
+          input,
+          schema,
+          this.mergeOptionsWithModel(options, modelOverride),
+        ),
+      extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
+        this.extractUsageFromResponse(result),
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+    });
+
+    return controller.handleText(buildRequest(options?.model));
+  }
+
+  private async executeGenerateObject<T extends z.ZodType>(
+    input: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    options?: GenerateObjectOptions,
+  ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -1452,7 +1562,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const schemaName = schema.description || "unknown";
 
         // Add model attributes and all options
@@ -1511,9 +1621,16 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           providerOptions,
+          model: _model, // Exclude model so spread does not override resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
+        methodLogger.info("[AI SDK] Calling generateObject", {
+          messageCount: messages.length,
+          modelName,
+          schemaName,
+        });
         const result = await generateObject({
           model,
           messages,
@@ -1522,13 +1639,19 @@ export class Agent {
           // Default values
           maxOutputTokens: this.maxOutputTokens,
           temperature: this.temperature,
-          maxRetries: 3,
+          maxRetries: 0,
           // User overrides from AI SDK options
           ...aiSDKOptions,
           // Provider-specific options
           providerOptions,
           // VoltAgent controlled
           abortSignal: oc.abortController.signal,
+        });
+        methodLogger.info("[AI SDK] Received generateObject result", {
+          finishReason: result.finishReason,
+          usage: result.usage ? safeStringify(result.usage) : undefined,
+          warnings: result.warnings,
+          rawResult: safeStringify(result),
         });
 
         const usageInfo = convertUsage(result.usage);
@@ -1656,6 +1779,26 @@ export class Agent {
     schema: T,
     options?: StreamObjectOptions,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
+    const controller = getTrafficController({ logger: this.logger });
+    const tenantId = this.resolveTenantId(options);
+    const buildRequest = (modelOverride?: LanguageModel) => ({
+      tenantId,
+      metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
+      execute: () =>
+        this.executeStreamObject(input, schema, this.mergeOptionsWithModel(options, modelOverride)),
+      extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
+        this.extractUsageFromResponse(result),
+      createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+    });
+
+    return controller.handleStream(buildRequest(options?.model));
+  }
+
+  private async executeStreamObject<T extends z.ZodType>(
+    input: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    options?: StreamObjectOptions,
+  ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
 
@@ -1680,7 +1823,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const schemaName = schema.description || "unknown";
 
         // Add model attributes and all options
@@ -1740,13 +1883,20 @@ export class Agent {
           tools: userTools,
           onFinish: userOnFinish,
           providerOptions,
+          model: _model, // Exclude model so aiSDKOptions cannot override resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
 
         let guardrailObjectPromise!: Promise<z.infer<T>>;
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
         let rejectGuardrailObject: ((reason: unknown) => void) | undefined;
 
+        methodLogger.info("[AI SDK] Calling streamObject", {
+          messageCount: messages.length,
+          modelName,
+          schemaName,
+        });
         const result = streamObject({
           model,
           messages,
@@ -1755,7 +1905,7 @@ export class Agent {
           // Default values
           maxOutputTokens: this.maxOutputTokens,
           temperature: this.temperature,
-          maxRetries: 3,
+          maxRetries: 0,
           // User overrides from AI SDK options
           ...aiSDKOptions,
           // Provider-specific options
@@ -1771,7 +1921,7 @@ export class Agent {
             methodLogger.error("Stream object error occurred", {
               error: actualError,
               agentName: this.name,
-              modelName: this.getModelName(),
+              modelName: this.getModelName(model),
               schemaName: schemaName,
             });
 
@@ -1800,6 +1950,11 @@ export class Agent {
           },
           onFinish: async (finalResult: any) => {
             try {
+              methodLogger.info("[AI SDK] streamObject finished", {
+                finishReason: finalResult.finishReason,
+                usage: finalResult.usage ? safeStringify(finalResult.usage) : undefined,
+                rawResult: safeStringify(finalResult),
+              });
               const usageInfo = convertUsage(finalResult.usage as any);
               let finalObject = finalResult.object as z.infer<T>;
               if (guardrailSet.output.length > 0) {
@@ -2021,8 +2176,9 @@ export class Agent {
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
 
-    // Resolve dynamic values
-    const model = await this.resolveValue(this.model, oc);
+    // Resolve dynamic values (allow per-call model override for fallbacks)
+    const selectedModel = options?.model ?? this.model;
+    const model = await this.resolveValue(selectedModel, oc);
     const dynamicToolList = (await this.resolveValue(this.dynamicTools, oc)) || [];
 
     // Merge agent tools with option tools
@@ -2073,6 +2229,8 @@ export class Agent {
   ): OperationContext {
     const operationId = randomUUID();
     const startTimeDate = new Date();
+    const priority = this.resolveTrafficPriority(options);
+    const tenantId = this.resolveTenantId(options);
 
     // Prefer reusing an existing context instance to preserve reference across calls/subagents
     const runtimeContext = toContextMap(options?.context);
@@ -2123,6 +2281,7 @@ export class Agent {
       operationId,
       userId: options?.userId,
       conversationId: options?.conversationId,
+      tenantId,
       executionId: operationId,
     });
 
@@ -2137,6 +2296,9 @@ export class Agent {
       parentAgentId: options?.parentAgentId,
       input,
     });
+    if (tenantId) {
+      traceContext.getRootSpan().setAttribute("tenant.id", tenantId);
+    }
     traceContext.getRootSpan().setAttribute("voltagent.operation_id", operationId);
 
     // Use parent's AbortController if available, otherwise create new one
@@ -2174,8 +2336,10 @@ export class Agent {
       logger,
       conversationSteps: options?.parentOperationContext?.conversationSteps || [],
       abortController,
+      priority,
       userId: options?.userId,
       conversationId: options?.conversationId,
+      tenantId,
       parentAgentId: options?.parentAgentId,
       traceContext,
       startTime: startTimeDate,
@@ -3147,6 +3311,20 @@ export class Agent {
     return value;
   }
 
+  private mergeOptionsWithModel(
+    options: BaseGenerationOptions | undefined,
+    modelOverride?: LanguageModel,
+  ): BaseGenerationOptions | undefined {
+    if (!options && modelOverride === undefined) {
+      return undefined;
+    }
+
+    return {
+      ...(options ?? {}),
+      ...(modelOverride !== undefined ? { model: modelOverride } : {}),
+    };
+  }
+
   /**
    * Prepare tools with execution context
    */
@@ -3799,17 +3977,170 @@ export class Agent {
     return this.subAgentManager.calculateMaxSteps(this.maxSteps);
   }
 
+  private resolveTrafficPriority(options?: BaseGenerationOptions): TrafficPriority {
+    const normalize = (value?: TrafficPriority): TrafficPriority | undefined => {
+      if (value === "P0" || value === "P1" || value === "P2") {
+        return value;
+      }
+      return undefined;
+    };
+
+    const parentPriority = normalize(options?.parentOperationContext?.priority);
+    const localPriority = normalize(options?.trafficPriority) ?? this.trafficPriority ?? "P1";
+
+    if (parentPriority) {
+      return this.pickHigherPriority(parentPriority, localPriority);
+    }
+
+    return localPriority;
+  }
+
+  private resolveTenantId(options?: BaseGenerationOptions): string {
+    const parentTenant = options?.parentOperationContext?.tenantId;
+    if (parentTenant) {
+      return parentTenant;
+    }
+
+    if (options?.tenantId) {
+      return options.tenantId;
+    }
+
+    return "default";
+  }
+
+  private pickHigherPriority(a: TrafficPriority, b: TrafficPriority): TrafficPriority {
+    const rank: Record<TrafficPriority, number> = { P0: 0, P1: 1, P2: 2 };
+    return rank[a] <= rank[b] ? a : b;
+  }
+
+  private buildTrafficMetadata(
+    modelOverride?: LanguageModel | DynamicValue<LanguageModel>,
+    options?: BaseGenerationOptions,
+  ): TrafficRequestMetadata {
+    const provider =
+      this.resolveProvider(modelOverride) ?? this.resolveProvider(this.model) ?? undefined;
+    const priority = this.resolveTrafficPriority(options);
+
+    return {
+      agentId: this.id, // Identify which agent issued the request
+      agentName: this.name, // Human-readable label for logs/metrics
+      model: this.getModelName(modelOverride), // Used for future capacity policies
+      provider, // Allows per-provider throttling later
+      priority,
+      tenantId: this.resolveTenantId(options),
+    };
+  }
+
+  private updateTrafficControllerRateLimits(
+    response: unknown,
+    metadata: TrafficRequestMetadata | undefined,
+    logger?: Logger,
+  ): void {
+    if (!response || typeof response !== "object") {
+      logger?.debug?.("[Traffic] No response object available for rate limit update");
+      return;
+    }
+
+    const responseWithHeaders = response as { headers?: unknown } | null;
+    const headers = responseWithHeaders?.headers;
+    if (!headers) {
+      logger?.debug?.("[Traffic] Response missing headers; skipping rate limit update");
+      return;
+    }
+
+    const controller = getTrafficController();
+    const updateResult = controller.updateRateLimitFromHeaders(
+      metadata ?? this.buildTrafficMetadata(),
+      headers,
+    );
+
+    if (!updateResult) {
+      logger?.debug?.("[Traffic] No rate limit headers applied from response");
+      return;
+    }
+
+    const now = Date.now();
+    const effectiveRemaining = Math.max(
+      0,
+      updateResult.state.remaining - updateResult.state.reserved,
+    );
+    const resetInMs = Math.max(0, updateResult.state.resetAt - now);
+    const nextAllowedInMs = Math.max(0, updateResult.state.nextAllowedAt - now);
+    logger?.info?.("[Traffic] Applied rate limit from response headers", {
+      rateLimitKey: updateResult.key,
+      limit: updateResult.state.limit,
+      remaining: updateResult.state.remaining,
+      reserved: updateResult.state.reserved,
+      effectiveRemaining,
+      resetAt: updateResult.state.resetAt,
+      resetInMs,
+      nextAllowedAt: updateResult.state.nextAllowedAt,
+      nextAllowedInMs,
+      headers: {
+        limitRequests: updateResult.headerSnapshot.limitRequests,
+        remainingRequests: updateResult.headerSnapshot.remainingRequests,
+        resetRequestsMs: updateResult.headerSnapshot.resetRequestsMs,
+      },
+    });
+  }
+
+  private extractUsageFromResponse(
+    result:
+      | {
+          usage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined>;
+          totalUsage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined>;
+        }
+      | undefined,
+  ): Promise<LanguageModelUsage | undefined> | LanguageModelUsage | undefined {
+    if (!result) {
+      return undefined;
+    }
+
+    const usageCandidate =
+      (result as { totalUsage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined> })
+        ?.totalUsage ??
+      (result as { usage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined> })?.usage;
+
+    if (!usageCandidate) {
+      return undefined;
+    }
+
+    if (
+      typeof (usageCandidate as PromiseLike<LanguageModelUsage | undefined>).then === "function"
+    ) {
+      return (usageCandidate as Promise<LanguageModelUsage | undefined>).catch(() => undefined);
+    }
+
+    return usageCandidate as LanguageModelUsage;
+  }
+
+  private resolveProvider(
+    model: LanguageModel | DynamicValue<LanguageModel> | undefined,
+  ): string | undefined {
+    if (
+      model &&
+      typeof model === "object" &&
+      "provider" in model &&
+      typeof (model as any).provider === "string"
+    ) {
+      return (model as any).provider;
+    }
+
+    return undefined;
+  }
+
   /**
    * Get the model name
    */
-  public getModelName(): string {
-    if (typeof this.model === "function") {
+  public getModelName(modelOverride?: LanguageModel | DynamicValue<LanguageModel>): string {
+    const selectedModel = modelOverride ?? this.model;
+    if (typeof selectedModel === "function") {
       return "dynamic";
     }
-    if (typeof this.model === "string") {
-      return this.model;
+    if (typeof selectedModel === "string") {
+      return selectedModel;
     }
-    return this.model.modelId || "unknown";
+    return selectedModel.modelId || "unknown";
   }
 
   /**
