@@ -21,6 +21,34 @@ import React, { forwardRef, useRef, useState, useEffect } from "react";
 import { AirtableLogo, GitHubLogo, GmailLogo, SlackLogo } from "../../../static/img/logos";
 import { AnimatedBeam } from "../magicui/animated-beam";
 
+// Christmas Tree Icon Component with colors
+const ChristmasTreeIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    {/* Top tree layer */}
+    <path d="M12 6L16 12H8L12 6Z" fill="#228B22" stroke="#006400" strokeWidth="0.3" />
+    {/* Middle tree layer */}
+    <path d="M12 9L18 17H6L12 9Z" fill="#228B22" stroke="#006400" strokeWidth="0.3" />
+    {/* Bottom tree layer */}
+    <path d="M12 14L20 24H4L12 14Z" fill="#228B22" stroke="#006400" strokeWidth="0.3" />
+    {/* Trunk */}
+    <rect x="10" y="24" width="4" height="3" fill="#8B4513" stroke="#654321" strokeWidth="0.3" />
+    {/* Ornaments */}
+    <circle cx="10" cy="13" r="1" fill="#FF0000" />
+    <circle cx="14" cy="15" r="1" fill="#FF0000" />
+    <circle cx="11" cy="18" r="1" fill="#FFD700" />
+    <circle cx="14" cy="20" r="1" fill="#FF0000" />
+    <circle cx="8" cy="20" r="1" fill="#00BFFF" />
+    <circle cx="16" cy="18" r="1" fill="#FFD700" />
+    {/* Star on top - drawn last to be on top */}
+    <path
+      d="M12 0L13.5 4L17.5 4.5L14.5 7L15.5 11L12 9L8.5 11L9.5 7L6.5 4.5L10.5 4L12 0Z"
+      fill="#FFD700"
+      stroke="#FFA500"
+      strokeWidth="0.5"
+    />
+  </svg>
+);
+
 // Beat types mapping for different node types
 const beatTypes: Record<string, string> = {
   userPrompt: "kick",
@@ -798,9 +826,7 @@ export function AgentsAnimation({ className }: { className?: string }) {
           >
             <div className="relative ">
               <div className="absolute inset-0 rounded-full bg-[#00d992] blur-md opacity-30 animate-pulse" />
-              <Icons.lightning
-                className={clsx("text-[#00d992]", isMobile ? "h-5 w-5" : "h-8 w-8")}
-              />
+              <ChristmasTreeIcon className={clsx(isMobile ? "h-6 w-6" : "h-10 w-10")} />
             </div>
           </Node>
         </div>
