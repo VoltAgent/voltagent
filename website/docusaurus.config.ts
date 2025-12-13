@@ -255,7 +255,7 @@ const config: Config = {
       },
     ],
 
-    "./plugins/gurubase/index.js",
+    /* "./plugins/gurubase/index.js", */
     [
       "./plugins/docusaurus-plugin-content-mcp",
       {
