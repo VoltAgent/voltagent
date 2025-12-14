@@ -25,6 +25,7 @@ export {
   // Surface traffic controller so downstream consumers can route agent calls through the shared scheduler
   TrafficController,
   CircuitBreakerOpenError,
+  RateLimitedUpstreamError,
   getTrafficController,
   type RateLimitConfig,
   type RateLimitKey,
