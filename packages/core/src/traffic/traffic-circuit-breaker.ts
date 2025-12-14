@@ -1,3 +1,4 @@
+import type { Logger } from "../logger";
 import {
   CIRCUIT_COOLDOWN_MS,
   CIRCUIT_FAILURE_THRESHOLD,
@@ -28,22 +29,40 @@ export class TrafficCircuitBreaker {
     this.fallbackChains = new Map(Object.entries(chains));
   }
 
-  resolve(next: QueuedRequest): DispatchDecision | null {
+  resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
+    const circuitLogger = logger?.child({ module: "circuit-breaker" });
     const visited = new Set<string>();
 
     while (true) {
       const key = this.buildRateLimitKey(next.request.metadata);
       next.circuitKey = key;
+      circuitLogger?.trace?.("Circuit resolve step", {
+        circuitKey: key,
+        provider: next.request.metadata?.provider,
+        model: next.request.metadata?.model,
+      });
 
       const model = next.request.metadata?.model;
       if (model) visited.add(model);
 
-      const evaluation = this.evaluateCircuitState(key);
+      const evaluation = this.evaluateCircuitState(key, circuitLogger);
       next.circuitStatus = evaluation.state;
+      circuitLogger?.debug?.("Circuit evaluated", {
+        circuitKey: key,
+        state: evaluation.state,
+        allowRequest: evaluation.allowRequest,
+        retryAfterMs: evaluation.retryAfterMs,
+      });
 
       if (evaluation.allowRequest) return null;
 
-      const fallback = this.findFallbackModel(next.request.metadata, visited);
+      const fallback = this.findFallbackModel(next.request.metadata, visited, circuitLogger);
+      circuitLogger?.debug?.("Circuit open; attempting fallback", {
+        circuitKey: key,
+        currentModel: next.request.metadata?.model,
+        fallback,
+        visitedModels: Array.from(visited),
+      });
       if (!fallback || !next.request.createFallbackRequest) {
         next.reject(
           new CircuitBreakerOpenError(
@@ -52,11 +71,21 @@ export class TrafficCircuitBreaker {
             evaluation.retryAfterMs,
           ),
         );
+        circuitLogger?.warn?.("No fallback available; rejecting request", {
+          circuitKey: key,
+          retryAfterMs: evaluation.retryAfterMs,
+        });
         return { kind: "skip" };
       }
 
       const fallbackRequest = next.request.createFallbackRequest(fallback);
-      if (!fallbackRequest) return { kind: "skip" };
+      if (!fallbackRequest) {
+        circuitLogger?.warn?.("createFallbackRequest returned undefined; skipping", {
+          circuitKey: key,
+          fallback,
+        });
+        return { kind: "skip" };
+      }
 
       next.request = fallbackRequest;
       next.attempt = 1;
@@ -64,27 +93,54 @@ export class TrafficCircuitBreaker {
       next.etaMs = undefined;
       next.circuitKey = undefined;
       next.circuitStatus = undefined;
+      circuitLogger?.debug?.("Switched to fallback request", {
+        previousCircuitKey: key,
+        fallbackModel: fallback,
+      });
     }
   }
 
-  markTrial(item: QueuedRequest): void {
+  markTrial(item: QueuedRequest, logger?: Logger): void {
+    const circuitLogger = logger?.child({ module: "circuit-breaker" });
     const key = item.circuitKey;
     if (!key) return;
     const state = this.circuitBreakers.get(key);
     if (state && state.status === "half-open" && !state.trialInFlight) {
       state.trialInFlight = true;
+      circuitLogger?.debug?.("Marked half-open trial in flight", { circuitKey: key });
     }
   }
 
-  recordSuccess(metadata?: TrafficRequestMetadata): void {
+  recordSuccess(metadata?: TrafficRequestMetadata, logger?: Logger): void {
+    const circuitLogger = logger?.child({ module: "circuit-breaker" });
     const key = this.buildRateLimitKey(metadata);
     this.circuitBreakers.delete(key);
+    circuitLogger?.debug?.("Circuit success; cleared circuit state", {
+      circuitKey: key,
+      provider: metadata?.provider,
+      model: metadata?.model,
+    });
   }
 
-  recordFailure(metadata: TrafficRequestMetadata | undefined, error: unknown): void {
-    const status = extractStatusCode(error);
+  recordFailure(
+    metadata: TrafficRequestMetadata | undefined,
+    error: unknown,
+    logger?: Logger,
+  ): void {
+    const circuitLogger = logger?.child({ module: "circuit-breaker" });
+    const status = extractStatusCode(error, logger);
+    circuitLogger?.debug?.("Circuit failure observed", {
+      circuitKey: this.buildRateLimitKey(metadata),
+      status,
+      provider: metadata?.provider,
+      model: metadata?.model,
+    });
     if (!this.isCircuitBreakerStatus(status)) {
       this.circuitBreakers.delete(this.buildRateLimitKey(metadata));
+      circuitLogger?.debug?.("Failure not eligible for circuit breaker; cleared circuit state", {
+        circuitKey: this.buildRateLimitKey(metadata),
+        status,
+      });
       return;
     }
 
@@ -106,18 +162,36 @@ export class TrafficCircuitBreaker {
       state.status = "open";
       state.openedAt = now;
       state.trialInFlight = false;
+      circuitLogger?.warn?.("Circuit opened", {
+        circuitKey: key,
+        failureCount: state.failureTimestamps.length,
+        threshold: CIRCUIT_FAILURE_THRESHOLD,
+        openedAt: state.openedAt,
+      });
     }
 
     this.circuitBreakers.set(key, state);
+    circuitLogger?.trace?.("Circuit state updated", {
+      circuitKey: key,
+      status: state.status,
+      failureCount: state.failureTimestamps.length,
+      windowMs: CIRCUIT_FAILURE_WINDOW_MS,
+    });
   }
 
-  private evaluateCircuitState(key: string): {
+  private evaluateCircuitState(
+    key: string,
+    logger?: Logger,
+  ): {
     allowRequest: boolean;
     state: CircuitStateStatus;
     retryAfterMs?: number;
   } {
     const state = this.circuitBreakers.get(key);
-    if (!state) return { allowRequest: true, state: "closed" };
+    if (!state) {
+      logger?.trace?.("Circuit state missing; allow request", { circuitKey: key });
+      return { allowRequest: true, state: "closed" };
+    }
 
     const now = Date.now();
 
@@ -127,6 +201,7 @@ export class TrafficCircuitBreaker {
         state.status = "half-open";
         state.trialInFlight = false;
         state.failureTimestamps = [];
+        logger?.debug?.("Circuit transitioned to half-open", { circuitKey: key });
         return { allowRequest: true, state: "half-open" };
       }
       return {
@@ -146,14 +221,17 @@ export class TrafficCircuitBreaker {
   private findFallbackModel(
     metadata: TrafficRequestMetadata | undefined,
     visitedModels: Set<string>,
+    logger?: Logger,
   ): string | undefined {
     const currentModel = metadata?.model;
     if (!currentModel) {
+      logger?.trace?.("No current model; no fallback", {});
       return undefined;
     }
 
     const chain = this.fallbackChains.get(currentModel);
     if (!chain) {
+      logger?.trace?.("No fallback chain for model", { currentModel });
       return undefined;
     }
 
@@ -168,9 +246,14 @@ export class TrafficCircuitBreaker {
         model: candidate,
       });
 
-      const evaluation = this.evaluateCircuitState(candidateKey);
+      const evaluation = this.evaluateCircuitState(candidateKey, logger);
       if (evaluation.allowRequest) {
         visitedModels.add(candidate);
+        logger?.debug?.("Selected fallback model", {
+          currentModel,
+          fallbackModel: candidate,
+          fallbackCircuitKey: candidateKey,
+        });
         return candidate;
       }
     }

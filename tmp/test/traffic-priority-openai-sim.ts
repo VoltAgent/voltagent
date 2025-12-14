@@ -9,6 +9,9 @@
  *  - Test 1: P0 runs before P1/P2 when all runnable.
  *  - Test 2: P0 request (gpt-4o) is rate-limited → P1 (gpt-4o-mini) proceeds.
  *
+ * Note:
+ *  - Rate-limit wakeups include a small probe delay; a "1s" reset may unblock slightly after 1s.
+ *
  * Run:
  *  - pnpm ts-node tmp/test/traffic-priority-openai-sim.ts
  */

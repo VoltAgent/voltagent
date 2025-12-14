@@ -32,9 +32,10 @@
     "publint": "^0.3.8",
     "rimraf": "^5.0.5",
     "syncpack": "^13.0.2",
+    "ts-node": "^10.9.2",
     "tslib": "^2.3.0",
     "tsup": "^8.5.0",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "vite": "^7.2.7",
     "vitest": "^3.2.4"
   },
