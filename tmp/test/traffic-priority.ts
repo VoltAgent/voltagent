@@ -6,6 +6,9 @@
  *  - Test 1: P0 should run before P1/P2 when runnable.
  *  - Test 2: If a P0 request is rate-limited, a lower priority (P1) can proceed.
  *
+ * Note:
+ *  - Rate-limit wakeups include a small probe delay; a "1s" reset may unblock slightly after 1s.
+ *
  * Run:
  *  - pnpm ts-node tmp/test/traffic-priority.ts
  *  - VERBOSE=1 pnpm ts-node tmp/test/traffic-priority.ts

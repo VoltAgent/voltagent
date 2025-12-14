@@ -4,6 +4,8 @@
  *
  * What to look for:
  *  - Requests should be paced out across the window (no steady "refill" math).
+ *  - If responses arrive out-of-order, remaining headers might "increase"; controller should
+ *    keep remaining monotonic within the same window.
  *
  * Run:
  *  - pnpm ts-node tmp/test/traffic-rate-limit-static.ts
@@ -78,6 +80,7 @@ async function main() {
     provider,
     modelId: model,
     doGenerate: async (options: any) => {
+      const simulatedLatencyMs = 10 + Math.floor(Math.random() * 120);
       const nowMs = Date.now();
       if (nowMs >= windowResetAt) {
         windowStartAt = nowMs;
@@ -92,8 +95,10 @@ async function main() {
       lastStartAt = startAt;
 
       const label = extractLabel(options?.prompt);
-      console.log(`[${now()}] doGenerate start call=${calls} (+${delta}ms) input=${label}`);
-      await sleep(50);
+      console.log(
+        `[${now()}] doGenerate start call=${calls} (+${delta}ms) input=${label} latencyMs=${simulatedLatencyMs}`,
+      );
+      await sleep(simulatedLatencyMs);
       console.log(`[${now()}] doGenerate end   input=${label}`);
 
       const remainingAfterThis = Math.max(0, limit - usedInWindow);
