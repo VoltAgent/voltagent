@@ -1,9 +1,4 @@
-import type {
-  TrafficPriority,
-  TrafficRequest,
-  TrafficRequestMetadata,
-  TrafficRequestType,
-} from "./traffic-types";
+import type { TrafficPriority, TrafficRequest, TrafficRequestType } from "./traffic-types";
 
 export type Scheduler = (callback: () => void) => void;
 

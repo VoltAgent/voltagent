@@ -1,3 +1,4 @@
+import type { Logger } from "../logger";
 import {
   MAX_RETRY_ATTEMPTS,
   RATE_LIMIT_BASE_BACKOFF_MS,
@@ -15,24 +16,39 @@ export type RetryReason = "rateLimit" | "serverError" | "timeout";
 export function buildRetryPlan(
   error: unknown,
   attempt: number,
+  logger?: Logger,
 ): { delayMs: number; reason: RetryReason } | undefined {
-  const reason = getRetryReason(error);
-  if (!reason) return undefined;
+  const retryLogger = logger?.child({ module: "retry" });
+  const reason = getRetryReason(error, retryLogger);
+  if (!reason) {
+    retryLogger?.debug?.("No retry reason detected; skipping retry", { attempt });
+    return undefined;
+  }
 
   const max = reason === "timeout" ? TIMEOUT_RETRY_ATTEMPTS : MAX_RETRY_ATTEMPTS;
-  if (attempt >= max) return undefined;
+  if (attempt >= max) {
+    retryLogger?.debug?.("Retry attempts exhausted; skipping retry", {
+      attempt,
+      max,
+      reason,
+    });
+    return undefined;
+  }
+
+  const delayMs = computeBackoffDelay(reason, attempt);
+  retryLogger?.debug?.("Retry plan built", { attempt, reason, delayMs, max });
 
   return {
     reason,
-    delayMs: computeBackoffDelay(reason, attempt),
+    delayMs,
   };
 }
 
-function getRetryReason(error: unknown): RetryReason | undefined {
-  const status = extractStatusCode(error);
+function getRetryReason(error: unknown, logger?: Logger): RetryReason | undefined {
+  const status = extractStatusCode(error, logger);
   if (status === 429) return "rateLimit";
   if (status && status >= 500) return "serverError";
-  if (status === 408 || isTimeoutError(error)) return "timeout";
+  if (status === 408 || isTimeoutError(error, logger)) return "timeout";
   return undefined;
 }
 
