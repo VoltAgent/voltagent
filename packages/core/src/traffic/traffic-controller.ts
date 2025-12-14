@@ -2,7 +2,7 @@ import type { Logger } from "../logger";
 import { LoggerProxy } from "../logger";
 import { TrafficCircuitBreaker } from "./traffic-circuit-breaker";
 import type { DispatchDecision, QueuedRequest, Scheduler } from "./traffic-controller-internal";
-import { CircuitBreakerOpenError } from "./traffic-errors";
+import { CircuitBreakerOpenError, RateLimitedUpstreamError } from "./traffic-errors";
 import { type RateLimitUpdateResult, TrafficRateLimiter } from "./traffic-rate-limiter";
 import { type RetryReason, buildRetryPlan } from "./traffic-retry";
 import type {
@@ -36,6 +36,7 @@ export type {
 };
 
 export { CircuitBreakerOpenError };
+export { RateLimitedUpstreamError };
 
 export class TrafficController {
   /* ---------- Core ---------- */

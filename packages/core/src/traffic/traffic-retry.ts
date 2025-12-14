@@ -9,7 +9,8 @@ import {
   TIMEOUT_JITTER_FACTOR,
   TIMEOUT_RETRY_ATTEMPTS,
 } from "./traffic-constants";
-import { extractStatusCode, isTimeoutError } from "./traffic-error-utils";
+import { extractRetryAfterMs, extractStatusCode, isTimeoutError } from "./traffic-error-utils";
+import { RateLimitedUpstreamError } from "./traffic-errors";
 
 export type RetryReason = "rateLimit" | "serverError" | "timeout";
 
@@ -35,8 +36,24 @@ export function buildRetryPlan(
     return undefined;
   }
 
-  const delayMs = computeBackoffDelay(reason, attempt);
-  retryLogger?.debug?.("Retry plan built", { attempt, reason, delayMs, max });
+  const computedDelayMs = computeBackoffDelay(reason, attempt);
+  const retryAfterMs =
+    reason === "rateLimit"
+      ? error instanceof RateLimitedUpstreamError
+        ? error.retryAfterMs
+        : extractRetryAfterMs(error, retryLogger)
+      : undefined;
+  const delayMs =
+    retryAfterMs === undefined ? computedDelayMs : Math.max(computedDelayMs, retryAfterMs);
+
+  retryLogger?.debug?.("Retry plan built", {
+    attempt,
+    reason,
+    delayMs,
+    computedDelayMs,
+    retryAfterMs,
+    max,
+  });
 
   return {
     reason,
@@ -45,6 +62,7 @@ export function buildRetryPlan(
 }
 
 function getRetryReason(error: unknown, logger?: Logger): RetryReason | undefined {
+  if (error instanceof RateLimitedUpstreamError) return "rateLimit";
   const status = extractStatusCode(error, logger);
   if (status === 429) return "rateLimit";
   if (status && status >= 500) return "serverError";

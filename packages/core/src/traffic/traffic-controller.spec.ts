@@ -194,4 +194,39 @@ describe("TrafficController rate limit headers", () => {
       vi.useRealTimers();
     }
   });
+
+  it("applies Retry-After even when x-ratelimit headers are missing", async () => {
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(new Date(0));
+      const controller = new TrafficController({ maxConcurrent: 1 });
+      const order: string[] = [];
+
+      controller.updateRateLimitFromHeaders(
+        { provider: "p", model: "m" },
+        {
+          "retry-after": "2",
+        },
+      );
+
+      const p0 = controller.handleText({
+        metadata: { provider: "p", model: "m", priority: "P0" },
+        execute: async () => {
+          order.push("P0");
+          return "P0";
+        },
+      });
+
+      await vi.advanceTimersByTimeAsync(1_999);
+      expect(order).toEqual([]);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.runAllTimersAsync();
+      await p0;
+      expect(order).toEqual(["P0"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
