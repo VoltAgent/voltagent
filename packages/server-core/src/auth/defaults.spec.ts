@@ -69,6 +69,7 @@ describe("Auth Defaults", () => {
       it("should not require auth for default public routes", () => {
         expect(requiresAuth("GET", "/agents")).toBe(false);
         expect(requiresAuth("GET", "/workflows")).toBe(false);
+        expect(requiresAuth("GET", "/tools")).toBe(false);
         expect(requiresAuth("GET", "/doc")).toBe(false);
         expect(requiresAuth("GET", "/ui")).toBe(false);
         expect(requiresAuth("GET", "/")).toBe(false);
@@ -98,9 +99,9 @@ describe("Auth Defaults", () => {
         expect(requiresAuth("POST", "/agents/test/stream-object")).toBe(true);
       });
 
-      it("should require auth for direct tool execution", () => {
-        expect(requiresAuth("GET", "/tools")).toBe(true);
-        expect(requiresAuth("POST", "/tools/example/execute")).toBe(true);
+      it("should require auth for tool execution but not listing", () => {
+        expect(requiresAuth("GET", "/tools")).toBe(false); // Listing is public (like /agents, /workflows)
+        expect(requiresAuth("POST", "/tools/example/execute")).toBe(true); // Execution requires auth
       });
 
       it("should require auth for workflow execution endpoints", () => {
