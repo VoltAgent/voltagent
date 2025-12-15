@@ -22,6 +22,16 @@ export interface TrafficRequestMetadata {
   tenantId?: string;
 }
 
+export type ProviderModelConcurrencyLimit =
+  | number
+  | Record<string, number>
+  | ((metadata: TrafficRequestMetadata | undefined, key: string) => number | undefined);
+
+export type TenantConcurrencyLimit =
+  | number
+  | Record<string, number>
+  | ((tenantId: string, metadata: TrafficRequestMetadata | undefined) => number | undefined);
+
 export interface TrafficRequest<TResponse> {
   tenantId: string;
   metadata?: TrafficRequestMetadata;
@@ -35,6 +45,8 @@ export interface TrafficRequest<TResponse> {
 
 export interface TrafficControllerOptions {
   maxConcurrent?: number;
+  maxConcurrentPerProviderModel?: ProviderModelConcurrencyLimit;
+  maxConcurrentPerTenant?: TenantConcurrencyLimit;
   rateLimits?: RateLimitConfig;
   logger?: Logger;
   fallbackChains?: Record<string, string[]>;

@@ -91,6 +91,8 @@ export class TrafficCircuitBreaker {
 
       next.request = fallbackRequest;
       next.attempt = 1;
+      next.tenantConcurrencyKey = undefined;
+      next.providerModelConcurrencyKey = undefined;
       next.rateLimitKey = undefined;
       next.etaMs = undefined;
       next.circuitKey = undefined;
