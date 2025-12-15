@@ -3,6 +3,8 @@ import {
   CIRCUIT_COOLDOWN_MS,
   CIRCUIT_FAILURE_THRESHOLD,
   CIRCUIT_FAILURE_WINDOW_MS,
+  CIRCUIT_TIMEOUT_THRESHOLD,
+  CIRCUIT_TIMEOUT_WINDOW_MS,
   DEFAULT_FALLBACK_CHAINS,
 } from "./traffic-constants";
 import type {
@@ -11,7 +13,7 @@ import type {
   DispatchDecision,
   QueuedRequest,
 } from "./traffic-controller-internal";
-import { extractStatusCode } from "./traffic-error-utils";
+import { extractStatusCode, isTimeoutError } from "./traffic-error-utils";
 import { CircuitBreakerOpenError } from "./traffic-errors";
 import type { TrafficRequestMetadata } from "./traffic-types";
 
@@ -128,44 +130,75 @@ export class TrafficCircuitBreaker {
     logger?: Logger,
   ): void {
     const circuitLogger = logger?.child({ module: "circuit-breaker" });
+    const key = this.buildRateLimitKey(metadata);
     const status = extractStatusCode(error, logger);
+    const isTimeout = status === 408 || isTimeoutError(error, logger);
+    const isStatusEligible = this.isCircuitBreakerStatus(status);
+    const isTimeoutEligible = !isStatusEligible && isTimeout;
+    const isEligible = isStatusEligible || isTimeoutEligible;
+
     circuitLogger?.debug?.("Circuit failure observed", {
-      circuitKey: this.buildRateLimitKey(metadata),
+      circuitKey: key,
       status,
+      isTimeout,
+      eligible: isEligible,
       provider: metadata?.provider,
       model: metadata?.model,
     });
-    if (!this.isCircuitBreakerStatus(status)) {
-      this.circuitBreakers.delete(this.buildRateLimitKey(metadata));
+
+    if (!isEligible) {
+      this.circuitBreakers.delete(key);
       circuitLogger?.debug?.("Failure not eligible for circuit breaker; cleared circuit state", {
-        circuitKey: this.buildRateLimitKey(metadata),
+        circuitKey: key,
         status,
+        isTimeout,
       });
       return;
     }
 
-    const key = this.buildRateLimitKey(metadata);
     const now = Date.now();
     const state =
       this.circuitBreakers.get(key) ??
-      ({ status: "closed", failureTimestamps: [] } as CircuitState);
+      ({ status: "closed", failureTimestamps: [], timeoutTimestamps: [] } as CircuitState);
 
     state.failureTimestamps = state.failureTimestamps.filter(
       (t) => now - t <= CIRCUIT_FAILURE_WINDOW_MS,
     );
+    state.timeoutTimestamps = state.timeoutTimestamps.filter(
+      (t) => now - t <= CIRCUIT_TIMEOUT_WINDOW_MS,
+    );
+
     state.failureTimestamps.push(now);
+    if (isTimeoutEligible) {
+      state.timeoutTimestamps.push(now);
+    }
 
     if (
       state.status === "half-open" ||
-      state.failureTimestamps.length >= CIRCUIT_FAILURE_THRESHOLD
+      state.failureTimestamps.length >= CIRCUIT_FAILURE_THRESHOLD ||
+      state.timeoutTimestamps.length >= CIRCUIT_TIMEOUT_THRESHOLD
     ) {
+      const openReasons: string[] = [];
+      if (state.status === "half-open") openReasons.push("half-open-failure");
+      if (state.failureTimestamps.length >= CIRCUIT_FAILURE_THRESHOLD) {
+        openReasons.push("failure-threshold");
+      }
+      if (state.timeoutTimestamps.length >= CIRCUIT_TIMEOUT_THRESHOLD) {
+        openReasons.push("timeout-threshold");
+      }
+
       state.status = "open";
       state.openedAt = now;
       state.trialInFlight = false;
       circuitLogger?.warn?.("Circuit opened", {
         circuitKey: key,
+        openReasons,
+        status,
+        isTimeout,
         failureCount: state.failureTimestamps.length,
-        threshold: CIRCUIT_FAILURE_THRESHOLD,
+        failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
+        timeoutCount: state.timeoutTimestamps.length,
+        timeoutThreshold: CIRCUIT_TIMEOUT_THRESHOLD,
         openedAt: state.openedAt,
       });
     }
@@ -175,7 +208,9 @@ export class TrafficCircuitBreaker {
       circuitKey: key,
       status: state.status,
       failureCount: state.failureTimestamps.length,
-      windowMs: CIRCUIT_FAILURE_WINDOW_MS,
+      failureWindowMs: CIRCUIT_FAILURE_WINDOW_MS,
+      timeoutCount: state.timeoutTimestamps.length,
+      timeoutWindowMs: CIRCUIT_TIMEOUT_WINDOW_MS,
     });
   }
 
@@ -201,6 +236,7 @@ export class TrafficCircuitBreaker {
         state.status = "half-open";
         state.trialInFlight = false;
         state.failureTimestamps = [];
+        state.timeoutTimestamps = [];
         logger?.debug?.("Circuit transitioned to half-open", { circuitKey: key });
         return { allowRequest: true, state: "half-open" };
       }
