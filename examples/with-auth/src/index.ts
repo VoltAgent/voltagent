@@ -7,6 +7,9 @@ import { honoServer, jwtAuth } from "@voltagent/server-hono";
 import { AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 
+// Import tools
+import { weatherTool } from "./tools/index.js";
+
 // Create logger
 const logger = createPinoLogger({
   name: "base",
@@ -22,9 +25,10 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Base Agent",
-  instructions: "You are a helpful assistant",
+  instructions: "You are a helpful assistant that can provide weather information",
   model: openai("gpt-4o-mini"),
   memory: memory,
+  tools: [weatherTool],
 });
 
 new VoltAgent({

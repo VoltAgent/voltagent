@@ -15,6 +15,9 @@ export const DEFAULT_PUBLIC_ROUTES = [
   "GET /workflows", // List all workflows
   "GET /workflows/:id", // Get workflow details
 
+  // Tool management endpoints
+  "GET /tools", // List all tools
+
   // API documentation
   "GET /doc", // OpenAPI spec
   "GET /ui", // Swagger UI
@@ -47,7 +50,6 @@ export const PROTECTED_ROUTES = [
   // ========================================
   // TOOL EXECUTION (User Data)
   // ========================================
-  "GET /tools", // List tools (protected by default)
   "POST /tools/:name/execute",
 
   // ========================================
