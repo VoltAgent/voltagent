@@ -1,14 +1,17 @@
 import type { Logger } from "../logger";
 import { LoggerProxy } from "../logger";
 import { TrafficCircuitBreaker } from "./traffic-circuit-breaker";
+import { TrafficConcurrencyLimiter } from "./traffic-concurrency-limiter";
 import type { DispatchDecision, QueuedRequest, Scheduler } from "./traffic-controller-internal";
 import { CircuitBreakerOpenError, RateLimitedUpstreamError } from "./traffic-errors";
 import { type RateLimitUpdateResult, TrafficRateLimiter } from "./traffic-rate-limiter";
 import { type RetryReason, buildRetryPlan } from "./traffic-retry";
 import type {
+  ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
   RateLimitOptions,
+  TenantConcurrencyLimit,
   TenantUsage,
   TrafficControllerOptions,
   TrafficPriority,
@@ -24,9 +27,11 @@ import { TrafficUsageTracker } from "./traffic-usage-tracker";
  */
 
 export type {
+  ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
   RateLimitOptions,
+  TenantConcurrencyLimit,
   TenantUsage,
   TrafficControllerOptions,
   TrafficPriority,
@@ -46,6 +51,7 @@ export class TrafficController {
   private readonly logger: Logger;
   private readonly trafficLogger: Logger;
   private readonly controllerLogger: Logger;
+  private readonly concurrencyLimiter: TrafficConcurrencyLimiter;
 
   private readonly queues: Record<TrafficPriority, QueuedRequest[]> = {
     P0: [],
@@ -77,10 +83,17 @@ export class TrafficController {
       fallbackChains: options.fallbackChains,
       buildRateLimitKey: (metadata) => this.buildRateLimitKey(metadata),
     });
+    this.concurrencyLimiter = new TrafficConcurrencyLimiter({
+      buildProviderModelKey: (metadata) => this.buildRateLimitKey(metadata),
+      maxConcurrentPerProviderModel: options.maxConcurrentPerProviderModel,
+      maxConcurrentPerTenant: options.maxConcurrentPerTenant,
+    });
 
     this.controllerLogger.debug("Initialized TrafficController", {
       maxConcurrent: this.maxConcurrent,
       hasFallbackChains: !!options.fallbackChains,
+      hasProviderModelConcurrency: options.maxConcurrentPerProviderModel !== undefined,
+      hasTenantConcurrency: options.maxConcurrentPerTenant !== undefined,
     });
   }
 
@@ -230,60 +243,73 @@ export class TrafficController {
 
     let earliestWakeUpAt: number | undefined;
 
+    const observeWakeUpAt = (candidate?: number): void => {
+      if (candidate === undefined) return;
+      earliestWakeUpAt =
+        earliestWakeUpAt === undefined ? candidate : Math.min(earliestWakeUpAt, candidate);
+    };
+
     for (const priority of this.priorityOrder) {
-      const next = this.queues[priority][0];
-      if (!next) continue;
+      const queue = this.queues[priority];
+      for (let index = 0; index < queue.length; index++) {
+        const next = queue[index];
+        if (!next) continue;
 
-      this.controllerLogger.trace("Evaluate next queued request", {
-        priority,
-        type: next.type,
-        tenantId: next.tenantId,
-        attempt: next.attempt,
-        provider: next.request.metadata?.provider,
-        model: next.request.metadata?.model,
-      });
-
-      const circuit = this.resolveCircuit(next);
-      if (circuit) {
-        this.controllerLogger.trace("Circuit resolution returned decision", {
+        this.controllerLogger.trace("Evaluate next queued request", {
           priority,
-          decision: circuit,
-          circuitKey: next.circuitKey,
-          circuitStatus: next.circuitStatus,
+          queueIndex: index,
+          queueLength: queue.length,
+          type: next.type,
+          tenantId: next.tenantId,
+          attempt: next.attempt,
+          provider: next.request.metadata?.provider,
+          model: next.request.metadata?.model,
         });
-        if (circuit.kind === "skip") {
-          this.queues[priority].shift();
-          return { kind: "skip" };
-        }
-        if (circuit.kind === "wait") {
-          if (circuit.wakeUpAt !== undefined) {
-            earliestWakeUpAt =
-              earliestWakeUpAt === undefined
-                ? circuit.wakeUpAt
-                : Math.min(earliestWakeUpAt, circuit.wakeUpAt);
+
+        const circuit = this.resolveCircuit(next);
+        if (circuit) {
+          this.controllerLogger.trace("Circuit resolution returned decision", {
+            priority,
+            decision: circuit,
+            circuitKey: next.circuitKey,
+            circuitStatus: next.circuitStatus,
+          });
+          if (circuit.kind === "skip") {
+            queue.splice(index, 1);
+            return { kind: "skip" };
           }
+          if (circuit.kind === "wait") {
+            observeWakeUpAt(circuit.wakeUpAt);
+            continue;
+          }
+        }
+
+        const concurrency = this.concurrencyLimiter.resolve(next, this.trafficLogger);
+        if (concurrency.kind === "wait") {
+          this.controllerLogger.trace("Concurrency gate blocked request", {
+            priority,
+            tenantId: next.tenantId,
+            provider: next.request.metadata?.provider,
+            model: next.request.metadata?.model,
+            reasons: concurrency.reasons,
+          });
           continue;
         }
-      }
 
-      const rateLimit = this.resolveRateLimit(next);
-      if (rateLimit) {
-        this.controllerLogger.trace("Rate limit resolution returned decision", {
-          priority,
-          decision: rateLimit,
-          rateLimitKey: next.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
-        });
-        if (rateLimit.kind === "wait" && rateLimit.wakeUpAt !== undefined) {
-          earliestWakeUpAt =
-            earliestWakeUpAt === undefined
-              ? rateLimit.wakeUpAt
-              : Math.min(earliestWakeUpAt, rateLimit.wakeUpAt);
+        const rateLimit = this.resolveRateLimit(next);
+        if (rateLimit) {
+          this.controllerLogger.trace("Rate limit resolution returned decision", {
+            priority,
+            decision: rateLimit,
+            rateLimitKey: next.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
+          });
+          if (rateLimit.kind === "wait") observeWakeUpAt(rateLimit.wakeUpAt);
+          continue;
         }
-        continue;
-      }
 
-      this.startRequest(next);
-      return { kind: "dispatch" };
+        this.startRequest(next, index);
+        return { kind: "dispatch" };
+      }
     }
 
     return earliestWakeUpAt !== undefined
@@ -291,7 +317,7 @@ export class TrafficController {
       : { kind: "wait" };
   }
 
-  private startRequest(item: QueuedRequest): void {
+  private startRequest(item: QueuedRequest, queueIndex: number): void {
     this.controllerLogger.debug("Start request", {
       priority: item.priority,
       type: item.type,
@@ -300,8 +326,9 @@ export class TrafficController {
       provider: item.request.metadata?.provider,
       model: item.request.metadata?.model,
     });
-    this.queues[item.priority].shift();
+    this.queues[item.priority].splice(queueIndex, 1);
     this.activeCount++;
+    this.concurrencyLimiter.acquire(item, this.trafficLogger);
     this.rateLimiter.notifyDispatch(item.rateLimitKey, this.trafficLogger);
     this.circuitBreaker.markTrial(item, this.trafficLogger);
     void this.executeRequest(item);
@@ -375,6 +402,7 @@ export class TrafficController {
       }
     } finally {
       this.rateLimiter.releaseReservation(item.rateLimitKey, this.trafficLogger);
+      this.concurrencyLimiter.release(item, this.trafficLogger);
       this.activeCount = Math.max(0, this.activeCount - 1);
       this.controllerLogger.trace("Request finished; slot released", {
         tenantId: item.tenantId,
@@ -411,6 +439,8 @@ export class TrafficController {
       this.queues[item.priority].push({
         ...item,
         attempt: item.attempt + 1,
+        tenantConcurrencyKey: undefined,
+        providerModelConcurrencyKey: undefined,
         rateLimitKey: undefined,
         etaMs: undefined,
         circuitKey: undefined,
