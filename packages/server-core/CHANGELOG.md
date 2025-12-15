@@ -1,5 +1,19 @@
 # @voltagent/server-core
 
+## 1.0.34
+
+### Patch Changes
+
+- [#865](https://github.com/VoltAgent/voltagent/pull/865) [`77833b8`](https://github.com/VoltAgent/voltagent/commit/77833b848fbb1ae99e79c955e25442f9ebdd162f) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: make GET /tools endpoint public when auth is enabled
+
+  Previously, `GET /tools` was listed in `PROTECTED_ROUTES`, requiring authentication even though it only returns tool metadata (name, description, parameters). This was inconsistent with `GET /agents` and `GET /workflows` which are publicly accessible for discovery.
+
+  ## Changes
+  - Moved `GET /tools` from `PROTECTED_ROUTES` to `DEFAULT_PUBLIC_ROUTES`
+  - Tool execution (`POST /tools/:name/execute`) remains protected and requires authentication
+
+  This allows VoltOps Console and other clients to discover available tools without authentication, while still requiring auth to actually execute them.
+
 ## 1.0.33
 
 ### Patch Changes
