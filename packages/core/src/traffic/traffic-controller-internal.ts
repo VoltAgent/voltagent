@@ -12,6 +12,7 @@ export type CircuitStateStatus = "closed" | "open" | "half-open";
 export interface CircuitState {
   status: CircuitStateStatus;
   failureTimestamps: number[];
+  timeoutTimestamps: number[];
   openedAt?: number;
   trialInFlight?: boolean;
 }
