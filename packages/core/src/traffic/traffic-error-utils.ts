@@ -96,28 +96,45 @@ export function extractRetryAfterMs(error: unknown, logger?: Logger): number | u
 }
 
 export function isTimeoutError(error: unknown, logger?: Logger): boolean {
-  const code = readObjectProperty(error, "code");
-  const name = readObjectProperty(error, "name");
-  const message = readObjectProperty(error, "message");
-  const isTimeout =
-    String(code ?? "")
-      .toLowerCase()
-      .includes("timeout") ||
-    String(name ?? "")
-      .toLowerCase()
-      .includes("timeout") ||
-    String(message ?? "")
-      .toLowerCase()
-      .includes("timeout");
+  const candidates: unknown[] = [error];
 
-  logger?.trace?.("Checked timeout error", {
-    isTimeout,
-    code,
-    name,
-    messagePreview: typeof message === "string" ? message.slice(0, 160) : message,
-  });
+  const cause = readObjectProperty(error, "cause");
+  if (cause) {
+    candidates.push(cause);
+    const nestedCause = readObjectProperty(cause, "cause");
+    if (nestedCause) candidates.push(nestedCause);
+  }
 
-  return isTimeout;
+  for (const candidate of candidates) {
+    const code = readObjectProperty(candidate, "code");
+    const name = readObjectProperty(candidate, "name");
+    const message = readObjectProperty(candidate, "message");
+
+    const codeText = String(code ?? "").toLowerCase();
+    const nameText = String(name ?? "").toLowerCase();
+    const messageText = String(message ?? "").toLowerCase();
+
+    const isTimeout =
+      codeText.includes("timeout") ||
+      codeText.includes("timedout") ||
+      nameText.includes("timeout") ||
+      nameText.includes("timedout") ||
+      messageText.includes("timeout") ||
+      messageText.includes("timedout") ||
+      messageText.includes("timed out");
+
+    logger?.trace?.("Checked timeout error", {
+      isTimeout,
+      code,
+      name,
+      messagePreview: typeof message === "string" ? message.slice(0, 160) : message,
+      hasCause: candidate !== error,
+    });
+
+    if (isTimeout) return true;
+  }
+
+  return false;
 }
 
 export function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
