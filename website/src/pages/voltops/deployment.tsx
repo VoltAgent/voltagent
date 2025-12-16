@@ -1,5 +1,4 @@
 import Head from "@docusaurus/Head";
-import Link from "@docusaurus/Link";
 import {
   ArrowRightIcon,
   ChevronDownIcon,
@@ -9,6 +8,7 @@ import {
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { DotPattern } from "@site/src/components/ui/dot-pattern";
+import { Button } from "@site/src/components/voltops/Button";
 import Layout from "@theme/Layout";
 import { AnimatePresence, motion } from "framer-motion";
 import type React from "react";
@@ -29,40 +29,6 @@ const Container = ({
   <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${className}`}>{children}</div>
 );
 
-const Button = ({
-  variant = "primary",
-  children,
-  href,
-  className = "",
-  target,
-}: {
-  variant?: "primary" | "secondary";
-  children: React.ReactNode;
-  href: string;
-  className?: string;
-  target?: string;
-}) => {
-  const baseClasses =
-    "inline-flex items-center justify-center px-6 py-3 rounded-2xl font-semibold transition-all duration-200 no-underline";
-  const variants = {
-    primary:
-      "bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/30 shadow-lg hover:shadow-xl",
-    secondary:
-      "bg-transparent text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/20",
-  };
-
-  return (
-    <Link
-      href={href}
-      className={`${baseClasses} ${variants[variant]} ${className}`}
-      target={target}
-      rel={target === "_blank" ? "noopener noreferrer" : undefined}
-    >
-      {children}
-    </Link>
-  );
-};
-
 // Feature data
 // FAQ Component
 const FAQItem = ({
@@ -82,7 +48,7 @@ const FAQItem = ({
       onClick={onClick}
       className="w-full py-5 flex items-center justify-between text-left bg-transparent border-none cursor-pointer"
     >
-      <span className="text-base md:text-lg font-medium text-white">{question}</span>
+      <span className="text-sm sm:text-base md:text-lg font-medium text-white">{question}</span>
       <ChevronDownIcon
         className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
           isOpen ? "rotate-180" : ""
@@ -98,7 +64,9 @@ const FAQItem = ({
           transition={{ duration: 0.2 }}
           className="overflow-hidden"
         >
-          <p className="pb-5 text-lg text-gray-400 mb-0 leading-relaxed">{answer}</p>
+          <p className="pb-5 text-sm sm:text-base md:text-lg text-gray-400 mb-0 leading-relaxed">
+            {answer}
+          </p>
         </motion.div>
       )}
     </AnimatePresence>
@@ -201,16 +169,16 @@ export default function DeploymentPage(): JSX.Element {
                 transition={{ duration: 0.5 }}
               >
                 <div className="mb-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-emerald-400 border-solid border-emerald-500/20">
                     <CloudArrowUpIcon className="w-4 h-4 mr-2" />
                     VoltOps Deploy
                   </span>
                 </div>
-                <h1 className="text-4xl md:text-5xl tracking-[-0.025em] font-normal text-white mb-6 leading-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl tracking-[-0.025em] font-normal text-white mb-4 sm:mb-6 leading-tight">
                   Deploy AI Agents to <span className="text-emerald-400">Production</span> in
                   Minutes
                 </h1>
-                <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
+                <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-6 sm:mb-8 leading-relaxed">
                   Ship your agents with custom domains, automatic SSL, authentication, and real-time
                   monitoring. No infrastructure headaches.
                 </p>
@@ -271,11 +239,11 @@ export default function DeploymentPage(): JSX.Element {
                     {/* Feature Content */}
                     <div className={`${index % 2 === 1 ? "lg:order-1" : ""}`}>
                       <div className="flex items-center gap-4 mb-5">
-                        <h3 className="text-3xl font-normal text-white leading-tight mb-0">
+                        <h3 className="text-xl sm:text-2xl md:text-3xl font-normal text-white leading-tight mb-0">
                           {feature.title}
                         </h3>
                       </div>
-                      <p className="text-gray-400 text-lg md:text-xl  mb-0">
+                      <p className="text-gray-400 text-base sm:text-lg md:text-xl mb-0">
                         {feature.description}
                       </p>
                     </div>
@@ -299,7 +267,9 @@ export default function DeploymentPage(): JSX.Element {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="flex flex-col items-center"
             >
-              <h2 className="text-2xl md:text-4xl font-bold text-white mb-8">F.A.Q</h2>
+              <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-white mb-6 sm:mb-8">
+                F.A.Q
+              </h2>
 
               <div className="w-full max-w-4xl">
                 <div className="bg-gradient-to-br from-gray-900/90 to-gray-950/90 backdrop-blur-xl border border-solid border-gray-700/50 rounded-2xl p-6 md:p-8">
