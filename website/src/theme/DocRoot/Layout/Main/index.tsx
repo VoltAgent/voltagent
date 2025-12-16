@@ -8,7 +8,7 @@ import type { Props } from "@theme/DocRoot/Layout/Main";
 import clsx from "clsx";
 import React, { useMemo } from "react";
 
-import { ArrowRightIcon, ArrowTopRightOnSquareIcon, HomeIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, HomeIcon } from "@heroicons/react/24/outline";
 import styles from "./styles.module.css";
 
 export default function DocRootLayoutMain({
@@ -135,27 +135,6 @@ export default function DocRootLayoutMain({
               )}
             >
               Recipes & Guides
-            </Link>
-            <Link
-              to="/examples/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={clsx(
-                styles.tab,
-                location.pathname.startsWith("/examples/") && styles.tabActive,
-              )}
-            >
-              <span>Examples</span>
-              <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-1" />
-            </Link>
-            <Link
-              to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"
-              className={styles.tab}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span>Changelog</span>
-              <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-1" />
             </Link>
           </div>
         </div>
