@@ -26,6 +26,42 @@ const sidebars: SidebarsConfig = {
         },
       ],
     },
+    {
+      type: "category",
+      label: "Examples",
+      items: [
+        {
+          type: "doc",
+          id: "recipe-creator",
+          label: "AI Recipe Generator Agent",
+        },
+        {
+          type: "doc",
+          id: "research-assistant",
+          label: "AI Research Assistant Agent",
+        },
+        {
+          type: "doc",
+          id: "whatsapp-order",
+          label: "WhatsApp Order Agent",
+        },
+        {
+          type: "doc",
+          id: "ad-creator",
+          label: "AI Ads Generator Agent",
+        },
+        {
+          type: "doc",
+          id: "youtube-to-blog",
+          label: "YouTube to Blog Agent",
+        },
+        {
+          type: "doc",
+          id: "mcp-chatgpt",
+          label: "ChatGPT App With VoltAgent",
+        },
+      ],
+    },
   ],
 };
 

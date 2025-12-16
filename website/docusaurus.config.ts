@@ -491,6 +491,35 @@ const config: Config = {
             to: "/docs/getting-started/providers-models/",
             from: "/docs/providers/contributing/",
           },
+          // Redirect old /examples/ paths to /recipes-and-guides/
+          {
+            to: "/recipes-and-guides/",
+            from: "/examples/",
+          },
+          {
+            to: "/recipes-and-guides/recipe-generator/",
+            from: "/examples/agents/recipe-generator/",
+          },
+          {
+            to: "/recipes-and-guides/research-assistant/",
+            from: "/examples/agents/research-assistant/",
+          },
+          {
+            to: "/recipes-and-guides/whatsapp-ai-agent/",
+            from: "/examples/agents/whatsapp-ai-agent/",
+          },
+          {
+            to: "/recipes-and-guides/ai-instagram-ad-agent/",
+            from: "/examples/agents/ai-instagram-ad-agent/",
+          },
+          {
+            to: "/recipes-and-guides/youtube-blog-agent/",
+            from: "/examples/agents/youtube-blog-agent/",
+          },
+          {
+            to: "/recipes-and-guides/chatgpt-app/",
+            from: "/examples/agents/chatgpt-app/",
+          },
         ],
       },
     ],
@@ -535,13 +564,14 @@ const config: Config = {
         contentPath: "src/components/usecases",
       },
     ],
-    [
-      "./plugins/docusaurus-plugin-content-examples",
-      {
-        id: "examples",
-        contentPath: "examples",
-      },
-    ],
+    // Examples plugin disabled - examples are now in /recipes-and-guides/
+    // [
+    //   "./plugins/docusaurus-plugin-content-examples",
+    //   {
+    //     id: "examples",
+    //     contentPath: "examples",
+    //   },
+    // ],
   ],
   themeConfig: {
     image: "img/social3.png",
