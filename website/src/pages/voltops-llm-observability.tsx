@@ -118,22 +118,22 @@ const faqData = [
 
 const features = [
   {
+    title: "Visual Agent Execution",
+    description:
+      "Visualize your agent's execution as an interactive flow diagram. Instantly spot bottlenecks, failed steps, and unexpected behaviors.",
+    image: "/voltops/framework-2.png",
+  },
+  {
     title: "Real-time Monitoring",
     description:
       "Track agent performance, latency, token usage, and errors in real-time. Set up alerts for critical metrics and never miss an issue in production.",
-    image: "https://cdn.voltagent.dev/website/feature-showcase/monitoring.png",
-  },
-  {
-    title: "Framework Agnostic",
-    description:
-      "Works with any AI framework out of the box. Seamless integration with VoltAgent, LangChain, LlamaIndex, Vercel AI SDK, and custom implementations.",
-    image: "https://cdn.voltagent.dev/website/feature-showcase/framework.png",
+    image: "/voltops/alert-1.png",
   },
   {
     title: "Detailed Tracing & Logs",
     description:
       "Trace every LLM call, tool execution, and agent interaction with detailed logs. Debug complex agent workflows and understand exactly what happened at each step.",
-    image: "https://cdn.voltagent.dev/website/feature-showcase/dashboard.png",
+    image: "/voltops/logs-1.png",
   },
 ];
 
@@ -203,8 +203,8 @@ export default function ObservabilityPage(): JSX.Element {
                   Agents
                 </h1>
                 <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
-                  Monitor, debug, and optimize your AI agents from any framework. Get deep insights
-                  into every LLM call, tool execution, and agent interaction.
+                  Catch AI agent failures before they reach production. Get full visibility into
+                  every step, from input to output.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
@@ -229,7 +229,7 @@ export default function ObservabilityPage(): JSX.Element {
                 className="relative"
               >
                 <img
-                  src="https://cdn.voltagent.dev/website/feature-showcase/dashboard.png"
+                  src="/voltops/dashboard-1.png"
                   alt="VoltOps Observability Dashboard"
                   className="w-full h-auto rounded-xl object-cover"
                 />
