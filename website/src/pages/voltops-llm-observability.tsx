@@ -163,11 +163,11 @@ export default function ObservabilityPage(): JSX.Element {
                     VoltOps Observability
                   </span>
                 </div>
-                <h1 className="text-4xl md:text-5xl tracking-[-0.025em] font-normal text-white mb-6 leading-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl tracking-[-0.025em] font-normal text-white mb-4 sm:mb-6 leading-tight">
                   Real-time <span className="text-emerald-400">LLM Observability</span> for AI
                   Agents
                 </h1>
-                <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
+                <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-6 sm:mb-8 leading-relaxed">
                   Catch AI agent failures before they reach production. Get full visibility into
                   every step, from input to output.
                 </p>
@@ -232,11 +232,13 @@ export default function ObservabilityPage(): JSX.Element {
                     {/* Feature Content */}
                     <div className={`${index % 2 === 1 ? "lg:order-1" : ""}`}>
                       <div className="flex items-center gap-4 mb-5">
-                        <h3 className="text-3xl font-normal text-white leading-tight mb-0">
+                        <h3 className="text-xl sm:text-2xl md:text-3xl font-normal text-white leading-tight mb-0">
                           {feature.title}
                         </h3>
                       </div>
-                      <p className="text-gray-400 text-lg md:text-xl mb-0">{feature.description}</p>
+                      <p className="text-gray-400 text-base sm:text-lg md:text-xl mb-0">
+                        {feature.description}
+                      </p>
                     </div>
                   </div>
                   {/* Divider between features */}
