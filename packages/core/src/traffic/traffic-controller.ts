@@ -4,7 +4,12 @@ import { TrafficCircuitBreaker } from "./traffic-circuit-breaker";
 import { TrafficConcurrencyLimiter } from "./traffic-concurrency-limiter";
 import type { DispatchDecision, QueuedRequest, Scheduler } from "./traffic-controller-internal";
 import { CircuitBreakerOpenError, RateLimitedUpstreamError } from "./traffic-errors";
-import { type RateLimitUpdateResult, TrafficRateLimiter } from "./traffic-rate-limiter";
+import {
+  OpenAIWindowRateLimitStrategy,
+  type RateLimitUpdateResult,
+  TokenBucketRateLimitStrategy,
+  TrafficRateLimiter,
+} from "./traffic-rate-limiter";
 import { type RetryReason, buildRetryPlan } from "./traffic-retry";
 import type {
   ProviderModelConcurrencyLimit,
@@ -78,7 +83,17 @@ export class TrafficController {
     this.logger = new LoggerProxy({ component: "traffic-controller" }, options.logger);
     this.trafficLogger = this.logger.child({ subsystem: "traffic" });
     this.controllerLogger = this.trafficLogger.child({ module: "controller" });
-    this.rateLimiter = new TrafficRateLimiter(() => this.scheduleDrain());
+    const rateLimits = options.rateLimits;
+    this.rateLimiter = new TrafficRateLimiter(
+      () => this.scheduleDrain(),
+      (key) => {
+        const provider = key.split("::")[0] ?? "";
+        if (provider.startsWith("openai")) {
+          return new OpenAIWindowRateLimitStrategy(key);
+        }
+        return new TokenBucketRateLimitStrategy(key, rateLimits?.[key]);
+      },
+    );
     this.circuitBreaker = new TrafficCircuitBreaker({
       fallbackChains: options.fallbackChains,
       buildRateLimitKey: (metadata) => this.buildRateLimitKey(metadata),
@@ -94,6 +109,7 @@ export class TrafficController {
       hasFallbackChains: !!options.fallbackChains,
       hasProviderModelConcurrency: options.maxConcurrentPerProviderModel !== undefined,
       hasTenantConcurrency: options.maxConcurrentPerTenant !== undefined,
+      hasConfigRateLimits: options.rateLimits !== undefined,
     });
   }
 

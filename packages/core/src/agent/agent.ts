@@ -714,6 +714,7 @@ export class Agent {
           });
           this.updateTrafficControllerRateLimits(result.response, trafficMetadata, methodLogger);
         } catch (error) {
+          this.updateTrafficControllerRateLimits(error, trafficMetadata, methodLogger);
           finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
           throw error;
         }
@@ -1098,6 +1099,7 @@ export class Agent {
               modelName: this.getModelName(),
             });
 
+            this.updateTrafficControllerRateLimits(actualError, trafficMetadata, methodLogger);
             finalizeLLMSpan(SpanStatusCode.ERROR, { message: (actualError as Error)?.message });
 
             // History update removed - using OpenTelemetry only
@@ -4180,15 +4182,26 @@ export class Agent {
     metadata: TrafficRequestMetadata | undefined,
     logger?: Logger,
   ): void {
-    if (!response || typeof response !== "object") {
-      logger?.debug?.("[Traffic] No response object available for rate limit update");
-      return;
-    }
+    const readObjectProperty = (value: unknown, key: string): unknown => {
+      if (!value || typeof value !== "object") return undefined;
+      return (value as Record<string, unknown>)[key];
+    };
 
-    const responseWithHeaders = response as { headers?: unknown } | null;
-    const headers = responseWithHeaders?.headers;
+    const headerCandidates: unknown[] = [
+      readObjectProperty(response, "headers"),
+      readObjectProperty(readObjectProperty(response, "response"), "headers"),
+      readObjectProperty(readObjectProperty(response, "cause"), "headers"),
+      readObjectProperty(
+        readObjectProperty(readObjectProperty(response, "cause"), "response"),
+        "headers",
+      ),
+    ];
+
+    const headers = headerCandidates.find(
+      (candidate) => candidate !== undefined && candidate !== null,
+    );
     if (!headers) {
-      logger?.debug?.("[Traffic] Response missing headers; skipping rate limit update");
+      logger?.debug?.("[Traffic] No headers found for rate limit update");
       return;
     }
 
