@@ -1,11 +1,10 @@
 import Head from "@docusaurus/Head";
-import Link from "@docusaurus/Link";
-import { ArrowRightIcon, ChartBarIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ChartBarIcon } from "@heroicons/react/24/outline";
 import { DotPattern } from "@site/src/components/ui/dot-pattern";
+import { Button } from "@site/src/components/voltops/Button";
 import Layout from "@theme/Layout";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import type React from "react";
-import { useState } from "react";
 
 // Reusable components
 const Section = ({
@@ -22,41 +21,7 @@ const Container = ({
   <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${className}`}>{children}</div>
 );
 
-const Button = ({
-  variant = "primary",
-  children,
-  href,
-  className = "",
-  target,
-}: {
-  variant?: "primary" | "secondary";
-  children: React.ReactNode;
-  href: string;
-  className?: string;
-  target?: string;
-}) => {
-  const baseClasses =
-    "inline-flex items-center justify-center px-6 py-3 rounded-2xl font-semibold transition-all duration-200 no-underline";
-  const variants = {
-    primary:
-      "bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/30 shadow-lg hover:shadow-xl",
-    secondary:
-      "bg-transparent text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/20",
-  };
-
-  return (
-    <Link
-      href={href}
-      className={`${baseClasses} ${variants[variant]} ${className}`}
-      target={target}
-      rel={target === "_blank" ? "noopener noreferrer" : undefined}
-    >
-      {children}
-    </Link>
-  );
-};
-
-// FAQ Component
+/* FAQ Component
 const FAQItem = ({
   question,
   answer,
@@ -95,10 +60,10 @@ const FAQItem = ({
       )}
     </AnimatePresence>
   </div>
-);
+); */
 
 // FAQ data
-const faqData = [
+/* const faqData = [
   {
     question: "Can I use VoltOps with any AI framework?",
     answer:
@@ -114,7 +79,7 @@ const faqData = [
     answer:
       "Yes, VoltOps offers a self-hosted version for teams that need to keep data on their own infrastructure. You get the same powerful observability features with full control over your data.",
   },
-];
+]; */
 
 const features = [
   {
@@ -124,21 +89,21 @@ const features = [
     image: "/voltops/framework-2.png",
   },
   {
-    title: "Real-time Monitoring",
+    title: "Alerts & Notifications",
     description:
-      "Track agent performance, latency, token usage, and errors in real-time. Set up alerts for critical metrics and never miss an issue in production.",
+      "Get notified when things break. Set up alerts for latency, errors, and token usage. Receive notifications via Slack, email, or webhooks.",
     image: "/voltops/alert-1.png",
   },
   {
     title: "Detailed Tracing & Logs",
     description:
-      "Trace every LLM call, tool execution, and agent interaction with detailed logs. Debug complex agent workflows and understand exactly what happened at each step.",
+      "Trace every LLM call, tool execution, and agent interaction. Replay sessions, inspect payloads, and find the root cause fast.",
     image: "/voltops/logs-1.png",
   },
 ];
 
 export default function ObservabilityPage(): JSX.Element {
-  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  // const [openFAQ, setOpenFAQ] = useState<number | null>(null);
 
   return (
     <Layout>
@@ -193,7 +158,7 @@ export default function ObservabilityPage(): JSX.Element {
                 transition={{ duration: 0.5 }}
               >
                 <div className="mb-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium  text-emerald-400 border-solid border-emerald-500/20">
                     <ChartBarIcon className="w-4 h-4 mr-2" />
                     VoltOps Observability
                   </span>
@@ -285,7 +250,7 @@ export default function ObservabilityPage(): JSX.Element {
         </Section>
 
         {/* FAQ Section */}
-        <Section className="relative">
+        {/*    <Section className="relative">
           <Container className="relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -310,7 +275,7 @@ export default function ObservabilityPage(): JSX.Element {
               </div>
             </motion.div>
           </Container>
-        </Section>
+        </Section> */}
       </main>
     </Layout>
   );

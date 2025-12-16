@@ -1,5 +1,4 @@
 import Head from "@docusaurus/Head";
-import Link from "@docusaurus/Link";
 import {
   ArrowRightIcon,
   ChevronDownIcon,
@@ -9,6 +8,7 @@ import {
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { DotPattern } from "@site/src/components/ui/dot-pattern";
+import { Button } from "@site/src/components/voltops/Button";
 import Layout from "@theme/Layout";
 import { AnimatePresence, motion } from "framer-motion";
 import type React from "react";
@@ -28,40 +28,6 @@ const Container = ({
 }: { children: React.ReactNode; className?: string }) => (
   <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${className}`}>{children}</div>
 );
-
-const Button = ({
-  variant = "primary",
-  children,
-  href,
-  className = "",
-  target,
-}: {
-  variant?: "primary" | "secondary";
-  children: React.ReactNode;
-  href: string;
-  className?: string;
-  target?: string;
-}) => {
-  const baseClasses =
-    "inline-flex items-center justify-center px-6 py-3 rounded-2xl font-semibold transition-all duration-200 no-underline";
-  const variants = {
-    primary:
-      "bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/30 shadow-lg hover:shadow-xl",
-    secondary:
-      "bg-transparent text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/20",
-  };
-
-  return (
-    <Link
-      href={href}
-      className={`${baseClasses} ${variants[variant]} ${className}`}
-      target={target}
-      rel={target === "_blank" ? "noopener noreferrer" : undefined}
-    >
-      {children}
-    </Link>
-  );
-};
 
 // Feature data
 // FAQ Component
@@ -201,7 +167,7 @@ export default function DeploymentPage(): JSX.Element {
                 transition={{ duration: 0.5 }}
               >
                 <div className="mb-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-emerald-400 border-solid border-emerald-500/20">
                     <CloudArrowUpIcon className="w-4 h-4 mr-2" />
                     VoltOps Deploy
                   </span>
