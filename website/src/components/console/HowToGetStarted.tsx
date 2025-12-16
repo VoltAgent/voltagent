@@ -55,7 +55,7 @@ export const HowToGetStarted = () => {
                   <div className="flex justify-between  py-4  px-4 landing-xs:px-2 landing-sm:px-6 landing-md:px-8 relative">
                     {/* Framework Items */}
                     <Link
-                      to="https://voltagent.dev/voltops-llm-observability-docs/voltagent-framework/"
+                      to="https://voltagent.dev/observability-docs/voltagent-framework/"
                       className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2 cursor-pointer no-underline hover:opacity-80 transition-opacity"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -67,7 +67,7 @@ export const HowToGetStarted = () => {
                     </Link>
 
                     <Link
-                      to="https://voltagent.dev/voltops-llm-observability-docs/python-sdk/"
+                      to="https://voltagent.dev/observability-docs/python-sdk/"
                       className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2 cursor-pointer no-underline hover:opacity-80 transition-opacity"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -79,7 +79,7 @@ export const HowToGetStarted = () => {
                     </Link>
 
                     <Link
-                      to="https://voltagent.dev/voltops-llm-observability-docs/js-ts-sdk/"
+                      to="https://voltagent.dev/observability-docs/js-ts-sdk/"
                       className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2 cursor-pointer no-underline hover:opacity-80 transition-opacity"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -91,7 +91,7 @@ export const HowToGetStarted = () => {
                     </Link>
 
                     <Link
-                      to="https://voltagent.dev/voltops-llm-observability-docs/vercel-ai/"
+                      to="https://voltagent.dev/observability-docs/vercel-ai/"
                       className="flex flex-col items-center justify-center gap-1 landing-xs:gap-0.5 landing-sm:gap-2 cursor-pointer no-underline hover:opacity-80 transition-opacity"
                       target="_blank"
                       rel="noopener noreferrer"

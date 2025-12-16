@@ -108,7 +108,7 @@ You'll see:
 ══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
   ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
-     Docs: https://voltagent.dev/docs/deployment/local-tunnel/
+     Docs: https://voltagent.dev/deployment-docs/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
 
   Test your agents with VoltOps Console: https://console.voltagent.dev

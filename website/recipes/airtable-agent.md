@@ -14,7 +14,7 @@ import ExpandableCode from '@site/src/components/docs-widgets/ExpandableCode';
 
 # Airtable Agent
 
-This guide shows how to build event-driven AI agents with VoltAgent and Airtable using [Triggers](/docs/triggers/usage) and [Actions](/docs/actions/overview).
+This guide shows how to build event-driven AI agents with VoltAgent and Airtable using [Triggers](/actions-triggers-docs/triggers/usage) and [Actions](/actions-triggers-docs/actions/overview).
 
 You'll create an agent that uses Triggers to receive new record events, summarizes them, and uses Actions to write status/next steps back into the same row.
 
@@ -129,7 +129,7 @@ You should see the VoltAgent server startup message:
 ═══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
   ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
-     Docs: https://voltagent.dev/docs/deployment/local-tunnel/
+     Docs: https://voltagent.dev/deployment-docs/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
 
   Test your agents with VoltOps Console: https://console.voltagent.dev
@@ -168,7 +168,7 @@ Open [VoltAgent Console](https://console.voltagent.dev/triggers) and go to **Tri
 <br/>
 <br/>
 
-[Volt Tunnel](/docs/deployment/local-tunnel/) exposes your local server to the internet so triggers can reach it.
+[Volt Tunnel](/deployment-docs/local-tunnel/) exposes your local server to the internet so triggers can reach it.
 
 Run the tunnel command:
 
@@ -413,6 +413,6 @@ View request/response logs in **Actions → Runs** in Console.
 
 ## Related Documentation
 
-- [Triggers Usage](/docs/triggers/usage) - Trigger configuration reference
-- [Airtable Actions](/docs/actions/airtable) - Airtable action types
+- [Triggers Usage](/actions-triggers-docs/triggers/usage) - Trigger configuration reference
+- [Airtable Actions](/actions-triggers-docs/actions/airtable) - Airtable action types
 - [Tools](/docs/agents/tools) - Creating agent tools

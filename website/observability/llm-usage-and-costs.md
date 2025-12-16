@@ -12,42 +12,9 @@ VoltOps automatically tracks and displays LLM usage statistics including prompt 
 
 When you include the model name in your metadata under `modelParameters`, VoltOps automatically calculates pricing for all supported LLM providers. This gives you instant cost visibility without manual configuration.
 
-### Automatic model detection
+### Automatic Model Detection
 
-- **VoltAgent Framework**: Automatically captures model information and calculates costs
-- **Vercel AI SDK**: Built-in integration provides seamless cost tracking
-
-### Manual model specification
-
-- **JavaScript/TypeScript SDK** Include model name with usage information
-
-```javascript
-const agent = await trace.addAgent({
-  name: "Support Agent",
-  metadata: {
-    modelParameters: {
-      model: "gpt-4",
-    },
-    role: "customer-support",
-    department: "customer-success",
-  },
-});
-```
-
-- **Python SDK** Include model name with usage information
-
-```python
-agent = await trace.add_agent(
-    name="Support Agent",
-    metadata={
-        "modelParameters": {
-            "model": "gpt-4",
-        },
-        "role": "customer-support",
-        "department": "customer-success"
-    }
-)
-```
+VoltAgent automatically captures model information and calculates costs from your agent configuration. No manual specification required.
 
 ![llm-usage-2](https://cdn.voltagent.dev/docs/voltop-docs/llm-cost-2.png)
 

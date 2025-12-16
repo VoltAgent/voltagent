@@ -71,7 +71,7 @@ description: 'Plug in retriever agents to pull facts from your data sources and 
 },
 {
 type: 'link',
-href: '/docs/evals/overview/',
+href: '/evaluation-docs/',
 label: 'Evals',
 description: 'Ship guardrails faster by running agent eval suites alongside your workflows.'
 },
@@ -83,7 +83,7 @@ description: 'Add safety checks and validation layers to ensure your agents beha
 },
 {
 type: 'link',
-href: '/docs/deployment/voltops/',
+href: '/deployment-docs/voltops/',
 label: 'Deployment',
 description: 'Deploy your agents to production with one-click GitHub integration and managed infrastructure.'
 }
@@ -191,6 +191,6 @@ Bindings run inside VoltOps with observability, retries, and can be attached to 
 
 ### VoltOps LLM Observability Platform
 
-VoltAgent comes with built-in [VoltOps](/voltops-llm-observability-docs/) LLM observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.
+VoltAgent comes with built-in [VoltOps](/observability-docs/) LLM observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.
 
 ![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)

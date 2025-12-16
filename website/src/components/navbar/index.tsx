@@ -151,20 +151,20 @@ export default function Navbar() {
                         </div>
                       </div>
                     </Link>
-                    <Link to="/docs/triggers/overview/" className="no-underline">
+                    <Link to="/actions-triggers-docs/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
                         <ArrowPathIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
                           <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
-                            Triggers & Actions
+                            Actions & Triggers
                           </span>
                           <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
-                            Automate workflows with events
+                            Triggers and actions for workflows
                           </span>
                         </div>
                       </div>
                     </Link>
-                    <Link to="/docs/evals/overview/" className="no-underline">
+                    <Link to="/evaluation-docs/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
                         <ChartBarIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
@@ -267,8 +267,8 @@ export default function Navbar() {
             <Link to="/docs/" className={`${styles.navLink}  `}>
               VoltAgent Docs
             </Link>
-            <Link to="/voltops-llm-observability-docs/" className={`${styles.navLink}  `}>
-              VoltOps Docs
+            <Link to="/observability-docs/" className={`${styles.navLink}  `}>
+              Observability Docs
             </Link>
 
             <div className={`${styles.navLink} group relative`}>
@@ -519,15 +519,15 @@ export default function Navbar() {
                   </span>
                 </div>
               </Link>
-              <Link to="/docs/triggers/overview/" className="no-underline">
+              <Link to="/actions-triggers-docs/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
                   <ArrowPathIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
                   <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
-                    Triggers & Actions
+                    Actions & Triggers
                   </span>
                 </div>
               </Link>
-              <Link to="/docs/evals/overview/" className="no-underline">
+              <Link to="/evaluation-docs/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
                   <ChartBarIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
                   <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
@@ -587,11 +587,11 @@ export default function Navbar() {
           <Link to="/docs/" className={`${styles.mobileNavLink}`}>
             VoltAgent Docs
           </Link>
+          <Link to="/observability-docs/" className={`${styles.mobileNavLink}`}>
+            Observability Docs
+          </Link>
           <Link to="/recipes-and-guides/" className={`${styles.mobileNavLink}`}>
             Recipes & Guides
-          </Link>
-          <Link to="/voltops-llm-observability-docs/" className={`${styles.mobileNavLink}`}>
-            VoltOps Docs
           </Link>
 
           <div className={styles.mobileNavLink}>

@@ -83,6 +83,51 @@ export default function DocRootLayoutMain({
               VoltAgent Docs
             </Link>
             <Link
+              to="/observability-docs/"
+              className={clsx(
+                styles.tab,
+                location.pathname.startsWith("/observability-docs/") && styles.tabActive,
+              )}
+            >
+              Observability
+            </Link>
+            <Link
+              to="/actions-triggers-docs/"
+              className={clsx(
+                styles.tab,
+                location.pathname.startsWith("/actions-triggers-docs/") && styles.tabActive,
+              )}
+            >
+              Actions & Triggers
+            </Link>
+            <Link
+              to="/evaluation-docs/"
+              className={clsx(
+                styles.tab,
+                location.pathname.startsWith("/evaluation-docs/") && styles.tabActive,
+              )}
+            >
+              Evaluation
+            </Link>
+            <Link
+              to="/prompt-engineering-docs/"
+              className={clsx(
+                styles.tab,
+                location.pathname.startsWith("/prompt-engineering-docs/") && styles.tabActive,
+              )}
+            >
+              Prompt Engineering
+            </Link>
+            <Link
+              to="/deployment-docs/"
+              className={clsx(
+                styles.tab,
+                location.pathname.startsWith("/deployment-docs/") && styles.tabActive,
+              )}
+            >
+              Deployment
+            </Link>
+            <Link
               to="/recipes-and-guides/"
               className={clsx(
                 styles.tab,
@@ -90,16 +135,6 @@ export default function DocRootLayoutMain({
               )}
             >
               Recipes & Guides
-            </Link>
-            <Link
-              to="/voltops-llm-observability-docs/"
-              className={clsx(
-                styles.tab,
-                location.pathname.startsWith("/voltops-llm-observability-docs/") &&
-                  styles.tabActive,
-              )}
-            >
-              VoltOps Docs
             </Link>
             <Link
               to="/examples/"

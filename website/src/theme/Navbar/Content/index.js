@@ -46,11 +46,20 @@ function NavbarContentLayout({ left, right }) {
         <Link to="/docs/overview" className={clsx(styles.navLink, styles.navLinkActive)}>
           VoltAgent Docs
         </Link>
+        <Link to="/observability-docs/" className={styles.navLink}>
+          Observability
+        </Link>
+        <Link to="/evaluation-docs/" className={styles.navLink}>
+          Evaluation
+        </Link>
+        <Link to="/prompt-engineering-docs/" className={styles.navLink}>
+          Prompt Engineering
+        </Link>
+        <Link to="/deployment-docs/" className={styles.navLink}>
+          Deployment
+        </Link>
         <Link to="/recipes-and-guides/" className={styles.navLink}>
           Recipes & Guides
-        </Link>
-        <Link to="/voltops-llm-observability-docs/" className={styles.navLink}>
-          VoltOps Docs
         </Link>
         <Link
           to="https://github.com/voltagent/voltagent/blob/main/CHANGELOG.md"

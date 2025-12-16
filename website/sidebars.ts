@@ -100,29 +100,15 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
-      type: "category",
+      type: "doc",
+      id: "evals",
       label: "Evals",
-      collapsed: true,
       customProps: {
         badge: {
           label: "New",
           variant: "accent",
         },
       },
-      items: [
-        "evals/overview",
-        "evals/offline-evaluations",
-        "evals/live-evaluations",
-        "evals/datasets",
-        "evals/experiments",
-        {
-          type: "category",
-          label: "Scorers",
-          items: ["evals/prebuilt-scorers", "evals/building-custom-scorers"],
-        },
-        "evals/cli-reference",
-        "evals/using-with-viteval",
-      ],
     },
     {
       type: "category",
@@ -155,47 +141,26 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
-      type: "category",
+      type: "doc",
+      id: "triggers",
       label: "Triggers",
-      collapsed: true,
       customProps: {
         badge: {
           label: "New",
           variant: "accent",
         },
       },
-      items: [
-        "triggers/overview",
-        "triggers/usage",
-        "triggers/airtable",
-        "triggers/github",
-        "triggers/gmail",
-        "triggers/google-calendar",
-        "triggers/google-drive",
-        "triggers/slack",
-        "triggers/cron",
-      ],
     },
     {
-      type: "category",
+      type: "doc",
+      id: "actions",
       label: "Actions",
-      collapsed: true,
       customProps: {
         badge: {
           label: "New",
           variant: "accent",
         },
       },
-      items: [
-        "actions/overview",
-        "actions/airtable",
-        "actions/slack",
-        "actions/discord",
-        "actions/gmail",
-        "actions/google-calendar",
-        "actions/postgres",
-        "actions/google-drive",
-      ],
     },
     {
       type: "category",
@@ -207,7 +172,35 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "RAG",
       collapsed: true,
-      items: ["rag/overview", "rag/custom-retrievers", "rag/chroma", "rag/pinecone", "rag/qdrant"],
+      items: [
+        "rag/overview",
+        "rag/custom-retrievers",
+        {
+          type: "category",
+          label: "Chunkers",
+          items: [
+            "rag/chunkers/overview",
+            "rag/chunkers/structured-document",
+            "rag/chunkers/token-chunker",
+            "rag/chunkers/sentence-chunker",
+            "rag/chunkers/recursive-chunker",
+            "rag/chunkers/table-chunker",
+            "rag/chunkers/code-chunker",
+            "rag/chunkers/markdown-chunker",
+            "rag/chunkers/semantic-markdown-chunker",
+            "rag/chunkers/html-chunker",
+            "rag/chunkers/json-chunker",
+            "rag/chunkers/latex-chunker",
+            "rag/chunkers/semantic-chunker",
+            "rag/chunkers/late-chunker",
+            "rag/chunkers/neural-chunker",
+            "rag/chunkers/slumber-chunker",
+          ],
+        },
+        "rag/chroma",
+        "rag/pinecone",
+        "rag/qdrant",
+      ],
     },
     {
       type: "category",
@@ -251,25 +244,9 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
-      type: "category",
+      type: "doc",
+      id: "deployment",
       label: "Deployment",
-      collapsed: true,
-      items: [
-        "deployment/overview",
-        {
-          type: "doc",
-          id: "deployment/voltops",
-          customProps: {
-            badge: {
-              label: "New",
-              variant: "accent",
-            },
-          },
-        },
-        "deployment/cloudflare-workers",
-        "deployment/netlify-functions",
-        "deployment/local-tunnel",
-      ],
     },
     {
       type: "category",

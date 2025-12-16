@@ -219,7 +219,7 @@ export default function DeploymentPage(): JSX.Element {
                     Start Deploying
                     <ArrowRightIcon className="w-5 h-5 ml-2" />
                   </Button>
-                  <Button href="https://voltagent.dev/docs/deployment/voltops/" variant="secondary">
+                  <Button href="https://voltagent.dev/deployment-docs/voltops/" variant="secondary">
                     View Documentation
                   </Button>
                 </div>

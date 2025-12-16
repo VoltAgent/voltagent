@@ -51,7 +51,7 @@ function useShowAnnouncementBar() {
 export default function DocSidebarDesktopContent({ path, sidebar, className }) {
   const showAnnouncementBar = useShowAnnouncementBar();
   const location = useLocation();
-  const isVoltOpsDoc = location.pathname.includes("/voltops-llm-observability-docs/");
+  const isVoltOpsDoc = location.pathname.includes("/observability-docs/");
 
   return (
     <div className={styles.contentWrapper}>
@@ -59,7 +59,7 @@ export default function DocSidebarDesktopContent({ path, sidebar, className }) {
       <div className={styles.sidebarHeader}>
         <div className={styles.logoRow}>
           <Link
-            to={isVoltOpsDoc ? "/voltops-llm-observability-docs/" : "/docs/"}
+            to={isVoltOpsDoc ? "/observability-docs/" : "/docs/"}
             className={styles.sidebarLogo}
           >
             <div className={styles.logoContainer}>

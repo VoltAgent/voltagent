@@ -148,7 +148,7 @@ You should see the VoltAgent server startup message:
 ══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
   ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
-     Docs: https://voltagent.dev/docs/deployment/local-tunnel/
+     Docs: https://voltagent.dev/deployment-docs/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
 
   Test your agents with VoltOps Console: https://console.voltagent.dev
@@ -186,8 +186,8 @@ You should receive a response, you've successfully created your first basic AI a
 
 You now have a working AI agent that responds to messages. VoltAgent also supports event-driven workflows.
 
-- [VoltAgent Triggers](/docs/triggers/overview/) listen for external events like GitHub webhooks or cron schedules.
-- [Voltagent Actions](/docs/actions/overview/) send data to external services like Discord or Slack.
+- [VoltAgent Triggers](/actions-triggers-docs/triggers/overview) listen for external events like GitHub webhooks or cron schedules.
+- [Voltagent Actions](/actions-triggers-docs/actions/overview) send data to external services like Discord or Slack.
 
 Together, they let your agent react to events and take actions automatically.
 
@@ -375,7 +375,7 @@ The command prints an HTTPS URL (for example `https://your-tunnel-address.tunnel
 npx @voltagent/cli tunnel 3141
 ```
 
-See the [Local Tunnel guide](https://voltagent.dev/docs/deployment/local-tunnel/) for details.
+See the [Local Tunnel guide](https://voltagent.dev/deployment-docs/local-tunnel/) for details.
 
 </StepSection>
 
@@ -416,7 +416,7 @@ The `build` script invokes **tsdown**, which bundles your TypeScript entrypoint 
 
 ## Next Steps
 
-- [Deploy to Production](/docs/deployment/voltops) - Deploy your agent with VoltOps Deploy
+- [Deploy to Production](/deployment-docs/voltops) - Deploy your agent with VoltOps Deploy
 - [Tutorial](/tutorial/introduction) - Build agents with tools, memory, and integrations
 - [Agent Configuration](../agents/overview.md) - Agent options and settings
 - [Memory](../agents/memory/overview.md) - Conversation history and persistence

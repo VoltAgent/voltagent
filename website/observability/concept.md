@@ -4,7 +4,7 @@ title: Concept
 
 # VoltOps Observability Concept
 
-VoltOps revolutionizes how developers monitor and debug AI agents by introducing **visual observability** to the LLM ecosystem. Instead of drowning in text logs and scattered metrics, VoltOps presents your agent workflows as interactive, real-time flowcharts.
+VoltOps introduces **visual observability** to the LLM ecosystem. Instead of text logs and scattered metrics, VoltOps presents agent workflows as interactive, real-time flowcharts.
 
 ## The Visual Observability Approach
 
@@ -20,11 +20,11 @@ Traditional observability tools were built for web applications and APIs - they 
 
 **Context-Aware Debugging:** Click on any node to see the full context - input parameters, reasoning chains, tool outputs, and decision logic. No more hunting through log files to understand why your agent behaved a certain way.
 
-**Cross-Agent Orchestration:** When multiple agents work together, VoltOps shows the complete interaction map - which agent called which, how data flows between them, and where bottlenecks or failures occur.
+**Cross-Agent Orchestration:** When multiple agents work together, VoltOps shows the interaction map - which agent called which, how data flows between them, and where bottlenecks or failures occur.
 
 ## How It Works in Practice
 
-Here's how any AI application integrates with VoltOps observability:
+Here's how VoltAgent applications integrate with VoltOps observability:
 
 import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
 
@@ -53,32 +53,4 @@ participant Observability as VoltOps Platform
 
 `} />
 
-This flow demonstrates how VoltOps captures every step of your AI application's decision-making process, from initial user input to final response, providing complete visibility into the reasoning chain.
-
-## Framework Agnostic Design
-
-VoltAgent Observability works with any technology stack through multiple integration options:
-
-### SDKs
-
-- ✅ [**JavaScript/TypeScript SDK**](/voltops-llm-observability-docs/js-ts-sdk/) - Native integration with full observability
-- ✅ [**Python SDK**](/voltops-llm-observability-docs/python-sdk/) - Native integration with full observability
-- 🔄 **REST API** - Universal HTTP-based integration for any language _(Coming Soon)_
-
-### Framework Integrations
-
-- ✅ [**VoltAgent Framework**](/voltops-llm-observability-docs/voltagent-framework/) - Native integration with zero configuration
-- ✅ [**Vercel AI SDK**](/voltops-llm-observability-docs/vercel-ai/) - Add observability to existing Vercel AI SDK applications
-- 🔄 **OpenAI SDK** - Official OpenAI SDK integration _(Coming Soon)_
-- 🔄 **LangChain** - Comprehensive LLM application framework _(Coming Soon)_
-- 🔄 **LlamaIndex** - Leading RAG framework _(Coming Soon)_
-- 🔄 **AutoGen** - Multi-agent conversation framework _(Coming Soon)_
-- 🔄 **Semantic Kernel** - Enterprise AI orchestration _(Coming Soon)_
-- 🔄 **Pydantic AI** - Type-safe Python AI framework _(Coming Soon)_
-- 🔄 **Spring AI** - Java and Spring Boot AI framework _(Coming Soon)_
-- 🔄 **Agno** - Modern TypeScript-first AI agent framework _(Coming Soon)_
-- 🔄 **CrewAI** - Multi-agent orchestration and collaboration _(Coming Soon)_
-
-### Universal Integration
-
-- 🔄 **OpenTelemetry** - Works with existing observability infrastructure _(Coming Soon)_
+This flow demonstrates how VoltOps captures each step of your AI application's decision-making process, from initial user input to final response, providing visibility into the reasoning chain.

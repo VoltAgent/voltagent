@@ -58,10 +58,10 @@ const config: Config = {
             "./src/css/font.css",
           ],
         },
-        gtag: {
+        /*  gtag: {
           trackingID: "G-V4GFZ8WQ7D",
           anonymizeIP: true,
-        },
+        }, */
       } satisfies Preset.Options,
     ],
   ],
@@ -85,8 +85,56 @@ const config: Config = {
       {
         id: "observability",
         path: "observability",
-        routeBasePath: "voltops-llm-observability-docs",
+        routeBasePath: "observability-docs",
         sidebarPath: "./sidebarsObservability.ts",
+        breadcrumbs: false,
+        sidebarCollapsed: false,
+      },
+    ],
+    // Evaluation docs
+    [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "evaluation",
+        path: "evaluation-docs",
+        routeBasePath: "evaluation-docs",
+        sidebarPath: "./sidebarsEvaluation.ts",
+        breadcrumbs: false,
+        sidebarCollapsed: false,
+      },
+    ],
+    // Prompt Engineering docs
+    [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "prompt-engineering",
+        path: "prompt-engineering-docs",
+        routeBasePath: "prompt-engineering-docs",
+        sidebarPath: "./sidebarsPromptEngineering.ts",
+        breadcrumbs: false,
+        sidebarCollapsed: false,
+      },
+    ],
+    // Deployment docs
+    [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "deployment-standalone",
+        path: "deployment-docs",
+        routeBasePath: "deployment-docs",
+        sidebarPath: "./sidebarsDeployment.ts",
+        breadcrumbs: false,
+        sidebarCollapsed: false,
+      },
+    ],
+    // Actions & Triggers docs
+    [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "actions-triggers",
+        path: "actions-triggers-docs",
+        routeBasePath: "actions-triggers-docs",
+        sidebarPath: "./sidebarsActionsTriggers.ts",
         breadcrumbs: false,
         sidebarCollapsed: false,
       },
@@ -118,60 +166,269 @@ const config: Config = {
             to: "/about/",
             from: "/manifesto/",
           },
+          // Redirect old voltops-llm-observability-docs to new observability-docs
           {
-            to: "/voltops-llm-observability-docs/vercel-ai/",
+            to: "/observability-docs/",
+            from: "/voltops-llm-observability-docs/",
+          },
+          // Redirect old docs/deployment paths to deployment-docs
+          {
+            to: "/deployment-docs/",
+            from: "/docs/deployment/overview/",
+          },
+          {
+            to: "/deployment-docs/voltops",
+            from: "/docs/deployment/voltops/",
+          },
+          {
+            to: "/deployment-docs/cloudflare-workers",
+            from: "/docs/deployment/cloudflare-workers/",
+          },
+          {
+            to: "/deployment-docs/netlify-functions",
+            from: "/docs/deployment/netlify-functions/",
+          },
+          {
+            to: "/deployment-docs/local-tunnel",
+            from: "/docs/deployment/local-tunnel/",
+          },
+          // Redirect old docs/triggers paths to automations-docs/triggers
+          {
+            to: "/actions-triggers-docs/triggers/overview",
+            from: "/docs/triggers/overview/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/usage",
+            from: "/docs/triggers/usage/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/airtable",
+            from: "/docs/triggers/airtable/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/github",
+            from: "/docs/triggers/github/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/gmail",
+            from: "/docs/triggers/gmail/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/google-calendar",
+            from: "/docs/triggers/google-calendar/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/google-drive",
+            from: "/docs/triggers/google-drive/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/slack",
+            from: "/docs/triggers/slack/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/cron",
+            from: "/docs/triggers/cron/",
+          },
+          // Redirect old triggers-docs paths to automations-docs/triggers
+          {
+            to: "/actions-triggers-docs/triggers/overview",
+            from: "/triggers-docs/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/usage",
+            from: "/triggers-docs/usage/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/airtable",
+            from: "/triggers-docs/airtable/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/github",
+            from: "/triggers-docs/github/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/gmail",
+            from: "/triggers-docs/gmail/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/google-calendar",
+            from: "/triggers-docs/google-calendar/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/google-drive",
+            from: "/triggers-docs/google-drive/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/slack",
+            from: "/triggers-docs/slack/",
+          },
+          {
+            to: "/actions-triggers-docs/triggers/cron",
+            from: "/triggers-docs/cron/",
+          },
+          // Redirect old docs/actions paths to automations-docs/actions
+          {
+            to: "/actions-triggers-docs/actions/overview",
+            from: "/docs/actions/overview/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/airtable",
+            from: "/docs/actions/airtable/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/slack",
+            from: "/docs/actions/slack/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/discord",
+            from: "/docs/actions/discord/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/gmail",
+            from: "/docs/actions/gmail/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/google-calendar",
+            from: "/docs/actions/google-calendar/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/google-drive",
+            from: "/docs/actions/google-drive/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/postgres",
+            from: "/docs/actions/postgres/",
+          },
+          // Redirect old actions-docs paths to automations-docs/actions
+          {
+            to: "/actions-triggers-docs/actions/overview",
+            from: "/actions-docs/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/airtable",
+            from: "/actions-docs/airtable/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/slack",
+            from: "/actions-docs/slack/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/discord",
+            from: "/actions-docs/discord/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/gmail",
+            from: "/actions-docs/gmail/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/google-calendar",
+            from: "/actions-docs/google-calendar/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/google-drive",
+            from: "/actions-docs/google-drive/",
+          },
+          {
+            to: "/actions-triggers-docs/actions/postgres",
+            from: "/actions-docs/postgres/",
+          },
+          // Redirect old automations-docs paths to actions-triggers-docs
+          {
+            to: "/actions-triggers-docs/",
+            from: "/automations-docs/",
+          },
+          // Redirect old docs/evals paths to evaluation-docs
+          {
+            to: "/evaluation-docs/",
+            from: "/docs/evals/overview/",
+          },
+          {
+            to: "/evaluation-docs/offline-evaluations",
+            from: "/docs/evals/offline-evaluations/",
+          },
+          {
+            to: "/evaluation-docs/live-evaluations",
+            from: "/docs/evals/live-evaluations/",
+          },
+          {
+            to: "/evaluation-docs/datasets",
+            from: "/docs/evals/datasets/",
+          },
+          {
+            to: "/evaluation-docs/experiments",
+            from: "/docs/evals/experiments/",
+          },
+          {
+            to: "/evaluation-docs/prebuilt-scorers",
+            from: "/docs/evals/prebuilt-scorers/",
+          },
+          {
+            to: "/evaluation-docs/building-custom-scorers",
+            from: "/docs/evals/building-custom-scorers/",
+          },
+          {
+            to: "/evaluation-docs/cli-reference",
+            from: "/docs/evals/cli-reference/",
+          },
+          {
+            to: "/evaluation-docs/using-with-viteval",
+            from: "/docs/evals/using-with-viteval/",
+          },
+          // Redirect old docs-observability paths to observability-docs
+          {
+            to: "/observability-docs/",
             from: "/docs-observability/vercel-ai/",
           },
           {
-            to: "/voltops-llm-observability-docs/voltagent-framework/",
+            to: "/observability-docs/",
             from: "/docs-observability/voltagent-framework",
           },
           {
-            to: "/voltops-llm-observability-docs/js-ts-sdk/",
+            to: "/observability-docs/",
             from: "/docs-observability/js-ts-sdk/",
           },
           {
-            to: "/voltops-llm-observability-docs/python-sdk/",
+            to: "/observability-docs/",
             from: "/docs-observability/python-sdk/",
           },
           {
-            to: "/voltops-llm-observability-docs/openai-sdk/",
+            to: "/observability-docs/",
             from: "/docs-observability/openai-sdk/",
           },
           {
-            to: "/voltops-llm-observability-docs/langchain/",
+            to: "/observability-docs/",
             from: "/docs-observability/langchain/",
           },
           {
-            to: "/voltops-llm-observability-docs/llamaindex/",
+            to: "/observability-docs/",
             from: "/docs-observability/llamaindex/",
           },
           {
-            to: "/voltops-llm-observability-docs/autogen/",
+            to: "/observability-docs/",
             from: "/docs-observability/autogen/",
           },
           {
-            to: "/voltops-llm-observability-docs/semantic-kernel/",
+            to: "/observability-docs/",
             from: "/docs-observability/semantic-kernel/",
           },
           {
-            to: "/voltops-llm-observability-docs/pydantic-ai/",
+            to: "/observability-docs/",
             from: "/docs-observability/pydantic-ai/",
           },
           {
-            to: "/voltops-llm-observability-docs/spring-ai/",
+            to: "/observability-docs/",
             from: "/docs-observability/spring-ai/",
           },
           {
-            to: "/voltops-llm-observability-docs/agno/",
+            to: "/observability-docs/",
             from: "/docs-observability/agno/",
           },
           {
-            to: "/voltops-llm-observability-docs/crewai/",
+            to: "/observability-docs/",
             from: "/docs-observability/crewai/",
           },
           {
-            to: "/voltops-llm-observability-docs/rest-api/",
+            to: "/observability-docs/",
             from: "/docs-observability/rest-api/",
           },
           {
@@ -317,7 +574,7 @@ const config: Config = {
           position: "left",
         },
         {
-          to: "/voltops-llm-observability-docs",
+          to: "/observability-docs",
           label: "Observability",
           position: "left",
         },

@@ -69,7 +69,7 @@ new VoltAgent({
     image: "https://cdn.voltagent.dev/website/feature-showcase/dashboard.png",
     fullImage: true,
     footerText: "Monitor and debug your AI agents with real-time observability",
-    docLink: "/voltops-llm-observability-docs",
+    docLink: "/observability-docs",
   },
   {
     id: "evals",
@@ -101,7 +101,7 @@ const agent = new Agent({
   },
 });`,
     footerText: "Evaluate agent responses with customizable scorers in production",
-    docLink: "/docs/evals/overview",
+    docLink: "/evaluation-docs/",
   },
   {
     id: "triggers",
@@ -134,7 +134,7 @@ new VoltAgent({
   }),
 });`,
     footerText: "React to events from Slack, GitHub, Airtable, and webhooks automatically",
-    docLink: "/docs/triggers/overview",
+    docLink: "/actions-triggers-docs/triggers/overview",
   },
   {
     id: "actions",
@@ -166,7 +166,7 @@ const agent = new Agent({
   tools: [createAirtableRecord],
 });`,
     footerText: "Execute actions on external services like Airtable, Slack, and more",
-    docLink: "/docs/actions/overview",
+    docLink: "/actions-triggers-docs/actions/overview",
   },
   {
     id: "monitoring",
@@ -282,6 +282,6 @@ const agent = new Agent({
     image: "https://cdn.voltagent.dev/website/feature-showcase/deployment-4.png",
     fullImage: true,
     footerText: "Deploy your agents to production with one command",
-    docLink: "/docs/deployment/overview",
+    docLink: "/deployment-docs/",
   },
 ];

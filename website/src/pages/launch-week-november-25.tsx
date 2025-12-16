@@ -80,7 +80,7 @@ const Day1 = () => (
     date="DAY 1 | NOVEMBER 5, 2025"
     title="Triggers - Event Driven Agent Automation"
     description="Automate your AI agents with external events and schedules. Connect to Slack, Gmail, Airtable, GitHub, and cron schedules with full observability in VoltOps."
-    detailsLink="https://voltagent.dev/docs/triggers/usage/"
+    detailsLink="https://voltagent.dev/actions-triggers-docs/triggers/usage/"
   >
     <div className="rounded-md border-solid p-1 border-2 border-emerald-600 flex items-center justify-center relative overflow-hidden">
       <img
@@ -98,7 +98,7 @@ const Day2 = () => (
     date="DAY 2 | NOVEMBER 6, 2025"
     title="Evals - Test and Monitor Your AI Agents"
     description="Run offline evaluations against test datasets and monitor live agent performance with customizable scorers. Catch regressions before they ship with integrated VoltOps telemetry."
-    detailsLink="https://voltagent.dev/docs/evals/overview/"
+    detailsLink="https://voltagent.dev/evaluation-docs/"
   >
     <div className="rounded-md border-solid p-1 border-2 border-emerald-600 flex items-center justify-center relative overflow-hidden">
       <img
@@ -163,7 +163,7 @@ const Day4 = () => (
     date="DAY 4 | NOVEMBER 8, 2025"
     title="VoltAgent Tunnels - Share Your Local Agent Instantly"
     description="Expose your local VoltAgent server over HTTPS with a single command. Perfect for teammate reviews, webhook debugging, and mobile testing. No extra setup required."
-    detailsLink="https://voltagent.dev/docs/deployment/local-tunnel/"
+    detailsLink="https://voltagent.dev/deployment-docs/local-tunnel/"
   >
     <div className="rounded-md border-solid p-1 border-2 border-emerald-600 flex items-center justify-center relative overflow-hidden">
       <img

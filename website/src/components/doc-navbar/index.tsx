@@ -57,18 +57,35 @@ const tabs: TabConfig[] = [
     match: (pathname) => pathname.startsWith("/docs/"),
   },
   {
+    id: "observability",
+    label: "Observability",
+    href: "/observability-docs/",
+    match: (pathname) => pathname.startsWith("/observability-docs/"),
+  },
+  {
+    id: "evaluation",
+    label: "Evaluation",
+    href: "/evaluation-docs/",
+    match: (pathname) => pathname.startsWith("/evaluation-docs/"),
+  },
+  {
+    id: "prompt-engineering",
+    label: "Prompt Engineering",
+    href: "/prompt-engineering-docs/",
+    match: (pathname) => pathname.startsWith("/prompt-engineering-docs/"),
+  },
+  {
+    id: "deployment",
+    label: "Deployment",
+    href: "/deployment-docs/",
+    match: (pathname) => pathname.startsWith("/deployment-docs/"),
+  },
+  {
     id: "recipes",
     label: "Recipes & Guides",
     href: "/recipes-and-guides/",
     match: (pathname) => pathname.startsWith("/recipes-and-guides/"),
   },
-  {
-    id: "voltops",
-    label: "VoltOps Docs",
-    href: "/voltops-llm-observability-docs/",
-    match: (pathname) => pathname.startsWith("/voltops-llm-observability-docs/"),
-  },
-  // Changelog tab removed for mobile doc navbar
 ];
 
 function useActiveTab(pathname: string) {
@@ -159,7 +176,47 @@ export default function DocNavbar() {
               )}
               onClick={() => setIsMenuOpen(false)}
             >
-              Framework Docs
+              VoltAgent Docs
+            </Link>
+            <Link
+              to="/observability-docs/"
+              className={clsx(
+                styles.mobileNavLink,
+                activeTab === "observability" && styles.mobileNavLinkActive,
+              )}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Observability
+            </Link>
+            <Link
+              to="/evaluation-docs/"
+              className={clsx(
+                styles.mobileNavLink,
+                activeTab === "evaluation" && styles.mobileNavLinkActive,
+              )}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Evaluation
+            </Link>
+            <Link
+              to="/prompt-engineering-docs/"
+              className={clsx(
+                styles.mobileNavLink,
+                activeTab === "prompt-engineering" && styles.mobileNavLinkActive,
+              )}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Prompt Engineering
+            </Link>
+            <Link
+              to="/deployment-docs/"
+              className={clsx(
+                styles.mobileNavLink,
+                activeTab === "deployment" && styles.mobileNavLinkActive,
+              )}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Deployment
             </Link>
             <Link
               to="/recipes-and-guides/"
@@ -171,17 +228,6 @@ export default function DocNavbar() {
             >
               Recipes & Guides
             </Link>
-            <Link
-              to="/voltops-llm-observability-docs/"
-              className={clsx(
-                styles.mobileNavLink,
-                activeTab === "voltops" && styles.mobileNavLinkActive,
-              )}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              VoltOps LLM Observability Platform
-            </Link>
-            {/* Changelog removed from mobile links */}
           </div>
         </div>
       )}

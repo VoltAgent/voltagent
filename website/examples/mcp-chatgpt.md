@@ -138,7 +138,7 @@ pnpm volt tunnel 3141
 # Forwarding: https://<slug>.tunnel.voltagent.dev -> http://127.0.0.1:3141
 ```
 
-Keep the tunnel running; the VoltAgent example listens on `3141`, so the default command already forwards the correct port. (You can omit the `3141` argument to rely on the default.) See the [Local Tunnel guide](https://voltagent.dev/docs/deployment/local-tunnel/) for more options (including `npx` usage).
+Keep the tunnel running; the VoltAgent example listens on `3141`, so the default command already forwards the correct port. (You can omit the `3141` argument to rely on the default.) See the [Local Tunnel guide](https://voltagent.dev/deployment-docs/local-tunnel/) for more options (including `npx` usage).
 
 #### Create the ChatGPT connector
 
