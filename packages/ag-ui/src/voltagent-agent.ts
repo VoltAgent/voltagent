@@ -47,7 +47,6 @@ function debugLog(message: string, data?: Record<string, unknown>) {
 
 /**
  * VoltAgent adapter that speaks the AG-UI protocol.
- * Mirrors the Mastra integration strategy: preserve AG-UI state in working memory
  * and stream VoltAgent events as AG-UI BaseEvents.
  */
 export class VoltAgentAGUI extends AbstractAgent {
