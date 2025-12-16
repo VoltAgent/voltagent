@@ -1,23 +1,13 @@
 {
   "name": "@voltagent/rag",
-  "version": "0.0.1",
   "description": "Chunking and RAG utilities for VoltAgent",
-  "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "version": "0.0.1",
   "dependencies": {
     "js-tiktoken": "^1.0.14",
     "tree-sitter": "^0.25.0"
   },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "test": "vitest --reporter=hanging-process --reporter=default --typecheck",
-    "test:coverage": "vitest run --coverage --typecheck"
+  "devDependencies": {
+    "vitest": "^3.2.4"
   },
   "exports": {
     ".": {
@@ -31,7 +21,17 @@
       }
     }
   },
-  "devDependencies": {
-    "vitest": "^3.2.4"
-  }
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest --reporter=hanging-process --reporter=default --typecheck",
+    "test:coverage": "vitest run --coverage --typecheck"
+  },
+  "types": "dist/index.d.ts"
 }
