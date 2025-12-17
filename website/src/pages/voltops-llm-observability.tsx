@@ -86,19 +86,19 @@ const features = [
     title: "Visual Agent Execution",
     description:
       "Visualize your agent's execution as an interactive flow diagram. Instantly spot bottlenecks, failed steps, and unexpected behaviors.",
-    image: "/voltops/framework-2.png",
+    image: "https://cdn.voltagent.dev/website/observability/framework.png",
   },
   {
     title: "Alerts & Notifications",
     description:
       "Get notified when things break. Set up alerts for latency, errors, and token usage. Receive notifications via Slack, email, or webhooks.",
-    image: "/voltops/alert-1.png",
+    image: "https://cdn.voltagent.dev/website/observability/alerts.png",
   },
   {
     title: "Detailed Tracing & Logs",
     description:
       "Trace every LLM call, tool execution, and agent interaction. Replay sessions, inspect payloads, and find the root cause fast.",
-    image: "/voltops/logs-1.png",
+    image: "https://cdn.voltagent.dev/website/observability/logs.png",
   },
 ];
 
@@ -194,7 +194,7 @@ export default function ObservabilityPage(): JSX.Element {
                 className="relative"
               >
                 <img
-                  src="/voltops/dashboard-1.png"
+                  src="https://cdn.voltagent.dev/website/observability/dashboard.png"
                   alt="VoltOps Observability Dashboard"
                   className="w-full h-auto rounded-xl object-cover"
                 />
