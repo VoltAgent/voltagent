@@ -297,6 +297,33 @@ All elicitation methods support chaining:
 clients.myServer.elicitation.setHandler(myHandler).removeHandler().setHandler(anotherHandler);
 ```
 
+### Agent-Level Elicitation
+
+Instead of setting handlers on individual clients, you can pass an elicitation handler directly to `generateText` or `streamText`. This handler applies to all MCP tools during the request:
+
+```ts
+const response = await agent.generateText("Perform action with MCP tool", {
+  userId: "user123",
+  elicitation: async (request) => {
+    console.log("Server asks:", request.message);
+
+    // Collect user input (CLI prompt, UI form, etc.)
+    const confirmed = await askUser(request.message);
+
+    return {
+      action: confirmed ? "accept" : "decline",
+      content: confirmed ? { confirmed: true } : undefined,
+    };
+  },
+});
+```
+
+This approach is useful when:
+
+- You want request-scoped handlers that don't persist
+- You need access to request context (userId, conversationId) in your handler
+- You prefer not to manage client-level handlers manually
+
 ## Lifecycle
 
 1. Create `MCPConfiguration` with server definitions

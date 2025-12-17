@@ -61,6 +61,16 @@ export class UserInputBridge {
   }
 
   /**
+   * Gets the current handler.
+   *
+   * @internal
+   * @returns The current handler or undefined if none is set
+   */
+  getHandler(): UserInputHandler | undefined {
+    return this.handler;
+  }
+
+  /**
    * Registers a handler for processing user input requests.
    *
    * The handler will be called each time the MCP server requests

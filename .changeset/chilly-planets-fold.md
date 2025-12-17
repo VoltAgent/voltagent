@@ -40,12 +40,33 @@ if (clients.myServer.elicitation.hasHandler) {
 }
 ```
 
+## Agent-Level Elicitation
+
+Pass elicitation handler directly to `generateText` or `streamText`:
+
+```ts
+const response = await agent.generateText("Do something with MCP", {
+  userId: "user123",
+  elicitation: async (request) => {
+    // Handler receives elicitation request from any MCP tool
+    const confirmed = await askUser(request.message);
+    return {
+      action: confirmed ? "accept" : "decline",
+      content: confirmed ? { confirmed: true } : undefined,
+    };
+  },
+});
+```
+
+This handler is automatically applied to all MCP tools during the request.
+
 ## Key Features
 
 - **Dynamic handler management**: Add, replace, or remove handlers at runtime
 - **One-time handlers**: Use `.once()` for handlers that auto-remove after first invocation
 - **Method chaining**: All methods return `this` for fluent API usage
 - **Auto-cancellation**: Requests without handlers are automatically cancelled
+- **Agent-level integration**: Pass handler via `generateText`/`streamText` options
 - **Full MCP SDK compatibility**: Uses `ElicitRequest` and `ElicitResult` types from `@modelcontextprotocol/sdk`
 
 ## Exports

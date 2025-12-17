@@ -16,6 +16,7 @@ import type { Logger } from "@voltagent/internal";
 import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
+import type { ToolExecuteOptions } from "../../agent/providers/base/types";
 import { getGlobalLogger } from "../../logger";
 import { type Tool, createTool } from "../../tool";
 import { SimpleEventEmitter } from "../../utils/simple-event-emitter";
@@ -395,11 +396,32 @@ export class MCPClient extends SimpleEventEmitter {
           // Capture options for use in execute closure
           const capturedOptions = options;
 
+          // Capture elicitation bridge for use in execute closure
+          const elicitationBridge = this.elicitation;
+          const toolLogger = this.logger;
+
           const agentTool = createTool({
             name: namespacedToolName,
             description: toolDef.description || `Executes the remote tool: ${toolDef.name}`,
             parameters: zodSchema,
-            execute: async (args: Record<string, unknown>): Promise<unknown> => {
+            execute: async (
+              args: Record<string, unknown>,
+              execOptions?: ToolExecuteOptions,
+            ): Promise<unknown> => {
+              // If elicitation handler is provided in options, set it temporarily
+              const elicitationHandler = execOptions?.elicitation as UserInputHandler | undefined;
+              const hadPreviousHandler = elicitationBridge.hasHandler;
+              let previousHandler: UserInputHandler | undefined;
+
+              if (elicitationHandler) {
+                // Save previous handler if exists
+                if (hadPreviousHandler) {
+                  previousHandler = elicitationBridge.getHandler();
+                }
+                // Set the new handler from options
+                elicitationBridge.setHandler(elicitationHandler);
+              }
+
               try {
                 const result = await this.callTool(
                   {
@@ -410,10 +432,19 @@ export class MCPClient extends SimpleEventEmitter {
                 );
                 return result.content;
               } catch (execError) {
-                this.logger.error(`Error executing remote tool '${toolDef.name}':`, {
+                toolLogger.error(`Error executing remote tool '${toolDef.name}':`, {
                   error: execError,
                 });
                 throw execError;
+              } finally {
+                // Restore previous handler state
+                if (elicitationHandler) {
+                  if (previousHandler) {
+                    elicitationBridge.setHandler(previousHandler);
+                  } else if (!hadPreviousHandler) {
+                    elicitationBridge.removeHandler();
+                  }
+                }
               }
             },
           });
