@@ -26,20 +26,20 @@ const features = [
     title: "Built-in Actions",
     description:
       "Turn your agent from a chatbot into a doer. Pre-built integrations with Airtable, Discord, Gmail, and more, ready as agent tools.",
-    image: "/voltops/actions-last.png",
+    image: "https://cdn.voltagent.dev/website/triggers-actions/actions.png",
   },
   {
     title: "Event-Driven Triggers",
     description:
       "Wake up your agents when it matters. Listen for Slack messages, Gmail emails, GitHub webhooks, Airtable updates, and more. All with managed authentication.",
-    image: "/voltops/target-2.png",
+    image: "https://cdn.voltagent.dev/website/triggers-actions/target.png",
   },
 
   {
     title: "Workflow Automation",
     description:
       "Build complex automation pipelines by chaining triggers and actions. Create sophisticated workflows without writing custom code.",
-    image: "/voltops/dashboard-2.png",
+    image: "https://cdn.voltagent.dev/website/triggers-actions/dashboard.png",
   },
 ];
 
@@ -131,7 +131,7 @@ export default function ActionsTriggersPage(): JSX.Element {
                 className="relative"
               >
                 <img
-                  src="/voltops/hero.png"
+                  src="https://cdn.voltagent.dev/website/triggers-actions/hero.png"
                   alt="VoltOps Actions & Triggers Dashboard"
                   className="w-full h-auto rounded-xl object-cover"
                 />
