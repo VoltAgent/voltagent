@@ -4,7 +4,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
     "@cerbos/grpc": "^0.23.0",
-    "@modelcontextprotocol/sdk": "^1.13.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
     "@voltagent/cli": "^0.1.17",
     "@voltagent/core": "^1.2.21",
     "@voltagent/server-hono": "^1.2.8",
