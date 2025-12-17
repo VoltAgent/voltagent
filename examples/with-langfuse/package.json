@@ -8,7 +8,7 @@
     "@voltagent/langfuse-exporter": "^1.1.3",
     "@voltagent/libsql": "^1.0.14",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.8",
+    "@voltagent/server-hono": "^1.2.9",
     "ai": "^5.0.76",
     "zod": "^3.25.76"
   },

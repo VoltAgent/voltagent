@@ -1,5 +1,11 @@
 # @voltagent/server-hono
 
+## 1.2.9
+
+### Patch Changes
+
+- [`37be1ed`](https://github.com/VoltAgent/voltagent/commit/37be1ed67f833add6a3cce5cb47a8f0774236956) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: bump @voltagent/server-core dep
+
 ## 1.2.8
 
 ### Patch Changes
