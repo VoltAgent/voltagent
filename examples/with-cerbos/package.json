@@ -1,0 +1,38 @@
+{
+  "name": "voltagent-example-with-cerbos",
+  "author": "",
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.52",
+    "@cerbos/grpc": "^0.23.0",
+    "@voltagent/cli": "^0.1.17",
+    "@voltagent/core": "^1.2.21",
+    "@voltagent/server-hono": "^1.2.8",
+    "@modelcontextprotocol/sdk": "^1.13.0",
+    "express": "^5.1.0",
+    "ai": "^5.0.76",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "voltagent",
+    "cerbos",
+    "authorization"
+  ],
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt",
+    "cerbos:start": "docker compose up -d",
+    "cerbos:stop": "docker compose down"
+  },
+  "type": "module"
+}

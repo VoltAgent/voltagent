@@ -18,9 +18,11 @@ import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-jso
 import { getGlobalLogger } from "../../logger";
 import { type Tool, createTool } from "../../tool";
 import { SimpleEventEmitter } from "../../utils/simple-event-emitter";
+import { MCPAuthorizationError } from "../authorization";
 import type {
   ClientInfo,
   HTTPServerConfig,
+  MCPClientCallOptions,
   MCPClientConfig,
   MCPClientEvents,
   MCPServerConfig,
@@ -310,14 +312,14 @@ export class MCPClient extends SimpleEventEmitter {
   /**
    * Builds executable Tool objects from the server's tool definitions.
    * These tools include an `execute` method for calling the remote tool.
+   * @param options - Optional call options including authorization context.
    * @returns A record mapping namespaced tool names (`clientName_toolName`) to executable Tool objects.
    */
-  async getAgentTools(): Promise<Record<string, Tool<any>>> {
-    // Renamed back from buildExecutableTools
-    await this.ensureConnected(); // Use original connection check name
+  async getAgentTools(options?: MCPClientCallOptions): Promise<Record<string, Tool<any>>> {
+    await this.ensureConnected();
 
     try {
-      const definitions = await this.listTools(); // Use original method name
+      const definitions = await this.listTools();
 
       const executableTools: Record<string, Tool<any>> = {};
 
@@ -332,7 +334,10 @@ export class MCPClient extends SimpleEventEmitter {
             : convertJsonSchemaToZodV3)(
             toolDef.inputSchema as Record<string, unknown>,
           ) as unknown as z.ZodType;
-          const namespacedToolName = `${this.clientInfo.name}_${toolDef.name}`; // Use original separator
+          const namespacedToolName = `${this.clientInfo.name}_${toolDef.name}`;
+
+          // Capture options for use in execute closure
+          const capturedOptions = options;
 
           const agentTool = createTool({
             name: namespacedToolName,
@@ -340,11 +345,13 @@ export class MCPClient extends SimpleEventEmitter {
             parameters: zodSchema,
             execute: async (args: Record<string, unknown>): Promise<unknown> => {
               try {
-                const result = await this.callTool({
-                  // Use original method name
-                  name: toolDef.name,
-                  arguments: args,
-                });
+                const result = await this.callTool(
+                  {
+                    name: toolDef.name,
+                    arguments: args,
+                  },
+                  capturedOptions,
+                );
                 return result.content;
               } catch (execError) {
                 this.logger.error(`Error executing remote tool '${toolDef.name}':`, {
@@ -373,11 +380,35 @@ export class MCPClient extends SimpleEventEmitter {
   /**
    * Executes a specified tool on the remote MCP server.
    * @param toolCall Details of the tool to call, including name and arguments.
+   * @param options Optional call options including authorization context.
    * @returns The result content returned by the tool.
    */
-  async callTool(toolCall: MCPToolCall): Promise<MCPToolResult> {
-    // Renamed back from executeRemoteTool
-    await this.ensureConnected(); // Use original connection check name
+  async callTool(toolCall: MCPToolCall, options?: MCPClientCallOptions): Promise<MCPToolResult> {
+    await this.ensureConnected();
+
+    // Check authorization if configured
+    if (options?.authorizationConfig?.checkOnExecution) {
+      const serverName = options.serverName ?? this.clientInfo.name;
+
+      // Use `can` function if provided (takes precedence)
+      if (options.canFunction) {
+        const result = await options.canFunction({
+          toolName: toolCall.name,
+          serverName,
+          action: "execution",
+          arguments: toolCall.arguments,
+          userId: options.operationContext?.userId,
+          context: options.operationContext?.context,
+        });
+
+        const allowed = typeof result === "boolean" ? result : result.allowed;
+        const reason = typeof result === "boolean" ? undefined : result.reason;
+
+        if (!allowed) {
+          throw new MCPAuthorizationError(toolCall.name, serverName, reason);
+        }
+      }
+    }
 
     try {
       const result = await this.client.callTool(
@@ -386,7 +417,7 @@ export class MCPClient extends SimpleEventEmitter {
           arguments: toolCall.arguments,
         },
         CallToolResultSchema,
-        { timeout: this.timeout }, // Use original variable name
+        { timeout: this.timeout },
       );
 
       this.emit("toolCall", toolCall.name, toolCall.arguments, result);

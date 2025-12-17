@@ -1,5 +1,7 @@
 import type { ClientCapabilities } from "@modelcontextprotocol/sdk/types.js";
+import type { OperationContext } from "../agent/types";
 import type { Tool } from "../tool";
+import type { MCPAuthorizationConfig, MCPCanFunction } from "./authorization";
 
 /**
  * Client information for MCP
@@ -306,3 +308,43 @@ export type ToolsetWithTools = Record<string, AnyToolConfig> & {
  * Any tool configuration
  */
 export type AnyToolConfig = Tool<any>;
+
+/**
+ * Options for MCPConfiguration constructor.
+ */
+export interface MCPConfigurationOptions<TServerKeys extends string = string> {
+  /**
+   * Map of server configurations keyed by server names.
+   */
+  servers: Record<TServerKeys, MCPServerConfig>;
+
+  /**
+   * Optional authorization configuration for tool access control.
+   */
+  authorization?: MCPAuthorizationConfig;
+}
+
+/**
+ * Options for MCPClient.callTool method with authorization support.
+ */
+export interface MCPClientCallOptions {
+  /**
+   * Full operation context for authorization (from agent execution).
+   */
+  operationContext?: OperationContext;
+
+  /**
+   * Authorization function.
+   */
+  canFunction?: MCPCanFunction;
+
+  /**
+   * Authorization config settings.
+   */
+  authorizationConfig?: MCPAuthorizationConfig;
+
+  /**
+   * Server name for authorization context.
+   */
+  serverName?: string;
+}

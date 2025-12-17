@@ -54,7 +54,7 @@ const sidebars: SidebarsConfig = {
         {
           type: "category",
           label: "MCP",
-          items: ["agents/mcp/mcp", "agents/mcp/mcp-server"],
+          items: ["agents/mcp/mcp", "agents/mcp/authorization", "agents/mcp/mcp-server"],
         },
         "agents/a2a/a2a-server",
         "agents/hooks",
