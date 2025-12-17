@@ -780,6 +780,46 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-cerbos:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.52
+        version: 2.0.85(zod@3.25.76)
+      '@cerbos/grpc':
+        specifier: ^0.23.0
+        version: 0.23.7(@bufbuild/protobuf@2.10.1)(@cerbos/api@0.4.0)
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.13.0
+        version: 1.24.3(zod@3.25.76)
+      '@voltagent/cli':
+        specifier: ^0.1.17
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.2.21
+        version: link:../../packages/core
+      '@voltagent/server-hono':
+        specifier: ^1.2.8
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^5.0.76
+        version: 5.0.113(zod@3.25.76)
+      express:
+        specifier: ^5.1.0
+        version: 5.1.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-chroma:
     dependencies:
       '@ai-sdk/openai':
@@ -4327,7 +4367,7 @@ packages:
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
-      zod-to-json-schema: 3.24.6(zod@3.25.76)
+      zod-to-json-schema: 3.25.0(zod@3.25.76)
     dev: false
 
   /@ai-sdk/provider-utils@3.0.8(zod@3.25.76):
@@ -4462,7 +4502,7 @@ packages:
       '@ai-sdk/provider': 1.1.3
       '@ai-sdk/provider-utils': 2.2.8(zod@3.25.76)
       zod: 3.25.76
-      zod-to-json-schema: 3.24.6(zod@3.25.76)
+      zod-to-json-schema: 3.25.0(zod@3.25.76)
     dev: false
 
   /@ai-sdk/vue@2.0.63(vue@3.5.22)(zod@3.25.76):
@@ -7117,6 +7157,37 @@ packages:
       - encoding
     dev: false
 
+  /@cerbos/api@0.4.0:
+    resolution: {integrity: sha512-eLxYFGuEyw0kfX0SjSLPKRYU90gXdO6PEaCa6MCmpQ9Z+yTEfPoMLLYrxS+BRumhVN2MAiBsO2tg2MAT3qyQbg==}
+    engines: {node: '>= 20'}
+    dependencies:
+      '@bufbuild/protobuf': 2.10.1
+    dev: false
+
+  /@cerbos/core@0.26.0(@bufbuild/protobuf@2.10.1):
+    resolution: {integrity: sha512-lyX9111LMU1sSCGT/dQvto1bnEXgDEKY4X2mxxhnfDHhcxmeEwgUq1Qp1XLOt/1eg3/RuWEEpbFh2saSa5Y9CQ==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@bufbuild/protobuf': ^2.10.1
+    dependencies:
+      '@bufbuild/protobuf': 2.10.1
+      '@cerbos/api': 0.4.0
+      uuid: 13.0.0
+    dev: false
+
+  /@cerbos/grpc@0.23.7(@bufbuild/protobuf@2.10.1)(@cerbos/api@0.4.0):
+    resolution: {integrity: sha512-3MgjW1YiuPGuVaEHM8CV0ykT8Evlns5nIiLPWLdpouiQWNTNai/mm1IPuDtqmf+F+lZRka9E+hoctMtVuf0/aA==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@bufbuild/protobuf': ^2.10.1
+      '@cerbos/api': ^0.4.0
+    dependencies:
+      '@bufbuild/protobuf': 2.10.1
+      '@cerbos/api': 0.4.0
+      '@cerbos/core': 0.26.0(@bufbuild/protobuf@2.10.1)
+      '@grpc/grpc-js': 1.14.3
+    dev: false
+
   /@cfworker/json-schema@4.1.1:
     resolution: {integrity: sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==}
 
@@ -8753,6 +8824,14 @@ packages:
     engines: {node: '>=12.10.0'}
     dependencies:
       '@grpc/proto-loader': 0.7.15
+      '@js-sdsl/ordered-map': 4.4.2
+    dev: false
+
+  /@grpc/grpc-js@1.14.3:
+    resolution: {integrity: sha512-Iq8QQQ/7X3Sac15oB6p0FmUg/klxQvXLeileoqrTRGJYLV+/9tubbr9ipz0GKHjmXVsgFPo/+W+2cA8eNcR+XA==}
+    engines: {node: '>=12.10.0'}
+    dependencies:
+      '@grpc/proto-loader': 0.8.0
       '@js-sdsl/ordered-map': 4.4.2
     dev: false
 
@@ -21146,7 +21225,7 @@ packages:
       iconv-lite: 0.6.3
       on-finished: 2.4.1
       qs: 6.14.0
-      raw-body: 3.0.0
+      raw-body: 3.0.1
       type-is: 2.0.1
     transitivePeerDependencies:
       - supports-color
@@ -33708,6 +33787,7 @@ packages:
       http-errors: 2.0.0
       iconv-lite: 0.6.3
       unpipe: 1.0.0
+    dev: false
 
   /raw-body@3.0.1:
     resolution: {integrity: sha512-9G8cA+tuMS75+6G/TzW8OtLzmBDMo8p1JRxN5AZ+LAp8uxGA8V8GZm4GQ4/N5QNQEnLmg6SS7wyuSmbKepiKqA==}
@@ -37962,6 +38042,11 @@ packages:
   /uuid@11.1.0:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
     hasBin: true
+
+  /uuid@13.0.0:
+    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
+    hasBin: true
+    dev: false
 
   /uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}

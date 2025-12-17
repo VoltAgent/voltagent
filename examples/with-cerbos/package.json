@@ -4,12 +4,12 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.52",
     "@cerbos/grpc": "^0.23.0",
+    "@modelcontextprotocol/sdk": "^1.13.0",
     "@voltagent/cli": "^0.1.17",
     "@voltagent/core": "^1.2.21",
     "@voltagent/server-hono": "^1.2.8",
-    "@modelcontextprotocol/sdk": "^1.13.0",
-    "express": "^5.1.0",
     "ai": "^5.0.76",
+    "express": "^5.1.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -20,19 +20,19 @@
   "keywords": [
     "agent",
     "ai",
-    "voltagent",
+    "authorization",
     "cerbos",
-    "authorization"
+    "voltagent"
   ],
   "license": "MIT",
   "private": true,
   "scripts": {
     "build": "tsc",
+    "cerbos:start": "docker compose up -d",
+    "cerbos:stop": "docker compose down",
     "dev": "tsx watch --env-file=.env ./src",
     "start": "node dist/index.js",
-    "volt": "volt",
-    "cerbos:start": "docker compose up -d",
-    "cerbos:stop": "docker compose down"
+    "volt": "volt"
   },
   "type": "module"
 }
