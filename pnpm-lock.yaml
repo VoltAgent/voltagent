@@ -789,7 +789,7 @@ importers:
         specifier: ^0.23.0
         version: 0.23.7(@bufbuild/protobuf@2.10.1)(@cerbos/api@0.4.0)
       '@modelcontextprotocol/sdk':
-        specifier: ^1.13.0
+        specifier: ^1.12.1
         version: 1.24.3(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.17
