@@ -1,7 +1,22 @@
-import type { ClientCapabilities } from "@modelcontextprotocol/sdk/types.js";
+import type {
+  ClientCapabilities,
+  ElicitRequest,
+  ElicitResult,
+} from "@modelcontextprotocol/sdk/types.js";
 import type { OperationContext } from "../agent/types";
 import type { Tool } from "../tool";
 import type { MCPAuthorizationConfig, MCPCanFunction } from "./authorization";
+
+/**
+ * Handler for elicitation requests from the MCP server.
+ * Called when the server needs user input during tool execution.
+ *
+ * @deprecated Use `UserInputHandler` from `UserInputBridge` instead for dynamic handler registration.
+ */
+export type MCPElicitationHandler = (request: ElicitRequest["params"]) => Promise<ElicitResult>;
+
+// Re-export UserInputBridge types for convenience
+export type { UserInputHandler } from "./client/user-input-bridge";
 
 /**
  * Client information for MCP
@@ -98,6 +113,36 @@ export type MCPClientConfig = {
    * @default 30000
    */
   timeout?: number;
+
+  /**
+   * Elicitation handler for receiving user input requests from the MCP server.
+   * When the server needs additional information during tool execution,
+   * this handler will be called with the request details.
+   *
+   * @example
+   * ```typescript
+   * const mcpClient = new MCPClient({
+   *   clientInfo: { name: "my-client", version: "1.0.0" },
+   *   server: { type: "stdio", command: "my-mcp-server" },
+   *   elicitation: {
+   *     onRequest: async (request) => {
+   *       const confirmed = await askUserForConfirmation(request.message);
+   *       return {
+   *         action: confirmed ? "accept" : "decline",
+   *         content: confirmed ? { confirmed: true } : undefined,
+   *       };
+   *     },
+   *   },
+   * });
+   * ```
+   */
+  elicitation?: {
+    /**
+     * Handler called when the MCP server requests user input.
+     * Must return an ElicitResult with action: "accept", "decline", or "cancel".
+     */
+    onRequest: MCPElicitationHandler;
+  };
 };
 
 /**

@@ -9,6 +9,7 @@ import { DEFAULT_REQUEST_TIMEOUT_MSEC } from "@modelcontextprotocol/sdk/shared/p
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
   CallToolResultSchema,
+  ElicitRequestSchema,
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@voltagent/internal";
@@ -32,6 +33,8 @@ import type {
   StdioServerConfig,
   StreamableHTTPServerConfig,
 } from "../types";
+import type { UserInputHandler } from "./user-input-bridge";
+import { UserInputBridge } from "./user-input-bridge";
 
 /**
  * Client for interacting with Model Context Protocol (MCP) servers.
@@ -85,6 +88,20 @@ export class MCPClient extends SimpleEventEmitter {
   private readonly capabilities: Record<string, unknown>;
 
   /**
+   * Bridge for handling user input requests from the server.
+   * Provides methods to dynamically register and manage input handlers.
+   *
+   * @example
+   * ```typescript
+   * mcpClient.elicitation.setHandler(async (request) => {
+   *   const confirmed = await askUser(request.message);
+   *   return { action: confirmed ? "accept" : "decline" };
+   * });
+   * ```
+   */
+  public readonly elicitation: UserInputBridge;
+
+  /**
    * Get server info for logging
    */
   private getServerInfo(server: MCPServerConfig): { type: string; url?: string } {
@@ -106,9 +123,8 @@ export class MCPClient extends SimpleEventEmitter {
 
     this.clientInfo = config.clientInfo;
     this.serverConfig = config.server;
-    this.capabilities = config.capabilities || {};
 
-    // Initialize logger
+    // Initialize logger first (needed by UserInputBridge)
     const serverInfo = this.getServerInfo(config.server);
     this.logger = getGlobalLogger().child({
       component: "mcp-client",
@@ -116,9 +132,28 @@ export class MCPClient extends SimpleEventEmitter {
       serverUrl: serverInfo.url,
     });
 
+    // Always enable elicitation capability - handler can be set dynamically
+    this.capabilities = {
+      ...(config.capabilities || {}),
+      elicitation: {},
+    };
+
     this.client = new Client(this.clientInfo, {
       capabilities: this.capabilities,
     });
+
+    // Initialize elicitation bridge with callback for handler changes
+    this.elicitation = new UserInputBridge(this.logger, (handler) => {
+      this.updateElicitationHandler(handler);
+    });
+
+    // Register the elicitation request handler with MCP SDK
+    this.registerElicitationHandler();
+
+    // If config has initial handler, set it
+    if (config.elicitation?.onRequest) {
+      this.elicitation.setHandler(config.elicitation.onRequest);
+    }
 
     if (this.isHTTPServer(config.server)) {
       // HTTP type: Try streamable HTTP first with SSE fallback
@@ -165,6 +200,26 @@ export class MCPClient extends SimpleEventEmitter {
       this.connected = false;
       this.emit("disconnect");
     };
+  }
+
+  /**
+   * Registers the elicitation request handler with the MCP SDK client.
+   * Delegates to UserInputBridge for actual handling.
+   */
+  private registerElicitationHandler(): void {
+    this.client.setRequestHandler(ElicitRequestSchema, async (request) => {
+      return this.elicitation.processRequest(request.params);
+    });
+  }
+
+  /**
+   * Callback invoked when the elicitation handler changes.
+   * Currently a no-op since we always delegate to UserInputBridge.
+   * @internal
+   */
+  private updateElicitationHandler(_handler: UserInputHandler | undefined): void {
+    // Handler is managed by UserInputBridge, no additional action needed
+    // The MCP SDK handler always delegates to this.elicitation.processRequest()
   }
 
   /**
@@ -248,8 +303,9 @@ export class MCPClient extends SimpleEventEmitter {
     // Disable further fallback attempts
     this.shouldAttemptFallback = false;
 
-    // Re-setup event handlers
+    // Re-setup event handlers and elicitation handler for new client
     this.setupEventHandlers();
+    this.registerElicitationHandler();
 
     try {
       await this.client.connect(this.transport);

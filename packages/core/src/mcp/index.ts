@@ -1,6 +1,10 @@
 export { MCPServerRegistry, type RegisterOptions } from "./registry";
 export { MCPConfiguration } from "./registry/index";
 
+// Client exports
+export { MCPClient } from "./client";
+export { UserInputBridge } from "./client/user-input-bridge";
+
 // Authorization exports
 export {
   MCPAuthorizationError,
@@ -13,4 +17,10 @@ export {
 } from "./authorization";
 
 // Types exports
-export type { MCPClientCallOptions, MCPConfigurationOptions } from "./types";
+export type {
+  MCPClientCallOptions,
+  MCPClientConfig,
+  MCPConfigurationOptions,
+  MCPElicitationHandler,
+  UserInputHandler,
+} from "./types";
