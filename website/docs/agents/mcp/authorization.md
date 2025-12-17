@@ -552,6 +552,6 @@ interface MCPAuthorizationConfig {
 
 ## See Also
 
-- [MCP Configuration](/docs/agents/mcp/mcp) - Basic MCP setup
-- [MCP Server](/docs/agents/mcp/mcp-server) - Building MCP servers
+- [MCP Configuration](./mcp.md) - Basic MCP setup
+- [MCP Server](./mcp-server.md) - Building MCP servers
 - [Cerbos Example](https://github.com/VoltAgent/voltagent/tree/main/examples/with-cerbos) - Full Cerbos integration example
