@@ -25,7 +25,7 @@ const features = [
   {
     title: "Built-in Actions",
     description:
-      "Turn your agent from a chatbot into a doer. Pre-built integrations with Airtable, Discord, Gmail, and more, ready as agent tools.",
+      "Let your agent take action. Pre-built integrations with Airtable, Discord, Gmail that work as agent tools out of the box.",
     image: "https://cdn.voltagent.dev/website/triggers-actions/actions.png",
   },
   {
@@ -36,9 +36,9 @@ const features = [
   },
 
   {
-    title: "Workflow Automation",
+    title: "Automation Analytics",
     description:
-      "Build complex automation pipelines by chaining triggers and actions. Create sophisticated workflows without writing custom code.",
+      "Track every trigger and action. See success rates, execution counts, failure rates, and response times. Know exactly what your automations are doing.",
     image: "https://cdn.voltagent.dev/website/triggers-actions/dashboard.png",
   },
 ];
