@@ -575,12 +575,12 @@
     },
     "user": {
       "id_str": "79119874",
-      "name": "🍺 ikehaya@アニメ作る人",
+      "name": "🍺 イケハヤ@アニメ作る人",
       "screen_name": "IHayato",
       "profile_image_url_https": "https://pbs.twimg.com/profile_images/1613769723065532416/FMH_NlQh_normal.png",
       "profile_image_shape": "Circle",
       "verified": false,
-      "is_blue_verified": true
+      "is_blue_verified": false
     }
   },
   "1916757463426302247": {
