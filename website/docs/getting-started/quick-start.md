@@ -19,6 +19,7 @@ Build your first AI agent with VoltAgent. This guide covers creating an agent, c
 
 Looking for full recipes? Check out the [Recipes & Guides](/recipes-and-guides/) section.
 Want a ready-made chat UI? See the [UI integration guides](/docs/ui/overview/) for AI SDK, CopilotKit, and Assistant UI starters.
+Need managed RAG? Try [VoltAgent Knowledge Base](/docs/rag/voltagent/) for document ingestion and retrieval.
 
 <br/>
 
