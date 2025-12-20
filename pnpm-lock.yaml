@@ -2967,9 +2967,6 @@ importers:
       '@voltagent/logger':
         specifier: ^1.0.4
         version: link:../../packages/logger
-      '@voltagent/sdk':
-        specifier: ^1.0.2
-        version: link:../../packages/sdk
       '@voltagent/server-hono':
         specifier: ^1.2.9
         version: link:../../packages/server-hono
