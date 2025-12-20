@@ -3030,7 +3030,7 @@ export class Agent {
       attributes: {
         "retriever.name": this.retriever.tool.name || "Retriever",
         input: typeof input === "string" ? input : safeStringify(input),
-        ...this.retriever.getObservabilityAttributes(),
+        ...this.getRetrieverObservabilityAttributes(),
       },
     });
 
@@ -3080,7 +3080,7 @@ export class Agent {
           output: retrievedContent,
           attributes: {
             "retriever.document_count": documentCount,
-            ...this.retriever.getObservabilityAttributes(),
+            ...this.getRetrieverObservabilityAttributes(),
           },
         });
 
@@ -3092,7 +3092,7 @@ export class Agent {
         output: null,
         attributes: {
           "retriever.document_count": 0,
-          ...this.retriever.getObservabilityAttributes(),
+          ...this.getRetrieverObservabilityAttributes(),
         },
       });
 
@@ -3106,7 +3106,7 @@ export class Agent {
       oc.traceContext.endChildSpan(retrieverSpan, "error", {
         error: error as Error,
         attributes: {
-          ...this.retriever.getObservabilityAttributes(),
+          ...this.getRetrieverObservabilityAttributes(),
         },
       });
 
@@ -3126,6 +3126,20 @@ export class Agent {
       this.logger.warn("Failed to retrieve context", { error, agentId: this.id });
       return null;
     }
+  }
+
+  private getRetrieverObservabilityAttributes(): Record<string, unknown> {
+    const candidate = this.retriever as
+      | {
+          getObservabilityAttributes?: () => Record<string, unknown>;
+        }
+      | undefined;
+
+    if (candidate && typeof candidate.getObservabilityAttributes === "function") {
+      return candidate.getObservabilityAttributes();
+    }
+
+    return {};
   }
 
   /**
