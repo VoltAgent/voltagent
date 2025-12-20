@@ -3030,6 +3030,7 @@ export class Agent {
       attributes: {
         "retriever.name": this.retriever.tool.name || "Retriever",
         input: typeof input === "string" ? input : safeStringify(input),
+        ...this.retriever.getObservabilityAttributes(),
       },
     });
 
@@ -3057,6 +3058,7 @@ export class Agent {
         const documentCount = retrievedContent
           .split("\n")
           .filter((line: string) => line.trim()).length;
+        const durationMs = Date.now() - startTime;
 
         retrieverLogger.debug(
           buildAgentLogMessage(
@@ -3067,7 +3069,7 @@ export class Agent {
           {
             event: LogEvents.RETRIEVER_SEARCH_COMPLETED,
             documentCount,
-            duration: Date.now() - startTime,
+            duration: durationMs,
           },
         );
 
@@ -3078,6 +3080,7 @@ export class Agent {
           output: retrievedContent,
           attributes: {
             "retriever.document_count": documentCount,
+            ...this.retriever.getObservabilityAttributes(),
           },
         });
 
@@ -3089,6 +3092,7 @@ export class Agent {
         output: null,
         attributes: {
           "retriever.document_count": 0,
+          ...this.retriever.getObservabilityAttributes(),
         },
       });
 
@@ -3097,8 +3101,13 @@ export class Agent {
       // Event tracking now handled by OpenTelemetry spans
 
       // End OpenTelemetry span with error
+      const durationMs = Date.now() - startTime;
+
       oc.traceContext.endChildSpan(retrieverSpan, "error", {
         error: error as Error,
+        attributes: {
+          ...this.retriever.getObservabilityAttributes(),
+        },
       });
 
       retrieverLogger.error(
@@ -3110,7 +3119,7 @@ export class Agent {
         {
           event: LogEvents.RETRIEVER_SEARCH_FAILED,
           error: error instanceof Error ? error.message : String(error),
-          duration: Date.now() - startTime,
+          duration: durationMs,
         },
       );
 

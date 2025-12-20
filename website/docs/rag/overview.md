@@ -119,6 +119,31 @@ const agent = new Agent({
 
 ## Integration Examples
 
+### VoltAgent Knowledge Base (Recommended)
+
+The fastest way to add RAG to your agent. Fully managed - just upload documents and start searching.
+
+```typescript
+import { Agent, VoltAgentRagRetriever } from "@voltagent/core";
+
+const retriever = new VoltAgentRagRetriever({
+  knowledgeBaseName: "my-docs",
+  topK: 8,
+  includeSources: true,
+});
+
+const agent = new Agent({
+  name: "Support Bot",
+  retriever, // Automatic context injection
+});
+```
+
+- No infrastructure to manage
+- Built-in document processing & chunking
+- Search analytics in Console
+
+[**→ VoltAgent Knowledge Base Guide**](/docs/rag/voltagent)
+
 ### Build Your Own Retriever
 
 Connect to your own database, API, or files with a custom retriever.
@@ -182,6 +207,8 @@ npm create voltagent-app@latest -- --example with-qdrant
 [**→ Full Qdrant Guide**](/docs/rag/qdrant)
 
 ## Choose Your Path
+
+**I want the fastest setup** → [VoltAgent Knowledge Base](/docs/rag/voltagent) (5 mins)
 
 **I want to try locally** → [Chroma Tutorial](/docs/rag/chroma) (10 mins)
 

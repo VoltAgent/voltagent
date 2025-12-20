@@ -90,4 +90,12 @@ export abstract class BaseRetriever {
    * @returns Promise resolving to a string with the retrieved content
    */
   abstract retrieve(input: string | BaseMessage[], options: RetrieveOptions): Promise<string>;
+
+  /**
+   * Optional observability attributes for retriever spans.
+   * Override in subclasses to add context (e.g. knowledge base metadata).
+   */
+  getObservabilityAttributes(): Record<string, unknown> {
+    return {};
+  }
 }

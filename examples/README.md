@@ -120,6 +120,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Qdrant](./with-qdrant) — RAG with Qdrant showing retriever‑on‑every‑turn vs LLM‑decides search.
 - [RAG Chatbot](./with-rag-chatbot) — A conversational bot grounded in your documents with citations.
 - [Retrieval](./with-retrieval) — Minimal retrieval helpers demonstrating the retriever API.
+- [VoltOps Retrieval](./with-voltops-retrieval) — Use VoltOps Knowledge Bases as a retriever via @voltagent/core.
 - [Sub‑agents](./with-subagents) — Supervisor orchestrates focused sub‑agents to divide tasks.
 - [Supabase](./with-supabase) — Use Supabase auth/database in tools and server endpoints.
 - [Tavily Search](./with-tavily-search) — Augment answers with web results from Tavily.

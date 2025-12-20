@@ -33,6 +33,11 @@ export type {
   EvalExperimentDetail,
   ResolveExperimentIdOptions,
   ResolveExperimentIdResult,
+  KnowledgeBaseTagFilter,
+  RagKnowledgeBaseSummary,
+  RagSearchKnowledgeBaseRequest,
+  RagSearchKnowledgeBaseResponse,
+  RagSearchKnowledgeBaseResult,
 } from "./types";
 export type {
   VoltOpsActionExecutionResult,

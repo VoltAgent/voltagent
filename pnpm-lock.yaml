@@ -2950,6 +2950,46 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-voltops-retrieval:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.52
+        version: 2.0.85(zod@3.25.76)
+      '@voltagent/cli':
+        specifier: ^0.1.17
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.3.0
+        version: link:../../packages/core
+      '@voltagent/libsql':
+        specifier: ^1.0.14
+        version: link:../../packages/libsql
+      '@voltagent/logger':
+        specifier: ^1.0.4
+        version: link:../../packages/logger
+      '@voltagent/sdk':
+        specifier: ^1.0.2
+        version: link:../../packages/sdk
+      '@voltagent/server-hono':
+        specifier: ^1.2.9
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^5.0.76
+        version: 5.0.113(zod@3.25.76)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.6.2
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-whatsapp:
     dependencies:
       '@ai-sdk/openai':
