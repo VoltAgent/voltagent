@@ -138,6 +138,30 @@ export class TrafficController {
     return this.enqueue("stream", request);
   }
 
+  reportStreamSuccess(metadata?: TrafficRequestMetadata): void {
+    this.controllerLogger.debug("Stream reported success", {
+      provider: metadata?.provider,
+      model: metadata?.model,
+      tenantId: metadata?.tenantId,
+      priority: metadata?.priority,
+    });
+    this.circuitBreaker.recordSuccess(metadata, this.trafficLogger);
+  }
+
+  reportStreamFailure(metadata: TrafficRequestMetadata | undefined, error: unknown): void {
+    this.controllerLogger.warn("Stream reported failure", {
+      provider: metadata?.provider,
+      model: metadata?.model,
+      tenantId: metadata?.tenantId,
+      priority: metadata?.priority,
+      errorName: (error as { name?: unknown } | null)?.name,
+      errorMessage: (error as { message?: unknown } | null)?.message,
+      status: (error as { status?: unknown } | null)?.status,
+      statusCode: (error as { statusCode?: unknown } | null)?.statusCode,
+    });
+    this.circuitBreaker.recordFailure(metadata, error, this.trafficLogger);
+  }
+
   updateRateLimitFromHeaders(
     metadata: TrafficRequestMetadata | undefined,
     headers: unknown,
@@ -378,7 +402,15 @@ export class TrafficController {
         model: item.request.metadata?.model,
         elapsedMs: Date.now() - startedAt,
       });
-      this.circuitBreaker.recordSuccess(item.request.metadata, this.trafficLogger);
+      if (item.type === "stream") {
+        this.controllerLogger.trace("Stream started successfully", {
+          tenantId: item.tenantId,
+          provider: item.request.metadata?.provider,
+          model: item.request.metadata?.model,
+        });
+      } else {
+        this.circuitBreaker.recordSuccess(item.request.metadata, this.trafficLogger);
+      }
       this.usageTracker.recordUsage(item, result, this.trafficLogger);
       item.resolve(result);
     } catch (error) {

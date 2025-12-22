@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { CIRCUIT_FAILURE_THRESHOLD } from "./traffic-constants";
 import { TrafficController } from "./traffic-controller";
 
 describe("TrafficController priority scheduling", () => {
@@ -228,5 +229,48 @@ describe("TrafficController rate limit headers", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("TrafficController stream reporting", () => {
+  it("treats post-start stream failures as circuit breaker failures", async () => {
+    const controller = new TrafficController({
+      maxConcurrent: 1,
+      fallbackChains: {
+        primary: ["fallback"],
+      },
+    });
+    const tenantId = "tenant-1";
+    const metadata = { provider: "p", model: "primary", priority: "P1" as const };
+
+    await controller.handleStream({
+      tenantId,
+      metadata,
+      execute: async () => ({ ok: true }),
+    });
+
+    for (let i = 0; i < CIRCUIT_FAILURE_THRESHOLD; i += 1) {
+      controller.reportStreamFailure(metadata, new Error("stream-failure"));
+    }
+
+    const order: string[] = [];
+    await controller.handleStream({
+      tenantId,
+      metadata,
+      execute: async () => {
+        order.push("primary");
+        return "primary";
+      },
+      createFallbackRequest: (modelId) => ({
+        tenantId,
+        metadata: { provider: "p", model: modelId, priority: "P1" },
+        execute: async () => {
+          order.push(modelId);
+          return modelId;
+        },
+      }),
+    });
+
+    expect(order).toEqual(["fallback"]);
   });
 });

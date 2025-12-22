@@ -1360,6 +1360,7 @@ export class Agent {
               },
             });
             const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+            const trafficController = getTrafficController({ logger: this.logger });
 
             methodLogger.info("[AI SDK] Calling streamText", {
               messageCount: messages.length,
@@ -1449,6 +1450,7 @@ export class Agent {
                 });
 
                 this.updateTrafficControllerRateLimits(actualError, trafficMetadata, methodLogger);
+                trafficController.reportStreamFailure(trafficMetadata, actualError);
                 finalizeLLMSpan(SpanStatusCode.ERROR, { message: (actualError as Error)?.message });
 
                 // History update removed - using OpenTelemetry only
@@ -1498,6 +1500,7 @@ export class Agent {
                   trafficMetadata,
                   methodLogger,
                 );
+                trafficController.reportStreamSuccess(trafficMetadata);
                 const providerUsage = finalResult.usage
                   ? await Promise.resolve(finalResult.usage)
                   : undefined;
@@ -2576,6 +2579,7 @@ export class Agent {
         let guardrailObjectPromise!: Promise<z.infer<T>>;
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
         let rejectGuardrailObject: ((reason: unknown) => void) | undefined;
+        const trafficController = getTrafficController({ logger: this.logger });
 
         const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
           oc,
@@ -2640,6 +2644,7 @@ export class Agent {
                   maxRetries,
                 });
                 this.updateTrafficControllerRateLimits(actualError, trafficMetadata, methodLogger);
+                trafficController.reportStreamFailure(trafficMetadata, actualError);
 
                 methodLogger.debug(recoveryMessage, {
                   operation: "streamObject",
@@ -2707,6 +2712,7 @@ export class Agent {
                     trafficMetadata,
                     methodLogger,
                   );
+                  trafficController.reportStreamSuccess(trafficMetadata);
                   const usageInfo = convertUsage(finalResult.usage as any);
                   let finalObject = finalResult.object as z.infer<T>;
                   if (guardrailSet.output.length > 0) {
