@@ -5,10 +5,10 @@
     "@ai-sdk/openai": "^2.0.52",
     "@pinecone-database/pinecone": "^6.1.1",
     "@voltagent/cli": "^0.1.17",
-    "@voltagent/core": "^1.5.0",
+    "@voltagent/core": "^1.5.1",
     "@voltagent/libsql": "^1.0.14",
     "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.9",
+    "@voltagent/server-hono": "^1.2.10",
     "ai": "^5.0.76",
     "openai": "^4.91.0",
     "zod": "^3.25.76"
