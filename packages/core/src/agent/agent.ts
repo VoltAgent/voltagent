@@ -599,17 +599,13 @@ export class Agent {
   ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
     const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
     const buildRequest = (modelOverride?: LanguageModel | string) => {
-      const tenantId = this.resolveTenantId(options);
-      const trafficMetadata = this.buildTrafficMetadata(modelOverride ?? options?.model, options);
+      const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
+      const tenantId = this.resolveTenantId(mergedOptions);
+      const metadata = this.buildTrafficMetadata(mergedOptions?.model, mergedOptions); // Compute once per queued request (including per-call model overrides)
       return {
         tenantId,
-        metadata: trafficMetadata, // Pass model/provider info for future rate limiting keys
-        execute: () =>
-          this.executeGenerateText(
-            input,
-            this.mergeOptionsWithModel(options, modelOverride),
-            trafficMetadata,
-          ), // Defer actual execution so controller can schedule it
+        metadata,
+        execute: () => this.executeGenerateText(input, mergedOptions, metadata), // Defer actual execution so controller can schedule it
         extractUsage: (result) => this.extractUsageFromResponse(result),
         createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
       };
@@ -1100,18 +1096,15 @@ export class Agent {
   ): Promise<StreamTextResultWithContext> {
     const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
     const buildRequest = (modelOverride?: LanguageModel | string) => {
-      const tenantId = this.resolveTenantId(options);
-      const trafficMetadata = this.buildTrafficMetadata(modelOverride ?? options?.model, options);
+      const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
+      const tenantId = this.resolveTenantId(mergedOptions);
+      const metadata = this.buildTrafficMetadata(mergedOptions?.model, mergedOptions); // Compute once per queued request (including per-call model overrides)
       return {
         tenantId,
-        metadata: trafficMetadata, // Include identifiers to support per-provider/model policies later
-        execute: () =>
-          this.executeStreamText(
-            input,
-            this.mergeOptionsWithModel(options, modelOverride),
-            trafficMetadata,
-          ), // Actual streaming work happens after the controller dequeues us
-        extractUsage: (result: StreamTextResultWithContext) => this.extractUsageFromResponse(result),
+        metadata,
+        execute: () => this.executeStreamText(input, mergedOptions, metadata), // Actual streaming work happens after the controller dequeues us
+        extractUsage: (result: StreamTextResultWithContext) =>
+          this.extractUsageFromResponse(result),
         createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
       };
     };
@@ -2060,16 +2053,13 @@ export class Agent {
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
     const buildRequest = (modelOverride?: LanguageModel | string) => {
-      const tenantId = this.resolveTenantId(options);
+      const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
+      const tenantId = this.resolveTenantId(mergedOptions);
+      const metadata = this.buildTrafficMetadata(mergedOptions?.model, mergedOptions); // Compute once per queued request (including per-call model overrides)
       return {
         tenantId,
-        metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
-        execute: () =>
-          this.executeGenerateObject(
-            input,
-            schema,
-            this.mergeOptionsWithModel(options, modelOverride),
-          ),
+        metadata,
+        execute: () => this.executeGenerateObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
         createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
@@ -2083,6 +2073,7 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     schema: T,
     options?: GenerateObjectOptions,
+    trafficMetadata?: TrafficRequestMetadata,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
@@ -2220,6 +2211,11 @@ export class Agent {
                   warnings: response.warnings,
                   rawResult: safeStringify(response),
                 });
+                this.updateTrafficControllerRateLimits(
+                  response.response,
+                  trafficMetadata,
+                  methodLogger,
+                );
                 return response;
               },
             });
@@ -2388,6 +2384,7 @@ export class Agent {
           }
         }
       } catch (error) {
+        this.updateTrafficControllerRateLimits(error, trafficMetadata, methodLogger);
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
       } finally {
@@ -2414,16 +2411,13 @@ export class Agent {
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
     const buildRequest = (modelOverride?: LanguageModel | string) => {
-      const tenantId = this.resolveTenantId(options);
+      const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
+      const tenantId = this.resolveTenantId(mergedOptions);
+      const metadata = this.buildTrafficMetadata(mergedOptions?.model, mergedOptions);
       return {
         tenantId,
-        metadata: this.buildTrafficMetadata(modelOverride ?? options?.model, options),
-        execute: () =>
-          this.executeStreamObject(
-            input,
-            schema,
-            this.mergeOptionsWithModel(options, modelOverride),
-          ),
+        metadata,
+        execute: () => this.executeStreamObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
         createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
@@ -2437,6 +2431,7 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     schema: T,
     options?: StreamObjectOptions,
+    trafficMetadata?: TrafficRequestMetadata,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
@@ -2644,6 +2639,7 @@ export class Agent {
                   attempt,
                   maxRetries,
                 });
+                this.updateTrafficControllerRateLimits(actualError, trafficMetadata, methodLogger);
 
                 methodLogger.debug(recoveryMessage, {
                   operation: "streamObject",
@@ -2706,6 +2702,11 @@ export class Agent {
                     usage: finalResult.usage ? safeStringify(finalResult.usage) : undefined,
                     rawResult: safeStringify(finalResult),
                   });
+                  this.updateTrafficControllerRateLimits(
+                    finalResult.response,
+                    trafficMetadata,
+                    methodLogger,
+                  );
                   const usageInfo = convertUsage(finalResult.usage as any);
                   let finalObject = finalResult.object as z.infer<T>;
                   if (guardrailSet.output.length > 0) {
