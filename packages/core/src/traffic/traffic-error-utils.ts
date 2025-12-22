@@ -5,6 +5,20 @@ function readObjectProperty(value: unknown, key: string): unknown {
   return (value as Record<string, unknown>)[key];
 }
 
+export function findHeaders(value: unknown): unknown[] {
+  const candidates: unknown[] = [
+    readObjectProperty(value, "headers"),
+    readObjectProperty(readObjectProperty(value, "response"), "headers"),
+    readObjectProperty(readObjectProperty(value, "cause"), "headers"),
+    readObjectProperty(
+      readObjectProperty(readObjectProperty(value, "cause"), "response"),
+      "headers",
+    ),
+  ];
+
+  return candidates.filter((candidate) => candidate !== undefined && candidate !== null);
+}
+
 export function readHeaderValue(headers: unknown, name: string): string | undefined {
   if (!headers) return undefined;
 
@@ -73,15 +87,7 @@ export function extractStatusCode(error: unknown, logger?: Logger): number | und
 
 export function extractRetryAfterMs(error: unknown, logger?: Logger): number | undefined {
   const retryAfterLogger = logger?.child({ module: "retry-after" });
-  const candidates: unknown[] = [
-    readObjectProperty(error, "headers"),
-    readObjectProperty(readObjectProperty(error, "response"), "headers"),
-    readObjectProperty(readObjectProperty(error, "cause"), "headers"),
-    readObjectProperty(
-      readObjectProperty(readObjectProperty(error, "cause"), "response"),
-      "headers",
-    ),
-  ];
+  const candidates = findHeaders(error);
 
   for (const headers of candidates) {
     const raw = readHeaderValue(headers, "retry-after");

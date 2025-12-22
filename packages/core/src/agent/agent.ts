@@ -60,6 +60,7 @@ import {
   type TrafficRequestMetadata,
   getTrafficController,
 } from "../traffic/traffic-controller";
+import { findHeaders } from "../traffic/traffic-error-utils";
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
@@ -5523,34 +5524,19 @@ export class Agent {
     metadata: TrafficRequestMetadata | undefined,
     logger?: Logger,
   ): void {
-    const readObjectProperty = (value: unknown, key: string): unknown => {
-      if (!value || typeof value !== "object") return undefined;
-      return (value as Record<string, unknown>)[key];
-    };
-
-    const headerCandidates: unknown[] = [
-      readObjectProperty(response, "headers"),
-      readObjectProperty(readObjectProperty(response, "response"), "headers"),
-      readObjectProperty(readObjectProperty(response, "cause"), "headers"),
-      readObjectProperty(
-        readObjectProperty(readObjectProperty(response, "cause"), "response"),
-        "headers",
-      ),
-    ];
-
-    const headers = headerCandidates.find(
-      (candidate) => candidate !== undefined && candidate !== null,
-    );
-    if (!headers) {
+    const headerCandidates = findHeaders(response);
+    if (headerCandidates.length === 0) {
       logger?.debug?.("[Traffic] No headers found for rate limit update");
       return;
     }
 
     const controller = getTrafficController();
-    const updateResult = controller.updateRateLimitFromHeaders(
-      metadata ?? this.buildTrafficMetadata(),
-      headers,
-    );
+    const effectiveMetadata = metadata ?? this.buildTrafficMetadata();
+    let updateResult: ReturnType<typeof controller.updateRateLimitFromHeaders> | undefined;
+    for (const headers of headerCandidates) {
+      updateResult = controller.updateRateLimitFromHeaders(effectiveMetadata, headers);
+      if (updateResult) break;
+    }
 
     if (!updateResult) {
       logger?.debug?.("[Traffic] No rate limit headers applied from response");
