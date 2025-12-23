@@ -6,7 +6,7 @@
     "@nuxt/ui": "^4.0.0",
     "@voltagent/core": "^1.5.1",
     "@voltagent/libsql": "^1.0.14",
-    "@voltagent/server-hono": "^1.2.10",
+    "@voltagent/server-hono": "^1.2.11",
     "ai": "^5.0.76",
     "nuxt": "^4.1.2",
     "vue": "^3.5.22",

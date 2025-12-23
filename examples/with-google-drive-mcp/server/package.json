@@ -9,7 +9,7 @@
     "@voltagent/core": "^1.5.1",
     "@voltagent/libsql": "^1.0.0-next.0",
     "@voltagent/logger": "^0.1.4",
-    "@voltagent/server-hono": "^1.2.10",
+    "@voltagent/server-hono": "^1.2.11",
     "composio-core": "^0.5.33",
     "hono": "^4.7.7",
     "zod": "^3.25.76",
