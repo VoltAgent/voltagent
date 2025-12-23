@@ -81,8 +81,8 @@ Default access by endpoint group:
 | Management     | `GET /agents`, `GET /workflows`, `GET /tools`                                   | Console key                 | Public             |
 | Docs + UI      | `GET /`, `GET /doc`, `GET /ui`                                                  | Console key                 | Public             |
 | Discovery      | `GET /mcp/servers`, `GET /agents/:id/card`                                      | Console key                 | Public             |
-| Observability  | `/observability/*`, `GET /api/logs`, `WS /ws/observability/**`                  | Console key                 | Console key or JWT |
-| Updates        | `GET /updates`, `POST /updates`, `POST /updates/:packageName`                   | Console key                 | Console key or JWT |
+| Observability  | `/observability/*`, `GET /api/logs`, `WS /ws/observability/**`                  | Console key                 | Console key        |
+| Updates        | `GET /updates`, `POST /updates`, `POST /updates/:packageName`                   | Console key                 | Console key        |
 | Custom routes  | `GET /health`, `POST /webhooks/*`                                               | User token (JWT) by default | Public by default  |
 
 Notes:
