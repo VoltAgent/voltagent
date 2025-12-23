@@ -58,9 +58,22 @@ export interface TrafficControllerOptions {
    * Useful when you need to add new metadata fields without changing core logic.
    */
   rateLimitKeyBuilder?: (metadata?: TrafficRequestMetadata) => string;
+  /**
+   * Select a rate-limit strategy by provider/model.
+   * Example:
+   *  { providers: { openai: "window" }, models: { "openai::gpt-4o": "window" } }
+   */
+  rateLimitStrategy?: RateLimitStrategyConfig;
   logger?: Logger;
   fallbackChains?: Record<string, string[]>;
 }
+
+export type RateLimitStrategyKind = "window" | "token-bucket";
+
+export type RateLimitStrategyConfig = {
+  providers?: Record<string, RateLimitStrategyKind>;
+  models?: Record<string, RateLimitStrategyKind>;
+};
 
 export interface RateLimitOptions {
   requestsPerMinute: number;
