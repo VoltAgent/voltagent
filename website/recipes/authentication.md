@@ -15,7 +15,7 @@ Defaults with authNext:
 - Console routes require `VOLTAGENT_CONSOLE_ACCESS_KEY`.
 - Execution routes require a user token (JWT).
 
-For details, see [Authentication API](../api/authentication.md).
+For details, see [Authentication API](/docs/api/authentication).
 
 ## Quick Setup
 

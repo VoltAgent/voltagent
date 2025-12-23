@@ -1,4 +1,4 @@
-import { DEFAULT_PUBLIC_ROUTES, pathMatches } from "./defaults";
+import { DEFAULT_CONSOLE_ROUTES, pathMatches } from "./defaults";
 import type { AuthProvider } from "./types";
 
 export type AuthNextAccess = "public" | "console" | "user";
@@ -23,25 +23,6 @@ export function normalizeAuthNextConfig<TRequest>(
 ): AuthNextConfig<TRequest> {
   return isAuthNextConfig(value) ? value : { provider: value };
 }
-
-/**
- * Console routes require console access when authNext is enabled.
- */
-export const DEFAULT_CONSOLE_ROUTES = [
-  ...DEFAULT_PUBLIC_ROUTES,
-  "GET /agents/:id/history",
-  "GET /workflows/executions",
-  "GET /workflows/:id/executions/:executionId/state",
-  "GET /api/logs",
-  "POST /setup-observability",
-  "/observability/*",
-  "GET /updates",
-  "POST /updates",
-  "POST /updates/:packageName",
-  "WS /ws",
-  "WS /ws/logs",
-  "WS /ws/observability/**",
-];
 
 function routeMatches(method: string, path: string, routePattern: string): boolean {
   const parts = routePattern.split(" ");

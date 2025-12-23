@@ -67,7 +67,7 @@ When auth is enabled, VoltAgent evaluates each request based on the configured m
 
 ### Legacy auth
 
-1. Routes in `DEFAULT_PUBLIC_ROUTES` are always public.
+1. Routes in `DEFAULT_LEGACY_PUBLIC_ROUTES` (alias `DEFAULT_PUBLIC_ROUTES`) are always public.
 2. Routes in `PROTECTED_ROUTES` require a user token (JWT).
 3. `defaultPrivate: true` applies to custom routes only.
 
@@ -154,7 +154,7 @@ By default, authNext treats these as **console** routes (Console Key required):
 - `WS /ws/logs`
 - `WS /ws/observability/**`
 
-This list is defined in `packages/server-core/src/auth/next.ts`.
+This list is defined in `packages/server-core/src/auth/defaults.ts`.
 
 ### Route Pattern Syntax
 
@@ -589,14 +589,14 @@ if (process.env.NODE_ENV === "production") {
 
 Legacy auth uses two default lists:
 
-- **DEFAULT_PUBLIC_ROUTES**: management, docs, discovery
+- **DEFAULT_LEGACY_PUBLIC_ROUTES** (alias `DEFAULT_PUBLIC_ROUTES`): management, docs, discovery
 - **PROTECTED_ROUTES**: execution, tool execution, observability, updates
 
 When `auth` is enabled:
 
 - **Execution endpoints** require JWT
 - **Management and docs** remain public
-- `defaultPrivate: true` only protects **custom/unknown routes**, but does **not** override DEFAULT_PUBLIC_ROUTES
+- `defaultPrivate: true` only protects **custom/unknown routes**, but does **not** override `DEFAULT_LEGACY_PUBLIC_ROUTES` (alias `DEFAULT_PUBLIC_ROUTES`)
 
 If you need `/agents`, `/workflows`, `/doc`, or `/ui` protected, use **authNext**.
 

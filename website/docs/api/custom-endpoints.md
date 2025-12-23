@@ -556,7 +556,7 @@ Notes:
 
 ### Legacy auth (Deprecated)
 
-Legacy `auth` uses `DEFAULT_PUBLIC_ROUTES` and `PROTECTED_ROUTES`. Custom routes are public by default unless you set `defaultPrivate: true`. See [Authentication](./authentication.md) for details.
+Legacy `auth` uses `DEFAULT_LEGACY_PUBLIC_ROUTES` (alias `DEFAULT_PUBLIC_ROUTES`) and `PROTECTED_ROUTES`. Custom routes are public by default unless you set `defaultPrivate: true`. See [Authentication](./authentication.md) for details.
 
 ## Best Practices
 

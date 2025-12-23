@@ -3,10 +3,9 @@
  */
 
 /**
- * Routes that don't require authentication by default
- * These are typically used by VoltOps and management tools
+ * Routes that don't require authentication by default (legacy auth)
  */
-export const DEFAULT_PUBLIC_ROUTES = [
+export const DEFAULT_LEGACY_PUBLIC_ROUTES = [
   // Agent management endpoints (VoltOps uses these)
   "GET /agents", // List all agents
   "GET /agents/:id", // Get agent details
@@ -30,6 +29,51 @@ export const DEFAULT_PUBLIC_ROUTES = [
 
   // A2A (agent-to-agent discovery)
   "GET /agents/:id/card",
+];
+
+// Backward compatibility alias
+export const DEFAULT_PUBLIC_ROUTES = DEFAULT_LEGACY_PUBLIC_ROUTES;
+
+/**
+ * Routes that require console access when authNext is enabled
+ */
+export const DEFAULT_CONSOLE_ROUTES = [
+  // Agent management endpoints (VoltOps uses these)
+  "GET /agents", // List all agents
+  "GET /agents/:id", // Get agent details
+
+  // Workflow management endpoints
+  "GET /workflows", // List all workflows
+  "GET /workflows/:id", // Get workflow details
+
+  // Tool management endpoints
+  "GET /tools", // List all tools
+
+  // API documentation
+  "GET /doc", // OpenAPI spec
+  "GET /ui", // Swagger UI
+  "GET /", // Landing page
+
+  // MCP (public discovery)
+  "GET /mcp/servers",
+  "GET /mcp/servers/:serverId",
+  "GET /mcp/servers/:serverId/tools",
+
+  // A2A (agent-to-agent discovery)
+  "GET /agents/:id/card",
+
+  "GET /agents/:id/history",
+  "GET /workflows/executions",
+  "GET /workflows/:id/executions/:executionId/state",
+  "GET /api/logs",
+  "POST /setup-observability",
+  "/observability/*",
+  "GET /updates",
+  "POST /updates",
+  "POST /updates/:packageName",
+  "WS /ws",
+  "WS /ws/logs",
+  "WS /ws/observability/**",
 ];
 
 /**
@@ -171,7 +215,7 @@ export function requiresAuth(
   defaultPrivate?: boolean,
 ): boolean {
   // Check if it's a default public route
-  for (const publicRoute of DEFAULT_PUBLIC_ROUTES) {
+  for (const publicRoute of DEFAULT_LEGACY_PUBLIC_ROUTES) {
     if (publicRoute.includes(" ")) {
       // Route with method specified
       const [routeMethod, routePath] = publicRoute.split(" ");
