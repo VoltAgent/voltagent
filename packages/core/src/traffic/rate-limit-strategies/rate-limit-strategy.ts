@@ -21,10 +21,18 @@ export type RateLimitUpdateResult = {
   state: RateLimitWindowState;
 };
 
+export type RateLimitUsage = {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+};
+
 export interface RateLimitStrategy {
+  readonly handlesTokenLimits?: boolean;
   resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null;
   onDispatch(logger?: Logger): void;
   onComplete(logger?: Logger): void;
+  recordUsage?(usage: RateLimitUsage, logger?: Logger): void;
   updateFromHeaders(
     metadata: TrafficRequestMetadata | undefined,
     headers: unknown,
