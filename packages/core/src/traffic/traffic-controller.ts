@@ -3,20 +3,26 @@ import { LoggerProxy } from "../logger";
 import { TrafficCircuitBreaker } from "./traffic-circuit-breaker";
 import { TrafficConcurrencyLimiter } from "./traffic-concurrency-limiter";
 import type { DispatchDecision, QueuedRequest, Scheduler } from "./traffic-controller-internal";
-import { CircuitBreakerOpenError, RateLimitedUpstreamError } from "./traffic-errors";
+import {
+  CircuitBreakerOpenError,
+  RateLimitedUpstreamError,
+  normalizeRateLimitError,
+} from "./traffic-errors";
 import {
   OpenAIWindowRateLimitStrategy,
   type RateLimitUpdateResult,
   TokenBucketRateLimitStrategy,
   TrafficRateLimiter,
 } from "./traffic-rate-limiter";
-import { type RetryReason, buildRetryPlan } from "./traffic-retry";
+import { buildRetryPlanWithPolicy } from "./traffic-retry";
 import type {
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
   RateLimitStrategyConfig,
   RateLimitStrategyKind,
+  RetryPlan,
+  RetryPolicyConfig,
   TenantConcurrencyLimit,
   TenantUsage,
   TrafficControllerOptions,
@@ -56,6 +62,7 @@ export class TrafficController {
   private readonly scheduler: Scheduler;
   private readonly maxConcurrent: number;
   private readonly rateLimitKeyBuilder: (metadata?: TrafficRequestMetadata) => string;
+  private readonly retryPolicy?: RetryPolicyConfig;
   private readonly logger: Logger;
   private readonly trafficLogger: Logger;
   private readonly controllerLogger: Logger;
@@ -84,6 +91,7 @@ export class TrafficController {
     this.maxConcurrent = options.maxConcurrent ?? Number.POSITIVE_INFINITY;
     this.scheduler = this.createScheduler();
     this.rateLimitKeyBuilder = options.rateLimitKeyBuilder ?? buildRateLimitKeyFromMetadata;
+    this.retryPolicy = options.retryPolicy;
     this.logger = new LoggerProxy({ component: "traffic-controller" }, options.logger);
     this.trafficLogger = this.logger.child({ subsystem: "traffic" });
     this.controllerLogger = this.trafficLogger.child({ module: "controller" });
@@ -116,6 +124,7 @@ export class TrafficController {
       hasTenantConcurrency: options.maxConcurrentPerTenant !== undefined,
       hasConfigRateLimits: options.rateLimits !== undefined,
       hasStrategyOverrides: options.rateLimitStrategy !== undefined,
+      hasRetryPolicy: options.retryPolicy !== undefined,
     });
   }
 
@@ -422,6 +431,16 @@ export class TrafficController {
       this.rateLimiter.recordUsage(rateLimitKey, usage, this.trafficLogger);
       item.resolve(result);
     } catch (error) {
+      const rateLimitKey = item.rateLimitKey ?? this.buildRateLimitKey(item.request.metadata);
+      const normalizedRateLimitError = normalizeRateLimitError({
+        error,
+        metadata: item.request.metadata,
+        tenantId: item.tenantId,
+        key: rateLimitKey,
+        logger: this.trafficLogger,
+      });
+      const errorForHandling = normalizedRateLimitError ?? error;
+
       this.controllerLogger.warn("Request failed", {
         tenantId: item.tenantId,
         attempt: item.attempt,
@@ -433,20 +452,45 @@ export class TrafficController {
         status: (error as { status?: unknown } | null)?.status,
         statusCode: (error as { statusCode?: unknown } | null)?.statusCode,
       });
-      this.circuitBreaker.recordFailure(item.request.metadata, error, this.trafficLogger);
+      this.circuitBreaker.recordFailure(
+        item.request.metadata,
+        errorForHandling,
+        this.trafficLogger,
+      );
 
-      const retry = buildRetryPlan(error, item.attempt, this.trafficLogger);
-      if (retry) {
-        this.controllerLogger.debug("Retrying request", {
-          tenantId: item.tenantId,
+      const retry = buildRetryPlanWithPolicy(
+        {
+          error: errorForHandling,
           attempt: item.attempt,
-          nextAttempt: item.attempt + 1,
-          reason: retry.reason,
-          delayMs: retry.delayMs,
-          provider: item.request.metadata?.provider,
-          model: item.request.metadata?.model,
-        });
-        this.scheduleRetry(item, retry);
+          metadata: item.request.metadata,
+          key: rateLimitKey,
+          logger: this.trafficLogger,
+        },
+        this.retryPolicy,
+      );
+      if (retry) {
+        if (!this.canRetryWithinDeadline(item, retry.delayMs)) {
+          this.controllerLogger.debug("Retry skipped; deadline exceeded", {
+            tenantId: item.tenantId,
+            attempt: item.attempt,
+            provider: item.request.metadata?.provider,
+            model: item.request.metadata?.model,
+            deadlineAt: item.request.deadlineAt,
+            delayMs: retry.delayMs,
+          });
+          item.reject(errorForHandling);
+        } else {
+          this.controllerLogger.debug("Retrying request", {
+            tenantId: item.tenantId,
+            attempt: item.attempt,
+            nextAttempt: item.attempt + 1,
+            reason: retry.reason,
+            delayMs: retry.delayMs,
+            provider: item.request.metadata?.provider,
+            model: item.request.metadata?.model,
+          });
+          this.scheduleRetry(item, retry);
+        }
       } else {
         this.controllerLogger.debug("No retry plan; rejecting request", {
           tenantId: item.tenantId,
@@ -454,7 +498,7 @@ export class TrafficController {
           provider: item.request.metadata?.provider,
           model: item.request.metadata?.model,
         });
-        item.reject(error);
+        item.reject(errorForHandling);
       }
     } finally {
       this.rateLimiter.releaseReservation(item.rateLimitKey, this.trafficLogger);
@@ -474,10 +518,7 @@ export class TrafficController {
    * ============================================================
    */
 
-  private scheduleRetry<TResponse>(
-    item: QueuedRequest<TResponse>,
-    plan: { delayMs: number; reason: RetryReason },
-  ): void {
+  private scheduleRetry<TResponse>(item: QueuedRequest<TResponse>, plan: RetryPlan): void {
     this.controllerLogger.debug("Schedule retry", {
       tenantId: item.tenantId,
       priority: item.priority,
@@ -504,6 +545,13 @@ export class TrafficController {
       });
       this.scheduleDrain();
     }, plan.delayMs);
+  }
+
+  private canRetryWithinDeadline(item: QueuedRequest, delayMs: number): boolean {
+    const deadlineAt = item.request.deadlineAt;
+    if (!deadlineAt) return true;
+    const nextAttemptAt = Date.now() + delayMs;
+    return nextAttemptAt <= deadlineAt;
   }
 
   /* ============================================================
