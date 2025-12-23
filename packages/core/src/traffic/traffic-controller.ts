@@ -15,6 +15,8 @@ import type {
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
+  RateLimitStrategyConfig,
+  RateLimitStrategyKind,
   TenantConcurrencyLimit,
   TenantUsage,
   TrafficControllerOptions,
@@ -34,6 +36,8 @@ export type {
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
+  RateLimitStrategyConfig,
+  RateLimitStrategyKind,
   TenantConcurrencyLimit,
   TenantUsage,
   TrafficControllerOptions,
@@ -84,11 +88,12 @@ export class TrafficController {
     this.trafficLogger = this.logger.child({ subsystem: "traffic" });
     this.controllerLogger = this.trafficLogger.child({ module: "controller" });
     const rateLimits = options.rateLimits;
+    const rateLimitStrategy = options.rateLimitStrategy;
     this.rateLimiter = new TrafficRateLimiter(() => this.scheduleDrain(), {
       rateLimits,
       strategyFactory: (key) => {
-        const provider = key.split("::")[0] ?? "";
-        if (provider.startsWith("openai")) {
+        const strategyKind = this.resolveRateLimitStrategy(key, rateLimitStrategy);
+        if (strategyKind === "window") {
           return new OpenAIWindowRateLimitStrategy(key, rateLimits?.[key]);
         }
         return new TokenBucketRateLimitStrategy(key, rateLimits?.[key]);
@@ -110,6 +115,7 @@ export class TrafficController {
       hasProviderModelConcurrency: options.maxConcurrentPerProviderModel !== undefined,
       hasTenantConcurrency: options.maxConcurrentPerTenant !== undefined,
       hasConfigRateLimits: options.rateLimits !== undefined,
+      hasStrategyOverrides: options.rateLimitStrategy !== undefined,
     });
   }
 
@@ -534,6 +540,19 @@ export class TrafficController {
 
   private buildRateLimitKey(metadata?: TrafficRequestMetadata): string {
     return this.rateLimitKeyBuilder(metadata);
+  }
+
+  private resolveRateLimitStrategy(
+    key: string,
+    config?: RateLimitStrategyConfig,
+  ): RateLimitStrategyKind {
+    const modelOverride = config?.models?.[key];
+    if (modelOverride) return modelOverride;
+    const provider = key.split("::")[0] ?? "";
+    const providerOverride = config?.providers?.[provider];
+    if (providerOverride) return providerOverride;
+    if (provider.startsWith("openai")) return "window";
+    return "token-bucket";
   }
 }
 
