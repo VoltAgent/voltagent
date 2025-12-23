@@ -28,5 +28,10 @@
     "dev": "tsx watch --env-file=.env ./src/index.ts",
     "start": "tsx --env-file=.env ./src/index.ts"
   },
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-agent-tool"
+  },
   "type": "module"
 }

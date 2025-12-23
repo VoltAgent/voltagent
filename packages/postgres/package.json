@@ -48,5 +48,10 @@
     "test:integration:setup": "docker compose -f docker-compose.test.yaml up -d && sleep 10",
     "test:integration:teardown": "docker compose -f docker-compose.test.yaml down -v"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/postgres"
+  },
   "types": "dist/index.d.ts"
 }

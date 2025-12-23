@@ -50,5 +50,10 @@
     "publint": "publint --strict",
     "test": "vitest"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/ag-ui"
+  },
   "types": "dist/index.d.ts"
 }

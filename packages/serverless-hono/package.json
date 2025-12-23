@@ -32,6 +32,11 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/serverless-hono"
+  },
   "type": "module",
   "types": "dist/index.d.ts"
 }

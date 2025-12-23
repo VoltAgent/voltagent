@@ -39,5 +39,10 @@
     "tail": "wrangler tail",
     "volt": "volt"
   },
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-cloudflare-workers"
+  },
   "type": "module"
 }

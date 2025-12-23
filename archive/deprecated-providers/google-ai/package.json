@@ -47,5 +47,10 @@
     "test": "vitest",
     "test:coverage": "vitest run"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "archive/deprecated-providers/google-ai/"
+  },
   "types": "dist/index.d.ts"
 }

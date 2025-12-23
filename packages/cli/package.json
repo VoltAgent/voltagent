@@ -62,5 +62,10 @@
     "start": "node dist/index.js",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/cli"
   }
 }

@@ -47,6 +47,11 @@
     "lint:fix": "biome check . --write",
     "test": "vitest run"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/scorers"
+  },
   "type": "module",
   "types": "dist/index.d.ts"
 }
