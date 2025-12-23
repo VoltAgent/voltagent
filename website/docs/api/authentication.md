@@ -5,7 +5,7 @@ sidebar_label: Authentication
 
 # Authentication
 
-VoltAgent supports optional authentication. The recommended policy is **authNext**, which protects all routes by default and separates **console access** from **user access**. The legacy `auth` option is still supported but deprecated.
+VoltAgent supports optional authentication. For new integrations, use **authNext**, which treats all routes as private by default and separates **console access** from **user access**. The legacy `auth` option is still supported but deprecated.
 
 ## Quick Start
 
@@ -47,6 +47,48 @@ new VoltAgent({
 ```
 
 Legacy `auth` is still supported for existing integrations. See the **Legacy auth** section at the end for details.
+
+## Concepts
+
+- **User token**: A JWT from your identity provider, sent in `Authorization: Bearer <token>`.
+- **Console access key**: A static key for management, docs, observability, and updates endpoints. Set `VOLTAGENT_CONSOLE_ACCESS_KEY` and send `x-console-access-key` (or `?key=` for WebSocket).
+- **Public routes**: Endpoints that bypass auth. You control them.
+- **Dev bypass**: `x-voltagent-dev: true` is accepted only when `NODE_ENV` is not `"production"`.
+
+## How Authentication Works
+
+When auth is enabled, VoltAgent evaluates each request based on the configured mode.
+
+### authNext
+
+1. Match `publicRoutes` (authNext + provider). If matched, request is public.
+2. Match `consoleRoutes` (authNext or defaults). If matched, require console key or dev bypass.
+3. Everything else requires a user token (JWT) or dev bypass.
+
+### Legacy auth
+
+1. Routes in `DEFAULT_PUBLIC_ROUTES` are always public.
+2. Routes in `PROTECTED_ROUTES` require a user token (JWT).
+3. `defaultPrivate: true` applies to custom routes only.
+
+## Route Access Summary
+
+Default access by endpoint group:
+
+| Endpoint Group | Examples                                                                        | authNext Access             | Legacy auth Access |
+| -------------- | ------------------------------------------------------------------------------- | --------------------------- | ------------------ |
+| Execution      | `POST /agents/:id/text`, `POST /workflows/:id/run`, `POST /tools/:name/execute` | User token (JWT)            | User token (JWT)   |
+| Management     | `GET /agents`, `GET /workflows`, `GET /tools`                                   | Console key                 | Public             |
+| Docs + UI      | `GET /`, `GET /doc`, `GET /ui`                                                  | Console key                 | Public             |
+| Discovery      | `GET /mcp/servers`, `GET /agents/:id/card`                                      | Console key                 | Public             |
+| Observability  | `/observability/*`, `GET /api/logs`, `WS /ws/observability/**`                  | Console key                 | Console key or JWT |
+| Updates        | `GET /updates`, `POST /updates`, `POST /updates/:packageName`                   | Console key                 | Console key or JWT |
+| Custom routes  | `GET /health`, `POST /webhooks/*`                                               | User token (JWT) by default | Public by default  |
+
+Notes:
+
+- WebSocket console endpoints require `?key=<key>` or `?dev=true` in non-production.
+- In legacy auth, `defaultPrivate: true` changes custom routes only; it does not change default public routes.
 
 ## authNext: Policy Model (Recommended)
 
