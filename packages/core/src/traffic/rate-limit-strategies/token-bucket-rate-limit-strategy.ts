@@ -23,18 +23,20 @@ type TokenBucketState = {
 function normalizeTokenBucketOptions(
   raw: RateLimitOptions | undefined,
 ): Omit<TokenBucketState, "tokens" | "updatedAt"> {
-  const capacityRaw = raw?.capacity;
-  const refillRaw = raw?.refillPerSecond;
+  const requestsPerMinuteRaw = raw?.requestsPerMinute;
+  const burstSizeRaw = raw?.burstSize;
 
-  const capacity = typeof capacityRaw === "number" ? capacityRaw : Number(capacityRaw);
-  const refillPerSecond = typeof refillRaw === "number" ? refillRaw : Number(refillRaw);
+  const requestsPerMinute =
+    typeof requestsPerMinuteRaw === "number" ? requestsPerMinuteRaw : Number(requestsPerMinuteRaw);
+  const burstSize = typeof burstSizeRaw === "number" ? burstSizeRaw : Number(burstSizeRaw);
 
-  const safeCapacity = Number.isFinite(capacity) ? capacity : 0;
-  const safeRefill = Number.isFinite(refillPerSecond) ? refillPerSecond : 0;
+  const safeRequestsPerMinute = Number.isFinite(requestsPerMinute) ? requestsPerMinute : 0;
+  const safeBurst = Number.isFinite(burstSize) ? burstSize : safeRequestsPerMinute;
+  const refillPerSecond = safeRequestsPerMinute > 0 ? safeRequestsPerMinute / 60 : 0;
 
   return {
-    capacity: safeCapacity > 0 ? Math.max(1, safeCapacity) : 0,
-    refillPerSecond: safeRefill > 0 ? safeRefill : 0,
+    capacity: safeBurst > 0 ? Math.max(1, safeBurst) : 0,
+    refillPerSecond,
   };
 }
 function refillTokenBucket(bucket: TokenBucketState, now: number): void {
