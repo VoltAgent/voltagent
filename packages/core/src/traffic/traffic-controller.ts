@@ -15,7 +15,6 @@ import type {
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
-  RateLimitOptions,
   TenantConcurrencyLimit,
   TenantUsage,
   TrafficControllerOptions,
@@ -35,7 +34,6 @@ export type {
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
-  RateLimitOptions,
   TenantConcurrencyLimit,
   TenantUsage,
   TrafficControllerOptions,
@@ -53,6 +51,7 @@ export class TrafficController {
 
   private readonly scheduler: Scheduler;
   private readonly maxConcurrent: number;
+  private readonly rateLimitKeyBuilder: (metadata?: TrafficRequestMetadata) => string;
   private readonly logger: Logger;
   private readonly trafficLogger: Logger;
   private readonly controllerLogger: Logger;
@@ -80,20 +79,21 @@ export class TrafficController {
   constructor(options: TrafficControllerOptions = {}) {
     this.maxConcurrent = options.maxConcurrent ?? Number.POSITIVE_INFINITY;
     this.scheduler = this.createScheduler();
+    this.rateLimitKeyBuilder = options.rateLimitKeyBuilder ?? buildRateLimitKeyFromMetadata;
     this.logger = new LoggerProxy({ component: "traffic-controller" }, options.logger);
     this.trafficLogger = this.logger.child({ subsystem: "traffic" });
     this.controllerLogger = this.trafficLogger.child({ module: "controller" });
     const rateLimits = options.rateLimits;
-    this.rateLimiter = new TrafficRateLimiter(
-      () => this.scheduleDrain(),
-      (key) => {
+    this.rateLimiter = new TrafficRateLimiter(() => this.scheduleDrain(), {
+      rateLimits,
+      strategyFactory: (key) => {
         const provider = key.split("::")[0] ?? "";
         if (provider.startsWith("openai")) {
-          return new OpenAIWindowRateLimitStrategy(key);
+          return new OpenAIWindowRateLimitStrategy(key, rateLimits?.[key]);
         }
         return new TokenBucketRateLimitStrategy(key, rateLimits?.[key]);
       },
-    );
+    });
     this.circuitBreaker = new TrafficCircuitBreaker({
       fallbackChains: options.fallbackChains,
       buildRateLimitKey: (metadata) => this.buildRateLimitKey(metadata),
@@ -411,7 +411,9 @@ export class TrafficController {
       } else {
         this.circuitBreaker.recordSuccess(item.request.metadata, this.trafficLogger);
       }
-      this.usageTracker.recordUsage(item, result, this.trafficLogger);
+      const usage = this.usageTracker.recordUsage(item, result, this.trafficLogger);
+      const rateLimitKey = item.rateLimitKey ?? this.buildRateLimitKey(item.request.metadata);
+      this.rateLimiter.recordUsage(rateLimitKey, usage, this.trafficLogger);
       item.resolve(result);
     } catch (error) {
       this.controllerLogger.warn("Request failed", {
@@ -531,7 +533,7 @@ export class TrafficController {
   }
 
   private buildRateLimitKey(metadata?: TrafficRequestMetadata): string {
-    return `${metadata?.provider ?? "default-provider"}::${metadata?.model ?? "default-model"}`;
+    return this.rateLimitKeyBuilder(metadata);
   }
 }
 
@@ -547,4 +549,29 @@ export function getTrafficController(options?: TrafficControllerOptions): Traffi
     singletonController = new TrafficController(options);
   }
   return singletonController;
+}
+
+function buildRateLimitKeyFromMetadata(metadata?: TrafficRequestMetadata): string {
+  const provider = metadata?.provider ?? "default-provider";
+  const model = metadata?.model ?? "default-model";
+  const parts = [provider, model];
+
+  // SOP: Add new metadata fields in one place with a stable label and ordering.
+  // 1) Add the optional field to TrafficRequestMetadata.
+  // 2) Add it here with a stable label so keys stay predictable.
+  // Example: { label: "org", value: metadata?.orgId }
+  const optionalFields: Array<{ label: string; value?: string }> = [
+    { label: "apiKey", value: metadata?.apiKeyId },
+    { label: "region", value: metadata?.region },
+    { label: "endpoint", value: metadata?.endpoint },
+    { label: "tenantTier", value: metadata?.tenantTier },
+    { label: "taskType", value: metadata?.taskType },
+  ];
+
+  for (const field of optionalFields) {
+    if (!field.value) continue;
+    parts.push(`${field.label}=${encodeURIComponent(field.value)}`);
+  }
+
+  return parts.join("::");
 }

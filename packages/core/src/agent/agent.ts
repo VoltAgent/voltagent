@@ -5589,13 +5589,41 @@ export class Agent {
       return undefined;
     }
 
+    const normalizeUsage = (
+      usage: LanguageModelUsage | undefined,
+    ): LanguageModelUsage | undefined => {
+      if (!usage) return undefined;
+      const input = Number.isFinite(usage.inputTokens) ? (usage.inputTokens as number) : undefined;
+      const output = Number.isFinite(usage.outputTokens)
+        ? (usage.outputTokens as number)
+        : undefined;
+      const total = Number.isFinite(usage.totalTokens) ? (usage.totalTokens as number) : undefined;
+
+      if (total === undefined && input === undefined && output === undefined) {
+        return undefined;
+      }
+
+      const safeInput = input ?? 0;
+      const safeOutput = output ?? 0;
+      const safeTotal = total ?? safeInput + safeOutput;
+
+      return {
+        ...usage,
+        inputTokens: safeInput,
+        outputTokens: safeOutput,
+        totalTokens: safeTotal,
+      };
+    };
+
     if (
       typeof (usageCandidate as PromiseLike<LanguageModelUsage | undefined>).then === "function"
     ) {
-      return (usageCandidate as Promise<LanguageModelUsage | undefined>).catch(() => undefined);
+      return (usageCandidate as Promise<LanguageModelUsage | undefined>)
+        .then((usage) => normalizeUsage(usage))
+        .catch(() => undefined);
     }
 
-    return usageCandidate as LanguageModelUsage;
+    return normalizeUsage(usageCandidate as LanguageModelUsage);
   }
 
   private resolveProvider(model: AgentModelValue | undefined): string | undefined {

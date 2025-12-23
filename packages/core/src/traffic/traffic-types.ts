@@ -20,6 +20,11 @@ export interface TrafficRequestMetadata {
   provider?: string;
   priority?: TrafficPriority;
   tenantId?: string;
+  apiKeyId?: string;
+  region?: string;
+  endpoint?: string;
+  tenantTier?: string;
+  taskType?: string;
 }
 
 export type ProviderModelConcurrencyLimit =
@@ -48,13 +53,19 @@ export interface TrafficControllerOptions {
   maxConcurrentPerProviderModel?: ProviderModelConcurrencyLimit;
   maxConcurrentPerTenant?: TenantConcurrencyLimit;
   rateLimits?: RateLimitConfig;
+  /**
+   * Optional override for rate-limit key construction.
+   * Useful when you need to add new metadata fields without changing core logic.
+   */
+  rateLimitKeyBuilder?: (metadata?: TrafficRequestMetadata) => string;
   logger?: Logger;
   fallbackChains?: Record<string, string[]>;
 }
 
 export interface RateLimitOptions {
-  capacity: number;
-  refillPerSecond: number;
+  requestsPerMinute: number;
+  tokensPerMinute: number;
+  burstSize?: number;
 }
 
 export type RateLimitKey = string;

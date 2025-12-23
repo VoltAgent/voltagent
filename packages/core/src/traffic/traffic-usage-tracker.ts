@@ -17,12 +17,16 @@ export class TrafficUsageTracker {
     return usage ? { ...usage } : undefined;
   }
 
-  recordUsage<TResponse>(item: QueuedRequest<TResponse>, result: TResponse, logger?: Logger): void {
+  recordUsage<TResponse>(
+    item: QueuedRequest<TResponse>,
+    result: TResponse,
+    logger?: Logger,
+  ): UsageCounters | Promise<UsageCounters | undefined> | undefined {
     const usageLogger = logger?.child({ module: "usage-tracker" });
     const extractor = item.extractUsage ?? item.request.extractUsage;
     if (!extractor) {
       usageLogger?.trace?.("No usage extractor; skipping usage", { tenantId: item.tenantId });
-      return;
+      return undefined;
     }
 
     const usage = extractor(result);
@@ -30,7 +34,7 @@ export class TrafficUsageTracker {
       usageLogger?.trace?.("Usage extractor returned empty; skipping usage", {
         tenantId: item.tenantId,
       });
-      return;
+      return undefined;
     }
 
     if (isPromiseLike(usage)) {
@@ -38,9 +42,10 @@ export class TrafficUsageTracker {
         tenantId: item.tenantId,
       });
       void usage.then((u) => u && this.incrementTenantUsage(item.tenantId, u, usageLogger));
-    } else {
-      this.incrementTenantUsage(item.tenantId, usage, usageLogger);
+      return usage;
     }
+    this.incrementTenantUsage(item.tenantId, usage, usageLogger);
+    return usage;
   }
 
   private incrementTenantUsage(tenantId: string, usage: UsageCounters, logger?: Logger): void {
@@ -50,9 +55,18 @@ export class TrafficUsageTracker {
       totalTokens: 0,
     };
 
-    const input = usage.inputTokens ?? 0;
-    const output = usage.outputTokens ?? 0;
-    const total = usage.totalTokens ?? input + output;
+    const input =
+      typeof usage.inputTokens === "number" && Number.isFinite(usage.inputTokens)
+        ? usage.inputTokens
+        : 0;
+    const output =
+      typeof usage.outputTokens === "number" && Number.isFinite(usage.outputTokens)
+        ? usage.outputTokens
+        : 0;
+    const total =
+      typeof usage.totalTokens === "number" && Number.isFinite(usage.totalTokens)
+        ? usage.totalTokens
+        : input + output;
 
     this.tenantUsage.set(tenantId, {
       inputTokens: current.inputTokens + input,
