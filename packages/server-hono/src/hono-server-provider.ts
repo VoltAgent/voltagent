@@ -108,12 +108,13 @@ export class HonoServerProvider extends BaseServerProvider {
 
       // Setup WebSocket if enabled
       if (this.config.enableWebSocket !== false) {
-        this.websocketServer = createWebSocketServer(this.deps, this.logger, this.config.auth);
+        const authConfig = this.honoConfig.authNext ?? this.honoConfig.auth;
+        this.websocketServer = createWebSocketServer(this.deps, this.logger, authConfig);
         setupWebSocketUpgrade(
           this.server,
           this.websocketServer,
           this.config.websocketPath,
-          this.config.auth,
+          authConfig,
           this.logger,
         );
       }

@@ -7,7 +7,7 @@ import {
   shouldEnableSwaggerUI,
 } from "@voltagent/server-core";
 import { cors } from "hono/cors";
-import { createAuthMiddleware } from "./auth/middleware";
+import { createAuthMiddleware, createAuthNextMiddleware } from "./auth/middleware";
 import {
   registerA2ARoutes,
   registerAgentRoutes,
@@ -67,7 +67,17 @@ export async function createApp(
       }
     },
     auth: () => {
+      if (config.authNext && config.auth) {
+        logger.warn("Both authNext and auth are set. authNext will take precedence.");
+      }
+
+      if (config.authNext) {
+        app.use("*", createAuthNextMiddleware(config.authNext));
+        return;
+      }
+
       if (config.auth) {
+        logger.warn("auth is deprecated. Use authNext to protect all routes by default.");
         app.use("*", createAuthMiddleware(config.auth));
       }
     },

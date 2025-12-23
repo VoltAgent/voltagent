@@ -156,6 +156,47 @@ describe("app-factory CORS configuration", () => {
     });
   });
 
+  it("should protect custom routes added via configureApp with authNext", async () => {
+    const mockAuthProvider = {
+      type: "custom",
+      verifyToken: async (token: string) => {
+        if (token === "valid-token") {
+          return { id: "user-123", email: "test@example.com" };
+        }
+        return null;
+      },
+    };
+
+    const { app } = await createApp(createDeps(), {
+      authNext: { provider: mockAuthProvider },
+      configureApp: (app) => {
+        app.get("/custom-protected-next", (c) => {
+          const user = c.get("authenticatedUser");
+          return c.json({ message: "protected", user });
+        });
+      },
+    });
+
+    const unauthorizedRes = await app.request("/custom-protected-next");
+    expect(unauthorizedRes.status).toBe(401);
+    const unauthorizedJson = await unauthorizedRes.json();
+    expect(unauthorizedJson.success).toBe(false);
+    expect(unauthorizedJson.error).toContain("Authorization: Bearer");
+
+    const authorizedRes = await app.request("/custom-protected-next", {
+      headers: {
+        Authorization: "Bearer valid-token",
+      },
+    });
+    expect(authorizedRes.status).toBe(200);
+    const authorizedJson = await authorizedRes.json();
+    expect(authorizedJson.message).toBe("protected");
+    expect(authorizedJson.user).toEqual({
+      id: "user-123",
+      email: "test@example.com",
+    });
+  });
+
   it("should allow disabling default CORS and using route-specific CORS", async () => {
     const { app } = await createApp(createDeps(), {
       cors: false, // Disable default CORS

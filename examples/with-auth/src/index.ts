@@ -1,7 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { honoServer, jwtAuth } from "@voltagent/server-hono";
+import { authNext, honoServer, jwtAuth } from "@voltagent/server-hono";
 
 // Import Memory and TelemetryStore from core
 import { AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
@@ -34,11 +34,12 @@ const agent = new Agent({
 new VoltAgent({
   agents: { agent },
   server: honoServer({
-    auth: jwtAuth({
-      secret: "super-secret",
-      defaultPrivate: true,
-      publicRoutes: ["GET /api/health"],
-    }),
+    authNext: {
+      provider: jwtAuth({
+        secret: "super-secret",
+      }),
+      publicRoutes: ["/api/health"],
+    },
     configureApp: (app) => {
       app.get("/api/health", (c) => c.json({ status: "ok" }));
       app.get("/api/protected", (c) => c.json({ message: "This is protected" }));

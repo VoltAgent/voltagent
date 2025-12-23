@@ -18,7 +18,7 @@ export default honoServer;
 export type { HonoServerConfig } from "./types";
 
 // Export auth utilities
-export { jwtAuth } from "./auth";
+export { DEFAULT_CONSOLE_ROUTES, jwtAuth, type AuthNextConfig } from "./auth";
 
 // Export custom endpoint utilities
 export { extractCustomEndpoints, getEnhancedOpenApiDoc } from "./utils/custom-endpoints";
