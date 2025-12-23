@@ -11,14 +11,27 @@ import {
 } from "./traffic-constants";
 import { extractRetryAfterMs, extractStatusCode, isTimeoutError } from "./traffic-error-utils";
 import { RateLimitedUpstreamError } from "./traffic-errors";
+import type {
+  RetryPlan,
+  RetryPolicy,
+  RetryPolicyConfig,
+  RetryPolicyContext,
+  RetryReason,
+} from "./traffic-types";
 
-export type RetryReason = "rateLimit" | "serverError" | "timeout";
+export type {
+  RetryPlan,
+  RetryPolicy,
+  RetryPolicyConfig,
+  RetryPolicyContext,
+  RetryReason,
+} from "./traffic-types";
 
 export function buildRetryPlan(
   error: unknown,
   attempt: number,
   logger?: Logger,
-): { delayMs: number; reason: RetryReason } | undefined {
+): RetryPlan | undefined {
   const retryLogger = logger?.child({ module: "retry" });
   const reason = getRetryReason(error, retryLogger);
   if (!reason) {
@@ -59,6 +72,47 @@ export function buildRetryPlan(
     reason,
     delayMs,
   };
+}
+
+export function buildRetryPlanWithPolicy(
+  context: RetryPolicyContext,
+  policyConfig?: RetryPolicyConfig,
+): RetryPlan | undefined {
+  const retryLogger = context.logger?.child({ module: "retry" });
+  const policy = resolveRetryPolicy(context, policyConfig);
+  if (policy) {
+    const planned = policy(context);
+    if (planned) {
+      retryLogger?.debug?.("Retry policy returned a plan", {
+        attempt: context.attempt,
+        reason: planned.reason,
+        delayMs: planned.delayMs,
+      });
+      return planned;
+    }
+    retryLogger?.debug?.("Retry policy declined to retry", { attempt: context.attempt });
+  }
+
+  return buildRetryPlan(context.error, context.attempt, context.logger);
+}
+
+function resolveRetryPolicy(
+  context: RetryPolicyContext,
+  config?: RetryPolicyConfig,
+): RetryPolicy | undefined {
+  if (!config) return undefined;
+  const modelPolicy = context.key ? config.models?.[context.key] : undefined;
+  if (modelPolicy) return modelPolicy;
+  const providerModelKey =
+    context.metadata?.provider && context.metadata?.model
+      ? `${context.metadata.provider}::${context.metadata.model}`
+      : undefined;
+  const providerModelPolicy = providerModelKey ? config.models?.[providerModelKey] : undefined;
+  if (providerModelPolicy) return providerModelPolicy;
+  const provider = context.metadata?.provider;
+  const providerPolicy = provider ? config.providers?.[provider] : undefined;
+  if (providerPolicy) return providerPolicy;
+  return config.default;
 }
 
 function getRetryReason(error: unknown, logger?: Logger): RetryReason | undefined {

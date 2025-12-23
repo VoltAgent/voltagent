@@ -10,6 +10,29 @@ type UsageCounters = {
   totalTokens?: number;
 };
 
+export type RetryReason = "rateLimit" | "serverError" | "timeout";
+
+export type RetryPlan = {
+  delayMs: number;
+  reason: RetryReason;
+};
+
+export type RetryPolicyContext = {
+  error: unknown;
+  attempt: number;
+  metadata?: TrafficRequestMetadata;
+  key?: string;
+  logger?: Logger;
+};
+
+export type RetryPolicy = (context: RetryPolicyContext) => RetryPlan | undefined;
+
+export type RetryPolicyConfig = {
+  default?: RetryPolicy;
+  providers?: Record<string, RetryPolicy>;
+  models?: Record<string, RetryPolicy>;
+};
+
 export type TrafficRequestType = "text" | "stream";
 export type TrafficPriority = "P0" | "P1" | "P2";
 
@@ -41,6 +64,7 @@ export interface TrafficRequest<TResponse> {
   tenantId: string;
   metadata?: TrafficRequestMetadata;
   execute: () => Promise<TResponse>;
+  deadlineAt?: number;
   createFallbackRequest?: (modelId: string) => TrafficRequest<TResponse> | undefined;
   extractUsage?: BivariantFunction<
     [response: TResponse],
@@ -58,6 +82,11 @@ export interface TrafficControllerOptions {
    * Useful when you need to add new metadata fields without changing core logic.
    */
   rateLimitKeyBuilder?: (metadata?: TrafficRequestMetadata) => string;
+  /**
+   * Optional retry policy overrides by provider/model.
+   * Models keys can use the rate-limit key or provider::model.
+   */
+  retryPolicy?: RetryPolicyConfig;
   /**
    * Select a rate-limit strategy by provider/model.
    * Example:
