@@ -48,7 +48,27 @@ export interface TrafficRequestMetadata {
   endpoint?: string;
   tenantTier?: string;
   taskType?: string;
+  fallbackPolicyId?: string;
 }
+
+export type FallbackTarget = {
+  provider?: string;
+  model: string;
+};
+
+export type FallbackChainEntry = string | FallbackTarget;
+
+export type FallbackPolicyMode = "fallback" | "wait";
+
+export type FallbackPolicy = {
+  mode: FallbackPolicyMode;
+};
+
+export type FallbackPolicyConfig = {
+  defaultPolicyId?: string;
+  policies?: Record<string, FallbackPolicy>;
+  taskTypePolicyIds?: Record<string, string>;
+};
 
 export type ProviderModelConcurrencyLimit =
   | number
@@ -65,7 +85,10 @@ export interface TrafficRequest<TResponse> {
   metadata?: TrafficRequestMetadata;
   execute: () => Promise<TResponse>;
   deadlineAt?: number;
-  createFallbackRequest?: (modelId: string) => TrafficRequest<TResponse> | undefined;
+  createFallbackRequest?: BivariantFunction<
+    [target: FallbackChainEntry],
+    TrafficRequest<TResponse> | undefined
+  >;
   extractUsage?: BivariantFunction<
     [response: TResponse],
     Promise<UsageCounters | undefined> | UsageCounters | undefined
@@ -88,13 +111,17 @@ export interface TrafficControllerOptions {
    */
   retryPolicy?: RetryPolicyConfig;
   /**
+   * Optional fallback policy selection by task type or explicit policy id.
+   */
+  fallbackPolicy?: FallbackPolicyConfig;
+  /**
    * Select a rate-limit strategy by provider/model.
    * Example:
    *  { providers: { openai: "window" }, models: { "openai::gpt-4o": "window" } }
    */
   rateLimitStrategy?: RateLimitStrategyConfig;
   logger?: Logger;
-  fallbackChains?: Record<string, string[]>;
+  fallbackChains?: Record<string, FallbackChainEntry[]>;
 }
 
 export type RateLimitStrategyKind = "window" | "token-bucket";
