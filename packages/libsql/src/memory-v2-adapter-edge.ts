@@ -69,7 +69,7 @@ export class LibSQLMemoryAdapterEdge extends LibSQLMemoryCore {
     const logger =
       options.logger ||
       AgentRegistry.getInstance().getGlobalLogger() ||
-      createPinoLogger({ name: "libsql-memory-edge" });
+      createPinoLogger({ name: "libsql-memory-edge", level: options.debug ? "debug" : "info" });
 
     // Create LibSQL client using web-compatible import
     const client = createClient({
