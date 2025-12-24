@@ -4737,8 +4737,6 @@ code .token.coord {
   color: #ffffff !important;
 }
 
-
-
 [data-theme="dark"] .menu__list-item-collapsible .menu__link::before {
   color: rgb(16, 185, 129) !important;
 }
