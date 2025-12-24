@@ -93,4 +93,9 @@ export type Retriever = {
    * This is optional and may not be present in all implementations
    */
   tool?: any;
+
+  /**
+   * Optional observability attributes for retriever spans.
+   */
+  getObservabilityAttributes?: () => Record<string, unknown>;
 };

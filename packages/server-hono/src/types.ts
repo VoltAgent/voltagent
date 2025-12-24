@@ -1,4 +1,4 @@
-import type { AuthProvider } from "@voltagent/server-core";
+import type { AuthNextConfig, AuthProvider } from "@voltagent/server-core";
 import type { Context } from "hono";
 import type { OpenAPIHonoType } from "./zod-openapi-compat";
 
@@ -66,12 +66,12 @@ export interface HonoServerConfig {
    * routes and middleware using Hono's native API.
    *
    * NOTE: Custom routes added via configureApp are protected by the auth middleware
-   * if one is configured. Routes are registered AFTER authentication middleware.
+   * if one is configured (auth/authNext). Routes are registered AFTER authentication middleware.
    *
    * @example
    * ```typescript
    * configureApp: (app) => {
-   *   // Add custom routes (will be auth-protected if config.auth is set)
+   *   // Add custom routes (will be auth-protected if auth/authNext is set)
    *   app.get('/health', (c) => c.json({ status: 'ok' }));
    *
    *   // Add middleware
@@ -126,8 +126,16 @@ export interface HonoServerConfig {
   }) => void | Promise<void>;
 
   /**
+   * Next-gen authentication policy.
+   * When provided, all routes are protected by default, with console routes
+   * requiring console access and publicRoutes explicitly allowed.
+   */
+  authNext?: AuthNextConfig;
+
+  /**
    * Authentication provider for protecting agent/workflow execution endpoints
    * When provided, execution endpoints will require valid authentication
+   * @deprecated Use authNext instead.
    */
   auth?: AuthProvider;
 }

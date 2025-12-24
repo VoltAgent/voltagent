@@ -723,6 +723,66 @@ describe("MCPClient", () => {
       });
     });
 
+    it("should use per-call elicitation handler from tool execution options", async () => {
+      mockListTools.mockResolvedValue({
+        tools: [
+          {
+            name: "tool1",
+            description: "Tool 1 description",
+            inputSchema: { type: "object" },
+          },
+        ],
+      });
+
+      const client = new MCPClient({
+        clientInfo: mockClientInfo,
+        server: mockHttpServerConfig,
+      });
+
+      let resolveCallTool: ((value: any) => void) | undefined;
+      const callToolPromise = new Promise((resolve) => {
+        resolveCallTool = resolve;
+      });
+      mockCallTool.mockImplementation(() => callToolPromise);
+
+      const agentTools = (await client.getAgentTools()) as Record<string, any>;
+      const mockElicitationHandler = vi.fn().mockResolvedValue({
+        action: "accept",
+        content: { confirmed: true },
+      });
+
+      const executePromise = agentTools.TestClient_tool1.execute(
+        { param: "value" },
+        { elicitation: mockElicitationHandler },
+      );
+
+      expect(client.elicitation.hasHandler).toBe(true);
+
+      const mockRequest = {
+        params: {
+          message: "Confirm delete",
+          requestedSchema: {
+            type: "object",
+            properties: { confirmed: { type: "boolean" } },
+          },
+        },
+      };
+
+      expect(capturedRequestHandler).toBeDefined();
+      const elicitationResult = await capturedRequestHandler?.(mockRequest);
+
+      expect(mockElicitationHandler).toHaveBeenCalledWith(mockRequest.params);
+      expect(elicitationResult).toEqual({
+        action: "accept",
+        content: { confirmed: true },
+      });
+
+      resolveCallTool?.({ content: "ok" });
+      await executePromise;
+
+      expect(client.elicitation.hasHandler).toBe(false);
+    });
+
     it("should return cancel action when elicitation handler throws error", async () => {
       const mockElicitationHandler = vi.fn().mockRejectedValue(new Error("Handler failed"));
 

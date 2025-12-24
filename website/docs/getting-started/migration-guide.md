@@ -143,8 +143,11 @@ new VoltAgent({
     configureApp: (app) => {
       app.get("/api/health", (c) => c.json({ status: "ok" }));
     },
-    // JWT auth (optional)
-    // auth: jwtAuth({ secret: process.env.JWT_SECRET!, publicRoutes: ["/health", "/metrics"] }),
+    // Auth (optional)
+    // authNext: {
+    //   provider: jwtAuth({ secret: process.env.JWT_SECRET! }),
+    //   publicRoutes: ["GET /health", "GET /metrics"],
+    // },
   }),
 });
 ```
@@ -507,18 +510,19 @@ new VoltAgent({
 
 ### Authentication (optional)
 
-`@voltagent/server-hono` provides JWT auth. Example:
+Use `authNext` to separate public, console, and user routes:
 
 ```ts
-import { honoServer, jwtAuth } from "@voltagent/server-hono";
+import { honoServer } from "@voltagent/server-hono";
+import { jwtAuth } from "@voltagent/server-core";
 
 new VoltAgent({
   agents: { agent },
   server: honoServer({
-    auth: jwtAuth({
-      secret: process.env.JWT_SECRET!,
-      publicRoutes: ["/health", "/metrics"],
-    }),
+    authNext: {
+      provider: jwtAuth({ secret: process.env.JWT_SECRET! }),
+      publicRoutes: ["GET /health", "GET /metrics"],
+    },
   }),
 });
 ```

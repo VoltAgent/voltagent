@@ -7,6 +7,7 @@ import type { Server } from "node:http";
 import type { IServerProvider, RegisteredTrigger, ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import type { WebSocketServer } from "ws";
+import { buildMcpRoutePaths } from "../mcp/routes";
 import { A2A_ROUTES, MCP_ROUTES } from "../routes/definitions";
 import type { ServerEndpointSummary } from "../types/server";
 import { showAnnouncements } from "../utils/announcements";
@@ -207,9 +208,66 @@ export abstract class BaseServerProvider implements IServerProvider {
 
     const mcpRegistry = this.deps.mcp?.registry;
     const registeredMcpServers =
-      mcpRegistry && typeof mcpRegistry.list === "function" ? mcpRegistry.list() : [];
+      mcpRegistry && typeof mcpRegistry.listMetadata === "function"
+        ? mcpRegistry.listMetadata()
+        : [];
     if (registeredMcpServers.length > 0) {
       addRoutes(MCP_ROUTES, "MCP Endpoints");
+
+      registeredMcpServers.forEach((server) => {
+        const protocols = server.protocols ?? {};
+        const httpEnabled = protocols.http ?? true;
+        const sseEnabled = protocols.sse ?? true;
+        const stdioEnabled = protocols.stdio ?? true;
+        const { httpPath, ssePath, messagePath } = buildMcpRoutePaths(server.id);
+
+        if (httpEnabled) {
+          const key = `POST ${httpPath}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            endpoints.push({
+              method: "POST",
+              path: httpPath,
+              group: "MCP Transport",
+            });
+          }
+        }
+
+        if (stdioEnabled) {
+          const stdioPath = `stdio://${server.id}`;
+          const stdioKey = `STDIO ${stdioPath}`;
+          if (!seen.has(stdioKey)) {
+            seen.add(stdioKey);
+            endpoints.push({
+              method: "STDIO",
+              path: stdioPath,
+              group: "MCP Transport",
+            });
+          }
+        }
+
+        if (sseEnabled) {
+          const sseKey = `GET ${ssePath}`;
+          if (!seen.has(sseKey)) {
+            seen.add(sseKey);
+            endpoints.push({
+              method: "GET",
+              path: ssePath,
+              group: "MCP Transport",
+            });
+          }
+
+          const messageKey = `POST ${messagePath}`;
+          if (!seen.has(messageKey)) {
+            seen.add(messageKey);
+            endpoints.push({
+              method: "POST",
+              path: messagePath,
+              group: "MCP Transport",
+            });
+          }
+        }
+      });
     }
 
     const a2aRegistry = this.deps.a2a?.registry;

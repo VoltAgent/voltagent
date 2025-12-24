@@ -108,6 +108,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Langfuse](./with-langfuse) — Send traces and metrics to Langfuse for observability.
 - [Live Evals](./with-live-evals) — Run online evaluations against prompts/agents during development.
 - [MCP Basics](./with-mcp) — Connect to MCP servers and call tools from an agent.
+- [MCP Elicitation](./with-mcp-elicitation) — Handle `elicitation/create` requests from MCP tools with per-request handlers.
 - [MCP Server](./with-mcp-server) — Implement and run a local MCP server that exposes custom tools.
 - [Netlify Functions](./with-netlify-functions) — Ship serverless agent APIs on Netlify.
 - [Next.js](./with-nextjs) — React UI with agent APIs and streaming responses.
@@ -120,6 +121,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Qdrant](./with-qdrant) — RAG with Qdrant showing retriever‑on‑every‑turn vs LLM‑decides search.
 - [RAG Chatbot](./with-rag-chatbot) — A conversational bot grounded in your documents with citations.
 - [Retrieval](./with-retrieval) — Minimal retrieval helpers demonstrating the retriever API.
+- [VoltOps Retrieval](./with-voltops-retrieval) — Use VoltOps Knowledge Bases as a retriever via @voltagent/core.
 - [Sub‑agents](./with-subagents) — Supervisor orchestrates focused sub‑agents to divide tasks.
 - [Supabase](./with-supabase) — Use Supabase auth/database in tools and server endpoints.
 - [Tavily Search](./with-tavily-search) — Augment answers with web results from Tavily.

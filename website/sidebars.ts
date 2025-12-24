@@ -175,6 +175,7 @@ const sidebars: SidebarsConfig = {
       items: [
         "rag/overview",
         "rag/custom-retrievers",
+        "rag/voltagent",
         {
           type: "category",
           label: "Chunkers",

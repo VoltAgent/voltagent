@@ -71,6 +71,12 @@ description: 'Plug in retriever agents to pull facts from your data sources and 
 },
 {
 type: 'link',
+href: '/docs/rag/voltagent/',
+label: 'VoltAgent Knowledge Base',
+description: 'Use the managed RAG service for document ingestion, chunking, embeddings, and semantic search.'
+},
+{
+type: 'link',
 href: '/evaluation-docs/',
 label: 'Evals',
 description: 'Ship guardrails faster by running agent eval suites alongside your workflows.'

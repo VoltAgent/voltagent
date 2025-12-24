@@ -177,10 +177,7 @@ export default function Navbar() {
                         </div>
                       </div>
                     </Link>
-                    <Link
-                      to="/docs/agents/prompts/#voltops-prompt-management"
-                      className="no-underline"
-                    >
+                    <Link to="/voltops/prompt-management" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
                         <ChatBubbleBottomCenterTextIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
@@ -535,7 +532,7 @@ export default function Navbar() {
                   </span>
                 </div>
               </Link>
-              <Link to="/docs/agents/prompts/#voltops-prompt-management" className="no-underline">
+              <Link to="/voltops/prompt-management" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
                   <ChatBubbleBottomCenterTextIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
                   <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">

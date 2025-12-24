@@ -12,6 +12,15 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
+export type {
+  KnowledgeBaseTagFilter,
+  RagKnowledgeBaseSummary,
+  RagSearchKnowledgeBaseChildChunk,
+  RagSearchKnowledgeBaseRequest,
+  RagSearchKnowledgeBaseResponse,
+  RagSearchKnowledgeBaseResult,
+} from "@voltagent/core";
+
 export type EvalRunStatus = "pending" | "running" | "succeeded" | "failed" | "cancelled";
 export type TerminalEvalRunStatus = "succeeded" | "failed" | "cancelled";
 export type EvalResultStatus = "pending" | "running" | "passed" | "failed" | "error";

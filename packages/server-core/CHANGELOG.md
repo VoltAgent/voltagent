@@ -1,5 +1,54 @@
 # @voltagent/server-core
 
+## 1.0.36
+
+### Patch Changes
+
+- [#883](https://github.com/VoltAgent/voltagent/pull/883) [`9320326`](https://github.com/VoltAgent/voltagent/commit/93203262bf3ebcbc38fe4663c4b0cea27dd9ea16) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add authNext and deprecate legacy auth
+
+  Add a new `authNext` policy that splits routes into public, console, and user access. All routes are protected by default; use `publicRoutes` to opt out.
+
+  AuthNext example:
+
+  ```ts
+  import { jwtAuth } from "@voltagent/server-core";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const server = honoServer({
+    authNext: {
+      provider: jwtAuth({ secret: process.env.JWT_SECRET! }),
+      publicRoutes: ["GET /health"],
+    },
+  });
+  ```
+
+  Behavior summary:
+  - When `authNext` is set, all routes are private by default.
+  - Console endpoints (agents, workflows, tools, docs, observability, updates) require a Console Access Key.
+  - Execution endpoints require a user token (JWT).
+
+  Console access uses `VOLTAGENT_CONSOLE_ACCESS_KEY`:
+
+  ```bash
+  VOLTAGENT_CONSOLE_ACCESS_KEY=your-console-key
+  ```
+
+  ```bash
+  curl http://localhost:3141/agents \
+    -H "x-console-access-key: your-console-key"
+  ```
+
+  Legacy `auth` remains supported but is deprecated. Use `authNext` for new integrations.
+
+## 1.0.35
+
+### Patch Changes
+
+- [`b663dce`](https://github.com/VoltAgent/voltagent/commit/b663dceb57542d1b85475777f32ceb3671cc1237) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: dedupe MCP endpoints in server startup output and include MCP transport paths (streamable HTTP/SSE) so the actual server endpoint is visible.
+
+- Updated dependencies [[`b663dce`](https://github.com/VoltAgent/voltagent/commit/b663dceb57542d1b85475777f32ceb3671cc1237)]:
+  - @voltagent/core@1.5.1
+
 ## 1.0.34
 
 ### Patch Changes

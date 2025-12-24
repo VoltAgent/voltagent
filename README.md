@@ -68,6 +68,7 @@ With the core framework, you can build intelligent agents with memory, tools, an
 - **[LLM Compatibility](https://voltagent.dev/docs/getting-started/providers-models/)**: Swap between OpenAI, Anthropic, Google, or other providers by changing config, not rewriting agent logic.
 - **[Memory](https://voltagent.dev/docs/agents/memory/overview/)**: Attach durable memory adapters so agents remember important context across runs.
 - **[Retrieval & RAG](https://voltagent.dev/docs/rag/overview/)**: Plug in retriever agents to pull facts from your data sources and ground responses (RAG) before the model answers.
+- **[VoltAgent Knowledge Base](https://voltagent.dev/docs/rag/voltagent/)**: Use the managed RAG service for document ingestion, chunking, embeddings, and search.
 - **[Evals](https://voltagent.dev/docs/evals/overview/)**: Ship guardrails faster by running agent eval suites alongside your workflows.
 
 ### VoltOps LLM Observability Platform

@@ -52,6 +52,9 @@ export function isDevRequest(req: Request): boolean {
  * // Production with console key
  * NODE_ENV=production + x-console-access-key=valid-key → true
  *
+ * // Production with console key in query param
+ * NODE_ENV=production + ?key=valid-key → true
+ *
  * // Production without key
  * NODE_ENV=production + no key → false
  *
@@ -68,9 +71,11 @@ export function hasConsoleAccess(req: Request): boolean {
 
   // 2. Console Access Key check (for production)
   const consoleKey = req.headers.get("x-console-access-key");
+  const url = new URL(req.url, "http://localhost");
+  const queryKey = url.searchParams.get("key");
   const configuredKey = process.env.VOLTAGENT_CONSOLE_ACCESS_KEY;
 
-  if (configuredKey && consoleKey === configuredKey) {
+  if (configuredKey && (consoleKey === configuredKey || queryKey === configuredKey)) {
     return true;
   }
 

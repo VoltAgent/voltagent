@@ -130,7 +130,7 @@ export function printServerStartup(port: number, options: ServerStartupOptions =
       groupMap.get(groupLabel)?.push(endpoint);
     });
 
-    const methodOrder = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"];
+    const methodOrder = ["STDIO", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"];
 
     groupMap.forEach((endpoints, groupLabel) => {
       console.log();
@@ -151,12 +151,17 @@ export function printServerStartup(port: number, options: ServerStartupOptions =
       methodOrder.forEach((method) => {
         if (methodGroups[method]) {
           methodGroups[method].forEach((endpoint) => {
-            const pathText = `${colors.white}${endpoint.path}${colors.reset}`;
-            const nameText = endpoint.name ? `${colors.dim} (${endpoint.name})${colors.reset}` : "";
+            const isMcpStdio = groupLabel === "MCP Transport" && method === "STDIO";
+            const displayPath = isMcpStdio
+              ? 'uses stdin/stdout. Example client: { type: "stdio", command: "node", args: ["dist/index.js"] }'
+              : endpoint.path;
+            const pathText = `${colors.white}${displayPath}${colors.reset}`;
+            const nameText =
+              endpoint.name && !isMcpStdio ? `${colors.dim} (${endpoint.name})${colors.reset}` : "";
             console.log(
               `${colors.dim}      ${method.padEnd(6)} ${colors.reset}${pathText}${nameText}`,
             );
-            if (endpoint.description) {
+            if (endpoint.description && !isMcpStdio) {
               console.log(`${colors.dim}                ${endpoint.description}${colors.reset}`);
             }
           });

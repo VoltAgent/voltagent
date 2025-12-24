@@ -1,5 +1,11 @@
-import type { AuthProvider } from "@voltagent/server-core";
-import { hasConsoleAccess, isDevRequest, requiresAuth } from "@voltagent/server-core";
+import type { AuthNextConfig, AuthProvider } from "@voltagent/server-core";
+import {
+  hasConsoleAccess,
+  isDevRequest,
+  normalizeAuthNextConfig,
+  requiresAuth,
+  resolveAuthNextAccess,
+} from "@voltagent/server-core";
 import type { Context, Next } from "hono";
 
 /**
@@ -78,41 +84,7 @@ export function createAuthMiddleware(authProvider: AuthProvider<Request>) {
         );
       }
 
-      // Store user in context for later use
-      c.set("authenticatedUser", user);
-
-      // Inject user into request body for protected routes
-      // This modifies c.req.json() to include context
-      const originalJson = c.req.json.bind(c.req);
-      c.req.json = async () => {
-        const body = await originalJson();
-        return {
-          ...body,
-          // Not removing context from body as it might be used somewhere else
-          context: {
-            ...body.context,
-            user,
-          },
-          // Set userId if available
-          ...(user.id && { userId: user.id }),
-          ...(user.sub && !user.id && { userId: user.sub }),
-          // Adding the above in options, as this is where context is read from
-          // by processAgentOptions (packages/server-core/src/utils/options.ts:37)
-          // and processWorkflowOptions
-          // These is needed so the auth context/user arrives into OperationContext
-          options: {
-            ...body.options, // Preserve all existing options (conversationId, temperature, etc.)
-            context: {
-              ...body.options?.context,
-              ...body.context,
-              user,
-            },
-            // Set userId if available
-            ...(user.id && { userId: user.id }),
-            ...(user.sub && !user.id && { userId: user.sub }),
-          },
-        };
-      };
+      injectUserContext(c, user);
 
       return next();
     } catch (error) {
@@ -126,4 +98,139 @@ export function createAuthMiddleware(authProvider: AuthProvider<Request>) {
       );
     }
   };
+}
+
+/**
+ * Create authentication middleware for Hono using authNext policy
+ * This middleware handles both authentication and user context injection
+ * @param authNextConfig The authNext configuration
+ * @returns Hono middleware function
+ */
+export function createAuthNextMiddleware(
+  authNextConfig: AuthNextConfig<Request> | AuthProvider<Request>,
+) {
+  const config = normalizeAuthNextConfig(authNextConfig);
+  const authProvider = config.provider;
+
+  return async (c: Context, next: Next) => {
+    const path = c.req.path;
+    const method = c.req.method;
+    const access = resolveAuthNextAccess(method, path, config);
+
+    if (access === "public") {
+      return next();
+    }
+
+    if (access === "console") {
+      if (hasConsoleAccess(c.req.raw)) {
+        return next();
+      }
+
+      return c.json(
+        {
+          success: false,
+          error: buildAuthNextMessage("console", "Console access required"),
+        },
+        401,
+      );
+    }
+
+    if (isDevRequest(c.req.raw)) {
+      return next();
+    }
+
+    try {
+      let token: string | undefined;
+
+      if (authProvider.extractToken) {
+        token = authProvider.extractToken(c.req.raw);
+      } else {
+        const authHeader = c.req.header("Authorization");
+        if (authHeader?.startsWith("Bearer ")) {
+          token = authHeader.substring(7);
+        }
+      }
+
+      if (!token) {
+        return c.json(
+          {
+            success: false,
+            error: buildAuthNextMessage("user", "Authentication required"),
+          },
+          401,
+        );
+      }
+
+      const user = await authProvider.verifyToken(token, c.req.raw);
+
+      if (!user) {
+        return c.json(
+          {
+            success: false,
+            error: buildAuthNextMessage("user", "Invalid authentication"),
+          },
+          401,
+        );
+      }
+
+      injectUserContext(c, user);
+      return next();
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "Authentication failed";
+      return c.json(
+        {
+          success: false,
+          error: buildAuthNextMessage("user", reason),
+        },
+        401,
+      );
+    }
+  };
+}
+
+function injectUserContext(c: Context, user: any) {
+  c.set("authenticatedUser", user);
+
+  const originalJson = c.req.json.bind(c.req);
+  c.req.json = async () => {
+    const body = await originalJson();
+    return {
+      ...body,
+      context: {
+        ...body.context,
+        user,
+      },
+      ...(user.id && { userId: user.id }),
+      ...(user.sub && !user.id && { userId: user.sub }),
+      options: {
+        ...body.options,
+        context: {
+          ...body.options?.context,
+          ...body.context,
+          user,
+        },
+        ...(user.id && { userId: user.id }),
+        ...(user.sub && !user.id && { userId: user.sub }),
+      },
+    };
+  };
+}
+
+function buildAuthNextMessage(access: "console" | "user", reason: string): string {
+  const hint = buildAuthNextHint(access);
+  const normalized = reason.endsWith(".") ? reason.slice(0, -1) : reason;
+  return `${normalized}. ${hint}`;
+}
+
+function buildAuthNextHint(access: "console" | "user"): string {
+  const devHint =
+    process.env.NODE_ENV !== "production"
+      ? " In development, you can set x-voltagent-dev: true."
+      : "";
+
+  if (access === "console") {
+    return `Set VOLTAGENT_CONSOLE_ACCESS_KEY and send x-console-access-key header or add ?key=YOUR_KEY query param.${devHint}`;
+  }
+
+  return `Send Authorization: Bearer <token>.${devHint}`;
 }

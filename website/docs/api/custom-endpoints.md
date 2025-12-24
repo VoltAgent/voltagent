@@ -503,11 +503,11 @@ configureApp: (app) => {
 
 ## Authentication for Custom Endpoints
 
-**Important**: Custom routes added via `configureApp` are registered AFTER the authentication middleware. This means when you configure an auth provider, your custom routes automatically inherit the same authentication behavior as VoltAgent's built-in routes. When `defaultPrivate: true` is set, all custom routes are protected by default unless explicitly listed in `publicRoutes`.
+**Important**: Custom routes added via `configureApp` are registered AFTER the authentication middleware. This means your custom routes follow the same auth rules as built-in routes.
 
 ### How Authentication Works with Custom Routes
 
-VoltAgent applies authentication middleware to all routes before `configureApp` is called. This ensures your custom endpoints have the same security posture as built-in endpoints.
+VoltAgent applies authentication middleware before `configureApp`:
 
 ```typescript
 // Authentication flow:
@@ -517,83 +517,46 @@ VoltAgent applies authentication middleware to all routes before `configureApp` 
 // 4. configureApp called → your custom routes registered
 ```
 
-### Opt-In Mode (Default)
+### authNext (Default Behavior)
 
-By default (`defaultPrivate: false`), only execution endpoints require authentication. Custom routes are **public** unless they match a protected pattern:
+With `authNext`, custom routes are **user** routes by default. To make a route public, add it to `authNext.publicRoutes`. To make a route console-only, add it to `authNext.consoleRoutes`.
 
 ```typescript
-import { jwtAuth } from "@voltagent/server-core";
+import { DEFAULT_CONSOLE_ROUTES, jwtAuth } from "@voltagent/server-core";
 
 new VoltAgent({
   agents: { myAgent },
   server: honoServer({
-    auth: jwtAuth({
-      secret: process.env.JWT_SECRET,
-      // defaultPrivate: false (default)
-    }),
-    configureApp: (app) => {
-      // Public endpoint (doesn't match protected patterns)
-      app.get("/api/public-data", (c) => {
-        return c.json({ data: "anyone can access this" });
-      });
-
-      // Also public (you can access authenticatedUser if it exists)
-      app.get("/api/optional-auth", (c) => {
-        const user = c.get("authenticatedUser");
-        if (user) {
-          return c.json({ message: `Hello, ${user.email}` });
-        }
-        return c.json({ message: "Hello, anonymous" });
-      });
+    authNext: {
+      provider: jwtAuth({ secret: process.env.JWT_SECRET! }),
+      publicRoutes: ["GET /api/health"],
+      consoleRoutes: [...DEFAULT_CONSOLE_ROUTES, "GET /api/admin/metrics"],
     },
-  }),
-});
-```
-
-### Opt-Out Mode (Recommended)
-
-Set `defaultPrivate: true` to protect **all routes by default**, including custom endpoints. Then selectively make routes public using `publicRoutes`:
-
-```typescript
-import { jwtAuth } from "@voltagent/server-core";
-
-new VoltAgent({
-  agents: { myAgent },
-  server: honoServer({
-    auth: jwtAuth({
-      secret: process.env.JWT_SECRET,
-      defaultPrivate: true, // Protect all routes by default
-      publicRoutes: ["GET /api/health", "GET /api/status", "POST /api/webhooks/*"],
-    }),
     configureApp: (app) => {
-      // Public endpoint (in publicRoutes)
+      // Public route
       app.get("/api/health", (c) => c.json({ status: "ok" }));
 
-      // Protected endpoint (requires authentication)
+      // Console-only route
+      app.get("/api/admin/metrics", (c) => c.json({ ok: true }));
+
+      // User route (JWT required)
       app.get("/api/user/profile", (c) => {
         const user = c.get("authenticatedUser");
-        return c.json({ user }); // user is guaranteed to exist
-      });
-
-      // All custom routes are protected unless in publicRoutes
-      app.post("/api/data", async (c) => {
-        const user = c.get("authenticatedUser");
-        const body = await c.req.json();
-        // Process authenticated request
-        return c.json({ success: true, userId: user.id });
+        return c.json({ user });
       });
     },
   }),
 });
 ```
 
-**Benefits of Opt-Out Mode**:
+Notes:
 
-- ✅ Automatic protection for all custom endpoints
-- ✅ No need to manually check authentication in each route
-- ✅ Better security by default (fail-safe)
-- ✅ Easier to maintain when using third-party auth providers (Clerk, Auth0)
-- ✅ Consistent auth behavior across all routes
+- `consoleRoutes` replaces the default console list. Include `DEFAULT_CONSOLE_ROUTES` if you want the built-in console endpoints to stay console-protected.
+- If `NODE_ENV` is not `"production"`, you can send `x-voltagent-dev: true` to bypass auth.
+
+### Legacy auth (Deprecated)
+
+Legacy `auth` uses `DEFAULT_LEGACY_PUBLIC_ROUTES` (alias `DEFAULT_PUBLIC_ROUTES`) and `PROTECTED_ROUTES`. Custom routes are public by default unless you set `defaultPrivate: true`. See [Authentication](./authentication.md) for details.
 
 ## Best Practices
 

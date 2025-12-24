@@ -5,6 +5,7 @@
 
 export * from "./types";
 export * from "./defaults";
+export * from "./next";
 export * from "./utils";
 
 // Export auth providers

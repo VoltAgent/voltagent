@@ -8,6 +8,15 @@
       "url": "https://console.voltagent.dev/deployments",
       "version": "1.0.0",
       "enabled": true
+    },
+    {
+      "id": "2025-12-19-voltagent-rag",
+      "date": "2025-12-19",
+      "title": "VoltAgent RAG Is Live",
+      "description": "VoltAgent Knowledge Base is live. Upload documents, preview chunks, and use managed RAG in your agents.",
+      "url": "https://voltagent.dev/docs/rag/voltagent/",
+      "version": "1.2.20",
+      "enabled": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { safeStringify } from "@voltagent/internal";
 import { z } from "zod";
 import type { ToolExecuteOptions } from "../../agent/providers/base/types";
 import { LogEvents } from "../../logger/events";
@@ -50,6 +51,39 @@ export const createRetrieverTool = (
     execute: async ({ query }, options?: ToolExecuteOptions) => {
       // Pass complete options to retriever for access to userId, conversationId, etc.
       const startTime = Date.now();
+      const toolSpan = options?.systemContext?.get("parentToolSpan") as
+        | { setAttribute?: (key: string, value: unknown) => void }
+        | undefined;
+
+      const normalizeAttributeValue = (value: unknown) => {
+        if (value === null || value === undefined) return null;
+        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+          return value;
+        }
+        if (
+          Array.isArray(value) &&
+          value.every((item) => ["string", "number", "boolean"].includes(typeof item))
+        ) {
+          return value;
+        }
+        return safeStringify(value);
+      };
+
+      const attachRetrieverAttributes = () => {
+        if (!toolSpan?.setAttribute) return;
+        const candidate = retriever as unknown as {
+          getObservabilityAttributes?: () => Record<string, unknown>;
+        };
+        const baseAttributes =
+          typeof candidate.getObservabilityAttributes === "function"
+            ? candidate.getObservabilityAttributes()
+            : {};
+        Object.entries(baseAttributes).forEach(([key, value]) => {
+          const normalized = normalizeAttributeValue(value);
+          if (normalized === null) return;
+          toolSpan?.setAttribute?.(key, normalized as any);
+        });
+      };
 
       options?.logger?.debug(
         buildRetrieverLogMessage(toolName, ActionType.START, "search started"),
@@ -61,6 +95,7 @@ export const createRetrieverTool = (
 
       try {
         const result = await retriever.retrieve(query, options ?? {});
+        attachRetrieverAttributes();
 
         options?.logger?.debug(
           buildRetrieverLogMessage(toolName, ActionType.COMPLETE, "search completed"),
@@ -73,6 +108,7 @@ export const createRetrieverTool = (
 
         return result;
       } catch (error) {
+        attachRetrieverAttributes();
         options?.logger?.error(
           buildRetrieverLogMessage(toolName, ActionType.ERROR, "search failed"),
           buildLogContext(ResourceType.RETRIEVER, toolName, ActionType.ERROR, {
