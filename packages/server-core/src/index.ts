@@ -40,6 +40,7 @@ export * from "./utils/server-utils";
 export * from "./utils/ui-templates";
 export * from "./utils/response-mappers";
 export * from "./utils/sse";
+export * from "./utils/traffic";
 export * from "./utils/announcements";
 
 // Export WebSocket utilities

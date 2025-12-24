@@ -51,6 +51,18 @@ export interface TrafficRequestMetadata {
   fallbackPolicyId?: string;
 }
 
+export type TrafficResponseMetadata = {
+  rateLimitKey?: string;
+  retryAfterMs?: number;
+  rateLimitRemaining?: number;
+  rateLimitResetAt?: number;
+  rateLimitResetInMs?: number;
+  queueEtaMs?: number;
+  tenantId?: string;
+  priority?: TrafficPriority;
+  taskType?: string;
+};
+
 export type FallbackTarget = {
   provider?: string;
   model: string;
@@ -80,6 +92,17 @@ export type TenantConcurrencyLimit =
   | Record<string, number>
   | ((tenantId: string, metadata: TrafficRequestMetadata | undefined) => number | undefined);
 
+export type PriorityBurstLimits = Partial<Record<TrafficPriority, number>>;
+
+export type AdaptiveLimiterConfig = {
+  windowMs?: number;
+  threshold?: number;
+  minPenaltyMs?: number;
+  maxPenaltyMs?: number;
+  penaltyMultiplier?: number;
+  decayMs?: number;
+};
+
 export interface TrafficRequest<TResponse> {
   tenantId: string;
   metadata?: TrafficRequestMetadata;
@@ -101,6 +124,8 @@ export interface TrafficControllerOptions {
   maxConcurrentPerProviderModel?: ProviderModelConcurrencyLimit;
   maxConcurrentPerTenant?: TenantConcurrencyLimit;
   rateLimits?: RateLimitConfig;
+  priorityBurstLimits?: PriorityBurstLimits;
+  adaptiveLimiter?: AdaptiveLimiterConfig;
   /**
    * Optional override for rate-limit key construction.
    * Useful when you need to add new metadata fields without changing core logic.

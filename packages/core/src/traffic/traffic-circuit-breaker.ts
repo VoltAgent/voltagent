@@ -22,6 +22,7 @@ import type {
   FallbackPolicyConfig,
   FallbackTarget,
   TrafficRequestMetadata,
+  TrafficResponseMetadata,
 } from "./traffic-types";
 
 export class TrafficCircuitBreaker {
@@ -87,13 +88,20 @@ export class TrafficCircuitBreaker {
         visitedKeys: Array.from(visitedKeys),
       });
       if (!fallback || !next.request.createFallbackRequest) {
-        next.reject(
-          new CircuitBreakerOpenError(
-            `Circuit open for ${key}`,
-            next.request.metadata,
-            evaluation.retryAfterMs,
-          ),
+        const error = new CircuitBreakerOpenError(
+          `Circuit open for ${key}`,
+          next.request.metadata,
+          evaluation.retryAfterMs,
         );
+        const traffic: TrafficResponseMetadata = {
+          rateLimitKey: key,
+          retryAfterMs: evaluation.retryAfterMs,
+          tenantId: next.request.metadata?.tenantId ?? next.tenantId,
+          priority: next.request.metadata?.priority,
+          taskType: next.request.metadata?.taskType,
+        };
+        (error as Record<string, unknown>).traffic = traffic;
+        next.reject(error);
         circuitLogger?.warn?.("No fallback available; rejecting request", {
           circuitKey: key,
           retryAfterMs: evaluation.retryAfterMs,
