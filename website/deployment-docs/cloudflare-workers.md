@@ -57,7 +57,6 @@ type Env = {
   VOLTAGENT_SECRET_KEY?: string;
 };
 
-// LibSQL is not supported on Cloudflare Workers. Use InMemory or Postgres/Supabase instead.
 const memory = new Memory({
   storage: new InMemoryStorageAdapter(),
 });
@@ -130,7 +129,6 @@ curl https://<your-worker>.workers.dev/
 ## Feature limitations on serverless (edge)
 
 - **MCP client/server** are not available on serverless runtimes today. The current MCP implementation depends on Node.js stdio/network APIs. Run MCP providers on a Node deployment instead.
-- **libSQL memory adapter** is not supported in Workers. The libSQL driver requires Node sockets. Use the bundled `InMemoryStorageAdapter` or connect to an external database (PostgreSQL/Supabase) via their HTTP clients.
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -193,6 +191,29 @@ const memory = new Memory({
   storage: new SupabaseMemoryAdapter({
     url: env.SUPABASE_URL,
     serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
+  }),
+});
+
+const agent = new Agent({
+  name: "serverless-assistant",
+  instructions: "Answer user questions quickly.",
+  model: openai("gpt-4o-mini"),
+  tools: [weatherTool],
+  memory,
+});
+```
+
+  </TabItem>
+  <TabItem value="turso" label="Turso (LibSQL)">
+
+```ts
+import { Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql/edge";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({
+    url: env.TURSO_URL, // libsql://your-db.turso.io
+    authToken: env.TURSO_AUTH_TOKEN,
   }),
 });
 

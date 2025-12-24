@@ -22,6 +22,16 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
+    },
+    "./edge": {
+      "import": {
+        "types": "./dist/edge.d.mts",
+        "default": "./dist/edge.mjs"
+      },
+      "require": {
+        "types": "./dist/edge.d.ts",
+        "default": "./dist/edge.js"
+      }
     }
   },
   "files": [
