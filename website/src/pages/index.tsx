@@ -8,12 +8,10 @@ import { FeatureShowcase } from "../components/feature-showcase";
 import { FeaturedBlog } from "../components/featured-blog";
 import { Hero } from "../components/hero";
 import { Integrations } from "../components/integrations";
-import LivePreview from "../components/live-preview";
 import Ops from "../components/ops";
 import { Rag } from "../components/rag";
 import { SupervisorAgent } from "../components/supervisor-agent";
 import { Testimonials } from "../components/testimonials";
-import { TwoBlocks } from "../components/two-blocks";
 import { DotPattern } from "../components/ui/dot-pattern";
 import { Workflows } from "../components/workflows";
 export default function Home(): JSX.Element {
@@ -75,7 +73,6 @@ export default function Home(): JSX.Element {
             <Workflows />
             <Rag />
             <Integrations />
-            <Ops />
             <FeaturedBlog />
             <CommunitySection />
           </div>
