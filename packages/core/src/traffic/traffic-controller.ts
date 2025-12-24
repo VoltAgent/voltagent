@@ -17,11 +17,13 @@ import {
 } from "./traffic-rate-limiter";
 import { buildRetryPlanWithPolicy } from "./traffic-retry";
 import type {
+  AdaptiveLimiterConfig,
   FallbackChainEntry,
   FallbackPolicy,
   FallbackPolicyConfig,
   FallbackPolicyMode,
   FallbackTarget,
+  PriorityBurstLimits,
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
@@ -36,6 +38,7 @@ import type {
   TrafficRequest,
   TrafficRequestMetadata,
   TrafficRequestType,
+  TrafficResponseMetadata,
 } from "./traffic-types";
 import { TrafficUsageTracker } from "./traffic-usage-tracker";
 
@@ -45,11 +48,13 @@ import { TrafficUsageTracker } from "./traffic-usage-tracker";
  */
 
 export type {
+  AdaptiveLimiterConfig,
   FallbackChainEntry,
   FallbackPolicy,
   FallbackPolicyConfig,
   FallbackPolicyMode,
   FallbackTarget,
+  PriorityBurstLimits,
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
@@ -61,12 +66,49 @@ export type {
   TrafficPriority,
   TrafficRequest,
   TrafficRequestMetadata,
+  TrafficResponseMetadata,
   TrafficRequestType,
 };
 
 export { CircuitBreakerOpenError };
 export { QueueWaitTimeoutError };
 export { RateLimitedUpstreamError };
+
+type TenantQueueState = {
+  order: string[];
+  index: number;
+  queues: Map<string, QueuedRequest[]>;
+};
+
+type RateLimitSnapshot = {
+  limit?: number;
+  remaining?: number;
+  resetAt?: number;
+  nextAllowedAt?: number;
+  retryAfterMs?: number;
+};
+
+type AdaptiveLimiterState = {
+  recent429s: number[];
+  penaltyMs: number;
+  cooldownUntil?: number;
+  last429At?: number;
+};
+
+const DEFAULT_PRIORITY_BURST_LIMITS: Record<TrafficPriority, number> = {
+  P0: 5,
+  P1: 3,
+  P2: 2,
+};
+
+const DEFAULT_ADAPTIVE_LIMITER: Required<AdaptiveLimiterConfig> = {
+  windowMs: 30_000,
+  threshold: 3,
+  minPenaltyMs: 500,
+  maxPenaltyMs: 10_000,
+  penaltyMultiplier: 2,
+  decayMs: 10_000,
+};
 
 export class TrafficController {
   /* ---------- Core ---------- */
@@ -80,12 +122,18 @@ export class TrafficController {
   private readonly controllerLogger: Logger;
   private readonly concurrencyLimiter: TrafficConcurrencyLimiter;
 
-  private readonly queues: Record<TrafficPriority, QueuedRequest[]> = {
-    P0: [],
-    P1: [],
-    P2: [],
+  private readonly queues: Record<TrafficPriority, TenantQueueState> = {
+    P0: { order: [], index: 0, queues: new Map() },
+    P1: { order: [], index: 0, queues: new Map() },
+    P2: { order: [], index: 0, queues: new Map() },
   };
   private readonly priorityOrder: TrafficPriority[] = ["P0", "P1", "P2"];
+  private readonly priorityBurstLimits: Record<TrafficPriority, number>;
+  private readonly priorityBurstCounts: Record<TrafficPriority, number> = {
+    P0: 0,
+    P1: 0,
+    P2: 0,
+  };
 
   private activeCount = 0;
   private drainScheduled = false;
@@ -99,11 +147,26 @@ export class TrafficController {
   /* ---------- Usage ---------- */
   private readonly usageTracker = new TrafficUsageTracker();
 
+  /* ---------- Traffic metadata ---------- */
+  private readonly rateLimitSnapshots = new Map<string, RateLimitSnapshot>();
+
+  /* ---------- Adaptive limiter ---------- */
+  private readonly adaptiveLimiterConfig: Required<AdaptiveLimiterConfig>;
+  private readonly adaptiveLimiterState = new Map<string, AdaptiveLimiterState>();
+
   constructor(options: TrafficControllerOptions = {}) {
     this.maxConcurrent = options.maxConcurrent ?? Number.POSITIVE_INFINITY;
     this.scheduler = this.createScheduler();
     this.rateLimitKeyBuilder = options.rateLimitKeyBuilder ?? buildRateLimitKeyFromMetadata;
     this.retryPolicy = options.retryPolicy;
+    this.priorityBurstLimits = {
+      ...DEFAULT_PRIORITY_BURST_LIMITS,
+      ...(options.priorityBurstLimits ?? {}),
+    };
+    this.adaptiveLimiterConfig = {
+      ...DEFAULT_ADAPTIVE_LIMITER,
+      ...(options.adaptiveLimiter ?? {}),
+    };
     this.logger = new LoggerProxy({ component: "traffic-controller" }, options.logger);
     this.trafficLogger = this.logger.child({ subsystem: "traffic" });
     this.controllerLogger = this.trafficLogger.child({ module: "controller" });
@@ -139,6 +202,8 @@ export class TrafficController {
       hasConfigRateLimits: options.rateLimits !== undefined,
       hasStrategyOverrides: options.rateLimitStrategy !== undefined,
       hasRetryPolicy: options.retryPolicy !== undefined,
+      hasPriorityBurstLimits: options.priorityBurstLimits !== undefined,
+      hasAdaptiveLimiter: options.adaptiveLimiter !== undefined,
     });
   }
 
@@ -175,6 +240,13 @@ export class TrafficController {
       priority: metadata?.priority,
     });
     this.circuitBreaker.recordSuccess(metadata, this.trafficLogger);
+    const rateLimitKey = this.buildRateLimitKey(metadata);
+    const adaptiveKey = this.buildAdaptiveKey(
+      metadata,
+      metadata?.tenantId ?? "default",
+      rateLimitKey,
+    );
+    this.recordAdaptiveSuccess(adaptiveKey);
   }
 
   reportStreamFailure(metadata: TrafficRequestMetadata | undefined, error: unknown): void {
@@ -189,6 +261,19 @@ export class TrafficController {
       statusCode: (error as { statusCode?: unknown } | null)?.statusCode,
     });
     this.circuitBreaker.recordFailure(metadata, error, this.trafficLogger);
+    const rateLimitKey = this.buildRateLimitKey(metadata);
+    const adaptiveKey = this.buildAdaptiveKey(
+      metadata,
+      metadata?.tenantId ?? "default",
+      rateLimitKey,
+    );
+    if (error instanceof RateLimitedUpstreamError) {
+      this.recordAdaptiveRateLimitHit(adaptiveKey, error.retryAfterMs);
+    }
+    this.attachTrafficMetadata(
+      error,
+      this.buildTrafficResponseMetadataFromMetadata(metadata, rateLimitKey, Date.now(), error),
+    );
   }
 
   updateRateLimitFromHeaders(
@@ -220,6 +305,14 @@ export class TrafficController {
       resetRequestsMs: update.headerSnapshot.resetRequestsMs,
     });
 
+    this.rateLimitSnapshots.set(update.key, {
+      limit: update.state.limit,
+      remaining: update.state.remaining,
+      resetAt: update.state.resetAt,
+      nextAllowedAt: update.state.nextAllowedAt,
+      retryAfterMs: update.headerSnapshot.retryAfterMs,
+    });
+
     return update;
   }
 
@@ -243,21 +336,22 @@ export class TrafficController {
   ): Promise<TResponse> {
     return new Promise((resolve, reject) => {
       const priority = this.resolvePriority(request.metadata);
+      const tenantId = this.resolveTenantId(request);
       this.controllerLogger.debug("Enqueue request", {
         type,
-        tenantId: request.tenantId,
+        tenantId,
         priority,
         provider: request.metadata?.provider,
         model: request.metadata?.model,
       });
-      this.queues[priority].push({
+      this.enqueueItem({
         type,
         request,
         resolve,
         reject,
         attempt: 1,
         priority,
-        tenantId: request.tenantId,
+        tenantId,
         enqueuedAt: Date.now(),
         extractUsage: request.extractUsage,
       });
@@ -281,9 +375,9 @@ export class TrafficController {
     this.controllerLogger.trace("Drain start", {
       activeCount: this.activeCount,
       maxConcurrent: this.maxConcurrent,
-      queuedP0: this.queues.P0.length,
-      queuedP1: this.queues.P1.length,
-      queuedP2: this.queues.P2.length,
+      queuedP0: this.getQueuedCount("P0"),
+      queuedP1: this.getQueuedCount("P1"),
+      queuedP2: this.getQueuedCount("P2"),
     });
     while (true) {
       const decision = this.tryDispatchNext();
@@ -319,21 +413,25 @@ export class TrafficController {
         earliestWakeUpAt === undefined ? candidate : Math.min(earliestWakeUpAt, candidate);
     };
 
-    for (const priority of this.priorityOrder) {
-      const queue = this.queues[priority];
-      for (let index = 0; index < queue.length; index++) {
-        const next = queue[index];
-        if (!next) continue;
+    const priorities = this.getPriorityDispatchOrder();
+    for (const priority of priorities) {
+      const state = this.queues[priority];
+      if (state.order.length === 0) continue;
+
+      let attempts = 0;
+      const maxAttempts = state.order.length;
+
+      while (attempts < maxAttempts) {
+        const candidate = this.getNextTenantCandidate(priority);
+        if (!candidate) break;
+        attempts += 1;
+
+        const { item: next, queue, tenantId } = candidate;
         const now = Date.now();
         const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
-        const queueTimeoutTriggered = this.handleQueueTimeout(
-          next,
-          queue,
-          index,
-          now,
-          queueTimeoutAt,
-        );
+        const queueTimeoutTriggered = this.handleQueueTimeout(next, queue, 0, now, queueTimeoutAt);
         if (queueTimeoutTriggered === "rejected") {
+          this.cleanupTenantQueue(priority, tenantId, queue);
           return { kind: "skip" };
         }
         if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
@@ -343,13 +441,12 @@ export class TrafficController {
 
         this.controllerLogger.trace("Evaluate next queued request", {
           priority,
-          queueIndex: index,
-          queueLength: queue.length,
-          type: next.type,
           tenantId: next.tenantId,
+          type: next.type,
           attempt: next.attempt,
           provider: next.request.metadata?.provider,
           model: next.request.metadata?.model,
+          queueLength: queue.length,
         });
 
         const circuit = this.resolveCircuit(next);
@@ -361,27 +458,19 @@ export class TrafficController {
             circuitStatus: next.circuitStatus,
           });
           if (circuit.kind === "skip") {
-            queue.splice(index, 1);
+            queue.shift();
+            this.cleanupTenantQueue(priority, tenantId, queue);
             return { kind: "skip" };
           }
           if (circuit.kind === "wait") {
             if (
-              this.rejectIfQueueTimedOut(
-                queueTimeoutExpired,
-                next,
-                queue,
-                index,
-                now,
-                "circuit wait",
-              )
+              this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "circuit wait")
             ) {
+              this.cleanupTenantQueue(priority, tenantId, queue);
               return { kind: "skip" };
             }
-            if (circuit.wakeUpAt !== undefined) {
-              next.etaMs = Math.max(0, circuit.wakeUpAt - now);
-            } else {
-              next.etaMs = undefined;
-            }
+            next.etaMs =
+              circuit.wakeUpAt !== undefined ? Math.max(0, circuit.wakeUpAt - now) : undefined;
             observeWakeUpAt(circuit.wakeUpAt);
             continue;
           }
@@ -397,18 +486,26 @@ export class TrafficController {
             reasons: concurrency.reasons,
           });
           if (
-            this.rejectIfQueueTimedOut(
-              queueTimeoutExpired,
-              next,
-              queue,
-              index,
-              now,
-              "concurrency wait",
-            )
+            this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "concurrency wait")
           ) {
+            this.cleanupTenantQueue(priority, tenantId, queue);
             return { kind: "skip" };
           }
           next.etaMs = undefined;
+          continue;
+        }
+
+        const adaptive = this.resolveAdaptiveLimit(next, now);
+        if (adaptive?.kind === "wait") {
+          if (
+            this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "adaptive wait")
+          ) {
+            this.cleanupTenantQueue(priority, tenantId, queue);
+            return { kind: "skip" };
+          }
+          next.etaMs =
+            adaptive.wakeUpAt !== undefined ? Math.max(0, adaptive.wakeUpAt - now) : undefined;
+          observeWakeUpAt(adaptive.wakeUpAt);
           continue;
         }
 
@@ -425,18 +522,16 @@ export class TrafficController {
                 queueTimeoutExpired,
                 next,
                 queue,
-                index,
+                0,
                 now,
                 "rate limit wait",
               )
             ) {
+              this.cleanupTenantQueue(priority, tenantId, queue);
               return { kind: "skip" };
             }
-            if (rateLimit.wakeUpAt !== undefined) {
-              next.etaMs = Math.max(0, rateLimit.wakeUpAt - now);
-            } else {
-              next.etaMs = undefined;
-            }
+            next.etaMs =
+              rateLimit.wakeUpAt !== undefined ? Math.max(0, rateLimit.wakeUpAt - now) : undefined;
             observeWakeUpAt(rateLimit.wakeUpAt);
           }
           continue;
@@ -444,6 +539,15 @@ export class TrafficController {
 
         if (queueTimeoutExpired) {
           const timeoutError = this.createQueueTimeoutError(next, now);
+          this.attachTrafficMetadata(
+            timeoutError,
+            this.buildTrafficResponseMetadata(
+              next,
+              timeoutError.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
+              now,
+              timeoutError,
+            ),
+          );
           this.controllerLogger.warn("Queue wait timed out before dispatch", {
             tenantId: next.tenantId,
             waitedMs: timeoutError.waitedMs,
@@ -453,12 +557,13 @@ export class TrafficController {
             model: next.request.metadata?.model,
             rateLimitKey: timeoutError.rateLimitKey,
           });
-          queue.splice(index, 1);
+          queue.shift();
+          this.cleanupTenantQueue(priority, tenantId, queue);
           next.reject(timeoutError);
           return { kind: "skip" };
         }
 
-        this.startRequest(next, index);
+        this.startRequest(next, queue, tenantId);
         return { kind: "dispatch" };
       }
     }
@@ -468,7 +573,7 @@ export class TrafficController {
       : { kind: "wait" };
   }
 
-  private startRequest(item: QueuedRequest, queueIndex: number): void {
+  private startRequest(item: QueuedRequest, queue: QueuedRequest[], tenantId: string): void {
     this.controllerLogger.debug("Start request", {
       priority: item.priority,
       type: item.type,
@@ -477,7 +582,10 @@ export class TrafficController {
       provider: item.request.metadata?.provider,
       model: item.request.metadata?.model,
     });
-    this.queues[item.priority].splice(queueIndex, 1);
+    item.dispatchedAt = Date.now();
+    queue.shift();
+    this.cleanupTenantQueue(item.priority, tenantId, queue);
+    this.recordPriorityDispatch(item.priority);
     this.activeCount++;
     this.concurrencyLimiter.acquire(item, this.trafficLogger);
     this.rateLimiter.notifyDispatch(item.rateLimitKey, this.trafficLogger);
@@ -506,6 +614,8 @@ export class TrafficController {
         activeCount: this.activeCount,
       });
       const result = await item.request.execute();
+      const rateLimitKey = item.rateLimitKey ?? this.buildRateLimitKey(item.request.metadata);
+      const adaptiveKey = this.buildAdaptiveKey(item.request.metadata, item.tenantId, rateLimitKey);
       this.controllerLogger.debug("Request succeeded", {
         tenantId: item.tenantId,
         attempt: item.attempt,
@@ -523,8 +633,12 @@ export class TrafficController {
         this.circuitBreaker.recordSuccess(item.request.metadata, this.trafficLogger);
       }
       const usage = this.usageTracker.recordUsage(item, result, this.trafficLogger);
-      const rateLimitKey = item.rateLimitKey ?? this.buildRateLimitKey(item.request.metadata);
       this.rateLimiter.recordUsage(rateLimitKey, usage, this.trafficLogger);
+      this.recordAdaptiveSuccess(adaptiveKey);
+      this.attachTrafficMetadata(
+        result,
+        this.buildTrafficResponseMetadata(item, rateLimitKey, Date.now()),
+      );
       item.resolve(result);
     } catch (error) {
       const rateLimitKey = item.rateLimitKey ?? this.buildRateLimitKey(item.request.metadata);
@@ -536,6 +650,10 @@ export class TrafficController {
         logger: this.trafficLogger,
       });
       const errorForHandling = normalizedRateLimitError ?? error;
+      const adaptiveKey = this.buildAdaptiveKey(item.request.metadata, item.tenantId, rateLimitKey);
+      if (errorForHandling instanceof RateLimitedUpstreamError) {
+        this.recordAdaptiveRateLimitHit(adaptiveKey, errorForHandling.retryAfterMs);
+      }
 
       this.controllerLogger.warn("Request failed", {
         tenantId: item.tenantId,
@@ -552,6 +670,10 @@ export class TrafficController {
         item.request.metadata,
         errorForHandling,
         this.trafficLogger,
+      );
+      this.attachTrafficMetadata(
+        errorForHandling,
+        this.buildTrafficResponseMetadata(item, rateLimitKey, Date.now(), errorForHandling),
       );
 
       const retry = buildRetryPlanWithPolicy(
@@ -629,10 +751,11 @@ export class TrafficController {
         priority: item.priority,
         nextAttempt: item.attempt + 1,
       });
-      this.queues[item.priority].push({
+      this.enqueueItem({
         ...item,
         attempt: item.attempt + 1,
         enqueuedAt: Date.now(),
+        dispatchedAt: undefined,
         tenantConcurrencyKey: undefined,
         providerModelConcurrencyKey: undefined,
         rateLimitKey: undefined,
@@ -713,6 +836,15 @@ export class TrafficController {
     }
 
     const timeoutError = this.createQueueTimeoutError(next, now);
+    this.attachTrafficMetadata(
+      timeoutError,
+      this.buildTrafficResponseMetadata(
+        next,
+        timeoutError.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
+        now,
+        timeoutError,
+      ),
+    );
     this.controllerLogger.warn("Queue wait timed out; rejecting request", {
       tenantId: next.tenantId,
       waitedMs: timeoutError.waitedMs,
@@ -737,6 +869,15 @@ export class TrafficController {
   ): boolean {
     if (!queueTimeoutExpired) return false;
     const timeoutError = this.createQueueTimeoutError(next, now);
+    this.attachTrafficMetadata(
+      timeoutError,
+      this.buildTrafficResponseMetadata(
+        next,
+        timeoutError.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
+        now,
+        timeoutError,
+      ),
+    );
     this.controllerLogger.warn("Queue wait timed out during gate wait", {
       tenantId: next.tenantId,
       waitedMs: timeoutError.waitedMs,
@@ -763,12 +904,276 @@ export class TrafficController {
     });
   }
 
+  private resolveTenantId(request: TrafficRequest<unknown>): string {
+    return request.tenantId ?? request.metadata?.tenantId ?? "default";
+  }
+
+  private enqueueItem(item: QueuedRequest): void {
+    const state = this.queues[item.priority];
+    const tenantId = item.tenantId;
+    let queue = state.queues.get(tenantId);
+    if (!queue) {
+      queue = [];
+      state.queues.set(tenantId, queue);
+      state.order.push(tenantId);
+    }
+    queue.push(item);
+  }
+
+  private getQueuedCount(priority: TrafficPriority): number {
+    const state = this.queues[priority];
+    let total = 0;
+    for (const queue of state.queues.values()) {
+      total += queue.length;
+    }
+    return total;
+  }
+
+  private hasQueuedWorkBelow(priority: TrafficPriority): boolean {
+    const index = this.priorityOrder.indexOf(priority);
+    if (index < 0) return false;
+    for (let i = index + 1; i < this.priorityOrder.length; i += 1) {
+      if (this.getQueuedCount(this.priorityOrder[i]) > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private canDispatchPriority(priority: TrafficPriority): boolean {
+    const limit = this.priorityBurstLimits[priority];
+    if (!Number.isFinite(limit) || limit <= 0) return true;
+    if (this.priorityBurstCounts[priority] < limit) return true;
+    return !this.hasQueuedWorkBelow(priority);
+  }
+
+  private recordPriorityDispatch(priority: TrafficPriority): void {
+    for (const key of this.priorityOrder) {
+      if (key !== priority) {
+        this.priorityBurstCounts[key] = 0;
+      }
+    }
+    this.priorityBurstCounts[priority] += 1;
+  }
+
+  private getPriorityDispatchOrder(): TrafficPriority[] {
+    return this.priorityOrder.filter((priority) => this.canDispatchPriority(priority));
+  }
+
+  private getNextTenantCandidate(
+    priority: TrafficPriority,
+  ): { item: QueuedRequest; queue: QueuedRequest[]; tenantId: string } | undefined {
+    const state = this.queues[priority];
+    if (state.order.length === 0) return undefined;
+    const maxAttempts = state.order.length;
+    let attempts = 0;
+
+    while (attempts < maxAttempts && state.order.length > 0) {
+      const index = state.index % state.order.length;
+      const tenantId = state.order[index];
+      const queue = state.queues.get(tenantId);
+      attempts += 1;
+
+      if (!queue || queue.length === 0) {
+        this.removeTenantQueue(priority, tenantId);
+        continue;
+      }
+
+      state.index = (index + 1) % state.order.length;
+      return { item: queue[0], queue, tenantId };
+    }
+
+    return undefined;
+  }
+
+  private cleanupTenantQueue(
+    priority: TrafficPriority,
+    tenantId: string,
+    queue: QueuedRequest[],
+  ): void {
+    if (queue.length > 0) return;
+    this.removeTenantQueue(priority, tenantId);
+  }
+
+  private removeTenantQueue(priority: TrafficPriority, tenantId: string): void {
+    const state = this.queues[priority];
+    state.queues.delete(tenantId);
+    const index = state.order.indexOf(tenantId);
+    if (index === -1) return;
+    state.order.splice(index, 1);
+    if (state.order.length === 0) {
+      state.index = 0;
+      return;
+    }
+    if (state.index > index) {
+      state.index -= 1;
+    }
+    if (state.index >= state.order.length) {
+      state.index = 0;
+    }
+  }
+
   private resolvePriority(metadata?: TrafficRequestMetadata): TrafficPriority {
     return metadata?.priority ?? "P1";
   }
 
   private buildRateLimitKey(metadata?: TrafficRequestMetadata): string {
     return this.rateLimitKeyBuilder(metadata);
+  }
+
+  private resolveAdaptiveLimit(next: QueuedRequest, now: number): DispatchDecision | null {
+    const rateLimitKey = next.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata);
+    const adaptiveKey = this.buildAdaptiveKey(next.request.metadata, next.tenantId, rateLimitKey);
+    const state = this.adaptiveLimiterState.get(adaptiveKey);
+    if (!state) return null;
+
+    this.applyAdaptiveDecay(state, now);
+    if (state.cooldownUntil !== undefined && now < state.cooldownUntil) {
+      return { kind: "wait", wakeUpAt: state.cooldownUntil };
+    }
+
+    return null;
+  }
+
+  private recordAdaptiveRateLimitHit(key: string, retryAfterMs?: number): void {
+    const state = this.getAdaptiveState(key);
+    const now = Date.now();
+    const { windowMs, threshold, minPenaltyMs, maxPenaltyMs, penaltyMultiplier } =
+      this.adaptiveLimiterConfig;
+
+    state.last429At = now;
+    state.recent429s = state.recent429s.filter((timestamp) => now - timestamp <= windowMs);
+    state.recent429s.push(now);
+
+    if (state.recent429s.length < threshold) {
+      return;
+    }
+
+    const basePenalty = state.penaltyMs > 0 ? state.penaltyMs : minPenaltyMs;
+    const nextPenalty = Math.min(
+      maxPenaltyMs,
+      Math.max(minPenaltyMs, Math.round(basePenalty * penaltyMultiplier)),
+    );
+    state.penaltyMs = nextPenalty;
+    const retryPenalty = typeof retryAfterMs === "number" ? retryAfterMs : 0;
+    const cooldownMs = Math.max(nextPenalty, retryPenalty);
+    state.cooldownUntil = now + cooldownMs;
+  }
+
+  private recordAdaptiveSuccess(key: string): void {
+    const state = this.adaptiveLimiterState.get(key);
+    if (!state) return;
+
+    const now = Date.now();
+    this.applyAdaptiveDecay(state, now);
+    if (state.penaltyMs === 0) {
+      state.cooldownUntil = undefined;
+      state.recent429s = [];
+      state.last429At = undefined;
+    }
+  }
+
+  private applyAdaptiveDecay(state: AdaptiveLimiterState, now: number): void {
+    const { decayMs, penaltyMultiplier } = this.adaptiveLimiterConfig;
+    if (state.last429At && now - state.last429At < decayMs) {
+      return;
+    }
+
+    if (state.penaltyMs > 0) {
+      state.penaltyMs = Math.max(0, Math.floor(state.penaltyMs / penaltyMultiplier));
+    }
+  }
+
+  private getAdaptiveState(key: string): AdaptiveLimiterState {
+    const existing = this.adaptiveLimiterState.get(key);
+    if (existing) return existing;
+    const created: AdaptiveLimiterState = {
+      recent429s: [],
+      penaltyMs: 0,
+    };
+    this.adaptiveLimiterState.set(key, created);
+    return created;
+  }
+
+  private buildAdaptiveKey(
+    metadata: TrafficRequestMetadata | undefined,
+    tenantId: string,
+    rateLimitKey: string,
+  ): string {
+    if (rateLimitKey.includes("tenant=")) {
+      return rateLimitKey;
+    }
+    const tenant = metadata?.tenantId ?? tenantId ?? "default";
+    return `${rateLimitKey}::tenant=${encodeURIComponent(tenant)}`;
+  }
+
+  private buildTrafficResponseMetadata(
+    item: QueuedRequest,
+    rateLimitKey: string,
+    now: number,
+    error?: unknown,
+  ): TrafficResponseMetadata {
+    const snapshot = this.rateLimitSnapshots.get(rateLimitKey);
+    const retryAfterMs = this.resolveRetryAfterMs(error, snapshot);
+    const queuedForMs =
+      item.dispatchedAt !== undefined ? item.dispatchedAt - item.enqueuedAt : now - item.enqueuedAt;
+    const queueEtaMs = item.etaMs ?? Math.max(0, queuedForMs);
+
+    return {
+      rateLimitKey,
+      retryAfterMs,
+      rateLimitRemaining: snapshot?.remaining,
+      rateLimitResetAt: snapshot?.resetAt,
+      rateLimitResetInMs:
+        snapshot?.resetAt !== undefined ? Math.max(0, snapshot.resetAt - now) : undefined,
+      queueEtaMs,
+      tenantId: item.tenantId,
+      priority: item.request.metadata?.priority,
+      taskType: item.request.metadata?.taskType,
+    };
+  }
+
+  private buildTrafficResponseMetadataFromMetadata(
+    metadata: TrafficRequestMetadata | undefined,
+    rateLimitKey: string,
+    now: number,
+    error?: unknown,
+  ): TrafficResponseMetadata {
+    const snapshot = this.rateLimitSnapshots.get(rateLimitKey);
+    const retryAfterMs = this.resolveRetryAfterMs(error, snapshot);
+
+    return {
+      rateLimitKey,
+      retryAfterMs,
+      rateLimitRemaining: snapshot?.remaining,
+      rateLimitResetAt: snapshot?.resetAt,
+      rateLimitResetInMs:
+        snapshot?.resetAt !== undefined ? Math.max(0, snapshot.resetAt - now) : undefined,
+      tenantId: metadata?.tenantId,
+      priority: metadata?.priority,
+      taskType: metadata?.taskType,
+    };
+  }
+
+  private attachTrafficMetadata(target: unknown, info: TrafficResponseMetadata): void {
+    if (!target || typeof target !== "object") return;
+    (target as Record<string, unknown>).traffic = info;
+  }
+
+  private resolveRetryAfterMs(
+    error: unknown | undefined,
+    snapshot?: RateLimitSnapshot,
+  ): number | undefined {
+    if (error && typeof error === "object" && "retryAfterMs" in error) {
+      const candidate = (error as { retryAfterMs?: unknown }).retryAfterMs;
+      if (typeof candidate === "number" && Number.isFinite(candidate)) {
+        return candidate;
+      }
+    }
+    if (snapshot?.retryAfterMs !== undefined) {
+      return snapshot.retryAfterMs;
+    }
+    return undefined;
   }
 
   private resolveRateLimitStrategy(
@@ -812,6 +1217,7 @@ function buildRateLimitKeyFromMetadata(metadata?: TrafficRequestMetadata): strin
     { label: "apiKey", value: metadata?.apiKeyId },
     { label: "region", value: metadata?.region },
     { label: "endpoint", value: metadata?.endpoint },
+    { label: "tenant", value: metadata?.tenantId },
     { label: "tenantTier", value: metadata?.tenantTier },
     { label: "taskType", value: metadata?.taskType },
   ];

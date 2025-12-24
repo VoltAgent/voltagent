@@ -39,6 +39,7 @@ export interface QueuedRequest<TResponse = unknown> {
   priority: TrafficPriority;
   tenantId: string;
   enqueuedAt: number;
+  dispatchedAt?: number;
 
   tenantConcurrencyKey?: string;
   providerModelConcurrencyKey?: string;

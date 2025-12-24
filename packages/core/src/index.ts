@@ -49,8 +49,11 @@ export {
   type RateLimitConfig,
   type RateLimitKey,
   type RateLimitOptions,
+  type AdaptiveLimiterConfig,
+  type PriorityBurstLimits,
   type TrafficRequest,
   type TrafficRequestMetadata,
+  type TrafficResponseMetadata,
   type TrafficPriority,
   type TrafficRequestType,
 } from "./traffic/traffic-controller";

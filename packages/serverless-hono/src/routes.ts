@@ -32,6 +32,7 @@ import {
   type TriggerHttpRequestContext,
   UPDATE_ROUTES,
   WORKFLOW_ROUTES,
+  buildTrafficHeaders,
   executeA2ARequest,
   executeTriggerHandler,
   getConversationMessagesHandler,
@@ -243,7 +244,8 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       logger,
       signal,
     );
-    return c.json(response, response.success ? 200 : 500);
+    const trafficHeaders = buildTrafficHeaders(response.traffic);
+    return c.json(response, response.success ? 200 : 500, trafficHeaders);
   });
 
   app.post(AGENT_ROUTES.streamText.path, async (c) => {
@@ -309,7 +311,8 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       logger,
       signal,
     );
-    return c.json(response, response.success ? 200 : 500);
+    const trafficHeaders = buildTrafficHeaders(response.traffic);
+    return c.json(response, response.success ? 200 : 500, trafficHeaders);
   });
 
   app.post(AGENT_ROUTES.streamObject.path, async (c) => {
