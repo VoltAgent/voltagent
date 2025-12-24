@@ -21,6 +21,30 @@ export class CircuitBreakerOpenError extends Error {
   }
 }
 
+export class QueueWaitTimeoutError extends Error {
+  readonly waitedMs: number;
+  readonly maxQueueWaitMs?: number;
+  readonly deadlineAt?: number;
+  readonly metadata?: TrafficRequestMetadata;
+  readonly rateLimitKey?: string;
+
+  constructor(options: {
+    waitedMs: number;
+    maxQueueWaitMs?: number;
+    deadlineAt?: number;
+    metadata?: TrafficRequestMetadata;
+    rateLimitKey?: string;
+  }) {
+    super("Queue wait time exceeded");
+    this.name = "QueueWaitTimeoutError";
+    this.waitedMs = options.waitedMs;
+    this.maxQueueWaitMs = options.maxQueueWaitMs;
+    this.deadlineAt = options.deadlineAt;
+    this.metadata = options.metadata;
+    this.rateLimitKey = options.rateLimitKey;
+  }
+}
+
 export class RateLimitedUpstreamError extends Error {
   readonly status = 429;
   readonly retryAfterMs?: number;

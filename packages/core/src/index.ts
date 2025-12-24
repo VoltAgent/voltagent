@@ -33,6 +33,7 @@ export {
   // Surface traffic controller so downstream consumers can route agent calls through the shared scheduler
   TrafficController,
   CircuitBreakerOpenError,
+  QueueWaitTimeoutError,
   RateLimitedUpstreamError,
   getTrafficController,
   type FallbackChainEntry,

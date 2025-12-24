@@ -5,6 +5,7 @@ import { TrafficConcurrencyLimiter } from "./traffic-concurrency-limiter";
 import type { DispatchDecision, QueuedRequest, Scheduler } from "./traffic-controller-internal";
 import {
   CircuitBreakerOpenError,
+  QueueWaitTimeoutError,
   RateLimitedUpstreamError,
   normalizeRateLimitError,
 } from "./traffic-errors";
@@ -64,6 +65,7 @@ export type {
 };
 
 export { CircuitBreakerOpenError };
+export { QueueWaitTimeoutError };
 export { RateLimitedUpstreamError };
 
 export class TrafficController {
@@ -256,6 +258,7 @@ export class TrafficController {
         attempt: 1,
         priority,
         tenantId: request.tenantId,
+        enqueuedAt: Date.now(),
         extractUsage: request.extractUsage,
       });
       this.scheduleDrain();
@@ -321,6 +324,22 @@ export class TrafficController {
       for (let index = 0; index < queue.length; index++) {
         const next = queue[index];
         if (!next) continue;
+        const now = Date.now();
+        const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
+        const queueTimeoutTriggered = this.handleQueueTimeout(
+          next,
+          queue,
+          index,
+          now,
+          queueTimeoutAt,
+        );
+        if (queueTimeoutTriggered === "rejected") {
+          return { kind: "skip" };
+        }
+        if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
+          observeWakeUpAt(queueTimeoutAt);
+        }
+        const queueTimeoutExpired = queueTimeoutTriggered === "expired";
 
         this.controllerLogger.trace("Evaluate next queued request", {
           priority,
@@ -346,6 +365,23 @@ export class TrafficController {
             return { kind: "skip" };
           }
           if (circuit.kind === "wait") {
+            if (
+              this.rejectIfQueueTimedOut(
+                queueTimeoutExpired,
+                next,
+                queue,
+                index,
+                now,
+                "circuit wait",
+              )
+            ) {
+              return { kind: "skip" };
+            }
+            if (circuit.wakeUpAt !== undefined) {
+              next.etaMs = Math.max(0, circuit.wakeUpAt - now);
+            } else {
+              next.etaMs = undefined;
+            }
             observeWakeUpAt(circuit.wakeUpAt);
             continue;
           }
@@ -360,6 +396,19 @@ export class TrafficController {
             model: next.request.metadata?.model,
             reasons: concurrency.reasons,
           });
+          if (
+            this.rejectIfQueueTimedOut(
+              queueTimeoutExpired,
+              next,
+              queue,
+              index,
+              now,
+              "concurrency wait",
+            )
+          ) {
+            return { kind: "skip" };
+          }
+          next.etaMs = undefined;
           continue;
         }
 
@@ -370,8 +419,43 @@ export class TrafficController {
             decision: rateLimit,
             rateLimitKey: next.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
           });
-          if (rateLimit.kind === "wait") observeWakeUpAt(rateLimit.wakeUpAt);
+          if (rateLimit.kind === "wait") {
+            if (
+              this.rejectIfQueueTimedOut(
+                queueTimeoutExpired,
+                next,
+                queue,
+                index,
+                now,
+                "rate limit wait",
+              )
+            ) {
+              return { kind: "skip" };
+            }
+            if (rateLimit.wakeUpAt !== undefined) {
+              next.etaMs = Math.max(0, rateLimit.wakeUpAt - now);
+            } else {
+              next.etaMs = undefined;
+            }
+            observeWakeUpAt(rateLimit.wakeUpAt);
+          }
           continue;
+        }
+
+        if (queueTimeoutExpired) {
+          const timeoutError = this.createQueueTimeoutError(next, now);
+          this.controllerLogger.warn("Queue wait timed out before dispatch", {
+            tenantId: next.tenantId,
+            waitedMs: timeoutError.waitedMs,
+            maxQueueWaitMs: timeoutError.maxQueueWaitMs,
+            deadlineAt: timeoutError.deadlineAt,
+            provider: next.request.metadata?.provider,
+            model: next.request.metadata?.model,
+            rateLimitKey: timeoutError.rateLimitKey,
+          });
+          queue.splice(index, 1);
+          next.reject(timeoutError);
+          return { kind: "skip" };
         }
 
         this.startRequest(next, index);
@@ -548,6 +632,7 @@ export class TrafficController {
       this.queues[item.priority].push({
         ...item,
         attempt: item.attempt + 1,
+        enqueuedAt: Date.now(),
         tenantConcurrencyKey: undefined,
         providerModelConcurrencyKey: undefined,
         rateLimitKey: undefined,
@@ -593,6 +678,90 @@ export class TrafficController {
    * Utilities
    * ============================================================
    */
+
+  private resolveQueueTimeoutAt(next: QueuedRequest): number | undefined {
+    const maxQueueWaitMs = next.request.maxQueueWaitMs;
+    const normalizedMaxWait =
+      typeof maxQueueWaitMs === "number" && Number.isFinite(maxQueueWaitMs)
+        ? Math.max(0, maxQueueWaitMs)
+        : undefined;
+    const timeoutAt =
+      normalizedMaxWait !== undefined ? next.enqueuedAt + normalizedMaxWait : undefined;
+    const deadlineAt = next.request.deadlineAt;
+    if (timeoutAt === undefined) return deadlineAt;
+    if (deadlineAt === undefined) return timeoutAt;
+    return Math.min(timeoutAt, deadlineAt);
+  }
+
+  private handleQueueTimeout(
+    next: QueuedRequest,
+    queue: QueuedRequest[],
+    index: number,
+    now: number,
+    queueTimeoutAt?: number,
+  ): "none" | "expired" | "rejected" {
+    if (queueTimeoutAt === undefined) return "none";
+    if (now < queueTimeoutAt) return "none";
+
+    const fallbackApplied = this.circuitBreaker.tryFallback(
+      next,
+      "queue-timeout",
+      this.trafficLogger,
+    );
+    if (fallbackApplied) {
+      return "expired";
+    }
+
+    const timeoutError = this.createQueueTimeoutError(next, now);
+    this.controllerLogger.warn("Queue wait timed out; rejecting request", {
+      tenantId: next.tenantId,
+      waitedMs: timeoutError.waitedMs,
+      maxQueueWaitMs: timeoutError.maxQueueWaitMs,
+      deadlineAt: timeoutError.deadlineAt,
+      provider: next.request.metadata?.provider,
+      model: next.request.metadata?.model,
+      rateLimitKey: timeoutError.rateLimitKey,
+    });
+    queue.splice(index, 1);
+    next.reject(timeoutError);
+    return "rejected";
+  }
+
+  private rejectIfQueueTimedOut(
+    queueTimeoutExpired: boolean,
+    next: QueuedRequest,
+    queue: QueuedRequest[],
+    index: number,
+    now: number,
+    reason: string,
+  ): boolean {
+    if (!queueTimeoutExpired) return false;
+    const timeoutError = this.createQueueTimeoutError(next, now);
+    this.controllerLogger.warn("Queue wait timed out during gate wait", {
+      tenantId: next.tenantId,
+      waitedMs: timeoutError.waitedMs,
+      maxQueueWaitMs: timeoutError.maxQueueWaitMs,
+      deadlineAt: timeoutError.deadlineAt,
+      provider: next.request.metadata?.provider,
+      model: next.request.metadata?.model,
+      rateLimitKey: timeoutError.rateLimitKey,
+      reason,
+    });
+    queue.splice(index, 1);
+    next.reject(timeoutError);
+    return true;
+  }
+
+  private createQueueTimeoutError(next: QueuedRequest, now: number): QueueWaitTimeoutError {
+    const waitedMs = Math.max(0, now - next.enqueuedAt);
+    return new QueueWaitTimeoutError({
+      waitedMs,
+      maxQueueWaitMs: next.request.maxQueueWaitMs,
+      deadlineAt: next.request.deadlineAt,
+      metadata: next.request.metadata,
+      rateLimitKey: next.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
+    });
+  }
 
   private resolvePriority(metadata?: TrafficRequestMetadata): TrafficPriority {
     return metadata?.priority ?? "P1";
