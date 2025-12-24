@@ -15,6 +15,7 @@ export interface CircuitState {
   timeoutTimestamps: number[];
   openedAt?: number;
   trialInFlight?: boolean;
+  nextProbeAt?: number;
 }
 
 export interface RateLimitWindowState {
