@@ -261,10 +261,15 @@ describe("TrafficController stream reporting", () => {
         order.push("primary");
         return "primary";
       },
-      createFallbackRequest: (modelId) => ({
+      createFallbackRequest: (target) => ({
         tenantId,
-        metadata: { provider: "p", model: modelId, priority: "P1" },
+        metadata: {
+          provider: "p",
+          model: typeof target === "string" ? target : target.model,
+          priority: "P1",
+        },
         execute: async () => {
+          const modelId = typeof target === "string" ? target : target.model;
           order.push(modelId);
           return modelId;
         },

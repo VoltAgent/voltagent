@@ -56,6 +56,7 @@ import type { Tool, ToolExecutionResult, Toolkit, VercelTool } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
 import {
+  type FallbackChainEntry,
   type TrafficPriority,
   type TrafficRequestMetadata,
   getTrafficController,
@@ -378,6 +379,14 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
    * Defaults to agent-level priority when omitted.
    */
   trafficPriority?: TrafficPriority;
+  /**
+   * Optional task classification for circuit-breaker fallback policies.
+   */
+  taskType?: string;
+  /**
+   * Optional explicit fallback policy id.
+   */
+  fallbackPolicyId?: string;
 
   // Parent tracking
   parentAgentId?: string;
@@ -599,16 +608,24 @@ export class Agent {
     options?: GenerateTextOptions<OUTPUT>,
   ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
     const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
-    const buildRequest = (modelOverride?: LanguageModel | string) => {
+    const buildRequest = (modelOverride?: LanguageModel | string, providerOverride?: string) => {
       const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
       const tenantId = this.resolveTenantId(mergedOptions);
-      const metadata = this.buildTrafficMetadata(mergedOptions?.model, mergedOptions); // Compute once per queued request (including per-call model overrides)
+      const metadata = this.buildTrafficMetadata(
+        mergedOptions?.model,
+        mergedOptions,
+        providerOverride,
+      ); // Compute once per queued request (including per-call model overrides)
       return {
         tenantId,
         metadata,
         execute: () => this.executeGenerateText(input, mergedOptions, metadata), // Defer actual execution so controller can schedule it
         extractUsage: (result) => this.extractUsageFromResponse(result),
-        createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+        createFallbackRequest: (fallbackTarget) => {
+          const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
+            this.resolveFallbackTarget(fallbackTarget);
+          return buildRequest(fallbackModel, fallbackProvider);
+        },
       };
     };
 
@@ -741,11 +758,15 @@ export class Agent {
               maxSteps: userMaxSteps,
               tools: userTools,
               output,
+              taskType,
+              fallbackPolicyId,
               providerOptions,
               model: _model, // Exclude model so aiSDKOptions doesn't override resolved model
               ...aiSDKOptions
             } = options || {};
             void _model;
+            void taskType;
+            void fallbackPolicyId;
 
             const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
               | ToolChoice<Record<string, unknown>>
@@ -1096,17 +1117,25 @@ export class Agent {
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
     const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
-    const buildRequest = (modelOverride?: LanguageModel | string) => {
+    const buildRequest = (modelOverride?: LanguageModel | string, providerOverride?: string) => {
       const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
       const tenantId = this.resolveTenantId(mergedOptions);
-      const metadata = this.buildTrafficMetadata(mergedOptions?.model, mergedOptions); // Compute once per queued request (including per-call model overrides)
+      const metadata = this.buildTrafficMetadata(
+        mergedOptions?.model,
+        mergedOptions,
+        providerOverride,
+      ); // Compute once per queued request (including per-call model overrides)
       return {
         tenantId,
         metadata,
         execute: () => this.executeStreamText(input, mergedOptions, metadata), // Actual streaming work happens after the controller dequeues us
         extractUsage: (result: StreamTextResultWithContext) =>
           this.extractUsageFromResponse(result),
-        createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+        createFallbackRequest: (fallbackTarget) => {
+          const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
+            this.resolveFallbackTarget(fallbackTarget);
+          return buildRequest(fallbackModel, fallbackProvider);
+        },
       };
     };
 
@@ -1309,11 +1338,15 @@ export class Agent {
           tools: userTools,
           onFinish: userOnFinish,
           output,
+          taskType,
+          fallbackPolicyId,
           providerOptions,
           model: _model, // Exclude model from aiSDKOptions to avoid overriding resolved model
           ...aiSDKOptions
         } = options || {};
         void _model;
+        void taskType;
+        void fallbackPolicyId;
 
         const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
           | ToolChoice<Record<string, unknown>>
@@ -2056,17 +2089,25 @@ export class Agent {
     options?: GenerateObjectOptions,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
-    const buildRequest = (modelOverride?: LanguageModel | string) => {
+    const buildRequest = (modelOverride?: LanguageModel | string, providerOverride?: string) => {
       const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
       const tenantId = this.resolveTenantId(mergedOptions);
-      const metadata = this.buildTrafficMetadata(mergedOptions?.model, mergedOptions); // Compute once per queued request (including per-call model overrides)
+      const metadata = this.buildTrafficMetadata(
+        mergedOptions?.model,
+        mergedOptions,
+        providerOverride,
+      ); // Compute once per queued request (including per-call model overrides)
       return {
         tenantId,
         metadata,
         execute: () => this.executeGenerateObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
-        createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+        createFallbackRequest: (fallbackTarget) => {
+          const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
+            this.resolveFallbackTarget(fallbackTarget);
+          return buildRequest(fallbackModel, fallbackProvider);
+        },
       };
     };
 
@@ -2178,11 +2219,15 @@ export class Agent {
               maxSteps: userMaxSteps,
               tools: userTools,
               output: _output,
+              taskType,
+              fallbackPolicyId,
               providerOptions,
               model: _model, // Exclude model so spread does not override resolved model
               ...aiSDKOptions
             } = options || {};
             void _model;
+            void taskType;
+            void fallbackPolicyId;
 
             const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
               oc,
@@ -2414,17 +2459,25 @@ export class Agent {
     options?: StreamObjectOptions,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
-    const buildRequest = (modelOverride?: LanguageModel | string) => {
+    const buildRequest = (modelOverride?: LanguageModel | string, providerOverride?: string) => {
       const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
       const tenantId = this.resolveTenantId(mergedOptions);
-      const metadata = this.buildTrafficMetadata(mergedOptions?.model, mergedOptions);
+      const metadata = this.buildTrafficMetadata(
+        mergedOptions?.model,
+        mergedOptions,
+        providerOverride,
+      );
       return {
         tenantId,
         metadata,
         execute: () => this.executeStreamObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
-        createFallbackRequest: (fallbackModel: string) => buildRequest(fallbackModel),
+        createFallbackRequest: (fallbackTarget) => {
+          const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
+            this.resolveFallbackTarget(fallbackTarget);
+          return buildRequest(fallbackModel, fallbackProvider);
+        },
       };
     };
 
@@ -2571,11 +2624,15 @@ export class Agent {
           tools: userTools,
           onFinish: userOnFinish,
           output: _output,
+          taskType,
+          fallbackPolicyId,
           providerOptions,
           model: _model, // Exclude model so aiSDKOptions cannot override resolved model
           ...aiSDKOptions
         } = options || {};
         void _model;
+        void taskType;
+        void fallbackPolicyId;
 
         let guardrailObjectPromise!: Promise<z.infer<T>>;
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
@@ -5504,9 +5561,13 @@ export class Agent {
   private buildTrafficMetadata(
     modelOverride?: AgentModelValue,
     options?: BaseGenerationOptions,
+    providerOverride?: string,
   ): TrafficRequestMetadata {
     const provider =
-      this.resolveProvider(modelOverride) ?? this.resolveProvider(this.model) ?? undefined;
+      providerOverride ??
+      this.resolveProvider(modelOverride) ??
+      this.resolveProvider(this.model) ??
+      undefined;
     const priority = this.resolveTrafficPriority(options);
 
     return {
@@ -5516,6 +5577,21 @@ export class Agent {
       provider, // Allows per-provider throttling later
       priority,
       tenantId: this.resolveTenantId(options),
+      taskType: options?.taskType,
+      fallbackPolicyId: options?.fallbackPolicyId,
+    };
+  }
+
+  private resolveFallbackTarget(target: FallbackChainEntry): {
+    modelOverride?: LanguageModel | string;
+    providerOverride?: string;
+  } {
+    if (typeof target === "string") {
+      return { modelOverride: target };
+    }
+    return {
+      modelOverride: target.model,
+      providerOverride: target.provider,
     };
   }
 

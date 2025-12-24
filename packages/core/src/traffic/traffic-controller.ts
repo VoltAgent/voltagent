@@ -16,6 +16,11 @@ import {
 } from "./traffic-rate-limiter";
 import { buildRetryPlanWithPolicy } from "./traffic-retry";
 import type {
+  FallbackChainEntry,
+  FallbackPolicy,
+  FallbackPolicyConfig,
+  FallbackPolicyMode,
+  FallbackTarget,
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
@@ -39,6 +44,11 @@ import { TrafficUsageTracker } from "./traffic-usage-tracker";
  */
 
 export type {
+  FallbackChainEntry,
+  FallbackPolicy,
+  FallbackPolicyConfig,
+  FallbackPolicyMode,
+  FallbackTarget,
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
@@ -109,6 +119,7 @@ export class TrafficController {
     });
     this.circuitBreaker = new TrafficCircuitBreaker({
       fallbackChains: options.fallbackChains,
+      fallbackPolicy: options.fallbackPolicy,
       buildRateLimitKey: (metadata) => this.buildRateLimitKey(metadata),
     });
     this.concurrencyLimiter = new TrafficConcurrencyLimiter({
@@ -120,6 +131,7 @@ export class TrafficController {
     this.controllerLogger.debug("Initialized TrafficController", {
       maxConcurrent: this.maxConcurrent,
       hasFallbackChains: !!options.fallbackChains,
+      hasFallbackPolicy: options.fallbackPolicy !== undefined,
       hasProviderModelConcurrency: options.maxConcurrentPerProviderModel !== undefined,
       hasTenantConcurrency: options.maxConcurrentPerTenant !== undefined,
       hasConfigRateLimits: options.rateLimits !== undefined,

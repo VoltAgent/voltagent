@@ -3,6 +3,7 @@ import {
   CIRCUIT_COOLDOWN_MS,
   CIRCUIT_FAILURE_THRESHOLD,
   CIRCUIT_FAILURE_WINDOW_MS,
+  CIRCUIT_PROBE_INTERVAL_MS,
   CIRCUIT_TIMEOUT_THRESHOLD,
   CIRCUIT_TIMEOUT_WINDOW_MS,
   DEFAULT_FALLBACK_CHAINS,
@@ -15,37 +16,44 @@ import type {
 } from "./traffic-controller-internal";
 import { extractStatusCode, isTimeoutError } from "./traffic-error-utils";
 import { CircuitBreakerOpenError } from "./traffic-errors";
-import type { TrafficRequestMetadata } from "./traffic-types";
+import type {
+  FallbackChainEntry,
+  FallbackPolicy,
+  FallbackPolicyConfig,
+  FallbackTarget,
+  TrafficRequestMetadata,
+} from "./traffic-types";
 
 export class TrafficCircuitBreaker {
   private readonly circuitBreakers = new Map<string, CircuitState>();
-  private readonly fallbackChains: Map<string, string[]>;
+  private readonly fallbackChains: Map<string, FallbackChainEntry[]>;
+  private readonly fallbackPolicy?: FallbackPolicyConfig;
   private readonly buildRateLimitKey: (metadata?: TrafficRequestMetadata) => string;
 
   constructor(options: {
-    fallbackChains?: Record<string, string[]>;
+    fallbackChains?: Record<string, FallbackChainEntry[]>;
+    fallbackPolicy?: FallbackPolicyConfig;
     buildRateLimitKey: (metadata?: TrafficRequestMetadata) => string;
   }) {
     this.buildRateLimitKey = options.buildRateLimitKey;
     const chains = options.fallbackChains ?? DEFAULT_FALLBACK_CHAINS;
     this.fallbackChains = new Map(Object.entries(chains));
+    this.fallbackPolicy = options.fallbackPolicy;
   }
 
   resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
     const circuitLogger = logger?.child({ module: "circuit-breaker" });
-    const visited = new Set<string>();
+    const visitedKeys = new Set<string>();
 
     while (true) {
       const key = this.buildRateLimitKey(next.request.metadata);
       next.circuitKey = key;
+      visitedKeys.add(key);
       circuitLogger?.trace?.("Circuit resolve step", {
         circuitKey: key,
         provider: next.request.metadata?.provider,
         model: next.request.metadata?.model,
       });
-
-      const model = next.request.metadata?.model;
-      if (model) visited.add(model);
 
       const evaluation = this.evaluateCircuitState(key, circuitLogger);
       next.circuitStatus = evaluation.state;
@@ -58,12 +66,25 @@ export class TrafficCircuitBreaker {
 
       if (evaluation.allowRequest) return null;
 
-      const fallback = this.findFallbackModel(next.request.metadata, visited, circuitLogger);
+      const { policy, policyId } = this.resolveFallbackPolicy(next.request.metadata);
+      if (policy.mode === "wait") {
+        const wakeUpAt =
+          evaluation.retryAfterMs !== undefined ? Date.now() + evaluation.retryAfterMs : undefined;
+        circuitLogger?.debug?.("Circuit open; waiting per fallback policy", {
+          circuitKey: key,
+          policyId,
+          retryAfterMs: evaluation.retryAfterMs,
+          wakeUpAt,
+        });
+        return { kind: "wait", wakeUpAt };
+      }
+
+      const fallback = this.findFallbackTarget(next.request.metadata, visitedKeys, circuitLogger);
       circuitLogger?.debug?.("Circuit open; attempting fallback", {
         circuitKey: key,
         currentModel: next.request.metadata?.model,
         fallback,
-        visitedModels: Array.from(visited),
+        visitedKeys: Array.from(visitedKeys),
       });
       if (!fallback || !next.request.createFallbackRequest) {
         next.reject(
@@ -192,6 +213,7 @@ export class TrafficCircuitBreaker {
       state.status = "open";
       state.openedAt = now;
       state.trialInFlight = false;
+      state.nextProbeAt = now + CIRCUIT_PROBE_INTERVAL_MS;
       circuitLogger?.warn?.("Circuit opened", {
         circuitKey: key,
         openReasons,
@@ -234,18 +256,27 @@ export class TrafficCircuitBreaker {
 
     if (state.status === "open") {
       const elapsed = state.openedAt ? now - state.openedAt : 0;
-      if (elapsed >= CIRCUIT_COOLDOWN_MS) {
+      if (state.nextProbeAt === undefined) {
+        state.nextProbeAt = now + CIRCUIT_PROBE_INTERVAL_MS;
+      }
+      const cooldownRemaining = Math.max(0, CIRCUIT_COOLDOWN_MS - elapsed);
+      const probeRemaining = Math.max(0, state.nextProbeAt - now);
+      if (probeRemaining === 0 || cooldownRemaining === 0) {
         state.status = "half-open";
         state.trialInFlight = false;
         state.failureTimestamps = [];
         state.timeoutTimestamps = [];
-        logger?.debug?.("Circuit transitioned to half-open", { circuitKey: key });
+        state.nextProbeAt = undefined;
+        logger?.debug?.("Circuit transitioned to half-open", {
+          circuitKey: key,
+          reason: cooldownRemaining === 0 ? "cooldown" : "probe",
+        });
         return { allowRequest: true, state: "half-open" };
       }
       return {
         allowRequest: false,
         state: "open",
-        retryAfterMs: CIRCUIT_COOLDOWN_MS - elapsed,
+        retryAfterMs: Math.min(cooldownRemaining, probeRemaining),
       };
     }
 
@@ -256,40 +287,65 @@ export class TrafficCircuitBreaker {
     return { allowRequest: true, state: state.status };
   }
 
-  private findFallbackModel(
+  private resolveFallbackPolicy(metadata: TrafficRequestMetadata | undefined): {
+    policy: FallbackPolicy;
+    policyId?: string;
+  } {
+    const policyId =
+      metadata?.fallbackPolicyId ??
+      (metadata?.taskType
+        ? this.fallbackPolicy?.taskTypePolicyIds?.[metadata.taskType]
+        : undefined) ??
+      this.fallbackPolicy?.defaultPolicyId;
+
+    const policy = policyId ? this.fallbackPolicy?.policies?.[policyId] : undefined;
+    return {
+      policy: policy ?? { mode: "fallback" },
+      policyId,
+    };
+  }
+
+  private findFallbackTarget(
     metadata: TrafficRequestMetadata | undefined,
-    visitedModels: Set<string>,
+    visitedKeys: Set<string>,
     logger?: Logger,
-  ): string | undefined {
+  ): FallbackChainEntry | undefined {
     const currentModel = metadata?.model;
     if (!currentModel) {
       logger?.trace?.("No current model; no fallback", {});
       return undefined;
     }
 
-    const chain = this.fallbackChains.get(currentModel);
+    const provider = metadata?.provider;
+    const chain = this.resolveFallbackChain(provider, currentModel);
     if (!chain) {
-      logger?.trace?.("No fallback chain for model", { currentModel });
+      logger?.trace?.("No fallback chain for model", {
+        currentModel,
+        provider,
+      });
       return undefined;
     }
 
-    const provider = metadata?.provider;
     for (const candidate of chain) {
-      if (visitedModels.has(candidate)) {
+      const target = this.normalizeFallbackTarget(candidate, provider);
+      const candidateMetadata: TrafficRequestMetadata = {
+        ...(metadata ?? {}),
+        provider: target.provider ?? provider,
+        model: target.model,
+      };
+      const candidateKey = this.buildRateLimitKey(candidateMetadata);
+      if (visitedKeys.has(candidateKey)) {
         continue;
       }
 
-      const candidateKey = this.buildRateLimitKey({
-        provider,
-        model: candidate,
-      });
-
       const evaluation = this.evaluateCircuitState(candidateKey, logger);
       if (evaluation.allowRequest) {
-        visitedModels.add(candidate);
-        logger?.debug?.("Selected fallback model", {
+        visitedKeys.add(candidateKey);
+        logger?.debug?.("Selected fallback target", {
           currentModel,
-          fallbackModel: candidate,
+          currentProvider: provider,
+          fallbackModel: target.model,
+          fallbackProvider: target.provider ?? provider,
           fallbackCircuitKey: candidateKey,
         });
         return candidate;
@@ -297,6 +353,31 @@ export class TrafficCircuitBreaker {
     }
 
     return undefined;
+  }
+
+  private resolveFallbackChain(
+    provider: string | undefined,
+    model: string,
+  ): FallbackChainEntry[] | undefined {
+    const providerKey = provider ? `${provider}::${model}` : undefined;
+    if (providerKey) {
+      const providerChain = this.fallbackChains.get(providerKey);
+      if (providerChain) return providerChain;
+    }
+    return this.fallbackChains.get(model);
+  }
+
+  private normalizeFallbackTarget(
+    candidate: FallbackChainEntry,
+    provider: string | undefined,
+  ): FallbackTarget {
+    if (typeof candidate === "string") {
+      return { provider, model: candidate };
+    }
+    return {
+      provider: candidate.provider ?? provider,
+      model: candidate.model,
+    };
   }
 
   private isCircuitBreakerStatus(status?: number): boolean {
