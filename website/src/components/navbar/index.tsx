@@ -3,6 +3,7 @@ import { useLocation } from "@docusaurus/router";
 import {
   AcademicCapIcon,
   ArrowPathIcon,
+  ArrowRightIcon,
   BookOpenIcon,
   BriefcaseIcon,
   BuildingLibraryIcon,
@@ -15,7 +16,9 @@ import {
   ComputerDesktopIcon,
   CurrencyDollarIcon,
   DocumentTextIcon,
+  HomeIcon,
   InformationCircleIcon,
+  MagnifyingGlassIcon,
   MegaphoneIcon,
   PencilSquareIcon,
   PuzzlePieceIcon,
@@ -29,7 +32,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { BoltIcon, ChevronDownIcon, StarIcon } from "@heroicons/react/24/solid";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
-import React, { useState } from "react";
+import clsx from "clsx";
+import React, { useCallback, useEffect, useState } from "react";
+import { DiscordLogo } from "../../../static/img/logos/discord";
+import { GitHubLogo } from "../../../static/img/logos/github";
 
 // Santa Claus Icon Component
 const SantaIcon = ({ className }: { className?: string }) => (
@@ -63,11 +69,28 @@ const SantaIcon = ({ className }: { className?: string }) => (
     />
   </svg>
 );
-import { DiscordLogo } from "../../../static/img/logos/discord";
-import { GitHubLogo } from "../../../static/img/logos/github";
 import { useGitHubStars } from "../../contexts/GitHubStarsContext";
 import useCasesData from "../usecases/usecases.json";
 import styles from "./styles.module.css";
+
+// Docs page tab configuration
+const docTabs = [
+  { label: "VoltAgent Docs", href: "/docs/", match: "/docs/" },
+  { label: "Observability", href: "/observability-docs/", match: "/observability-docs/" },
+  {
+    label: "Actions & Triggers",
+    href: "/actions-triggers-docs/",
+    match: "/actions-triggers-docs/",
+  },
+  { label: "Evaluation", href: "/evaluation-docs/", match: "/evaluation-docs/" },
+  {
+    label: "Prompt Engineering",
+    href: "/prompt-engineering-docs/",
+    match: "/prompt-engineering-docs/",
+  },
+  { label: "Deployment", href: "/deployment-docs/", match: "/deployment-docs/" },
+  { label: "Recipes & Guides", href: "/recipes-and-guides/", match: "/recipes-and-guides/" },
+];
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -117,6 +140,122 @@ export default function Navbar() {
     }
   };
 
+  // Check if current page is a docs page
+  const isDocsPage =
+    location.pathname.includes("/docs") ||
+    location.pathname.includes("/observability-docs") ||
+    location.pathname.includes("/evaluation-docs") ||
+    location.pathname.includes("/prompt-engineering-docs") ||
+    location.pathname.includes("/deployment-docs") ||
+    location.pathname.includes("/actions-triggers-docs") ||
+    location.pathname.startsWith("/recipes-and-guides/");
+
+  // Open search modal (Docusaurus search)
+  const openSearch = useCallback(() => {
+    // Trigger Docusaurus search - press Cmd+K or Ctrl+K
+    const event = new KeyboardEvent("keydown", {
+      key: "k",
+      code: "KeyK",
+      metaKey: true,
+      ctrlKey: false,
+      bubbles: true,
+    });
+    document.dispatchEvent(event);
+  }, []);
+
+  // Check if on VoltOps/Observability docs
+  const isVoltOpsDoc = location.pathname.includes("/observability-docs/");
+
+  // Render docs navbar for documentation pages
+  if (isDocsPage) {
+    return (
+      <nav className={styles.docsNavbar}>
+        {/* Top Row: Logo + Search + Version + Actions */}
+        <div className={styles.docsNavbarTop}>
+          <div className={styles.docsLeftSection}>
+            <Link
+              to={isVoltOpsDoc ? "/observability-docs/" : "/docs/"}
+              className={styles.docsLogoLink}
+            >
+              <SantaIcon className={styles.docsLogoIcon} />
+              <span className={styles.docsLogoText}>{isVoltOpsDoc ? "voltops" : "voltagent"}</span>
+              <span className={styles.docsFrameworkText}>
+                {isVoltOpsDoc ? "Observability" : "Framework"}
+              </span>
+              <span className={styles.docsDocsText}>Docs</span>
+            </Link>
+          </div>
+          <div className={styles.docsCenterSection}>
+            {!isVoltOpsDoc && <div className={styles.docsVersionBadge}>v1.0.x</div>}
+            <div className={styles.docsSearchWrapper}>
+              <button
+                type="button"
+                className={styles.docsSearchButton}
+                onClick={openSearch}
+                aria-label="Search"
+              >
+                <MagnifyingGlassIcon className={styles.docsSearchIcon} />
+                <span className={styles.docsSearchText}>Search</span>
+                <span className={styles.docsSearchShortcut}>⌘K</span>
+              </button>
+            </div>
+          </div>
+          <div className={styles.docsRightSection}>
+            <Link
+              to="https://console.voltagent.dev/"
+              className={clsx(styles.docsSocialButton, styles.docsCtaButton)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Try VoltOps"
+            >
+              <span>Try VoltOps</span>
+              <ArrowRightIcon className={styles.docsCtaIcon} />
+            </Link>
+            <Link to="/" className={styles.docsSocialButton} aria-label="Home">
+              <HomeIcon className={styles.docsSocialIconHome} />
+            </Link>
+            <Link
+              to="https://s.voltagent.dev/discord"
+              className={styles.docsSocialButton}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Discord"
+            >
+              <DiscordLogo className={styles.docsSocialIconDiscord} />
+            </Link>
+            <Link
+              to="https://github.com/voltagent/voltagent"
+              className={styles.docsSocialButton}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+            >
+              <GitHubLogo className={styles.docsSocialIconGitHub} />
+            </Link>
+          </div>
+        </div>
+        {/* Bottom Row: Tabs */}
+        <div className={styles.docsNavbarBottom}>
+          <div className={styles.docsTabList} role="tablist" aria-label="Documentation sections">
+            {docTabs.map((tab) => (
+              <Link
+                key={tab.href}
+                to={tab.href}
+                className={clsx(
+                  styles.docsTab,
+                  location.pathname.startsWith(tab.match) && styles.docsTabActive,
+                )}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  // Default navbar for non-docs pages
   return (
     <nav className={styles.navbar}>
       <div className={styles.navbarInner}>

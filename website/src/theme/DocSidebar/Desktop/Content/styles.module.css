@@ -1,175 +1,13 @@
-.contentWrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.sidebarHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 0.875rem 1rem;
-  flex-shrink: 0;
-}
-
-.logoRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  min-height: 24px;
-}
-
-.sidebarLogo {
-  text-decoration: none;
-  display: block;
-  flex: 1;
-  min-width: 0;
-}
-
-.logoContainer {
-  display: flex;
-  align-items: baseline;
-  gap: 0.375rem;
-  flex-wrap: nowrap;
-}
-
-.logoIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.boltIcon {
-  width: 0.75rem;
-  height: 0.75rem;
-  color: #00d992;
-}
-
-.logoText {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #00d992;
-}
-
-.frameworkText {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin-left: 0.25rem;
-  white-space: nowrap;
-}
-
-.docsText {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #10b981;
-  white-space: nowrap;
-}
-
-.versionBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.1875rem 0.375rem;
-  background-color: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 4px;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: #10b981;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-[data-theme='dark'] .versionBadge {
-  background-color: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.4);
-}
-
-.searchRow {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.searchContainer {
-  position: relative;
-  flex: 1;
-}
-
-.searchContainer :global(.DocSearch-Button) {
-  width: 100% !important;
-  height: 32px !important;
-  padding: 0 0.625rem !important;
-  border-radius: 6px !important;
-  background-color: #fafafa !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  font-size: 0.8125rem !important;
-  box-shadow: none !important;
-}
-
-.searchContainer :global(.DocSearch-Button):hover {
-  background-color: rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  box-shadow: none !important;
-}
-
-.searchContainer :global(.DocSearch-Button-Placeholder) {
-  color: #9ca3af !important;
-  font-size: 0.8125rem !important;
-}
-
-.searchContainer :global(.DocSearch-Search-Icon) {
-  color: #9ca3af !important;
-  width: 14px !important;
-  height: 14px !important;
-}
-
-[data-theme='dark'] .searchContainer :global(.DocSearch-Button) {
-  background-color: #aaaaaa0d !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: none !important;
-}
-
-[data-theme='dark'] .searchContainer :global(.DocSearch-Button):hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: none !important;
-}
-
-.searchContainer :global(.DocSearch-Button-Keys) {
-  background-color: rgba(16, 185, 129, 0.1) !important;
-  border: 1px solid rgba(16, 185, 129, 0.3) !important;
-  border-radius: 4px !important;
-  padding: 0.1875rem 0.375rem !important;
-  display: inline-flex !important;
-  align-items: center !important;
-}
-
-.searchContainer :global(.DocSearch-Button-Key) {
-  color: #10b981 !important;
-  font-size: 0.6875rem !important;
-  font-weight: 600 !important;
-}
-
-[data-theme='dark'] .searchContainer :global(.DocSearch-Button-Keys) {
-  background-color: rgba(16, 185, 129, 0.15) !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
-}
-
-[data-theme='dark'] .searchContainer :global(.DocSearch-Button-Key) {
-  color: #10b981 !important;
-}
-
 @media (min-width: 997px) {
-  .menu {
+   .menu {
     flex-grow: 1;
     padding: 0 1rem 1rem 1rem;
     overflow-y: auto;
+    height: 100%;
   }
   @supports (scrollbar-gutter: stable) {
     .menu {
-      padding: 0 1rem 1rem 1rem;
+            padding: 0 1rem 1rem 1rem;
       scrollbar-gutter: stable;
     }
   }
@@ -179,9 +17,7 @@
   }
 }
 
-/* Hide sidebar header on mobile */
-@media (max-width: 996px) {
-  .sidebarHeader {
-    display: none !important;
-  }
+/* Add top padding to sidebar menu list */
+:global(.theme-doc-sidebar-menu.menu__list) {
+  padding-top: 0.5rem;
 }

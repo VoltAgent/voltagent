@@ -49,16 +49,7 @@ export default function TOC({ toc, ...props }) {
   }));
 
   return (
-    <div
-      className={clsx(
-        "toc-wrapper",
-        "overflow-y-auto",
-        "overflow-x-hidden",
-        "max-h-[calc(100vh-var(--ifm-navbar-height)-2rem)]",
-        "sticky",
-        "top-20",
-      )}
-    >
+    <div className={clsx("toc-wrapper", "overflow-x-hidden", "sticky", "top-[100px]")}>
       <div className="flex items-center  gap-2">
         <ListBulletIcon className="w-4 h-4 text-[#94bfaebf]" />
         <h3 className="text-sm text-left font-semibold text-gray-900 dark:text-gray-100 m-0">

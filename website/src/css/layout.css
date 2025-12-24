@@ -204,6 +204,11 @@ div[class^="announcementBar_"] button {
     /*  border-right: none !important; */
     margin-top: 0 !important;
     margin-left: 0;
+    position: sticky;
+    top: 100px;
+    height: calc(100vh - 100px);
+    align-self: flex-start;
+    overflow: hidden;
   }
 
   /* Target docSidebarContainer by attribute selector */

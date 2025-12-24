@@ -5334,9 +5334,9 @@ nav.table-of-contents .table-of-contents__link--active,
 /* Table of Contents additional styles */
 .tableOfContents {
   position: sticky;
-  top: calc(var(--ifm-navbar-height) + 1rem);
-  max-height: calc(100vh - var(--ifm-navbar-height) - 2rem);
-  overflow-y: auto;
+  top: 100px;
+  max-height: none;
+  overflow: visible;
   padding-left: 0;
   padding-right: 0;
   padding-bottom: 1rem;

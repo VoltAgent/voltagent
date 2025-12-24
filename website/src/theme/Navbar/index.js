@@ -18,12 +18,11 @@ export default function Navbar() {
 
   const isMobile = windowSize === "mobile";
 
-  if (isDocsPage) {
-    if (isMobile) {
-      return <DocNavbar />;
-    }
-    return null;
+  // Mobile docs pages: show DocNavbar
+  if (isDocsPage && isMobile) {
+    return <DocNavbar />;
   }
 
+  // All other cases (including desktop docs): show CustomNavbar
   return <CustomNavbar />;
 }
