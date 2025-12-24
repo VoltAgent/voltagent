@@ -273,7 +273,6 @@ export function SupervisorAgent() {
               <div className="flex w-[45%] flex-col gap-6">
                 {/* Feature 1 - Centralized Coordination */}
                 <div className="relative h-full">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "centralized"
@@ -301,7 +300,6 @@ export function SupervisorAgent() {
 
                 {/* Feature 2 - Specialized Agent Roles */}
                 <div className="relative h-full">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "specialized"
@@ -362,7 +360,6 @@ export function SupervisorAgent() {
 
                 {/* Feature 4 - Dynamic Agent Selection */}
                 <div className="relative h-full">
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "dynamic"

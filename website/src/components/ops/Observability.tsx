@@ -683,7 +683,6 @@ const TabItem = ({
   onClick: () => void;
 }) => {
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: ignore
     <div
       className={`flex flex-col items-center px-3 pt-2 cursor-pointer transition-all duration-300 ease-in-out  min-w-[80px] ${
         isActive ? "  " : "border-transparent text-gray-300 hover:text-gray-200 "
