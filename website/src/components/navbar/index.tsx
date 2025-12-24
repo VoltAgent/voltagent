@@ -75,7 +75,7 @@ import styles from "./styles.module.css";
 
 // Docs page tab configuration
 const docTabs = [
-  { label: "VoltAgent Docs", href: "/docs/", match: "/docs/" },
+  { label: "VoltAgent", href: "/docs/", match: "/docs/" },
   { label: "Observability", href: "/observability-docs/", match: "/observability-docs/" },
   {
     label: "Actions & Triggers",
@@ -163,9 +163,6 @@ export default function Navbar() {
     document.dispatchEvent(event);
   }, []);
 
-  // Check if on VoltOps/Observability docs
-  const isVoltOpsDoc = location.pathname.includes("/observability-docs/");
-
   // Render docs navbar for documentation pages
   if (isDocsPage) {
     return (
@@ -173,20 +170,14 @@ export default function Navbar() {
         {/* Top Row: Logo + Search + Version + Actions */}
         <div className={styles.docsNavbarTop}>
           <div className={styles.docsLeftSection}>
-            <Link
-              to={isVoltOpsDoc ? "/observability-docs/" : "/docs/"}
-              className={styles.docsLogoLink}
-            >
+            <Link to="/docs/" className={styles.docsLogoLink}>
               <SantaIcon className={styles.docsLogoIcon} />
-              <span className={styles.docsLogoText}>{isVoltOpsDoc ? "voltops" : "voltagent"}</span>
-              <span className={styles.docsFrameworkText}>
-                {isVoltOpsDoc ? "Observability" : "Framework"}
-              </span>
+              <span className={styles.docsLogoText}>voltagent</span>
               <span className={styles.docsDocsText}>Docs</span>
             </Link>
           </div>
           <div className={styles.docsCenterSection}>
-            {!isVoltOpsDoc && <div className={styles.docsVersionBadge}>v1.0.x</div>}
+            <div className={styles.docsVersionBadge}>v1.0.x</div>
             <div className={styles.docsSearchWrapper}>
               <button
                 type="button"
