@@ -344,7 +344,7 @@
   display: flex;
   align-items: center;
   padding: 0 1.5rem;
-  min-height: 48px;
+  min-height: 42px;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -408,6 +408,19 @@
   min-width: 240px;
   max-width: 280px;
   width: 100%;
+  position: relative;
+}
+
+.docsSearchHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .docsSearchButton {
@@ -602,15 +615,19 @@
   font-size: 0.88rem;
   font-weight: 500;
   color: #b2b2b2;
-  padding: 0.7rem 0rem;
+  padding: 0.5rem 0rem;
   letter-spacing: 0.005em;
   transition: color 0.15s ease;
   white-space: nowrap;
 }
 
 .docsTab:hover {
-  color: rgba(16, 185, 129, 0.85);
+  color: #b2b2b2;
   text-decoration: none;
+}
+
+.docsTab:hover::after {
+  background: rgba(75, 85, 99, 0.5);
 }
 
 .docsTab::after {
@@ -629,6 +646,14 @@
   color: #f2f2f2;
 }
 
+.docsTabActive:hover {
+  color: #f2f2f2;
+}
+
+.docsTabActive:hover::after {
+  background: #10b981;
+}
+
 .docsTabActive::after {
   background: #10b981;
 }
@@ -638,11 +663,23 @@
 }
 
 [data-theme='light'] .docsTab:hover {
-  color: #0f766e;
+  color: rgba(15, 23, 42, 0.6);
+}
+
+[data-theme='light'] .docsTab:hover::after {
+  background: rgba(75, 85, 99, 0.3);
 }
 
 [data-theme='light'] .docsTabActive {
   color: #059669;
+}
+
+[data-theme='light'] .docsTabActive:hover {
+  color: #059669;
+}
+
+[data-theme='light'] .docsTabActive:hover::after {
+  background: #10b981;
 }
 
 @media (max-width: 1024px) {

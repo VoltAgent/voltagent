@@ -210,17 +210,7 @@
           "expanded_url": "https://voltagent.dev/docs/agents/memory/overview/"
         }
       ],
-      "user_mentions": [
-        {
-          "indices": [
-            0,
-            9
-          ],
-          "id_str": "19107253",
-          "name": "Tom Siwik",
-          "screen_name": "tomsiwik"
-        }
-      ],
+      "user_mentions": [],
       "symbols": [],
       "media": []
     },

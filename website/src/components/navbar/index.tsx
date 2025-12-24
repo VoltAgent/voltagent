@@ -32,8 +32,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { BoltIcon, ChevronDownIcon, StarIcon } from "@heroicons/react/24/solid";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
+import SearchBar from "@theme/SearchBar";
 import clsx from "clsx";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { DiscordLogo } from "../../../static/img/logos/discord";
 import { GitHubLogo } from "../../../static/img/logos/github";
 
@@ -150,19 +151,6 @@ export default function Navbar() {
     location.pathname.includes("/actions-triggers-docs") ||
     location.pathname.startsWith("/recipes-and-guides/");
 
-  // Open search modal (Docusaurus search)
-  const openSearch = useCallback(() => {
-    // Trigger Docusaurus search - press Cmd+K or Ctrl+K
-    const event = new KeyboardEvent("keydown", {
-      key: "k",
-      code: "KeyK",
-      metaKey: true,
-      ctrlKey: false,
-      bubbles: true,
-    });
-    document.dispatchEvent(event);
-  }, []);
-
   // Render docs navbar for documentation pages
   if (isDocsPage) {
     return (
@@ -179,10 +167,22 @@ export default function Navbar() {
           <div className={styles.docsCenterSection}>
             <div className={styles.docsVersionBadge}>v1.0.x</div>
             <div className={styles.docsSearchWrapper}>
+              {/* Hidden SearchBar - triggers on button click */}
+              <div className={styles.docsSearchHidden}>
+                <SearchBar />
+              </div>
               <button
                 type="button"
                 className={styles.docsSearchButton}
-                onClick={openSearch}
+                onClick={() => {
+                  // Click the hidden DocSearch button
+                  const searchButton = document.querySelector(
+                    ".DocSearch-Button",
+                  ) as HTMLButtonElement;
+                  if (searchButton) {
+                    searchButton.click();
+                  }
+                }}
                 aria-label="Search"
               >
                 <MagnifyingGlassIcon className={styles.docsSearchIcon} />

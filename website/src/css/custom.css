@@ -945,7 +945,7 @@ footer .hoverLink:hover {
 
 @media (min-width: 1024px) {
   :root .DocSearch-Modal {
-    margin-top: 40px !important;
+    margin-top: 85px !important;
   }
 }
 
@@ -5499,7 +5499,7 @@ nav.table-of-contents .table-of-contents__link--active,
 
 .DocSearch-Modal {
   box-shadow: none !important;
-  margin-top: 40px !important;
+  margin-top: 85px !important;
   padding: 0 5px;
 }
 
