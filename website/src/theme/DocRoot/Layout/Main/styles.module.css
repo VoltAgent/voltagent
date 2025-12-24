@@ -11,7 +11,7 @@
 .docItemWrapper {
   position: relative;
   width: 100%;
-  padding: 0 var(--docs-content-horizontal-padding, 3.6rem) 2rem;
+  padding: 1.5rem var(--docs-content-horizontal-padding, 3.6rem) 2rem;
 }
 
 .docItemWrapperEnhanced {
@@ -30,7 +30,7 @@
 @media (max-width: 1160px) {
   .docItemWrapper {
     max-width: 100%;
-    padding: 0 var(--docs-content-horizontal-padding-mobile, 1.5rem) 2rem;
+    padding: 1.5rem var(--docs-content-horizontal-padding-mobile, 1.5rem) 2rem;
   }
 }
 
@@ -41,7 +41,7 @@
   }
 
   .docItemWrapper {
-    padding: 0 1.25rem 1.5rem;
+    padding: 1.25rem 1.25rem 1.5rem;
   }
 }
 

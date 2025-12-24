@@ -4737,6 +4737,8 @@ code .token.coord {
   color: #ffffff !important;
 }
 
+
+
 [data-theme="dark"] .menu__list-item-collapsible .menu__link::before {
   color: rgb(16, 185, 129) !important;
 }
@@ -5339,6 +5341,7 @@ nav.table-of-contents .table-of-contents__link--active,
   overflow: visible;
   padding-left: 0;
   padding-right: 0;
+  padding-top: 1.5rem;
   padding-bottom: 1rem;
   width: 100%;
   max-width: 300px;
@@ -5411,6 +5414,29 @@ nav.table-of-contents .table-of-contents__link--active,
 .theme-doc-sidebar-item-link-level-1 > .menu__link {
   padding-left: 0.75rem !important; /* Ensure consistent left padding for first level items */
   font-weight: 500 !important;
+}
+
+/* Level 1 link items (Evals, Triggers, Actions, etc.) - same style as category headers */
+.theme-doc-sidebar-item-link-level-1 > .menu__link {
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .theme-doc-sidebar-item-link-level-1 > .menu__link {
+  color: #ffffff !important;
+}
+
+.theme-doc-sidebar-item-link-level-1 > .menu__link--active {
+  color: #ffffff !important;
+  border-left: 2px solid rgb(16, 185, 129) !important;
+}
+
+[data-theme="dark"] .theme-doc-sidebar-item-link-level-1 > .menu__link--active {
+  color: #ffffff !important;
+  border-left: 2px solid rgb(16, 185, 129) !important;
 }
 
 /* Custom Search Bar Styling */
@@ -5569,6 +5595,30 @@ nav.table-of-contents .table-of-contents__link--active,
   opacity: 0.6 !important;
   transition: transform 0.2s ease !important;
   display: inline-flex !important;
+}
+
+.menu__caret svg {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+/* Caret ::before pseudo-element - consistent icon size */
+.menu__caret::before {
+  background-size: 2rem 2rem !important;
+  width: 2rem !important;
+  height: 2rem !important;
+}
+
+/* Nested menu caret - same size as parent */
+.menu__list .menu__list .menu__caret svg {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.menu__list .menu__list .menu__caret::before {
+  background-size: 1.5rem 1.5rem !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
 }
 
 .menu__list-item-collapsible .menu__caret {
