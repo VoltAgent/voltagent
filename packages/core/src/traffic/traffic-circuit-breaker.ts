@@ -110,19 +110,56 @@ export class TrafficCircuitBreaker {
         return { kind: "skip" };
       }
 
-      next.request = fallbackRequest;
-      next.attempt = 1;
-      next.tenantConcurrencyKey = undefined;
-      next.providerModelConcurrencyKey = undefined;
-      next.rateLimitKey = undefined;
-      next.etaMs = undefined;
-      next.circuitKey = undefined;
-      next.circuitStatus = undefined;
-      circuitLogger?.debug?.("Switched to fallback request", {
+      this.applyFallbackRequest(next, fallbackRequest, fallback, circuitLogger, {
         previousCircuitKey: key,
-        fallbackModel: fallback,
+        reason: "circuit-open",
       });
     }
+  }
+
+  tryFallback(next: QueuedRequest, reason: "queue-timeout", logger?: Logger): boolean {
+    const circuitLogger = logger?.child({ module: "circuit-breaker" });
+    const { policy, policyId } = this.resolveFallbackPolicy(next.request.metadata);
+    if (policy.mode === "wait") {
+      circuitLogger?.debug?.("Fallback skipped by policy", {
+        policyId,
+        reason,
+        provider: next.request.metadata?.provider,
+        model: next.request.metadata?.model,
+      });
+      return false;
+    }
+
+    const visitedKeys = new Set<string>();
+    const key = this.buildRateLimitKey(next.request.metadata);
+    visitedKeys.add(key);
+
+    const fallback = this.findFallbackTarget(next.request.metadata, visitedKeys, circuitLogger);
+    if (!fallback || !next.request.createFallbackRequest) {
+      circuitLogger?.debug?.("Fallback unavailable for request", {
+        reason,
+        provider: next.request.metadata?.provider,
+        model: next.request.metadata?.model,
+        fallback,
+      });
+      return false;
+    }
+
+    const fallbackRequest = next.request.createFallbackRequest(fallback);
+    if (!fallbackRequest) {
+      circuitLogger?.warn?.("createFallbackRequest returned undefined; skipping", {
+        reason,
+        fallback,
+      });
+      return false;
+    }
+
+    this.applyFallbackRequest(next, fallbackRequest, fallback, circuitLogger, {
+      previousCircuitKey: key,
+      reason,
+      policyId,
+    });
+    return true;
   }
 
   markTrial(item: QueuedRequest, logger?: Logger): void {
@@ -303,6 +340,29 @@ export class TrafficCircuitBreaker {
       policy: policy ?? { mode: "fallback" },
       policyId,
     };
+  }
+
+  private applyFallbackRequest<TResponse>(
+    next: QueuedRequest<TResponse>,
+    fallbackRequest: QueuedRequest<TResponse>["request"],
+    fallback: FallbackChainEntry,
+    logger?: Logger,
+    context?: { previousCircuitKey?: string; reason?: string; policyId?: string },
+  ): void {
+    next.request = fallbackRequest;
+    next.attempt = 1;
+    next.tenantConcurrencyKey = undefined;
+    next.providerModelConcurrencyKey = undefined;
+    next.rateLimitKey = undefined;
+    next.etaMs = undefined;
+    next.circuitKey = undefined;
+    next.circuitStatus = undefined;
+    logger?.debug?.("Switched to fallback request", {
+      previousCircuitKey: context?.previousCircuitKey,
+      fallbackModel: fallback,
+      reason: context?.reason,
+      policyId: context?.policyId,
+    });
   }
 
   private findFallbackTarget(

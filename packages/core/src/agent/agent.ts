@@ -278,6 +278,10 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
    */
   trafficPriority?: TrafficPriority;
   /**
+   * Optional maximum time to wait in the queue before timing out.
+   */
+  maxQueueWaitMs?: number;
+  /**
    * Optional task classification for circuit-breaker fallback policies.
    */
   taskType?: string;
@@ -482,6 +486,7 @@ export class Agent {
       return {
         tenantId,
         metadata,
+        maxQueueWaitMs: options?.maxQueueWaitMs,
         execute: () => this.executeGenerateText(input, mergedOptions, metadata), // Defer actual execution so controller can schedule it
         extractUsage: (result: GenerateTextResultWithContext) =>
           this.extractUsageFromResponse(result),
@@ -600,6 +605,7 @@ export class Agent {
           hooks,
           maxSteps: userMaxSteps,
           tools: userTools,
+          maxQueueWaitMs,
           taskType,
           fallbackPolicyId,
           experimental_output,
@@ -608,6 +614,7 @@ export class Agent {
           ...aiSDKOptions
         } = options || {};
         void _model;
+        void maxQueueWaitMs;
         void taskType;
         void fallbackPolicyId;
 
@@ -859,6 +866,7 @@ export class Agent {
       return {
         tenantId,
         metadata,
+        maxQueueWaitMs: options?.maxQueueWaitMs,
         execute: () => this.executeStreamText(input, mergedOptions, metadata), // Actual streaming work happens after the controller dequeues us
         extractUsage: (result: StreamTextResultWithContext) =>
           this.extractUsageFromResponse(result),
@@ -974,6 +982,7 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
+          maxQueueWaitMs,
           taskType,
           fallbackPolicyId,
           experimental_output,
@@ -982,6 +991,7 @@ export class Agent {
           ...aiSDKOptions
         } = options || {};
         void _model;
+        void maxQueueWaitMs;
         void taskType;
         void fallbackPolicyId;
 
@@ -1573,6 +1583,7 @@ export class Agent {
       return {
         tenantId,
         metadata,
+        maxQueueWaitMs: options?.maxQueueWaitMs,
         execute: () => this.executeGenerateObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
@@ -1676,6 +1687,7 @@ export class Agent {
           tools: userTools,
           taskType,
           fallbackPolicyId,
+          maxQueueWaitMs,
           providerOptions,
           model: _model, // Exclude model so spread does not override resolved model
           ...aiSDKOptions
@@ -1683,6 +1695,7 @@ export class Agent {
         void _model;
         void taskType;
         void fallbackPolicyId;
+        void maxQueueWaitMs;
 
         methodLogger.info("[AI SDK] Calling generateObject", {
           messageCount: messages.length,
@@ -1851,6 +1864,7 @@ export class Agent {
       return {
         tenantId,
         metadata,
+        maxQueueWaitMs: options?.maxQueueWaitMs,
         execute: () => this.executeStreamObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
@@ -1956,6 +1970,7 @@ export class Agent {
           onFinish: userOnFinish,
           taskType,
           fallbackPolicyId,
+          maxQueueWaitMs,
           providerOptions,
           model: _model, // Exclude model so aiSDKOptions cannot override resolved model
           ...aiSDKOptions
@@ -1963,6 +1978,7 @@ export class Agent {
         void _model;
         void taskType;
         void fallbackPolicyId;
+        void maxQueueWaitMs;
 
         let guardrailObjectPromise!: Promise<z.infer<T>>;
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;

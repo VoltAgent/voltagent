@@ -85,6 +85,7 @@ export interface TrafficRequest<TResponse> {
   metadata?: TrafficRequestMetadata;
   execute: () => Promise<TResponse>;
   deadlineAt?: number;
+  maxQueueWaitMs?: number;
   createFallbackRequest?: BivariantFunction<
     [target: FallbackChainEntry],
     TrafficRequest<TResponse> | undefined
