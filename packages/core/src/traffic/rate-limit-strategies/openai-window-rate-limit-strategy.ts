@@ -42,33 +42,31 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     if (this.requestsPerMinute !== undefined) {
       const requestDecision = this.resolveRequestWindow(next, logger);
       if (requestDecision) return requestDecision;
-      const tokenDecision = this.resolveTokenWindow(logger);
-      if (tokenDecision) return tokenDecision;
-      return null;
+    } else {
+      const decision = this.window.resolve(next, logger);
+      if (decision) return decision;
+
+      if (!next.rateLimitKey && this.tokensPerMinute === undefined) {
+        const rateLimitLogger = logger?.child({ module: "rate-limiter" });
+        if (this.bootstrapReserved >= 1) {
+          rateLimitLogger?.debug?.("OpenAI rate limit bootstrap active; waiting", {
+            rateLimitKey: this.key,
+            bootstrapReserved: this.bootstrapReserved,
+          });
+          return { kind: "wait" };
+        }
+
+        this.bootstrapReserved += 1;
+        next.rateLimitKey = this.key;
+        rateLimitLogger?.debug?.("OpenAI rate limit bootstrap reserved", {
+          rateLimitKey: this.key,
+          bootstrapReserved: this.bootstrapReserved,
+        });
+      }
     }
 
-    const decision = this.window.resolve(next, logger);
-    if (decision) return decision;
-
-    if (next.rateLimitKey) {
-      return null;
-    }
-
-    const rateLimitLogger = logger?.child({ module: "rate-limiter" });
-    if (this.bootstrapReserved >= 1) {
-      rateLimitLogger?.debug?.("OpenAI rate limit bootstrap active; waiting", {
-        rateLimitKey: this.key,
-        bootstrapReserved: this.bootstrapReserved,
-      });
-      return { kind: "wait" };
-    }
-
-    this.bootstrapReserved += 1;
-    next.rateLimitKey = this.key;
-    rateLimitLogger?.debug?.("OpenAI rate limit bootstrap reserved", {
-      rateLimitKey: this.key,
-      bootstrapReserved: this.bootstrapReserved,
-    });
+    const tokenDecision = this.resolveTokenWindow(logger);
+    if (tokenDecision) return tokenDecision;
     return null;
   }
 

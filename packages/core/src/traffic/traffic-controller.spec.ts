@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CIRCUIT_FAILURE_THRESHOLD } from "./traffic-constants";
+import { CIRCUIT_FAILURE_THRESHOLD, RATE_LIMIT_PROBE_DELAY_MS } from "./traffic-constants";
 import { TrafficController } from "./traffic-controller";
 
 describe("TrafficController priority scheduling", () => {
@@ -266,6 +266,59 @@ describe("TrafficController rate limit headers", () => {
       await vi.runAllTimersAsync();
       await p0;
       expect(order).toEqual(["P0"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("TrafficController token limits", () => {
+  it("blocks OpenAI when the token window is exhausted even without RPM config", async () => {
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(new Date(0));
+      const controller = new TrafficController({
+        maxConcurrent: 1,
+        rateLimits: {
+          "openai::gpt-4o": {
+            requestsPerMinute: 0,
+            tokensPerMinute: 2,
+          },
+        },
+      });
+      const order: string[] = [];
+
+      const first = controller.handleText({
+        tenantId: "tenant-a",
+        metadata: { provider: "openai", model: "gpt-4o", priority: "P1" },
+        execute: async () => {
+          order.push("first");
+          return "first";
+        },
+        extractUsage: () => ({ totalTokens: 2 }),
+      });
+
+      const second = controller.handleText({
+        tenantId: "tenant-b",
+        metadata: { provider: "openai", model: "gpt-4o", priority: "P1" },
+        execute: async () => {
+          order.push("second");
+          return "second";
+        },
+        extractUsage: () => ({ totalTokens: 1 }),
+      });
+
+      await first;
+      expect(order).toEqual(["first"]);
+
+      await vi.advanceTimersByTimeAsync(60_000 + RATE_LIMIT_PROBE_DELAY_MS - 1);
+      expect(order).toEqual(["first"]);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.runAllTimersAsync();
+      await second;
+      expect(order).toEqual(["first", "second"]);
     } finally {
       vi.useRealTimers();
     }
