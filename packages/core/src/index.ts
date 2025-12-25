@@ -45,6 +45,7 @@ export {
   type RateLimitKey,
   type RateLimitOptions,
   type AdaptiveLimiterConfig,
+  type PriorityWeights,
   type PriorityBurstLimits,
   type TrafficRequest,
   type TrafficRequestMetadata,

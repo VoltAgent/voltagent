@@ -68,7 +68,12 @@ export type FallbackTarget = {
   model: string;
 };
 
-export type FallbackChainEntry = string | FallbackTarget;
+export type ShortResponseFallbackTarget = {
+  kind: "short-response";
+  text: string;
+};
+
+export type FallbackChainEntry = string | FallbackTarget | ShortResponseFallbackTarget;
 
 export type FallbackPolicyMode = "fallback" | "wait";
 
@@ -93,6 +98,7 @@ export type TenantConcurrencyLimit =
   | ((tenantId: string, metadata: TrafficRequestMetadata | undefined) => number | undefined);
 
 export type PriorityBurstLimits = Partial<Record<TrafficPriority, number>>;
+export type PriorityWeights = Partial<Record<TrafficPriority, number>>;
 
 export type AdaptiveLimiterConfig = {
   windowMs?: number;
@@ -126,6 +132,7 @@ export interface TrafficControllerOptions {
   maxConcurrentPerTenant?: TenantConcurrencyLimit;
   rateLimits?: RateLimitConfig;
   priorityBurstLimits?: PriorityBurstLimits;
+  priorityWeights?: PriorityWeights;
   adaptiveLimiter?: AdaptiveLimiterConfig;
   /**
    * Optional override for rate-limit key construction.

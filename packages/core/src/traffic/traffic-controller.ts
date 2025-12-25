@@ -24,6 +24,7 @@ import type {
   FallbackPolicyMode,
   FallbackTarget,
   PriorityBurstLimits,
+  PriorityWeights,
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
@@ -55,6 +56,7 @@ export type {
   FallbackPolicyMode,
   FallbackTarget,
   PriorityBurstLimits,
+  PriorityWeights,
   ProviderModelConcurrencyLimit,
   RateLimitConfig,
   RateLimitKey,
@@ -95,7 +97,7 @@ type AdaptiveLimiterState = {
   last429At?: number;
 };
 
-const DEFAULT_PRIORITY_BURST_LIMITS: Record<TrafficPriority, number> = {
+const DEFAULT_PRIORITY_WEIGHTS: Record<TrafficPriority, number> = {
   P0: 5,
   P1: 3,
   P2: 2,
@@ -128,12 +130,8 @@ export class TrafficController {
     P2: { order: [], index: 0, queues: new Map() },
   };
   private readonly priorityOrder: TrafficPriority[] = ["P0", "P1", "P2"];
-  private readonly priorityBurstLimits: Record<TrafficPriority, number>;
-  private readonly priorityBurstCounts: Record<TrafficPriority, number> = {
-    P0: 0,
-    P1: 0,
-    P2: 0,
-  };
+  private readonly priorityWeights: Record<TrafficPriority, number>;
+  private readonly priorityCredits: Record<TrafficPriority, number>;
 
   private activeCount = 0;
   private drainScheduled = false;
@@ -159,10 +157,17 @@ export class TrafficController {
     this.scheduler = this.createScheduler();
     this.rateLimitKeyBuilder = options.rateLimitKeyBuilder ?? buildRateLimitKeyFromMetadata;
     this.retryPolicy = options.retryPolicy;
-    this.priorityBurstLimits = {
-      ...DEFAULT_PRIORITY_BURST_LIMITS,
-      ...(options.priorityBurstLimits ?? {}),
+    const priorityOverrides = options.priorityWeights ?? options.priorityBurstLimits;
+    const priorityWeights = {
+      ...DEFAULT_PRIORITY_WEIGHTS,
+      ...(priorityOverrides ?? {}),
     };
+    this.priorityWeights = {
+      P0: Math.max(0, Math.floor(priorityWeights.P0)),
+      P1: Math.max(0, Math.floor(priorityWeights.P1)),
+      P2: Math.max(0, Math.floor(priorityWeights.P2)),
+    };
+    this.priorityCredits = { ...this.priorityWeights };
     this.adaptiveLimiterConfig = {
       ...DEFAULT_ADAPTIVE_LIMITER,
       ...(options.adaptiveLimiter ?? {}),
@@ -203,6 +208,7 @@ export class TrafficController {
       hasStrategyOverrides: options.rateLimitStrategy !== undefined,
       hasRetryPolicy: options.retryPolicy !== undefined,
       hasPriorityBurstLimits: options.priorityBurstLimits !== undefined,
+      hasPriorityWeights: options.priorityWeights !== undefined,
       hasAdaptiveLimiter: options.adaptiveLimiter !== undefined,
     });
   }
@@ -957,35 +963,31 @@ export class TrafficController {
     return total;
   }
 
-  private hasQueuedWorkBelow(priority: TrafficPriority): boolean {
-    const index = this.priorityOrder.indexOf(priority);
-    if (index < 0) return false;
-    for (let i = index + 1; i < this.priorityOrder.length; i += 1) {
-      if (this.getQueuedCount(this.priorityOrder[i]) > 0) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private canDispatchPriority(priority: TrafficPriority): boolean {
-    const limit = this.priorityBurstLimits[priority];
-    if (!Number.isFinite(limit) || limit <= 0) return true;
-    if (this.priorityBurstCounts[priority] < limit) return true;
-    return !this.hasQueuedWorkBelow(priority);
+  private refillPriorityCredits(): void {
+    this.priorityCredits.P0 = this.priorityWeights.P0;
+    this.priorityCredits.P1 = this.priorityWeights.P1;
+    this.priorityCredits.P2 = this.priorityWeights.P2;
   }
 
   private recordPriorityDispatch(priority: TrafficPriority): void {
-    for (const key of this.priorityOrder) {
-      if (key !== priority) {
-        this.priorityBurstCounts[key] = 0;
-      }
+    if (this.priorityCredits[priority] > 0) {
+      this.priorityCredits[priority] -= 1;
     }
-    this.priorityBurstCounts[priority] += 1;
   }
 
   private getPriorityDispatchOrder(): TrafficPriority[] {
-    return this.priorityOrder.filter((priority) => this.canDispatchPriority(priority));
+    const prioritiesWithWork = this.priorityOrder.filter(
+      (priority) => this.getQueuedCount(priority) > 0,
+    );
+    if (prioritiesWithWork.length === 0) return [];
+
+    let available = prioritiesWithWork.filter((priority) => this.priorityCredits[priority] > 0);
+    if (available.length === 0) {
+      this.refillPriorityCredits();
+      available = prioritiesWithWork.filter((priority) => this.priorityCredits[priority] > 0);
+    }
+
+    return available.length === 0 ? prioritiesWithWork : available;
   }
 
   private getNextTenantCandidate(
