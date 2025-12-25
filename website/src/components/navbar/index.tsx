@@ -10,6 +10,7 @@ import {
   ChartBarIcon,
   ChatBubbleBottomCenterTextIcon,
   ChatBubbleLeftRightIcon,
+  CircleStackIcon,
   CloudArrowUpIcon,
   CogIcon,
   CommandLineIcon,
@@ -329,6 +330,19 @@ export default function Navbar() {
                           </span>
                           <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
                             Deploy AI agents to production
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link to="/voltops/rag" className="no-underline">
+                      <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
+                        <CircleStackIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                            RAG
+                          </span>
+                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                            Retrieval Augmented Generation
                           </span>
                         </div>
                       </div>
@@ -675,6 +689,14 @@ export default function Navbar() {
                   <CloudArrowUpIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
                   <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
                     Deployment
+                  </span>
+                </div>
+              </Link>
+              <Link to="/voltops/rag" className="no-underline">
+                <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
+                  <CircleStackIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                    RAG
                   </span>
                 </div>
               </Link>
