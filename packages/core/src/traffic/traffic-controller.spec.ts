@@ -326,6 +326,60 @@ describe("TrafficController token limits", () => {
 });
 
 describe("TrafficController stream reporting", () => {
+  it("slows down after stream 429 errors", async () => {
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(new Date(0));
+      const controller = new TrafficController({
+        maxConcurrent: 1,
+        adaptiveLimiter: {
+          windowMs: 1_000,
+          threshold: 1,
+          minPenaltyMs: 10,
+          maxPenaltyMs: 10,
+          penaltyMultiplier: 1,
+          decayMs: 1_000,
+        },
+      });
+      const metadata = {
+        provider: "p",
+        model: "m",
+        priority: "P1" as const,
+        tenantId: "tenant-a",
+      };
+
+      controller.reportStreamFailure(
+        metadata,
+        Object.assign(new Error("rate limit"), { status: 429 }),
+      );
+
+      const order: string[] = [];
+      const request = controller.handleText({
+        tenantId: "tenant-a",
+        metadata,
+        execute: async () => {
+          order.push("run");
+          return "ok";
+        },
+      });
+
+      await Promise.resolve();
+      expect(order).toEqual([]);
+
+      await vi.advanceTimersByTimeAsync(9);
+      await Promise.resolve();
+      expect(order).toEqual([]);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.runAllTimersAsync();
+      await request;
+      expect(order).toEqual(["run"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("treats post-start stream failures as circuit breaker failures", async () => {
     const controller = new TrafficController({
       maxConcurrent: 1,

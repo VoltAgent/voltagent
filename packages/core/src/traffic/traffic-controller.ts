@@ -250,6 +250,16 @@ export class TrafficController {
   }
 
   reportStreamFailure(metadata: TrafficRequestMetadata | undefined, error: unknown): void {
+    const rateLimitKey = this.buildRateLimitKey(metadata);
+    const normalizedRateLimitError = normalizeRateLimitError({
+      error,
+      metadata,
+      tenantId: metadata?.tenantId,
+      key: rateLimitKey,
+      logger: this.trafficLogger,
+    });
+    const errorForHandling = normalizedRateLimitError ?? error;
+
     this.controllerLogger.warn("Stream reported failure", {
       provider: metadata?.provider,
       model: metadata?.model,
@@ -260,20 +270,25 @@ export class TrafficController {
       status: (error as { status?: unknown } | null)?.status,
       statusCode: (error as { statusCode?: unknown } | null)?.statusCode,
     });
-    this.circuitBreaker.recordFailure(metadata, error, this.trafficLogger);
-    const rateLimitKey = this.buildRateLimitKey(metadata);
+    this.circuitBreaker.recordFailure(metadata, errorForHandling, this.trafficLogger);
     const adaptiveKey = this.buildAdaptiveKey(
       metadata,
       metadata?.tenantId ?? "default",
       rateLimitKey,
     );
-    if (error instanceof RateLimitedUpstreamError) {
-      this.recordAdaptiveRateLimitHit(adaptiveKey, error.retryAfterMs);
+    if (errorForHandling instanceof RateLimitedUpstreamError) {
+      this.recordAdaptiveRateLimitHit(adaptiveKey, errorForHandling.retryAfterMs);
     }
-    this.attachTrafficMetadata(
-      error,
-      this.buildTrafficResponseMetadataFromMetadata(metadata, rateLimitKey, Date.now(), error),
+    const traffic = this.buildTrafficResponseMetadataFromMetadata(
+      metadata,
+      rateLimitKey,
+      Date.now(),
+      errorForHandling,
     );
+    this.attachTrafficMetadata(errorForHandling, traffic);
+    if (errorForHandling !== error) {
+      this.attachTrafficMetadata(error, traffic);
+    }
   }
 
   updateRateLimitFromHeaders(
