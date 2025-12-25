@@ -188,7 +188,7 @@ export class TrafficController {
       buildRateLimitKey: (metadata) => this.buildRateLimitKey(metadata),
     });
     this.concurrencyLimiter = new TrafficConcurrencyLimiter({
-      buildProviderModelKey: (metadata) => this.buildRateLimitKey(metadata),
+      buildProviderModelKey: (metadata) => buildProviderModelKeyFromMetadata(metadata),
       maxConcurrentPerProviderModel: options.maxConcurrentPerProviderModel,
       maxConcurrentPerTenant: options.maxConcurrentPerTenant,
     });
@@ -1228,4 +1228,10 @@ function buildRateLimitKeyFromMetadata(metadata?: TrafficRequestMetadata): strin
   }
 
   return parts.join("::");
+}
+
+function buildProviderModelKeyFromMetadata(metadata?: TrafficRequestMetadata): string {
+  const provider = metadata?.provider ?? "default-provider";
+  const model = metadata?.model ?? "default-model";
+  return `${provider}::${model}`;
 }

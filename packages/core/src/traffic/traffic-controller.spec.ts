@@ -81,6 +81,46 @@ describe("TrafficController priority scheduling", () => {
   });
 });
 
+describe("TrafficController concurrency limits", () => {
+  it("shares provider/model limits across tenants", async () => {
+    const controller = new TrafficController({
+      maxConcurrent: 2,
+      maxConcurrentPerProviderModel: 1,
+    });
+    const started: string[] = [];
+    let releaseFirst!: () => void;
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+
+    const first = controller.handleText({
+      tenantId: "tenant-a",
+      metadata: { provider: "openai", model: "gpt-4o", priority: "P1" },
+      execute: async () => {
+        started.push("tenant-a");
+        await firstGate;
+        return "a";
+      },
+    });
+
+    const second = controller.handleText({
+      tenantId: "tenant-b",
+      metadata: { provider: "openai", model: "gpt-4o", priority: "P1" },
+      execute: async () => {
+        started.push("tenant-b");
+        return "b";
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(started).toEqual(["tenant-a"]);
+
+    releaseFirst();
+    await Promise.all([first, second]);
+    expect(started).toEqual(["tenant-a", "tenant-b"]);
+  });
+});
+
 describe("TrafficController rate limit headers", () => {
   it("parses OpenAI-style compound reset durations (e.g. 1m30.951s)", () => {
     vi.useFakeTimers();
