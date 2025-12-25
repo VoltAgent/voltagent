@@ -368,6 +368,7 @@ export class TrafficController {
         priority,
         tenantId,
         enqueuedAt: Date.now(),
+        estimatedTokens: request.estimatedTokens,
         extractUsage: request.extractUsage,
       });
       this.scheduleDrain();
@@ -648,7 +649,7 @@ export class TrafficController {
         this.circuitBreaker.recordSuccess(item.request.metadata, this.trafficLogger);
       }
       const usage = this.usageTracker.recordUsage(item, result, this.trafficLogger);
-      this.rateLimiter.recordUsage(rateLimitKey, usage, this.trafficLogger);
+      this.rateLimiter.recordUsage(rateLimitKey, usage, this.trafficLogger, item.reservedTokens);
       this.recordAdaptiveSuccess(adaptiveKey);
       this.attachTrafficMetadata(
         result,
@@ -666,6 +667,14 @@ export class TrafficController {
       });
       const errorForHandling = normalizedRateLimitError ?? error;
       const adaptiveKey = this.buildAdaptiveKey(item.request.metadata, item.tenantId, rateLimitKey);
+      if (typeof item.reservedTokens === "number" && item.reservedTokens > 0) {
+        this.rateLimiter.recordUsage(
+          rateLimitKey,
+          { totalTokens: 0 },
+          this.trafficLogger,
+          item.reservedTokens,
+        );
+      }
       if (errorForHandling instanceof RateLimitedUpstreamError) {
         this.recordAdaptiveRateLimitHit(adaptiveKey, errorForHandling.retryAfterMs);
       }
@@ -771,6 +780,7 @@ export class TrafficController {
         attempt: item.attempt + 1,
         enqueuedAt: Date.now(),
         dispatchedAt: undefined,
+        reservedTokens: undefined,
         tenantConcurrencyKey: undefined,
         providerModelConcurrencyKey: undefined,
         rateLimitKey: undefined,

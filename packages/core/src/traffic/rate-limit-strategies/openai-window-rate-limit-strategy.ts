@@ -65,7 +65,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       }
     }
 
-    const tokenDecision = this.resolveTokenWindow(logger);
+    const tokenDecision = this.resolveTokenWindow(next, logger);
     if (tokenDecision) return tokenDecision;
     return null;
   }
@@ -93,14 +93,20 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     this.window.onComplete(logger);
   }
 
-  recordUsage(usage: RateLimitUsage, logger?: Logger): void {
+  recordUsage(usage: RateLimitUsage, logger?: Logger, reservedTokens?: number): void {
     if (this.tokensPerMinute === undefined) return;
     const tokens = this.resolveTokenCount(usage);
     if (tokens <= 0) return;
 
     const now = Date.now();
     const state = this.ensureTokenState(now);
-    state.remaining = Math.max(0, state.remaining - tokens);
+    const reserved = typeof reservedTokens === "number" ? reservedTokens : 0;
+    const delta = tokens - reserved;
+    if (delta > 0) {
+      state.remaining = Math.max(0, state.remaining - delta);
+    } else if (delta < 0) {
+      state.remaining = Math.min(state.limit, state.remaining + Math.abs(delta));
+    }
     logger?.child({ module: "rate-limiter" })?.trace?.("OpenAI token usage recorded", {
       rateLimitKey: this.key,
       tokens,
@@ -198,13 +204,22 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     return null;
   }
 
-  private resolveTokenWindow(logger?: Logger): DispatchDecision | null {
+  private resolveTokenWindow(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
     if (this.tokensPerMinute === undefined) return null;
     const rateLimitLogger = logger?.child({ module: "rate-limiter" });
     const now = Date.now();
     const state = this.ensureTokenState(now);
+    const estimatedTokens = next.estimatedTokens;
 
-    if (state.remaining > 0) return null;
+    if (typeof estimatedTokens === "number" && estimatedTokens > 0) {
+      if (state.remaining >= estimatedTokens) {
+        state.remaining = Math.max(0, state.remaining - estimatedTokens);
+        next.reservedTokens = estimatedTokens;
+        return null;
+      }
+    } else if (state.remaining > 0) {
+      return null;
+    }
 
     const probeAt = state.resetAt + RATE_LIMIT_PROBE_DELAY_MS;
     rateLimitLogger?.debug?.("OpenAI token window exhausted; waiting", {

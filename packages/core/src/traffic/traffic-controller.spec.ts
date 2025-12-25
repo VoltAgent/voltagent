@@ -323,6 +323,68 @@ describe("TrafficController token limits", () => {
       vi.useRealTimers();
     }
   });
+
+  it("reserves estimated tokens before dispatch", async () => {
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(new Date(0));
+      const controller = new TrafficController({
+        maxConcurrent: 2,
+        rateLimits: {
+          "openai::gpt-4o": {
+            requestsPerMinute: 0,
+            tokensPerMinute: 2,
+          },
+        },
+      });
+      const order: string[] = [];
+      let releaseFirst!: () => void;
+      const firstGate = new Promise<void>((resolve) => {
+        releaseFirst = resolve;
+      });
+
+      const first = controller.handleText({
+        tenantId: "tenant-a",
+        metadata: { provider: "openai", model: "gpt-4o", priority: "P1" },
+        estimatedTokens: 2,
+        execute: async () => {
+          order.push("first");
+          await firstGate;
+          return "first";
+        },
+        extractUsage: () => ({ totalTokens: 2 }),
+      });
+
+      const second = controller.handleText({
+        tenantId: "tenant-b",
+        metadata: { provider: "openai", model: "gpt-4o", priority: "P1" },
+        estimatedTokens: 1,
+        execute: async () => {
+          order.push("second");
+          return "second";
+        },
+        extractUsage: () => ({ totalTokens: 1 }),
+      });
+
+      await Promise.resolve();
+      expect(order).toEqual(["first"]);
+
+      await vi.advanceTimersByTimeAsync(60_000 + RATE_LIMIT_PROBE_DELAY_MS - 1);
+      await Promise.resolve();
+      expect(order).toEqual(["first"]);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.runAllTimersAsync();
+      await Promise.resolve();
+      expect(order).toEqual(["first", "second"]);
+
+      releaseFirst();
+      await Promise.all([first, second]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("TrafficController stream reporting", () => {

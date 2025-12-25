@@ -59,7 +59,7 @@ export class TrafficRateLimiter {
     if (requestDecision?.kind === "wait") {
       const tokenDecision = strategy.handlesTokenLimits
         ? null
-        : this.resolveTokenLimit(key, logger);
+        : this.resolveTokenLimit(next, key, logger, false);
       if (tokenDecision?.kind === "wait") {
         const requestWakeUp = requestDecision.wakeUpAt;
         const tokenWakeUp = tokenDecision.wakeUpAt;
@@ -73,7 +73,9 @@ export class TrafficRateLimiter {
       return requestDecision;
     }
 
-    const tokenDecision = strategy.handlesTokenLimits ? null : this.resolveTokenLimit(key, logger);
+    const tokenDecision = strategy.handlesTokenLimits
+      ? null
+      : this.resolveTokenLimit(next, key, logger, true);
     if (tokenDecision?.kind === "wait") {
       return tokenDecision;
     }
@@ -126,18 +128,19 @@ export class TrafficRateLimiter {
     key: string | undefined,
     usage: UsageCounters | Promise<UsageCounters | undefined> | undefined,
     logger?: Logger,
+    reservedTokens?: number,
   ): void {
     if (!key || !usage) return;
     if (typeof (usage as PromiseLike<UsageCounters | undefined>).then === "function") {
       void (usage as Promise<UsageCounters | undefined>)
-        .then((resolved) => this.recordUsage(key, resolved, logger))
+        .then((resolved) => this.recordUsage(key, resolved, logger, reservedTokens))
         .catch(() => {});
       return;
     }
 
     const strategy = this.strategies.get(key);
     if (strategy?.recordUsage) {
-      strategy.recordUsage(usage, logger);
+      strategy.recordUsage(usage, logger, reservedTokens);
       return;
     }
 
@@ -150,7 +153,13 @@ export class TrafficRateLimiter {
     const now = Date.now();
     this.refillTokenRate(bucket, now);
     bucket.tokens = Math.min(bucket.capacity, bucket.tokens);
-    bucket.tokens -= tokens;
+    const reserved = typeof reservedTokens === "number" ? reservedTokens : 0;
+    const delta = tokens - reserved;
+    if (delta > 0) {
+      bucket.tokens -= delta;
+    } else if (delta < 0) {
+      bucket.tokens = Math.min(bucket.capacity, bucket.tokens + Math.abs(delta));
+    }
 
     if (bucket.tokens < 0 && bucket.refillPerSecond > 0) {
       const waitMs = Math.max(1, Math.ceil((-bucket.tokens / bucket.refillPerSecond) * 1000));
@@ -184,7 +193,12 @@ export class TrafficRateLimiter {
     return created;
   }
 
-  private resolveTokenLimit(key: string, logger?: Logger): DispatchDecision | null {
+  private resolveTokenLimit(
+    next: QueuedRequest,
+    key: string,
+    logger?: Logger,
+    reserveTokens = true,
+  ): DispatchDecision | null {
     const bucket = this.getTokenRateState(key, logger);
     if (!bucket) return null;
 
@@ -200,7 +214,18 @@ export class TrafficRateLimiter {
       return { kind: "wait" };
     }
 
-    if (bucket.tokens >= 0) return null;
+    const estimatedTokens = next.estimatedTokens;
+    if (typeof estimatedTokens === "number" && estimatedTokens > 0) {
+      if (bucket.tokens >= estimatedTokens) {
+        if (reserveTokens) {
+          bucket.tokens -= estimatedTokens;
+          next.reservedTokens = estimatedTokens;
+        }
+        return null;
+      }
+    } else if (bucket.tokens >= 0) {
+      return null;
+    }
 
     if (bucket.refillPerSecond <= 0) {
       logger?.child({ module: "rate-limiter" })?.debug?.("Token limit has no refill; blocking", {
@@ -211,7 +236,10 @@ export class TrafficRateLimiter {
       return { kind: "wait" };
     }
 
-    const requiredTokens = -bucket.tokens;
+    const requiredTokens =
+      typeof estimatedTokens === "number" && estimatedTokens > 0
+        ? Math.max(estimatedTokens - bucket.tokens, 1)
+        : -bucket.tokens;
     const waitMs = Math.max(1, Math.ceil((requiredTokens / bucket.refillPerSecond) * 1000));
     return { kind: "wait", wakeUpAt: now + waitMs };
   }

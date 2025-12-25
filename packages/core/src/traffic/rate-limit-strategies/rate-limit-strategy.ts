@@ -32,7 +32,7 @@ export interface RateLimitStrategy {
   resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null;
   onDispatch(logger?: Logger): void;
   onComplete(logger?: Logger): void;
-  recordUsage?(usage: RateLimitUsage, logger?: Logger): void;
+  recordUsage?(usage: RateLimitUsage, logger?: Logger, reservedTokens?: number): void;
   updateFromHeaders(
     metadata: TrafficRequestMetadata | undefined,
     headers: unknown,
