@@ -697,10 +697,12 @@ export class Agent {
           taskType,
           fallbackPolicyId,
           providerOptions,
+          maxRetries: _maxRetries, // Always disable provider retries (TrafficController handles retries)
           model: _model, // Exclude model so aiSDKOptions doesn't override resolved model
           ...aiSDKOptions
         } = options || {};
         void _model;
+        void _maxRetries;
         void maxQueueWaitMs;
         void taskType;
         void fallbackPolicyId;
@@ -1085,10 +1087,12 @@ export class Agent {
           taskType,
           fallbackPolicyId,
           providerOptions,
+          maxRetries: _maxRetries, // Always disable provider retries (TrafficController handles retries)
           model: _model, // Exclude model from aiSDKOptions to avoid overriding resolved model
           ...aiSDKOptions
         } = options || {};
         void _model;
+        void _maxRetries;
         void maxQueueWaitMs;
         void taskType;
         void fallbackPolicyId;
@@ -1806,10 +1810,12 @@ export class Agent {
           fallbackPolicyId,
           maxQueueWaitMs,
           providerOptions,
+          maxRetries: _maxRetries, // Always disable provider retries (TrafficController handles retries)
           model: _model, // Exclude model so spread does not override resolved model
           ...aiSDKOptions
         } = options || {};
         void _model;
+        void _maxRetries;
         void taskType;
         void fallbackPolicyId;
         void maxQueueWaitMs;
@@ -2096,10 +2102,12 @@ export class Agent {
           fallbackPolicyId,
           maxQueueWaitMs,
           providerOptions,
+          maxRetries: _maxRetries, // Always disable provider retries (TrafficController handles retries)
           model: _model, // Exclude model so aiSDKOptions cannot override resolved model
           ...aiSDKOptions
         } = options || {};
         void _model;
+        void _maxRetries;
         void taskType;
         void fallbackPolicyId;
         void maxQueueWaitMs;
