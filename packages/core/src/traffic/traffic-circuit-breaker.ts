@@ -359,12 +359,19 @@ export class TrafficCircuitBreaker {
   ): void {
     next.request = fallbackRequest;
     next.attempt = 1;
+    next.estimatedTokens = fallbackRequest.estimatedTokens;
+    next.reservedTokens = undefined;
     next.tenantConcurrencyKey = undefined;
     next.providerModelConcurrencyKey = undefined;
     next.rateLimitKey = undefined;
     next.etaMs = undefined;
     next.circuitKey = undefined;
     next.circuitStatus = undefined;
+    next.extractUsage = fallbackRequest.extractUsage;
+    if (context?.reason === "queue-timeout") {
+      next.enqueuedAt = Date.now();
+      next.dispatchedAt = undefined;
+    }
     logger?.debug?.("Switched to fallback request", {
       previousCircuitKey: context?.previousCircuitKey,
       fallbackModel: fallback,

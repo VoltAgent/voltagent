@@ -857,7 +857,7 @@ export class TrafficController {
       this.trafficLogger,
     );
     if (fallbackApplied) {
-      return "expired";
+      return "none";
     }
 
     const timeoutError = this.createQueueTimeoutError(next, now);
