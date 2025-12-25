@@ -109,6 +109,7 @@ export interface TrafficRequest<TResponse> {
   execute: () => Promise<TResponse>;
   deadlineAt?: number;
   maxQueueWaitMs?: number;
+  estimatedTokens?: number;
   createFallbackRequest?: BivariantFunction<
     [target: FallbackChainEntry],
     TrafficRequest<TResponse> | undefined
