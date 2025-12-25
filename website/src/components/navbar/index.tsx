@@ -25,7 +25,6 @@ import {
   PuzzlePieceIcon,
   RocketLaunchIcon,
   ScaleIcon,
-  ServerIcon,
   ShieldCheckIcon,
   ShoppingCartIcon,
   UserGroupIcon,
@@ -406,10 +405,7 @@ export default function Navbar() {
               </div>
             </div>
             <Link to="/docs/" className={`${styles.navLink}  `}>
-              VoltAgent Docs
-            </Link>
-            <Link to="/observability-docs/" className={`${styles.navLink}  `}>
-              Observability Docs
+              Docs
             </Link>
 
             <div className={`${styles.navLink} group relative`}>
@@ -476,19 +472,6 @@ export default function Navbar() {
                           </span>
                           <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
                             Explore sample projects and code
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                    <Link to="/mcp/" className="no-underline">
-                      <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <ServerIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
-                            MCP Directory
-                          </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
-                            Browse MCP services
                           </span>
                         </div>
                       </div>
@@ -734,10 +717,7 @@ export default function Navbar() {
             </div>
           </div>
           <Link to="/docs/" className={`${styles.mobileNavLink}`}>
-            VoltAgent Docs
-          </Link>
-          <Link to="/observability-docs/" className={`${styles.mobileNavLink}`}>
-            Observability Docs
+            Docs
           </Link>
           <Link to="/recipes-and-guides/" className={`${styles.mobileNavLink}`}>
             Recipes & Guides
@@ -806,14 +786,6 @@ export default function Navbar() {
                   <CommandLineIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
                   <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
                     Examples
-                  </span>
-                </div>
-              </Link>
-              <Link to="/mcp/" className="no-underline">
-                <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <ServerIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
-                    MCP Directory
                   </span>
                 </div>
               </Link>
