@@ -10,6 +10,7 @@ import type {
   QueuedRequest,
   RateLimitWindowState,
 } from "../traffic-controller-internal";
+import { parseRetryAfterMs, readHeaderValue } from "../traffic-error-utils";
 import type { RateLimitOptions, TrafficRequestMetadata } from "../traffic-types";
 import { DefaultRateLimitStrategy } from "./default-rate-limit-strategy";
 import type {
@@ -17,9 +18,10 @@ import type {
   RateLimitUpdateResult,
   RateLimitUsage,
 } from "./rate-limit-strategy";
+import { parseResetDurationToMs } from "./rate-limit-utils";
 
 export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
-  readonly handlesTokenLimits: boolean;
+  readonly handlesTokenLimits = true;
   private readonly window: DefaultRateLimitStrategy;
   private readonly key: string;
   private readonly requestsPerMinute?: number;
@@ -35,7 +37,6 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     // Window strategy enforces fixed 60s windows; burstSize is intentionally ignored here.
     this.requestsPerMinute = this.normalizeLimit(options?.requestsPerMinute);
     this.tokensPerMinute = this.normalizeLimit(options?.tokensPerMinute);
-    this.handlesTokenLimits = this.tokensPerMinute !== undefined;
   }
 
   resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
@@ -94,12 +95,12 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
   }
 
   recordUsage(usage: RateLimitUsage, logger?: Logger, reservedTokens?: number): void {
-    if (this.tokensPerMinute === undefined) return;
     const tokens = this.resolveTokenCount(usage);
     if (tokens <= 0) return;
 
     const now = Date.now();
     const state = this.ensureTokenState(now);
+    if (!state) return;
     const reserved = typeof reservedTokens === "number" ? reservedTokens : 0;
     const delta = tokens - reserved;
     if (delta > 0) {
@@ -120,10 +121,12 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     headers: unknown,
     logger?: Logger,
   ): RateLimitUpdateResult | undefined {
-    if (this.requestsPerMinute !== undefined) {
-      return undefined;
-    }
-    return this.window.updateFromHeaders(metadata, headers, logger);
+    const update =
+      this.requestsPerMinute !== undefined
+        ? undefined
+        : this.window.updateFromHeaders(metadata, headers, logger);
+    this.applyTokenHeaderUpdates(headers, logger);
+    return update;
   }
 
   private resolveRequestWindow(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
@@ -205,10 +208,10 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
   }
 
   private resolveTokenWindow(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
-    if (this.tokensPerMinute === undefined) return null;
     const rateLimitLogger = logger?.child({ module: "rate-limiter" });
     const now = Date.now();
     const state = this.ensureTokenState(now);
+    if (!state) return null;
     const estimatedTokens = next.estimatedTokens;
 
     if (typeof estimatedTokens === "number" && estimatedTokens > 0) {
@@ -247,10 +250,23 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     return state;
   }
 
-  private ensureTokenState(now: number): RateLimitWindowState {
-    const limit = this.tokensPerMinute ?? 0;
+  private ensureTokenState(now: number): RateLimitWindowState | undefined {
+    const configuredLimit = this.tokensPerMinute;
     const state = this.tokenState;
-    if (!state || now >= state.resetAt) {
+    if (!state) {
+      if (configuredLimit === undefined) return undefined;
+      this.tokenState = {
+        limit: configuredLimit,
+        remaining: configuredLimit,
+        resetAt: now + this.windowMs,
+        reserved: 0,
+        nextAllowedAt: now,
+      };
+      return this.tokenState;
+    }
+
+    if (now >= state.resetAt) {
+      const limit = configuredLimit ?? state.limit;
       this.tokenState = {
         limit,
         remaining: limit,
@@ -260,12 +276,71 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       };
       return this.tokenState;
     }
+
+    if (configuredLimit !== undefined && configuredLimit !== state.limit) {
+      state.limit = configuredLimit;
+      state.remaining = Math.min(state.remaining, configuredLimit);
+    }
+
     return state;
   }
 
   private normalizeLimit(value: number | undefined): number | undefined {
     const numeric = typeof value === "number" ? value : Number(value);
     return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+  }
+
+  private applyTokenHeaderUpdates(headers: unknown, logger?: Logger): void {
+    const rateLimitLogger = logger?.child({ module: "rate-limiter" });
+    const limitTokens = readHeaderValue(headers, "x-ratelimit-limit-tokens");
+    const remainingTokens = readHeaderValue(headers, "x-ratelimit-remaining-tokens");
+    const resetTokens = readHeaderValue(headers, "x-ratelimit-reset-tokens");
+    const retryAfter = readHeaderValue(headers, "retry-after");
+
+    const limit = Number(limitTokens);
+    const remaining = Number(remainingTokens);
+    const resetTokensMs = resetTokens ? parseResetDurationToMs(resetTokens) : undefined;
+    const retryAfterMs = retryAfter ? parseRetryAfterMs(retryAfter) : undefined;
+
+    if (!Number.isFinite(limit) || !Number.isFinite(remaining) || resetTokensMs === undefined) {
+      rateLimitLogger?.trace?.("OpenAI token headers missing or invalid; skipping", {
+        rateLimitKey: this.key,
+        hasLimit: !!limitTokens,
+        hasRemaining: !!remainingTokens,
+        hasReset: !!resetTokens,
+      });
+      return;
+    }
+
+    const now = Date.now();
+    const configuredLimit = this.tokensPerMinute;
+    const effectiveLimit = configuredLimit === undefined ? limit : Math.min(configuredLimit, limit);
+    const clampedRemaining = Math.max(0, Math.min(remaining, effectiveLimit));
+    const parsedResetAt = now + resetTokensMs;
+    const existing = this.tokenState;
+    const isSameWindow = !!existing && now < existing.resetAt;
+    const resetAt = isSameWindow ? Math.max(existing.resetAt, parsedResetAt) : parsedResetAt;
+    const nextAllowedAt = isSameWindow ? Math.max(existing.nextAllowedAt, now) : now;
+    const reserved = Math.max(0, existing?.reserved ?? 0);
+    const effectiveRemaining = isSameWindow
+      ? Math.min(existing.remaining, clampedRemaining)
+      : clampedRemaining;
+
+    this.tokenState = {
+      limit: effectiveLimit,
+      remaining: effectiveRemaining,
+      resetAt,
+      reserved,
+      nextAllowedAt,
+    };
+
+    rateLimitLogger?.debug?.("OpenAI token headers applied", {
+      rateLimitKey: this.key,
+      limit: effectiveLimit,
+      remaining: effectiveRemaining,
+      resetAt,
+      retryAfterMs,
+    });
   }
 
   private resolveTokenCount(usage: RateLimitUsage): number {
