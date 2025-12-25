@@ -828,6 +828,9 @@ export class TrafficController {
    */
 
   private resolveQueueTimeoutAt(next: QueuedRequest): number | undefined {
+    if (next.queueTimeoutDisabled) {
+      return next.request.deadlineAt;
+    }
     const maxQueueWaitMs = next.request.maxQueueWaitMs;
     const normalizedMaxWait =
       typeof maxQueueWaitMs === "number" && Number.isFinite(maxQueueWaitMs)
