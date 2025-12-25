@@ -1242,7 +1242,8 @@ function buildRateLimitKeyFromMetadata(metadata?: TrafficRequestMetadata): strin
     { label: "apiKey", value: metadata?.apiKeyId },
     { label: "region", value: metadata?.region },
     { label: "endpoint", value: metadata?.endpoint },
-    { label: "tenant", value: metadata?.tenantId },
+    // Intentionally exclude tenantId to enforce provider/model limits across tenants.
+    // Use rateLimitKeyBuilder to include tenant for per-tenant rate limits.
     { label: "tenantTier", value: metadata?.tenantTier },
     { label: "taskType", value: metadata?.taskType },
   ];

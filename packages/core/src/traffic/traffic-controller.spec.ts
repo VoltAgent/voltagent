@@ -270,6 +270,45 @@ describe("TrafficController rate limit headers", () => {
       vi.useRealTimers();
     }
   });
+
+  it("shares rate limits across tenants for the same provider/model", async () => {
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(new Date(0));
+      const controller = new TrafficController({ maxConcurrent: 1 });
+      controller.updateRateLimitFromHeaders(
+        { provider: "openai", model: "gpt-4o", tenantId: "tenant-a" },
+        {
+          "x-ratelimit-limit-requests": "1",
+          "x-ratelimit-remaining-requests": "0",
+          "x-ratelimit-reset-requests": "1s",
+        },
+      );
+
+      const order: string[] = [];
+      const request = controller.handleText({
+        tenantId: "tenant-b",
+        metadata: { provider: "openai", model: "gpt-4o", priority: "P1" },
+        execute: async () => {
+          order.push("tenant-b");
+          return "ok";
+        },
+      });
+
+      await vi.advanceTimersByTimeAsync(999);
+      await Promise.resolve();
+      expect(order).toEqual([]);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.runAllTimersAsync();
+      await request;
+
+      expect(order).toEqual(["tenant-b"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("TrafficController token limits", () => {
@@ -381,6 +420,102 @@ describe("TrafficController token limits", () => {
 
       releaseFirst();
       await Promise.all([first, second]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("allows token-only configs on non-OpenAI providers", async () => {
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(new Date(0));
+      const controller = new TrafficController({
+        maxConcurrent: 2,
+        rateLimits: {
+          "p::m": {
+            requestsPerMinute: 0,
+            tokensPerMinute: 2,
+          },
+        },
+      });
+      const order: string[] = [];
+
+      const first = controller.handleText({
+        tenantId: "tenant-a",
+        metadata: { provider: "p", model: "m", priority: "P1" },
+        estimatedTokens: 2,
+        execute: async () => {
+          order.push("first");
+          return "first";
+        },
+        extractUsage: () => ({ totalTokens: 2 }),
+      });
+
+      const second = controller.handleText({
+        tenantId: "tenant-b",
+        metadata: { provider: "p", model: "m", priority: "P1" },
+        estimatedTokens: 1,
+        execute: async () => {
+          order.push("second");
+          return "second";
+        },
+        extractUsage: () => ({ totalTokens: 1 }),
+      });
+
+      await first;
+      expect(order).toEqual(["first"]);
+
+      await vi.advanceTimersByTimeAsync(29_999);
+      await Promise.resolve();
+      expect(order).toEqual(["first"]);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.runAllTimersAsync();
+      await second;
+      expect(order).toEqual(["first", "second"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("honors OpenAI token headers even without token config", async () => {
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(new Date(0));
+      const controller = new TrafficController({ maxConcurrent: 1 });
+      controller.updateRateLimitFromHeaders(
+        { provider: "openai", model: "gpt-4o" },
+        {
+          "x-ratelimit-limit-tokens": "2",
+          "x-ratelimit-remaining-tokens": "0",
+          "x-ratelimit-reset-tokens": "1s",
+        },
+      );
+
+      const order: string[] = [];
+      const request = controller.handleText({
+        tenantId: "tenant-a",
+        metadata: { provider: "openai", model: "gpt-4o", priority: "P1" },
+        estimatedTokens: 1,
+        execute: async () => {
+          order.push("run");
+          return "ok";
+        },
+      });
+
+      await Promise.resolve();
+      expect(order).toEqual([]);
+
+      await vi.advanceTimersByTimeAsync(1_000 + RATE_LIMIT_PROBE_DELAY_MS - 1);
+      await Promise.resolve();
+      expect(order).toEqual([]);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.runAllTimersAsync();
+      await request;
+      expect(order).toEqual(["run"]);
     } finally {
       vi.useRealTimers();
     }
