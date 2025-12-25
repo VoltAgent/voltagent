@@ -1064,6 +1064,18 @@ export type OperationContext = {
   /** Optional tenant identifier propagated across nested operations */
   tenantId?: string;
 
+  /** Optional key identifier for per-key traffic limits */
+  apiKeyId?: string;
+
+  /** Optional region identifier for per-region traffic limits */
+  region?: string;
+
+  /** Optional endpoint identifier for per-endpoint traffic limits */
+  endpoint?: string;
+
+  /** Optional tenant tier identifier for per-tier traffic limits */
+  tenantTier?: string;
+
   /** User-managed context map for this operation */
   readonly context: Map<string | symbol, unknown>;
 

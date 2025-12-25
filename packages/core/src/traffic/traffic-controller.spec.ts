@@ -488,3 +488,84 @@ describe("TrafficController stream reporting", () => {
     expect(order).toEqual(["fallback"]);
   });
 });
+
+describe("TrafficController queue timeouts", () => {
+  it("lets fallback requests wait after queue timeout without rejecting", async () => {
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(new Date(0));
+      const controller = new TrafficController({
+        maxConcurrent: 1,
+        fallbackChains: {
+          "p::m": ["m-fallback"],
+        },
+      });
+      const order: string[] = [];
+      let releaseFirst!: () => void;
+      const firstGate = new Promise<void>((resolve) => {
+        releaseFirst = resolve;
+      });
+
+      const first = controller.handleText({
+        tenantId: "tenant-a",
+        metadata: { provider: "p", model: "m", priority: "P1" },
+        execute: async () => {
+          order.push("first");
+          await firstGate;
+          return "first";
+        },
+      });
+
+      const second = controller.handleText({
+        tenantId: "tenant-a",
+        metadata: { provider: "p", model: "m", priority: "P1" },
+        maxQueueWaitMs: 1,
+        execute: async () => {
+          order.push("primary");
+          return "primary";
+        },
+        createFallbackRequest: (target) => ({
+          tenantId: "tenant-a",
+          metadata: {
+            provider: "p",
+            model: typeof target === "string" ? target : target.model,
+            priority: "P1",
+          },
+          maxQueueWaitMs: 1,
+          execute: async () => {
+            order.push("fallback");
+            return "fallback";
+          },
+        }),
+      });
+
+      await Promise.resolve();
+      expect(order).toEqual(["first"]);
+
+      await vi.advanceTimersByTimeAsync(2);
+
+      const third = controller.handleText({
+        tenantId: "tenant-a",
+        metadata: { provider: "p", model: "other", priority: "P1" },
+        execute: async () => {
+          order.push("third");
+          return "third";
+        },
+      });
+
+      await Promise.resolve();
+      expect(order).toEqual(["first"]);
+
+      releaseFirst();
+      await vi.runAllTimersAsync();
+
+      await expect(second).resolves.toBe("fallback");
+      await Promise.all([first, third]);
+
+      expect(order).toEqual(["first", "fallback", "third"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

@@ -372,6 +372,22 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   userId?: string;
   conversationId?: string;
   tenantId?: string;
+  /**
+   * Optional key metadata for per-key rate limits.
+   */
+  apiKeyId?: string;
+  /**
+   * Optional region metadata for per-region rate limits.
+   */
+  region?: string;
+  /**
+   * Optional endpoint metadata for per-endpoint rate limits.
+   */
+  endpoint?: string;
+  /**
+   * Optional tenant tier metadata for per-tier rate limits.
+   */
+  tenantTier?: string;
   context?: ContextInput;
   elicitation?: (request: unknown) => Promise<unknown>;
   /**
@@ -3158,6 +3174,10 @@ export class Agent {
     const startTimeDate = new Date();
     const priority = this.resolveTrafficPriority(options);
     const tenantId = this.resolveTenantId(options);
+    const apiKeyId = options?.apiKeyId ?? options?.parentOperationContext?.apiKeyId;
+    const region = options?.region ?? options?.parentOperationContext?.region;
+    const endpoint = options?.endpoint ?? options?.parentOperationContext?.endpoint;
+    const tenantTier = options?.tenantTier ?? options?.parentOperationContext?.tenantTier;
 
     // Prefer reusing an existing context instance to preserve reference across calls/subagents
     const runtimeContext = toContextMap(options?.context);
@@ -3267,6 +3287,10 @@ export class Agent {
       userId: options?.userId,
       conversationId: options?.conversationId,
       tenantId,
+      apiKeyId,
+      region,
+      endpoint,
+      tenantTier,
       parentAgentId: options?.parentAgentId,
       traceContext,
       startTime: startTimeDate,
@@ -5589,6 +5613,10 @@ export class Agent {
       this.resolveProvider(this.model) ??
       undefined;
     const priority = this.resolveTrafficPriority(options);
+    const apiKeyId = options?.apiKeyId ?? options?.parentOperationContext?.apiKeyId;
+    const region = options?.region ?? options?.parentOperationContext?.region;
+    const endpoint = options?.endpoint ?? options?.parentOperationContext?.endpoint;
+    const tenantTier = options?.tenantTier ?? options?.parentOperationContext?.tenantTier;
 
     return {
       agentId: this.id, // Identify which agent issued the request
@@ -5597,6 +5625,10 @@ export class Agent {
       provider, // Allows per-provider throttling later
       priority,
       tenantId: this.resolveTenantId(options),
+      apiKeyId,
+      region,
+      endpoint,
+      tenantTier,
       taskType: options?.taskType,
       fallbackPolicyId: options?.fallbackPolicyId,
     };
