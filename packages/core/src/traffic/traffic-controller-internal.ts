@@ -42,6 +42,7 @@ export interface QueuedRequest<TResponse = unknown> {
   dispatchedAt?: number;
   estimatedTokens?: number;
   reservedTokens?: number;
+  queueTimeoutDisabled?: boolean;
 
   tenantConcurrencyKey?: string;
   providerModelConcurrencyKey?: string;

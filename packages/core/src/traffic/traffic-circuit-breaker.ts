@@ -369,8 +369,7 @@ export class TrafficCircuitBreaker {
     next.circuitStatus = undefined;
     next.extractUsage = fallbackRequest.extractUsage;
     if (context?.reason === "queue-timeout") {
-      next.enqueuedAt = Date.now();
-      next.dispatchedAt = undefined;
+      next.queueTimeoutDisabled = true;
     }
     logger?.debug?.("Switched to fallback request", {
       previousCircuitKey: context?.previousCircuitKey,
