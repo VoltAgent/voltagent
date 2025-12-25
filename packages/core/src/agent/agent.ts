@@ -487,6 +487,7 @@ export class Agent {
         tenantId,
         metadata,
         maxQueueWaitMs: options?.maxQueueWaitMs,
+        estimatedTokens: this.estimateTokens(input, mergedOptions),
         execute: () => this.executeGenerateText(input, mergedOptions, metadata), // Defer actual execution so controller can schedule it
         extractUsage: (result: GenerateTextResultWithContext) =>
           this.extractUsageFromResponse(result),
@@ -867,6 +868,7 @@ export class Agent {
         tenantId,
         metadata,
         maxQueueWaitMs: options?.maxQueueWaitMs,
+        estimatedTokens: this.estimateTokens(input, mergedOptions),
         execute: () => this.executeStreamText(input, mergedOptions, metadata), // Actual streaming work happens after the controller dequeues us
         extractUsage: (result: StreamTextResultWithContext) =>
           this.extractUsageFromResponse(result),
@@ -1584,6 +1586,7 @@ export class Agent {
         tenantId,
         metadata,
         maxQueueWaitMs: options?.maxQueueWaitMs,
+        estimatedTokens: this.estimateTokens(input, mergedOptions),
         execute: () => this.executeGenerateObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
@@ -1865,6 +1868,7 @@ export class Agent {
         tenantId,
         metadata,
         maxQueueWaitMs: options?.maxQueueWaitMs,
+        estimatedTokens: this.estimateTokens(input, mergedOptions),
         execute: () => this.executeStreamObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
@@ -4159,6 +4163,41 @@ export class Agent {
       taskType: options?.taskType,
       fallbackPolicyId: options?.fallbackPolicyId,
     };
+  }
+
+  private estimateTokens(
+    input: string | UIMessage[] | BaseMessage[],
+    options?: BaseGenerationOptions,
+  ): number | undefined {
+    let text = "";
+    if (typeof input === "string") {
+      text = input;
+    } else if (Array.isArray(input)) {
+      text = input
+        .map((message) => {
+          if (typeof message === "string") return message;
+          if (message && typeof message === "object") {
+            const content = (message as { content?: unknown }).content;
+            if (typeof content === "string") return content;
+            if (content !== undefined) return safeStringify(content);
+            return safeStringify(message);
+          }
+          return String(message ?? "");
+        })
+        .join(" ");
+    } else if (input) {
+      text = safeStringify(input);
+    }
+
+    const inputTokens = text ? Math.ceil(text.length / 4) : 0;
+    const outputTokensRaw =
+      typeof options?.maxOutputTokens === "number" ? options.maxOutputTokens : this.maxOutputTokens;
+    const outputTokens =
+      typeof outputTokensRaw === "number" && Number.isFinite(outputTokensRaw)
+        ? Math.max(0, Math.floor(outputTokensRaw))
+        : 0;
+    const total = inputTokens + outputTokens;
+    return total > 0 ? total : undefined;
   }
 
   private resolveFallbackTarget(target: FallbackChainEntry): {
