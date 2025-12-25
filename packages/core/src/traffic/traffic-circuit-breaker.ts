@@ -379,6 +379,17 @@ export class TrafficCircuitBreaker {
     });
   }
 
+  private isShortResponseFallback(
+    candidate: FallbackChainEntry,
+  ): candidate is { kind: "short-response"; text: string } {
+    return (
+      typeof candidate === "object" &&
+      candidate !== null &&
+      "kind" in candidate &&
+      (candidate as { kind?: string }).kind === "short-response"
+    );
+  }
+
   private findFallbackTarget(
     metadata: TrafficRequestMetadata | undefined,
     visitedKeys: Set<string>,
@@ -401,6 +412,13 @@ export class TrafficCircuitBreaker {
     }
 
     for (const candidate of chain) {
+      if (this.isShortResponseFallback(candidate)) {
+        logger?.debug?.("Selected short-response fallback", {
+          currentModel,
+          currentProvider: provider,
+        });
+        return candidate;
+      }
       const target = this.normalizeFallbackTarget(candidate, provider);
       const candidateMetadata: TrafficRequestMetadata = {
         ...(metadata ?? {}),
