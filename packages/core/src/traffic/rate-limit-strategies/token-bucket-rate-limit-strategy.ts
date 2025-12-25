@@ -22,15 +22,22 @@ type TokenBucketState = {
 
 function normalizeTokenBucketOptions(
   raw: RateLimitOptions | undefined,
-): Omit<TokenBucketState, "tokens" | "updatedAt"> {
+): Omit<TokenBucketState, "tokens" | "updatedAt"> | undefined {
   const requestsPerMinuteRaw = raw?.requestsPerMinute;
+  const tokensPerMinuteRaw = raw?.tokensPerMinute;
   const burstSizeRaw = raw?.burstSize;
 
   const requestsPerMinute =
     typeof requestsPerMinuteRaw === "number" ? requestsPerMinuteRaw : Number(requestsPerMinuteRaw);
+  const tokensPerMinute =
+    typeof tokensPerMinuteRaw === "number" ? tokensPerMinuteRaw : Number(tokensPerMinuteRaw);
   const burstSize = typeof burstSizeRaw === "number" ? burstSizeRaw : Number(burstSizeRaw);
 
   const safeRequestsPerMinute = Number.isFinite(requestsPerMinute) ? requestsPerMinute : 0;
+  const hasTokenLimit = Number.isFinite(tokensPerMinute) && tokensPerMinute > 0;
+  if (safeRequestsPerMinute <= 0 && hasTokenLimit) {
+    return undefined;
+  }
   const safeBurst = Number.isFinite(burstSize) ? burstSize : safeRequestsPerMinute;
   const refillPerSecond = safeRequestsPerMinute > 0 ? safeRequestsPerMinute / 60 : 0;
 
@@ -59,6 +66,7 @@ export class TokenBucketRateLimitStrategy implements RateLimitStrategy {
     this.key = key;
     if (!options) return;
     const normalized = normalizeTokenBucketOptions(options);
+    if (!normalized) return;
     const now = Date.now();
     this.bucket = {
       ...normalized,
