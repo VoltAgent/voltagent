@@ -644,6 +644,14 @@ export class Agent {
         execute: () => this.executeGenerateText(input, mergedOptions, metadata), // Defer actual execution so controller can schedule it
         extractUsage: (result) => this.extractUsageFromResponse(result),
         createFallbackRequest: (fallbackTarget) => {
+          if (this.isShortResponseFallback(fallbackTarget)) {
+            return this.buildShortTextFallbackRequest(
+              tenantId,
+              metadata,
+              mergedOptions,
+              fallbackTarget.text,
+            );
+          }
           const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
             this.resolveFallbackTarget(fallbackTarget);
           return buildRequest(fallbackModel, fallbackProvider);
@@ -1160,6 +1168,14 @@ export class Agent {
         extractUsage: (result: StreamTextResultWithContext) =>
           this.extractUsageFromResponse(result),
         createFallbackRequest: (fallbackTarget) => {
+          if (this.isShortResponseFallback(fallbackTarget)) {
+            return this.buildShortStreamTextFallbackRequest(
+              tenantId,
+              metadata,
+              mergedOptions,
+              fallbackTarget.text,
+            );
+          }
           const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
             this.resolveFallbackTarget(fallbackTarget);
           return buildRequest(fallbackModel, fallbackProvider);
@@ -2138,6 +2154,15 @@ export class Agent {
         extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
         createFallbackRequest: (fallbackTarget) => {
+          if (this.isShortResponseFallback(fallbackTarget)) {
+            return this.buildShortObjectFallbackRequest(
+              tenantId,
+              metadata,
+              schema,
+              mergedOptions,
+              fallbackTarget.text,
+            );
+          }
           const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
             this.resolveFallbackTarget(fallbackTarget);
           return buildRequest(fallbackModel, fallbackProvider);
@@ -2514,6 +2539,15 @@ export class Agent {
         extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
         createFallbackRequest: (fallbackTarget) => {
+          if (this.isShortResponseFallback(fallbackTarget)) {
+            return this.buildShortStreamObjectFallbackRequest(
+              tenantId,
+              metadata,
+              schema,
+              mergedOptions,
+              fallbackTarget.text,
+            );
+          }
           const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
             this.resolveFallbackTarget(fallbackTarget);
           return buildRequest(fallbackModel, fallbackProvider);
@@ -5687,6 +5721,372 @@ export class Agent {
     return {
       modelOverride: target.model,
       providerOverride: target.provider,
+    };
+  }
+
+  private isShortResponseFallback(
+    target: FallbackChainEntry,
+  ): target is { kind: "short-response"; text: string } {
+    return (
+      typeof target === "object" &&
+      target !== null &&
+      "kind" in target &&
+      (target as { kind?: string }).kind === "short-response"
+    );
+  }
+
+  private buildShortResponseMetadata(
+    baseMetadata: TrafficRequestMetadata | undefined,
+  ): TrafficRequestMetadata {
+    const metadata = baseMetadata ?? this.buildTrafficMetadata();
+    return {
+      ...metadata,
+      provider: "short-response",
+      model: "short-response",
+    };
+  }
+
+  private createZeroUsage(): LanguageModelUsage {
+    return { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+  }
+
+  private createShortTextStream(text: string): AsyncIterableStream<string> {
+    return createAsyncIterableReadable<string>((controller) => {
+      controller.enqueue(text);
+      controller.close();
+    });
+  }
+
+  private createShortFullStream(text: string): AsyncIterableStream<VoltAgentTextStreamPart> {
+    const usage = this.createZeroUsage();
+    const id = `short-response-${randomUUID()}`;
+    return createAsyncIterableReadable<VoltAgentTextStreamPart>((controller) => {
+      controller.enqueue({
+        type: "text-delta",
+        id,
+        delta: text,
+        text,
+      } as VoltAgentTextStreamPart);
+      controller.enqueue({
+        type: "finish",
+        finishReason: "stop",
+        usage,
+        totalUsage: usage,
+      } as VoltAgentTextStreamPart);
+      controller.close();
+    });
+  }
+
+  private createShortTextResult(
+    text: string,
+    options?: GenerateTextOptions,
+  ): GenerateTextResultWithContext {
+    const usage = this.createZeroUsage();
+    const context = toContextMap(options?.context) ?? new Map();
+    const createTextStream = (): AsyncIterableStream<string> => this.createShortTextStream(text);
+
+    return {
+      text,
+      content: [],
+      reasoning: [],
+      reasoningText: "",
+      files: [],
+      sources: [],
+      toolCalls: [],
+      staticToolCalls: [],
+      dynamicToolCalls: [],
+      toolResults: [],
+      staticToolResults: [],
+      dynamicToolResults: [],
+      usage,
+      totalUsage: usage,
+      warnings: [],
+      finishReason: "stop",
+      steps: [],
+      experimental_output: undefined,
+      response: {
+        id: "short-response",
+        modelId: "short-response",
+        timestamp: new Date(),
+        messages: [],
+      },
+      context,
+      request: {
+        body: {},
+      },
+      providerMetadata: undefined,
+      experimental_providerMetadata: undefined,
+      pipeTextStreamToResponse: (response, init) => {
+        pipeTextStreamToResponse({
+          response,
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      toTextStreamResponse: (init) => {
+        return createTextStreamResponse({
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      toDataStream: () => createTextStream(),
+      toDataStreamResponse: (init) => {
+        return createTextStreamResponse({
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      pipeDataStreamToResponse: (response, init) => {
+        pipeTextStreamToResponse({
+          response,
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+    } as GenerateTextResultWithContext;
+  }
+
+  private createShortStreamTextResult(
+    text: string,
+    options?: StreamTextOptions,
+  ): StreamTextResultWithContext {
+    const usage = this.createZeroUsage();
+    const context = toContextMap(options?.context) ?? new Map();
+    const createTextStream = (): AsyncIterableStream<string> => this.createShortTextStream(text);
+    const createFullStream = (): AsyncIterableStream<VoltAgentTextStreamPart> =>
+      this.createShortFullStream(text);
+
+    const toUIMessageStream = (_options?: unknown) =>
+      createUIMessageStream({
+        execute: async ({ writer }) => {
+          writer.write({ type: "text", text } as any);
+        },
+        onError: (error) => String(error),
+      });
+
+    const toUIMessageStreamResponse = (options?: ResponseInit) => {
+      const stream = toUIMessageStream(options);
+      const responseInit = options ? { ...options } : {};
+      return createUIMessageStreamResponse({
+        stream,
+        ...responseInit,
+      });
+    };
+
+    const pipeUIMessageStreamToResponse = (response: any, init?: ResponseInit) => {
+      const stream = toUIMessageStream(init);
+      const initOptions = init ? { ...init } : {};
+      pipeUIMessageStreamToResponse({
+        response,
+        stream,
+        ...initOptions,
+      });
+    };
+
+    return {
+      text: Promise.resolve(text),
+      get textStream() {
+        return createTextStream();
+      },
+      get fullStream() {
+        return createFullStream();
+      },
+      usage: Promise.resolve(usage),
+      finishReason: Promise.resolve("stop"),
+      experimental_partialOutputStream: undefined,
+      toUIMessageStream: toUIMessageStream as StreamTextResultWithContext["toUIMessageStream"],
+      toUIMessageStreamResponse:
+        toUIMessageStreamResponse as StreamTextResultWithContext["toUIMessageStreamResponse"],
+      pipeUIMessageStreamToResponse:
+        pipeUIMessageStreamToResponse as StreamTextResultWithContext["pipeUIMessageStreamToResponse"],
+      pipeTextStreamToResponse: (response, init) => {
+        pipeTextStreamToResponse({
+          response,
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      toTextStreamResponse: (init) => {
+        return createTextStreamResponse({
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      context,
+    };
+  }
+
+  private resolveShortResponseObject<T extends z.ZodType>(schema: T, text: string): z.infer<T> {
+    const candidates: unknown[] = [];
+    if (text.length > 0) {
+      try {
+        candidates.push(JSON.parse(text));
+      } catch {}
+    }
+    candidates.push(text);
+    candidates.push({ text });
+    for (const candidate of candidates) {
+      const parsed = schema.safeParse(candidate);
+      if (parsed.success) {
+        return parsed.data;
+      }
+    }
+    return (candidates[0] ?? text) as z.infer<T>;
+  }
+
+  private createShortObjectResult<T extends z.ZodType>(
+    schema: T,
+    text: string,
+    options?: GenerateObjectOptions,
+  ): GenerateObjectResultWithContext<z.infer<T>> {
+    const object = this.resolveShortResponseObject(schema, text);
+    const usage = this.createZeroUsage();
+    const context = toContextMap(options?.context) ?? new Map();
+
+    return {
+      object,
+      usage,
+      warnings: [],
+      finishReason: "stop",
+      response: {
+        id: "short-response",
+        modelId: "short-response",
+        timestamp: new Date(),
+        messages: [],
+      },
+      context,
+      request: {
+        body: {},
+      },
+      reasoning: "",
+      providerMetadata: undefined,
+      toJsonResponse: (init?: ResponseInit) => {
+        const responseInit = init ? { ...init } : {};
+        const headers = {
+          "content-type": "application/json",
+          ...(responseInit.headers ?? {}),
+        };
+        return new Response(safeStringify(object), {
+          ...responseInit,
+          headers,
+        });
+      },
+    } as GenerateObjectResultWithContext<z.infer<T>>;
+  }
+
+  private createShortStreamObjectResult<T extends z.ZodType>(
+    schema: T,
+    text: string,
+    options?: StreamObjectOptions,
+  ): StreamObjectResultWithContext<z.infer<T>> {
+    const object = this.resolveShortResponseObject(schema, text);
+    const usage = this.createZeroUsage();
+    const context = toContextMap(options?.context) ?? new Map();
+    const textPayload = safeStringify(object);
+    const createTextStream = (): AsyncIterableStream<string> =>
+      this.createShortTextStream(textPayload);
+
+    const partialObjectStream = new ReadableStream<Partial<z.infer<T>>>({
+      start(controller) {
+        controller.enqueue(object);
+        controller.close();
+      },
+    });
+
+    return {
+      object: Promise.resolve(object),
+      partialObjectStream,
+      textStream: createTextStream(),
+      warnings: Promise.resolve(undefined),
+      usage: Promise.resolve(usage),
+      finishReason: Promise.resolve("stop"),
+      pipeTextStreamToResponse: (response, init) => {
+        pipeTextStreamToResponse({
+          response,
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      toTextStreamResponse: (init) => {
+        return createTextStreamResponse({
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      context,
+    };
+  }
+
+  private buildShortTextFallbackRequest(
+    tenantId: string,
+    metadata: TrafficRequestMetadata | undefined,
+    options: GenerateTextOptions | undefined,
+    text: string,
+  ): TrafficRequest<GenerateTextResultWithContext> {
+    const shortMetadata = this.buildShortResponseMetadata(metadata);
+    return {
+      tenantId,
+      metadata: shortMetadata,
+      maxQueueWaitMs: options?.maxQueueWaitMs,
+      estimatedTokens: 0,
+      execute: async () => this.createShortTextResult(text, options),
+      extractUsage: (result: GenerateTextResultWithContext) =>
+        this.extractUsageFromResponse(result),
+    };
+  }
+
+  private buildShortStreamTextFallbackRequest(
+    tenantId: string,
+    metadata: TrafficRequestMetadata | undefined,
+    options: StreamTextOptions | undefined,
+    text: string,
+  ): TrafficRequest<StreamTextResultWithContext> {
+    const shortMetadata = this.buildShortResponseMetadata(metadata);
+    return {
+      tenantId,
+      metadata: shortMetadata,
+      maxQueueWaitMs: options?.maxQueueWaitMs,
+      estimatedTokens: 0,
+      execute: async () => this.createShortStreamTextResult(text, options),
+      extractUsage: (result: StreamTextResultWithContext) => this.extractUsageFromResponse(result),
+    };
+  }
+
+  private buildShortObjectFallbackRequest<T extends z.ZodType>(
+    tenantId: string,
+    metadata: TrafficRequestMetadata | undefined,
+    schema: T,
+    options: GenerateObjectOptions | undefined,
+    text: string,
+  ): TrafficRequest<GenerateObjectResultWithContext<z.infer<T>>> {
+    const shortMetadata = this.buildShortResponseMetadata(metadata);
+    return {
+      tenantId,
+      metadata: shortMetadata,
+      maxQueueWaitMs: options?.maxQueueWaitMs,
+      estimatedTokens: 0,
+      execute: async () => this.createShortObjectResult(schema, text, options),
+      extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
+        this.extractUsageFromResponse(result),
+    };
+  }
+
+  private buildShortStreamObjectFallbackRequest<T extends z.ZodType>(
+    tenantId: string,
+    metadata: TrafficRequestMetadata | undefined,
+    schema: T,
+    options: StreamObjectOptions | undefined,
+    text: string,
+  ): TrafficRequest<StreamObjectResultWithContext<z.infer<T>>> {
+    const shortMetadata = this.buildShortResponseMetadata(metadata);
+    return {
+      tenantId,
+      metadata: shortMetadata,
+      maxQueueWaitMs: options?.maxQueueWaitMs,
+      estimatedTokens: 0,
+      execute: async () => this.createShortStreamObjectResult(schema, text, options),
+      extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
+        this.extractUsageFromResponse(result),
     };
   }
 
