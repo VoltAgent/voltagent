@@ -44,6 +44,7 @@ function wrapStreamWithTraffic(
       const trafficEvent = `data: ${safeStringify({ type: "traffic", traffic })}\n\n`;
       controller.enqueue(encoder.encode(trafficEvent));
       const reader = baseBody.getReader();
+      let didError = false;
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -53,10 +54,13 @@ function wrapStreamWithTraffic(
           }
         }
       } catch (error) {
+        didError = true;
         controller.error(error);
       } finally {
         reader.releaseLock();
-        controller.close();
+        if (!didError) {
+          controller.close();
+        }
       }
     },
   });
