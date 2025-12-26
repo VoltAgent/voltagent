@@ -328,6 +328,7 @@ export class TrafficController {
       resetAt: update.state.resetAt,
       nextAllowedAt: update.state.nextAllowedAt,
       resetRequestsMs: update.headerSnapshot.resetRequestsMs,
+      resetTokensMs: update.headerSnapshot.resetTokensMs,
     });
 
     this.rateLimitSnapshots.set(update.key, {
