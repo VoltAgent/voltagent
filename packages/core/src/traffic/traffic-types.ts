@@ -41,6 +41,7 @@ export interface TrafficRequestMetadata {
   agentName?: string;
   model?: string;
   provider?: string;
+  requestId?: string;
   priority?: TrafficPriority;
   tenantId?: string;
   apiKeyId?: string;
