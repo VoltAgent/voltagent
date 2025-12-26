@@ -11,6 +11,10 @@ export type RateLimitHeaderSnapshot = {
   remainingRequests?: string;
   resetRequests?: string;
   resetRequestsMs?: number;
+  limitTokens?: string;
+  remainingTokens?: string;
+  resetTokens?: string;
+  resetTokensMs?: number;
   retryAfter?: string;
   retryAfterMs?: number;
 };

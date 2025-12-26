@@ -125,7 +125,16 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       this.requestsPerMinute !== undefined
         ? undefined
         : this.window.updateFromHeaders(metadata, headers, logger);
-    this.applyTokenHeaderUpdates(headers, logger);
+    const tokenUpdate = this.applyTokenHeaderUpdates(headers, logger);
+    if (!update) {
+      return tokenUpdate;
+    }
+    if (tokenUpdate?.headerSnapshot) {
+      return {
+        ...update,
+        headerSnapshot: { ...update.headerSnapshot, ...tokenUpdate.headerSnapshot },
+      };
+    }
     return update;
   }
 
@@ -290,7 +299,10 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
   }
 
-  private applyTokenHeaderUpdates(headers: unknown, logger?: Logger): void {
+  private applyTokenHeaderUpdates(
+    headers: unknown,
+    logger?: Logger,
+  ): RateLimitUpdateResult | undefined {
     const rateLimitLogger = logger?.child({ module: "rate-limiter" });
     const limitTokens = readHeaderValue(headers, "x-ratelimit-limit-tokens");
     const remainingTokens = readHeaderValue(headers, "x-ratelimit-remaining-tokens");
@@ -309,7 +321,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
         hasRemaining: !!remainingTokens,
         hasReset: !!resetTokens,
       });
-      return;
+      return undefined;
     }
 
     const now = Date.now();
@@ -326,13 +338,14 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       ? Math.min(existing.remaining, clampedRemaining)
       : clampedRemaining;
 
-    this.tokenState = {
+    const state: RateLimitWindowState = {
       limit: effectiveLimit,
       remaining: effectiveRemaining,
       resetAt,
       reserved,
       nextAllowedAt,
     };
+    this.tokenState = state;
 
     rateLimitLogger?.debug?.("OpenAI token headers applied", {
       rateLimitKey: this.key,
@@ -341,6 +354,19 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       resetAt,
       retryAfterMs,
     });
+
+    return {
+      key: this.key,
+      headerSnapshot: {
+        limitTokens,
+        remainingTokens,
+        resetTokens,
+        resetTokensMs,
+        retryAfter,
+        retryAfterMs,
+      },
+      state,
+    };
   }
 
   private resolveTokenCount(usage: RateLimitUsage): number {
