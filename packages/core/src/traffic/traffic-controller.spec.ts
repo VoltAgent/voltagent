@@ -671,6 +671,58 @@ describe("TrafficController stream reporting", () => {
 });
 
 describe("TrafficController queue timeouts", () => {
+  it("times out queued requests even when max concurrency is saturated", async () => {
+    vi.useFakeTimers();
+
+    try {
+      vi.setSystemTime(new Date(0));
+      const controller = new TrafficController({ maxConcurrent: 1 });
+      const order: string[] = [];
+      let releaseFirst!: () => void;
+      const firstGate = new Promise<void>((resolve) => {
+        releaseFirst = resolve;
+      });
+
+      const first = controller.handleText({
+        tenantId: "tenant-a",
+        metadata: { provider: "p", model: "m", priority: "P1" },
+        execute: async () => {
+          order.push("first");
+          await firstGate;
+          return "first";
+        },
+      });
+
+      const second = controller.handleText({
+        tenantId: "tenant-a",
+        metadata: { provider: "p", model: "m", priority: "P1" },
+        maxQueueWaitMs: 1,
+        execute: async () => {
+          order.push("second");
+          return "second";
+        },
+      });
+      const secondExpectation = expect(second).rejects.toHaveProperty(
+        "name",
+        "QueueWaitTimeoutError",
+      );
+
+      await Promise.resolve();
+      expect(order).toEqual(["first"]);
+
+      await vi.advanceTimersByTimeAsync(2);
+      await vi.runAllTimersAsync();
+      await secondExpectation;
+      expect(order).toEqual(["first"]);
+
+      releaseFirst();
+      await vi.runAllTimersAsync();
+      await first;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("lets fallback requests wait after queue timeout without rejecting", async () => {
     vi.useFakeTimers();
 
