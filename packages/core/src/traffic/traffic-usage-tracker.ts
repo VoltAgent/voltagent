@@ -29,7 +29,17 @@ export class TrafficUsageTracker {
       return undefined;
     }
 
-    const usage = extractor(result);
+    let usage: UsageCounters | Promise<UsageCounters | undefined> | undefined;
+    try {
+      usage = extractor(result);
+    } catch (error) {
+      usageLogger?.warn?.("Usage extractor threw; skipping usage", {
+        tenantId: item.tenantId,
+        errorName: (error as { name?: unknown } | null)?.name,
+        errorMessage: (error as { message?: unknown } | null)?.message,
+      });
+      return undefined;
+    }
     if (!usage) {
       usageLogger?.trace?.("Usage extractor returned empty; skipping usage", {
         tenantId: item.tenantId,
@@ -41,7 +51,15 @@ export class TrafficUsageTracker {
       usageLogger?.trace?.("Usage extractor returned promise; awaiting", {
         tenantId: item.tenantId,
       });
-      void usage.then((u) => u && this.incrementTenantUsage(item.tenantId, u, usageLogger));
+      void usage
+        .then((u) => u && this.incrementTenantUsage(item.tenantId, u, usageLogger))
+        .catch((error) => {
+          usageLogger?.warn?.("Usage extractor promise rejected; skipping usage", {
+            tenantId: item.tenantId,
+            errorName: (error as { name?: unknown } | null)?.name,
+            errorMessage: (error as { message?: unknown } | null)?.message,
+          });
+        });
       return usage;
     }
     this.incrementTenantUsage(item.tenantId, usage, usageLogger);
