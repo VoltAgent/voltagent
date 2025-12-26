@@ -431,7 +431,13 @@ export class TrafficController {
    */
 
   private tryDispatchNext(): DispatchDecision {
-    if (this.activeCount >= this.maxConcurrent) return { kind: "wait" };
+    if (this.activeCount >= this.maxConcurrent) {
+      const timeoutSweep = this.processQueueTimeoutsOnly(Date.now());
+      if (timeoutSweep.evicted) return { kind: "skip" };
+      return timeoutSweep.wakeUpAt !== undefined
+        ? { kind: "wait", wakeUpAt: timeoutSweep.wakeUpAt }
+        : { kind: "wait" };
+    }
 
     let earliestWakeUpAt: number | undefined;
 
@@ -935,6 +941,43 @@ export class TrafficController {
 
   private buildRateLimitKey(metadata?: TrafficRequestMetadata): string {
     return this.rateLimitKeyBuilder(metadata);
+  }
+
+  private processQueueTimeoutsOnly(now: number): { evicted: boolean; wakeUpAt?: number } {
+    let evicted = false;
+    let wakeUpAt: number | undefined;
+
+    const observeWakeUpAt = (candidate?: number): void => {
+      if (candidate === undefined) return;
+      wakeUpAt = wakeUpAt === undefined ? candidate : Math.min(wakeUpAt, candidate);
+    };
+
+    for (const priority of this.priorityOrder) {
+      const state = this.queues[priority];
+      if (state.order.length === 0) continue;
+
+      for (const tenantId of [...state.order]) {
+        const queue = state.queues.get(tenantId);
+        if (!queue || queue.length === 0) {
+          this.removeTenantQueue(priority, tenantId);
+          continue;
+        }
+
+        const next = queue[0];
+        const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
+        if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
+          observeWakeUpAt(queueTimeoutAt);
+        }
+
+        const queueTimeoutTriggered = this.handleQueueTimeout(next, queue, 0, now, queueTimeoutAt);
+        if (queueTimeoutTriggered === "rejected") {
+          evicted = true;
+          this.cleanupTenantQueue(priority, tenantId, queue);
+        }
+      }
+    }
+
+    return { evicted, wakeUpAt };
   }
 
   private processQueuedCandidate(
