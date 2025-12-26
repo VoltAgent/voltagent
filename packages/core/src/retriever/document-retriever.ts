@@ -53,6 +53,9 @@ export abstract class DocumentRetriever extends BaseRetriever {
    * Can be overridden if needed.
    */
   async retrieve(input: string | BaseMessage[], options: RetrieveOptions = {}): Promise<string> {
+    if (Array.isArray(input) && input.length === 0) {
+      return "";
+    }
     const textQuery = typeof input === "string" ? input : input[input.length - 1].content;
 
     // We assume the processor's embedder has an embedQuery method.

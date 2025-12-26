@@ -11,6 +11,14 @@ export abstract class TextSplitter {
     this.chunkSize = fields?.chunkSize ?? 1000;
     this.chunkOverlap = fields?.chunkOverlap ?? 200;
 
+    if (this.chunkSize <= 0) {
+      throw new Error(`chunkSize must be a positive number, but got ${this.chunkSize}`);
+    }
+
+    if (this.chunkOverlap < 0) {
+      throw new Error(`chunkOverlap must be non-negative, but got ${this.chunkOverlap}`);
+    }
+
     if (this.chunkOverlap >= this.chunkSize) {
       throw new Error("Chunk overlap must be less than chunk size");
     }
