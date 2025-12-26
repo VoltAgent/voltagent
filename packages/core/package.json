@@ -15,6 +15,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
+    "@voltagent/documents": "workspace:*",
     "@voltagent/internal": "^0.0.12",
     "ts-pattern": "^5.7.1",
     "type-fest": "^4.41.0",
