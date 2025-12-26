@@ -523,6 +523,52 @@ describe("TrafficController token limits", () => {
 });
 
 describe("TrafficController stream reporting", () => {
+  it("holds concurrency slots for streams until completion", async () => {
+    const controller = new TrafficController({ maxConcurrent: 1 });
+    const order: string[] = [];
+    const firstMetadata = {
+      provider: "p",
+      model: "m",
+      priority: "P1" as const,
+      tenantId: "tenant-a",
+    };
+    const secondMetadata = {
+      provider: "p",
+      model: "m",
+      priority: "P1" as const,
+      tenantId: "tenant-a",
+    };
+
+    const first = controller.handleStream({
+      tenantId: "tenant-a",
+      metadata: firstMetadata,
+      execute: async () => {
+        order.push("first");
+        return "first";
+      },
+    });
+
+    const second = controller.handleStream({
+      tenantId: "tenant-a",
+      metadata: secondMetadata,
+      execute: async () => {
+        order.push("second");
+        return "second";
+      },
+    });
+
+    await first;
+    await Promise.resolve();
+    expect(order).toEqual(["first"]);
+
+    controller.reportStreamSuccess(firstMetadata);
+    await Promise.resolve();
+    expect(order).toEqual(["first", "second"]);
+
+    controller.reportStreamSuccess(secondMetadata);
+    await Promise.all([first, second]);
+  });
+
   it("slows down after stream 429 errors", async () => {
     vi.useFakeTimers();
 

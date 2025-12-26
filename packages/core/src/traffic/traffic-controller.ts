@@ -1,5 +1,6 @@
 import type { Logger } from "../logger";
 import { LoggerProxy } from "../logger";
+import { randomUUID } from "../utils/id";
 import { TrafficCircuitBreaker } from "./traffic-circuit-breaker";
 import { TrafficConcurrencyLimiter } from "./traffic-concurrency-limiter";
 import type { DispatchDecision, QueuedRequest, Scheduler } from "./traffic-controller-internal";
@@ -135,6 +136,7 @@ export class TrafficController {
 
   private activeCount = 0;
   private drainScheduled = false;
+  private readonly inFlightStreams = new Map<string, QueuedRequest>();
 
   /* ---------- Rate limits ---------- */
   private readonly rateLimiter: TrafficRateLimiter;
@@ -253,6 +255,7 @@ export class TrafficController {
       rateLimitKey,
     );
     this.recordAdaptiveSuccess(adaptiveKey);
+    this.releaseStreamSlot(metadata, "success");
   }
 
   reportStreamFailure(metadata: TrafficRequestMetadata | undefined, error: unknown): void {
@@ -295,6 +298,7 @@ export class TrafficController {
     if (errorForHandling !== error) {
       this.attachTrafficMetadata(error, traffic);
     }
+    this.releaseStreamSlot(metadata, "failure");
   }
 
   updateRateLimitFromHeaders(
@@ -356,26 +360,27 @@ export class TrafficController {
     request: TrafficRequest<TResponse>,
   ): Promise<TResponse> {
     return new Promise((resolve, reject) => {
-      const priority = this.resolvePriority(request.metadata);
-      const tenantId = this.resolveTenantId(request);
+      const normalizedRequest = this.ensureStreamRequestId(type, request);
+      const priority = this.resolvePriority(normalizedRequest.metadata);
+      const tenantId = this.resolveTenantId(normalizedRequest);
       this.controllerLogger.debug("Enqueue request", {
         type,
         tenantId,
         priority,
-        provider: request.metadata?.provider,
-        model: request.metadata?.model,
+        provider: normalizedRequest.metadata?.provider,
+        model: normalizedRequest.metadata?.model,
       });
       this.enqueueItem({
         type,
-        request,
+        request: normalizedRequest,
         resolve,
         reject,
         attempt: 1,
         priority,
         tenantId,
         enqueuedAt: Date.now(),
-        estimatedTokens: request.estimatedTokens,
-        extractUsage: request.extractUsage,
+        estimatedTokens: normalizedRequest.estimatedTokens,
+        extractUsage: normalizedRequest.extractUsage,
       });
       this.scheduleDrain();
     });
@@ -448,145 +453,11 @@ export class TrafficController {
         if (!candidate) break;
         attempts += 1;
 
-        const { item: next, queue, tenantId } = candidate;
         const now = Date.now();
-        const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
-        const queueTimeoutTriggered = this.handleQueueTimeout(next, queue, 0, now, queueTimeoutAt);
-        if (queueTimeoutTriggered === "rejected") {
-          this.cleanupTenantQueue(priority, tenantId, queue);
-          return { kind: "skip" };
-        }
-        if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
-          observeWakeUpAt(queueTimeoutAt);
-        }
-        const queueTimeoutExpired = queueTimeoutTriggered === "expired";
-
-        this.controllerLogger.trace("Evaluate next queued request", {
-          priority,
-          tenantId: next.tenantId,
-          type: next.type,
-          attempt: next.attempt,
-          provider: next.request.metadata?.provider,
-          model: next.request.metadata?.model,
-          queueLength: queue.length,
-        });
-
-        const circuit = this.resolveCircuit(next);
-        if (circuit) {
-          this.controllerLogger.trace("Circuit resolution returned decision", {
-            priority,
-            decision: circuit,
-            circuitKey: next.circuitKey,
-            circuitStatus: next.circuitStatus,
-          });
-          if (circuit.kind === "skip") {
-            queue.shift();
-            this.cleanupTenantQueue(priority, tenantId, queue);
-            return { kind: "skip" };
-          }
-          if (circuit.kind === "wait") {
-            if (
-              this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "circuit wait")
-            ) {
-              this.cleanupTenantQueue(priority, tenantId, queue);
-              return { kind: "skip" };
-            }
-            next.etaMs =
-              circuit.wakeUpAt !== undefined ? Math.max(0, circuit.wakeUpAt - now) : undefined;
-            observeWakeUpAt(circuit.wakeUpAt);
-            continue;
-          }
-        }
-
-        const concurrency = this.concurrencyLimiter.resolve(next, this.trafficLogger);
-        if (concurrency.kind === "wait") {
-          this.controllerLogger.trace("Concurrency gate blocked request", {
-            priority,
-            tenantId: next.tenantId,
-            provider: next.request.metadata?.provider,
-            model: next.request.metadata?.model,
-            reasons: concurrency.reasons,
-          });
-          if (
-            this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "concurrency wait")
-          ) {
-            this.cleanupTenantQueue(priority, tenantId, queue);
-            return { kind: "skip" };
-          }
-          next.etaMs = undefined;
-          continue;
-        }
-
-        const adaptive = this.resolveAdaptiveLimit(next, now);
-        if (adaptive?.kind === "wait") {
-          if (
-            this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "adaptive wait")
-          ) {
-            this.cleanupTenantQueue(priority, tenantId, queue);
-            return { kind: "skip" };
-          }
-          next.etaMs =
-            adaptive.wakeUpAt !== undefined ? Math.max(0, adaptive.wakeUpAt - now) : undefined;
-          observeWakeUpAt(adaptive.wakeUpAt);
-          continue;
-        }
-
-        const rateLimit = this.resolveRateLimit(next);
-        if (rateLimit) {
-          this.controllerLogger.trace("Rate limit resolution returned decision", {
-            priority,
-            decision: rateLimit,
-            rateLimitKey: next.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
-          });
-          if (rateLimit.kind === "wait") {
-            if (
-              this.rejectIfQueueTimedOut(
-                queueTimeoutExpired,
-                next,
-                queue,
-                0,
-                now,
-                "rate limit wait",
-              )
-            ) {
-              this.cleanupTenantQueue(priority, tenantId, queue);
-              return { kind: "skip" };
-            }
-            next.etaMs =
-              rateLimit.wakeUpAt !== undefined ? Math.max(0, rateLimit.wakeUpAt - now) : undefined;
-            observeWakeUpAt(rateLimit.wakeUpAt);
-          }
-          continue;
-        }
-
-        if (queueTimeoutExpired) {
-          const timeoutError = this.createQueueTimeoutError(next, now);
-          this.attachTrafficMetadata(
-            timeoutError,
-            this.buildTrafficResponseMetadata(
-              next,
-              timeoutError.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
-              now,
-              timeoutError,
-            ),
-          );
-          this.controllerLogger.warn("Queue wait timed out before dispatch", {
-            tenantId: next.tenantId,
-            waitedMs: timeoutError.waitedMs,
-            maxQueueWaitMs: timeoutError.maxQueueWaitMs,
-            deadlineAt: timeoutError.deadlineAt,
-            provider: next.request.metadata?.provider,
-            model: next.request.metadata?.model,
-            rateLimitKey: timeoutError.rateLimitKey,
-          });
-          queue.shift();
-          this.cleanupTenantQueue(priority, tenantId, queue);
-          next.reject(timeoutError);
-          return { kind: "skip" };
-        }
-
-        this.startRequest(next, queue, tenantId);
-        return { kind: "dispatch" };
+        const result = this.processQueuedCandidate(priority, candidate, now);
+        observeWakeUpAt(result.wakeUpAt);
+        if (result.action === "dispatch") return { kind: "dispatch" };
+        if (result.action === "skip") return { kind: "skip" };
       }
     }
 
@@ -622,6 +493,7 @@ export class TrafficController {
 
   private async executeRequest<TResponse>(item: QueuedRequest<TResponse>): Promise<void> {
     const startedAt = Date.now();
+    let streamHeld = false;
     try {
       this.controllerLogger.debug("Execute request", {
         priority: item.priority,
@@ -661,6 +533,25 @@ export class TrafficController {
         result,
         this.buildTrafficResponseMetadata(item, rateLimitKey, Date.now()),
       );
+      if (item.type === "stream") {
+        const requestId = item.request.metadata?.requestId;
+        if (!requestId) {
+          this.controllerLogger.warn("Stream missing requestId; releasing slot immediately", {
+            tenantId: item.tenantId,
+            provider: item.request.metadata?.provider,
+            model: item.request.metadata?.model,
+          });
+        } else {
+          this.inFlightStreams.set(requestId, item);
+          streamHeld = true;
+          this.controllerLogger.debug("Stream registered; holding slot", {
+            requestId,
+            tenantId: item.tenantId,
+            provider: item.request.metadata?.provider,
+            model: item.request.metadata?.model,
+          });
+        }
+      }
       item.resolve(result);
     } catch (error) {
       const rateLimitKey = item.rateLimitKey ?? this.buildRateLimitKey(item.request.metadata);
@@ -749,15 +640,9 @@ export class TrafficController {
         item.reject(errorForHandling);
       }
     } finally {
-      this.rateLimiter.releaseReservation(item.rateLimitKey, this.trafficLogger);
-      this.concurrencyLimiter.release(item, this.trafficLogger);
-      this.activeCount = Math.max(0, this.activeCount - 1);
-      this.controllerLogger.trace("Request finished; slot released", {
-        tenantId: item.tenantId,
-        activeCount: this.activeCount,
-        maxConcurrent: this.maxConcurrent,
-      });
-      this.scheduleDrain();
+      if (!(item.type === "stream" && streamHeld)) {
+        this.releaseActiveSlot(item, "completed");
+      }
     }
   }
 
@@ -1049,6 +934,217 @@ export class TrafficController {
 
   private buildRateLimitKey(metadata?: TrafficRequestMetadata): string {
     return this.rateLimitKeyBuilder(metadata);
+  }
+
+  private processQueuedCandidate(
+    priority: TrafficPriority,
+    candidate: { item: QueuedRequest; queue: QueuedRequest[]; tenantId: string },
+    now: number,
+  ): { action: "dispatch" | "skip" | "continue"; wakeUpAt?: number } {
+    const { item: next, queue, tenantId } = candidate;
+    let wakeUpAt: number | undefined;
+    const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
+    const queueTimeoutTriggered = this.handleQueueTimeout(next, queue, 0, now, queueTimeoutAt);
+    if (queueTimeoutTriggered === "rejected") {
+      this.cleanupTenantQueue(priority, tenantId, queue);
+      return { action: "skip" };
+    }
+    if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
+      wakeUpAt = queueTimeoutAt;
+    }
+    const queueTimeoutExpired = queueTimeoutTriggered === "expired";
+
+    this.controllerLogger.trace("Evaluate next queued request", {
+      priority,
+      tenantId: next.tenantId,
+      type: next.type,
+      attempt: next.attempt,
+      provider: next.request.metadata?.provider,
+      model: next.request.metadata?.model,
+      queueLength: queue.length,
+    });
+
+    const circuit = this.resolveCircuit(next);
+    if (circuit) {
+      this.controllerLogger.trace("Circuit resolution returned decision", {
+        priority,
+        decision: circuit,
+        circuitKey: next.circuitKey,
+        circuitStatus: next.circuitStatus,
+      });
+      if (circuit.kind === "skip") {
+        queue.shift();
+        this.cleanupTenantQueue(priority, tenantId, queue);
+        return { action: "skip", wakeUpAt };
+      }
+      if (circuit.kind === "wait") {
+        if (this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "circuit wait")) {
+          this.cleanupTenantQueue(priority, tenantId, queue);
+          return { action: "skip", wakeUpAt };
+        }
+        next.etaMs =
+          circuit.wakeUpAt !== undefined ? Math.max(0, circuit.wakeUpAt - now) : undefined;
+        return { action: "continue", wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, circuit.wakeUpAt) };
+      }
+    }
+
+    const concurrency = this.concurrencyLimiter.resolve(next, this.trafficLogger);
+    if (concurrency.kind === "wait") {
+      this.controllerLogger.trace("Concurrency gate blocked request", {
+        priority,
+        tenantId: next.tenantId,
+        provider: next.request.metadata?.provider,
+        model: next.request.metadata?.model,
+        reasons: concurrency.reasons,
+      });
+      if (
+        this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "concurrency wait")
+      ) {
+        this.cleanupTenantQueue(priority, tenantId, queue);
+        return { action: "skip", wakeUpAt };
+      }
+      next.etaMs = undefined;
+      return { action: "continue", wakeUpAt };
+    }
+
+    const adaptive = this.resolveAdaptiveLimit(next, now);
+    if (adaptive?.kind === "wait") {
+      if (this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "adaptive wait")) {
+        this.cleanupTenantQueue(priority, tenantId, queue);
+        return { action: "skip", wakeUpAt };
+      }
+      next.etaMs =
+        adaptive.wakeUpAt !== undefined ? Math.max(0, adaptive.wakeUpAt - now) : undefined;
+      return { action: "continue", wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, adaptive.wakeUpAt) };
+    }
+
+    const rateLimit = this.resolveRateLimit(next);
+    if (rateLimit) {
+      this.controllerLogger.trace("Rate limit resolution returned decision", {
+        priority,
+        decision: rateLimit,
+        rateLimitKey: next.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
+      });
+      if (rateLimit.kind === "wait") {
+        if (
+          this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "rate limit wait")
+        ) {
+          this.cleanupTenantQueue(priority, tenantId, queue);
+          return { action: "skip", wakeUpAt };
+        }
+        next.etaMs =
+          rateLimit.wakeUpAt !== undefined ? Math.max(0, rateLimit.wakeUpAt - now) : undefined;
+        return {
+          action: "continue",
+          wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, rateLimit.wakeUpAt),
+        };
+      }
+      return { action: "continue", wakeUpAt };
+    }
+
+    if (queueTimeoutExpired) {
+      const timeoutError = this.createQueueTimeoutError(next, now);
+      this.attachTrafficMetadata(
+        timeoutError,
+        this.buildTrafficResponseMetadata(
+          next,
+          timeoutError.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
+          now,
+          timeoutError,
+        ),
+      );
+      this.controllerLogger.warn("Queue wait timed out before dispatch", {
+        tenantId: next.tenantId,
+        waitedMs: timeoutError.waitedMs,
+        maxQueueWaitMs: timeoutError.maxQueueWaitMs,
+        deadlineAt: timeoutError.deadlineAt,
+        provider: next.request.metadata?.provider,
+        model: next.request.metadata?.model,
+        rateLimitKey: timeoutError.rateLimitKey,
+      });
+      queue.shift();
+      this.cleanupTenantQueue(priority, tenantId, queue);
+      next.reject(timeoutError);
+      return { action: "skip", wakeUpAt };
+    }
+
+    this.startRequest(next, queue, tenantId);
+    return { action: "dispatch", wakeUpAt };
+  }
+
+  private pickEarlierWakeUp(
+    current: number | undefined,
+    candidate: number | undefined,
+  ): number | undefined {
+    if (candidate === undefined) return current;
+    if (current === undefined) return candidate;
+    return Math.min(current, candidate);
+  }
+
+  private ensureStreamRequestId<TResponse>(
+    type: TrafficRequestType,
+    request: TrafficRequest<TResponse>,
+  ): TrafficRequest<TResponse> {
+    if (type !== "stream") return request;
+    const metadata = request.metadata;
+    if (metadata?.requestId) return request;
+
+    const requestId = randomUUID();
+    if (metadata && typeof metadata === "object") {
+      (metadata as TrafficRequestMetadata).requestId = requestId;
+      return request;
+    }
+
+    return {
+      ...request,
+      metadata: {
+        ...(metadata ?? {}),
+        requestId,
+      },
+    };
+  }
+
+  private releaseStreamSlot(
+    metadata: TrafficRequestMetadata | undefined,
+    outcome: "success" | "failure",
+  ): void {
+    const requestId = metadata?.requestId;
+    if (!requestId) {
+      this.controllerLogger.debug("Stream completion missing requestId; slot not released", {
+        outcome,
+      });
+      return;
+    }
+    const item = this.inFlightStreams.get(requestId);
+    if (!item) {
+      this.controllerLogger.debug("Stream completion missing in-flight entry", {
+        requestId,
+        outcome,
+      });
+      return;
+    }
+    this.inFlightStreams.delete(requestId);
+    this.controllerLogger.debug("Stream completed; releasing slot", {
+      requestId,
+      tenantId: item.tenantId,
+      provider: item.request.metadata?.provider,
+      model: item.request.metadata?.model,
+      outcome,
+    });
+    this.releaseActiveSlot(item, `stream-${outcome}`);
+  }
+
+  private releaseActiveSlot(item: QueuedRequest, reason: string): void {
+    this.rateLimiter.releaseReservation(item.rateLimitKey, this.trafficLogger);
+    this.concurrencyLimiter.release(item, this.trafficLogger);
+    this.activeCount = Math.max(0, this.activeCount - 1);
+    this.controllerLogger.trace("Request finished; slot released", {
+      tenantId: item.tenantId,
+      activeCount: this.activeCount,
+      maxConcurrent: this.maxConcurrent,
+      reason,
+    });
+    this.scheduleDrain();
   }
 
   private resolveAdaptiveLimit(next: QueuedRequest, now: number): DispatchDecision | null {
