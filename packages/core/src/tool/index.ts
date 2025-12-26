@@ -1,10 +1,32 @@
+import type { ProviderOptions } from "@ai-sdk/provider-utils";
 import type { Tool as VercelTool } from "ai";
-import { v4 as uuidv4 } from "uuid";
 import type { z } from "zod";
-import type { BaseTool, ToolSchema } from "../agent/providers/base/types";
-import type { OperationContext } from "../agent/types";
+import type { BaseTool, ToolExecuteOptions, ToolSchema } from "../agent/providers/base/types";
 import { LoggerProxy } from "../logger";
+
+/**
+ * JSON value types (matches AI SDK's JSONValue)
+ */
+type JSONValue = string | number | boolean | null | { [key: string]: JSONValue } | Array<JSONValue>;
+
+/**
+ * Tool result output format for multi-modal content.
+ * Matches AI SDK's LanguageModelV2ToolResultOutput type.
+ */
+export type ToolResultOutput =
+  | { type: "text"; value: string }
+  | { type: "json"; value: JSONValue }
+  | { type: "error-text"; value: string }
+  | { type: "error-json"; value: JSONValue }
+  | {
+      type: "content";
+      value: Array<
+        { type: "text"; text: string } | { type: "media"; data: string; mediaType: string }
+      >;
+    };
+
 export type { Tool as VercelTool } from "ai";
+export type { ProviderOptions } from "@ai-sdk/provider-utils";
 
 // Export ToolManager and related types
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
@@ -54,11 +76,54 @@ export type ToolOptions<
   outputSchema?: O;
 
   /**
-   * Function to execute when the tool is called
+   * Optional user-defined tags for organizing or labeling tools.
+   */
+  tags?: string[];
+
+  /**
+   * Provider-specific options for the tool.
+   * Enables provider-specific functionality like cache control.
+   *
+   * @example
+   * ```typescript
+   * // Anthropic cache control
+   * providerOptions: {
+   *   anthropic: {
+   *     cacheControl: { type: 'ephemeral' }
+   *   }
+   * }
+   * ```
+   */
+  providerOptions?: ProviderOptions;
+
+  /**
+   * Optional function to convert tool output to multi-modal content.
+   * Enables returning images, media, or structured content to the LLM.
+   *
+   * Supported by: Anthropic, OpenAI
+   *
+   * @example
+   * ```typescript
+   * // Return image + text
+   * toModelOutput: (result) => ({
+   *   type: 'content',
+   *   value: [
+   *     { type: 'text', text: 'Screenshot taken' },
+   *     { type: 'media', data: result.base64Image, mediaType: 'image/png' }
+   *   ]
+   * })
+   * ```
+   */
+  toModelOutput?: (output: O extends ToolSchema ? z.infer<O> : unknown) => ToolResultOutput;
+
+  /**
+   * Function to execute when the tool is called.
+   * @param args - The arguments passed to the tool
+   * @param options - Optional execution options including context, abort signals, etc.
    */
   execute?: (
     args: z.infer<T>,
-    context?: OperationContext,
+    options?: ToolExecuteOptions,
   ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
 };
 
@@ -93,17 +158,38 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   readonly outputSchema?: O;
 
   /**
+   * Optional user-defined tags for organizing or labeling tools.
+   */
+  readonly tags?: string[];
+
+  /**
+   * Provider-specific options for the tool.
+   * Enables provider-specific functionality like cache control.
+   */
+  readonly providerOptions?: ProviderOptions;
+
+  /**
+   * Optional function to convert tool output to multi-modal content.
+   * Enables returning images, media, or structured content to the LLM.
+   */
+  readonly toModelOutput?: (
+    output: O extends ToolSchema ? z.infer<O> : unknown,
+  ) => ToolResultOutput;
+
+  /**
    * Internal discriminator to make runtime/type checks simpler across module boundaries.
    * Marking our Tool instances with a stable string avoids instanceof issues.
    */
   readonly type = "user-defined" as const;
 
   /**
-   * Function to execute when the tool is called
+   * Function to execute when the tool is called.
+   * @param args - The arguments passed to the tool
+   * @param options - Optional execution options including context, abort signals, etc.
    */
   readonly execute?: (
     args: z.infer<T>,
-    context?: OperationContext,
+    options?: ToolExecuteOptions,
   ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
 
   /**
@@ -129,11 +215,14 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
       throw new Error(`Tool '${options.name}' parameters schema is required`);
     }
 
-    this.id = options.id || uuidv4();
+    this.id = options.id ?? options.name;
     this.name = options.name;
     this.description = options.description || "";
     this.parameters = options.parameters;
     this.outputSchema = options.outputSchema;
+    this.tags = options.tags;
+    this.providerOptions = options.providerOptions;
+    this.toModelOutput = options.toModelOutput;
     this.execute = options.execute;
   }
 }

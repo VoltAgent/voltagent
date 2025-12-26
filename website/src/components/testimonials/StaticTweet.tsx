@@ -1,5 +1,5 @@
 import type { Tweet } from "react-tweet/api";
-import { MagicTweet, TweetNotFound } from "../magicui/tweet-card";
+import { MagicTweet } from "../magicui/tweet-card";
 
 interface StaticTweetProps {
   tweet: Tweet | null;
@@ -7,11 +7,10 @@ interface StaticTweetProps {
 }
 
 export function StaticTweet({ tweet, className }: StaticTweetProps) {
-  console.log("StaticTweet received tweet:", tweet);
-
-  if (!tweet) {
-    console.log("Tweet is null/undefined, showing TweetNotFound");
-    return <TweetNotFound />;
+  // If tweet is null/undefined or missing required fields, don't render anything
+  // This prevents "Tweet not found" cards from appearing in the testimonials
+  if (!tweet || !tweet.id_str || !tweet.user) {
+    return null;
   }
 
   return <MagicTweet tweet={tweet} className={className} />;

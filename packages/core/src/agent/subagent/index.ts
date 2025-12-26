@@ -1,4 +1,4 @@
-import type { Span } from "@opentelemetry/api";
+import { type Span, trace } from "@opentelemetry/api";
 import { safeStringify } from "@voltagent/internal/utils";
 import type { UIDataTypes, UIMessage, UIMessageStreamWriter, UITools } from "ai";
 import { z } from "zod";
@@ -13,6 +13,12 @@ import type {
   StreamObjectOptions,
   StreamTextOptions,
 } from "../agent";
+import {
+  AGENT_METADATA_CONTEXT_KEY,
+  type AgentMetadataContextValue,
+  SUBAGENT_TOOL_CALL_METADATA_KEY,
+} from "../memory-persist-queue";
+import type { UsageInfo } from "../providers/base/types";
 import type { OperationContext, SupervisorConfig } from "../types";
 import type { SubAgentStateData } from "../types";
 import type {
@@ -142,10 +148,13 @@ export class SubAgentManager {
    */
   private extractAgentPurpose(agentConfig: SubAgentConfig): string {
     const agent = this.extractAgent(agentConfig);
-    if (typeof agent.instructions === "string") {
-      return agent.purpose ?? agent.instructions;
+    if (agent.purpose) {
+      return agent.purpose;
     }
-    return agent.purpose ?? "Dynamic instructions";
+    if (typeof agent.instructions === "string") {
+      return agent.instructions;
+    }
+    return "Dynamic instructions";
   }
 
   /**
@@ -309,7 +318,8 @@ ${guidelinesText}
   }): Promise<{
     result: string;
     messages: UIMessage[];
-    usage?: any;
+    usage?: UsageInfo;
+    bailed?: boolean;
   }> {
     const {
       task,
@@ -382,6 +392,10 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       if (this.isDirectAgent(targetAgentConfig)) {
         // Direct agent - use streamText by default
         const response = await targetAgent.streamText(messages, baseOptions);
+        const forwardingMetadata = this.buildForwardingMetadata(
+          targetAgent,
+          parentOperationContext,
+        );
 
         // Get the UI stream writer from operationContext if available
         const uiStreamWriter = parentOperationContext?.systemContext?.get(
@@ -403,10 +417,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           // Apply type filters from supervisor config
           const enrichedStream = createMetadataEnrichedStream(
             subagentUIStream,
-            {
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            },
+            forwardingMetadata,
             this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
           );
 
@@ -435,9 +446,9 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
                 // Add subagent metadata to each part
                 const enrichedPart = {
                   ...part,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
+                  ...forwardingMetadata,
                 };
+                this.registerToolCallMetadata(parentOperationContext, enrichedPart, targetAgent);
                 await fullStreamWriter.write(enrichedPart);
               }
             } catch (error) {
@@ -451,8 +462,11 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           writeSubagentFullStream();
         }
 
-        // Get the final result
-        finalResult = await response.text;
+        // Get the final result - check for bailed result first
+        const bailedResultFromContext = parentOperationContext?.systemContext?.get(
+          "bailedResult",
+        ) as { agentName: string; response: string } | undefined;
+        finalResult = bailedResultFromContext?.response || (await response.text);
         usage = await response.usage;
 
         const assistantMessage: UIMessage = {
@@ -465,6 +479,10 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         // StreamText configuration
         const options: StreamTextOptions = { ...baseOptions, ...targetAgentConfig.options };
         const response = await targetAgent.streamText(messages, options);
+        const forwardingMetadata = this.buildForwardingMetadata(
+          targetAgent,
+          parentOperationContext,
+        );
 
         // Get the UI stream writer from operationContext if available
         const uiStreamWriter = parentOperationContext?.systemContext?.get(
@@ -486,10 +504,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           // Apply type filters from supervisor config
           const enrichedStream = createMetadataEnrichedStream(
             subagentUIStream,
-            {
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            },
+            forwardingMetadata,
             this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
           );
 
@@ -518,9 +533,9 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
                 // Add subagent metadata to each part
                 const enrichedPart = {
                   ...part,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
+                  ...forwardingMetadata,
                 };
+                this.registerToolCallMetadata(parentOperationContext, enrichedPart, targetAgent);
                 await fullStreamWriter.write(enrichedPart);
               }
             } catch (error) {
@@ -534,8 +549,11 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           writeSubagentFullStream();
         }
 
-        // Get the final result
-        finalResult = await response.text;
+        // Get the final result - check for bailed result first
+        const bailedResultFromContext = parentOperationContext?.systemContext?.get(
+          "bailedResult",
+        ) as { agentName: string; response: string } | undefined;
+        finalResult = bailedResultFromContext?.response || (await response.text);
         usage = await response.usage;
 
         const assistantMessage: UIMessage = {
@@ -594,6 +612,77 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       } else {
         // This should never happen due to exhaustive type checking
         throw new Error("Unknown subagent configuration type");
+      }
+
+      // Call onHandoffComplete hook on SOURCE agent (supervisor) if available
+      if (sourceAgent?.hooks?.onHandoffComplete) {
+        let bailed = false;
+        let bailedResult: string | undefined;
+
+        // Create bail function that can be called by the hook
+        const bail = (transformedResult?: string) => {
+          bailed = true;
+          bailedResult = transformedResult;
+        };
+
+        try {
+          // Call the hook with all relevant information
+          await sourceAgent.hooks.onHandoffComplete({
+            agent: targetAgent,
+            sourceAgent,
+            result: finalResult,
+            messages: finalMessages,
+            usage,
+            context: parentOperationContext || ({} as OperationContext),
+            bail,
+          });
+        } catch (error) {
+          // If hook throws error, log and continue normally (don't bail)
+          const logger = parentOperationContext?.logger || getGlobalLogger();
+          logger.error("Error in onHandoffComplete hook", { error });
+        }
+
+        // Check if hook called bail()
+        if (bailed) {
+          const logger = parentOperationContext?.logger || getGlobalLogger();
+          logger.info("Supervisor bailed after handoff", {
+            supervisorAgent: sourceAgent.name,
+            subAgent: targetAgent.name,
+            transformed: bailedResult !== undefined,
+            resultLength: finalResult.length,
+          });
+
+          // Add OpenTelemetry span attributes for observability UI
+          const currentSpan = trace.getActiveSpan();
+          if (currentSpan) {
+            // Add attributes to current span (subagent span)
+            currentSpan.setAttribute("bailed", true);
+            currentSpan.setAttribute("bail.supervisor", sourceAgent.name);
+            currentSpan.setAttribute("bail.transformed", bailedResult !== undefined);
+
+            // Set output attribute so it appears in observability UI
+            const outputToSet = bailedResult !== undefined ? bailedResult : finalResult;
+            currentSpan.setAttribute("output", outputToSet);
+          }
+
+          // Add attributes to supervisor root span for observability
+          if (parentOperationContext?.traceContext) {
+            const rootSpan = parentOperationContext.traceContext.getRootSpan();
+            if (rootSpan) {
+              rootSpan.setAttribute("bailed", true);
+              rootSpan.setAttribute("bail.subagent", targetAgent.name);
+              rootSpan.setAttribute("bail.transformed", bailedResult !== undefined);
+            }
+          }
+
+          // Return with bailed flag and possibly transformed result
+          return {
+            result: bailedResult !== undefined ? bailedResult : finalResult,
+            messages: finalMessages,
+            usage,
+            bailed: true,
+          };
+        }
       }
 
       return {
@@ -656,7 +745,8 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     Array<{
       result: string;
       messages: UIMessage[];
-      usage?: any;
+      usage?: UsageInfo;
+      bailed?: boolean;
     }>
   > {
     const { targetAgents, conversationId, ...restOptions } = options;
@@ -710,7 +800,10 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           .optional()
           .describe("Additional context for the task"),
       }),
-      execute: async ({ task, targetAgents, context = {} }, currentOperationContext) => {
+      execute: async ({ task, targetAgents, context = {} }, options) => {
+        // Extract OperationContext from options if available
+        // Since ToolExecuteOptions extends Partial<OperationContext>, we can cast it
+        const currentOperationContext = options as OperationContext | undefined;
         // Fall back to the original operation context if not available
         const effectiveOperationContext = currentOperationContext || operationContext;
 
@@ -783,9 +876,11 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
               agentName: this.extractAgentName(agents[index]),
               response: result.result,
               usage: result.usage,
+              bailed: result.bailed,
             };
           });
 
+          // Always return array for consistent API
           return structuredResults;
         } catch (error) {
           logger.error("Error in delegate_task tool execution", { error });
@@ -842,5 +937,47 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
 
       return subAgentData;
     });
+  }
+
+  private buildForwardingMetadata(agent: Agent, oc?: OperationContext) {
+    const parentMetadata = oc?.systemContext?.get(AGENT_METADATA_CONTEXT_KEY) as
+      | AgentMetadataContextValue
+      | undefined;
+
+    return {
+      subAgentId: agent.id,
+      subAgentName: agent.name,
+      executingAgentId: agent.id,
+      executingAgentName: agent.name,
+      parentAgentId: parentMetadata?.agentId,
+      parentAgentName: parentMetadata?.agentName,
+      agentPath: parentMetadata ? [parentMetadata.agentName, agent.name] : [agent.name],
+    };
+  }
+
+  private registerToolCallMetadata(
+    oc: OperationContext | undefined,
+    part: { type?: string; toolCallId?: string },
+    agent: Agent,
+  ): void {
+    if (!oc || !part?.type || !part.type.startsWith("tool-") || !part.toolCallId) {
+      return;
+    }
+
+    let metadataMap = oc.systemContext.get(SUBAGENT_TOOL_CALL_METADATA_KEY) as
+      | Map<string, AgentMetadataContextValue>
+      | undefined;
+
+    if (!metadataMap) {
+      metadataMap = new Map();
+      oc.systemContext.set(SUBAGENT_TOOL_CALL_METADATA_KEY, metadataMap);
+    }
+
+    if (!metadataMap.has(part.toolCallId)) {
+      metadataMap.set(part.toolCallId, {
+        agentId: agent.id,
+        agentName: agent.name,
+      });
+    }
   }
 }

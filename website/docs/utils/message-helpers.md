@@ -6,8 +6,12 @@ title: Message Helpers
 
 Message helpers are utility functions for working with message content in VoltAgent.
 
-- Content-level helpers operate on `MessageContent` (string or array of parts like text/image/file).
-- Message-level helpers operate on `UIMessage` (ai-sdk UI message format used by Agent hooks and generation).
+Message helpers work with two message formats:
+
+- **MessageContent** - The `content` property from AI SDK's ModelMessage (string or array of content parts)
+- **UIMessage** - The AI SDK UI message format with `id`, `role`, and `parts` array (used by Agent hooks, memory, and generation)
+
+Most extractor and checker functions support **both formats** using TypeScript overloads, so you can use the same function regardless of which format you're working with.
 
 ## Import
 
@@ -15,6 +19,61 @@ Message helpers are utility functions for working with message content in VoltAg
 import { messageHelpers } from "@voltagent/core";
 // Or import individual functions
 import { isTextContent, extractText, MessageContentBuilder } from "@voltagent/core/utils";
+```
+
+:::info Understanding Message Types
+VoltAgent uses different message types for different purposes. For a comprehensive guide on **MessageContent**, **UIMessage**, and **VoltAgentTextStreamPart**, see [Understanding Message Types](../agents/message-types.md).
+:::
+
+## Working with UIMessage
+
+All extractor and checker functions (`extractText`, `extractTextParts`, `extractImageParts`, `extractFileParts`, `hasTextPart`, `hasImagePart`, `hasFilePart`, `getContentLength`) support **both MessageContent and UIMessage** using TypeScript overloads.
+
+This means you can use the same function whether you're working with:
+
+- `ModelMessage.content` (MessageContent format)
+- Messages from `memory.getMessages()` (UIMessage format)
+- Messages in agent hooks (UIMessage format)
+
+### Example: Memory Integration
+
+```typescript
+import { extractText, hasImagePart, extractImageParts } from "@voltagent/core";
+
+// Get messages from memory (returns UIMessage[])
+const messages = await memory.getMessages(userId, conversationId);
+
+// Extract text directly from UIMessage
+const text = extractText(messages[0]);
+console.log(text); // Works seamlessly!
+
+// Check for images in UIMessage
+if (hasImagePart(messages[0])) {
+  const images = extractImageParts(messages[0]);
+  // Process images...
+}
+
+// TypeScript automatically infers the correct return types
+```
+
+### Example: Both Formats
+
+```typescript
+import { extractText } from "@voltagent/core";
+
+// Works with MessageContent
+const content = [{ type: "text", text: "Hello" }];
+extractText(content); // "Hello"
+
+// Also works with UIMessage
+const message = {
+  id: "msg-1",
+  role: "user",
+  parts: [{ type: "text", text: "Hello" }],
+};
+extractText(message); // "Hello"
+
+// Same function, different formats!
 ```
 
 ## Type Guards
@@ -54,11 +113,12 @@ console.log(isStructuredContent(arrayContent)); // true
 
 ### `hasTextPart()`
 
-Checks if content contains any text, regardless of format.
+Checks if content contains any text, regardless of format. Works with both MessageContent and UIMessage.
 
 ```typescript
 import { hasTextPart } from "@voltagent/core/utils";
 
+// With MessageContent
 const stringContent = "Hello";
 const mixedContent = [
   { type: "text", text: "Description" },
@@ -69,15 +129,30 @@ const imageOnlyContent = [{ type: "image", image: "data..." }];
 console.log(hasTextPart(stringContent)); // true
 console.log(hasTextPart(mixedContent)); // true
 console.log(hasTextPart(imageOnlyContent)); // false
+
+// With UIMessage
+import type { UIMessage } from "ai";
+
+const message: UIMessage = {
+  id: "m1",
+  role: "user",
+  parts: [
+    { type: "text", text: "Hello" },
+    { type: "file", url: "image.png", mediaType: "image/png" },
+  ],
+} as UIMessage;
+
+console.log(hasTextPart(message)); // true
 ```
 
 ### `hasImagePart()` and `hasFilePart()`
 
-Check for specific content part types.
+Check for specific content part types. Works with both MessageContent and UIMessage.
 
 ```typescript
 import { hasImagePart, hasFilePart } from "@voltagent/core/utils";
 
+// With MessageContent
 const content = [
   { type: "text", text: "Check this image:" },
   { type: "image", image: "data:image/png;base64..." },
@@ -87,6 +162,21 @@ const content = [
 console.log(hasImagePart(content)); // true
 console.log(hasFilePart(content)); // true
 console.log(hasImagePart("text")); // false
+
+// With UIMessage
+import type { UIMessage } from "ai";
+
+const message: UIMessage = {
+  id: "m1",
+  role: "user",
+  parts: [
+    { type: "text", text: "Check this:" },
+    { type: "file", url: "image.png", mediaType: "image/png" },
+  ],
+} as UIMessage;
+
+console.log(hasImagePart(message)); // true (file with image mediaType)
+console.log(hasFilePart(message)); // true
 ```
 
 ## Extractors
@@ -95,16 +185,16 @@ Extractors retrieve specific content types from messages.
 
 ### `extractText()`
 
-Extracts all text from content, concatenating multiple text parts.
+Extracts all text from content, concatenating multiple text parts. Works with both MessageContent and UIMessage.
 
 ```typescript
 import { extractText } from "@voltagent/core/utils";
 
-// From string content
+// From string content (MessageContent)
 const text1 = extractText("Hello world");
 console.log(text1); // "Hello world"
 
-// From structured content
+// From structured content (MessageContent)
 const content = [
   { type: "text", text: "Hello " },
   { type: "image", image: "data..." },
@@ -113,10 +203,25 @@ const content = [
 const text2 = extractText(content);
 console.log(text2); // "Hello world"
 
-// From non-text content
-const imageOnly = [{ type: "image", image: "data..." }];
-const text3 = extractText(imageOnly);
-console.log(text3); // ""
+// From UIMessage
+import type { UIMessage } from "ai";
+
+const message: UIMessage = {
+  id: "m1",
+  role: "user",
+  parts: [
+    { type: "text", text: "Hello " },
+    { type: "file", url: "image.png", mediaType: "image/png" },
+    { type: "text", text: "world" },
+  ],
+} as UIMessage;
+
+const text3 = extractText(message);
+console.log(text3); // "Hello world"
+
+// From memory
+const messages = await memory.getMessages(userId, conversationId);
+const text4 = extractText(messages[0]);
 ```
 
 ### `extractTextParts()`
@@ -491,18 +596,33 @@ const agent = new Agent({
 ```typescript
 function isTextContent(content: MessageContent): content is string;
 function isStructuredContent(content: MessageContent): content is Array<any>;
+
+// Overloaded to support both MessageContent and UIMessage
 function hasTextPart(content: MessageContent): boolean;
+function hasTextPart(message: UIMessage): boolean;
+
 function hasImagePart(content: MessageContent): boolean;
+function hasImagePart(message: UIMessage): boolean;
+
 function hasFilePart(content: MessageContent): boolean;
+function hasFilePart(message: UIMessage): boolean;
 ```
 
 ### Extractors
 
 ```typescript
+// Overloaded to support both MessageContent and UIMessage
 function extractText(content: MessageContent): string;
+function extractText(message: UIMessage): string;
+
 function extractTextParts(content: MessageContent): Array<{ type: "text"; text: string }>;
+function extractTextParts(message: UIMessage): TextUIPart[];
+
 function extractImageParts(content: MessageContent): Array<any>;
+function extractImageParts(message: UIMessage): FileUIPart[];
+
 function extractFileParts(content: MessageContent): Array<any>;
+function extractFileParts(message: UIMessage): FileUIPart[];
 ```
 
 ### Transformers
@@ -550,7 +670,10 @@ function addTimestampToMessage(message: UIMessage, timestamp?: string): UIMessag
 function prependToMessage(message: UIMessage, prefix: string): UIMessage;
 function appendToMessage(message: UIMessage, suffix: string): UIMessage;
 function hasContent(message: UIMessage): boolean;
+
+// Overloaded to support both MessageContent and UIMessage
 function getContentLength(content: MessageContent): number;
+function getContentLength(message: UIMessage): number;
 ```
 
 ### Combined Export

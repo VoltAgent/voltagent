@@ -62,6 +62,10 @@ export function Footer() {
             <div className="text-gray-400 text-center lg:text-left text-xs md:text-base">
               VoltAgent Inc. © {new Date().getFullYear()}
             </div>
+            <div className="flex gap-4 mt-2 text-center lg:text-left">
+              <FooterLink href="/privacy">Privacy Policy</FooterLink>
+              <FooterLink href="/terms">Terms of Service</FooterLink>
+            </div>
           </div>
 
           {/* Main footer links */}

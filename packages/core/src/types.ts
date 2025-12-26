@@ -12,6 +12,8 @@ import type { AgentStatus } from "./agent/types";
 import type { MCPServerRegistry } from "./mcp";
 import type { VoltAgentObservability } from "./observability";
 import type { ToolStatusInfo } from "./tool";
+import type { TriggerRegistry } from "./triggers/registry";
+import type { VoltAgentTriggersConfig } from "./triggers/types";
 import type { VoltOpsClient } from "./voltops/client";
 import type { WorkflowChain } from "./workflow/chain";
 import type { RegisteredWorkflow } from "./workflow/registry";
@@ -100,6 +102,7 @@ export interface ServerProviderDeps {
     getWorkflowsForApi(): unknown[];
     getWorkflowDetailForApi(id: string): unknown;
     getWorkflowCount(): number;
+    getAllWorkflowIds(): string[];
     on(event: string, handler: (...args: any[]) => void): void;
     off(event: string, handler: (...args: any[]) => void): void;
     activeExecutions: Map<string, WorkflowSuspendController>;
@@ -120,6 +123,7 @@ export interface ServerProviderDeps {
   a2a?: {
     registry: A2AServerRegistry;
   };
+  triggerRegistry: TriggerRegistry;
   ensureEnvironment?: (env?: Record<string, unknown>) => void;
 }
 
@@ -188,6 +192,8 @@ export type VoltAgentOptions = {
         DangerouslyAllowAny
       >
   >;
+  /** Optional VoltOps trigger handlers */
+  triggers?: VoltAgentTriggersConfig;
   /**
    * Server provider factory function
    * Example: honoServer({ port: 3141, enableSwaggerUI: true })

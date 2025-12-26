@@ -76,8 +76,9 @@ OPENAI_API_KEY="your-openai-api-key-here"
 Create the main chat API route with the agent and singleton defined inline in `app/api/chat/route.ts`:
 
 ```typescript title="app/api/chat/route.ts"
+import { after } from "next/server";
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { Agent, VoltAgent, createTool, setWaitUntil } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
@@ -135,6 +136,10 @@ export async function POST(req: Request) {
     const lastMessage = messages[messages.length - 1];
 
     const result = await agent.streamText([lastMessage]);
+
+    // Enable non-blocking OTel export for Vercel/serverless
+    setWaitUntil(after);
+
     return result.toUIMessageStreamResponse();
   } catch (error) {
     return Response.json({ error: "Internal server error" }, { status: 500 });
@@ -277,3 +282,49 @@ This creates a simple but powerful VoltAgent application with:
 - **Tool integration** showing how agents use tools
 
 The agent will use the calculator tool when users ask for mathematical calculations, demonstrating how VoltAgent integrates tools seamlessly into conversations.
+
+## Deploying to Vercel (Serverless)
+
+When deploying VoltAgent to Vercel or other serverless platforms, you need to ensure observability spans are properly exported before the serverless function terminates. Without this, traces may remain in "pending" status in VoltOps even though execution completed successfully.
+
+### The Problem
+
+Serverless functions terminate immediately after sending the response. This can interrupt the OpenTelemetry BatchSpanProcessor before it exports pending spans, causing:
+
+- ❌ Traces stuck in "pending" status in VoltOps
+- ❌ Missing agent completion metadata
+- ❌ Incomplete observability data
+
+### The Solution: Using `setWaitUntil` with `after()`
+
+Next.js 15+ provides the `after()` API to execute code after the response is sent but before the function terminates. VoltAgent provides a helper `setWaitUntil` to leverage this for non-blocking observability exports.
+
+Update your API route as follows:
+
+```typescript
+import { after } from "next/server";
+import { setWaitUntil } from "@voltagent/core"; // Import the helper
+
+export async function POST(req: Request) {
+  // Enable non-blocking OTel export
+  // This ensures spans are flushed in the background without blocking the response
+  setWaitUntil(after);
+
+  // ... your agent logic
+  const result = await agent.streamText([lastMessage]);
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+### Why This Works
+
+1. **`setWaitUntil(after)`**: Registers the Next.js `after` function as the global `waitUntil` handler for VoltAgent.
+2. **Automatic Flushing**: The agent automatically detects when execution finishes (or streams complete) and schedules the span export using the registered `waitUntil`.
+3. **Non-Blocking**: The response is sent immediately to the user, while the span export happens in the background, ensuring no latency penalty.
+
+### Requirements
+
+- **Next.js 15+**: The `after()` API was introduced in Next.js 15
+- **Vercel Platform**: Uses Vercel's `waitUntil()` primitive under the hood
+- **VoltOps Observability**: Only needed if you're using VoltOps for trace monitoring

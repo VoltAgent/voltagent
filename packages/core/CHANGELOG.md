@@ -1,5 +1,1528 @@
 # @voltagent/core
 
+## 1.5.1
+
+### Patch Changes
+
+- [`b663dce`](https://github.com/VoltAgent/voltagent/commit/b663dceb57542d1b85475777f32ceb3671cc1237) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: dedupe MCP endpoints in server startup output and include MCP transport paths (streamable HTTP/SSE) so the actual server endpoint is visible.
+
+## 1.5.0
+
+### Minor Changes
+
+- [#879](https://github.com/VoltAgent/voltagent/pull/879) [`2f81e6d`](https://github.com/VoltAgent/voltagent/commit/2f81e6df4176120bfdbb47c503a4d027164e5a5e) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add VoltAgentRagRetriever to @voltagent/core
+
+  Added `VoltAgentRagRetriever` - a built-in retriever that connects to VoltAgent Knowledge Bases for fully managed RAG. No infrastructure setup required - just upload documents to the Console and start searching.
+
+  ## Features
+  - **Automatic context injection**: Searches before each response and injects relevant context
+  - **Tool-based retrieval**: Use as a tool that the agent calls when needed
+  - **Tag filtering**: Filter results by custom document tags
+  - **Source tracking**: Access retrieved chunk references via `rag.references` context
+
+  ## Usage
+
+  ```typescript
+  import { Agent, VoltAgentRagRetriever } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+
+  const retriever = new VoltAgentRagRetriever({
+    knowledgeBaseName: "my-docs",
+    topK: 8,
+    includeSources: true,
+  });
+
+  // Option 1: Automatic context injection
+  const agent = new Agent({
+    name: "RAG Assistant",
+    model: openai("gpt-4o-mini"),
+    retriever,
+  });
+
+  // Option 2: Tool-based retrieval
+  const agentWithTool = new Agent({
+    name: "RAG Assistant",
+    model: openai("gpt-4o-mini"),
+    tools: [retriever.tool],
+  });
+  ```
+
+  ## Configuration
+
+  | Option              | Default  | Description                  |
+  | ------------------- | -------- | ---------------------------- |
+  | `knowledgeBaseName` | required | Name of your knowledge base  |
+  | `topK`              | 8        | Number of chunks to retrieve |
+  | `tagFilters`        | null     | Filter by document tags      |
+  | `includeSources`    | true     | Include document metadata    |
+  | `includeSimilarity` | false    | Include similarity scores    |
+
+  ## Environment Variables
+
+  ```bash
+  VOLTAGENT_PUBLIC_KEY=pk_...
+  VOLTAGENT_SECRET_KEY=sk_...
+  # Optional
+  VOLTAGENT_API_BASE_URL=https://api.voltagent.dev
+  ```
+
+## 1.4.0
+
+### Minor Changes
+
+- [#875](https://github.com/VoltAgent/voltagent/pull/875) [`93c52cc`](https://github.com/VoltAgent/voltagent/commit/93c52ccc191d463328a929869e5445abf9ff99df) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add MCP client elicitation support for user input handling
+
+  Added support for handling elicitation requests from MCP servers. When an MCP server needs user input during tool execution (e.g., confirmation dialogs, credentials, or form data), you can now dynamically register handlers to process these requests.
+
+  ## New API
+
+  Access the elicitation bridge via `mcpClient.elicitation`:
+
+  ```ts
+  const clients = await mcpConfig.getClients();
+
+  // Set a persistent handler
+  clients.myServer.elicitation.setHandler(async (request) => {
+    console.log("Server asks:", request.message);
+    console.log("Expected schema:", request.requestedSchema);
+
+    const userConfirmed = await promptUser(request.message);
+
+    return {
+      action: userConfirmed ? "accept" : "decline",
+      content: userConfirmed ? { confirmed: true } : undefined,
+    };
+  });
+
+  // One-time handler (auto-removes after first call)
+  clients.myServer.elicitation.once(async (request) => {
+    return { action: "accept", content: { approved: true } };
+  });
+
+  // Remove handler
+  clients.myServer.elicitation.removeHandler();
+
+  // Check if handler exists
+  if (clients.myServer.elicitation.hasHandler) {
+    console.log("Handler registered");
+  }
+  ```
+
+  ## Agent-Level Elicitation
+
+  Pass elicitation handler directly to `generateText` or `streamText`:
+
+  ```ts
+  const response = await agent.generateText("Do something with MCP", {
+    userId: "user123",
+    elicitation: async (request) => {
+      // Handler receives elicitation request from any MCP tool
+      const confirmed = await askUser(request.message);
+      return {
+        action: confirmed ? "accept" : "decline",
+        content: confirmed ? { confirmed: true } : undefined,
+      };
+    },
+  });
+  ```
+
+  This handler is automatically applied to all MCP tools during the request.
+
+  ## Key Features
+  - **Dynamic handler management**: Add, replace, or remove handlers at runtime
+  - **One-time handlers**: Use `.once()` for handlers that auto-remove after first invocation
+  - **Method chaining**: All methods return `this` for fluent API usage
+  - **Auto-cancellation**: Requests without handlers are automatically cancelled
+  - **Agent-level integration**: Pass handler via `generateText`/`streamText` options
+  - **Full MCP SDK compatibility**: Uses `ElicitRequest` and `ElicitResult` types from `@modelcontextprotocol/sdk`
+
+  ## Exports
+
+  New exports from `@voltagent/core`:
+  - `MCPClient` - MCP client with elicitation support
+  - `UserInputBridge` - Bridge class for handler management
+  - `UserInputHandler` - Handler function type
+
+## 1.3.0
+
+### Minor Changes
+
+- [#870](https://github.com/VoltAgent/voltagent/pull/870) [`63cade8`](https://github.com/VoltAgent/voltagent/commit/63cade8b3226e97b6864a20906a748892f23fb96) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add authorization layer for MCP tools
+
+  Add a `can` function to `MCPConfiguration` that lets you control which MCP tools users can discover and execute. Supports both tool discovery filtering and execution-time checks.
+
+  ## Usage
+
+  ```typescript
+  import { MCPConfiguration, type MCPCanParams } from "@voltagent/core";
+
+  const mcp = new MCPConfiguration({
+    servers: {
+      expenses: { type: "http", url: "http://localhost:3142/mcp" },
+    },
+    authorization: {
+      can: async ({ toolName, action, userId, context }: MCPCanParams) => {
+        const roles = (context?.get("roles") as string[]) ?? [];
+
+        // action is "discovery" (getTools) or "execution" (tool call)
+        if (toolName === "delete_expense" && !roles.includes("admin")) {
+          return { allowed: false, reason: "Admin only" };
+        }
+
+        return true;
+      },
+      filterOnDiscovery: true, // Hide unauthorized tools from tool list
+      checkOnExecution: true, // Verify on each tool call
+    },
+  });
+
+  // Get tools filtered by user's permissions
+  const tools = await mcp.getTools({
+    userId: "user-123",
+    context: { roles: ["manager"] },
+  });
+  ```
+
+  ## `MCPCanParams`
+
+  ```typescript
+  interface MCPCanParams {
+    toolName: string; // Tool name (without server prefix)
+    serverName: string; // MCP server identifier
+    action: "discovery" | "execution"; // When the check is happening
+    arguments?: Record<string, unknown>; // Tool arguments (execution only)
+    userId?: string;
+    context?: Map<string | symbol, unknown>;
+  }
+  ```
+
+  ## Cerbos Integration
+
+  For production use with policy-based authorization:
+
+  ```typescript
+  import { GRPC } from "@cerbos/grpc";
+
+  const cerbos = new GRPC("localhost:3593", { tls: false });
+
+  const mcp = new MCPConfiguration({
+    servers: { expenses: { type: "http", url: "..." } },
+    authorization: {
+      can: async ({ toolName, serverName, userId, context }) => {
+        const roles = (context?.get("roles") as string[]) ?? ["user"];
+
+        const result = await cerbos.checkResource({
+          principal: { id: userId ?? "anonymous", roles },
+          resource: { kind: `mcp::${serverName}`, id: serverName },
+          actions: [toolName],
+        });
+
+        return { allowed: result.isAllowed(toolName) ?? false };
+      },
+      filterOnDiscovery: true,
+      checkOnExecution: true,
+    },
+  });
+  ```
+
+  See the full Cerbos example: [examples/with-cerbos](https://github.com/VoltAgent/voltagent/tree/main/examples/with-cerbos)
+
+## 1.2.21
+
+### Patch Changes
+
+- [#855](https://github.com/VoltAgent/voltagent/pull/855) [`cd500ea`](https://github.com/VoltAgent/voltagent/commit/cd500ea0c71879c4ddbf5662b47758752595cc7d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add google drive and google calendar actions methods and expose trigger DSL events
+  - The trigger DSL now supports Google Calendar (`on.googleCalendar.*`) and Google Drive (`on.googleDrive.*`) events alongside the new action helpers.
+
+## 1.2.20
+
+### Patch Changes
+
+- [#852](https://github.com/VoltAgent/voltagent/pull/852) [`097f0cf`](https://github.com/VoltAgent/voltagent/commit/097f0cfcc113ae2029e233f67ff7e7c10db3e29d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: fullStream forwarding from sub-agents so metadata reflects the executing sub-agent (adds executingAgentId/name, parent info, agentPath) instead of the supervisor - #849
+
+  Documentation now calls out the metadata shape and how it appears in fullStream/toUIMessageStream, and the with-subagents example logs forwarded chunks for easy validation.
+
+  Example:
+
+  ```ts
+  const res = await supervisor.streamText("delegate something");
+  for await (const part of res.fullStream) {
+    console.log({
+      type: part.type,
+      subAgent: part.subAgentName,
+      executing: part.executingAgentName,
+      parent: part.parentAgentName,
+      path: part.agentPath,
+    });
+  }
+  ```
+
+  Example output:
+
+  ```json
+  {
+    "type": "tool-call",
+    "subAgent": "Formatter",
+    "executing": "Formatter",
+    "parent": "Supervisor",
+    "path": ["Supervisor", "Formatter"]
+  }
+  ```
+
+## 1.2.19
+
+### Patch Changes
+
+- [`da5b0a1`](https://github.com/VoltAgent/voltagent/commit/da5b0a1992cf5fe9b65cb8bd0cb97a19ce22958f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add postgres action
+
+  Add a Postgres “execute query” action end‑to‑end: API provider with timeouts/SSL, credential creation, default catalog entry and console test payloads, plus VoltOps SDK/MCP snippets and client typings.
+
+## 1.2.18
+
+### Patch Changes
+
+- [`9e215c6`](https://github.com/VoltAgent/voltagent/commit/9e215c69bce4e4fd3d96adb12b4ba98e3a5fcdb4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: schema serialization for workflows and tools when projects use Zod 4.
+
+  ## The Problem
+
+  Zod 4 changed its internal `_def` shape (e.g., `type` instead of `typeName`, `shape` as an object, `element` for arrays). Our lightweight `zodSchemaToJsonUI` only understood the Zod 3 layout, so Zod 4 workflows/tools exposed `inputSchema`/`resultSchema` as `{ type: "unknown" }` in `/workflows/{id}` and tool metadata.
+
+  ## The Solution
+
+  Teach `zodSchemaToJsonUI` both v3 and v4 shapes: look at `_def.type` as well as `_def.typeName`, handle v4 object `shape`, array `element`, enum entries, optional/default unwrap, and record value types. Default values are picked up whether they’re stored as a function (v3) or a raw value (v4).
+
+  ## Impact
+
+  API consumers and UIs now see real input/result/output schemas for Zod 4-authored workflows and tools instead of `{ type: "unknown" }`, restoring schema-driven rendering and validation.
+
+- [`7e40045`](https://github.com/VoltAgent/voltagent/commit/7e40045656d6868eb5ca337aad5c6a20532dad17) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add Gmail actions to VoltOps SDK client
+  - Added `actions.gmail.sendEmail`, `replyToEmail`, `searchEmail`, `getEmail`, `getThread`
+  - Supports inline or stored credentials (OAuth refresh token or service account)
+
+  Usage:
+
+  ```ts
+  import { VoltOpsClient } from "@voltagent/core";
+
+  const voltops = new VoltOpsClient({
+    publicKey: "<public-key>",
+    secretKey: "<secret-key>",
+  });
+
+  await voltops.actions.gmail.sendEmail({
+    credential: { credentialId: "<gmail-credential-id>" },
+    to: ["teammate@example.com"],
+    cc: ["manager@example.com"],
+    subject: "Status update",
+    bodyType: "text",
+    body: "All systems operational.",
+    attachments: [
+      {
+        filename: "notes.txt",
+        content: "YmFzZTY0LWNvbnRlbnQ=",
+        contentType: "text/plain",
+      },
+    ],
+  });
+  ```
+
+## 1.2.17
+
+### Patch Changes
+
+- [#845](https://github.com/VoltAgent/voltagent/pull/845) [`5432f13`](https://github.com/VoltAgent/voltagent/commit/5432f13bddebd869522ebffbedd9843b4476f08b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: workflow execution listing - #844
+
+  Added a unified way to list workflow runs so teams can audit executions across every storage backend and surface them via the API and console.
+
+  ## What changed
+  - `queryWorkflowRuns` now exists on all memory adapters (in-memory, libsql, Postgres, Supabase, voltagent-memory) with filters for `workflowId`, `status`, `from`, `to`, `limit`, and `offset`.
+  - Server routes are consolidated under `/workflows/executions` (no path param needed); `GET /workflows/:id` also returns the workflow result schema for typed clients. Handler naming is standardized to `listWorkflowRuns`.
+  - VoltOps Console observability panel lists the new endpoint; REST docs updated with query params and sample responses. New unit tests cover handlers and every storage adapter.
+
+  ## Quick fetch
+
+  ```ts
+  await fetch(
+    "http://localhost:3141/workflows/executions?workflowId=expense-approval&status=completed&from=2024-01-01&to=2024-01-31&limit=20&offset=0"
+  );
+  ```
+
+## 1.2.16
+
+### Patch Changes
+
+- [#839](https://github.com/VoltAgent/voltagent/pull/839) [`93e5a8e`](https://github.com/VoltAgent/voltagent/commit/93e5a8ed03d2335d845436752b476881c24931ba) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: expose resultSchema in workflow API response
+
+  Previously, when calling the workflow API endpoint (e.g., `GET /workflows/{id}`), the response included `inputSchema`, `suspendSchema`, and `resumeSchema`, but was missing `resultSchema` (the output schema).
+
+  Now, workflows properly expose their result schema alongside other schemas:
+
+  ```json
+  {
+    "inputSchema": {
+      "type": "object",
+      "properties": { "name": { "type": "string" } },
+      "required": ["name"]
+    },
+    "resultSchema": {
+      "type": "object",
+      "properties": { "greeting": { "type": "string" } },
+      "required": ["greeting"]
+    },
+    "suspendSchema": { "type": "unknown" },
+    "resumeSchema": { "type": "unknown" }
+  }
+  ```
+
+  This allows API consumers to understand the expected output format of a workflow, enabling better client-side validation and documentation generation.
+
+## 1.2.15
+
+### Patch Changes
+
+- [#833](https://github.com/VoltAgent/voltagent/pull/833) [`010aa0a`](https://github.com/VoltAgent/voltagent/commit/010aa0a29a5561201689ecfee4738f0cc40798ce) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: supervisor now prefers each sub-agent’s `purpose` over full `instructions` when listing specialized agents, keeping prompts concise and preventing accidental directive leakage; added test coverage, docs, and example updates to encourage setting a short purpose per sub-agent.
+
+## 1.2.14
+
+### Patch Changes
+
+- [#830](https://github.com/VoltAgent/voltagent/pull/830) [`972889f`](https://github.com/VoltAgent/voltagent/commit/972889f68a0973f80cd981c3322043c11df5f223) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: tool error handling to return structured, JSON-safe payloads instead of crashing on circular axios errors. #829
+
+## 1.2.13
+
+### Patch Changes
+
+- [#825](https://github.com/VoltAgent/voltagent/pull/825) [`fd1428b`](https://github.com/VoltAgent/voltagent/commit/fd1428b73abfcac29c238e0cee5229ff227cb72b) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: remove redundant "You are ${this.name}" prefix from system prompt construction - #813
+
+  The system prompt construction in `Agent` class was redundantly prepending "You are ${this.name}" even when the user provided their own system prompt. This change removes the prefix, allowing the user's instructions to be used exactly as provided.
+
+## 1.2.12
+
+### Patch Changes
+
+- [`28661fc`](https://github.com/VoltAgent/voltagent/commit/28661fc24f945b0e52c12703a5a09a033317d8fa) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enable persistence for live evaluations
+
+## 1.2.11
+
+### Patch Changes
+
+- [#817](https://github.com/VoltAgent/voltagent/pull/817) [`decfda5`](https://github.com/VoltAgent/voltagent/commit/decfda5898128ef9097cd1dc456ca563ee49def1) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: pass complete OperationContext to retrievers when used as object instances
+
+  ## The Problem
+
+  When a retriever was assigned directly to an agent as an object instance (e.g., `retriever: myRetriever`), it wasn't receiving the `userId` and `conversationId` from the OperationContext. This prevented user-specific and conversation-aware retrieval when retrievers were used in this way, even though these fields were correctly passed when retrievers were used as tools.
+
+  ## The Solution
+
+  Updated the `getRetrieverContext` method in the Agent class to pass the complete OperationContext to retrievers, ensuring consistency between tool-based and object-based retriever usage.
+
+  ## What Changed
+
+  ```typescript
+  // Before - only partial context was passed
+  return await this.retriever.retrieve(retrieverInput, {
+    context: oc.context,
+    logger: retrieverLogger,
+  });
+
+  // After - complete OperationContext is passed
+  return await this.retriever.retrieve(retrieverInput, {
+    ...oc,
+    logger: retrieverLogger,
+  });
+  ```
+
+  ## Impact
+  - **Consistent behavior:** Retrievers now receive `userId` and `conversationId` regardless of how they're configured
+  - **User-specific retrieval:** Enables filtering results by user in multi-tenant scenarios
+  - **Conversation awareness:** Retrievers can now access conversation context when used as object instances
+  - **No breaking changes:** This is a backward-compatible fix that adds missing context fields
+
+- [#820](https://github.com/VoltAgent/voltagent/pull/820) [`c5e0c89`](https://github.com/VoltAgent/voltagent/commit/c5e0c89554d85c895e3d6cbfc83ad47bd53a1b9f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: expose createdAt in memory.getMessages
+
+  ## What Changed
+
+  The `createdAt` timestamp is now exposed in the `metadata` object of messages retrieved via `memory.getMessages()`. This ensures that the creation time of messages is accessible across all storage adapters (`InMemory`, `Supabase`, `LibSQL`, `PostgreSQL`).
+
+  ## Usage
+
+  You can now access the `createdAt` timestamp from the message metadata:
+
+  ```typescript
+  const messages = await memory.getMessages(userId, conversationId);
+
+  messages.forEach((message) => {
+    console.log(`Message ID: ${message.id}`);
+    console.log(`Created At: ${message.metadata?.createdAt}`);
+  });
+  ```
+
+  This change aligns the behavior of all storage adapters and ensures consistent access to message timestamps.
+
+- [`53ff6bf`](https://github.com/VoltAgent/voltagent/commit/53ff6bfcae59e0f72dc4de6f8550241392e25864) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: voltops actions serverless fetch usage
+
+## 1.2.10
+
+### Patch Changes
+
+- [#815](https://github.com/VoltAgent/voltagent/pull/815) [`148f550`](https://github.com/VoltAgent/voltagent/commit/148f550ceafa412534fd2d1c4cfb44c8255636ab) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: eliminate duplicate code in Agent.getSystemMessage method through refactoring - #813
+
+  ## The Problem
+
+  The `getSystemMessage` method in the Agent class contained significant code duplication between two code paths:
+  - Lines 2896-2929: Handling `promptContent.type === "text"`
+  - Lines 2933-2967: Handling default string instructions
+
+  Both paths contained identical logic for:
+  1. Adding toolkit instructions
+  2. Adding markdown formatting instructions
+  3. Adding retriever context
+  4. Adding working memory context
+  5. Adding supervisor instructions for sub-agents
+
+  This duplication violated the DRY (Don't Repeat Yourself) principle and made maintenance more difficult, as any changes to instruction enrichment logic would need to be applied in multiple places.
+
+  ## The Solution
+
+  **Refactoring with Helper Method:**
+  - Created a new private method `enrichInstructions` that consolidates all common instruction enrichment logic
+  - Updated both code paths to use this centralized helper method
+  - Eliminated ~35 lines of duplicate code while preserving exact functionality
+
+  **New Method Signature:**
+
+  ```typescript
+  private async enrichInstructions(
+    baseContent: string,
+    retrieverContext: string | null,
+    workingMemoryContext: string | null,
+    oc: OperationContext,
+  ): Promise<string>
+  ```
+
+  ## Impact
+  - ✅ **Improved Maintainability:** Single source of truth for instruction enrichment logic
+  - ✅ **Reduced Complexity:** Cleaner, more readable code with better separation of concerns
+  - ✅ **Better Testability:** Dedicated unit tests for the `enrichInstructions` method
+  - ✅ **No Breaking Changes:** Pure refactoring with identical behavior
+  - ✅ **Comprehensive Testing:** Added 16 new tests covering all enrichment scenarios and edge cases
+
+  ## Technical Details
+
+  The refactored `enrichInstructions` method handles:
+  - Toolkit instructions injection from registered toolkits
+  - Markdown formatting directive when enabled
+  - Retriever context integration for RAG patterns
+  - Working memory context from conversation history
+  - Supervisor instructions for multi-agent orchestration
+
+  All existing functionality is preserved with improved code organization and test coverage.
+
+## 1.2.9
+
+### Patch Changes
+
+- [#812](https://github.com/VoltAgent/voltagent/pull/812) [`0f64363`](https://github.com/VoltAgent/voltagent/commit/0f64363a2b577e025fae41276cc0d85ef7fc0644) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: comprehensive authentication system with JWT, Console Access, and WebSocket support
+
+  ## The Problem
+
+  VoltAgent's authentication system had several critical gaps that made it difficult to secure production deployments:
+  1. **No Authentication Support:** The framework lacked built-in authentication, forcing developers to implement their own security
+  2. **WebSocket Security:** WebSocket connections for observability had no authentication, exposing sensitive telemetry data
+  3. **Browser Limitations:** Browsers cannot send custom headers during WebSocket handshake, making authentication impossible
+  4. **Development vs Production:** No clear separation between development convenience and production security
+  5. **Console Access:** No secure way for the VoltAgent Console to access observability endpoints in production
+
+  ## The Solution
+
+  **JWT Authentication (`@voltagent/server-core`, `@voltagent/server-hono`):**
+  - Added pluggable `jwtAuth` provider with configurable secret and options
+  - Implemented `mapUser` function to transform JWT payloads into user objects
+  - Created flexible route protection with `defaultPrivate` mode (opt-out vs opt-in)
+  - Added `publicRoutes` configuration for fine-grained control
+
+  **WebSocket Authentication:**
+  - Implemented query parameter authentication for browser WebSocket connections
+  - Added dual authentication support (headers for servers, query params for browsers)
+  - Created WebSocket-specific authentication helpers for observability endpoints
+  - Preserved user context throughout WebSocket connection lifecycle
+
+  **Console Access System:**
+  - Introduced `VOLTAGENT_CONSOLE_ACCESS_KEY` environment variable for production Console access
+  - Added `x-console-access-key` header support for HTTP requests
+  - Implemented query parameter `?key=` for WebSocket connections
+  - Created `hasConsoleAccess()` utility for unified access checking
+
+  **Development Experience:**
+  - Enhanced `x-voltagent-dev` header to work with both HTTP and WebSocket
+  - Added `isDevRequest()` helper that requires both header AND non-production environment
+  - Implemented query parameter `?dev=true` for browser WebSocket connections
+  - Maintained zero-config development mode while ensuring production security
+
+  **Route Matching Improvements:**
+  - Added wildcard support with `/observability/*` pattern for all observability endpoints
+  - Implemented double-star pattern `/api/**` for path and all children
+  - Enhanced `pathMatches()` function with proper segment matching
+  - Protected all observability, workflow control, and system update endpoints by default
+
+  ## Impact
+  - ✅ **Production Ready:** Complete authentication system for securing VoltAgent deployments
+  - ✅ **WebSocket Security:** Browser-compatible authentication for real-time observability
+  - ✅ **Console Integration:** Secure access for VoltAgent Console in production environments
+  - ✅ **Developer Friendly:** Zero-config development with automatic authentication bypass
+  - ✅ **Flexible Security:** Choose between opt-in (default) or opt-out authentication modes
+  - ✅ **User Context:** Automatic user injection into agent and workflow execution context
+
+  ## Technical Details
+
+  **Protected Routes (Default):**
+
+  ```typescript
+  // Agent/Workflow Execution
+  POST /agents/:id/text
+  POST /agents/:id/stream
+  POST /workflows/:id/run
+
+  // All Observability Endpoints
+  /observability/*  // Traces, logs, memory - all methods
+
+  // Workflow Control
+  POST /workflows/:id/executions/:executionId/suspend
+  POST /workflows/:id/executions/:executionId/resume
+
+  // System Updates
+  GET /updates
+  POST /updates/:packageName
+  ```
+
+  **Authentication Modes:**
+
+  ```typescript
+  // Opt-in mode (default) - Only execution endpoints protected
+  auth: jwtAuth({
+    secret: process.env.JWT_SECRET,
+  });
+
+  // Opt-out mode - Everything protected except specified routes
+  auth: jwtAuth({
+    secret: process.env.JWT_SECRET,
+    defaultPrivate: true,
+    publicRoutes: ["GET /health", "POST /webhooks/*"],
+  });
+  ```
+
+  **WebSocket Authentication Flow:**
+
+  ```typescript
+  // Browser WebSocket with query params
+  new WebSocket("ws://localhost:3000/ws/observability?key=console-key");
+  new WebSocket("ws://localhost:3000/ws/observability?dev=true");
+
+  // Server WebSocket with headers
+  ws.connect({
+    headers: {
+      "x-console-access-key": "console-key",
+      "x-voltagent-dev": "true",
+    },
+  });
+  ```
+
+  ## Migration Notes
+
+  **For Existing Users:**
+  1. **No Breaking Changes:** Authentication is optional. Existing deployments continue to work without configuration.
+  2. **To Enable Authentication:**
+
+     ```typescript
+     import { jwtAuth } from "@voltagent/server-hono";
+
+     new VoltAgent({
+       server: honoServer({
+         auth: jwtAuth({
+           secret: process.env.JWT_SECRET,
+         }),
+       }),
+     });
+     ```
+
+  3. **For Production Console:**
+
+     ```bash
+     # .env
+     VOLTAGENT_CONSOLE_ACCESS_KEY=your-secure-key
+     NODE_ENV=production
+     ```
+
+  4. **Generate Secrets:**
+
+     ```bash
+     # JWT Secret
+     openssl rand -hex 32
+
+     # Console Access Key
+     openssl rand -hex 32
+     ```
+
+  5. **Test Token Generation:**
+     ```javascript
+     // generate-token.js
+     import jwt from "jsonwebtoken";
+     const token = jwt.sign({ id: "user-1", email: "test@example.com" }, process.env.JWT_SECRET, {
+       expiresIn: "24h",
+     });
+     console.log(token);
+     ```
+
+  ## Documentation
+
+  Comprehensive authentication documentation has been added to `/website/docs/api/authentication.md` covering:
+  - Getting started with three authentication options
+  - Common use cases with code examples
+  - Advanced configuration with `mapUser` function
+  - Console and observability authentication
+  - Security best practices
+  - Troubleshooting guide
+
+## 1.2.8
+
+### Patch Changes
+
+- [#810](https://github.com/VoltAgent/voltagent/pull/810) [`efcfe52`](https://github.com/VoltAgent/voltagent/commit/efcfe52dbe2c095057ce08a5e053d1defafd4e62) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: ensure reliable trace export and context propagation in serverless environments
+
+  ## The Problem
+
+  Trigger-initiated agent executions in serverless environments (Cloudflare Workers, Vercel Edge Functions) were experiencing inconsistent trace exports and missing parent-child span relationships. This manifested as:
+  1. Agent traces not appearing in observability tools despite successful execution
+  2. Trigger and agent spans appearing as separate, disconnected traces instead of a single coherent trace tree
+  3. Spans being lost due to serverless functions terminating before export completion
+
+  ## The Solution
+
+  **Serverless Trace Export (`@voltagent/serverless-hono`):**
+  - Implemented reliable span flushing using Cloudflare's `waitUntil` API to ensure spans are exported before function termination
+  - Switched from `SimpleSpanProcessor` to `BatchSpanProcessor` with serverless-optimized configuration (immediate export, small batch sizes)
+  - Added automatic flush on trigger completion with graceful fallback to `forceFlush` when `waitUntil` is unavailable
+
+  **Context Propagation (`@voltagent/core`):**
+  - Integrated official `@opentelemetry/context-async-hooks` package to replace custom context manager implementation
+  - Ensured `AsyncHooksContextManager` is registered in both Node.js and serverless environments for consistent async context tracking
+  - Fixed `resolveParentSpan` logic to correctly identify scorer spans while avoiding framework-generated ambient spans
+  - Exported `propagation` and `ROOT_CONTEXT` from `@opentelemetry/api` for HTTP header-based trace context injection/extraction
+
+  **Node.js Reliability:**
+  - Updated `NodeVoltAgentObservability.flushOnFinish()` to call `forceFlush()` instead of being a no-op, ensuring spans are exported in short-lived processes
+
+  ## Impact
+  - ✅ Serverless traces are now reliably exported and visible in observability tools
+  - ✅ Trigger and agent spans form a single, coherent trace tree with proper parent-child relationships
+  - ✅ Consistent tracing behavior across Node.js and serverless runtimes
+  - ✅ No more missing or orphaned spans in Cloudflare Workers, Vercel Edge Functions, or similar platforms
+
+  ## Technical Details
+  - Uses `BatchSpanProcessor` with `maxExportBatchSize: 32` and `scheduledDelayMillis: 100` for serverless
+  - Leverages `globalThis.___voltagent_wait_until` for non-blocking span export in Cloudflare Workers
+  - Implements `AsyncHooksContextManager` for robust async context tracking across `Promise` chains and `async/await`
+  - Maintains backward compatibility with existing Node.js deployments
+
+  ## Migration Notes
+
+  No breaking changes. Existing deployments will automatically benefit from improved trace reliability. Ensure your `wrangler.toml` includes `nodejs_compat` flag for Cloudflare Workers:
+
+  ```toml
+  compatibility_flags = ["nodejs_compat"]
+  ```
+
+## 1.2.7
+
+### Patch Changes
+
+- [#806](https://github.com/VoltAgent/voltagent/pull/806) [`b56e5a0`](https://github.com/VoltAgent/voltagent/commit/b56e5a087378c7ba5ce4a2c1756a0fe3dfb738b5) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: pass complete ToolExecuteOptions to retriever.retrieve() method
+
+  ## The Problem
+
+  Previously, `createRetrieverTool` only passed `context` and `logger` from `ToolExecuteOptions` to the retriever's `retrieve()` method. This prevented retrievers from accessing important operation metadata like:
+  - `userId` - for user-specific filtering
+  - `conversationId` - for conversation-aware retrieval
+  - `operationId` - for tracking
+  - Other `OperationContext` fields
+
+  This limitation meant retrievers could only provide public knowledge and couldn't implement:
+  - Multi-tenant retrieval with user-specific namespaces
+  - Private knowledge bases per user
+  - User-filtered database queries
+  - Context-aware retrieval strategies
+
+  ## The Solution
+
+  **Core Changes:**
+  - Updated `RetrieveOptions` interface to extend `Partial<OperationContext>`, providing access to all operation metadata
+  - Modified `createRetrieverTool` to pass the complete `options` object to `retriever.retrieve()` instead of just `{ context, logger }`
+  - Maintained full backward compatibility - all existing retrievers continue to work without changes
+
+  **What's Now Available in retrieve() method:**
+
+  ```typescript
+  class UserSpecificRetriever extends BaseRetriever {
+    async retrieve(input, options) {
+      // Access operation context
+      const { userId, conversationId, logger } = options;
+
+      // User-specific filtering
+      const results = await db.query("SELECT * FROM documents WHERE user_id = $1", [userId]);
+
+      return results;
+    }
+  }
+  ```
+
+  ## Impact
+  - **Multi-tenant Support:** Retrievers can now filter by user using different namespaces, indexes, or database filters
+  - **Private Knowledge:** Support for user-specific knowledge bases and personalized retrieval
+  - **Better Context:** Access to conversation and operation metadata for smarter retrieval
+  - **Backward Compatible:** Existing retrievers work without any code changes
+
+  ## Usage Examples
+
+  ### User-Specific Vector Search
+
+  ```typescript
+  class MultiTenantRetriever extends BaseRetriever {
+    async retrieve(input, options) {
+      const query = typeof input === "string" ? input : input[input.length - 1].content;
+      const { userId } = options;
+
+      // Use user-specific namespace in Pinecone
+      const results = await this.pinecone.query({
+        vector: await this.embed(query),
+        namespace: `user-${userId}`,
+        topK: 5,
+      });
+
+      return results.matches.map((m) => m.metadata.text).join("\n\n");
+    }
+  }
+
+  // Use with userId
+  const response = await agent.generateText("Find my documents", {
+    userId: "user-123",
+  });
+  ```
+
+  ### Conversation-Aware Retrieval
+
+  ```typescript
+  class ConversationRetriever extends BaseRetriever {
+    async retrieve(input, options) {
+      const { conversationId, userId } = options;
+
+      // Retrieve documents relevant to this conversation
+      const results = await db.query(
+        "SELECT * FROM documents WHERE user_id = $1 AND conversation_id = $2",
+        [userId, conversationId]
+      );
+
+      return results.map((r) => r.content).join("\n\n");
+    }
+  }
+  ```
+
+  ## Migration Guide
+
+  No migration needed! Existing retrievers automatically receive the full `options` object and can access new fields when ready:
+
+  ```typescript
+  // Before (still works)
+  async retrieve(input, options) {
+    const { context, logger } = options;
+    // ...
+  }
+
+  // After (now possible)
+  async retrieve(input, options) {
+    const { context, logger, userId, conversationId } = options;
+    // Can now use userId and conversationId
+  }
+  ```
+
+## 1.2.6
+
+### Patch Changes
+
+- [#801](https://github.com/VoltAgent/voltagent/pull/801) [`a26ddd8`](https://github.com/VoltAgent/voltagent/commit/a26ddd826692485278033c22ac9828cb51cdd749) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add triggers DSL improvements and event payload simplification
+  - Introduce the new `createTriggers` DSL and expose trigger events via sensible provider names (e.g. `on.airtable.recordCreated`) rather than raw catalog IDs.
+  - Add trigger span metadata propagation so VoltAgent agents receive trigger context automatically without manual mapping.
+  - Simplify action dispatch payloads: `payload` now contains only the event’s raw data while trigger context lives in the `event`/`metadata` blocks, reducing boilerplate in handlers.
+
+  ```ts
+  import { VoltAgent, createTriggers } from "@voltagent/core";
+
+  new VoltAgent({
+    // ...
+    triggers: createTriggers((on) => {
+      on.airtable.recordCreated(({ payload, event }) => {
+        console.log("New Airtable row", payload, event.metadata);
+      });
+
+      on.gmail.newEmail(({ payload }) => {
+        console.log("New Gmail message", payload);
+      });
+    }),
+  });
+  ```
+
+- [#801](https://github.com/VoltAgent/voltagent/pull/801) [`a26ddd8`](https://github.com/VoltAgent/voltagent/commit/a26ddd826692485278033c22ac9828cb51cdd749) Thanks [@omeraplak](https://github.com/omeraplak)! - Add full Discord action coverage to `VoltOpsActionsClient`, including typed helpers for messaging, reactions, channels, and guild roles. **All VoltOps Actions now require the inline `credential` payload**—pass `{ id: "cred_xyz" }` to reuse a saved credential or provide provider-specific secrets on the fly. Each provider now has explicit credential typing (Airtable ⇒ `{ apiKey }`, Slack ⇒ `{ botToken }`, Discord ⇒ `{ botToken } | { webhookUrl }`), so editors autocomplete only the valid fields. The SDK propagates these types so apps can invoke VoltOps Actions without managing separate credential IDs.
+
+## 1.2.5
+
+### Patch Changes
+
+- [#798](https://github.com/VoltAgent/voltagent/pull/798) [`3168cc3`](https://github.com/VoltAgent/voltagent/commit/3168cc3bc241b74434bb35c2f6f80240beeac64c) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enhanced message-helpers to support both MessageContent and UIMessage using TypeScript overloads - #796
+
+  ## The Problem
+
+  When working with messages in VoltAgent, there were two different message formats:
+  1. **MessageContent** - The `content` property from AI SDK's `ModelMessage` (string or array of content parts)
+  2. **UIMessage** - The newer format returned by memory operations and AI SDK's UI utilities (object with `id`, `role`, and `parts` array)
+
+  The existing `message-helpers` utilities only supported MessageContent, making it cumbersome to extract information from UIMessage objects retrieved from memory or other sources. Users had to manually navigate the UIMessage structure or convert between formats.
+
+  ## The Solution
+
+  All message helper functions now accept **both MessageContent and UIMessage** using TypeScript function overloads. This provides a seamless experience regardless of which message format you're working with.
+
+  **Enhanced Functions:**
+  - `extractText()` - Extract text from MessageContent or UIMessage
+  - `extractTextParts()` - Get text parts from either format
+  - `extractImageParts()` - Get image parts from either format
+  - `extractFileParts()` - Get file parts from either format
+  - `hasTextPart()` - Check for text parts in either format
+  - `hasImagePart()` - Check for image parts in either format
+  - `hasFilePart()` - Check for file parts in either format
+  - `getContentLength()` - Get content length from either format
+
+  ## Usage Example
+
+  ```typescript
+  import { extractText, hasImagePart } from "@voltagent/core";
+
+  // Works with MessageContent (existing usage - no changes needed!)
+  const content = [{ type: "text", text: "Hello world" }];
+  extractText(content); // "Hello world"
+
+  // Now also works with UIMessage directly!
+  const messages = await memory.getMessages(userId, conversationId);
+  const firstMessage = messages[0];
+
+  // Extract text directly from UIMessage
+  const text = extractText(firstMessage); // "Hello world"
+
+  // Check for images in UIMessage
+  if (hasImagePart(firstMessage)) {
+    const images = extractImageParts(firstMessage);
+    // Process images...
+  }
+
+  // TypeScript inference works perfectly for both!
+  ```
+
+  ## Benefits
+  1. **Zero Breaking Changes** - All existing code continues to work exactly as before
+  2. **Cleaner API** - Single function name for both formats instead of `extractText()` vs `extractTextFromUIMessage()`
+  3. **Type Safety** - Full TypeScript type inference and autocomplete for both formats
+  4. **Memory Integration** - Works seamlessly with messages retrieved from `memory.getMessages()`
+  5. **Intuitive** - "Extract text" is just `extractText()` regardless of message format
+
+  ## Migration
+
+  **No migration needed!** Your existing code using MessageContent continues to work. You can now also pass UIMessage objects directly to these functions when working with memory or other sources that return UIMessage format.
+
+  ```typescript
+  // Before: Had to manually navigate UIMessage structure
+  const message = messages[0];
+  const text = message.parts
+    .filter((p) => p.type === "text")
+    .map((p) => p.text)
+    .join("");
+
+  // After: Use the same helper function!
+  const text = extractText(message);
+  ```
+
+  ## Technical Details
+  - Uses TypeScript function overloads for clean API surface
+  - Type guard (`isUIMessage`) automatically detects format
+  - Returns appropriate types based on input (e.g., `TextUIPart[]` for UIMessage, generic array for MessageContent)
+  - Fully tested with 50 comprehensive test cases covering both formats
+
+## 1.2.4
+
+### Patch Changes
+
+- [#794](https://github.com/VoltAgent/voltagent/pull/794) [`39704ad`](https://github.com/VoltAgent/voltagent/commit/39704ad30069fe940577006146c23d0218e16968) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: remove ambient parent spans in serverless environments to ensure proper trace completion
+
+  ## The Problem
+
+  When deploying VoltAgent to serverless platforms like Vercel/Next.js, Netlify Functions, or Cloudflare Workers, traces would remain in "pending" status in VoltOps even though:
+  - All spans were successfully exported to the backend
+  - The agent execution completed successfully
+  - The finish reason was captured correctly
+
+  **Root Cause**: VoltAgent was using `context.active()` when creating root spans, which inherited ambient spans from the hosting framework (e.g., Next.js instrumentation, Vercel telemetry). This caused agent root spans to appear as child spans with framework-generated parent span IDs, preventing the backend from recognizing them as trace roots.
+
+  Example of the issue:
+
+  ```typescript
+  // Backend received:
+  {
+    name: 'Supervisor',
+    parentSpanId: '8423d7ed5539b430', // ❌ Next.js ambient span
+    isRootSpan: false,                // ❌ Not detected as root
+    agentState: 'completed',
+  }
+  // Result: Trace stayed "pending" forever
+  ```
+
+  ## The Solution
+
+  Updated `trace-context.ts` to use `trace.deleteSpan(context.active())` instead of `context.active()` when no explicit parent span exists. This removes ambient spans from the context, ensuring agent root spans are truly root.
+
+  **Before**:
+
+  ```typescript
+  const parentContext = parentSpan ? trace.setSpan(context.active(), parentSpan) : context.active(); // ❌ Includes ambient spans
+  ```
+
+  **After**:
+
+  ```typescript
+  const parentContext = parentSpan
+    ? trace.setSpan(context.active(), parentSpan)
+    : trace.deleteSpan(context.active()); // ✅ Clean context
+  ```
+
+  This follows OpenTelemetry's official pattern from `@opentelemetry/sdk-trace-base`:
+
+  ```typescript
+  if (options.root) {
+    context = api.trace.deleteSpan(context);
+  }
+  ```
+
+  ## Impact
+  - ✅ **Serverless environments**: Traces now properly complete in VoltOps on Vercel, Netlify, Cloudflare Workers
+  - ✅ **Framework compatibility**: Works correctly alongside Next.js, Express, and other instrumented frameworks
+  - ✅ **Proper trace hierarchy**: Agent root spans are no longer children of ambient framework spans
+  - ✅ **No breaking changes**: Only affects root span context creation, existing functionality preserved
+  - ✅ **Observability improvements**: Backend can now correctly identify root spans and mark traces as "completed"
+
+  ## Verification
+
+  After the fix, backend logs show:
+
+  ```typescript
+  {
+    name: 'Supervisor',
+    parentSpanId: undefined,          // ✅ No ambient parent
+    isRootSpan: true,                 // ✅ Correctly detected
+    agentState: 'completed',
+  }
+  // Result: Trace marked as "completed" ✅
+  ```
+
+  ## Usage
+
+  No code changes required - this fix is automatic for all VoltAgent applications deployed to serverless environments.
+
+  **Note**: If you previously added workarounds like `after()` with `forceFlush()` in Next.js routes, those are no longer necessary for trace completion (though they may still be useful for ensuring spans are exported before function termination on some platforms).
+
+## 1.2.3
+
+### Patch Changes
+
+- [#787](https://github.com/VoltAgent/voltagent/pull/787) [`5e81d65`](https://github.com/VoltAgent/voltagent/commit/5e81d6568ba3bee26083ca2a8e5d31f158e36fc0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add full conversation step persistence across the stack:
+  - Core now exposes managed-memory step APIs, and the VoltAgent managed memory adapter persists/retrieves steps through VoltOps.
+  - LibSQL, PostgreSQL, Supabase, and server handlers provision the new `_steps` table, wire up DTOs/routes, and surface the data in Observability/Steps UI (including managed-memory backends).
+
+  fixes: #613
+
+## 1.2.2
+
+### Patch Changes
+
+- [#785](https://github.com/VoltAgent/voltagent/pull/785) [`f4b9524`](https://github.com/VoltAgent/voltagent/commit/f4b9524ea24b7dfc7e863547d5ee01e876524eba) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: the `/agents/:id/text` response to always include tool calling data. Previously we only bubbled up the last step's `toolCalls`/`toolResults`, so multi-step providers (like `ollama-ai-provider-v2`) returned empty arrays even though the tool actually ran. We now aggregate tool activity across every step before returning the result, restoring parity with GPT-style providers and matching the AI SDK output.
+
+- [#783](https://github.com/VoltAgent/voltagent/pull/783) [`46597cf`](https://github.com/VoltAgent/voltagent/commit/46597cf5a6ff8ff1ff5b8a61ab45c4195049f550) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: unwrap provider-executed tool outputs when persisting conversation history so Anthropic’s `server_tool_use` IDs stay unique on replay
+
+- [#786](https://github.com/VoltAgent/voltagent/pull/786) [`f262b51`](https://github.com/VoltAgent/voltagent/commit/f262b51f0a65923d6dfac4f410b37f54a7f81cd2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: ensure sub-agent metadata is persisted alongside supervisor history so supervisor conversations know which sub-agent produced each tool event and memory record. You can now filter historical events the same way you handle live streams:
+
+  ```ts
+  const memoryMessages = await memory.getMessages(userId, conversationId);
+
+  const formatterSteps = memoryMessages.filter(
+    (message) => message.metadata?.subAgentId === "Formatter"
+  );
+
+  for (const message of formatterSteps) {
+    console.log(`[${message.metadata?.subAgentName}]`, message.parts);
+  }
+  ```
+
+  The same metadata also exists on live `fullStream` chunks, so you can keep the streaming UI and the historical memory explorer in sync.
+
+## 1.2.1
+
+### Patch Changes
+
+- [`65e3317`](https://github.com/VoltAgent/voltagent/commit/65e331786645a124f16f06d08dfa55a675959bc8) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add tags support for tools
+
+## 1.2.0
+
+### Minor Changes
+
+- [#761](https://github.com/VoltAgent/voltagent/pull/761) [`0d13b73`](https://github.com/VoltAgent/voltagent/commit/0d13b73db5e6d1d144229bda9657abb776fafab4) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `onHandoffComplete` hook for early termination in supervisor/subagent workflows
+
+  ## The Problem
+
+  When using the supervisor/subagent pattern, subagents **always** return to the supervisor for processing, even when they generate final outputs (like JSON structures or reports) that need no additional handling. This causes unnecessary token consumption.
+
+  **Current flow**:
+
+  ```
+  Supervisor → SubAgent (generates 2K token JSON) → Supervisor (processes JSON) → User
+                                                      ↑ Wastes ~2K tokens
+  ```
+
+  **Example impact**:
+  - Current: ~2,650 tokens per request
+  - With bail: ~560 tokens per request
+  - Savings: **79%** (~2,000 tokens / ~$0.020 per request)
+
+  ## The Solution
+
+  Added `onHandoffComplete` hook that allows supervisors to intercept subagent results and optionally **bail** (skip supervisor processing) when the subagent produces final output.
+
+  **New flow**:
+
+  ```
+  Supervisor → SubAgent → bail() → User ✅
+  ```
+
+  ## API
+
+  The hook receives a `bail()` function that can be called to terminate early:
+
+  ```typescript
+  const supervisor = new Agent({
+    name: "Workout Supervisor",
+    subAgents: [exerciseAgent, workoutBuilder],
+    hooks: {
+      onHandoffComplete: async ({ agent, result, bail, context }) => {
+        // Workout Builder produces final JSON - no processing needed
+        if (agent.name === "Workout Builder") {
+          context.logger?.info("Final output received, bailing");
+          bail(); // Skip supervisor, return directly to user
+          return;
+        }
+
+        // Large result - bail to save tokens
+        if (result.length > 2000) {
+          context.logger?.warn("Large result, bailing to save tokens");
+          bail();
+          return;
+        }
+
+        // Transform and bail
+        if (agent.name === "Report Generator") {
+          const transformed = `# Final Report\n\n${result}\n\n---\nGenerated at: ${new Date().toISOString()}`;
+          bail(transformed); // Bail with transformed result
+          return;
+        }
+
+        // Default: continue to supervisor for processing
+      },
+    },
+  });
+  ```
+
+  ## Hook Arguments
+
+  ```typescript
+  interface OnHandoffCompleteHookArgs {
+    agent: Agent; // Target agent (subagent)
+    sourceAgent: Agent; // Source agent (supervisor)
+    result: string; // Subagent's output
+    messages: UIMessage[]; // Full conversation messages
+    usage?: UsageInfo; // Token usage info
+    context: OperationContext; // Operation context
+    bail: (transformedResult?: string) => void; // Call to bail
+  }
+  ```
+
+  ## Features
+  - ✅ **Clean API**: No return value needed, just call `bail()`
+  - ✅ **True early termination**: Supervisor execution stops immediately, no LLM calls wasted
+  - ✅ **Conditional bail**: Decide based on agent, result content, size, etc.
+  - ✅ **Optional transformation**: `bail(newResult)` to transform before bailing
+  - ✅ **Observability**: Automatic logging and OpenTelemetry events with visual indicators
+  - ✅ **Backward compatible**: Existing code works without changes
+  - ✅ **Error handling**: Hook errors logged, flow continues normally
+
+  ## How Bail Works (Implementation Details)
+
+  When `bail()` is called in the `onHandoffComplete` hook:
+
+  **1. Hook Level** (`packages/core/src/agent/subagent/index.ts`):
+  - Sets `bailed: true` flag in handoff return value
+  - Adds OpenTelemetry span attributes to both supervisor and subagent spans
+  - Logs the bail event with metadata
+
+  **2. Tool Level** (`delegate_task` tool):
+  - Includes `bailed: true` in tool result structure
+  - Adds note: "One or more subagents produced final output. No further processing needed."
+
+  **3. Step Handler Level** (`createStepHandler` in `agent.ts`):
+  - Detects bail during step execution when tool results arrive
+  - Creates `BailError` and aborts execution via `abortController.abort(bailError)`
+  - Stores bailed result in `systemContext` for retrieval
+  - **Works for both `generateText` and `streamText`**
+
+  **4. Catch Block Level** (method-specific handling):
+  - **generateText**: Catches `BailError`, retrieves bailed result from `systemContext`, applies guardrails, calls hooks, returns as successful generation
+  - **streamText**: `onError` catches `BailError` gracefully (not logged as error), `onFinish` retrieves and uses bailed result
+
+  This unified abort-based implementation ensures true early termination for all generation methods.
+
+  ### Stream Support (NEW)
+
+  **For `streamText` supervisors:**
+
+  When a subagent bails during streaming, the supervisor stream is immediately aborted using a `BailError`:
+  1. **Detection during streaming** (`createStepHandler`):
+     - Tool results are checked in `onStepFinish` handler
+     - If `bailed: true` found, `BailError` is created and stream is aborted via `abortController.abort(bailError)`
+     - Bailed result stored in `systemContext` for retrieval in `onFinish`
+  2. **Graceful error handling** (`streamText` onError):
+     - `BailError` is detected and handled gracefully (not logged as error)
+     - Error hooks are NOT called for bail
+     - Stream abort is treated as successful early termination
+  3. **Final result** (`streamText` onFinish):
+     - Bailed result retrieved from `systemContext`
+     - Output guardrails applied to bailed result
+     - `onEnd` hook called with bailed result
+
+  **Benefits for streaming:**
+  - ✅ Stream stops immediately when bail detected (no wasted supervisor chunks)
+  - ✅ No unnecessary LLM calls after bail
+  - ✅ Works with `fullStreamEventForwarding` - subagent chunks already forwarded
+  - ✅ Clean abort semantic with `BailError` class
+  - ✅ Graceful handling - not treated as error
+
+  **Supported methods:**
+  - ✅ `generateText` - Aborts execution during step handler, catches `BailError` and returns bailed result
+  - ✅ `streamText` - Aborts stream during step handler, handles `BailError` in `onError` and `onFinish`
+  - ❌ `generateObject` - No tool support, bail not applicable
+  - ❌ `streamObject` - No tool support, bail not applicable
+
+  **Key difference from initial implementation:**
+  - ❌ **OLD**: Post-execution check in `generateText` (after AI SDK completes) - redundant
+  - ✅ **NEW**: Unified abort mechanism in `createStepHandler` - works for both methods, stops execution immediately
+
+  ## Use Cases
+
+  Perfect for scenarios where specialized subagents generate final outputs:
+  1. **JSON/Structured data generators**: Workout builders, report generators
+  2. **Large content producers**: Document creators, data exports
+  3. **Token optimization**: Skip processing for expensive results
+  4. **Business logic**: Conditional routing based on result characteristics
+
+  ## Observability
+
+  When bail occurs, both logging and OpenTelemetry tracking provide full visibility:
+
+  **Logging:**
+  - Log event: `Supervisor bailed after handoff`
+  - Includes: supervisor name, subagent name, result length, transformation status
+
+  **OpenTelemetry:**
+  - Span event: `supervisor.handoff.bailed` (for timeline events)
+  - Span attributes added to **both supervisor and subagent spans**:
+    - `bailed`: `true`
+    - `bail.supervisor`: supervisor agent name (on subagent span)
+    - `bail.subagent`: subagent name (on supervisor span)
+    - `bail.transformed`: `true` if result was transformed
+
+  **Console Visualization:**
+  Bailed subagents are visually distinct in the observability react-flow view:
+  - Purple border with shadow (`border-purple-500 shadow-purple-600/50`)
+  - "⚡ BAILED" badge in the header (shows "⚡ BAILED (T)" if transformed)
+  - Tooltip showing which supervisor initiated the bail
+  - Node opacity remains at 1.0 (fully visible)
+  - Status badge shows "BAILED" with purple styling instead of error
+  - Details panel shows "Early Termination" info section with supervisor info
+
+  ## Type Safety Improvements
+
+  Also improved type safety by replacing `usage?: any` with proper `UsageInfo` type:
+
+  ```typescript
+  export type UsageInfo = {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    cachedInputTokens?: number;
+    reasoningTokens?: number;
+  };
+  ```
+
+  This provides:
+  - ✅ Better autocomplete in IDEs
+  - ✅ Compile-time type checking
+  - ✅ Clear documentation of available fields
+
+  ## Breaking Changes
+
+  None - this is a purely additive feature. The `UsageInfo` type structure is fully compatible with existing code.
+
+### Patch Changes
+
+- [#754](https://github.com/VoltAgent/voltagent/pull/754) [`c80d18f`](https://github.com/VoltAgent/voltagent/commit/c80d18f344ee37c16f52495edb88c72f74701610) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: encapsulate tool-specific metadata in toolContext + prevent AI SDK context collision
+
+  ## Changes
+
+  ### 1. Tool Context Encapsulation
+
+  Tool-specific metadata now organized under optional `toolContext` field for better separation and future-proofing.
+
+  **Migration:**
+
+  ```typescript
+  // Before
+  execute: async ({ location }, options) => {
+    // Fields were flat (planned, not released)
+  };
+
+  // After
+  execute: async ({ location }, options) => {
+    const { name, callId, messages, abortSignal } = options?.toolContext || {};
+
+    // Session context remains flat
+    const userId = options?.userId;
+    const logger = options?.logger;
+    const context = options?.context;
+  };
+  ```
+
+  ### 2. AI SDK Context Field Protection
+
+  Explicitly exclude `context` from being spread into AI SDK calls to prevent future naming collisions if AI SDK renames `experimental_context` → `context`.
+
+  ## Benefits
+  - ✅ Better organization - tool metadata in one place
+  - ✅ Clearer separation - session context vs tool context
+  - ✅ Future-proof - easy to add new tool metadata fields
+  - ✅ Namespace safety - no collision with OperationContext or AI SDK fields
+  - ✅ Backward compatible - `toolContext` is optional for external callers (MCP servers)
+  - ✅ Protected from AI SDK breaking changes
+
+- [#754](https://github.com/VoltAgent/voltagent/pull/754) [`c80d18f`](https://github.com/VoltAgent/voltagent/commit/c80d18f344ee37c16f52495edb88c72f74701610) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add multi-modal tool results support with toModelOutput - #722
+
+  Tools can now return images, media, and rich content to AI models using the `toModelOutput` function.
+
+  ## The Problem
+
+  AI agents couldn't receive visual information from tools - everything had to be text or JSON. This limited use cases like:
+  - Computer use agents that need to see screenshots
+  - Image analysis workflows
+  - Visual debugging tools
+  - Any tool that produces media output
+
+  ## The Solution
+
+  Added `toModelOutput?: (output) => ToolResultOutput` to tool options. This function transforms your tool's output into a format the AI model can understand, including images and media.
+
+  ```typescript
+  import { createTool } from "@voltagent/core";
+  import fs from "fs";
+
+  const screenshotTool = createTool({
+    name: "take_screenshot",
+    description: "Takes a screenshot of the screen",
+    parameters: z.object({
+      region: z.string().optional().describe("Region to capture"),
+    }),
+    execute: async ({ region }) => {
+      const imageData = fs.readFileSync("./screenshot.png").toString("base64");
+      return {
+        type: "image",
+        data: imageData,
+        timestamp: new Date().toISOString(),
+      };
+    },
+    toModelOutput: (result) => ({
+      type: "content",
+      value: [
+        { type: "text", text: `Screenshot captured at ${result.timestamp}` },
+        { type: "media", data: result.data, mediaType: "image/png" },
+      ],
+    }),
+  });
+  ```
+
+  ## Return Formats
+
+  The `toModelOutput` function can return multiple formats:
+
+  **Text output:**
+
+  ```typescript
+  toModelOutput: (result) => ({
+    type: "text",
+    value: result.summary,
+  });
+  ```
+
+  **JSON output:**
+
+  ```typescript
+  toModelOutput: (result) => ({
+    type: "json",
+    value: { status: "success", data: result },
+  });
+  ```
+
+  **Multi-modal content (text + media):**
+
+  ```typescript
+  toModelOutput: (result) => ({
+    type: "content",
+    value: [
+      { type: "text", text: "Analysis complete" },
+      { type: "media", data: result.imageBase64, mediaType: "image/png" },
+    ],
+  });
+  ```
+
+  **Error handling:**
+
+  ```typescript
+  toModelOutput: (result) => ({
+    type: "error-text",
+    value: result.errorMessage,
+  });
+  ```
+
+  ## Impact
+  - **Visual AI Workflows**: Build computer use agents that can see and interact with UIs
+  - **Image Generation**: Tools can return generated images directly to the model
+  - **Debugging**: Return screenshots and visual debugging information
+  - **Rich Responses**: Combine text explanations with visual evidence
+
+  ## Usage with Anthropic
+
+  ```typescript
+  const agent = createAgent({
+    name: "visual-assistant",
+    tools: [screenshotTool],
+    model: anthropic("claude-3-5-sonnet-20241022"),
+  });
+
+  const result = await agent.generateText({
+    prompt: "Take a screenshot and describe what you see",
+  });
+  // Agent receives both text and image, can analyze the screenshot
+  ```
+
+  See [AI SDK documentation](https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#multi-modal-tool-results) for more details on multi-modal tool results.
+
+- [#754](https://github.com/VoltAgent/voltagent/pull/754) [`c80d18f`](https://github.com/VoltAgent/voltagent/commit/c80d18f344ee37c16f52495edb88c72f74701610) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add providerOptions support to tools for provider-specific features - #759
+
+  Tools can now accept `providerOptions` to enable provider-specific features like Anthropic's cache control. This aligns VoltAgent tools with the AI SDK's tool API.
+
+  ## The Problem
+
+  Users wanted to use provider-specific features like Anthropic's prompt caching to reduce costs and latency, but VoltAgent's `createTool()` didn't support the `providerOptions` field that AI SDK tools have.
+
+  ## The Solution
+
+  **What Changed:**
+  - Added `providerOptions?: ProviderOptions` field to `ToolOptions` type
+  - VoltAgent tools now accept and pass through provider options to the AI SDK
+  - Supports all provider-specific features: cache control, reasoning settings, etc.
+
+  **What Gets Enabled:**
+
+  ```typescript
+  import { createTool } from "@voltagent/core";
+  import { z } from "zod";
+
+  const cityAttractionsTool = createTool({
+    name: "get_city_attractions",
+    description: "Get tourist attractions for a city",
+    parameters: z.object({
+      city: z.string().describe("The city name"),
+    }),
+    providerOptions: {
+      anthropic: {
+        cacheControl: { type: "ephemeral" },
+      },
+    },
+    execute: async ({ city }) => {
+      return await fetchAttractions(city);
+    },
+  });
+  ```
+
+  ## Impact
+  - **Cost Optimization:** Anthropic cache control reduces API costs for repeated tool calls
+  - **Future-Proof:** Any new provider features work automatically
+  - **Type-Safe:** Uses official AI SDK `ProviderOptions` type
+  - **Zero Breaking Changes:** Optional field, fully backward compatible
+
+  ## Usage
+
+  Use with any provider that supports provider-specific options:
+
+  ```typescript
+  const agent = new Agent({
+    name: "Travel Assistant",
+    model: anthropic("claude-3-5-sonnet"),
+    tools: [cityAttractionsTool], // Tool with cacheControl enabled
+  });
+
+  await agent.generateText("What are the top attractions in Paris?");
+  // Tool definition cached by Anthropic for improved performance
+  ```
+
+  Learn more: [Anthropic Cache Control](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic#cache-control)
+
+## 1.1.39
+
+### Patch Changes
+
+- [#757](https://github.com/VoltAgent/voltagent/pull/757) [`a0509c4`](https://github.com/VoltAgent/voltagent/commit/a0509c493b85619c7eafb2eebd2257c348868133) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: evals & guardrails observability issue
+
+## 1.1.38
+
+### Patch Changes
+
+- [#744](https://github.com/VoltAgent/voltagent/pull/744) [`e9e467a`](https://github.com/VoltAgent/voltagent/commit/e9e467a433a0fe0ba14f56554fc65fccce1cb888) Thanks [@marinoska](https://github.com/marinoska)! - Refactor ToolManager into hierarchical architecture with BaseToolManager and ToolkitManager
+
+  Introduces new class hierarchy for improved tool management:
+  - **BaseToolManager**: Abstract base class with core tool management functionality
+  - **ToolManager**: Main manager supporting standalone tools, provider tools, and toolkits
+  - **ToolkitManager**: Specialized manager for toolkit-scoped tools (no nested toolkits)
+
+  Features:
+  - Enhanced type-safe tool categorization with type guards
+  - Conflict detection for toolkit tools
+  - Reorganized tool preparation process - moved `prepareToolsForExecution` logic from agent into ToolManager, simplifying agent code
+
+  Public API remains compatible.
+
+- [#752](https://github.com/VoltAgent/voltagent/pull/752) [`002ebad`](https://github.com/VoltAgent/voltagent/commit/002ebad1e95a82998c1693b3998b683d5bb04bb2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: forward AI SDK tool call metadata (including `toolCallId`) to server-side tool executions - #746
+
+  Tool wrappers now receive the full options object from the AI SDK, so custom tools and hook listeners can access `toolCallId`, abort signals, and other metadata. We also propagate the real call id to OpenTelemetry spans. Existing tools keep working (the extra argument is optional), but they can now inspect the third `options` parameter if they need richer context.
+
 ## 1.1.37
 
 ### Patch Changes

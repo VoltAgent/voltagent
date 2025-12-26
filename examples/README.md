@@ -82,7 +82,10 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 ## All Examples
 
 - [Base Starter](./base) — Minimal VoltAgent starter with a single agent, memory, and dev server.
+- [Slack](./with-slack) — Slack app mention bot that replies in the same channel/thread via VoltOps Slack actions.
+- [Airtable](./with-airtable) — React to new Airtable records and write updates back using VoltOps Airtable actions.
 - [GitHub Repo Analyzer](./github-repo-analyzer) — Agents read repository code and summarize insights/issues from GitHub projects.
+- [GitHub Star Stories](./github-star-stories) — Celebrate new GitHub stars with enriched profiles, AI-written stories, and VoltOps Discord actions.
 - [SDK Trace Example](./sdk-trace-example) — OpenTelemetry tracing wired to VoltOps so you can inspect spans and events.
 - [Agent‑to‑Agent Server](./with-a2a-server) — Expose agents over HTTP so other agents/services can call them.
 - [Amazon Bedrock](./with-amazon-bedrock) — Run AWS Bedrock models by configuring credentials and providers in VoltAgent.
@@ -105,6 +108,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Langfuse](./with-langfuse) — Send traces and metrics to Langfuse for observability.
 - [Live Evals](./with-live-evals) — Run online evaluations against prompts/agents during development.
 - [MCP Basics](./with-mcp) — Connect to MCP servers and call tools from an agent.
+- [MCP Elicitation](./with-mcp-elicitation) — Handle `elicitation/create` requests from MCP tools with per-request handlers.
 - [MCP Server](./with-mcp-server) — Implement and run a local MCP server that exposes custom tools.
 - [Netlify Functions](./with-netlify-functions) — Ship serverless agent APIs on Netlify.
 - [Next.js](./with-nextjs) — React UI with agent APIs and streaming responses.
@@ -117,11 +121,13 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Qdrant](./with-qdrant) — RAG with Qdrant showing retriever‑on‑every‑turn vs LLM‑decides search.
 - [RAG Chatbot](./with-rag-chatbot) — A conversational bot grounded in your documents with citations.
 - [Retrieval](./with-retrieval) — Minimal retrieval helpers demonstrating the retriever API.
+- [VoltOps Retrieval](./with-voltops-retrieval) — Use VoltOps Knowledge Bases as a retriever via @voltagent/core.
 - [Sub‑agents](./with-subagents) — Supervisor orchestrates focused sub‑agents to divide tasks.
 - [Supabase](./with-supabase) — Use Supabase auth/database in tools and server endpoints.
 - [Tavily Search](./with-tavily-search) — Augment answers with web results from Tavily.
 - [Thinking Tool](./with-thinking-tool) — Structured reasoning via a dedicated “thinking” tool and schema.
 - [Tools](./with-tools) — Author Zod‑typed tools with cancellation and streaming support.
+- [VoltOps Actions + Airtable](./with-voltagent-actions) — Call VoltOps Actions as tools to create and list Airtable records.
 - [Turso](./with-turso) — Persist memory on LibSQL/Turso with simple setup.
 - [Vector Search](./with-vector-search) — Semantic memory with embeddings and automatic recall during chats.
 - [Vercel AI](./with-vercel-ai) — VoltAgent with Vercel AI SDK provider and streaming.
@@ -133,5 +139,4 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Managed Memory](./with-voltagent-managed-memory) — Production‑grade memory via VoltOps Managed Memory REST adapter.
 - [Workflow](./with-workflow) — Build multi‑step flows with createWorkflowChain and human‑in‑the‑loop.
 - [Working Memory](./with-working-memory) — Persist per‑conversation/user facts with built‑in read/update tools.
-- [xAI](./with-xsai) — Use xAI Grok models as an LLM provider.
 - [Zapier (MCP)](./with-zapier-mcp) — Trigger Zapier actions through MCP from your agents.

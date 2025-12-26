@@ -115,6 +115,99 @@ Retrieve detailed information about a specific workflow including schemas.
 curl http://localhost:3141/workflows/order-approval
 ```
 
+## List Workflow Executions
+
+Retrieve executions for a workflow using query parameters.
+
+**Endpoint:** `GET /workflows/executions`
+
+**Query Parameters:**
+
+| Name         | Type              | Description                                                                  |
+| ------------ | ----------------- | ---------------------------------------------------------------------------- |
+| `workflowId` | string (optional) | Workflow ID to filter executions (omit to get all)                           |
+| `status`     | string (optional) | Filter by status (`running`, `suspended`, `completed`, `cancelled`, `error`) |
+| `from`       | string (optional) | ISO timestamp to filter executions created after this time                   |
+| `to`         | string (optional) | ISO timestamp to filter executions created before this time                  |
+| `limit`      | number (optional) | Max results to return                                                        |
+| `offset`     | number (optional) | Offset for pagination                                                        |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "6a8ca92c-0d8a-425f-b24f-09f841a8c200",
+      "workflowId": "order-approval",
+      "workflowName": "Order Approval Workflow",
+      "status": "completed",
+      "input": {
+        "employeeId": "sample-employeeId",
+        "amount": 42,
+        "category": "sample-category",
+        "description": "sample-description"
+      },
+      "metadata": {
+        "traceId": "abe55638e17097f497bfb7ba5ed92a50",
+        "spanId": "0704efe9b0bf5bfc"
+      },
+      "events": [
+        {
+          "id": "3a290355-4baa-4e48-9502-f8d314fb008e",
+          "type": "workflow-start",
+          "name": "Expense Approval Workflow",
+          "from": "Expense Approval Workflow",
+          "startTime": "2025-12-10T15:18:04.423Z",
+          "endTime": "2025-12-10T15:18:04.423Z",
+          "status": "running",
+          "input": {
+            "employeeId": "sample-employeeId",
+            "amount": 42,
+            "category": "sample-category",
+            "description": "sample-description"
+          }
+        },
+        {
+          "id": "8d80ee68-bd2d-451f-abed-856845280509",
+          "type": "workflow-complete",
+          "name": "Expense Approval Workflow",
+          "from": "Expense Approval Workflow",
+          "startTime": "2025-12-10T15:18:05.415Z",
+          "endTime": "2025-12-10T15:18:05.415Z",
+          "status": "success",
+          "output": {
+            "status": "approved",
+            "approvedBy": "system",
+            "finalAmount": 42
+          }
+        }
+      ],
+      "output": {
+        "status": "approved",
+        "approvedBy": "system",
+        "finalAmount": 42
+      },
+      "createdAt": "2025-12-10T15:18:04.421Z",
+      "updatedAt": "2025-12-10T15:18:05.413Z"
+    }
+  ]
+}
+```
+
+**cURL Example:**
+
+```bash
+curl "http://localhost:3141/workflows/executions?workflowId=order-approval&status=completed&limit=20&offset=0"
+```
+
+**List all executions:**
+
+```bash
+curl "http://localhost:3141/workflows/executions?limit=50"
+```
+
 ## Execute Workflow
 
 Execute a workflow synchronously and wait for completion.

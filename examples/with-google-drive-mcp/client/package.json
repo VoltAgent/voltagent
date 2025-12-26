@@ -1,8 +1,24 @@
 {
   "name": "voltagent-example-with-google-drive-mcp-client",
   "version": "0.0.0",
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@tailwindcss/vite": "^4.1.4",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-markdown": "^10.1.0",
+    "react-router": "^7.5.2",
+    "tailwindcss": "^4.1.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.2",
+    "globals": "^16.0.0",
+    "typescript": "^5.8.2",
+    "vite": "^7.2.7"
+  },
   "private": true,
-  "type": "module",
   "scripts": {
     "build": "tsc -b && vite build",
     "dev": "vite",
@@ -10,21 +26,5 @@
     "lint:fix": "biome check . --write",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "@heroicons/react": "^2.2.0",
-    "@tailwindcss/vite": "^4.1.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-markdown": "^10.1.0",
-    "react-router": "^7.5.2",
-    "tailwindcss": "^4.1.4"
-  },
-  "devDependencies": {
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "@vitejs/plugin-react": "^4.3.4",
-    "globals": "^16.0.0",
-    "typescript": "~5.7.2",
-    "vite": "^6.3.1"
-  }
+  "type": "module"
 }

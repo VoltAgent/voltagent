@@ -1,0 +1,25 @@
+---
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: "default"
+  resource: "mcp::expenses"
+  rules:
+    # All users can list expenses
+    - actions: ["list_expenses"]
+      effect: EFFECT_ALLOW
+      roles: ["admin", "manager", "user"]
+
+    # Only users can add expenses
+    - actions: ["add_expense"]
+      effect: EFFECT_ALLOW
+      roles: ["user"]
+
+    # Managers and admins can approve/reject expenses
+    - actions: ["approve_expense", "reject_expense"]
+      effect: EFFECT_ALLOW
+      roles: ["admin", "manager"]
+
+    # Only admins can delete expenses and use superpower tool
+    - actions: ["delete_expense", "superpower_tool"]
+      effect: EFFECT_ALLOW
+      roles: ["admin"]

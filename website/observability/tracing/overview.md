@@ -4,9 +4,13 @@ title: Overview
 
 # VoltOps Tracing
 
-Tracing is the process of recording and visualizing the complete execution path of your AI applications in real-time. It shows you exactly what your AI agents are doing, which tools they're using, and how data flows through your system from start to finish.
+Tracing is the process of recording and visualizing the execution path of your AI applications in real-time. It shows you exactly what your AI agents are doing, which tools they're using, and how data flows through your system from start to finish.
 
-![Vercel AI SDK Integration](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-multi-agent.gif)
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
+
+  <source src="https://cdn.voltagent.dev/docs/voltop-docs/voltops-observability.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
 
 ## Why Tracing Matters for LLM Applications
 

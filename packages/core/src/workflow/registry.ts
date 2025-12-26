@@ -14,6 +14,7 @@ export interface RegisteredWorkflow {
   inputSchema?: any; // Store the input schema for API access
   suspendSchema?: any; // Store the suspend schema for API access
   resumeSchema?: any; // Store the resume schema for API access
+  resultSchema?: any; // Store the result schema for API access
 }
 
 /**
@@ -66,6 +67,7 @@ export class WorkflowRegistry extends SimpleEventEmitter {
       inputSchema: workflow.inputSchema,
       suspendSchema: workflow.suspendSchema,
       resumeSchema: workflow.resumeSchema,
+      resultSchema: workflow.resultSchema,
     };
 
     this.workflows.set(workflow.id, registeredWorkflow);
@@ -341,6 +343,10 @@ export class WorkflowRegistry extends SimpleEventEmitter {
       stepsCount: workflow.steps.length,
       status: "idle" as const,
       steps: workflow.steps.map((step, index) => serializeWorkflowStep(step, index)),
+      inputSchema: registeredWorkflow.inputSchema,
+      resultSchema: registeredWorkflow.resultSchema,
+      suspendSchema: registeredWorkflow.suspendSchema,
+      resumeSchema: registeredWorkflow.resumeSchema,
     };
   }
 }

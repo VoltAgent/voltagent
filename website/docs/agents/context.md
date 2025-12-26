@@ -78,10 +78,79 @@ executionContext.set("language", "English");
 const response = await agent.generateText("Hello!", {
   context: executionContext,
 });
-
 // Now you can access the data from the response
 console.log("Language:", response.context?.get("language"));
 ```
+
+## Sending User Information
+
+You can pass user information to the agent using the `context`. This information is automatically picked up by the tracing system and associated with the trace.
+
+Supported fields:
+
+- `user.name`: User's full name
+- `user.email`: User's email address
+- `user.avatar`: User's avatar URL (optional, falls back to Gravatar using email if not provided)
+- `user.metadata`: Additional metadata object
+
+<Tabs>
+  <TabItem value="sdk" label="SDK" default>
+
+When using the SDK, pass user information in the `context` Map:
+
+```typescript
+import { Agent } from "@voltagent/core";
+
+const agent = new Agent({ ... });
+
+const context = new Map();
+context.set("user.name", "John Doe");
+context.set("user.email", "john@example.com");
+context.set("user.avatar", "https://example.com/avatar.jpg");
+context.set("user.metadata", { plan: "pro" });
+
+await agent.generateText("Hello", { userId: "user_123", context });
+```
+
+  </TabItem>
+  <TabItem value="api" label="REST API">
+
+When using the REST API, you can pass user information in the `context` object. You can use either a nested `user` object or flat keys.
+
+**Option 1: Nested User Object**
+
+```json
+{
+  "prompt": "Hello",
+  "userId": "user_123",
+  "context": {
+    "user": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "avatar": "https://example.com/avatar.jpg",
+      "metadata": { "plan": "pro" }
+    }
+  }
+}
+```
+
+**Option 2: Flat Keys**
+
+```json
+{
+  "prompt": "Hello",
+  "userId": "user_123",
+  "context": {
+    "user.name": "John Doe",
+    "user.email": "john@example.com",
+    "user.avatar": "https://example.com/avatar.jpg",
+    "user.metadata": { "plan": "pro" }
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
 
 ## Hooks Access context
 
@@ -120,9 +189,9 @@ context.set("language", "English");
 await agent.generateText("Hello!", { context });
 ```
 
-## Tools Access context
+## Tools Access Context
 
-Tools can read and write to `context` through their options:
+Tools receive the full operation context through the second parameter (`options`), which includes all `OperationContext` fields directly accessible:
 
 ```typescript
 import { createTool } from "@voltagent/core";
@@ -135,17 +204,29 @@ const loggerTool = createTool({
     message: z.string(),
   }),
   execute: async ({ message }, options) => {
-    // Read from context
-    const language = options?.operationContext?.context?.get("language");
-    const requestId = options?.operationContext?.context?.get("requestId");
+    // Access user-defined context directly
+    const language = options?.context?.get("language");
+    const requestId = options?.context?.get("requestId");
+
+    // Access operation metadata
+    const userId = options?.userId;
+    const operationId = options?.operationId;
+
+    // Use the operation-scoped logger
+    options?.logger?.info(`[${requestId}] User ${userId}: ${message}`);
 
     console.log(`[${requestId}] Language ${language}: ${message}`);
 
     // Write to context
-    const ctx = options?.operationContext?.context;
+    const ctx = options?.context;
     if (ctx) {
       const logs = ctx.get("logs") || [];
-      logs.push({ message, timestamp: new Date().toISOString() });
+      logs.push({
+        message,
+        timestamp: new Date().toISOString(),
+        userId,
+        operationId,
+      });
       ctx.set("logs", logs);
     }
 
@@ -167,11 +248,66 @@ context.set("requestId", "req-456");
 
 const response = await agentWithTool.generateText("Log this: Hello world!", {
   context,
+  userId: "user123",
 });
 
 // Check what was logged
 const logs = response.context?.get("logs");
 console.log("All logs:", logs);
+```
+
+### What's Available in Tool Options?
+
+The `options` parameter in tool `execute` functions combines `ToolExecuteOptions` and `Partial<OperationContext>`:
+
+**From OperationContext:**
+
+- `operationId` - Unique operation identifier
+- `userId` - User identifier (if provided)
+- `conversationId` - Conversation identifier (if provided)
+- `context` - User-defined context Map (read/write)
+- `systemContext` - Internal system context Map
+- `logger` - Operation-scoped logger with full context
+- `abortController` - For operation cancellation
+- `traceContext` - OpenTelemetry trace context
+- `input` - Original input to the agent
+- `isActive` - Whether operation is still active
+
+**Tool-specific context (from `toolContext?` - optional):**
+
+> **Note:** `toolContext` is always populated when your tool is called from a VoltAgent agent. It may be `undefined` when called externally.
+
+- `toolContext?.name` - Name of the tool being executed
+- `toolContext?.callId` - Unique identifier for this tool call (from AI SDK)
+- `toolContext?.messages` - Message history at tool call time (from AI SDK)
+- `toolContext?.abortSignal` - Abort signal for cancellation (from AI SDK)
+
+```typescript
+// Example: Authorization check using context
+const sensitiveDataTool = createTool({
+  name: "get_sensitive_data",
+  description: "Retrieves sensitive user data",
+  parameters: z.object({
+    dataType: z.string(),
+  }),
+  execute: async ({ dataType }, options) => {
+    // Check user role from context
+    const userRole = options?.context?.get("userRole");
+
+    if (userRole !== "admin") {
+      throw new Error("Unauthorized: Admin role required");
+    }
+
+    // Log access with full context including tool name
+    const toolName = options?.toolContext?.name;
+    options?.logger?.warn(`${toolName}: Sensitive data accessed: ${dataType}`, {
+      userId: options?.userId,
+      operationId: options?.operationId,
+    });
+
+    return await fetchSensitiveData(dataType);
+  },
+});
 ```
 
 ## Access Input and Output in Context
@@ -619,7 +755,7 @@ const counterTool = createTool({
   description: "Increments a counter",
   parameters: z.object({}),
   execute: async (_, options) => {
-    const ctx = options.operationContext?.context;
+    const ctx = options?.context;
     if (ctx) {
       const count = (ctx.get("counter") || 0) + 1;
       ctx.set("counter", count);
@@ -780,13 +916,13 @@ const agent = new Agent({
 // Tenant A: user-123's data
 await agent.generateText("Show my history", {
   userId: "user-123",
-  context: { tenantId: "company-abc" }, // Stores as "company-abc:user-123"
+  context: new Map([["tenantId", "company-abc"]]), // Stores as "company-abc:user-123"
 });
 
 // Tenant B: same user ID, but different tenant = different data
 await agent.generateText("Show my history", {
   userId: "user-123",
-  context: { tenantId: "company-xyz" }, // Stores as "company-xyz:user-123"
+  context: new Map([["tenantId", "company-xyz"]]), // Stores as "company-xyz:user-123"
 });
 ```
 

@@ -35,6 +35,13 @@ Default port is 3141, but may vary based on configuration.
 | POST   | `/agents/:id/stream-object` | Stream object generation (SSE) | Yes  |
 | GET    | `/agents/:id/history`       | Get agent execution history    | No   |
 
+## Tool Endpoints
+
+| Method | Path                   | Description                       | Auth |
+| ------ | ---------------------- | --------------------------------- | ---- |
+| GET    | `/tools`               | List all registered tools         | No   |
+| POST   | `/tools/:name/execute` | Execute a tool directly over HTTP | Yes  |
+
 ### Common Request Format
 
 ```json

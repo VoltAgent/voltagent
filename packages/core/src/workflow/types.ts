@@ -404,6 +404,10 @@ export type Workflow<
    */
   inputSchema?: INPUT_SCHEMA;
   /**
+   * Result schema for the workflow (for API access)
+   */
+  resultSchema?: RESULT_SCHEMA;
+  /**
    * Suspend schema for the workflow (for API access)
    */
   suspendSchema?: SUSPEND_SCHEMA;
@@ -430,6 +434,7 @@ export type Workflow<
     stepsCount: number;
     steps: DangerouslyAllowAny[];
     inputSchema?: DangerouslyAllowAny;
+    resultSchema?: DangerouslyAllowAny;
     suspendSchema?: DangerouslyAllowAny;
     resumeSchema?: DangerouslyAllowAny;
   };

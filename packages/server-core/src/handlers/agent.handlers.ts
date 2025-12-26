@@ -91,6 +91,16 @@ export async function handleGenerateText(
         finishReason: result.finishReason,
         toolCalls: result.toolCalls,
         toolResults: result.toolResults,
+        // Try to access experimental_output safely - getter throws if not defined
+        ...(() => {
+          try {
+            return result.experimental_output
+              ? { experimental_output: result.experimental_output }
+              : {};
+          } catch {
+            return {};
+          }
+        })(),
       },
     };
   } catch (error) {

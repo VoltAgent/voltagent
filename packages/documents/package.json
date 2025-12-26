@@ -30,9 +30,9 @@
         "openai": "^4.20.0"
     },
     "devDependencies": {
-        "tsup": "^8.0.0",
-        "typescript": "^5.0.0",
-        "vitest": "^1.0.0",
-        "@types/node": "^20.0.0"
+        "tsup": "^8.5.0",
+        "typescript": "^5.8.2",
+        "vitest": "^3.2.4",
+        "@types/node": "^24.2.1"
     }
 }

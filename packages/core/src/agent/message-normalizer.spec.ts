@@ -72,6 +72,27 @@ describe("message-normalizer", () => {
     });
   });
 
+  it("unwraps json-style tool outputs before converting to model messages", () => {
+    const message = baseMessage([
+      {
+        type: "tool-weather_lookup",
+        toolCallId: "call-2",
+        state: "output-available",
+        output: { type: "json", value: { feelsLike: 24, unit: "C" } },
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const part = (sanitized as UIMessage).parts[0] as any;
+    expect(part.output).toEqual({ feelsLike: 24, unit: "C" });
+    // Original message remains wrapped
+    expect((message.parts[0] as any).output).toEqual({
+      type: "json",
+      value: { feelsLike: 24, unit: "C" },
+    });
+  });
+
   it("preserves provider metadata on text parts", () => {
     const message = baseMessage([
       {

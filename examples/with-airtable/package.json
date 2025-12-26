@@ -1,0 +1,35 @@
+{
+  "name": "voltagent-example-with-airtable",
+  "author": "",
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.52",
+    "@voltagent/cli": "^0.1.17",
+    "@voltagent/core": "^1.5.1",
+    "@voltagent/internal": "^0.0.12",
+    "@voltagent/logger": "^1.0.4",
+    "@voltagent/sdk": "^1.0.2",
+    "@voltagent/server-hono": "^1.2.11",
+    "ai": "^5.0.76",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "airtable",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
+}

@@ -3,6 +3,7 @@ import type { UIMessage } from "ai";
 import type { AgentTool } from "../../tool";
 import type { Agent } from "../agent";
 import type { AbortError, CancellationError, VoltAgentError } from "../errors";
+import type { ToolExecuteOptions, UsageInfo } from "../providers/base/types";
 import type { AgentOperationOutput, OperationContext } from "../types";
 
 // Argument Object Interfaces (old API restored, adapted for AI SDK types)
@@ -29,11 +30,33 @@ export interface OnHandoffHookArgs {
   sourceAgent: Agent;
 }
 
+export interface OnHandoffCompleteHookArgs {
+  /** The target agent (subagent) that completed the task. */
+  agent: Agent;
+  /** The source agent (supervisor) that delegated the task. */
+  sourceAgent: Agent;
+  /** The result produced by the subagent. */
+  result: string;
+  /** The full conversation messages including the task and response. */
+  messages: UIMessage[];
+  /** Token usage information from the subagent execution. */
+  usage?: UsageInfo;
+  /** The operation context containing metadata about the operation. */
+  context: OperationContext;
+  /**
+   * Call this function to bail (skip supervisor processing) and return result directly.
+   * Optionally provide a transformed result to use instead of the original.
+   * @param transformedResult - Optional transformed result to return instead of original
+   */
+  bail: (transformedResult?: string) => void;
+}
+
 export interface OnToolStartHookArgs {
   agent: Agent;
   tool: AgentTool;
   context: OperationContext;
   args: any;
+  options?: ToolExecuteOptions;
 }
 
 export interface OnToolEndHookArgs {
@@ -44,6 +67,7 @@ export interface OnToolEndHookArgs {
   /** The error if the tool execution failed. */
   error: VoltAgentError | AbortError | undefined;
   context: OperationContext;
+  options?: ToolExecuteOptions;
 }
 
 export interface OnPrepareMessagesHookArgs {
@@ -94,6 +118,7 @@ export interface OnStepFinishHookArgs {
 export type AgentHookOnStart = (args: OnStartHookArgs) => Promise<void> | void;
 export type AgentHookOnEnd = (args: OnEndHookArgs) => Promise<void> | void;
 export type AgentHookOnHandoff = (args: OnHandoffHookArgs) => Promise<void> | void;
+export type AgentHookOnHandoffComplete = (args: OnHandoffCompleteHookArgs) => Promise<void> | void;
 export type AgentHookOnToolStart = (args: OnToolStartHookArgs) => Promise<void> | void;
 export type AgentHookOnToolEnd = (args: OnToolEndHookArgs) => Promise<void> | void;
 export type AgentHookOnPrepareMessages = (
@@ -112,6 +137,7 @@ export type AgentHooks = {
   onStart?: AgentHookOnStart;
   onEnd?: AgentHookOnEnd;
   onHandoff?: AgentHookOnHandoff;
+  onHandoffComplete?: AgentHookOnHandoffComplete;
   onToolStart?: AgentHookOnToolStart;
   onToolEnd?: AgentHookOnToolEnd;
   onPrepareMessages?: AgentHookOnPrepareMessages;
@@ -128,6 +154,7 @@ const defaultHooks: Required<AgentHooks> = {
   onStart: async (_args: OnStartHookArgs) => {},
   onEnd: async (_args: OnEndHookArgs) => {},
   onHandoff: async (_args: OnHandoffHookArgs) => {},
+  onHandoffComplete: async (_args: OnHandoffCompleteHookArgs) => {},
   onToolStart: async (_args: OnToolStartHookArgs) => {},
   onToolEnd: async (_args: OnToolEndHookArgs) => {},
   onPrepareMessages: async (_args: OnPrepareMessagesHookArgs) => ({}),
@@ -144,6 +171,7 @@ export function createHooks(hooks: Partial<AgentHooks> = {}): AgentHooks {
     onStart: hooks.onStart || defaultHooks.onStart,
     onEnd: hooks.onEnd || defaultHooks.onEnd,
     onHandoff: hooks.onHandoff || defaultHooks.onHandoff,
+    onHandoffComplete: hooks.onHandoffComplete || defaultHooks.onHandoffComplete,
     onToolStart: hooks.onToolStart || defaultHooks.onToolStart,
     onToolEnd: hooks.onToolEnd || defaultHooks.onToolEnd,
     onPrepareMessages: hooks.onPrepareMessages || defaultHooks.onPrepareMessages,

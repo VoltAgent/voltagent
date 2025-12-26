@@ -31,12 +31,14 @@ export {
   handleStreamWorkflow,
   handleSuspendWorkflow,
   handleResumeWorkflow,
+  handleListWorkflowRuns,
   handleGetWorkflowState,
 } from "./handlers/workflow.handlers";
 export {
   listMemoryUsersHandler,
   listMemoryConversationsHandler,
   getConversationMessagesHandler,
+  getConversationStepsHandler,
   getWorkingMemoryHandler,
 } from "./handlers/memory-observability.handlers";
 

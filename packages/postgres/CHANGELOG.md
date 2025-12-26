@@ -1,5 +1,100 @@
 # @voltagent/postgres
 
+## 1.1.4
+
+### Patch Changes
+
+- [#845](https://github.com/VoltAgent/voltagent/pull/845) [`5432f13`](https://github.com/VoltAgent/voltagent/commit/5432f13bddebd869522ebffbedd9843b4476f08b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: workflow execution listing - #844
+
+  Added a unified way to list workflow runs so teams can audit executions across every storage backend and surface them via the API and console.
+
+  ## What changed
+  - `queryWorkflowRuns` now exists on all memory adapters (in-memory, libsql, Postgres, Supabase, voltagent-memory) with filters for `workflowId`, `status`, `from`, `to`, `limit`, and `offset`.
+  - Server routes are consolidated under `/workflows/executions` (no path param needed); `GET /workflows/:id` also returns the workflow result schema for typed clients. Handler naming is standardized to `listWorkflowRuns`.
+  - VoltOps Console observability panel lists the new endpoint; REST docs updated with query params and sample responses. New unit tests cover handlers and every storage adapter.
+
+  ## Quick fetch
+
+  ```ts
+  await fetch(
+    "http://localhost:3141/workflows/executions?workflowId=expense-approval&status=completed&from=2024-01-01&to=2024-01-31&limit=20&offset=0"
+  );
+  ```
+
+## 1.1.3
+
+### Patch Changes
+
+- [#820](https://github.com/VoltAgent/voltagent/pull/820) [`c5e0c89`](https://github.com/VoltAgent/voltagent/commit/c5e0c89554d85c895e3d6cbfc83ad47bd53a1b9f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: expose createdAt in memory.getMessages
+
+  ## What Changed
+
+  The `createdAt` timestamp is now exposed in the `metadata` object of messages retrieved via `memory.getMessages()`. This ensures that the creation time of messages is accessible across all storage adapters (`InMemory`, `Supabase`, `LibSQL`, `PostgreSQL`).
+
+  ## Usage
+
+  You can now access the `createdAt` timestamp from the message metadata:
+
+  ```typescript
+  const messages = await memory.getMessages(userId, conversationId);
+
+  messages.forEach((message) => {
+    console.log(`Message ID: ${message.id}`);
+    console.log(`Created At: ${message.metadata?.createdAt}`);
+  });
+  ```
+
+  This change aligns the behavior of all storage adapters and ensures consistent access to message timestamps.
+
+## 1.1.2
+
+### Patch Changes
+
+- [#801](https://github.com/VoltAgent/voltagent/pull/801) [`a26ddd8`](https://github.com/VoltAgent/voltagent/commit/a26ddd826692485278033c22ac9828cb51cdd749) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add triggers DSL improvements and event payload simplification
+  - Introduce the new `createTriggers` DSL and expose trigger events via sensible provider names (e.g. `on.airtable.recordCreated`) rather than raw catalog IDs.
+  - Add trigger span metadata propagation so VoltAgent agents receive trigger context automatically without manual mapping.
+  - Simplify action dispatch payloads: `payload` now contains only the event’s raw data while trigger context lives in the `event`/`metadata` blocks, reducing boilerplate in handlers.
+
+  ```ts
+  import { VoltAgent, createTriggers } from "@voltagent/core";
+
+  new VoltAgent({
+    // ...
+    triggers: createTriggers((on) => {
+      on.airtable.recordCreated(({ payload, event }) => {
+        console.log("New Airtable row", payload, event.metadata);
+      });
+
+      on.gmail.newEmail(({ payload }) => {
+        console.log("New Gmail message", payload);
+      });
+    }),
+  });
+  ```
+
+## 1.1.1
+
+### Patch Changes
+
+- [#787](https://github.com/VoltAgent/voltagent/pull/787) [`5e81d65`](https://github.com/VoltAgent/voltagent/commit/5e81d6568ba3bee26083ca2a8e5d31f158e36fc0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add full conversation step persistence across the stack:
+  - Core now exposes managed-memory step APIs, and the VoltAgent managed memory adapter persists/retrieves steps through VoltOps.
+  - LibSQL, PostgreSQL, Supabase, and server handlers provision the new `_steps` table, wire up DTOs/routes, and surface the data in Observability/Steps UI (including managed-memory backends).
+
+  fixes: #613
+
+## 1.1.0
+
+### Minor Changes
+
+- [#773](https://github.com/VoltAgent/voltagent/pull/773) [`35290d9`](https://github.com/VoltAgent/voltagent/commit/35290d9331c846f8274325ad698da0c2cda54530) Thanks [@hyperion912](https://github.com/hyperion912)! - feat(postgres-memory-adapter): add schema configuration support
+
+  Add support for defining a custom PostgreSQL schema during adapter initialization.
+  Defaults to undefined (uses the database’s default schema if not provided).
+
+  Includes tests for schema configuration.
+
+  Resolves #763
+
 ## 1.0.11
 
 ### Patch Changes

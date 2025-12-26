@@ -278,6 +278,33 @@ export const WORKFLOW_ROUTES = {
       },
     },
   },
+  listWorkflowRuns: {
+    method: "get" as const,
+    path: "/workflows/executions",
+    summary: "List workflow executions (query-driven)",
+    description:
+      "Retrieve workflow executions using query params (workflowId, status, from, to, limit, offset) without path parameters.",
+    tags: ["Workflow Management"],
+    operationId: "listWorkflowRuns",
+    responses: {
+      200: {
+        description: "Successfully retrieved workflow executions",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid query parameters",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Workflow not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve workflow executions due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   executeWorkflow: {
     method: "post" as const,
     path: "/workflows/:id/execute",
@@ -775,6 +802,28 @@ export const OBSERVABILITY_MEMORY_ROUTES = {
       },
     },
   },
+  getConversationSteps: {
+    method: "get" as const,
+    path: "/observability/memory/conversations/:conversationId/steps",
+    summary: "Get conversation steps",
+    description: "Fetch the recorded agent steps for a specific conversation stored in memory.",
+    tags: ["Observability", "Memory"],
+    operationId: "getConversationSteps",
+    responses: {
+      200: {
+        description: "Successfully retrieved conversation steps",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve conversation steps due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   getWorkingMemory: {
     method: "get" as const,
     path: "/observability/memory/working-memory",
@@ -801,11 +850,64 @@ export const OBSERVABILITY_MEMORY_ROUTES = {
 } as const;
 
 /**
+ * Tool route definitions
+ */
+export const TOOL_ROUTES = {
+  listTools: {
+    method: "get" as const,
+    path: "/tools",
+    summary: "List all tools",
+    description:
+      "Retrieve a list of all tools registered across agents. Includes name, description, parameters, and owning agent metadata.",
+    tags: ["Tools"],
+    operationId: "listTools",
+    responses: {
+      200: {
+        description: "Successfully retrieved list of tools",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve tools due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  executeTool: {
+    method: "post" as const,
+    path: "/tools/:name/execute",
+    summary: "Execute a tool directly",
+    description:
+      "Execute a registered tool directly via HTTP without going through the agent chat flow. Accepts tool input and optional context metadata.",
+    tags: ["Tools"],
+    operationId: "executeTool",
+    responses: {
+      200: {
+        description: "Successfully executed tool",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request or tool input",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Tool not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to execute tool due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+} as const;
+
+/**
  * All route definitions combined
  */
 export const ALL_ROUTES = {
   ...AGENT_ROUTES,
   ...WORKFLOW_ROUTES,
+  ...TOOL_ROUTES,
   ...LOG_ROUTES,
   ...UPDATE_ROUTES,
   ...OBSERVABILITY_ROUTES,

@@ -47,7 +47,7 @@ export const mcpServer = new MCPServer({
 This minimal configuration:
 
 - Names the server `voltagent-example` (used in URLs and IDE listings).
-- Ships a static prompt so clients immediately see helpful metadata even before wiring runtime adapters.
+- Registers server metadata so clients can discover it even before you add tools/agents.
 - Enables all transports (`stdio`, `http`, `sse`) by default. Override `protocols` to disable transports you do not need.
 
 ```ts title="src/mcp/server.ts"
@@ -93,7 +93,89 @@ export const voltAgent = new VoltAgent({
 - `mcpServers` registers your MCP server alongside the agent/workflow registries.
 - Passing `server: honoServer(...)` makes VoltAgent expose MCP HTTP and SSE routes automatically. With the server running, visit [`https://console.voltagent.dev/mcp`](https://console.voltagent.dev/mcp) to browse, invoke, and debug tools.
 
-## 4. Optional: add MCP-only entries
+## 4. Find the MCP endpoint (HTTP + SSE)
+
+When you start the VoltAgent server, MCP transport endpoints are exposed per server ID:
+
+- **Streamable HTTP**: `POST /mcp/{serverId}/mcp`
+- **SSE** (if enabled): `GET /mcp/{serverId}/sse` and `POST /mcp/{serverId}/messages`
+
+The `{serverId}` is a normalized version of the `name` (lowercased, spaces replaced) and may get a numeric suffix if there are duplicates. You can always discover it via the registry endpoint:
+
+```bash
+curl http://localhost:3141/mcp/servers
+```
+
+Example response (trimmed):
+
+```json
+{
+  "servers": [
+    {
+      "id": "voltagent-example",
+      "name": "voltagent-example",
+      "version": "0.1.0"
+    }
+  ]
+}
+```
+
+Once you have the `id`, the HTTP MCP URL becomes:
+
+```
+http://localhost:3141/mcp/voltagent-example/mcp
+```
+
+## 5. Connect via stdio (local process)
+
+STDIO does not use an HTTP URL. The MCP client spawns your server process and communicates over stdin/stdout. In the startup log you should see a line like:
+
+```
+STDIO  uses stdin/stdout. Example client: { type: "stdio", command: "node", args: ["dist/index.js"] }
+```
+
+Client example (MCPClient):
+
+```ts
+import { MCPClient } from "@voltagent/core";
+
+const client = new MCPClient({
+  clientInfo: { name: "local-client", version: "0.1.0" },
+  server: {
+    type: "stdio",
+    command: "node",
+    args: ["dist/index.js"],
+    cwd: process.cwd(),
+    env: { ...process.env },
+  },
+});
+
+await client.connect();
+const tools = await client.listTools();
+```
+
+Replace `command`/`args` with the entry that starts your VoltAgent + MCP server (for example `pnpm start -- --stdio` or `node dist/index.js` after build).
+
+## 6. Connect via HTTP
+
+Use the MCP URL in `MCPConfiguration`:
+
+```ts
+import { MCPConfiguration } from "@voltagent/core";
+
+const mcpConfig = new MCPConfiguration({
+  servers: {
+    local: {
+      type: "http",
+      url: "http://localhost:3141/mcp/voltagent-example/mcp",
+    },
+  },
+});
+
+const tools = await mcpConfig.getTools();
+```
+
+## 7. Optional: add MCP-only entries
 
 Sometimes you want MCP clients to see helpers that are not (yet) registered with VoltAgent. Provide them as keyed objects (just like the main `VoltAgent` config) via the `agents`, `workflows`, or `tools` fields to append entries that live only on the MCP side:
 
@@ -149,7 +231,7 @@ export const mcpServer = new MCPServer({
 
 These configured entries behave like regular VoltAgent components for MCP clients, they appear in listings and can be invoked-yet they are not registered with the main `VoltAgent` instance.
 
-## 5. Optional: filter exposed agents/workflows/tools
+## 8. Optional: filter exposed agents/workflows/tools
 
 By default, every agent, workflow, and tool registered with `VoltAgent` is visible to MCP clients. Provide filter functions when you need to hide or reorder the registry output for a specific transport:
 
@@ -166,7 +248,7 @@ export const mcpServer = new MCPServer({
 
 Filters receive the list of components sourced from the VoltAgent registries (plus any configured additions) and must return the array you want to expose. They are intended for pruning or sorting, use the `agents`/`workflows`/`tools` fields when you need to introduce brand-new entries.
 
-## 6. Optional: stream prompts and resources
+## 9. Optional: stream prompts and resources
 
 MCP clients can ask a server for structured prompt templates (`prompts/list`, `prompts/get`) and arbitrary resources (`resources/list`, `resources/read`). VoltAgent lets you seed static content and/or forward to a dynamic source via the new `adapters` field:
 

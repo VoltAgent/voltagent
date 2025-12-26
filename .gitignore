@@ -164,6 +164,7 @@ vitest.config.*.timestamp*
 
 # claude
 .claude
+skills
 
 dev-debug.log
 node_modules/
@@ -173,3 +174,5 @@ node_modules/
 !packages/core/src/observability/logs
 # Local Netlify folder
 .netlify
+
+

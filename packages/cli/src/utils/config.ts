@@ -1,5 +1,7 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import Configstore from "configstore";
 import dotenv from "dotenv";
 import inquirer from "inquirer";
 
@@ -11,6 +13,15 @@ export interface AuthConfig {
 
 export interface ResolveAuthOptions {
   promptIfMissing?: boolean;
+}
+
+export interface VoltOpsConfig {
+  token: string;
+  user: {
+    email: string;
+    name: string;
+  };
+  loginDate: string;
 }
 
 const ENV_FILE_NAME = ".env";
@@ -149,4 +160,102 @@ export const resolveAuthConfig = async (options: ResolveAuthOptions = {}): Promi
     publicKey,
     secretKey,
   };
+};
+
+// VoltOps Token Management (for CLI login)
+
+// Initialize configstore with globalConfigPath option
+// This creates config at ~/.config/voltcli/config.json (Linux/macOS) or %APPDATA%\voltcli\config.json (Windows)
+const voltOpsConfig = new Configstore(
+  "voltcli",
+  {},
+  {
+    globalConfigPath: true, // Use ~/.config/voltcli instead of ~/.config/configstore/voltcli
+  },
+);
+
+// Migration: Move old config from ~/.voltcli to new location
+const migrateOldConfig = (): void => {
+  try {
+    const homeDir = os.homedir();
+    const oldConfigDir =
+      process.platform === "win32"
+        ? path.join(process.env.APPDATA || path.join(homeDir, "AppData", "Roaming"), "voltcli")
+        : path.join(homeDir, ".voltcli");
+    const oldConfigPath = path.join(oldConfigDir, "config.json");
+
+    // Check if old config exists and new config doesn't
+    if (fs.existsSync(oldConfigPath) && !voltOpsConfig.has("token")) {
+      const oldConfigContent = fs.readFileSync(oldConfigPath, "utf-8");
+      const oldConfig: VoltOpsConfig = JSON.parse(oldConfigContent);
+
+      // Migrate to new location
+      voltOpsConfig.set("token", oldConfig.token);
+      voltOpsConfig.set("user", oldConfig.user);
+      voltOpsConfig.set("loginDate", oldConfig.loginDate);
+
+      // Delete old config file
+      fs.unlinkSync(oldConfigPath);
+
+      // Try to remove old directory if empty
+      try {
+        fs.rmdirSync(oldConfigDir);
+      } catch {
+        // Directory not empty or other error, ignore
+      }
+    }
+  } catch (error) {
+    // Migration failed, not critical
+    console.error("Warning: Failed to migrate old config:", error);
+  }
+};
+
+// Run migration once
+migrateOldConfig();
+
+export const readVoltOpsToken = (): string | null => {
+  return voltOpsConfig.get("token") ?? null;
+};
+
+export const readVoltOpsConfig = (): VoltOpsConfig | null => {
+  if (!voltOpsConfig.has("token")) {
+    return null;
+  }
+
+  return {
+    token: voltOpsConfig.get("token"),
+    user: voltOpsConfig.get("user"),
+    loginDate: voltOpsConfig.get("loginDate"),
+  };
+};
+
+export const writeVoltOpsToken = (token: string, user: { email: string; name: string }): void => {
+  voltOpsConfig.set({
+    token,
+    user,
+    loginDate: new Date().toISOString(),
+  });
+};
+
+export const deleteVoltOpsToken = (): void => {
+  voltOpsConfig.clear();
+};
+
+export const getVoltOpsConfigPath = (): string => {
+  return voltOpsConfig.path;
+};
+
+export const getTunnelPrefix = (): string | null => {
+  // Load .env if exists
+  loadLocalEnvFile();
+
+  return process.env.VOLTAGENT_TUNNEL_PREFIX || null;
+};
+
+export const getTunnelPort = (): number => {
+  // Load .env if exists
+  loadLocalEnvFile();
+
+  const port = process.env.VOLTAGENT_TUNNEL_PORT;
+  return port ? Number.parseInt(port, 10) : 3141;
 };

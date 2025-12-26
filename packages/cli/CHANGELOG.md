@@ -1,5 +1,125 @@
 # @voltagent/cli
 
+## 0.1.17
+
+### Patch Changes
+
+- [`d3e0995`](https://github.com/VoltAgent/voltagent/commit/d3e09950fb8708db8beb9db2f1b8eafbe47686ea) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add CLI announcements system for server startup
+
+  VoltAgent server now displays announcements during startup, keeping developers informed about new features and updates.
+
+  ## How It Works
+
+  When the server starts, it fetches announcements from a centralized GitHub-hosted JSON file and displays them in a minimal, non-intrusive format:
+
+  ```
+    ⚡ Introducing VoltOps Deployments → https://console.voltagent.dev/deployments
+  ```
+
+  ## Key Features
+  - **Dynamic updates**: Announcements are fetched from GitHub at runtime, so new announcements appear without requiring a package update
+  - **Non-blocking**: Uses a 3-second timeout and fails silently to never delay server startup
+  - **Minimal footprint**: Single-line format inspired by Next.js, doesn't clutter the console
+  - **Toggle support**: Each announcement has an `enabled` flag for easy control
+
+  ## Technical Details
+  - Announcements source: `https://raw.githubusercontent.com/VoltAgent/voltagent/main/announcements.json`
+  - New `showAnnouncements()` function exported from `@voltagent/server-core`
+  - Integrated into both `BaseServerProvider` and `HonoServerProvider` startup flow
+
+## 0.1.16
+
+### Patch Changes
+
+- [#787](https://github.com/VoltAgent/voltagent/pull/787) [`5e81d65`](https://github.com/VoltAgent/voltagent/commit/5e81d6568ba3bee26083ca2a8e5d31f158e36fc0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add authentication and tunnel prefix support to VoltAgent CLI
+
+  ## Authentication Commands
+
+  Added `volt login` and `volt logout` commands for managing VoltAgent CLI authentication:
+
+  ### volt login
+  - Implements Device Code Flow authentication
+  - Opens browser to `https://console.voltagent.dev/cli-auth` for authorization
+  - Stores authentication token in XDG-compliant config location:
+    - macOS/Linux: `~/.config/voltcli/config.json`
+    - Windows: `%APPDATA%\voltcli\config.json`
+  - Tokens expire after 365 days
+  - Enables persistent subdomains for Core/Pro plan users
+
+  ```bash
+  pnpm volt login
+  ```
+
+  ### volt logout
+  - Removes authentication token from local machine
+  - Clears stored credentials
+
+  ```bash
+  pnpm volt logout
+  ```
+
+  ## Persistent Tunnel Subdomains
+
+  Authenticated Core/Pro users now receive persistent subdomains based on their username:
+
+  **Before (unauthenticated or free plan):**
+
+  ```bash
+  pnpm volt tunnel 3141
+  # → https://happy-cat-42.tunnel.voltagent.dev (changes each time)
+  ```
+
+  **After (authenticated Core/Pro):**
+
+  ```bash
+  pnpm volt tunnel 3141
+  # → https://john-doe.tunnel.voltagent.dev (same URL every time)
+  ```
+
+  ## Tunnel Prefix Support
+
+  Added `--prefix` flag to organize multiple tunnels with custom subdomain prefixes:
+
+  ```bash
+  pnpm volt tunnel 3141 --prefix agent
+  # → https://agent-john-doe.tunnel.voltagent.dev
+
+  pnpm volt tunnel 8080 --prefix api
+  # → https://api-john-doe.tunnel.voltagent.dev
+  ```
+
+  **Prefix validation rules:**
+  - 1-20 characters
+  - Alphanumeric and dash only
+  - Must start with letter or number
+  - Reserved prefixes: `www`, `mail`, `admin`, `console`, `api-voltagent`
+
+  **Error handling:**
+  - Subdomain collision detection (if already in use by another user)
+  - Clear error messages with suggestions to try different prefixes
+
+  ## Config Migration
+
+  Config location migrated from `.voltcli` to XDG-compliant paths for better cross-platform support and adherence to OS conventions.
+
+  See the [local tunnel documentation](https://voltagent.dev/docs/deployment/local-tunnel) for complete usage examples.
+
+## 0.1.15
+
+### Patch Changes
+
+- [#767](https://github.com/VoltAgent/voltagent/pull/767) [`cc1f5c0`](https://github.com/VoltAgent/voltagent/commit/cc1f5c032cd891ed4df0b718885f70853c344690) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add tunnel command
+
+  ## New: `volt tunnel`
+
+  Expose your local VoltAgent server over a secure public URL with a single command:
+
+  ```bash
+  pnpm volt tunnel 3141
+  ```
+
+  The CLI handles tunnel creation for `localhost:3141` and keeps the connection alive until you press `Ctrl+C`. You can omit the port argument to use the default.
+
 ## 0.1.14
 
 ### Patch Changes

@@ -16,6 +16,7 @@ import {
   handleGetWorkflowState,
   handleGetWorkflows,
   handleInstallUpdates,
+  handleListWorkflowRuns,
   handleResumeWorkflow,
   handleStreamObject,
   handleStreamText,
@@ -40,8 +41,11 @@ import {
   textRoute,
 } from "./agent.routes";
 import { getLogsRoute } from "./log.routes";
+import { registerTriggerRoutes } from "./trigger.routes";
 export { registerMcpRoutes } from "./mcp.routes";
 export { registerA2ARoutes } from "./a2a.routes";
+export { registerToolRoutes } from "./tool.routes";
+export { registerTriggerRoutes } from "./trigger.routes";
 
 /**
  * Register agent routes
@@ -183,6 +187,17 @@ export function registerWorkflowRoutes(
     return c.json(response, 200);
   });
 
+  // GET /workflows/executions - List workflow executions (query-driven)
+  app.get("/workflows/executions", async (c) => {
+    const query = c.req.query();
+    const response = await handleListWorkflowRuns(undefined, query, deps, logger);
+    if (!response.success) {
+      return c.json(response, response.error?.includes("not found") ? 404 : 500);
+    }
+
+    return c.json(response, 200);
+  });
+
   // GET /workflows/:id - Get workflow by ID
   app.get("/workflows/:id", async (c) => {
     const workflowId = c.req.param("id");
@@ -281,6 +296,16 @@ export function registerWorkflowRoutes(
     if (!response.success) {
       return c.json(response, 500);
     }
+    return c.json(response, 200);
+  });
+
+  app.get("/workflows/executions", async (c) => {
+    const query = c.req.query();
+    const response = await handleListWorkflowRuns(undefined, query, deps, logger);
+    if (!response.success) {
+      return c.json(response, response.error?.includes("not found") ? 404 : 500);
+    }
+
     return c.json(response, 200);
   });
 

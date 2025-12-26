@@ -376,6 +376,15 @@ export class VoltAgentObservability {
     await this.loggerProvider.forceFlush();
   }
 
+  /**
+   * Flushes spans on finish.
+   * We force flush here to ensure spans are exported even if the runtime
+   * is incorrectly detected or if we are in a short-lived process.
+   */
+  async flushOnFinish(): Promise<void> {
+    await this.forceFlush();
+  }
+
   getProvider(): NodeTracerProvider {
     return this.provider;
   }

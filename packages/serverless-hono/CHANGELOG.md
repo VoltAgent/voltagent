@@ -1,5 +1,136 @@
 # @voltagent/serverless-hono
 
+## 1.0.10
+
+### Patch Changes
+
+- [#847](https://github.com/VoltAgent/voltagent/pull/847) [`d861c17`](https://github.com/VoltAgent/voltagent/commit/d861c17e72f2fb6368778970a56411fadabaf9a5) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add first-class REST tool endpoints and UI support - #638
+  - Server: list and execute registered tools over HTTP (`GET /tools`, `POST /tools/:name/execute`) with zod-validated inputs and OpenAPI docs.
+  - Auth: Both GET and POST tool endpoints are behind the same auth middleware as agent/workflow execution (protected by default).
+  - Multi-agent tools: tools now report all owning agents via `agents[]` (no more single `agentId`), including tags when provided.
+  - Safer handlers: input validation via safeParse guard, tag extraction without `any`, and better error shaping.
+  - Serverless: update install route handles empty bodies and `/updates/:packageName` variant.
+  - Console: Unified list surfaces tools, tool tester drawer with Monaco editors and default context, Observability page adds a Tools tab with direct execution.
+  - Docs: New tools endpoint page and API reference entries for listing/executing tools.
+
+- Updated dependencies [[`d861c17`](https://github.com/VoltAgent/voltagent/commit/d861c17e72f2fb6368778970a56411fadabaf9a5)]:
+  - @voltagent/server-core@1.0.33
+
+## 1.0.9
+
+### Patch Changes
+
+- [#845](https://github.com/VoltAgent/voltagent/pull/845) [`5432f13`](https://github.com/VoltAgent/voltagent/commit/5432f13bddebd869522ebffbedd9843b4476f08b) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: workflow execution listing - #844
+
+  Added a unified way to list workflow runs so teams can audit executions across every storage backend and surface them via the API and console.
+
+  ## What changed
+  - `queryWorkflowRuns` now exists on all memory adapters (in-memory, libsql, Postgres, Supabase, voltagent-memory) with filters for `workflowId`, `status`, `from`, `to`, `limit`, and `offset`.
+  - Server routes are consolidated under `/workflows/executions` (no path param needed); `GET /workflows/:id` also returns the workflow result schema for typed clients. Handler naming is standardized to `listWorkflowRuns`.
+  - VoltOps Console observability panel lists the new endpoint; REST docs updated with query params and sample responses. New unit tests cover handlers and every storage adapter.
+
+  ## Quick fetch
+
+  ```ts
+  await fetch(
+    "http://localhost:3141/workflows/executions?workflowId=expense-approval&status=completed&from=2024-01-01&to=2024-01-31&limit=20&offset=0"
+  );
+  ```
+
+- Updated dependencies [[`5432f13`](https://github.com/VoltAgent/voltagent/commit/5432f13bddebd869522ebffbedd9843b4476f08b)]:
+  - @voltagent/server-core@1.0.32
+
+## 1.0.8
+
+### Patch Changes
+
+- [#810](https://github.com/VoltAgent/voltagent/pull/810) [`efcfe52`](https://github.com/VoltAgent/voltagent/commit/efcfe52dbe2c095057ce08a5e053d1defafd4e62) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: ensure reliable trace export and context propagation in serverless environments
+
+  ## The Problem
+
+  Trigger-initiated agent executions in serverless environments (Cloudflare Workers, Vercel Edge Functions) were experiencing inconsistent trace exports and missing parent-child span relationships. This manifested as:
+  1. Agent traces not appearing in observability tools despite successful execution
+  2. Trigger and agent spans appearing as separate, disconnected traces instead of a single coherent trace tree
+  3. Spans being lost due to serverless functions terminating before export completion
+
+  ## The Solution
+
+  **Serverless Trace Export (`@voltagent/serverless-hono`):**
+  - Implemented reliable span flushing using Cloudflare's `waitUntil` API to ensure spans are exported before function termination
+  - Switched from `SimpleSpanProcessor` to `BatchSpanProcessor` with serverless-optimized configuration (immediate export, small batch sizes)
+  - Added automatic flush on trigger completion with graceful fallback to `forceFlush` when `waitUntil` is unavailable
+
+  **Context Propagation (`@voltagent/core`):**
+  - Integrated official `@opentelemetry/context-async-hooks` package to replace custom context manager implementation
+  - Ensured `AsyncHooksContextManager` is registered in both Node.js and serverless environments for consistent async context tracking
+  - Fixed `resolveParentSpan` logic to correctly identify scorer spans while avoiding framework-generated ambient spans
+  - Exported `propagation` and `ROOT_CONTEXT` from `@opentelemetry/api` for HTTP header-based trace context injection/extraction
+
+  **Node.js Reliability:**
+  - Updated `NodeVoltAgentObservability.flushOnFinish()` to call `forceFlush()` instead of being a no-op, ensuring spans are exported in short-lived processes
+
+  ## Impact
+  - ✅ Serverless traces are now reliably exported and visible in observability tools
+  - ✅ Trigger and agent spans form a single, coherent trace tree with proper parent-child relationships
+  - ✅ Consistent tracing behavior across Node.js and serverless runtimes
+  - ✅ No more missing or orphaned spans in Cloudflare Workers, Vercel Edge Functions, or similar platforms
+
+  ## Technical Details
+  - Uses `BatchSpanProcessor` with `maxExportBatchSize: 32` and `scheduledDelayMillis: 100` for serverless
+  - Leverages `globalThis.___voltagent_wait_until` for non-blocking span export in Cloudflare Workers
+  - Implements `AsyncHooksContextManager` for robust async context tracking across `Promise` chains and `async/await`
+  - Maintains backward compatibility with existing Node.js deployments
+
+  ## Migration Notes
+
+  No breaking changes. Existing deployments will automatically benefit from improved trace reliability. Ensure your `wrangler.toml` includes `nodejs_compat` flag for Cloudflare Workers:
+
+  ```toml
+  compatibility_flags = ["nodejs_compat"]
+  ```
+
+## 1.0.7
+
+### Patch Changes
+
+- [#801](https://github.com/VoltAgent/voltagent/pull/801) [`a26ddd8`](https://github.com/VoltAgent/voltagent/commit/a26ddd826692485278033c22ac9828cb51cdd749) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add triggers DSL improvements and event payload simplification
+  - Introduce the new `createTriggers` DSL and expose trigger events via sensible provider names (e.g. `on.airtable.recordCreated`) rather than raw catalog IDs.
+  - Add trigger span metadata propagation so VoltAgent agents receive trigger context automatically without manual mapping.
+  - Simplify action dispatch payloads: `payload` now contains only the event’s raw data while trigger context lives in the `event`/`metadata` blocks, reducing boilerplate in handlers.
+
+  ```ts
+  import { VoltAgent, createTriggers } from "@voltagent/core";
+
+  new VoltAgent({
+    // ...
+    triggers: createTriggers((on) => {
+      on.airtable.recordCreated(({ payload, event }) => {
+        console.log("New Airtable row", payload, event.metadata);
+      });
+
+      on.gmail.newEmail(({ payload }) => {
+        console.log("New Gmail message", payload);
+      });
+    }),
+  });
+  ```
+
+- Updated dependencies [[`a26ddd8`](https://github.com/VoltAgent/voltagent/commit/a26ddd826692485278033c22ac9828cb51cdd749)]:
+  - @voltagent/server-core@1.0.25
+
+## 1.0.6
+
+### Patch Changes
+
+- [#787](https://github.com/VoltAgent/voltagent/pull/787) [`5e81d65`](https://github.com/VoltAgent/voltagent/commit/5e81d6568ba3bee26083ca2a8e5d31f158e36fc0) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add full conversation step persistence across the stack:
+  - Core now exposes managed-memory step APIs, and the VoltAgent managed memory adapter persists/retrieves steps through VoltOps.
+  - LibSQL, PostgreSQL, Supabase, and server handlers provision the new `_steps` table, wire up DTOs/routes, and surface the data in Observability/Steps UI (including managed-memory backends).
+
+  fixes: #613
+
+- Updated dependencies [[`5e81d65`](https://github.com/VoltAgent/voltagent/commit/5e81d6568ba3bee26083ca2a8e5d31f158e36fc0)]:
+  - @voltagent/server-core@1.0.22
+
 ## 1.0.5
 
 ### Patch Changes

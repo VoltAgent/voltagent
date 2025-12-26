@@ -146,7 +146,6 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   solidBeamAfterRequest = false, // Default: false means no solid beam after particles
   pathType = "curved", // Default: curved path
   verticalOffset = 0, // Default: 0 vertical offset
-  // biome-ignore lint/correctness/noUnusedVariables: <explanation>
   particleDirection = "forward", // Default: forward direction
   particleCount = 1, // Default: 1 particle
   showPath = true,
@@ -156,7 +155,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   pathOverride,
 }) => {
   const id = useId();
-  const _particleId = useId();
+  const particleId = useId();
   const [pathD, setPathD] = useState("");
   const [svgDimensions, setSvgDimensions] = useState({ width: 0, height: 0 });
   const [pathLength, setPathLength] = useState(0);
@@ -348,60 +347,57 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
           />
         ))}
 
-      {/* Particle animation - Halloween themed */}
+      {/* Particle animation */}
       {showParticlesState && pathLength > 0 && (
         <>
           {/* First particle (always shown) */}
-          <circle r={particleSize} fill="url(#pumpkin-gradient)" stroke="#FFD23F" strokeWidth="0.3">
-            <animateMotion dur={`${particleSpeed}s`} repeatCount="indefinite" path={pathD} />
+          <circle r={particleSize} fill={particleColor}>
+            <motion.animateMotion
+              path={particleDirection === "backward" ? pathD.split("").reverse().join("") : pathD}
+              dur={`${particleSpeed}s`}
+              repeatCount="indefinite"
+              rotate="auto"
+            >
+              <mpath href={`#${particleId}`} />
+            </motion.animateMotion>
           </circle>
 
           {/* Second particle (shown if particleCount >= 2) */}
           {particleCount >= 2 && (
-            <circle
-              r={particleSize * 0.8}
-              fill="url(#pumpkin-gradient)"
-              stroke="#FFD23F"
-              strokeWidth="0.3"
-              opacity="0.8"
-            >
-              <animateMotion
+            <circle r={particleSize * 0.8} fill={particleColor} opacity="0.8">
+              <motion.animateMotion
+                path={particleDirection === "backward" ? pathD.split("").reverse().join("") : pathD}
                 dur={`${particleSpeed * 1.3}s`}
                 repeatCount="indefinite"
+                rotate="auto"
                 begin={`${particleSpeed * 0.3}s`}
-                path={pathD}
-              />
+              >
+                <mpath href={`#${particleId}`} />
+              </motion.animateMotion>
             </circle>
           )}
 
           {/* Third particle (shown if particleCount >= 3) */}
           {particleCount >= 3 && (
-            <circle
-              r={particleSize * 0.6}
-              fill="url(#pumpkin-gradient)"
-              stroke="#FFD23F"
-              strokeWidth="0.3"
-              opacity="0.6"
-            >
-              <animateMotion
+            <circle r={particleSize * 0.6} fill={particleColor} opacity="0.6">
+              <motion.animateMotion
+                path={particleDirection === "backward" ? pathD.split("").reverse().join("") : pathD}
                 dur={`${particleSpeed * 0.8}s`}
                 repeatCount="indefinite"
+                rotate="auto"
                 begin={`${particleSpeed * 0.6}s`}
-                path={pathD}
-              />
+              >
+                <mpath href={`#${particleId}`} />
+              </motion.animateMotion>
             </circle>
           )}
+
+          {/* Hidden path for particle animation reference */}
+          <path id={particleId} d={pathD} opacity="0" />
         </>
       )}
 
       <defs>
-        {/* Halloween pumpkin gradient for particles */}
-        <radialGradient id="pumpkin-gradient">
-          <stop offset="0%" stopColor="#FF8C42" stopOpacity="1" />
-          <stop offset="70%" stopColor="#FF6B35" stopOpacity="1" />
-          <stop offset="100%" stopColor="#E8540E" stopOpacity="1" />
-        </radialGradient>
-
         {/* Gradient definition */}
         <motion.linearGradient
           className="transform-gpu"

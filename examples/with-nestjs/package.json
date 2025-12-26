@@ -1,0 +1,38 @@
+{
+  "name": "voltagent-example-with-nestjs",
+  "description": "VoltAgent with NestJS integration example",
+  "version": "1.0.0",
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.52",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@voltagent/core": "^1.5.1",
+    "@voltagent/server-core": "^1.0.36",
+    "@voltagent/server-hono": "^1.2.11",
+    "hono": "^4.7.7",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.8.1",
+    "ws": "^8.18.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^24.2.1",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.8.2"
+  },
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "start": "nest start",
+    "start:debug": "nest start --debug --watch",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main",
+    "typecheck": "tsc --noEmit"
+  }
+}

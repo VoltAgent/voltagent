@@ -43,7 +43,11 @@ The server starts automatically and displays:
   VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
+  ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
+     Docs: https://voltagent.dev/deployment-docs/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
+
+  Test your agents with VoltOps Console: https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
@@ -73,11 +77,17 @@ Get the raw OpenAPI 3.1 spec at [`http://localhost:3141/doc`](http://localhost:3
 ### Workflow Endpoints
 
 - `GET /workflows` - List all workflows
+- `GET /workflows/executions` - List workflow executions (filters via query params; `workflowId` optional)
 - `POST /workflows/:id/execute` - Execute workflow
 - `POST /workflows/:id/stream` - Stream workflow execution (SSE)
 - `POST /workflows/:id/executions/:executionId/suspend` - Suspend execution
 - `POST /workflows/:id/executions/:executionId/resume` - Resume execution
 - `GET /workflows/:id/executions/:executionId/state` - Get execution state
+
+### Tool Endpoints
+
+- `GET /tools` - List all registered tools (across agents)
+- `POST /tools/:name/execute` - Execute a tool directly over HTTP
 
 ### Observability & Logs
 

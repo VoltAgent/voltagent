@@ -14,11 +14,13 @@ import type { SearchResult, VectorItem } from "../memory/adapters/vector/types";
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
   GetMessagesOptions,
   WorkflowStateEntry,
 } from "../memory/types";
 import { AgentRegistry } from "../registries/agent-registry";
+import { VoltOpsActionsClient } from "./actions/client";
 // VoltAgentExporter removed - migrated to OpenTelemetry
 import { VoltOpsPromptManagerImpl } from "./prompt-manager";
 import type {
@@ -30,7 +32,9 @@ import type {
   ManagedMemoryCredentialListResult,
   ManagedMemoryDatabaseSummary,
   ManagedMemoryDeleteVectorsInput,
+  ManagedMemoryGetConversationStepsInput,
   ManagedMemoryGetMessagesInput,
+  ManagedMemoryQueryWorkflowRunsInput,
   ManagedMemorySearchVectorsInput,
   ManagedMemorySetWorkingMemoryInput,
   ManagedMemoryStoreVectorInput,
@@ -47,6 +51,8 @@ import type {
   VoltOpsCreateEvalRunRequest,
   VoltOpsCreateScorerRequest,
   VoltOpsEvalRunSummary,
+  VoltOpsEvalsApi,
+  VoltOpsFailEvalRunRequest,
   VoltOpsPromptManager,
   VoltOpsScorerSummary,
 } from "./types";
@@ -60,10 +66,12 @@ export class VoltOpsClient implements IVoltOpsClient {
   // observability removed - now handled by VoltAgentObservability
   public readonly prompts?: VoltOpsPromptManager;
   public readonly managedMemory: ManagedMemoryVoltOpsClient;
+  public readonly actions: VoltOpsActionsClient;
+  public readonly evals: VoltOpsEvalsApi;
   private readonly logger: Logger;
 
   private get fetchImpl(): typeof fetch {
-    return this.options.fetch ?? fetch;
+    return this.options.fetch ?? fetch.bind(globalThis);
   }
 
   constructor(options: VoltOpsClientOptions) {
@@ -87,6 +95,18 @@ export class VoltOpsClient implements IVoltOpsClient {
 
     this.logger = new LoggerProxy({ component: "voltops-client" });
     this.managedMemory = this.createManagedMemoryClient();
+    this.actions = new VoltOpsActionsClient(this, { useProjectEndpoint: true });
+    this.evals = {
+      runs: {
+        create: this.createEvalRun.bind(this),
+        appendResults: this.appendEvalRunResults.bind(this),
+        complete: this.completeEvalRun.bind(this),
+        fail: this.failEvalRun.bind(this),
+      },
+      scorers: {
+        create: this.createEvalScorer.bind(this),
+      },
+    };
 
     // Check if keys are valid (not empty and have correct prefixes)
     const hasValidKeys =
@@ -198,6 +218,23 @@ export class VoltOpsClient implements IVoltOpsClient {
     };
   }
 
+  public async sendRequest(path: string, init?: RequestInit): Promise<Response> {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const url = `${this.getApiUrl()}${normalizedPath}`;
+    const headers = {
+      ...this.getAuthHeaders(),
+      ...(init?.headers ?? {}),
+    };
+
+    const requestInit: RequestInit = {
+      method: "GET",
+      ...init,
+      headers,
+    };
+
+    return await this.fetchImpl(url, requestInit);
+  }
+
   // getObservabilityExporter removed - observability now handled by VoltAgentObservability
 
   /**
@@ -207,14 +244,14 @@ export class VoltOpsClient implements IVoltOpsClient {
     return this.prompts;
   }
 
-  public async createEvalRun(
+  private async createEvalRun(
     payload: VoltOpsCreateEvalRunRequest = {},
   ): Promise<VoltOpsEvalRunSummary> {
     const response = await this.request<unknown>("POST", "/evals/runs", payload);
     return this.normalizeRunSummary(response);
   }
 
-  public async appendEvalRunResults(
+  private async appendEvalRunResults(
     runId: string,
     payload: VoltOpsAppendEvalRunResultsRequest,
   ): Promise<VoltOpsEvalRunSummary> {
@@ -226,7 +263,7 @@ export class VoltOpsClient implements IVoltOpsClient {
     return this.normalizeRunSummary(response);
   }
 
-  public async completeEvalRun(
+  private async completeEvalRun(
     runId: string,
     payload: VoltOpsCompleteEvalRunRequest,
   ): Promise<VoltOpsEvalRunSummary> {
@@ -238,7 +275,19 @@ export class VoltOpsClient implements IVoltOpsClient {
     return this.normalizeRunSummary(response);
   }
 
-  public async createEvalScorer(
+  private async failEvalRun(
+    runId: string,
+    payload: VoltOpsFailEvalRunRequest,
+  ): Promise<VoltOpsEvalRunSummary> {
+    const response = await this.request<unknown>(
+      "POST",
+      `/evals/runs/${encodeURIComponent(runId)}/fail`,
+      payload,
+    );
+    return this.normalizeRunSummary(response);
+  }
+
+  private async createEvalScorer(
     payload: VoltOpsCreateScorerRequest,
   ): Promise<VoltOpsScorerSummary> {
     const response = await this.request<unknown>("POST", "/evals/scorers", payload);
@@ -325,8 +374,17 @@ export class VoltOpsClient implements IVoltOpsClient {
         set: (databaseId, executionId, state) =>
           this.setManagedMemoryWorkflowState(databaseId, executionId, state),
         update: (databaseId, input) => this.updateManagedMemoryWorkflowState(databaseId, input),
+        list: (databaseId, input) => this.getManagedMemoryWorkflowStates(databaseId, input),
+        query: (databaseId, input) => this.getManagedMemoryWorkflowStates(databaseId, input),
         listSuspended: (databaseId, workflowId) =>
-          this.getManagedMemorySuspendedWorkflowStates(databaseId, workflowId),
+          this.getManagedMemoryWorkflowStates(databaseId, {
+            workflowId,
+            status: "suspended",
+          }),
+      },
+      steps: {
+        save: (databaseId, steps) => this.saveManagedMemoryConversationSteps(databaseId, steps),
+        list: (databaseId, input) => this.getManagedMemoryConversationSteps(databaseId, input),
       },
       vectors: {
         store: (databaseId, input) => this.storeManagedMemoryVector(databaseId, input),
@@ -766,11 +824,18 @@ export class VoltOpsClient implements IVoltOpsClient {
     }
   }
 
-  private async getManagedMemorySuspendedWorkflowStates(
+  private async getManagedMemoryWorkflowStates(
     databaseId: string,
-    workflowId: string,
+    input: ManagedMemoryQueryWorkflowRunsInput,
   ): Promise<WorkflowStateEntry[]> {
-    const query = this.buildQueryString({ workflowId });
+    const query = this.buildQueryString({
+      workflowId: input.workflowId,
+      status: input.status,
+      from: input.from?.toISOString(),
+      to: input.to?.toISOString(),
+      limit: input.limit,
+      offset: input.offset,
+    });
 
     const payload = await this.request<{
       success: boolean;
@@ -778,10 +843,52 @@ export class VoltOpsClient implements IVoltOpsClient {
     }>("GET", `/managed-memory/projects/databases/${databaseId}/workflow-states${query}`);
 
     if (!payload?.success) {
-      throw new Error("Failed to fetch suspended managed memory workflow states via VoltOps");
+      throw new Error("Failed to fetch managed memory workflow states via VoltOps");
     }
 
     return payload.data?.workflowStates ?? [];
+  }
+
+  private async saveManagedMemoryConversationSteps(
+    databaseId: string,
+    steps: ConversationStepRecord[],
+  ): Promise<void> {
+    if (!steps || steps.length === 0) {
+      return;
+    }
+
+    const payload = await this.request<{ success: boolean }>(
+      "POST",
+      `/managed-memory/projects/databases/${databaseId}/steps`,
+      { steps },
+    );
+
+    if (!payload?.success) {
+      throw new Error("Failed to save managed memory conversation steps via VoltOps");
+    }
+  }
+
+  private async getManagedMemoryConversationSteps(
+    databaseId: string,
+    input: ManagedMemoryGetConversationStepsInput,
+  ): Promise<ConversationStepRecord[]> {
+    const query = this.buildQueryString({
+      conversationId: input.conversationId,
+      userId: input.userId,
+      operationId: input.options?.operationId,
+      limit: input.options?.limit,
+    });
+
+    const payload = await this.request<{
+      success: boolean;
+      data?: { steps?: ConversationStepRecord[] };
+    }>("GET", `/managed-memory/projects/databases/${databaseId}/steps${query}`);
+
+    if (!payload?.success) {
+      throw new Error("Failed to fetch managed memory conversation steps via VoltOps");
+    }
+
+    return payload.data?.steps ?? [];
   }
 
   /**

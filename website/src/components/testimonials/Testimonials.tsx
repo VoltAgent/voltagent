@@ -79,8 +79,6 @@ const scrollAnimation = `
 
 const testimonialTweetIds = [
   "1916955895709503681",
-  "1930715579155202268",
-  "1952223435469566004",
   "1929706642851193172",
   "1917264060225044707",
   "1950536117549486550",
@@ -189,6 +187,14 @@ const linkedInMessages = [
 
 const articles = [
   {
+    title: "Building a ChatGPT App with VoltAgent and the Apps SDK",
+    coverImage: "https://cdn.voltagent.dev/website/testimonials/community.png",
+    excerpt: "Building a ChatGPT App with VoltAgent and the Apps SDK",
+    author: "Ekim Cem Kaya",
+    url: "https://dev.to/ekimcem/building-a-chatgpt-app-with-voltagent-and-the-apps-sdk-4j21",
+    type: "article" as const,
+  },
+  {
     title: "The Gift of Reasoning: Enhancing Amazon Nova Lite with VoltAgent for Character Quirks",
     coverImage: "https://cdn.voltagent.dev/website/testimonials/community.png",
     excerpt:
@@ -203,6 +209,13 @@ const articles = [
     author: "Yosuke Toyota",
     url: "https://qiita.com/youtoy/items/6990e175e92c54265580",
     type: "article" as const,
+  },
+  {
+    title: "Connected VoltAgent + RAG and my own real intelligence copilot was born",
+    type: "youtube" as const,
+    videoId: "7m-ijjmPwyo",
+    excerpt: "Connected VoltAgent + RAG and my own real intelligence copilot was born",
+    url: "https://www.youtube.com/watch?v=7m-ijjmPwyo",
   },
   {
     title: "How to use Voltagent Framework with Gaia AI",
@@ -265,6 +278,13 @@ const articles = [
     videoId: "Jw3AqIYNLbs",
     excerpt: "0からTypeScriptでAIエージェントを開発する実践チュートリアル【React/VoltAgent】",
     url: "https://www.youtube.com/watch?v=Jw3AqIYNLbs",
+  },
+  {
+    title: "Create MCP HTTP Server from Scratch with VoltAgent (No Studio)",
+    type: "youtube" as const,
+    videoId: "3jg0OWao0lY",
+    excerpt: "Create MCP HTTP Server from Scratch with VoltAgent (No Studio)",
+    url: "https://www.youtube.com/watch?v=3jg0OWao0lY&t=1227s",
   },
 ];
 
@@ -476,21 +496,30 @@ export function Testimonials() {
                   isTweetsRowPaused ? "animation-paused" : ""
                 }`}
               >
-                {seamlessMixedContent.map((item, index) => (
-                  <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
-                    {item.type === "tweet" ? (
-                      <StaticTweet tweet={tweetsData?.[item.id]} />
-                    ) : (
-                      <LinkedInPost
-                        profileImage={item.data.profileImage}
-                        name={item.data.name}
-                        title={item.data.title}
-                        content={item.data.content}
-                        url={item.data.url}
-                      />
-                    )}
-                  </div>
-                ))}
+                {seamlessMixedContent
+                  .filter((item) => {
+                    // Filter out tweets that don't exist or are missing required data
+                    if (item.type === "tweet") {
+                      const tweet = tweetsData?.[item.id];
+                      return tweet?.id_str && tweet.user;
+                    }
+                    return true;
+                  })
+                  .map((item, index) => (
+                    <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
+                      {item.type === "tweet" ? (
+                        <StaticTweet tweet={tweetsData?.[item.id]} />
+                      ) : (
+                        <LinkedInPost
+                          profileImage={item.data.profileImage}
+                          name={item.data.name}
+                          title={item.data.title}
+                          content={item.data.content}
+                          url={item.data.url}
+                        />
+                      )}
+                    </div>
+                  ))}
               </div>
             </div>
           </div>
