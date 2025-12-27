@@ -723,6 +723,46 @@ describe("MCPClient", () => {
       });
     });
 
+    it("should fill empty elicitation message from schema description", async () => {
+      const mockElicitationHandler = vi.fn().mockResolvedValue({
+        action: "accept",
+        content: { confirmed: true },
+      });
+
+      new MCPClient({
+        clientInfo: mockClientInfo,
+        server: mockHttpServerConfig,
+        elicitation: {
+          onRequest: mockElicitationHandler,
+        },
+      });
+
+      const mockRequest = {
+        params: {
+          message: "",
+          requestedSchema: {
+            type: "object",
+            properties: {
+              confirm: {
+                type: "string",
+                description: "Confirm the deletion of the data.",
+              },
+            },
+            required: ["confirm"],
+          },
+        },
+      };
+
+      expect(capturedRequestHandler).toBeDefined();
+      await capturedRequestHandler?.(mockRequest);
+
+      expect(mockElicitationHandler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Confirm the deletion of the data.",
+        }),
+      );
+    });
+
     it("should use per-call elicitation handler from tool execution options", async () => {
       mockListTools.mockResolvedValue({
         tools: [
