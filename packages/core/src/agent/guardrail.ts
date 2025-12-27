@@ -192,7 +192,9 @@ export function serializeGuardrailValue(value: unknown): string {
   return safeStringify(value);
 }
 
-export function extractInputTextForGuardrail(value: string | UIMessage[] | BaseMessage[]): string {
+export async function extractInputTextForGuardrail(
+  value: string | UIMessage[] | BaseMessage[],
+): Promise<string> {
   if (typeof value === "string") {
     return value;
   }
@@ -208,7 +210,7 @@ export function extractInputTextForGuardrail(value: string | UIMessage[] | BaseM
     modelMessages = value as BaseMessage[];
   } else {
     try {
-      modelMessages = convertToModelMessages(value as UIMessage[]);
+      modelMessages = await convertToModelMessages(value as UIMessage[]);
     } catch {
       return "";
     }
@@ -227,7 +229,7 @@ export function extractInputTextForGuardrail(value: string | UIMessage[] | BaseM
     .trim();
 }
 
-export function extractOutputTextForGuardrail(value: unknown): string | undefined {
+export async function extractOutputTextForGuardrail(value: unknown): Promise<string | undefined> {
   if (value === null || value === undefined) {
     return undefined;
   }
@@ -238,7 +240,7 @@ export function extractOutputTextForGuardrail(value: unknown): string | undefine
 
   if (Array.isArray(value)) {
     try {
-      return extractInputTextForGuardrail(value as any);
+      return await extractInputTextForGuardrail(value as any);
     } catch {
       return undefined;
     }
@@ -276,7 +278,7 @@ export async function runInputGuardrails(
 
   const originalInput = input;
   let currentInput = input;
-  const originalInputText = extractInputTextForGuardrail(originalInput);
+  const originalInputText = await extractInputTextForGuardrail(originalInput);
   let currentInputText = originalInputText;
 
   for (let index = 0; index < guardrails.length; index++) {
@@ -350,7 +352,7 @@ export async function runInputGuardrails(
 
       if (action === "modify" && resolvedDecision.modifiedInput !== undefined) {
         currentInput = resolvedDecision.modifiedInput;
-        currentInputText = extractInputTextForGuardrail(currentInput);
+        currentInputText = await extractInputTextForGuardrail(currentInput);
       }
 
       span.setAttribute("guardrail.input.after", serializeGuardrailValue(currentInput));
@@ -407,7 +409,7 @@ export async function runOutputGuardrails<TOutput>({
 
   const originalOutput = originalOutputOverride ?? output;
   let currentOutput = output;
-  const originalOutputText = extractOutputTextForGuardrail(originalOutput);
+  const originalOutputText = await extractOutputTextForGuardrail(originalOutput);
   let currentOutputText = originalOutputText;
   const streamSpanMap = oc.context.get(STREAM_GUARDRAIL_SPANS_KEY) as
     | Map<string | number, Span>
@@ -506,7 +508,7 @@ export async function runOutputGuardrails<TOutput>({
 
       if (action === "modify" && resolvedDecision.modifiedOutput !== undefined) {
         currentOutput = resolvedDecision.modifiedOutput;
-        currentOutputText = extractOutputTextForGuardrail(currentOutput);
+        currentOutputText = await extractOutputTextForGuardrail(currentOutput);
       }
 
       span?.setAttribute("guardrail.output.after", serializeGuardrailValue(currentOutput));

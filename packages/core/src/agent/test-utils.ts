@@ -3,7 +3,7 @@
  */
 
 import type { LanguageModel, LanguageModelUsage, StepResult } from "ai";
-import { MockLanguageModelV2, mockId } from "ai/test";
+import { MockLanguageModelV3, mockId } from "ai/test";
 import { vi } from "vitest";
 import { z } from "zod";
 import type { ToolSchema } from "../agent/providers/base/types";
@@ -47,8 +47,36 @@ export const defaultMockResponse = {
     inputTokens: 10,
     outputTokens: 5,
     totalTokens: 15,
+    inputTokenDetails: {
+      noCacheTokens: 10,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+    },
+    outputTokenDetails: {
+      textTokens: 5,
+      reasoningTokens: 0,
+    },
   } as LanguageModelUsage,
   warnings: [],
+};
+
+const defaultProviderUsage = {
+  inputTokens: {
+    total: 10,
+    noCache: 10,
+    cacheRead: 0,
+    cacheWrite: 0,
+  },
+  outputTokens: {
+    total: 5,
+    text: 5,
+    reasoning: 0,
+  },
+};
+
+const defaultProviderFinishReason = {
+  unified: "stop",
+  raw: "stop",
 };
 
 /**
@@ -59,26 +87,26 @@ export function createMockLanguageModel(config?: {
   doGenerate?: any;
   doStream?: any;
 }): LanguageModel {
-  const mockModel = new MockLanguageModelV2({
+  const mockModel = new MockLanguageModelV3({
     modelId: config?.modelId || "test-model",
     doGenerate: config?.doGenerate || {
-      ...defaultMockResponse,
+      finishReason: defaultProviderFinishReason,
+      usage: defaultProviderUsage,
       content: [{ type: "text", text: "Mock response" }],
+      warnings: [],
     },
     doStream: config?.doStream || {
       stream: convertArrayToReadableStream([
-        { type: "text-delta" as const, id: "text-1", delta: "Mock ", text: "Mock " },
-        { type: "text-delta" as const, id: "text-1", delta: "stream", text: "stream" },
+        { type: "text-start" as const, id: "text-1" },
+        { type: "text-delta" as const, id: "text-1", delta: "Mock " },
+        { type: "text-delta" as const, id: "text-1", delta: "stream" },
+        { type: "text-end" as const, id: "text-1" },
         {
           type: "finish",
-          finishReason: "stop",
-          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
-          totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+          finishReason: defaultProviderFinishReason,
+          usage: defaultProviderUsage,
         },
       ]),
-      rawCall: { rawPrompt: null, rawSettings: {} },
-      usage: Promise.resolve(defaultMockResponse.usage),
-      warnings: [],
     },
   });
 
@@ -164,6 +192,7 @@ export function createMockStepResult(options?: Partial<StepResult<any>>): StepRe
     toolCalls: options?.toolCalls || [],
     toolResults: options?.toolResults || [],
     finishReason: options?.finishReason || "stop",
+    rawFinishReason: options?.rawFinishReason,
     usage: options?.usage || defaultMockResponse.usage,
     warnings: options?.warnings || [],
     ...options,
@@ -301,7 +330,7 @@ export function createMockGenerateTextResult(overrides?: Partial<any>) {
     },
     providerMetadata: overrides?.providerMetadata || undefined,
     steps: overrides?.steps || [],
-    experimental_output: overrides?.experimental_output || undefined,
+    output: overrides?.output || undefined,
   } as any;
 }
 

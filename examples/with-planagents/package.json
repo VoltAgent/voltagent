@@ -1,0 +1,29 @@
+{
+  "name": "voltagent-example-with-planagents",
+  "description": "PlanAgent quickstart example using VoltAgent core.",
+  "version": "0.1.0",
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.0",
+    "@langchain/tavily": "^0.1.0",
+    "@voltagent/cli": "^0.1.17",
+    "@voltagent/core": "^1.5.1",
+    "@voltagent/libsql": "^1.0.14",
+    "@voltagent/logger": "^1.0.4",
+    "@voltagent/server-hono": "^1.2.11",
+    "ai": "^6.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
+}

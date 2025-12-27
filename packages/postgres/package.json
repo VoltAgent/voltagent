@@ -10,7 +10,7 @@
     "@types/pg": "^8.15.2",
     "@vitest/coverage-v8": "^3.2.4",
     "@voltagent/core": "^1.2.17",
-    "ai": "^5.0.76"
+    "ai": "^6.0.0"
   },
   "exports": {
     ".": {
@@ -32,7 +32,7 @@
   "module": "dist/index.mjs",
   "peerDependencies": {
     "@voltagent/core": "^1.0.0",
-    "ai": "^5.0.76"
+    "ai": "^6.0.0"
   },
   "scripts": {
     "attw": "attw --pack",

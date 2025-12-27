@@ -193,13 +193,13 @@ html[data-theme="dark"] .theme-doc-markdown .section-divider p {
   align-items: center;
   justify-content: center;
   margin-left: 0;
-  padding: 0.15rem 0.55rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 999px;
   border: 1px solid transparent;
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .sidebar-badge--accent {

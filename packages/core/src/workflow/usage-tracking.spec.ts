@@ -1,6 +1,6 @@
 import { safeStringify } from "@voltagent/internal";
 import type { LanguageModelUsage } from "ai";
-import { MockLanguageModelV2 } from "ai/test";
+import { MockLanguageModelV3 } from "ai/test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { createTestAgent } from "../agent/test-utils";
@@ -10,13 +10,37 @@ import { createWorkflowChain } from "./chain";
 import { WorkflowRegistry } from "./registry";
 
 // Helper function to create a mock agent with specified usage
-function createMockAgentWithUsage(usage: LanguageModelUsage, responseSchema?: Record<string, any>) {
+function createMockAgentWithUsage(
+  usage: Partial<LanguageModelUsage>,
+  responseSchema?: Record<string, any>,
+) {
+  const inputTokens = usage.inputTokens ?? 0;
+  const outputTokens = usage.outputTokens ?? 0;
+  const totalTokens = usage.totalTokens ?? inputTokens + outputTokens;
+  const normalizedUsage: LanguageModelUsage = {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    inputTokenDetails: usage.inputTokenDetails ?? {
+      noCacheTokens: inputTokens,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+    },
+    outputTokenDetails: usage.outputTokenDetails ?? {
+      textTokens: outputTokens,
+      reasoningTokens: 0,
+    },
+    cachedInputTokens: usage.cachedInputTokens,
+    reasoningTokens: usage.reasoningTokens,
+    raw: usage.raw,
+  };
+
   return createTestAgent({
     name: "MockAgent",
-    model: new MockLanguageModelV2({
+    model: new MockLanguageModelV3({
       doGenerate: async () => ({
         finishReason: "stop" as const,
-        usage: usage,
+        usage: normalizedUsage,
         content: [
           {
             type: "text" as const,
@@ -312,7 +336,7 @@ describe("workflow usage tracking", () => {
     // Agent that doesn't return usage
     const agentWithoutUsage = createTestAgent({
       name: "NoUsageAgent",
-      model: new MockLanguageModelV2({
+      model: new MockLanguageModelV3({
         doGenerate: async () => ({
           finishReason: "stop" as const,
           usage: {
@@ -370,7 +394,7 @@ describe("workflow usage tracking", () => {
     // Agent with only some usage fields
     const partialUsageAgent = createTestAgent({
       name: "PartialUsageAgent",
-      model: new MockLanguageModelV2({
+      model: new MockLanguageModelV3({
         doGenerate: async () => ({
           finishReason: "stop" as const,
           usage: {

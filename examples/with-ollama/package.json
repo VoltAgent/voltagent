@@ -5,7 +5,7 @@
     "@voltagent/core": "^1.5.1",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.11",
-    "ai": "^5.0.76",
+    "ai": "^6.0.0",
     "ollama-ai-provider-v2": "^1.5.3",
     "zod": "^3.25.76"
   },

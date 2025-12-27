@@ -6,7 +6,7 @@
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@voltagent/core": "^1.5.1",
     "@voltagent/internal": "^0.0.12",
-    "ai": "^5.0.76",
+    "ai": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.1",
     "zod-from-json-schema": "^0.5.0",

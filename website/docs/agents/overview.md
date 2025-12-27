@@ -142,9 +142,9 @@ for await (const partial of stream.partialObjectStream) {
 }
 ```
 
-#### Option 2: experimental_output (Schema + Agent Features)
+#### Option 2: output (Schema + Agent Features)
 
-Use `experimental_output` with `generateText`/`streamText` to get structured data **while still using tools and all agent capabilities**.
+Use `output` with `generateText`/`streamText` to get structured data **while still using tools and all agent capabilities**.
 
 ```ts
 import { Output } from "ai";
@@ -158,33 +158,30 @@ const recipeSchema = z.object({
 
 // With generateText - supports tool calling
 const result = await agent.generateText("Create a pasta recipe", {
-  experimental_output: Output.object({ schema: recipeSchema }),
+  output: Output.object({ schema: recipeSchema }),
 });
-console.log(result.experimental_output); // { name: "...", ingredients: [...], ... }
+console.log(result.output); // { name: "...", ingredients: [...], ... }
 
 // With streamText - stream partial objects while using tools
 const stream = await agent.streamText("Create a detailed recipe", {
-  experimental_output: Output.object({ schema: recipeSchema }),
+  output: Output.object({ schema: recipeSchema }),
 });
 
-for await (const partial of stream.experimental_partialOutputStream ?? []) {
+for await (const partial of stream.partialOutputStream ?? []) {
   console.log(partial); // Incrementally built object
 }
 
 // Constrained text generation
 const haiku = await agent.generateText("Write a haiku about coding", {
-  experimental_output: Output.text({
-    maxLength: 100,
-    description: "A traditional haiku poem",
-  }),
+  output: Output.text(),
 });
-console.log(haiku.experimental_output);
+console.log(haiku.output);
 ```
 
 **When to use which:**
 
 - Use `generateObject`/`streamObject` for simple schema validation without tool calling
-- Use `experimental_output` when you need structured output **and** tool calling
+- Use `output` when you need structured output **and** tool calling
 
 ### Input Types
 
@@ -250,7 +247,7 @@ The server exposes the following REST endpoints:
 
 ### Structured Output via HTTP
 
-You can use `experimental_output` with the text endpoints (`/text`, `/stream`, `/chat`) to get structured data while maintaining tool calling capabilities. Add the `experimental_output` field to the `options` object in your request:
+You can use `output` with the text endpoints (`/text`, `/stream`, `/chat`) to get structured data while maintaining tool calling capabilities. Add the `output` field to the `options` object in your request:
 
 ```typescript
 const response = await fetch("http://localhost:3141/agents/assistant/text", {
@@ -259,7 +256,7 @@ const response = await fetch("http://localhost:3141/agents/assistant/text", {
   body: JSON.stringify({
     input: "Create a recipe",
     options: {
-      experimental_output: {
+      output: {
         type: "object",
         schema: {
           type: "object",
@@ -275,10 +272,10 @@ const response = await fetch("http://localhost:3141/agents/assistant/text", {
 });
 
 const data = await response.json();
-console.log(data.data.experimental_output); // Structured object
+console.log(data.data.output); // Structured object
 ```
 
-For detailed API reference and examples, see [Agent Endpoints - experimental_output](../api/endpoints/agents.md#using-experimental_output-for-structured-generation).
+For detailed API reference and examples, see [Agent Endpoints - output](../api/endpoints/agents.md#using-output-for-structured-generation).
 
 ### Calling from Next.js API Route
 

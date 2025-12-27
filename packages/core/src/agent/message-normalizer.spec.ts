@@ -147,6 +147,31 @@ describe("message-normalizer", () => {
     expect(((sanitized as UIMessage).parts[0] as any).state).toBe("input-available");
   });
 
+  it("preserves tool approval metadata for approval flows", () => {
+    const message = baseMessage([
+      {
+        type: "tool-run_command",
+        toolCallId: "call-approve",
+        state: "approval-responded",
+        input: { command: "ls" },
+        approval: {
+          id: "approval-123",
+          approved: true,
+          reason: "User confirmed",
+        },
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const part = (sanitized as UIMessage).parts[0] as any;
+    expect(part.approval).toEqual({
+      id: "approval-123",
+      approved: true,
+      reason: "User confirmed",
+    });
+  });
+
   it("drops redundant step-start parts", () => {
     const message = baseMessage([
       { type: "step-start" } as any,
@@ -328,5 +353,70 @@ describe("message-normalizer", () => {
 
     expect(sanitized).toHaveLength(1);
     expect(sanitized[0].parts[0]).toEqual({ type: "text", text: "visible" });
+  });
+
+  it("filters incomplete tool calls when preparing model messages", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "tool-search",
+          toolCallId: "call-123",
+          state: "input-available",
+          input: { query: "hello" },
+        } as any,
+      ]),
+      baseMessage([{ type: "text", text: "follow up" } as any], "user"),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages);
+
+    expect(sanitized).toHaveLength(1);
+    expect(sanitized[0].role).toBe("user");
+  });
+
+  it("preserves approval responses on the last assistant message", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "tool-run_command",
+          toolCallId: "call-approve",
+          state: "approval-responded",
+          input: { command: "ls" },
+          approval: {
+            id: "approval-123",
+            approved: true,
+          },
+        } as any,
+      ]),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages);
+
+    expect(sanitized).toHaveLength(1);
+    expect((sanitized[0].parts[0] as any).state).toBe("approval-responded");
+    expect((sanitized[0].parts[0] as any).approval).toEqual({
+      id: "approval-123",
+      approved: true,
+    });
+  });
+
+  it("inserts step-start between tool outputs and text parts", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "tool-weather",
+          toolCallId: "call-9",
+          state: "output-available",
+          output: { temp: 20 },
+        } as any,
+        { type: "text", text: "done" } as any,
+      ]),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages);
+
+    expect(sanitized).toHaveLength(1);
+    expect(sanitized[0].parts).toHaveLength(3);
+    expect(sanitized[0].parts[1]).toEqual({ type: "step-start" });
   });
 });

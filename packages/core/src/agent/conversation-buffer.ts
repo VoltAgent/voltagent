@@ -390,6 +390,9 @@ export class ConversationBuffer {
         if ((part as any).callProviderMetadata) {
           existingPart.callProviderMetadata = (part as any).callProviderMetadata;
         }
+        if ((part as any).approval !== undefined) {
+          existingPart.approval = (part as any).approval;
+        }
         return "updated";
       }
     }

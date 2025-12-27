@@ -6,12 +6,12 @@ import type { EmbeddingAdapter, EmbeddingOptions } from "./types";
  * Wraps Vercel AI SDK embedding models for use with Memory V2
  */
 export class AiSdkEmbeddingAdapter implements EmbeddingAdapter {
-  private model: EmbeddingModel<string>;
+  private model: EmbeddingModel;
   private dimensions: number;
   private modelName: string;
   private options: EmbeddingOptions;
 
-  constructor(model: EmbeddingModel<string>, options: EmbeddingOptions = {}) {
+  constructor(model: EmbeddingModel, options: EmbeddingOptions = {}) {
     this.model = model;
     // EmbeddingModel can be either a string or an object with modelId
     this.modelName = typeof model === "string" ? model : model.modelId;

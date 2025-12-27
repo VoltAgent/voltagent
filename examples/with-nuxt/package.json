@@ -1,13 +1,13 @@
 {
   "name": "voltagent-example-with-nuxt",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
+    "@ai-sdk/openai": "^3.0.0",
     "@nuxt/eslint": "^1.9.0",
     "@nuxt/ui": "^4.0.0",
     "@voltagent/core": "^1.5.1",
     "@voltagent/libsql": "^1.0.14",
     "@voltagent/server-hono": "^1.2.11",
-    "ai": "^5.0.76",
+    "ai": "^6.0.0",
     "nuxt": "^4.1.2",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1",

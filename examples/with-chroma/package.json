@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-chroma",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
+    "@ai-sdk/openai": "^3.0.0",
     "@chroma-core/default-embed": "^0.1.8",
     "@chroma-core/ollama": "^0.1.7",
     "@chroma-core/openai": "^0.1.7",
@@ -11,7 +11,7 @@
     "@voltagent/libsql": "^1.0.14",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.11",
-    "ai": "^5.0.76",
+    "ai": "^6.0.0",
     "chromadb": "^3.0.4",
     "zod": "^3.25.76"
   },
