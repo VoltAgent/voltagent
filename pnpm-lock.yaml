@@ -117,10 +117,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -154,10 +154,10 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -194,7 +194,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -282,10 +282,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/server-hono':
         specifier: ^1.2.11
@@ -328,7 +328,7 @@ importers:
         version: 5.1.6
       next:
         specifier: ^16.0.7
-        version: 16.1.1(@babel/core@7.28.0)(react-dom@19.2.3)(react@19.2.3)
+        version: 16.1.1(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -403,7 +403,7 @@ importers:
         specifier: ^1.0.2
         version: link:../../packages/a2a-server
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^0.0.12
@@ -501,7 +501,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       ai:
         specifier: ^5.0.76
@@ -529,7 +529,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^0.0.12
@@ -572,10 +572,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -609,10 +609,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -701,7 +701,7 @@ importers:
         version: 12.23.26(react-dom@19.2.3)(react@19.2.3)
       next:
         specifier: ^16.0.7
-        version: 16.1.1(@babel/core@7.28.0)(react-dom@19.2.3)(react@19.2.3)
+        version: 16.1.1(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -752,10 +752,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -795,7 +795,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/server-hono':
         specifier: ^1.2.11
@@ -838,10 +838,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -881,7 +881,7 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^1.0.0
@@ -894,7 +894,7 @@ importers:
         version: 5.0.76(zod@3.25.76)
       next:
         specifier: ^16.0.7
-        version: 16.1.1(@babel/core@7.28.0)(react-dom@19.2.3)(react@19.2.3)
+        version: 16.1.1(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -924,7 +924,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/serverless-hono':
         specifier: ^1.0.10
@@ -961,10 +961,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -993,10 +993,10 @@ importers:
     dependencies:
       '@copilotkit/react-core':
         specifier: ^1.50.0
-        version: 1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.1.11)
+        version: 1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1)
       '@copilotkit/react-ui':
         specifier: ^1.50.0
-        version: 1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.1.11)
+        version: 1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -1063,10 +1063,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1100,10 +1100,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1137,10 +1137,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1174,10 +1174,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1260,10 +1260,10 @@ importers:
         specifier: ^0.1.10
         version: link:../../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.0-next.0
+        specifier: ^1.1.0
         version: link:../../../packages/libsql
       '@voltagent/logger':
         specifier: ^0.1.4
@@ -1273,7 +1273,7 @@ importers:
         version: link:../../../packages/server-hono
       composio-core:
         specifier: ^0.5.33
-        version: 0.5.39(@ai-sdk/openai@2.0.53)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.76)(langchain@0.3.30)(openai@4.104.0)
+        version: 0.5.39(@ai-sdk/openai@2.0.53)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.116)(langchain@0.3.30)(openai@4.104.0)
       hono:
         specifier: ^4.7.7
         version: 4.9.1
@@ -1303,10 +1303,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1340,10 +1340,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1372,12 +1372,12 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: ^2.0.52
-        version: 2.0.53(zod@4.1.11)
+        version: 2.0.53(zod@4.2.1)
       '@voltagent/cli':
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1387,7 +1387,7 @@ importers:
         version: link:../../packages/server-hono
       ai:
         specifier: ^5.0.76
-        version: 5.0.76(zod@4.1.11)
+        version: 5.0.76(zod@4.2.1)
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -1408,10 +1408,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1445,10 +1445,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1522,13 +1522,13 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^1.1.3
         version: link:../../packages/langfuse-exporter
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1590,10 +1590,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1627,7 +1627,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1661,7 +1661,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1693,12 +1693,12 @@ importers:
     dependencies:
       '@ai-sdk/openai':
         specifier: ^2.0.52
-        version: 2.0.53(zod@4.1.11)
+        version: 2.0.53(zod@4.2.1)
       '@voltagent/cli':
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1735,7 +1735,7 @@ importers:
         specifier: ^11.0.0
         version: 11.1.10(@nestjs/common@11.1.10)(@nestjs/core@11.1.10)
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/server-core':
         specifier: ^1.0.36
@@ -1784,7 +1784,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/serverless-hono':
         specifier: ^1.0.10
@@ -1827,10 +1827,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -1846,7 +1846,7 @@ importers:
         version: 1.14.2
       next:
         specifier: ^16.0.7
-        version: 16.1.1(@babel/core@7.28.0)(react-dom@19.2.3)(react@19.2.3)
+        version: 16.1.1(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
       npm-check-updates:
         specifier: ^17.1.18
         version: 17.1.18
@@ -1889,15 +1889,15 @@ importers:
         version: 2.0.53(zod@3.25.76)
       '@nuxt/eslint':
         specifier: ^1.9.0
-        version: 1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.2)(vite@7.3.0)
+        version: 1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.3)(vite@7.3.0)
       '@nuxt/ui':
         specifier: ^4.0.0
-        version: 4.0.1(embla-carousel@8.6.0)(typescript@5.9.2)(vite@7.3.0)(vue-router@4.5.1)(vue@3.5.22)(zod@3.25.76)
+        version: 4.0.1(embla-carousel@8.6.0)(typescript@5.9.3)(vite@7.3.0)(vue-router@4.5.1)(vue@3.5.22)(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/server-hono':
         specifier: ^1.2.11
@@ -1907,10 +1907,10 @@ importers:
         version: 5.0.76(zod@3.25.76)
       nuxt:
         specifier: ^4.1.2
-        version: 4.1.3(@biomejs/biome@1.9.4)(@types/node@24.2.1)(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.2)(vite@7.3.0)
+        version: 4.1.3(@biomejs/biome@1.9.4)(@types/node@24.2.1)(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.3)(vite@7.3.0)
       vue:
         specifier: ^3.5.22
-        version: 3.5.22(typescript@5.9.2)
+        version: 3.5.22(typescript@5.9.3)
       vue-router:
         specifier: ^4.5.1
         version: 4.5.1(vue@3.5.22)
@@ -1931,7 +1931,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/evals':
         specifier: ^1.0.4
@@ -1965,7 +1965,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2002,10 +2002,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2042,10 +2042,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2094,10 +2094,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2143,7 +2143,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2183,10 +2183,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2223,10 +2223,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2260,7 +2260,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2294,10 +2294,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2328,10 +2328,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2365,10 +2365,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2405,10 +2405,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2445,7 +2445,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2482,10 +2482,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2519,10 +2519,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2556,10 +2556,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2593,10 +2593,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2630,10 +2630,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2667,10 +2667,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2704,10 +2704,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2759,10 +2759,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2799,10 +2799,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2845,10 +2845,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2891,7 +2891,7 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2925,10 +2925,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2959,7 +2959,7 @@ importers:
         specifier: ^2.0.52
         version: 2.0.53(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -2996,10 +2996,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -3036,10 +3036,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -3076,10 +3076,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -3113,10 +3113,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -3150,10 +3150,10 @@ importers:
         specifier: ^0.1.17
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^1.5.1
+        specifier: ^1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -3187,10 +3187,10 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~1.5.1
+        specifier: ~1.5.2
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^1.0.14
+        specifier: ^1.1.0
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^1.0.4
@@ -3515,7 +3515,7 @@ importers:
         version: 29.7.0(@types/node@24.2.1)
       ts-jest:
         specifier: ^29.1.0
-        version: 29.4.1(@babel/core@7.28.4)(esbuild@0.25.10)(jest@29.7.0)(typescript@5.9.2)
+        version: 29.4.1(@babel/core@7.28.5)(esbuild@0.25.10)(jest@29.7.0)(typescript@5.9.3)
 
   packages/docs-mcp:
     dependencies:
@@ -3602,14 +3602,14 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^1.2.17
+        specifier: ^1.5.2
         version: link:../core
       '@voltagent/logger':
         specifier: ^1.0.3
         version: link:../logger
       ai:
         specifier: ^5.0.76
-        version: 5.0.76(zod@4.1.11)
+        version: 5.0.76(zod@4.2.1)
 
   packages/logger:
     dependencies:
@@ -3675,7 +3675,7 @@ importers:
         version: link:../core
       ai:
         specifier: ^5.0.76
-        version: 5.0.76(zod@4.1.11)
+        version: 5.0.76(zod@4.2.1)
 
   packages/rag:
     dependencies:
@@ -3834,7 +3834,7 @@ importers:
         version: link:../logger
       ai:
         specifier: ^5.0.76
-        version: 5.0.76(zod@4.1.11)
+        version: 5.0.76(zod@4.2.1)
 
   packages/voice:
     dependencies:
@@ -3884,7 +3884,7 @@ importers:
         version: link:../core
       ai:
         specifier: ^5.0.76
-        version: 5.0.76(zod@4.1.11)
+        version: 5.0.76(zod@4.2.1)
 
 packages:
 
@@ -4144,16 +4144,16 @@ packages:
       '@vercel/oidc': 3.0.3
       zod: 3.25.76
 
-  /@ai-sdk/gateway@2.0.0(zod@4.1.11):
+  /@ai-sdk/gateway@2.0.0(zod@4.2.1):
     resolution: {integrity: sha512-Gj0PuawK7NkZuyYgO/h5kDK/l6hFOjhLdTq3/Lli1FTl47iGmwhH1IZQpAL3Z09BeFYWakcwUmn02ovIm2wy9g==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.12(zod@4.1.11)
+      '@ai-sdk/provider-utils': 3.0.12(zod@4.2.1)
       '@vercel/oidc': 3.0.3
-      zod: 4.1.11
+      zod: 4.2.1
 
   /@ai-sdk/gateway@2.0.23(zod@3.25.76):
     resolution: {integrity: sha512-qmX7afPRszUqG5hryHF3UN8ITPIRSGmDW6VYCmByzjoUkgm3MekzSx2hMV1wr0P+llDeuXb378SjqUfpvWJulg==}
@@ -4324,15 +4324,15 @@ packages:
       '@ai-sdk/provider-utils': 3.0.12(zod@3.25.76)
       zod: 3.25.76
 
-  /@ai-sdk/openai@2.0.53(zod@4.1.11):
+  /@ai-sdk/openai@2.0.53(zod@4.2.1):
     resolution: {integrity: sha512-GIkR3+Fyif516ftXv+YPSPstnAHhcZxNoR2s8uSHhQ1yBT7I7aQYTVwpjAuYoT3GR+TeP50q7onj2/nDRbT2FQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.12(zod@4.1.11)
-      zod: 4.1.11
+      '@ai-sdk/provider-utils': 3.0.12(zod@4.2.1)
+      zod: 4.2.1
     dev: false
 
   /@ai-sdk/perplexity@1.1.9(zod@3.25.76):
@@ -4383,7 +4383,7 @@ packages:
       eventsource-parser: 3.0.6
       zod: 3.25.76
 
-  /@ai-sdk/provider-utils@3.0.12(zod@4.1.11):
+  /@ai-sdk/provider-utils@3.0.12(zod@4.2.1):
     resolution: {integrity: sha512-ZtbdvYxdMoria+2SlNarEk6Hlgyf+zzcznlD55EAl+7VZvJaSg2sqPvwArY7L6TfDEDJsnCq0fdhBSkYo0Xqdg==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -4392,7 +4392,7 @@ packages:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.6
-      zod: 4.1.11
+      zod: 4.2.1
 
   /@ai-sdk/provider-utils@3.0.17(zod@3.25.76):
     resolution: {integrity: sha512-TR3Gs4I3Tym4Ll+EPdzRdvo/rc8Js6c4nVhFLuvGLX/Y4V9ZcQMa/HTiYsHEgmYrf1zVi6Q145UEZUfleOwOjw==}
@@ -4591,7 +4591,7 @@ packages:
       '@ai-sdk/provider-utils': 3.0.11(zod@3.25.76)
       ai: 5.0.63(zod@3.25.76)
       swrv: 1.1.0(vue@3.5.22)
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
       zod: 3.25.76
     dev: false
 
@@ -5379,6 +5379,7 @@ packages:
       semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /@babel/core@7.28.4:
     resolution: {integrity: sha512-2BCOP7TN8M+gVDj7/ht3hsaO/B/n5oDbiAyyvnRlNOs+u1o+JWNYTQrmpuNp1/Wq2gcFrI01JAW+paEKDMx/CA==}
@@ -5423,7 +5424,6 @@ packages:
       semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@babel/generator@7.28.0:
     resolution: {integrity: sha512-lJjzvrbEeWrhB4P3QBsH7tey117PjLZnDbLiQEKjQ/fNJTjuq4HSqgFA+UNSwZT8D7dxxbnuSBMsa1lrWzKlQg==}
@@ -5454,7 +5454,6 @@ packages:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.30
       jsesc: 3.1.0
-    dev: true
 
   /@babel/helper-annotate-as-pure@7.27.3:
     resolution: {integrity: sha512-fXSwMQqitTGeHLBC08Eq5yXz2m37E4pJX1qAU1+2cNedz/ifv/bVXft90VeSav5nFO61EcNgwr0aJxbyPaWBPg==}
@@ -5596,6 +5595,7 @@ packages:
       '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /@babel/helper-module-transforms@7.28.3(@babel/core@7.28.4):
     resolution: {integrity: sha512-gytXUbs8k2sXS9PnQptz5o0QnpLL51SwASIORY6XaBKF88nsOT0Zw9szLqlSGQDP/4TljBAD5y98p2U1fqkdsw==}
@@ -5622,7 +5622,6 @@ packages:
       '@babel/traverse': 7.28.4
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@babel/helper-optimise-call-expression@7.27.1:
     resolution: {integrity: sha512-URMGH08NzYFhubNSGJrpUEphGKQwMQYBySzat5cAByY1/YgIRkULnIy3tAMeszlL/so2HbeilYloUmSpd7GdVw==}
@@ -5695,7 +5694,6 @@ packages:
   /@babel/helper-validator-identifier@7.28.5:
     resolution: {integrity: sha512-qSs4ifwzKJSV39ucNjsvc6WVHs6b7S03sOh2OcHF9UHfVPqWWALUsNUVzhSBiItjRZoLHx7nIarVjqKVusUZ1Q==}
     engines: {node: '>=6.9.0'}
-    dev: true
 
   /@babel/helper-validator-option@7.27.1:
     resolution: {integrity: sha512-YvjJow9FxbhFFKDSuFnVCe2WxXk1zWc22fFePVNEaWJEu8IrZVlda6N0uHwzZrUM1il7NC9Mlp4MaJYbYd9JSg==}
@@ -5739,7 +5737,6 @@ packages:
     hasBin: true
     dependencies:
       '@babel/types': 7.28.5
-    dev: true
 
   /@babel/plugin-bugfix-firefox-class-in-computed-class-key@7.27.1(@babel/core@7.28.0):
     resolution: {integrity: sha512-QPG3C9cCVRQLxAVwmefEmwdTanECuUBMQZ/ym5kiw3XKCGA7qkuQLcjWWHcrD/GKbn/WmJwaezfuuAOcyKlRPA==}
@@ -7017,7 +7014,6 @@ packages:
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@babel/types@7.28.2:
     resolution: {integrity: sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==}
@@ -7039,7 +7035,6 @@ packages:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
-    dev: true
 
   /@balena/dockerignore@1.0.2:
     resolution: {integrity: sha512-wMue2Sy4GAVTk6Ic4tJVcnfdau+gx2EnG7S+uAEe+TWJFqE4YoWN4/H8MSLj4eYJKxGg26lZwboEniNiNwZQ6Q==}
@@ -7830,7 +7825,7 @@ packages:
     hasBin: true
     dev: false
 
-  /@copilotkit/react-core@1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.1.11):
+  /@copilotkit/react-core@1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1):
     resolution: {integrity: sha512-L7WdesE1PAP+Ks5kY0NXT+/sZfmx/Vj5t7l4eMQzzLDSvwgLDqvrQCZLJq/PtSLKidrX+z8zDyLJad7YR3L6dQ==}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
@@ -7847,7 +7842,7 @@ packages:
       react-dom: 19.2.3(react@19.2.3)
       react-markdown: 8.0.7(@types/react@19.1.10)(react@19.2.3)
       untruncate-json: 0.0.1
-      zod: 4.1.11
+      zod: 4.2.1
     transitivePeerDependencies:
       - '@types/mdast'
       - '@types/react'
@@ -7859,12 +7854,12 @@ packages:
       - supports-color
     dev: false
 
-  /@copilotkit/react-ui@1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.1.11):
+  /@copilotkit/react-ui@1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1):
     resolution: {integrity: sha512-JO6Nf3GTqFWjB3WR0ClSgnf8284QUJxVh/djcUOUZ24NkjglZAYORAMzvwIBJlcOZFxMk1AkvRAU56HWNCUZ5Q==}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
     dependencies:
-      '@copilotkit/react-core': 1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.1.11)
+      '@copilotkit/react-core': 1.50.1(@types/react-dom@19.1.7)(@types/react@19.1.10)(micromark@4.0.2)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1)
       '@copilotkit/runtime-client-gql': 1.50.1(react@19.2.3)
       '@copilotkit/shared': 1.50.1
       '@headlessui/react': 2.2.9(react-dom@19.2.3)(react@19.2.3)
@@ -9352,7 +9347,7 @@ packages:
       vue: '>=3'
     dependencies:
       '@iconify/types': 2.0.0
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@img/colour@1.0.0:
@@ -12178,7 +12173,7 @@ packages:
       - vue
     dev: false
 
-  /@nuxt/eslint-config@1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.2):
+  /@nuxt/eslint-config@1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.3):
     resolution: {integrity: sha512-KLiYlX/MmWR9dhC0u7GSZQl6wyVLGAHme5aAL5fAUT1PLYgcFiJIUg1Z+b296LmwHGTa+oGPRBIk3yoDmX9/9Q==}
     peerDependencies:
       eslint: ^9.0.0
@@ -12190,15 +12185,15 @@ packages:
       '@antfu/install-pkg': 1.1.0
       '@clack/prompts': 0.11.0
       '@eslint/js': 9.33.0
-      '@nuxt/eslint-plugin': 1.9.0(eslint@9.33.0)(typescript@5.9.2)
+      '@nuxt/eslint-plugin': 1.9.0(eslint@9.33.0)(typescript@5.9.3)
       '@stylistic/eslint-plugin': 5.4.0(eslint@9.33.0)
-      '@typescript-eslint/eslint-plugin': 8.46.0(@typescript-eslint/parser@8.46.0)(eslint@9.33.0)(typescript@5.9.2)
-      '@typescript-eslint/parser': 8.46.0(eslint@9.33.0)(typescript@5.9.2)
+      '@typescript-eslint/eslint-plugin': 8.46.0(@typescript-eslint/parser@8.46.0)(eslint@9.33.0)(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.46.0(eslint@9.33.0)(typescript@5.9.3)
       eslint: 9.33.0
       eslint-config-flat-gitignore: 2.1.0(eslint@9.33.0)
       eslint-flat-config-utils: 2.1.4
       eslint-merge-processors: 2.0.0(eslint@9.33.0)
-      eslint-plugin-import-lite: 0.3.0(eslint@9.33.0)(typescript@5.9.2)
+      eslint-plugin-import-lite: 0.3.0(eslint@9.33.0)(typescript@5.9.3)
       eslint-plugin-import-x: 4.16.1(eslint@9.33.0)
       eslint-plugin-jsdoc: 54.7.0(eslint@9.33.0)
       eslint-plugin-regexp: 2.10.0(eslint@9.33.0)
@@ -12217,20 +12212,20 @@ packages:
       - typescript
     dev: false
 
-  /@nuxt/eslint-plugin@1.9.0(eslint@9.33.0)(typescript@5.9.2):
+  /@nuxt/eslint-plugin@1.9.0(eslint@9.33.0)(typescript@5.9.3):
     resolution: {integrity: sha512-DY4ZSavgFyKQxI/NCOpSCUHg3dpS2O4lAdic5UmvP2NWj1xwtvmA9UwEZQ2nW2/f/Km6N+Q53UsgFSIBjz8jDQ==}
     peerDependencies:
       eslint: ^9.0.0
     dependencies:
       '@typescript-eslint/types': 8.44.1
-      '@typescript-eslint/utils': 8.46.0(eslint@9.33.0)(typescript@5.9.2)
+      '@typescript-eslint/utils': 8.46.0(eslint@9.33.0)(typescript@5.9.3)
       eslint: 9.33.0
     transitivePeerDependencies:
       - supports-color
       - typescript
     dev: false
 
-  /@nuxt/eslint@1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.2)(vite@7.3.0):
+  /@nuxt/eslint@1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.3)(vite@7.3.0):
     resolution: {integrity: sha512-8Wm2fDD9za+vJOOhRS2jj+MzyjCNvDhS+04Y55q9W1Ai5hFjTZ1a94jlgSwaqI1B3Zt7y5fqFoEb4wKpZ3ycWg==}
     peerDependencies:
       eslint: ^9.0.0
@@ -12244,8 +12239,8 @@ packages:
     dependencies:
       '@eslint/config-inspector': 1.3.0(eslint@9.33.0)
       '@nuxt/devtools-kit': 2.6.5(magicast@0.3.5)(vite@7.3.0)
-      '@nuxt/eslint-config': 1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.2)
-      '@nuxt/eslint-plugin': 1.9.0(eslint@9.33.0)(typescript@5.9.2)
+      '@nuxt/eslint-config': 1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.3)
+      '@nuxt/eslint-plugin': 1.9.0(eslint@9.33.0)(typescript@5.9.3)
       '@nuxt/kit': 4.1.3
       chokidar: 4.0.3
       eslint: 9.33.0
@@ -12444,7 +12439,7 @@ packages:
       - magicast
     dev: false
 
-  /@nuxt/ui@4.0.1(embla-carousel@8.6.0)(typescript@5.9.2)(vite@7.3.0)(vue-router@4.5.1)(vue@3.5.22)(zod@3.25.76):
+  /@nuxt/ui@4.0.1(embla-carousel@8.6.0)(typescript@5.9.3)(vite@7.3.0)(vue-router@4.5.1)(vue@3.5.22)(zod@3.25.76):
     resolution: {integrity: sha512-mtY8wairYw2WXotCYxXG0CmxbqyJWaMHYbes3p+vFaOJ2kdQHQh7QM/7ziQeZHxVNHciBcWayi6G+55ok/kHAQ==}
     hasBin: true
     peerDependencies:
@@ -12506,13 +12501,13 @@ packages:
       motion-v: 1.7.2(@vueuse/core@13.9.0)(vue@3.5.22)
       ohash: 2.0.11
       pathe: 2.0.3
-      reka-ui: 2.5.1(typescript@5.9.2)(vue@3.5.22)
+      reka-ui: 2.5.1(typescript@5.9.3)(vue@3.5.22)
       scule: 1.3.0
       tailwind-merge: 3.3.1
       tailwind-variants: 3.1.1(tailwind-merge@3.3.1)(tailwindcss@4.1.14)
       tailwindcss: 4.1.14
       tinyglobby: 0.2.15
-      typescript: 5.9.2
+      typescript: 5.9.3
       unplugin: 2.3.10
       unplugin-auto-import: 20.2.0(@nuxt/kit@4.1.3)(@vueuse/core@13.9.0)
       unplugin-vue-components: 29.1.0(@nuxt/kit@4.1.3)(vue@3.5.22)
@@ -12563,7 +12558,7 @@ packages:
       - vue
     dev: false
 
-  /@nuxt/vite-builder@4.1.3(@biomejs/biome@1.9.4)(@types/node@24.2.1)(eslint@9.33.0)(typescript@5.9.2)(vue@3.5.22):
+  /@nuxt/vite-builder@4.1.3(@biomejs/biome@1.9.4)(@types/node@24.2.1)(eslint@9.33.0)(typescript@5.9.3)(vue@3.5.22):
     resolution: {integrity: sha512-yrblLSpGW6h9k+sDZa+vtevQz/6JLrPAj3n97HrEmVa6qB+4sE4HWtkMNUtWsOPe60sAm9usRsjDUkkiHZ0DpA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
@@ -12600,8 +12595,8 @@ packages:
       unenv: 2.0.0-rc.21
       vite: 7.3.0(@types/node@24.2.1)(jiti@2.6.1)
       vite-node: 3.2.4(@types/node@24.2.1)(jiti@2.6.1)
-      vite-plugin-checker: 0.11.0(@biomejs/biome@1.9.4)(eslint@9.33.0)(typescript@5.9.2)(vite@7.3.0)
-      vue: 3.5.22(typescript@5.9.2)
+      vite-plugin-checker: 0.11.0(@biomejs/biome@1.9.4)(eslint@9.33.0)(typescript@5.9.3)(vite@7.3.0)
+      vue: 3.5.22(typescript@5.9.3)
       vue-bundle-renderer: 2.2.0
     transitivePeerDependencies:
       - '@biomejs/biome'
@@ -17612,7 +17607,7 @@ packages:
       vue: '>=3.2'
     dependencies:
       '@tanstack/table-core': 8.21.3
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@tanstack/vue-virtual@3.13.12(vue@3.5.22):
@@ -17621,7 +17616,7 @@ packages:
       vue: ^2.7.0 || ^3.0.0
     dependencies:
       '@tanstack/virtual-core': 3.13.12
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@tokenizer/inflate@0.4.1:
@@ -18430,7 +18425,7 @@ packages:
     dev: true
     optional: true
 
-  /@typescript-eslint/eslint-plugin@8.46.0(@typescript-eslint/parser@8.46.0)(eslint@9.33.0)(typescript@5.9.2):
+  /@typescript-eslint/eslint-plugin@8.46.0(@typescript-eslint/parser@8.46.0)(eslint@9.33.0)(typescript@5.9.3):
     resolution: {integrity: sha512-hA8gxBq4ukonVXPy0OKhiaUh/68D0E88GSmtC1iAEnGaieuDi38LhS7jdCHRLi6ErJBNDGCzvh5EnzdPwUc0DA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
@@ -18439,22 +18434,22 @@ packages:
       typescript: '>=4.8.4 <6.0.0'
     dependencies:
       '@eslint-community/regexpp': 4.12.1
-      '@typescript-eslint/parser': 8.46.0(eslint@9.33.0)(typescript@5.9.2)
+      '@typescript-eslint/parser': 8.46.0(eslint@9.33.0)(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.46.0
-      '@typescript-eslint/type-utils': 8.46.0(eslint@9.33.0)(typescript@5.9.2)
-      '@typescript-eslint/utils': 8.46.0(eslint@9.33.0)(typescript@5.9.2)
+      '@typescript-eslint/type-utils': 8.46.0(eslint@9.33.0)(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.46.0(eslint@9.33.0)(typescript@5.9.3)
       '@typescript-eslint/visitor-keys': 8.46.0
       eslint: 9.33.0
       graphemer: 1.4.0
       ignore: 7.0.5
       natural-compare: 1.4.0
-      ts-api-utils: 2.1.0(typescript@5.9.2)
-      typescript: 5.9.2
+      ts-api-utils: 2.1.0(typescript@5.9.3)
+      typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
     dev: false
 
-  /@typescript-eslint/parser@8.46.0(eslint@9.33.0)(typescript@5.9.2):
+  /@typescript-eslint/parser@8.46.0(eslint@9.33.0)(typescript@5.9.3):
     resolution: {integrity: sha512-n1H6IcDhmmUEG7TNVSspGmiHHutt7iVKtZwRppD7e04wha5MrkV1h3pti9xQLcCMt6YWsncpoT0HMjkH1FNwWQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
@@ -18463,11 +18458,11 @@ packages:
     dependencies:
       '@typescript-eslint/scope-manager': 8.46.0
       '@typescript-eslint/types': 8.46.0
-      '@typescript-eslint/typescript-estree': 8.46.0(typescript@5.9.2)
+      '@typescript-eslint/typescript-estree': 8.46.0(typescript@5.9.3)
       '@typescript-eslint/visitor-keys': 8.46.0
       debug: 4.4.3(supports-color@10.2.2)
       eslint: 9.33.0
-      typescript: 5.9.2
+      typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -18486,16 +18481,16 @@ packages:
       - supports-color
     dev: true
 
-  /@typescript-eslint/project-service@8.46.0(typescript@5.9.2):
+  /@typescript-eslint/project-service@8.46.0(typescript@5.9.3):
     resolution: {integrity: sha512-OEhec0mH+U5Je2NZOeK1AbVCdm0ChyapAyTeXVIYTPXDJ3F07+cu87PPXcGoYqZ7M9YJVvFnfpGg1UmCIqM+QQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       typescript: '>=4.8.4 <6.0.0'
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.46.0(typescript@5.9.2)
+      '@typescript-eslint/tsconfig-utils': 8.46.0(typescript@5.9.3)
       '@typescript-eslint/types': 8.46.0
       debug: 4.4.3(supports-color@10.2.2)
-      typescript: 5.9.2
+      typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -18517,16 +18512,16 @@ packages:
       typescript: 5.9.2
     dev: true
 
-  /@typescript-eslint/tsconfig-utils@8.46.0(typescript@5.9.2):
+  /@typescript-eslint/tsconfig-utils@8.46.0(typescript@5.9.3):
     resolution: {integrity: sha512-WrYXKGAHY836/N7zoK/kzi6p8tXFhasHh8ocFL9VZSAkvH956gfeRfcnhs3xzRy8qQ/dq3q44v1jvQieMFg2cw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       typescript: '>=4.8.4 <6.0.0'
     dependencies:
-      typescript: 5.9.2
+      typescript: 5.9.3
     dev: false
 
-  /@typescript-eslint/type-utils@8.46.0(eslint@9.33.0)(typescript@5.9.2):
+  /@typescript-eslint/type-utils@8.46.0(eslint@9.33.0)(typescript@5.9.3):
     resolution: {integrity: sha512-hy+lvYV1lZpVs2jRaEYvgCblZxUoJiPyCemwbQZ+NGulWkQRy0HRPYAoef/CNSzaLt+MLvMptZsHXHlkEilaeg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
@@ -18534,12 +18529,12 @@ packages:
       typescript: '>=4.8.4 <6.0.0'
     dependencies:
       '@typescript-eslint/types': 8.46.0
-      '@typescript-eslint/typescript-estree': 8.46.0(typescript@5.9.2)
-      '@typescript-eslint/utils': 8.46.0(eslint@9.33.0)(typescript@5.9.2)
+      '@typescript-eslint/typescript-estree': 8.46.0(typescript@5.9.3)
+      '@typescript-eslint/utils': 8.46.0(eslint@9.33.0)(typescript@5.9.3)
       debug: 4.4.3(supports-color@10.2.2)
       eslint: 9.33.0
-      ts-api-utils: 2.1.0(typescript@5.9.2)
-      typescript: 5.9.2
+      ts-api-utils: 2.1.0(typescript@5.9.3)
+      typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -18574,14 +18569,14 @@ packages:
       - supports-color
     dev: true
 
-  /@typescript-eslint/typescript-estree@8.46.0(typescript@5.9.2):
+  /@typescript-eslint/typescript-estree@8.46.0(typescript@5.9.3):
     resolution: {integrity: sha512-ekDCUfVpAKWJbRfm8T1YRrCot1KFxZn21oV76v5Fj4tr7ELyk84OS+ouvYdcDAwZL89WpEkEj2DKQ+qg//+ucg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       typescript: '>=4.8.4 <6.0.0'
     dependencies:
-      '@typescript-eslint/project-service': 8.46.0(typescript@5.9.2)
-      '@typescript-eslint/tsconfig-utils': 8.46.0(typescript@5.9.2)
+      '@typescript-eslint/project-service': 8.46.0(typescript@5.9.3)
+      '@typescript-eslint/tsconfig-utils': 8.46.0(typescript@5.9.3)
       '@typescript-eslint/types': 8.46.0
       '@typescript-eslint/visitor-keys': 8.46.0
       debug: 4.4.3(supports-color@10.2.2)
@@ -18589,13 +18584,13 @@ packages:
       is-glob: 4.0.3
       minimatch: 9.0.5
       semver: 7.7.2
-      ts-api-utils: 2.1.0(typescript@5.9.2)
-      typescript: 5.9.2
+      ts-api-utils: 2.1.0(typescript@5.9.3)
+      typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
     dev: false
 
-  /@typescript-eslint/utils@8.46.0(eslint@9.33.0)(typescript@5.9.2):
+  /@typescript-eslint/utils@8.46.0(eslint@9.33.0)(typescript@5.9.3):
     resolution: {integrity: sha512-nD6yGWPj1xiOm4Gk0k6hLSZz2XkNXhuYmyIrOWcHoPuAhjT9i5bAG+xbWPgFeNR8HPHHtpNKdYUXJl/D3x7f5g==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
@@ -18605,9 +18600,9 @@ packages:
       '@eslint-community/eslint-utils': 4.7.0(eslint@9.33.0)
       '@typescript-eslint/scope-manager': 8.46.0
       '@typescript-eslint/types': 8.46.0
-      '@typescript-eslint/typescript-estree': 8.46.0(typescript@5.9.2)
+      '@typescript-eslint/typescript-estree': 8.46.0(typescript@5.9.3)
       eslint: 9.33.0
-      typescript: 5.9.2
+      typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -18638,7 +18633,7 @@ packages:
     dependencies:
       hookable: 5.5.3
       unhead: 2.0.19
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@unrs/resolver-binding-android-arm-eabi@1.11.1:
@@ -18892,7 +18887,7 @@ packages:
       '@rolldown/pluginutils': 1.0.0-beta.57
       '@vue/babel-plugin-jsx': 1.5.0(@babel/core@7.28.4)
       vite: 7.3.0(@types/node@24.2.1)(jiti@2.6.1)
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -18906,7 +18901,7 @@ packages:
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.29
       vite: 7.3.0(@types/node@24.2.1)(jiti@2.6.1)
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@vitest/coverage-v8@3.2.4(vitest@3.2.4):
@@ -19268,7 +19263,7 @@ packages:
       local-pkg: 1.1.2
       magic-string-ast: 1.0.3
       unplugin-utils: 0.2.5
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@vue/babel-helper-vue-transform-on@1.5.0:
@@ -19361,7 +19356,7 @@ packages:
       nanoid: 5.1.6
       pathe: 2.0.3
       vite-hot-client: 2.1.0(vite@7.3.0)
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     transitivePeerDependencies:
       - vite
     dev: false
@@ -19384,7 +19379,7 @@ packages:
       rfdc: 1.4.1
     dev: false
 
-  /@vue/language-core@3.1.1(typescript@5.9.2):
+  /@vue/language-core@3.1.1(typescript@5.9.3):
     resolution: {integrity: sha512-qjMY3Q+hUCjdH+jLrQapqgpsJ0rd/2mAY02lZoHG3VFJZZZKLjAlV+Oo9QmWIT4jh8+Rx8RUGUi++d7T9Wb6Mw==}
     peerDependencies:
       typescript: '*'
@@ -19399,7 +19394,7 @@ packages:
       muggle-string: 0.4.1
       path-browserify: 1.0.1
       picomatch: 4.0.3
-      typescript: 5.9.2
+      typescript: 5.9.3
     dev: false
 
   /@vue/reactivity@3.5.22:
@@ -19431,7 +19426,7 @@ packages:
     dependencies:
       '@vue/compiler-ssr': 3.5.22
       '@vue/shared': 3.5.22
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@vue/shared@3.5.22:
@@ -19449,13 +19444,13 @@ packages:
       - vue
     dev: false
 
-  /@vueuse/core@12.8.2(typescript@5.9.2):
+  /@vueuse/core@12.8.2(typescript@5.9.3):
     resolution: {integrity: sha512-HbvCmZdzAu3VGi/pWYm5Ut+Kd9mn1ZHnn4L5G8kOQTPs/IwIAmJoBrmYk2ckLArgMXZj0AW3n5CAejLUO+PhdQ==}
     dependencies:
       '@types/web-bluetooth': 0.0.21
       '@vueuse/metadata': 12.8.2
-      '@vueuse/shared': 12.8.2(typescript@5.9.2)
-      vue: 3.5.22(typescript@5.9.2)
+      '@vueuse/shared': 12.8.2(typescript@5.9.3)
+      vue: 3.5.22(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
     dev: false
@@ -19468,7 +19463,7 @@ packages:
       '@types/web-bluetooth': 0.0.21
       '@vueuse/metadata': 13.9.0
       '@vueuse/shared': 13.9.0(vue@3.5.22)
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@vueuse/integrations@13.9.0(fuse.js@7.1.0)(vue@3.5.22):
@@ -19516,7 +19511,7 @@ packages:
       '@vueuse/core': 13.9.0(vue@3.5.22)
       '@vueuse/shared': 13.9.0(vue@3.5.22)
       fuse.js: 7.1.0
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@vueuse/metadata@10.11.1:
@@ -19540,10 +19535,10 @@ packages:
       - vue
     dev: false
 
-  /@vueuse/shared@12.8.2(typescript@5.9.2):
+  /@vueuse/shared@12.8.2(typescript@5.9.3):
     resolution: {integrity: sha512-dznP38YzxZoNloI0qpEfpkms8knDtaoQ6Y/sfS0L7Yki4zh40LFHEhur0odJC6xTHG5dxWVPiUWBXn+wCG2s5w==}
     dependencies:
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     transitivePeerDependencies:
       - typescript
     dev: false
@@ -19553,7 +19548,7 @@ packages:
     peerDependencies:
       vue: ^3.5.0
     dependencies:
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /@webassemblyjs/ast@1.14.1:
@@ -20116,17 +20111,17 @@ packages:
       '@opentelemetry/api': 1.9.0
       zod: 3.25.76
 
-  /ai@5.0.76(zod@4.1.11):
+  /ai@5.0.76(zod@4.2.1):
     resolution: {integrity: sha512-ZCxi1vrpyCUnDbtYrO/W8GLvyacV9689f00yshTIQ3mFFphbD7eIv40a2AOZBv3GGRA7SSRYIDnr56wcS/gyQg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
-      '@ai-sdk/gateway': 2.0.0(zod@4.1.11)
+      '@ai-sdk/gateway': 2.0.0(zod@4.2.1)
       '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.12(zod@4.1.11)
+      '@ai-sdk/provider-utils': 3.0.12(zod@4.2.1)
       '@opentelemetry/api': 1.9.0
-      zod: 4.1.11
+      zod: 4.2.1
 
   /ajv-errors@3.0.0(ajv@8.17.1):
     resolution: {integrity: sha512-V3wD15YHfHz6y0KdhYFjyy9vWtEVALT9UrxfN3zqlI6dMioHnJrqOYfyPKol3oqrnCM9uwkcdCwkJ0WUcbLMTQ==}
@@ -22026,7 +22021,7 @@ packages:
   /compatx@0.2.0:
     resolution: {integrity: sha512-6gLRNt4ygsi5NyMVhceOCFv14CIdDFN7fQjX1U4+47qVE/+kjPoXMK65KWK+dWxmFzMTuKazoQ9sch6pM0p5oA==}
 
-  /composio-core@0.5.39(@ai-sdk/openai@2.0.53)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.76)(langchain@0.3.30)(openai@4.104.0):
+  /composio-core@0.5.39(@ai-sdk/openai@2.0.53)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@5.0.116)(langchain@0.3.30)(openai@4.104.0):
     resolution: {integrity: sha512-7BeSFlfRzr1cbIfGYJW4jQ3BHwaObOaFKiRJIFuWOmvOrTABl1hbxGkWPA3C+uFw9CFXbZhrLWNyD7lhYy2Scg==}
     hasBin: true
     peerDependencies:
@@ -22044,7 +22039,7 @@ packages:
       '@hey-api/client-axios': 0.2.12(axios@1.11.0)
       '@langchain/core': 0.3.70(openai@4.104.0)
       '@langchain/openai': 0.6.7(@langchain/core@0.3.70)
-      ai: 5.0.76(zod@3.25.76)
+      ai: 5.0.116(zod@3.25.76)
       axios: 1.11.0
       chalk: 4.1.2
       cli-progress: 3.12.0
@@ -23671,7 +23666,7 @@ packages:
     dependencies:
       embla-carousel: 8.6.0
       embla-carousel-reactive-utils: 8.6.0(embla-carousel@8.6.0)
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /embla-carousel-wheel-gestures@8.1.0(embla-carousel@8.6.0):
@@ -24042,7 +24037,7 @@ packages:
       eslint: 9.33.0
     dev: false
 
-  /eslint-plugin-import-lite@0.3.0(eslint@9.33.0)(typescript@5.9.2):
+  /eslint-plugin-import-lite@0.3.0(eslint@9.33.0)(typescript@5.9.3):
     resolution: {integrity: sha512-dkNBAL6jcoCsXZsQ/Tt2yXmMDoNt5NaBh/U7yvccjiK8cai6Ay+MK77bMykmqQA2bTF6lngaLCDij6MTO3KkvA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
@@ -24055,7 +24050,7 @@ packages:
       '@eslint-community/eslint-utils': 4.7.0(eslint@9.33.0)
       '@typescript-eslint/types': 8.44.1
       eslint: 9.33.0
-      typescript: 5.9.2
+      typescript: 5.9.3
     dev: false
 
   /eslint-plugin-import-x@4.16.1(eslint@9.33.0):
@@ -24165,7 +24160,7 @@ packages:
     dependencies:
       '@eslint-community/eslint-utils': 4.7.0(eslint@9.33.0)
       '@stylistic/eslint-plugin': 5.4.0(eslint@9.33.0)
-      '@typescript-eslint/parser': 8.46.0(eslint@9.33.0)(typescript@5.9.2)
+      '@typescript-eslint/parser': 8.46.0(eslint@9.33.0)(typescript@5.9.3)
       eslint: 9.33.0
       natural-compare: 1.4.0
       nth-check: 2.1.1
@@ -30414,7 +30409,7 @@ packages:
       framer-motion: 12.23.12
       hey-listen: 1.0.8
       motion-dom: 12.23.12
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     transitivePeerDependencies:
       - '@emotion/is-prop-valid'
       - react
@@ -30753,7 +30748,7 @@ packages:
     resolution: {integrity: sha512-4zdzIP+6muqPCuE8avnrgDJ6KW/2+UpHTRcTbMXCIRxiRmyrX+IZ4WSJGZdHPWF3WmQpXpy603XxecZ9iygN7w==}
     dev: true
 
-  /next@16.1.1(@babel/core@7.28.0)(react-dom@19.2.3)(react@19.2.3):
+  /next@16.1.1(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3):
     resolution: {integrity: sha512-QI+T7xrxt1pF6SQ/JYFz95ro/mg/1Znk5vBebsWwbpejj1T0A23hO7GYEaVac9QUOT2BIMiuzm0L99ooq7k0/w==}
     engines: {node: '>=20.9.0'}
     hasBin: true
@@ -30781,7 +30776,7 @@ packages:
       postcss: 8.4.31
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
-      styled-jsx: 5.1.6(@babel/core@7.28.0)(react@19.2.3)
+      styled-jsx: 5.1.6(@babel/core@7.28.5)(react@19.2.3)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.1.1
       '@next/swc-darwin-x64': 16.1.1
@@ -31291,7 +31286,7 @@ packages:
     dependencies:
       boolbase: 1.0.0
 
-  /nuxt@4.1.3(@biomejs/biome@1.9.4)(@types/node@24.2.1)(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.2)(vite@7.3.0):
+  /nuxt@4.1.3(@biomejs/biome@1.9.4)(@types/node@24.2.1)(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.3)(vite@7.3.0):
     resolution: {integrity: sha512-FPl+4HNIOTRYWQXtsZe5KJAr/eddFesuXABvcSTnFLYckIfnxcistwmbtPlkJhkW6vr/Jdhef5QqqYYkBsowGg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
@@ -31310,7 +31305,7 @@ packages:
       '@nuxt/kit': 4.1.3
       '@nuxt/schema': 4.1.3
       '@nuxt/telemetry': 2.6.6
-      '@nuxt/vite-builder': 4.1.3(@biomejs/biome@1.9.4)(@types/node@24.2.1)(eslint@9.33.0)(typescript@5.9.2)(vue@3.5.22)
+      '@nuxt/vite-builder': 4.1.3(@biomejs/biome@1.9.4)(@types/node@24.2.1)(eslint@9.33.0)(typescript@5.9.3)(vue@3.5.22)
       '@types/node': 24.2.1
       '@unhead/vue': 2.0.19(vue@3.5.22)
       '@vue/shared': 3.5.22
@@ -31361,10 +31356,10 @@ packages:
       unctx: 2.4.1
       unimport: 5.4.1
       unplugin: 2.3.10
-      unplugin-vue-router: 0.15.0(@vue/compiler-sfc@3.5.22)(typescript@5.9.2)(vue-router@4.5.1)(vue@3.5.22)
+      unplugin-vue-router: 0.15.0(@vue/compiler-sfc@3.5.22)(typescript@5.9.3)(vue-router@4.5.1)(vue@3.5.22)
       unstorage: 1.17.1(db0@0.3.2)(ioredis@5.7.0)
       untyped: 2.0.0
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
       vue-bundle-renderer: 2.2.0
       vue-devtools-stub: 0.1.0
       vue-router: 4.5.1(vue@3.5.22)
@@ -34134,7 +34129,7 @@ packages:
       vfile: 6.0.3
     dev: false
 
-  /reka-ui@2.5.1(typescript@5.9.2)(vue@3.5.22):
+  /reka-ui@2.5.1(typescript@5.9.3)(vue@3.5.22):
     resolution: {integrity: sha512-QJGB3q21wQ1Kw28HhhNDpjfFe8qpePX1gK4FTBRd68XTh9aEnhR5bTJnlV0jxi8FBPh0xivZBeNFUc3jiGx7mQ==}
     peerDependencies:
       vue: '>= 3.2.0'
@@ -34144,12 +34139,12 @@ packages:
       '@internationalized/date': 3.10.0
       '@internationalized/number': 3.6.5
       '@tanstack/vue-virtual': 3.13.12(vue@3.5.22)
-      '@vueuse/core': 12.8.2(typescript@5.9.2)
-      '@vueuse/shared': 12.8.2(typescript@5.9.2)
+      '@vueuse/core': 12.8.2(typescript@5.9.3)
+      '@vueuse/shared': 12.8.2(typescript@5.9.3)
       aria-hidden: 1.2.6
       defu: 6.1.4
       ohash: 2.0.11
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     transitivePeerDependencies:
       - '@vue/composition-api'
       - typescript
@@ -35733,7 +35728,7 @@ packages:
     dependencies:
       inline-style-parser: 0.2.4
 
-  /styled-jsx@5.1.6(@babel/core@7.28.0)(react@19.2.3):
+  /styled-jsx@5.1.6(@babel/core@7.28.5)(react@19.2.3):
     resolution: {integrity: sha512-qSVyDTeMotdvQYoHWLNGwRFJHC+i+ZvdBRYosOFgC+Wg1vx4frN2/RG/NA7SYqqvKNLf39P2LSRA2pu6n0XYZA==}
     engines: {node: '>= 12.0.0'}
     peerDependencies:
@@ -35746,7 +35741,7 @@ packages:
       babel-plugin-macros:
         optional: true
     dependencies:
-      '@babel/core': 7.28.0
+      '@babel/core': 7.28.5
       client-only: 0.0.1
       react: 19.2.3
     dev: false
@@ -35851,7 +35846,7 @@ packages:
     peerDependencies:
       vue: '>=3.2.26 < 4'
     dependencies:
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /symbol-observable@4.0.0:
@@ -36420,6 +36415,16 @@ packages:
       typescript: '>=4.8.4'
     dependencies:
       typescript: 5.9.2
+    dev: true
+
+  /ts-api-utils@2.1.0(typescript@5.9.3):
+    resolution: {integrity: sha512-CUgTZL1irw8u29bzrOD/nH85jqyc74D6SshFgujOIA7osm2Rz7dYH77agkx7H4FBNxDq7Cjf+IjaX/8zwFW+ZQ==}
+    engines: {node: '>=18.12'}
+    peerDependencies:
+      typescript: '>=4.8.4'
+    dependencies:
+      typescript: 5.9.3
+    dev: false
 
   /ts-dedent@2.2.0:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
@@ -36435,7 +36440,7 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /ts-jest@29.4.1(@babel/core@7.28.4)(esbuild@0.25.10)(jest@29.7.0)(typescript@5.9.2):
+  /ts-jest@29.4.1(@babel/core@7.28.5)(esbuild@0.25.10)(jest@29.7.0)(typescript@5.9.3):
     resolution: {integrity: sha512-SaeUtjfpg9Uqu8IbeDKtdaS0g8lS6FT6OzM3ezrDfErPJPHNDo/Ey+VFGP1bQIDfagYDLyRpd7O15XpG1Es2Uw==}
     engines: {node: ^14.15.0 || ^16.10.0 || ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -36462,7 +36467,7 @@ packages:
       jest-util:
         optional: true
     dependencies:
-      '@babel/core': 7.28.4
+      '@babel/core': 7.28.5
       bs-logger: 0.2.6
       esbuild: 0.25.10
       fast-json-stable-stringify: 2.1.0
@@ -36473,7 +36478,7 @@ packages:
       make-error: 1.3.6
       semver: 7.7.2
       type-fest: 4.41.0
-      typescript: 5.9.2
+      typescript: 5.9.3
       yargs-parser: 21.1.1
     dev: true
 
@@ -36852,7 +36857,6 @@ packages:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
-    dev: true
 
   /ufo@1.6.1:
     resolution: {integrity: sha512-9a4/uxlTWJ4+a5i0ooc1rU7C7YOw3wT+UGqdeNNHWnOF9qcMBgLRS+4IYUqbczewFx4mLEig6gawh7X6mFlEkA==}
@@ -37322,12 +37326,12 @@ packages:
       tinyglobby: 0.2.15
       unplugin: 2.3.10
       unplugin-utils: 0.3.0
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     transitivePeerDependencies:
       - supports-color
     dev: false
 
-  /unplugin-vue-router@0.15.0(@vue/compiler-sfc@3.5.22)(typescript@5.9.2)(vue-router@4.5.1)(vue@3.5.22):
+  /unplugin-vue-router@0.15.0(@vue/compiler-sfc@3.5.22)(typescript@5.9.3)(vue-router@4.5.1)(vue@3.5.22):
     resolution: {integrity: sha512-PyGehCjd9Ny9h+Uer4McbBjjib3lHihcyUEILa7pHKl6+rh8N7sFyw4ZkV+N30Oq2zmIUG7iKs3qpL0r+gXAaQ==}
     peerDependencies:
       '@vue/compiler-sfc': ^3.5.17
@@ -37338,7 +37342,7 @@ packages:
     dependencies:
       '@vue-macros/common': 3.0.0-beta.16(vue@3.5.22)
       '@vue/compiler-sfc': 3.5.22
-      '@vue/language-core': 3.1.1(typescript@5.9.2)
+      '@vue/language-core': 3.1.1(typescript@5.9.3)
       ast-walker-scope: 0.8.3
       chokidar: 4.0.3
       json5: 2.2.3
@@ -37873,8 +37877,8 @@ packages:
       vue: ^3.3.0
     dependencies:
       '@vueuse/core': 10.11.1(vue@3.5.22)
-      reka-ui: 2.5.1(typescript@5.9.2)(vue@3.5.22)
-      vue: 3.5.22(typescript@5.9.2)
+      reka-ui: 2.5.1(typescript@5.9.3)(vue@3.5.22)
+      vue: 3.5.22(typescript@5.9.3)
     transitivePeerDependencies:
       - '@vue/composition-api'
     dev: false
@@ -38007,7 +38011,7 @@ packages:
       - yaml
     dev: true
 
-  /vite-plugin-checker@0.11.0(@biomejs/biome@1.9.4)(eslint@9.33.0)(typescript@5.9.2)(vite@7.3.0):
+  /vite-plugin-checker@0.11.0(@biomejs/biome@1.9.4)(eslint@9.33.0)(typescript@5.9.3)(vite@7.3.0):
     resolution: {integrity: sha512-iUdO9Pl9UIBRPAragwi3as/BXXTtRu4G12L3CMrjx+WVTd9g/MsqNakreib9M/2YRVkhZYiTEwdH2j4Dm0w7lw==}
     engines: {node: '>=16.11'}
     peerDependencies:
@@ -38053,7 +38057,7 @@ packages:
       picomatch: 4.0.3
       tiny-invariant: 1.3.3
       tinyglobby: 0.2.15
-      typescript: 5.9.2
+      typescript: 5.9.3
       vite: 7.3.0(@types/node@24.2.1)(jiti@2.6.1)
       vscode-uri: 3.1.0
     dev: false
@@ -38095,7 +38099,7 @@ packages:
       pathe: 2.0.3
       source-map-js: 1.2.1
       vite: 7.3.0(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4)
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /vite@7.3.0(@types/node@24.2.1)(jiti@2.5.1)(tsx@4.20.4):
@@ -38520,7 +38524,7 @@ packages:
       '@vue/composition-api':
         optional: true
     dependencies:
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
   /vue-devtools-stub@0.1.0:
@@ -38550,10 +38554,10 @@ packages:
       vue: ^3.2.0
     dependencies:
       '@vue/devtools-api': 6.6.4
-      vue: 3.5.22(typescript@5.9.2)
+      vue: 3.5.22(typescript@5.9.3)
     dev: false
 
-  /vue@3.5.22(typescript@5.9.2):
+  /vue@3.5.22(typescript@5.9.3):
     resolution: {integrity: sha512-toaZjQ3a/G/mYaLSbV+QsQhIdMo9x5rrqIpYRObsJ6T/J+RyCSFwN2LHNVH9v8uIcljDNa3QzPVdv3Y6b9hAJQ==}
     peerDependencies:
       typescript: '*'
@@ -38566,7 +38570,7 @@ packages:
       '@vue/runtime-dom': 3.5.22
       '@vue/server-renderer': 3.5.22(vue@3.5.22)
       '@vue/shared': 3.5.22
-      typescript: 5.9.2
+      typescript: 5.9.3
     dev: false
 
   /w3c-xmlserializer@4.0.0:
@@ -39251,7 +39255,6 @@ packages:
 
   /zod@4.2.1:
     resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}
-    dev: false
 
   /zustand@4.5.7(@types/react@19.1.10)(react@19.2.3):
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
