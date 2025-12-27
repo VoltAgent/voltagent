@@ -8,7 +8,7 @@ import { FORCED_TOOL_CHOICE_CONTEXT_KEY } from "../agent/context-keys";
 import type { AgentHooks } from "../agent/hooks";
 import { SubAgentManager } from "../agent/subagent";
 import type { SubAgentConfig } from "../agent/subagent/types";
-import type { AgentOptions, AgentSummarizationOptions, OperationContext } from "../agent/types";
+import type { AgentOptions, OperationContext } from "../agent/types";
 import type { Tool, VercelTool } from "../tool";
 import { createTool } from "../tool";
 import type { Toolkit } from "../tool/toolkit";
@@ -106,7 +106,7 @@ export type PlanAgentOptions = Omit<
   subagents?: PlanAgentSubagentDefinition[];
   generalPurposeAgent?: boolean;
   planning?: PlanningToolkitOptions | false;
-  summarization?: AgentSummarizationOptions | false;
+  summarization?: AgentOptions["summarization"];
   filesystem?: FilesystemToolkitOptions | false;
   task?: TaskToolOptions | false;
   extensions?: PlanAgentExtension[];
@@ -985,7 +985,7 @@ export class PlanAgent extends Agent {
       }
 
       const built = result.afterSubagents({
-        agent,
+        agent: this,
         subagents: normalizedSubagents,
       });
 
@@ -1006,11 +1006,11 @@ export class PlanAgent extends Agent {
         : wrappedToolkits;
 
     if (finalToolkits.length > 0) {
-      agent.addTools(finalToolkits);
+      this.addTools(finalToolkits);
     }
 
     if (wrappedTools.length > 0) {
-      agent.addTools(wrappedTools);
+      this.addTools(wrappedTools);
     }
   }
 }

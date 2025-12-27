@@ -404,7 +404,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
             const ftext = pdata.path?.text;
             if (!ftext) continue;
 
-            let virtPath: string;
+            let virtPath: string | undefined;
             if (this.virtualMode) {
               try {
                 const resolved = path.resolve(ftext);
@@ -417,6 +417,10 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
               }
             } else {
               virtPath = ftext;
+            }
+
+            if (!virtPath) {
+              continue;
             }
 
             const ln = pdata.line_number;
@@ -481,7 +485,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
           if (regex.test(line)) {
-            let virtPath: string;
+            let virtPath: string | undefined;
             if (this.virtualMode) {
               try {
                 const relative = path.relative(this.cwd, fp);
@@ -493,6 +497,10 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
               }
             } else {
               virtPath = fp;
+            }
+
+            if (!virtPath) {
+              continue;
             }
 
             if (!results[virtPath]) {
