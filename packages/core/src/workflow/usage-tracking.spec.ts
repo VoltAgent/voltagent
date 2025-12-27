@@ -1,9 +1,8 @@
 import { safeStringify } from "@voltagent/internal";
 import type { LanguageModelUsage } from "ai";
-import { MockLanguageModelV3 } from "ai/test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { createTestAgent } from "../agent/test-utils";
+import { createMockLanguageModel, createTestAgent } from "../agent/test-utils";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { createWorkflowChain } from "./chain";
@@ -37,8 +36,8 @@ function createMockAgentWithUsage(
 
   return createTestAgent({
     name: "MockAgent",
-    model: new MockLanguageModelV3({
-      doGenerate: async () => ({
+    model: createMockLanguageModel({
+      doGenerate: {
         finishReason: "stop" as const,
         usage: normalizedUsage,
         content: [
@@ -48,8 +47,8 @@ function createMockAgentWithUsage(
           },
         ],
         warnings: [],
-      }),
-    }) as any,
+      },
+    }),
   });
 }
 
@@ -336,8 +335,8 @@ describe("workflow usage tracking", () => {
     // Agent that doesn't return usage
     const agentWithoutUsage = createTestAgent({
       name: "NoUsageAgent",
-      model: new MockLanguageModelV3({
-        doGenerate: async () => ({
+      model: createMockLanguageModel({
+        doGenerate: {
           finishReason: "stop" as const,
           usage: {
             inputTokens: 0,
@@ -351,8 +350,8 @@ describe("workflow usage tracking", () => {
             },
           ],
           warnings: [],
-        }),
-      }) as any,
+        },
+      }),
     });
 
     const agentWithUsage = createMockAgentWithUsage({
@@ -394,8 +393,8 @@ describe("workflow usage tracking", () => {
     // Agent with only some usage fields
     const partialUsageAgent = createTestAgent({
       name: "PartialUsageAgent",
-      model: new MockLanguageModelV3({
-        doGenerate: async () => ({
+      model: createMockLanguageModel({
+        doGenerate: {
           finishReason: "stop" as const,
           usage: {
             inputTokens: 100,
@@ -409,8 +408,8 @@ describe("workflow usage tracking", () => {
             },
           ],
           warnings: [],
-        }),
-      }) as any,
+        },
+      }),
     });
 
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
@@ -433,7 +432,7 @@ describe("workflow usage tracking", () => {
     expect(execution.usage).toEqual({
       promptTokens: 100,
       completionTokens: 0, // Default to 0
-      totalTokens: 0, // Default to 0
+      totalTokens: 100, // Defaults to prompt + completion
     });
   });
 });
