@@ -3,6 +3,8 @@
  * @module retriever
  */
 
+export type { ProcessedDocument } from "@voltagent/documents";
+
 export { BaseRetriever } from "./retriever";
 export { DocumentRetriever, type DocumentRetrieverOptions } from "./document-retriever";
 export type { Retriever, RetrieverOptions, RetrieveOptions } from "./types";
