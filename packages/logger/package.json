@@ -42,5 +42,10 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/logger"
+  },
   "types": "dist/index.d.ts"
 }

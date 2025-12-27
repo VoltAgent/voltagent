@@ -49,5 +49,10 @@
     "test": "vitest",
     "test:coverage": "vitest run"
   },
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "archive/deprecated-providers/xsai"
+  },
   "types": "dist/index.d.ts"
 }

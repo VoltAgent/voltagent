@@ -49,5 +49,10 @@
     "test": "vitest --coverage",
     "test:coverage": "vitest run --coverage"
   },
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "archive/deprecated-providers/vercel-ui"
+  },
   "types": "dist/index.d.ts"
 }

@@ -35,5 +35,10 @@
     "lint": "next lint",
     "start": "next start",
     "volt": "volt"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-nextjs"
   }
 }

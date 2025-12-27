@@ -26,5 +26,10 @@
     "lint:fix": "biome check . --write",
     "preview": "vite preview"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-google-drive-mcp/client"
+  },
   "type": "module"
 }
