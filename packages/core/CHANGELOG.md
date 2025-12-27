@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 1.5.2
+
+### Patch Changes
+
+- [#895](https://github.com/VoltAgent/voltagent/pull/895) [`f2a3ba8`](https://github.com/VoltAgent/voltagent/commit/f2a3ba8a9e96e78f36a30bba004754b7b61ed69f) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: normalize MCP elicitation requests with empty `message` by falling back to the schema description so handlers receive a usable prompt.
+
 ## 1.5.1
 
 ### Patch Changes

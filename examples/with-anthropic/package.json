@@ -4,8 +4,8 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.37",
     "@voltagent/cli": "^0.1.17",
-    "@voltagent/core": "^1.5.1",
-    "@voltagent/libsql": "^1.0.14",
+    "@voltagent/core": "^1.5.2",
+    "@voltagent/libsql": "^1.1.0",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/server-hono": "^1.2.11",
     "ai": "^5.0.76",
