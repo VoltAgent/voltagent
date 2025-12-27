@@ -1,5 +1,27 @@
 # @voltagent/libsql
 
+## 1.1.0
+
+### Minor Changes
+
+- [#887](https://github.com/VoltAgent/voltagent/pull/887) [`25f3859`](https://github.com/VoltAgent/voltagent/commit/25f38592293e77852f0e9e814c6c8548fcbad1a5) Thanks [@nt9142](https://github.com/nt9142)! - Add Edge/Cloudflare Workers support for @voltagent/libsql
+  - New `@voltagent/libsql/edge` export for edge runtimes
+  - Refactored adapters into core classes with dependency injection
+  - Edge adapters use `@libsql/client/web` for fetch-based transport
+  - Core uses DataView/ArrayBuffer for cross-platform compatibility
+  - Node.js adapters override with Buffer for better performance
+
+  Usage:
+
+  ```typescript
+  import { LibSQLMemoryAdapter } from "@voltagent/libsql/edge";
+
+  const adapter = new LibSQLMemoryAdapter({
+    url: "libsql://your-db.turso.io",
+    authToken: "your-token",
+  });
+  ```
+
 ## 1.0.14
 
 ### Patch Changes

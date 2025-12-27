@@ -152,12 +152,14 @@ export class UserInputBridge {
       return { action: "cancel", content: undefined };
     }
 
+    const normalizedRequest = this.normalizeRequest(request);
+
     try {
       this.logger.debug("Processing user input request", {
-        message: request.message,
+        message: normalizedRequest.message,
       });
 
-      const result = await this.handler(request);
+      const result = await this.handler(normalizedRequest);
 
       this.logger.debug("User input request processed", {
         action: result.action,
@@ -168,5 +170,57 @@ export class UserInputBridge {
       this.logger.error("Error processing user input request", { error });
       return { action: "cancel", content: undefined };
     }
+  }
+
+  private normalizeRequest(request: ElicitRequest["params"]): ElicitRequest["params"] {
+    if (typeof request.message === "string" && request.message.trim() !== "") {
+      return request;
+    }
+
+    const fallbackMessage = this.getFallbackMessage(request);
+    if (!fallbackMessage) {
+      return request;
+    }
+
+    return { ...request, message: fallbackMessage };
+  }
+
+  private getFallbackMessage(request: ElicitRequest["params"]): string | undefined {
+    if (!("requestedSchema" in request)) {
+      return undefined;
+    }
+
+    const schema = request.requestedSchema as Record<string, unknown> | undefined;
+    if (!schema || typeof schema !== "object") {
+      return undefined;
+    }
+
+    const description = schema.description;
+    if (typeof description === "string" && description.trim() !== "") {
+      return description.trim();
+    }
+
+    const properties = schema.properties;
+    if (!properties || typeof properties !== "object") {
+      return undefined;
+    }
+
+    for (const property of Object.values(properties as Record<string, unknown>)) {
+      if (!property || typeof property !== "object") {
+        continue;
+      }
+
+      const propertyDescription = (property as Record<string, unknown>).description;
+      if (typeof propertyDescription === "string" && propertyDescription.trim() !== "") {
+        return propertyDescription.trim();
+      }
+
+      const propertyTitle = (property as Record<string, unknown>).title;
+      if (typeof propertyTitle === "string" && propertyTitle.trim() !== "") {
+        return propertyTitle.trim();
+      }
+    }
+
+    return undefined;
   }
 }

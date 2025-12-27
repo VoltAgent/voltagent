@@ -25,12 +25,14 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   bell: BellIcon,
   message: ChatBubbleLeftIcon,
   shield: ShieldCheckIcon,
+  book: BookOpenIcon,
 };
 
 export function FeatureShowcase() {
   const [activeTab, setActiveTab] = useState("framework");
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [activeCodeTab, setActiveCodeTab] = useState<"trigger" | "action">("trigger");
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
   const activeTabData = tabsData.find((tab) => tab.id === activeTab);
@@ -97,7 +99,7 @@ export function FeatureShowcase() {
                     className={`
                       relative flex items-center justify-center gap-1 md:gap-2 p-2 md:px-4 md:py-3 font-medium
                       transition-all duration-700 ease-in-out cursor-pointer
-                      min-w-[33.333%] md:min-w-0 md:flex-1
+                      md:flex-1
                       ${
                         isActive && !hoveredTab
                           ? "bg-zinc-800/60 text-emerald-400 border-b-2 border-emerald-400"
@@ -109,7 +111,7 @@ export function FeatureShowcase() {
                   >
                     {Icon && (
                       <Icon
-                        className={`w-4 h-4 transition-colors duration-700 ease-in-out ${
+                        className={`w-5 h-5 transition-colors duration-700 ease-in-out ${
                           isHighlighted ? "text-emerald-400" : ""
                         }`}
                       />
@@ -198,7 +200,43 @@ export function FeatureShowcase() {
 
                 {/* Code Panel - Bottom on mobile, Left on desktop */}
                 <div className="h-[250px] sm:h-[350px] md:h-[600px] overflow-auto showcase-code-block lg:border-r border-solid border-t-0 border-b-0 border-l-0 border-zinc-700 order-2 lg:order-1">
-                  <CodeBlock language="typescript">{displayTabData?.code}</CodeBlock>
+                  {displayTabData?.triggerCode && displayTabData?.actionCode ? (
+                    <div className="flex flex-col h-full">
+                      {/* Code Tabs */}
+                      <div className="flex border-b border-solid border-t-0 border-l-0 border-r-0 border-zinc-800 bg-black">
+                        <button
+                          onClick={() => setActiveCodeTab("trigger")}
+                          className={`px-4 py-2 text-xs font-medium transition-colors cursor-pointer border-0 outline-none ${
+                            activeCodeTab === "trigger"
+                              ? "text-zinc-100 bg-zinc-900 border-b-2 border-zinc-500"
+                              : "text-zinc-500 hover:text-zinc-300 bg-transparent"
+                          }`}
+                        >
+                          Trigger
+                        </button>
+                        <button
+                          onClick={() => setActiveCodeTab("action")}
+                          className={`px-4 py-2 text-xs font-medium transition-colors cursor-pointer border-0 outline-none ${
+                            activeCodeTab === "action"
+                              ? "text-zinc-100 bg-zinc-900 border-b-2 border-zinc-500"
+                              : "text-zinc-500 hover:text-zinc-300 bg-transparent"
+                          }`}
+                        >
+                          Action
+                        </button>
+                      </div>
+                      {/* Code Content */}
+                      <div className="flex-1 overflow-auto">
+                        <CodeBlock language="typescript">
+                          {activeCodeTab === "trigger"
+                            ? displayTabData.triggerCode
+                            : displayTabData.actionCode}
+                        </CodeBlock>
+                      </div>
+                    </div>
+                  ) : (
+                    <CodeBlock language="typescript">{displayTabData?.code}</CodeBlock>
+                  )}
                 </div>
 
                 {/* Preview Image - Desktop only */}

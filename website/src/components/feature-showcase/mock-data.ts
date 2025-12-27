@@ -4,6 +4,8 @@ export interface TabData {
   icon: string;
   image?: string;
   code?: string;
+  triggerCode?: string;
+  actionCode?: string;
   description?: string;
   features?: string[];
   fullImage?: boolean;
@@ -59,7 +61,7 @@ new VoltAgent({
     });
   }),
 });`,
-    footerText: "Build AI agents with a type-safe, modular TypeScript framework",
+    footerText: "Create production-ready AI agents in minutes with type-safe TypeScript APIs",
     docLink: "/docs",
   },
   {
@@ -68,7 +70,8 @@ new VoltAgent({
     icon: "chart",
     image: "https://cdn.voltagent.dev/website/feature-showcase/dashboard.png",
     fullImage: true,
-    footerText: "Monitor and debug your AI agents with real-time observability",
+    footerText:
+      "See exactly what your agents are doing with full execution traces and debugging tools",
     docLink: "/observability-docs",
   },
   {
@@ -100,15 +103,15 @@ const agent = new Agent({
     },
   },
 });`,
-    footerText: "Evaluate agent responses with customizable scorers in production",
+    footerText: "Test agent outputs automatically and catch issues before they hit production",
     docLink: "/evaluation-docs/",
   },
   {
-    id: "triggers",
-    label: "Triggers",
-    icon: "zap",
+    id: "triggers-actions",
+    label: "Triggers & Actions",
+    icon: "play",
     image: "https://cdn.voltagent.dev/website/feature-showcase/trigger.png",
-    code: `import { VoltAgent, createTriggers } from "@voltagent/core";
+    triggerCode: `import { VoltAgent, createTriggers } from "@voltagent/core";
 
 new VoltAgent({
   triggers: createTriggers((on) => {
@@ -133,15 +136,7 @@ new VoltAgent({
     });
   }),
 });`,
-    footerText: "React to events from Slack, GitHub, Airtable, and webhooks automatically",
-    docLink: "/actions-triggers-docs/triggers/overview",
-  },
-  {
-    id: "actions",
-    label: "Actions",
-    icon: "play",
-    image: "https://cdn.voltagent.dev/website/feature-showcase/actions.png",
-    code: `import { Agent, createTool } from "@voltagent/core";
+    actionCode: `import { Agent, createTool } from "@voltagent/core";
 import { voltOps } from "@voltagent/voltops";
 
 // Create Airtable action as a tool
@@ -165,8 +160,38 @@ const agent = new Agent({
   name: "data-agent",
   tools: [createAirtableRecord],
 });`,
-    footerText: "Execute actions on external services like Airtable, Slack, and more",
-    docLink: "/actions-triggers-docs/actions/overview",
+    footerText: "Connect agents to Slack, GitHub, and webhooks to automate workflows end-to-end",
+    docLink: "/actions-triggers-docs/triggers/overview",
+  },
+  {
+    id: "rag",
+    label: "RAG",
+    icon: "book",
+    image: "https://cdn.voltagent.dev/website/feature-showcase/rag-features.png",
+    code: `import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent } from "@voltagent/core";
+import { VoltAgentRagRetriever } from "@voltagent/core";
+
+const retriever = new VoltAgentRagRetriever({
+  knowledgeBaseName: "My Document",
+  topK: 8,
+  includeSources: true,
+});
+
+const agent = new Agent({
+  name: "RAG Assistant",
+  instructions:
+    "A helpful assistant that searches your knowledge base and uses relevant context to answer.",
+  model: openai("gpt-4o-mini"),
+  retriever,
+});
+
+const result = await agent.generateText("Ask a question about your docs…");
+console.log(result.text);
+// Optional: inspect which chunks were used
+// console.log(result.context.get("rag.references"));`,
+    footerText: "Ground agent responses in your own data with built-in vector search",
+    docLink: "/docs/rag/overview/",
   },
   {
     id: "monitoring",
@@ -200,7 +225,7 @@ await voltOps.alerts.create({
   channels: ["pagerduty"],
   severity: "critical",
 });`,
-    footerText: "Set up alerts for latency, errors, and custom metrics",
+    footerText: "Set up alerts for latency spikes, errors, and anomalies in agent behavior",
     docLink: "/docs/quick-start",
   },
   {
@@ -230,7 +255,7 @@ new VoltAgent({
   agents: { agent },
   voltOpsClient: voltOpsClient,
 });`,
-    footerText: "Manage and version prompts centrally with VoltOps",
+    footerText: "Version and update prompts without code changes using a central registry",
     docLink: "/docs/agents/prompts#voltops-prompt-management",
   },
   {
@@ -271,8 +296,7 @@ const agent = new Agent({
     ],
   },
 });`,
-    footerText:
-      "Protect your agents with content moderation, PII detection, and topic restrictions",
+    footerText: "Block harmful content, mask PII, and enforce topic boundaries automatically",
     docLink: "/docs/guardrails/overview",
   },
   {
@@ -281,7 +305,7 @@ const agent = new Agent({
     icon: "zap",
     image: "https://cdn.voltagent.dev/website/feature-showcase/deployment-4.png",
     fullImage: true,
-    footerText: "Deploy your agents to production with one command",
+    footerText: "Deploy agents to production with one click — no infrastructure to manage",
     docLink: "/deployment-docs/",
   },
 ];

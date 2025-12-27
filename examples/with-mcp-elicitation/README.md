@@ -37,6 +37,27 @@ From the repo root you can also run:
 pnpm --filter voltagent-example-with-mcp-elicitation dev
 ```
 
+## Optional: Go HTTP MCP Server
+
+Requires Go 1.23+ (the Go MCP SDK requires Go 1.23).
+
+Start the Go server:
+
+```bash
+cd examples/with-mcp-elicitation/go-server
+go run .
+```
+
+Then run the VoltAgent example pointing at it:
+
+```bash
+MCP_SERVER_URL=http://localhost:3142/mcp pnpm dev
+```
+
+The Go server exposes the `customer_delete` tool and intentionally sends an empty
+elicitation message with a schema description so you can verify the client-side
+fallback.
+
 ## What It Does
 
 - Starts a VoltAgent MCP server on `http://localhost:3142/mcp/mcp-elicitation-example/mcp`.

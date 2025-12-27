@@ -9,14 +9,14 @@ const logger = createPinoLogger({
 });
 
 const port = Number.parseInt(process.env.MCP_SERVER_PORT ?? "3142", 10);
-
-const { url } = await startMcpServer(port, logger);
+const serverUrl = "http://127.0.0.1:3142/mcp"; // process.env.MCP_SERVER_URL?.trim();
+const resolvedUrl = serverUrl || (await startMcpServer(port, logger)).url;
 
 const mcpConfig = new MCPConfiguration({
   servers: {
     demo: {
       type: "http",
-      url,
+      url: resolvedUrl,
     },
   },
 });
