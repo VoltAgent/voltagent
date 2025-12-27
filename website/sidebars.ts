@@ -50,6 +50,28 @@ const sidebars: SidebarsConfig = {
         "agents/overview",
         "agents/prompts",
         "agents/tools",
+        {
+          type: "doc",
+          id: "agents/plan-agent",
+          label: "PlanAgent",
+          customProps: {
+            badge: {
+              label: "Experimental",
+              variant: "accent",
+            },
+          },
+        },
+        {
+          type: "doc",
+          id: "agents/summarization",
+          label: "Summarization",
+          customProps: {
+            badge: {
+              label: "New",
+              variant: "accent",
+            },
+          },
+        },
         "agents/memory",
         {
           type: "category",

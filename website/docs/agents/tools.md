@@ -663,16 +663,16 @@ const screenshotTool = createTool({
     };
   },
   // Convert output to multi-modal content for LLM
-  toModelOutput: (result) => ({
+  toModelOutput: ({ output }) => ({
     type: "content",
     value: [
       {
         type: "text",
-        text: `Screenshot captured at ${result.timestamp}`,
+        text: `Screenshot captured at ${output.timestamp}`,
       },
       {
         type: "media",
-        data: result.data,
+        data: output.data,
         mediaType: "image/png",
       },
     ],
@@ -687,7 +687,7 @@ The `toModelOutput` function can return different content types:
 **Text only:**
 
 ```ts
-toModelOutput: (output) => ({
+toModelOutput: ({ output }) => ({
   type: "text",
   value: "Operation completed successfully",
 });
@@ -696,7 +696,7 @@ toModelOutput: (output) => ({
 **JSON data:**
 
 ```ts
-toModelOutput: (output) => ({
+toModelOutput: ({ output }) => ({
   type: "json",
   value: { status: "success", data: output },
 });
@@ -705,7 +705,7 @@ toModelOutput: (output) => ({
 **Multi-modal (text + image):**
 
 ```ts
-toModelOutput: (output) => ({
+toModelOutput: ({ output }) => ({
   type: "content",
   value: [
     { type: "text", text: "Here is the image:" },
@@ -717,7 +717,7 @@ toModelOutput: (output) => ({
 **Error handling:**
 
 ```ts
-toModelOutput: (output) => {
+toModelOutput: ({ output }) => {
   if (output.error) {
     return {
       type: "error-text",

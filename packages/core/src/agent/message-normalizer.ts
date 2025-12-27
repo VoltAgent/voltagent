@@ -14,10 +14,15 @@ type ToolLikePart = UIMessagePart<any, any> & {
   providerExecuted?: boolean;
   isError?: boolean;
   errorText?: string;
+  approval?: unknown;
 };
 
 type TextLikePart = UIMessagePart<any, any> & {
   text?: string;
+};
+
+type SanitizeMessagesOptions = {
+  filterIncompleteToolCalls?: boolean;
 };
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -159,6 +164,24 @@ const toolNameFromType = (type: unknown): string | undefined => {
   return type.slice("tool-".length);
 };
 
+const isToolLikePart = (part: UIMessagePart<any, any>): part is ToolLikePart => {
+  if (typeof part.type !== "string") {
+    return false;
+  }
+  return part.type.startsWith("tool-") || part.type === "dynamic-tool";
+};
+
+const hasToolOutput = (part: ToolLikePart): boolean => {
+  const state = typeof part.state === "string" ? part.state : undefined;
+  if (state === "output-available" || state === "output-error" || state === "output-denied") {
+    return true;
+  }
+  return part.output !== undefined;
+};
+
+const isApprovalResponded = (part: ToolLikePart): boolean =>
+  Boolean((part as any).approval && (part as any).approval.approved != null);
+
 const isWorkingMemoryTool = (part: ToolLikePart): boolean => {
   const toolName = toolNameFromType((part as any).type);
   if (!toolName) return false;
@@ -208,6 +231,7 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
   if (part.providerExecuted !== undefined) normalized.providerExecuted = part.providerExecuted;
   if (part.isError !== undefined) normalized.isError = part.isError;
   if (part.errorText !== undefined) normalized.errorText = part.errorText;
+  if ((part as any).approval !== undefined) normalized.approval = safeClone((part as any).approval);
   const callProviderMetadata = sanitizeReasoningProviderMetadata(
     (part as any).callProviderMetadata,
   );
@@ -222,10 +246,22 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
   return normalized as UIMessagePart<any, any>;
 };
 
-export const sanitizeMessagesForModel = (messages: UIMessage[]): UIMessage[] =>
-  messages
+export const sanitizeMessagesForModel = (
+  messages: UIMessage[],
+  options: SanitizeMessagesOptions = {},
+): UIMessage[] => {
+  const sanitized = messages
     .map((message) => sanitizeMessageForModel(message))
     .filter((message): message is UIMessage => Boolean(message));
+
+  const shouldFilterIncomplete = options.filterIncompleteToolCalls !== false;
+
+  const filtered = shouldFilterIncomplete
+    ? filterIncompleteToolCallsForModel(sanitized)
+    : sanitized;
+
+  return addStepStartsBetweenToolRuns(filtered);
+};
 
 export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null => {
   const sanitizedParts: UIMessagePart<any, any>[] = [];
@@ -294,6 +330,108 @@ const normalizeGenericPart = (part: UIMessagePart<any, any>): UIMessagePart<any,
 
       return safeClone(part);
   }
+};
+
+const filterIncompleteToolCallsForModel = (messages: UIMessage[]): UIMessage[] => {
+  const lastMessage = messages.at(-1);
+  const preserveApprovalResponses =
+    lastMessage?.role === "assistant" &&
+    lastMessage.parts.some((part) => isToolLikePart(part) && isApprovalResponded(part));
+
+  const filtered: UIMessage[] = [];
+
+  for (const message of messages) {
+    if (message.role !== "assistant") {
+      filtered.push(message);
+      continue;
+    }
+
+    let mutated = false;
+    const parts = message.parts.filter((part) => {
+      if (!isToolLikePart(part)) {
+        return true;
+      }
+
+      if (hasToolOutput(part)) {
+        return true;
+      }
+
+      if (preserveApprovalResponses && message === lastMessage && isApprovalResponded(part)) {
+        return true;
+      }
+
+      const state = typeof part.state === "string" ? part.state : "input-available";
+      if (
+        state === "input-streaming" ||
+        state === "input-available" ||
+        state === "approval-requested" ||
+        state === "approval-responded"
+      ) {
+        mutated = true;
+        return false;
+      }
+
+      return true;
+    });
+
+    const pruned = collapseRedundantStepStarts(parts);
+    if (pruned.length === 0) {
+      continue;
+    }
+
+    if (!mutated && pruned.length === message.parts.length) {
+      filtered.push(message);
+    } else {
+      filtered.push({
+        ...message,
+        parts: pruned,
+      });
+    }
+  }
+
+  return filtered;
+};
+
+const addStepStartsBetweenToolRuns = (messages: UIMessage[]): UIMessage[] => {
+  let mutated = false;
+
+  const updated = messages.map((message) => {
+    if (message.role !== "assistant") {
+      return message;
+    }
+
+    const nextParts = [...message.parts];
+    let changed = false;
+
+    for (let index = 0; index < nextParts.length - 1; index++) {
+      const part = nextParts[index];
+      const next = nextParts[index + 1];
+
+      if (!isToolLikePart(part)) {
+        continue;
+      }
+
+      if (next?.type === "step-start" || isToolLikePart(next)) {
+        continue;
+      }
+
+      nextParts.splice(index + 1, 0, { type: "step-start" } as UIMessagePart<any, any>);
+      changed = true;
+      mutated = true;
+      index += 1;
+    }
+
+    if (!changed) {
+      return message;
+    }
+
+    return {
+      ...message,
+      parts: nextParts,
+    };
+  });
+
+  return mutated ? updated : messages;
 };
 
 const pruneEmptyToolRuns = (parts: UIMessagePart<any, any>[]): UIMessagePart<any, any>[] => {

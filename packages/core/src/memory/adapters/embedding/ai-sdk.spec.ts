@@ -9,7 +9,7 @@ vi.mock("ai", () => ({
 }));
 
 describe("AiSdkEmbeddingAdapter", () => {
-  let mockModel: EmbeddingModel<string>;
+  let mockModel: EmbeddingModel;
   let adapter: AiSdkEmbeddingAdapter;
 
   beforeEach(() => {
@@ -19,7 +19,7 @@ describe("AiSdkEmbeddingAdapter", () => {
       modelId: "test-model",
       provider: "test-provider",
       doEmbed: vi.fn(),
-    } as unknown as EmbeddingModel<string>;
+    } as unknown as EmbeddingModel;
 
     adapter = new AiSdkEmbeddingAdapter(mockModel, {
       maxBatchSize: 2,

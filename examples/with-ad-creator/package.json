@@ -3,8 +3,8 @@
   "description": "A VoltAgent application",
   "version": "0.1.1",
   "dependencies": {
-    "@ai-sdk/google": "^2.0.23",
-    "@ai-sdk/openai": "^2.0.52",
+    "@ai-sdk/google": "^3.0.0",
+    "@ai-sdk/openai": "^3.0.0",
     "@browserbasehq/sdk": "^2.6.0",
     "@browserbasehq/stagehand": "^2.5.0",
     "@google-cloud/aiplatform": "^5.7.0",
@@ -14,7 +14,7 @@
     "@voltagent/libsql": "^1.0.9",
     "@voltagent/logger": "^1.0.3",
     "@voltagent/server-hono": "^1.0.22",
-    "ai": "^5.0.76",
+    "ai": "^6.0.0",
     "dotenv": "^16.4.5",
     "sharp": "^0.34.4",
     "zod": "^3.25.76"

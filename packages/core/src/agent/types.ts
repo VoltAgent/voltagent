@@ -419,6 +419,15 @@ export type OutputGuardrail<TOutput = unknown> =
   | OutputGuardrailFunction<TOutput>
   | OutputGuardrailDefinition<TOutput>;
 
+export type AgentSummarizationOptions = {
+  enabled?: boolean;
+  triggerTokens?: number;
+  keepMessages?: number;
+  maxOutputTokens?: number;
+  systemPrompt?: string | null;
+  model?: LanguageModel | DynamicValue<LanguageModel>;
+};
+
 /**
  * Agent configuration options
  */
@@ -436,6 +445,7 @@ export type AgentOptions = {
   tools?: (Tool<any, any> | Toolkit | VercelTool)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
   toolkits?: Toolkit[];
   memory?: Memory | false;
+  summarization?: AgentSummarizationOptions | false;
 
   // Retriever/RAG
   retriever?: BaseRetriever;

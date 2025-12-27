@@ -1,6 +1,6 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
-import type { LanguageModel, UIMessage } from "ai";
-import { MockLanguageModelV2 } from "ai/test";
+import type { FinishReason, LanguageModel, LanguageModelUsage, UIMessage } from "ai";
+import { MockLanguageModelV3 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
 import type { BaseRetriever } from "../retriever/retriever";
@@ -38,17 +38,19 @@ import type {
 
 describe("Agent Type System", () => {
   // Realistic mocks using AI SDK patterns
-  const mockModel = new MockLanguageModelV2({
+  const finishReason = { unified: "stop", raw: "stop" } as const;
+  const providerUsage = {
+    inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 },
+    outputTokens: { total: 20, text: 20, reasoning: 0 },
+  };
+  const mockModel = new MockLanguageModelV3({
     doGenerate: async () => ({
-      finishReason: "stop" as const,
-      usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+      finishReason,
+      usage: providerUsage,
       content: [{ type: "text" as const, text: "test response" }],
       warnings: [],
     }),
-    doStream: async () => ({
-      stream: {} as any,
-      warnings: [],
-    }),
+    doStream: async () => ({ stream: {} as ReadableStream<any> }),
   });
 
   const mockVoltOpsClient = {} as VoltOpsClient;
@@ -1005,16 +1007,8 @@ describe("Agent Type System", () => {
 
       // Should have AI SDK compatible properties
       expectTypeOf(result.text).toEqualTypeOf<string>();
-      expectTypeOf(result.usage).toEqualTypeOf<{
-        inputTokens: number | undefined;
-        outputTokens: number | undefined;
-        totalTokens: number | undefined;
-        reasoningTokens?: number | undefined;
-        cachedInputTokens?: number | undefined;
-      }>();
-      expectTypeOf(result.finishReason).toEqualTypeOf<
-        "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other" | "unknown"
-      >();
+      expectTypeOf(result.usage).toEqualTypeOf<LanguageModelUsage>();
+      expectTypeOf(result.finishReason).toEqualTypeOf<FinishReason>();
       expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
     });
 

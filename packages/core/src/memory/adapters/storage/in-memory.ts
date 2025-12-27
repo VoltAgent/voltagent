@@ -76,8 +76,21 @@ export class InMemoryStorageAdapter implements StorageAdapter {
       conversationId,
     };
 
+    const conversationMessages = this.storage[userId][conversationId];
+    const existingIndex = conversationMessages.findIndex((msg) => msg.id === message.id);
+
+    if (existingIndex >= 0) {
+      const existing = conversationMessages[existingIndex];
+      conversationMessages[existingIndex] = {
+        ...existing,
+        ...storedMessage,
+        createdAt: existing.createdAt,
+      };
+      return;
+    }
+
     // Add message to storage
-    this.storage[userId][conversationId].push(storedMessage);
+    conversationMessages.push(storedMessage);
   }
 
   /**

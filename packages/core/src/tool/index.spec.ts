@@ -60,6 +60,20 @@ describe("Tool", () => {
       expect(tool.execute).toEqual(options.execute);
     });
 
+    it("should keep needsApproval when provided", () => {
+      const options = {
+        name: "approvalTool",
+        description: "Requires approval",
+        parameters: z.object({ command: z.string() }),
+        needsApproval: true,
+        execute: vi.fn(),
+      };
+
+      const tool = new Tool(options);
+
+      expect(tool.needsApproval).toBe(true);
+    });
+
     it("should throw error if name is missing", () => {
       const options = {
         parameters: z.object({}),

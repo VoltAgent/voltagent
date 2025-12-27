@@ -3,13 +3,13 @@
   "description": "VoltAgent example showing MCP elicitation handling from a local MCP server.",
   "version": "0.1.0",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
+    "@ai-sdk/openai": "^3.0.0",
     "@voltagent/cli": "^0.1.17",
     "@voltagent/core": "^1.5.2",
     "@voltagent/logger": "^1.0.4",
     "@voltagent/mcp-server": "^1.0.3",
     "@voltagent/server-hono": "^1.2.11",
-    "ai": "^5.0.76",
+    "ai": "^6.0.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

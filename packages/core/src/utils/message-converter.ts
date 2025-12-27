@@ -26,6 +26,8 @@ export async function convertResponseMessagesToUIMessages(
 
   // Track tool parts globally by toolCallId to update outputs when tool results arrive
   const toolPartsById = new Map<string, any>();
+  const approvalIdToToolCallId = new Map<string, string>();
+  const pendingApprovalByToolCallId = new Map<string, string>();
 
   for (const message of responseMessages) {
     if (message.role === "assistant" && message.content) {
@@ -73,8 +75,29 @@ export async function convertResponseMessagesToUIMessages(
                 ? { providerExecuted: contentPart.providerExecuted }
                 : {}),
             } satisfies ToolUIPart;
+
+            const approvalId = pendingApprovalByToolCallId.get(contentPart.toolCallId);
+            if (approvalId) {
+              applyApprovalRequestToToolPart(toolPart, approvalId);
+              approvalIdToToolCallId.set(approvalId, contentPart.toolCallId);
+              pendingApprovalByToolCallId.delete(contentPart.toolCallId);
+            }
+
             uiMessage.parts.push(toolPart);
             toolPartsById.set(contentPart.toolCallId, toolPart);
+            break;
+          }
+          case "tool-approval-request": {
+            pendingApprovalByToolCallId.set(contentPart.toolCallId, contentPart.approvalId);
+            approvalIdToToolCallId.set(contentPart.approvalId, contentPart.toolCallId);
+
+            const existing =
+              toolPartsById.get(contentPart.toolCallId) ||
+              findExistingToolPart(uiMessage.parts, contentPart.toolCallId);
+
+            if (existing) {
+              applyApprovalRequestToToolPart(existing, contentPart.approvalId);
+            }
             break;
           }
           case "tool-result": {
@@ -130,22 +153,38 @@ export async function convertResponseMessagesToUIMessages(
       }
     } else if (message.role === "tool" && message.content) {
       for (const toolResult of message.content) {
-        const existing = toolPartsById.get(toolResult.toolCallId);
-        if (existing) {
-          existing.state = "output-available";
-          existing.output = toolResult.output;
-          existing.providerExecuted = false;
-        } else {
-          const resultPart = {
-            type: `tool-${toolResult.toolName}` as const,
-            toolCallId: toolResult.toolCallId,
-            state: "output-available" as const,
-            input: {},
-            output: toolResult.output,
-            providerExecuted: false,
-          } satisfies ToolUIPart;
-          uiMessage.parts.push(resultPart);
-          toolPartsById.set(toolResult.toolCallId, resultPart);
+        if (toolResult.type === "tool-result") {
+          const existing = toolPartsById.get(toolResult.toolCallId);
+          if (existing) {
+            existing.state = "output-available";
+            existing.output = toolResult.output;
+            existing.providerExecuted = false;
+          } else {
+            const resultPart = {
+              type: `tool-${toolResult.toolName}` as const,
+              toolCallId: toolResult.toolCallId,
+              state: "output-available" as const,
+              input: {},
+              output: toolResult.output,
+              providerExecuted: false,
+            } satisfies ToolUIPart;
+            uiMessage.parts.push(resultPart);
+            toolPartsById.set(toolResult.toolCallId, resultPart);
+          }
+        } else if (toolResult.type === "tool-approval-response") {
+          const toolCallId = approvalIdToToolCallId.get(toolResult.approvalId);
+          const existing =
+            (toolCallId ? toolPartsById.get(toolCallId) : undefined) ||
+            (toolCallId ? findExistingToolPart(uiMessage.parts, toolCallId) : undefined) ||
+            findToolPartByApprovalId(uiMessage.parts, toolResult.approvalId);
+
+          if (existing) {
+            applyApprovalResponseToToolPart(existing, {
+              id: toolResult.approvalId,
+              approved: toolResult.approved,
+              ...(toolResult.reason ? { reason: toolResult.reason } : {}),
+            });
+          }
         }
       }
     }
@@ -186,6 +225,44 @@ function findExistingToolPart(parts: UIMessage["parts"], toolCallId: string) {
   return undefined;
 }
 
+function findToolPartByApprovalId(parts: UIMessage["parts"], approvalId: string) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i] as ToolUIPart | undefined;
+    const approval = (part as any)?.approval as { id?: string } | undefined;
+    if (approval?.id === approvalId) {
+      return part;
+    }
+  }
+  return undefined;
+}
+
+function applyApprovalRequestToToolPart(toolPart: ToolUIPart, approvalId: string) {
+  const currentState = (toolPart as any).state as string | undefined;
+  (toolPart as any).approval = { id: approvalId };
+  if (
+    currentState !== "output-available" &&
+    currentState !== "output-error" &&
+    currentState !== "output-denied"
+  ) {
+    (toolPart as any).state = "approval-requested";
+  }
+}
+
+function applyApprovalResponseToToolPart(
+  toolPart: ToolUIPart,
+  approval: { id: string; approved: boolean; reason?: string },
+) {
+  const currentState = (toolPart as any).state as string | undefined;
+  (toolPart as any).approval = approval;
+  if (
+    currentState !== "output-available" &&
+    currentState !== "output-error" &&
+    currentState !== "output-denied"
+  ) {
+    (toolPart as any).state = "approval-responded";
+  }
+}
+
 /**
  * Convert input ModelMessages (AI SDK) to UIMessage array used by VoltAgent.
  * - Preserves roles (user/assistant/system). Tool messages are represented as
@@ -195,6 +272,8 @@ function findExistingToolPart(parts: UIMessage["parts"], toolCallId: string) {
 export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMessage[] {
   const uiMessages: UIMessage[] = [];
   const toolPartsById = new Map<string, ToolUIPart>();
+  const approvalIdToToolCallId = new Map<string, string>();
+  const pendingApprovalByToolCallId = new Map<string, string>();
 
   const assignToolResult = (
     toolCallId: string,
@@ -264,6 +343,28 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
             };
             uiMessages.push(toolMessage);
             toolPartsById.set(part.toolCallId, toolMessage.parts[0] as ToolUIPart);
+          } else if (part.type === "tool-approval-response") {
+            const toolCallId = approvalIdToToolCallId.get(part.approvalId);
+            const existing =
+              (toolCallId ? toolPartsById.get(toolCallId) : undefined) ||
+              (toolCallId
+                ? findExistingToolPart(
+                    uiMessages.flatMap((msg) => msg.parts),
+                    toolCallId,
+                  )
+                : undefined) ||
+              findToolPartByApprovalId(
+                uiMessages.flatMap((msg) => msg.parts),
+                part.approvalId,
+              );
+
+            if (existing) {
+              applyApprovalResponseToToolPart(existing, {
+                id: part.approvalId,
+                approved: part.approved,
+                ...(part.reason ? { reason: part.reason } : {}),
+              });
+            }
           }
         }
       }
@@ -333,8 +434,29 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
               ? { providerExecuted: contentPart.providerExecuted }
               : {}),
           } satisfies ToolUIPart;
+
+          const approvalId = pendingApprovalByToolCallId.get(contentPart.toolCallId);
+          if (approvalId) {
+            applyApprovalRequestToToolPart(toolPart, approvalId);
+            approvalIdToToolCallId.set(approvalId, contentPart.toolCallId);
+            pendingApprovalByToolCallId.delete(contentPart.toolCallId);
+          }
+
           ui.parts.push(toolPart);
           toolPartsById.set(contentPart.toolCallId, toolPart);
+          break;
+        }
+        case "tool-approval-request": {
+          pendingApprovalByToolCallId.set(contentPart.toolCallId, contentPart.approvalId);
+          approvalIdToToolCallId.set(contentPart.approvalId, contentPart.toolCallId);
+
+          const existing =
+            toolPartsById.get(contentPart.toolCallId) ||
+            findExistingToolPart(ui.parts, contentPart.toolCallId);
+
+          if (existing) {
+            applyApprovalRequestToToolPart(existing, contentPart.approvalId);
+          }
           break;
         }
         case "tool-result": {

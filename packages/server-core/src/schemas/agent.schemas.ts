@@ -56,7 +56,7 @@ export const AgentListSchema = z
   .array(AgentResponseSchema)
   .describe("Array of agent objects with their configurations");
 
-// Basic JSON schema for structured output (used in both experimental_output and object generation)
+// Basic JSON schema for structured output (used in both output and object generation)
 export const BasicJsonSchema = z
   .object({
     type: z.literal("object"),
@@ -135,7 +135,7 @@ export const GenerateOptionsSchema = z
       .record(z.string(), z.unknown())
       .nullish()
       .describe("Provider-specific options for AI SDK providers (e.g., OpenAI's reasoningEffort)"),
-    experimental_output: z
+    output: z
       .object({
         type: z
           .enum(["object", "text"])
@@ -145,9 +145,7 @@ export const GenerateOptionsSchema = z
         ),
       })
       .optional()
-      .describe(
-        "Experimental output configuration for structured generation with tool calling support",
-      ),
+      .describe("Structured output configuration for schema-guided generation"),
   })
   .passthrough();
 
@@ -181,10 +179,7 @@ export const TextResponseSchema = z.object({
         finishReason: z.string().optional(),
         toolCalls: z.array(z.any()).optional(),
         toolResults: z.array(z.any()).optional(),
-        experimental_output: z
-          .any()
-          .optional()
-          .describe("Structured output when experimental_output is used"),
+        output: z.any().optional().describe("Structured output when output is used"),
       })
       .describe("AI SDK formatted response"),
   ]),

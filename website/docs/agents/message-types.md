@@ -273,7 +273,7 @@ import type { UIMessage } from "ai";
 
 // UIMessage[] → ModelMessage[] (which contains MessageContent)
 const uiMessages: UIMessage[] = await memory.getMessages(userId, conversationId);
-const modelMessages = convertToModelMessages(uiMessages);
+const modelMessages = await convertToModelMessages(uiMessages);
 
 // Access MessageContent from ModelMessage
 const content = modelMessages[0].content; // MessageContent

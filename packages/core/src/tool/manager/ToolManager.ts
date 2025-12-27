@@ -1,4 +1,4 @@
-import type { ToolCallOptions } from "@ai-sdk/provider-utils";
+import type { ToolExecutionOptions } from "@ai-sdk/provider-utils";
 import type { Logger } from "@voltagent/internal";
 import type { ApiToolInfo } from "../../agent/types";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
@@ -48,22 +48,25 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
   public prepareToolsForExecution(
     createToolExecuteFunction: (
       tool: AgentTool,
-    ) => (args: any, options?: ToolCallOptions) => Promise<any>,
+    ) => (args: any, options?: ToolExecutionOptions) => Promise<any>,
   ): Record<string, any> {
-    const tools: Record<
-      string,
-      | {
-          description: string;
-          inputSchema: any;
-          execute?: (args: any, options?: ToolCallOptions) => Promise<any>;
-        }
-      | ProviderTool
-    > = {};
+    type ManagedTool = {
+      description: string;
+      inputSchema: AgentTool["parameters"];
+      execute?: (args: any, options?: ToolExecutionOptions) => Promise<any>;
+      needsApproval?: AgentTool["needsApproval"];
+      providerOptions?: AgentTool["providerOptions"];
+      toModelOutput?: AgentTool["toModelOutput"];
+      outputSchema?: AgentTool["outputSchema"];
+    };
+
+    const tools: Record<string, ManagedTool | ProviderTool> = {};
 
     for (const tool of this.getAllBaseTools()) {
       tools[tool.name] = {
         description: tool.description,
         inputSchema: tool.parameters, // AI SDK will convert this to JSON Schema internally
+        needsApproval: tool.needsApproval,
         providerOptions: tool.providerOptions, // Pass provider-specific options to AI SDK
         toModelOutput: tool.toModelOutput, // Pass multi-modal output converter to AI SDK
       };

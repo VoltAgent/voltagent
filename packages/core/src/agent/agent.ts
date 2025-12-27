@@ -2,7 +2,7 @@ import type {
   ModelMessage,
   ProviderOptions,
   SystemModelMessage,
-  ToolCallOptions,
+  ToolExecutionOptions,
 } from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
 import { SpanKind, SpanStatusCode, context as otelContext } from "@opentelemetry/api";
@@ -10,20 +10,23 @@ import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
 import type {
   StreamTextResult as AIStreamTextResult,
+  Tool as AITool,
   CallSettings,
   GenerateObjectResult,
   GenerateTextResult,
   LanguageModel,
+  PrepareStepFunction,
   StepResult,
+  ToolChoice,
   ToolSet,
   UIMessage,
 } from "ai";
 import {
   type AsyncIterableStream,
-  type CallWarning,
   type FinishReason,
   type LanguageModelUsage,
   type Output,
+  type Warning,
   convertToModelMessages,
   createTextStreamResponse,
   createUIMessageStream,
@@ -45,7 +48,7 @@ import { type VoltAgentObservability, createVoltAgentObservability } from "../ob
 import { TRIGGER_CONTEXT_KEY } from "../observability/context-keys";
 import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { Tool, Toolkit } from "../tool";
+import type { Tool, Toolkit, VercelTool } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
 import { randomUUID } from "../utils/id";
@@ -84,6 +87,7 @@ import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import type { SamplingPolicy } from "../eval/runtime";
 import type { ConversationStepRecord } from "../memory/types";
+import { FORCED_TOOL_CHOICE_CONTEXT_KEY } from "./context-keys";
 import { ConversationBuffer } from "./conversation-buffer";
 import {
   type NormalizedInputGuardrail,
@@ -113,6 +117,7 @@ import type {
   AgentFullState,
   AgentGuardrailState,
   AgentOptions,
+  AgentSummarizationOptions,
   DynamicValue,
   DynamicValueOptions,
   InputGuardrail,
@@ -125,10 +130,43 @@ import type {
 const BUFFER_CONTEXT_KEY = Symbol("conversationBuffer");
 const QUEUE_CONTEXT_KEY = Symbol("memoryPersistQueue");
 const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
+const SUMMARY_METADATA_KEY = "agent";
+const SUMMARY_STATE_CACHE_KEY = Symbol("agentSummaryState");
+
+const SUMMARY_SYSTEM_PROMPT = [
+  "You are a summarization assistant for an AI agent conversation.",
+  "Summarize the conversation so far, preserving key facts, decisions, constraints, and open questions.",
+  "Include important tool outputs, file paths, and any user preferences.",
+  "Use concise bullet points and keep the summary short.",
+].join("\n");
+
+const SUMMARY_SYSTEM_MARKER = "<agent_summary>";
+const DEFAULT_SUMMARY_TRIGGER_TOKENS = 170_000;
+const DEFAULT_SUMMARY_KEEP_MESSAGES = 6;
+const DEFAULT_SUMMARY_MAX_OUTPUT_TOKENS = 800;
+const SUMMARY_CHAR_PER_TOKEN = 4;
+const SUMMARY_MAX_PART_CHARS = 2000;
+const SUMMARY_PREVIEW_CHARS = 600;
+const SUMMARY_MAX_ATTR_CHARS = 4000;
+
+type AgentSummaryState = {
+  summary?: string;
+  summaryUpdatedAt?: string;
+  summaryMessageCount?: number;
+};
+
+const summaryFallbackState = new Map<string, AgentSummaryState>();
 
 // ============================================================================
 // Types
 // ============================================================================
+
+type OutputSpec =
+  | ReturnType<typeof Output.text>
+  | ReturnType<typeof Output.object>
+  | ReturnType<typeof Output.array>
+  | ReturnType<typeof Output.choice>
+  | ReturnType<typeof Output.json>;
 
 /**
  * Context input type that accepts both Map and plain object
@@ -155,27 +193,21 @@ function toContextMap(context?: ContextInput): Map<string | symbol, unknown> | u
  */
 export interface StreamTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
-  PARTIAL_OUTPUT = any,
+  OUTPUT extends OutputSpec = OutputSpec,
 > {
   // All methods from AIStreamTextResult
-  readonly text: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["text"];
-  readonly textStream: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["textStream"];
+  readonly text: AIStreamTextResult<TOOLS, OUTPUT>["text"];
+  readonly textStream: AIStreamTextResult<TOOLS, OUTPUT>["textStream"];
   readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
-  readonly usage: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["usage"];
-  readonly finishReason: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["finishReason"];
-  // Experimental partial output stream for streaming structured objects
-  readonly experimental_partialOutputStream?: AIStreamTextResult<
-    TOOLS,
-    PARTIAL_OUTPUT
-  >["experimental_partialOutputStream"];
-  toUIMessageStream: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["toUIMessageStream"];
-  toUIMessageStreamResponse: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["toUIMessageStreamResponse"];
-  pipeUIMessageStreamToResponse: AIStreamTextResult<
-    TOOLS,
-    PARTIAL_OUTPUT
-  >["pipeUIMessageStreamToResponse"];
-  pipeTextStreamToResponse: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["pipeTextStreamToResponse"];
-  toTextStreamResponse: AIStreamTextResult<TOOLS, PARTIAL_OUTPUT>["toTextStreamResponse"];
+  readonly usage: AIStreamTextResult<TOOLS, OUTPUT>["usage"];
+  readonly finishReason: AIStreamTextResult<TOOLS, OUTPUT>["finishReason"];
+  // Partial output stream for streaming structured objects
+  readonly partialOutputStream?: AIStreamTextResult<TOOLS, OUTPUT>["partialOutputStream"];
+  toUIMessageStream: AIStreamTextResult<TOOLS, OUTPUT>["toUIMessageStream"];
+  toUIMessageStreamResponse: AIStreamTextResult<TOOLS, OUTPUT>["toUIMessageStreamResponse"];
+  pipeUIMessageStreamToResponse: AIStreamTextResult<TOOLS, OUTPUT>["pipeUIMessageStreamToResponse"];
+  pipeTextStreamToResponse: AIStreamTextResult<TOOLS, OUTPUT>["pipeTextStreamToResponse"];
+  toTextStreamResponse: AIStreamTextResult<TOOLS, OUTPUT>["toTextStreamResponse"];
   // Additional context field
   context: Map<string | symbol, unknown>;
 }
@@ -188,7 +220,7 @@ export interface StreamObjectResultWithContext<T> {
   readonly object: Promise<T>;
   readonly partialObjectStream: ReadableStream<Partial<T>>;
   readonly textStream: AsyncIterableStream<string>;
-  readonly warnings: Promise<CallWarning[] | undefined>;
+  readonly warnings: Promise<Warning[] | undefined>;
   readonly usage: Promise<LanguageModelUsage>;
   readonly finishReason: Promise<FinishReason>;
   // Response conversion methods
@@ -203,7 +235,7 @@ export interface StreamObjectResultWithContext<T> {
  */
 export type GenerateTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
-  OUTPUT = any,
+  OUTPUT extends OutputSpec = OutputSpec,
 > = GenerateTextResult<TOOLS, OUTPUT> & {
   // Additional context field
   context: Map<string | symbol, unknown>;
@@ -221,7 +253,7 @@ export interface GenerateObjectResultWithContext<T> extends GenerateObjectResult
 
 function cloneGenerateTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
-  OUTPUT = any,
+  OUTPUT extends OutputSpec = OutputSpec,
 >(
   result: GenerateTextResult<TOOLS, OUTPUT>,
   overrides: Partial<
@@ -251,6 +283,37 @@ function cloneGenerateTextResultWithContext<
   }
 
   return clone;
+}
+
+type AITextCallOptions = Partial<CallSettings> & {
+  toolChoice?: ToolChoice<Record<string, unknown>>;
+  prepareStep?: PrepareStepFunction<Record<string, AITool>>;
+};
+
+function applyForcedToolChoice(
+  aiSDKOptions: AITextCallOptions,
+  forcedToolChoice: ToolChoice<Record<string, unknown>> | undefined,
+): void {
+  if (!forcedToolChoice || aiSDKOptions.toolChoice !== undefined) {
+    return;
+  }
+
+  const userPrepareStep = aiSDKOptions.prepareStep;
+  aiSDKOptions.prepareStep = async (
+    options: Parameters<PrepareStepFunction<Record<string, AITool>>>[0],
+  ) => {
+    const prepared = userPrepareStep ? await userPrepareStep(options) : undefined;
+    const isFirstStep = options.steps.length === 0;
+    if (!isFirstStep || prepared?.toolChoice !== undefined) {
+      return prepared;
+    }
+
+    if (prepared) {
+      return { ...prepared, toolChoice: forcedToolChoice };
+    }
+
+    return { toolChoice: forcedToolChoice };
+  };
 }
 
 /**
@@ -304,8 +367,8 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   // Provider-specific options
   providerOptions?: ProviderOptions;
 
-  // Experimental output (for structured generation)
-  experimental_output?: ReturnType<typeof Output.object> | ReturnType<typeof Output.text>;
+  // Structured output (for schema-guided generation)
+  output?: OutputSpec;
 
   // === Inherited from AI SDK CallSettings ===
   // maxOutputTokens, temperature, topP, topK,
@@ -316,6 +379,11 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
    * Mirrors the `stop` option supported by ai-sdk `generateText/streamText`.
    */
   stop?: string | string[];
+
+  /**
+   * Tool choice strategy for AI SDK calls.
+   */
+  toolChoice?: ToolChoice<Record<string, unknown>>;
 }
 
 export type GenerateTextOptions = BaseGenerationOptions;
@@ -352,6 +420,7 @@ export class Agent {
   private readonly logger: Logger;
   private readonly memoryManager: MemoryManager;
   private readonly memory?: Memory | false;
+  private readonly summarization?: AgentSummarizationOptions | false;
   private defaultObservability?: VoltAgentObservability;
   private readonly toolManager: ToolManager;
   private readonly subAgentManager: SubAgentManager;
@@ -406,6 +475,7 @@ export class Agent {
 
     // Store Memory
     this.memory = options.memory;
+    this.summarization = options.summarization;
 
     // Initialize memory manager
     this.memoryManager = new MemoryManager(this.id, this.memory, {}, this.logger);
@@ -544,10 +614,15 @@ export class Agent {
           hooks,
           maxSteps: userMaxSteps,
           tools: userTools,
-          experimental_output,
+          output,
           providerOptions,
           ...aiSDKOptions
         } = options || {};
+
+        const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
+          | ToolChoice<Record<string, unknown>>
+          | undefined;
+        applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
 
         const llmSpan = this.createLLMSpan(oc, {
           operation: "generateText",
@@ -565,7 +640,7 @@ export class Agent {
         });
         const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
-        let result!: GenerateTextResult<ToolSet, unknown>;
+        let result!: GenerateTextResult<ToolSet, OutputSpec>;
         try {
           result = await oc.traceContext.withSpan(llmSpan, () =>
             generateText({
@@ -579,8 +654,8 @@ export class Agent {
               stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
               // User overrides from AI SDK options
               ...aiSDKOptions,
-              // Experimental output if provided
-              experimental_output,
+              // Structured output if provided
+              output,
               // Provider-specific options
               providerOptions,
               // VoltAgent controlled (these should not be overridden)
@@ -868,15 +943,20 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
-          experimental_output,
+          output,
           providerOptions,
           ...aiSDKOptions
         } = options || {};
 
+        const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
+          | ToolChoice<Record<string, unknown>>
+          | undefined;
+        applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
+
         const guardrailStreamingEnabled = guardrailSet.output.length > 0;
 
         let guardrailPipeline: GuardrailPipeline | null = null;
-        let sanitizedTextPromise!: Promise<string>;
+        let sanitizedTextPromise!: PromiseLike<string>;
 
         const llmSpan = this.createLLMSpan(oc, {
           operation: "streamText",
@@ -905,8 +985,8 @@ export class Agent {
           stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
           // User overrides from AI SDK options
           ...aiSDKOptions,
-          // Experimental output if provided
-          experimental_output,
+          // Structured output if provided
+          output,
           // Provider-specific options
           providerOptions,
           // VoltAgent controlled (these should not be overridden)
@@ -1383,8 +1463,8 @@ export class Agent {
           },
           usage: result.usage,
           finishReason: result.finishReason,
-          get experimental_partialOutputStream() {
-            return result.experimental_partialOutputStream;
+          get partialOutputStream() {
+            return result.partialOutputStream;
           },
           toUIMessageStream: toUIMessageStreamSanitized as typeof result.toUIMessageStream,
           toUIMessageStreamResponse:
@@ -1510,6 +1590,7 @@ export class Agent {
           hooks,
           maxSteps: userMaxSteps,
           tools: userTools,
+          output: _output,
           providerOptions,
           ...aiSDKOptions
         } = options || {};
@@ -1517,7 +1598,6 @@ export class Agent {
         const result = await generateObject({
           model,
           messages,
-          output: "object",
           schema,
           // Default values
           maxOutputTokens: this.maxOutputTokens,
@@ -1739,6 +1819,7 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
+          output: _output,
           providerOptions,
           ...aiSDKOptions
         } = options || {};
@@ -1750,7 +1831,6 @@ export class Agent {
         const result = streamObject({
           model,
           messages,
-          output: "object",
           schema,
           // Default values
           maxOutputTokens: this.maxOutputTokens,
@@ -2004,7 +2084,7 @@ export class Agent {
 
     // Convert UIMessages to ModelMessages for the LLM
     const hooks = this.getMergedHooks(options);
-    let messages = convertToModelMessages(uiMessages);
+    let messages = await convertToModelMessages(uiMessages);
 
     if (hooks.onPrepareModelMessages) {
       const result = await hooks.onPrepareModelMessages({
@@ -2041,7 +2121,7 @@ export class Agent {
     };
   }
 
-  private collectToolDataFromResult<TOOLS extends ToolSet, OUTPUT>(
+  private collectToolDataFromResult<TOOLS extends ToolSet, OUTPUT extends OutputSpec>(
     result: GenerateTextResult<TOOLS, OUTPUT>,
   ): {
     toolCalls: GenerateTextResult<TOOLS, OUTPUT>["toolCalls"];
@@ -2393,31 +2473,14 @@ export class Agent {
       return;
     }
 
-    const coerce = (value: unknown): number | undefined => {
-      if (typeof value === "number" && Number.isFinite(value)) {
-        return value;
-      }
-      if (typeof value === "string") {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : undefined;
-      }
-      return undefined;
-    };
+    const normalizedUsage =
+      "promptTokens" in usage ? (usage as UsageInfo) : convertUsage(usage as LanguageModelUsage);
 
-    const promptTokens =
-      coerce((usage as any).promptTokens) ??
-      coerce((usage as any).prompt) ??
-      coerce((usage as any).inputTokens) ??
-      coerce((usage as any).input_tokens);
-    const completionTokens =
-      coerce((usage as any).completionTokens) ??
-      coerce((usage as any).completion) ??
-      coerce((usage as any).outputTokens) ??
-      coerce((usage as any).output_tokens);
-    const totalTokens =
-      coerce((usage as any).totalTokens) ??
-      coerce((usage as any).total_tokens) ??
-      (promptTokens ?? 0) + (completionTokens ?? 0);
+    if (!normalizedUsage) {
+      return;
+    }
+
+    const { promptTokens, completionTokens, totalTokens } = normalizedUsage;
 
     if (promptTokens !== undefined) {
       span.setAttribute("llm.usage.prompt_tokens", promptTokens);
@@ -2714,7 +2777,22 @@ export class Agent {
     } else if (Array.isArray(input)) {
       const first = (input as any[])[0];
       if (first && Array.isArray(first.parts)) {
-        messages.push(...(input as UIMessage[]));
+        const inputMessages = input as UIMessage[];
+        const idsToReplace = new Set(
+          inputMessages
+            .map((message) => message.id)
+            .filter((id): id is string => typeof id === "string" && id.trim().length > 0),
+        );
+
+        if (idsToReplace.size > 0) {
+          for (let index = messages.length - 1; index >= 0; index--) {
+            if (idsToReplace.has(messages[index].id)) {
+              messages.splice(index, 1);
+            }
+          }
+        }
+
+        messages.push(...inputMessages);
       } else {
         messages.push(...convertModelMessagesToUIMessages(input as BaseMessage[]));
       }
@@ -2722,20 +2800,184 @@ export class Agent {
 
     // Sanitize messages before passing them to the model-layer hooks
     const sanitizedMessages = sanitizeMessagesForModel(messages);
+    const summarizedMessages = await this.applySummarization(sanitizedMessages, oc);
 
     // Allow hooks to modify sanitized messages (while exposing the raw set when needed)
     const hooks = this.getMergedHooks(options);
     if (hooks.onPrepareMessages) {
       const result = await hooks.onPrepareMessages({
-        messages: sanitizedMessages,
+        messages: summarizedMessages,
         rawMessages: messages,
         agent: this,
         context: oc,
       });
-      return result?.messages || sanitizedMessages;
+      return result?.messages || summarizedMessages;
     }
 
-    return sanitizedMessages;
+    return summarizedMessages;
+  }
+
+  private async applySummarization(
+    messages: UIMessage[],
+    oc: OperationContext,
+  ): Promise<UIMessage[]> {
+    const config = this.summarization;
+    if (!config) {
+      return messages;
+    }
+
+    const enabled = config.enabled ?? true;
+    if (!enabled) {
+      return messages;
+    }
+
+    const triggerTokens = config.triggerTokens ?? DEFAULT_SUMMARY_TRIGGER_TOKENS;
+    const keepMessages = config.keepMessages ?? DEFAULT_SUMMARY_KEEP_MESSAGES;
+    const maxOutputTokens = config.maxOutputTokens ?? DEFAULT_SUMMARY_MAX_OUTPUT_TOKENS;
+    const systemPrompt =
+      config.systemPrompt === undefined ? SUMMARY_SYSTEM_PROMPT : config.systemPrompt || "";
+
+    const sanitizedMessages = removeSystemMessagesWithMarker(messages, SUMMARY_SYSTEM_MARKER);
+    const nonSystemMessages = sanitizedMessages.filter((message) => message.role !== "system");
+
+    if (nonSystemMessages.length <= keepMessages) {
+      return sanitizedMessages;
+    }
+
+    const summaryCandidateCount = Math.max(0, nonSystemMessages.length - keepMessages);
+    if (summaryCandidateCount === 0) {
+      return sanitizedMessages;
+    }
+
+    const estimatedTokens = estimateTokensFromMessages(nonSystemMessages);
+    const state = await loadAgentSummaryState(this, oc);
+    const existingSummary = typeof state.summary === "string" ? state.summary.trim() : "";
+    const existingCount =
+      typeof state.summaryMessageCount === "number" ? state.summaryMessageCount : 0;
+
+    const shouldTrigger = triggerTokens <= 0 || estimatedTokens >= triggerTokens;
+    let summaryText = existingSummary;
+    let summaryUpdated = false;
+    let summarySpan: Span | null = null;
+    let summarySpanAction: "generate" | "inject" | null = null;
+    const summaryBaseAttributes = {
+      "agent.summary.keep_messages": keepMessages,
+      "agent.summary.candidates": summaryCandidateCount,
+      "agent.summary.estimated_tokens": estimatedTokens,
+      "agent.summary.trigger_tokens": triggerTokens,
+      "agent.summary.previous_count": existingCount,
+      "voltagent.type": "summary",
+    };
+
+    if (shouldTrigger && summaryCandidateCount > existingCount) {
+      const candidates = nonSystemMessages.slice(0, summaryCandidateCount);
+      const newMessages = candidates.slice(Math.max(0, existingCount));
+      const summaryInput = buildSummaryInput({
+        previousSummary: summaryText,
+        messages: newMessages,
+      });
+
+      if (summaryInput.trim()) {
+        summarySpanAction = "generate";
+        summarySpan = oc.traceContext.createChildSpan("agent.summary", "summary", {
+          label: "Summary (generated)",
+          attributes: {
+            ...summaryBaseAttributes,
+            "agent.summary.action": summarySpanAction,
+          },
+        });
+
+        try {
+          const summaryModel = config.model ?? this.model;
+          const resolvedModel = await this.resolveValue(summaryModel, oc);
+          const summaryMessages: Array<{ role: "system" | "user"; content: string }> = [];
+          if (systemPrompt.trim()) {
+            summaryMessages.push({ role: "system" as const, content: systemPrompt });
+          }
+          summaryMessages.push({ role: "user" as const, content: summaryInput });
+
+          const result = await oc.traceContext.withSpan(summarySpan, async () =>
+            generateText({
+              model: resolvedModel,
+              messages: summaryMessages,
+              temperature: 0,
+              maxOutputTokens,
+              abortSignal: oc.abortController?.signal,
+            }),
+          );
+
+          const nextSummary = result.text?.trim();
+          if (nextSummary) {
+            summaryText = nextSummary;
+            summaryUpdated = true;
+            await updateAgentSummaryState(this, oc, (current) => ({
+              ...current,
+              summary: summaryText,
+              summaryUpdatedAt: new Date().toISOString(),
+              summaryMessageCount: summaryCandidateCount,
+            }));
+          }
+        } catch (error) {
+          oc.logger.debug("[Agent] Failed to summarize conversation", {
+            error: safeStringify(error),
+          });
+          if (summarySpan) {
+            oc.traceContext.endChildSpan(summarySpan, "error", {
+              error: error as Error,
+              attributes: {
+                ...summaryBaseAttributes,
+                "agent.summary.action": summarySpanAction,
+              },
+            });
+          }
+          return sanitizedMessages;
+        }
+      }
+    }
+
+    const canUseSummary =
+      summaryText &&
+      summaryCandidateCount > 0 &&
+      (summaryCandidateCount <= existingCount || summaryUpdated);
+
+    if (!canUseSummary) {
+      if (summarySpan) {
+        oc.traceContext.endChildSpan(summarySpan, "completed", {
+          attributes: {
+            ...summaryBaseAttributes,
+            "agent.summary.action": summarySpanAction,
+            "agent.summary.updated": summaryUpdated,
+            "agent.summary.length": summaryText.length,
+          },
+        });
+      }
+      return sanitizedMessages;
+    }
+
+    const systemMessages = sanitizedMessages.filter((message) => message.role === "system");
+    const tailMessages = keepMessages > 0 ? nonSystemMessages.slice(-keepMessages) : [];
+    const summaryMessage = buildSummarySystemMessage(summaryText);
+    const summaryAttributes = {
+      ...summaryBaseAttributes,
+      "agent.summary.action": summarySpanAction ?? "inject",
+      "agent.summary.updated": summaryUpdated,
+      "agent.summary.length": summaryText.length,
+      "agent.summary.preview": truncateText(summaryText, SUMMARY_PREVIEW_CHARS),
+      "agent.summary.text": truncateText(summaryText, SUMMARY_MAX_ATTR_CHARS),
+    };
+
+    if (!summarySpan) {
+      summarySpan = oc.traceContext.createChildSpan("agent.summary", "summary", {
+        label: "Summary (cached)",
+        attributes: summaryAttributes,
+      });
+    }
+    oc.traceContext.endChildSpan(summarySpan, "completed", {
+      output: summaryAttributes["agent.summary.text"],
+      attributes: summaryAttributes,
+    });
+
+    return [...systemMessages, summaryMessage, ...tailMessages];
   }
 
   /**
@@ -3043,7 +3285,7 @@ export class Agent {
           ? input
           : Array.isArray(input) && (input as any[])[0]?.content !== undefined
             ? (input as BaseMessage[])
-            : convertToModelMessages(input as UIMessage[]);
+            : await convertToModelMessages(input as UIMessage[]);
 
       // Execute retriever with the span context
       const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {
@@ -3237,14 +3479,14 @@ export class Agent {
   private createToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
-  ): (tool: BaseTool) => (args: any, options?: ToolCallOptions) => Promise<any> {
-    return (tool: BaseTool) => async (args: any, options?: ToolCallOptions) => {
-      // AI SDK passes ToolCallOptions with fields: toolCallId, messages, abortSignal
+  ): (tool: BaseTool) => (args: any, options?: ToolExecutionOptions) => Promise<any> {
+    return (tool: BaseTool) => async (args: any, options?: ToolExecutionOptions) => {
+      // AI SDK passes ToolExecutionOptions with fields: toolCallId, messages, abortSignal
       const toolCallId = options?.toolCallId ?? randomUUID();
       const messages = options?.messages ?? [];
       const abortSignal = options?.abortSignal;
 
-      // Convert ToolCallOptions to ToolExecuteOptions by merging with OperationContext
+      // Convert ToolExecutionOptions to ToolExecuteOptions by merging with OperationContext
       const executionOptions: ToolExecuteOptions = {
         ...oc,
         toolContext: {
@@ -3997,7 +4239,9 @@ export class Agent {
   /**
    * Add tools or toolkits to the agent
    */
-  public addTools(tools: (Tool<any, any> | Toolkit)[]): { added: (Tool<any, any> | Toolkit)[] } {
+  public addTools(tools: (Tool<any, any> | Toolkit | VercelTool)[]): {
+    added: (Tool<any, any> | Toolkit | VercelTool)[];
+  } {
     this.toolManager.addItems(tools);
     return { added: tools };
   }
@@ -4235,12 +4479,15 @@ export class Agent {
   private setTraceContextUsage(traceContext: AgentTraceContext, usage?: LanguageModelUsage): void {
     if (!usage) return;
 
+    const resolvedUsage = convertUsage(usage);
+    if (!resolvedUsage) return;
+
     traceContext.setUsage({
-      promptTokens: usage.inputTokens,
-      completionTokens: usage.outputTokens,
-      totalTokens: usage.totalTokens,
-      cachedTokens: usage.cachedInputTokens,
-      reasoningTokens: usage.reasoningTokens,
+      promptTokens: resolvedUsage.promptTokens,
+      completionTokens: resolvedUsage.completionTokens,
+      totalTokens: resolvedUsage.totalTokens,
+      cachedTokens: resolvedUsage.cachedInputTokens,
+      reasoningTokens: resolvedUsage.reasoningTokens,
     });
   }
 
@@ -4354,4 +4601,234 @@ export class Agent {
 
     return tools;
   }
+}
+
+function cloneSummaryState(state?: AgentSummaryState | null): AgentSummaryState {
+  if (!state) {
+    return {};
+  }
+  return { ...state };
+}
+
+function getSummaryConversationKey(context: OperationContext): string {
+  return context.conversationId || context.operationId;
+}
+
+function readSummaryStateFromMetadata(
+  metadata: Record<string, unknown> | undefined,
+): AgentSummaryState | null {
+  if (!metadata) return null;
+  const entry = metadata[SUMMARY_METADATA_KEY];
+  if (!entry || typeof entry !== "object") return null;
+  return cloneSummaryState(entry as AgentSummaryState);
+}
+
+async function loadAgentSummaryState(
+  agent: Agent,
+  context: OperationContext,
+): Promise<AgentSummaryState> {
+  const cached = context.systemContext.get(SUMMARY_STATE_CACHE_KEY) as
+    | AgentSummaryState
+    | undefined;
+  if (cached) {
+    return cloneSummaryState(cached);
+  }
+
+  let state: AgentSummaryState | null = null;
+  const memory = agent.getMemory();
+
+  if (memory && context.conversationId) {
+    try {
+      const conversation = await memory.getConversation(context.conversationId);
+      state = readSummaryStateFromMetadata(conversation?.metadata);
+    } catch (error) {
+      context.logger.debug("[Agent] Failed to load summary state from memory", {
+        error: safeStringify(error),
+      });
+    }
+  }
+
+  if (!state) {
+    state = cloneSummaryState(summaryFallbackState.get(getSummaryConversationKey(context)) || {});
+  }
+
+  context.systemContext.set(SUMMARY_STATE_CACHE_KEY, state);
+  return cloneSummaryState(state);
+}
+
+async function updateAgentSummaryState(
+  agent: Agent,
+  context: OperationContext,
+  updater: (state: AgentSummaryState) => AgentSummaryState,
+): Promise<AgentSummaryState> {
+  const current = await loadAgentSummaryState(agent, context);
+  const nextState = updater(cloneSummaryState(current));
+  const normalized = nextState || {};
+
+  context.systemContext.set(SUMMARY_STATE_CACHE_KEY, normalized);
+  summaryFallbackState.set(getSummaryConversationKey(context), cloneSummaryState(normalized));
+
+  const memory = agent.getMemory();
+  if (memory && context.conversationId) {
+    try {
+      const conversation = await memory.getConversation(context.conversationId);
+      if (conversation) {
+        const metadata = {
+          ...conversation.metadata,
+          [SUMMARY_METADATA_KEY]: cloneSummaryState(normalized),
+        };
+        await memory.updateConversation(context.conversationId, { metadata });
+      }
+    } catch (error) {
+      context.logger.debug("[Agent] Failed to persist summary state", {
+        error: safeStringify(error),
+      });
+    }
+  }
+
+  return cloneSummaryState(normalized);
+}
+
+function truncateText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+  return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
+}
+
+function extractMessageText(message: UIMessage): string {
+  if ("content" in message && typeof message.content === "string") {
+    return message.content;
+  }
+
+  if ("parts" in message && Array.isArray(message.parts)) {
+    return message.parts.map((part) => (part.type === "text" ? (part.text ?? "") : "")).join("");
+  }
+
+  return "";
+}
+
+function removeSystemMessagesWithMarker(messages: UIMessage[], marker: string): UIMessage[] {
+  return messages.filter((message) => {
+    if (message.role !== "system") {
+      return true;
+    }
+    return !extractMessageText(message).includes(marker);
+  });
+}
+
+function estimateTokensFromText(text: string): number {
+  if (!text) return 0;
+  return Math.ceil(text.length / SUMMARY_CHAR_PER_TOKEN);
+}
+
+function summarizePartValue(value: unknown): string {
+  if (typeof value === "string") {
+    return truncateText(value, SUMMARY_MAX_PART_CHARS);
+  }
+  if (value === null || value === undefined) {
+    return "";
+  }
+  return truncateText(safeStringify(value), SUMMARY_MAX_PART_CHARS);
+}
+
+function extractSummaryText(message: UIMessage): string {
+  if ("content" in message && typeof message.content === "string") {
+    return message.content;
+  }
+
+  if (!("parts" in message) || !Array.isArray(message.parts)) {
+    return "";
+  }
+
+  const parts: string[] = [];
+  for (const part of message.parts) {
+    if (!part || typeof part !== "object") {
+      continue;
+    }
+
+    if (part.type === "text" || part.type === "reasoning") {
+      if (typeof part.text === "string" && part.text.trim()) {
+        parts.push(part.text);
+      }
+      continue;
+    }
+
+    if (part.type === "tool-call") {
+      const toolName = "toolName" in part ? String(part.toolName) : "tool";
+      const input = "input" in part ? summarizePartValue(part.input) : "";
+      const detail = input ? ` ${input}` : "";
+      parts.push(`tool-call ${toolName}:${detail}`);
+      continue;
+    }
+
+    if (part.type === "tool-result") {
+      const toolName = "toolName" in part ? String(part.toolName) : "tool";
+      const output = "output" in part ? summarizePartValue(part.output) : "";
+      const detail = output ? ` ${output}` : "";
+      parts.push(`tool-result ${toolName}:${detail}`);
+      continue;
+    }
+
+    if ("text" in part && typeof part.text === "string" && part.text.trim()) {
+      parts.push(part.text);
+    }
+  }
+
+  return parts.join("\n");
+}
+
+function formatMessageForSummary(message: UIMessage): string {
+  const content = extractSummaryText(message).trim();
+  if (!content) {
+    return "";
+  }
+  return `${message.role.toUpperCase()}: ${content}`;
+}
+
+function estimateTokensFromMessages(messages: UIMessage[]): number {
+  let total = 0;
+  for (const message of messages) {
+    const formatted = formatMessageForSummary(message);
+    if (formatted) {
+      total += estimateTokensFromText(formatted);
+    }
+  }
+  return total;
+}
+
+function buildSummaryInput(options: {
+  previousSummary?: string;
+  messages: UIMessage[];
+}): string {
+  const lines = options.messages
+    .map(formatMessageForSummary)
+    .filter((line) => line.trim().length > 0);
+
+  const sections: string[] = [];
+  const previousSummary = options.previousSummary?.trim();
+  if (previousSummary) {
+    sections.push("Existing summary:");
+    sections.push(previousSummary);
+  }
+
+  if (lines.length > 0) {
+    sections.push("New conversation messages:");
+    sections.push(lines.join("\n"));
+  }
+
+  return sections.join("\n\n");
+}
+
+function buildSummarySystemMessage(summary: string): UIMessage {
+  return {
+    id: randomUUID(),
+    role: "system",
+    parts: [
+      {
+        type: "text",
+        text: [SUMMARY_SYSTEM_MARKER, summary.trim(), "</agent_summary>"].join("\n"),
+      },
+    ],
+  };
 }

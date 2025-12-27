@@ -30,6 +30,7 @@ export {
   type GenerateObjectOptions,
   type StreamObjectOptions,
 } from "./agent/agent";
+export * from "./planagent";
 export * from "./agent/hooks";
 export { createSubagent } from "./agent/subagent/types";
 export type {
@@ -131,6 +132,7 @@ export * from "./agent/providers";
 export * from "./events/types";
 export type {
   AgentOptions,
+  AgentSummarizationOptions,
   AgentResponse,
   AgentFullState,
   ApiToolInfo,
