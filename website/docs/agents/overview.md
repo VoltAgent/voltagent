@@ -9,7 +9,7 @@ An agent in VoltAgent wraps a language model with instructions, tools, memory, a
 
 There are two ways to use agents in VoltAgent:
 
-1. **Direct method calls** - Call agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) from your application code
+1. **Direct method calls** - Call agent methods (`generateText`, `streamText`) from your application code
 2. **REST API** - Use VoltAgent's HTTP server to expose agents as REST endpoints
 
 This document covers both approaches, starting with the basics.
@@ -33,7 +33,7 @@ The `instructions` property defines the agent's behavior. The `model` comes from
 
 ## Using Agents: Direct Method Calls
 
-Agents have four core methods for generating responses:
+Agents have two core methods for generating responses:
 
 ### Text Generation
 
@@ -58,7 +58,7 @@ for await (const chunk of stream.textStream) {
 
 ### Streaming Features
 
-When using `streamText` or `streamObject`, you can access detailed events and final values.
+When using `streamText`, you can access detailed events and final values.
 
 #### fullStream for Detailed Events
 
@@ -111,43 +111,12 @@ console.log(`\nTotal: ${fullText.length} chars, ${usage?.totalTokens} tokens`);
 
 ### Structured Data Generation
 
-There are two approaches for getting structured data from agents:
-
-#### Option 1: generateObject / streamObject (Schema-Only)
-
-These methods validate output against a schema but **do not support tool calling**. Use these for simple data extraction without tools.
-
-**generateObject** - Returns a complete validated object.
-
-```ts
-import { z } from "zod";
-
-const schema = z.object({
-  name: z.string(),
-  age: z.number(),
-  skills: z.array(z.string()),
-});
-
-const result = await agent.generateObject("Create a developer profile for Alex", schema);
-console.log(result.object); // { name: "Alex", age: 28, skills: [...] }
-```
-
-**streamObject** - Streams partial objects as they're built.
-
-```ts
-const stream = await agent.streamObject("Create a profile for Jamie", schema);
-
-for await (const partial of stream.partialObjectStream) {
-  console.log(partial); // { name: "Jamie" } -> { name: "Jamie", age: 25 } -> ...
-}
-```
-
-#### Option 2: output (Schema + Agent Features)
-
-Use `output` with `generateText`/`streamText` to get structured data **while still using tools and all agent capabilities**.
+Use `output` with `generateText`/`streamText` to get structured data while still using tools and all agent capabilities.
+`generateObject` and `streamObject` are deprecated in VoltAgent 2.x.
 
 ```ts
 import { Output } from "ai";
+import { z } from "zod";
 
 const recipeSchema = z.object({
   name: z.string(),
@@ -177,11 +146,6 @@ const haiku = await agent.generateText("Write a haiku about coding", {
 });
 console.log(haiku.output);
 ```
-
-**When to use which:**
-
-- Use `generateObject`/`streamObject` for simple schema validation without tool calling
-- Use `output` when you need structured output **and** tool calling
 
 ### Input Types
 

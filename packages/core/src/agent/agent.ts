@@ -1503,6 +1503,7 @@ export class Agent {
 
   /**
    * Generate structured object
+   * @deprecated Use generateText with Output.object instead. generateObject will be removed in a future release.
    */
   async generateObject<T extends z.ZodType>(
     input: string | UIMessage[] | BaseMessage[],
@@ -1730,6 +1731,7 @@ export class Agent {
 
   /**
    * Stream structured object
+   * @deprecated Use streamText with Output.object instead. streamObject will be removed in a future release.
    */
   async streamObject<T extends z.ZodType>(
     input: string | UIMessage[] | BaseMessage[],
