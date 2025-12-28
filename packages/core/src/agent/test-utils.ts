@@ -2,6 +2,7 @@
  * Test utilities for Agent tests using AI SDK test helpers
  */
 
+import { ReadableStream as WebReadableStream } from "node:stream/web";
 import type { FinishReason, LanguageModel, LanguageModelUsage, StepResult } from "ai";
 import { MockLanguageModelV3, mockId } from "ai/test";
 import { vi } from "vitest";
@@ -243,21 +244,7 @@ const mapReadableStream = <T, U>(
 };
 
 const asyncIterableToReadableStream = <T>(iterable: AsyncIterable<T>): ReadableStream<T> => {
-  const iterator = iterable[Symbol.asyncIterator]();
-
-  return new ReadableStream<T>({
-    async pull(controller) {
-      const { done, value } = await iterator.next();
-      if (done) {
-        controller.close();
-        return;
-      }
-      controller.enqueue(value);
-    },
-    cancel() {
-      return iterator.return?.();
-    },
-  });
+  return WebReadableStream.from(iterable) as ReadableStream<T>;
 };
 
 const normalizeStream = (stream: unknown): ReadableStream<unknown> => {
