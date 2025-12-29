@@ -211,11 +211,20 @@ function injectUserContext(request: Request, user: any) {
     return;
   }
 
+  let cachedBody: any;
+  let isCached = false;
+
   // Override json method to inject user context
   (request as any).json = async () => {
+    if (isCached) {
+      return cachedBody;
+    }
+
     const body = await originalJson();
 
     if (!body || typeof body !== "object") {
+      cachedBody = body;
+      isCached = true;
       return body;
     }
 
@@ -229,7 +238,7 @@ function injectUserContext(request: Request, user: any) {
       user,
     };
 
-    return {
+    cachedBody = {
       ...body,
       options: {
         ...body.options,
@@ -237,5 +246,8 @@ function injectUserContext(request: Request, user: any) {
         context: mergedContext,
       },
     };
+
+    isCached = true;
+    return cachedBody;
   };
 }

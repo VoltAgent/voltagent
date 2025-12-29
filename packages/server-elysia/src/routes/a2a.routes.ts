@@ -160,7 +160,10 @@ export function registerA2ARoutes(app: Elysia, deps: ServerProviderDeps, logger:
         return response;
       } catch (error) {
         const response = normalizeError(null, error);
-        set.status = 400;
+        const code = response.error?.code;
+        const isServerError =
+          code === -32603 || (code !== undefined && code <= -32000 && code >= -32099);
+        set.status = isServerError ? 500 : 400;
         return response;
       }
     },
@@ -190,7 +193,15 @@ export function registerA2ARoutes(app: Elysia, deps: ServerProviderDeps, logger:
         return card;
       } catch (error) {
         const response = normalizeError(null, error);
-        const status = response.error?.code === -32601 ? 404 : 400;
+        const code = response.error?.code;
+        let status = 400;
+
+        if (code === -32601) {
+          status = 404;
+        } else if (code === -32603 || (code !== undefined && code <= -32000 && code >= -32099)) {
+          status = 500;
+        }
+
         set.status = status;
         return response;
       }

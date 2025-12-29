@@ -50,7 +50,9 @@ export class ElysiaSseBridge implements SseBridge {
 
     // If already aborted, call immediately
     if (this.abortController.signal.aborted) {
-      void listener();
+      Promise.resolve(listener()).catch((error) => {
+        console.error("Error in abort listener:", error);
+      });
     }
   }
 

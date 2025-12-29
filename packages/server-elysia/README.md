@@ -238,4 +238,4 @@ MIT
 
 - [VoltAgent Documentation](https://voltagent.dev)
 - [Elysia Documentation](https://elysiajs.com)
-- [GitHub Repository](https://github.com/MGrin/voltagent)
+- [GitHub Repository](https://github.com/VoltAgent/voltagent)

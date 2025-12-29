@@ -22,15 +22,7 @@ vi.mock("@voltagent/server-core", async () => {
     listMemoryConversationsHandler: vi.fn(),
     listMemoryUsersHandler: vi.fn(),
     OBSERVABILITY_ROUTES: actual.OBSERVABILITY_ROUTES,
-    OBSERVABILITY_MEMORY_ROUTES: {
-      listMemoryUsers: { path: "/observability/memory/users" },
-      listMemoryConversations: { path: "/observability/memory/conversations" },
-      getMemoryConversationMessages: {
-        path: "/observability/memory/conversations/:conversationId/messages",
-      },
-      getConversationSteps: { path: "/observability/memory/conversations/:conversationId/steps" },
-      getWorkingMemory: { path: "/observability/memory/working-memory" },
-    },
+    OBSERVABILITY_MEMORY_ROUTES: actual.OBSERVABILITY_MEMORY_ROUTES,
   };
 });
 

@@ -33,12 +33,12 @@ This package includes or depends upon third-party code. The following is a list 
 
 - **License**: MIT
 - **Repository**: https://github.com/StefanTerdell/zod-to-json-schema
-- **Copyright**: Copyright (c) 2023 Saltyaom
+- **Copyright**: Copyright (c) 2023 Stefan Terdell
 
 ## VoltAgent Core Packages
 
 - **License**: MIT
-- **Repository**: https://github.com/MGrin/voltagent
+- **Repository**: https://github.com/VoltAgent/voltagent
 - **Copyright**: Copyright (c) VoltAgent Contributors
 
 ---

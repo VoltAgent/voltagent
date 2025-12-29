@@ -37,10 +37,12 @@ export function registerToolRoutes(app: Elysia, deps: ServerProviderDeps, logger
   // GET /tools - List all tools
   app.get(
     "/tools",
-    async () => {
+    async ({ set }) => {
       const response = await handleListTools(deps, logger);
       if (!response.success) {
-        throw new Error("Failed to list tools");
+        const { httpStatus, ...details } = response;
+        set.status = httpStatus || 500;
+        return details;
       }
       return response;
     },
@@ -61,10 +63,12 @@ export function registerToolRoutes(app: Elysia, deps: ServerProviderDeps, logger
   // POST /tools/:name/execute - Execute a tool
   app.post(
     "/tools/:name/execute",
-    async ({ params, body }) => {
+    async ({ params, body, set }) => {
       const response = await handleExecuteTool(params.name, body, deps, logger);
       if (!response.success) {
-        throw new Error("Failed to execute tool");
+        const { httpStatus, ...details } = response;
+        set.status = httpStatus || 500;
+        return details;
       }
       return response;
     },

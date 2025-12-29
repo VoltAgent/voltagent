@@ -207,8 +207,8 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
   app.get(
     "/agents/:id/history",
     async ({ params, query }) => {
-      const page = Number.parseInt((query.page as string) || "0", 10);
-      const limit = Number.parseInt((query.limit as string) || "10", 10);
+      const page = Math.max(0, Number.parseInt((query.page as string) || "0", 10) || 0);
+      const limit = Math.max(1, Number.parseInt((query.limit as string) || "10", 10) || 10);
       const response = await handleGetAgentHistory(params.id, page, limit, deps, logger);
       if (!response.success) {
         throw new Error("Failed to get agent history");

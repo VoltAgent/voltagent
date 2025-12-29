@@ -84,7 +84,7 @@ export function registerUpdateRoutes(app: Elysia, deps: ServerProviderDeps, logg
 
   // POST /updates/:packageName - Install single package update
   app.post(
-    "/updates/:packageName",
+    UPDATE_ROUTES.installSingleUpdate.path,
     async ({ params }) => {
       const response = await handleInstallUpdates(params.packageName, deps, logger);
       if (!response.success) {

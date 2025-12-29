@@ -259,9 +259,18 @@ export function registerMcpRoutes(app: Elysia, deps: McpDeps, logger: Logger): v
   // GET /mcp/:serverId/prompts/:promptName - Get a specific prompt
   app.get(
     "/mcp/:serverId/prompts/:promptName",
-    async ({ params, query }) => {
+    async ({ params, query, set }) => {
       // Parse arguments from query string if present
-      const promptArgs = query.arguments ? JSON.parse(query.arguments) : undefined;
+      let promptArgs: any;
+      if (query.arguments) {
+        try {
+          promptArgs = JSON.parse(query.arguments);
+        } catch (_error) {
+          set.status = 400;
+          return { success: false, error: "Invalid JSON in arguments parameter" };
+        }
+      }
+
       const response = await handleGetMcpPrompt(registry, logger, params.serverId, {
         name: params.promptName,
         arguments: promptArgs,
@@ -276,6 +285,7 @@ export function registerMcpRoutes(app: Elysia, deps: McpDeps, logger: Logger): v
       query: McpGetPromptQuery,
       response: {
         200: McpPromptResponseSchema,
+        400: ErrorSchema,
         500: ErrorSchema,
       },
       detail: {

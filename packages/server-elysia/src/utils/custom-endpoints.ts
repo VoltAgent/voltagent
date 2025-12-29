@@ -213,11 +213,15 @@ export function getEnhancedOpenApiDoc(app: Elysia, baseDoc: any): any {
           const methods = ["get", "post", "put", "patch", "delete", "options", "head"] as const;
           methods.forEach((method) => {
             const operation = (pathItem as any)[method];
-            if (operation) {
-              operation.tags = operation.tags || [];
-              if (!operation.tags.includes("Custom Endpoints")) {
-                operation.tags.push("Custom Endpoints");
-              }
+            if (operation && !operation.tags?.includes("Custom Endpoints")) {
+              // Ensure we don't mutate the original pathItem or operation
+              fullDoc.paths[path] = {
+                ...(fullDoc.paths[path] as any),
+                [method]: {
+                  ...operation,
+                  tags: [...(operation.tags || []), "Custom Endpoints"],
+                },
+              };
             }
           });
         }

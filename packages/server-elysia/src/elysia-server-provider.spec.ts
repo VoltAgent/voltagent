@@ -15,6 +15,7 @@ vi.mock("@voltagent/server-core", async () => {
     createWebSocketServer: vi.fn(),
     setupWebSocketUpgrade: vi.fn(),
     showAnnouncements: vi.fn(),
+    printServerStartup: vi.fn(),
   };
 });
 
@@ -34,6 +35,7 @@ describe("ElysiaServerProvider", () => {
       warn: vi.fn(),
       debug: vi.fn(),
       trace: vi.fn(),
+      child: vi.fn().mockReturnThis(),
     },
     config: {
       port: 3000,
@@ -42,11 +44,12 @@ describe("ElysiaServerProvider", () => {
 
   beforeEach(() => {
     vi.spyOn(appFactory, "createApp").mockResolvedValue({ app: mockApp } as any);
-    provider = new ElysiaServerProvider({ port: 3000 }, mockDeps);
+    provider = new ElysiaServerProvider(mockDeps, { port: 3000 });
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    mockApp.routes = [];
   });
 
   it("should start the server", async () => {
@@ -70,30 +73,42 @@ describe("ElysiaServerProvider", () => {
   });
 
   it("should configure websocket if enabled", async () => {
-    const providerWs = new ElysiaServerProvider({ port: 3000, enableWebSocket: true }, mockDeps);
+    const { createWebSocketServer } = await import("@voltagent/server-core");
+    const providerWs = new ElysiaServerProvider(mockDeps, { port: 3000, enableWebSocket: true });
     await providerWs.start();
-    // Verification would require checking calls to createWebSocketServer which is mocked
+    expect(createWebSocketServer).toHaveBeenCalled();
   });
 
   it("should extract and display custom endpoints from configureApp", async () => {
-    const providerWithCustom = new ElysiaServerProvider(
-      {
-        port: 3000,
-        configureApp: (app) => {
-          app.get("/custom-test", () => "custom");
-          return app;
-        },
-      },
-      mockDeps,
-    );
+    const { printServerStartup } = await import("@voltagent/server-core");
 
-    // We need to mock extractCustomEndpoints or ensure mockApp behaves correctly
-    // Since extractCustomEndpoints uses app.routes, we can mock that
-    mockApp.routes = [{ method: "GET", path: "/custom-test" }] as any;
+    // Create a fresh mock app for this test to avoid pollution
+    const localMockApp = {
+      listen: vi.fn().mockReturnValue({}),
+      stop: vi.fn(),
+      routes: [{ method: "GET", path: "/custom-test" }],
+      get: vi.fn(),
+    };
+
+    vi.spyOn(appFactory, "createApp").mockResolvedValue({ app: localMockApp } as any);
+
+    const providerWithCustom = new ElysiaServerProvider(mockDeps, {
+      port: 3000,
+      configureApp: (app) => {
+        app.get("/custom-test", () => "custom");
+        return app;
+      },
+    });
 
     await providerWithCustom.start();
-    // We can't easily verify the logging output without spying on the logger or printServerStartup
-    // But this should cover the lines in the if block
+    expect(printServerStartup).toHaveBeenCalledWith(
+      expect.any(Number),
+      expect.objectContaining({
+        customEndpoints: expect.arrayContaining([
+          expect.objectContaining({ path: "/custom-test" }),
+        ]),
+      }),
+    );
   });
 
   it("should handle startup errors and release port", async () => {
