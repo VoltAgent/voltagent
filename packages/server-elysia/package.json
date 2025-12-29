@@ -1,0 +1,50 @@
+{
+  "name": "@voltagent/server-elysia",
+  "description": "Elysia server implementation for VoltAgent",
+  "version": "1.0.0",
+  "dependencies": {
+    "@elysiajs/cors": "^1.2.2",
+    "@elysiajs/swagger": "^1.2.4",
+    "@voltagent/a2a-server": "^1.0.2",
+    "@voltagent/core": "^1.5.1",
+    "@voltagent/internal": "^0.0.12",
+    "@voltagent/mcp-server": "^1.0.3",
+    "@voltagent/server-core": "^1.0.36",
+    "elysia": "^1.1.29",
+    "@sinclair/typebox": "^0.34.45",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.25.1"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "peerDependencies": {
+    "@voltagent/core": "^1.x",
+    "elysia": "^1.x"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "types": "dist/index.d.ts"
+}
