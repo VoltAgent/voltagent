@@ -165,7 +165,7 @@ export default function Navbar() {
             </Link>
           </div>
           <div className={styles.docsCenterSection}>
-            <div className={styles.docsVersionBadge}>v1.0.x</div>
+            <div className={styles.docsVersionBadge}>v2.0.x</div>
             <div className={styles.docsSearchWrapper}>
               {/* Hidden SearchBar - triggers on button click */}
               <div className={styles.docsSearchHidden}>

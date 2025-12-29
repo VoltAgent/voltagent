@@ -45,7 +45,7 @@ export default function NavbarLogo() {
       <span className={styles.logoText}>voltagent</span>
       <span className={styles.frameworkText}>Framework</span>
       <span className={styles.docsText}>Docs</span>
-      <div className={styles.versionBadge}>v1.0.x</div>
+      <div className={styles.versionBadge}>v2.0.x</div>
     </Link>
   );
 }
