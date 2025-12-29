@@ -46,6 +46,7 @@ import type { Memory, MemoryUpdateMode } from "../memory";
 import { MemoryManager } from "../memory/manager/memory-manager";
 import { type VoltAgentObservability, createVoltAgentObservability } from "../observability";
 import { TRIGGER_CONTEXT_KEY } from "../observability/context-keys";
+import { type ObservabilityFlushState, flushObservability } from "../observability/utils";
 import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit, VercelTool } from "../tool";
@@ -429,6 +430,9 @@ export class Agent {
   private readonly evalConfig?: AgentEvalConfig;
   private readonly inputGuardrails: NormalizedInputGuardrail[];
   private readonly outputGuardrails: NormalizedOutputGuardrail[];
+  private readonly observabilityAuthWarningState: ObservabilityFlushState = {
+    authWarningLogged: false,
+  };
 
   constructor(options: AgentOptions) {
     this.id = options.id || options.name;
@@ -835,7 +839,12 @@ export class Agent {
       } finally {
         // Ensure all spans are exported before returning (critical for serverless)
         // Uses waitUntil if available to avoid blocking
-        await this.getObservability().flushOnFinish();
+        await flushObservability(
+          this.getObservability(),
+          oc.logger ?? this.logger,
+          this.observabilityAuthWarningState,
+          "generateText:finally",
+        );
       }
     });
   }
@@ -1037,9 +1046,12 @@ export class Agent {
             // The onError callback should return void for AI SDK compatibility
             // Ensure spans are flushed on error
             // Uses waitUntil if available to avoid blocking
-            await this.getObservability()
-              .flushOnFinish()
-              .catch(() => {});
+            await flushObservability(
+              this.getObservability(),
+              oc.logger ?? this.logger,
+              this.observabilityAuthWarningState,
+              "streamText:onError",
+            );
           },
           onFinish: async (finalResult) => {
             const providerUsage = finalResult.usage
@@ -1193,7 +1205,12 @@ export class Agent {
 
             // Ensure all spans are exported on finish
             // Uses waitUntil if available to avoid blocking
-            await this.getObservability().flushOnFinish();
+            await flushObservability(
+              this.getObservability(),
+              oc.logger ?? this.logger,
+              this.observabilityAuthWarningState,
+              "streamText:onFinish",
+            );
           },
         });
 
@@ -1491,9 +1508,12 @@ export class Agent {
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         // Ensure spans are exported on pre-stream errors
-        await this.getObservability()
-          .flushOnFinish()
-          .catch(() => {});
+        await flushObservability(
+          this.getObservability(),
+          oc.logger ?? this.logger,
+          this.observabilityAuthWarningState,
+          "streamText:preStreamError",
+        );
         return this.handleError(error as Error, oc, options, startTime);
       } finally {
         // No need to flush here for streams - handled in onFinish/onError
@@ -1724,7 +1744,12 @@ export class Agent {
       } finally {
         // Ensure all spans are exported before returning (critical for serverless)
         // Uses waitUntil if available to avoid blocking
-        await this.getObservability().flushOnFinish();
+        await flushObservability(
+          this.getObservability(),
+          oc.logger ?? this.logger,
+          this.observabilityAuthWarningState,
+          "generateObject:finally",
+        );
       }
     });
   }
@@ -1876,9 +1901,12 @@ export class Agent {
             // The onError callback should return void for AI SDK compatibility
             // Ensure spans are flushed on error
             // Uses waitUntil if available to avoid blocking
-            await this.getObservability()
-              .flushOnFinish()
-              .catch(() => {});
+            await flushObservability(
+              this.getObservability(),
+              oc.logger ?? this.logger,
+              this.observabilityAuthWarningState,
+              "streamObject:onError",
+            );
           },
           onFinish: async (finalResult: any) => {
             try {
@@ -1988,7 +2016,12 @@ export class Agent {
 
               // Ensure all spans are exported on finish
               // Uses waitUntil if available to avoid blocking
-              await this.getObservability().flushOnFinish();
+              await flushObservability(
+                this.getObservability(),
+                oc.logger ?? this.logger,
+                this.observabilityAuthWarningState,
+                "streamObject:onFinish",
+              );
             } catch (error) {
               rejectGuardrailObject?.(error);
               throw error;
@@ -2032,9 +2065,12 @@ export class Agent {
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         // Ensure spans are exported on pre-stream errors
-        await this.getObservability()
-          .flushOnFinish()
-          .catch(() => {});
+        await flushObservability(
+          this.getObservability(),
+          oc.logger ?? this.logger,
+          this.observabilityAuthWarningState,
+          "streamObject:preStreamError",
+        );
         return this.handleError(error as Error, oc, options, 0);
       } finally {
         // No need to flush here for streams - handled in onFinish/onError
