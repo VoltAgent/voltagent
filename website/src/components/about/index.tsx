@@ -190,7 +190,7 @@ export function Manifesto() {
           <div className="flex flex-col items-center text-center">
             <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
               <img
-                src="https://cdn.voltagent.dev/website/team/necatiozmen.jpg"
+                src="https://cdn.voltagent.dev/website/team/necati.png"
                 alt="Necati Ozmen"
                 className="w-full h-full object-cover"
               />

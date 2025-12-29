@@ -198,35 +198,12 @@ Avoid when:
 
 VoltOps separates prompt content from application code. Prompts are created and versioned in the VoltOps platform, then fetched at runtime.
 
-### Setup
+For complete documentation on VoltOps Prompt Management, see:
 
-**1. Get API keys:**
+- [Prompt Management Overview](/prompt-engineering-docs/) - Creating, versioning, labels, and managing prompts
+- [Usage Guide](/prompt-engineering-docs/usage/) - Integration with agents, caching, variables, and error handling
 
-Sign up at [console.voltagent.dev](https://console.voltagent.dev/) and navigate to Settings → [Projects](https://console.voltagent.dev/settings/projects).
-
-**2. Configure environment:**
-
-```bash
-VOLTAGENT_PUBLIC_KEY=pk_your_public_key_here
-VOLTAGENT_SECRET_KEY=sk_your_secret_key_here
-```
-
-### Create a Prompt
-
-![VoltOps Prompt Management](https://cdn.voltagent.dev/docs/create-prompt-demo.gif)
-
-1. Navigate to [console.voltagent.dev/prompts](https://console.voltagent.dev/prompts)
-2. Click "Create Prompt"
-3. Fill in details:
-   - **Name**: `customer-support-prompt`
-   - **Type**: `Text` or `Chat`
-   - **Content**: Your prompt with optional template variables like `{{companyName}}`
-4. Set initial label (e.g., `development`)
-5. Click "Create Prompt"
-
-### Use in Code
-
-![VoltOps Prompt Playground Demo](https://cdn.voltagent.dev/docs/voltops-prompt-playground.gif)
+### Quick Example
 
 ```typescript
 import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
@@ -235,11 +212,6 @@ import { openai } from "@ai-sdk/openai";
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
   secretKey: process.env.VOLTAGENT_SECRET_KEY,
-  prompts: true,
-  promptCache: {
-    enabled: true,
-    ttl: 300, // 5 minutes
-  },
 });
 
 const agent = new Agent({
@@ -248,169 +220,14 @@ const agent = new Agent({
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
       promptName: "customer-support-prompt",
-      variables: {
-        companyName: "VoltAgent Corp",
-        tone: "professional",
-      },
-    });
-  },
-});
-
-const voltAgent = new VoltAgent({
-  agents: { agent },
-  voltOpsClient: voltOpsClient,
-});
-```
-
-**Alternative: Agent-level VoltOpsClient**
-
-```typescript
-const agent = new Agent({
-  name: "SupportAgent",
-  model: openai("gpt-4o-mini"),
-  instructions: async ({ prompts }) => {
-    return await prompts.getPrompt({
-      promptName: "customer-support-prompt",
+      label: "production",
       variables: { companyName: "VoltAgent Corp" },
     });
   },
-  voltOpsClient: voltOpsClient,
-});
-```
-
-**Direct VoltOpsClient access:**
-
-```typescript
-const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
-  secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
-const content = await voltOpsClient.prompts.getPrompt({
-  promptName: "customer-support-prompt",
-  variables: { companyName: "VoltAgent Corp" },
-});
-
-console.log("Prompt content:", content);
-```
-
-### Versioning
-
-![VoltOps Prompt Versioning](https://cdn.voltagent.dev/docs/create-new-version-prompt.gif)
-
-Create new versions through the console:
-
-1. Open prompt detail page
-2. Click "New Version"
-3. Modify content
-4. Add commit message
-5. Click "Create Version"
-
-### Caching
-
-VoltOps caches prompts at two levels.
-
-**Global cache (VoltOpsClient):**
-
-```typescript
-const voltOpsClient = new VoltOpsClient({
-  promptCache: {
-    enabled: true,
-    ttl: 300, // Seconds until expiration
-    maxSize: 100, // Maximum cached prompts
-  },
-});
-```
-
-**Per-prompt cache override:**
-
-```typescript
-instructions: async ({ prompts }) => {
-  return await prompts.getPrompt({
-    promptName: "customer-support-prompt",
-    promptCache: { enabled: false }, // Disable cache for this fetch
-    variables: { companyName: "VoltAgent Corp" },
-  });
-};
-```
-
-**Clear cache:**
-
-```typescript
-voltOpsClient.prompts.clearCache();
-```
-
-### Labels
-
-![Promote to Production](https://cdn.voltagent.dev/docs/prompt-promoting.gif)
-
-Labels associate versions with environments.
-
-**Promote version to label:**
-
-1. Open prompt detail page
-2. Find version in history
-3. Click "⋯" menu
-4. Select "Promote to Production"
-
-**Use labels in code:**
-
-```typescript
-instructions: async ({ prompts }) => {
-  const label = process.env.NODE_ENV === "production" ? "production" : "development";
-
-  return await prompts.getPrompt({
-    promptName: "customer-support-prompt",
-    label: label,
-    variables: {
-      /* ... */
-    },
-  });
-};
-```
-
-### Chat Prompts
-
-Chat prompts define multi-message conversations.
-
-**Create in console:**
-
-1. Click "Create Prompt"
-2. Select type: "Chat"
-3. Add messages:
-
-```json
-[
-  {
-    "role": "system",
-    "content": "You are {{agentRole}} for {{companyName}}."
-  },
-  {
-    "role": "user",
-    "content": "Hello, I need help."
-  },
-  {
-    "role": "assistant",
-    "content": "Hello! How can I assist you today?"
-  }
-]
-```
-
-**Use in code:**
-
-```typescript
-const agent = new Agent({
-  name: "ChatAgent",
-  model: openai("gpt-4o-mini"),
-  instructions: async ({ prompts }) => {
-    return await prompts.getPrompt({
-      promptName: "chat-support-prompt",
-      variables: {
-        agentRole: "customer support specialist",
-        companyName: "VoltAgent Corp",
-      },
-    });
-  },
+new VoltAgent({
+  agents: { agent },
   voltOpsClient: voltOpsClient,
 });
 ```
@@ -423,173 +240,11 @@ Use VoltOps when:
 - Audit trails and approval workflows are required
 - Multiple environments need different prompt versions
 - Prompt analytics and monitoring are needed
-- Managing many prompts across multiple agents
 
 Avoid when:
 
 - External dependencies are not acceptable
 - Offline operation is required
-- Network latency is a concern (though mitigated by caching)
-
-## Best Practices
-
-### Versioning
-
-Use descriptive commit messages:
-
-```typescript
-// Avoid
-"updated prompt";
-"fixed issues";
-
-// Prefer
-"Add persona consistency guidelines for customer support";
-"Reduce hallucination by adding explicit knowledge boundaries";
-```
-
-### Error Handling
-
-Implement fallback strategies:
-
-```typescript
-instructions: async ({ prompts }) => {
-  try {
-    return await prompts.getPrompt({
-      promptName: "primary-prompt",
-      timeout: 5000,
-    });
-  } catch (error) {
-    console.error("Prompt fetch failed:", error);
-    return "You are a helpful assistant.";
-  }
-};
-```
-
-### Performance
-
-**Cache configuration:**
-
-```typescript
-// High-frequency prompts: short TTL
-await prompts.getPrompt({
-  promptName: "chat-greeting",
-  promptCache: { ttl: 60, enabled: true },
-});
-
-// Stable prompts: long TTL
-await prompts.getPrompt({
-  promptName: "system-instructions",
-  promptCache: { ttl: 3600, enabled: true },
-});
-
-// Dynamic prompts: no cache
-await prompts.getPrompt({
-  promptName: "personalized-prompt",
-  promptCache: { enabled: false },
-  variables: { userId: dynamicUserId },
-});
-```
-
-**Preload prompts:**
-
-```typescript
-const criticalPrompts = ["welcome-message", "error-handler"];
-await Promise.all(criticalPrompts.map((name) => prompts.getPrompt({ promptName: name })));
-```
-
-### Security
-
-Sanitize template variables:
-
-```typescript
-instructions: async ({ prompts, context }) => {
-  const sanitizedUserName =
-    context.get("userName")?.replace(/[<>]/g, "")?.substring(0, 50) || "Guest";
-
-  return await prompts.getPrompt({
-    promptName: "personalized-greeting",
-    variables: { userName: sanitizedUserName },
-  });
-};
-```
-
-## Troubleshooting
-
-### Prompt not found
-
-```typescript
-// Error: Prompt 'weather-prompt' not found
-
-// Solution: Verify name and existence
-instructions: async ({ prompts }) => {
-  try {
-    return await prompts.getPrompt({ promptName: "weather-prompt" });
-  } catch (error) {
-    console.error("Prompt fetch failed:", error);
-    return "Fallback instructions";
-  }
-};
-```
-
-### Missing variables
-
-```typescript
-// Error: Variable 'userName' not found
-
-// Solution: Provide all required variables
-return await prompts.getPrompt({
-  promptName: "greeting-prompt",
-  variables: {
-    userName: context.get("userName") || "Guest",
-    currentTime: new Date().toISOString(),
-  },
-});
-```
-
-### Stale cache
-
-```typescript
-// Problem: Old prompt version still in use
-
-// Solution 1: Clear cache
-voltOpsClient.prompts.clearCache();
-
-// Solution 2: Disable cache temporarily
-return await prompts.getPrompt({
-  promptName: "urgent-prompt",
-  promptCache: { enabled: false },
-});
-
-// Solution 3: Wait for TTL expiration
-```
-
-### Authentication
-
-```typescript
-// Error: Authentication failed
-
-// Solution: Verify environment variables
-console.log("Public Key:", process.env.VOLTAGENT_PUBLIC_KEY?.substring(0, 8) + "...");
-console.log("Secret Key:", process.env.VOLTAGENT_SECRET_KEY ? "Set" : "Missing");
-```
-
-### Debug prompts independently
-
-```typescript
-const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
-  secretKey: process.env.VOLTAGENT_SECRET_KEY,
-});
-
-try {
-  const prompt = await voltOpsClient.prompts.getPrompt({
-    promptName: "test-prompt",
-  });
-  console.log("Success:", prompt);
-} catch (error) {
-  console.error("Failed:", error);
-}
-```
 
 ## Comparison
 

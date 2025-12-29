@@ -624,6 +624,7 @@ export function createWorkflow<
     purpose,
     hooks,
     input,
+    result,
     suspendSchema,
     resumeSchema,
     memory: workflowMemory,
@@ -1052,6 +1053,9 @@ export function createWorkflow<
             traceContext.recordCancellation(reason);
             traceContext.end("cancelled");
 
+            // Ensure spans are flushed (critical for serverless environments)
+            await observability.flushOnFinish();
+
             workflowRegistry.activeExecutions.delete(executionId);
 
             try {
@@ -1219,6 +1223,9 @@ export function createWorkflow<
 
             // End root span as suspended
             traceContext.end("suspended");
+
+            // Ensure spans are flushed (critical for serverless environments)
+            await observability.flushOnFinish();
 
             // Log workflow suspension with context
             runLogger.debug(
@@ -1507,6 +1514,9 @@ export function createWorkflow<
               // End root span as suspended
               traceContext.end("suspended");
 
+              // Ensure spans are flushed (critical for serverless environments)
+              await observability.flushOnFinish();
+
               // Save suspension state to workflow's own Memory V2
               try {
                 await saveSuspensionState(
@@ -1554,6 +1564,9 @@ export function createWorkflow<
         traceContext.setOutput(finalState.result);
         traceContext.setUsage(stateManager.state.usage);
         traceContext.end("completed");
+
+        // Ensure spans are flushed (critical for serverless environments)
+        await observability.flushOnFinish();
 
         // Update Memory V2 state to completed with events and output
         try {
@@ -1621,6 +1634,9 @@ export function createWorkflow<
           traceContext.recordCancellation(cancellationReason);
           traceContext.end("cancelled");
 
+          // Ensure spans are flushed (critical for serverless environments)
+          await observability.flushOnFinish();
+
           workflowRegistry.activeExecutions.delete(executionId);
 
           emitAndCollectEvent({
@@ -1676,6 +1692,9 @@ export function createWorkflow<
             stateManager.state.suspension?.checkpoint,
           );
           traceContext.end("suspended");
+
+          // Ensure spans are flushed (critical for serverless environments)
+          await observability.flushOnFinish();
           // This case should be handled in the step catch block,
           // but just in case it bubbles up here
           streamController?.close();
@@ -1696,6 +1715,9 @@ export function createWorkflow<
 
         // End trace with error
         traceContext.end("error", error as Error);
+
+        // Ensure spans are flushed (critical for serverless environments)
+        await observability.flushOnFinish();
 
         // Log workflow error with context
         runLogger.debug(
@@ -1766,6 +1788,7 @@ export function createWorkflow<
     purpose: purpose ?? "No purpose provided",
     steps: steps as BaseStep[],
     inputSchema: input,
+    resultSchema: result,
     suspendSchema: effectiveSuspendSchema as SUSPEND_SCHEMA,
     resumeSchema: effectiveResumeSchema as RESUME_SCHEMA,
     // ✅ Always expose memory for registry access
@@ -1780,6 +1803,7 @@ export function createWorkflow<
         stepsCount: steps.length,
         steps: steps.map((step, index) => serializeWorkflowStep(step, index)),
         inputSchema: input,
+        resultSchema: result,
         suspendSchema: effectiveSuspendSchema,
         resumeSchema: effectiveResumeSchema,
       };

@@ -9,18 +9,22 @@ import { DEFAULT_REQUEST_TIMEOUT_MSEC } from "@modelcontextprotocol/sdk/shared/p
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
   CallToolResultSchema,
+  ElicitRequestSchema,
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@voltagent/internal";
 import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
+import type { ToolExecuteOptions } from "../../agent/providers/base/types";
 import { getGlobalLogger } from "../../logger";
 import { type Tool, createTool } from "../../tool";
 import { SimpleEventEmitter } from "../../utils/simple-event-emitter";
+import { MCPAuthorizationError } from "../authorization";
 import type {
   ClientInfo,
   HTTPServerConfig,
+  MCPClientCallOptions,
   MCPClientConfig,
   MCPClientEvents,
   MCPServerConfig,
@@ -30,6 +34,8 @@ import type {
   StdioServerConfig,
   StreamableHTTPServerConfig,
 } from "../types";
+import type { UserInputHandler } from "./user-input-bridge";
+import { UserInputBridge } from "./user-input-bridge";
 
 /**
  * Client for interacting with Model Context Protocol (MCP) servers.
@@ -83,6 +89,20 @@ export class MCPClient extends SimpleEventEmitter {
   private readonly capabilities: Record<string, unknown>;
 
   /**
+   * Bridge for handling user input requests from the server.
+   * Provides methods to dynamically register and manage input handlers.
+   *
+   * @example
+   * ```typescript
+   * mcpClient.elicitation.setHandler(async (request) => {
+   *   const confirmed = await askUser(request.message);
+   *   return { action: confirmed ? "accept" : "decline" };
+   * });
+   * ```
+   */
+  public readonly elicitation: UserInputBridge;
+
+  /**
    * Get server info for logging
    */
   private getServerInfo(server: MCPServerConfig): { type: string; url?: string } {
@@ -104,9 +124,8 @@ export class MCPClient extends SimpleEventEmitter {
 
     this.clientInfo = config.clientInfo;
     this.serverConfig = config.server;
-    this.capabilities = config.capabilities || {};
 
-    // Initialize logger
+    // Initialize logger first (needed by UserInputBridge)
     const serverInfo = this.getServerInfo(config.server);
     this.logger = getGlobalLogger().child({
       component: "mcp-client",
@@ -114,9 +133,28 @@ export class MCPClient extends SimpleEventEmitter {
       serverUrl: serverInfo.url,
     });
 
+    // Always enable elicitation capability - handler can be set dynamically
+    this.capabilities = {
+      ...(config.capabilities || {}),
+      elicitation: {},
+    };
+
     this.client = new Client(this.clientInfo, {
       capabilities: this.capabilities,
     });
+
+    // Initialize elicitation bridge with callback for handler changes
+    this.elicitation = new UserInputBridge(this.logger, (handler) => {
+      this.updateElicitationHandler(handler);
+    });
+
+    // Register the elicitation request handler with MCP SDK
+    this.registerElicitationHandler();
+
+    // If config has initial handler, set it
+    if (config.elicitation?.onRequest) {
+      this.elicitation.setHandler(config.elicitation.onRequest);
+    }
 
     if (this.isHTTPServer(config.server)) {
       // HTTP type: Try streamable HTTP first with SSE fallback
@@ -163,6 +201,26 @@ export class MCPClient extends SimpleEventEmitter {
       this.connected = false;
       this.emit("disconnect");
     };
+  }
+
+  /**
+   * Registers the elicitation request handler with the MCP SDK client.
+   * Delegates to UserInputBridge for actual handling.
+   */
+  private registerElicitationHandler(): void {
+    this.client.setRequestHandler(ElicitRequestSchema, async (request) => {
+      return this.elicitation.processRequest(request.params);
+    });
+  }
+
+  /**
+   * Callback invoked when the elicitation handler changes.
+   * Currently a no-op since we always delegate to UserInputBridge.
+   * @internal
+   */
+  private updateElicitationHandler(_handler: UserInputHandler | undefined): void {
+    // Handler is managed by UserInputBridge, no additional action needed
+    // The MCP SDK handler always delegates to this.elicitation.processRequest()
   }
 
   /**
@@ -246,8 +304,9 @@ export class MCPClient extends SimpleEventEmitter {
     // Disable further fallback attempts
     this.shouldAttemptFallback = false;
 
-    // Re-setup event handlers
+    // Re-setup event handlers and elicitation handler for new client
     this.setupEventHandlers();
+    this.registerElicitationHandler();
 
     try {
       await this.client.connect(this.transport);
@@ -310,14 +369,14 @@ export class MCPClient extends SimpleEventEmitter {
   /**
    * Builds executable Tool objects from the server's tool definitions.
    * These tools include an `execute` method for calling the remote tool.
+   * @param options - Optional call options including authorization context.
    * @returns A record mapping namespaced tool names (`clientName_toolName`) to executable Tool objects.
    */
-  async getAgentTools(): Promise<Record<string, Tool<any>>> {
-    // Renamed back from buildExecutableTools
-    await this.ensureConnected(); // Use original connection check name
+  async getAgentTools(options?: MCPClientCallOptions): Promise<Record<string, Tool<any>>> {
+    await this.ensureConnected();
 
     try {
-      const definitions = await this.listTools(); // Use original method name
+      const definitions = await this.listTools();
 
       const executableTools: Record<string, Tool<any>> = {};
 
@@ -332,25 +391,60 @@ export class MCPClient extends SimpleEventEmitter {
             : convertJsonSchemaToZodV3)(
             toolDef.inputSchema as Record<string, unknown>,
           ) as unknown as z.ZodType;
-          const namespacedToolName = `${this.clientInfo.name}_${toolDef.name}`; // Use original separator
+          const namespacedToolName = `${this.clientInfo.name}_${toolDef.name}`;
+
+          // Capture options for use in execute closure
+          const capturedOptions = options;
+
+          // Capture elicitation bridge for use in execute closure
+          const elicitationBridge = this.elicitation;
+          const toolLogger = this.logger;
 
           const agentTool = createTool({
             name: namespacedToolName,
             description: toolDef.description || `Executes the remote tool: ${toolDef.name}`,
             parameters: zodSchema,
-            execute: async (args: Record<string, unknown>): Promise<unknown> => {
+            execute: async (
+              args: Record<string, unknown>,
+              execOptions?: ToolExecuteOptions,
+            ): Promise<unknown> => {
+              // If elicitation handler is provided in options, set it temporarily
+              const elicitationHandler = execOptions?.elicitation as UserInputHandler | undefined;
+              const hadPreviousHandler = elicitationBridge.hasHandler;
+              let previousHandler: UserInputHandler | undefined;
+
+              if (elicitationHandler) {
+                // Save previous handler if exists
+                if (hadPreviousHandler) {
+                  previousHandler = elicitationBridge.getHandler();
+                }
+                // Set the new handler from options
+                elicitationBridge.setHandler(elicitationHandler);
+              }
+
               try {
-                const result = await this.callTool({
-                  // Use original method name
-                  name: toolDef.name,
-                  arguments: args,
-                });
+                const result = await this.callTool(
+                  {
+                    name: toolDef.name,
+                    arguments: args,
+                  },
+                  capturedOptions,
+                );
                 return result.content;
               } catch (execError) {
-                this.logger.error(`Error executing remote tool '${toolDef.name}':`, {
+                toolLogger.error(`Error executing remote tool '${toolDef.name}':`, {
                   error: execError,
                 });
                 throw execError;
+              } finally {
+                // Restore previous handler state
+                if (elicitationHandler) {
+                  if (previousHandler) {
+                    elicitationBridge.setHandler(previousHandler);
+                  } else if (!hadPreviousHandler) {
+                    elicitationBridge.removeHandler();
+                  }
+                }
               }
             },
           });
@@ -373,11 +467,35 @@ export class MCPClient extends SimpleEventEmitter {
   /**
    * Executes a specified tool on the remote MCP server.
    * @param toolCall Details of the tool to call, including name and arguments.
+   * @param options Optional call options including authorization context.
    * @returns The result content returned by the tool.
    */
-  async callTool(toolCall: MCPToolCall): Promise<MCPToolResult> {
-    // Renamed back from executeRemoteTool
-    await this.ensureConnected(); // Use original connection check name
+  async callTool(toolCall: MCPToolCall, options?: MCPClientCallOptions): Promise<MCPToolResult> {
+    await this.ensureConnected();
+
+    // Check authorization if configured
+    if (options?.authorizationConfig?.checkOnExecution) {
+      const serverName = options.serverName ?? this.clientInfo.name;
+
+      // Use `can` function if provided (takes precedence)
+      if (options.canFunction) {
+        const result = await options.canFunction({
+          toolName: toolCall.name,
+          serverName,
+          action: "execution",
+          arguments: toolCall.arguments,
+          userId: options.operationContext?.userId,
+          context: options.operationContext?.context,
+        });
+
+        const allowed = typeof result === "boolean" ? result : result.allowed;
+        const reason = typeof result === "boolean" ? undefined : result.reason;
+
+        if (!allowed) {
+          throw new MCPAuthorizationError(toolCall.name, serverName, reason);
+        }
+      }
+    }
 
     try {
       const result = await this.client.callTool(
@@ -386,7 +504,7 @@ export class MCPClient extends SimpleEventEmitter {
           arguments: toolCall.arguments,
         },
         CallToolResultSchema,
-        { timeout: this.timeout }, // Use original variable name
+        { timeout: this.timeout },
       );
 
       this.emit("toolCall", toolCall.name, toolCall.arguments, result);

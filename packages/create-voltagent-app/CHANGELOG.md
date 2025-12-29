@@ -1,5 +1,15 @@
 # create-voltagent-app
 
+## 0.2.13
+
+### Patch Changes
+
+- [#857](https://github.com/VoltAgent/voltagent/pull/857) [`056bbda`](https://github.com/VoltAgent/voltagent/commit/056bbdac8502a21bf4d317d05a9492658afc406a) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: use LibSQL for persistent observability in project template
+
+  Previously, projects created with `create-voltagent-app` used in-memory observability storage, which meant traces and spans were lost on restart.
+
+  Now the template uses `LibSQLObservabilityAdapter` to persist observability data to `.voltagent/observability.db`, matching the existing persistent memory setup. This ensures agent traces, spans, and logs are retained across restarts for better debugging and monitoring during development.
+
 ## 0.2.11
 
 ### Patch Changes

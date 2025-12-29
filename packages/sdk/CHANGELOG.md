@@ -1,5 +1,36 @@
 # @voltagent/sdk
 
+## 1.0.2
+
+### Patch Changes
+
+- [#801](https://github.com/VoltAgent/voltagent/pull/801) [`a26ddd8`](https://github.com/VoltAgent/voltagent/commit/a26ddd826692485278033c22ac9828cb51cdd749) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add triggers DSL improvements and event payload simplification
+  - Introduce the new `createTriggers` DSL and expose trigger events via sensible provider names (e.g. `on.airtable.recordCreated`) rather than raw catalog IDs.
+  - Add trigger span metadata propagation so VoltAgent agents receive trigger context automatically without manual mapping.
+  - Simplify action dispatch payloads: `payload` now contains only the event’s raw data while trigger context lives in the `event`/`metadata` blocks, reducing boilerplate in handlers.
+
+  ```ts
+  import { VoltAgent, createTriggers } from "@voltagent/core";
+
+  new VoltAgent({
+    // ...
+    triggers: createTriggers((on) => {
+      on.airtable.recordCreated(({ payload, event }) => {
+        console.log("New Airtable row", payload, event.metadata);
+      });
+
+      on.gmail.newEmail(({ payload }) => {
+        console.log("New Gmail message", payload);
+      });
+    }),
+  });
+  ```
+
+- [#801](https://github.com/VoltAgent/voltagent/pull/801) [`a26ddd8`](https://github.com/VoltAgent/voltagent/commit/a26ddd826692485278033c22ac9828cb51cdd749) Thanks [@omeraplak](https://github.com/omeraplak)! - Add full Discord action coverage to `VoltOpsActionsClient`, including typed helpers for messaging, reactions, channels, and guild roles. **All VoltOps Actions now require the inline `credential` payload**—pass `{ id: "cred_xyz" }` to reuse a saved credential or provide provider-specific secrets on the fly. Each provider now has explicit credential typing (Airtable ⇒ `{ apiKey }`, Slack ⇒ `{ botToken }`, Discord ⇒ `{ botToken } | { webhookUrl }`), so editors autocomplete only the valid fields. The SDK propagates these types so apps can invoke VoltOps Actions without managing separate credential IDs.
+
+- Updated dependencies [[`a26ddd8`](https://github.com/VoltAgent/voltagent/commit/a26ddd826692485278033c22ac9828cb51cdd749), [`a26ddd8`](https://github.com/VoltAgent/voltagent/commit/a26ddd826692485278033c22ac9828cb51cdd749)]:
+  - @voltagent/core@1.2.6
+
 ## 1.0.1
 
 ### Patch Changes

@@ -1,0 +1,195 @@
+---
+title: Comparison
+sidebar_label: Comparison
+---
+
+import { ComparisonTable } from "@site/src/components/ComparisonTable";
+
+:::note
+
+This comparison table strives to be as accurate and as unbiased as possible. If you use any of these libraries and feel the information could be improved, feel free to suggest changes (with notes or evidence of claims) using the "Edit this page" link at the bottom of this page.
+
+:::
+
+<ComparisonTable
+  rows={[
+    {
+      feature: "Agents",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "partial" },
+      aiSdkTools: { status: "ready" },
+    },
+    {
+      feature: "Workflows",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Chains",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Actions",
+      link: "/actions-docs/overview",
+      voltagent: { status: "ready" },
+      mastra: { status: "not-supported" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Triggers",
+      link: "/triggers-docs/overview",
+      voltagent: { status: "ready" },
+      mastra: { status: "not-supported" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Tool Calling",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "ready" },
+      aiSdkTools: { status: "ready" },
+    },
+    {
+      feature: "Working Memory",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "ready" },
+    },
+    {
+      feature: "Semantic Memory",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "RAG",
+      link: "/docs/rag/voltagent/",
+      voltagent: { status: "ready" },
+      mastra: { status: "partial" },
+      aiSdk: { status: "partial" },
+      aiSdkTools: { status: "partial" },
+    },
+    {
+      feature: "Local Tunnel",
+      voltagent: { status: "ready" },
+      mastra: { status: "not-supported" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Prompt Management",
+      voltagent: { status: "ready" },
+      mastra: { status: "not-supported" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "API Layer",
+      voltagent: { status: "ready", note: "Pluggable Hono" },
+      mastra: { status: "partial", note: "Hono only" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Streaming",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "ready" },
+      aiSdkTools: { status: "ready" },
+    },
+    {
+      feature: "Multi-modal",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "ready" },
+      aiSdkTools: { status: "ready" },
+    },
+    {
+      feature: "Guardrails",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "partial", note: "No output override" },
+    },
+    {
+      feature: "Agent/Workflow as MCP Server",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "A2A Communication",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Tracing",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "ready" },
+      aiSdkTools: { status: "ready" },
+    },
+    {
+      feature: "Metrics",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "ready" },
+      aiSdkTools: { status: "ready" },
+    },
+    {
+      feature: "Evals (Dataset & Experiments)",
+      voltagent: { status: "ready", note: "Full UI, cron-based" },
+      mastra: { status: "not-supported" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Scorers",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Alerts",
+      voltagent: { status: "ready", note: "Latency, errors" },
+      mastra: { status: "not-supported" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Self-hosted",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "ready" },
+      aiSdkTools: { status: "ready" },
+    },
+    {
+      feature: "Authentication",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "not-supported" },
+      aiSdkTools: { status: "not-supported" },
+    },
+    {
+      feature: "Edge Compatible",
+      voltagent: { status: "ready" },
+      mastra: { status: "ready" },
+      aiSdk: { status: "ready" },
+      aiSdkTools: { status: "ready" },
+    },
+  ]}
+/>

@@ -1,4 +1,4 @@
-import type { UIMessage } from "ai";
+import type { FileUIPart, TextUIPart, UIMessage } from "ai";
 import type { MessageContent } from "../agent/providers/base/types";
 
 /**
@@ -16,46 +16,114 @@ export function isStructuredContent(content: MessageContent): content is Array<a
 }
 
 /**
- * Check if content has any text parts
+ * Check if content or message has any text parts
+ * @param input - MessageContent or UIMessage
+ * @returns True if has text parts
  */
-export function hasTextPart(content: MessageContent): boolean {
-  if (isTextContent(content)) return true;
-  if (isStructuredContent(content)) {
-    return content.some((part) => part.type === "text");
+export function hasTextPart(content: MessageContent): boolean;
+export function hasTextPart(message: UIMessage): boolean;
+export function hasTextPart(input: MessageContent | UIMessage): boolean {
+  // Handle UIMessage
+  if (isUIMessage(input)) {
+    if (!input.parts || !Array.isArray(input.parts)) {
+      return false;
+    }
+    return input.parts.some((part) => part?.type === "text");
+  }
+
+  // Handle MessageContent
+  if (isTextContent(input)) return true;
+  if (isStructuredContent(input)) {
+    return input.some((part) => part.type === "text");
   }
   return false;
 }
 
 /**
- * Check if content has any image parts
+ * Check if content or message has any image parts
+ * @param input - MessageContent or UIMessage
+ * @returns True if has image parts
  */
-export function hasImagePart(content: MessageContent): boolean {
-  if (isStructuredContent(content)) {
-    return content.some((part) => part.type === "image");
+export function hasImagePart(content: MessageContent): boolean;
+export function hasImagePart(message: UIMessage): boolean;
+export function hasImagePart(input: MessageContent | UIMessage): boolean {
+  // Handle UIMessage
+  if (isUIMessage(input)) {
+    if (!input.parts || !Array.isArray(input.parts)) {
+      return false;
+    }
+    return input.parts.some(
+      (part) =>
+        part?.type === "file" &&
+        typeof (part as FileUIPart).mediaType === "string" &&
+        (part as FileUIPart).mediaType.startsWith("image/"),
+    );
+  }
+
+  // Handle MessageContent
+  if (isStructuredContent(input)) {
+    return input.some((part) => part.type === "image");
   }
   return false;
 }
 
 /**
- * Check if content has any file parts
+ * Check if content or message has any file parts
+ * @param input - MessageContent or UIMessage
+ * @returns True if has file parts
  */
-export function hasFilePart(content: MessageContent): boolean {
-  if (isStructuredContent(content)) {
-    return content.some((part) => part.type === "file");
+export function hasFilePart(content: MessageContent): boolean;
+export function hasFilePart(message: UIMessage): boolean;
+export function hasFilePart(input: MessageContent | UIMessage): boolean {
+  // Handle UIMessage
+  if (isUIMessage(input)) {
+    if (!input.parts || !Array.isArray(input.parts)) {
+      return false;
+    }
+    return input.parts.some((part) => part?.type === "file");
+  }
+
+  // Handle MessageContent
+  if (isStructuredContent(input)) {
+    return input.some((part) => part.type === "file");
   }
   return false;
 }
 
 /**
- * Extract text from message content
+ * Extract text from message content or UIMessage
+ * @param input - MessageContent (from ModelMessage.content) or UIMessage object
+ * @returns All text content joined together
+ * @example
+ * // From MessageContent
+ * const content = [{ type: "text", text: "Hello" }];
+ * extractText(content); // "Hello"
+ *
+ * // From UIMessage
+ * const message = { id: "1", role: "user", parts: [{ type: "text", text: "Hi" }] };
+ * extractText(message); // "Hi"
  */
-export function extractText(content: MessageContent): string {
-  if (isTextContent(content)) {
-    return content;
+export function extractText(content: MessageContent): string;
+export function extractText(message: UIMessage): string;
+export function extractText(input: MessageContent | UIMessage): string {
+  // Handle UIMessage
+  if (isUIMessage(input)) {
+    if (!input.parts || !Array.isArray(input.parts)) {
+      return "";
+    }
+    return input.parts
+      .filter((part): part is TextUIPart => part?.type === "text")
+      .map((part) => part.text)
+      .join("");
   }
 
-  if (isStructuredContent(content)) {
-    return content
+  // Handle MessageContent (string or array)
+  if (isTextContent(input)) {
+    return input;
+  }
+
+  if (isStructuredContent(input)) {
+    return input
       .filter((part) => part.type === "text")
       .map((part) => part.text)
       .join("");
@@ -65,34 +133,78 @@ export function extractText(content: MessageContent): string {
 }
 
 /**
- * Extract all text parts from structured content
+ * Extract all text parts from structured content or UIMessage
+ * @param input - MessageContent or UIMessage
+ * @returns Array of text parts
  */
-export function extractTextParts(content: MessageContent): Array<{ type: "text"; text: string }> {
-  if (isStructuredContent(content)) {
-    return content.filter((part) => part.type === "text");
+export function extractTextParts(content: MessageContent): Array<{ type: "text"; text: string }>;
+export function extractTextParts(message: UIMessage): TextUIPart[];
+export function extractTextParts(input: MessageContent | UIMessage): Array<any> {
+  // Handle UIMessage
+  if (isUIMessage(input)) {
+    if (!input.parts || !Array.isArray(input.parts)) {
+      return [];
+    }
+    return input.parts.filter((part): part is TextUIPart => part?.type === "text");
   }
-  if (isTextContent(content)) {
-    return [{ type: "text", text: content }];
+
+  // Handle MessageContent
+  if (isStructuredContent(input)) {
+    return input.filter((part) => part.type === "text");
+  }
+  if (isTextContent(input)) {
+    return [{ type: "text", text: input }];
   }
   return [];
 }
 
 /**
- * Extract image parts from message content
+ * Extract image parts from message content or UIMessage
+ * @param input - MessageContent or UIMessage
+ * @returns Array of image parts (FileUIPart for UIMessage)
  */
-export function extractImageParts(content: MessageContent): Array<any> {
-  if (isStructuredContent(content)) {
-    return content.filter((part) => part.type === "image");
+export function extractImageParts(content: MessageContent): Array<any>;
+export function extractImageParts(message: UIMessage): FileUIPart[];
+export function extractImageParts(input: MessageContent | UIMessage): Array<any> {
+  // Handle UIMessage
+  if (isUIMessage(input)) {
+    if (!input.parts || !Array.isArray(input.parts)) {
+      return [];
+    }
+    return input.parts.filter(
+      (part): part is FileUIPart =>
+        part?.type === "file" &&
+        typeof (part as FileUIPart).mediaType === "string" &&
+        (part as FileUIPart).mediaType.startsWith("image/"),
+    );
+  }
+
+  // Handle MessageContent
+  if (isStructuredContent(input)) {
+    return input.filter((part) => part.type === "image");
   }
   return [];
 }
 
 /**
- * Extract file parts from message content
+ * Extract file parts from message content or UIMessage
+ * @param input - MessageContent or UIMessage
+ * @returns Array of file parts
  */
-export function extractFileParts(content: MessageContent): Array<any> {
-  if (isStructuredContent(content)) {
-    return content.filter((part) => part.type === "file");
+export function extractFileParts(content: MessageContent): Array<any>;
+export function extractFileParts(message: UIMessage): FileUIPart[];
+export function extractFileParts(input: MessageContent | UIMessage): Array<any> {
+  // Handle UIMessage
+  if (isUIMessage(input)) {
+    if (!input.parts || !Array.isArray(input.parts)) {
+      return [];
+    }
+    return input.parts.filter((part): part is FileUIPart => part?.type === "file");
+  }
+
+  // Handle MessageContent
+  if (isStructuredContent(input)) {
+    return input.filter((part) => part.type === "file");
   }
   return [];
 }
@@ -315,16 +427,47 @@ export function hasContent(message: UIMessage): boolean {
 }
 
 /**
- * Get content length (text characters or array items)
+ * Get content length (text characters, array items, or UIMessage parts count)
+ * @param input - MessageContent or UIMessage
+ * @returns Length/count of content
  */
-export function getContentLength(content: MessageContent): number {
-  if (isTextContent(content)) return content.length;
-  if (isStructuredContent(content)) return content.length;
+export function getContentLength(content: MessageContent): number;
+export function getContentLength(message: UIMessage): number;
+export function getContentLength(input: MessageContent | UIMessage): number {
+  // Handle UIMessage
+  if (isUIMessage(input)) {
+    if (!input.parts || !Array.isArray(input.parts)) {
+      return 0;
+    }
+    return input.parts.length;
+  }
+
+  // Handle MessageContent
+  if (isTextContent(input)) return input.length;
+  if (isStructuredContent(input)) return input.length;
   return 0;
+}
+
+// ============================================================================
+// Helper to detect UIMessage vs MessageContent
+// ============================================================================
+
+/**
+ * Type guard to check if input is a UIMessage
+ */
+function isUIMessage(input: any): input is UIMessage {
+  return (
+    input &&
+    typeof input === "object" &&
+    "parts" in input &&
+    "role" in input &&
+    Array.isArray(input.parts)
+  );
 }
 
 /**
  * Combined message helpers object for easy importing
+ * All functions now support both MessageContent and UIMessage formats
  */
 export const messageHelpers = {
   // Type guards
@@ -334,7 +477,7 @@ export const messageHelpers = {
   hasImagePart,
   hasFilePart,
 
-  // Extractors
+  // Extractors - work with both MessageContent and UIMessage
   extractText,
   extractTextParts,
   extractImageParts,

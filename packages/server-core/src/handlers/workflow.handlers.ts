@@ -1,4 +1,4 @@
-import type { ServerProviderDeps } from "@voltagent/core";
+import type { ServerProviderDeps, WorkflowStateEntry } from "@voltagent/core";
 import { zodSchemaToJsonUI } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { ApiResponse, ErrorResponse } from "../types";
@@ -49,6 +49,7 @@ export async function handleGetWorkflow(
     // Get the registered workflow to access schemas
     const registeredWorkflow = deps.workflowRegistry.getWorkflow(workflowId);
     let inputSchema: unknown = null;
+    let resultSchema: unknown = null;
     let suspendSchema: unknown = null;
     let resumeSchema: unknown = null;
 
@@ -58,6 +59,14 @@ export async function handleGetWorkflow(
         inputSchema = zodSchemaToJsonUI(registeredWorkflow.inputSchema);
       } catch (error) {
         logger.warn("Failed to convert input schema to JSON schema:", { error });
+      }
+    }
+
+    if (registeredWorkflow?.resultSchema) {
+      try {
+        resultSchema = zodSchemaToJsonUI(registeredWorkflow.resultSchema);
+      } catch (error) {
+        logger.warn("Failed to convert result schema to JSON schema:", { error });
       }
     }
 
@@ -143,6 +152,7 @@ export async function handleGetWorkflow(
       data: {
         ...workflowData,
         inputSchema,
+        resultSchema,
         suspendSchema,
         resumeSchema,
       },
@@ -509,6 +519,121 @@ export async function handleResumeWorkflow(
   }
 }
 
+function formatWorkflowState(workflowState: WorkflowStateEntry) {
+  return {
+    ...workflowState,
+    createdAt:
+      workflowState.createdAt instanceof Date
+        ? workflowState.createdAt.toISOString()
+        : workflowState.createdAt,
+    updatedAt:
+      workflowState.updatedAt instanceof Date
+        ? workflowState.updatedAt.toISOString()
+        : workflowState.updatedAt,
+    suspension: workflowState.suspension
+      ? {
+          ...workflowState.suspension,
+          suspendedAt:
+            workflowState.suspension.suspendedAt instanceof Date
+              ? workflowState.suspension.suspendedAt.toISOString()
+              : workflowState.suspension.suspendedAt,
+        }
+      : undefined,
+  };
+}
+
+/**
+ * Handler for listing workflow execution runs
+ */
+export async function handleListWorkflowRuns(
+  workflowId: string | undefined,
+  query:
+    | {
+        status?: string;
+        from?: string;
+        to?: string;
+        limit?: string;
+        offset?: string;
+        workflowId?: string;
+      }
+    | undefined,
+  deps: ServerProviderDeps,
+  logger: Logger,
+): Promise<ApiResponse> {
+  try {
+    const effectiveWorkflowId = query?.workflowId ?? workflowId;
+
+    const filters: any = {
+      workflowId: effectiveWorkflowId,
+      status: query?.status as WorkflowStateEntry["status"] | undefined,
+      limit: query?.limit ? Number(query.limit) : undefined,
+      offset: query?.offset ? Number(query.offset) : undefined,
+    };
+
+    if (query?.from) {
+      const fromDate = new Date(query.from);
+      if (!Number.isNaN(fromDate.getTime())) {
+        filters.from = fromDate;
+      }
+    }
+
+    if (query?.to) {
+      const toDate = new Date(query.to);
+      if (!Number.isNaN(toDate.getTime())) {
+        filters.to = toDate;
+      }
+    }
+
+    if (effectiveWorkflowId) {
+      const registeredWorkflow = deps.workflowRegistry.getWorkflow(effectiveWorkflowId);
+
+      if (!registeredWorkflow) {
+        return {
+          success: false,
+          error: `Workflow with id ${effectiveWorkflowId} not found`,
+        };
+      }
+
+      const workflowStates = await registeredWorkflow.workflow.memory.queryWorkflowRuns(filters);
+      const formattedStates = workflowStates.map((state) => formatWorkflowState(state));
+
+      return {
+        success: true,
+        data: formattedStates,
+      };
+    }
+
+    // No workflowId provided: aggregate across all registered workflows
+    const allWorkflowIds = deps.workflowRegistry.getAllWorkflowIds?.() ?? [];
+    const results: WorkflowStateEntry[] = [];
+
+    for (const id of allWorkflowIds) {
+      const registeredWorkflow = deps.workflowRegistry.getWorkflow(id);
+      if (!registeredWorkflow) continue;
+      const states = await registeredWorkflow.workflow.memory.queryWorkflowRuns({
+        ...filters,
+        workflowId: id,
+      });
+      results.push(...states);
+    }
+
+    const formattedStates = results
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .map((state) => formatWorkflowState(state));
+
+    return {
+      success: true,
+      data: formattedStates,
+    };
+  } catch (error) {
+    logger.error("Failed to get workflow states", { error });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to get workflow states",
+    };
+  }
+}
+
 /**
  * Handler for getting workflow execution state
  * Returns workflow state from Memory V2
@@ -541,26 +666,7 @@ export async function handleGetWorkflowState(
     }
 
     // Format dates for JSON response
-    const formattedState = {
-      ...workflowState,
-      createdAt:
-        workflowState.createdAt instanceof Date
-          ? workflowState.createdAt.toISOString()
-          : workflowState.createdAt,
-      updatedAt:
-        workflowState.updatedAt instanceof Date
-          ? workflowState.updatedAt.toISOString()
-          : workflowState.updatedAt,
-      suspension: workflowState.suspension
-        ? {
-            ...workflowState.suspension,
-            suspendedAt:
-              workflowState.suspension.suspendedAt instanceof Date
-                ? workflowState.suspension.suspendedAt.toISOString()
-                : workflowState.suspension.suspendedAt,
-          }
-        : undefined,
-    };
+    const formattedState = formatWorkflowState(workflowState);
 
     return {
       success: true,

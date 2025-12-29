@@ -14,10 +14,19 @@ const sidebars: SidebarsConfig = {
   docs: [
     {
       type: "category",
-      label: "Getting Started",
+      label: "Get Started",
+      collapsed: true,
       items: [
         "getting-started/overview",
-        "getting-started/quick-start",
+        {
+          type: "category",
+          label: "Quick Start",
+          link: {
+            type: "doc",
+            id: "getting-started/quick-start",
+          },
+          items: ["getting-started/quick-start", "getting-started/manual-setup"],
+        },
         "getting-started/mcp-docs-server",
         {
           type: "link",
@@ -29,12 +38,14 @@ const sidebars: SidebarsConfig = {
           },
         },
         "getting-started/providers-models",
+        "getting-started/comparison",
         "getting-started/migration-guide",
       ],
     },
     {
       type: "category",
       label: "Agents",
+      collapsed: true,
       items: [
         "agents/overview",
         "agents/prompts",
@@ -43,10 +54,11 @@ const sidebars: SidebarsConfig = {
         {
           type: "category",
           label: "MCP",
-          items: ["agents/mcp/mcp", "agents/mcp/mcp-server"],
+          items: ["agents/mcp/mcp", "agents/mcp/authorization", "agents/mcp/mcp-server"],
         },
         "agents/a2a/a2a-server",
         "agents/hooks",
+        "agents/message-types",
         "agents/multi-modal",
         "agents/providers",
         "agents/subagents",
@@ -59,6 +71,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Guardrails",
+      collapsed: true,
       customProps: {
         badge: {
           label: "New",
@@ -70,6 +83,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Workflows",
+      collapsed: true,
       items: [
         "workflows/overview",
         "workflows/suspend-resume",
@@ -86,7 +100,8 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
-      type: "category",
+      type: "doc",
+      id: "evals",
       label: "Evals",
       customProps: {
         badge: {
@@ -94,24 +109,11 @@ const sidebars: SidebarsConfig = {
           variant: "accent",
         },
       },
-      items: [
-        "evals/overview",
-        "evals/offline-evaluations",
-        "evals/live-evaluations",
-        "evals/datasets",
-        "evals/experiments",
-        {
-          type: "category",
-          label: "Scorers",
-          items: ["evals/prebuilt-scorers", "evals/building-custom-scorers"],
-        },
-        "evals/cli-reference",
-        "evals/using-with-viteval",
-      ],
     },
     {
       type: "category",
       label: "Memory",
+      collapsed: true,
       items: [
         "agents/memory/overview",
         "agents/memory/working-memory",
@@ -139,18 +141,72 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
+      type: "doc",
+      id: "triggers",
+      label: "Triggers",
+      customProps: {
+        badge: {
+          label: "New",
+          variant: "accent",
+        },
+      },
+    },
+    {
+      type: "doc",
+      id: "actions",
+      label: "Actions",
+      customProps: {
+        badge: {
+          label: "New",
+          variant: "accent",
+        },
+      },
+    },
+    {
       type: "category",
       label: "Tools",
+      collapsed: true,
       items: ["tools/overview", "tools/reasoning-tool"],
     },
     {
       type: "category",
       label: "RAG",
-      items: ["rag/overview", "rag/custom-retrievers", "rag/chroma", "rag/pinecone", "rag/qdrant"],
+      collapsed: true,
+      items: [
+        "rag/overview",
+        "rag/custom-retrievers",
+        "rag/voltagent",
+        {
+          type: "category",
+          label: "Chunkers",
+          items: [
+            "rag/chunkers/overview",
+            "rag/chunkers/structured-document",
+            "rag/chunkers/token-chunker",
+            "rag/chunkers/sentence-chunker",
+            "rag/chunkers/recursive-chunker",
+            "rag/chunkers/table-chunker",
+            "rag/chunkers/code-chunker",
+            "rag/chunkers/markdown-chunker",
+            "rag/chunkers/semantic-markdown-chunker",
+            "rag/chunkers/html-chunker",
+            "rag/chunkers/json-chunker",
+            "rag/chunkers/latex-chunker",
+            "rag/chunkers/semantic-chunker",
+            "rag/chunkers/late-chunker",
+            "rag/chunkers/neural-chunker",
+            "rag/chunkers/slumber-chunker",
+          ],
+        },
+        "rag/chroma",
+        "rag/pinecone",
+        "rag/qdrant",
+      ],
     },
     {
       type: "category",
       label: "API",
+      collapsed: true,
       items: [
         "api/overview",
         "api/server-architecture",
@@ -161,23 +217,26 @@ const sidebars: SidebarsConfig = {
         {
           type: "category",
           label: "Endpoints",
-          items: ["api/endpoints/agents", "api/endpoints/workflows"],
+          items: ["api/endpoints/agents", "api/endpoints/workflows", "api/endpoints/tools"],
         },
       ],
     },
     {
       type: "category",
       label: "UI",
-      items: ["ui/ai-sdk-integration"],
+      collapsed: true,
+      items: ["ui/overview", "ui/ai-sdk-integration", "ui/copilotkit", "ui/assistant-ui"],
     },
     {
       type: "category",
       label: "Utils",
+      collapsed: true,
       items: ["utils/create-prompt", "utils/message-helpers"],
     },
     {
       type: "category",
       label: "Observability",
+      collapsed: true,
       items: [
         "observability/overview",
         "observability/developer-console",
@@ -186,23 +245,28 @@ const sidebars: SidebarsConfig = {
       ],
     },
     {
-      type: "category",
+      type: "doc",
+      id: "deployment",
       label: "Deployment",
-      items: [
-        "deployment/overview",
-        "deployment/cloudflare-workers",
-        "deployment/netlify-functions",
-      ],
     },
     {
       type: "category",
       label: "Integrations",
+      collapsed: true,
       items: ["integrations/overview", "integrations/nextjs", "integrations/vercel-ai"],
     },
 
     {
       type: "category",
+      label: "Troubleshooting",
+      collapsed: true,
+      items: ["troubleshooting/connection"],
+    },
+
+    {
+      type: "category",
       label: "Community",
+      collapsed: true,
       items: ["community/overview", "community/contributing", "community/licence"],
     },
   ],

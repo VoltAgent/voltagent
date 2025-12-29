@@ -1,3 +1,8 @@
+import { Output } from "ai";
+import { z } from "zod";
+import { convertJsonSchemaToZod } from "zod-from-json-schema";
+import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
+
 /**
  * Process agent options from request body
  */
@@ -18,6 +23,7 @@ export interface ProcessedAgentOptions {
   maxRetries?: number;
   abortSignal?: AbortSignal;
   onFinish?: (result: unknown) => Promise<void>;
+  experimental_output?: any;
   [key: string]: any;
 }
 
@@ -36,6 +42,25 @@ export function processAgentOptions(body: any, signal?: AbortSignal): ProcessedA
   // Convert context to Map for internal use
   if (options.context && typeof options.context === "object" && !(options.context instanceof Map)) {
     processedOptions.context = new Map(Object.entries(options.context));
+  }
+
+  // Process experimental_output if provided
+  // The client sends: { type: "object"|"text", schema?: {...}, maxLength?: number, description?: string }
+  // We need to convert it to AI SDK's Output.object() or Output.text() format
+  if (options.experimental_output) {
+    const { type, schema: jsonSchema } = options.experimental_output;
+
+    if (type === "object" && jsonSchema) {
+      // Convert JSON schema to Zod schema (supports zod v3 and v4)
+      const zodSchema = ("toJSONSchema" in z ? convertJsonSchemaToZod : convertJsonSchemaToZodV3)(
+        jsonSchema,
+      ) as any;
+
+      processedOptions.experimental_output = Output.object({ schema: zodSchema });
+    } else if (type === "text") {
+      // Output.text() takes no parameters - it's for constrained text generation
+      processedOptions.experimental_output = Output.text();
+    }
   }
 
   return processedOptions;

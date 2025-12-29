@@ -1,6 +1,11 @@
-import type { ModelMessage, ProviderOptions, SystemModelMessage } from "@ai-sdk/provider-utils";
+import type {
+  ModelMessage,
+  ProviderOptions,
+  SystemModelMessage,
+  ToolCallOptions,
+} from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
-import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
+import { SpanKind, SpanStatusCode, context as otelContext } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
 import type {
@@ -37,6 +42,7 @@ import { ActionType, buildAgentLogMessage } from "../logger/message-builder";
 import type { Memory, MemoryUpdateMode } from "../memory";
 import { MemoryManager } from "../memory/manager/memory-manager";
 import { type VoltAgentObservability, createVoltAgentObservability } from "../observability";
+import { TRIGGER_CONTEXT_KEY } from "../observability/context-keys";
 import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, Toolkit } from "../tool";
@@ -50,9 +56,12 @@ import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
 import type { PromptContent, PromptHelper } from "../voltops/types";
+import { buildToolErrorResult } from "./error-utils";
 import {
   createAbortError,
+  createBailError,
   createVoltAgentError,
+  isBailError,
   isClientHTTPError,
   isToolDeniedError,
 } from "./errors";
@@ -63,11 +72,18 @@ import {
 } from "./eval";
 import type { AgentHooks } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
-import type { BaseMessage, BaseTool, StepWithContent } from "./providers/base/types";
+import type {
+  BaseMessage,
+  BaseTool,
+  StepWithContent,
+  ToolExecuteOptions,
+  UsageInfo,
+} from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import type { SamplingPolicy } from "../eval/runtime";
+import type { ConversationStepRecord } from "../memory/types";
 import { ConversationBuffer } from "./conversation-buffer";
 import {
   type NormalizedInputGuardrail,
@@ -77,7 +93,11 @@ import {
   normalizeInputGuardrailList,
   normalizeOutputGuardrailList,
 } from "./guardrail";
-import { MemoryPersistQueue } from "./memory-persist-queue";
+import {
+  AGENT_METADATA_CONTEXT_KEY,
+  type AgentMetadataContextValue,
+  MemoryPersistQueue,
+} from "./memory-persist-queue";
 import { sanitizeMessagesForModel } from "./message-normalizer";
 import {
   type GuardrailPipeline,
@@ -104,6 +124,7 @@ import type {
 
 const BUFFER_CONTEXT_KEY = Symbol("conversationBuffer");
 const QUEUE_CONTEXT_KEY = Symbol("memoryPersistQueue");
+const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
 
 // ============================================================================
 // Types
@@ -188,6 +209,8 @@ export type GenerateTextResultWithContext<
   context: Map<string | symbol, unknown>;
 };
 
+type LLMOperation = "streamText" | "generateText" | "streamObject" | "generateObject";
+
 /**
  * Extended GenerateObjectResult that includes context
  */
@@ -201,7 +224,12 @@ function cloneGenerateTextResultWithContext<
   OUTPUT = any,
 >(
   result: GenerateTextResult<TOOLS, OUTPUT>,
-  overrides: Pick<GenerateTextResultWithContext<TOOLS, OUTPUT>, "text" | "context">,
+  overrides: Partial<
+    Pick<
+      GenerateTextResultWithContext<TOOLS, OUTPUT>,
+      "text" | "context" | "toolCalls" | "toolResults"
+    >
+  >,
 ): GenerateTextResultWithContext<TOOLS, OUTPUT> {
   const prototype = Object.getPrototypeOf(result);
   const clone = Object.create(prototype) as GenerateTextResultWithContext<TOOLS, OUTPUT>;
@@ -283,6 +311,11 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   // maxOutputTokens, temperature, topP, topK,
   // presencePenalty, frequencyPenalty, stopSequences,
   // seed, maxRetries, abortSignal, headers
+  /**
+   * Optional explicit stop sequences to pass through to the underlying provider.
+   * Mirrors the `stop` option supported by ai-sdk `generateText/streamText`.
+   */
+  stop?: string | string[];
 }
 
 export type GenerateTextOptions = BaseGenerationOptions;
@@ -505,6 +538,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
           hooks,
@@ -515,25 +549,62 @@ export class Agent {
           ...aiSDKOptions
         } = options || {};
 
-        const result = await generateText({
-          model,
+        const llmSpan = this.createLLMSpan(oc, {
+          operation: "generateText",
+          modelName,
+          isStreaming: false,
           messages,
           tools,
-          // Default values
-          temperature: this.temperature,
-          maxOutputTokens: this.maxOutputTokens,
-          maxRetries: 3,
-          stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
-          // User overrides from AI SDK options
-          ...aiSDKOptions,
-          // Experimental output if provided
-          experimental_output,
-          // Provider-specific options
           providerOptions,
-          // VoltAgent controlled (these should not be overridden)
-          abortSignal: oc.abortController.signal,
-          onStepFinish: this.createStepHandler(oc, options),
+          callOptions: {
+            temperature: aiSDKOptions?.temperature ?? this.temperature,
+            maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
+            topP: aiSDKOptions?.topP,
+            stop: aiSDKOptions?.stop ?? options?.stop,
+          },
         });
+        const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+
+        let result!: GenerateTextResult<ToolSet, unknown>;
+        try {
+          result = await oc.traceContext.withSpan(llmSpan, () =>
+            generateText({
+              model,
+              messages,
+              tools,
+              // Default values
+              temperature: this.temperature,
+              maxOutputTokens: this.maxOutputTokens,
+              maxRetries: 3,
+              stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+              // User overrides from AI SDK options
+              ...aiSDKOptions,
+              // Experimental output if provided
+              experimental_output,
+              // Provider-specific options
+              providerOptions,
+              // VoltAgent controlled (these should not be overridden)
+              abortSignal: oc.abortController.signal,
+              onStepFinish: this.createStepHandler(oc, options),
+            }),
+          );
+        } catch (error) {
+          finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
+          throw error;
+        }
+
+        const resolvedProviderUsage = result.usage
+          ? await Promise.resolve(result.usage)
+          : undefined;
+        finalizeLLMSpan(SpanStatusCode.OK, {
+          usage: resolvedProviderUsage,
+          finishReason: result.finishReason,
+        });
+
+        const { toolCalls: aggregatedToolCalls, toolResults: aggregatedToolResults } =
+          this.collectToolDataFromResult(result);
+
+        this.recordStepResults(result.steps, oc);
 
         await persistQueue.flush(buffer, oc);
 
@@ -580,7 +651,7 @@ export class Agent {
             duration: Date.now() - startTime,
             finishReason: result.finishReason,
             usage: result.usage,
-            toolCalls: result.toolCalls?.length || 0,
+            toolCalls: aggregatedToolCalls.length,
             text: finalText,
           },
         );
@@ -605,7 +676,7 @@ export class Agent {
           metadata: {
             finishReason: result.finishReason,
             usage: result.usage ? JSON.parse(safeStringify(result.usage)) : undefined,
-            toolCalls: result.toolCalls,
+            toolCalls: aggregatedToolCalls,
           },
         });
 
@@ -615,10 +686,81 @@ export class Agent {
         return cloneGenerateTextResultWithContext(result, {
           text: finalText,
           context: oc.context,
+          toolCalls: aggregatedToolCalls,
+          toolResults: aggregatedToolResults,
         });
       } catch (error) {
+        // Check if this is a BailError (subagent early termination via abort)
+        if (isBailError(error as Error)) {
+          // Retrieve bailed result from systemContext
+          const bailedResult = oc.systemContext.get("bailedResult") as
+            | { agentName: string; response: string }
+            | undefined;
+
+          if (bailedResult) {
+            methodLogger.info("Using bailed subagent result as final output (from abort)", {
+              event: LogEvents.AGENT_GENERATION_COMPLETED,
+              agentName: bailedResult.agentName,
+              bailed: true,
+            });
+
+            const usageInfo: UsageInfo = {
+              promptTokens: 0,
+              completionTokens: 0,
+              totalTokens: 0,
+            };
+
+            // Apply guardrails to bailed result
+            const finalText = await executeOutputGuardrails({
+              output: bailedResult.response,
+              operationContext: oc,
+              guardrails: guardrailSet.output,
+              operation: "generateText",
+              agent: this,
+              metadata: {
+                usage: usageInfo,
+                finishReason: "bail" as any,
+                warnings: null,
+              },
+            });
+
+            // Call onEnd hook
+            await this.getMergedHooks(options).onEnd?.({
+              conversationId: oc.conversationId || "",
+              agent: this,
+              output: {
+                text: finalText,
+                usage: usageInfo,
+                providerResponse: undefined as any,
+                finishReason: "bail" as any,
+                warnings: undefined,
+                context: oc.context,
+              },
+              error: undefined,
+              context: oc,
+            });
+
+            this.recordStepResults(undefined, oc);
+
+            // Return bailed result as successful generation
+            return {
+              text: finalText,
+              usage: usageInfo,
+              finishReason: "bail" as any,
+              warnings: undefined,
+              response: {} as any,
+              operationContext: oc,
+              context: oc.context,
+            } as any;
+          }
+        }
+
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
+      } finally {
+        // Ensure all spans are exported before returning (critical for serverless)
+        // Uses waitUntil if available to avoid blocking
+        await this.getObservability().flushOnFinish();
       }
     });
   }
@@ -719,6 +861,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
           hooks,
@@ -734,6 +877,22 @@ export class Agent {
 
         let guardrailPipeline: GuardrailPipeline | null = null;
         let sanitizedTextPromise!: Promise<string>;
+
+        const llmSpan = this.createLLMSpan(oc, {
+          operation: "streamText",
+          modelName,
+          isStreaming: true,
+          messages,
+          tools,
+          providerOptions,
+          callOptions: {
+            temperature: aiSDKOptions?.temperature ?? this.temperature,
+            maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
+            topP: aiSDKOptions?.topP,
+            stop: aiSDKOptions?.stop ?? options?.stop,
+          },
+        });
+        const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
         const result = streamText({
           model,
@@ -753,10 +912,23 @@ export class Agent {
           // VoltAgent controlled (these should not be overridden)
           abortSignal: oc.abortController.signal,
           onStepFinish: this.createStepHandler(oc, options),
-          onError: (errorData) => {
+          onError: async (errorData) => {
             // Handle nested error structure from OpenAI and other providers
             // The error might be directly the error or wrapped in { error: ... }
             const actualError = (errorData as any)?.error || errorData;
+
+            // Check if this is a BailError (subagent early termination)
+            // This is not a real error - it's a signal that execution should stop
+            if (isBailError(actualError)) {
+              methodLogger.info("Stream aborted due to subagent bail (not an error)", {
+                agentName: actualError.agentName,
+                event: LogEvents.AGENT_GENERATION_COMPLETED,
+              });
+
+              // Don't log as error, don't call error hooks
+              // onFinish will be called and will handle span ending with correct finish reason
+              return;
+            }
 
             // Log the error
             methodLogger.error("Stream error occurred", {
@@ -764,6 +936,8 @@ export class Agent {
               agentName: this.name,
               modelName: this.getModelName(),
             });
+
+            finalizeLLMSpan(SpanStatusCode.ERROR, { message: (actualError as Error)?.message });
 
             // History update removed - using OpenTelemetry only
 
@@ -781,8 +955,21 @@ export class Agent {
 
             // Don't re-throw - let the error be part of the stream
             // The onError callback should return void for AI SDK compatibility
+            // Ensure spans are flushed on error
+            // Uses waitUntil if available to avoid blocking
+            await this.getObservability()
+              .flushOnFinish()
+              .catch(() => {});
           },
           onFinish: async (finalResult) => {
+            const providerUsage = finalResult.usage
+              ? await Promise.resolve(finalResult.usage)
+              : undefined;
+            finalizeLLMSpan(SpanStatusCode.OK, {
+              usage: providerUsage,
+              finishReason: finalResult.finishReason,
+            });
+
             await persistQueue.flush(buffer, oc);
 
             // History update removed - using OpenTelemetry only
@@ -795,7 +982,37 @@ export class Agent {
             const usage = convertUsage(finalResult.totalUsage);
             let finalText: string;
 
-            if (guardrailPipeline) {
+            // Check if we aborted due to subagent bail (early termination)
+            const bailedResult = oc.systemContext.get("bailedResult") as
+              | { agentName: string; response: string }
+              | undefined;
+
+            if (bailedResult) {
+              // Use the bailed result instead of the supervisor's output
+              methodLogger.info("Using bailed subagent result as final output", {
+                event: LogEvents.AGENT_GENERATION_COMPLETED,
+                agentName: bailedResult.agentName,
+                bailed: true,
+              });
+
+              // Apply guardrails to bailed result
+              if (guardrailSet.output.length > 0) {
+                finalText = await executeOutputGuardrails({
+                  output: bailedResult.response,
+                  operationContext: oc,
+                  guardrails: guardrailSet.output,
+                  operation: "streamText",
+                  agent: this,
+                  metadata: {
+                    usage,
+                    finishReason: "bail" as any,
+                    warnings: finalResult.warnings ?? null,
+                  },
+                });
+              } else {
+                finalText = bailedResult.response;
+              }
+            } else if (guardrailPipeline) {
               finalText = await sanitizedTextPromise;
             } else if (guardrailSet.output.length > 0) {
               finalText = await executeOutputGuardrails({
@@ -818,7 +1035,15 @@ export class Agent {
               guardrailSet.output.length > 0 ? { ...finalResult, text: finalText } : finalResult;
 
             oc.traceContext.setOutput(finalText);
-            oc.traceContext.setFinishReason(finalResult.finishReason);
+
+            this.recordStepResults(finalResult.steps, oc);
+
+            // Set finish reason - override to "stop" if bailed (not "error")
+            if (bailedResult) {
+              oc.traceContext.setFinishReason("stop" as any);
+            } else {
+              oc.traceContext.setFinishReason(finalResult.finishReason);
+            }
 
             // Check if stopped by maxSteps
             const steps = finalResult.steps;
@@ -879,7 +1104,16 @@ export class Agent {
               },
             });
 
+            finalizeLLMSpan(SpanStatusCode.OK, {
+              usage: finalResult.totalUsage,
+              finishReason: finalResult.finishReason,
+            });
+
             oc.traceContext.end("completed");
+
+            // Ensure all spans are exported on finish
+            // Uses waitUntil if available to avoid blocking
+            await this.getObservability().flushOnFinish();
           },
         });
 
@@ -896,6 +1130,48 @@ export class Agent {
         const agent = this;
 
         const createBaseFullStream = (): AsyncIterable<VoltAgentTextStreamPart> => {
+          // Wrap the base stream with abort handling
+          const wrapWithAbortHandling = async function* (
+            baseStream: AsyncIterable<VoltAgentTextStreamPart>,
+          ): AsyncIterable<VoltAgentTextStreamPart> {
+            const iterator = baseStream[Symbol.asyncIterator]();
+
+            try {
+              while (true) {
+                // Check if aborted before reading next chunk
+                if (oc.abortController.signal.aborted) {
+                  // Clean exit - stream is done
+                  return;
+                }
+
+                // Try to read next chunk - may throw if stream is aborted
+                let iterResult: IteratorResult<VoltAgentTextStreamPart>;
+                try {
+                  iterResult = await iterator.next();
+                } catch (error) {
+                  // If aborted, reader.read() may throw AbortError - treat as clean exit
+                  if (oc.abortController.signal.aborted) {
+                    return; // Clean exit, no error propagation
+                  }
+                  // Other errors should propagate to user code
+                  throw error;
+                }
+
+                const { done, value } = iterResult;
+
+                if (done) {
+                  return;
+                }
+
+                yield value;
+              }
+            } finally {
+              // No manual cleanup needed - AI SDK's AsyncIterableStream handles
+              // its own cleanup when the generator returns. Calling iterator.return()
+              // would cause ERR_INVALID_STATE since the reader is already detached.
+            }
+          };
+
           if (agent.subAgentManager.hasSubAgents()) {
             const createMergedFullStream =
               async function* (): AsyncIterable<VoltAgentTextStreamPart> {
@@ -906,11 +1182,23 @@ export class Agent {
 
                 const writeParentStream = async () => {
                   try {
-                    for await (const part of result.fullStream) {
+                    // Wrap AI SDK stream with abort handling before iterating
+                    // This ensures the loop exits cleanly when abort is triggered
+                    const abortAwareParentStream = wrapWithAbortHandling(result.fullStream);
+
+                    for await (const part of abortAwareParentStream) {
+                      // No manual abort check needed - wrapper handles it
                       await writer.write(part as VoltAgentTextStreamPart);
                     }
                   } finally {
-                    // noop, writer closed after draining merged stream
+                    // Ensure the merged stream is closed when the parent stream finishes.
+                    // This allows the reader loop below to exit with done=true and lets
+                    // callers (e.g., SSE) observe completion.
+                    try {
+                      await writer.close();
+                    } catch (_) {
+                      // Ignore double-close or stream state errors
+                    }
                   }
                 };
 
@@ -919,6 +1207,11 @@ export class Agent {
 
                 try {
                   while (true) {
+                    // Check abort before reading
+                    if (oc.abortController.signal.aborted) {
+                      break;
+                    }
+
                     const { done, value } = await reader.read();
                     if (done) break;
                     if (value !== undefined) {
@@ -935,7 +1228,8 @@ export class Agent {
             return createMergedFullStream();
           }
 
-          return result.fullStream;
+          // For non-subagent case, wrap the stream with abort handling
+          return wrapWithAbortHandling(result.fullStream);
         };
 
         const guardrailContext = guardrailStreamingEnabled
@@ -962,10 +1256,28 @@ export class Agent {
             if (typeof sanitized === "string" && sanitized.length > 0) {
               return sanitized;
             }
-            return await result.text;
+            // Wait for AI SDK text first (stream must complete)
+            const aiSdkText = await result.text;
+
+            // NOW check for bailed result (set during stream processing)
+            const bailedResult = oc.systemContext.get("bailedResult") as
+              | { agentName: string; response: string }
+              | undefined;
+            return bailedResult?.response || aiSdkText;
           });
         } else {
-          sanitizedTextPromise = result.text;
+          // Wrap result.text with custom Promise that checks for bailed result
+          // IMPORTANT: Wait for AI SDK text first (stream must complete/abort)
+          // This ensures createStepHandler has processed tool results and set bailedResult
+          sanitizedTextPromise = result.text.then((aiSdkText) => {
+            // NOW check if bailed (set by createStepHandler during stream processing)
+            const bailedResult = oc.systemContext.get("bailedResult") as
+              | { agentName: string; response: string }
+              | undefined;
+
+            // Return bailed subagent's result instead of supervisor's (if bailed)
+            return bailedResult?.response || aiSdkText;
+          });
         }
 
         const getGuardrailAwareFullStream = (): AsyncIterable<VoltAgentTextStreamPart> => {
@@ -1098,7 +1410,13 @@ export class Agent {
         return resultWithContext;
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
+        // Ensure spans are exported on pre-stream errors
+        await this.getObservability()
+          .flushOnFinish()
+          .catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
+      } finally {
+        // No need to flush here for streams - handled in onFinish/onError
       }
     });
   }
@@ -1186,6 +1504,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
           hooks,
@@ -1321,6 +1640,10 @@ export class Agent {
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
+      } finally {
+        // Ensure all spans are exported before returning (critical for serverless)
+        // Uses waitUntil if available to avoid blocking
+        await this.getObservability().flushOnFinish();
       }
     });
   }
@@ -1409,6 +1732,7 @@ export class Agent {
         const {
           userId,
           conversationId,
+          context, // Explicitly exclude to prevent collision with AI SDK's future 'context' field
           parentAgentId,
           parentOperationContext,
           hooks,
@@ -1438,7 +1762,7 @@ export class Agent {
           providerOptions,
           // VoltAgent controlled
           abortSignal: oc.abortController.signal,
-          onError: (errorData) => {
+          onError: async (errorData) => {
             // Handle nested error structure from OpenAI and other providers
             // The error might be directly the error or wrapped in { error: ... }
             const actualError = (errorData as any)?.error || errorData;
@@ -1468,6 +1792,11 @@ export class Agent {
 
             // Don't re-throw - let the error be part of the stream
             // The onError callback should return void for AI SDK compatibility
+            // Ensure spans are flushed on error
+            // Uses waitUntil if available to avoid blocking
+            await this.getObservability()
+              .flushOnFinish()
+              .catch(() => {});
           },
           onFinish: async (finalResult: any) => {
             try {
@@ -1574,6 +1903,10 @@ export class Agent {
               });
 
               oc.traceContext.end("completed");
+
+              // Ensure all spans are exported on finish
+              // Uses waitUntil if available to avoid blocking
+              await this.getObservability().flushOnFinish();
             } catch (error) {
               rejectGuardrailObject?.(error);
               throw error;
@@ -1616,7 +1949,13 @@ export class Agent {
         return resultWithContext;
       } catch (error) {
         await this.flushPendingMessagesOnError(oc).catch(() => {});
+        // Ensure spans are exported on pre-stream errors
+        await this.getObservability()
+          .flushOnFinish()
+          .catch(() => {});
         return this.handleError(error as Error, oc, options, 0);
+      } finally {
+        // No need to flush here for streams - handled in onFinish/onError
       }
     });
   }
@@ -1702,6 +2041,23 @@ export class Agent {
     };
   }
 
+  private collectToolDataFromResult<TOOLS extends ToolSet, OUTPUT>(
+    result: GenerateTextResult<TOOLS, OUTPUT>,
+  ): {
+    toolCalls: GenerateTextResult<TOOLS, OUTPUT>["toolCalls"];
+    toolResults: GenerateTextResult<TOOLS, OUTPUT>["toolResults"];
+  } {
+    const steps = result.steps ?? [];
+
+    const stepToolCalls = steps.flatMap((step) => step.toolCalls ?? []);
+    const stepToolResults = steps.flatMap((step) => step.toolResults ?? []);
+
+    return {
+      toolCalls: stepToolCalls.length > 0 ? stepToolCalls : (result.toolCalls ?? []),
+      toolResults: stepToolResults.length > 0 ? stepToolResults : (result.toolResults ?? []),
+    };
+  }
+
   /**
    * Create execution context
    */
@@ -1754,6 +2110,15 @@ export class Agent {
       context = new Map();
     }
 
+    const activeTriggerContext = otelContext.active().getValue(TRIGGER_CONTEXT_KEY);
+    if (activeTriggerContext instanceof Map) {
+      for (const [key, value] of activeTriggerContext.entries()) {
+        if (!context.has(key)) {
+          context.set(key, value);
+        }
+      }
+    }
+
     const logger = this.getContextualLogger(options?.parentAgentId).child({
       operationId,
       userId: options?.userId,
@@ -1772,6 +2137,7 @@ export class Agent {
       parentAgentId: options?.parentAgentId,
       input,
     });
+    traceContext.getRootSpan().setAttribute("voltagent.operation_id", operationId);
 
     // Use parent's AbortController if available, otherwise create new one
     const abortController =
@@ -1793,6 +2159,10 @@ export class Agent {
       QUEUE_CONTEXT_KEY,
       new MemoryPersistQueue(this.memoryManager, { debounceMs: 200, logger }),
     );
+    systemContext.set(AGENT_METADATA_CONTEXT_KEY, {
+      agentId: this.id,
+      agentName: this.name,
+    });
 
     const elicitationHandler = options?.elicitation ?? options?.parentOperationContext?.elicitation;
 
@@ -1898,6 +2268,166 @@ export class Agent {
 
   private enqueueEvalScoring(args: EnqueueEvalScoringArgs): void {
     enqueueEvalScoringHelper(this.createEvalHost(), args);
+  }
+
+  private createLLMSpan(
+    oc: OperationContext,
+    params: {
+      operation: LLMOperation;
+      modelName: string;
+      isStreaming: boolean;
+      messages?: Array<{ role: string; content: unknown }>;
+      tools?: ToolSet;
+      providerOptions?: ProviderOptions;
+      callOptions?: Record<string, unknown>;
+    },
+  ): Span {
+    const attributes = this.buildLLMSpanAttributes(params);
+    const span = oc.traceContext.createChildSpan(`llm:${params.operation}`, "llm", {
+      kind: SpanKind.CLIENT,
+      attributes,
+    });
+    return span;
+  }
+
+  private createLLMSpanFinalizer(span: Span) {
+    let ended = false;
+    return (
+      status: SpanStatusCode,
+      details?: {
+        message?: string;
+        usage?: LanguageModelUsage | UsageInfo | null;
+        finishReason?: FinishReason | string | null;
+      },
+    ) => {
+      if (ended) {
+        return;
+      }
+      if (details?.usage) {
+        this.recordLLMUsage(span, details.usage);
+      }
+      if (details?.finishReason) {
+        span.setAttribute("llm.finish_reason", String(details.finishReason));
+      }
+      if (details?.message) {
+        span.setStatus({ code: status, message: details.message });
+      } else {
+        span.setStatus({ code: status });
+      }
+      span.end();
+      ended = true;
+    };
+  }
+
+  private buildLLMSpanAttributes(params: {
+    operation: LLMOperation;
+    modelName: string;
+    isStreaming: boolean;
+    messages?: Array<{ role: string; content: unknown }>;
+    tools?: ToolSet;
+    providerOptions?: ProviderOptions;
+    callOptions?: Record<string, unknown>;
+  }): Record<string, any> {
+    const attrs: Record<string, any> = {
+      "llm.operation": params.operation,
+      "llm.model": params.modelName,
+      "llm.stream": params.isStreaming,
+    };
+    const provider = params.modelName?.includes("/") ? params.modelName.split("/")[0] : undefined;
+    if (provider) {
+      attrs["llm.provider"] = provider;
+    }
+
+    const callOptions = params.callOptions ?? {};
+    const maybeNumber = (value: unknown): number | undefined => {
+      if (typeof value === "number") {
+        return Number.isFinite(value) ? value : undefined;
+      }
+      if (typeof value === "string") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    };
+
+    const temperature = maybeNumber(callOptions.temperature ?? callOptions.temp ?? undefined);
+    if (temperature !== undefined) {
+      attrs["llm.temperature"] = temperature;
+    }
+    const maxOutputTokens = maybeNumber(callOptions.maxOutputTokens);
+    if (maxOutputTokens !== undefined) {
+      attrs["llm.max_output_tokens"] = maxOutputTokens;
+    }
+    const topP = maybeNumber(callOptions.topP);
+    if (topP !== undefined) {
+      attrs["llm.top_p"] = topP;
+    }
+    if (callOptions.stop !== undefined) {
+      attrs["llm.stop_condition"] = safeStringify(callOptions.stop);
+    }
+    if (params.messages && params.messages.length > 0) {
+      attrs["llm.messages.count"] = params.messages.length;
+      const trimmedMessages = params.messages.slice(-10);
+      attrs["llm.messages"] = safeStringify(
+        trimmedMessages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+      );
+    }
+    if (params.tools) {
+      const toolNames = Object.keys(params.tools);
+      attrs["llm.tools.count"] = toolNames.length;
+      if (toolNames.length > 0) {
+        attrs["llm.tools"] = toolNames.join(",");
+      }
+    }
+    if (params.providerOptions) {
+      attrs["llm.provider_options"] = safeStringify(params.providerOptions);
+    }
+    return attrs;
+  }
+
+  private recordLLMUsage(span: Span, usage?: LanguageModelUsage | UsageInfo | null): void {
+    if (!usage) {
+      return;
+    }
+
+    const coerce = (value: unknown): number | undefined => {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+      }
+      if (typeof value === "string") {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    };
+
+    const promptTokens =
+      coerce((usage as any).promptTokens) ??
+      coerce((usage as any).prompt) ??
+      coerce((usage as any).inputTokens) ??
+      coerce((usage as any).input_tokens);
+    const completionTokens =
+      coerce((usage as any).completionTokens) ??
+      coerce((usage as any).completion) ??
+      coerce((usage as any).outputTokens) ??
+      coerce((usage as any).output_tokens);
+    const totalTokens =
+      coerce((usage as any).totalTokens) ??
+      coerce((usage as any).total_tokens) ??
+      (promptTokens ?? 0) + (completionTokens ?? 0);
+
+    if (promptTokens !== undefined) {
+      span.setAttribute("llm.usage.prompt_tokens", promptTokens);
+    }
+    if (completionTokens !== undefined) {
+      span.setAttribute("llm.usage.completion_tokens", completionTokens);
+    }
+    if (totalTokens !== undefined) {
+      span.setAttribute("llm.usage.total_tokens", totalTokens);
+    }
   }
 
   private createEvalHost(): AgentEvalHost {
@@ -2364,45 +2894,62 @@ export class Agent {
       }
 
       if (promptContent.type === "text") {
-        let content = promptContent.text || "";
-
-        // Add toolkit instructions
-        content = this.addToolkitInstructions(content);
-
-        // Add markdown instruction
-        if (this.markdown) {
-          content = `${content}\n\nUse markdown to format your answers.`;
-        }
-
-        // Add retriever context
-        if (retrieverContext) {
-          content = `${content}\n\nRelevant Context:\n${retrieverContext}`;
-        }
-
-        // Add working memory context
-        if (workingMemoryContext) {
-          content = `${content}${workingMemoryContext}`;
-        }
-
-        // Add supervisor instructions if needed
-        if (this.subAgentManager.hasSubAgents()) {
-          const agentsMemory = await this.prepareAgentsMemory(oc);
-          content = this.subAgentManager.generateSupervisorSystemMessage(
-            content,
-            agentsMemory,
-            this.supervisorConfig,
-          );
-        }
+        const baseContent = promptContent.text || "";
+        const content = await this.enrichInstructions(
+          baseContent,
+          retrieverContext,
+          workingMemoryContext,
+          oc,
+        );
 
         return {
           role: "system",
-          content: `You are ${this.name}. ${content}`,
+          content: `${content}`,
         };
       }
     }
 
     // Default string instructions
-    let content = typeof resolvedInstructions === "string" ? resolvedInstructions : "";
+    const baseContent = typeof resolvedInstructions === "string" ? resolvedInstructions : "";
+    const content = await this.enrichInstructions(
+      baseContent,
+      retrieverContext,
+      workingMemoryContext,
+      oc,
+    );
+
+    return {
+      role: "system",
+      content: `${content}`,
+    };
+  }
+
+  /**
+   * Add toolkit instructions
+   */
+  private addToolkitInstructions(baseInstructions: string): string {
+    const toolkits = this.toolManager.getToolkits();
+    let toolInstructions = "";
+
+    for (const toolkit of toolkits) {
+      if (toolkit.addInstructions && toolkit.instructions) {
+        toolInstructions += `\n\n${toolkit.instructions}`;
+      }
+    }
+
+    return baseInstructions + toolInstructions;
+  }
+
+  /**
+   * Enrich instructions with additional context and modifiers
+   */
+  private async enrichInstructions(
+    baseContent: string,
+    retrieverContext: string | null,
+    workingMemoryContext: string | null,
+    oc: OperationContext,
+  ): Promise<string> {
+    let content = baseContent;
 
     // Add toolkit instructions
     content = this.addToolkitInstructions(content);
@@ -2432,26 +2979,7 @@ export class Agent {
       );
     }
 
-    return {
-      role: "system",
-      content: `You are ${this.name}. ${content}`,
-    };
-  }
-
-  /**
-   * Add toolkit instructions
-   */
-  private addToolkitInstructions(baseInstructions: string): string {
-    const toolkits = this.toolManager.getToolkits();
-    let toolInstructions = "";
-
-    for (const toolkit of toolkits) {
-      if (toolkit.addInstructions && toolkit.instructions) {
-        toolInstructions += `\n\n${toolkit.instructions}`;
-      }
-    }
-
-    return baseInstructions + toolInstructions;
+    return content;
   }
 
   /**
@@ -2502,6 +3030,7 @@ export class Agent {
       attributes: {
         "retriever.name": this.retriever.tool.name || "Retriever",
         input: typeof input === "string" ? input : safeStringify(input),
+        ...this.getRetrieverObservabilityAttributes(),
       },
     });
 
@@ -2520,7 +3049,7 @@ export class Agent {
       const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {
         if (!this.retriever) return null;
         return await this.retriever.retrieve(retrieverInput, {
-          context: oc.context,
+          ...oc,
           logger: retrieverLogger,
         });
       });
@@ -2529,6 +3058,7 @@ export class Agent {
         const documentCount = retrievedContent
           .split("\n")
           .filter((line: string) => line.trim()).length;
+        const durationMs = Date.now() - startTime;
 
         retrieverLogger.debug(
           buildAgentLogMessage(
@@ -2539,7 +3069,7 @@ export class Agent {
           {
             event: LogEvents.RETRIEVER_SEARCH_COMPLETED,
             documentCount,
-            duration: Date.now() - startTime,
+            duration: durationMs,
           },
         );
 
@@ -2550,6 +3080,7 @@ export class Agent {
           output: retrievedContent,
           attributes: {
             "retriever.document_count": documentCount,
+            ...this.getRetrieverObservabilityAttributes(),
           },
         });
 
@@ -2561,6 +3092,7 @@ export class Agent {
         output: null,
         attributes: {
           "retriever.document_count": 0,
+          ...this.getRetrieverObservabilityAttributes(),
         },
       });
 
@@ -2569,8 +3101,13 @@ export class Agent {
       // Event tracking now handled by OpenTelemetry spans
 
       // End OpenTelemetry span with error
+      const durationMs = Date.now() - startTime;
+
       oc.traceContext.endChildSpan(retrieverSpan, "error", {
         error: error as Error,
+        attributes: {
+          ...this.getRetrieverObservabilityAttributes(),
+        },
       });
 
       retrieverLogger.error(
@@ -2582,13 +3119,27 @@ export class Agent {
         {
           event: LogEvents.RETRIEVER_SEARCH_FAILED,
           error: error instanceof Error ? error.message : String(error),
-          duration: Date.now() - startTime,
+          duration: durationMs,
         },
       );
 
       this.logger.warn("Failed to retrieve context", { error, agentId: this.id });
       return null;
     }
+  }
+
+  private getRetrieverObservabilityAttributes(): Record<string, unknown> {
+    const candidate = this.retriever as
+      | {
+          getObservabilityAttributes?: () => Record<string, unknown>;
+        }
+      | undefined;
+
+    if (candidate && typeof candidate.getObservabilityAttributes === "function") {
+      return candidate.getObservabilityAttributes();
+    }
+
+    return {};
   }
 
   /**
@@ -2628,37 +3179,36 @@ export class Agent {
     maxSteps: number,
     options?: BaseGenerationOptions,
   ): Promise<Record<string, any>> {
-    const baseTools = this.toolManager.combineStaticAndRuntimeBaseTools(adHocTools);
+    const hooks = this.getMergedHooks(options);
+    const createToolExecuteFunction = this.createToolExecutionFactory(oc, hooks);
+
+    const runtimeTools: (BaseTool | Toolkit)[] = [...adHocTools];
 
     // Add delegate tool if we have subagents
     if (this.subAgentManager.hasSubAgents()) {
       const delegateTool = this.subAgentManager.createDelegateTool({
-        sourceAgent: this as any, // Type workaround
+        sourceAgent: this,
         currentHistoryEntryId: oc.operationId,
         operationContext: oc,
         maxSteps: maxSteps,
         conversationId: options?.conversationId,
         userId: options?.userId,
       });
-      baseTools.push(delegateTool);
+      runtimeTools.push(delegateTool);
     }
-
     // Add working memory tools if Memory V2 with working memory is configured
     const workingMemoryTools = this.createWorkingMemoryTools(options);
     if (workingMemoryTools.length > 0) {
-      baseTools.push(...workingMemoryTools);
+      runtimeTools.push(...workingMemoryTools);
     }
 
-    // Convert to AI SDK tools with context injection
-    const aiTools = this.convertTools(baseTools, oc, options);
+    const tempManager = new ToolManager(runtimeTools, this.logger);
 
-    // Pass through the provider tools untouched as they are
-    const providerTools = this.toolManager.getProviderTools();
-    for (const tool of providerTools) {
-      aiTools[tool.name] = tool;
-    }
+    const preparedDynamicTools = tempManager.prepareToolsForExecution(createToolExecuteFunction);
+    const preparedStaticTools =
+      this.toolManager.prepareToolsForExecution(createToolExecuteFunction);
 
-    return aiTools;
+    return { ...preparedStaticTools, ...preparedDynamicTools };
   }
 
   /**
@@ -2684,110 +3234,119 @@ export class Agent {
     return parseResult.data;
   }
 
-  /**
-   * Convert VoltAgent tools to AI SDK format with context injection
-   */
-  private convertTools(
-    tools: Tool<any, any>[],
+  private createToolExecutionFactory(
     oc: OperationContext,
-    options?: BaseGenerationOptions,
-  ): Record<string, any> {
-    const aiTools: Record<string, any> = {};
-    const hooks = this.getMergedHooks(options);
+    hooks: AgentHooks,
+  ): (tool: BaseTool) => (args: any, options?: ToolCallOptions) => Promise<any> {
+    return (tool: BaseTool) => async (args: any, options?: ToolCallOptions) => {
+      // AI SDK passes ToolCallOptions with fields: toolCallId, messages, abortSignal
+      const toolCallId = options?.toolCallId ?? randomUUID();
+      const messages = options?.messages ?? [];
+      const abortSignal = options?.abortSignal;
 
-    for (const tool of tools) {
-      aiTools[tool.name] = {
-        description: tool.description,
-        inputSchema: tool.parameters, // AI SDK will convert this to JSON Schema internally
+      // Convert ToolCallOptions to ToolExecuteOptions by merging with OperationContext
+      const executionOptions: ToolExecuteOptions = {
+        ...oc,
+        toolContext: {
+          name: tool.name,
+          callId: toolCallId,
+          messages: messages,
+          abortSignal: abortSignal,
+        },
       };
 
-      if (tool.isClientSide()) {
-        continue;
-      }
+      // Event tracking now handled by OpenTelemetry spans
+      const toolTags = (tool as { tags?: string[] | undefined }).tags;
+      const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
+        label: tool.name,
+        attributes: {
+          "tool.name": tool.name,
+          "tool.call.id": toolCallId,
+          "tool.description": tool.description,
+          ...(toolTags && toolTags.length > 0 ? { "tool.tags": safeStringify(toolTags) } : {}),
+          "tool.parameters": safeStringify(tool.parameters),
+          input: args ? safeStringify(args) : undefined,
+        },
+        kind: SpanKind.CLIENT,
+      });
 
-      aiTools[tool.name] = {
-        ...aiTools[tool.name],
-        execute: async (args: any) => {
-          // Event tracking now handled by OpenTelemetry spans
+      // Push execution metadata into systemContext for tools to consume
+      oc.systemContext.set("agentId", this.id);
+      oc.systemContext.set("historyEntryId", oc.operationId);
+      oc.systemContext.set("parentToolSpan", toolSpan);
 
-          // Create tool span using TraceContext
-          const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
-            label: tool.name,
-            attributes: {
-              "tool.name": tool.name,
-              "tool.call.id": randomUUID(),
-              input: args ? safeStringify(args) : undefined,
-            },
-            kind: SpanKind.CLIENT,
+      // Execute tool and handle span lifecycle
+      return await oc.traceContext.withSpan(toolSpan, async () => {
+        try {
+          // Call tool start hook - can throw ToolDeniedError
+          await hooks.onToolStart?.({
+            agent: this,
+            tool,
+            context: oc,
+            args,
+            options: executionOptions,
           });
 
-          // Push execution metadata into systemContext for tools to consume
-          oc.systemContext.set("agentId", this.id);
-          oc.systemContext.set("historyEntryId", oc.operationId);
-          oc.systemContext.set("parentToolSpan", toolSpan);
+          // Execute tool with merged options
+          if (!tool.execute) {
+            throw new Error(`Tool ${tool.name} does not have "execute" method`);
+          }
+          const result = await tool.execute(args, executionOptions);
+          const validatedResult = await this.validateToolOutput(result, tool);
 
-          // Execute tool and handle span lifecycle
-          return await oc.traceContext.withSpan(toolSpan, async () => {
-            try {
-              // Call tool start hook - can throw ToolDeniedError
-              await hooks.onToolStart?.({ agent: this, tool, context: oc, args });
+          // End OTEL span
+          toolSpan.setAttribute("output", safeStringify(result));
+          toolSpan.setStatus({ code: SpanStatusCode.OK });
+          toolSpan.end();
 
-              // Execute tool with OperationContext directly
-              if (!tool.execute) {
-                throw new Error(`Tool ${tool.name} does not have "execute" method`);
-              }
-              const result = await tool.execute(args, oc);
-              const validatedResult = await this.validateToolOutput(result, tool);
+          // Call tool end hook
+          await hooks.onToolEnd?.({
+            agent: this,
+            tool,
+            output: validatedResult,
+            error: undefined,
+            context: oc,
+            options: executionOptions,
+          });
 
-              // End OTEL span
-              toolSpan.setAttribute("output", safeStringify(result));
-              toolSpan.setStatus({ code: SpanStatusCode.OK });
-              toolSpan.end();
+          return result;
+        } catch (e) {
+          const error = e instanceof Error ? e : new Error(String(e));
+          const voltAgentError = createVoltAgentError(error, {
+            stage: "tool_execution",
+            toolError: {
+              toolCallId,
+              toolName: tool.name,
+              toolExecutionError: error,
+              toolArguments: args,
+            },
+          });
+          const errorResult = buildToolErrorResult(error, toolCallId, tool.name);
 
-              // Event tracking now handled by OpenTelemetry spans
+          toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+          toolSpan.recordException(error);
+          toolSpan.end();
 
-              // Call tool end hook
-              await hooks.onToolEnd?.({
-                agent: this,
-                tool,
-                output: validatedResult,
-                error: undefined,
-                context: oc,
-              });
+          await hooks.onToolEnd?.({
+            agent: this,
+            tool,
+            output: undefined,
+            error: voltAgentError,
+            context: oc,
+            options: executionOptions,
+          });
 
-              return result;
-            } catch (e) {
-              const error = e instanceof Error ? e : new Error(String(e));
-              //POJO error
-              const errorResult = { error: true, ...error };
+          if (isToolDeniedError(e)) {
+            oc.abortController.abort(e);
+          }
 
-              toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-              toolSpan.recordException(error);
-              toolSpan.end();
-
-              await hooks.onToolEnd?.({
-                agent: this,
-                tool,
-                output: undefined,
-                error: errorResult as any,
-                context: oc,
-              });
-
-              if (isToolDeniedError(e)) {
-                oc.abortController.abort(e);
-              }
-
-              return errorResult;
-            } finally {
-              // End the span if it was created
-              oc.traceContext.endChildSpan(toolSpan, "completed", {});
-            }
-          }); // End of withSpan
-        }, // End of execute function
-      };
-    }
-
-    return aiTools;
+          return errorResult;
+        } finally {
+          // End the span if it was created
+          oc.traceContext.endChildSpan(toolSpan, "completed", {});
+        }
+      });
+    };
   }
 
   /**
@@ -2849,6 +3408,34 @@ export class Agent {
                 part.output && typeof part.output === "object" && "error" in part.output,
               ),
             });
+
+            // Check if this tool result indicates a subagent bail (early termination)
+            const toolResult = part.output;
+            if (Array.isArray(toolResult)) {
+              // Check for bailed result in results array
+              const bailedResult = toolResult.find((r: any) => r.bailed === true);
+
+              if (bailedResult) {
+                const agentName = bailedResult.agentName || "unknown";
+                const response = String(bailedResult.response || "");
+
+                oc.logger.info("Subagent bailed during stream - aborting supervisor stream", {
+                  event: LogEvents.AGENT_STEP_TOOL_RESULT,
+                  agentName,
+                  bailed: true,
+                });
+
+                // Store bailed result for retrieval in onFinish
+                oc.systemContext.set("bailedResult", {
+                  agentName,
+                  response,
+                });
+
+                // Abort the stream with BailError to signal early termination
+                oc.abortController.abort(createBailError(agentName, response));
+                return; // Stop processing this step
+              }
+            }
           } else if (part.type === "tool-error") {
             oc.logger.debug(`Step: Tool '${part.toolName}' error`, {
               event: LogEvents.AGENT_STEP_TOOL_RESULT,
@@ -2870,6 +3457,172 @@ export class Agent {
       const hooks = this.getMergedHooks(options);
       await hooks.onStepFinish?.({ agent: this, step: event, context: oc });
     };
+  }
+
+  private recordStepResults(
+    steps: ReadonlyArray<StepResult<ToolSet>> | undefined,
+    oc: OperationContext,
+  ): void {
+    const storedSteps =
+      (steps && steps.length > 0 ? steps : undefined) ||
+      (oc.systemContext.get("conversationSteps") as StepResult<ToolSet>[] | undefined);
+
+    if (!storedSteps?.length) {
+      return;
+    }
+
+    if (!oc.conversationSteps) {
+      oc.conversationSteps = [];
+    }
+
+    const previouslyPersistedCount =
+      (oc.systemContext.get(STEP_PERSIST_COUNT_KEY) as number | undefined) ?? 0;
+    const newSteps = storedSteps.slice(previouslyPersistedCount);
+
+    if (!newSteps.length) {
+      return;
+    }
+
+    oc.systemContext.set(STEP_PERSIST_COUNT_KEY, previouslyPersistedCount + newSteps.length);
+
+    if (oc.conversationId) {
+      const rootSpan = oc.traceContext.getRootSpan();
+      rootSpan.setAttribute("conversation.id", oc.conversationId);
+      rootSpan.setAttribute("voltagent.conversation_id", oc.conversationId);
+    }
+
+    const agentMetadata = oc.systemContext.get(AGENT_METADATA_CONTEXT_KEY) as
+      | AgentMetadataContextValue
+      | undefined;
+    const subAgentMetadata =
+      oc.parentAgentId && agentMetadata
+        ? {
+            subAgentId: agentMetadata.agentId,
+            subAgentName: agentMetadata.agentName,
+          }
+        : undefined;
+
+    const stepRecords: ConversationStepRecord[] = [];
+    let recordTimestamp = new Date().toISOString();
+
+    newSteps.forEach((step, offset) => {
+      const usage = convertUsage(step.usage);
+      const stepIndex = previouslyPersistedCount + offset;
+
+      const trimmedText = step.text?.trim();
+      if (trimmedText) {
+        oc.conversationSteps?.push({
+          id: randomUUID(),
+          type: "text",
+          content: trimmedText,
+          role: "assistant",
+          usage,
+          ...(subAgentMetadata ?? {}),
+        });
+
+        if (oc.userId && oc.conversationId) {
+          stepRecords.push({
+            id: randomUUID(),
+            conversationId: oc.conversationId,
+            userId: oc.userId,
+            agentId: this.id,
+            agentName: this.name,
+            operationId: oc.operationId,
+            stepIndex,
+            type: "text",
+            role: "assistant",
+            content: trimmedText,
+            usage,
+            subAgentId: subAgentMetadata?.subAgentId,
+            subAgentName: subAgentMetadata?.subAgentName,
+            createdAt: recordTimestamp,
+          });
+        }
+      }
+
+      if (step.toolCalls?.length) {
+        for (const toolCall of step.toolCalls) {
+          oc.conversationSteps?.push({
+            id: toolCall.toolCallId || randomUUID(),
+            type: "tool_call",
+            content: safeStringify(toolCall.input ?? {}),
+            role: "assistant",
+            name: toolCall.toolName,
+            arguments: (toolCall as { input?: Record<string, unknown> }).input || {},
+            usage,
+            ...(subAgentMetadata ?? {}),
+          });
+
+          if (oc.userId && oc.conversationId) {
+            stepRecords.push({
+              id: toolCall.toolCallId || randomUUID(),
+              conversationId: oc.conversationId,
+              userId: oc.userId,
+              agentId: this.id,
+              agentName: this.name,
+              operationId: oc.operationId,
+              stepIndex,
+              type: "tool_call",
+              role: "assistant",
+              arguments: (toolCall as { input?: Record<string, unknown> }).input || {},
+              usage,
+              subAgentId: subAgentMetadata?.subAgentId,
+              subAgentName: subAgentMetadata?.subAgentName,
+              createdAt: recordTimestamp,
+            });
+          }
+        }
+      }
+
+      if (step.toolResults?.length) {
+        for (const toolResult of step.toolResults) {
+          oc.conversationSteps?.push({
+            id: toolResult.toolCallId || randomUUID(),
+            type: "tool_result",
+            content: safeStringify(toolResult.output),
+            role: "assistant",
+            name: toolResult.toolName,
+            result: toolResult.output,
+            usage,
+            ...(subAgentMetadata ?? {}),
+          });
+
+          if (oc.userId && oc.conversationId) {
+            stepRecords.push({
+              id: toolResult.toolCallId || randomUUID(),
+              conversationId: oc.conversationId,
+              userId: oc.userId,
+              agentId: this.id,
+              agentName: this.name,
+              operationId: oc.operationId,
+              stepIndex,
+              type: "tool_result",
+              role: "assistant",
+              result: toolResult.output ?? null,
+              usage,
+              subAgentId: subAgentMetadata?.subAgentId,
+              subAgentName: subAgentMetadata?.subAgentName,
+              createdAt: recordTimestamp,
+            });
+          }
+        }
+      }
+
+      // Refresh timestamp for multi-step batches to maintain ordering while avoiding identical references
+      recordTimestamp = new Date().toISOString();
+    });
+
+    if (stepRecords.length > 0 && oc.userId && oc.conversationId) {
+      void this.memoryManager
+        .saveConversationSteps(oc, stepRecords, oc.userId, oc.conversationId)
+        .catch((error) => {
+          oc.logger.debug("Failed to persist conversation steps", {
+            error,
+            conversationId: oc.conversationId,
+            userId: oc.userId,
+          });
+        });
+    }
   }
 
   /**
@@ -2907,6 +3660,10 @@ export class Agent {
         await options.hooks?.onHandoff?.(...args);
         await this.hooks.onHandoff?.(...args);
       },
+      onHandoffComplete: async (...args) => {
+        await options.hooks?.onHandoffComplete?.(...args);
+        await this.hooks.onHandoffComplete?.(...args);
+      },
       onToolStart: async (...args) => {
         await options.hooks?.onToolStart?.(...args);
         await this.hooks.onToolStart?.(...args);
@@ -2936,38 +3693,66 @@ export class Agent {
       // Mark operation as inactive
       oc.isActive = false;
 
-      if (isClientHTTPError(signal.reason)) {
-        oc.cancellationError = signal.reason;
-      } else {
-        const abortReason = match(signal.reason)
-          .with(P.string, (reason) => reason)
-          .with({ message: P.string }, (reason) => reason.message)
-          .otherwise(() => "Operation cancelled");
-        oc.cancellationError = createAbortError(abortReason);
-      }
-      // Track cancellation in OpenTelemetry
-      if (oc.traceContext) {
-        const rootSpan = oc.traceContext.getRootSpan();
-        rootSpan.setAttribute("agent.state", "cancelled");
-        rootSpan.setAttribute("cancelled", true);
-        rootSpan.setAttribute("cancellation.reason", oc.cancellationError.message);
-        rootSpan.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: oc.cancellationError.message,
-        });
-        rootSpan.recordException(oc.cancellationError);
-        rootSpan.end();
-      }
+      // Check if this is a bail (early termination from subagent)
+      const isBail = isBailError(signal.reason as Error);
 
-      // Call onEnd hook with cancellation error
-      const hooks = this.getMergedHooks();
-      await hooks.onEnd?.({
-        conversationId: oc.conversationId || "",
-        agent: this,
-        output: undefined,
-        error: oc.cancellationError,
-        context: oc,
-      });
+      if (isBail) {
+        // Bail is not an error - it's a successful early termination
+        // Get the bailed result from systemContext
+        const bailedResult = oc.systemContext.get("bailedResult") as
+          | { agentName: string; response: string }
+          | undefined;
+
+        if (oc.traceContext && bailedResult) {
+          const rootSpan = oc.traceContext.getRootSpan();
+          // Mark as completed, not cancelled
+          rootSpan.setAttribute("agent.state", "completed");
+          rootSpan.setAttribute("bailed", true);
+          rootSpan.setAttribute("bail.subagent", bailedResult.agentName);
+          // Set output so it appears in observability UI
+          rootSpan.setAttribute("output", bailedResult.response);
+          // Set finish reason
+          rootSpan.setAttribute("ai.response.finish_reason", "bail");
+          // Span status is OK (success), not ERROR
+          rootSpan.setStatus({ code: SpanStatusCode.OK });
+          rootSpan.end();
+        }
+      } else {
+        // Normal abort/cancellation - treat as error
+        if (isClientHTTPError(signal.reason)) {
+          oc.cancellationError = signal.reason;
+        } else {
+          const abortReason = match(signal.reason)
+            .with(P.string, (reason) => reason)
+            .with({ message: P.string }, (reason) => reason.message)
+            .otherwise(() => "Operation cancelled");
+          oc.cancellationError = createAbortError(abortReason);
+        }
+
+        // Track cancellation in OpenTelemetry
+        if (oc.traceContext) {
+          const rootSpan = oc.traceContext.getRootSpan();
+          rootSpan.setAttribute("agent.state", "cancelled");
+          rootSpan.setAttribute("cancelled", true);
+          rootSpan.setAttribute("cancellation.reason", oc.cancellationError.message);
+          rootSpan.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: oc.cancellationError.message,
+          });
+          rootSpan.recordException(oc.cancellationError);
+          rootSpan.end();
+        }
+
+        // Call onEnd hook with cancellation error
+        const hooks = this.getMergedHooks();
+        await hooks.onEnd?.({
+          conversationId: oc.conversationId || "",
+          agent: this,
+          output: undefined,
+          error: oc.cancellationError,
+          context: oc,
+        });
+      }
     });
   }
 
@@ -2980,6 +3765,18 @@ export class Agent {
     options?: BaseGenerationOptions,
     startTime?: number,
   ): Promise<never> {
+    // Check if this is a BailError (subagent early termination)
+    // This should be handled gracefully, not as an error
+    if (isBailError(error)) {
+      // BailError should have been handled in onFinish/onError callbacks
+      // If we reach here, something went wrong - log and re-throw
+      oc.logger.warn("BailError reached handleError - this should not happen", {
+        agentName: error.agentName,
+        event: LogEvents.AGENT_GENERATION_FAILED,
+      });
+      throw error;
+    }
+
     // Check if cancelled
     if (!oc.isActive && oc.cancellationError) {
       throw oc.cancellationError;
@@ -3147,7 +3944,7 @@ export class Agent {
       model: this.getModelName(),
       node_id: createNodeId(NodeType.AGENT, this.id),
 
-      tools: this.toolManager.getTools().map((tool) => ({
+      tools: this.toolManager.getAllBaseTools().map((tool) => ({
         ...tool,
         node_id: createNodeId(NodeType.TOOL, tool.name, this.id),
       })),
@@ -3254,7 +4051,7 @@ export class Agent {
       const delegateTool = this.subAgentManager.createDelegateTool({
         sourceAgent: this as any,
       });
-      this.toolManager.addTool(delegateTool);
+      this.toolManager.addStandaloneTool(delegateTool);
     }
   }
 
@@ -3274,7 +4071,7 @@ export class Agent {
    * Get all tools
    */
   public getTools() {
-    return this.toolManager.getTools();
+    return this.toolManager.getAllBaseTools();
   }
 
   /**
@@ -3398,16 +4195,20 @@ export class Agent {
       name: toolName,
       description: toolDescription,
       parameters: parametersSchema,
-      execute: async (args, context) => {
+      execute: async (args, options) => {
         // Extract the prompt from args
         const prompt = (args as any).prompt || args;
+
+        // Extract OperationContext from options if available
+        // Since ToolExecuteOptions extends Partial<OperationContext>, we can extract the fields
+        const oc = options as OperationContext | undefined;
 
         // Generate response using this agent
         const result = await this.generateText(prompt, {
           // Pass through the operation context if available
-          parentOperationContext: context,
-          conversationId: context?.conversationId,
-          userId: context?.userId,
+          parentOperationContext: oc,
+          conversationId: options?.conversationId,
+          userId: options?.userId,
         });
 
         // Return the text result

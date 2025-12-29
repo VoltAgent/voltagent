@@ -18,6 +18,7 @@ export interface ServerEndpointSummary {
   method: string;
   description?: string;
   group?: string;
+  name?: string;
 }
 
 export interface ServerStartupOptions {

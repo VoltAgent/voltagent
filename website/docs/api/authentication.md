@@ -3,122 +3,617 @@ title: Authentication
 sidebar_label: Authentication
 ---
 
-# API Authentication
+# Authentication
 
-VoltAgent Server supports pluggable authentication providers to secure your API endpoints. The authentication system is framework-agnostic and works with any server implementation.
+VoltAgent supports optional authentication. For new integrations, use **authNext**, which treats all routes as private by default and separates **console access** from **user access**. The legacy `auth` option is still supported but deprecated.
 
-## Overview
+## Quick Start
 
-Authentication in VoltAgent:
+### Option 1: No Authentication (Default)
 
-- **Selective Protection** - Only execution endpoints require authentication by default
-- **Pluggable Providers** - Use JWT, Auth0, Supabase, or custom providers
-- **Automatic Context** - User information is injected into agent/workflow context
-- **Flexible Configuration** - Customize which routes require authentication
-
-## Default Route Protection
-
-VoltAgent supports two authentication modes to give you full control over route security:
-
-### Authentication Modes
-
-#### Opt-In Mode (Default)
-
-By default (`defaultPrivate: false` or not set), only specific execution endpoints require authentication. This is the traditional mode where you explicitly protect sensitive routes.
+Use for development and internal tools:
 
 ```typescript
-auth: jwtAuth({
-  secret: process.env.JWT_SECRET,
-  // defaultPrivate: false (this is the default)
+import { VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer(), // No auth configuration needed
 });
 ```
 
-**Behavior**:
+All endpoints are publicly accessible.
 
-- VoltAgent execution routes (like `POST /agents/:id/text`) → Protected ✅
-- VoltAgent management routes (like `GET /agents`) → Public 🌐
-- Custom routes added via `configureApp` → Public 🌐\*
+### Option 2: authNext (Recommended)
 
-\* _Custom routes are registered after auth middleware is applied, so they follow the same authentication rules as built-in routes. In opt-in mode, they're public by default unless they match a protected route pattern._
-
-#### Opt-Out Mode (Recommended)
-
-When you set `defaultPrivate: true`, all routes require authentication by default. You can selectively make routes public using the `publicRoutes` property.
+Protect everything by default. Explicitly allow public routes, and use a Console Access Key for management endpoints:
 
 ```typescript
-auth: jwtAuth({
-  secret: process.env.JWT_SECRET,
-  defaultPrivate: true, // Protect all routes by default
-  publicRoutes: ["GET /health", "POST /api/webhooks/*"],
+import { jwtAuth } from "@voltagent/server-core";
+import { honoServer } from "@voltagent/server-hono";
+
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    authNext: {
+      provider: jwtAuth({
+        secret: process.env.JWT_SECRET!,
+      }),
+      publicRoutes: ["GET /health"],
+    },
+  }),
 });
 ```
 
-**Behavior**:
+Legacy `auth` is still supported for existing integrations. See the **Legacy auth** section at the end for details.
 
-- VoltAgent execution routes → Protected ✅
-- VoltAgent management routes → Protected ✅
-- Custom routes added via `configureApp` → Protected ✅
-- Routes in `publicRoutes` → Public 🌐
+## Concepts
 
-**Why Opt-Out Mode is Recommended**:
+- **User token**: A JWT from your identity provider, sent in `Authorization: Bearer <token>`.
+- **Console access key**: A static key for management, docs, observability, and updates endpoints. Set `VOLTAGENT_CONSOLE_ACCESS_KEY` and send `x-console-access-key` (or `?key=` for WebSocket).
+- **Public routes**: Endpoints that bypass auth. You control them.
+- **Dev bypass**: `x-voltagent-dev: true` is accepted only when `NODE_ENV` is not `"production"`.
 
-Since custom routes are automatically protected in opt-out mode, you get secure-by-default behavior without needing to manually add authentication checks to each endpoint.
+## How Authentication Works
 
-**Use Cases**:
+When auth is enabled, VoltAgent evaluates each request based on the configured mode.
 
-- You're using third-party auth providers (Clerk, Auth0, Supabase)
-- You want to protect all custom endpoints by default
-- You need fine-grained control over which routes are public
+### authNext
 
-### Public Routes (No Auth Required in Opt-In Mode)
+1. Match `publicRoutes` (authNext + provider). If matched, request is public.
+2. Match `consoleRoutes` (authNext or defaults). If matched, require console key or dev bypass.
+3. Everything else requires a user token (JWT) or dev bypass.
 
-In the default opt-in mode, these endpoints are public:
+### Legacy auth
 
-```javascript
-// Management endpoints
-GET /agents              // List agents
-GET /agents/:id          // Get agent details
-GET /workflows           // List workflows
-GET /workflows/:id       // Get workflow details
+1. Routes in `DEFAULT_LEGACY_PUBLIC_ROUTES` (alias `DEFAULT_PUBLIC_ROUTES`) are always public.
+2. Routes in `PROTECTED_ROUTES` require a user token (JWT).
+3. `defaultPrivate: true` applies to custom routes only.
 
-// Documentation
-GET /                    // Landing page
-GET /doc                 // OpenAPI spec
-GET /ui                  // Swagger UI
+## Route Access Summary
 
-// Logs & monitoring
-GET /api/logs            // Get logs (HTTP)
-// (Optional) GET /health // Only if you add a health route
+Default access by endpoint group:
+
+| Endpoint Group | Examples                                                                        | authNext Access             | Legacy auth Access |
+| -------------- | ------------------------------------------------------------------------------- | --------------------------- | ------------------ |
+| Execution      | `POST /agents/:id/text`, `POST /workflows/:id/run`, `POST /tools/:name/execute` | User token (JWT)            | User token (JWT)   |
+| Management     | `GET /agents`, `GET /workflows`, `GET /tools`                                   | Console key                 | Public             |
+| Docs + UI      | `GET /`, `GET /doc`, `GET /ui`                                                  | Console key                 | Public             |
+| Discovery      | `GET /mcp/servers`, `GET /agents/:id/card`                                      | Console key                 | Public             |
+| Observability  | `/observability/*`, `GET /api/logs`, `WS /ws/observability/**`                  | Console key                 | Console key or JWT |
+| Updates        | `GET /updates`, `POST /updates`, `POST /updates/:packageName`                   | Console key                 | Console key or JWT |
+| Custom routes  | `GET /health`, `POST /webhooks/*`                                               | User token (JWT) by default | Public by default  |
+
+Notes:
+
+- WebSocket console endpoints require `?key=<key>` or `?dev=true` in non-production.
+- In legacy auth, `defaultPrivate: true` changes custom routes only; it does not change default public routes.
+
+## authNext: Policy Model (Recommended)
+
+authNext is a policy layer that decides **how each route is accessed**:
+
+- **public**: No authentication required
+- **console**: Requires Console Access Key (or dev bypass)
+- **user**: Requires a valid user token (JWT)
+
+Console routes cover management, docs, and observability endpoints used by the VoltAgent Console UI.
+
+### Access Resolution Order
+
+authNext resolves access in this order:
+
+1. **public** routes (from `authNext.publicRoutes` + `provider.publicRoutes`)
+2. **console** routes (from `authNext.consoleRoutes` or defaults)
+3. **user** routes (everything else)
+
+If a route matches both public and console, **public wins**.
+
+When using authNext, define public routes on `authNext.publicRoutes`. `provider.publicRoutes` is merged in for provider defaults.
+
+### Default Console Routes
+
+By default, authNext treats these as **console** routes (Console Key required):
+
+**Management**
+
+- `GET /agents`
+- `GET /agents/:id`
+- `GET /workflows`
+- `GET /workflows/:id`
+- `GET /tools`
+- `GET /agents/:id/history`
+- `GET /workflows/executions`
+- `GET /workflows/:id/executions/:executionId/state`
+
+**Docs + Landing**
+
+- `GET /`
+- `GET /doc`
+- `GET /ui`
+
+**Discovery**
+
+- `GET /agents/:id/card`
+- `GET /mcp/servers`
+- `GET /mcp/servers/:serverId`
+- `GET /mcp/servers/:serverId/tools`
+
+**Observability + Updates**
+
+- `/observability/*`
+- `GET /api/logs`
+- `GET /updates`
+- `POST /updates`
+- `POST /updates/:packageName`
+
+**WebSocket (Console Channels)**
+
+- `WS /ws`
+- `WS /ws/logs`
+- `WS /ws/observability/**`
+
+This list is defined in `packages/server-core/src/auth/defaults.ts`.
+
+### Route Pattern Syntax
+
+Route patterns support:
+
+- Method prefix: `GET /agents/:id`
+- Path params: `/agents/:id`
+- Single wildcard: `/observability/*` (matches `/observability/x` and deeper)
+- Double-star: `/ws/observability/**` (matches `/ws/observability` and children)
+
+### Making Routes Public
+
+Add routes to `authNext.publicRoutes`:
+
+```typescript
+authNext: {
+  provider: jwtAuth({ secret: process.env.JWT_SECRET! }),
+  publicRoutes: [
+    "GET /health",
+    "POST /webhooks/*",
+  ],
+},
 ```
 
-### Protected Routes (Auth Required)
+### Custom Console Routes
 
-These execution endpoints require authentication by default:
+`authNext.consoleRoutes` **replaces** the default console list:
 
-```javascript
-// Agent execution
-POST /agents/:id/text          // Generate text
-POST /agents/:id/stream        // Stream text
-POST /agents/:id/object        // Generate object
-POST /agents/:id/stream-object // Stream object
-
-// Workflow execution
-POST /workflows/:id/execute    // Execute workflow
-POST /workflows/:id/stream     // Stream workflow
+```typescript
+authNext: {
+  provider: jwtAuth({ secret: process.env.JWT_SECRET! }),
+  consoleRoutes: [
+    "/observability/*",
+    "GET /updates",
+    "POST /updates",
+  ],
+},
 ```
 
-Note:
+If you want the defaults plus custom routes, include the defaults explicitly.
 
-- `POST /workflows/:id/executions/:executionId/suspend` and `POST /workflows/:id/executions/:executionId/resume` are currently NOT included in default protected patterns. If you need auth on these endpoints today, add a custom guard in `configureApp` or wrap them behind your own routes. Future versions may include them by default.
-- WebSockets are currently unauthenticated. If you need auth on `/ws/*`, implement a custom provider or a proxy that enforces authentication.
+```typescript
+import { DEFAULT_CONSOLE_ROUTES } from "@voltagent/server-core";
 
-````
+authNext: {
+  provider: jwtAuth({ secret: process.env.JWT_SECRET! }),
+  consoleRoutes: [...DEFAULT_CONSOLE_ROUTES, "GET /admin/metrics"],
+},
+```
 
-## JWT Authentication
+### Console Access Key
 
-The built-in JWT provider supports standard JSON Web Tokens.
+In production, set a Console Access Key:
 
-### Basic Setup
+```bash
+NODE_ENV=production
+VOLTAGENT_CONSOLE_ACCESS_KEY=your-console-key
+```
+
+Provide the key via:
+
+- Header: `x-console-access-key: <key>`
+- Query: `?key=<key>` (required for WebSocket)
+
+### Development Bypass
+
+In non-production, the dev bypass is allowed:
+
+```bash
+# HTTP requests
+x-voltagent-dev: true
+
+# WebSocket connections
+?dev=true
+```
+
+This bypass works for both **console** and **user** routes.
+
+## Auth Providers
+
+VoltAgent includes a JWT provider and supports custom providers via the `AuthProvider` interface.
+Providers validate tokens and return a user object; role and tenant checks live in your handlers or middleware.
+
+### JWT (`jwtAuth`)
+
+`jwtAuth` can be used with **authNext** or legacy `auth`:
+
+```typescript
+import { jwtAuth } from "@voltagent/server-core";
+
+const provider = jwtAuth({
+  secret: process.env.JWT_SECRET!,
+  mapUser: (payload) => ({
+    id: payload.sub,
+    email: payload.email,
+    tenantId: payload.tenant_id,
+    role: payload.role,
+  }),
+  verifyOptions: {
+    algorithms: ["HS256"],
+    audience: "voltagent-api",
+    issuer: "my-auth-service",
+  },
+});
+```
+
+**Note**: `defaultPrivate` only affects legacy `auth`. For authNext, use `authNext.publicRoutes`.
+
+### Custom Providers (AuthProvider)
+
+If you use a different identity system, implement `AuthProvider` and plug it into `authNext`:
+
+```typescript
+import { VoltAgent } from "@voltagent/core";
+import type { AuthProvider } from "@voltagent/server-core";
+import { honoServer } from "@voltagent/server-hono";
+
+const provider: AuthProvider = {
+  type: "my-provider",
+  async verifyToken(token, _request) {
+    // Validate token and return your user object
+    return { id: "user-id", role: "user" };
+  },
+};
+
+new VoltAgent({
+  agents: { myAgent },
+  server: honoServer({
+    authNext: { provider },
+  }),
+});
+```
+
+### Provider Recipes
+
+VoltAgent does not ship official packages for these providers yet, but you can wire them up
+by implementing `AuthProvider`. Use the examples below as starting points.
+
+All examples assume:
+
+```typescript
+import type { AuthProvider } from "@voltagent/server-core";
+```
+
+#### Auth0 (JWKS)
+
+Env:
+
+- `AUTH0_DOMAIN`
+- `AUTH0_AUDIENCE`
+
+```typescript
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
+const domain = process.env.AUTH0_DOMAIN!;
+const audience = process.env.AUTH0_AUDIENCE!;
+const jwks = createRemoteJWKSet(new URL(`https://${domain}/.well-known/jwks.json`));
+
+const provider: AuthProvider = {
+  type: "auth0",
+  async verifyToken(token) {
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer: `https://${domain}/`,
+      audience,
+    });
+    return payload;
+  },
+};
+```
+
+#### Clerk (JWKS)
+
+Env:
+
+- `CLERK_JWKS_URI` (from Clerk dashboard)
+- `CLERK_SECRET_KEY`
+- `CLERK_PUBLISHABLE_KEY`
+
+```typescript
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
+const jwks = createRemoteJWKSet(new URL(process.env.CLERK_JWKS_URI!));
+
+const provider: AuthProvider = {
+  type: "clerk",
+  async verifyToken(token) {
+    const { payload } = await jwtVerify(token, jwks);
+    return payload;
+  },
+};
+```
+
+If you need organization membership or user lookups, use `@clerk/backend` with the secret and publishable keys.
+
+#### WorkOS (JWKS)
+
+Env:
+
+- `WORKOS_API_KEY`
+- `WORKOS_CLIENT_ID`
+
+```typescript
+import { WorkOS } from "@workos-inc/node";
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
+const workos = new WorkOS(process.env.WORKOS_API_KEY!, {
+  clientId: process.env.WORKOS_CLIENT_ID!,
+});
+const jwksUrl = workos.userManagement.getJwksUrl(process.env.WORKOS_CLIENT_ID!);
+const jwks = createRemoteJWKSet(new URL(jwksUrl));
+
+const provider: AuthProvider = {
+  type: "workos",
+  async verifyToken(token) {
+    const { payload } = await jwtVerify(token, jwks);
+    return payload;
+  },
+};
+```
+
+#### Firebase
+
+Env:
+
+- `FIREBASE_SERVICE_ACCOUNT` (path to service account JSON)
+- `FIRESTORE_DATABASE_ID` or `FIREBASE_DATABASE_ID` (optional)
+
+```typescript
+import { initializeApp, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+
+const app = initializeApp({
+  credential: cert(process.env.FIREBASE_SERVICE_ACCOUNT!),
+});
+
+const provider: AuthProvider = {
+  type: "firebase",
+  async verifyToken(token) {
+    return getAuth(app).verifyIdToken(token);
+  },
+};
+```
+
+#### Supabase
+
+Env:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+
+```typescript
+import { createClient } from "@supabase/supabase-js";
+
+const client = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+
+const provider: AuthProvider = {
+  type: "supabase",
+  async verifyToken(token) {
+    const { data, error } = await client.auth.getUser(token);
+    if (error) {
+      throw error;
+    }
+    return data.user;
+  },
+};
+```
+
+#### Better Auth
+
+Env:
+
+- `DATABASE_URL` (or whatever your Better Auth setup requires)
+
+```typescript
+import { betterAuth } from "better-auth";
+
+const auth = betterAuth({
+  // Your Better Auth configuration
+});
+
+const provider: AuthProvider = {
+  type: "better-auth",
+  async verifyToken(token, request) {
+    const headers = new Headers();
+    const authHeader = request?.headers?.get("authorization");
+    headers.set("Authorization", authHeader ?? `Bearer ${token}`);
+
+    const cookie = request?.headers?.get("cookie");
+    if (cookie) {
+      headers.set("Cookie", cookie);
+    }
+
+    const result = await auth.api.getSession({ headers });
+    if (!result?.user) {
+      return null;
+    }
+
+    return result.user;
+  },
+};
+```
+
+These providers authenticate **user routes** only. Console routes still use the Console Access Key.
+
+## WebSocket Authentication
+
+VoltAgent WebSocket endpoints are used by the Console (logs, observability). Browsers cannot send headers in the handshake, so use query params:
+
+```javascript
+// Console auth (observability, logs)
+const wsConsole = new WebSocket(`ws://localhost:3141/ws/observability?key=${consoleKey}`);
+
+// Dev bypass (non-production only)
+const wsDev = new WebSocket("ws://localhost:3141/ws/observability?dev=true");
+```
+
+If you expose **custom WebSocket endpoints**, include them in your authNext route patterns and use `?token=` for user access or `?key=` for console access.
+
+## Testing Your Authentication
+
+### Generate a Test Token
+
+Create `generate-token.js`:
+
+```javascript
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const token = jwt.sign(
+  {
+    id: "test-user",
+    email: "test@example.com",
+    role: "admin",
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: "24h" }
+);
+
+console.log("Token:", token);
+```
+
+### Test Protected Endpoints (authNext)
+
+```bash
+# Execution requires JWT
+curl -X POST http://localhost:3141/agents/my-agent/text \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"input": "Hello"}'
+
+# Management requires Console Key
+curl http://localhost:3141/agents \
+  -H "x-console-access-key: YOUR_CONSOLE_KEY"
+```
+
+## Troubleshooting
+
+### Console Shows 401 Errors
+
+**Production**:
+
+```bash
+export NODE_ENV=production
+export VOLTAGENT_CONSOLE_ACCESS_KEY=your-key
+```
+
+Then provide the same key via header or `?key=`.
+
+**Development**:
+
+```bash
+# Ensure NODE_ENV is not "production"
+unset NODE_ENV
+```
+
+### WebSocket Connection Fails
+
+Common causes:
+
+1. Missing `?key=` (console) or `?token=` (custom user WS)
+2. `NODE_ENV=production` with dev bypass headers
+3. Using console key on user routes or JWT on console routes
+
+### Mixed Authentication Issues
+
+Remember the authNext split:
+
+- **User routes** (execution) -> JWT
+- **Console routes** (management, docs, observability, updates) -> Console Key
+- **Public routes** -> no auth
+
+## Security Best Practices
+
+### 1. Use Environment Variables
+
+```typescript
+// Good: Environment variable
+const provider = jwtAuth({
+  secret: process.env.JWT_SECRET!,
+});
+```
+
+### 2. Generate Strong Secrets
+
+```bash
+openssl rand -hex 32
+```
+
+### 3. Use HTTPS in Production
+
+```typescript
+if (process.env.NODE_ENV === "production") {
+  app.use(async (c, next) => {
+    if (c.req.header("x-forwarded-proto") !== "https") {
+      return c.redirect(`https://${c.req.header("host")}${c.req.url}`);
+    }
+    await next();
+  });
+}
+```
+
+## Next Steps
+
+- Learn about [Custom Endpoints](./custom-endpoints.md)
+- See [Streaming](./streaming.md)
+- Read about [Agent Endpoints](./endpoints/agents.md)
+- Set up [Observability](../observability/developer-console.md)
+
+## Legacy `auth` (Deprecated)
+
+Legacy auth uses two default lists:
+
+- **DEFAULT_LEGACY_PUBLIC_ROUTES** (alias `DEFAULT_PUBLIC_ROUTES`): management, docs, discovery
+- **PROTECTED_ROUTES**: execution, tool execution, observability, updates
+
+When `auth` is enabled:
+
+- **Execution endpoints** require JWT
+- **Management and docs** remain public
+- `defaultPrivate: true` only protects **custom/unknown routes**, but does **not** override `DEFAULT_LEGACY_PUBLIC_ROUTES` (alias `DEFAULT_PUBLIC_ROUTES`)
+
+If you need `/agents`, `/workflows`, `/doc`, or `/ui` protected, use **authNext**.
+
+### Legacy Behavior Summary
+
+| Endpoint Type                     | Legacy Auth (Default) | Legacy Auth (defaultPrivate: true) |
+| --------------------------------- | --------------------- | ---------------------------------- |
+| Execution (`POST /agents/*/text`) | Protected             | Protected                          |
+| Management (`GET /agents`)        | Public                | Public                             |
+| Docs (`/doc`, `/ui`)              | Public                | Public                             |
+| Custom routes                     | Public                | Protected                          |
+
+Observability and updates still require Console Access Key in production.
+
+### Legacy Usage
+
+Minimal setup with JWT:
 
 ```typescript
 import { VoltAgent } from "@voltagent/core";
@@ -129,417 +624,38 @@ new VoltAgent({
   agents: { myAgent },
   server: honoServer({
     auth: jwtAuth({
-      secret: process.env.JWT_SECRET || "your-secret-key",
+      secret: process.env.JWT_SECRET!,
     }),
   }),
 });
-````
+```
 
-### Advanced Configuration
+### Legacy Route Controls
+
+`auth` supports `publicRoutes` and `defaultPrivate` on the provider:
 
 ```typescript
-const authProvider = jwtAuth({
-  // JWT secret for verification
-  secret: process.env.JWT_SECRET,
+auth: jwtAuth({
+  secret: process.env.JWT_SECRET!,
 
-  // Map JWT payload to user object
-  mapUser: (payload) => ({
-    id: payload.sub,
-    email: payload.email,
-    name: payload.name,
-    roles: payload.roles || [],
-    tier: payload.tier || "free",
-  }),
+  // Protect all unknown/custom routes by default
+  defaultPrivate: true,
 
-  // Additional public routes
-  publicRoutes: ["GET /api/public/*", "POST /api/webhooks/*"],
-
-  // Protect all routes by default (opt-out mode)
-  // When true, all routes require auth unless listed in publicRoutes
-  // defaultPrivate: true,
-
-  // JWT verification options
-  verifyOptions: {
-    algorithms: ["HS256", "RS256"],
-    audience: "https://api.example.com",
-    issuer: "https://auth.example.com",
-  },
-});
-
-new VoltAgent({
-  agents: { myAgent },
-  server: honoServer({ auth: authProvider }),
-});
+  // Add additional public routes
+  publicRoutes: ["GET /health", "POST /webhooks/*"],
+}),
 ```
 
-### Creating JWT Tokens
+Important behavior:
 
-For testing or simple implementations:
+- `publicRoutes` are **added** to the default public list
+- `defaultPrivate: true` does **not** make default public routes private
+- To protect management or docs endpoints, switch to **authNext**
 
-```typescript
-import { createJWT } from "@voltagent/server-core";
+### Legacy Route Pattern Syntax
 
-const token = createJWT(
-  {
-    sub: "user-123",
-    email: "user@example.com",
-    name: "John Doe",
-    roles: ["admin"],
-    tier: "premium",
-  },
-  "your-secret-key",
-  {
-    expiresIn: "24h",
-    audience: "https://api.example.com",
-    issuer: "https://auth.example.com",
-  }
-);
+Legacy route patterns use the same matcher as authNext:
 
-console.log("Bearer", token);
-```
-
-## Using Authentication
-
-### Making Authenticated Requests
-
-Include the JWT token in the Authorization header:
-
-```bash
-# Get token (from your auth system)
-TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-
-# Make authenticated request
-curl -X POST http://localhost:3141/agents/assistant/text \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{
-    "input": "Hello, who am I?"
-  }'
-```
-
-### JavaScript Client
-
-```javascript
-const token = await getAuthToken(); // Your auth logic
-
-const response = await fetch("http://localhost:3141/agents/assistant/text", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  },
-  body: JSON.stringify({
-    input: "Process my request",
-  }),
-});
-
-if (response.status === 401) {
-  console.error("Authentication failed");
-  // Refresh token or redirect to login
-}
-```
-
-## User Context Injection
-
-When authenticated, user information is automatically injected into the request. The middleware adds the user object to `body.context.user` and sets `userId`.
-
-### Accessing User in Agent Hooks
-
-The user context is available in the `OperationContext` Map:
-
-```typescript
-const agent = new Agent({
-  name: "ContextAwareAgent",
-  instructions: "You are a helpful assistant",
-  model: openai("gpt-4"),
-
-  hooks: {
-    onStart: async ({ agent, context }) => {
-      // User data is in the context Map
-      const user = context.context.get("user");
-      console.log("Processing request for:", user?.email);
-
-      // userId is directly available
-      console.log("User ID:", context.userId);
-
-      // Customize behavior based on user
-      if (user?.tier === "premium") {
-        console.log("Premium user detected");
-      }
-    },
-
-    onEnd: async ({ agent, context, output, error }) => {
-      const user = context.context.get("user");
-      console.log(`Request completed for user: ${user?.id}`);
-    },
-  },
-});
-```
-
-### Dynamic Instructions Based on User
-
-You can use dynamic instructions to customize agent behavior:
-
-```typescript
-const agent = new Agent({
-  name: "DynamicAgent",
-  instructions: ({ context }) => {
-    // Access user from the context Map
-    const user = context?.get("user");
-
-    if (user?.roles?.includes("admin")) {
-      return "You are an admin assistant with full access to all features.";
-    }
-
-    if (user?.tier === "premium") {
-      return "You are a premium assistant with advanced capabilities.";
-    }
-
-    return "You are a helpful assistant with standard features.";
-  },
-  model: openai("gpt-4"),
-});
-```
-
-### Workflow Context
-
-Workflows receive user context in a similar way:
-
-```typescript
-const workflow = new Workflow({
-  name: "UserWorkflow",
-
-  run: async (input, { context }) => {
-    // Context is a Map with user data
-    const user = context?.get("user");
-    const userId = context?.get("userId");
-
-    if (user?.roles?.includes("admin")) {
-      console.log("Admin workflow execution");
-    }
-
-    return {
-      processedBy: userId,
-      userTier: user?.tier,
-    };
-  },
-});
-```
-
-## Custom Auth Providers
-
-Create your own authentication provider by implementing the `AuthProvider` interface:
-
-```typescript
-import type { AuthProvider } from "@voltagent/server-core";
-
-export function customAuth(config: CustomAuthConfig): AuthProvider<Request> {
-  return {
-    type: "custom",
-
-    // Verify token and return user object
-    async verifyToken(token: string, request?: Request): Promise<any> {
-      // Your verification logic
-      const user = await verifyWithYourService(token);
-
-      if (!user) {
-        throw new Error("Invalid token");
-      }
-
-      return user;
-    },
-
-    // Extract token from request (optional)
-    extractToken(request: Request): string | undefined {
-      // Check Authorization header
-      const authHeader = request.headers.get("Authorization");
-      if (authHeader?.startsWith("Bearer ")) {
-        return authHeader.substring(7);
-      }
-
-      // Check cookie
-      const cookie = request.headers.get("Cookie");
-      const token = parseCookie(cookie, "auth_token");
-      if (token) return token;
-
-      // Check query parameter
-      const url = new URL(request.url);
-      return url.searchParams.get("token") || undefined;
-    },
-
-    // Protect all routes by default (recommended for custom providers)
-    defaultPrivate: true,
-
-    // Additional public routes
-    publicRoutes: ["GET /api/status", "POST /api/login"],
-  };
-}
-```
-
-## Error Responses
-
-Authentication failures return consistent error responses:
-
-### 401 - No Token
-
-```json
-{
-  "success": false,
-  "error": "Authentication required"
-}
-```
-
-### 401 - Invalid Token
-
-```json
-{
-  "success": false,
-  "error": "Invalid token: jwt malformed"
-}
-```
-
-### 401 - Expired Token
-
-```json
-{
-  "success": false,
-  "error": "Token expired"
-}
-```
-
-## Security Best Practices
-
-### 1. Secure Token Storage
-
-Never store JWT secrets in code:
-
-```typescript
-// ❌ Bad
-const secret = "my-secret-key";
-
-// ✅ Good
-const secret = process.env.JWT_SECRET;
-if (!secret) {
-  throw new Error("JWT_SECRET environment variable is required");
-}
-```
-
-### 2. Use HTTPS in Production
-
-Always use HTTPS to prevent token interception:
-
-```typescript
-// Production configuration
-if (process.env.NODE_ENV === "production") {
-  if (!request.url.startsWith("https://")) {
-    throw new Error("HTTPS required in production");
-  }
-}
-```
-
-### 3. Token Expiration
-
-Set reasonable expiration times:
-
-```typescript
-createJWT(payload, secret, {
-  expiresIn: "15m", // Short-lived for sensitive operations
-  // or
-  expiresIn: "7d", // Longer for less sensitive apps
-});
-```
-
-### 4. Refresh Tokens
-
-Implement refresh token logic for long sessions:
-
-```typescript
-// Public route for token refresh
-publicRoutes: (["POST /auth/refresh"],
-  // In your refresh handler
-  app.post("/auth/refresh", async (c) => {
-    const refreshToken = c.req.header("X-Refresh-Token");
-    if (validateRefreshToken(refreshToken)) {
-      const newToken = createJWT(payload, secret, { expiresIn: "15m" });
-      return c.json({ token: newToken });
-    }
-    return c.json({ error: "Invalid refresh token" }, 401);
-  }));
-```
-
-### 5. Rate Limiting
-
-Protect auth endpoints from brute force:
-
-```typescript
-import { rateLimiter } from "hono-rate-limiter";
-
-server: honoServer({
-  configureApp: (app) => {
-    // Rate limit auth endpoints
-    app.use(
-      "/agents/*/text",
-      rateLimiter({
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        limit: 100, // Max 100 requests per window
-      })
-    );
-  },
-  auth: jwtAuth({ secret }),
-});
-```
-
-## Testing Authentication
-
-### Generate Test Tokens
-
-Create a test token generator:
-
-```typescript
-// test-token.ts
-import { createJWT } from "@voltagent/server-core";
-
-const testUsers = {
-  admin: {
-    sub: "admin-123",
-    email: "admin@test.com",
-    roles: ["admin"],
-    tier: "enterprise",
-  },
-  user: {
-    sub: "user-456",
-    email: "user@test.com",
-    roles: ["user"],
-    tier: "free",
-  },
-};
-
-const token = createJWT(testUsers.admin, process.env.JWT_SECRET || "test-secret", {
-  expiresIn: "1h",
-});
-
-console.log(`Bearer ${token}`);
-```
-
-### Test Protected Endpoints
-
-```bash
-# Without token (should fail)
-curl -X POST http://localhost:3141/agents/assistant/text \
-  -H "Content-Type: application/json" \
-  -d '{"input": "Hello"}'
-# Response: 401 {"success": false, "error": "Authentication required"}
-
-# With token (should succeed)
-curl -X POST http://localhost:3141/agents/assistant/text \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"input": "Hello"}'
-# Response: 200 {"success": true, "data": {...}}
-```
-
-## Next Steps
-
-- Explore [Custom Endpoints](./custom-endpoints.md) to add auth-protected routes
-- Learn about [Streaming](./streaming.md) with authentication
-- Check [Agent Endpoints](./endpoints/agents.md) for authenticated requests
+- `GET /agents/:id`
+- `/observability/*`
+- `/ws/observability/**`

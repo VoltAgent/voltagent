@@ -4,15 +4,14 @@ import Layout from "@theme/Layout";
 import { AgentsDetail } from "../components/agents-detail";
 import { CommunitySection } from "../components/community-section";
 import { CompaniesMarquee } from "../components/companies/CompaniesMarquee";
+import { FeatureShowcase } from "../components/feature-showcase";
 import { FeaturedBlog } from "../components/featured-blog";
 import { Hero } from "../components/hero";
 import { Integrations } from "../components/integrations";
-import LivePreview from "../components/live-preview";
 import Ops from "../components/ops";
 import { Rag } from "../components/rag";
 import { SupervisorAgent } from "../components/supervisor-agent";
 import { Testimonials } from "../components/testimonials";
-import { TwoBlocks } from "../components/two-blocks";
 import { DotPattern } from "../components/ui/dot-pattern";
 import { Workflows } from "../components/workflows";
 export default function Home(): JSX.Element {
@@ -63,21 +62,17 @@ export default function Home(): JSX.Element {
           </div>
 
           <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
-
           <Hero />
-          <CompaniesMarquee />
-
-          <TwoBlocks />
-          <LivePreview />
+          <FeatureShowcase />
 
           <div className="relative">
+            <CompaniesMarquee />
             <AgentsDetail />
             <Testimonials />
             <SupervisorAgent />
             <Workflows />
             <Rag />
             <Integrations />
-            <Ops />
             <FeaturedBlog />
             <CommunitySection />
           </div>

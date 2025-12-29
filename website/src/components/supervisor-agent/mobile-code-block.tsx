@@ -111,7 +111,6 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Centralized Coordination */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "centralized",
@@ -138,7 +137,6 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Specialized Agent Roles */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "specialized",
@@ -188,7 +186,6 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Shared Memory System */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses("memory")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("memory", e)}
@@ -228,7 +225,6 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               </span>
 
               {/* Dynamic Agent Selection */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "dynamic",

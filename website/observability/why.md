@@ -8,7 +8,7 @@ VoltOps is built by the **VoltAgent team** - open source AI agent framework main
 
 Born from the actual needs encountered while developing the VoltAgent framework, this observability platform addresses the gaps we experienced firsthand - not theoretical problems, but real debugging challenges that arise when agents interact with tools, make complex decisions, and handle multi-step workflows.
 
-**Built on real use cases from the community:** Instead of adding features for the sake of completeness, every capability in VoltOps comes from actual pain points reported by developers building AI agents in production. We focus on what actually matters when your agent fails in production and you need to understand why immediately.
+**Built on real use cases from the community:** Every capability in VoltOps comes from actual pain points reported by developers building AI agents in production. We focus on what actually matters when your agent fails in production and you need to understand why immediately.
 
 **No bloat, just value:** As framework builders ourselves, we know the difference between nice-to-have metrics and mission-critical insights. VoltOps includes only the observability features that genuinely help you ship better LLM applications.
 
@@ -50,23 +50,23 @@ Unlike traditional monitoring tools that focus on model metrics, VoltOps is desi
 
 Watch your agents think and act in real-time through interactive flowcharts. No waiting for batch processing or delayed dashboards - see execution flow as it happens with virtually zero latency between agent action and console visualization.
 
-**Complete Workflow Visibility**
+**Workflow Visibility**
 
 Track the entire agent decision-making process from initial user input to final response. See not just what happened, but why - including which tools were considered but not used, and the reasoning chain that led to specific actions.
 
-**Framework-Agnostic Integration**
+**VoltAgent Integration**
 
-Works with any technology stack through multiple integration options - from native SDK support to universal REST API integration. Whether you're using VoltAgent, Vercel AI SDK, or building custom solutions.
+VoltOps integrates directly with VoltAgent through the framework's telemetry system. No additional SDK or configuration required - traces are captured automatically when you run VoltAgent applications.
 
 ## Key Capabilities
 
 **Multi-Agent Coordination** - Parent-child relationships and hierarchies visualized as interactive flowcharts. See how your main conversation agent delegates to specialized agents like code generators, data analysts, or customer service bots.
 
-**Tool Execution Flows** - Complete tool call sequences with inputs/outputs, execution times, and success rates. Know immediately if your database tool is receiving malformed queries or if your API integration is timing out.
+**Tool Execution Flows** - Tool call sequences with inputs/outputs, execution times, and success rates. Know immediately if your database tool is receiving malformed queries or if your API integration is timing out.
 
 **Conversation Threading** - How messages connect across interactions, showing user intent progression and agent response patterns. This helps identify where users get confused or where your agent provides incomplete responses.
 
-**Decision Tracking** - The reasoning behind each step, including the complete dialogue thread across multiple interactions and why certain responses were generated.
+**Decision Tracking** - The reasoning behind each step, including the dialogue thread across multiple interactions and why certain responses were generated.
 
 **Instant Problem Detection** - Get immediate alerts when tools fail, when agents get stuck in loops, or when response times spike. Dramatically reduce time to resolution with real-time monitoring.
 

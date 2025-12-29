@@ -1,5 +1,14 @@
 # @voltagent/scorers
 
+## 1.0.2
+
+### Patch Changes
+
+- [#805](https://github.com/VoltAgent/voltagent/pull/805) [`ad4893a`](https://github.com/VoltAgent/voltagent/commit/ad4893a523be60cef93706a5aa6d2e0096cc306b) Thanks [@lzj960515](https://github.com/lzj960515)! - feat: add exports field to package.json for module compatibility
+
+- Updated dependencies [[`b56e5a0`](https://github.com/VoltAgent/voltagent/commit/b56e5a087378c7ba5ce4a2c1756a0fe3dfb738b5)]:
+  - @voltagent/core@1.2.7
+
 ## 1.0.1
 
 ### Patch Changes

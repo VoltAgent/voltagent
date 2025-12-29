@@ -225,11 +225,111 @@ try {
 
 When using `type: "http"`, the client attempts streamable HTTP first. If it fails, it automatically creates a new SSE transport and retries the connection.
 
+## User Input Handling (Elicitation)
+
+Some MCP servers may request user input during tool execution. For example, a server might ask for confirmation before performing a destructive action. VoltAgent provides a dynamic API to handle these elicitation requests.
+
+### Setting Up an Elicitation Handler
+
+Use the `elicitation` bridge on individual clients to register handlers:
+
+```ts
+const clients = await mcpConfig.getClients();
+
+// Set a persistent handler
+clients.myServer.elicitation.setHandler(async (request) => {
+  console.log("Server asks:", request.message);
+  console.log("Expected schema:", request.requestedSchema);
+
+  // Collect user input (e.g., via CLI prompt or UI form)
+  const userConfirmed = await askUserForConfirmation(request.message);
+
+  return {
+    action: userConfirmed ? "accept" : "decline",
+    content: userConfirmed ? { confirmed: true } : undefined,
+  };
+});
+```
+
+The handler receives a request object with:
+
+- `message`: Human-readable message from the server
+- `requestedSchema`: JSON schema describing the expected response format
+
+The handler must return an object with:
+
+- `action`: One of `"accept"`, `"decline"`, or `"cancel"`
+- `content`: Optional data matching the requested schema (when accepting)
+
+### One-Time Handler
+
+Handle only the next elicitation request, then auto-remove:
+
+```ts
+clients.myServer.elicitation.once(async (request) => {
+  return { action: "accept", content: { approved: true } };
+});
+```
+
+### Removing the Handler
+
+```ts
+clients.myServer.elicitation.removeHandler();
+```
+
+When no handler is registered, elicitation requests are automatically cancelled.
+
+### Checking Handler Status
+
+```ts
+if (clients.myServer.elicitation.hasHandler) {
+  console.log("Handler is registered");
+} else {
+  console.log("No handler - requests will be cancelled");
+}
+```
+
+### Method Chaining
+
+All elicitation methods support chaining:
+
+```ts
+clients.myServer.elicitation.setHandler(myHandler).removeHandler().setHandler(anotherHandler);
+```
+
+### Agent-Level Elicitation
+
+Instead of setting handlers on individual clients, you can pass an elicitation handler directly to `generateText` or `streamText`. This handler applies to all MCP tools during the request:
+
+```ts
+const response = await agent.generateText("Perform action with MCP tool", {
+  userId: "user123",
+  elicitation: async (request) => {
+    console.log("Server asks:", request.message);
+
+    // Collect user input (CLI prompt, UI form, etc.)
+    const confirmed = await askUser(request.message);
+
+    return {
+      action: confirmed ? "accept" : "decline",
+      content: confirmed ? { confirmed: true } : undefined,
+    };
+  },
+});
+```
+
+This approach is useful when:
+
+- You want request-scoped handlers that don't persist
+- You need access to request context (userId, conversationId) in your handler
+- You prefer not to manage client-level handlers manually
+
 ## Lifecycle
 
 1. Create `MCPConfiguration` with server definitions
 2. Fetch tools with `getTools()` or `getToolsets()`
 3. Pass tools to agent (initialization or per request)
-4. Use agent methods (`generateText`, `streamText`, etc.)
-5. Monitor with `getClients()` and event listeners (optional)
-6. Disconnect with `disconnect()`
+4. Set up elicitation handlers if needed (optional)
+5. Use agent methods (`generateText`, `streamText`, etc.)
+6. Monitor with `getClients()` and event listeners (optional)
+7. Disconnect with `disconnect()`

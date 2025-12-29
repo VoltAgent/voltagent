@@ -5,6 +5,7 @@
 
 import type { UIMessage } from "ai";
 import type { z } from "zod";
+import type { MessageRole, UsageInfo } from "../agent/providers/base/types";
 import type { OperationContext } from "../agent/types";
 
 // ============================================================================
@@ -65,6 +66,32 @@ export type GetMessagesOptions = {
   after?: Date;
   roles?: string[];
 };
+
+export type ConversationStepType = "text" | "tool_call" | "tool_result";
+
+export interface ConversationStepRecord {
+  id: string;
+  conversationId: string;
+  userId: string;
+  agentId: string;
+  agentName?: string;
+  operationId: string;
+  stepIndex: number;
+  type: ConversationStepType;
+  role: MessageRole;
+  content?: string;
+  arguments?: Record<string, unknown> | null;
+  result?: Record<string, unknown> | null;
+  usage?: UsageInfo;
+  subAgentId?: string;
+  subAgentName?: string;
+  createdAt: string;
+}
+
+export interface GetConversationStepsOptions {
+  limit?: number;
+  operationId?: string;
+}
 
 /**
  * Memory options for MemoryManager
@@ -139,6 +166,15 @@ export interface WorkflowStateEntry {
   /** Timestamps */
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface WorkflowRunQuery {
+  workflowId?: string;
+  status?: WorkflowStateEntry["status"];
+  from?: Date;
+  to?: Date;
+  limit?: number;
+  offset?: number;
 }
 
 // ============================================================================
@@ -320,7 +356,7 @@ export interface StorageAdapter {
     conversationId: string,
     options?: GetMessagesOptions,
     context?: OperationContext,
-  ): Promise<UIMessage[]>;
+  ): Promise<UIMessage<{ createdAt: Date }>[]>;
   clearMessages(userId: string, conversationId?: string, context?: OperationContext): Promise<void>;
 
   // Conversation operations
@@ -337,6 +373,13 @@ export interface StorageAdapter {
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
   ): Promise<Conversation>;
   deleteConversation(id: string): Promise<void>;
+
+  saveConversationSteps?(steps: ConversationStepRecord[]): Promise<void>;
+  getConversationSteps?(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]>;
 
   // Working Memory operations
   getWorkingMemory(params: {
@@ -360,6 +403,7 @@ export interface StorageAdapter {
 
   // Workflow State operations
   getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null>;
+  queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]>;
   setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void>;
   updateWorkflowState(executionId: string, updates: Partial<WorkflowStateEntry>): Promise<void>;
   getSuspendedWorkflowStates(workflowId: string): Promise<WorkflowStateEntry[]>;

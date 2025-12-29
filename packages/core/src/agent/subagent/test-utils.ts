@@ -67,6 +67,7 @@ export interface CreateMockAgentOptions {
   id?: string;
   name?: string;
   instructions?: string;
+  purpose?: string;
   model?: LanguageModel;
   tools?: (Tool<ToolSchema, ToolSchema | undefined> | Toolkit)[];
   voice?: Voice;
@@ -90,6 +91,7 @@ export function createMockAgent(options: CreateMockAgentOptions = {}): Agent {
     id = "mock-agent-id",
     name = "Mock Agent",
     instructions = "You are a mock agent for testing",
+    purpose,
     model = createMockLanguageModel(),
     tools = [],
     voice,
@@ -116,6 +118,7 @@ export function createMockAgent(options: CreateMockAgentOptions = {}): Agent {
     subAgents,
     supervisorConfig,
     hooks,
+    purpose,
     temperature,
     maxSteps,
     markdown,

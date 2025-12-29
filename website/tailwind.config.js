@@ -9,6 +9,7 @@ module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
     "./docs/**/*.{md,mdx,tsx}",
+    "./recipes/**/*.{md,mdx,tsx}",
     "app/**/*.{ts,tsx}",
     "components/**/*.{ts,tsx}",
   ],

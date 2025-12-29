@@ -9,16 +9,20 @@ export default function Navbar() {
   const windowSize = useWindowSize();
   const isDocsPage =
     location.pathname.includes("/docs") ||
-    location.pathname.includes("/voltops-llm-observability-docs");
+    location.pathname.includes("/observability-docs") ||
+    location.pathname.includes("/evaluation-docs") ||
+    location.pathname.includes("/prompt-engineering-docs") ||
+    location.pathname.includes("/deployment-docs") ||
+    location.pathname.includes("/actions-triggers-docs") ||
+    location.pathname.startsWith("/recipes-and-guides/");
 
   const isMobile = windowSize === "mobile";
 
-  if (isDocsPage) {
-    if (isMobile) {
-      return <DocNavbar />;
-    }
-    return null;
+  // Mobile docs pages: show DocNavbar
+  if (isDocsPage && isMobile) {
+    return <DocNavbar />;
   }
 
+  // All other cases (including desktop docs): show CustomNavbar
   return <CustomNavbar />;
 }

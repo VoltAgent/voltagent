@@ -10,7 +10,9 @@ import { ConversationAlreadyExistsError, ConversationNotFoundError } from "../..
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
   StoredUIMessage,
@@ -41,6 +43,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   private users: Map<string, UserInfo> = new Map();
   private workflowStates: Map<string, WorkflowStateEntry> = new Map();
   private workflowStatesByWorkflow: Map<string, Set<string>> = new Map();
+  private conversationSteps = new Map<string, Map<string, ConversationStepRecord[]>>();
 
   // ============================================================================
   // Message Operations
@@ -99,7 +102,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     conversationId: string,
     options?: GetMessagesOptions,
     _context?: OperationContext,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     const { limit = 100, before, after, roles } = options || {};
 
     // Get user's messages or return empty array
@@ -132,9 +135,64 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     return messages.map((msg) => {
       const cloned = deepClone(msg);
       // Remove storage-specific fields to return clean UIMessage
-      const { createdAt, userId: msgUserId, conversationId: msgConvId, ...uiMessage } = cloned;
-      return uiMessage as UIMessage;
+      const { userId: msgUserId, conversationId: msgConvId, ...uiMessage } = cloned;
+
+      // Ensure metadata exists
+      if (!uiMessage.metadata) {
+        uiMessage.metadata = {};
+      }
+
+      // Add createdAt to metadata
+      (uiMessage.metadata as any).createdAt = cloned.createdAt;
+
+      return uiMessage as UIMessage<{ createdAt: Date }>;
     });
+  }
+
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    for (const step of steps) {
+      const userSteps = this.getOrCreateUserSteps(step.userId);
+      const conversationSteps = this.getOrCreateConversationSteps(userSteps, step.conversationId);
+      const record = { ...step };
+      const existingIndex = conversationSteps.findIndex((item) => item.id === step.id);
+      if (existingIndex >= 0) {
+        conversationSteps[existingIndex] = record;
+      } else {
+        conversationSteps.push(record);
+      }
+      conversationSteps.sort((a, b) => a.stepIndex - b.stepIndex);
+    }
+  }
+
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    const userSteps = this.conversationSteps.get(userId);
+    if (!userSteps) {
+      return [];
+    }
+    const conversationSteps = userSteps.get(conversationId);
+    if (!conversationSteps) {
+      return [];
+    }
+
+    let steps = conversationSteps;
+    if (options?.operationId) {
+      steps = steps.filter((step) => step.operationId === options.operationId);
+    }
+
+    if (options?.limit && options.limit > 0 && steps.length > options.limit) {
+      steps = steps.slice(steps.length - options.limit);
+    }
+
+    return steps.map((step) => ({
+      ...step,
+      arguments: step.arguments ? { ...step.arguments } : step.arguments,
+      result: step.result ? { ...step.result } : step.result,
+      usage: step.usage ? { ...step.usage } : step.usage,
+    }));
   }
 
   /**
@@ -154,9 +212,17 @@ export class InMemoryStorageAdapter implements StorageAdapter {
       if (this.storage[userId][conversationId]) {
         this.storage[userId][conversationId] = [];
       }
+      const userSteps = this.conversationSteps.get(userId);
+      if (userSteps) {
+        userSteps.delete(conversationId);
+        if (userSteps.size === 0) {
+          this.conversationSteps.delete(userId);
+        }
+      }
     } else {
       // Clear all messages for the user
       this.storage[userId] = {};
+      this.conversationSteps.delete(userId);
     }
   }
 
@@ -400,6 +466,56 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   }
 
   /**
+   * Query workflow states with optional filters
+   */
+  async queryWorkflowRuns(query: {
+    workflowId?: string;
+    status?: WorkflowStateEntry["status"];
+    from?: Date;
+    to?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<WorkflowStateEntry[]> {
+    const states: WorkflowStateEntry[] = [];
+
+    if (query.workflowId) {
+      const executionIds = this.workflowStatesByWorkflow.get(query.workflowId);
+      if (executionIds) {
+        for (const id of executionIds) {
+          const state = this.workflowStates.get(id);
+          if (state) {
+            states.push(deepClone(state));
+          }
+        }
+      }
+    } else {
+      for (const state of this.workflowStates.values()) {
+        states.push(deepClone(state));
+      }
+    }
+
+    const filtered = states
+      .filter((state) => {
+        if (query.status && state.status !== query.status) {
+          return false;
+        }
+        if (query.from && state.createdAt < query.from) {
+          return false;
+        }
+        if (query.to && state.createdAt > query.to) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const start = query.offset ?? 0;
+    const end = query.limit ? start + query.limit : undefined;
+
+    return filtered.slice(start, end);
+  }
+
+  /**
    * Set workflow state
    */
   async setWorkflowState(executionId: string, state: WorkflowStateEntry): Promise<void> {
@@ -481,6 +597,27 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     };
   }
 
+  private getOrCreateUserSteps(userId: string): Map<string, ConversationStepRecord[]> {
+    let userSteps = this.conversationSteps.get(userId);
+    if (!userSteps) {
+      userSteps = new Map();
+      this.conversationSteps.set(userId, userSteps);
+    }
+    return userSteps;
+  }
+
+  private getOrCreateConversationSteps(
+    userSteps: Map<string, ConversationStepRecord[]>,
+    conversationId: string,
+  ): ConversationStepRecord[] {
+    let steps = userSteps.get(conversationId);
+    if (!steps) {
+      steps = [];
+      userSteps.set(conversationId, steps);
+    }
+    return steps;
+  }
+
   /**
    * Clear all data
    */
@@ -490,5 +627,6 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     this.users.clear();
     this.workflowStates.clear();
     this.workflowStatesByWorkflow.clear();
+    this.conversationSteps.clear();
   }
 }

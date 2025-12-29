@@ -17,6 +17,9 @@ You can build production-ready agents with memory, workflows, tools, and built-i
 
 VoltAgent provides a complete platform for developing and monitoring AI agents through two complementary tools.
 
+For end-to-end walkthroughs (e.g., Slack agent), see the [Recipes & Guides](/recipes-and-guides/) section.
+Need a frontend? Check the [UI integration guides](/docs/ui/overview/) for ready-made chat UIs (AI SDK, CopilotKit, Assistant UI) backed by VoltAgent.
+
 ### Core Framework
 
 With the core framework, you can build intelligent agents with memory, tools, and multi-step workflows while connecting to any AI provider. Create sophisticated multi-agent systems where specialized agents work together under supervisor coordination.
@@ -68,7 +71,13 @@ description: 'Plug in retriever agents to pull facts from your data sources and 
 },
 {
 type: 'link',
-href: '/docs/evals/overview/',
+href: '/docs/rag/voltagent/',
+label: 'VoltAgent Knowledge Base',
+description: 'Use the managed RAG service for document ingestion, chunking, embeddings, and semantic search.'
+},
+{
+type: 'link',
+href: '/evaluation-docs/',
 label: 'Evals',
 description: 'Ship guardrails faster by running agent eval suites alongside your workflows.'
 },
@@ -77,6 +86,12 @@ type: 'link',
 href: '/docs/guardrails/overview/',
 label: 'Guardrails',
 description: 'Add safety checks and validation layers to ensure your agents behave correctly and safely.'
+},
+{
+type: 'link',
+href: '/deployment-docs/voltops/',
+label: 'Deployment',
+description: 'Deploy your agents to production with one-click GitHub integration and managed infrastructure.'
 }
 ]} />
 
@@ -150,8 +165,38 @@ const analysisWorkflow = createWorkflowChain({
   });
 ```
 
+### Actions & Integrations
+
+Connect agent or workflow outputs to external systems without writing custom plumbing. VoltOps ships with an **Actions** catalog (first release: Airtable) that you can explore from the console, test in place, and then call directly from code.
+
+- Use the **Actions** drawer in VoltOps Console to pick an integration, select a credential, and provide sample payload values.
+- Run the real provider test from the drawer, inspect the response, and copy the generated SDK snippet.
+- Paste the snippet into your agent or workflow and replace the sample values with runtime data.
+
+```ts
+import { createVoltOpsClient } from "@voltagent/core";
+
+const voltops = createVoltOpsClient({
+  publicKey: process.env.VOLT_PUBLIC_KEY!,
+  secretKey: process.env.VOLT_SECRET_KEY!,
+});
+
+await voltops.actions.airtable.createRecord({
+  credential: { credentialId: "cred_abc123" },
+  baseId: "appXXXXXXXXXXXXXX",
+  tableId: "tblYYYYYYYYYYYY",
+  fields: {
+    Name: "Ada Lovelace",
+    Email: "ada@example.com",
+  },
+  typecast: true,
+});
+```
+
+Bindings run inside VoltOps with observability, retries, and can be attached to agents or workflows using JSON transform templates. Additional providers will land in the same experience.
+
 ### VoltOps LLM Observability Platform
 
-VoltAgent comes with built-in [VoltOps](/voltops-llm-observability-docs/) LLM observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.
+VoltAgent comes with built-in [VoltOps](/observability-docs/) LLM observability to monitor and debug your agents in real-time with detailed execution traces, performance metrics, and visual dashboards. Inspect every decision your agents make, track tool usage, and optimize your workflows with built-in OpenTelemetry-based observability.
 
 ![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)

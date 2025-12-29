@@ -1,8 +1,13 @@
 import type { Tool } from "../../tool";
+import type { MCPAuthorizationConfig, MCPAuthorizationContext } from "../authorization";
 import { MCPClient } from "../client/index";
-import type { AnyToolConfig, MCPServerConfig, ToolsetWithTools } from "../types";
-
-// Removed global configurationRegistry Map
+import type {
+  AnyToolConfig,
+  MCPClientCallOptions,
+  MCPConfigurationOptions,
+  MCPServerConfig,
+  ToolsetWithTools,
+} from "../types";
 
 // Helper Type Guard function
 function isToolStructure(
@@ -17,6 +22,17 @@ function isToolStructure(
     typeof obj.description === "string" &&
     "inputSchema" in obj
   );
+}
+
+/**
+ * Helper to normalize context to a Map.
+ */
+function normalizeContextToMap(
+  context?: Map<string | symbol, unknown> | Record<string, unknown>,
+): Map<string | symbol, unknown> {
+  if (!context) return new Map();
+  if (context instanceof Map) return context;
+  return new Map(Object.entries(context));
 }
 
 /**
@@ -36,11 +52,17 @@ export class MCPConfiguration<TServerKeys extends string = string> {
   private readonly mcpClientsById = new Map<TServerKeys, MCPClient>();
 
   /**
-   * Creates a new, independent MCP configuration instance.
-   * @param options Configuration options including server definitions.
+   * Authorization configuration for tool access control.
    */
-  constructor(options: { servers: Record<TServerKeys, MCPServerConfig> }) {
+  private readonly authorizationConfig?: MCPAuthorizationConfig;
+
+  /**
+   * Creates a new, independent MCP configuration instance.
+   * @param options Configuration options including server definitions and optional authorization.
+   */
+  constructor(options: MCPConfigurationOptions<TServerKeys>) {
     this.serverConfigs = options.servers;
+    this.authorizationConfig = options.authorization;
   }
 
   /**
@@ -73,25 +95,106 @@ export class MCPConfiguration<TServerKeys extends string = string> {
 
   /**
    * Retrieves agent-ready tools from all configured MCP servers for this instance.
+   * @param authContext - Optional authorization context for filtering tools.
    * @returns A flat array of all agent-ready tools.
    */
-  public async getTools(): Promise<Tool<any>[]> {
+  public async getTools(authContext?: MCPAuthorizationContext): Promise<Tool<any>[]> {
     const serverEntries = Object.entries(this.serverConfigs) as [TServerKeys, MCPServerConfig][];
 
     const toolFetchingTasks = serverEntries.map(async ([serverName, serverConfig]) => {
       try {
         const client = await this.getConnectedClient(serverName, serverConfig);
-        const agentTools = await client.getAgentTools();
-        return Object.values(agentTools);
+        const callOptions = this.createClientCallOptions(serverName as string, authContext);
+        const agentTools = await client.getAgentTools(callOptions);
+        return { serverName: serverName as string, tools: Object.values(agentTools) };
       } catch (error) {
         console.error(`Error fetching agent tools from server ${serverName}:`, error);
-        return []; // Return empty array for this server on error
+        return { serverName: serverName as string, tools: [] };
       }
     });
 
-    const toolArrays = await Promise.all(toolFetchingTasks);
+    const results = await Promise.all(toolFetchingTasks);
+
+    // If authorization is configured with filterOnDiscovery, filter the tools
+    if (this.authorizationConfig?.filterOnDiscovery && this.hasAuthorizationHandler()) {
+      return this.filterToolsByAuthorization(results, authContext);
+    }
+
     // Flatten the array of arrays into a single array
-    return toolArrays.flat();
+    return results.flatMap((r) => r.tools);
+  }
+
+  /**
+   * Checks if the can authorization function is configured.
+   */
+  private hasAuthorizationHandler(): boolean {
+    return !!this.authorizationConfig?.can;
+  }
+
+  /**
+   * Creates call options for MCPClient methods with authorization context.
+   */
+  private createClientCallOptions(
+    serverName: string,
+    authContext?: MCPAuthorizationContext,
+  ): MCPClientCallOptions {
+    return {
+      serverName,
+      canFunction: this.authorizationConfig?.can,
+      authorizationConfig: this.authorizationConfig,
+      operationContext: authContext
+        ? ({
+            userId: authContext.userId,
+            context: normalizeContextToMap(authContext.context),
+          } as any)
+        : undefined,
+    };
+  }
+
+  /**
+   * Filters tools based on authorization using the `can` function.
+   */
+  private async filterToolsByAuthorization(
+    serverTools: { serverName: string; tools: Tool<any>[] }[],
+    authContext?: MCPAuthorizationContext,
+  ): Promise<Tool<any>[]> {
+    const canFn = this.authorizationConfig?.can;
+
+    // If no can function is available, return all tools
+    if (!canFn) {
+      return serverTools.flatMap((r) => r.tools);
+    }
+
+    const normalizedContext = authContext?.context
+      ? normalizeContextToMap(authContext.context)
+      : undefined;
+
+    const authorizedTools: Tool<any>[] = [];
+
+    for (const { serverName, tools } of serverTools) {
+      for (const tool of tools) {
+        // Extract original tool name by removing serverName prefix if present
+        // Tool names are namespaced as `${serverName}_${originalName}` in getAgentTools
+        const originalToolName = tool.name.startsWith(`${serverName}_`)
+          ? tool.name.slice(serverName.length + 1)
+          : tool.name;
+
+        const result = await canFn({
+          toolName: originalToolName,
+          serverName,
+          action: "discovery",
+          userId: authContext?.userId,
+          context: normalizedContext,
+        });
+
+        const allowed = typeof result === "boolean" ? result : result.allowed;
+        if (allowed) {
+          authorizedTools.push(tool);
+        }
+      }
+    }
+
+    return authorizedTools;
   }
 
   /**

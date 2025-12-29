@@ -10,9 +10,11 @@ import { EmbeddingAdapterNotConfiguredError, VectorAdapterNotConfiguredError } f
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
   Document,
   EmbeddingAdapter,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   MemoryConfig,
   MemoryStorageMetadata,
@@ -20,6 +22,7 @@ import type {
   SearchResult,
   StorageAdapter,
   VectorAdapter,
+  WorkflowRunQuery,
   WorkflowStateEntry,
   WorkingMemoryConfig,
   WorkingMemorySummary,
@@ -69,7 +72,7 @@ export class Memory {
     conversationId: string,
     options?: GetMessagesOptions,
     context?: OperationContext,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     return this.storage.getMessages(userId, conversationId, options, context);
   }
 
@@ -78,6 +81,12 @@ export class Memory {
    */
   async saveMessage(message: UIMessage, userId: string, conversationId: string): Promise<void> {
     await this.addMessage(message, userId, conversationId);
+  }
+
+  async saveConversationSteps(steps: ConversationStepRecord[]): Promise<void> {
+    if (this.storage.saveConversationSteps) {
+      await this.storage.saveConversationSteps(steps);
+    }
   }
 
   /**
@@ -123,6 +132,17 @@ export class Memory {
     context?: OperationContext,
   ): Promise<void> {
     return this.storage.clearMessages(userId, conversationId, context);
+  }
+
+  async getConversationSteps(
+    userId: string,
+    conversationId: string,
+    options?: GetConversationStepsOptions,
+  ): Promise<ConversationStepRecord[]> {
+    if (!this.storage.getConversationSteps) {
+      return [];
+    }
+    return this.storage.getConversationSteps(userId, conversationId, options);
   }
 
   // ============================================================================
@@ -221,7 +241,7 @@ export class Memory {
       semanticThreshold?: number;
       mergeStrategy?: "prepend" | "append" | "interleave";
     },
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     // Get recent messages
     const recentMessages = await this.storage.getMessages(userId, conversationId, {
       limit: options?.limit,
@@ -275,11 +295,13 @@ export class Memory {
     userId: string,
     conversationId: string,
     messageIds: string[],
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     // Get all messages once and map by id to preserve the order of messageIds
     const allMessages = await this.storage.getMessages(userId, conversationId);
     const byId = new Map(allMessages.map((m) => [m.id, m] as const));
-    const ordered = messageIds.map((id) => byId.get(id)).filter((m): m is UIMessage => Boolean(m));
+    const ordered = messageIds
+      .map((id) => byId.get(id))
+      .filter((m): m is UIMessage<{ createdAt: Date }> => Boolean(m));
     return ordered;
   }
 
@@ -287,10 +309,10 @@ export class Memory {
    * Merge two arrays of messages, removing duplicates
    */
   private mergeMessages(
-    recentMessages: UIMessage[],
-    semanticMessages: UIMessage[],
+    recentMessages: UIMessage<{ createdAt: Date }>[],
+    semanticMessages: UIMessage<{ createdAt: Date }>[],
     strategy: "prepend" | "append" | "interleave" = "append",
-  ): UIMessage[] {
+  ): UIMessage<{ createdAt: Date }>[] {
     // Create a Set of message IDs from recent messages
     const recentIds = new Set(recentMessages.map((m) => m.id));
 
@@ -307,7 +329,7 @@ export class Memory {
         return [...recentMessages, ...uniqueSemanticMessages];
       case "interleave": {
         // Interleave semantic messages with recent messages
-        const merged: UIMessage[] = [];
+        const merged: UIMessage<{ createdAt: Date }>[] = [];
         const maxLength = Math.max(recentMessages.length, uniqueSemanticMessages.length);
         for (let i = 0; i < maxLength; i++) {
           if (i < uniqueSemanticMessages.length) {
@@ -946,11 +968,11 @@ Remember:
       mergeStrategy?: "prepend" | "append" | "interleave";
     },
     operationContext?: OperationContext,
-  ): Promise<UIMessage[]> {
+  ): Promise<UIMessage<{ createdAt: Date }>[]> {
     const logger = options?.logger || this.logger;
 
     try {
-      let messages: UIMessage[] = [];
+      let messages: UIMessage<{ createdAt: Date }>[] = [];
 
       // Semantic search decision
       if (options?.useSemanticSearch && options?.currentQuery && this.hasVectorSupport()) {
@@ -1086,6 +1108,13 @@ Remember:
    */
   async getWorkflowState(executionId: string): Promise<WorkflowStateEntry | null> {
     return this.storage.getWorkflowState(executionId);
+  }
+
+  /**
+   * Query workflow states with filters
+   */
+  async queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
+    return this.storage.queryWorkflowRuns(query);
   }
 
   /**

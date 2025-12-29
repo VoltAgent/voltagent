@@ -41,8 +41,97 @@ Each tool has:
 - **description**: Explains what the tool does (the model uses this to decide when to call it)
 - **parameters**: Input schema defined with Zod
 - **execute**: Function that runs when the tool is called
+- **providerOptions** (optional): Provider-specific options for advanced features
+- **tags** (optional): Optional user-defined tags for organizing or labeling tools.
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
+
+### Tool Tags
+
+Tags are optional string labels that help organize and categorize tools.
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+// Example: Database tools with tags
+const queryTool = createTool({
+  name: "query_database",
+  description: "Execute a read-only SQL query",
+  tags: ["database", "read-only", "sql"],
+  parameters: z.object({
+    query: z.string().describe("SQL query to execute"),
+  }),
+  execute: async ({ query }) => {
+    // Execute query
+    return { results: [] };
+  },
+});
+
+const updateTool = createTool({
+  name: "update_record",
+  description: "Update database records",
+  tags: ["database", "write", "sql", "destructive"],
+  parameters: z.object({
+    table: z.string().describe("Table name"),
+    id: z.string().describe("Record ID"),
+    data: z.record(z.unknown()).describe("Data to update"),
+  }),
+  execute: async ({ table, id, data }) => {
+    // Update record
+    return { success: true };
+  },
+});
+
+// Example: External API tools
+const weatherTool = createTool({
+  name: "get_weather",
+  description: "Get current weather data",
+  tags: ["weather", "external-api", "read-only"],
+  parameters: z.object({
+    location: z.string().describe("City name"),
+  }),
+  execute: async ({ location }) => {
+    // Fetch weather
+    return { temperature: 72, conditions: "sunny" };
+  },
+});
+```
+
+Tags are included in OpenTelemetry spans and visible in the VoltAgent observability dashboard, making it easy to analyze tool usage patterns and debug agent behavior.
+
+Tool tags also flow through the REST tool endpoints (`GET /tools` and `POST /tools/:name/execute` responses), so you can build frontend tooling or access control based on tags.
+
+### Provider-Specific Options
+
+You can pass provider-specific options to enable advanced features like caching. Currently supported providers include Anthropic, OpenAI, Google, and others.
+
+#### Anthropic Cache Control
+
+Anthropic's prompt caching can reduce costs and latency for repeated tool calls:
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const cityAttractionsTool = createTool({
+  name: "get_city_attractions",
+  description: "Get tourist attractions for a city",
+  parameters: z.object({
+    city: z.string().describe("The city name"),
+  }),
+  providerOptions: {
+    anthropic: {
+      cacheControl: { type: "ephemeral" },
+    },
+  },
+  execute: async ({ city }) => {
+    return await fetchAttractions(city);
+  },
+});
+```
+
+The `cacheControl` option tells Anthropic to cache the tool definition, improving performance for subsequent calls. Learn more about [Anthropic's cache control](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic#cache-control).
 
 ## Using Tools with Agents
 
@@ -108,9 +197,9 @@ const response = await agent.generateText("Calculate 123 * 456", {
 });
 ```
 
-## OperationContext
+## Accessing Operation Context
 
-The `execute` function receives an `OperationContext` as its second parameter, providing access to operation metadata and control mechanisms.
+The `execute` function receives a `ToolExecuteOptions` object as its second parameter, which extends `Partial<OperationContext>` and provides access to all operation metadata and control mechanisms.
 
 ```ts
 const debugTool = createTool({
@@ -119,20 +208,29 @@ const debugTool = createTool({
   parameters: z.object({
     message: z.string().describe("Debug message to log"),
   }),
-  execute: async (args, context) => {
-    // Access operation metadata
-    console.log("Operation ID:", context?.operationId);
-    console.log("User ID:", context?.userId);
-    console.log("Conversation ID:", context?.conversationId);
+  execute: async (args, options) => {
+    // Access tool context (tool-specific metadata)
+    const { name, callId, messages } = options?.toolContext || {};
+    console.log("Tool name:", name);
+    console.log("Tool call ID:", callId);
+    console.log("Message history length:", messages?.length);
+
+    // Access operation metadata directly from options
+    console.log("Operation ID:", options?.operationId);
+    console.log("User ID:", options?.userId);
+    console.log("Conversation ID:", options?.conversationId);
 
     // Access the original input
-    console.log("Original input:", context?.input);
+    console.log("Original input:", options?.input);
 
-    // Access custom context values
-    const customValue = context?.context.get("customKey");
+    // Access user-defined context Map
+    const customValue = options?.context?.get("customKey");
+
+    // Use the operation-scoped logger with tool name
+    options?.logger?.info(`${name}: Logging ${args.message}`);
 
     // Check if operation is still active
-    if (!context?.isActive) {
+    if (!options?.isActive) {
       throw new Error("Operation has been cancelled");
     }
 
@@ -141,7 +239,18 @@ const debugTool = createTool({
 });
 ```
 
-The `OperationContext` contains:
+The `options` parameter includes all `OperationContext` fields plus an **optional** `toolContext` object:
+
+**Tool execution context (`toolContext?` - optional):**
+
+> **Note:** `toolContext` is always populated when your tool is called from a VoltAgent agent. It may be `undefined` when called from external systems (e.g., MCP servers). Always use optional chaining: `options?.toolContext?.name`.
+
+- `toolContext.name`: Name of the tool being executed
+- `toolContext.callId`: Unique identifier for this specific tool call (from AI SDK)
+- `toolContext.messages`: Message history at the time of tool call (from AI SDK)
+- `toolContext.abortSignal`: Abort signal for detecting cancellation (from AI SDK)
+
+**From OperationContext:**
 
 - `operationId`: Unique identifier for this operation
 - `userId`: Optional user identifier
@@ -155,6 +264,8 @@ The `OperationContext` contains:
 - `traceContext`: OpenTelemetry trace context
 - `elicitation`: Optional function for requesting user input
 
+> - Since `ToolExecuteOptions` extends `Partial<OperationContext>`, you can name the second parameter anything you like (`options`, `context`, `ctx`, etc.)
+
 ## Cancellation with AbortController
 
 Tools can respond to cancellation signals and cancel the entire operation when needed.
@@ -166,8 +277,8 @@ const searchTool = createTool({
   parameters: z.object({
     query: z.string().describe("The search query"),
   }),
-  execute: async (args, context) => {
-    const abortController = context?.abortController;
+  execute: async (args, options) => {
+    const abortController = options?.abortController;
     const signal = abortController?.signal;
 
     // Check if already aborted
@@ -426,6 +537,48 @@ const agent = new Agent({
 });
 ```
 
+### Using Tags with Hooks
+
+Tool tags can be accessed in hooks for implementing custom logic like access control or conditional behavior:
+
+```ts
+import { createHooks, ToolDeniedError } from "@voltagent/core";
+
+const hooks = createHooks({
+  onToolStart({ tool, context }) {
+    // Check if tool has destructive tag and user has permission
+    if (tool.tags?.includes("destructive")) {
+      const userRole = context.context.get("userRole");
+      if (userRole !== "admin") {
+        throw new ToolDeniedError({
+          toolName: tool.name,
+          message: "Admin permission required for destructive operations",
+          code: "TOOL_FORBIDDEN",
+        });
+      }
+    }
+
+    // Log tools by category
+    if (tool.tags?.includes("external-api")) {
+      console.log(`Calling external API: ${tool.name}`);
+    }
+  },
+});
+
+const agent = new Agent({
+  name: "Controlled Assistant",
+  instructions: "An assistant with tag-based access control",
+  model: openai("gpt-4o"),
+  tools: [queryTool, updateTool, weatherTool],
+  hooks: hooks,
+});
+
+// Usage with context
+const response = await agent.generateText("Update the user record", {
+  context: { userRole: "admin" }, // Admin can use destructive tools
+});
+```
+
 ### Policy Enforcement with ToolDeniedError
 
 Throw `ToolDeniedError` from a hook to block a tool and immediately stop the entire agent operation.
@@ -479,6 +632,106 @@ Allowed `code` values:
 - `TOOL_PLAN_REQUIRED`
 - `TOOL_QUOTA_EXCEEDED`
 - Custom codes (e.g., `"TOOL_REGION_BLOCKED"`)
+
+### Multi-modal Tool Results
+
+Tools can return images and media content to the LLM using the `toModelOutput` function. This enables visual workflows where tools can provide screenshots, generated images, or other media for the LLM to analyze.
+
+**Supported Providers:** Anthropic, OpenAI
+
+#### Screenshot Tool Example
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+import fs from "fs";
+
+const screenshotTool = createTool({
+  name: "take_screenshot",
+  description: "Takes a screenshot of the screen",
+  parameters: z.object({
+    region: z.string().optional().describe("Region to capture"),
+  }),
+  execute: async ({ region }) => {
+    // Take screenshot and return base64
+    const imageData = fs.readFileSync("./screenshot.png").toString("base64");
+
+    return {
+      type: "image",
+      data: imageData,
+      timestamp: new Date().toISOString(),
+    };
+  },
+  // Convert output to multi-modal content for LLM
+  toModelOutput: (result) => ({
+    type: "content",
+    value: [
+      {
+        type: "text",
+        text: `Screenshot captured at ${result.timestamp}`,
+      },
+      {
+        type: "media",
+        data: result.data,
+        mediaType: "image/png",
+      },
+    ],
+  }),
+});
+```
+
+#### Return Formats
+
+The `toModelOutput` function can return different content types:
+
+**Text only:**
+
+```ts
+toModelOutput: (output) => ({
+  type: "text",
+  value: "Operation completed successfully",
+});
+```
+
+**JSON data:**
+
+```ts
+toModelOutput: (output) => ({
+  type: "json",
+  value: { status: "success", data: output },
+});
+```
+
+**Multi-modal (text + image):**
+
+```ts
+toModelOutput: (output) => ({
+  type: "content",
+  value: [
+    { type: "text", text: "Here is the image:" },
+    { type: "media", data: output.base64, mediaType: "image/png" },
+  ],
+});
+```
+
+**Error handling:**
+
+```ts
+toModelOutput: (output) => {
+  if (output.error) {
+    return {
+      type: "error-text",
+      value: `Failed: ${output.error}`,
+    };
+  }
+  return {
+    type: "text",
+    value: output.result,
+  };
+};
+```
+
+Learn more: [AI SDK Multi-modal Tool Results](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#multi-modal-tool-results)
 
 ## Best Practices
 
@@ -543,7 +796,7 @@ execute: async (args) => {
 For long-running operations, implement timeouts using `AbortController`.
 
 ```ts
-execute: async (args, context) => {
+execute: async (args, options) => {
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => {
     timeoutController.abort("Operation timed out");
@@ -551,7 +804,7 @@ execute: async (args, context) => {
 
   try {
     // Listen to parent abort if provided
-    const parentController = context?.abortController;
+    const parentController = options?.abortController;
     if (parentController?.signal) {
       parentController.signal.addEventListener("abort", () => {
         timeoutController.abort("Parent operation aborted");

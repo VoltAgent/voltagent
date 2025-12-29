@@ -37,6 +37,15 @@ const formatterAgent = new Agent({
   instructions: "Formats and styles text content",
   model: openai("gpt-4o-mini"),
 });
+
+// Give sub-agents a concise purpose to control what the supervisor sees
+const summarizerAgent = new Agent({
+  name: "Summarizer",
+  purpose: "Summarize long support tickets",
+  instructions:
+    "Read the conversation and produce a concise summary highlighting blockers and owners",
+  model: openai("gpt-4o-mini"),
+});
 ```
 
 ### Creating a Supervisor Agent
@@ -51,7 +60,7 @@ const supervisorAgent = new Agent({
   name: "Supervisor",
   instructions: "Coordinates between content creation and formatting agents",
   model: openai("gpt-4o-mini"),
-  subAgents: [contentCreatorAgent, formatterAgent],
+  subAgents: [contentCreatorAgent, formatterAgent, summarizerAgent],
 });
 ```
 
@@ -64,6 +73,12 @@ See: [Advanced Configuration](#advanced-configuration)
 ## Customizing Supervisor Behavior
 
 Supervisor agents use an automatically generated system message that includes guidelines for managing sub-agents. Customize this behavior using the `supervisorConfig` option.
+
+### Purpose vs. Instructions (what the supervisor sees)
+
+- The supervisor lists sub-agents in a `<specialized_agents>` block using the sub-agent `purpose` when provided; if `purpose` is missing, it falls back to `instructions`, and if both are missing it uses `"Dynamic instructions"`.
+- Set a short `purpose` to avoid leaking long/verbose instructions into the supervisor’s prompt and to keep the prompt small. The full `instructions` still run for the sub-agent itself when delegated.
+- If you leave `purpose` empty, expect the supervisor prompt to include the entire `instructions` string for that sub-agent.
 
 :::info Default System Message
 See the [generateSupervisorSystemMessage implementation](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/subagent/index.ts#L131) on GitHub.
@@ -263,35 +278,36 @@ if (response.status === "error") {
 
 #### Using with fullStream
 
-When using `fullStream`, the configuration controls what you receive from sub-agents:
+When using `fullStream`, the configuration controls what you receive from sub-agents. VoltAgent
+forwards metadata onto each forwarded chunk so you can attribute every event:
+
+- `subAgentId` / `subAgentName`: the sub-agent that produced the chunk
+- `executingAgentId` / `executingAgentName`: same as above (reserved for nested handoffs)
+- `parentAgentId` / `parentAgentName`: the supervisor that forwarded the chunk
+- `agentPath`: ordered names from supervisor → executing agent
+
+This metadata is only on the streamed events (fullStream / UI streams); it is **not** sent back to
+the model provider or injected into the LLM messages.
 
 ```ts
 // Stream with full event details
-const result = await supervisorAgent.streamText("Create and edit content", {
-  fullStream: true,
-});
+const result = await supervisorAgent.streamText("Create and edit content");
 
 // Process different event types
 for await (const event of result.fullStream) {
-  switch (event.type) {
-    case "tool-call":
-      console.log(
-        `${event.subAgentName ? `[${event.subAgentName}] ` : ""}Tool called: ${event.data.toolName}`
-      );
-      break;
-    case "tool-result":
-      console.log(
-        `${event.subAgentName ? `[${event.subAgentName}] ` : ""}Tool result: ${event.data.result}`
-      );
-      break;
-    case "text-delta":
-      // Only appears if included in types array
-      console.log(`Text: ${event.data}`);
-      break;
-    case "reasoning":
-      // Only appears if included in types array
-      console.log(`Reasoning: ${event.data}`);
-      break;
+  if (event.type === "tool-call") {
+    if (event.subAgentName) {
+      console.log(`[${event.subAgentName}] Tool called: ${event.toolName}`);
+    }
+  } else if (event.type === "tool-result") {
+    if (event.subAgentName) {
+      console.log(`[${event.subAgentName}] Tool result:`, event.output);
+    }
+  } else if (event.type === "text-delta") {
+    // Only appears if included in types array
+    if (event.subAgentName) {
+      console.log(`[${event.subAgentName}] Text: ${event.text ?? event.delta ?? ""}`);
+    }
   }
 }
 ```
@@ -301,25 +317,24 @@ for await (const event of result.fullStream) {
 Identify which events come from sub-agents by checking for `subAgentId` and `subAgentName` properties:
 
 ```ts
-const result = await supervisorAgent.streamText("Create and edit content", {
-  fullStream: true,
-});
+const result = await supervisorAgent.streamText("Create and edit content");
 
 for await (const event of result.fullStream) {
-  // Check if this event is from a sub-agent
   if (event.subAgentId && event.subAgentName) {
-    console.log(`Event from sub-agent ${event.subAgentName}:`);
+    console.log(
+      `Event from sub-agent ${event.subAgentName} (path: ${event.agentPath?.join(" > ")})`
+    );
     console.log(`  Type: ${event.type}`);
-    console.log(`  Data:`, event.data);
-
-    // Filter by specific sub-agent
-    if (event.subAgentName === "WriterAgent") {
-      // Handle writer agent events specifically
-    }
-  } else {
-    // This is from the supervisor agent itself
-    console.log(`Supervisor event: ${event.type}`);
+    console.log(`  Payload:`, {
+      toolName: event.toolName,
+      output: event.output,
+      text: (event as { text?: string }).text,
+    });
+    continue;
   }
+
+  // This is from the supervisor agent itself
+  console.log(`Supervisor event: ${event.type}`);
 }
 ```
 
@@ -328,6 +343,24 @@ This allows you to:
 - Distinguish between supervisor and sub-agent events
 - Filter events by specific sub-agent
 - Apply different handling logic based on the event source
+
+#### Filtering Historical Conversations
+
+Sub-agent metadata is also persisted in memory, so you can apply the same filtering logic when you replay a conversation later:
+
+```ts
+const messages = await memory.getMessages(userId, conversationId);
+
+const writerMessages = messages.filter(
+  (message) => message.metadata?.subAgentName === "WriterAgent"
+);
+
+for (const message of writerMessages) {
+  console.log(`[${message.metadata?.subAgentName}]`, message.parts);
+}
+```
+
+Every `UIMessage` in memory now includes the `metadata.subAgentId` and `metadata.subAgentName` fields, making it easy to render supervisor history the same way you render live streams.
 
 ### Complete System Message Override
 
@@ -440,17 +473,21 @@ This tool is automatically added to supervisor agents and handles delegation.
   - Finds the sub-agent instances based on the provided names
   - Calls the `handoffTask` (or `handoffToMultiple`) method internally
   - Passes the supervisor's agent ID (`parentAgentId`) and history entry ID (`parentHistoryEntryId`) for observability
-- **Returns**: An array of objects with results from each delegated agent:
-  ```ts
-  [
-    {
-      agentName: string; // Name of the sub-agent that executed the task
-      response: string; // The text result returned by the sub-agent
-      usage?: any; // Token usage information
-    },
-    // ... more results if multiple agents were targeted
-  ]
-  ```
+- **Returns**:
+  - **Always returns an array** of result objects (even for single agent):
+    ```ts
+    [
+      {
+        agentName: string; // Name of the sub-agent that executed the task
+        response: string; // The text result returned by the sub-agent
+        usage?: UsageInfo; // Token usage information
+        bailed?: boolean; // True if onHandoffComplete called bail()
+      },
+      // ... more results if multiple agents were targeted
+    ]
+    ```
+
+  When `bailed: true`, the supervisor's execution is terminated immediately and the subagent's response is returned to the user. See [Early Termination (Bail)](#early-termination-bail) for details.
 
 5. Sub-agents process their delegated tasks independently. They can use their own tools or delegate further if they are also supervisors.
 6. Each sub-agent returns its result to the `delegate_task` tool execution context.
@@ -501,7 +538,11 @@ for await (const chunk of result.textStream) {
 
 ## Using Hooks
 
-Monitor task delegation with the `onHandoff` hook:
+VoltAgent provides hooks to monitor and control the supervisor/subagent workflow:
+
+### `onHandoff` Hook
+
+Triggered when delegation begins:
 
 ```ts
 const supervisor = new Agent({
@@ -514,6 +555,28 @@ const supervisor = new Agent({
   },
 });
 ```
+
+### `onHandoffComplete` Hook
+
+Triggered when a subagent completes execution. This hook enables **early termination (bail)** to optimize token usage:
+
+```ts
+const supervisor = new Agent({
+  name: "Supervisor",
+  subAgents: [dataAnalyzer, reportGenerator],
+  hooks: {
+    onHandoffComplete: async ({ agent, sourceAgent, result, messages, usage, context, bail }) => {
+      // Bail if subagent produced final output
+      if (agent.name === "Report Generator") {
+        context.logger?.info("Final report ready, bailing");
+        bail(); // Skip supervisor processing
+      }
+    },
+  },
+});
+```
+
+See [Early Termination (Bail)](#early-termination-bail) below for detailed usage.
 
 ## Context Sharing
 
@@ -535,6 +598,277 @@ const subAgent = new Agent({
 });
 ```
 
+## Early Termination (Bail)
+
+### The Problem
+
+In supervisor/subagent workflows, subagents **always** return to the supervisor for processing, even when they generate final outputs (like JSON structures or reports) that need no additional handling. This wastes tokens:
+
+```
+Current flow:
+Supervisor → SubAgent (generates 2K token JSON) → Supervisor (processes JSON) → User
+                                                    ↑ Wastes ~2K tokens
+```
+
+**Example impact:**
+
+- Without bail: ~2,650 tokens per request
+- With bail: ~560 tokens per request
+- **Savings: 79%** (~$0.020 per request)
+
+### The Solution
+
+The `onHandoffComplete` hook allows supervisors to intercept subagent results and **bail** (skip supervisor processing) when the subagent produces final output:
+
+```
+New flow:
+Supervisor → SubAgent → bail() → User ✅
+```
+
+### Basic Usage
+
+Call `bail()` in the `onHandoffComplete` hook to terminate early:
+
+```ts
+const supervisor = new Agent({
+  name: "Workout Supervisor",
+  subAgents: [exerciseAgent, workoutBuilder],
+  hooks: {
+    onHandoffComplete: async ({ agent, result, bail, context }) => {
+      // Workout Builder produces final JSON - no processing needed
+      if (agent.name === "Workout Builder") {
+        context.logger?.info("Final output received, bailing");
+        bail(); // Skip supervisor, return directly to user
+      }
+      // Default: continue to supervisor for processing
+    },
+  },
+});
+```
+
+### Conditional Bail Logic
+
+Bail based on agent name, result size, or content:
+
+```ts
+hooks: {
+  onHandoffComplete: async ({ agent, result, bail, context }) => {
+    // By agent name
+    if (agent.name === "Report Generator") {
+      bail();
+      return;
+    }
+
+    // By result size (save tokens)
+    if (result.length > 2000) {
+      context.logger?.warn("Large result, bailing to save tokens");
+      bail();
+      return;
+    }
+
+    // By result content
+    if (result.includes("FINAL_OUTPUT")) {
+      bail();
+      return;
+    }
+
+    // Default: continue to supervisor
+  },
+}
+```
+
+### Transform Before Bail
+
+Optionally transform the result before bailing:
+
+```ts
+hooks: {
+  onHandoffComplete: async ({ agent, result, bail }) => {
+    if (agent.name === "Report Generator") {
+      // Add metadata before returning
+      const transformed = `# Final Report\n\n${result}\n\n---\nGenerated at: ${new Date().toISOString()}`;
+      bail(transformed); // Bail with transformed result
+    }
+  },
+}
+```
+
+### Hook Parameters
+
+```ts
+interface OnHandoffCompleteHookArgs {
+  agent: Agent; // Target agent (subagent)
+  sourceAgent: Agent; // Source agent (supervisor)
+  result: string; // Subagent's output
+  messages: UIMessage[]; // Full conversation messages
+  usage?: UsageInfo; // Token usage info
+  context: OperationContext; // Operation context
+  bail: (transformedResult?: string) => void; // Call to bail
+}
+```
+
+### Accessing Bailed Results
+
+When a subagent bails, the **subagent's result** is returned to the user (not the supervisor's):
+
+```ts
+const supervisor = new Agent({
+  name: "Supervisor",
+  subAgents: [
+    createSubagent({
+      agent: workoutBuilder,
+      method: "generateObject",
+      schema: WorkoutSchema,
+    }),
+  ],
+  hooks: {
+    onHandoffComplete: async ({ agent, bail }) => {
+      if (agent.name === "Workout Builder") {
+        bail(); // Return workout JSON directly
+      }
+    },
+  },
+});
+
+const result = await supervisor.generateText("Create workout");
+console.log(result.text); // Contains workout JSON, not supervisor's processing
+```
+
+### Supported Methods
+
+Bail works with methods that support tools:
+
+- ✅ `generateText` - Aborts execution, returns bailed result
+- ✅ `streamText` - Aborts stream immediately, returns bailed result
+- ❌ `generateObject` - No tool support, bail not applicable
+- ❌ `streamObject` - No tool support, bail not applicable
+
+### Stream Event Visibility with Bail
+
+When using bail with `toUIMessageStream()` or consuming `fullStream` events, you need to configure which events are forwarded from subagents.
+
+**Default Behavior:**
+
+By default, only `tool-call` and `tool-result` events are forwarded from subagents. This means **subagent text chunks are NOT visible** in the stream:
+
+```ts
+// Default configuration (implicit)
+supervisorConfig: {
+  fullStreamEventForwarding: {
+    types: ['tool-call', 'tool-result'], // ⚠️ text-delta NOT included
+  }
+}
+```
+
+**To See Subagent Text Output:**
+
+When a subagent bails and produces text output, you must explicitly include `text-delta` in the forwarded event types:
+
+```ts
+const supervisor = new Agent({
+  name: "Supervisor",
+  subAgents: [workoutBuilder],
+  supervisorConfig: {
+    fullStreamEventForwarding: {
+      types: ["tool-call", "tool-result", "text-delta"], // ✅ Include text-delta
+    },
+  },
+  hooks: {
+    onHandoffComplete: ({ agent, bail }) => {
+      if (agent.name === "Workout Builder") {
+        bail(); // Subagent text will be visible in stream
+      }
+    },
+  },
+});
+```
+
+**Consuming Bailed Subagent Output:**
+
+When using `toUIMessageStream()`, subagent text appears as `data-subagent-stream` events that are automatically grouped and rendered in the UI:
+
+```ts
+const result = await supervisor.streamText("Create workout");
+
+for await (const message of result.toUIMessageStream()) {
+  // Message parts include grouped subagent output; each subagent chunk carries:
+  // subAgentId, subAgentName, executingAgent*, parentAgent*, agentPath
+  // These parts are emitted as `data-subagent-stream` entries.
+}
+```
+
+**Event Types Reference:**
+
+| Event Type    | Description                      | Default         |
+| ------------- | -------------------------------- | --------------- |
+| `tool-call`   | Tool invocations                 | ✅ Included     |
+| `tool-result` | Tool results                     | ✅ Included     |
+| `text-delta`  | Text chunk generation            | ❌ NOT included |
+| `reasoning`   | Model reasoning (if available)   | ❌ NOT included |
+| `source`      | Retrieved sources (if available) | ❌ NOT included |
+| `error`       | Error events                     | ❌ NOT included |
+| `finish`      | Stream completion                | ❌ NOT included |
+
+### Observability
+
+Bailed subagents are tracked in observability with visual indicators:
+
+**Logging:**
+
+```
+[INFO] Supervisor bailed after handoff
+  supervisor: Workout Supervisor
+  subagent: Workout Builder
+  transformed: false
+  resultLength: 450
+```
+
+**OpenTelemetry Attributes:**
+
+Both supervisor and subagent spans get attributes:
+
+```ts
+// Supervisor span attributes
+{
+  "bailed": true,
+  "bail.subagent": "Workout Builder",
+  "bail.transformed": false
+}
+
+// Subagent span attributes
+{
+  "bailed": true,
+  "bail.supervisor": "Workout Supervisor",
+  "bail.transformed": false
+}
+```
+
+### Use Cases
+
+Perfect for scenarios where specialized subagents generate final outputs:
+
+1. **JSON/Structured data generators** - Workout builders, report generators, data exporters
+2. **Large content producers** - Document creators, extensive data analysis
+3. **Token optimization** - Skip processing for expensive results
+4. **Business logic** - Conditional routing based on result characteristics
+
+### Best Practices
+
+**✅ DO:**
+
+- Bail when subagent produces final, ready-to-use output
+- Use conditional logic to bail selectively
+- Log bail decisions for debugging
+- Transform results before bailing when needed
+
+**❌ DON'T:**
+
+- Bail on every subagent (defeats supervisor purpose)
+- Bail when supervisor needs to process/combine results
+- Forget to handle non-bailed flow (default case)
+
+````
+
 ## Step Control
 
 Control workflow steps with `maxSteps`:
@@ -547,7 +881,7 @@ const supervisor = new Agent({
 
 // Override per request
 const result = await supervisor.generateText("Task", { maxSteps: 10 });
-```
+````
 
 **Default:** `10 × number_of_sub-agents` (prevents infinite loops)
 

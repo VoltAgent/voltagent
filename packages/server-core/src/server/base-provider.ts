@@ -4,10 +4,13 @@
  */
 
 import type { Server } from "node:http";
-import type { IServerProvider, ServerProviderDeps } from "@voltagent/core";
+import type { IServerProvider, RegisteredTrigger, ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import type { WebSocketServer } from "ws";
+import { buildMcpRoutePaths } from "../mcp/routes";
 import { A2A_ROUTES, MCP_ROUTES } from "../routes/definitions";
+import type { ServerEndpointSummary } from "../types/server";
+import { showAnnouncements } from "../utils/announcements";
 import { portManager } from "../utils/port-manager";
 import { printServerStartup } from "../utils/server-utils";
 import { createWebSocketServer, setupWebSocketUpgrade } from "../websocket/setup";
@@ -85,6 +88,9 @@ export abstract class BaseServerProvider implements IServerProvider {
       }
 
       this.running = true;
+
+      // Show announcements (non-blocking)
+      showAnnouncements();
 
       // Print startup message
       const customEndpoints = this.collectFeatureEndpoints();
@@ -178,8 +184,8 @@ export abstract class BaseServerProvider implements IServerProvider {
     });
   }
 
-  private collectFeatureEndpoints(): Array<{ method: string; path: string; group?: string }> {
-    const endpoints: Array<{ method: string; path: string; group?: string }> = [];
+  private collectFeatureEndpoints(): ServerEndpointSummary[] {
+    const endpoints: ServerEndpointSummary[] = [];
     const seen = new Set<string>();
 
     const addRoutes = (
@@ -202,9 +208,66 @@ export abstract class BaseServerProvider implements IServerProvider {
 
     const mcpRegistry = this.deps.mcp?.registry;
     const registeredMcpServers =
-      mcpRegistry && typeof mcpRegistry.list === "function" ? mcpRegistry.list() : [];
+      mcpRegistry && typeof mcpRegistry.listMetadata === "function"
+        ? mcpRegistry.listMetadata()
+        : [];
     if (registeredMcpServers.length > 0) {
       addRoutes(MCP_ROUTES, "MCP Endpoints");
+
+      registeredMcpServers.forEach((server) => {
+        const protocols = server.protocols ?? {};
+        const httpEnabled = protocols.http ?? true;
+        const sseEnabled = protocols.sse ?? true;
+        const stdioEnabled = protocols.stdio ?? true;
+        const { httpPath, ssePath, messagePath } = buildMcpRoutePaths(server.id);
+
+        if (httpEnabled) {
+          const key = `POST ${httpPath}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            endpoints.push({
+              method: "POST",
+              path: httpPath,
+              group: "MCP Transport",
+            });
+          }
+        }
+
+        if (stdioEnabled) {
+          const stdioPath = `stdio://${server.id}`;
+          const stdioKey = `STDIO ${stdioPath}`;
+          if (!seen.has(stdioKey)) {
+            seen.add(stdioKey);
+            endpoints.push({
+              method: "STDIO",
+              path: stdioPath,
+              group: "MCP Transport",
+            });
+          }
+        }
+
+        if (sseEnabled) {
+          const sseKey = `GET ${ssePath}`;
+          if (!seen.has(sseKey)) {
+            seen.add(sseKey);
+            endpoints.push({
+              method: "GET",
+              path: ssePath,
+              group: "MCP Transport",
+            });
+          }
+
+          const messageKey = `POST ${messagePath}`;
+          if (!seen.has(messageKey)) {
+            seen.add(messageKey);
+            endpoints.push({
+              method: "POST",
+              path: messagePath,
+              group: "MCP Transport",
+            });
+          }
+        }
+      });
     }
 
     const a2aRegistry = this.deps.a2a?.registry;
@@ -212,6 +275,19 @@ export abstract class BaseServerProvider implements IServerProvider {
       a2aRegistry && typeof a2aRegistry.list === "function" ? a2aRegistry.list() : [];
     if (registeredA2AServers.length > 0) {
       addRoutes(A2A_ROUTES, "A2A Endpoints");
+    }
+
+    const registeredTriggers: RegisteredTrigger[] = this.deps.triggerRegistry?.list?.() ?? [];
+    if (registeredTriggers.length > 0) {
+      registeredTriggers.forEach((trigger) => {
+        endpoints.push({
+          method: trigger.method.toUpperCase(),
+          path: trigger.path,
+          group: "Trigger Endpoints",
+          name: trigger.name,
+          description: trigger.summary ?? trigger.description ?? trigger.definition?.description,
+        });
+      });
     }
 
     return endpoints;

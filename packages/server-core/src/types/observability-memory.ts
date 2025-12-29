@@ -1,3 +1,4 @@
+import type { ConversationStepRecord } from "@voltagent/core";
 import type { UIMessage } from "ai";
 
 export interface MemoryUserSummary {
@@ -28,6 +29,11 @@ export interface MemoryConversationSummary {
 export interface MemoryConversationMessagesResult {
   conversation: MemoryConversationSummary;
   messages: UIMessage[];
+}
+
+export interface MemoryConversationStepsResult {
+  conversation: MemoryConversationSummary;
+  steps: ConversationStepRecord[];
 }
 
 export interface MemoryWorkingMemoryResult {
@@ -61,4 +67,10 @@ export interface MemoryGetMessagesQuery {
   before?: Date;
   after?: Date;
   roles?: string[];
+}
+
+export interface MemoryGetStepsQuery {
+  agentId?: string;
+  limit?: number;
+  operationId?: string;
 }

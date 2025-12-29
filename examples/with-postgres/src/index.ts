@@ -50,9 +50,3 @@ new VoltAgent({
   logger,
   server: honoServer({ port: 3141 }),
 });
-
-(async () => {
-  const hede = await memoryStorage.getMessages("user-123", "conv-456");
-
-  logger.info("Starting PostgreSQL memory agent on http://localhost:3141", { hede });
-})();

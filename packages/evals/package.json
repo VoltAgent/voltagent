@@ -1,14 +1,26 @@
 {
   "name": "@voltagent/evals",
   "description": "VoltAgent evaluation orchestrator utilities",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "VoltAgent",
   "dependencies": {
     "@voltagent/internal": "^0.0.12",
-    "@voltagent/scorers": "^1.0.1",
+    "@voltagent/scorers": "^1.0.2",
     "@voltagent/sdk": "^1.0.1"
   },
   "devDependencies": {},
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "files": [
     "dist"
   ],

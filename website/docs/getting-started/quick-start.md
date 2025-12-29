@@ -1,18 +1,31 @@
 ---
-title: Quick Start
+title: Create with VoltAgent CLI
 slug: /quick-start
+hide_table_of_contents: true
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import ApiKeyButton from '@site/src/components/docs-widgets/ApiKeyButton';
+import StepSection from '@site/src/components/docs-widgets/StepSection';
+import WorkflowDiagramFlow from '@site/src/components/docs-widgets/WorkflowDiagramFlow';
+import SectionDivider from '@site/src/components/docs-widgets/SectionDivider';
+import ExpandableCode from '@site/src/components/docs-widgets/ExpandableCode';
+import EnterpriseCard from '@site/src/components/docs-widgets/EnterpriseCard';
 
-# Quick Start
+# Create with VoltAgent CLI
 
-There are two ways to create a VoltAgent application: Automatic setup or manual setup. While both work, the automatic setup provides the smoothest experience, especially for new users. Be sure your environment is running **Node.js 20.19 or newer** so the generated tsdown build works without ESM resolution issues.
+Build your first AI agent with VoltAgent. This guide covers creating an agent, connecting it to external events, running workflows, and deploying to production.
 
-### Automatic Setup (Recommended)
+Looking for full recipes? Check out the [Recipes & Guides](/recipes-and-guides/) section.
+Want a ready-made chat UI? See the [UI integration guides](/docs/ui/overview/) for AI SDK, CopilotKit, and Assistant UI starters.
+Need managed RAG? Try [VoltAgent Knowledge Base](/docs/rag/voltagent/) for document ingestion and retrieval.
 
-You can quickly create a new project using the `create-voltagent-app` CLI tool:
+<br/>
+
+<StepSection stepNumber={1}  title="Create New Project">
+
+Run the following command to create a new VoltAgent project:
 
 <Tabs>
   <TabItem value="npm" label="npm" default>
@@ -38,85 +51,71 @@ pnpm create voltagent-app my-agent-app
   </TabItem>
 </Tabs>
 
-After running the command, you'll see the VoltAgent Generator welcome screen:
-
-```
- _    __      ____  ___                    __
-| |  / /___  / / /_/   | ____ ____  ____  / /_
-| | / / __ \/ / __/ /| |/ __ `/ _ \/ __ \/ __/
-| |/ / /_/ / / /_/ ___ / /_/ /  __/ / / / /_
-|___/\____/_/\__/_/  |_\__, /\___/_/ /_/\__/
-                      /____/
-
-   ╭───────────────────────────────────────────────╮
-   │                                               │
-   │   Welcome to VoltAgent Generator!             │
-   │                                               │
-   │   Create powerful AI agents with VoltAgent.   │
-   │                                               │
-   ╰───────────────────────────────────────────────╯
-
-Let's create your next AI application...
-
-
-? What is your project named? (my-voltagent-app) _
-```
-
-The CLI will guide you through the setup process:
-
-1. **Project Name**: Choose a name for your project
-2. **AI Provider**: Select from OpenAI, Anthropic, Google, Groq, Mistral, or Ollama (local)
-3. **API Key** (optional): Enter your API key or skip to add it later
-4. **Package Manager**: Choose from installed package managers (npm, yarn, or pnpm)
-5. **IDE Configuration**: Optionally configure MCP Docs Server for your IDE
-
-The tool will automatically:
-
-- Create project files and structure (including a `tsdown.config.ts` build configuration)
-- Generate a `.env` file with your API key (if provided)
-- Initialize a git repository
-- Install dependencies
-
-Once the setup is complete, navigate to your project directory:
+The CLI will prompt you for project name, AI provider, and API key. Once complete:
 
 ```bash
-cd my-voltagent-app
+cd my-agent-app
 ```
 
-### Add Your API Key
+:::info requirement
+Be sure your environment is running Node.js 20.19 or newer so the generated tsdown build works without ESM resolution issues.
+:::
+
+</StepSection>
+
+<StepSection stepNumber={2} title="Configure and Start">
 
 If you skipped API key entry during setup, create or edit the `.env` file in your project root and add your API key:
 
+<Tabs>
+  <TabItem value="openai" label="OpenAI" default>
+
 ```bash
-# For OpenAI
 OPENAI_API_KEY=your-api-key-here
-
-# For Anthropic
-ANTHROPIC_API_KEY=your-api-key-here
-
-# For Google
-GOOGLE_GENERATIVE_AI_API_KEY=your-api-key-here
-
-# For Groq
-GROQ_API_KEY=your-api-key-here
-
-# For Mistral
-MISTRAL_API_KEY=your-api-key-here
-
-# For Ollama (no API key needed, runs locally)
-# Make sure Ollama is installed and running
 ```
 
-> **Get your API key:**
->
-> - **OpenAI**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-> - **Anthropic**: [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
-> - **Google**: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-> - **Groq**: [console.groq.com/keys](https://console.groq.com/keys)
-> - **Mistral**: [console.mistral.ai/api-keys](https://console.mistral.ai/api-keys)
-> - **Ollama**: [ollama.com/download](https://ollama.com/download)
+<ApiKeyButton provider="OpenAI" href="https://platform.openai.com/api-keys" />
 
-### Start Your Application
+  </TabItem>
+  <TabItem value="anthropic" label="Anthropic">
+
+```bash
+ANTHROPIC_API_KEY=your-api-key-here
+```
+
+<ApiKeyButton provider="Anthropic" href="https://console.anthropic.com/settings/keys" />
+
+  </TabItem>
+  <TabItem value="google" label="Google Gemini">
+
+```bash
+GOOGLE_GENERATIVE_AI_API_KEY=your-api-key-here
+```
+
+<ApiKeyButton provider="Google" href="https://aistudio.google.com/app/apikey" />
+
+  </TabItem>
+  <TabItem value="groq" label="Groq">
+
+```bash
+GROQ_API_KEY=your-api-key-here
+```
+
+<ApiKeyButton provider="Groq" href="https://console.groq.com/keys" />
+
+  </TabItem>
+  <TabItem value="mistral" label="Mistral">
+
+```bash
+MISTRAL_API_KEY=your-api-key-here
+```
+
+<ApiKeyButton provider="Mistral" href="https://console.mistral.ai/api-keys" />
+
+  </TabItem>
+</Tabs>
+
+Now start the development server:
 
 <Tabs>
   <TabItem value="npm" label="npm" default>
@@ -142,34 +141,246 @@ pnpm dev
   </TabItem>
 </Tabs>
 
-When you run the `dev` command, `tsx` will compile and run your code. You should see the VoltAgent server startup message in your terminal:
+You should see the VoltAgent server startup message:
 
 ```bash
 ══════════════════════════════════════════════════
   VOLTAGENT SERVER STARTED SUCCESSFULLY
 ══════════════════════════════════════════════════
   ✓ HTTP Server:  http://localhost:3141
+  ↪ Share it:    pnpm volt tunnel 3141 (secure HTTPS tunnel for teammates)
+     Docs: https://voltagent.dev/deployment-docs/local-tunnel/
   ✓ Swagger UI:   http://localhost:3141/ui
 
   Test your agents with VoltOps Console: https://console.voltagent.dev
 ══════════════════════════════════════════════════
 ```
 
-Your agent is now running! To interact with it:
+</StepSection>
 
-1.  **Open the Console:** Click the [`https://console.voltagent.dev`](https://console.voltagent.dev) link in your terminal output (or copy-paste it into your browser).
-2.  **Find Your Agent:** On the VoltOps LLM Observability Platform page, you should see your agent listed (e.g., "my-agent").
-3.  **Open Agent Details:** Click on your agent's name.
-4.  **Start Chatting:** On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
-5.  **Send a Message:** Type a message like "Hello" and press Enter.
+<StepSection stepNumber={3} title="Test Your Agent">
 
-![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
 
-You should receive a response from your AI agent in the chat window. This confirms that your VoltAgent application is set up correctly and communicating with the LLM.
+  <source src="https://cdn.voltagent.dev/docs/media/get-started/step-3-test.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
 
-The `dev` script uses `tsx watch`, so it will automatically restart if you make changes to your code in the `src` directory. Press `Ctrl+C` in the terminal to stop the agent.
+<br/>
+<br/>
 
-### Build for Production
+Open [`https://console.voltagent.dev`](https://console.voltagent.dev) and click **Agents & Workflows** in the sidebar to find your agent.
+
+Select it, click the chat icon in the bottom right corner, and try asking _"What's the weather in San Francisco?"_
+
+You should receive a response, you've successfully created your first basic AI agent that understand and generate responses.
+
+<EnterpriseCard />
+
+</StepSection>
+
+<SectionDivider>
+  Up to this point, you created and tested a basic working AI agent. The next steps show how to connect it to external events, services, and using workflows.
+</SectionDivider>
+
+<StepSection stepNumber={4} title="Add Triggers and Actions (Optional)">
+
+You now have a working AI agent that responds to messages. VoltAgent also supports event-driven workflows.
+
+- [VoltAgent Triggers](/actions-triggers-docs/triggers/overview) listen for external events like GitHub webhooks or cron schedules.
+- [Voltagent Actions](/actions-triggers-docs/actions/overview) send data to external services like Discord or Slack.
+
+Together, they let your agent react to events and take actions automatically.
+
+The diagram below shows an event-driven agent example: a GitHub star event triggers the agent, which generates a message and sends it to Discord.
+
+<WorkflowDiagramFlow />
+
+**Workflow steps:**
+
+1. **Trigger** - Captures a GitHub star webhook event
+2. **AI Agent** - Generates a message based on the event
+3. **Action** - Sends the message to Discord
+
+To implement this workflow with your agent, go to the VoltAgent Console [Get Started Guide](https://console.voltagent.dev/get-started) and continue from Step 4.
+
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
+
+  <source src="https://cdn.voltagent.dev/docs/media/get-started/step-4-triggers.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+<br/>
+<br/>
+
+</StepSection>
+
+<StepSection stepNumber={5} title="Run a Workflow">
+
+## Running Your First Human-in-the-Loop Workflow
+
+[Workflows](https://voltagent.dev/docs/workflows/overview/) chain multiple steps (data transformations, API calls, AI agent interactions) into a single execution. Unlike a standalone agent that responds to one message at a time, workflows coordinate multi-step processes.
+
+The generated project includes an expense approval workflow that demonstrates [suspend/resume](https://voltagent.dev/docs/workflows/suspend-resume/) functionality. Workflows can pause execution, wait for human input, and then continue.
+
+<ExpandableCode title="src/workflows/index.ts" previewLines={15}>
+
+```typescript
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+export const expenseApprovalWorkflow = createWorkflowChain({
+  id: "expense-approval",
+  name: "Expense Approval Workflow",
+  purpose: "Process expense reports with manager approval for high amounts",
+
+  input: z.object({
+    employeeId: z.string(),
+    amount: z.number(),
+    category: z.string(),
+    description: z.string(),
+  }),
+  result: z.object({
+    status: z.enum(["approved", "rejected"]),
+    approvedBy: z.string(),
+    finalAmount: z.number(),
+  }),
+})
+  // Step 1: Validate expense and check if approval needed
+  .andThen({
+    id: "check-approval-needed",
+    resumeSchema: z.object({
+      approved: z.boolean(),
+      managerId: z.string(),
+      comments: z.string().optional(),
+      adjustedAmount: z.number().optional(),
+    }),
+    execute: async ({ data, suspend, resumeData }) => {
+      // If resuming with manager's decision
+      if (resumeData) {
+        return {
+          ...data,
+          approved: resumeData.approved,
+          approvedBy: resumeData.managerId,
+          finalAmount: resumeData.adjustedAmount || data.amount,
+        };
+      }
+
+      // Expenses over $500 require manager approval
+      if (data.amount > 500) {
+        await suspend("Manager approval required", {
+          employeeId: data.employeeId,
+          requestedAmount: data.amount,
+          category: data.category,
+        });
+      }
+
+      // Auto-approve small expenses
+      return {
+        ...data,
+        approved: true,
+        approvedBy: "system",
+        finalAmount: data.amount,
+      };
+    },
+  })
+  // Step 2: Process the final decision
+  .andThen({
+    id: "process-decision",
+    execute: async ({ data }) => {
+      return {
+        status: data.approved ? "approved" : "rejected",
+        approvedBy: data.approvedBy,
+        finalAmount: data.finalAmount,
+      };
+    },
+  });
+```
+
+</ExpandableCode>
+
+<br/>
+
+<video controls loop muted playsInline style={{width: '100%', height: 'auto'}}>
+
+  <source src="https://cdn.voltagent.dev/docs/media/get-started/step-5-workflow.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+<br/>
+<br/>
+
+### Run the example workflow
+
+Open the [Workflows page](https://console.voltagent.dev/workflows) in console, select **"Expense Approval Workflow"**, and click **"Test Workflow"**. Enter input and click **"Execute Workflow"**.
+
+This workflow simulates an expense approval process where certain decisions require human input before continuing:
+
+- Expenses under $500 are auto-approved by the system
+- Expenses over $500 trigger a suspend, pausing the workflow until a manager approves or rejects
+
+**Auto-approval example** (under $500):
+
+```json
+{
+  "employeeId": "EMP-123",
+  "amount": 250,
+  "category": "office-supplies",
+  "description": "New laptop mouse and keyboard"
+}
+```
+
+**Manual review example** (over $500):
+
+```json
+{
+  "employeeId": "EMP-456",
+  "amount": 750,
+  "category": "travel",
+  "description": "Flight tickets for client meeting"
+}
+```
+
+:::tip Workflow Step Types
+VoltAgent workflows support multiple step types:
+
+- [`andThen`](https://voltagent.dev/docs/workflows/steps/and-then/) - sequential data transformation (used in this example)
+- [`andAgent`](https://voltagent.dev/docs/workflows/steps/and-agent/) - AI agent calls
+- [`andAll`](https://voltagent.dev/docs/workflows/steps/and-all/) - parallel processing
+- [`andRace`](https://voltagent.dev/docs/workflows/steps/and-race/) - racing operations
+- [`andWhen`](https://voltagent.dev/docs/workflows/steps/and-when/) - conditional logic
+- [`andTap`](https://voltagent.dev/docs/workflows/steps/and-tap/) - side effects without modifying data
+  :::
+
+</StepSection>
+
+<StepSection stepNumber={6} title="Share Your Local Server">
+
+When you need to demo your agent remotely or receive external webhooks, install the VoltAgent CLI and open a tunnel:
+
+```bash title="Install the CLI (adds a volt script and dev dependency)"
+npx @voltagent/cli init
+```
+
+Then expose your local server:
+
+```bash
+pnpm volt tunnel 3141
+```
+
+The command prints an HTTPS URL (for example `https://your-tunnel-address.tunnel.voltagent.dev`) that forwards traffic to your local port until you press `Ctrl+C`. You can also run it ad‑hoc without installing dependencies:
+
+> Tip: skipping the port (`pnpm volt tunnel`) uses the default `3141`.
+
+```bash
+npx @voltagent/cli tunnel 3141
+```
+
+See the [Local Tunnel guide](https://voltagent.dev/deployment-docs/local-tunnel/) for details.
+
+</StepSection>
+
+<StepSection stepNumber={7} title="Build for Production">
 
 When you're ready to deploy, bundle the app and run the compiled JavaScript with Node:
 
@@ -202,284 +413,14 @@ pnpm start
 
 The `build` script invokes **tsdown**, which bundles your TypeScript entrypoint (and any sibling directories such as `./workflows` or `./tools`) into `dist/index.js`. This extra step keeps the Node ESM loader from throwing `ERR_UNSUPPORTED_DIR_IMPORT` while preserving extensionless imports during development.
 
-### Explore and Run Your Workflow from the Console
-
-Your new project isn't just an agent; it's a powerful automation engine. We've included an expense approval workflow example to get you started, and you can run it directly from the VoltOps console.
-
-This workflow demonstrates how to chain together all the core steps of VoltAgent:
-
-- **Data Transformation** (`andThen`)
-- **AI Agent Calls** (`andAgent`)
-- **Parallel Processing** (`andAll`)
-- **Racing Operations** (`andRace`)
-- **Conditional Logic** (`andWhen`)
-
-#### How to Run the Workflow
-
-![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)
-
-1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
-2.  **Select Your Project:** Use the project selector on the page to choose your newly created project (e.g., "my-agent-app").
-3.  **Find and Run the Workflow:** You will see **"Expense Approval Workflow"** listed. Click on it to open the detail page, then click the **"Run"** button.
-4.  **Provide Input:** An input form will appear. The workflow expects a JSON object with expense details. Try one of the following inputs to see how it works:
-    - For automatic approval (under $100):
-
-```json
-{
-  "amount": 75,
-  "category": "office supplies",
-  "description": "Notebooks and pens for team meeting"
-}
-```
-
-    -   For manual review (over $100):
-
-```json
-{
-  "amount": 450,
-  "category": "equipment",
-  "description": "New monitor for development workstation"
-}
-```
-
-5.  **View the Results:** After execution, you can inspect the detailed logs for each step and see the final output directly in the console.
-
-This interactive experience is a great way to understand how to build and test complex automations with VoltAgent without needing to modify your code for every run.
+</StepSection>
 
 ## Next Steps
 
-Ready to build real AI agents? Follow our step-by-step tutorial:
+- [Deploy to Production](/deployment-docs/voltops) - Deploy your agent with VoltOps Deploy
+- [Tutorial](/tutorial/introduction) - Build agents with tools, memory, and integrations
+- [Agent Configuration](../agents/overview.md) - Agent options and settings
+- [Memory](../agents/memory/overview.md) - Conversation history and persistence
+- [Tools](../agents/tools.md) - Create custom tools for your agent
 
-- **[Start the Tutorial](/tutorial/introduction)** - Learn to build agents with tools, memory, and real-world integrations
-
-Or explore specific topics:
-
-- Explore [Agent](../agents/overview.md) options
-- Learn about [Memory](../agents/memory/overview.md)
-- Check out [Tool Creation](../agents/tools.md) for more advanced use cases
-
-### Manual Setup
-
-Follow these steps to create a new TypeScript project and add VoltAgent:
-
-Create a new project directory:
-
-```bash
-mkdir my-voltagent-project
-cd my-voltagent-project
-```
-
-Initialize a new npm project:
-
-```bash
-npm init -y
-```
-
-Create a basic TypeScript configuration file (tsconfig.json):
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "outDir": "dist",
-    "strict": true
-  },
-  "include": ["src"]
-}
-```
-
-Add a `tsdown.config.ts` alongside `tsconfig.json` so production builds bundle correctly:
-
-```typescript
-import { defineConfig } from "tsdown";
-
-export default defineConfig({
-  entry: ["./src/index.ts"],
-  sourcemap: true,
-  outDir: "dist",
-});
-```
-
-#### Install Dependencies
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-# Install development dependencies
-npm install --save-dev typescript tsx tsdown @types/node @voltagent/cli
-
-# Install dependencies
-npm install @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
-```
-
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-
-```bash
-# Install development dependencies
-yarn add --dev typescript tsx tsdown @types/node @voltagent/cli
-
-# Install dependencies
-yarn add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
-```
-
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-
-```bash
-# Install development dependencies
-pnpm add --save-dev typescript tsx tsdown @types/node @voltagent/cli
-
-# Install dependencies
-pnpm add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
-```
-
-  </TabItem>
-</Tabs>
-
-Create a source directory:
-
-```bash
-mkdir src
-```
-
-Create a basic agent in `src/index.ts`:
-
-```typescript
-import { VoltAgent, Agent, Memory } from "@voltagent/core";
-import { honoServer } from "@voltagent/server-hono"; // HTTP server
-import { LibSQLMemoryAdapter } from "@voltagent/libsql"; // For persistent memory
-import { openai } from "@ai-sdk/openai"; // Example model
-import { createPinoLogger } from "@voltagent/logger";
-
-// Create logger (optional but recommended)
-const logger = createPinoLogger({
-  name: "my-agent",
-  level: "info",
-});
-
-// Define a simple agent
-const agent = new Agent({
-  name: "my-agent",
-  instructions: "A helpful assistant that answers questions without using tools",
-  // VoltAgent uses ai-sdk directly - pick any ai-sdk model
-  model: openai("gpt-4o-mini"),
-  // Optional: Add persistent memory (remove this to use default in-memory storage)
-  memory: new Memory({
-    storage: new LibSQLMemoryAdapter({
-      url: "file:./.voltagent/memory.db",
-    }),
-  }),
-});
-
-// Initialize VoltAgent with your agent(s)
-new VoltAgent({
-  agents: { agent },
-  server: honoServer(), // Default port: 3141
-  logger,
-});
-```
-
-Create a `.env` file and add your OpenAI API key:
-
-```bash
-# Make sure to replace 'your_openai_api_key' with your actual key
-OPENAI_API_KEY=your_openai_api_key
-```
-
-Add the following to your package.json:
-
-```json
-"type": "module",
-"scripts": {
-  "build": "tsdown",
-  "dev": "tsx watch --env-file=.env ./src",
-  "start": "node dist/index.js",
-  "volt": "volt" // Requires @voltagent/cli
-}
-```
-
-`npm run build` (or `yarn build` / `pnpm build`) bundles your sources with tsdown before handing the output to Node via `npm start`.
-
-Your project structure should now look like this:
-
-```
-my-voltagent-project/
-├── node_modules/
-├── src/
-│   └── index.ts
-├── package.json
-├── tsconfig.json
-├── tsdown.config.ts
-├── .env
-└── .voltagent/ (created automatically when you run the agent)
-```
-
-#### Run Your Agent
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-npm run dev
-```
-
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-
-```bash
-yarn dev
-```
-
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-
-```bash
-pnpm dev
-```
-
-  </TabItem>
-</Tabs>
-
-When you run the `dev` command, `tsx` will compile and run your code. You should see the VoltAgent server startup message in your terminal:
-
-```bash
-══════════════════════════════════════════════════
-  VOLTAGENT SERVER STARTED SUCCESSFULLY
-══════════════════════════════════════════════════
-  ✓ HTTP Server:  http://localhost:3141
-  ✓ Swagger UI:   http://localhost:3141/ui
-
-  Test your agents with VoltOps Console: https://console.voltagent.dev
-══════════════════════════════════════════════════
-```
-
-Your agent is now running! To interact with it:
-
-1.  **Open the Console:** Click the `https://console.voltagent.dev` link in your terminal output (or copy-paste it into your browser).
-2.  **Find Your Agent:** On the VoltOps LLM Observability Platform page, you should see your agent listed (e.g., "my-agent").
-3.  **Open Agent Details:** Click on your agent's name.
-4.  **Start Chatting:** On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
-5.  **Send a Message:** Type a message like "Hello" and press Enter.
-
-_[Placeholder for GIF showing Console interaction: Finding agent, clicking chat, sending message]_
-
-You should receive a response from your AI agent in the chat window. This confirms that your VoltAgent application is set up correctly and communicating with the LLM.
-
-The `dev` script uses `tsx watch`, so it will automatically restart if you make changes to your code in the `src` directory. Press `Ctrl+C` in the terminal to stop the agent.
-
-## Next Steps
-
-Ready to build real AI agents? Follow our step-by-step tutorial:
-
-- **[Start the Tutorial](/tutorial/introduction)** - Learn to build agents with tools, memory, and real-world integrations
-
-Or explore specific topics:
-
-- Explore [Agent](../agents/overview.md) options
-- Learn about [Memory](../agents/memory/overview.md)
-- Check out [Tool Creation](../agents/tools.md) for more advanced use cases
+To add VoltAgent to an existing project, see [Create from scratch](./manual-setup.md).

@@ -491,9 +491,427 @@ VoltAgent includes helper functions for common tasks.
 
 ---
 
-## 7. Project Governance & Important Files
+## 7. Workflows (`@voltagent/core`)
+
+Workflows enable type-safe, multi-step AI pipelines with built-in observability. Chain steps together using a fluent API.
+
+**Key Concepts:**
+
+*   **`createWorkflowChain`**: Creates a workflow builder with input/output schemas
+*   **Step Types**:
+    *   `andThen`: Execute any TypeScript function
+    *   `andAgent`: Run an AI agent and get structured output
+    *   `andWhen`: Conditional step execution based on data
+    *   `andAll`: Run multiple steps in parallel (wait for all)
+    *   `andRace`: Run multiple steps in parallel (first wins)
+    *   `andTap`: Side effects without modifying data flow
+*   **Type-Safe Data Flow**: Output of each step becomes input for the next, with full TypeScript inference
+*   **Schemas**: Validate input, output, suspend, and resume data with Zod
+*   **Suspend & Resume**: Pause workflows for human-in-the-loop or external events
+*   **Workflow Hooks**: `onStart`, `onEnd`, `onStepStart`, `onStepEnd` for lifecycle events
+*   **REST API**: Execute workflows via `POST /workflows/{id}/execute`
+
+**More Info:**
+
+*   `[Workflows Overview](/docs/workflows/overview.md)`
+*   `[Workflow Steps](/docs/workflows/steps/)`
+*   `[Suspend & Resume](/docs/workflows/suspend-resume.md)`
+*   `[Workflow Hooks](/docs/workflows/hooks.md)`
+*   `[Execute API](/docs/workflows/execute-api.md)`
+
+---
+
+## 8. Agent Hooks
+
+Hooks intercept specific points in the agent execution pipeline for observability, logging, and behavior modification.
+
+**Available Hooks:**
+
+*   `onStart`: Before agent begins processing a request
+*   `onEnd`: After agent completes (success or failure)
+*   `onPrepareMessages`: Transform messages before LLM receives them
+*   `onPrepareModelMessages`: Apply provider-specific message adjustments
+*   `onToolStart`: Before a tool executes
+*   `onToolEnd`: After a tool completes or throws
+*   `onHandoff`: When task is delegated to a sub-agent
+*   `onError`: When an error occurs during execution
+*   `onStepFinish`: After each step in multi-step execution
+
+**Usage:** Define hooks with `createHooks()` helper and pass to Agent constructor or individual method calls.
+
+**More Info:**
+
+*   `[Agent Hooks Documentation](/docs/agents/hooks.md)`
+
+---
+
+## 9. Guardrails
+
+Guardrails intercept and validate agent input/output at runtime. They can inspect, modify, or block content.
+
+**Input Guardrails (`createInputGuardrail`):**
+
+*   Run before user input reaches the model
+*   Use cases: Block profanity, validate format, sanitize content, enforce business rules
+
+**Output Guardrails (`createOutputGuardrail`):**
+
+*   Process model output before it reaches users
+*   Supports both `handler` (final output) and `streamHandler` (real-time chunks)
+*   Use cases: Redact PII, enforce content policies, limit output length
+
+**Actions:** `allow`, `modify`, `block`
+
+**More Info:**
+
+*   `[Guardrails Overview](/docs/guardrails/overview.md)`
+*   `[Built-in Guardrails](/docs/guardrails/built-in.md)`
+
+---
+
+## 10. Voice (`@voltagent/voice`)
+
+Text-to-speech (TTS) and speech-to-text (STT) capabilities for voice-enabled agents.
+
+**Supported Providers:**
+
+*   **OpenAI**: High-quality voices and transcription
+*   **ElevenLabs**: Realistic, customizable voices
+*   **xsAI**: Lightweight OpenAI-compatible voice API
+
+**Key Methods:**
+
+*   `speak(text)`: Convert text to audio stream (TTS)
+*   `listen(audioStream)`: Transcribe audio to text (STT)
+*   `getVoices()`: List available voices
+
+**Agent Integration:** Pass voice provider to Agent constructor via `voice` option.
+
+**More Info:**
+
+*   `[Voice Documentation](/docs/agents/voice.md)`
+
+---
+
+## 11. MCP (Model Context Protocol)
+
+MCP client capabilities for connecting agents to external tools and services via the standardized Model Context Protocol.
+
+**Transport Types:**
+
+*   `http`: Streamable HTTP with automatic SSE fallback
+*   `streamable-http`: Direct streamable HTTP
+*   `sse`: Server-Sent Events
+*   `stdio`: Standard I/O for local processes
+
+**Key Concepts:**
+
+*   **`MCPConfiguration`**: Manages connections to MCP servers
+*   **`getTools()`**: Get all MCP tools as flat array
+*   **`getToolsets()`**: Get tools organized by server
+*   **Elicitation**: Handle user input requests from MCP servers
+*   **Event Handling**: `connect`, `disconnect`, `error`, `toolCall` events
+
+**MCP Server:** Create your own MCP server with `@voltagent/mcp-server` package.
+
+**More Info:**
+
+*   `[MCP Client Documentation](/docs/agents/mcp/mcp.md)`
+*   `[MCP Server Documentation](/docs/agents/mcp/mcp-server.md)`
+*   `[MCP Authorization](/docs/agents/mcp/authorization.md)`
+
+---
+
+## 12. RAG (Retrieval-Augmented Generation)
+
+Give agents access to your documents, databases, and knowledge bases.
+
+**Two Approaches:**
+
+*   **Always-On Search**: Set `retriever` on Agent - searches before every response
+*   **Search When Needed**: Add retriever as a tool - agent decides when to search
+
+**Supported Vector Databases:**
+
+*   Chroma (local, Docker-based)
+*   Pinecone (managed, serverless)
+*   Qdrant (open-source, production-ready)
+
+**Custom Retrievers:** Extend `BaseRetriever` class for any data source (SQL, NoSQL, files, APIs).
+
+**Chunkers:** 17+ chunker types for different document formats:
+*   `SemanticChunker`, `NeuralChunker`, `RecursiveChunker`
+*   `MarkdownChunker`, `HTMLChunker`, `JSONChunker`, `CodeChunker`
+*   `SentenceChunker`, `TokenChunker`, `TableChunker`, and more
+
+**More Info:**
+
+*   `[RAG Overview](/docs/rag/overview.md)`
+*   `[Custom Retrievers](/docs/rag/custom-retrievers.md)`
+*   `[Chroma Guide](/docs/rag/chroma.md)`
+*   `[Pinecone Guide](/docs/rag/pinecone.md)`
+*   `[Qdrant Guide](/docs/rag/qdrant.md)`
+*   `[Chunkers Overview](/docs/rag/chunkers/overview.md)`
+
+---
+
+## 13. A2A Protocol (Agent-to-Agent)
+
+Expose VoltAgent applications over the Agent-to-Agent (A2A) protocol for inter-agent communication.
+
+**Package:** `@voltagent/a2a-server`
+
+**Key Features:**
+
+*   **Discovery Card**: `GET /.well-known/{agentId}/agent-card.json`
+*   **JSON-RPC Endpoint**: `POST /a2a/{agentId}`
+*   **Supported Methods**: `message/send`, `message/stream`, `tasks/get`, `tasks/cancel`
+*   **Custom Task Store**: Implement `TaskStore` interface for Redis, Postgres, etc.
+
+**More Info:**
+
+*   `[A2A Server Documentation](/docs/agents/a2a/a2a-server.md)`
+
+---
+
+## 14. Advanced Memory Options
+
+Beyond basic LibSQL storage, VoltAgent supports multiple memory backends.
+
+**Storage Adapters:**
+
+*   **`InMemoryStorage`**: Non-persistent, development use
+*   **`LibSQLStorage`**: SQLite/Turso for local or cloud persistence
+*   **`PostgreSQLMemoryAdapter`** (`@voltagent/postgres`): Production PostgreSQL with connection pooling
+*   **`SupabaseMemoryAdapter`** (`@voltagent/supabase`): Supabase Postgres with RLS support
+
+**Advanced Features:**
+
+*   **Working Memory**: Compact, schema-validated context per user or conversation
+*   **Semantic Search**: Vector embeddings for similarity-based retrieval
+*   **Managed Memory**: Zero-setup hosted memory via VoltOps
+
+**More Info:**
+
+*   `[Memory Overview](/docs/agents/memory/overview.md)`
+*   `[PostgreSQL Memory](/docs/agents/memory/postgres.md)`
+*   `[Supabase Memory](/docs/agents/memory/supabase.md)`
+*   `[Working Memory](/docs/agents/memory/working-memory.md)`
+*   `[Semantic Search](/docs/agents/memory/semantic-search.md)`
+*   `[Managed Memory](/docs/agents/memory/managed-memory.md)`
+
+---
+
+## 15. Dynamic Agents
+
+Configure agent properties dynamically at runtime based on user context.
+
+**Dynamic Properties:**
+
+*   `instructions`: Change system prompt based on user role, language, etc.
+*   `model`: Select different models based on subscription tier
+*   `tools`: Provide different tool sets based on permissions
+
+**Resolution:** Functions receive `DynamicValueOptions` with `context` Map and resolve on each operation.
+
+**More Info:**
+
+*   `[Dynamic Agents Documentation](/docs/agents/dynamic-agents.md)`
+
+---
+
+## 16. UI Integrations
+
+Connect VoltAgent to frontend frameworks and chat UIs.
+
+**Supported Integrations:**
+
+*   **Vercel AI SDK**: Wire streaming endpoints to AI SDK chat primitives
+*   **CopilotKit**: Use CopilotKit React components with AG-UI adapter
+*   **Assistant UI**: Full-featured chat UI starter
+
+**Starter Examples:**
+
+```bash
+npm create voltagent-app@latest -- --example with-assistant-ui
+npm create voltagent-app@latest -- --example with-nextjs
+npm create voltagent-app@latest -- --example with-copilotkit
+```
+
+**More Info:**
+
+*   `[UI Overview](/docs/ui/overview.md)`
+*   `[AI SDK Integration](/docs/ui/ai-sdk-integration.md)`
+*   `[CopilotKit](/docs/ui/copilotkit.md)`
+*   `[Assistant UI](/docs/ui/assistant-ui.md)`
+
+---
+
+## 17. Vercel AI SDK Integration
+
+Add VoltAgent observability to existing Vercel AI applications with minimal changes.
+
+**Package:** `@voltagent/vercel-ai-exporter`
+
+**Features:**
+
+*   OpenTelemetry-based tracing
+*   Track AI calls in VoltOps Platform
+*   Multi-agent workflow visualization
+*   Tool usage tracking
+
+**More Info:**
+
+*   `[Vercel AI Integration](/docs/integrations/vercel-ai.md)`
+*   `[Next.js Integration](/docs/integrations/nextjs.md)`
+
+---
+
+## 18. API & Server
+
+VoltAgent includes a built-in HTTP server for REST API access.
+
+**Server Options:**
+
+*   `@voltagent/server-hono`: Hono-based HTTP server (default)
+
+**Key Endpoints:**
+
+*   `POST /agents/{id}/text`: Generate text
+*   `POST /agents/{id}/stream`: Stream text
+*   `POST /agents/{id}/object`: Generate structured object
+*   `POST /workflows/{id}/execute`: Execute workflow
+*   `GET /agents`: List registered agents
+*   `GET /tools`: List available tools
+
+**Features:**
+
+*   Authentication support
+*   Custom endpoints
+*   Streaming responses
+*   WebSocket for real-time updates
+
+**More Info:**
+
+*   `[API Overview](/docs/api/overview.md)`
+*   `[API Reference](/docs/api/api-reference.md)`
+*   `[Server Architecture](/docs/api/server-architecture.md)`
+*   `[Authentication](/docs/api/authentication.md)`
+*   `[Custom Endpoints](/docs/api/custom-endpoints.md)`
+
+---
+
+## 19. Observability
+
+Real-time debugging and monitoring for agent execution.
+
+**VoltOps Platform:**
+
+*   Visual execution traces
+*   Tool call inspection
+*   Memory explorer
+*   Real-time WebSocket updates
+
+**Langfuse Integration:** Advanced analytics and evaluation platform.
+
+**Logging:** Structured logging with configurable levels.
+
+**More Info:**
+
+*   `[Observability Overview](/docs/observability/overview.md)`
+*   `[Developer Console](/docs/observability/developer-console.md)`
+*   `[Langfuse Integration](/docs/observability/langfuse.md)`
+*   `[Logging](/docs/observability/logging.md)`
+
+---
+
+## 20. Evals
+
+Evaluate and measure AI agent performance.
+
+**Evaluation Types:**
+
+*   **Offline Evaluations**: Run against datasets
+*   **Live Evaluations**: Monitor agents in production
+
+**Components:**
+
+*   Datasets for test cases
+*   Experiments for tracking runs
+*   Scorers (built-in and custom)
+*   CLI tools for automation
+
+**More Info:**
+
+*   `[Evals Documentation](/docs/evals.md)`
+
+---
+
+## 21. Actions & Triggers
+
+VoltOps Actions provide managed integrations triggered from agents or workflows.
+
+**Supported Providers:**
+
+*   Airtable: Create, update, manage records
+*   Slack: Send messages and notifications
+*   Discord: Send messages to channels
+*   Gmail: Send and manage emails
+*   Google Calendar: Create and manage events
+*   Google Drive: Upload and manage files
+*   Postgres: Execute database queries
+
+**More Info:**
+
+*   `[Actions Documentation](/docs/actions.md)`
+*   `[Triggers Documentation](/docs/triggers.md)`
+
+---
+
+## 22. Additional Agent Features
+
+**Multi-Modal Support:** Handle images, audio, and other media types in agent interactions.
+*   `[Multi-Modal Documentation](/docs/agents/multi-modal.md)`
+
+**Cancellation:** Gracefully cancel long-running agent operations with AbortSignal.
+*   `[Cancellation Documentation](/docs/agents/cancellation.md)`
+
+**Context Management:** Pass and access runtime context throughout agent execution.
+*   `[Context Documentation](/docs/agents/context.md)`
+
+**Message Types:** Understand UIMessage format and message helpers.
+*   `[Message Types](/docs/agents/message-types.md)`
+
+**Prompts:** Dynamic prompt management and templates.
+*   `[Prompts Documentation](/docs/agents/prompts.md)`
+
+---
+
+## 23. Deployment
+
+Deploy VoltAgent applications to production environments.
+
+**More Info:**
+
+*   `[Deployment Guide](/docs/deployment.md)`
+
+---
+
+## 24. Troubleshooting
+
+Common issues and solutions.
+
+**More Info:**
+
+*   `[Connection Issues](/docs/troubleshooting/connection.md)`
+
+---
+
+## 25. Project Governance & Important Files
 
 *   **License:** VoltAgent is licensed under the MIT License, allowing permissive use, modification, and distribution. `[View License](/LICENCE)`
 *   **Code of Conduct:** Follows the Contributor Covenant v2.0. `[View Code of Conduct](/CODE_OF_CONDUCT.md)`
 *   **Monorepo Management:** Uses `pnpm workspaces` (defined in `/pnpm-workspace.yaml`) and potentially `lerna`/`nx` (check `lerna.json`, `nx.json`) for managing packages.
 *   **`.gitignore`:** Specifies files and directories excluded from version control (build outputs, dependencies, environment files, logs, etc.). `[View /.gitignore]`
+*   **Contributing:** Guidelines for contributing to VoltAgent. `[Contributing Guide](/docs/community/contributing.md)`
+*   **Community:** Join the community. `[Community Overview](/docs/community/overview.md)`

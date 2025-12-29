@@ -1,16 +1,28 @@
 {
   "name": "@voltagent/scorers",
   "description": "VoltAgent scorers re-export sourced from Viteval's prebuilt scorer set",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "VoltAgent",
   "dependencies": {
-    "@voltagent/core": "^1.1.30",
+    "@voltagent/core": "^1.2.7",
     "@voltagent/internal": "^0.0.12",
     "autoevals": "^0.0.131"
   },
   "devDependencies": {
     "ai": "^5.0.76",
     "zod": "^3.25.76"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
   },
   "files": [
     "dist"

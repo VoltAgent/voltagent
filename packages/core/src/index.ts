@@ -96,6 +96,8 @@ export {
   trace,
   context,
 } from "./observability";
+export { TRIGGER_CONTEXT_KEY } from "./observability/context-keys";
+export { createTriggers } from "./triggers/dsl";
 
 // Memory V2 - Export with aliases to avoid conflicts
 export {
@@ -182,8 +184,18 @@ export * from "./utils/update";
 export * from "./voice";
 // TelemetryExporter removed - migrated to OpenTelemetry
 export * from "./voltops";
+export * from "./triggers/types";
+export { TriggerRegistry } from "./triggers/registry";
+export {
+  VoltOpsTriggerDefinitions,
+  VoltOpsTriggerNames,
+  type VoltOpsTriggerGroupMap,
+  type VoltOpsTriggerName,
+  getVoltOpsTriggerDefinition,
+} from "./triggers/catalog";
 export * from "./eval/runtime";
-export type { UsageInfo, StreamPart } from "./agent/providers";
+export type { UsageInfo, StreamPart, MessageRole } from "./agent/providers";
+export type { ConversationStepRecord, GetConversationStepsOptions } from "./memory/types";
 export type {
   VoltAgentOptions,
   IServerProvider,
@@ -227,6 +239,7 @@ export type {
   ManagedMemoryUpdateConversationInput,
   ManagedMemoryWorkingMemoryInput,
   ManagedMemorySetWorkingMemoryInput,
+  ManagedMemoryQueryWorkflowRunsInput,
   ManagedMemoryWorkflowStateUpdateInput,
   ManagedMemoryMessagesClient,
   ManagedMemoryConversationsClient,

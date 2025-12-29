@@ -54,6 +54,34 @@ describe("Tool Parser Utilities", () => {
       });
     });
 
+    it("should handle Zod v4 style schemas", () => {
+      const schema = {
+        _def: {
+          type: "object",
+          shape: {
+            name: { _def: { type: "string" } },
+            tags: { _def: { type: "array", element: { _def: { type: "string" } } } },
+            isActive: { _def: { type: "optional", innerType: { _def: { type: "boolean" } } } },
+          },
+        },
+      };
+
+      const result = zodSchemaToJsonUI(schema);
+
+      expect(result).toEqual({
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          tags: {
+            type: "array",
+            items: { type: "string" },
+          },
+          isActive: { type: "boolean" },
+        },
+        required: ["name", "tags"],
+      });
+    });
+
     it("should handle nested objects", () => {
       const schema = z.object({
         user: z.object({
@@ -165,6 +193,23 @@ describe("Tool Parser Utilities", () => {
           },
         },
         required: ["name", "count"],
+      });
+    });
+
+    it("should handle default values when defaultValue is a value (Zod v4 style)", () => {
+      const schema = {
+        _def: {
+          type: "default",
+          innerType: { _def: { type: "string" } },
+          defaultValue: "Jane",
+        },
+      };
+
+      const result = zodSchemaToJsonUI(schema);
+
+      expect(result).toEqual({
+        type: "string",
+        default: "Jane",
       });
     });
 

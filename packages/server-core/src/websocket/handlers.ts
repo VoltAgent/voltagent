@@ -20,6 +20,7 @@ export async function handleWebSocketConnection(
   req: IncomingMessage,
   deps: ServerProviderDeps,
   logger: Logger,
+  user?: any,
 ): Promise<void> {
   // Extract path from URL
   const url = new URL(req.url || "", "ws://localhost");
@@ -27,18 +28,18 @@ export async function handleWebSocketConnection(
 
   // Handle test connection
   if (url.pathname === "/ws") {
-    handleTestConnection(ws, logger);
+    handleTestConnection(ws, logger, user);
     return;
   }
 
   // Handle different WebSocket paths
   if (pathParts[2] === "logs") {
-    handleLogStream(ws, url, logger);
+    handleLogStream(ws, url, logger, user);
     return;
   }
 
   if (pathParts[2] === "observability") {
-    handleObservabilityConnection(ws, req, deps);
+    handleObservabilityConnection(ws, req, deps, user);
     return;
   }
 
@@ -52,7 +53,7 @@ export async function handleWebSocketConnection(
 /**
  * Handle test WebSocket connection
  */
-function handleTestConnection(ws: IWebSocket, logger: Logger): void {
+function handleTestConnection(ws: IWebSocket, logger: Logger, user?: any): void {
   // Send a test message when connection is established
   ws.send(
     safeStringify({
@@ -61,6 +62,8 @@ function handleTestConnection(ws: IWebSocket, logger: Logger): void {
       data: {
         message: "WebSocket test connection successful",
         timestamp: new Date().toISOString(),
+        authenticated: !!user,
+        userId: user?.id,
       },
     }),
   );
@@ -85,7 +88,7 @@ function handleTestConnection(ws: IWebSocket, logger: Logger): void {
 /**
  * Handle log stream WebSocket connection
  */
-function handleLogStream(ws: IWebSocket, url: URL, _logger: Logger): void {
+function handleLogStream(ws: IWebSocket, url: URL, _logger: Logger, _user?: any): void {
   const query = Object.fromEntries(url.searchParams.entries());
   const filter: LogFilter = {
     level: query.level as any,

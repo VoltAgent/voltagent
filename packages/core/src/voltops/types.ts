@@ -13,7 +13,9 @@ import type { SearchResult, VectorItem } from "../memory/adapters/vector/types";
 import type {
   Conversation,
   ConversationQueryOptions,
+  ConversationStepRecord,
   CreateConversationInput,
+  GetConversationStepsOptions,
   GetMessagesOptions,
   WorkflowStateEntry,
   WorkingMemoryScope,
@@ -129,6 +131,584 @@ export type CachedPrompt = {
   /** Time to live in milliseconds */
   ttl: number;
 };
+
+export interface VoltOpsActionExecutionResult {
+  actionId: string;
+  provider: string;
+  requestPayload: Record<string, unknown>;
+  responsePayload: unknown;
+  metadata?: Record<string, unknown> | null;
+}
+
+type VoltOpsCredentialMetadata = {
+  metadata?: Record<string, unknown>;
+};
+
+type VoltOpsStoredCredentialRef = {
+  credentialId: string;
+} & VoltOpsCredentialMetadata;
+
+type WithCredentialMetadata<T> = T & VoltOpsCredentialMetadata;
+
+export type VoltOpsAirtableCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{ apiKey: string }>;
+
+export type VoltOpsSlackCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{ botToken: string }>;
+
+export type VoltOpsDiscordCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{ botToken: string }>
+  | WithCredentialMetadata<{ webhookUrl: string }>;
+
+export type VoltOpsGoogleCalendarCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{
+      accessToken?: string;
+      refreshToken?: string;
+      clientId?: string;
+      clientSecret?: string;
+      tokenType?: string;
+      expiresAt?: string;
+    }>;
+
+export type VoltOpsGoogleDriveCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{
+      accessToken?: string;
+      refreshToken?: string;
+      clientId?: string;
+      clientSecret?: string;
+      tokenType?: string;
+      expiresAt?: string;
+    }>;
+
+export type VoltOpsPostgresCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{
+      host: string;
+      port?: number;
+      user: string;
+      password: string;
+      database: string;
+      ssl?: boolean;
+      rejectUnauthorized?: boolean;
+    }>;
+
+export type VoltOpsGmailCredential =
+  | VoltOpsStoredCredentialRef
+  | WithCredentialMetadata<{
+      accessToken?: string;
+      refreshToken?: string;
+      clientId?: string;
+      clientSecret?: string;
+      tokenType?: string;
+      expiresAt?: string;
+    }>
+  | WithCredentialMetadata<{
+      clientEmail: string;
+      privateKey: string;
+      subject?: string | null;
+    }>;
+
+export interface VoltOpsGmailAttachment {
+  filename?: string;
+  content: string;
+  contentType?: string;
+}
+
+export interface VoltOpsAirtableCreateRecordParams {
+  credential: VoltOpsAirtableCredential;
+  baseId: string;
+  tableId: string;
+  fields: Record<string, unknown>;
+  typecast?: boolean;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableUpdateRecordParams {
+  credential: VoltOpsAirtableCredential;
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  fields?: Record<string, unknown>;
+  typecast?: boolean;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableDeleteRecordParams {
+  credential: VoltOpsAirtableCredential;
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableGetRecordParams {
+  credential: VoltOpsAirtableCredential;
+  baseId: string;
+  tableId: string;
+  recordId: string;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsAirtableListRecordsParams {
+  credential: VoltOpsAirtableCredential;
+  baseId: string;
+  tableId: string;
+  view?: string;
+  filterByFormula?: string;
+  maxRecords?: number;
+  pageSize?: number;
+  offset?: string;
+  fields?: string[];
+  sort?: Array<{ field: string; direction?: "asc" | "desc" }>;
+  returnFieldsByFieldId?: boolean;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsSlackBaseParams {
+  credential: VoltOpsSlackCredential;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsSlackPostMessageParams extends VoltOpsSlackBaseParams {
+  channelId?: string;
+  channelName?: string;
+  channelLabel?: string | null;
+  defaultThreadTs?: string | null;
+  targetType?: "conversation" | "user";
+  userId?: string;
+  userName?: string;
+  text?: string;
+  blocks?: unknown;
+  attachments?: unknown;
+  threadTs?: string;
+  metadata?: Record<string, unknown>;
+  linkNames?: boolean;
+  unfurlLinks?: boolean;
+  unfurlMedia?: boolean;
+}
+
+export interface VoltOpsSlackDeleteMessageParams extends VoltOpsSlackBaseParams {
+  channelId: string;
+  messageTs: string;
+  threadTs?: string;
+}
+
+export interface VoltOpsSlackSearchMessagesParams extends VoltOpsSlackBaseParams {
+  query: string;
+  sort?: "relevance" | "timestamp";
+  sortDirection?: "asc" | "desc";
+  channelIds?: string[];
+  limit?: number;
+}
+
+export type VoltOpsDiscordChannelType = "text" | "voice" | "announcement" | "category" | "forum";
+
+export interface VoltOpsDiscordConfig {
+  guildId?: string;
+  channelId?: string;
+  threadId?: string;
+  userId?: string;
+  roleId?: string;
+}
+
+export interface VoltOpsDiscordBaseParams {
+  credential: VoltOpsDiscordCredential;
+  catalogId?: string;
+  projectId?: string | null;
+  actionId?: string;
+  config?: VoltOpsDiscordConfig | null;
+}
+
+export interface VoltOpsDiscordSendMessageParams extends VoltOpsDiscordBaseParams {
+  guildId?: string;
+  channelId?: string;
+  threadId?: string;
+  content?: string;
+  embeds?: unknown[];
+  components?: unknown[];
+  tts?: boolean;
+  allowedMentions?: Record<string, unknown>;
+  replyToMessageId?: string;
+}
+
+export interface VoltOpsDiscordSendWebhookMessageParams extends VoltOpsDiscordSendMessageParams {
+  username?: string;
+  avatarUrl?: string;
+}
+
+export interface VoltOpsDiscordChannelMessageParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+  messageId: string;
+}
+
+export interface VoltOpsDiscordListMessagesParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+  limit?: number;
+  before?: string;
+  after?: string;
+}
+
+export interface VoltOpsDiscordReactionParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+  messageId: string;
+  emoji: string;
+}
+
+export interface VoltOpsDiscordCreateChannelParams extends VoltOpsDiscordBaseParams {
+  guildId: string;
+  name: string;
+  type?: VoltOpsDiscordChannelType;
+  topic?: string;
+}
+
+export interface VoltOpsDiscordUpdateChannelParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+  name?: string;
+  topic?: string;
+  archived?: boolean;
+  locked?: boolean;
+}
+
+export interface VoltOpsDiscordDeleteChannelParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+}
+
+export interface VoltOpsDiscordGetChannelParams extends VoltOpsDiscordBaseParams {
+  channelId: string;
+}
+
+export interface VoltOpsDiscordListChannelsParams extends VoltOpsDiscordBaseParams {
+  guildId: string;
+}
+
+export interface VoltOpsDiscordListMembersParams extends VoltOpsDiscordBaseParams {
+  guildId: string;
+  limit?: number;
+  after?: string;
+}
+
+export interface VoltOpsDiscordMemberRoleParams extends VoltOpsDiscordBaseParams {
+  guildId: string;
+  userId: string;
+  roleId: string;
+}
+
+export interface VoltOpsPostgresBaseParams {
+  credential: VoltOpsPostgresCredential;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsPostgresExecuteParams extends VoltOpsPostgresBaseParams {
+  query: string;
+  parameters?: unknown[];
+  applicationName?: string;
+  statementTimeoutMs?: number;
+  connectionTimeoutMs?: number;
+  ssl?: {
+    rejectUnauthorized?: boolean;
+  };
+}
+
+export interface VoltOpsGmailBaseParams {
+  credential: VoltOpsGmailCredential;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsGmailSendEmailParams extends VoltOpsGmailBaseParams {
+  to: string | string[];
+  cc?: string | string[];
+  bcc?: string | string[];
+  subject: string;
+  body?: string;
+  bodyType?: "text" | "html";
+  htmlBody?: string;
+  textBody?: string;
+  replyTo?: string | string[];
+  from?: string;
+  senderName?: string;
+  inReplyTo?: string;
+  threadId?: string;
+  attachments?: VoltOpsGmailAttachment[];
+  draft?: boolean;
+}
+
+export interface VoltOpsGmailReplyParams extends VoltOpsGmailSendEmailParams {}
+
+export interface VoltOpsGmailSearchParams extends VoltOpsGmailBaseParams {
+  from?: string;
+  to?: string;
+  subject?: string;
+  label?: string;
+  category?: string;
+  after?: number;
+  before?: number;
+  maxResults?: number;
+  pageToken?: string;
+  query?: string;
+}
+
+export interface VoltOpsGmailGetEmailParams extends VoltOpsGmailBaseParams {
+  messageId: string;
+  format?: "full" | "minimal" | "raw" | "metadata";
+}
+
+export interface VoltOpsGmailGetThreadParams extends VoltOpsGmailBaseParams {
+  threadId: string;
+  format?: "full" | "minimal" | "raw" | "metadata";
+}
+
+export interface VoltOpsGoogleCalendarBaseParams {
+  credential: VoltOpsGoogleCalendarCredential;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsGoogleCalendarCreateParams extends VoltOpsGoogleCalendarBaseParams {
+  calendarId?: string;
+  summary: string;
+  start: { dateTime: string; timeZone?: string | null };
+  end: { dateTime: string; timeZone?: string | null };
+  description?: string;
+  location?: string;
+  status?: string;
+  attendees?: Array<{ email: string; optional?: boolean; comment?: string }>;
+}
+
+export interface VoltOpsGoogleCalendarUpdateParams extends VoltOpsGoogleCalendarBaseParams {
+  eventId: string;
+  calendarId?: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  status?: string;
+  start?: { dateTime: string; timeZone?: string | null } | null;
+  end?: { dateTime: string; timeZone?: string | null } | null;
+  attendees?: Array<{ email: string; optional?: boolean; comment?: string }>;
+}
+
+export interface VoltOpsGoogleCalendarDeleteParams extends VoltOpsGoogleCalendarBaseParams {
+  eventId: string;
+  calendarId?: string;
+}
+
+export interface VoltOpsGoogleCalendarListParams extends VoltOpsGoogleCalendarBaseParams {
+  calendarId?: string;
+  timeMin?: string;
+  timeMax?: string;
+  maxResults?: number;
+  pageToken?: string;
+  q?: string;
+  showDeleted?: boolean;
+  singleEvents?: boolean;
+  orderBy?: string;
+}
+
+export interface VoltOpsGoogleCalendarGetParams extends VoltOpsGoogleCalendarBaseParams {
+  eventId: string;
+  calendarId?: string;
+}
+
+export interface VoltOpsGoogleDriveBaseParams {
+  credential: VoltOpsGoogleDriveCredential;
+  actionId?: string;
+  catalogId?: string;
+  projectId?: string | null;
+}
+
+export interface VoltOpsGoogleDriveListParams extends VoltOpsGoogleDriveBaseParams {
+  q?: string;
+  pageSize?: number;
+  pageToken?: string;
+  orderBy?: string;
+  includeTrashed?: boolean;
+}
+
+export interface VoltOpsGoogleDriveGetFileParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+}
+
+export interface VoltOpsGoogleDriveDownloadParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+}
+
+export interface VoltOpsGoogleDriveUploadParams extends VoltOpsGoogleDriveBaseParams {
+  name: string;
+  mimeType?: string;
+  parents?: string[];
+  content?: string;
+  isBase64?: boolean;
+}
+
+export interface VoltOpsGoogleDriveCreateFolderParams extends VoltOpsGoogleDriveBaseParams {
+  name: string;
+  parents?: string[];
+}
+
+export interface VoltOpsGoogleDriveMoveParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+  newParentId: string;
+  removeAllParents?: boolean;
+}
+
+export interface VoltOpsGoogleDriveCopyParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+  destinationParentId?: string;
+  name?: string;
+}
+
+export interface VoltOpsGoogleDriveDeleteParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+}
+
+export interface VoltOpsGoogleDriveShareParams extends VoltOpsGoogleDriveBaseParams {
+  fileId: string;
+}
+
+export type VoltOpsActionsApi = {
+  airtable: {
+    createRecord: (
+      params: VoltOpsAirtableCreateRecordParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    updateRecord: (
+      params: VoltOpsAirtableUpdateRecordParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteRecord: (
+      params: VoltOpsAirtableDeleteRecordParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    getRecord: (params: VoltOpsAirtableGetRecordParams) => Promise<VoltOpsActionExecutionResult>;
+    listRecords: (
+      params: VoltOpsAirtableListRecordsParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
+  slack: {
+    postMessage: (params: VoltOpsSlackPostMessageParams) => Promise<VoltOpsActionExecutionResult>;
+    deleteMessage: (
+      params: VoltOpsSlackDeleteMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    searchMessages: (
+      params: VoltOpsSlackSearchMessagesParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
+  discord: {
+    sendMessage: (params: VoltOpsDiscordSendMessageParams) => Promise<VoltOpsActionExecutionResult>;
+    sendWebhookMessage: (
+      params: VoltOpsDiscordSendWebhookMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteMessage: (
+      params: VoltOpsDiscordChannelMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    getMessage: (
+      params: VoltOpsDiscordChannelMessageParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    listMessages: (
+      params: VoltOpsDiscordListMessagesParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    addReaction: (params: VoltOpsDiscordReactionParams) => Promise<VoltOpsActionExecutionResult>;
+    removeReaction: (params: VoltOpsDiscordReactionParams) => Promise<VoltOpsActionExecutionResult>;
+    createChannel: (
+      params: VoltOpsDiscordCreateChannelParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    updateChannel: (
+      params: VoltOpsDiscordUpdateChannelParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteChannel: (
+      params: VoltOpsDiscordDeleteChannelParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    getChannel: (params: VoltOpsDiscordGetChannelParams) => Promise<VoltOpsActionExecutionResult>;
+    listChannels: (
+      params: VoltOpsDiscordListChannelsParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    listMembers: (params: VoltOpsDiscordListMembersParams) => Promise<VoltOpsActionExecutionResult>;
+    addMemberRole: (
+      params: VoltOpsDiscordMemberRoleParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    removeMemberRole: (
+      params: VoltOpsDiscordMemberRoleParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
+  gmail: {
+    sendEmail: (params: VoltOpsGmailSendEmailParams) => Promise<VoltOpsActionExecutionResult>;
+    replyToEmail: (params: VoltOpsGmailReplyParams) => Promise<VoltOpsActionExecutionResult>;
+    searchEmail: (params: VoltOpsGmailSearchParams) => Promise<VoltOpsActionExecutionResult>;
+    getEmail: (params: VoltOpsGmailGetEmailParams) => Promise<VoltOpsActionExecutionResult>;
+    getThread: (params: VoltOpsGmailGetThreadParams) => Promise<VoltOpsActionExecutionResult>;
+  };
+  googlecalendar: {
+    createEvent: (
+      params: VoltOpsGoogleCalendarCreateParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    updateEvent: (
+      params: VoltOpsGoogleCalendarUpdateParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    deleteEvent: (
+      params: VoltOpsGoogleCalendarDeleteParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    listEvents: (params: VoltOpsGoogleCalendarListParams) => Promise<VoltOpsActionExecutionResult>;
+    getEvent: (params: VoltOpsGoogleCalendarGetParams) => Promise<VoltOpsActionExecutionResult>;
+  };
+  googledrive: {
+    listFiles: (params: VoltOpsGoogleDriveListParams) => Promise<VoltOpsActionExecutionResult>;
+    getFileMetadata: (
+      params: VoltOpsGoogleDriveGetFileParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    downloadFile: (
+      params: VoltOpsGoogleDriveDownloadParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    uploadFile: (params: VoltOpsGoogleDriveUploadParams) => Promise<VoltOpsActionExecutionResult>;
+    createFolder: (
+      params: VoltOpsGoogleDriveCreateFolderParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+    moveFile: (params: VoltOpsGoogleDriveMoveParams) => Promise<VoltOpsActionExecutionResult>;
+    copyFile: (params: VoltOpsGoogleDriveCopyParams) => Promise<VoltOpsActionExecutionResult>;
+    deleteFile: (params: VoltOpsGoogleDriveDeleteParams) => Promise<VoltOpsActionExecutionResult>;
+    shareFilePublic: (
+      params: VoltOpsGoogleDriveShareParams,
+    ) => Promise<VoltOpsActionExecutionResult>;
+  };
+  postgres: {
+    executeQuery: (params: VoltOpsPostgresExecuteParams) => Promise<VoltOpsActionExecutionResult>;
+  };
+};
+
+export interface VoltOpsEvalsApi {
+  runs: {
+    create(payload?: VoltOpsCreateEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+    appendResults(
+      runId: string,
+      payload: VoltOpsAppendEvalRunResultsRequest,
+    ): Promise<VoltOpsEvalRunSummary>;
+    complete(runId: string, payload: VoltOpsCompleteEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+    fail(runId: string, payload: VoltOpsFailEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
+  };
+  scorers: {
+    create(payload: VoltOpsCreateScorerRequest): Promise<VoltOpsScorerSummary>;
+  };
+}
 
 /**
  * API response for prompt fetch operations
@@ -284,6 +864,10 @@ export interface VoltOpsCompleteEvalRunRequest {
   error?: VoltOpsEvalRunErrorPayload;
 }
 
+export interface VoltOpsFailEvalRunRequest {
+  error: VoltOpsEvalRunErrorPayload;
+}
+
 export interface VoltOpsCreateScorerRequest {
   id: string;
   name: string;
@@ -316,26 +900,14 @@ export interface VoltOpsClient {
   /** Configuration options */
   options: VoltOpsClientOptions & { baseUrl: string };
 
+  /** Actions client for third-party integrations */
+  actions: VoltOpsActionsApi;
+
+  /** Evaluations API surface */
+  evals: VoltOpsEvalsApi;
+
   /** Create a prompt helper for agent instructions */
   createPromptHelper(agentId: string, historyEntryId?: string): PromptHelper;
-
-  /** Create a new evaluation run in VoltOps */
-  createEvalRun(payload?: VoltOpsCreateEvalRunRequest): Promise<VoltOpsEvalRunSummary>;
-
-  /** Append evaluation results to an existing run */
-  appendEvalRunResults(
-    runId: string,
-    payload: VoltOpsAppendEvalRunResultsRequest,
-  ): Promise<VoltOpsEvalRunSummary>;
-
-  /** Complete an evaluation run */
-  completeEvalRun(
-    runId: string,
-    payload: VoltOpsCompleteEvalRunRequest,
-  ): Promise<VoltOpsEvalRunSummary>;
-
-  /** Upsert a scorer definition */
-  createEvalScorer(payload: VoltOpsCreateScorerRequest): Promise<VoltOpsScorerSummary>;
 
   /** List managed memory databases available to the project */
   listManagedMemoryDatabases(): Promise<ManagedMemoryDatabaseSummary[]>;
@@ -468,6 +1040,12 @@ export interface ManagedMemoryClearMessagesInput {
   conversationId?: string;
 }
 
+export interface ManagedMemoryGetConversationStepsInput {
+  conversationId: string;
+  userId: string;
+  options?: GetConversationStepsOptions;
+}
+
 export interface ManagedMemoryStoreVectorInput {
   id: string;
   vector: number[];
@@ -505,6 +1083,15 @@ export interface ManagedMemorySetWorkingMemoryInput extends ManagedMemoryWorking
   content: string;
 }
 
+export interface ManagedMemoryQueryWorkflowRunsInput {
+  workflowId?: string;
+  status?: WorkflowStateEntry["status"];
+  from?: Date;
+  to?: Date;
+  limit?: number;
+  offset?: number;
+}
+
 export interface ManagedMemoryWorkflowStateUpdateInput {
   executionId: string;
   updates: Partial<WorkflowStateEntry>;
@@ -535,7 +1122,23 @@ export interface ManagedMemoryWorkflowStatesClient {
   get(databaseId: string, executionId: string): Promise<WorkflowStateEntry | null>;
   set(databaseId: string, executionId: string, state: WorkflowStateEntry): Promise<void>;
   update(databaseId: string, input: ManagedMemoryWorkflowStateUpdateInput): Promise<void>;
+  list(
+    databaseId: string,
+    input: ManagedMemoryQueryWorkflowRunsInput,
+  ): Promise<WorkflowStateEntry[]>;
+  query(
+    databaseId: string,
+    input: ManagedMemoryQueryWorkflowRunsInput,
+  ): Promise<WorkflowStateEntry[]>;
   listSuspended(databaseId: string, workflowId: string): Promise<WorkflowStateEntry[]>;
+}
+
+export interface ManagedMemoryStepsClient {
+  save(databaseId: string, steps: ConversationStepRecord[]): Promise<void>;
+  list(
+    databaseId: string,
+    input: ManagedMemoryGetConversationStepsInput,
+  ): Promise<ConversationStepRecord[]>;
 }
 
 export interface ManagedMemoryVectorsClient {
@@ -554,5 +1157,6 @@ export interface ManagedMemoryVoltOpsClient {
   conversations: ManagedMemoryConversationsClient;
   workingMemory: ManagedMemoryWorkingMemoryClient;
   workflowStates: ManagedMemoryWorkflowStatesClient;
+  steps: ManagedMemoryStepsClient;
   vectors: ManagedMemoryVectorsClient;
 }

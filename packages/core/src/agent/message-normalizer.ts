@@ -165,6 +165,26 @@ const isWorkingMemoryTool = (part: ToolLikePart): boolean => {
   return WORKING_MEMORY_TOOL_NAMES.has(toolName);
 };
 
+const normalizeToolOutputPayload = (output: unknown): unknown => {
+  if (Array.isArray(output)) {
+    return output.map((item) => normalizeToolOutputPayload(item));
+  }
+
+  if (!isObject(output)) {
+    return output;
+  }
+
+  const candidate = output as Record<string, unknown>;
+  if ("value" in candidate) {
+    const type = candidate.type;
+    if (typeof type === "string" && type.toLowerCase().includes("json")) {
+      return normalizeToolOutputPayload(candidate.value);
+    }
+  }
+
+  return output;
+};
+
 const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null => {
   if (isWorkingMemoryTool(part)) {
     return null;
@@ -182,7 +202,9 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
   if (part.toolCallId) normalized.toolCallId = part.toolCallId;
   if (part.state) normalized.state = part.state;
   if (part.input !== undefined) normalized.input = safeClone(part.input);
-  if (part.output !== undefined) normalized.output = safeClone(part.output);
+  if (part.output !== undefined) {
+    normalized.output = safeClone(normalizeToolOutputPayload(part.output));
+  }
   if (part.providerExecuted !== undefined) normalized.providerExecuted = part.providerExecuted;
   if (part.isError !== undefined) normalized.isError = part.isError;
   if (part.errorText !== undefined) normalized.errorText = part.errorText;

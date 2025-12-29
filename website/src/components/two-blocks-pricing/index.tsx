@@ -225,7 +225,7 @@ export function TwoBlocks() {
                   type="button"
                   className="w-full landing-xs:py-1.5 landing-xs:px-3 landing-md:py-3 backdrop-blur-md landing-md:px-4 text-orange-400 font-semibold rounded-md border border-orange-400/20 bg-orange-400/10 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-xs landing-md:text-base"
                   onClick={() => {
-                    window.open("/voltops-llm-observability-docs/", "_blank");
+                    window.open("/observability-docs/", "_blank");
                   }}
                 >
                   <span>DOCS</span>

@@ -106,9 +106,11 @@ export class AgentTraceContext {
     this.commonAttributes = commonAttributes;
 
     // If there's a parent span, use it as context
+    // Otherwise, use a clean context (remove any ambient spans)
+    // This ensures agent root spans are truly root, not children of Next.js/framework spans
     const parentContext = parentSpan
       ? trace.setSpan(context.active(), parentSpan)
-      : context.active();
+      : trace.deleteSpan(context.active());
 
     // Create root span with common attributes
     const spanAttributes: Record<string, any> = {
@@ -154,7 +156,7 @@ export class AgentTraceContext {
    */
   createChildSpan(
     name: string,
-    type: "tool" | "memory" | "retriever" | "embedding" | "vector" | "agent" | "guardrail",
+    type: "tool" | "memory" | "retriever" | "embedding" | "vector" | "agent" | "guardrail" | "llm",
     options?: {
       label?: string;
       attributes?: Record<string, any>;
@@ -181,7 +183,7 @@ export class AgentTraceContext {
   createChildSpanWithParent(
     parentSpan: Span,
     name: string,
-    type: "tool" | "memory" | "retriever" | "embedding" | "vector" | "agent" | "guardrail",
+    type: "tool" | "memory" | "retriever" | "embedding" | "vector" | "agent" | "guardrail" | "llm",
     options?: {
       label?: string;
       attributes?: Record<string, any>;

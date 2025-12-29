@@ -525,6 +525,39 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       expect(result).toHaveLength(1);
       expect(result[0].status).toBe("suspended");
     });
+
+    it("should query workflow runs with filters and pagination", async () => {
+      const dbRows = [
+        {
+          id: "wf-2",
+          workflow_id: "workflow-1",
+          workflow_name: "Test Workflow",
+          status: "completed",
+          created_at: new Date("2024-01-02T00:00:00Z").toISOString(),
+          updated_at: new Date("2024-01-02T00:00:00Z").toISOString(),
+        },
+      ];
+
+      supabaseMock.queue("voltagent_memory_workflow_states", ok(dbRows));
+
+      const result = await adapter.queryWorkflowRuns({
+        workflowId: "workflow-1",
+        status: "completed",
+        from: new Date("2024-01-01T00:00:00Z"),
+        to: new Date("2024-01-03T00:00:00Z"),
+        limit: 10,
+        offset: 5,
+      });
+
+      expect(result).toHaveLength(1);
+      const builder = supabaseMock.getLast("voltagent_memory_workflow_states");
+      expect(builder.eq).toHaveBeenCalledWith("workflow_id", "workflow-1");
+      expect(builder.eq).toHaveBeenCalledWith("status", "completed");
+      expect(builder.gte).toHaveBeenCalledWith("created_at", "2024-01-01T00:00:00.000Z");
+      expect(builder.lte).toHaveBeenCalledWith("created_at", "2024-01-03T00:00:00.000Z");
+      expect(builder.order).toHaveBeenCalledWith("created_at", { ascending: false });
+      expect(builder.range).toHaveBeenCalledWith(5, 14);
+    });
   });
 
   // ============================================================================
