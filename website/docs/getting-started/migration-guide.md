@@ -3,7 +3,7 @@ import TabItem from '@theme/TabItem';
 
 # Migration guide: 1.x → 2.x
 
-VoltAgent 2.x updates the framework to AI SDK v6. This is a breaking change because VoltAgent now follows the updated tool, message, and output contracts. If you only use VoltAgent APIs, follow the steps below. If your app calls AI SDK functions directly, also review the upstream AI SDK v6 migration guide.
+VoltAgent 2.x aligns the framework with AI SDK v6 and adds new features. There are no breaking changes in VoltAgent APIs. If you only use VoltAgent APIs, follow the steps below. If your app calls AI SDK functions directly, also review the upstream AI SDK v6 migration guide.
 
 If you are still on 0.1.x, scroll down to the **Migration guide: 0.1.x → 1.x** section first, then come back here for the 1.x → 2.x upgrade.
 
@@ -85,21 +85,7 @@ If you type the second `execute` parameter, use:
 import type { ToolExecutionOptions } from "@ai-sdk/provider-utils";
 ```
 
-## Step 3. Message storage and adapters (if you persist messages)
-
-If you store messages in a database or custom adapter, make sure you persist tool calls and tool results in order. A common order is:
-
-```text
-system
-user (text)
-assistant (tool-call)
-tool (tool-result)
-assistant (text)
-```
-
-If you call `convertToModelMessages` yourself, it is now async. Await it and update types accordingly.
-
-## Step 4. Structured output (if you use generateObject/streamObject)
+## Step 3. Structured output (if you use generateObject/streamObject)
 
 VoltAgent 2.x deprecates `generateObject` and `streamObject`. Migrate to `generateText`/`streamText` with `Output.object`.
 
@@ -152,22 +138,12 @@ for await (const partial of stream.partialOutputStream ?? []) {
 }
 ```
 
-## Step 5. Tests (if you use AI SDK mocks directly)
+## Step 4. Tests (if you use AI SDK mocks directly)
 
 Update V2 mocks to V3 mocks:
 
 ```ts
 import { MockLanguageModelV3 } from "ai/test";
-```
-
-## Step 6. Validate
-
-Run your test suite and build:
-
-```bash
-pnpm test:all
-pnpm build:all
-pnpm lint
 ```
 
 ---
