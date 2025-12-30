@@ -26,16 +26,16 @@
     "@voltagent/server-core": "^1.0.0",
     "hono": "^4.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/serverless-hono"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/serverless-hono"
   },
   "type": "module",
   "types": "dist/index.d.ts"

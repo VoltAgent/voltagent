@@ -36,6 +36,11 @@
     "@voltagent/logger": "^1.0.0",
     "ai": "^6.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/supabase"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",
@@ -45,11 +50,6 @@
     "publint": "publint --strict",
     "test": "vitest --reporter=hanging-process --reporter=default --typecheck",
     "test:coverage": "vitest run --coverage --typecheck"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/supabase"
   },
   "types": "dist/index.d.ts"
 }

@@ -49,16 +49,16 @@
     "@voltagent/core": "^1.0.0",
     "zod": "^3.25.0 || ^4.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/server-core"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/server-core"
   },
   "types": "dist/index.d.ts"
 }

@@ -27,6 +27,11 @@
   ],
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-google-drive-mcp/server"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch --env-file=.env ./src",
@@ -34,11 +39,6 @@
     "lint:fix": "biome check . --write",
     "start": "node dist/index.js",
     "volt": "volt"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "examples/with-google-drive-mcp/server"
   },
   "type": "module"
 }

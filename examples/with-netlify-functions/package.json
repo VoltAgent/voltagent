@@ -28,6 +28,11 @@
   ],
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-netlify-functions"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "deploy": "netlify deploy --prod",
@@ -35,11 +40,6 @@
     "dev": "netlify dev --dir . --functions netlify/functions",
     "typecheck": "tsc --noEmit",
     "volt": "volt"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "examples/with-netlify-functions"
   },
   "type": "module"
 }

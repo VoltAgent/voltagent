@@ -42,6 +42,11 @@
     "@voltagent/internal": "^0.0.12",
     "rxjs": "^7.8.1"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/ag-ui"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -49,11 +54,6 @@
     "lint:fix": "biome check . --write",
     "publint": "publint --strict",
     "test": "vitest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/ag-ui"
   },
   "types": "dist/index.d.ts"
 }

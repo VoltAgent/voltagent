@@ -63,6 +63,11 @@
       "optional": true
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/core"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",
@@ -74,11 +79,6 @@
     "test:coverage": "vitest run --coverage --typecheck",
     "test:single": "vitest run --reporter=verbose",
     "typecheck": "tsc --noEmit"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/core"
   },
   "types": "dist/index.d.ts"
 }

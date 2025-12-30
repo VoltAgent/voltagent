@@ -32,6 +32,11 @@
     "@voltagent/core": "^1.0.0",
     "ai": "^6.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/voltagent-memory"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",
@@ -40,11 +45,6 @@
     "lint:fix": "biome check . --write",
     "publint": "publint --strict",
     "test": "vitest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/voltagent-memory"
   },
   "types": "dist/index.d.ts"
 }

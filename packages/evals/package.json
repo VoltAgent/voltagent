@@ -31,17 +31,17 @@
     "@voltagent/scorers": "^1.0.0",
     "@voltagent/sdk": "^1.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/evals"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "test": "vitest run"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/evals"
   },
   "type": "module",
   "types": "dist/index.d.ts"

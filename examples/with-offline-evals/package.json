@@ -17,16 +17,16 @@
     "typescript": "^5.8.2"
   },
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-offline-evals"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "dev": "tsx watch --env-file=.env ./src/index.ts",
     "start": "node dist/index.js",
     "volt": "volt"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "examples/with-offline-evals"
   },
   "type": "module"
 }

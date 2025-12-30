@@ -42,6 +42,11 @@
   ],
   "license": "MIT",
   "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/create-voltagent-app"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",
@@ -52,10 +57,5 @@
     "start": "node dist/index.js",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/create-voltagent-app"
   }
 }

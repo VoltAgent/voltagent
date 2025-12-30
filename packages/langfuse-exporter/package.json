@@ -35,6 +35,11 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@voltagent/core": "^1.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/src"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",
@@ -44,11 +49,6 @@
     "publint": "publint --strict",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/src"
   },
   "types": "dist/index.d.ts"
 }

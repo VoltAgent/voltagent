@@ -15,16 +15,16 @@
     "vite": "^7.2.7"
   },
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-copilotkit/client"
+  },
   "scripts": {
     "build": "vite build",
     "dev": "vite",
     "lint": "echo \"no lint configured\"",
     "preview": "vite preview"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "examples/with-copilotkit/client"
   },
   "type": "module"
 }

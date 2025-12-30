@@ -40,17 +40,17 @@
       "optional": true
     }
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/scorers"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "test": "vitest run"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/scorers"
   },
   "type": "module",
   "types": "dist/index.d.ts"

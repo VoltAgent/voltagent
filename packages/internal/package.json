@@ -71,6 +71,11 @@
   "license": "MIT",
   "main": "dist/main/index.js",
   "module": "dist/main/index.mjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/internal"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",
@@ -80,11 +85,6 @@
     "publint": "publint --strict",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/internal"
   },
   "types": "dist/main/index.d.ts",
   "typesVersions": {

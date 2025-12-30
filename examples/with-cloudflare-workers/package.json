@@ -30,6 +30,11 @@
   ],
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-cloudflare-workers"
+  },
   "scripts": {
     "build": "tsc",
     "deploy": "wrangler deploy",
@@ -38,11 +43,6 @@
     "preview": "tsc && wrangler dev --local",
     "tail": "wrangler tail",
     "volt": "volt"
-  },
-    "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "examples/with-cloudflare-workers"
   },
   "type": "module"
 }

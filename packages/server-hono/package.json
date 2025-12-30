@@ -40,16 +40,16 @@
     "@voltagent/core": "^1.x",
     "zod": "^3.25.0 || ^4.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/server-hono"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/server-hono"
   },
   "types": "dist/index.d.ts"
 }

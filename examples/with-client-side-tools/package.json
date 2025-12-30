@@ -28,14 +28,14 @@
   ],
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-client-side-tools"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",
     "start": "next start"
-  },
-    "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "examples/with-client-side-tools"
   }
 }

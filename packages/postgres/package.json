@@ -34,6 +34,11 @@
     "@voltagent/core": "^1.0.0",
     "ai": "^6.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/postgres"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",
@@ -47,11 +52,6 @@
     "test:integration:ci": "vitest run --config vitest.integration.config.mts",
     "test:integration:setup": "docker compose -f docker-compose.test.yaml up -d && sleep 10",
     "test:integration:teardown": "docker compose -f docker-compose.test.yaml down -v"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VoltAgent/voltagent.git",
-    "directory": "packages/postgres"
   },
   "types": "dist/index.d.ts"
 }
