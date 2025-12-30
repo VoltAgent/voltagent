@@ -9,11 +9,11 @@ VoltAgent Server allows you to add custom REST endpoints alongside the built-in 
 
 ## Overview
 
-With `@voltagent/server-hono`, you can add custom routes using the `configureApp` callback which gives you direct access to the Hono app instance.
+Both `@voltagent/server-hono` and `@voltagent/server-elysia` allow you to add custom routes using the `configureApp` callback, which gives you direct access to the underlying app instance.
 
-## Basic Setup
+## Using Hono
 
-Add custom endpoints through the server configuration:
+Add custom endpoints through the Hono server configuration:
 
 ```typescript
 import { VoltAgent } from "@voltagent/core";
@@ -30,6 +30,30 @@ new VoltAgent({
         const body = await c.req.json();
         // Process data
         return c.json({ success: true, data: body });
+      });
+    },
+  }),
+});
+```
+
+## Using Elysia
+
+Add custom endpoints through the Elysia server configuration:
+
+```typescript
+import { VoltAgent } from "@voltagent/core";
+import { elysiaServer } from "@voltagent/server-elysia";
+
+new VoltAgent({
+  agents: { myAgent },
+  server: elysiaServer({
+    configureApp: (app) => {
+      // Add custom routes here
+      app.get("/api/health", () => ({ status: "healthy" }));
+
+      app.post("/api/data", ({ body }) => {
+        // Process data
+        return { success: true, data: body };
       });
     },
   }),
