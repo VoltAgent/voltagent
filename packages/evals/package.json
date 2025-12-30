@@ -1,12 +1,12 @@
 {
   "name": "@voltagent/evals",
   "description": "VoltAgent evaluation orchestrator utilities",
-  "version": "1.0.4",
+  "version": "2.0.0",
   "author": "VoltAgent",
   "dependencies": {
-    "@voltagent/internal": "^0.0.12",
-    "@voltagent/scorers": "^1.0.2",
-    "@voltagent/sdk": "^1.0.1"
+    "@voltagent/internal": "^1.0.0",
+    "@voltagent/scorers": "^2.0.0",
+    "@voltagent/sdk": "^2.0.0"
   },
   "devDependencies": {},
   "exports": {
@@ -28,8 +28,8 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@voltagent/scorers": "^1.0.0",
-    "@voltagent/sdk": "^1.0.0"
+    "@voltagent/scorers": "^2.0.0",
+    "@voltagent/sdk": "^2.0.0"
   },
   "repository": {
     "type": "git",

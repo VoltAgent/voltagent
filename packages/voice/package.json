@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/voice",
   "description": "VoltAgent Voice - Voice capabilities for AI agents",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "dependencies": {
     "@xsai/generate-speech": "0.4.0-beta.1",
     "@xsai/generate-transcription": "0.4.0-beta.1",
@@ -11,7 +11,7 @@
   "devDependencies": {
     "@types/node": "^24.2.1",
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^1.1.10",
+    "@voltagent/core": "^2.0.0",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"
@@ -35,7 +35,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@voltagent/core": "^1.0.0"
+    "@voltagent/core": "^2.0.0"
   },
   "repository": {
     "type": "git",

@@ -1,12 +1,12 @@
 {
   "name": "with-jwt-auth",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
-    "@voltagent/core": "^1.1.30",
-    "@voltagent/libsql": "^1.0.9",
-    "@voltagent/logger": "^1.0.3",
-    "@voltagent/server-hono": "^1.0.22",
+    "@voltagent/core": "^2.0.0",
+    "@voltagent/libsql": "^2.0.0",
+    "@voltagent/logger": "^2.0.0",
+    "@voltagent/server-hono": "^2.0.0",
     "ai": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "zod": "^3.25.76"

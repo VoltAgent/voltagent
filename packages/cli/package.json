@@ -1,14 +1,14 @@
 {
   "name": "@voltagent/cli",
   "description": "CLI tool for VoltAgent applications",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "bin": {
     "volt": "dist/index.js"
   },
   "dependencies": {
-    "@voltagent/evals": "^1.0.3",
-    "@voltagent/internal": "^0.0.12",
-    "@voltagent/sdk": "^1.0.1",
+    "@voltagent/evals": "^2.0.0",
+    "@voltagent/internal": "^1.0.0",
+    "@voltagent/sdk": "^2.0.0",
     "boxen": "^5.1.2",
     "bundle-require": "^5.1.0",
     "chalk": "^4.1.2",

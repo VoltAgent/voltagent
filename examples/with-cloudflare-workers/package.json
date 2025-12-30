@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
-    "@voltagent/core": "^1.5.2",
-    "@voltagent/serverless-hono": "^1.0.10",
+    "@voltagent/core": "^2.0.0",
+    "@voltagent/serverless-hono": "^2.0.0",
     "ai": "^6.0.0",
     "hono": "^4.7.7",
     "zod": "^3.25.76"

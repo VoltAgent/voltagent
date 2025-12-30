@@ -1,5 +1,14 @@
 # @voltagent/cli
 
+## 0.1.18
+
+### Patch Changes
+
+- Updated dependencies [[`ee05549`](https://github.com/VoltAgent/voltagent/commit/ee055498096b1b99015a8362903712663969677f)]:
+  - @voltagent/evals@2.0.0
+  - @voltagent/internal@1.0.0
+  - @voltagent/sdk@2.0.0
+
 ## 0.1.17
 
 ### Patch Changes
