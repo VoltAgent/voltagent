@@ -259,8 +259,8 @@ interface ElysiaServerConfig {
   // Configure the full app (including routes and middleware)
   configureFullApp?: (params: {
     app: Elysia;
-    routes: RouteRegister;
-    middlewares: MiddlewareRegister;
+    routes: Record<string, () => void>;
+    middlewares: Record<string, () => void>;
   }) => void | Promise<void>;
 
   // Authentication provider
