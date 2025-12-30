@@ -254,11 +254,11 @@ The package includes several specialized chunkers optimized for different conten
 import { RecursiveChunker, MarkdownChunker } from "@voltagent/rag";
 
 // 1. Recursive Chunking (Recommended for text)
-const textChunker = new RecursiveChunker({
+const textChunker = new RecursiveChunker();
+const textChunks = textChunker.chunk(longDocument, {
   maxTokens: 500,
   overlapTokens: 50,
 });
-const textChunks = await textChunker.chunk(longDocument);
 
 // 2. Markdown Chunking (Recommended for documentation)
 const mdChunker = new MarkdownChunker();
