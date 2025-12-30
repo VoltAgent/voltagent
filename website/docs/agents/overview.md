@@ -147,6 +147,10 @@ const haiku = await agent.generateText("Write a haiku about coding", {
 console.log(haiku.output);
 ```
 
+### Summarization
+
+Summarization inserts a system summary and keeps the last N non-system messages before each model call. Configure it with the `summarization` option on the agent. See [Summarization](./summarization.md) for configuration and storage details.
+
 ### Input Types
 
 All methods accept either a string or an array of messages:

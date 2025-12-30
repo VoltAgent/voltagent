@@ -5,15 +5,7 @@ slug: /agents/summarization
 
 # Summarization
 
-Summarization keeps the most recent messages in full and replaces older turns with a short summary message. This keeps context size bounded while preserving decisions, constraints, and tool results.
-
-## How It Works
-
-When summarization runs:
-
-- The agent keeps the last `keepMessages` non-system messages.
-- Earlier messages are condensed into a single system message.
-- The summary is included before the recent messages in the next model call.
+Summarization shortens long conversations by inserting a system summary and keeping the last N non-system messages. It is configured per agent.
 
 ## Configuration
 
@@ -22,67 +14,67 @@ import { Agent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
-  name: "ResearchAssistant",
-  instructions: "Answer with sources when possible.",
+  name: "Assistant",
+  instructions: "Answer questions clearly.",
   model: openai("gpt-4o"),
   summarization: {
+    enabled: true,
     triggerTokens: 120_000,
     keepMessages: 6,
-    maxOutputTokens: 600,
+    maxOutputTokens: 800,
+    systemPrompt: "Summarize the conversation for the next step.",
+    model: openai("gpt-4o-mini"),
   },
 });
 ```
 
-### Options
+Options:
 
-| Option            | Type                            | Default  | Notes                                                                                                                                       |
-| ----------------- | ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enabled`         | `boolean`                       | `true`   | Disable by setting `false`.                                                                                                                 |
-| `triggerTokens`   | `number`                        | `170000` | Summary runs when estimated tokens meet or exceed this value. Use `0` to allow summarization on every call once `keepMessages` is exceeded. |
-| `keepMessages`    | `number`                        | `6`      | Number of most recent non-system messages to keep.                                                                                          |
-| `maxOutputTokens` | `number`                        | `800`    | Token limit for the summary generation call.                                                                                                |
-| `systemPrompt`    | `string \| null`                | default  | Custom prompt for the summarizer. Use `""` or `null` to remove it.                                                                          |
-| `model`           | `LanguageModel \| DynamicValue` | agent    | Override the model used for summary generation.                                                                                             |
+- `enabled`: Enable or disable summarization.
+- `triggerTokens`: Token estimate threshold. The estimate uses a simple character-to-token heuristic.
+- `keepMessages`: Number of most recent non-system messages kept after summarization.
+- `maxOutputTokens`: Token budget for the summary generation call.
+- `systemPrompt`: Prompt used for summary generation. If omitted, a default system prompt is used.
+- `model`: Optional model for summarization; defaults to the agent model.
 
-## Using Conversation History
+## How Summarization Runs
 
-Summarization uses the messages available to the agent for the current call. For multi-turn conversations, pass `userId` and `conversationId` so the agent can retrieve prior messages from memory.
+On each request, VoltAgent:
 
-```ts
-await agent.generateText("Summarize the open questions so far.", {
-  userId: "user-123",
-  conversationId: "thread-456",
-});
+1. Removes any previous summary system message (identified by `<agent_summary>` markers).
+2. Calculates a token estimate for non-system messages.
+3. If `nonSystemMessages.length > keepMessages` and the token estimate meets `triggerTokens`, it generates a summary.
+4. Stores the summary state and injects a system message that contains the summary.
+5. Returns `[systemMessages, summaryMessage, tailMessages]` to the model.
+
+If summary generation fails, the original sanitized messages are used.
+
+The injected summary system message looks like:
+
+```text
+<agent_summary>
+...summary text...
+</agent_summary>
 ```
 
-If you do not provide these identifiers, summarization only sees the messages passed in the current call.
+## Storage Behavior
 
-## PlanAgent Usage
+Summary state is stored under the conversation metadata key `agent` when memory is enabled and `conversationId` is present. The state includes:
 
-PlanAgent uses the same summarization configuration as `Agent`.
+- `summary`
+- `summaryMessageCount`
+- `summaryUpdatedAt`
 
-```ts
-import { PlanAgent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
+If memory is disabled or `conversationId` is missing, summary state is kept in process memory and resets on restart.
 
-const agent = new PlanAgent({
-  name: "Planner",
-  systemPrompt: "Plan before using tools.",
-  model: openai("gpt-4o"),
-  summarization: {
-    triggerTokens: 120_000,
-    keepMessages: 6,
-  },
-});
-```
+If you manage conversation metadata, reserve the `metadata.agent` key for VoltAgent summarization state.
 
-## Disable Summarization
+## When To Use It
 
-```ts
-const agent = new Agent({
-  name: "NoSummary",
-  instructions: "Keep full context.",
-  model: openai("gpt-4o"),
-  summarization: false,
-});
-```
+Use summarization when conversation history grows past model limits or when token usage needs to be capped. Avoid it when you require full message fidelity for audits or deterministic replay.
+
+## Notes for Framework Integrations
+
+- Pass `conversationId` consistently to keep summaries across requests.
+- If you render messages in a UI, filter summary system messages by the `<agent_summary>` marker.
+- If you hook into `onPrepareMessages`, that hook runs after summarization and receives the summary-injected message list.
