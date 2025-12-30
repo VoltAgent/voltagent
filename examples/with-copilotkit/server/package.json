@@ -1,13 +1,13 @@
 {
   "name": "voltagent-with-copilotkit-server",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
     "@copilotkit/runtime": "^1.50.0",
-    "@voltagent/ag-ui": "^1.0.0",
-    "@voltagent/cli": "^0.1.18",
-    "@voltagent/core": "^2.0.0",
-    "@voltagent/server-hono": "^2.0.0",
+    "@voltagent/ag-ui": "^1.0.2",
+    "@voltagent/cli": "^0.1.20",
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.2",
     "ai": "^6.0.0",
     "zod": "^3.25.76"
   },

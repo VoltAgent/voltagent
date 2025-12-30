@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/rag",
   "description": "Chunking and RAG utilities for VoltAgent",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "dependencies": {
     "js-tiktoken": "^1.0.14"
   },

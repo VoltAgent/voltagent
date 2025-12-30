@@ -1,13 +1,13 @@
 {
   "name": "@voltagent/logger",
   "description": "VoltAgent logger - @voltagent/logger",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "dependencies": {
     "@opentelemetry/api-logs": "^0.204.0",
     "@opentelemetry/instrumentation": "^0.204.0",
     "@opentelemetry/instrumentation-pino": "^0.50.1",
     "@opentelemetry/sdk-logs": "^0.204.0",
-    "@voltagent/internal": "^1.0.1",
+    "@voltagent/internal": "^1.0.2",
     "pino": "^9.7.0",
     "pino-pretty": "^13.0.0"
   },

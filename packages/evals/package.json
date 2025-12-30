@@ -1,12 +1,12 @@
 {
   "name": "@voltagent/evals",
   "description": "VoltAgent evaluation orchestrator utilities",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "author": "VoltAgent",
   "dependencies": {
-    "@voltagent/internal": "^1.0.1",
-    "@voltagent/scorers": "^2.0.1",
-    "@voltagent/sdk": "^2.0.1"
+    "@voltagent/internal": "^1.0.2",
+    "@voltagent/scorers": "^2.0.2",
+    "@voltagent/sdk": "^2.0.2"
   },
   "devDependencies": {},
   "exports": {

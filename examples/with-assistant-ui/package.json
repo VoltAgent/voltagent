@@ -1,6 +1,6 @@
 {
   "name": "assistant-ui-starter",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
     "@assistant-ui/react": "^0.11.47",
@@ -13,9 +13,9 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@voltagent/core": "^2.0.0",
-    "@voltagent/libsql": "^2.0.0",
-    "@voltagent/server-hono": "^2.0.0",
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/libsql": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.2",
     "ai": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

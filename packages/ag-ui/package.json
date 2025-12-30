@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/ag-ui",
   "description": "AG-UI adapter for VoltAgent agents and CopilotKit runtimes.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "dependencies": {
     "rxjs": "^7.8.1"
   },
@@ -10,8 +10,8 @@
     "@ag-ui/core": "^0.0.37",
     "@copilotkit/runtime": "^1.50.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^2.0.1",
-    "@voltagent/internal": "^1.0.1",
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/internal": "^1.0.2",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "vitest": "^3.2.4"
