@@ -1,13 +1,13 @@
 {
   "name": "@voltagent/mcp-server",
   "description": "VoltAgent MCP server implementation for exposing agents, tools, and workflows via the Model Context Protocol.",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@voltagent/internal": "^1.0.0"
+    "@voltagent/internal": "^1.0.1"
   },
   "devDependencies": {
-    "@voltagent/core": "^2.0.0",
+    "@voltagent/core": "^2.0.1",
     "zod": "^3.25.76"
   },
   "exports": {

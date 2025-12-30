@@ -4,11 +4,11 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
     "@pinecone-database/pinecone": "^6.1.1",
-    "@voltagent/cli": "^0.1.18",
-    "@voltagent/core": "^2.0.0",
-    "@voltagent/libsql": "^2.0.0",
-    "@voltagent/logger": "^2.0.0",
-    "@voltagent/server-hono": "^2.0.0",
+    "@voltagent/cli": "^0.1.19",
+    "@voltagent/core": "^2.0.1",
+    "@voltagent/libsql": "^2.0.1",
+    "@voltagent/logger": "^2.0.1",
+    "@voltagent/server-hono": "^2.0.1",
     "ai": "^6.0.0",
     "openai": "^4.91.0",
     "zod": "^3.25.76"

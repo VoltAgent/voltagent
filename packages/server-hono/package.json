@@ -1,15 +1,15 @@
 {
   "name": "@voltagent/server-hono",
   "description": "Hono server implementation for VoltAgent",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "dependencies": {
     "@hono/node-server": "^1.14.0",
     "@hono/swagger-ui": "^0.5.1",
-    "@voltagent/a2a-server": "^2.0.0",
-    "@voltagent/core": "^2.0.0",
-    "@voltagent/internal": "^1.0.0",
-    "@voltagent/mcp-server": "^2.0.0",
-    "@voltagent/server-core": "^2.0.0",
+    "@voltagent/a2a-server": "^2.0.1",
+    "@voltagent/core": "^2.0.1",
+    "@voltagent/internal": "^1.0.1",
+    "@voltagent/mcp-server": "^2.0.1",
+    "@voltagent/server-core": "^2.0.1",
     "fetch-to-node": "^2.1.0",
     "hono": "^4.7.7",
     "openapi3-ts": "^4.5.0"

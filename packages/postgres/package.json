@@ -1,15 +1,15 @@
 {
   "name": "@voltagent/postgres",
   "description": "VoltAgent PostgreSQL - PostgreSQL Memory provider integration for VoltAgent",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "dependencies": {
-    "@voltagent/internal": "^1.0.0",
+    "@voltagent/internal": "^1.0.1",
     "pg": "^8.16.0"
   },
   "devDependencies": {
     "@types/pg": "^8.15.2",
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^2.0.0",
+    "@voltagent/core": "^2.0.1",
     "ai": "^6.0.0"
   },
   "exports": {
