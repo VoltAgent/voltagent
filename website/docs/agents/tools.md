@@ -337,6 +337,113 @@ try {
 }
 ```
 
+## Tool Execution Approval (needsApproval)
+
+Some tools should not run automatically because they trigger sensitive actions (payments, file changes, command execution, etc). Set `needsApproval` to require explicit user approval before the tool executes.
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const runCommandTool = createTool({
+  name: "runCommand",
+  description: "Run a shell command",
+  parameters: z.object({
+    command: z.string().describe("Command to execute"),
+  }),
+  needsApproval: true,
+  execute: async ({ command }) => {
+    // Execute safely
+    return { ok: true, command };
+  },
+});
+```
+
+`needsApproval` can also be a function for dynamic policies:
+
+```ts
+const processPaymentTool = createTool({
+  name: "processPayment",
+  description: "Charge a customer",
+  parameters: z.object({
+    amount: z.number(),
+    customerId: z.string(),
+  }),
+  needsApproval: async ({ amount }) => amount > 1000,
+  execute: async ({ amount, customerId }) => {
+    return { success: true, amount, customerId };
+  },
+});
+```
+
+### How the Approval Flow Works
+
+1. The model calls a tool with `needsApproval`.
+2. VoltAgent returns a tool part with `state: "approval-requested"` instead of executing.
+3. Your UI asks the user to approve or deny.
+4. Send a tool approval response back to VoltAgent.
+5. If approved, the tool executes in the next step. If denied, the model sees the denial and can respond accordingly.
+
+### UI Implementation (useChat)
+
+VoltAgent's `/agents/:id/chat` stream is compatible with AI SDK `useChat`, so you can render the approval request and send a response from the UI.
+
+```tsx
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
+
+function Chat() {
+  const { messages, addToolApprovalResponse } = useChat({
+    transport: new DefaultChatTransport({ api: "/agents/weather/chat" }),
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+  });
+
+  return (
+    <div>
+      {messages.map((message) => (
+        <div key={message.id}>
+          {message.parts.map((part) => {
+            if (part.type === "tool-runCommand") {
+              if (part.state === "approval-requested") {
+                return (
+                  <div key={part.toolCallId}>
+                    <p>Approve command: {part.input.command}?</p>
+                    <button
+                      onClick={() =>
+                        addToolApprovalResponse({
+                          id: part.approval.id,
+                          approved: true,
+                        })
+                      }
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() =>
+                        addToolApprovalResponse({
+                          id: part.approval.id,
+                          approved: false,
+                          reason: "User denied",
+                        })
+                      }
+                    >
+                      Deny
+                    </button>
+                  </div>
+                );
+              }
+            }
+            return null;
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+If you do not use `sendAutomaticallyWhen`, call `sendMessage` manually after approval to continue the flow.
+
 ## Client-Side Tools
 
 Client-side tools execute in the browser or client application instead of on the server. They're useful for accessing browser APIs, user permissions, or client-specific features.
@@ -663,16 +770,16 @@ const screenshotTool = createTool({
     };
   },
   // Convert output to multi-modal content for LLM
-  toModelOutput: (result) => ({
+  toModelOutput: ({ output }) => ({
     type: "content",
     value: [
       {
         type: "text",
-        text: `Screenshot captured at ${result.timestamp}`,
+        text: `Screenshot captured at ${output.timestamp}`,
       },
       {
         type: "media",
-        data: result.data,
+        data: output.data,
         mediaType: "image/png",
       },
     ],
@@ -687,7 +794,7 @@ The `toModelOutput` function can return different content types:
 **Text only:**
 
 ```ts
-toModelOutput: (output) => ({
+toModelOutput: ({ output }) => ({
   type: "text",
   value: "Operation completed successfully",
 });
@@ -696,7 +803,7 @@ toModelOutput: (output) => ({
 **JSON data:**
 
 ```ts
-toModelOutput: (output) => ({
+toModelOutput: ({ output }) => ({
   type: "json",
   value: { status: "success", data: output },
 });
@@ -705,7 +812,7 @@ toModelOutput: (output) => ({
 **Multi-modal (text + image):**
 
 ```ts
-toModelOutput: (output) => ({
+toModelOutput: ({ output }) => ({
   type: "content",
   value: [
     { type: "text", text: "Here is the image:" },
@@ -717,7 +824,7 @@ toModelOutput: (output) => ({
 **Error handling:**
 
 ```ts
-toModelOutput: (output) => {
+toModelOutput: ({ output }) => {
   if (output.error) {
     return {
       type: "error-text",

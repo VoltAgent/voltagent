@@ -274,7 +274,7 @@ describe("ToolManager", () => {
     it("should include provider-defined tools unchanged", () => {
       toolManager.addStandaloneTool(mockTool1);
       const providerTool = {
-        type: "provider-defined",
+        type: "provider",
         name: "provider-tool",
         description: "Provider-defined tool",
       } as ProviderTool;
@@ -317,7 +317,7 @@ describe("provider-defined tools", () => {
 
   const createProviderTool = (name: string): ProviderTool =>
     ({
-      type: "provider-defined",
+      type: "provider",
       name,
       description: `Provider tool ${name}`,
     }) as unknown as ProviderTool;

@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/internal",
   "description": "VoltAgent internal - an internal set of tools for the VoltAgent packages",
-  "version": "0.0.12",
+  "version": "1.0.2",
   "dependencies": {
     "type-fest": "^4.41.0"
   },
@@ -71,6 +71,11 @@
   "license": "MIT",
   "main": "dist/main/index.js",
   "module": "dist/main/index.mjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/internal"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",

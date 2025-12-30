@@ -6,7 +6,7 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { FinishReason, LanguageModel, LanguageModelUsage, UIMessage } from "ai";
-import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
+import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 import { vi } from "vitest";
 import { z } from "zod";
 import type { BaseRetriever } from "../../retriever/retriever";
@@ -33,10 +33,11 @@ import type { SubAgentConfig } from "./types";
  * Creates a mock language model using AI SDK's test utilities
  */
 export function createMockLanguageModel(_name = "mock-model"): LanguageModel {
-  return new MockLanguageModelV2({
+  const finishReason = { unified: "stop", raw: "stop" } as const;
+  return new MockLanguageModelV3({
     doGenerate: async () => ({
-      finishReason: "stop",
-      usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+      finishReason,
+      usage: createProviderUsage(),
       content: [{ type: "text", text: "Mock response" }],
       warnings: [],
     }),
@@ -44,15 +45,14 @@ export function createMockLanguageModel(_name = "mock-model"): LanguageModel {
       stream: simulateReadableStream({
         chunks: [
           { type: "text-start", id: "text-1" },
-          { type: "text-delta", id: "text-1", delta: "Mock ", text: "Mock " },
-          { type: "text-delta", id: "text-1", delta: "stream ", text: "stream " },
-          { type: "text-delta", id: "text-1", delta: "response", text: "response" },
+          { type: "text-delta", id: "text-1", delta: "Mock " },
+          { type: "text-delta", id: "text-1", delta: "stream " },
+          { type: "text-delta", id: "text-1", delta: "response" },
           { type: "text-end", id: "text-1" },
           {
             type: "finish",
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
-            totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            finishReason,
+            usage: createProviderUsage(),
           },
         ],
       }),
@@ -136,19 +136,45 @@ function createMockUsage(): LanguageModelUsage {
     inputTokens: 10,
     outputTokens: 5,
     totalTokens: 15,
+    inputTokenDetails: {
+      noCacheTokens: 10,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+    },
+    outputTokenDetails: {
+      textTokens: 5,
+      reasoningTokens: 0,
+    },
+  };
+}
+
+function createProviderUsage() {
+  return {
+    inputTokens: {
+      total: 10,
+      noCache: 10,
+      cacheRead: 0,
+      cacheWrite: 0,
+    },
+    outputTokens: {
+      total: 5,
+      text: 5,
+      reasoning: 0,
+    },
   };
 }
 
 /**
- * Creates a mock agent with AI SDK's MockLanguageModelV2
+ * Creates a mock agent with AI SDK's MockLanguageModelV3
  * This creates a real agent with predictable model responses
  */
 export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
   // Create agent with a properly configured mock model
-  const mockModel = new MockLanguageModelV2({
+  const finishReason = { unified: "stop", raw: "stop" } as const;
+  const mockModel = new MockLanguageModelV3({
     doGenerate: async () => ({
-      finishReason: "stop",
-      usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+      finishReason,
+      usage: createProviderUsage(),
       content: [{ type: "text", text: `Response from ${options.name || "Mock Agent"}` }],
       warnings: [],
     }),
@@ -156,19 +182,17 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
       stream: simulateReadableStream({
         chunks: [
           { type: "text-start", id: "text-1" },
-          { type: "text-delta", id: "text-1", delta: "Hello from ", text: "Hello from " },
+          { type: "text-delta", id: "text-1", delta: "Hello from " },
           {
             type: "text-delta",
             id: "text-1",
             delta: options.name || "Mock Agent",
-            text: options.name || "Mock Agent",
           },
           { type: "text-end", id: "text-1" },
           {
             type: "finish",
-            finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
-            totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            finishReason,
+            usage: createProviderUsage(),
           },
         ],
       }),
@@ -197,8 +221,8 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
           {
             type: "finish",
             finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
-            totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            usage: createMockUsage(),
+            totalUsage: createMockUsage(),
           },
         ],
       });
@@ -219,7 +243,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         usage: Promise.resolve(createMockUsage()),
         finishReason: Promise.resolve("stop"),
         context: new Map(),
-        experimental_partialOutputStream: undefined,
+        partialOutputStream: undefined,
         toUIMessageStream: vi.fn(),
         toUIMessageStreamResponse: vi.fn(),
         pipeUIMessageStreamToResponse: vi.fn(),
@@ -255,8 +279,10 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         totalUsage: createMockUsage(),
         warnings: [],
         finishReason: "stop" as const,
+        rawFinishReason: undefined,
         steps: [],
         experimental_output: undefined,
+        output: undefined,
         response: {
           id: "mock-response-id",
           modelId: "mock-model",
@@ -298,8 +324,8 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
           {
             type: "finish",
             finishReason: "stop",
-            usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
-            totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+            usage: createMockUsage(),
+            totalUsage: createMockUsage(),
           },
         ],
       });

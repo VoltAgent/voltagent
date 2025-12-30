@@ -2,8 +2,9 @@
  * Test utilities for Agent tests using AI SDK test helpers
  */
 
-import type { LanguageModel, LanguageModelUsage, StepResult } from "ai";
-import { MockLanguageModelV2, mockId } from "ai/test";
+import { ReadableStream as WebReadableStream } from "node:stream/web";
+import type { FinishReason, LanguageModel, LanguageModelUsage, StepResult } from "ai";
+import { MockLanguageModelV3, mockId } from "ai/test";
 import { vi } from "vitest";
 import { z } from "zod";
 import type { ToolSchema } from "../agent/providers/base/types";
@@ -47,8 +48,236 @@ export const defaultMockResponse = {
     inputTokens: 10,
     outputTokens: 5,
     totalTokens: 15,
+    inputTokenDetails: {
+      noCacheTokens: 10,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+    },
+    outputTokenDetails: {
+      textTokens: 5,
+      reasoningTokens: 0,
+    },
+    cachedInputTokens: 0,
+    reasoningTokens: 0,
+    raw: undefined,
   } as LanguageModelUsage,
   warnings: [],
+};
+
+const finishReasonValues: FinishReason[] = [
+  "stop",
+  "length",
+  "content-filter",
+  "tool-calls",
+  "error",
+  "other",
+];
+
+const finishReasonSet = new Set<FinishReason>(finishReasonValues);
+
+type ProviderFinishReason = {
+  unified: FinishReason;
+  raw: string | undefined;
+};
+
+type ProviderUsage = {
+  inputTokens: {
+    total: number | undefined;
+    noCache: number | undefined;
+    cacheRead: number | undefined;
+    cacheWrite: number | undefined;
+  };
+  outputTokens: {
+    total: number | undefined;
+    text: number | undefined;
+    reasoning: number | undefined;
+  };
+  raw?: Record<string, unknown>;
+};
+
+const defaultProviderUsage = {
+  inputTokens: {
+    total: 10,
+    noCache: 10,
+    cacheRead: 0,
+    cacheWrite: 0,
+  },
+  outputTokens: {
+    total: 5,
+    text: 5,
+    reasoning: 0,
+  },
+};
+
+const defaultProviderFinishReason: ProviderFinishReason = {
+  unified: "stop",
+  raw: "stop",
+};
+
+const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
+  return (
+    !!value &&
+    (typeof value === "object" || typeof value === "function") &&
+    "then" in (value as Record<string, unknown>) &&
+    typeof (value as { then?: unknown }).then === "function"
+  );
+};
+
+const isProviderUsage = (usage: unknown): usage is ProviderUsage => {
+  if (!usage || typeof usage !== "object") return false;
+  const candidate = usage as ProviderUsage;
+  return (
+    typeof candidate.inputTokens === "object" &&
+    candidate.inputTokens !== null &&
+    "total" in candidate.inputTokens &&
+    typeof candidate.outputTokens === "object" &&
+    candidate.outputTokens !== null &&
+    "total" in candidate.outputTokens
+  );
+};
+
+const normalizeFinishReason = (finishReason: unknown): ProviderFinishReason => {
+  if (finishReason && typeof finishReason === "object" && "unified" in finishReason) {
+    const unifiedValue = (finishReason as ProviderFinishReason).unified;
+    const rawValue = (finishReason as ProviderFinishReason).raw;
+    return {
+      unified: finishReasonSet.has(unifiedValue) ? unifiedValue : "other",
+      raw:
+        typeof rawValue === "string" ? rawValue : rawValue == null ? undefined : String(rawValue),
+    };
+  }
+
+  if (typeof finishReason === "string") {
+    return {
+      unified: finishReasonSet.has(finishReason as FinishReason)
+        ? (finishReason as FinishReason)
+        : "other",
+      raw: finishReason,
+    };
+  }
+
+  return defaultProviderFinishReason;
+};
+
+const normalizeProviderUsage = (
+  usage: LanguageModelUsage | ProviderUsage | undefined,
+): ProviderUsage | undefined => {
+  if (!usage) return undefined;
+  if (isPromiseLike(usage)) return undefined;
+  if (isProviderUsage(usage)) return usage;
+
+  const inputTokens = usage.inputTokens ?? usage.inputTokenDetails?.noCacheTokens;
+  const outputTokens = usage.outputTokens ?? usage.outputTokenDetails?.textTokens;
+  const hasInput = inputTokens != null || usage.inputTokenDetails != null;
+  const hasOutput = outputTokens != null || usage.outputTokenDetails != null;
+
+  return {
+    inputTokens: {
+      total: typeof inputTokens === "number" ? inputTokens : undefined,
+      noCache: usage.inputTokenDetails?.noCacheTokens ?? inputTokens,
+      cacheRead: usage.inputTokenDetails?.cacheReadTokens ?? (hasInput ? 0 : undefined),
+      cacheWrite: usage.inputTokenDetails?.cacheWriteTokens ?? (hasInput ? 0 : undefined),
+    },
+    outputTokens: {
+      total: typeof outputTokens === "number" ? outputTokens : undefined,
+      text: usage.outputTokenDetails?.textTokens ?? outputTokens,
+      reasoning: usage.outputTokenDetails?.reasoningTokens ?? (hasOutput ? 0 : undefined),
+    },
+    raw: usage.raw as Record<string, unknown> | undefined,
+  };
+};
+
+const normalizeGenerateResult = (result: any) => {
+  if (!result || typeof result !== "object") return result;
+  return {
+    ...result,
+    finishReason: normalizeFinishReason(result.finishReason),
+    usage: normalizeProviderUsage(result.usage) ?? defaultProviderUsage,
+  };
+};
+
+const normalizeStreamPart = (part: any) => {
+  if (!part || typeof part !== "object") return part;
+  if (part.type !== "finish") return part;
+
+  return {
+    ...part,
+    finishReason: normalizeFinishReason(part.finishReason),
+    usage: normalizeProviderUsage(part.usage) ?? defaultProviderUsage,
+    totalUsage:
+      normalizeProviderUsage(part.totalUsage as LanguageModelUsage | ProviderUsage | undefined) ??
+      part.totalUsage,
+  };
+};
+
+const mapReadableStream = <T, U>(
+  stream: ReadableStream<T>,
+  mapChunk: (chunk: T) => U,
+): ReadableStream<U> => {
+  let reader: ReadableStreamDefaultReader<T> | undefined;
+
+  return new ReadableStream<U>({
+    start() {
+      reader = stream.getReader();
+    },
+    async pull(controller) {
+      if (!reader) {
+        controller.close();
+        return;
+      }
+
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(mapChunk(value));
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+    cancel(reason) {
+      return reader?.cancel(reason);
+    },
+  });
+};
+
+const asyncIterableToReadableStream = <T>(iterable: AsyncIterable<T>): ReadableStream<T> => {
+  return WebReadableStream.from(iterable) as ReadableStream<T>;
+};
+
+const normalizeStream = (stream: unknown): ReadableStream<unknown> => {
+  if (stream && typeof (stream as ReadableStream<unknown>).getReader === "function") {
+    return mapReadableStream(stream as ReadableStream<unknown>, normalizeStreamPart);
+  }
+
+  if (stream && Symbol.asyncIterator in Object(stream)) {
+    const mappedIterable = (async function* () {
+      for await (const chunk of stream as AsyncIterable<unknown>) {
+        yield normalizeStreamPart(chunk);
+      }
+    })();
+    return asyncIterableToReadableStream(mappedIterable);
+  }
+
+  return stream as ReadableStream<unknown>;
+};
+
+const normalizeStreamResult = (result: any) => {
+  if (!result || typeof result !== "object") return result;
+  const usage = isPromiseLike(result.usage)
+    ? result.usage
+    : (normalizeProviderUsage(result.usage) ?? result.usage);
+  const totalUsage = isPromiseLike(result.totalUsage)
+    ? result.totalUsage
+    : (normalizeProviderUsage(result.totalUsage) ?? result.totalUsage);
+  return {
+    ...result,
+    stream: normalizeStream(result.stream),
+    usage,
+    totalUsage,
+  };
 };
 
 /**
@@ -59,27 +288,51 @@ export function createMockLanguageModel(config?: {
   doGenerate?: any;
   doStream?: any;
 }): LanguageModel {
-  const mockModel = new MockLanguageModelV2({
+  const normalizedDoGenerate =
+    config?.doGenerate == null
+      ? undefined
+      : typeof config.doGenerate === "function"
+        ? async (options: any) => normalizeGenerateResult(await config.doGenerate(options))
+        : Array.isArray(config.doGenerate)
+          ? config.doGenerate.map(normalizeGenerateResult)
+          : normalizeGenerateResult(config.doGenerate);
+
+  const normalizedDoStream =
+    config?.doStream == null
+      ? undefined
+      : typeof config.doStream === "function"
+        ? async (options: any) => normalizeStreamResult(await config.doStream(options))
+        : Array.isArray(config.doStream)
+          ? config.doStream.map(normalizeStreamResult)
+          : normalizeStreamResult(config.doStream);
+
+  const mockModel = new MockLanguageModelV3({
     modelId: config?.modelId || "test-model",
-    doGenerate: config?.doGenerate || {
-      ...defaultMockResponse,
-      content: [{ type: "text", text: "Mock response" }],
-    },
-    doStream: config?.doStream || {
-      stream: convertArrayToReadableStream([
-        { type: "text-delta" as const, id: "text-1", delta: "Mock ", text: "Mock " },
-        { type: "text-delta" as const, id: "text-1", delta: "stream", text: "stream" },
-        {
-          type: "finish",
-          finishReason: "stop",
-          usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
-          totalUsage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
-        },
-      ]),
-      rawCall: { rawPrompt: null, rawSettings: {} },
-      usage: Promise.resolve(defaultMockResponse.usage),
-      warnings: [],
-    },
+    doGenerate:
+      normalizedDoGenerate ||
+      ({
+        finishReason: defaultProviderFinishReason,
+        usage: defaultProviderUsage,
+        content: [{ type: "text", text: "Mock response" }],
+        warnings: [],
+      } as any),
+    doStream:
+      normalizedDoStream ||
+      ({
+        stream: normalizeStream(
+          convertArrayToReadableStream([
+            { type: "text-start" as const, id: "text-1" },
+            { type: "text-delta" as const, id: "text-1", delta: "Mock " },
+            { type: "text-delta" as const, id: "text-1", delta: "stream" },
+            { type: "text-end" as const, id: "text-1" },
+            {
+              type: "finish",
+              finishReason: defaultProviderFinishReason,
+              usage: defaultProviderUsage,
+            },
+          ]),
+        ),
+      } as any),
   });
 
   // Cast to LanguageModel to match AI SDK types
@@ -164,6 +417,7 @@ export function createMockStepResult(options?: Partial<StepResult<any>>): StepRe
     toolCalls: options?.toolCalls || [],
     toolResults: options?.toolResults || [],
     finishReason: options?.finishReason || "stop",
+    rawFinishReason: options?.rawFinishReason,
     usage: options?.usage || defaultMockResponse.usage,
     warnings: options?.warnings || [],
     ...options,
@@ -301,7 +555,7 @@ export function createMockGenerateTextResult(overrides?: Partial<any>) {
     },
     providerMetadata: overrides?.providerMetadata || undefined,
     steps: overrides?.steps || [],
-    experimental_output: overrides?.experimental_output || undefined,
+    output: overrides?.output || undefined,
   } as any;
 }
 

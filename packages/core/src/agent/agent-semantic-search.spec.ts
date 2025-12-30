@@ -3,7 +3,7 @@
  */
 
 import type { UIMessage } from "ai";
-import { MockLanguageModelV2 } from "ai/test";
+import { MockLanguageModelV3 } from "ai/test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Memory } from "../memory";
 import type { EmbeddingAdapter } from "../memory/adapters/embedding/types";
@@ -43,14 +43,14 @@ class MockEmbeddingAdapter implements EmbeddingAdapter {
 }
 
 describe("Agent Semantic Search", () => {
-  let mockModel: MockLanguageModelV2;
+  let mockModel: MockLanguageModelV3;
   let _agent: Agent;
   let memoryWithVector: Memory;
   let memoryWithoutVector: Memory;
 
   beforeEach(() => {
     // Create mock model
-    mockModel = new MockLanguageModelV2({
+    mockModel = new MockLanguageModelV3({
       modelId: "test-model",
       doGenerate: {
         content: [{ type: "text", text: "Test response" }],
@@ -59,6 +59,8 @@ describe("Agent Semantic Search", () => {
           inputTokens: 10,
           outputTokens: 5,
           totalTokens: 15,
+          inputTokenDetails: { noCacheTokens: 10, cacheReadTokens: 0, cacheWriteTokens: 0 },
+          outputTokenDetails: { textTokens: 5, reasoningTokens: 0 },
         },
       },
     });

@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/core",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
-  "version": "1.5.2",
+  "version": "2.0.2",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@opentelemetry/api": "^1.9.0",
@@ -17,7 +17,9 @@
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "@voltagent/documents": "workspace:*",
-    "@voltagent/internal": "^0.0.12",
+    "@voltagent/internal": "^1.0.2",
+    "fast-glob": "^3.3.3",
+    "micromatch": "^4.0.8",
     "ts-pattern": "^5.7.1",
     "type-fest": "^4.41.0",
     "uuid": "^9.0.1",
@@ -25,10 +27,11 @@
     "zod-from-json-schema-v3": "npm:zod-from-json-schema@^0.0.5"
   },
   "devDependencies": {
-    "@ai-sdk/provider-utils": "^3.0.0",
+    "@ai-sdk/provider-utils": "^4.0.0",
+    "@types/micromatch": "^4.0.10",
     "@types/uuid": "^10.0.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "ai": "^5.0.76",
+    "ai": "^6.0.0",
     "msw": "^2.11.5",
     "zod": "^3.25.76"
   },
@@ -51,15 +54,20 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@ai-sdk/provider-utils": "3.x",
-    "@voltagent/logger": "1.x",
-    "ai": "5.x",
+    "@ai-sdk/provider-utils": "4.x",
+    "@voltagent/logger": "2.0.2",
+    "ai": "^6.0.0",
     "zod": "^3.25.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
     "@voltagent/logger": {
       "optional": true
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/core"
   },
   "scripts": {
     "attw": "attw --pack",

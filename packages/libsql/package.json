@@ -1,16 +1,16 @@
 {
   "name": "@voltagent/libsql",
   "description": "VoltAgent LibSQL - LibSQL/Turso Memory provider integration for VoltAgent",
-  "version": "1.1.0",
+  "version": "2.0.2",
   "dependencies": {
     "@libsql/client": "^0.15.0",
-    "@voltagent/internal": "^0.0.12"
+    "@voltagent/internal": "^1.0.2"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
-    "@voltagent/core": "^1.5.2",
-    "@voltagent/logger": "^1.0.3",
-    "ai": "^5.0.76"
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/logger": "^2.0.2",
+    "ai": "^6.0.0"
   },
   "exports": {
     ".": {
@@ -41,12 +41,17 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "peerDependencies": {
-    "@voltagent/core": "^1.0.0",
-    "@voltagent/logger": "^1.0.0",
-    "ai": "^5.0.76"
+    "@voltagent/core": "^2.0.0",
+    "@voltagent/logger": "^2.0.0",
+    "ai": "^6.0.0"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/libsql"
   },
   "scripts": {
     "attw": "attw --pack",

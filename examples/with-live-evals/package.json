@@ -1,11 +1,11 @@
 {
   "name": "example-with-live-evals",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
-    "@voltagent/core": "^1.1.30",
-    "@voltagent/scorers": "^1.0.1",
-    "@voltagent/server-hono": "^1.0.22",
+    "@ai-sdk/openai": "^3.0.0",
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/scorers": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -14,6 +14,11 @@
     "typescript": "^5.8.2"
   },
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-live-evals"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch --env-file=.env ./src",

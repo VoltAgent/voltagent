@@ -9,7 +9,7 @@ An agent in VoltAgent wraps a language model with instructions, tools, memory, a
 
 There are two ways to use agents in VoltAgent:
 
-1. **Direct method calls** - Call agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) from your application code
+1. **Direct method calls** - Call agent methods (`generateText`, `streamText`) from your application code
 2. **REST API** - Use VoltAgent's HTTP server to expose agents as REST endpoints
 
 This document covers both approaches, starting with the basics.
@@ -33,7 +33,7 @@ The `instructions` property defines the agent's behavior. The `model` comes from
 
 ## Using Agents: Direct Method Calls
 
-Agents have four core methods for generating responses:
+Agents have two core methods for generating responses:
 
 ### Text Generation
 
@@ -58,7 +58,7 @@ for await (const chunk of stream.textStream) {
 
 ### Streaming Features
 
-When using `streamText` or `streamObject`, you can access detailed events and final values.
+When using `streamText`, you can access detailed events and final values.
 
 #### fullStream for Detailed Events
 
@@ -111,43 +111,12 @@ console.log(`\nTotal: ${fullText.length} chars, ${usage?.totalTokens} tokens`);
 
 ### Structured Data Generation
 
-There are two approaches for getting structured data from agents:
-
-#### Option 1: generateObject / streamObject (Schema-Only)
-
-These methods validate output against a schema but **do not support tool calling**. Use these for simple data extraction without tools.
-
-**generateObject** - Returns a complete validated object.
-
-```ts
-import { z } from "zod";
-
-const schema = z.object({
-  name: z.string(),
-  age: z.number(),
-  skills: z.array(z.string()),
-});
-
-const result = await agent.generateObject("Create a developer profile for Alex", schema);
-console.log(result.object); // { name: "Alex", age: 28, skills: [...] }
-```
-
-**streamObject** - Streams partial objects as they're built.
-
-```ts
-const stream = await agent.streamObject("Create a profile for Jamie", schema);
-
-for await (const partial of stream.partialObjectStream) {
-  console.log(partial); // { name: "Jamie" } -> { name: "Jamie", age: 25 } -> ...
-}
-```
-
-#### Option 2: experimental_output (Schema + Agent Features)
-
-Use `experimental_output` with `generateText`/`streamText` to get structured data **while still using tools and all agent capabilities**.
+Use `output` with `generateText`/`streamText` to get structured data while still using tools and all agent capabilities.
+`generateObject` and `streamObject` are deprecated in VoltAgent 2.x.
 
 ```ts
 import { Output } from "ai";
+import { z } from "zod";
 
 const recipeSchema = z.object({
   name: z.string(),
@@ -158,33 +127,29 @@ const recipeSchema = z.object({
 
 // With generateText - supports tool calling
 const result = await agent.generateText("Create a pasta recipe", {
-  experimental_output: Output.object({ schema: recipeSchema }),
+  output: Output.object({ schema: recipeSchema }),
 });
-console.log(result.experimental_output); // { name: "...", ingredients: [...], ... }
+console.log(result.output); // { name: "...", ingredients: [...], ... }
 
 // With streamText - stream partial objects while using tools
 const stream = await agent.streamText("Create a detailed recipe", {
-  experimental_output: Output.object({ schema: recipeSchema }),
+  output: Output.object({ schema: recipeSchema }),
 });
 
-for await (const partial of stream.experimental_partialOutputStream ?? []) {
+for await (const partial of stream.partialOutputStream ?? []) {
   console.log(partial); // Incrementally built object
 }
 
 // Constrained text generation
 const haiku = await agent.generateText("Write a haiku about coding", {
-  experimental_output: Output.text({
-    maxLength: 100,
-    description: "A traditional haiku poem",
-  }),
+  output: Output.text(),
 });
-console.log(haiku.experimental_output);
+console.log(haiku.output);
 ```
 
-**When to use which:**
+### Summarization
 
-- Use `generateObject`/`streamObject` for simple schema validation without tool calling
-- Use `experimental_output` when you need structured output **and** tool calling
+Summarization inserts a system summary and keeps the last N non-system messages before each model call. Configure it with the `summarization` option on the agent. See [Summarization](./summarization.md) for configuration and storage details.
 
 ### Input Types
 
@@ -250,7 +215,7 @@ The server exposes the following REST endpoints:
 
 ### Structured Output via HTTP
 
-You can use `experimental_output` with the text endpoints (`/text`, `/stream`, `/chat`) to get structured data while maintaining tool calling capabilities. Add the `experimental_output` field to the `options` object in your request:
+You can use `output` with the text endpoints (`/text`, `/stream`, `/chat`) to get structured data while maintaining tool calling capabilities. Add the `output` field to the `options` object in your request:
 
 ```typescript
 const response = await fetch("http://localhost:3141/agents/assistant/text", {
@@ -259,7 +224,7 @@ const response = await fetch("http://localhost:3141/agents/assistant/text", {
   body: JSON.stringify({
     input: "Create a recipe",
     options: {
-      experimental_output: {
+      output: {
         type: "object",
         schema: {
           type: "object",
@@ -275,10 +240,10 @@ const response = await fetch("http://localhost:3141/agents/assistant/text", {
 });
 
 const data = await response.json();
-console.log(data.data.experimental_output); // Structured object
+console.log(data.data.output); // Structured object
 ```
 
-For detailed API reference and examples, see [Agent Endpoints - experimental_output](../api/endpoints/agents.md#using-experimental_output-for-structured-generation).
+For detailed API reference and examples, see [Agent Endpoints - output](../api/endpoints/agents.md#using-output-for-structured-generation).
 
 ### Calling from Next.js API Route
 

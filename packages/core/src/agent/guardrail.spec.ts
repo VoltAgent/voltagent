@@ -149,31 +149,31 @@ describe("guardrail helpers", () => {
   });
 
   describe("extractInputTextForGuardrail", () => {
-    it("handles string input", () => {
-      expect(extractInputTextForGuardrail("hello")).toBe("hello");
+    it("handles string input", async () => {
+      await expect(extractInputTextForGuardrail("hello")).resolves.toBe("hello");
     });
 
-    it("extracts from UI messages", () => {
+    it("extracts from UI messages", async () => {
       const messages = [createMockUIMessage("user", "hello world")];
-      expect(extractInputTextForGuardrail(messages)).toBe("hello world");
+      await expect(extractInputTextForGuardrail(messages)).resolves.toBe("hello world");
     });
 
-    it("extracts from model messages", () => {
+    it("extracts from model messages", async () => {
       const messages: ModelMessage[] = [
         { role: "user", content: "hi" },
         { role: "assistant", content: [{ type: "text", text: "reply" }] },
       ];
-      expect(extractInputTextForGuardrail(messages)).toBe("hi\nreply");
+      await expect(extractInputTextForGuardrail(messages)).resolves.toBe("hi\nreply");
     });
   });
 
   describe("extractOutputTextForGuardrail", () => {
-    it("returns string as-is", () => {
-      expect(extractOutputTextForGuardrail("output")).toBe("output");
+    it("returns string as-is", async () => {
+      await expect(extractOutputTextForGuardrail("output")).resolves.toBe("output");
     });
 
-    it("serializes objects", () => {
-      const text = extractOutputTextForGuardrail({ foo: "bar" });
+    it("serializes objects", async () => {
+      const text = await extractOutputTextForGuardrail({ foo: "bar" });
       expect(text && JSON.parse(text)).toEqual({ foo: "bar" });
     });
   });

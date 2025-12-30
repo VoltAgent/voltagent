@@ -3,10 +3,10 @@
   "description": "VoltAgent example deployed as a Netlify Function",
   "version": "1.0.0",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
-    "@voltagent/core": "^1.5.2",
-    "@voltagent/serverless-hono": "^1.0.10",
-    "ai": "^5.0.76",
+    "@ai-sdk/openai": "^3.0.0",
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/serverless-hono": "^2.0.2",
+    "ai": "^6.0.0",
     "hono": "^4.7.7",
     "zod": "^3.25.76"
   },
@@ -28,6 +28,11 @@
   ],
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-netlify-functions"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "deploy": "netlify deploy --prod",

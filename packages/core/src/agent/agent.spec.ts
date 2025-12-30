@@ -6,7 +6,7 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
 import * as ai from "ai";
 import type { UIMessage } from "ai";
-import { MockLanguageModelV2 } from "ai/test";
+import { MockLanguageModelV3 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
@@ -31,11 +31,11 @@ vi.mock("ai", async () => {
 });
 
 describe("Agent", () => {
-  let mockModel: MockLanguageModelV2;
+  let mockModel: MockLanguageModelV3;
 
   beforeEach(() => {
     // Create a fresh mock model for each test
-    mockModel = new MockLanguageModelV2({
+    mockModel = new MockLanguageModelV3({
       modelId: "test-model",
       doGenerate: {
         content: [{ type: "text", text: "Test response" }],
@@ -44,6 +44,15 @@ describe("Agent", () => {
           inputTokens: 10,
           outputTokens: 5,
           totalTokens: 15,
+          inputTokenDetails: {
+            noCacheTokens: 10,
+            cacheReadTokens: 0,
+            cacheWriteTokens: 0,
+          },
+          outputTokenDetails: {
+            textTokens: 5,
+            reasoningTokens: 0,
+          },
         },
         warnings: [],
       },
@@ -589,7 +598,7 @@ describe("Agent", () => {
         pipeUIMessageStreamToResponse: vi.fn(),
         pipeTextStreamToResponse: vi.fn(),
         toTextStreamResponse: vi.fn(),
-        experimental_partialOutputStream: undefined,
+        partialOutputStream: undefined,
       };
 
       vi.mocked(ai.streamText).mockReturnValue(mockStream as any);

@@ -1,7 +1,7 @@
 {
   "name": "create-voltagent-app",
   "description": "Create VoltAgent applications with one command",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "bin": {
     "create-voltagent": "./dist/index.js",
     "create-voltagent-app": "./dist/index.js"
@@ -42,6 +42,11 @@
   ],
   "license": "MIT",
   "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/create-voltagent-app"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",

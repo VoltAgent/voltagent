@@ -2,16 +2,16 @@
   "name": "voltagent-example-with-nextjs",
   "version": "0.1.0",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
-    "@ai-sdk/react": "^2.0.8",
+    "@ai-sdk/openai": "^3.0.0",
+    "@ai-sdk/react": "^3.0.0",
     "@libsql/client": "^0.15.0",
     "@tailwindcss/postcss": "^4.1.4",
-    "@voltagent/cli": "^0.1.17",
-    "@voltagent/core": "^1.5.2",
-    "@voltagent/libsql": "^1.1.0",
-    "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.11",
-    "ai": "^5.0.76",
+    "@voltagent/cli": "^0.1.20",
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/libsql": "^2.0.2",
+    "@voltagent/logger": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.2",
+    "ai": "^6.0.0",
     "import-in-the-middle": "^1.14.2",
     "next": "^16.0.7",
     "npm-check-updates": "^17.1.18",
@@ -29,6 +29,11 @@
     "typescript": "^5.8.2"
   },
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-nextjs"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbopack",

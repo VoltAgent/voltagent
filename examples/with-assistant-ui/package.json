@@ -1,8 +1,8 @@
 {
   "name": "assistant-ui-starter",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
+    "@ai-sdk/openai": "^3.0.0",
     "@assistant-ui/react": "^0.11.47",
     "@assistant-ui/react-ai-sdk": "^1.1.16",
     "@assistant-ui/react-markdown": "^0.11.6",
@@ -13,10 +13,10 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@voltagent/core": "^1.2.21",
-    "@voltagent/libsql": "^1.0.14",
-    "@voltagent/server-hono": "^1.2.8",
-    "ai": "^5.0.76",
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/libsql": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.2",
+    "ai": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.25",
@@ -40,6 +40,11 @@
     "typescript": "^5.8.2"
   },
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-assistant-ui"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbopack",
