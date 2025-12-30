@@ -66,5 +66,10 @@
     "dev": "next dev",
     "start": "next start",
     "volt": "volt"
+  },
+   "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/next-js-chatbot-starter-template"
   }
 }

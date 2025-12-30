@@ -55,5 +55,10 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/server-core"
+  },
   "types": "dist/index.d.ts"
 }

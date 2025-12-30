@@ -39,5 +39,10 @@
     "typecheck": "tsc --noEmit",
     "volt": "volt"
   },
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-ad-creator"
+  },
   "type": "module"
 }

@@ -34,5 +34,10 @@
     "start": "node dist/index.js",
     "volt": "volt"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-voice-openai"
+  },
   "type": "module"
 }

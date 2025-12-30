@@ -37,6 +37,12 @@
 
 <br/>
 
+<div align="center">
+⭐ 喜歡我們的項目嗎？給我們一個星標 ⬆️
+</div>
+
+<br/>
+
 **VoltAgent** 是一個開源的 TypeScript 框架，用於構建和編排 AI 代理。
 您可以構建具有記憶、工作流程、工具和內建 LLM 可觀測性的生產就緒代理。
 
@@ -62,6 +68,7 @@ VoltAgent 通過兩個互補的工具提供完整的開發和監控 AI 代理平
 - **[LLM 兼容性](https://voltagent.dev/docs/getting-started/providers-models/)**：通過更改配置而不是重寫代理邏輯，在 OpenAI、Anthropic、Google 或其他提供商之間切換。
 - **[記憶](https://voltagent.dev/docs/agents/memory/overview/)**：附加持久記憶適配器，使代理能夠跨運行記住重要上下文。
 - **[檢索與 RAG](https://voltagent.dev/docs/rag/overview/)**：插入檢索器代理，從您的數據源提取事實並在模型回答之前奠定響應基礎（RAG）。
+- **[VoltAgent 知識庫](https://voltagent.dev/docs/rag/voltagent/)**：使用託管的 RAG 服務進行文檔攝入、分塊、嵌入和搜索。
 - **[評估](https://voltagent.dev/docs/evals/overview/)**：與您的工作流程一起運行代理評估套件，更快地提供防護欄。
 
 ### VoltOps LLM 可觀測性平台
@@ -307,6 +314,16 @@ VoltAgent 配備 VoltOps，這是一個內建的 LLM 可觀測性平台，可幫
 <br/>
 
 ![VoltOps Prompt Builder](https://cdn.voltagent.dev/console/prompt.png)
+
+### 部署
+
+透過一鍵 GitHub 整合和託管基礎設施將您的代理部署到生產環境。
+
+<br/>
+
+![VoltOps Deploy](https://cdn.voltagent.dev/website/feature-showcase/deployment.png)
+
+📖 [VoltOps 部署文檔](https://voltagent.dev/docs/deployment/voltops/)
 
 ## 範例
 
