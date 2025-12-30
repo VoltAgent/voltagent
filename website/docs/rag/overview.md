@@ -261,8 +261,8 @@ const textChunker = new RecursiveChunker({
 const textChunks = await textChunker.chunk(longDocument);
 
 // 2. Markdown Chunking (Recommended for documentation)
-const mdChunker = new MarkdownChunker({
+const mdChunker = new MarkdownChunker();
+const mdChunks = mdChunker.chunk(markdownContent, {
   maxTokens: 1000,
 });
-const mdChunks = await mdChunker.chunk(markdownContent);
 ```
