@@ -993,10 +993,10 @@ importers:
     dependencies:
       '@copilotkit/react-core':
         specifier: ^1.50.0
-        version: 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@3.25.76)
+        version: 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1)
       '@copilotkit/react-ui':
         specifier: ^1.50.0
-        version: 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@3.25.76)
+        version: 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -1371,13 +1371,8 @@ importers:
   examples/with-guardrails:
     dependencies:
       '@ai-sdk/openai':
-<<<<<<< HEAD
         specifier: ^3.0.0
-        version: 3.0.1(zod@4.1.13)
-=======
-        specifier: ^2.0.52
-        version: 2.0.53(zod@3.25.76)
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
+        version: 3.0.1(zod@4.2.1)
       '@voltagent/cli':
         specifier: ^0.1.20
         version: link:../../packages/cli
@@ -1391,13 +1386,8 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/server-hono
       ai:
-<<<<<<< HEAD
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.1.13)
-=======
-        specifier: ^5.0.76
-        version: 5.0.76(zod@3.25.76)
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
+        version: 6.0.3(zod@4.2.1)
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -1702,13 +1692,8 @@ importers:
   examples/with-memory-rest-api:
     dependencies:
       '@ai-sdk/openai':
-<<<<<<< HEAD
         specifier: ^3.0.0
-        version: 3.0.1(zod@4.1.13)
-=======
-        specifier: ^2.0.52
-        version: 2.0.53(zod@3.25.76)
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
+        version: 3.0.1(zod@4.2.1)
       '@voltagent/cli':
         specifier: ^0.1.20
         version: link:../../packages/cli
@@ -3650,13 +3635,8 @@ importers:
         specifier: ^2.0.2
         version: link:../logger
       ai:
-<<<<<<< HEAD
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.1.13)
-=======
-        specifier: ^5.0.76
-        version: 5.0.76(zod@3.25.76)
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
+        version: 6.0.3(zod@4.2.1)
 
   packages/logger:
     dependencies:
@@ -3721,13 +3701,8 @@ importers:
         specifier: ^2.0.2
         version: link:../core
       ai:
-<<<<<<< HEAD
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.1.13)
-=======
-        specifier: ^5.0.76
-        version: 5.0.76(zod@3.25.76)
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
+        version: 6.0.3(zod@4.2.1)
 
   packages/rag:
     dependencies:
@@ -3821,24 +3796,24 @@ importers:
         version: 0.34.45
       '@voltagent/a2a-server':
         specifier: ^1.0.2
-        version: link:../a2a-server
+        version: 1.0.2(@voltagent/core@1.5.2)
       '@voltagent/core':
         specifier: ^1.5.1
-        version: link:../core
+        version: 1.5.2(@ai-sdk/provider-utils@3.0.19)(ai@5.0.113)(zod@3.25.76)
       '@voltagent/internal':
         specifier: ^0.0.12
-        version: link:../internal
+        version: 0.0.12
       '@voltagent/mcp-server':
         specifier: ^1.0.3
-        version: link:../mcp-server
+        version: 1.0.3(@voltagent/core@1.5.2)(zod@3.25.76)
       '@voltagent/server-core':
         specifier: ^1.0.36
-        version: link:../server-core
+        version: 1.0.36(@voltagent/core@1.5.2)(zod@3.25.76)
       elysia:
         specifier: ^1.1.29
         version: 1.4.19(@sinclair/typebox@0.34.45)(exact-mirror@0.2.5)(file-type@21.0.0)(openapi-types@12.1.3)(typescript@5.9.2)
       zod:
-        specifier: ^3.24.1
+        specifier: ^3.25.76
         version: 3.25.76
       zod-to-json-schema:
         specifier: ^3.25.1
@@ -3925,13 +3900,8 @@ importers:
         specifier: ^2.0.2
         version: link:../logger
       ai:
-<<<<<<< HEAD
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.1.13)
-=======
-        specifier: ^5.0.76
-        version: 5.0.76(zod@3.25.76)
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
+        version: 6.0.3(zod@4.2.1)
 
   packages/voice:
     dependencies:
@@ -3980,13 +3950,8 @@ importers:
         specifier: ^2.0.2
         version: link:../core
       ai:
-<<<<<<< HEAD
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.1.13)
-=======
-        specifier: ^5.0.76
-        version: 5.0.76(zod@3.25.76)
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
+        version: 6.0.3(zod@4.2.1)
 
 packages:
 
@@ -4235,31 +4200,6 @@ packages:
       zod: 3.25.76
     dev: false
 
-<<<<<<< HEAD
-=======
-  /@ai-sdk/gateway@1.0.6(zod@3.25.76):
-    resolution: {integrity: sha512-JuSj1MtTr4vw2VBBth4wlbciQnQIV0o1YV9qGLFA+r85nR5H+cJp3jaYE0nprqfzC9rYG8w9c6XGHB3SDKgcgA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.3(zod@3.25.76)
-      zod: 3.25.76
-    dev: false
-
-  /@ai-sdk/gateway@2.0.0(zod@3.25.76):
-    resolution: {integrity: sha512-Gj0PuawK7NkZuyYgO/h5kDK/l6hFOjhLdTq3/Lli1FTl47iGmwhH1IZQpAL3Z09BeFYWakcwUmn02ovIm2wy9g==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.12(zod@3.25.76)
-      '@vercel/oidc': 3.0.3
-      zod: 3.25.76
-
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
   /@ai-sdk/gateway@2.0.21(zod@3.25.76):
     resolution: {integrity: sha512-BwV7DU/lAm3Xn6iyyvZdWgVxgLu3SNXzl5y57gMvkW4nGhAOV5269IrJzQwGt03bb107sa6H6uJwWxc77zXoGA==}
     engines: {node: '>=18'}
@@ -4294,16 +4234,16 @@ packages:
       '@vercel/oidc': 3.0.5
       zod: 3.25.76
 
-  /@ai-sdk/gateway@3.0.2(zod@4.1.13):
+  /@ai-sdk/gateway@3.0.2(zod@4.2.1):
     resolution: {integrity: sha512-giJEg9ob45htbu3iautK+2kvplY2JnTj7ir4wZzYSQWvqGatWfBBfDuNCU5wSJt9BCGjymM5ZS9ziD42JGCZBw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.1.13)
+      '@ai-sdk/provider-utils': 4.0.1(zod@4.2.1)
       '@vercel/oidc': 3.0.5
-      zod: 4.1.13
+      zod: 4.2.1
 
   /@ai-sdk/google-vertex@3.0.25(zod@3.25.76):
     resolution: {integrity: sha512-X4VRfFHTMr50wo8qvoA4WmxmehSAMzEAiJ5pPn0/EPB4kxytz53g7BijRBDL+MZpqXRNiwF3taf4p3P1WUMnVA==}
@@ -4452,20 +4392,6 @@ packages:
     dev: false
     optional: true
 
-<<<<<<< HEAD
-=======
-  /@ai-sdk/openai@2.0.53(zod@3.25.76):
-    resolution: {integrity: sha512-GIkR3+Fyif516ftXv+YPSPstnAHhcZxNoR2s8uSHhQ1yBT7I7aQYTVwpjAuYoT3GR+TeP50q7onj2/nDRbT2FQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.12(zod@3.25.76)
-      zod: 3.25.76
-    dev: false
-
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
   /@ai-sdk/openai@2.0.85(zod@3.25.76):
     resolution: {integrity: sha512-3pzr7qVhsOXwjPAfmvFNZz3sRWCuyMOc3GgLHe7sWY0t8J4hA5mwQ4LISTKYI3iIr8IXzAQn9MUrC8Hiji9RpA==}
     engines: {node: '>=18'}
@@ -4487,15 +4413,15 @@ packages:
       zod: 3.25.76
     dev: false
 
-  /@ai-sdk/openai@3.0.1(zod@4.1.13):
+  /@ai-sdk/openai@3.0.1(zod@4.2.1):
     resolution: {integrity: sha512-P+qxz2diOrh8OrpqLRg+E+XIFVIKM3z2kFjABcCJGHjGbXBK88AJqmuKAi87qLTvTe/xn1fhZBjklZg9bTyigw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.1.13)
-      zod: 4.1.13
+      '@ai-sdk/provider-utils': 4.0.1(zod@4.2.1)
+      zod: 4.2.1
     dev: false
 
   /@ai-sdk/perplexity@1.1.9(zod@3.25.76):
@@ -4535,20 +4461,6 @@ packages:
       zod: 3.25.76
     dev: false
 
-<<<<<<< HEAD
-=======
-  /@ai-sdk/provider-utils@3.0.12(zod@3.25.76):
-    resolution: {integrity: sha512-ZtbdvYxdMoria+2SlNarEk6Hlgyf+zzcznlD55EAl+7VZvJaSg2sqPvwArY7L6TfDEDJsnCq0fdhBSkYo0Xqdg==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
-      eventsource-parser: 3.0.6
-      zod: 3.25.76
-
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
   /@ai-sdk/provider-utils@3.0.16(zod@3.25.76):
     resolution: {integrity: sha512-lsWQY9aDXHitw7C1QRYIbVGmgwyT98TF3MfM8alNIXKpdJdi+W782Rzd9f1RyOfgRmZ08gJ2EYNDhWNK7RqpEA==}
     engines: {node: '>=18'}
@@ -4630,7 +4542,7 @@ packages:
       eventsource-parser: 3.0.6
       zod: 3.25.76
 
-  /@ai-sdk/provider-utils@4.0.1(zod@4.1.13):
+  /@ai-sdk/provider-utils@4.0.1(zod@4.2.1):
     resolution: {integrity: sha512-de2v8gH9zj47tRI38oSxhQIewmNc+OZjYIOOaMoVWKL65ERSav2PYYZHPSPCrfOeLMkv+Dyh8Y0QGwkO29wMWQ==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -4639,7 +4551,7 @@ packages:
       '@ai-sdk/provider': 3.0.0
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
-      zod: 4.1.13
+      zod: 4.2.1
 
   /@ai-sdk/provider@1.1.3:
     resolution: {integrity: sha512-qZMxYJ0qqX/RfnuIaab+zp8UAeJn/ygXXAffR5I4N0n1IrvA6qBsjc8hXLmBiMV2zoXlifkacF7sEFnYnjBcqg==}
@@ -7957,7 +7869,7 @@ packages:
     hasBin: true
     dev: false
 
-  /@copilotkit/react-core@1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@3.25.76):
+  /@copilotkit/react-core@1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1):
     resolution: {integrity: sha512-JfUEvmgXgPz7wIQq9EFXWGDMtYLIVKSNqPdJROEomZXLhREDlxpg+jr5KHvoOPUlSnVLzuPObRKSdeJTwVOGsQ==}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
@@ -7974,7 +7886,7 @@ packages:
       react-dom: 19.2.3(react@19.2.3)
       react-markdown: 8.0.7(@types/react@19.2.7)(react@19.2.3)
       untruncate-json: 0.0.1
-      zod: 3.25.76
+      zod: 4.2.1
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -7983,12 +7895,12 @@ packages:
       - supports-color
     dev: false
 
-  /@copilotkit/react-ui@1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@3.25.76):
+  /@copilotkit/react-ui@1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1):
     resolution: {integrity: sha512-BB4d5yrf3n3P0stCI7DLLo22EhesNz4ELuSKFT39P+GEjKMVcpZu+mR6NgkbIkrmU6cFxxsrJKv20p7T+EBnoA==}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
     dependencies:
-      '@copilotkit/react-core': 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@3.25.76)
+      '@copilotkit/react-core': 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1)
       '@copilotkit/runtime-client-gql': 1.50.0(react@19.2.3)
       '@copilotkit/shared': 1.50.0
       '@headlessui/react': 2.2.9(react-dom@19.2.3)(react@19.2.3)
@@ -19835,8 +19747,102 @@ packages:
     resolution: {integrity: sha512-Z1Uc8IB57Lm6k7q6KIDu/p+JWtf3xsXJqAX/5r18hYOTpJyBn0KXUR8oTJ4WFYOcDzWC9n3IflGgHowx6U6z9Q==}
     dev: false
 
+  /@voltagent/a2a-server@1.0.2(@voltagent/core@1.5.2):
+    resolution: {integrity: sha512-WIPDM0iYvcEPKbwbYt9n1TQv9jjRUcxvAgeCAiVD8EzYYrJvHXHCHC6satpeQF8N/0jFKtEMq8a+5/3cfwM/hQ==}
+    peerDependencies:
+      '@voltagent/core': ^1.0.0
+    dependencies:
+      '@a2a-js/sdk': 0.2.5
+      '@voltagent/core': 1.5.2(@ai-sdk/provider-utils@3.0.19)(ai@5.0.113)(zod@3.25.76)
+      '@voltagent/internal': 0.0.12
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /@voltagent/core@1.5.2(@ai-sdk/provider-utils@3.0.19)(ai@5.0.113)(zod@3.25.76):
+    resolution: {integrity: sha512-g5zqV46dJle0BykMvJNT2/69bRe63SOYCWFsNfioptq0ayuKZ2rrwKd4m7FPTBD926FPlJx4NzbPARONeWYl4w==}
+    peerDependencies:
+      '@ai-sdk/provider-utils': 3.x
+      '@voltagent/logger': 1.x
+      ai: 5.x
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      '@voltagent/logger':
+        optional: true
+    dependencies:
+      '@ai-sdk/provider-utils': 3.0.19(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.24.3(zod@3.25.76)
+      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api-logs': 0.204.0
+      '@opentelemetry/context-async-hooks': 2.2.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/exporter-logs-otlp-http': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/exporter-trace-otlp-http': 0.203.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/otlp-transformer': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-logs': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-node': 2.0.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/semantic-conventions': 1.36.0
+      '@voltagent/internal': 0.0.12
+      ai: 5.0.113(zod@3.25.76)
+      ts-pattern: 5.8.0
+      type-fest: 4.41.0
+      uuid: 9.0.1
+      zod: 3.25.76
+      zod-from-json-schema: 0.5.0
+      zod-from-json-schema-v3: /zod-from-json-schema@0.0.5
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - supports-color
+    dev: false
+
+  /@voltagent/internal@0.0.12:
+    resolution: {integrity: sha512-S7ANIskxtCc+n0YzwULfvnzPyEC7YvvV+0chgpV+rW5EQbvLuzKSSrC5gmrSgzDNi+WgODysM3acZ2F9MuhLeQ==}
+    dependencies:
+      type-fest: 4.41.0
+    dev: false
+
   /@voltagent/internal@0.0.9:
     resolution: {integrity: sha512-Kaa2jW60VsfYVotuXC81LmNOJ07Lf1yq36vMteNKKa5seIsKkJ75PvIbMp52eEZ/ky/oBXrs94UXrQNqXBJ80Q==}
+    dev: false
+
+  /@voltagent/mcp-server@1.0.3(@voltagent/core@1.5.2)(zod@3.25.76):
+    resolution: {integrity: sha512-2VsGTyb5DayiHOWZIeClNM56IAkJmjAeh5aAJLZuY0+nGzoLhANzCUyh3Z4pYGxjOKT5ohM0eWPZwMf/5O4dXA==}
+    peerDependencies:
+      '@voltagent/core': ^1.0.0
+      zod: ^3.25.0 || ^4.0.0
+    dependencies:
+      '@modelcontextprotocol/sdk': 1.24.3(zod@3.25.76)
+      '@voltagent/core': 1.5.2(@ai-sdk/provider-utils@3.0.19)(ai@5.0.113)(zod@3.25.76)
+      '@voltagent/internal': 0.0.12
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - supports-color
+    dev: false
+
+  /@voltagent/server-core@1.0.36(@voltagent/core@1.5.2)(zod@3.25.76):
+    resolution: {integrity: sha512-IpXiSI6LFfdkUNSLJREMK3rpgkkMPhED8ln21EaapKCrdVhnBFTDIIPU7+JHsM6sbSzsVyIjfFDC9BN2++kGZg==}
+    peerDependencies:
+      '@voltagent/core': ^1.0.0
+      zod: ^3.25.0 || ^4.0.0
+    dependencies:
+      '@modelcontextprotocol/sdk': 1.24.3(zod@3.25.76)
+      '@voltagent/core': 1.5.2(@ai-sdk/provider-utils@3.0.19)(ai@5.0.113)(zod@3.25.76)
+      '@voltagent/internal': 0.0.12
+      ai: 5.0.113(zod@3.25.76)
+      jsonwebtoken: 9.0.2
+      ws: 8.18.3
+      zod: 3.25.76
+      zod-from-json-schema: 0.5.0
+      zod-from-json-schema-v3: /zod-from-json-schema@0.0.5
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - bufferutil
+      - supports-color
+      - utf-8-validate
     dev: false
 
   /@voltagent/vercel-ai@1.0.0(@voltagent/core@packages+core)(zod@3.25.76):
@@ -20705,21 +20711,18 @@ packages:
       '@opentelemetry/api': 1.9.0
       zod: 3.25.76
 
-<<<<<<< HEAD
-  /ai@6.0.3(zod@4.1.13):
+  /ai@6.0.3(zod@4.2.1):
     resolution: {integrity: sha512-OOo+/C+sEyscoLnbY3w42vjQDICioVNyS+F+ogwq6O5RJL/vgWGuiLzFwuP7oHTeni/MkmX8tIge48GTdaV7QQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
-      '@ai-sdk/gateway': 3.0.2(zod@4.1.13)
+      '@ai-sdk/gateway': 3.0.2(zod@4.2.1)
       '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.1.13)
+      '@ai-sdk/provider-utils': 4.0.1(zod@4.2.1)
       '@opentelemetry/api': 1.9.0
-      zod: 4.1.13
+      zod: 4.2.1
 
-=======
->>>>>>> 29487887 (feat(server-elysia): add elysia server integration)
   /ajv-errors@3.0.0(ajv@8.17.1):
     resolution: {integrity: sha512-V3wD15YHfHz6y0KdhYFjyy9vWtEVALT9UrxfN3zqlI6dMioHnJrqOYfyPKol3oqrnCM9uwkcdCwkJ0WUcbLMTQ==}
     peerDependencies:
@@ -39689,7 +39692,6 @@ packages:
 
   /zod@4.2.1:
     resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}
-    dev: true
 
   /zustand@4.5.7(@types/react@19.1.10)(react@19.2.3):
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
