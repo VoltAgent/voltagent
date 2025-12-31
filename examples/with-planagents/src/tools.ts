@@ -1,4 +1,4 @@
-import { TavilySearch } from "@langchain/tavily";
+import { tavily } from "@tavily/core";
 import { createTool } from "@voltagent/core";
 import { z } from "zod";
 
@@ -27,13 +27,12 @@ export const internetSearch = createTool({
       };
     }
 
-    const tavilySearch = new TavilySearch({
-      maxResults,
-      tavilyApiKey,
-      includeRawContent,
-      topic,
-    });
+    const tavilyClient = tavily({ apiKey: tavilyApiKey });
 
-    return await tavilySearch.invoke({ query });
+    return await tavilyClient.search(query, {
+      maxResults,
+      topic,
+      includeRawContent: includeRawContent ? "markdown" : false,
+    });
   },
 });

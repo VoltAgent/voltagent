@@ -27,7 +27,9 @@ All endpoints are publicly accessible.
 
 ### Option 2: authNext (Recommended)
 
-Protect everything by default. Explicitly allow public routes, and use a Console Access Key for management endpoints:
+Protect everything by default. Explicitly allow public routes, and use a Console Access Key for management endpoints.
+
+#### Using Hono
 
 ```typescript
 import { jwtAuth } from "@voltagent/server-core";
@@ -36,6 +38,25 @@ import { honoServer } from "@voltagent/server-hono";
 new VoltAgent({
   agents: { myAgent },
   server: honoServer({
+    authNext: {
+      provider: jwtAuth({
+        secret: process.env.JWT_SECRET!,
+      }),
+      publicRoutes: ["GET /health"],
+    },
+  }),
+});
+```
+
+#### Using Elysia
+
+```typescript
+import { jwtAuth } from "@voltagent/server-elysia";
+import { elysiaServer } from "@voltagent/server-elysia";
+
+new VoltAgent({
+  agents: { myAgent },
+  server: elysiaServer({
     authNext: {
       provider: jwtAuth({
         secret: process.env.JWT_SECRET!,

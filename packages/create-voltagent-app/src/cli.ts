@@ -5,7 +5,7 @@ import { Command } from "commander";
 import inquirer from "inquirer";
 import ora from "ora";
 import { createProject } from "./project-creator";
-import { type AIProvider, AI_PROVIDER_CONFIG, type ProjectOptions } from "./types";
+import { type AIProvider, AI_PROVIDER_CONFIG, type ProjectOptions, SERVER_CONFIG } from "./types";
 import { captureError, captureProjectCreation } from "./utils/analytics";
 import {
   colorTypewriter,
@@ -79,8 +79,27 @@ export const runCLI = async (): Promise<void> => {
 
       const targetDir = path.resolve(process.cwd(), projectName);
 
+      const { server } = await inquirer.prompt<{
+        server: ProjectOptions["server"];
+      }>([
+        {
+          type: "list",
+          name: "server",
+          message: "Which REST API framework would you like to use to access your agents?",
+          choices: [
+            { name: `${SERVER_CONFIG.hono.name} (recommended)`, value: "hono" },
+            { name: SERVER_CONFIG.elysia.name, value: "elysia" },
+          ],
+          default: "hono",
+        },
+      ]);
+
       // Start installing base dependencies immediately
-      const baseDependencyInstaller = await createBaseDependencyInstaller(targetDir, projectName);
+      const baseDependencyInstaller = await createBaseDependencyInstaller(
+        targetDir,
+        projectName,
+        server || "hono",
+      );
 
       // Wait for base dependencies to finish installing before asking more questions
       await baseDependencyInstaller.waitForCompletion();
@@ -131,6 +150,7 @@ export const runCLI = async (): Promise<void> => {
         ide,
         aiProvider,
         apiKey,
+        server: server || "hono",
       };
 
       // Create the project

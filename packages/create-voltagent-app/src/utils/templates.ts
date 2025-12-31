@@ -1,5 +1,10 @@
 import path from "node:path";
-import { AI_PROVIDER_CONFIG, type ProjectOptions, type TemplateFile } from "../types";
+import {
+  AI_PROVIDER_CONFIG,
+  type ProjectOptions,
+  SERVER_CONFIG,
+  type TemplateFile,
+} from "../types";
 
 // Determine the correct base path for templates.
 // In the built version, templates are at ../templates relative to dist/
@@ -21,6 +26,8 @@ export const getBaseTemplates = (): TemplateFile[] => {
       transform: (content: string, options: ProjectOptions) => {
         const provider = options.aiProvider || "openai";
         const config = AI_PROVIDER_CONFIG[provider];
+        const server = options.server || "hono";
+        const serverConfig = SERVER_CONFIG[server];
 
         // Always use npm commands
         const pm = {
@@ -46,6 +53,7 @@ export const getBaseTemplates = (): TemplateFile[] => {
           .replace(/{{projectName}}/g, options.projectName)
           .replace(/{{aiProviderName}}/g, config.name)
           .replace(/{{modelName}}/g, config.modelName)
+          .replace(/{{serverName}}/g, serverConfig.name)
           .replace(/{{packageManagerInstall}}/g, pm.install)
           .replace(/{{packageManagerDev}}/g, pm.dev)
           .replace(/{{packageManagerBuild}}/g, pm.build)
@@ -61,9 +69,15 @@ export const getBaseTemplates = (): TemplateFile[] => {
       transform: (content: string, options: ProjectOptions) => {
         const provider = options.aiProvider || "openai";
         const config = AI_PROVIDER_CONFIG[provider];
+        const server = options.server || "hono";
+        const serverConfig = SERVER_CONFIG[server];
 
         // Replace project name
         let result = content.replace(/{{projectName}}/g, options.projectName);
+
+        result = result
+          .replace(/{{serverPackage}}/g, serverConfig.package)
+          .replace(/{{serverFactory}}/g, serverConfig.factory);
 
         // Replace import statement
         result = result.replace('import { openai } from "@ai-sdk/openai";', config.import);
