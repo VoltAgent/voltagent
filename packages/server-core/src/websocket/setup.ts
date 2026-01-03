@@ -93,6 +93,7 @@ export function setupWebSocketUpgrade(
   auth?: AuthProvider<any> | AuthNextConfig<any>,
   logger?: Logger,
 ): void {
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy complexity allowed
   server.addListener("upgrade", async (req: IncomingMessage, socket: Socket, head: Buffer) => {
     const url = new URL(req.url || "", "http://localhost");
     const path = url.pathname;

@@ -342,7 +342,6 @@ VoltAgent 配备 VoltOps，这是一个内置的 LLM 可观测性平台，可帮
 <br/>
 <br/>
 
-
 - 📖 [教程](https://voltagent.dev/examples/agents/whatsapp-ai-agent)
 - 💻 [源代码](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp)
 
@@ -356,7 +355,6 @@ VoltAgent 配备 VoltOps，这是一个内置的 LLM 可观测性平台，可帮
 
 <br/>
 <br/>
-
 
 - 📖 [教程](https://voltagent.dev/examples/agents/youtube-blog-agent)
 - 💻 [源代码](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)
@@ -374,7 +372,6 @@ VoltAgent 配备 VoltOps，这是一个内置的 LLM 可观测性平台，可帮
 <br/>
 <br/>
 
-
 - 📖 [教程](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)
 - 💻 [源代码](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator)
 
@@ -390,7 +387,6 @@ VoltAgent 配备 VoltOps，这是一个内置的 LLM 可观测性平台，可帮
 
 <br/>
 <br/>
-
 
 - 📖 [教程](https://voltagent.dev/examples/agents/recipe-generator)
 - 📹 [观看视频](https://youtu.be/KjV1c6AhlfY)
@@ -408,7 +404,6 @@ VoltAgent 配备 VoltOps，这是一个内置的 LLM 可观测性平台，可帮
 
 <br/>
 <br/>
-
 
 - 📖 [教程](https://voltagent.dev/examples/agents/research-assistant)
 - 📹 [观看视频](https://youtu.be/j6KAUaoZMy4)

@@ -302,6 +302,7 @@ ${guidelinesText}
   /**
    * Hand off a task to another agent using AgentV2
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy complexity allowed
   public async handoffTask(options: {
     task: string;
     targetAgent: SubAgentConfig;

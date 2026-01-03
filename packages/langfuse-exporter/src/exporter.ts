@@ -144,6 +144,7 @@ export class LangfuseExporter implements SpanExporter {
     }
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy complexity allowed
   private processTraceSpans(traceId: string, spans: ReadableSpan[]): void {
     let rootSpan: ReadableSpan | undefined = undefined;
     let traceName: string | undefined = undefined;
