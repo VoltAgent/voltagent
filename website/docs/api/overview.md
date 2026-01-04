@@ -13,8 +13,11 @@ VoltAgent 1.x introduces a pluggable server architecture:
 
 - **`@voltagent/server-core`** - Framework-agnostic core with route definitions, handlers, and base provider
 - **`@voltagent/server-hono`** - Official server implementation using [Hono](https://hono.dev/) (recommended)
+- **`@voltagent/server-elysia`** - High-performance server implementation using [Elysia](https://elysiajs.com/)
 
 ## Quick Start
+
+### Using Hono (Recommended)
 
 ```typescript
 import { Agent, VoltAgent } from "@voltagent/core";
@@ -30,6 +33,28 @@ const agent = new Agent({
 new VoltAgent({
   agents: { agent },
   server: honoServer({
+    port: 3141,
+    enableSwaggerUI: true,
+  }),
+});
+```
+
+### Using Elysia
+
+```typescript
+import { Agent, VoltAgent } from "@voltagent/core";
+import { elysiaServer } from "@voltagent/server-elysia";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "Assistant",
+  instructions: "You are a helpful assistant",
+  model: openai("gpt-4o-mini"),
+});
+
+new VoltAgent({
+  agents: { agent },
+  server: elysiaServer({
     port: 3141,
     enableSwaggerUI: true,
   }),

@@ -1,17 +1,50 @@
-import { MockLanguageModelV2, mockId, simulateReadableStream } from "ai/test";
+import { MockLanguageModelV3, mockId, simulateReadableStream } from "ai/test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { NodeVoltAgentObservability, WebSocketEventEmitter } from "../observability";
 import { SpanKind, SpanStatusCode } from "../observability/types";
 import { Agent } from "./agent";
 
+const makeFinishReason = (
+  unified: "stop" | "length" | "content-filter" | "tool-calls" | "error" | "other",
+) => ({
+  unified,
+  raw: unified,
+});
+
+const makeProviderUsage = (inputTokens: number, outputTokens: number) => ({
+  inputTokens: {
+    total: inputTokens,
+    noCache: inputTokens,
+    cacheRead: 0,
+    cacheWrite: 0,
+  },
+  outputTokens: {
+    total: outputTokens,
+    text: outputTokens,
+    reasoning: 0,
+  },
+});
+
+const makeExpectedUsage = (
+  inputTokens: number,
+  outputTokens: number,
+  totalTokens = inputTokens + outputTokens,
+) => ({
+  inputTokens,
+  outputTokens,
+  totalTokens,
+  inputTokenDetails: { noCacheTokens: inputTokens, cacheReadTokens: 0, cacheWriteTokens: 0 },
+  outputTokenDetails: { textTokens: outputTokens, reasoningTokens: 0 },
+});
+
 describe("Agent with Observability", () => {
   let observability: NodeVoltAgentObservability;
-  let mockModel: MockLanguageModelV2;
+  let mockModel: MockLanguageModelV3;
 
   beforeEach(() => {
     observability = new NodeVoltAgentObservability();
-    mockModel = new MockLanguageModelV2();
+    mockModel = new MockLanguageModelV3();
   });
 
   describe("generateText", () => {
@@ -24,8 +57,8 @@ describe("Agent with Observability", () => {
 
       // Setup mock model response
       mockModel.doGenerate = async () => ({
-        finishReason: "stop",
-        usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+        finishReason: makeFinishReason("stop"),
+        usage: makeProviderUsage(10, 20),
         content: [{ type: "text", text: "Hello from the AI!" }],
         warnings: [],
         logprobs: undefined,
@@ -46,11 +79,7 @@ describe("Agent with Observability", () => {
 
       expect(result).toBeDefined();
       expect(result.text).toBe("Hello from the AI!");
-      expect(result.usage).toEqual({
-        inputTokens: 10,
-        outputTokens: 20,
-        totalTokens: 30,
-      });
+      expect(result.usage).toMatchObject(makeExpectedUsage(10, 20, 30));
 
       // Check that observability events were emitted
       expect(events.length).toBeGreaterThan(0);
@@ -70,8 +99,8 @@ describe("Agent with Observability", () => {
 
       // Setup mock model to call a tool
       mockModel.doGenerate = async () => ({
-        finishReason: "tool-calls",
-        usage: { inputTokens: 15, outputTokens: 25, totalTokens: 40 },
+        finishReason: makeFinishReason("tool-calls"),
+        usage: makeProviderUsage(15, 25),
         content: [],
         toolCalls: [
           {
@@ -155,20 +184,17 @@ describe("Agent with Observability", () => {
         stream: simulateReadableStream({
           chunks: [
             { type: "text-start", id: "text-1" },
-            { type: "text-delta", id: "text-1", delta: "Hello", text: "Hello" },
-            { type: "text-delta", id: "text-1", delta: ", ", text: ", " },
-            { type: "text-delta", id: "text-1", delta: "world!", text: "world!" },
+            { type: "text-delta", id: "text-1", delta: "Hello" },
+            { type: "text-delta", id: "text-1", delta: ", " },
+            { type: "text-delta", id: "text-1", delta: "world!" },
             { type: "text-end", id: "text-1" },
             {
               type: "finish",
-              finishReason: "stop",
-              usage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
-              totalUsage: { inputTokens: 3, outputTokens: 10, totalTokens: 13 },
+              finishReason: makeFinishReason("stop"),
+              usage: makeProviderUsage(3, 10),
             },
           ],
         }),
-        warnings: [],
-        rawCall: { rawPrompt: null, rawSettings: {} },
       });
 
       const agent = new Agent({
@@ -207,8 +233,8 @@ describe("Agent with Observability", () => {
 
       // Setup mock model for object generation
       mockModel.doGenerate = async () => ({
-        finishReason: "stop",
-        usage: { inputTokens: 12, outputTokens: 18, totalTokens: 30 },
+        finishReason: makeFinishReason("stop"),
+        usage: makeProviderUsage(12, 18),
         content: [{ type: "text", text: '{"name":"John","age":30}' }],
         warnings: [],
         logprobs: undefined,
@@ -267,8 +293,8 @@ describe("Agent with Observability", () => {
       });
 
       mockModel.doGenerate = async () => ({
-        finishReason: "stop",
-        usage: { inputTokens: 5, outputTokens: 10, totalTokens: 15 },
+        finishReason: makeFinishReason("stop"),
+        usage: makeProviderUsage(5, 10),
         content: [{ type: "text", text: "Response with context" }],
         warnings: [],
         logprobs: undefined,
@@ -314,8 +340,8 @@ describe("Agent with Observability", () => {
       });
 
       mockModel.doGenerate = async () => ({
-        finishReason: "stop",
-        usage: { inputTokens: 8, outputTokens: 12, totalTokens: 20 },
+        finishReason: makeFinishReason("stop"),
+        usage: makeProviderUsage(8, 12),
         content: [{ type: "text", text: "Response with memory" }],
         warnings: [],
         logprobs: undefined,

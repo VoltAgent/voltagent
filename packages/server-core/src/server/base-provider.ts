@@ -184,7 +184,7 @@ export abstract class BaseServerProvider implements IServerProvider {
     });
   }
 
-  private collectFeatureEndpoints(): ServerEndpointSummary[] {
+  protected collectFeatureEndpoints(): ServerEndpointSummary[] {
     const endpoints: ServerEndpointSummary[] = [];
     const seen = new Set<string>();
 

@@ -10,6 +10,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid #00d992;
+  border-radius: 9999px;
+  padding: 0.125rem;
   flex-shrink: 0;
 }
 

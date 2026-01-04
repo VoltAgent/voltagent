@@ -435,7 +435,13 @@ export class LibSQLMemoryCore implements StorageAdapter {
     await this.executeWithRetry(async () => {
       await this.client.execute({
         sql: `INSERT INTO ${messagesTable} (conversation_id, message_id, user_id, role, parts, metadata, format_version, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(conversation_id, message_id) DO UPDATE SET
+              user_id = excluded.user_id,
+              role = excluded.role,
+              parts = excluded.parts,
+              metadata = excluded.metadata,
+              format_version = excluded.format_version`,
         args: [
           conversationId,
           message.id,
@@ -466,7 +472,13 @@ export class LibSQLMemoryCore implements StorageAdapter {
       await this.client.batch(
         messages.map((message) => ({
           sql: `INSERT INTO ${messagesTable} (conversation_id, message_id, user_id, role, parts, metadata, format_version, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(conversation_id, message_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                role = excluded.role,
+                parts = excluded.parts,
+                metadata = excluded.metadata,
+                format_version = excluded.format_version`,
           args: [
             conversationId,
             message.id,

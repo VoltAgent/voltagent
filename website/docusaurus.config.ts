@@ -154,6 +154,7 @@ const config: Config = {
     "./plugins/fetch-tweets.js",
     "./plugins/clarity/index.js",
     "./plugins/ahrefs/index.js",
+    "./plugins/new-year-modal/index.js",
     [
       "@docusaurus/plugin-client-redirects",
       {
@@ -541,7 +542,7 @@ const config: Config = {
       },
     ],
 
-    /* "./plugins/gurubase/index.js", */
+    "./plugins/gurubase/index.js",
     [
       "./plugins/docusaurus-plugin-content-mcp",
       {

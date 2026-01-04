@@ -2,12 +2,12 @@
   "name": "voltagent-example-github-star-stories",
   "version": "0.0.0",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
-    "@voltagent/cli": "^0.1.17",
-    "@voltagent/core": "^1.5.2",
-    "@voltagent/logger": "^1.0.4",
-    "@voltagent/server-hono": "^1.2.11",
-    "@voltagent/serverless-hono": "^1.0.10",
+    "@ai-sdk/openai": "^3.0.0",
+    "@voltagent/cli": "^0.1.20",
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/logger": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.2",
+    "@voltagent/serverless-hono": "^2.0.2",
     "dotenv": "^16.4.5",
     "wrangler": "^3.38.0",
     "zod": "^3.25.76"
@@ -25,6 +25,11 @@
     "voltagent"
   ],
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/github-star-stories"
+  },
   "scripts": {
     "build": "tsc",
     "deploy": "wrangler deploy",

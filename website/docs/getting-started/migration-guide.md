@@ -1,3 +1,153 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Migration guide: 1.x → 2.x
+
+VoltAgent 2.x aligns the framework with AI SDK v6 and adds new features. There are no breaking changes in VoltAgent APIs. If you only use VoltAgent APIs, follow the steps below. If your app calls AI SDK functions directly, also review the upstream AI SDK v6 migration guide.
+
+If you are still on 0.1.x, scroll down to the **Migration guide: 0.1.x → 1.x** section first, then come back here for the 1.x → 2.x upgrade.
+
+## Step 1. Update packages
+
+### 1.1 Use the Volt CLI to update VoltAgent packages (recommended)
+
+If you already have the Volt CLI installed, use:
+
+```bash
+npm run volt update
+```
+
+This command updates only `@voltagent/*` dependencies. You still need to align `ai` and `@ai-sdk/*` packages in the next step.
+
+If you do not have the CLI yet, install it and add a script:
+
+<Tabs>
+  <TabItem value="automatic" label="Automatic (CLI)" default>
+
+```bash
+npx @voltagent/cli init
+```
+
+This command installs `@voltagent/cli`, adds the `volt` script, and creates the `.voltagent` folder in your project.
+
+  </TabItem>
+  <TabItem value="manual" label="Manual">
+
+```bash
+npm install --save-dev @voltagent/cli
+```
+
+```json
+"scripts": {
+  "volt": "volt"
+}
+```
+
+  </TabItem>
+</Tabs>
+
+Then run:
+
+```bash
+npm run volt update
+```
+
+### 1.2 Align AI SDK packages
+
+If you ran `npm run volt update`, you can skip the `@voltagent/*` line below. Otherwise, update both VoltAgent and AI SDK packages:
+
+```bash
+pnpm add @voltagent/core@latest @voltagent/server-hono@latest @voltagent/libsql@latest @voltagent/logger@latest
+pnpm add ai@^6 @ai-sdk/openai@^3 @ai-sdk/provider@^3 @ai-sdk/provider-utils@^4
+```
+
+Notes:
+
+- If you use other providers, upgrade them to `@ai-sdk/*@^3` (e.g., `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/azure`).
+- If you use `useChat` or other UI helpers, upgrade `@ai-sdk/react` to `^3`.
+- If you are in a monorepo, update all `@voltagent/*` packages to the same major version.
+
+## Step 2. Update custom tools (only if you use advanced tool hooks)
+
+### 2.1 Tool output mapping signature change
+
+If you use `toModelOutput`, it now receives `{ output }`:
+
+```ts
+toModelOutput: ({ output }) => ({ type: "text", value: output }),
+```
+
+### 2.2 Tool execution options type rename (if you type it)
+
+If you type the second `execute` parameter, use:
+
+```ts
+import type { ToolExecutionOptions } from "@ai-sdk/provider-utils";
+```
+
+## Step 3. Structured output (if you use generateObject/streamObject)
+
+VoltAgent 2.x deprecates `generateObject` and `streamObject`. Migrate to `generateText`/`streamText` with `Output.object`.
+
+Before (1.x):
+
+```ts
+import { z } from "zod";
+
+const schema = z.object({
+  name: z.string(),
+  age: z.number(),
+});
+
+const result = await agent.generateObject("Create a profile", schema);
+console.log(result.object);
+```
+
+```ts
+const stream = await agent.streamObject("Create a profile", schema);
+
+for await (const partial of stream.partialObjectStream) {
+  console.log(partial);
+}
+```
+
+After (2.x):
+
+```ts
+import { Output } from "ai";
+import { z } from "zod";
+
+const schema = z.object({
+  name: z.string(),
+  age: z.number(),
+});
+
+const result = await agent.generateText("Create a profile", {
+  output: Output.object({ schema }),
+});
+console.log(result.output);
+```
+
+```ts
+const stream = await agent.streamText("Create a profile", {
+  output: Output.object({ schema }),
+});
+
+for await (const partial of stream.partialOutputStream ?? []) {
+  console.log(partial);
+}
+```
+
+## Step 4. Tests (if you use AI SDK mocks directly)
+
+Update V2 mocks to V3 mocks:
+
+```ts
+import { MockLanguageModelV3 } from "ai/test";
+```
+
+---
+
 # Migration guide: 0.1.x → 1.x
 
 Welcome to VoltAgent 1.x! This release brings the architectural improvements you've been asking for - native ai-sdk integration, truly modular components, and production-ready observability. Your agents are about to get a serious upgrade.

@@ -1,14 +1,14 @@
 {
   "name": "@voltagent/cli",
   "description": "CLI tool for VoltAgent applications",
-  "version": "0.1.17",
+  "version": "0.1.20",
   "bin": {
     "volt": "dist/index.js"
   },
   "dependencies": {
-    "@voltagent/evals": "^1.0.3",
-    "@voltagent/internal": "^0.0.12",
-    "@voltagent/sdk": "^1.0.1",
+    "@voltagent/evals": "^2.0.2",
+    "@voltagent/internal": "^1.0.2",
+    "@voltagent/sdk": "^2.0.2",
     "boxen": "^5.1.2",
     "bundle-require": "^5.1.0",
     "chalk": "^4.1.2",
@@ -52,6 +52,11 @@
   ],
   "license": "MIT",
   "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/cli"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",

@@ -24,6 +24,8 @@ export const weatherTool = createTool({
     location: z.string().describe("The city or location to get weather for"),
   }),
   outputSchema: weatherOutputSchema,
+  needsApproval: true,
+
   execute: async ({ location }) => {
     // In a real implementation, this would call a weather API
     // This is a mock implementation for demonstration purposes

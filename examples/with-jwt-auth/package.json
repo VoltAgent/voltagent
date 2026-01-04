@@ -1,13 +1,13 @@
 {
   "name": "with-jwt-auth",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.52",
-    "@voltagent/core": "^1.1.30",
-    "@voltagent/libsql": "^1.0.9",
-    "@voltagent/logger": "^1.0.3",
-    "@voltagent/server-hono": "^1.0.22",
-    "ai": "^5.0.76",
+    "@ai-sdk/openai": "^3.0.0",
+    "@voltagent/core": "^2.0.2",
+    "@voltagent/libsql": "^2.0.2",
+    "@voltagent/logger": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.2",
+    "ai": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "zod": "^3.25.76"
   },
@@ -18,6 +18,11 @@
     "typescript": "^5.8.2"
   },
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-jwt-auth"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch --env-file=.env ./src",

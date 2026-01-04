@@ -23,9 +23,12 @@
 .brandMark {
   width: 32px;
   height: 32px;
+  border-radius: 999px;
+  border: 2px solid #00d992;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(0, 217, 146, 0.08);
   flex-shrink: 0;
 }
 

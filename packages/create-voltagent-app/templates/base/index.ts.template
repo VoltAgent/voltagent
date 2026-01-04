@@ -3,7 +3,7 @@ import { VoltAgent, VoltOpsClient, Agent, Memory, VoltAgentObservability } from 
 import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { openai } from "@ai-sdk/openai";
-import { honoServer } from "@voltagent/server-hono";
+import { {{serverFactory}} } from "{{serverPackage}}";
 import { expenseApprovalWorkflow } from "./workflows";
 import { weatherTool } from "./tools";
 
@@ -43,7 +43,7 @@ new VoltAgent({
   workflows: {
     expenseApprovalWorkflow,
   },
-  server: honoServer(),
+  server: {{serverFactory}}(),
   logger,
   observability,
   voltOpsClient: new VoltOpsClient({

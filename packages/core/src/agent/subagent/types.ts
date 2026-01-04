@@ -1,3 +1,4 @@
+import type { Output } from "ai";
 import type { StreamTextResult, TextStreamPart } from "ai";
 import type { z } from "zod";
 import type { Agent } from "../agent";
@@ -173,17 +174,24 @@ export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<s
     agentPath?: string[];
   };
 
+type OutputSpec =
+  | ReturnType<typeof Output.text>
+  | ReturnType<typeof Output.object>
+  | ReturnType<typeof Output.array>
+  | ReturnType<typeof Output.choice>
+  | ReturnType<typeof Output.json>;
+
 /**
  * Extended StreamTextResult that uses VoltAgentTextStreamPart for fullStream.
  * This maintains compatibility with ai-sdk while adding subagent metadata support.
  *
  * @template TOOLS - The tool set type parameter
- * @template PARTIAL_OUTPUT - The partial output type parameter
+ * @template OUTPUT - The output spec type parameter
  */
 export interface VoltAgentStreamTextResult<
   TOOLS extends Record<string, any> = Record<string, any>,
-  PARTIAL_OUTPUT = any,
-> extends Omit<StreamTextResult<TOOLS, PARTIAL_OUTPUT>, "fullStream"> {
+  OUTPUT extends OutputSpec = OutputSpec,
+> extends Omit<StreamTextResult<TOOLS, OUTPUT>, "fullStream"> {
   /**
    * Full stream with subagent metadata support
    */

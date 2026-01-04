@@ -219,24 +219,24 @@ curl -X POST http://localhost:3141/agents/assistant/text \
   }'
 ```
 
-### Using experimental_output for Structured Generation
+### Using output for Structured Generation
 
-The `/text`, `/stream`, and `/chat` endpoints support structured output generation using the `experimental_output` option. Unlike the `/object` endpoint, this allows you to get structured data **while maintaining full tool calling capabilities**.
+The `/text`, `/stream`, and `/chat` endpoints support structured output generation using the `output` option. Unlike the `/object` endpoint, this allows you to get structured data **while maintaining full tool calling capabilities**.
 
 **Key Differences:**
 
-| Feature           | `/object` endpoint | `experimental_output` with `/text` |
-| ----------------- | ------------------ | ---------------------------------- |
-| Structured output | ✅                 | ✅                                 |
-| Tool calling      | ❌                 | ✅                                 |
+| Feature           | `/object` endpoint | `output` with `/text` |
+| ----------------- | ------------------ | --------------------- |
+| Structured output | ✅                 | ✅                    |
+| Tool calling      | ❌                 | ✅                    |
 
-**Request Body with experimental_output:**
+**Request Body with output:**
 
 ```json
 {
   "input": "Create a recipe for pasta carbonara",
   "options": {
-    "experimental_output": {
+    "output": {
       "type": "object",
       "schema": {
         "type": "object",
@@ -266,7 +266,7 @@ The `/text`, `/stream`, and `/chat` endpoints support structured output generati
   "success": true,
   "data": {
     "text": "Here is a classic pasta carbonara recipe...",
-    "experimental_output": {
+    "output": {
       "name": "Classic Pasta Carbonara",
       "ingredients": [
         "400g spaghetti",
@@ -306,7 +306,7 @@ curl -X POST http://localhost:3141/agents/assistant/text \
   -d '{
     "input": "Create a recipe for pasta carbonara",
     "options": {
-      "experimental_output": {
+      "output": {
         "type": "object",
         "schema": {
           "type": "object",
@@ -332,7 +332,7 @@ curl -X POST http://localhost:3141/agents/assistant/text \
 
 **When to Use:**
 
-- Use `experimental_output` when you need structured output AND tool calling
+- Use `output` when you need structured output AND tool calling
 - Use `/object` endpoint for simple data extraction without tools
 
 ## Stream Text (Raw)

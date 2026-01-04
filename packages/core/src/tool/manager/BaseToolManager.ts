@@ -17,7 +17,7 @@ function isBaseTool(tool: AgentTool | VercelTool): tool is Tool<any, any> {
  * Type guard for provider-defined tools
  * */
 export function isProviderTool(tool: AgentTool | Toolkit | VercelTool): tool is ProviderTool {
-  return "type" in tool && tool.type === "provider-defined";
+  return "type" in tool && tool.type === "provider";
 }
 
 /**
@@ -87,31 +87,45 @@ export abstract class BaseToolManager<
   }
 
   addStandaloneTool(tool: AgentTool | VercelTool): boolean {
+    if (isProviderTool(tool)) {
+      if (!("name" in tool)) {
+        this.logger.warn(
+          "[ToolManager] Provider tool name is missing. Skipping invalid tool in addStandaloneTool:",
+          tool,
+        );
+        return false;
+      }
+
+      if (this.hasToolInAny(tool.name)) {
+        this.logger.warn(
+          `[ToolManager] Warning: Standalone tool name '${tool.name}' conflicts with a tool inside an existing toolkit.`,
+        );
+      }
+
+      this.providerTools.set(tool.name, tool);
+
+      return true;
+    }
+
+    if (isBaseTool(tool)) {
+      if (this.hasToolInAny(tool.name)) {
+        this.logger.warn(
+          `[ToolManager] Warning: Standalone tool name '${tool.name}' conflicts with a tool inside an existing toolkit.`,
+        );
+      }
+
+      // existing tools with the same name will be overwritten
+      this.baseTools.set(tool.name, tool);
+
+      return true;
+    }
+
     if (!("name" in tool)) {
       this.logger.warn(
         "[ToolManager] Tool name is missing. Skipping invalid tool in addStandaloneTool:",
         tool,
       );
       return false;
-    }
-
-    if (this.hasToolInAny(tool.name)) {
-      this.logger.warn(
-        `[ToolManager] Warning: Standalone tool name '${tool.name}' conflicts with a tool inside an existing toolkit.`,
-      );
-    }
-
-    // existing tools with the same name will be overwritten
-    if (isBaseTool(tool)) {
-      this.baseTools.set(tool.name, tool);
-
-      return true;
-    }
-
-    if (isProviderTool(tool)) {
-      this.providerTools.set(tool.name, tool);
-
-      return true;
     }
 
     // Other types of Vercel tools are not supported
@@ -159,7 +173,7 @@ export abstract class BaseToolManager<
   getAllBaseTools(): BaseTool[] {
     return [
       ...this.baseTools.values(),
-      ...this.getToolkits().flatMap((toolkit) => toolkit.getAllBaseTools()),
+      ...this.getToolkitManagers().flatMap((toolkit) => toolkit.getAllBaseTools()),
     ];
   }
 
@@ -169,7 +183,7 @@ export abstract class BaseToolManager<
   getAllProviderTools(): ProviderTool[] {
     return [
       ...this.providerTools.values(),
-      ...this.getToolkits().flatMap((toolkit) => toolkit.getAllProviderTools()),
+      ...this.getToolkitManagers().flatMap((toolkit) => toolkit.getAllProviderTools()),
     ];
   }
 
@@ -179,7 +193,7 @@ export abstract class BaseToolManager<
   getAllTools(): (BaseTool | ProviderTool)[] {
     return [
       ...this.getStandaloneTools(),
-      ...this.getToolkits().flatMap((toolkit) => toolkit.getAllTools()),
+      ...this.getToolkitManagers().flatMap((toolkit) => toolkit.getAllTools()),
     ];
   }
 
@@ -189,7 +203,7 @@ export abstract class BaseToolManager<
   getAllToolNames(): string[] {
     const names = [
       ...this.getStandaloneTools().map((tool) => tool.name),
-      ...this.getToolkits().flatMap((toolkit) => toolkit.getAllToolNames()),
+      ...this.getToolkitManagers().flatMap((toolkit) => toolkit.getAllToolNames()),
     ];
 
     return names;
@@ -213,7 +227,11 @@ export abstract class BaseToolManager<
     return (
       this.baseTools.has(toolName) ||
       this.providerTools.has(toolName) ||
-      this.getToolkits().some((toolkit) => toolkit.hasToolInAny(toolName))
+      this.getToolkitManagers().some((toolkit) => toolkit.hasToolInAny(toolName))
     );
+  }
+
+  private getToolkitManagers(): BaseToolManager<any, any>[] {
+    return [...this.toolkits.values()] as BaseToolManager<any, any>[];
   }
 }
