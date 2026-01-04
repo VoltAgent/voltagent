@@ -29,6 +29,10 @@ export {
   type StreamTextOptions,
   type GenerateObjectOptions,
   type StreamObjectOptions,
+  type GenerateTextResultWithContext,
+  type StreamTextResultWithContext,
+  type GenerateObjectResultWithContext,
+  type StreamObjectResultWithContext,
 } from "./agent/agent";
 export * from "./planagent";
 export * from "./agent/hooks";
