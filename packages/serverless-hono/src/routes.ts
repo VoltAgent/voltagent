@@ -1,4 +1,8 @@
-import type { A2AServerRegistry, ServerProviderDeps } from "@voltagent/core";
+import {
+  type A2AServerRegistry,
+  SERVERLESS_ENV_CONTEXT_KEY,
+  type ServerProviderDeps,
+} from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal";
 import {
@@ -96,6 +100,72 @@ function extractHeaders(
   return result;
 }
 
+type ServerlessEnv = Record<string, unknown>;
+
+function getServerlessEnv(c: { env?: unknown }): ServerlessEnv | undefined {
+  const env = c?.env;
+  if (!env || typeof env !== "object" || Array.isArray(env)) {
+    return undefined;
+  }
+  return env as ServerlessEnv;
+}
+
+function mergeContextWithServerlessEnv(
+  context: unknown,
+  env: ServerlessEnv | undefined,
+): Map<string | symbol, unknown> | undefined {
+  if (!env) {
+    return context instanceof Map ? context : undefined;
+  }
+
+  const contextMap =
+    context instanceof Map
+      ? context
+      : context && typeof context === "object" && !Array.isArray(context)
+        ? new Map(Object.entries(context as Record<string, unknown>))
+        : new Map<string | symbol, unknown>();
+
+  if (!contextMap.has(SERVERLESS_ENV_CONTEXT_KEY)) {
+    contextMap.set(SERVERLESS_ENV_CONTEXT_KEY, env);
+  }
+
+  return contextMap;
+}
+
+function withServerlessEnvInOptions(body: any, env: ServerlessEnv | undefined) {
+  if (!env || !body || typeof body !== "object") {
+    return body;
+  }
+
+  const options =
+    body.options && typeof body.options === "object" && !Array.isArray(body.options)
+      ? body.options
+      : {};
+
+  const context = mergeContextWithServerlessEnv(options.context, env);
+
+  return {
+    ...body,
+    options: {
+      ...options,
+      context: context ?? options.context,
+    },
+  };
+}
+
+function withServerlessEnvInContext(body: any, env: ServerlessEnv | undefined) {
+  if (!env || !body || typeof body !== "object") {
+    return body;
+  }
+
+  const context = mergeContextWithServerlessEnv(body.context, env);
+
+  return {
+    ...body,
+    context: context ?? body.context,
+  };
+}
+
 function parseContextCandidate(candidate: unknown): A2ARequestContext | undefined {
   if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
     return undefined;
@@ -164,7 +234,14 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    const response = await handleGenerateText(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleGenerateText(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
     return c.json(response, response.success ? 200 : 500);
   });
 
@@ -175,7 +252,14 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    const response = await handleStreamText(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleStreamText(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
     return response;
   });
 
@@ -186,7 +270,14 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    return handleChatStream(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    return handleChatStream(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
   });
 
   app.post(AGENT_ROUTES.generateObject.path, async (c) => {
@@ -196,7 +287,14 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    const response = await handleGenerateObject(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleGenerateObject(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
     return c.json(response, response.success ? 200 : 500);
   });
 
@@ -207,7 +305,14 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       return c.json({ error: "Invalid JSON body" }, 400);
     }
     const signal = c.req.raw.signal;
-    return handleStreamObject(agentId, body, deps, logger, signal);
+    const runtimeEnv = getServerlessEnv(c);
+    return handleStreamObject(
+      agentId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+      signal,
+    );
   });
 
   app.get(AGENT_ROUTES.getAgentHistory.path, async (c) => {
@@ -237,7 +342,13 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
     if (!body) {
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
-    const response = await handleExecuteWorkflow(workflowId, body, deps, logger);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleExecuteWorkflow(
+      workflowId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+    );
     return c.json(response, response.success ? 200 : 500);
   });
 
@@ -248,7 +359,13 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
       return c.json({ error: "Invalid JSON body" }, 400);
     }
 
-    const response = await handleStreamWorkflow(workflowId, body, deps, logger);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleStreamWorkflow(
+      workflowId,
+      withServerlessEnvInOptions(body, runtimeEnv),
+      deps,
+      logger,
+    );
 
     if (isErrorResponse(response)) {
       return c.json(response, 500);
@@ -312,7 +429,13 @@ export function registerToolRoutes(app: Hono, deps: ServerProviderDeps, logger: 
       return c.json({ success: false, error: "Invalid JSON body" }, 400);
     }
 
-    const response = await handleExecuteTool(toolName, body, deps, logger);
+    const runtimeEnv = getServerlessEnv(c);
+    const response = await handleExecuteTool(
+      toolName,
+      withServerlessEnvInContext(body, runtimeEnv),
+      deps,
+      logger,
+    );
     const status = response.success ? 200 : response.httpStatus || 500;
     return c.json(response, status);
   });

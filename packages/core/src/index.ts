@@ -102,6 +102,7 @@ export {
   context,
 } from "./observability";
 export { TRIGGER_CONTEXT_KEY } from "./observability/context-keys";
+export { SERVERLESS_ENV_CONTEXT_KEY } from "./context-keys";
 export { createTriggers } from "./triggers/dsl";
 
 // Memory V2 - Export with aliases to avoid conflicts

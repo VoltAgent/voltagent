@@ -99,7 +99,71 @@ compatibility_flags = [
 
 If you ship TypeScript, add a build script like `tsc --project tsconfig.json`, or use Wrangler’s `--bundle` support.
 
-## 5. Run locally
+## 5. Cloudflare bindings (D1, KV, R2)
+
+When you use `serverlessHono()` on Workers, VoltAgent injects the Worker `env` object into the execution context map. Access it via `SERVERLESS_ENV_CONTEXT_KEY` from `@voltagent/core`. This works for agent requests, workflow runs, and tool executions triggered through the serverless routes.
+
+### D1 binding in `wrangler.toml`
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "voltagent"
+database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+```
+
+### Use D1 in a tool
+
+```ts
+import { createTool, SERVERLESS_ENV_CONTEXT_KEY } from "@voltagent/core";
+import type { D1Database } from "@cloudflare/workers-types";
+import { z } from "zod";
+
+type Env = { DB: D1Database };
+
+export const listUsers = createTool({
+  name: "list-users",
+  description: "Fetch users from D1",
+  parameters: z.object({}),
+  execute: async (_args, options) => {
+    const env = options?.context?.get(SERVERLESS_ENV_CONTEXT_KEY) as Env | undefined;
+    const db = env?.DB;
+    if (!db) {
+      throw new Error("D1 binding is missing (env.DB)");
+    }
+
+    const { results } = await db.prepare("SELECT id, name FROM users").all();
+    return results;
+  },
+});
+```
+
+### Use D1 in a workflow step
+
+```ts
+import { andThen, SERVERLESS_ENV_CONTEXT_KEY } from "@voltagent/core";
+import type { D1Database } from "@cloudflare/workers-types";
+
+type Env = { DB: D1Database };
+
+andThen({
+  id: "load-users",
+  execute: async ({ state }) => {
+    const env = state.context?.get(SERVERLESS_ENV_CONTEXT_KEY) as Env | undefined;
+    const db = env?.DB;
+    if (!db) {
+      throw new Error("D1 binding is missing (env.DB)");
+    }
+
+    const { results } = await db.prepare("SELECT id, name FROM users").all();
+    return { users: results };
+  },
+});
+```
+
+If you call an agent or workflow directly inside Worker code (not via the serverless routes), pass the binding manually with `context: new Map([[SERVERLESS_ENV_CONTEXT_KEY, env]])`.
+
+## 6. Run locally
 
 ```bash
 pnpm install
@@ -108,7 +172,7 @@ pnpm wrangler dev
 
 `wrangler dev` runs your Worker in an edge-like sandbox. Use `--local` only if you need Node-specific debugging.
 
-## 6. Deploy
+## 7. Deploy
 
 ```bash
 pnpm wrangler deploy

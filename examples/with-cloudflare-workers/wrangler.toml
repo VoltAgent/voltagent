@@ -9,3 +9,8 @@ compatibility_flags = [
   "nodejs_compat_populate_process_env",
   "no_handle_cross_request_promise_resolution",
 ]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "my-db-name"
+database_id = "b4712095-3b98-4834-ad03-edf70aef9eb3"
