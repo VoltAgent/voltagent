@@ -36,7 +36,13 @@ export type VoiceOptions = {
 /**
  * Voice event types
  */
-export type VoiceEventType = "speaking" | "listening" | "error" | "connected" | "disconnected";
+export type VoiceEventType =
+  | "speaking"
+  | "listening"
+  | "transcript"
+  | "error"
+  | "connected"
+  | "disconnected";
 
 /**
  * Voice event data types
@@ -45,9 +51,23 @@ export type VoiceEventData = {
   speaking: {
     text: string;
     audio?: NodeJS.ReadableStream;
+    format?: string;
+    sampleRate?: number;
+    channels?: number;
+    id?: string;
+    isFinal?: boolean;
   };
   listening: {
     audio: NodeJS.ReadableStream;
+    format?: string;
+    sampleRate?: number;
+    channels?: number;
+  };
+  transcript: {
+    text: string;
+    role?: "assistant" | "user";
+    isFinal?: boolean;
+    id?: string;
   };
   error: {
     message: string;
@@ -56,6 +76,31 @@ export type VoiceEventData = {
   };
   connected: undefined;
   disconnected: undefined;
+};
+
+/**
+ * Minimal tool metadata used by voice providers.
+ */
+export type VoiceToolExecutionOptions = {
+  toolCallId?: string;
+  messages?: unknown[];
+  abortSignal?: AbortSignal;
+};
+
+export type VoiceToolDescriptor = {
+  name: string;
+  description?: string;
+  parameters?: unknown;
+  execute?: (args: unknown, options?: VoiceToolExecutionOptions) => Promise<unknown>;
+};
+
+/**
+ * Listener capability metadata.
+ */
+export type VoiceListenerStatus = {
+  enabled: boolean;
+  mode?: "realtime" | "batch";
+  metadata?: Record<string, unknown>;
 };
 
 /**
@@ -126,4 +171,44 @@ export type Voice = {
    * Get available voices
    */
   getVoices(): Promise<VoiceMetadata[]>;
+
+  /**
+   * Optional: expose listener capability.
+   */
+  getListener?: () => Promise<VoiceListenerStatus>;
+
+  /**
+   * Optional: provide agent instructions to the voice provider.
+   */
+  addInstructions?: (instructions: string) => void;
+
+  /**
+   * Optional: provide agent tools to the voice provider.
+   */
+  addTools?: (tools: VoiceToolDescriptor[]) => void;
+
+  /**
+   * Optional: trigger a realtime provider to respond.
+   */
+  answer?: (options?: Record<string, unknown>) => Promise<void>;
+
+  /**
+   * Optional: interrupt a realtime response (barge-in).
+   */
+  interrupt?: () => Promise<void> | void;
+
+  /**
+   * Optional: clear pending input audio buffer for realtime sessions.
+   */
+  clearAudio?: () => Promise<void> | void;
+
+  /**
+   * Optional: truncate an in-progress realtime response.
+   */
+  truncate?: (options: {
+    messageId: string;
+    audioEndMs: number;
+    modalities?: Array<"audio" | "text">;
+    audioTranscript?: string;
+  }) => Promise<void> | void;
 };

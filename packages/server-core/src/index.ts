@@ -28,6 +28,7 @@ export * from "./handlers/update.handlers";
 export * from "./handlers/observability.handlers";
 export * from "./handlers/trigger.handlers";
 export * from "./handlers/memory-observability.handlers";
+export * from "./handlers/voice.handlers";
 export { setupObservabilityHandler } from "./handlers/observability-setup.handler";
 
 // Export auth

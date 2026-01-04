@@ -8,6 +8,11 @@ import {
   StreamTextEventSchema,
   TextRequestSchema,
   TextResponseSchema,
+  VoiceListenRequestSchema,
+  VoiceListenResponseSchema,
+  VoiceListenerResponseSchema,
+  VoiceSpeakRequestSchema,
+  VoiceVoicesResponseSchema,
   WORKFLOW_ROUTES,
   WorkflowCancelRequestSchema,
   WorkflowCancelResponseSchema,
@@ -43,6 +48,11 @@ export {
   ObjectRequestSchema,
   ObjectResponseSchema,
   StreamObjectEventSchema,
+  VoiceListenRequestSchema,
+  VoiceListenResponseSchema,
+  VoiceListenerResponseSchema,
+  VoiceSpeakRequestSchema,
+  VoiceVoicesResponseSchema,
   WorkflowResponseSchema,
   WorkflowListSchema,
   WorkflowExecutionRequestSchema,
@@ -341,6 +351,217 @@ Example event: 'data: {"partialUpdate": {...}}\n\n' or 'data: {"finalObject": {.
   tags: [...AGENT_ROUTES.streamObject.tags],
   summary: AGENT_ROUTES.streamObject.summary,
   description: AGENT_ROUTES.streamObject.description,
+});
+
+// Voice: list available voices
+export const voiceVoicesRoute = createRoute({
+  method: AGENT_ROUTES.getVoiceVoices.method,
+  path: AGENT_ROUTES.getVoiceVoices.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: VoiceVoicesResponseSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.getVoiceVoices.responses?.[200]?.description ||
+        "Successfully retrieved voices",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: AGENT_ROUTES.getVoiceVoices.responses?.[404]?.description || "Agent not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getVoiceVoices.responses?.[500]?.description || "Failed to retrieve voices",
+    },
+  },
+  tags: [...AGENT_ROUTES.getVoiceVoices.tags],
+  summary: AGENT_ROUTES.getVoiceVoices.summary,
+  description: AGENT_ROUTES.getVoiceVoices.description,
+});
+
+// Voice: listener status
+export const voiceListenerRoute = createRoute({
+  method: AGENT_ROUTES.getVoiceListener.method,
+  path: AGENT_ROUTES.getVoiceListener.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: VoiceListenerResponseSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.getVoiceListener.responses?.[200]?.description ||
+        "Successfully retrieved listener status",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: AGENT_ROUTES.getVoiceListener.responses?.[404]?.description || "Agent not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getVoiceListener.responses?.[500]?.description ||
+        "Failed to retrieve listener status",
+    },
+  },
+  tags: [...AGENT_ROUTES.getVoiceListener.tags],
+  summary: AGENT_ROUTES.getVoiceListener.summary,
+  description: AGENT_ROUTES.getVoiceListener.description,
+});
+
+// Voice: text-to-speech
+export const voiceSpeakRoute = createRoute({
+  method: AGENT_ROUTES.speakVoice.method,
+  path: AGENT_ROUTES.speakVoice.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: VoiceSpeakRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/octet-stream": {
+          schema: z.any(),
+        },
+      },
+      description:
+        AGENT_ROUTES.speakVoice.responses?.[200]?.description || "Successfully generated audio",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: AGENT_ROUTES.speakVoice.responses?.[400]?.description || "Invalid speak request",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: AGENT_ROUTES.speakVoice.responses?.[404]?.description || "Agent not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.speakVoice.responses?.[500]?.description || "Failed to generate audio",
+    },
+  },
+  tags: [...AGENT_ROUTES.speakVoice.tags],
+  summary: AGENT_ROUTES.speakVoice.summary,
+  description: AGENT_ROUTES.speakVoice.description,
+});
+
+// Voice: speech-to-text
+export const voiceListenRoute = createRoute({
+  method: AGENT_ROUTES.listenVoice.method,
+  path: AGENT_ROUTES.listenVoice.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: VoiceListenRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: VoiceListenResponseSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.listenVoice.responses?.[200]?.description || "Successfully transcribed audio",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listenVoice.responses?.[400]?.description || "Invalid listen request",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: AGENT_ROUTES.listenVoice.responses?.[404]?.description || "Agent not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listenVoice.responses?.[500]?.description || "Failed to transcribe audio",
+    },
+  },
+  tags: [...AGENT_ROUTES.listenVoice.tags],
+  summary: AGENT_ROUTES.listenVoice.summary,
+  description: AGENT_ROUTES.listenVoice.description,
 });
 
 export const getWorkflowsRoute = createRoute({

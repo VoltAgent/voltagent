@@ -55,8 +55,9 @@ import { ToolManager } from "../tool/manager";
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
+import { zodSchemaToJsonUI } from "../utils/toolParser";
 import { convertUsage } from "../utils/usage-converter";
-import type { Voice } from "../voice";
+import type { Voice, VoiceEventData, VoiceToolDescriptor } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
 import type { PromptContent, PromptHelper } from "../voltops/types";
@@ -131,6 +132,8 @@ import type {
 
 const BUFFER_CONTEXT_KEY = Symbol("conversationBuffer");
 const QUEUE_CONTEXT_KEY = Symbol("memoryPersistQueue");
+const VOICE_TOOL_PERSIST_CONTEXT_KEY = Symbol("voiceToolPersist");
+const VOICE_TOOL_PERSISTED_CALLS_KEY = Symbol("voiceToolPersistedCalls");
 const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
 
 // ============================================================================
@@ -3023,6 +3026,49 @@ export class Agent {
     };
   }
 
+  private extractInstructionText(messages: BaseMessage | BaseMessage[]): string {
+    const list = Array.isArray(messages) ? messages : [messages];
+    const systemMessages = list.filter((message) => message.role === "system");
+    const candidates = systemMessages.length > 0 ? systemMessages : list;
+    const chunks = candidates
+      .map((message) => this.extractTextContent(message.content))
+      .filter((chunk) => chunk.trim().length > 0);
+
+    return chunks.join("\n\n");
+  }
+
+  private extractTextContent(content: unknown): string {
+    if (typeof content === "string") {
+      return content;
+    }
+
+    if (Array.isArray(content)) {
+      return content
+        .map((part) => {
+          if (typeof part === "string") {
+            return part;
+          }
+          if (part && typeof part === "object") {
+            if ("text" in part && typeof part.text === "string") {
+              return part.text;
+            }
+            if ("content" in part && typeof part.content === "string") {
+              return part.content;
+            }
+          }
+          return "";
+        })
+        .filter((part) => part.length > 0)
+        .join("");
+    }
+
+    if (content && typeof content === "object" && "text" in content) {
+      return typeof content.text === "string" ? content.text : "";
+    }
+
+    return "";
+  }
+
   /**
    * Add toolkit instructions
    */
@@ -3408,6 +3454,13 @@ export class Agent {
             options: executionOptions,
           });
 
+          this.queueVoiceToolResult(oc, {
+            toolName: tool.name,
+            toolCallId,
+            input: args,
+            output: validatedResult,
+          });
+
           return result;
         } catch (e) {
           const error = e instanceof Error ? e : new Error(String(e));
@@ -3435,6 +3488,14 @@ export class Agent {
             options: executionOptions,
           });
 
+          this.queueVoiceToolResult(oc, {
+            toolName: tool.name,
+            toolCallId,
+            input: args,
+            output: errorResult,
+            isError: true,
+          });
+
           if (isToolDeniedError(e)) {
             oc.abortController.abort(e);
           }
@@ -3446,6 +3507,95 @@ export class Agent {
         }
       });
     };
+  }
+
+  private queueVoiceToolResult(
+    oc: OperationContext,
+    payload: {
+      toolName: string;
+      toolCallId: string;
+      input: unknown;
+      output: unknown;
+      isError?: boolean;
+    },
+  ): void {
+    if (!oc.systemContext.get(VOICE_TOOL_PERSIST_CONTEXT_KEY)) {
+      return;
+    }
+
+    const hasMemoryContext =
+      Boolean(oc.userId && oc.conversationId) && this.memoryManager.hasConversationMemory();
+    if (!hasMemoryContext) {
+      console.log("[VoiceTool] persist skipped", {
+        toolName: payload.toolName,
+        toolCallId: payload.toolCallId,
+        hasUserId: Boolean(oc.userId),
+        hasConversationId: Boolean(oc.conversationId),
+        memoryEnabled: this.memoryManager.hasConversationMemory(),
+      });
+      oc.logger.debug("Voice tool result skipped (missing memory context)", {
+        toolName: payload.toolName,
+        toolCallId: payload.toolCallId,
+        userId: oc.userId,
+        conversationId: oc.conversationId,
+      });
+      return;
+    }
+
+    let persisted = oc.systemContext.get(VOICE_TOOL_PERSISTED_CALLS_KEY) as Set<string> | undefined;
+    if (!persisted) {
+      persisted = new Set<string>();
+      oc.systemContext.set(VOICE_TOOL_PERSISTED_CALLS_KEY, persisted);
+    }
+    if (persisted.has(payload.toolCallId)) {
+      return;
+    }
+    persisted.add(payload.toolCallId);
+
+    const toolCallMessage: ModelMessage = {
+      role: "assistant",
+      content: [
+        {
+          type: "tool-call",
+          toolCallId: payload.toolCallId,
+          toolName: payload.toolName,
+          input: payload.input ?? {},
+          providerExecuted: false,
+        },
+      ],
+    };
+
+    const toolResultMessage: ModelMessage = {
+      role: "tool",
+      content: [
+        {
+          type: "tool-result",
+          toolCallId: payload.toolCallId,
+          toolName: payload.toolName,
+          output: (payload.output ?? null) as any,
+        },
+      ],
+    };
+
+    const buffer = this.getConversationBuffer(oc);
+    buffer.addModelMessages([toolCallMessage, toolResultMessage], "response");
+
+    const queue = this.getMemoryPersistQueue(oc);
+    queue.scheduleSave(buffer, oc);
+
+    console.log("[VoiceTool] queued tool result", {
+      toolName: payload.toolName,
+      toolCallId: payload.toolCallId,
+      conversationId: oc.conversationId,
+      isError: Boolean(payload.isError),
+    });
+    oc.logger.debug("Voice tool result queued for memory", {
+      toolName: payload.toolName,
+      toolCallId: payload.toolCallId,
+      userId: oc.userId,
+      conversationId: oc.conversationId,
+      isError: Boolean(payload.isError),
+    });
   }
 
   /**
@@ -3550,6 +3700,56 @@ export class Agent {
       const responseMessages = event.response?.messages as ModelMessage[] | undefined;
       if (responseMessages && responseMessages.length > 0) {
         buffer.addModelMessages(responseMessages, "response");
+      }
+
+      const toolResults = event.toolResults ?? [];
+      if (toolResults.length > 0) {
+        const responseToolResults = new Set<string>();
+        if (responseMessages?.length) {
+          for (const responseMessage of responseMessages) {
+            if (!Array.isArray(responseMessage.content)) {
+              continue;
+            }
+            for (const part of responseMessage.content) {
+              if (
+                part &&
+                typeof part === "object" &&
+                (part as { type?: string }).type === "tool-result"
+              ) {
+                const toolCallId = (part as { toolCallId?: string }).toolCallId;
+                if (toolCallId) {
+                  responseToolResults.add(toolCallId);
+                }
+              }
+            }
+          }
+        }
+
+        const toolContent = toolResults
+          .filter(
+            (toolResult) =>
+              toolResult?.toolCallId &&
+              toolResult.providerExecuted !== true &&
+              !responseToolResults.has(toolResult.toolCallId),
+          )
+          .map((toolResult) => ({
+            type: "tool-result",
+            toolCallId: toolResult.toolCallId,
+            toolName: toolResult.toolName,
+            output: toolResult.output as unknown,
+          }));
+
+        if (toolContent.length > 0) {
+          buffer.addModelMessages(
+            [
+              {
+                role: "tool",
+                content: toolContent as any,
+              } as ModelMessage,
+            ],
+            "response",
+          );
+        }
       }
 
       // Call hooks
@@ -4180,6 +4380,244 @@ export class Agent {
    */
   public getToolsForApi() {
     return this.toolManager.getToolsForApi();
+  }
+
+  /**
+   * Get a voice instance with agent instructions and tools attached when supported.
+   */
+  public async getVoice(options: BaseGenerationOptions = {}): Promise<Voice | undefined> {
+    const voice = this.voice;
+    if (!voice) {
+      return undefined;
+    }
+
+    const oc = this.createOperationContext("", options);
+    let traceError: unknown;
+
+    try {
+      await this.prepareVoice(voice, oc, options);
+    } catch (error) {
+      traceError = error;
+      oc.logger.warn("Failed to prepare voice", { error });
+    } finally {
+      oc.traceContext.end(traceError ? "error" : "completed", traceError as Error | undefined);
+    }
+
+    return voice;
+  }
+
+  /**
+   * Run a voice operation with telemetry and agent context attached.
+   */
+  public async withVoiceOperation<T>(
+    operation: string,
+    options: BaseGenerationOptions,
+    handler: (voice: Voice, oc: OperationContext) => Promise<T>,
+  ): Promise<T | undefined> {
+    const voice = this.voice;
+    if (!voice) {
+      return undefined;
+    }
+
+    const oc = this.createOperationContext(`voice.${operation}`, options);
+    if (operation === "realtime") {
+      oc.systemContext.set(VOICE_TOOL_PERSIST_CONTEXT_KEY, true);
+    }
+    oc.traceContext.getRootSpan().setAttribute("voice.operation", operation);
+    oc.traceContext.getRootSpan().setAttribute("span.type", "voice");
+    let transcriptHandler: ((data: VoiceEventData["transcript"]) => void) | null = null;
+    let transcriptFlush: (() => void) | null = null;
+
+    try {
+      await this.prepareVoice(voice, oc, options);
+      if (operation === "realtime") {
+        const transcriptPersistence = this.createVoiceTranscriptPersistence(oc);
+        transcriptHandler = transcriptPersistence.handleTranscript;
+        transcriptFlush = transcriptPersistence.flush;
+        voice.on("transcript", transcriptHandler);
+      }
+      const result = await handler(voice, oc);
+      if (typeof result === "string") {
+        oc.traceContext.setOutput(result);
+      }
+      transcriptFlush?.();
+      oc.traceContext.end("completed");
+      return result;
+    } catch (error) {
+      transcriptFlush?.();
+      oc.traceContext.end("error", error as Error);
+      throw error;
+    } finally {
+      if (transcriptHandler) {
+        voice.off("transcript", transcriptHandler);
+      }
+    }
+  }
+
+  private createVoiceTranscriptPersistence(oc: OperationContext): {
+    handleTranscript: (data: VoiceEventData["transcript"]) => void;
+    flush: () => void;
+  } {
+    if (!oc.userId || !oc.conversationId || !this.memoryManager.hasConversationMemory()) {
+      return {
+        handleTranscript: () => {},
+        flush: () => {},
+      };
+    }
+
+    const pendingTranscripts = new Map<string, string>();
+    const normalizeRole = (role?: VoiceEventData["transcript"]["role"]): "assistant" | "user" =>
+      role === "assistant" ? "assistant" : "user";
+    const buildKey = (role: "assistant" | "user", id?: string): string =>
+      `${role}:${id || "default"}`;
+    const extractRole = (key: string): "assistant" | "user" =>
+      key.startsWith("assistant:") ? "assistant" : "user";
+    const mergeText = (pending: string, finalText: string): string => {
+      if (!pending) {
+        return finalText;
+      }
+      if (!finalText) {
+        return pending;
+      }
+      if (finalText.startsWith(pending)) {
+        return finalText;
+      }
+      if (pending.startsWith(finalText)) {
+        return pending;
+      }
+      return pending + finalText;
+    };
+    const persistMessage = (role: "assistant" | "user", text: string) => {
+      if (text.trim().length === 0) {
+        return;
+      }
+
+      const message: UIMessage = {
+        id: randomUUID(),
+        role,
+        parts: [{ type: "text", text }],
+      };
+      void this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+    };
+
+    return {
+      handleTranscript: (data: VoiceEventData["transcript"]) => {
+        const role = normalizeRole(data.role);
+        const id = typeof data.id === "string" && data.id.length > 0 ? data.id : undefined;
+        const key = buildKey(role, id);
+
+        if (data.isFinal) {
+          const resolved = mergeText(pendingTranscripts.get(key) ?? "", data.text);
+          pendingTranscripts.delete(key);
+          persistMessage(role, resolved);
+          return;
+        }
+
+        if (data.text) {
+          const existing = pendingTranscripts.get(key) ?? "";
+          pendingTranscripts.set(key, existing + data.text);
+        }
+      },
+      flush: () => {
+        if (pendingTranscripts.size === 0) {
+          return;
+        }
+
+        for (const [key, text] of pendingTranscripts.entries()) {
+          const role = extractRole(key);
+          persistMessage(role, text);
+        }
+        pendingTranscripts.clear();
+      },
+    };
+  }
+
+  private async prepareVoice(
+    voice: Voice,
+    oc: OperationContext,
+    options: BaseGenerationOptions,
+  ): Promise<void> {
+    try {
+      const systemMessage = await this.getSystemMessage("", oc, options);
+      const instructionText = this.extractInstructionText(systemMessage);
+      if (instructionText.trim()) {
+        voice.addInstructions?.(instructionText);
+      }
+    } catch (error) {
+      oc.logger.warn("Failed to resolve voice instructions", { error });
+    }
+
+    const voiceTools = this.getVoiceToolsForRealtime(oc, options);
+    if (voiceTools.length > 0) {
+      voice.addTools?.(voiceTools);
+    }
+  }
+
+  private getVoiceToolsForRealtime(
+    oc: OperationContext,
+    options: BaseGenerationOptions,
+  ): VoiceToolDescriptor[] {
+    const hooks = this.getMergedHooks(options);
+    const createToolExecuteFunction = this.createToolExecutionFactory(oc, hooks);
+    const preparedTools = this.toolManager.prepareToolsForExecution(createToolExecuteFunction);
+    const descriptors: VoiceToolDescriptor[] = [];
+
+    for (const [name, tool] of Object.entries(preparedTools)) {
+      const descriptor = this.normalizeVoiceToolDescriptor(name, tool);
+      if (descriptor) {
+        descriptors.push(descriptor);
+      }
+    }
+
+    return descriptors;
+  }
+
+  private normalizeVoiceToolDescriptor(name: string, tool: unknown): VoiceToolDescriptor | null {
+    if (!tool || typeof tool !== "object") {
+      return null;
+    }
+
+    const candidate = tool as {
+      description?: unknown;
+      execute?: unknown;
+      inputSchema?: unknown;
+      parameters?: unknown;
+      type?: unknown;
+    };
+
+    if (candidate.type === "provider") {
+      return null;
+    }
+
+    if (typeof candidate.execute !== "function") {
+      return null;
+    }
+
+    const parameters = this.normalizeVoiceToolParameters(
+      candidate.inputSchema ?? candidate.parameters,
+    );
+
+    return {
+      name,
+      description: typeof candidate.description === "string" ? candidate.description : "",
+      parameters,
+      execute: candidate.execute as VoiceToolDescriptor["execute"],
+    };
+  }
+
+  private normalizeVoiceToolParameters(schema: unknown): Record<string, unknown> | undefined {
+    if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+      return undefined;
+    }
+
+    const candidate = schema as { _def?: { typeName?: unknown }; def?: { type?: unknown } };
+    const def = candidate._def ?? candidate.def;
+    if (def && typeof def === "object" && ("typeName" in def || "type" in def)) {
+      const converted = zodSchemaToJsonUI(schema);
+      return converted && typeof converted === "object" ? converted : undefined;
+    }
+
+    return schema as Record<string, unknown>;
   }
 
   /**

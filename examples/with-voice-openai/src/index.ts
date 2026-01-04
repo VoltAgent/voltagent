@@ -5,7 +5,8 @@ import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { OpenAIVoiceProvider } from "@voltagent/voice";
+import { OpenAIRealtimeVoiceProvider, OpenAIVoiceProvider } from "@voltagent/voice";
+import { weatherTool } from "./tools/weather";
 
 // Create logger
 const logger = createPinoLogger({
@@ -20,29 +21,42 @@ const voiceProvider = new OpenAIVoiceProvider({
   ttsModel: "tts-1", // Using standard TTS model, can be upgraded to tts-1-hd
 });
 
+// Initialize realtime voice provider (PCM16 streaming)
+const realtimeVoiceProvider = new OpenAIRealtimeVoiceProvider({
+  apiKey: process.env.OPENAI_API_KEY || "",
+  model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-mini",
+  voice: "alloy",
+  inputAudioFormat: "pcm16",
+  outputAudioFormat: "pcm16",
+});
+
 // Initialize agent with voice capabilities
 const agent = new Agent({
   name: "Voice Assistant",
   instructions: "A helpful assistant that can speak and listen using OpenAI's voice API",
   model: openai("gpt-4o-mini"),
   voice: voiceProvider,
-  memory: new Memory({
-    storage: new LibSQLMemoryAdapter({
-      url: "file:./.voltagent/memory.db",
-    }),
-  }),
+});
+
+const realtimeAgent = new Agent({
+  name: "Realtime Voice Assistant",
+  instructions: "A helpful assistant that responds in real time using OpenAI Realtime voice.",
+  model: openai("gpt-4o-mini"),
+  voice: realtimeVoiceProvider,
+  tools: [weatherTool],
 });
 
 // Create the VoltAgent with our voice-enabled agent
 new VoltAgent({
   agents: {
     agent,
+    realtimeAgent,
   },
   logger,
   server: honoServer({ port: 3141 }),
 });
 
-(async () => {
+/* (async () => {
   const voices = await agent.voice?.getVoices();
   console.log("Available voices:", voices);
 
@@ -79,3 +93,4 @@ voiceProvider.on("listening", () => {
 voiceProvider.on("error", (error: { message: string }) => {
   console.error("Voice error:", error.message);
 });
+ */

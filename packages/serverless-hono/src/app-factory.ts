@@ -25,7 +25,12 @@ function resolveCorsConfig(config?: ServerlessConfig) {
     "DELETE",
     "OPTIONS",
   ];
-  const allowHeaders = config?.corsAllowHeaders ?? ["Content-Type", "Authorization"];
+  const allowHeaders = config?.corsAllowHeaders ?? [
+    "Content-Type",
+    "Authorization",
+    "x-voltagent-dev",
+    "x-console-access-key",
+  ];
 
   return {
     origin,

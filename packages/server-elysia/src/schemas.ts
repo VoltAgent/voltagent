@@ -7,6 +7,11 @@ import {
   ObjectResponseSchema as ZodObjectResponseSchema,
   TextRequestSchema as ZodTextRequestSchema,
   TextResponseSchema as ZodTextResponseSchema,
+  VoiceListenRequestSchema as ZodVoiceListenRequestSchema,
+  VoiceListenResponseSchema as ZodVoiceListenResponseSchema,
+  VoiceListenerResponseSchema as ZodVoiceListenerResponseSchema,
+  VoiceSpeakRequestSchema as ZodVoiceSpeakRequestSchema,
+  VoiceVoicesResponseSchema as ZodVoiceVoicesResponseSchema,
   WorkflowCancelRequestSchema as ZodWorkflowCancelRequestSchema,
   WorkflowCancelResponseSchema as ZodWorkflowCancelResponseSchema,
   WorkflowExecutionRequestSchema as ZodWorkflowExecutionRequestSchema,
@@ -34,6 +39,13 @@ export const GenerateOptionsSchema = zodToTypeBox(ZodGenerateOptionsSchema);
 // Text generation schemas
 export const TextRequestSchema = zodToTypeBox(ZodTextRequestSchema);
 export const TextResponseSchema = zodToTypeBox(ZodTextResponseSchema);
+
+// Voice schemas
+export const VoiceSpeakRequestSchema = zodToTypeBox(ZodVoiceSpeakRequestSchema);
+export const VoiceListenRequestSchema = zodToTypeBox(ZodVoiceListenRequestSchema);
+export const VoiceListenResponseSchema = zodToTypeBox(ZodVoiceListenResponseSchema);
+export const VoiceVoicesResponseSchema = zodToTypeBox(ZodVoiceVoicesResponseSchema);
+export const VoiceListenerResponseSchema = zodToTypeBox(ZodVoiceListenerResponseSchema);
 
 // Object generation schemas
 export const ObjectRequestSchema = zodToTypeBox(ZodObjectRequestSchema);

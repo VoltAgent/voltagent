@@ -42,6 +42,8 @@ import {
   handleGetAgentHistory,
   handleGetAgents,
   handleGetLogs,
+  handleGetVoiceListener,
+  handleGetVoiceVoices,
   handleGetWorkflow,
   handleGetWorkflowState,
   handleGetWorkflows,
@@ -53,6 +55,8 @@ import {
   handleStreamText,
   handleStreamWorkflow,
   handleSuspendWorkflow,
+  handleVoiceListen,
+  handleVoiceSpeak,
   isErrorResponse,
   mapLogResponse,
   parseJsonRpcRequest,
@@ -68,6 +72,30 @@ function parseJsonSafe<T>(raw: string, logger: Logger): T | undefined {
     return undefined;
   }
 }
+
+const inferAudioFormat = (file: File): string | undefined => {
+  const type = file.type?.toLowerCase();
+  if (!type) return undefined;
+  if (type.includes("audio/webm")) return "webm";
+  if (type.includes("audio/wav") || type.includes("audio/x-wav")) return "wav";
+  if (type.includes("audio/mp4")) return "mp4";
+  if (type.includes("audio/m4a") || type.includes("audio/x-m4a")) return "m4a";
+  if (type.includes("audio/mpga")) return "mpga";
+  if (type.includes("audio/mpeg") || type.includes("audio/mp3")) return "mp3";
+  return undefined;
+};
+
+const applyInferredAudioFormat = (
+  options: Record<string, unknown> | undefined,
+  file: File,
+): Record<string, unknown> | undefined => {
+  const inferredFormat = inferAudioFormat(file);
+  if (!inferredFormat) return options;
+  if (options && typeof options === "object" && "format" in options) {
+    return options;
+  }
+  return { ...(options ?? {}), format: inferredFormat };
+};
 
 async function readJsonBody<T>(c: any, logger: Logger): Promise<T | undefined> {
   try {
@@ -208,6 +236,47 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
     }
     const signal = c.req.raw.signal;
     return handleStreamObject(agentId, body, deps, logger, signal);
+  });
+
+  app.get(AGENT_ROUTES.getVoiceVoices.path, async (c) => {
+    const agentId = c.req.param("id");
+    const response = await handleGetVoiceVoices(agentId, deps, logger);
+    return c.json(response, response.success ? 200 : 500);
+  });
+
+  app.get(AGENT_ROUTES.getVoiceListener.path, async (c) => {
+    const agentId = c.req.param("id");
+    const response = await handleGetVoiceListener(agentId, deps, logger);
+    return c.json(response, response.success ? 200 : 500);
+  });
+
+  app.post(AGENT_ROUTES.speakVoice.path, async (c) => {
+    const agentId = c.req.param("id");
+    const body = await readJsonBody(c, logger);
+    if (!body) {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    return handleVoiceSpeak(agentId, body as any, deps, logger);
+  });
+
+  app.post(AGENT_ROUTES.listenVoice.path, async (c) => {
+    const agentId = c.req.param("id");
+    const formData = await c.req.formData();
+    const audio = formData.get("audio");
+    if (!audio || typeof (audio as File).arrayBuffer !== "function") {
+      return c.json({ success: false, error: "Audio payload is required" }, 400);
+    }
+
+    const optionsValue = formData.get("options");
+    let options =
+      typeof optionsValue === "string"
+        ? parseJsonSafe<Record<string, unknown>>(optionsValue, logger)
+        : undefined;
+    options = applyInferredAudioFormat(options, audio as File);
+
+    const audioBuffer = await (audio as File).arrayBuffer();
+    const response = await handleVoiceListen(agentId, audioBuffer, options, deps, logger);
+    return c.json(response, response.success ? 200 : 500);
   });
 
   app.get(AGENT_ROUTES.getAgentHistory.path, async (c) => {

@@ -215,6 +215,53 @@ export const StreamObjectEventSchema = z
   .any()
   .describe("Streamed object parts or the final object");
 
+// Voice schemas
+export const VoiceRequestOptionsSchema = z
+  .object({
+    userId: z.string().optional(),
+    conversationId: z.string().optional(),
+    context: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough()
+  .describe("Optional agent context and provider-specific voice options");
+
+export const VoiceSpeakRequestSchema = z.object({
+  text: z.string().describe("Text to convert to speech"),
+  options: VoiceRequestOptionsSchema.optional(),
+});
+
+export const VoiceListenRequestSchema = z.object({
+  audio: z.any().optional().describe("Audio payload (multipart form field)"),
+  options: z
+    .union([VoiceRequestOptionsSchema, z.string()])
+    .optional()
+    .describe("Optional options object or JSON-encoded string (multipart form field)"),
+});
+
+export const VoiceListenResponseSchema = z.object({
+  text: z.string().describe("Transcribed text"),
+});
+
+export const VoiceVoicesResponseSchema = z.array(
+  z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      language: z.string(),
+      gender: z.enum(["male", "female", "neutral"]).optional(),
+      metadata: z.record(z.string(), z.unknown()).optional(),
+    })
+    .passthrough(),
+);
+
+export const VoiceListenerResponseSchema = z
+  .object({
+    enabled: z.boolean(),
+    mode: z.enum(["realtime", "batch"]).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough();
+
 // Workflow schemas
 export const WorkflowResponseSchema = z.object({
   id: z.string().describe("Unique workflow identifier"),

@@ -36,6 +36,24 @@ new VoltAgent({
 });
 ```
 
+## Realtime (OpenAI)
+
+Use the realtime provider for streaming voice sessions (PCM16):
+
+```typescript
+import { OpenAIRealtimeVoiceProvider } from "@voltagent/voice";
+
+const realtimeVoice = new OpenAIRealtimeVoiceProvider({
+  apiKey: process.env.OPENAI_API_KEY!,
+  model: "gpt-4o-mini-realtime-preview-2024-12-17",
+  voice: "alloy",
+  inputAudioFormat: "pcm16",
+  outputAudioFormat: "pcm16",
+});
+```
+
+The VoltOps Console will automatically switch to live mode when a realtime provider is configured.
+
 ## Text-to-Speech (Speak)
 
 ```typescript

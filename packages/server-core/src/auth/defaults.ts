@@ -63,6 +63,10 @@ export const DEFAULT_CONSOLE_ROUTES = [
   "GET /agents/:id/card",
 
   "GET /agents/:id/history",
+  "GET /agents/:id/voice/voices",
+  "GET /agents/:id/voice/listener",
+  "POST /agents/:id/voice/speak",
+  "POST /agents/:id/voice/listen",
   "GET /workflows/executions",
   "GET /workflows/:id/executions/:executionId/state",
   "GET /api/logs",
@@ -74,6 +78,7 @@ export const DEFAULT_CONSOLE_ROUTES = [
   "WS /ws",
   "WS /ws/logs",
   "WS /ws/observability/**",
+  "WS /ws/agents/:id/voice",
 ];
 
 /**
@@ -89,7 +94,12 @@ export const PROTECTED_ROUTES = [
   "POST /agents/:id/chat", // chatStream
   "POST /agents/:id/object", // generateObject
   "POST /agents/:id/stream-object", // streamObject
+  "GET /agents/:id/voice/voices", // list voices
+  "GET /agents/:id/voice/listener", // listener status
+  "POST /agents/:id/voice/speak", // text-to-speech
+  "POST /agents/:id/voice/listen", // speech-to-text
   "WS /ws/agents/:id", // WebSocket connection
+  "WS /ws/agents/:id/voice", // Voice WebSocket connection
 
   // ========================================
   // TOOL EXECUTION (User Data)

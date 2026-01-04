@@ -8,6 +8,7 @@ import { type LogFilter, type Logger, safeStringify } from "@voltagent/internal"
 import type { IWebSocket } from "../types/websocket";
 import { LogStreamManager } from "./log-stream";
 import { handleObservabilityConnection } from "./observability-handler";
+import { handleVoiceConnection } from "./voice-handler";
 
 // Log stream manager instance
 const logStreamManager = new LogStreamManager();
@@ -35,6 +36,11 @@ export async function handleWebSocketConnection(
   // Handle different WebSocket paths
   if (pathParts[2] === "logs") {
     handleLogStream(ws, url, logger, user);
+    return;
+  }
+
+  if (pathParts[2] === "agents" && pathParts[4] === "voice") {
+    await handleVoiceConnection(ws, req, deps, logger, user);
     return;
   }
 

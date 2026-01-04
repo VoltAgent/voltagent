@@ -135,6 +135,8 @@ export class OpenAIVoiceProvider extends BaseVoiceProvider {
 
       // Create file for OpenAI API
       const format = options?.format || "mp3";
+      const requestOptions = { ...(options ?? {}) } as Record<string, unknown>;
+      delete requestOptions.format;
       const mimeTypes: Record<OpenAIAudioFormat, string> = {
         mp3: "audio/mpeg",
         mp4: "audio/mp4",
@@ -156,7 +158,7 @@ export class OpenAIVoiceProvider extends BaseVoiceProvider {
           file: file as unknown as File,
           stream: true,
           response_format: "text",
-          ...options,
+          ...requestOptions,
         } as OpenAI.Audio.Transcriptions.TranscriptionCreateParamsStreaming);
 
         return response;
@@ -167,7 +169,7 @@ export class OpenAIVoiceProvider extends BaseVoiceProvider {
         model: this.speechModel,
         file: file as unknown as File,
         stream: false,
-        ...options,
+        ...requestOptions,
       } as OpenAI.Audio.Transcriptions.TranscriptionCreateParamsNonStreaming);
 
       return response.text;

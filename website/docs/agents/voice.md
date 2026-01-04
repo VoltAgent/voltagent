@@ -41,6 +41,7 @@ pnpm add @voltagent/voice
 ## Supported Providers
 
 - **OpenAI**: High-quality voices and transcription.
+- **OpenAI Realtime**: Low-latency streaming voice over WebSocket (PCM16).
 - **ElevenLabs**: Realistic, customizable voices.
 - **xsAI**: Lightweight OpenAI-compatible voice API.
 
@@ -81,6 +82,82 @@ const xsAIVoice = new XsAIVoiceProvider({
 ```
 
 **Note:** It's recommended to manage API keys securely, for example, using environment variables.
+
+### Realtime Voice (OpenAI)
+
+Use the realtime provider when you need low-latency speech-to-speech in a streaming session.
+
+```typescript
+import { OpenAIRealtimeVoiceProvider } from "@voltagent/voice";
+
+const realtimeVoice = new OpenAIRealtimeVoiceProvider({
+  apiKey: process.env.OPENAI_API_KEY!,
+  model: process.env.OPENAI_REALTIME_MODEL || "gpt-4o-mini-realtime-preview-2024-12-17",
+  voice: "alloy",
+  inputAudioFormat: "pcm16",
+  outputAudioFormat: "pcm16",
+  inputSampleRate: 24000,
+  outputSampleRate: 24000,
+  // Optional: server-side turn detection (recommended for live use)
+  turnDetection: { type: "server_vad", create_response: true },
+  // Optional: set a transcription model for realtime input audio
+  transcriber: "whisper-1",
+});
+```
+
+Notes:
+- Turn detection supports `server_vad` or `semantic_vad`. Use `server_vad` for most realtime cases.
+- For higher accuracy, use a larger realtime model (for example `gpt-4o-realtime-preview-2024-12-17`).
+
+#### Using Live Voice in VoltOps Console
+
+Once a realtime voice provider is attached to an agent, the VoltOps Console can act as a WebSocket client
+for live voice.
+
+1. Start your agent server.
+2. Open the VoltOps Console and go to Observability.
+3. Open the Playground panel for your agent.
+4. Click the microphone button to start live capture.
+5. Click Stop to end the turn and request a response.
+
+If voice is not configured for the agent, the mic button is disabled and shows a tooltip linking to this doc.
+When voice is configured, a speaker icon appears under each message to trigger TTS playback.
+
+#### WebSocket Protocol (Advanced)
+
+Live sessions are driven over WebSocket at `ws(s)://<host>/ws/agents/:id/voice`.
+Send PCM16 mono chunks (24 kHz recommended) and close each turn with `VOICE_END`:
+
+```typescript
+// Pseudocode: send audio chunks and request a response
+ws.send(safeStringify({ type: "VOICE_INIT", options: { inputAudioFormat: "pcm16" } }));
+ws.send(
+  safeStringify({
+    type: "VOICE_AUDIO",
+    data: base64Pcm16Chunk,
+    format: "pcm16",
+    sampleRate: 24000,
+    channels: 1,
+  }),
+);
+ws.send(safeStringify({ type: "VOICE_END" }));
+```
+
+You can also cancel a turn with `VOICE_ABORT` if the user stops or interrupts:
+
+```typescript
+ws.send(safeStringify({ type: "VOICE_ABORT" }));
+```
+
+The server streams back:
+
+- `VOICE_READY`: listener metadata
+- `VOICE_TRANSCRIPT`: partial/final transcript chunks
+- `VOICE_AUDIO`: audio chunks (base64 PCM16)
+- `VOICE_AUDIO_END`: end of response audio
+- `VOICE_ERROR`: error details
+
+The VoltOps Console handles this automatically when a realtime voice provider is configured.
 
 ### Text-to-Speech (TTS)
 

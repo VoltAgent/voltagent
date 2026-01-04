@@ -1,9 +1,3 @@
-import { spawn } from "node:child_process";
-import * as fsSync from "node:fs";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import fg from "fast-glob";
-import micromatch from "micromatch";
 import {
   checkEmptyContent,
   formatContentWithLineNumbers,
@@ -18,12 +12,68 @@ import type {
   WriteResult,
 } from "./backend";
 
-const SUPPORTS_NOFOLLOW = fsSync.constants.O_NOFOLLOW !== undefined;
+type NodeRuntimeModules = {
+  spawn: typeof import("node:child_process").spawn;
+  fsSync: typeof import("node:fs");
+  fs: typeof import("node:fs/promises");
+  path: typeof import("node:path");
+  fg: FastGlob;
+  micromatch: Micromatch;
+};
+
+type NodeRuntimeState = NodeRuntimeModules & {
+  cwd: string;
+  supportsNoFollow: boolean;
+};
+
+let nodeModulesPromise: Promise<NodeRuntimeModules> | null = null;
+
+type FastGlob = typeof import("fast-glob");
+type Micromatch = typeof import("micromatch");
+
+const resolveFastGlob = (moduleValue: unknown): FastGlob => {
+  const wrapped = moduleValue as { default?: FastGlob };
+  return wrapped.default ?? (moduleValue as FastGlob);
+};
+
+const resolveMicromatch = (moduleValue: unknown): Micromatch => {
+  const wrapped = moduleValue as { default?: Micromatch };
+  return wrapped.default ?? (moduleValue as Micromatch);
+};
+
+// Lazy-load Node-only modules so edge bundles don't execute them at startup.
+const loadNodeModules = async (): Promise<NodeRuntimeModules> => {
+  if (!nodeModulesPromise) {
+    nodeModulesPromise = (async () => {
+      const [childProcess, fsSync, fs, path, fgModule, micromatchModule] = await Promise.all([
+        import("node:child_process"),
+        import("node:fs"),
+        import("node:fs/promises"),
+        import("node:path"),
+        import("fast-glob"),
+        import("micromatch"),
+      ]);
+      const fg = resolveFastGlob(fgModule as unknown);
+      const micromatch = resolveMicromatch(micromatchModule as unknown);
+      return {
+        spawn: childProcess.spawn,
+        fsSync,
+        fs,
+        path,
+        fg,
+        micromatch,
+      };
+    })();
+  }
+  return nodeModulesPromise ?? Promise.reject(new Error("Failed to load Node filesystem modules."));
+};
 
 export class NodeFilesystemBackend implements FilesystemBackendProtocol {
-  private cwd: string;
+  private cwd: string | null;
+  private rootDir?: string;
   private virtualMode: boolean;
   private maxFileSizeBytes: number;
+  private runtimePromise: Promise<NodeRuntimeState> | null = null;
 
   constructor(
     options: {
@@ -33,21 +83,47 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     } = {},
   ) {
     const { rootDir, virtualMode = false, maxFileSizeMb = 10 } = options;
-    this.cwd = rootDir ? path.resolve(rootDir) : process.cwd();
+    this.rootDir = rootDir;
+    this.cwd = null;
     this.virtualMode = virtualMode;
     this.maxFileSizeBytes = maxFileSizeMb * 1024 * 1024;
   }
 
-  private resolvePath(key: string): string {
+  private async getRuntime(): Promise<NodeRuntimeState> {
+    if (!this.runtimePromise) {
+      this.runtimePromise = loadNodeModules().then((modules) => {
+        if (typeof process === "undefined" || typeof process.cwd !== "function") {
+          throw new Error("NodeFilesystemBackend requires a Node.js runtime.");
+        }
+
+        if (this.cwd === null) {
+          this.cwd = this.rootDir ? modules.path.resolve(this.rootDir) : process.cwd();
+        }
+
+        const resolvedCwd = this.cwd ?? process.cwd();
+
+        return {
+          ...modules,
+          cwd: resolvedCwd,
+          supportsNoFollow: modules.fsSync.constants?.O_NOFOLLOW !== undefined,
+        };
+      });
+    }
+
+    return this.runtimePromise;
+  }
+
+  private resolvePath(key: string, runtime: NodeRuntimeState): string {
+    const { path, cwd } = runtime;
     if (this.virtualMode) {
       const vpath = key.startsWith("/") ? key : `/${key}`;
       if (vpath.includes("..") || vpath.startsWith("~")) {
         throw new Error("Path traversal not allowed");
       }
-      const full = path.resolve(this.cwd, vpath.substring(1));
-      const relative = path.relative(this.cwd, full);
+      const full = path.resolve(cwd, vpath.substring(1));
+      const relative = path.relative(cwd, full);
       if (relative.startsWith("..") || path.isAbsolute(relative)) {
-        throw new Error(`Path: ${full} outside root directory: ${this.cwd}`);
+        throw new Error(`Path: ${full} outside root directory: ${cwd}`);
       }
       return full;
     }
@@ -55,12 +131,14 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     if (path.isAbsolute(key)) {
       return key;
     }
-    return path.resolve(this.cwd, key);
+    return path.resolve(cwd, key);
   }
 
   async lsInfo(dirPath: string): Promise<FileInfo[]> {
     try {
-      const resolvedPath = this.resolvePath(dirPath);
+      const runtime = await this.getRuntime();
+      const { fs, path, cwd } = runtime;
+      const resolvedPath = this.resolvePath(dirPath, runtime);
       const stat = await fs.stat(resolvedPath);
 
       if (!stat.isDirectory()) {
@@ -70,7 +148,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
       const entries = await fs.readdir(resolvedPath, { withFileTypes: true });
       const results: FileInfo[] = [];
 
-      const cwdStr = this.cwd.endsWith(path.sep) ? this.cwd : this.cwd + path.sep;
+      const cwdStr = cwd.endsWith(path.sep) ? cwd : cwd + path.sep;
 
       for (const entry of entries) {
         const fullPath = path.join(resolvedPath, entry.name);
@@ -100,8 +178,8 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
             let relativePath: string;
             if (fullPath.startsWith(cwdStr)) {
               relativePath = fullPath.substring(cwdStr.length);
-            } else if (fullPath.startsWith(this.cwd)) {
-              relativePath = fullPath.substring(this.cwd.length).replace(/^[/\\]/, "");
+            } else if (fullPath.startsWith(cwd)) {
+              relativePath = fullPath.substring(cwd.length).replace(/^[/\\]/, "");
             } else {
               relativePath = fullPath;
             }
@@ -139,11 +217,13 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
 
   async read(filePath: string, offset = 0, limit = 2000): Promise<string> {
     try {
-      const resolvedPath = this.resolvePath(filePath);
+      const runtime = await this.getRuntime();
+      const { fs, fsSync } = runtime;
+      const resolvedPath = this.resolvePath(filePath, runtime);
 
       let content: string;
 
-      if (SUPPORTS_NOFOLLOW) {
+      if (runtime.supportsNoFollow) {
         const stat = await fs.stat(resolvedPath);
         if (!stat.isFile()) {
           return `Error: File '${filePath}' not found`;
@@ -189,12 +269,14 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
   }
 
   async readRaw(filePath: string): Promise<FileData> {
-    const resolvedPath = this.resolvePath(filePath);
+    const runtime = await this.getRuntime();
+    const { fs, fsSync } = runtime;
+    const resolvedPath = this.resolvePath(filePath, runtime);
 
     let content: string;
-    let stat: fsSync.Stats;
+    let stat: import("node:fs").Stats;
 
-    if (SUPPORTS_NOFOLLOW) {
+    if (runtime.supportsNoFollow) {
       stat = await fs.stat(resolvedPath);
       if (!stat.isFile()) throw new Error(`File '${filePath}' not found`);
       const fd = await fs.open(
@@ -224,7 +306,9 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
 
   async write(filePath: string, content: string): Promise<WriteResult> {
     try {
-      const resolvedPath = this.resolvePath(filePath);
+      const runtime = await this.getRuntime();
+      const { fs, fsSync, path } = runtime;
+      const resolvedPath = this.resolvePath(filePath, runtime);
 
       try {
         const stat = await fs.lstat(resolvedPath);
@@ -242,7 +326,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
 
       await fs.mkdir(path.dirname(resolvedPath), { recursive: true });
 
-      if (SUPPORTS_NOFOLLOW) {
+      if (runtime.supportsNoFollow) {
         const flags =
           fsSync.constants.O_WRONLY |
           fsSync.constants.O_CREAT |
@@ -272,11 +356,13 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     replaceAll = false,
   ): Promise<EditResult> {
     try {
-      const resolvedPath = this.resolvePath(filePath);
+      const runtime = await this.getRuntime();
+      const { fs, fsSync } = runtime;
+      const resolvedPath = this.resolvePath(filePath, runtime);
 
       let content: string;
 
-      if (SUPPORTS_NOFOLLOW) {
+      if (runtime.supportsNoFollow) {
         const stat = await fs.stat(resolvedPath);
         if (!stat.isFile()) {
           return { error: `Error: File '${filePath}' not found` };
@@ -310,7 +396,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
 
       const [newContent, occurrences] = result;
 
-      if (SUPPORTS_NOFOLLOW) {
+      if (runtime.supportsNoFollow) {
         const flags =
           fsSync.constants.O_WRONLY | fsSync.constants.O_TRUNC | fsSync.constants.O_NOFOLLOW;
 
@@ -343,13 +429,15 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
 
     let baseFull: string;
     try {
-      baseFull = this.resolvePath(dirPath || ".");
+      const runtime = await this.getRuntime();
+      baseFull = this.resolvePath(dirPath || ".", runtime);
     } catch {
       return [];
     }
 
     try {
-      await fs.stat(baseFull);
+      const runtime = await this.getRuntime();
+      await runtime.fs.stat(baseFull);
     } catch {
       return [];
     }
@@ -373,6 +461,8 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     baseFull: string,
     includeGlob: string | null,
   ): Promise<Record<string, Array<[number, string]>> | null> {
+    const runtime = await this.getRuntime();
+    const { spawn, path, cwd } = runtime;
     return new Promise((resolve) => {
       const args = ["--json"];
       if (includeGlob) {
@@ -408,7 +498,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
             if (this.virtualMode) {
               try {
                 const resolved = path.resolve(ftext);
-                const relative = path.relative(this.cwd, resolved);
+                const relative = path.relative(cwd, resolved);
                 if (relative.startsWith("..")) continue;
                 const normalizedRelative = relative.split(path.sep).join("/");
                 virtPath = `/${normalizedRelative}`;
@@ -457,6 +547,8 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
       return {};
     }
 
+    const runtime = await this.getRuntime();
+    const { fs, path, fg, micromatch, cwd } = runtime;
     const results: Record<string, Array<[number, string]>> = {};
     const stat = await fs.stat(baseFull);
     const root = stat.isDirectory() ? baseFull : path.dirname(baseFull);
@@ -488,7 +580,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
             let virtPath: string | undefined;
             if (this.virtualMode) {
               try {
-                const relative = path.relative(this.cwd, fp);
+                const relative = path.relative(cwd, fp);
                 if (relative.startsWith("..")) continue;
                 const normalizedRelative = relative.split(path.sep).join("/");
                 virtPath = `/${normalizedRelative}`;
@@ -523,7 +615,9 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
       effectivePattern = effectivePattern.substring(1);
     }
 
-    const resolvedSearchPath = searchPath === "/" ? this.cwd : this.resolvePath(searchPath);
+    const runtime = await this.getRuntime();
+    const { fs, path, fg, cwd } = runtime;
+    const resolvedSearchPath = searchPath === "/" ? cwd : this.resolvePath(searchPath, runtime);
 
     try {
       const stat = await fs.stat(resolvedSearchPath);
@@ -559,13 +653,13 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
               modified_at: stat.mtime.toISOString(),
             });
           } else {
-            const cwdStr = this.cwd.endsWith(path.sep) ? this.cwd : this.cwd + path.sep;
+            const cwdStr = cwd.endsWith(path.sep) ? cwd : cwd + path.sep;
             let relativePath: string;
 
             if (normalizedPath.startsWith(cwdStr)) {
               relativePath = normalizedPath.substring(cwdStr.length);
-            } else if (normalizedPath.startsWith(this.cwd)) {
-              relativePath = normalizedPath.substring(this.cwd.length).replace(/^[/\\]/, "");
+            } else if (normalizedPath.startsWith(cwd)) {
+              relativePath = normalizedPath.substring(cwd.length).replace(/^[/\\]/, "");
             } else {
               relativePath = normalizedPath;
             }

@@ -12,6 +12,8 @@ import {
   handleGetAgentHistory,
   handleGetAgents,
   handleGetLogs,
+  handleGetVoiceListener,
+  handleGetVoiceVoices,
   handleGetWorkflow,
   handleGetWorkflowState,
   handleGetWorkflows,
@@ -22,6 +24,8 @@ import {
   handleStreamText,
   handleStreamWorkflow,
   handleSuspendWorkflow,
+  handleVoiceListen,
+  handleVoiceSpeak,
   isErrorResponse,
   mapLogResponse,
 } from "@voltagent/server-core";
@@ -39,6 +43,10 @@ import {
   streamWorkflowRoute,
   suspendWorkflowRoute,
   textRoute,
+  voiceListenRoute,
+  voiceListenerRoute,
+  voiceSpeakRoute,
+  voiceVoicesRoute,
 } from "./agent.routes";
 import { getLogsRoute } from "./log.routes";
 import { registerTriggerRoutes } from "./trigger.routes";
@@ -46,6 +54,30 @@ export { registerMcpRoutes } from "./mcp.routes";
 export { registerA2ARoutes } from "./a2a.routes";
 export { registerToolRoutes } from "./tool.routes";
 export { registerTriggerRoutes } from "./trigger.routes";
+
+const inferAudioFormat = (file: File): string | undefined => {
+  const type = file.type?.toLowerCase();
+  if (!type) return undefined;
+  if (type.includes("audio/webm")) return "webm";
+  if (type.includes("audio/wav") || type.includes("audio/x-wav")) return "wav";
+  if (type.includes("audio/mp4")) return "mp4";
+  if (type.includes("audio/m4a") || type.includes("audio/x-m4a")) return "m4a";
+  if (type.includes("audio/mpga")) return "mpga";
+  if (type.includes("audio/mpeg") || type.includes("audio/mp3")) return "mp3";
+  return undefined;
+};
+
+const applyInferredAudioFormat = (
+  options: Record<string, unknown> | undefined,
+  file: File,
+): Record<string, unknown> | undefined => {
+  const inferredFormat = inferAudioFormat(file);
+  if (!inferredFormat) return options;
+  if (options && typeof options === "object" && "format" in options) {
+    return options;
+  }
+  return { ...(options ?? {}), format: inferredFormat };
+};
 
 /**
  * Register agent routes
@@ -150,6 +182,83 @@ export function registerAgentRoutes(
 
     // Handler now always returns a Response object
     return response;
+  });
+
+  // GET /agents/:id/voice/voices - List available voices
+  app.openapi(voiceVoicesRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
+    const response = await handleGetVoiceVoices(agentId, deps, logger);
+    if (!response.success) {
+      const status = response.error?.includes("not found") ? 404 : 500;
+      return c.json(response, status);
+    }
+    return c.json(response, 200);
+  });
+
+  // GET /agents/:id/voice/listener - Listener status
+  app.openapi(voiceListenerRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
+    const response = await handleGetVoiceListener(agentId, deps, logger);
+    if (!response.success) {
+      const status = response.error?.includes("not found") ? 404 : 500;
+      return c.json(response, status);
+    }
+    return c.json(response, 200);
+  });
+
+  // POST /agents/:id/voice/speak - Text to speech
+  app.openapi(voiceSpeakRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
+    const body = await c.req.json();
+    const response = await handleVoiceSpeak(agentId, body, deps, logger);
+    return response;
+  });
+
+  // POST /agents/:id/voice/listen - Speech to text
+  app.openapi(voiceListenRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      throw new Error("Missing agent id parameter");
+    }
+
+    const formData = await c.req.formData();
+    const audio = formData.get("audio");
+    if (!audio || typeof (audio as File).arrayBuffer !== "function") {
+      return c.json({ success: false, error: "Audio payload is required" }, 400);
+    }
+
+    const optionsValue = formData.get("options");
+    let options: Record<string, unknown> | undefined;
+    if (typeof optionsValue === "string") {
+      try {
+        options = JSON.parse(optionsValue) as Record<string, unknown>;
+      } catch {
+        return c.json({ success: false, error: "Invalid options JSON" }, 400);
+      }
+    }
+
+    options = applyInferredAudioFormat(options, audio as File);
+
+    const audioBuffer = await (audio as File).arrayBuffer();
+    const response = await handleVoiceListen(agentId, audioBuffer, options, deps, logger);
+    if (!response.success) {
+      const status = response.error?.includes("not found")
+        ? 404
+        : response.error?.includes("Voice is not configured")
+          ? 400
+          : 500;
+      return c.json(response, status);
+    }
+    return c.json(response, 200);
   });
 
   // GET /agents/:id/history - Get agent history with pagination

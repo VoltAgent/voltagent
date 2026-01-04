@@ -231,6 +231,102 @@ export const AGENT_ROUTES = {
       },
     },
   },
+  getVoiceVoices: {
+    method: "get" as const,
+    path: "/agents/:id/voice/voices",
+    summary: "List available voices",
+    description: "Retrieve the list of voices supported by the agent's voice provider.",
+    tags: ["Agent Voice"],
+    operationId: "listAgentVoices",
+    responses: {
+      200: {
+        description: "Successfully retrieved available voices",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve voices due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  speakVoice: {
+    method: "post" as const,
+    path: "/agents/:id/voice/speak",
+    summary: "Generate speech audio",
+    description: "Convert text to speech using the agent's voice provider.",
+    tags: ["Agent Voice"],
+    operationId: "speakVoice",
+    responses: {
+      200: {
+        description: "Successfully generated speech audio stream",
+        contentType: "application/octet-stream",
+      },
+      400: {
+        description: "Invalid request parameters or voice configuration",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to generate speech due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  listenVoice: {
+    method: "post" as const,
+    path: "/agents/:id/voice/listen",
+    summary: "Transcribe audio",
+    description: "Transcribe speech audio to text using the agent's voice provider.",
+    tags: ["Agent Voice"],
+    operationId: "listenVoice",
+    responses: {
+      200: {
+        description: "Successfully transcribed audio",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid audio payload or options",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to transcribe audio due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getVoiceListener: {
+    method: "get" as const,
+    path: "/agents/:id/voice/listener",
+    summary: "Get listener status",
+    description: "Check whether the agent's voice provider supports listening.",
+    tags: ["Agent Voice"],
+    operationId: "getVoiceListener",
+    responses: {
+      200: {
+        description: "Successfully retrieved listener status",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve listener status due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
 } as const;
 
 /**

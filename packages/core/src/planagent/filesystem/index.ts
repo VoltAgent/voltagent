@@ -6,6 +6,7 @@ import { createTool } from "../../tool";
 import { createToolkit } from "../../tool/toolkit";
 import type { Toolkit } from "../../tool/toolkit";
 import { randomUUID } from "../../utils/id";
+import { isNodeRuntime } from "../../utils/runtime";
 import { loadPlanAgentState, updatePlanAgentState } from "../state";
 import type { PlanAgentFileData } from "../types";
 import type {
@@ -19,11 +20,10 @@ import type {
   WriteResult,
 } from "./backends/backend";
 import { CompositeFilesystemBackend } from "./backends/composite";
-import { NodeFilesystemBackend } from "./backends/filesystem";
 import { InMemoryFilesystemBackend } from "./backends/in-memory";
 import { formatGrepMatches, sanitizeToolCallId, truncateIfTooLong } from "./utils";
 
-export { InMemoryFilesystemBackend, CompositeFilesystemBackend, NodeFilesystemBackend };
+export { InMemoryFilesystemBackend, CompositeFilesystemBackend };
 export type {
   FileData,
   FileInfo,
@@ -63,6 +63,94 @@ export type FilesystemToolkitOptions = {
 };
 
 type FilesUpdate = Record<string, PlanAgentFileData | null>;
+
+type NodeFilesystemBackendCtor = typeof import("./backends/filesystem").NodeFilesystemBackend;
+type NodeFilesystemBackendInstance = InstanceType<NodeFilesystemBackendCtor>;
+type NodeFilesystemBackendOptions = ConstructorParameters<NodeFilesystemBackendCtor>[0];
+
+let nodeFilesystemBackendPromise: Promise<NodeFilesystemBackendCtor> | null = null;
+
+const loadNodeFilesystemBackend = async (): Promise<NodeFilesystemBackendCtor> => {
+  if (!isNodeRuntime()) {
+    throw new Error("NodeFilesystemBackend is only available in Node.js runtimes.");
+  }
+
+  if (!nodeFilesystemBackendPromise) {
+    nodeFilesystemBackendPromise = import("./backends/filesystem")
+      .then((mod) => mod.NodeFilesystemBackend)
+      .catch((error) => {
+        throw new Error(
+          "Failed to load NodeFilesystemBackend. Ensure Node-only dependencies are available.",
+          { cause: error },
+        );
+      });
+  }
+
+  return nodeFilesystemBackendPromise;
+};
+
+export class NodeFilesystemBackend implements FilesystemBackend {
+  private backendPromise: Promise<NodeFilesystemBackendInstance> | null = null;
+  private options?: NodeFilesystemBackendOptions;
+
+  constructor(options?: NodeFilesystemBackendOptions) {
+    // Lazily load the Node-only backend so edge/serverless bundles avoid Node imports.
+    this.options = options;
+  }
+
+  private async getBackend(): Promise<NodeFilesystemBackendInstance> {
+    if (!this.backendPromise) {
+      this.backendPromise = loadNodeFilesystemBackend().then(
+        (Backend) => new Backend(this.options),
+      );
+    }
+    return this.backendPromise;
+  }
+
+  async lsInfo(path: string): Promise<FileInfo[]> {
+    const backend = await this.getBackend();
+    return backend.lsInfo(path);
+  }
+
+  async read(filePath: string, offset?: number, limit?: number): Promise<string> {
+    const backend = await this.getBackend();
+    return backend.read(filePath, offset, limit);
+  }
+
+  async readRaw(filePath: string): Promise<FileData> {
+    const backend = await this.getBackend();
+    return backend.readRaw(filePath);
+  }
+
+  async grepRaw(
+    pattern: string,
+    path?: string | null,
+    glob?: string | null,
+  ): Promise<GrepMatch[] | string> {
+    const backend = await this.getBackend();
+    return backend.grepRaw(pattern, path ?? undefined, glob);
+  }
+
+  async globInfo(pattern: string, path?: string): Promise<FileInfo[]> {
+    const backend = await this.getBackend();
+    return backend.globInfo(pattern, path);
+  }
+
+  async write(filePath: string, content: string): Promise<WriteResult> {
+    const backend = await this.getBackend();
+    return backend.write(filePath, content);
+  }
+
+  async edit(
+    filePath: string,
+    oldString: string,
+    newString: string,
+    replaceAll?: boolean,
+  ): Promise<EditResult> {
+    const backend = await this.getBackend();
+    return backend.edit(filePath, oldString, newString, replaceAll);
+  }
+}
 
 function resolveBackend(
   backend: FilesystemBackend | FilesystemBackendFactory,

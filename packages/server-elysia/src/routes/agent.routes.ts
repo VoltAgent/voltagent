@@ -7,8 +7,12 @@ import {
   handleGetAgent,
   handleGetAgentHistory,
   handleGetAgents,
+  handleGetVoiceListener,
+  handleGetVoiceVoices,
   handleStreamObject,
   handleStreamText,
+  handleVoiceListen,
+  handleVoiceSpeak,
   mapLogResponse,
 } from "@voltagent/server-core";
 import type { Elysia } from "elysia";
@@ -22,6 +26,11 @@ import {
   ObjectResponseSchema,
   TextRequestSchema,
   TextResponseSchema,
+  VoiceListenRequestSchema,
+  VoiceListenResponseSchema,
+  VoiceListenerResponseSchema,
+  VoiceSpeakRequestSchema,
+  VoiceVoicesResponseSchema,
 } from "../schemas";
 
 // Agent ID parameter
@@ -34,6 +43,30 @@ const HistoryQuery = t.Object({
   page: t.Optional(t.String()),
   limit: t.Optional(t.String()),
 });
+
+const inferAudioFormat = (file: File): string | undefined => {
+  const type = file.type?.toLowerCase();
+  if (!type) return undefined;
+  if (type.includes("audio/webm")) return "webm";
+  if (type.includes("audio/wav") || type.includes("audio/x-wav")) return "wav";
+  if (type.includes("audio/mp4")) return "mp4";
+  if (type.includes("audio/m4a") || type.includes("audio/x-m4a")) return "m4a";
+  if (type.includes("audio/mpga")) return "mpga";
+  if (type.includes("audio/mpeg") || type.includes("audio/mp3")) return "mp3";
+  return undefined;
+};
+
+const applyInferredAudioFormat = (
+  options: Record<string, unknown> | undefined,
+  file: File,
+): Record<string, unknown> | undefined => {
+  const inferredFormat = inferAudioFormat(file);
+  if (!inferredFormat) return options;
+  if (options && typeof options === "object" && "format" in options) {
+    return options;
+  }
+  return { ...(options ?? {}), format: inferredFormat };
+};
 
 /**
  * Register agent routes with full type validation and OpenAPI documentation
@@ -199,6 +232,137 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
         summary: "Stream object",
         description: "Stream object generation using the specified agent",
         tags: ["Agents"],
+      },
+    },
+  );
+
+  // GET /agents/:id/voice/voices - List available voices
+  app.get(
+    "/agents/:id/voice/voices",
+    async ({ params, set }) => {
+      const response = await handleGetVoiceVoices(params.id, deps, logger);
+      if (!response.success) {
+        set.status = response.error?.includes("not found") ? 404 : 500;
+        return response;
+      }
+      return response;
+    },
+    {
+      params: AgentIdParam,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+          data: VoiceVoicesResponseSchema,
+        }),
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "List available voices",
+        description: "Retrieve the list of voices supported by the agent's voice provider",
+        tags: ["Agents", "Voice"],
+      },
+    },
+  );
+
+  // GET /agents/:id/voice/listener - Listener status
+  app.get(
+    "/agents/:id/voice/listener",
+    async ({ params, set }) => {
+      const response = await handleGetVoiceListener(params.id, deps, logger);
+      if (!response.success) {
+        set.status = response.error?.includes("not found") ? 404 : 500;
+        return response;
+      }
+      return response;
+    },
+    {
+      params: AgentIdParam,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+          data: VoiceListenerResponseSchema,
+        }),
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "Get voice listener status",
+        description: "Check whether the agent's voice provider supports listening",
+        tags: ["Agents", "Voice"],
+      },
+    },
+  );
+
+  // POST /agents/:id/voice/speak - Text to speech
+  app.post(
+    "/agents/:id/voice/speak",
+    async ({ params, body }) => {
+      const response = await handleVoiceSpeak(params.id, body as any, deps, logger);
+      return response;
+    },
+    {
+      params: AgentIdParam,
+      body: VoiceSpeakRequestSchema,
+      detail: {
+        summary: "Generate speech audio",
+        description: "Convert text to speech using the agent's voice provider",
+        tags: ["Agents", "Voice"],
+      },
+    },
+  );
+
+  // POST /agents/:id/voice/listen - Speech to text
+  app.post(
+    "/agents/:id/voice/listen",
+    async ({ params, request, set }) => {
+      const formData = await request.formData();
+      const audio = formData.get("audio");
+      if (!audio || typeof (audio as File).arrayBuffer !== "function") {
+        set.status = 400;
+        return { success: false, error: "Audio payload is required" };
+      }
+
+      const optionsValue = formData.get("options");
+      let options: Record<string, unknown> | undefined;
+      if (typeof optionsValue === "string") {
+        try {
+          options = JSON.parse(optionsValue) as Record<string, unknown>;
+        } catch {
+          set.status = 400;
+          return { success: false, error: "Invalid options JSON" };
+        }
+      }
+
+      options = applyInferredAudioFormat(options, audio as File);
+
+      const audioBuffer = await (audio as File).arrayBuffer();
+      const response = await handleVoiceListen(params.id, audioBuffer, options, deps, logger);
+      if (!response.success) {
+        set.status = response.error?.includes("not found")
+          ? 404
+          : response.error?.includes("Voice is not configured")
+            ? 400
+            : 500;
+      }
+      return response;
+    },
+    {
+      params: AgentIdParam,
+      body: VoiceListenRequestSchema,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+          data: VoiceListenResponseSchema,
+        }),
+        400: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "Transcribe audio",
+        description: "Transcribe speech audio to text using the agent's voice provider",
+        tags: ["Agents", "Voice"],
       },
     },
   );
