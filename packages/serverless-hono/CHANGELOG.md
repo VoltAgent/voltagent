@@ -1,5 +1,11 @@
 # @voltagent/serverless-hono
 
+## 2.0.3
+
+### Patch Changes
+
+- [`c9bd810`](https://github.com/VoltAgent/voltagent/commit/c9bd810ac71972eb7e9e6e01c9ca15b6e9cfc9f0) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: allow Console dev headers in CORS and add a /ws probe response for serverless runtimes without WebSocket support
+
 ## 2.0.2
 
 ### Patch Changes
