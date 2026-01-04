@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.0.3
+
+### Patch Changes
+
+- [#909](https://github.com/VoltAgent/voltagent/pull/909) [`b4301c7`](https://github.com/VoltAgent/voltagent/commit/b4301c73656ea96ea276cb37b4bf72af7fd8c926) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: avoid TS4053 declaration emit errors when exporting `generateText` wrappers by decoupling ai-sdk `Output` types from public results
+
 ## 2.0.2
 
 ### Patch Changes
