@@ -4,7 +4,7 @@
     "@ai-sdk/openai": "^3.0.0",
     "@nuxt/eslint": "^1.9.0",
     "@nuxt/ui": "^4.0.0",
-    "@voltagent/core": "^2.0.3",
+    "@voltagent/core": "^2.0.4",
     "@voltagent/libsql": "^2.0.2",
     "@voltagent/server-hono": "^2.0.2",
     "ai": "^6.0.0",
