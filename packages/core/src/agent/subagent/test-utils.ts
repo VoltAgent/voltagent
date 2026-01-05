@@ -5,7 +5,15 @@
 
 import type { ModelMessage } from "@ai-sdk/provider-utils";
 import { type Logger, safeStringify } from "@voltagent/internal";
-import type { FinishReason, LanguageModel, LanguageModelUsage, UIMessage } from "ai";
+import type {
+  FinishReason,
+  InferGenerateOutput,
+  LanguageModel,
+  LanguageModelUsage,
+  Output,
+  ToolSet,
+  UIMessage,
+} from "ai";
 import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 import { vi } from "vitest";
 import { z } from "zod";
@@ -257,11 +265,12 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
 
   // Stub generateText method with proper signature
   vi.spyOn(agent, "generateText").mockImplementation(
-    async (
+    async <OUTPUT extends Output.Output<unknown, unknown> = Output.Output<unknown, unknown>>(
       _input: string | ModelMessage[] | UIMessage[],
-      _options?: GenerateTextOptions,
-    ): Promise<GenerateTextResultWithContext> => {
+      _options?: GenerateTextOptions<OUTPUT>,
+    ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> => {
       // Use a minimal mock that satisfies the interface
+      const outputValue = undefined as unknown as InferGenerateOutput<OUTPUT>;
       const result = {
         text: `Response from ${agent.name}`,
         content: [],
@@ -281,8 +290,8 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         finishReason: "stop" as const,
         rawFinishReason: undefined,
         steps: [],
-        experimental_output: undefined,
-        output: undefined,
+        experimental_output: outputValue,
+        output: outputValue,
         response: {
           id: "mock-response-id",
           modelId: "mock-model",
@@ -300,7 +309,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         toDataStream: vi.fn(),
         toDataStreamResponse: vi.fn(),
         pipeDataStreamToResponse: vi.fn(),
-      } as GenerateTextResultWithContext;
+      } as GenerateTextResultWithContext<ToolSet, OUTPUT>;
 
       return result;
     },

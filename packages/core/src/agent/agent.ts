@@ -24,6 +24,7 @@ import type {
 import {
   type AsyncIterableStream,
   type FinishReason,
+  type InferGenerateOutput,
   type LanguageModelUsage,
   type Output,
   type Warning,
@@ -137,7 +138,8 @@ const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
 // Types
 // ============================================================================
 
-type OutputSpec = Output.Output;
+type OutputSpec = Output.Output<unknown, unknown>;
+type OutputValue<OUTPUT extends OutputSpec> = InferGenerateOutput<OUTPUT>;
 
 /**
  * Context input type that accepts both Map and plain object
@@ -214,13 +216,13 @@ type BaseGenerateTextResult<TOOLS extends ToolSet = Record<string, any>> = Omit<
 
 export interface GenerateTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
-  OUTPUT = unknown,
+  OUTPUT extends OutputSpec = OutputSpec,
 > extends BaseGenerateTextResult<TOOLS> {
   // Additional context field
   context: Map<string | symbol, unknown>;
   // Typed structured output override if provided by callers
-  experimental_output: OUTPUT;
-  output: OUTPUT;
+  experimental_output: OutputValue<OUTPUT>;
+  output: OutputValue<OUTPUT>;
 }
 
 type LLMOperation = "streamText" | "generateText" | "streamObject" | "generateObject";
@@ -368,7 +370,12 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   toolChoice?: ToolChoice<Record<string, unknown>>;
 }
 
-export type GenerateTextOptions = BaseGenerationOptions;
+export type GenerateTextOptions<OUTPUT extends OutputSpec = OutputSpec> = Omit<
+  BaseGenerationOptions,
+  "output"
+> & {
+  output?: OUTPUT;
+};
 export type StreamTextOptions = BaseGenerationOptions & {
   onFinish?: (result: any) => void | Promise<void>;
 };
@@ -496,10 +503,10 @@ export class Agent {
   /**
    * Generate text response
    */
-  async generateText(
+  async generateText<OUTPUT extends OutputSpec = OutputSpec>(
     input: string | UIMessage[] | BaseMessage[],
-    options?: GenerateTextOptions,
-  ): Promise<GenerateTextResultWithContext> {
+    options?: GenerateTextOptions<OUTPUT>,
+  ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -625,7 +632,7 @@ export class Agent {
         });
         const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
-        let result!: GenerateTextResult<ToolSet, OutputSpec>;
+        let result!: GenerateTextResult<ToolSet, OUTPUT>;
         try {
           result = await oc.traceContext.withSpan(llmSpan, () =>
             generateText({
