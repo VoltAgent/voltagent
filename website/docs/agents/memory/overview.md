@@ -14,6 +14,7 @@ VoltAgent's `Memory` class stores conversation history and optional semantic sea
 | **InMemory**       | `@voltagent/core`             | None (RAM only)        | Development, testing             |
 | **Managed Memory** | `@voltagent/voltagent-memory` | VoltOps-hosted         | Production-ready, zero-setup     |
 | **LibSQL**         | `@voltagent/libsql`           | Local SQLite or remote | Self-hosted, edge deployments    |
+| **Cloudflare D1**  | `@voltagent/cloudflare-d1`    | Cloudflare D1 (SQLite) | Cloudflare Workers deployments   |
 | **Postgres**       | `@voltagent/postgres`         | Self-hosted Postgres   | Existing Postgres infrastructure |
 | **Supabase**       | `@voltagent/supabase`         | Supabase               | Supabase-based applications      |
 

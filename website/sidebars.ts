@@ -156,6 +156,7 @@ const sidebars: SidebarsConfig = {
               },
             },
             "agents/memory/libsql",
+            "agents/memory/cloudflare-d1",
             "agents/memory/postgres",
             "agents/memory/supabase",
           ],
