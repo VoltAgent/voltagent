@@ -940,7 +940,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20250119.0
+        specifier: ^4.20250408.0
         version: 4.20250813.0
       '@types/node':
         specifier: ^24.2.1
@@ -3399,6 +3399,28 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
 
+  packages/cloudflare-d1:
+    dependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250408.0
+        version: 4.20250813.0
+      '@voltagent/internal':
+        specifier: ^1.0.2
+        version: link:../internal
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+      '@voltagent/core':
+        specifier: ^2.0.3
+        version: link:../core
+      '@voltagent/logger':
+        specifier: ^2.0.2
+        version: link:../logger
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@4.2.1)
+
   packages/core:
     dependencies:
       '@modelcontextprotocol/sdk':
@@ -4456,7 +4478,7 @@ packages:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
     dev: false
@@ -4479,7 +4501,7 @@ packages:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
 
@@ -4490,7 +4512,7 @@ packages:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
 
@@ -4501,7 +4523,7 @@ packages:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 4.1.13
     dev: false
@@ -5773,7 +5795,7 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
     dependencies:
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   /@babel/parser@7.28.5:
     resolution: {integrity: sha512-KKBU1VGYR7ORr3At5HAtUQ+TV3SzRCXmA/8OdDZiLDBIZxVyzXuztPjfLd3BV1PRAQGCMWWSHYhL0F8d5uHBDQ==}
@@ -7038,9 +7060,9 @@ packages:
       '@babel/code-frame': 7.27.1
       '@babel/generator': 7.28.3
       '@babel/helper-globals': 7.28.0
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       '@babel/template': 7.27.2
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
@@ -19841,7 +19863,7 @@ packages:
   /@vue/compiler-core@3.5.22:
     resolution: {integrity: sha512-jQ0pFPmZwTEiRNSb+i9Ow/I/cHv2tXYqsnHKKyCQ08irI2kdF5qmYedmF8si8mA7zepUFmJ2hqzS8CQmNOWOkQ==}
     dependencies:
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       '@vue/shared': 3.5.22
       entities: 4.5.0
       estree-walker: 2.0.2
@@ -20921,14 +20943,14 @@ packages:
     resolution: {integrity: sha512-cl76xfBQM6pztbrFWRnxbrDm9EOqDr1BF6+qQnnDZG2Co2LjyUktkN9GTJfBAfdae+DbT2nJf2nCGAdDDN7W2g==}
     engines: {node: '>=20.18.0'}
     dependencies:
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       pathe: 2.0.3
 
   /ast-kit@2.1.3:
     resolution: {integrity: sha512-TH+b3Lv6pUjy/Nu0m6A2JULtdzLpmqF9x1Dhj00ZoEiML8qvVA9j1flkzTKNYgdEhWrjDwtWNpyyCUbfQe514g==}
     engines: {node: '>=20.19.0'}
     dependencies:
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       pathe: 2.0.3
     dev: false
 
@@ -20956,7 +20978,7 @@ packages:
     resolution: {integrity: sha512-cbdCP0PGOBq0ASG+sjnKIoYkWMKhhz+F/h9pRexUdX2Hd38+WOlBkRKlqkGOSm0YQpcFMQBJeK4WspUAkwsEdg==}
     engines: {node: '>=20.19.0'}
     dependencies:
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       ast-kit: 2.1.3
     dev: false
 
@@ -29523,8 +29545,8 @@ packages:
   /magicast@0.3.5:
     resolution: {integrity: sha512-L0WhttDl+2BOsybvEOLK7fW3UA0OQ0IQ2d6Zl2x/a6vVRs3bAY0ECOSHHeL5jD+SbOpOCUEi0y1DgHEn9Qn1AQ==}
     dependencies:
-      '@babel/parser': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/parser': 7.28.5
+      '@babel/types': 7.28.5
       source-map-js: 1.2.1
 
   /make-dir@2.1.0:
