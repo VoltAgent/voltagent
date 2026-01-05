@@ -680,13 +680,15 @@ export class D1MemoryAdapter implements StorageAdapter {
           })()
         : {};
 
+      const createdAt = row.created_at ? new Date(row.created_at as string) : new Date();
+
       return {
         id: row.message_id as string,
         role: row.role as UIMessage["role"],
         parts,
         metadata: {
           ...metadata,
-          createdAt: row.created_at ? new Date(row.created_at as string) : undefined,
+          createdAt,
         },
       };
     });
@@ -914,8 +916,19 @@ export class D1MemoryAdapter implements StorageAdapter {
       args.push(options.resourceId);
     }
 
-    const orderBy = options.orderBy || "updated_at";
-    const orderDirection = options.orderDirection || "DESC";
+    const orderByCandidate = options.orderBy;
+    const orderDirectionCandidate = options.orderDirection;
+    const allowedOrderBy = new Set<ConversationQueryOptions["orderBy"]>([
+      "created_at",
+      "updated_at",
+      "title",
+    ]);
+    const orderBy =
+      orderByCandidate && allowedOrderBy.has(orderByCandidate) ? orderByCandidate : "updated_at";
+    const orderDirection =
+      orderDirectionCandidate === "ASC" || orderDirectionCandidate === "DESC"
+        ? orderDirectionCandidate
+        : "DESC";
     sql += ` ORDER BY ${orderBy} ${orderDirection}`;
 
     if (options.limit) {
