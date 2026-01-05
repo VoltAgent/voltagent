@@ -1,5 +1,13 @@
 # @voltagent/core
 
+## 2.0.5
+
+### Patch Changes
+
+- [#916](https://github.com/VoltAgent/voltagent/pull/916) [`0707471`](https://github.com/VoltAgent/voltagent/commit/070747195992828845d7c4c4ff9711f3638c32f8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: infer structured output types for `generateText`
+
+  `generateText` now propagates the provided `Output.*` spec into the return type, so `result.output` is no longer `unknown` when using `Output.object`, `Output.array`, etc.
+
 ## 2.0.4
 
 ### Patch Changes

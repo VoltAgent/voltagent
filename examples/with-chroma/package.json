@@ -7,7 +7,7 @@
     "@chroma-core/ollama": "^0.1.7",
     "@chroma-core/openai": "^0.1.7",
     "@voltagent/cli": "^0.1.20",
-    "@voltagent/core": "^2.0.4",
+    "@voltagent/core": "^2.0.5",
     "@voltagent/libsql": "^2.0.2",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/server-hono": "^2.0.2",
