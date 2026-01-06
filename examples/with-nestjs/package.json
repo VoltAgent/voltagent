@@ -7,7 +7,7 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
-    "@voltagent/core": "^2.0.5",
+    "@voltagent/core": "^2.0.6",
     "@voltagent/server-core": "^2.1.1",
     "@voltagent/server-hono": "^2.0.2",
     "hono": "^4.7.7",

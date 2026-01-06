@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.0.6
+
+### Patch Changes
+
+- [`ad5ebe7`](https://github.com/VoltAgent/voltagent/commit/ad5ebe7f02a059b647d4862faeab537b293ab387) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: OutputSpec export
+
 ## 2.0.5
 
 ### Patch Changes
