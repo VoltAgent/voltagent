@@ -2,7 +2,6 @@ import { spawn } from "node:child_process";
 import * as fsSync from "node:fs";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import fg from "fast-glob";
 import micromatch from "micromatch";
 import {
   checkEmptyContent,
@@ -19,6 +18,19 @@ import type {
 } from "./backend";
 
 const SUPPORTS_NOFOLLOW = fsSync.constants.O_NOFOLLOW !== undefined;
+type FastGlobFn = typeof import("fast-glob");
+let fastGlobPromise: Promise<FastGlobFn> | undefined;
+
+async function loadFastGlob(): Promise<FastGlobFn> {
+  if (!fastGlobPromise) {
+    fastGlobPromise = import("fast-glob").then((mod) => {
+      const resolved =
+        (mod as unknown as { default?: FastGlobFn }).default ?? (mod as unknown as FastGlobFn);
+      return resolved;
+    });
+  }
+  return fastGlobPromise;
+}
 
 export class NodeFilesystemBackend implements FilesystemBackendProtocol {
   private cwd: string;
@@ -461,6 +473,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     const stat = await fs.stat(baseFull);
     const root = stat.isDirectory() ? baseFull : path.dirname(baseFull);
 
+    const fg = await loadFastGlob();
     const files = await fg("**/*", {
       cwd: root,
       absolute: true,
@@ -537,6 +550,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     const results: FileInfo[] = [];
 
     try {
+      const fg = await loadFastGlob();
       const matches = await fg(effectivePattern, {
         cwd: resolvedSearchPath,
         absolute: true,

@@ -117,8 +117,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -154,8 +154,8 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -194,8 +194,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -203,8 +203,8 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/server-hono
       '@voltagent/serverless-hono':
-        specifier: ^2.0.2
-        version: 2.0.4(@voltagent/core@2.0.4)(@voltagent/server-core@2.1.1)(hono@4.10.8)
+        specifier: ^2.0.4
+        version: link:../../packages/serverless-hono
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -282,8 +282,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -328,7 +328,7 @@ importers:
         version: 5.1.6
       next:
         specifier: ^16.0.7
-        version: 16.0.7(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3)(react@19.2.3)
+        version: 16.0.7(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -403,8 +403,8 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/a2a-server
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../../packages/internal
@@ -456,7 +456,7 @@ importers:
         version: link:../../packages/cli
       '@voltagent/core':
         specifier: ^2.0.0
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.0
         version: link:../../packages/libsql
@@ -501,8 +501,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@3.25.76)
@@ -529,8 +529,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../../packages/internal
@@ -572,8 +572,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -609,8 +609,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -674,7 +674,7 @@ importers:
         version: 1.2.8(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -701,7 +701,7 @@ importers:
         version: 12.23.26(react-dom@19.2.3)(react@19.2.3)
       next:
         specifier: ^16.0.7
-        version: 16.0.7(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3)(react@19.2.3)
+        version: 16.0.7(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -752,8 +752,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -795,8 +795,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/server-hono':
         specifier: ^2.0.2
         version: link:../../packages/server-hono
@@ -838,8 +838,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -881,20 +881,20 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/vercel-ai':
         specifier: ^1.0.0
-        version: 1.0.0(@voltagent/core@2.0.4)(zod@3.25.76)
+        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
       '@voltagent/vercel-ui':
         specifier: ^1.0.1
-        version: 1.0.1(@voltagent/core@2.0.4)(zod@3.25.76)
+        version: 1.0.1(@voltagent/core@packages+core)(zod@3.25.76)
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@3.25.76)
       next:
         specifier: ^16.0.7
-        version: 16.0.7(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3)(react@19.2.3)
+        version: 16.0.7(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -924,11 +924,11 @@ importers:
         specifier: ^3.0.0
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/serverless-hono':
-        specifier: ^2.0.2
-        version: 2.0.4(@voltagent/core@2.0.4)(@voltagent/server-core@2.1.1)(hono@4.9.1)
+        specifier: ^2.0.4
+        version: link:../../packages/serverless-hono
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@3.25.76)
@@ -940,7 +940,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20250119.0
+        specifier: ^4.20250408.0
         version: 4.20250813.0
       '@types/node':
         specifier: ^24.2.1
@@ -961,8 +961,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1027,7 +1027,7 @@ importers:
         version: 3.0.1(zod@3.25.76)
       '@copilotkit/runtime':
         specifier: ^1.50.0
-        version: 1.50.0(@langchain/core@0.3.70)(@opentelemetry/api@1.9.0)(openai@5.23.2)
+        version: 1.50.0(@langchain/core@0.3.70)(openai@5.23.2)
       '@voltagent/ag-ui':
         specifier: ^1.0.2
         version: link:../../../packages/ag-ui
@@ -1036,7 +1036,7 @@ importers:
         version: link:../../../packages/cli
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../../../packages/core
       '@voltagent/server-hono':
         specifier: ^2.0.2
         version: link:../../../packages/server-hono
@@ -1063,8 +1063,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1100,8 +1100,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1137,8 +1137,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1174,8 +1174,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1260,8 +1260,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../../packages/libsql
@@ -1273,7 +1273,7 @@ importers:
         version: link:../../../packages/server-hono
       composio-core:
         specifier: ^0.5.33
-        version: 0.5.39(@ai-sdk/openai@3.0.1)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@6.0.3)(langchain@0.3.30)(openai@4.104.0)
+        version: 0.5.39(@ai-sdk/openai@3.0.1)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@6.0.3)(langchain@0.3.30)(openai@6.15.0)
       hono:
         specifier: ^4.7.7
         version: 4.9.1
@@ -1303,8 +1303,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1340,8 +1340,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1377,8 +1377,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -1408,8 +1408,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1445,8 +1445,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1480,7 +1480,7 @@ importers:
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1562,8 +1562,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^2.0.2
         version: link:../../packages/langfuse-exporter
@@ -1600,7 +1600,7 @@ importers:
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../../packages/core
       '@voltagent/scorers':
         specifier: ^2.0.2
         version: link:../../packages/scorers
@@ -1630,8 +1630,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1667,8 +1667,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -1701,8 +1701,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -1738,8 +1738,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -1775,11 +1775,11 @@ importers:
         specifier: ^11.0.0
         version: 11.1.7(@nestjs/common@11.1.7)(@nestjs/core@11.1.7)
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/server-core':
-        specifier: ^2.1.0
-        version: 2.1.1(@voltagent/core@2.0.4)(zod@3.25.76)
+        specifier: ^2.1.1
+        version: link:../../packages/server-core
       '@voltagent/server-hono':
         specifier: ^2.0.2
         version: link:../../packages/server-hono
@@ -1824,11 +1824,11 @@ importers:
         specifier: ^3.0.0
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/serverless-hono':
-        specifier: ^2.0.2
-        version: 2.0.4(@voltagent/core@2.0.4)(@voltagent/server-core@2.1.1)(hono@4.9.1)
+        specifier: ^2.0.4
+        version: link:../../packages/serverless-hono
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@3.25.76)
@@ -1867,8 +1867,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1886,7 +1886,7 @@ importers:
         version: 1.14.2
       next:
         specifier: ^16.0.7
-        version: 16.0.7(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3)(react@19.2.3)
+        version: 16.0.7(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3)
       npm-check-updates:
         specifier: ^17.1.18
         version: 17.1.18
@@ -1934,8 +1934,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.1(embla-carousel@8.6.0)(typescript@5.9.3)(vite@7.2.7)(vue-router@4.5.1)(vue@3.5.22)(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -1971,8 +1971,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/evals':
         specifier: ^2.0.2
         version: link:../../packages/evals
@@ -2005,8 +2005,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -2042,8 +2042,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2082,8 +2082,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2125,8 +2125,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2174,8 +2174,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2223,8 +2223,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -2263,8 +2263,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2303,8 +2303,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2340,8 +2340,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -2374,8 +2374,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2408,8 +2408,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2445,8 +2445,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2485,8 +2485,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2525,8 +2525,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -2562,8 +2562,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2599,8 +2599,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2636,8 +2636,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2673,8 +2673,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2710,8 +2710,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2747,8 +2747,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2784,8 +2784,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2839,8 +2839,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2879,8 +2879,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2925,8 +2925,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -2971,8 +2971,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -3005,8 +3005,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -3039,8 +3039,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
@@ -3076,8 +3076,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -3116,8 +3116,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -3156,8 +3156,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -3193,8 +3193,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -3230,8 +3230,8 @@ importers:
         specifier: ^0.1.20
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -3267,8 +3267,8 @@ importers:
         specifier: ~3.799.0
         version: 3.799.0
       '@voltagent/core':
-        specifier: ~2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ~2.0.5
+        version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.0.2
         version: link:../../packages/libsql
@@ -3309,7 +3309,7 @@ importers:
     devDependencies:
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../core
 
   packages/ag-ui:
     dependencies:
@@ -3325,13 +3325,13 @@ importers:
         version: 0.0.37
       '@copilotkit/runtime':
         specifier: ^1.50.0
-        version: 1.50.0(@langchain/core@0.3.70)(@opentelemetry/api@1.9.0)(openai@5.23.2)
+        version: 1.50.0(@langchain/core@0.3.70)(openai@5.23.2)
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
@@ -3438,6 +3438,28 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
+
+  packages/cloudflare-d1:
+    dependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250408.0
+        version: 4.20250813.0
+      '@voltagent/internal':
+        specifier: ^1.0.2
+        version: link:../internal
+    devDependencies:
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+      '@voltagent/core':
+        specifier: ^2.0.5
+        version: link:../core
+      '@voltagent/logger':
+        specifier: ^2.0.2
+        version: link:../logger
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@4.2.1)
 
   packages/core:
     dependencies:
@@ -3654,7 +3676,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        version: link:../core
 
   packages/libsql:
     dependencies:
@@ -3670,7 +3692,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        version: link:../core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../logger
@@ -3717,7 +3739,7 @@ importers:
     devDependencies:
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../core
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -3739,7 +3761,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        version: link:../core
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@4.2.1)
@@ -3758,7 +3780,7 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
@@ -3777,7 +3799,7 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
@@ -3792,8 +3814,8 @@ importers:
         specifier: ^1.12.1
         version: 1.17.2
       '@voltagent/core':
-        specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        specifier: ^2.0.4
+        version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
@@ -3839,7 +3861,7 @@ importers:
         version: link:../a2a-server
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
@@ -3848,7 +3870,7 @@ importers:
         version: link:../mcp-server
       '@voltagent/server-core':
         specifier: ^2.1.0
-        version: 2.1.1(@voltagent/core@2.0.4)(zod@3.25.76)
+        version: link:../server-core
       elysia:
         specifier: ^1.1.29
         version: 1.4.19(@sinclair/typebox@0.34.45)(exact-mirror@0.2.5)(file-type@21.0.0)(openapi-types@12.1.3)(typescript@5.9.2)
@@ -3876,7 +3898,7 @@ importers:
         version: link:../a2a-server
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+        version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
@@ -3885,7 +3907,7 @@ importers:
         version: link:../mcp-server
       '@voltagent/server-core':
         specifier: ^2.0.2
-        version: 2.1.1(@voltagent/core@2.0.4)(zod@3.25.76)
+        version: link:../server-core
       fetch-to-node:
         specifier: ^2.1.0
         version: 2.1.0
@@ -3907,13 +3929,13 @@ importers:
     dependencies:
       '@voltagent/core':
         specifier: ^2.0.0
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
         version: link:../internal
       '@voltagent/server-core':
-        specifier: ^2.0.2
-        version: 2.1.1(@voltagent/core@2.0.4)(zod@4.2.1)
+        specifier: ^2.1.1
+        version: link:../server-core
       hono:
         specifier: ^4.7.7
         version: 4.9.1
@@ -3935,7 +3957,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        version: link:../core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../logger
@@ -3956,7 +3978,7 @@ importers:
         version: 1.59.0
       openai:
         specifier: ^4.91.0
-        version: 4.104.0(zod@4.2.1)
+        version: 4.104.0(ws@8.18.3)(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -3966,7 +3988,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        version: link:../core
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
@@ -3988,7 +4010,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
         specifier: ^2.0.2
-        version: 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
+        version: link:../core
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@4.2.1)
@@ -4080,7 +4102,7 @@ packages:
       '@ag-ui/core': 0.0.42
       '@ag-ui/proto': 0.0.42
 
-  /@ag-ui/langgraph@0.0.20(@ag-ui/client@0.0.42)(@ag-ui/core@0.0.42)(@opentelemetry/api@1.9.0)(openai@5.23.2):
+  /@ag-ui/langgraph@0.0.20(@ag-ui/client@0.0.42)(@ag-ui/core@0.0.42)(openai@5.23.2):
     resolution: {integrity: sha512-MQ35S8IUt5xwhA+NdinVJxBq3AHgpaeDrS92undC9Y3UX09HOUUojZcG46WGgZrxxqdFZNaZcupS4Opuf02DsA==}
     peerDependencies:
       '@ag-ui/client': '>=0.0.42'
@@ -4088,7 +4110,7 @@ packages:
     dependencies:
       '@ag-ui/client': 0.0.42
       '@ag-ui/core': 0.0.42
-      '@langchain/core': 0.3.70(@opentelemetry/api@1.9.0)(openai@5.23.2)
+      '@langchain/core': 0.3.70(openai@5.23.2)
       '@langchain/langgraph-sdk': 0.1.10(@langchain/core@0.3.70)
       partial-json: 0.1.7
       rxjs: 7.8.1
@@ -4496,7 +4518,7 @@ packages:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
     dev: false
@@ -4508,7 +4530,7 @@ packages:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
 
@@ -4519,7 +4541,7 @@ packages:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
 
@@ -4530,7 +4552,7 @@ packages:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
 
@@ -4541,7 +4563,7 @@ packages:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 4.1.13
     dev: false
@@ -5460,7 +5482,7 @@ packages:
     resolution: {integrity: sha512-RJlIHRueQgwWitWgF8OdFYGZX328Ax5BCemNGlqHfplnRT9ESi8JkFlvaVYbS+UubVY6dpv87Fs2u5M29iNFVQ==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/helper-validator-identifier': 7.27.1
+      '@babel/helper-validator-identifier': 7.28.5
       js-tokens: 4.0.0
       picocolors: 1.1.1
     dev: true
@@ -5536,8 +5558,8 @@ packages:
     resolution: {integrity: sha512-3lSpxGgvnmZznmBkCRnVREPUFJv2wrv9iAoFDvADJc0ypmdOxdUtcLeBgBJ6zE0PMeTKnxeQzyk0xTBq4Ep7zw==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/parser': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/parser': 7.28.5
+      '@babel/types': 7.28.5
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.30
       jsesc: 3.1.0
@@ -5556,7 +5578,7 @@ packages:
     resolution: {integrity: sha512-fXSwMQqitTGeHLBC08Eq5yXz2m37E4pJX1qAU1+2cNedz/ifv/bVXft90VeSav5nFO61EcNgwr0aJxbyPaWBPg==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   /@babel/helper-compilation-targets@7.27.2:
     resolution: {integrity: sha512-2+1thGUUWWjLTYTHZWK1n8Yga0ijBz1XAhUXcKy81rd5g6yh7hGqMp45v7cadSbEHc9G3OTv45SyneRN3ps4DQ==}
@@ -5639,7 +5661,7 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/traverse': 7.28.0
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
     transitivePeerDependencies:
       - supports-color
 
@@ -5648,7 +5670,7 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/traverse': 7.28.0
-      '@babel/types': 7.28.2
+      '@babel/types': 7.28.5
     transitivePeerDependencies:
       - supports-color
 
@@ -5660,7 +5682,7 @@ packages:
     dependencies:
       '@babel/core': 7.28.0
       '@babel/helper-module-imports': 7.27.1
-      '@babel/helper-validator-identifier': 7.27.1
+      '@babel/helper-validator-identifier': 7.28.5
       '@babel/traverse': 7.28.0
     transitivePeerDependencies:
       - supports-color
@@ -5674,7 +5696,7 @@ packages:
     dependencies:
       '@babel/core': 7.28.5
       '@babel/helper-module-imports': 7.27.1
-      '@babel/helper-validator-identifier': 7.27.1
+      '@babel/helper-validator-identifier': 7.28.5
       '@babel/traverse': 7.28.0
     transitivePeerDependencies:
       - supports-color
@@ -5711,7 +5733,7 @@ packages:
     resolution: {integrity: sha512-URMGH08NzYFhubNSGJrpUEphGKQwMQYBySzat5cAByY1/YgIRkULnIy3tAMeszlL/so2HbeilYloUmSpd7GdVw==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   /@babel/helper-plugin-utils@7.27.1:
     resolution: {integrity: sha512-1gn1Up5YXka3YYAHGKpbideQ5Yjf1tDa9qYcgysz+cNCXukyLl6DjPXhD3VRwSb8c0J9tA4b2+rHEZtc6R0tlw==}
@@ -5763,7 +5785,7 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/traverse': 7.28.0
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
     transitivePeerDependencies:
       - supports-color
 
@@ -5789,7 +5811,7 @@ packages:
     dependencies:
       '@babel/template': 7.27.2
       '@babel/traverse': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -5799,21 +5821,22 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/template': 7.27.2
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   /@babel/parser@7.28.0:
     resolution: {integrity: sha512-jVZGvOxOuNSsuQuLRTh13nU0AogFlw32w/MT+LV6D3sP5WdbW61E77RnkbaO2dUvmPAYrBDJXGn5gGS6tH4j8g==}
     engines: {node: '>=6.0.0'}
     hasBin: true
     dependencies:
-      '@babel/types': 7.28.2
+      '@babel/types': 7.28.5
+    dev: true
 
   /@babel/parser@7.28.4:
     resolution: {integrity: sha512-yZbBqeM6TkpP9du/I2pUZnJsRMGGvOuIrhjzC1AwHwW+6he4mni6Bp/m8ijn0iOuZuPI2BfkCoSRunpyjnrQKg==}
     engines: {node: '>=6.0.0'}
     hasBin: true
     dependencies:
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   /@babel/parser@7.28.5:
     resolution: {integrity: sha512-KKBU1VGYR7ORr3At5HAtUQ+TV3SzRCXmA/8OdDZiLDBIZxVyzXuztPjfLd3BV1PRAQGCMWWSHYhL0F8d5uHBDQ==}
@@ -7009,7 +7032,7 @@ packages:
     dependencies:
       '@babel/core': 7.28.0
       '@babel/helper-plugin-utils': 7.27.1
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
       esutils: 2.0.3
     dev: true
 
@@ -7054,8 +7077,8 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/code-frame': 7.27.1
-      '@babel/parser': 7.28.0
-      '@babel/types': 7.28.2
+      '@babel/parser': 7.28.5
+      '@babel/types': 7.28.5
 
   /@babel/traverse@7.28.0:
     resolution: {integrity: sha512-mGe7UK5wWyh0bKRfupsUchrQGqvDbZDbKJw+kcRGSmdHVYrv+ltd0pnpDTVpiTqnaBru9iEvA8pz8W46v0Amwg==}
@@ -7064,9 +7087,9 @@ packages:
       '@babel/code-frame': 7.27.1
       '@babel/generator': 7.28.0
       '@babel/helper-globals': 7.28.0
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       '@babel/template': 7.27.2
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
@@ -7078,9 +7101,9 @@ packages:
       '@babel/code-frame': 7.27.1
       '@babel/generator': 7.28.3
       '@babel/helper-globals': 7.28.0
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       '@babel/template': 7.27.2
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
@@ -7098,13 +7121,6 @@ packages:
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
-
-  /@babel/types@7.28.2:
-    resolution: {integrity: sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==}
-    engines: {node: '>=6.9.0'}
-    dependencies:
-      '@babel/helper-string-parser': 7.27.1
-      '@babel/helper-validator-identifier': 7.27.1
 
   /@babel/types@7.28.4:
     resolution: {integrity: sha512-bkFqkLhh3pMBUQQkpVgWDWq/lqzc2678eUyDlTBhRqhCHFguYYGM0Efga7tYk4TogG/3x0EEl66/OQ+WGbWB/Q==}
@@ -7975,7 +7991,7 @@ packages:
       - graphql
     dev: false
 
-  /@copilotkit/runtime@1.50.0(@langchain/core@0.3.70)(@opentelemetry/api@1.9.0)(openai@5.23.2):
+  /@copilotkit/runtime@1.50.0(@langchain/core@0.3.70)(openai@5.23.2):
     resolution: {integrity: sha512-0eFMPH+x2rs9IutDQuiNto7y7jxVeaa0Om205D/CEceKzG3h6rPTCMso7+ZMx0MEqMdth5ec9b/SZomXLHk0sw==}
     peerDependencies:
       '@anthropic-ai/sdk': ^0.57.0
@@ -8010,13 +8026,13 @@ packages:
     dependencies:
       '@ag-ui/client': 0.0.42
       '@ag-ui/core': 0.0.42
-      '@ag-ui/langgraph': 0.0.20(@ag-ui/client@0.0.42)(@ag-ui/core@0.0.42)(@opentelemetry/api@1.9.0)(openai@5.23.2)
+      '@ag-ui/langgraph': 0.0.20(@ag-ui/client@0.0.42)(@ag-ui/core@0.0.42)(openai@5.23.2)
       '@copilotkit/shared': 1.50.0
       '@copilotkitnext/agent': 0.0.31
       '@copilotkitnext/runtime': 0.0.31(openai@5.23.2)
       '@graphql-yoga/plugin-defer-stream': 3.17.1(graphql-yoga@5.17.1)(graphql@16.11.0)
       '@hono/node-server': 1.18.2(hono@4.10.8)
-      '@langchain/core': 0.3.70(@opentelemetry/api@1.9.0)(openai@5.23.2)
+      '@langchain/core': 0.3.70(openai@5.23.2)
       '@scarf/scarf': 1.4.0
       class-transformer: 0.5.1
       class-validator: 0.14.3
@@ -10420,7 +10436,6 @@ packages:
   /@lancedb/lancedb@0.23.0(apache-arrow@18.1.0):
     resolution: {integrity: sha512-aYrIoEG24AC+wILCL57Ius/Y4yU+xFHDPKLvmjzzN4byAjzeIGF0TC86S5RBt4Ji+dxS7yIWV5Q/gE5/fybIFQ==}
     engines: {node: '>= 18'}
-    cpu: [x64, arm64]
     os: [darwin, linux, win32]
     peerDependencies:
       apache-arrow: '>=15.0.0 <=18.1.0'
@@ -10437,7 +10452,7 @@ packages:
       '@lancedb/lancedb-win32-x64-msvc': 0.23.0
     dev: false
 
-  /@langchain/core@0.3.70(@opentelemetry/api@1.9.0)(openai@4.104.0):
+  /@langchain/core@0.3.70(openai@5.23.2):
     resolution: {integrity: sha512-nMH+aX/vnPPB4HNDxyesnUmhxZgipElcQrtXXznmzKTeFoJDez/cC/lDhO/o8DvI4Zq0cTtKitE3/YSibEbxPQ==}
     engines: {node: '>=18'}
     dependencies:
@@ -10446,7 +10461,29 @@ packages:
       camelcase: 6.3.0
       decamelize: 1.2.0
       js-tiktoken: 1.0.21
-      langsmith: 0.3.58(@opentelemetry/api@1.9.0)(openai@4.104.0)
+      langsmith: 0.3.58(openai@5.23.2)
+      mustache: 4.2.0
+      p-queue: 6.6.2
+      p-retry: 4.6.2
+      uuid: 10.0.0
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.0(zod@3.25.76)
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - '@opentelemetry/exporter-trace-otlp-proto'
+      - '@opentelemetry/sdk-trace-base'
+      - openai
+
+  /@langchain/core@0.3.70(openai@6.15.0):
+    resolution: {integrity: sha512-nMH+aX/vnPPB4HNDxyesnUmhxZgipElcQrtXXznmzKTeFoJDez/cC/lDhO/o8DvI4Zq0cTtKitE3/YSibEbxPQ==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@cfworker/json-schema': 4.1.1
+      ansi-styles: 5.2.0
+      camelcase: 6.3.0
+      decamelize: 1.2.0
+      js-tiktoken: 1.0.21
+      langsmith: 0.3.58(openai@6.15.0)
       mustache: 4.2.0
       p-queue: 6.6.2
       p-retry: 4.6.2
@@ -10459,28 +10496,6 @@ packages:
       - '@opentelemetry/sdk-trace-base'
       - openai
     dev: false
-
-  /@langchain/core@0.3.70(@opentelemetry/api@1.9.0)(openai@5.23.2):
-    resolution: {integrity: sha512-nMH+aX/vnPPB4HNDxyesnUmhxZgipElcQrtXXznmzKTeFoJDez/cC/lDhO/o8DvI4Zq0cTtKitE3/YSibEbxPQ==}
-    engines: {node: '>=18'}
-    dependencies:
-      '@cfworker/json-schema': 4.1.1
-      ansi-styles: 5.2.0
-      camelcase: 6.3.0
-      decamelize: 1.2.0
-      js-tiktoken: 1.0.21
-      langsmith: 0.3.58(@opentelemetry/api@1.9.0)(openai@5.23.2)
-      mustache: 4.2.0
-      p-queue: 6.6.2
-      p-retry: 4.6.2
-      uuid: 10.0.0
-      zod: 3.25.76
-      zod-to-json-schema: 3.25.0(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@opentelemetry/api'
-      - '@opentelemetry/exporter-trace-otlp-proto'
-      - '@opentelemetry/sdk-trace-base'
-      - openai
 
   /@langchain/langgraph-sdk@0.1.10(@langchain/core@0.3.70):
     resolution: {integrity: sha512-9srSCb2bSvcvehMgjA2sMMwX0o1VUgPN6ghwm5Fwc9JGAKsQa6n1S4eCwy1h4abuYxwajH5n3spBw+4I2WYbgw==}
@@ -10496,7 +10511,7 @@ packages:
       react-dom:
         optional: true
     dependencies:
-      '@langchain/core': 0.3.70(@opentelemetry/api@1.9.0)(openai@5.23.2)
+      '@langchain/core': 0.3.70(openai@5.23.2)
       '@types/json-schema': 7.0.15
       p-queue: 6.6.2
       p-retry: 4.6.2
@@ -10508,7 +10523,7 @@ packages:
     peerDependencies:
       '@langchain/core': '>=0.3.68 <0.4.0'
     dependencies:
-      '@langchain/core': 0.3.70(@opentelemetry/api@1.9.0)(openai@4.104.0)
+      '@langchain/core': 0.3.70(openai@6.15.0)
       js-tiktoken: 1.0.21
       openai: 5.23.2(zod@3.25.76)
       zod: 3.25.76
@@ -10522,7 +10537,7 @@ packages:
     peerDependencies:
       '@langchain/core': '>=0.2.21 <0.4.0'
     dependencies:
-      '@langchain/core': 0.3.70(@opentelemetry/api@1.9.0)(openai@4.104.0)
+      '@langchain/core': 0.3.70(openai@6.15.0)
       js-tiktoken: 1.0.21
     dev: false
 
@@ -10869,33 +10884,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /@modelcontextprotocol/sdk@1.24.3(zod@4.2.1):
-    resolution: {integrity: sha512-YgSHW29fuzKKAHTGe9zjNoo+yF8KaQPzDC2W9Pv41E7/57IfY+AMGJ/aDFlgTLcVVELoggKE4syABCE75u3NCw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@cfworker/json-schema': ^4.1.1
-      zod: ^3.25 || ^4.0
-    peerDependenciesMeta:
-      '@cfworker/json-schema':
-        optional: true
-    dependencies:
-      ajv: 8.17.1
-      ajv-formats: 3.0.1(ajv@8.17.1)
-      content-type: 1.0.5
-      cors: 2.8.5
-      cross-spawn: 7.0.6
-      eventsource: 3.0.7
-      eventsource-parser: 3.0.6
-      express: 5.1.0
-      express-rate-limit: 7.5.1(express@5.1.0)
-      jose: 6.1.3
-      pkce-challenge: 5.0.0
-      raw-body: 3.0.1
-      zod: 4.2.1
-      zod-to-json-schema: 3.25.1(zod@4.2.1)
-    transitivePeerDependencies:
-      - supports-color
-
   /@mole-inc/bin-wrapper@8.0.1:
     resolution: {integrity: sha512-sTGoeZnjI8N4KS+sW2AN95gDBErhAguvkw/tWdCjeM8bvxpz5lqrnd0vOJABA1A+Ic3zED7PYoLP/RANLgVotA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -11108,16 +11096,6 @@ packages:
       '@tybys/wasm-util': 0.9.0
     dev: true
 
-  /@napi-rs/wasm-runtime@1.1.0:
-    resolution: {integrity: sha512-Fq6DJW+Bb5jaWE69/qOE0D1TUN9+6uWhCeZpdnSBk14pjLcCWR7Q8n49PTSPHazM37JqrsdpEthXy2xn6jWWiA==}
-    requiresBuild: true
-    dependencies:
-      '@emnapi/core': 1.7.1
-      '@emnapi/runtime': 1.7.1
-      '@tybys/wasm-util': 0.10.1
-    dev: false
-    optional: true
-
   /@napi-rs/wasm-runtime@1.1.1:
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
     requiresBuild: true
@@ -11125,7 +11103,6 @@ packages:
       '@emnapi/core': 1.7.1
       '@emnapi/runtime': 1.7.1
       '@tybys/wasm-util': 0.10.1
-    dev: true
     optional: true
 
   /@neon-rs/load@0.0.4:
@@ -13427,12 +13404,14 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       '@opentelemetry/api': 1.9.0
+    dev: false
 
   /@opentelemetry/api-logs@0.204.0:
     resolution: {integrity: sha512-DqxY8yoAaiBPivoJD4UtgrMS8gEmzZ5lnaxzPojzLVHBGqPxgWm4zcuvcUHZiqQ6kRX2Klel2r9y8cA2HAtqpw==}
     engines: {node: '>=8.0.0'}
     dependencies:
       '@opentelemetry/api': 1.9.0
+    dev: false
 
   /@opentelemetry/api@1.8.0:
     resolution: {integrity: sha512-I/s6F7yKUDdtMsoBWXJe8Qz40Tui5vsuKCWJEWVL+5q9sSWRzzx6v2KeNsOBEwd94j0eWkpWCH4yB6rZg9Mf0w==}
@@ -13450,6 +13429,7 @@ packages:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
     dependencies:
       '@opentelemetry/api': 1.9.0
+    dev: false
 
   /@opentelemetry/context-async-hooks@2.2.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-qRkLWiUEZNAmYapZ7KGS5C4OmBLcP/H2foXeOEaowYCR0wi89fHejrfYfbuLVCMLp/dWZXKvQusdbUEZjERfwQ==}
@@ -13458,6 +13438,7 @@ packages:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
     dependencies:
       '@opentelemetry/api': 1.9.0
+    dev: false
 
   /@opentelemetry/core@2.0.1(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-MaZk9SJIDgo1peKevlbhP6+IwIiNPNmswNL4AF0WaQJLbHXjr9SrZMgS12+iqr9ToV4ZVosCcc0f8Rg67LXjxw==}
@@ -13467,6 +13448,7 @@ packages:
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/semantic-conventions': 1.36.0
+    dev: false
 
   /@opentelemetry/core@2.1.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-RMEtHsxJs/GiHHxYT58IY57UXAQTuUnZVco6ymDEqTNlJKTimM4qPUPVe8InNFyBjhHBEAx4k3Q8LtNayBsbUQ==}
@@ -13476,6 +13458,7 @@ packages:
     dependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/semantic-conventions': 1.36.0
+    dev: false
 
   /@opentelemetry/exporter-logs-otlp-http@0.204.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-cQyIIZxUnXy3M6n9LTW3uhw/cem4WP+k7NtrXp8pf4U3v0RljSCBeD0kA8TRotPJj2YutCjUIDrWOn0u+06PSA==}
@@ -13489,6 +13472,7 @@ packages:
       '@opentelemetry/otlp-exporter-base': 0.204.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/otlp-transformer': 0.204.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-logs': 0.204.0(@opentelemetry/api@1.9.0)
+    dev: false
 
   /@opentelemetry/exporter-trace-otlp-http@0.203.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-ZDiaswNYo0yq/cy1bBLJFe691izEJ6IgNmkjm4C6kE9ub/OMQqDXORx2D2j8fzTBTxONyzusbaZlqtfmyqURPw==}
@@ -13502,6 +13486,7 @@ packages:
       '@opentelemetry/otlp-transformer': 0.203.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-base': 2.0.1(@opentelemetry/api@1.9.0)
+    dev: false
 
   /@opentelemetry/instrumentation-pino@0.50.1(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-pBbvuWiHA9iAumAuQ0SKYOXK7NRlbnVTf/qBV0nMdRnxBPrc/GZTbh0f7Y59gZfYsbCLhXLL1oRTEnS+PwS3CA==}
@@ -13554,6 +13539,7 @@ packages:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/otlp-transformer': 0.203.0(@opentelemetry/api@1.9.0)
+    dev: false
 
   /@opentelemetry/otlp-exporter-base@0.204.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-K1LB1Ht4rGgOtZQ1N8xAwUnE1h9EQBfI4XUbSorbC6OxK6s/fLzl+UAhZX1cmBsDqM5mdx5+/k4QaKlDxX6UXQ==}
@@ -13564,6 +13550,7 @@ packages:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/otlp-transformer': 0.204.0(@opentelemetry/api@1.9.0)
+    dev: false
 
   /@opentelemetry/otlp-transformer@0.203.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-Y8I6GgoCna0qDQ2W6GCRtaF24SnvqvA8OfeTi7fqigD23u8Jpb4R5KFv/pRvrlGagcCLICMIyh9wiejp4TXu/A==}
@@ -13579,6 +13566,7 @@ packages:
       '@opentelemetry/sdk-metrics': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-base': 2.0.1(@opentelemetry/api@1.9.0)
       protobufjs: 7.5.3
+    dev: false
 
   /@opentelemetry/otlp-transformer@0.204.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-AekB2dgHJ0PMS0b3LH7xA2HDKZ0QqqZW4n5r/AVZy00gKnFoeyVF9t0AUz051fm80G7tKjGSLqOUSazqfTNpVQ==}
@@ -13594,6 +13582,7 @@ packages:
       '@opentelemetry/sdk-metrics': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.0)
       protobufjs: 7.5.3
+    dev: false
 
   /@opentelemetry/resources@2.0.1(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-dZOB3R6zvBwDKnHDTB4X1xtMArB/d324VsbiPkX/Yu0Q8T2xceRthoIVFhJdvgVM2QhGVUyX9tzwiNxGtoBJUw==}
@@ -13604,6 +13593,7 @@ packages:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.36.0
+    dev: false
 
   /@opentelemetry/resources@2.1.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-1CJjf3LCvoefUOgegxi8h6r4B/wLSzInyhGP2UmIBYNlo4Qk5CZ73e1eEyWmfXvFtm1ybkmfb2DqWvspsYLrWw==}
@@ -13614,6 +13604,7 @@ packages:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.36.0
+    dev: false
 
   /@opentelemetry/sdk-logs@0.203.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-vM2+rPq0Vi3nYA5akQD2f3QwossDnTDLvKbea6u/A2NZ3XDkPxMfo/PNrDoXhDUD/0pPo2CdH5ce/thn9K0kLw==}
@@ -13625,6 +13616,7 @@ packages:
       '@opentelemetry/api-logs': 0.203.0
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
+    dev: false
 
   /@opentelemetry/sdk-logs@0.204.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-y32iNNmpMUVFWSqbNrXE8xY/6EMge+HX3PXsMnCDV4cXT4SNT+W/3NgyMDf80KJL0fUK17/a0NmfXcrBhkFWrg==}
@@ -13636,6 +13628,7 @@ packages:
       '@opentelemetry/api-logs': 0.204.0
       '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
+    dev: false
 
   /@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-wf8OaJoSnujMAHWR3g+/hGvNcsC16rf9s1So4JlMiFaFHiE4HpIA3oUh+uWZQ7CNuK8gVW/pQSkgoa5HkkOl0g==}
@@ -13646,6 +13639,7 @@ packages:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
+    dev: false
 
   /@opentelemetry/sdk-metrics@2.1.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-J9QX459mzqHLL9Y6FZ4wQPRZG4TOpMCyPOh6mkr/humxE1W2S3Bvf4i75yiMW9uyed2Kf5rxmLhTm/UK8vNkAw==}
@@ -13656,6 +13650,7 @@ packages:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
+    dev: false
 
   /@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-xYLlvk/xdScGx1aEqvxLwf6sXQLXCjk3/1SQT9X9AoN5rXRhkdvIFShuNNmtTEPRBqcsMbS4p/gJLNI2wXaDuQ==}
@@ -13667,6 +13662,7 @@ packages:
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.36.0
+    dev: false
 
   /@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-uTX9FBlVQm4S2gVQO1sb5qyBLq/FPjbp+tmGoxu4tIgtYGmBYB44+KX/725RFDe30yBSaA9Ml9fqphe1hbUyLQ==}
@@ -13678,6 +13674,7 @@ packages:
       '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.36.0
+    dev: false
 
   /@opentelemetry/sdk-trace-node@2.0.1(@opentelemetry/api@1.9.0):
     resolution: {integrity: sha512-UhdbPF19pMpBtCWYP5lHbTogLWx9N0EBxtdagvkn5YtsAnCBZzL7SjktG+ZmupRgifsHMjwUaCCaVmqGfSADmA==}
@@ -13689,10 +13686,12 @@ packages:
       '@opentelemetry/context-async-hooks': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-base': 2.0.1(@opentelemetry/api@1.9.0)
+    dev: false
 
   /@opentelemetry/semantic-conventions@1.36.0:
     resolution: {integrity: sha512-TtxJSRD8Ohxp6bKkhrm27JRHAxPczQA7idtcTOMYI+wQRRrfgqxHv1cFbCApcSnNjtXkmzFozn6jQtFrOmbjPQ==}
     engines: {node: '>=14'}
+    dev: false
 
   /@opentf/cli-pbar@0.7.2:
     resolution: {integrity: sha512-1367ENsch7Ybs0dFMhTkPU3cQNETl/F9bETgJc1TeKUaZG61Fhs+rsIlm8eVtEd2qC3z0bYaZ3b5Bpehcr7C1Q==}
@@ -13829,7 +13828,7 @@ packages:
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.1.0
+      '@napi-rs/wasm-runtime': 1.1.1
     dev: false
     optional: true
 
@@ -13965,7 +13964,7 @@ packages:
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.1.0
+      '@napi-rs/wasm-runtime': 1.1.1
     dev: false
     optional: true
 
@@ -14109,7 +14108,7 @@ packages:
     cpu: [wasm32]
     requiresBuild: true
     dependencies:
-      '@napi-rs/wasm-runtime': 1.1.0
+      '@napi-rs/wasm-runtime': 1.1.1
     dev: false
     optional: true
 
@@ -14387,36 +14386,46 @@ packages:
 
   /@protobufjs/aspromise@1.1.2:
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
+    dev: false
 
   /@protobufjs/base64@1.1.2:
     resolution: {integrity: sha512-AZkcAA5vnN/v4PDqKyMR5lx7hZttPDgClv83E//FMNhR2TMcLUhfRUBHCmSl0oi9zMgDDqRUJkSxO3wm85+XLg==}
+    dev: false
 
   /@protobufjs/codegen@2.0.4:
     resolution: {integrity: sha512-YyFaikqM5sH0ziFZCN3xDC7zeGaB/d0IUb9CATugHWbd1FRFwWwt4ld4OYMPWu5a3Xe01mGAULCdqhMlPl29Jg==}
+    dev: false
 
   /@protobufjs/eventemitter@1.1.0:
     resolution: {integrity: sha512-j9ednRT81vYJ9OfVuXG6ERSTdEL1xVsNgqpkxMsbIabzSo3goCjDIveeGv5d03om39ML71RdmrGNjG5SReBP/Q==}
+    dev: false
 
   /@protobufjs/fetch@1.1.0:
     resolution: {integrity: sha512-lljVXpqXebpsijW71PZaCYeIcE5on1w5DlQy5WH6GLbFryLUrBD4932W/E2BSpfRJWseIL4v/KPgBFxDOIdKpQ==}
     dependencies:
       '@protobufjs/aspromise': 1.1.2
       '@protobufjs/inquire': 1.1.0
+    dev: false
 
   /@protobufjs/float@1.0.2:
     resolution: {integrity: sha512-Ddb+kVXlXst9d+R9PfTIxh1EdNkgoRe5tOX6t01f1lYWOvJnSPDBlG241QLzcyPdoNTsblLUdujGSE4RzrTZGQ==}
+    dev: false
 
   /@protobufjs/inquire@1.1.0:
     resolution: {integrity: sha512-kdSefcPdruJiFMVSbn801t4vFK7KB/5gd2fYvrxhuJYg8ILrmn9SKSX2tZdV6V+ksulWqS7aXjBcRXl3wHoD9Q==}
+    dev: false
 
   /@protobufjs/path@1.1.2:
     resolution: {integrity: sha512-6JOcJ5Tm08dOHAbdR3GrvP+yUUfkjG5ePsHYczMFLq3ZmMkAD98cDgcT2iA1lJ9NVwFd4tH/iSSoe44YWkltEA==}
+    dev: false
 
   /@protobufjs/pool@1.1.0:
     resolution: {integrity: sha512-0kELaGSIDBKvcgS4zkjz1PeddatrjYcmMWOlAuAPwAeccUrPHdUqo/J6LiymHHEiJT5NrF1UVwxY14f+fy4WQw==}
+    dev: false
 
   /@protobufjs/utf8@1.1.0:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
+    dev: false
 
   /@publint/pack@0.1.2:
     resolution: {integrity: sha512-S+9ANAvUmjutrshV4jZjaiG8XQyuJIZ8a4utWmN/vW1sgQ9IfBnPndwkmQYw53QmouOIytT874u65HEmu6H5jw==}
@@ -16188,13 +16197,8 @@ packages:
     resolution: {integrity: sha512-vENRlFU4YbrwVqNDZ7fLvy+JR1CRkyr01jhSiDpE1u6py3OMzQfztQU2jxykW3ALNxO4kSlqIDeYyD0Y9RcQeQ==}
     dev: true
 
-  /@rolldown/pluginutils@1.0.0-beta.57:
-    resolution: {integrity: sha512-aQNelgx14tGA+n2tNSa9x6/jeoCL9fkDeCei7nOKnHx0fEFRRMu5ReiITo+zZD5TzWDGGRjbSYCs93IfRIyTuQ==}
-    dev: false
-
   /@rolldown/pluginutils@1.0.0-beta.58:
     resolution: {integrity: sha512-qWhDs6yFGR5xDfdrwiSa3CWGIHxD597uGE/A9xGqytBjANvh4rLCTTkq7szhMV4+Ygh+PMS90KVJ8xWG/TkX4w==}
-    dev: true
 
   /@rollup/plugin-alias@5.1.1(rollup@4.50.2):
     resolution: {integrity: sha512-PR9zDb+rOzkRb2VD+EuKB7UC41vU5DIwZ5qqCpk0KJudcWAyi8rvYOhS7+L5aZCspw1stTViLgN5v6FF1p5cgQ==}
@@ -18038,7 +18042,7 @@ packages:
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.5)
       '@babel/template': 7.27.2
       '@babel/traverse': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
       '@tanstack/react-router': 1.131.44(react-dom@19.2.3)(react@19.2.3)
       '@tanstack/router-core': 1.131.44
       '@tanstack/router-generator': 1.131.44
@@ -18088,7 +18092,7 @@ packages:
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.5)
       '@babel/template': 7.27.2
       '@babel/traverse': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
       '@tanstack/directive-functions-plugin': 1.131.2(vite@7.2.7)
       babel-dead-code-elimination: 1.0.10
       tiny-invariant: 1.3.3
@@ -18377,20 +18381,20 @@ packages:
   /@types/babel__generator@7.27.0:
     resolution: {integrity: sha512-ufFd2Xi92OAVPYsy+P4n7/U7e68fex0+Ee8gSG9KX7eo084CWiQ4sdxktvdl0bOPupXtVJPY19zk6EwWqUQ8lg==}
     dependencies:
-      '@babel/types': 7.28.2
+      '@babel/types': 7.28.5
     dev: true
 
   /@types/babel__template@7.4.4:
     resolution: {integrity: sha512-h/NUaSyG5EyxBIp8YRxo4RMe2/qQgvyowRwVMzhYhBCONbW8PUsg4lkFMrhgZhUe5z3L3MiLDuvyJ/CaPa2A8A==}
     dependencies:
-      '@babel/parser': 7.28.0
-      '@babel/types': 7.28.2
+      '@babel/parser': 7.28.5
+      '@babel/types': 7.28.5
     dev: true
 
   /@types/babel__traverse@7.28.0:
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
     dependencies:
-      '@babel/types': 7.28.2
+      '@babel/types': 7.28.5
     dev: true
 
   /@types/body-parser@1.19.6:
@@ -19571,7 +19575,7 @@ packages:
       '@babel/core': 7.28.5
       '@babel/plugin-syntax-typescript': 7.27.1(@babel/core@7.28.5)
       '@babel/plugin-transform-typescript': 7.28.0(@babel/core@7.28.5)
-      '@rolldown/pluginutils': 1.0.0-beta.57
+      '@rolldown/pluginutils': 1.0.0-beta.58
       '@vue/babel-plugin-jsx': 1.5.0(@babel/core@7.28.5)
       vite: 7.2.7(@types/node@24.2.1)(jiti@2.6.1)
       vue: 3.5.22(typescript@5.9.3)
@@ -19896,186 +19900,31 @@ packages:
     resolution: {integrity: sha512-Z1Uc8IB57Lm6k7q6KIDu/p+JWtf3xsXJqAX/5r18hYOTpJyBn0KXUR8oTJ4WFYOcDzWC9n3IflGgHowx6U6z9Q==}
     dev: false
 
-  /@voltagent/core@2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76):
-    resolution: {integrity: sha512-/p9kdHADG9R9xQO6hHuED/ykfBlH9AOxNw2GJAdOhop3s/pt1+omPORIHRzh6lcagzFVZsXXvqlvMJhQr6D0gA==}
-    peerDependencies:
-      '@ai-sdk/provider-utils': 4.x
-      '@voltagent/logger': 2.0.2
-      ai: ^6.0.0
-      zod: ^3.25.0 || ^4.0.0
-    peerDependenciesMeta:
-      '@voltagent/logger':
-        optional: true
-    dependencies:
-      '@ai-sdk/provider-utils': 4.0.1(zod@3.25.76)
-      '@modelcontextprotocol/sdk': 1.24.3(zod@3.25.76)
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/api-logs': 0.204.0
-      '@opentelemetry/context-async-hooks': 2.2.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/exporter-logs-otlp-http': 0.204.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/exporter-trace-otlp-http': 0.203.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/otlp-transformer': 0.204.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-logs': 0.204.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-trace-node': 2.0.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/semantic-conventions': 1.36.0
-      '@voltagent/internal': 1.0.2
-      '@voltagent/logger': link:packages/logger
-      ai: 6.0.3(zod@3.25.76)
-      fast-glob: 3.3.3
-      micromatch: 4.0.8
-      ts-pattern: 5.8.0
-      type-fest: 4.41.0
-      uuid: 9.0.1
-      zod: 3.25.76
-      zod-from-json-schema: 0.5.0
-      zod-from-json-schema-v3: /zod-from-json-schema@0.0.5
-    transitivePeerDependencies:
-      - '@cfworker/json-schema'
-      - supports-color
-
-  /@voltagent/core@2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1):
-    resolution: {integrity: sha512-/p9kdHADG9R9xQO6hHuED/ykfBlH9AOxNw2GJAdOhop3s/pt1+omPORIHRzh6lcagzFVZsXXvqlvMJhQr6D0gA==}
-    peerDependencies:
-      '@ai-sdk/provider-utils': 4.x
-      '@voltagent/logger': 2.0.2
-      ai: ^6.0.0
-      zod: ^3.25.0 || ^4.0.0
-    peerDependenciesMeta:
-      '@voltagent/logger':
-        optional: true
-    dependencies:
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.2.1)
-      '@modelcontextprotocol/sdk': 1.24.3(zod@4.2.1)
-      '@opentelemetry/api': 1.9.0
-      '@opentelemetry/api-logs': 0.204.0
-      '@opentelemetry/context-async-hooks': 2.2.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/exporter-logs-otlp-http': 0.204.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/exporter-trace-otlp-http': 0.203.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/otlp-transformer': 0.204.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-logs': 0.204.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-trace-node': 2.0.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/semantic-conventions': 1.36.0
-      '@voltagent/internal': 1.0.2
-      '@voltagent/logger': link:packages/logger
-      ai: 6.0.3(zod@4.2.1)
-      fast-glob: 3.3.3
-      micromatch: 4.0.8
-      ts-pattern: 5.8.0
-      type-fest: 4.41.0
-      uuid: 9.0.1
-      zod: 4.2.1
-      zod-from-json-schema: 0.5.0
-      zod-from-json-schema-v3: /zod-from-json-schema@0.0.5
-    transitivePeerDependencies:
-      - '@cfworker/json-schema'
-      - supports-color
-
   /@voltagent/internal@0.0.9:
     resolution: {integrity: sha512-Kaa2jW60VsfYVotuXC81LmNOJ07Lf1yq36vMteNKKa5seIsKkJ75PvIbMp52eEZ/ky/oBXrs94UXrQNqXBJ80Q==}
     dev: false
 
-  /@voltagent/internal@1.0.2:
-    resolution: {integrity: sha512-/jguha6Z+Ag+1PGZgfgPDz/bEQybiX+eo5PrjDZnmPk/Yo5xakkhyttjgowj4TjjuaoXKMGDoOQIptVXczRIQQ==}
-    dependencies:
-      type-fest: 4.41.0
-
-  /@voltagent/server-core@2.1.1(@voltagent/core@2.0.4)(zod@3.25.76):
-    resolution: {integrity: sha512-bFw/cJlXsNRyWivdG5odTipk5MD4X2BzsMzTVnPo1jQ4yat1i3v1GCd29S2n3Mnno1jlFfq+A2QF8Aivx9pQhQ==}
-    peerDependencies:
-      '@voltagent/core': ^2.0.0
-      zod: ^3.25.0 || ^4.0.0
-    dependencies:
-      '@modelcontextprotocol/sdk': 1.24.3(zod@3.25.76)
-      '@voltagent/core': 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
-      '@voltagent/internal': 1.0.2
-      ai: 6.0.3(zod@3.25.76)
-      jsonwebtoken: 9.0.2
-      ws: 8.18.3
-      zod: 3.25.76
-      zod-from-json-schema: 0.5.0
-      zod-from-json-schema-v3: /zod-from-json-schema@0.0.5
-    transitivePeerDependencies:
-      - '@cfworker/json-schema'
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-    dev: false
-
-  /@voltagent/server-core@2.1.1(@voltagent/core@2.0.4)(zod@4.2.1):
-    resolution: {integrity: sha512-bFw/cJlXsNRyWivdG5odTipk5MD4X2BzsMzTVnPo1jQ4yat1i3v1GCd29S2n3Mnno1jlFfq+A2QF8Aivx9pQhQ==}
-    peerDependencies:
-      '@voltagent/core': ^2.0.0
-      zod: ^3.25.0 || ^4.0.0
-    dependencies:
-      '@modelcontextprotocol/sdk': 1.24.3(zod@4.2.1)
-      '@voltagent/core': 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@4.2.1)
-      '@voltagent/internal': 1.0.2
-      ai: 6.0.3(zod@4.2.1)
-      jsonwebtoken: 9.0.2
-      ws: 8.18.3
-      zod: 4.2.1
-      zod-from-json-schema: 0.5.0
-      zod-from-json-schema-v3: /zod-from-json-schema@0.0.5
-    transitivePeerDependencies:
-      - '@cfworker/json-schema'
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-    dev: false
-
-  /@voltagent/serverless-hono@2.0.4(@voltagent/core@2.0.4)(@voltagent/server-core@2.1.1)(hono@4.10.8):
-    resolution: {integrity: sha512-DJFefpzA8v7uiYFRw6uE7kqiAwGOumO2M/o57lqCkRMChgxii3nt2V5vKNpykSdvAS/vIBz5oXr4TFi+l1dPcQ==}
-    peerDependencies:
-      '@voltagent/core': ^2.0.0
-      '@voltagent/server-core': ^2.0.0
-      hono: ^4.0.0
-    dependencies:
-      '@voltagent/core': 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
-      '@voltagent/internal': 1.0.2
-      '@voltagent/server-core': 2.1.1(@voltagent/core@2.0.4)(zod@3.25.76)
-      hono: 4.10.8
-    dev: false
-
-  /@voltagent/serverless-hono@2.0.4(@voltagent/core@2.0.4)(@voltagent/server-core@2.1.1)(hono@4.9.1):
-    resolution: {integrity: sha512-DJFefpzA8v7uiYFRw6uE7kqiAwGOumO2M/o57lqCkRMChgxii3nt2V5vKNpykSdvAS/vIBz5oXr4TFi+l1dPcQ==}
-    peerDependencies:
-      '@voltagent/core': ^2.0.0
-      '@voltagent/server-core': ^2.0.0
-      hono: ^4.0.0
-    dependencies:
-      '@voltagent/core': 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
-      '@voltagent/internal': 1.0.2
-      '@voltagent/server-core': 2.1.1(@voltagent/core@2.0.4)(zod@3.25.76)
-      hono: 4.9.1
-    dev: false
-
-  /@voltagent/vercel-ai@1.0.0(@voltagent/core@2.0.4)(zod@3.25.76):
+  /@voltagent/vercel-ai@1.0.0(@voltagent/core@packages+core)(zod@3.25.76):
     resolution: {integrity: sha512-ooknKRG0G79YuHJAPuZ5Xoy1oiirq0XfyS5ncKO2+yMqasRSn5phd8wHq5x4nVwRFMY1mulo3YZJ2QGQLj1mIg==}
     peerDependencies:
       '@voltagent/core': ^0.1.71
       zod: ^3.25.0
     dependencies:
       '@ai-sdk/openai': 2.0.85(zod@3.25.76)
-      '@voltagent/core': 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+      '@voltagent/core': link:packages/core
       ai: 5.0.113(zod@3.25.76)
       ts-pattern: 5.8.0
       type-fest: 4.41.0
       zod: 3.25.76
     dev: false
 
-  /@voltagent/vercel-ui@1.0.1(@voltagent/core@2.0.4)(zod@3.25.76):
+  /@voltagent/vercel-ui@1.0.1(@voltagent/core@packages+core)(zod@3.25.76):
     resolution: {integrity: sha512-0suTujwLPQX7TZIarEI6Z4PZUtnFZguuevLUBwlu9bIP32VpZoSn20+Voovm16qQ+2jirhltdjuj/XAy6hC3hQ==}
     peerDependencies:
       '@voltagent/core': ^0.1.71
       zod: ^3.25.0
     dependencies:
-      '@voltagent/core': 2.0.4(@ai-sdk/provider-utils@4.0.1)(@voltagent/logger@packages+logger)(ai@6.0.3)(zod@3.25.76)
+      '@voltagent/core': link:packages/core
       '@voltagent/internal': 0.0.9
       ai: 5.0.113(zod@3.25.76)
       ts-pattern: 5.8.0
@@ -20144,7 +19993,7 @@ packages:
   /@vue/compiler-core@3.5.22:
     resolution: {integrity: sha512-jQ0pFPmZwTEiRNSb+i9Ow/I/cHv2tXYqsnHKKyCQ08irI2kdF5qmYedmF8si8mA7zepUFmJ2hqzS8CQmNOWOkQ==}
     dependencies:
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       '@vue/shared': 3.5.22
       entities: 4.5.0
       estree-walker: 2.0.2
@@ -20159,7 +20008,7 @@ packages:
   /@vue/compiler-sfc@3.5.22:
     resolution: {integrity: sha512-tbTR1zKGce4Lj+JLzFXDq36K4vcSZbJ1RBu8FxcDv1IGRz//Dh2EBqksyGVypz3kXpshIfWKGOCcqpSbyGWRJQ==}
     dependencies:
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       '@vue/compiler-core': 3.5.22
       '@vue/compiler-dom': 3.5.22
       '@vue/compiler-ssr': 3.5.22
@@ -21249,14 +21098,14 @@ packages:
     resolution: {integrity: sha512-cl76xfBQM6pztbrFWRnxbrDm9EOqDr1BF6+qQnnDZG2Co2LjyUktkN9GTJfBAfdae+DbT2nJf2nCGAdDDN7W2g==}
     engines: {node: '>=20.18.0'}
     dependencies:
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       pathe: 2.0.3
 
   /ast-kit@2.1.3:
     resolution: {integrity: sha512-TH+b3Lv6pUjy/Nu0m6A2JULtdzLpmqF9x1Dhj00ZoEiML8qvVA9j1flkzTKNYgdEhWrjDwtWNpyyCUbfQe514g==}
     engines: {node: '>=20.19.0'}
     dependencies:
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       pathe: 2.0.3
     dev: false
 
@@ -21284,7 +21133,7 @@ packages:
     resolution: {integrity: sha512-cbdCP0PGOBq0ASG+sjnKIoYkWMKhhz+F/h9pRexUdX2Hd38+WOlBkRKlqkGOSm0YQpcFMQBJeK4WspUAkwsEdg==}
     engines: {node: '>=20.19.0'}
     dependencies:
-      '@babel/parser': 7.28.4
+      '@babel/parser': 7.28.5
       ast-kit: 2.1.3
     dev: false
 
@@ -22844,7 +22693,7 @@ packages:
   /compatx@0.2.0:
     resolution: {integrity: sha512-6gLRNt4ygsi5NyMVhceOCFv14CIdDFN7fQjX1U4+47qVE/+kjPoXMK65KWK+dWxmFzMTuKazoQ9sch6pM0p5oA==}
 
-  /composio-core@0.5.39(@ai-sdk/openai@3.0.1)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@6.0.3)(langchain@0.3.30)(openai@4.104.0):
+  /composio-core@0.5.39(@ai-sdk/openai@3.0.1)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@6.0.3)(langchain@0.3.30)(openai@6.15.0):
     resolution: {integrity: sha512-7BeSFlfRzr1cbIfGYJW4jQ3BHwaObOaFKiRJIFuWOmvOrTABl1hbxGkWPA3C+uFw9CFXbZhrLWNyD7lhYy2Scg==}
     hasBin: true
     peerDependencies:
@@ -22860,7 +22709,7 @@ packages:
       '@cloudflare/workers-types': 4.20250813.0
       '@composio/mcp': 1.0.3-0
       '@hey-api/client-axios': 0.2.12(axios@1.11.0)
-      '@langchain/core': 0.3.70(@opentelemetry/api@1.9.0)(openai@4.104.0)
+      '@langchain/core': 0.3.70(openai@6.15.0)
       '@langchain/openai': 0.6.7(@langchain/core@0.3.70)
       ai: 6.0.3(zod@3.25.76)
       axios: 1.11.0
@@ -22868,9 +22717,9 @@ packages:
       cli-progress: 3.12.0
       commander: 12.1.0
       inquirer: 10.2.2
-      langchain: 0.3.30(@langchain/core@0.3.70)(@opentelemetry/api@1.9.0)(axios@1.11.0)(openai@4.104.0)
+      langchain: 0.3.30(@langchain/core@0.3.70)(axios@1.11.0)(openai@6.15.0)
       open: 8.4.2
-      openai: 4.104.0(ws@8.18.3)(zod@3.25.76)
+      openai: 6.15.0(zod@3.25.76)
       pusher-js: 8.4.0-rc2
       resolve-package-path: 4.0.3
       uuid: 10.0.0
@@ -28962,7 +28811,7 @@ packages:
       - ws
     dev: false
 
-  /langchain@0.3.30(@langchain/core@0.3.70)(@opentelemetry/api@1.9.0)(axios@1.11.0)(openai@4.104.0):
+  /langchain@0.3.30(@langchain/core@0.3.70)(axios@1.11.0)(openai@6.15.0):
     resolution: {integrity: sha512-UyVsfwHDpHbrnWrjWuhJHqi8Non+Zcsf2kdpDTqyJF8NXrHBOpjdHT5LvPuW9fnE7miDTWf5mLcrWAGZgcrznQ==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -29020,14 +28869,14 @@ packages:
       typeorm:
         optional: true
     dependencies:
-      '@langchain/core': 0.3.70(@opentelemetry/api@1.9.0)(openai@4.104.0)
+      '@langchain/core': 0.3.70(openai@6.15.0)
       '@langchain/openai': 0.6.7(@langchain/core@0.3.70)
       '@langchain/textsplitters': 0.1.0(@langchain/core@0.3.70)
       axios: 1.11.0
       js-tiktoken: 1.0.21
       js-yaml: 4.1.0
       jsonpointer: 5.0.1
-      langsmith: 0.3.58(@opentelemetry/api@1.9.0)(openai@4.104.0)
+      langsmith: 0.3.58(openai@6.15.0)
       openapi-types: 12.1.3
       p-retry: 4.6.2
       uuid: 10.0.0
@@ -29066,7 +28915,7 @@ packages:
       vscode-uri: 3.0.8
     dev: false
 
-  /langsmith@0.3.58(@opentelemetry/api@1.9.0)(openai@4.104.0):
+  /langsmith@0.3.58(openai@5.23.2):
     resolution: {integrity: sha512-bbqSVCDSF8zzl7KBvd33YpaTOuMVk05XF/WSEvP6nF17g9mt6lIVo1JM9BgC20fDTeSQ35TjMN6NS5Nl2TVC5w==}
     peerDependencies:
       '@opentelemetry/api': '*'
@@ -29083,35 +28932,6 @@ packages:
       openai:
         optional: true
     dependencies:
-      '@opentelemetry/api': 1.9.0
-      '@types/uuid': 10.0.0
-      chalk: 4.1.2
-      console-table-printer: 2.14.6
-      openai: 4.104.0(ws@8.18.3)(zod@3.25.76)
-      p-queue: 6.6.2
-      p-retry: 4.6.2
-      semver: 7.7.2
-      uuid: 10.0.0
-    dev: false
-
-  /langsmith@0.3.58(@opentelemetry/api@1.9.0)(openai@5.23.2):
-    resolution: {integrity: sha512-bbqSVCDSF8zzl7KBvd33YpaTOuMVk05XF/WSEvP6nF17g9mt6lIVo1JM9BgC20fDTeSQ35TjMN6NS5Nl2TVC5w==}
-    peerDependencies:
-      '@opentelemetry/api': '*'
-      '@opentelemetry/exporter-trace-otlp-proto': '*'
-      '@opentelemetry/sdk-trace-base': '*'
-      openai: '*'
-    peerDependenciesMeta:
-      '@opentelemetry/api':
-        optional: true
-      '@opentelemetry/exporter-trace-otlp-proto':
-        optional: true
-      '@opentelemetry/sdk-trace-base':
-        optional: true
-      openai:
-        optional: true
-    dependencies:
-      '@opentelemetry/api': 1.9.0
       '@types/uuid': 10.0.0
       chalk: 4.1.2
       console-table-printer: 2.14.6
@@ -29120,6 +28940,33 @@ packages:
       p-retry: 4.6.2
       semver: 7.7.2
       uuid: 10.0.0
+
+  /langsmith@0.3.58(openai@6.15.0):
+    resolution: {integrity: sha512-bbqSVCDSF8zzl7KBvd33YpaTOuMVk05XF/WSEvP6nF17g9mt6lIVo1JM9BgC20fDTeSQ35TjMN6NS5Nl2TVC5w==}
+    peerDependencies:
+      '@opentelemetry/api': '*'
+      '@opentelemetry/exporter-trace-otlp-proto': '*'
+      '@opentelemetry/sdk-trace-base': '*'
+      openai: '*'
+    peerDependenciesMeta:
+      '@opentelemetry/api':
+        optional: true
+      '@opentelemetry/exporter-trace-otlp-proto':
+        optional: true
+      '@opentelemetry/sdk-trace-base':
+        optional: true
+      openai:
+        optional: true
+    dependencies:
+      '@types/uuid': 10.0.0
+      chalk: 4.1.2
+      console-table-printer: 2.14.6
+      openai: 6.15.0(zod@3.25.76)
+      p-queue: 6.6.2
+      p-retry: 4.6.2
+      semver: 7.7.2
+      uuid: 10.0.0
+    dev: false
 
   /latest-version@5.1.0:
     resolution: {integrity: sha512-weT+r0kTkRQdCdYCNtkMwWXQTMEswKrFBkm4ckQOMVhhqhIMI1UT2hMj+1iigIhgSZm5gTmrRXBNoGUgaTY1xA==}
@@ -29739,6 +29586,7 @@ packages:
 
   /long@5.3.2:
     resolution: {integrity: sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==}
+    dev: false
 
   /longest-streak@3.1.0:
     resolution: {integrity: sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==}
@@ -31538,7 +31386,7 @@ packages:
     resolution: {integrity: sha512-4zdzIP+6muqPCuE8avnrgDJ6KW/2+UpHTRcTbMXCIRxiRmyrX+IZ4WSJGZdHPWF3WmQpXpy603XxecZ9iygN7w==}
     dev: true
 
-  /next@16.0.7(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.3)(react@19.2.3):
+  /next@16.0.7(@babel/core@7.28.5)(react-dom@19.2.3)(react@19.2.3):
     resolution: {integrity: sha512-3mBRJyPxT4LOxAJI6IsXeFtKfiJUbjCLgvXO02fV8Wy/lIhPvP94Fe7dGhUgHXcQy4sSuYwQNcOLhIfOm0rL0A==}
     engines: {node: '>=20.9.0'}
     deprecated: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
@@ -31561,7 +31409,6 @@ packages:
         optional: true
     dependencies:
       '@next/env': 16.0.7
-      '@opentelemetry/api': 1.9.0
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001734
       postcss: 8.4.31
@@ -32629,30 +32476,6 @@ packages:
       zod: 3.25.76
     transitivePeerDependencies:
       - encoding
-
-  /openai@4.104.0(zod@4.2.1):
-    resolution: {integrity: sha512-p99EFNsA/yX6UhVO93f5kJsDRLAg+CTA2RBqdHK4RtK8u5IJw32Hyb2dTGKbnnFmnuoBv5r7Z2CURI9sGZpSuA==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.23.8
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-    dependencies:
-      '@types/node': 18.19.122
-      '@types/node-fetch': 2.6.13
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-      zod: 4.2.1
-    transitivePeerDependencies:
-      - encoding
-    dev: false
 
   /openai@5.23.2(zod@3.25.76):
     resolution: {integrity: sha512-MQBzmTulj+MM5O8SKEk/gL8a7s5mktS9zUtAkU257WjvobGc9nKcBuVwjyEEcb9SI8a8Y2G/mzn3vm9n1Jlleg==}
@@ -34278,6 +34101,7 @@ packages:
       '@protobufjs/utf8': 1.1.0
       '@types/node': 24.6.2
       long: 5.3.2
+    dev: false
 
   /protocols@2.0.2:
     resolution: {integrity: sha512-hHVTzba3wboROl0/aWRRG9dMytgH6ow//STBZh43l/wQgmMhYhOFi0EHWAPtoCz9IAUymsyP0TSBHkhgMEGNnQ==}
@@ -39990,11 +39814,13 @@ packages:
     resolution: {integrity: sha512-zYEoo86M1qpA1Pq6329oSyHLS785z/mTwfr9V1Xf/ZLhuuBGaMlDGu/pDVGVUe4H4oa1EFgWZT53DP0U3oT9CQ==}
     dependencies:
       zod: 3.25.76
+    dev: false
 
   /zod-from-json-schema@0.5.0:
     resolution: {integrity: sha512-W1v1YIoimOJfvuorGGp1QroizLL3jEGELJtgrHiVg/ytxVZdh/BTTVyPypGB7YK30LHrCkkebbjuyHIjBGCEzw==}
     dependencies:
       zod: 4.1.13
+    dev: false
 
   /zod-to-json-schema@3.25.0(zod@3.25.76):
     resolution: {integrity: sha512-HvWtU2UG41LALjajJrML6uQejQhNJx+JBO9IflpSja4R03iNWfKXrj6W2h7ljuLyc1nKS+9yDyL/9tD1U/yBnQ==}
@@ -40010,13 +39836,6 @@ packages:
     dependencies:
       zod: 3.25.76
     dev: false
-
-  /zod-to-json-schema@3.25.1(zod@4.2.1):
-    resolution: {integrity: sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA==}
-    peerDependencies:
-      zod: ^3.25 || ^4
-    dependencies:
-      zod: 4.2.1
 
   /zod-validation-error@3.5.3(zod@3.25.76):
     resolution: {integrity: sha512-OT5Y8lbUadqVZCsnyFaTQ4/O2mys4tj7PqhdbBCp7McPwvIEKfPtdA6QfPeFQK2/Rz5LgwmAXRJTugBNBi0btw==}
@@ -40039,6 +39858,7 @@ packages:
 
   /zod@4.1.13:
     resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
+    dev: false
 
   /zod@4.2.1:
     resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}

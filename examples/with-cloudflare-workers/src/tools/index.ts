@@ -9,11 +9,10 @@ export const weatherTool = createTool({
   parameters: z.object({
     location: z.string().describe("The city or location to get weather for"),
   }),
-  execute: async ({ location }, context) => {
+  execute: async ({ location }) => {
     // In a real implementation, this would call a weather API
     // This is a mock implementation for demonstration purposes
 
-    context?.logger.info(`Fetching weather for ${location}`);
     const mockWeatherData = {
       location,
       temperature: Math.floor(Math.random() * 30) + 5, // Random temp between 5-35°C

@@ -24,6 +24,7 @@ import type {
 import {
   type AsyncIterableStream,
   type FinishReason,
+  type InferGenerateOutput,
   type LanguageModelUsage,
   type Output,
   type Warning,
@@ -137,12 +138,8 @@ const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
 // Types
 // ============================================================================
 
-type OutputSpec =
-  | ReturnType<typeof Output.text>
-  | ReturnType<typeof Output.object>
-  | ReturnType<typeof Output.array>
-  | ReturnType<typeof Output.choice>
-  | ReturnType<typeof Output.json>;
+export type OutputSpec = Output.Output<unknown, unknown>;
+type OutputValue<OUTPUT extends OutputSpec> = InferGenerateOutput<OUTPUT>;
 
 /**
  * Context input type that accepts both Map and plain object
@@ -167,26 +164,26 @@ function toContextMap(context?: ContextInput): Map<string | symbol, unknown> | u
 /**
  * Extended StreamTextResult that includes context
  */
-export interface StreamTextResultWithContext<
+export type StreamTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
-  OUTPUT extends OutputSpec = OutputSpec,
-> {
+  OUTPUT = unknown,
+> = {
   // All methods from AIStreamTextResult
-  readonly text: AIStreamTextResult<TOOLS, OUTPUT>["text"];
-  readonly textStream: AIStreamTextResult<TOOLS, OUTPUT>["textStream"];
+  readonly text: AIStreamTextResult<TOOLS, any>["text"];
+  readonly textStream: AIStreamTextResult<TOOLS, any>["textStream"];
   readonly fullStream: AsyncIterable<VoltAgentTextStreamPart<TOOLS>>;
-  readonly usage: AIStreamTextResult<TOOLS, OUTPUT>["usage"];
-  readonly finishReason: AIStreamTextResult<TOOLS, OUTPUT>["finishReason"];
+  readonly usage: AIStreamTextResult<TOOLS, any>["usage"];
+  readonly finishReason: AIStreamTextResult<TOOLS, any>["finishReason"];
   // Partial output stream for streaming structured objects
-  readonly partialOutputStream?: AIStreamTextResult<TOOLS, OUTPUT>["partialOutputStream"];
-  toUIMessageStream: AIStreamTextResult<TOOLS, OUTPUT>["toUIMessageStream"];
-  toUIMessageStreamResponse: AIStreamTextResult<TOOLS, OUTPUT>["toUIMessageStreamResponse"];
-  pipeUIMessageStreamToResponse: AIStreamTextResult<TOOLS, OUTPUT>["pipeUIMessageStreamToResponse"];
-  pipeTextStreamToResponse: AIStreamTextResult<TOOLS, OUTPUT>["pipeTextStreamToResponse"];
-  toTextStreamResponse: AIStreamTextResult<TOOLS, OUTPUT>["toTextStreamResponse"];
+  readonly partialOutputStream?: AIStreamTextResult<TOOLS, any>["partialOutputStream"];
+  toUIMessageStream: AIStreamTextResult<TOOLS, any>["toUIMessageStream"];
+  toUIMessageStreamResponse: AIStreamTextResult<TOOLS, any>["toUIMessageStreamResponse"];
+  pipeUIMessageStreamToResponse: AIStreamTextResult<TOOLS, any>["pipeUIMessageStreamToResponse"];
+  pipeTextStreamToResponse: AIStreamTextResult<TOOLS, any>["pipeTextStreamToResponse"];
+  toTextStreamResponse: AIStreamTextResult<TOOLS, any>["toTextStreamResponse"];
   // Additional context field
   context: Map<string | symbol, unknown>;
-}
+} & Record<never, OUTPUT>;
 
 /**
  * Extended StreamObjectResult that includes context
@@ -209,13 +206,24 @@ export interface StreamObjectResultWithContext<T> {
 /**
  * Extended GenerateTextResult that includes context
  */
-export type GenerateTextResultWithContext<
+type BaseGenerateTextResult<TOOLS extends ToolSet = Record<string, any>> = Omit<
+  GenerateTextResult<TOOLS, any>,
+  "experimental_output" | "output"
+> & {
+  experimental_output: unknown;
+  output: unknown;
+};
+
+export interface GenerateTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
   OUTPUT extends OutputSpec = OutputSpec,
-> = GenerateTextResult<TOOLS, OUTPUT> & {
+> extends BaseGenerateTextResult<TOOLS> {
   // Additional context field
   context: Map<string | symbol, unknown>;
-};
+  // Typed structured output override if provided by callers
+  experimental_output: OutputValue<OUTPUT>;
+  output: OutputValue<OUTPUT>;
+}
 
 type LLMOperation = "streamText" | "generateText" | "streamObject" | "generateObject";
 
@@ -362,7 +370,12 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   toolChoice?: ToolChoice<Record<string, unknown>>;
 }
 
-export type GenerateTextOptions = BaseGenerationOptions;
+export type GenerateTextOptions<OUTPUT extends OutputSpec = OutputSpec> = Omit<
+  BaseGenerationOptions,
+  "output"
+> & {
+  output?: OUTPUT;
+};
 export type StreamTextOptions = BaseGenerationOptions & {
   onFinish?: (result: any) => void | Promise<void>;
 };
@@ -490,10 +503,10 @@ export class Agent {
   /**
    * Generate text response
    */
-  async generateText(
+  async generateText<OUTPUT extends OutputSpec = OutputSpec>(
     input: string | UIMessage[] | BaseMessage[],
-    options?: GenerateTextOptions,
-  ): Promise<GenerateTextResultWithContext> {
+    options?: GenerateTextOptions<OUTPUT>,
+  ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -619,7 +632,7 @@ export class Agent {
         });
         const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
-        let result!: GenerateTextResult<ToolSet, OutputSpec>;
+        let result!: GenerateTextResult<ToolSet, OUTPUT>;
         try {
           result = await oc.traceContext.withSpan(llmSpan, () =>
             generateText({

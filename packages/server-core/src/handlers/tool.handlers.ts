@@ -146,6 +146,12 @@ export async function handleExecuteTool(
   logger: Logger,
 ): Promise<ApiResponse> {
   const { input, context } = body || {};
+  const contextMap =
+    context instanceof Map
+      ? context
+      : context && typeof context === "object"
+        ? new Map(Object.entries(context as Record<string, unknown>))
+        : new Map<string | symbol, unknown>();
 
   const lookup = findTool(deps, toolName);
   if (!lookup) {
@@ -184,18 +190,17 @@ export async function handleExecuteTool(
   const abortController = new AbortController();
 
   try {
-    const userId = context?.userId ?? body?.userId;
-    const conversationId = context?.conversationId ?? body?.conversationId;
+    const userId =
+      (context instanceof Map ? context.get("userId") : context?.userId) ?? body?.userId;
+    const conversationId =
+      (context instanceof Map ? context.get("conversationId") : context?.conversationId) ??
+      body?.conversationId;
 
     // Build a minimal execution context for tools
     const result = await tool.execute(parsedInput, {
       userId,
       conversationId,
-      context: new Map(
-        context && typeof context === "object"
-          ? Object.entries(context as Record<string, unknown>)
-          : [],
-      ),
+      context: contextMap,
       systemContext: new Map(),
       abortController,
       toolContext: {

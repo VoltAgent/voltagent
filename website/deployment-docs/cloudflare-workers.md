@@ -99,7 +99,128 @@ compatibility_flags = [
 
 If you ship TypeScript, add a build script like `tsc --project tsconfig.json`, or use Wrangler’s `--bundle` support.
 
-## 5. Run locally
+## 5. Cloudflare bindings (D1, KV, R2)
+
+Cloudflare bindings are available on the `env` argument passed to the Worker `fetch` handler. If a tool, workflow step, or memory adapter needs a binding, build your VoltAgent instance inside a factory that receives `env` and closes over it.
+
+When requests are executed via the serverless routes, VoltAgent also injects the Worker `env` into the execution context map. You can read it via `SERVERLESS_ENV_CONTEXT_KEY` from `@voltagent/core` for ad-hoc access in tools or workflow steps, but the D1 memory adapter does not need this.
+
+### D1 binding in `wrangler.toml`
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "voltagent"
+database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+```
+
+### Use D1 for memory
+
+Install the adapter:
+
+```bash
+pnpm add @voltagent/cloudflare-d1
+```
+
+```ts
+import { openai } from "@ai-sdk/openai";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { D1MemoryAdapter } from "@voltagent/cloudflare-d1";
+import { serverlessHono } from "@voltagent/serverless-hono";
+import type { D1Database } from "@cloudflare/workers-types";
+
+import { makeTools } from "./tools";
+
+type Env = {
+  DB: D1Database;
+  OPENAI_API_KEY: string;
+};
+
+const createWorker = (env: Env) => {
+  const memory = new Memory({
+    storage: new D1MemoryAdapter({ binding: env.DB }),
+  });
+
+  const agent = new Agent({
+    name: "serverless-assistant",
+    instructions: "Answer user questions quickly.",
+    model: openai("gpt-4o-mini"),
+    tools: makeTools(env),
+    memory,
+  });
+
+  const voltAgent = new VoltAgent({
+    agents: { agent },
+    serverless: serverlessHono(),
+  });
+
+  return voltAgent.serverless().toCloudflareWorker();
+};
+
+let cached: ReturnType<typeof createWorker> | undefined;
+
+export default {
+  fetch: (request: Request, env: Env, ctx: ExecutionContext) => {
+    if (!cached) {
+      cached = createWorker(env);
+    }
+
+    return cached.fetch(request, env, ctx);
+  },
+};
+```
+
+### Use D1 in a tool
+
+```ts
+import { createTool } from "@voltagent/core";
+import type { D1Database } from "@cloudflare/workers-types";
+import { z } from "zod";
+
+type Env = { DB: D1Database };
+
+export const makeTools = (env: Env) => [
+  createTool({
+    name: "list-users",
+    description: "Fetch users from D1",
+    parameters: z.object({}),
+    execute: async () => {
+      const { results } = await env.DB.prepare("SELECT id, name FROM users").all();
+      return results;
+    },
+  }),
+];
+```
+
+Use the same factory pattern for workflow steps so they can close over `env` bindings.
+
+### Optional: access `env` from tool/workflow context
+
+```ts
+import { createTool, SERVERLESS_ENV_CONTEXT_KEY } from "@voltagent/core";
+import type { D1Database } from "@cloudflare/workers-types";
+import { z } from "zod";
+
+type Env = { DB: D1Database };
+
+export const listUsers = createTool({
+  name: "list-users",
+  description: "Fetch users from D1",
+  parameters: z.object({}),
+  execute: async (_args, options) => {
+    const env = options?.context?.get(SERVERLESS_ENV_CONTEXT_KEY) as Env | undefined;
+    const db = env?.DB;
+    if (!db) {
+      throw new Error("D1 binding is missing (env.DB)");
+    }
+
+    const { results } = await db.prepare("SELECT id, name FROM users").all();
+    return results;
+  },
+});
+```
+
+## 6. Run locally
 
 ```bash
 pnpm install
@@ -108,7 +229,7 @@ pnpm wrangler dev
 
 `wrangler dev` runs your Worker in an edge-like sandbox. Use `--local` only if you need Node-specific debugging.
 
-## 6. Deploy
+## 7. Deploy
 
 ```bash
 pnpm wrangler deploy
@@ -143,6 +264,28 @@ import { Memory, InMemoryStorageAdapter } from "@voltagent/core";
 
 const memory = new Memory({
   storage: new InMemoryStorageAdapter(),
+});
+
+const agent = new Agent({
+  name: "serverless-assistant",
+  instructions: "Answer user questions quickly.",
+  model: openai("gpt-4o-mini"),
+  tools: [weatherTool],
+  memory,
+});
+```
+
+  </TabItem>
+  <TabItem value="d1" label="Cloudflare D1">
+
+```ts
+import { Memory } from "@voltagent/core";
+import { D1MemoryAdapter } from "@voltagent/cloudflare-d1";
+
+const memory = new Memory({
+  storage: new D1MemoryAdapter({
+    binding: env.DB,
+  }),
 });
 
 const agent = new Agent({
