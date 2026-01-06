@@ -1,11 +1,74 @@
-import { ClientHTTPError, type ServerProviderDeps } from "@voltagent/core";
-import { convertUsage } from "@voltagent/core";
+import {
+  ClientHTTPError,
+  type ServerProviderDeps,
+  type TrafficResponseMetadata,
+  convertUsage,
+} from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
 import type { ApiResponse } from "../types";
 import { processAgentOptions } from "../utils/options";
+import { buildTrafficHeaders } from "../utils/traffic";
+
+function extractTrafficMetadata(value: unknown): TrafficResponseMetadata | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const traffic = (value as { traffic?: unknown }).traffic;
+  if (!traffic || typeof traffic !== "object") return undefined;
+  return traffic as TrafficResponseMetadata;
+}
+
+function wrapStreamWithTraffic(
+  baseResponse: Response,
+  traffic?: TrafficResponseMetadata,
+): Response {
+  if (!traffic) return baseResponse;
+  const headers = new Headers(baseResponse.headers);
+  const trafficHeaders = buildTrafficHeaders(traffic);
+  for (const [key, value] of Object.entries(trafficHeaders)) {
+    headers.set(key, value);
+  }
+  const baseBody = baseResponse.body;
+  if (!baseBody) {
+    return new Response(baseBody, {
+      status: baseResponse.status,
+      headers,
+    });
+  }
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const trafficEvent = `data: ${safeStringify({ type: "traffic", traffic })}\n\n`;
+      controller.enqueue(encoder.encode(trafficEvent));
+      const reader = baseBody.getReader();
+      let didError = false;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value !== undefined) {
+            controller.enqueue(value);
+          }
+        }
+      } catch (error) {
+        didError = true;
+        controller.error(error);
+      } finally {
+        reader.releaseLock();
+        if (!didError) {
+          controller.close();
+        }
+      }
+    },
+  });
+
+  return new Response(stream, {
+    status: baseResponse.status,
+    headers,
+  });
+}
 
 /**
  * Handler for listing all agents
@@ -79,6 +142,7 @@ export async function handleGenerateText(
     const options = processAgentOptions(body, signal);
 
     const result = await agent.generateText(input, options);
+    const traffic = extractTrafficMetadata(result);
 
     // Convert usage format if present
     const usage = result.usage ? convertUsage(result.usage) : undefined;
@@ -100,9 +164,11 @@ export async function handleGenerateText(
           }
         })(),
       },
+      traffic,
     };
   } catch (error) {
     logger.error("Failed to generate text", { error });
+    const traffic = extractTrafficMetadata(error);
     if (error instanceof ClientHTTPError) {
       return {
         success: false,
@@ -110,11 +176,13 @@ export async function handleGenerateText(
         code: error.code,
         name: error.name,
         httpStatus: error.httpStatus,
+        traffic,
       };
     }
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
+      traffic,
     };
   }
 }
@@ -151,6 +219,7 @@ export async function handleStreamText(
     const options = processAgentOptions(body, signal);
 
     const result = await agent.streamText(input, options);
+    const traffic = extractTrafficMetadata(result);
 
     // Access the fullStream property
     const { fullStream } = result;
@@ -176,7 +245,7 @@ export async function handleStreamText(
       },
     });
 
-    return new Response(stream, {
+    const response = new Response(stream, {
       status: 200,
       headers: {
         "Content-Type": "text/event-stream",
@@ -184,20 +253,25 @@ export async function handleStreamText(
         Connection: "keep-alive",
       },
     });
+    return wrapStreamWithTraffic(response, traffic);
   } catch (error) {
     logger.error("Failed to handle stream text request", { error });
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const traffic = extractTrafficMetadata(error);
+    const trafficHeaders = buildTrafficHeaders(traffic);
 
     return new Response(
       safeStringify({
         error: errorMessage,
         message: errorMessage,
+        traffic,
       }),
       {
         status: 500,
         headers: {
           "Content-Type": "application/json",
+          ...trafficHeaders,
         },
       },
     );
@@ -236,26 +310,32 @@ export async function handleChatStream(
     const options = processAgentOptions(body, signal);
 
     const result = await agent.streamText(input, options);
+    const traffic = extractTrafficMetadata(result);
 
     // Use the built-in toUIMessageStreamResponse - it handles errors properly
-    return result.toUIMessageStreamResponse({
+    const response = result.toUIMessageStreamResponse({
       sendReasoning: true,
       sendSources: true,
     });
+    return wrapStreamWithTraffic(response, traffic);
   } catch (error) {
     logger.error("Failed to handle chat stream request", { error });
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const traffic = extractTrafficMetadata(error);
+    const trafficHeaders = buildTrafficHeaders(traffic);
 
     return new Response(
       safeStringify({
         error: errorMessage,
         message: errorMessage,
+        traffic,
       }),
       {
         status: 500,
         headers: {
           "Content-Type": "application/json",
+          ...trafficHeaders,
         },
       },
     );
@@ -291,16 +371,20 @@ export async function handleGenerateObject(
     ) as any;
 
     const result = await agent.generateObject(input, zodSchema, options);
+    const traffic = extractTrafficMetadata(result);
 
     return {
       success: true,
       data: result.object,
+      traffic,
     };
   } catch (error) {
     logger.error("Failed to generate object", { error });
+    const traffic = extractTrafficMetadata(error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
+      traffic,
     };
   }
 }
@@ -342,23 +426,29 @@ export async function handleStreamObject(
     ) as any;
 
     const result = await agent.streamObject(input, zodSchema, options);
+    const traffic = extractTrafficMetadata(result);
 
     // Use the built-in toTextStreamResponse - it handles errors properly
-    return result.toTextStreamResponse();
+    const response = result.toTextStreamResponse();
+    return wrapStreamWithTraffic(response, traffic);
   } catch (error) {
     logger.error("Failed to handle stream object request", { error });
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const traffic = extractTrafficMetadata(error);
+    const trafficHeaders = buildTrafficHeaders(traffic);
 
     return new Response(
       safeStringify({
         error: errorMessage,
         message: errorMessage,
+        traffic,
       }),
       {
         status: 500,
         headers: {
           "Content-Type": "application/json",
+          ...trafficHeaders,
         },
       },
     );
