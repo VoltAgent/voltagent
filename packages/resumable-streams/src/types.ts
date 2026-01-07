@@ -1,4 +1,4 @@
-import type { ResumableStreamContext } from "@voltagent/core";
+import type { ResumableStreamContext, VoltOpsClient } from "@voltagent/core";
 import type { Publisher, Subscriber } from "resumable-stream";
 
 export type ResumableStreamSubscriber = Subscriber;
@@ -35,6 +35,13 @@ export type ResumableStreamRedisStoreOptions = ResumableStreamStoreOptions & {
 export type ResumableStreamGenericStoreOptions = ResumableStreamStoreOptions & {
   publisher: ResumableStreamPublisher;
   subscriber: ResumableStreamSubscriber;
+};
+
+export type ResumableStreamVoltOpsStoreOptions = ResumableStreamStoreOptions & {
+  voltOpsClient?: VoltOpsClient;
+  publicKey?: string;
+  secretKey?: string;
+  baseUrl?: string;
 };
 
 export type ResumableStreamAdapterConfig = {

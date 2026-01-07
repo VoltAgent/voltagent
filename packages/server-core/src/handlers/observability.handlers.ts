@@ -166,6 +166,22 @@ export async function getObservabilityStatusHandler(deps: ServerProviderDeps): P
     // Get VoltAgentObservability instance from deps
     const observability = deps.observability;
     const enabled = !!observability;
+    const resumableStreamAdapter = deps.resumableStream;
+    const resumableStreamEnabled = !!resumableStreamAdapter;
+    const resumableStreamStoreType =
+      typeof (resumableStreamAdapter as { __voltagentResumableStoreType?: unknown })
+        ?.__voltagentResumableStoreType === "string"
+        ? ((resumableStreamAdapter as { __voltagentResumableStoreType?: string })
+            .__voltagentResumableStoreType as string)
+        : resumableStreamEnabled
+          ? "custom"
+          : null;
+    const resumableStreamStoreDisplayName =
+      typeof (resumableStreamAdapter as { __voltagentResumableStoreDisplayName?: unknown })
+        ?.__voltagentResumableStoreDisplayName === "string"
+        ? ((resumableStreamAdapter as { __voltagentResumableStoreDisplayName?: string })
+            .__voltagentResumableStoreDisplayName as string)
+        : null;
 
     let storageType = "none";
     let storageAdapterName: string | null = null;
@@ -218,6 +234,11 @@ export async function getObservabilityStatusHandler(deps: ServerProviderDeps): P
         traceCount,
         spanCount,
         logCount,
+        resumableStream: {
+          enabled: resumableStreamEnabled,
+          store: resumableStreamStoreType,
+          storeDisplayName: resumableStreamStoreDisplayName,
+        },
         message: enabled
           ? `Observability is enabled with ${storageType} storage`
           : "Observability is not configured",

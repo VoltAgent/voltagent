@@ -7,6 +7,7 @@
 
 // Export main client class
 export { VoltOpsClient } from "./client";
+export { getGlobalVoltOpsClient } from "./global-client";
 
 // Export all types
 export type {

@@ -3,9 +3,32 @@ title: Resumable Streaming
 slug: /agents/resumable-streaming
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # Resumable Streaming
 
 Resumable streaming lets a client reconnect to an in-flight stream (for example after a refresh) and continue receiving the same response. VoltAgent provides this via `@voltagent/resumable-streams`.
+
+## Install
+
+<Tabs groupId="package-manager">
+  <TabItem value="npm" label="npm" default>
+    ```bash
+    npm install @voltagent/resumable-streams
+    ```
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+    ```bash
+    yarn add @voltagent/resumable-streams
+    ```
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+    ```bash
+    pnpm add @voltagent/resumable-streams
+    ```
+  </TabItem>
+</Tabs>
 
 ## How it works
 
@@ -91,6 +114,44 @@ The Hono server exposes:
 If there is no active stream, it returns `204`. `userId` is required.
 
 ## Store options
+
+### VoltOps managed store
+
+`createResumableStreamVoltOpsStore` stores streams in VoltOps. It uses:
+
+- the global `VoltOpsClient` if one is already configured by `VoltAgent`, or
+- your explicit `voltOpsClient`, or
+- `VOLTAGENT_PUBLIC_KEY` + `VOLTAGENT_SECRET_KEY` from env.
+
+```ts
+import {
+  createResumableStreamAdapter,
+  createResumableStreamVoltOpsStore,
+} from "@voltagent/resumable-streams";
+
+const streamStore = await createResumableStreamVoltOpsStore();
+const adapter = await createResumableStreamAdapter({ streamStore });
+```
+
+If you need a custom base URL, pass `baseUrl` or set `VOLTAGENT_API_BASE_URL`.
+
+Custom VoltOps client:
+
+```ts
+import { VoltOpsClient } from "@voltagent/core";
+import {
+  createResumableStreamAdapter,
+  createResumableStreamVoltOpsStore,
+} from "@voltagent/resumable-streams";
+
+const voltOpsClient = new VoltOpsClient({
+  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+  secretKey: process.env.VOLTAGENT_SECRET_KEY,
+});
+
+const streamStore = await createResumableStreamVoltOpsStore({ voltOpsClient });
+const adapter = await createResumableStreamAdapter({ streamStore });
+```
 
 ### Redis store (recommended)
 
@@ -386,6 +447,14 @@ Otherwise, pass a separate `activeStreamStore`.
 - Resumable streaming does not persist messages. For message persistence, enable memory.  
   See [Memory](/agents/memory).
 
+## VoltOps plan limits (managed store)
+
+When you use the VoltOps managed store, concurrent resumable streams are limited per project:
+
+- Free: 1 concurrent stream
+- Core: 100 concurrent streams
+- Pro: 1000 concurrent streams
+
 ## API reference (@voltagent/resumable-streams)
 
 ### createResumableStreamAdapter
@@ -433,6 +502,25 @@ const customStreamStore = await createResumableStreamRedisStore({ publisher, sub
 ```
 
 If you pass custom clients, you must connect them yourself.
+
+### createResumableStreamVoltOpsStore
+
+Creates a managed store backed by VoltOps.
+
+Props:
+
+- `voltOpsClient` (optional)
+- `publicKey` / `secretKey` (optional, used if `voltOpsClient` is not provided)
+- `baseUrl` (optional)
+- `waitUntil` (optional)
+
+```ts
+import { createResumableStreamVoltOpsStore } from "@voltagent/resumable-streams";
+
+const streamStore = await createResumableStreamVoltOpsStore({
+  baseUrl: "https://api.voltagent.dev",
+});
+```
 
 ### createResumableStreamMemoryStore
 

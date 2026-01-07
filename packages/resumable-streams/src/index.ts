@@ -7,12 +7,14 @@ export type {
   ResumableStreamSubscriber,
   ResumableStreamStore,
   ResumableStreamStoreOptions,
+  ResumableStreamVoltOpsStoreOptions,
 } from "./types";
 export {
   createResumableStreamAdapter,
   createResumableStreamGenericStore,
   createResumableStreamMemoryStore,
   createResumableStreamRedisStore,
+  createResumableStreamVoltOpsStore,
   createMemoryResumableStreamActiveStore,
   resolveResumableStreamAdapter,
   resolveResumableStreamDeps,

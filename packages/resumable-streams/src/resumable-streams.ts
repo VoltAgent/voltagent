@@ -1,3 +1,4 @@
+import { VoltOpsClient, getGlobalVoltOpsClient } from "@voltagent/core";
 import type {
   ResumableStreamAdapter,
   ResumableStreamContext,
@@ -13,9 +14,18 @@ import type {
   ResumableStreamStore,
   ResumableStreamStoreOptions,
   ResumableStreamSubscriber,
+  ResumableStreamVoltOpsStoreOptions,
 } from "./types";
 
 const DEFAULT_KEY_PREFIX = "resumable-stream";
+const RESUMABLE_STREAM_DOCS_URL = "https://voltagent.dev/docs/agents/resumable-streaming/";
+const RESUMABLE_STREAM_DISABLED = "__voltagentResumableDisabled" as const;
+const RESUMABLE_STREAM_DISABLED_REASON = "__voltagentResumableDisabledReason" as const;
+const RESUMABLE_STREAM_DISABLED_DOCS_URL = "__voltagentResumableDisabledDocsUrl" as const;
+const RESUMABLE_STREAM_STORE_TYPE = "__voltagentResumableStoreType" as const;
+const RESUMABLE_STREAM_STORE_DISPLAY_NAME = "__voltagentResumableStoreDisplayName" as const;
+const VOLTOPS_MISSING_KEYS_REASON =
+  "Resumable streams are disabled because VOLTAGENT_PUBLIC_KEY and VOLTAGENT_SECRET_KEY are not configured.";
 
 const resolveRedisUrl = () => {
   const redisUrl = process.env.REDIS_URL || process.env.KV_URL;
@@ -23,6 +33,148 @@ const resolveRedisUrl = () => {
     throw new Error("REDIS_URL or KV_URL environment variable is not set");
   }
   return redisUrl;
+};
+
+const normalizeBaseUrl = (value: string) => value.replace(/\/$/, "");
+
+type ResumableStreamDisabledMetadata = {
+  [RESUMABLE_STREAM_DISABLED]: true;
+  [RESUMABLE_STREAM_DISABLED_REASON]?: string;
+  [RESUMABLE_STREAM_DISABLED_DOCS_URL]?: string;
+};
+
+type ResumableStreamStoreMetadata = {
+  [RESUMABLE_STREAM_STORE_TYPE]?: string;
+  [RESUMABLE_STREAM_STORE_DISPLAY_NAME]?: string;
+};
+
+const markResumableStreamDisabled = <T extends object>(
+  value: T,
+  reason: string,
+  docsUrl: string = RESUMABLE_STREAM_DOCS_URL,
+): T & ResumableStreamDisabledMetadata => {
+  Object.assign(value as Record<string, unknown>, {
+    [RESUMABLE_STREAM_DISABLED]: true,
+    [RESUMABLE_STREAM_DISABLED_REASON]: reason,
+    [RESUMABLE_STREAM_DISABLED_DOCS_URL]: docsUrl,
+  });
+
+  return value as T & ResumableStreamDisabledMetadata;
+};
+
+const getResumableStreamDisabledInfo = (value: unknown) => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (record[RESUMABLE_STREAM_DISABLED] !== true) {
+    return null;
+  }
+
+  const reason =
+    typeof record[RESUMABLE_STREAM_DISABLED_REASON] === "string"
+      ? (record[RESUMABLE_STREAM_DISABLED_REASON] as string)
+      : "Resumable streams are disabled.";
+  const docsUrl =
+    typeof record[RESUMABLE_STREAM_DISABLED_DOCS_URL] === "string"
+      ? (record[RESUMABLE_STREAM_DISABLED_DOCS_URL] as string)
+      : RESUMABLE_STREAM_DOCS_URL;
+
+  return { reason, docsUrl };
+};
+
+const markResumableStreamStoreType = <T extends object>(
+  value: T,
+  type: string,
+  displayName?: string,
+): T & ResumableStreamStoreMetadata => {
+  Object.assign(value as Record<string, unknown>, {
+    [RESUMABLE_STREAM_STORE_TYPE]: type,
+    ...(displayName ? { [RESUMABLE_STREAM_STORE_DISPLAY_NAME]: displayName } : {}),
+  });
+
+  return value as T & ResumableStreamStoreMetadata;
+};
+
+const getResumableStreamStoreInfo = (value: unknown) => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const type = record[RESUMABLE_STREAM_STORE_TYPE];
+  if (typeof type !== "string") {
+    return null;
+  }
+
+  const displayName =
+    typeof record[RESUMABLE_STREAM_STORE_DISPLAY_NAME] === "string"
+      ? (record[RESUMABLE_STREAM_STORE_DISPLAY_NAME] as string)
+      : null;
+
+  return { type, displayName };
+};
+
+const createDisabledResumableStreamStore = (reason: string) => {
+  const store: ResumableStreamStore & ResumableStreamActiveStore = {
+    async createNewResumableStream() {
+      return null;
+    },
+    async resumeExistingStream() {
+      return undefined;
+    },
+    async getActiveStreamId() {
+      return null;
+    },
+    async setActiveStreamId() {},
+    async clearActiveStream() {},
+  };
+
+  return markResumableStreamDisabled(store, reason);
+};
+
+const createDisabledResumableStreamAdapter = (reason: string) => {
+  const adapter: ResumableStreamAdapter = {
+    async createStream() {
+      return "";
+    },
+    async resumeStream() {
+      return null;
+    },
+    async getActiveStreamId() {
+      return null;
+    },
+    async clearActiveStream() {},
+  };
+
+  return markResumableStreamDisabled(adapter, reason);
+};
+
+const resolveVoltOpsClient = (
+  options: ResumableStreamVoltOpsStoreOptions,
+): VoltOpsClient | null => {
+  if (options.voltOpsClient) {
+    return options.voltOpsClient;
+  }
+
+  const globalClient = getGlobalVoltOpsClient();
+  if (globalClient) {
+    return globalClient;
+  }
+
+  const publicKey = options.publicKey ?? process.env.VOLTAGENT_PUBLIC_KEY;
+  const secretKey = options.secretKey ?? process.env.VOLTAGENT_SECRET_KEY;
+
+  if (!publicKey || !secretKey) {
+    return null;
+  }
+
+  const baseUrl = normalizeBaseUrl(
+    options.baseUrl ?? process.env.VOLTAGENT_API_BASE_URL ?? "https://api.voltagent.dev",
+  );
+
+  return new VoltOpsClient({ baseUrl, publicKey, secretKey });
 };
 
 const createRandomUUID = () => {
@@ -51,6 +203,18 @@ const buildStreamKey = ({ conversationId, userId }: ResumableStreamContext) => {
 
 const buildActiveStreamKey = (keyPrefix: string, context: ResumableStreamContext) =>
   `${keyPrefix}:active:${buildStreamKey(context)}`;
+
+const buildActiveStreamQuery = (context: ResumableStreamContext, streamId?: string): string => {
+  buildStreamKey(context);
+  const params = new URLSearchParams({
+    conversationId: context.conversationId,
+    userId: context.userId,
+  });
+  if (streamId) {
+    params.set("streamId", streamId);
+  }
+  return params.toString();
+};
 
 const createActiveStreamStoreFromPublisher = (
   publisher: ResumableStreamPublisher,
@@ -234,7 +398,8 @@ export async function createResumableStreamMemoryStore(
 
   const keyPrefix = options.keyPrefix ?? DEFAULT_KEY_PREFIX;
   const activeStreamStore = createActiveStreamStoreFromPublisher(publisher, keyPrefix);
-  return mergeStreamAndActiveStore(streamStore, activeStreamStore);
+  const mergedStore = mergeStreamAndActiveStore(streamStore, activeStreamStore);
+  return markResumableStreamStoreType(mergedStore, "memory", "Memory");
 }
 
 export async function createResumableStreamRedisStore(
@@ -277,7 +442,8 @@ export async function createResumableStreamRedisStore(
   }) as ResumableStreamStore;
 
   const activeStreamStore = createActiveStreamStoreFromPublisher(publisher, keyPrefix);
-  return mergeStreamAndActiveStore(streamStore, activeStreamStore);
+  const mergedStore = mergeStreamAndActiveStore(streamStore, activeStreamStore);
+  return markResumableStreamStoreType(mergedStore, "redis", "Redis");
 }
 
 export async function createResumableStreamGenericStore(
@@ -298,7 +464,111 @@ export async function createResumableStreamGenericStore(
   }) as ResumableStreamStore;
 
   const activeStreamStore = createActiveStreamStoreFromPublisher(options.publisher, keyPrefix);
-  return mergeStreamAndActiveStore(streamStore, activeStreamStore);
+  const mergedStore = mergeStreamAndActiveStore(streamStore, activeStreamStore);
+  return markResumableStreamStoreType(mergedStore, "custom", "Custom");
+}
+
+export async function createResumableStreamVoltOpsStore(
+  options: ResumableStreamVoltOpsStoreOptions = {},
+): Promise<ResumableStreamStore> {
+  const voltOpsClient = resolveVoltOpsClient(options);
+  if (!voltOpsClient) {
+    return createDisabledResumableStreamStore(VOLTOPS_MISSING_KEYS_REASON);
+  }
+
+  const streamStore: ResumableStreamStore = {
+    async createNewResumableStream(streamId, makeStream) {
+      const stream = makeStream();
+      const encodedStream = stream.pipeThrough(new TextEncoderStream());
+      const requestInit = {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+        body: encodedStream,
+        duplex: "half",
+      } as RequestInit;
+
+      const uploadPromise = voltOpsClient
+        .sendRequest(`/resumable-streams/streams/${encodeURIComponent(streamId)}`, requestInit)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Failed to persist resumable stream (${response.status})`);
+          }
+        });
+
+      if (options.waitUntil) {
+        options.waitUntil(uploadPromise);
+      } else {
+        void uploadPromise.catch(() => {});
+      }
+
+      return stream;
+    },
+    async resumeExistingStream(streamId) {
+      const response = await voltOpsClient.sendRequest(
+        `/resumable-streams/streams/${encodeURIComponent(streamId)}`,
+      );
+
+      if (response.status === 204) {
+        return undefined;
+      }
+
+      if (response.status === 410) {
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to resume resumable stream (${response.status})`);
+      }
+
+      if (!response.body) {
+        return null;
+      }
+
+      return response.body.pipeThrough(new TextDecoderStream());
+    },
+  };
+
+  const activeStreamStore: ResumableStreamActiveStore = {
+    async getActiveStreamId(context) {
+      const response = await voltOpsClient.sendRequest(
+        `/resumable-streams/active?${buildActiveStreamQuery(context)}`,
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch active resumable stream (${response.status})`);
+      }
+
+      const payload = (await response.json()) as { streamId?: string | null };
+      return typeof payload.streamId === "string" && payload.streamId.length > 0
+        ? payload.streamId
+        : null;
+    },
+    async setActiveStreamId(context, streamId) {
+      const response = await voltOpsClient.sendRequest(
+        `/resumable-streams/active?${buildActiveStreamQuery(context, streamId)}`,
+        { method: "POST" },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to set active resumable stream (${response.status})`);
+      }
+    },
+    async clearActiveStream({ streamId, ...context }) {
+      const response = await voltOpsClient.sendRequest(
+        `/resumable-streams/active?${buildActiveStreamQuery(context, streamId)}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to clear active resumable stream (${response.status})`);
+      }
+    },
+  };
+
+  const mergedStore = mergeStreamAndActiveStore(streamStore, activeStreamStore);
+  return markResumableStreamStoreType(mergedStore, "voltops", "VoltOps");
 }
 
 export async function createResumableStreamAdapter(
@@ -315,7 +585,14 @@ export async function createResumableStreamAdapter(
     throw new Error("Resumable stream activeStreamStore is required");
   }
 
-  return {
+  const disabledInfo =
+    getResumableStreamDisabledInfo(streamStore) ??
+    getResumableStreamDisabledInfo(activeStreamStore);
+  if (disabledInfo) {
+    return createDisabledResumableStreamAdapter(disabledInfo.reason);
+  }
+
+  const adapter: ResumableStreamAdapter = {
     async createStream({ conversationId, agentId, userId, stream }) {
       const streamId = createRandomUUID();
       await streamStore.createNewResumableStream(streamId, () => stream);
@@ -333,6 +610,18 @@ export async function createResumableStreamAdapter(
       await activeStreamStore.clearActiveStream({ ...context, streamId });
     },
   };
+
+  const storeInfo =
+    getResumableStreamStoreInfo(streamStore) ?? getResumableStreamStoreInfo(activeStreamStore);
+  if (storeInfo) {
+    return markResumableStreamStoreType(
+      adapter,
+      storeInfo.type,
+      storeInfo.displayName ?? undefined,
+    );
+  }
+
+  return adapter;
 }
 
 export async function resolveResumableStreamDeps(
@@ -363,6 +652,12 @@ export function resolveResumableStreamAdapter(
   logger?: Logger,
 ): ResumableStreamAdapter | undefined {
   if (!adapter) {
+    return undefined;
+  }
+
+  const disabledInfo = getResumableStreamDisabledInfo(adapter);
+  if (disabledInfo) {
+    logger?.warn(disabledInfo.reason, { docsUrl: disabledInfo.docsUrl });
     return undefined;
   }
 

@@ -134,6 +134,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Vector Search](./with-vector-search) — Semantic memory with embeddings and automatic recall during chats.
 - [Vercel AI](./with-vercel-ai) — VoltAgent with Vercel AI SDK provider and streaming.
 - [Resumable Streams](./with-resumable-streams) — Persist and resume chat streams with Redis-backed SSE storage.
+- [VoltOps Resumable Streams](./with-voltops-resumable-streams) — Persist and resume chat streams with VoltOps managed storage.
 - [ViteVal](./with-viteval) — Integrate ViteVal to evaluate agents and prompts.
 - [Voice (ElevenLabs)](./with-voice-elevenlabs) — Convert agent replies to speech using ElevenLabs TTS.
 - [Voice (OpenAI)](./with-voice-openai) — Speak responses with OpenAI’s TTS voices.
