@@ -27,8 +27,8 @@
   ],
   "keywords": [
     "ai",
-    "streams",
     "resumable",
+    "streams",
     "voltagent"
   ],
   "license": "MIT",
