@@ -113,6 +113,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [MCP Server](./with-mcp-server) — Implement and run a local MCP server that exposes custom tools.
 - [Netlify Functions](./with-netlify-functions) — Ship serverless agent APIs on Netlify.
 - [Next.js](./with-nextjs) — React UI with agent APIs and streaming responses.
+- [Next.js + AI Elements](./with-nextjs-ai-elements) — AI Elements chat UI with VoltAgent and resumable streams.
 - [Nuxt](./with-nuxt) — Vue/Nuxt front‑end talking to VoltAgent APIs.
 - [Offline Evals](./with-offline-evals) — Batch datasets and score outputs for regression testing.
 - [Peaka (MCP)](./with-peaka-mcp) — Integrate Peaka services via MCP tools.
@@ -132,6 +133,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Turso](./with-turso) — Persist memory on LibSQL/Turso with simple setup.
 - [Vector Search](./with-vector-search) — Semantic memory with embeddings and automatic recall during chats.
 - [Vercel AI](./with-vercel-ai) — VoltAgent with Vercel AI SDK provider and streaming.
+- [Resumable Streams](./with-resumable-streams) — Persist and resume chat streams with Redis-backed SSE storage.
 - [ViteVal](./with-viteval) — Integrate ViteVal to evaluate agents and prompts.
 - [Voice (ElevenLabs)](./with-voice-elevenlabs) — Convert agent replies to speech using ElevenLabs TTS.
 - [Voice (OpenAI)](./with-voice-openai) — Speak responses with OpenAI’s TTS voices.

@@ -1,5 +1,6 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
+import { resolveResumableStreamDeps } from "@voltagent/resumable-streams";
 import { getOrCreateLogger } from "@voltagent/server-core";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -42,6 +43,16 @@ function resolveCorsConfig(config?: ServerlessConfig) {
 export async function createServerlessApp(deps: ServerProviderDeps, config?: ServerlessConfig) {
   const app = new Hono();
   const logger: Logger = getOrCreateLogger(deps, "serverless");
+  const resumableStreamConfig = config?.resumableStream;
+  const baseDeps = await resolveResumableStreamDeps(deps, resumableStreamConfig?.adapter, logger);
+  const resumableStreamDefault =
+    typeof resumableStreamConfig?.defaultEnabled === "boolean"
+      ? resumableStreamConfig.defaultEnabled
+      : baseDeps.resumableStreamDefault;
+  const resolvedDeps: ServerProviderDeps = {
+    ...baseDeps,
+    ...(resumableStreamDefault !== undefined ? { resumableStreamDefault } : {}),
+  };
 
   const corsConfig = resolveCorsConfig(config);
   app.use("*", cors(corsConfig));
@@ -65,17 +76,17 @@ export async function createServerlessApp(deps: ServerProviderDeps, config?: Ser
     ),
   );
 
-  registerAgentRoutes(app, deps, logger);
-  registerWorkflowRoutes(app, deps, logger);
-  registerToolRoutes(app, deps, logger);
-  registerLogRoutes(app, deps, logger);
-  registerUpdateRoutes(app, deps, logger);
-  registerObservabilityRoutes(app, deps, logger);
-  registerTriggerRoutes(app, deps, logger);
-  registerA2ARoutes(app, deps, logger);
+  registerAgentRoutes(app, resolvedDeps, logger);
+  registerWorkflowRoutes(app, resolvedDeps, logger);
+  registerToolRoutes(app, resolvedDeps, logger);
+  registerLogRoutes(app, resolvedDeps, logger);
+  registerUpdateRoutes(app, resolvedDeps, logger);
+  registerObservabilityRoutes(app, resolvedDeps, logger);
+  registerTriggerRoutes(app, resolvedDeps, logger);
+  registerA2ARoutes(app, resolvedDeps, logger);
 
   if (config?.configureApp) {
-    await config.configureApp(app, deps);
+    await config.configureApp(app, resolvedDeps);
   }
 
   return app;

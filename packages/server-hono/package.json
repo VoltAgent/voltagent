@@ -9,6 +9,7 @@
     "@voltagent/core": "^2.0.2",
     "@voltagent/internal": "^1.0.2",
     "@voltagent/mcp-server": "^2.0.2",
+    "@voltagent/resumable-streams": "^2.0.0",
     "@voltagent/server-core": "^2.0.2",
     "fetch-to-node": "^2.1.0",
     "hono": "^4.7.7",

@@ -52,6 +52,7 @@ import {
   handleInstallUpdates,
   handleListTools,
   handleListWorkflowRuns,
+  handleResumeChatStream,
   handleResumeWorkflow,
   handleStreamObject,
   handleStreamText,
@@ -278,6 +279,19 @@ export function registerAgentRoutes(app: Hono, deps: ServerProviderDeps, logger:
       logger,
       signal,
     );
+  });
+
+  app.get(AGENT_ROUTES.resumeChatStream.path, async (c) => {
+    const agentId = c.req.param("id");
+    const conversationId = c.req.param("conversationId");
+    const userId = c.req.query("userId");
+    if (!agentId || !conversationId) {
+      return c.json({ error: "Missing agent or conversation id parameter" }, 400);
+    }
+    if (!userId) {
+      return c.json({ error: "Missing userId parameter" }, 400);
+    }
+    return handleResumeChatStream(agentId, conversationId, deps, logger, userId);
   });
 
   app.post(AGENT_ROUTES.generateObject.path, async (c) => {

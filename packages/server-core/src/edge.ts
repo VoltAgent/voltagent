@@ -14,6 +14,7 @@ export {
   handleGenerateText,
   handleStreamText,
   handleChatStream,
+  handleResumeChatStream,
   handleGenerateObject,
   handleStreamObject,
 } from "./handlers/agent.handlers";

@@ -1,4 +1,4 @@
-import type { ServerProviderDeps } from "@voltagent/core";
+import type { ResumableStreamAdapter, ServerProviderDeps } from "@voltagent/core";
 import type { Hono } from "hono";
 
 export type ServerlessRuntime = "cloudflare" | "vercel" | "deno" | "unknown";
@@ -8,5 +8,9 @@ export interface ServerlessConfig {
   corsAllowMethods?: string[];
   corsAllowHeaders?: string[];
   maxRequestSize?: number;
+  resumableStream?: {
+    adapter: ResumableStreamAdapter;
+    defaultEnabled?: boolean;
+  };
   configureApp?: (app: Hono, deps: ServerProviderDeps) => void | Promise<void>;
 }

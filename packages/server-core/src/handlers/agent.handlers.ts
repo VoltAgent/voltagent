@@ -1,6 +1,7 @@
 import { ClientHTTPError, type ServerProviderDeps } from "@voltagent/core";
 import { convertUsage } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
+import { type UIMessage, UI_MESSAGE_STREAM_HEADERS, generateId } from "ai";
 import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 import { convertJsonSchemaToZod as convertJsonSchemaToZodV3 } from "zod-from-json-schema-v3";
@@ -233,20 +234,212 @@ export async function handleChatStream(
     }
 
     const { input } = body;
+    const originalMessages =
+      Array.isArray(input) &&
+      input.length > 0 &&
+      input.every((message) => Array.isArray((message as { parts?: unknown }).parts))
+        ? (input as UIMessage[])
+        : undefined;
+    let resumableStreamRequested =
+      typeof body?.options?.resumableStream === "boolean"
+        ? body.options.resumableStream
+        : (deps.resumableStreamDefault ?? false);
     const options = processAgentOptions(body, signal);
+    const conversationId =
+      typeof options.conversationId === "string" ? options.conversationId : undefined;
+    const userId =
+      typeof options.userId === "string" && options.userId.trim().length > 0
+        ? options.userId
+        : undefined;
+    const resumableEnabled = Boolean(deps.resumableStream);
+    const resumableStreamEnabled =
+      resumableEnabled &&
+      resumableStreamRequested === true &&
+      Boolean(conversationId) &&
+      Boolean(userId);
+
+    if (resumableStreamRequested === true && !resumableEnabled) {
+      logger.warn(
+        "Resumable streams requested but not configured. Falling back to non-resumable streams.",
+        {
+          docsUrl: "https://voltagent.dev/docs/agents/resumable-streaming/",
+        },
+      );
+      resumableStreamRequested = false;
+    }
+
+    if (resumableStreamRequested === true && !conversationId) {
+      return new Response(
+        safeStringify({
+          error: "conversationId is required for resumable streams",
+          message: "conversationId is required for resumable streams",
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
+
+    if (resumableStreamRequested === true && !userId) {
+      return new Response(
+        safeStringify({
+          error: "userId is required for resumable streams",
+          message: "userId is required for resumable streams",
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
+
+    if (resumableStreamEnabled) {
+      options.abortSignal = undefined;
+    }
+
+    options.resumableStream = resumableStreamEnabled;
+
+    const resumableStreamAdapter = deps.resumableStream;
+    if (resumableStreamEnabled && resumableStreamAdapter && conversationId && userId) {
+      try {
+        await resumableStreamAdapter.clearActiveStream({ conversationId, agentId, userId });
+      } catch (error) {
+        logger.warn("Failed to clear active resumable stream", { error });
+      }
+    }
 
     const result = await agent.streamText(input, options);
+    let activeStreamId: string | null = null;
 
     // Use the built-in toUIMessageStreamResponse - it handles errors properly
     return result.toUIMessageStreamResponse({
+      originalMessages,
+      generateMessageId: generateId,
       sendReasoning: true,
       sendSources: true,
+      consumeSseStream: async ({ stream }) => {
+        if (!resumableStreamEnabled || !resumableStreamAdapter || !conversationId || !userId) {
+          return;
+        }
+
+        try {
+          activeStreamId = await resumableStreamAdapter.createStream({
+            conversationId,
+            agentId,
+            userId,
+            stream,
+          });
+        } catch (error) {
+          logger.error("Failed to persist resumable chat stream", { error });
+        }
+      },
+      onFinish: async () => {
+        if (!resumableStreamEnabled || !resumableStreamAdapter || !conversationId || !userId) {
+          return;
+        }
+
+        try {
+          await resumableStreamAdapter.clearActiveStream({
+            conversationId,
+            agentId,
+            userId,
+            streamId: activeStreamId ?? undefined,
+          });
+        } catch (error) {
+          logger.error("Failed to clear resumable chat stream", { error });
+        }
+      },
     });
   } catch (error) {
     logger.error("Failed to handle chat stream request", { error });
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
+    return new Response(
+      safeStringify({
+        error: errorMessage,
+        message: errorMessage,
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+  }
+}
+
+/**
+ * Handler for resuming chat streams
+ * Returns SSE stream if active, or 204 if no stream is active
+ */
+export async function handleResumeChatStream(
+  agentId: string,
+  conversationId: string,
+  deps: ServerProviderDeps,
+  logger: Logger,
+  userId?: string,
+): Promise<Response> {
+  try {
+    if (!deps.resumableStream) {
+      return new Response(null, { status: 204 });
+    }
+
+    if (!userId) {
+      return new Response(
+        safeStringify({
+          error: "userId is required for resumable streams",
+          message: "userId is required for resumable streams",
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
+
+    const streamId = await deps.resumableStream.getActiveStreamId({
+      conversationId,
+      agentId,
+      userId,
+    });
+
+    if (!streamId) {
+      return new Response(null, { status: 204 });
+    }
+
+    const stream = await deps.resumableStream.resumeStream(streamId);
+    if (!stream) {
+      try {
+        await deps.resumableStream.clearActiveStream({
+          conversationId,
+          agentId,
+          userId,
+          streamId,
+        });
+      } catch (error) {
+        logger.warn("Failed to clear inactive resumable stream", { error });
+      }
+      return new Response(null, { status: 204 });
+    }
+
+    const encodedStream = stream.pipeThrough(new TextEncoderStream());
+
+    return new Response(encodedStream, {
+      status: 200,
+      headers: UI_MESSAGE_STREAM_HEADERS,
+    });
+  } catch (error) {
+    logger.error("Failed to resume chat stream", { error });
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       safeStringify({
         error: errorMessage,

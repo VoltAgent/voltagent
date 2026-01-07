@@ -1,3 +1,4 @@
+import type { ResumableStreamAdapter } from "@voltagent/core";
 import type { AuthNextConfig, AuthProvider } from "@voltagent/server-core";
 import type { Context } from "hono";
 import type { OpenAPIHonoType } from "./zod-openapi-compat";
@@ -13,6 +14,14 @@ type CORSOptions = {
 
 export interface HonoServerConfig {
   port?: number;
+
+  /**
+   * Resumable stream configuration.
+   */
+  resumableStream?: {
+    adapter: ResumableStreamAdapter;
+    defaultEnabled?: boolean;
+  };
 
   enableSwaggerUI?: boolean;
 

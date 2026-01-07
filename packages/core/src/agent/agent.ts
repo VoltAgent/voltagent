@@ -378,6 +378,11 @@ export type GenerateTextOptions<OUTPUT extends OutputSpec = OutputSpec> = Omit<
 };
 export type StreamTextOptions = BaseGenerationOptions & {
   onFinish?: (result: any) => void | Promise<void>;
+  /**
+   * When true, avoids wiring the HTTP abort signal into the stream so clients can resume later.
+   * Use with a resumable stream store to prevent orphaned streams.
+   */
+  resumableStream?: boolean;
 };
 export type GenerateObjectOptions = BaseGenerationOptions;
 export type StreamObjectOptions = BaseGenerationOptions & {

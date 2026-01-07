@@ -24,6 +24,7 @@ export interface ProcessedAgentOptions {
   abortSignal?: AbortSignal;
   onFinish?: (result: unknown) => Promise<void>;
   output?: any;
+  resumableStream?: boolean;
   [key: string]: any;
 }
 

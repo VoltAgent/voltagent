@@ -1,0 +1,38 @@
+{
+  "name": "voltagent-example-with-resumable-streams",
+  "description": "Resumable streams without Next.js using VoltAgent Hono server",
+  "version": "1.0.0",
+  "author": "",
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.0",
+    "@voltagent/core": "^2.0.6",
+    "@voltagent/logger": "^2.0.2",
+    "@voltagent/resumable-streams": "^2.0.0",
+    "@voltagent/server-hono": "^2.0.2",
+    "ai": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "resumable-streams",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-resumable-streams"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src/index.ts",
+    "start": "tsx --env-file=.env ./src/index.ts"
+  },
+  "type": "module"
+}

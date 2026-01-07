@@ -88,6 +88,7 @@ const sidebars: SidebarsConfig = {
         "agents/context",
         "agents/dynamic-agents",
         "agents/cancellation",
+        "agents/resumable-streaming",
       ],
     },
     {

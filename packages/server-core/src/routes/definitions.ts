@@ -155,6 +155,37 @@ export const AGENT_ROUTES = {
       },
     },
   },
+  resumeChatStream: {
+    method: "get" as const,
+    path: "/agents/:id/chat/:conversationId/stream",
+    summary: "Resume chat stream",
+    description:
+      "Resume an in-progress UI message stream for a chat conversation. Requires userId query parameter. Returns 204 if no active stream is found.",
+    tags: ["Agent Generation"],
+    operationId: "resumeChatStream",
+    responses: {
+      200: {
+        description: "Successfully resumed SSE stream for chat generation",
+        contentType: "text/event-stream",
+      },
+      400: {
+        description: "Missing or invalid userId",
+        contentType: "application/json",
+      },
+      204: {
+        description: "No active stream found for the conversation",
+        contentType: "text/plain",
+      },
+      404: {
+        description: "Resumable streams not configured",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to resume chat stream due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   generateObject: {
     method: "post" as const,
     path: "/agents/:id/object",
