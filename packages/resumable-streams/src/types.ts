@@ -1,18 +1,8 @@
 import type { ResumableStreamContext } from "@voltagent/core";
+import type { Publisher, Subscriber } from "resumable-stream";
 
-export type ResumableStreamSubscriber = {
-  connect: () => Promise<unknown>;
-  subscribe: (channel: string, callback: (message: string) => void) => Promise<number | undefined>;
-  unsubscribe: (channel: string) => Promise<unknown>;
-};
-
-export type ResumableStreamPublisher = {
-  connect: () => Promise<unknown>;
-  publish: (channel: string, message: string) => Promise<number | unknown>;
-  set: (key: string, value: string, options?: { EX?: number }) => Promise<"OK" | unknown>;
-  get: (key: string) => Promise<string | number | null>;
-  incr: (key: string) => Promise<number>;
-};
+export type ResumableStreamSubscriber = Subscriber;
+export type ResumableStreamPublisher = Publisher;
 
 export type ResumableStreamStore = {
   createNewResumableStream: (
