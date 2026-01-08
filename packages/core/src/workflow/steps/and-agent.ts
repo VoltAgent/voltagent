@@ -84,7 +84,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           }
           state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
-        return (result.output ?? result.experimental_output) as z.infer<SCHEMA>;
+        return result.output as z.infer<SCHEMA>;
       }
 
       // Step start event removed - now handled by OpenTelemetry spans
@@ -116,7 +116,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
 
-        return (result.output ?? result.experimental_output) as z.infer<SCHEMA>;
+        return result.output as z.infer<SCHEMA>;
       } catch (error) {
         // Check if this is a suspension, not an error
         if (
