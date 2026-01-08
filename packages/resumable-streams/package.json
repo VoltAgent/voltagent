@@ -1,10 +1,10 @@
 {
   "name": "@voltagent/resumable-streams",
   "description": "Resumable stream utilities for VoltAgent",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "VoltAgent Team",
   "dependencies": {
-    "@voltagent/core": "^2.0.5",
+    "@voltagent/core": "^2.0.7",
     "@voltagent/internal": "^1.0.2",
     "redis": "^4.7.0",
     "resumable-stream": "^2.2.10"

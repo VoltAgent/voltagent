@@ -1,10 +1,10 @@
 {
   "name": "@voltagent/server-core",
   "description": "Framework-agnostic server core for VoltAgent",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@voltagent/core": "^2.0.4",
+    "@voltagent/core": "^2.0.7",
     "@voltagent/internal": "^1.0.2",
     "ai": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
