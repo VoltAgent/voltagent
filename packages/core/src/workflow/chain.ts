@@ -141,8 +141,8 @@ export class WorkflowChain<
    * ```
    *
    * @param task - The task (prompt) to execute for the agent, can be a string or a function that returns a string
-   * @param agent - The agent to execute the task using `generateObject`
-   * @param config - The config for the agent (schema) `generateObject` call
+   * @param agent - The agent to execute the task using `generateText`
+   * @param config - The config for the agent (schema) `generateText` call
    * @returns A workflow step that executes the agent with the task
    */
   andAgent<SCHEMA extends z.ZodTypeAny>(
@@ -414,11 +414,11 @@ export class WorkflowChain<
    *     id: "process-pending",
    *     condition: async ({ data }) => data.status === "pending",
    *     execute: async ({ data }) => {
-   *       const result = await agent.generateObject(
+   *       const result = await agent.generateText(
    *         `Process pending request for ${data.userId}`,
-   *         z.object({ processed: z.boolean() })
+   *         { output: Output.object({ schema: z.object({ processed: z.boolean() }) }) }
    *       );
-   *       return { ...data, ...result.object };
+   *       return { ...data, ...result.output };
    *     }
    *   });
    * ```
@@ -588,11 +588,11 @@ export class WorkflowChain<
    *       {
    *         id: "generate-recommendations",
    *         execute: async ({ data }) => {
-   *           const result = await agent.generateObject(
+   *           const result = await agent.generateText(
    *             `Generate recommendations for user ${data.userId}`,
-   *             z.object({ recommendations: z.array(z.string()) })
+   *             { output: Output.object({ schema: z.object({ recommendations: z.array(z.string()) }) }) }
    *           );
-   *           return result.object;
+   *           return result.output;
    *         }
    *       }
    *     ]
@@ -662,11 +662,15 @@ export class WorkflowChain<
    *       {
    *         id: "ai-fallback",
    *         execute: async ({ data }) => {
-   *           const result = await agent.generateObject(
+   *           const result = await agent.generateText(
    *             `Generate fallback response for: ${data.query}`,
-   *             z.object({ source: z.literal("ai"), result: z.string() })
+   *             {
+   *               output: Output.object({
+   *                 schema: z.object({ source: z.literal("ai"), result: z.string() }),
+   *               }),
+   *             }
    *           );
-   *           return result.object;
+   *           return result.output;
    *         }
    *       }
    *     ]

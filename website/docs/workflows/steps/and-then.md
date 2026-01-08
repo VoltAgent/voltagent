@@ -131,7 +131,7 @@ createWorkflowChain({
 
 ### Agent with Tools
 
-When you need tool support or streaming (not available in `andAgent`), call the agent directly:
+When you need streaming or custom tool handling, call the agent directly:
 
 ```typescript
 import { Agent, createTool } from "@voltagent/core";
@@ -172,8 +172,8 @@ const agent = new Agent({
 
 **Why use `andThen` instead of `andAgent`?**
 
-- `andAgent` uses `generateObject` (structured output only, no tools)
-- `andThen` with direct agent calls supports `streamText`/`generateText` (tools + streaming)
+- `andAgent` uses `generateText` with `Output.object` (structured output, no streaming)
+- `andThen` with direct agent calls supports `streamText`/`generateText` (streaming + direct tool access)
 
 ## Suspend & Resume Support
 
