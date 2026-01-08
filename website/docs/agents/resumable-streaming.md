@@ -445,7 +445,7 @@ Otherwise, pass a separate `activeStreamStore`.
 - When resumable streaming is enabled, the abort signal is removed.  
   If you need abortable streams, do not use `resumableStream`.
 - Resumable streaming does not persist messages. For message persistence, enable memory.  
-  See [Memory](/agents/memory).
+  See [Memory](../agents/memory.md).
 
 ## VoltOps plan limits (managed store)
 
