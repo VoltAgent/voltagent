@@ -1,5 +1,39 @@
 # @voltagent/core
 
+## 2.0.8
+
+### Patch Changes
+
+- [#927](https://github.com/VoltAgent/voltagent/pull/927) [`2712078`](https://github.com/VoltAgent/voltagent/commit/27120782e6e278a53d049ae2a60ce9981140d490) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enable `andAgent` tool usage by switching to `generateText` with `Output.object` while keeping structured output
+
+  Example:
+
+  ```ts
+  import { Agent, createTool, createWorkflowChain } from "@voltagent/core";
+  import { z } from "zod";
+  import { openai } from "@ai-sdk/openai";
+
+  const getWeather = createTool({
+    name: "get_weather",
+    description: "Get weather for a city",
+    parameters: z.object({ city: z.string() }),
+    execute: async ({ city }) => ({ city, temp: 72, condition: "sunny" }),
+  });
+
+  const agent = new Agent({
+    name: "WeatherAgent",
+    model: openai("gpt-4o-mini"),
+    tools: [getWeather],
+  });
+
+  const workflow = createWorkflowChain({
+    id: "weather-flow",
+    input: z.object({ city: z.string() }),
+  }).andAgent(({ data }) => `What is the weather in ${data.city}?`, agent, {
+    schema: z.object({ temp: z.number(), condition: z.string() }),
+  });
+  ```
+
 ## 2.0.7
 
 ### Patch Changes
