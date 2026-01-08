@@ -113,7 +113,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [MCP Server](./with-mcp-server) — Implement and run a local MCP server that exposes custom tools.
 - [Netlify Functions](./with-netlify-functions) — Ship serverless agent APIs on Netlify.
 - [Next.js](./with-nextjs) — React UI with agent APIs and streaming responses.
-- [Next.js + AI Elements](./with-nextjs-ai-elements) — AI Elements chat UI with VoltAgent and resumable streams.
+- [Next.js + Resumable Streams](./with-nextjs-resumable-stream) — AI Elements chat UI with VoltAgent and resumable streams.
 - [Nuxt](./with-nuxt) — Vue/Nuxt front‑end talking to VoltAgent APIs.
 - [Offline Evals](./with-offline-evals) — Batch datasets and score outputs for regression testing.
 - [Peaka (MCP)](./with-peaka-mcp) — Integrate Peaka services via MCP tools.

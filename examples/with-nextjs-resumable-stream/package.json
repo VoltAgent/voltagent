@@ -1,5 +1,5 @@
 {
-  "name": "voltagent-example-with-nextjs-ai-elements",
+  "name": "voltagent-example-with-nextjs-resumable-stream",
   "version": "0.1.0",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",

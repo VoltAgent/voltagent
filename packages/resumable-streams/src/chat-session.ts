@@ -37,10 +37,18 @@ export function createResumableChatSession({
   const context: ResumableStreamContext = { conversationId, agentId, userId };
   let activeStreamId: string | null = null;
 
-  const clearActiveStream = (streamId?: string) =>
-    adapter.clearActiveStream({ ...context, streamId });
+  const clearActiveStream = async (streamId?: string) => {
+    await adapter.clearActiveStream({ ...context, streamId });
+    if (!streamId || activeStreamId === streamId) {
+      activeStreamId = null;
+    }
+  };
 
-  const getActiveStreamId = () => adapter.getActiveStreamId(context);
+  const getActiveStreamId = async () => {
+    const streamId = await adapter.getActiveStreamId(context);
+    activeStreamId = streamId;
+    return streamId;
+  };
 
   const resumeStream = (streamId: string) => adapter.resumeStream(streamId);
 
@@ -59,12 +67,13 @@ export function createResumableChatSession({
   };
 
   const onFinish = async () => {
-    if (!activeStreamId) {
-      return;
-    }
-
     try {
-      await clearActiveStream(activeStreamId);
+      const streamId = activeStreamId ?? (await getActiveStreamId());
+      if (!streamId) {
+        return;
+      }
+
+      await clearActiveStream(streamId);
     } catch (error) {
       logger?.error("Failed to clear resumable chat stream", { error });
     }
