@@ -20,8 +20,8 @@
     "agent",
     "ai",
     "resumable-streams",
-    "voltops",
-    "voltagent"
+    "voltagent",
+    "voltops"
   ],
   "license": "MIT",
   "private": true,
