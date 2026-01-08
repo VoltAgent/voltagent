@@ -14,12 +14,27 @@ import type {
 } from "./internal/types";
 import {
   type WorkflowStep,
+  type WorkflowStepBranchConfig,
   type WorkflowStepConditionalWhenConfig,
+  type WorkflowStepForEachConfig,
+  type WorkflowStepLoopConfig,
+  type WorkflowStepMapConfig,
+  type WorkflowStepMapEntry,
+  type WorkflowStepMapResult,
   type WorkflowStepParallelAllConfig,
   type WorkflowStepParallelRaceConfig,
+  type WorkflowStepSleepConfig,
+  type WorkflowStepSleepUntilConfig,
   andAgent,
   andAll,
+  andBranch,
+  andDoUntil,
+  andDoWhile,
+  andForEach,
+  andMap,
   andRace,
+  andSleep,
+  andSleepUntil,
   andTap,
   andThen,
   andWhen,
@@ -529,6 +544,120 @@ export class WorkflowChain<
     const finalStep = andTap(config) as WorkflowStep<WorkflowInput<INPUT_SCHEMA>, any, any, any>;
     this.steps.push(finalStep);
     return this;
+  }
+
+  /**
+   * Add a sleep step to the workflow
+   */
+  andSleep(
+    config: WorkflowStepSleepConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andSleep(config));
+    return this;
+  }
+
+  /**
+   * Add a sleep-until step to the workflow
+   */
+  andSleepUntil(
+    config: WorkflowStepSleepUntilConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andSleepUntil(config));
+    return this;
+  }
+
+  /**
+   * Add a branching step that runs all matching branches
+   */
+  andBranch<NEW_DATA>(
+    config: WorkflowStepBranchConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>,
+  ): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    Array<NEW_DATA | undefined>,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
+  > {
+    this.steps.push(andBranch(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      Array<NEW_DATA | undefined>,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Add a foreach step that runs a step for each item in an array
+   */
+  andForEach<ITEM, NEW_DATA>(
+    config: WorkflowStepForEachConfig<WorkflowInput<INPUT_SCHEMA>, ITEM, NEW_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA[], SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andForEach(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      NEW_DATA[],
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Add a do-while loop step
+   */
+  andDoWhile<NEW_DATA>(
+    config: WorkflowStepLoopConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andDoWhile(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      NEW_DATA,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Add a do-until loop step
+   */
+  andDoUntil<NEW_DATA>(
+    config: WorkflowStepLoopConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andDoUntil(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      NEW_DATA,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Add a mapping step to the workflow
+   */
+  andMap<
+    MAP extends Record<string, WorkflowStepMapEntry<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>>,
+  >(
+    config: WorkflowStepMapConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, MAP>,
+  ): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    WorkflowStepMapResult<MAP>,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
+  > {
+    this.steps.push(andMap(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      WorkflowStepMapResult<MAP>,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 
   /**

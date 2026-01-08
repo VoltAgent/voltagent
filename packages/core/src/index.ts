@@ -8,6 +8,13 @@ export {
   andAll,
   andRace,
   andTap,
+  andSleep,
+  andSleepUntil,
+  andForEach,
+  andBranch,
+  andDoWhile,
+  andDoUntil,
+  andMap,
   andWorkflow,
 } from "./workflow";
 export type {

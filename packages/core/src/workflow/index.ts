@@ -1,4 +1,19 @@
-export { andAgent, andThen, andWhen, andAll, andWorkflow, andRace, andTap } from "./steps";
+export {
+  andAgent,
+  andThen,
+  andWhen,
+  andAll,
+  andWorkflow,
+  andRace,
+  andTap,
+  andSleep,
+  andSleepUntil,
+  andForEach,
+  andBranch,
+  andDoWhile,
+  andDoUntil,
+  andMap,
+} from "./steps";
 export { createWorkflow, serializeWorkflowStep } from "./core";
 export type { SerializedWorkflowStep } from "./core";
 export { createWorkflowChain } from "./chain";

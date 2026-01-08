@@ -17,9 +17,17 @@ export enum NodeType {
   WORKFLOW_STEP = "workflow_step",
   WORKFLOW_AGENT_STEP = "workflow_agent_step",
   WORKFLOW_FUNC_STEP = "workflow_func_step",
+  WORKFLOW_TAP_STEP = "workflow_tap_step",
+  WORKFLOW_WORKFLOW_STEP = "workflow_workflow_step",
   WORKFLOW_CONDITIONAL_STEP = "workflow_conditional_step",
   WORKFLOW_PARALLEL_ALL_STEP = "workflow_parallel_all_step",
   WORKFLOW_PARALLEL_RACE_STEP = "workflow_parallel_race_step",
+  WORKFLOW_SLEEP_STEP = "workflow_sleep_step",
+  WORKFLOW_SLEEP_UNTIL_STEP = "workflow_sleep_until_step",
+  WORKFLOW_FOREACH_STEP = "workflow_foreach_step",
+  WORKFLOW_LOOP_STEP = "workflow_loop_step",
+  WORKFLOW_BRANCH_STEP = "workflow_branch_step",
+  WORKFLOW_MAP_STEP = "workflow_map_step",
 }
 
 /**
@@ -60,9 +68,17 @@ export const getNodeTypeFromNodeId = (nodeId: string): NodeType | null => {
 export type WorkflowStepType =
   | "agent"
   | "func"
+  | "tap"
+  | "workflow"
   | "conditional-when"
   | "parallel-all"
-  | "parallel-race";
+  | "parallel-race"
+  | "sleep"
+  | "sleep-until"
+  | "foreach"
+  | "loop"
+  | "branch"
+  | "map";
 
 /**
  * Create a workflow step node ID with consistent pattern
@@ -119,12 +135,28 @@ export const getWorkflowStepNodeType = (stepType: WorkflowStepType): NodeType =>
       return NodeType.WORKFLOW_AGENT_STEP;
     case "func":
       return NodeType.WORKFLOW_FUNC_STEP;
+    case "tap":
+      return NodeType.WORKFLOW_TAP_STEP;
+    case "workflow":
+      return NodeType.WORKFLOW_WORKFLOW_STEP;
     case "conditional-when":
       return NodeType.WORKFLOW_CONDITIONAL_STEP;
     case "parallel-all":
       return NodeType.WORKFLOW_PARALLEL_ALL_STEP;
     case "parallel-race":
       return NodeType.WORKFLOW_PARALLEL_RACE_STEP;
+    case "sleep":
+      return NodeType.WORKFLOW_SLEEP_STEP;
+    case "sleep-until":
+      return NodeType.WORKFLOW_SLEEP_UNTIL_STEP;
+    case "foreach":
+      return NodeType.WORKFLOW_FOREACH_STEP;
+    case "loop":
+      return NodeType.WORKFLOW_LOOP_STEP;
+    case "branch":
+      return NodeType.WORKFLOW_BRANCH_STEP;
+    case "map":
+      return NodeType.WORKFLOW_MAP_STEP;
     default:
       return NodeType.WORKFLOW_STEP;
   }

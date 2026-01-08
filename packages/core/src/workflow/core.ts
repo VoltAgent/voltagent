@@ -2172,8 +2172,17 @@ export interface SerializedWorkflowStep {
   suspendSchema?: unknown;
   resumeSchema?: unknown;
   agentId?: string;
+  workflowId?: string;
   executeFunction?: string;
   conditionFunction?: string;
+  conditionFunctions?: string[];
+  loopType?: "dowhile" | "dountil";
+  sleepDurationMs?: number;
+  sleepDurationFn?: string;
+  sleepUntil?: string;
+  sleepUntilFn?: string;
+  concurrency?: number;
+  mapConfig?: string;
   nestedStep?: SerializedWorkflowStep;
   subSteps?: SerializedWorkflowStep[];
   subStepsCount?: number;
@@ -2255,6 +2264,121 @@ export function serializeWorkflowStep(step: BaseStep, index: number): Serialized
             ),
             subStepsCount: parallelStep.steps.length,
           }),
+      };
+    }
+
+    case "sleep": {
+      const sleepStep = step as WorkflowStep<unknown, unknown, unknown, unknown> & {
+        duration?: number | ((...args: any[]) => unknown);
+      };
+      return {
+        ...baseStep,
+        ...(typeof sleepStep.duration === "number" && {
+          sleepDurationMs: sleepStep.duration,
+        }),
+        ...(typeof sleepStep.duration === "function" && {
+          sleepDurationFn: sleepStep.duration.toString(),
+        }),
+      };
+    }
+
+    case "sleep-until": {
+      const sleepUntilStep = step as WorkflowStep<unknown, unknown, unknown, unknown> & {
+        date?: Date | ((...args: any[]) => unknown);
+      };
+      return {
+        ...baseStep,
+        ...(sleepUntilStep.date instanceof Date && {
+          sleepUntil: sleepUntilStep.date.toISOString(),
+        }),
+        ...(typeof sleepUntilStep.date === "function" && {
+          sleepUntilFn: sleepUntilStep.date.toString(),
+        }),
+      };
+    }
+
+    case "foreach": {
+      const forEachStep = step as WorkflowStep<unknown, unknown, unknown, unknown> & {
+        step?: BaseStep;
+        concurrency?: number;
+      };
+      return {
+        ...baseStep,
+        ...(forEachStep.step && {
+          nestedStep: serializeWorkflowStep(forEachStep.step, 0),
+        }),
+        ...(typeof forEachStep.concurrency === "number" && {
+          concurrency: forEachStep.concurrency,
+        }),
+      };
+    }
+
+    case "loop": {
+      const loopStep = step as WorkflowStep<unknown, unknown, unknown, unknown> & {
+        step?: BaseStep;
+        condition?: (...args: any[]) => unknown;
+        loopType?: "dowhile" | "dountil";
+      };
+      return {
+        ...baseStep,
+        ...(loopStep.condition && {
+          conditionFunction: loopStep.condition.toString(),
+        }),
+        ...(loopStep.loopType && {
+          loopType: loopStep.loopType,
+        }),
+        ...(loopStep.step && {
+          nestedStep: serializeWorkflowStep(loopStep.step, 0),
+        }),
+      };
+    }
+
+    case "branch": {
+      const branchStep = step as WorkflowStep<unknown, unknown, unknown, unknown> & {
+        branches?: Array<{ step: BaseStep; condition: (...args: any[]) => unknown }>;
+      };
+      return {
+        ...baseStep,
+        ...(branchStep.branches && {
+          subSteps: branchStep.branches.map((branch, index) =>
+            serializeWorkflowStep(branch.step, index),
+          ),
+          subStepsCount: branchStep.branches.length,
+          conditionFunctions: branchStep.branches.map((branch) => branch.condition.toString()),
+        }),
+      };
+    }
+
+    case "map": {
+      const mapStep = step as WorkflowStep<unknown, unknown, unknown, unknown> & {
+        map?: Record<string, { source: string; fn?: (...args: any[]) => unknown }>;
+      };
+      const mapConfig = mapStep.map
+        ? Object.fromEntries(
+            Object.entries(mapStep.map).map(([key, entry]) => {
+              if (entry?.source === "fn" && entry.fn) {
+                return [key, { ...entry, fn: entry.fn.toString() }];
+              }
+              return [key, entry];
+            }),
+          )
+        : undefined;
+
+      return {
+        ...baseStep,
+        ...(mapConfig && {
+          mapConfig: safeStringify(mapConfig),
+        }),
+      };
+    }
+
+    case "workflow": {
+      const workflowStep = step as WorkflowStep<unknown, unknown, unknown, unknown> & {
+        workflow?: { id?: string };
+      };
+      return {
+        ...baseStep,
+        ...(workflowStep.workflow?.id && { workflowId: workflowStep.workflow.id }),
       };
     }
 

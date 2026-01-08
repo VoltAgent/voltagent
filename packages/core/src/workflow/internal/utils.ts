@@ -10,7 +10,6 @@ import type { WorkflowStreamController } from "../stream";
 import type { WorkflowStreamEvent } from "../types";
 import type { WorkflowState } from "./state";
 import type {
-  InternalExtractWorkflowInputData,
   InternalWorkflowStateParam,
   InternalWorkflowStepConfig,
   WorkflowExecuteContext,
@@ -69,7 +68,7 @@ export function defaultStepConfig<CONFIG extends InternalWorkflowStepConfig>(con
  * @returns The execution context for the step
  */
 export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>(
-  data: InternalExtractWorkflowInputData<DATA>,
+  data: DATA,
   state: InternalWorkflowStateParam<INPUT>,
   executionContext: WorkflowExecutionContext,
   suspendFn: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>,

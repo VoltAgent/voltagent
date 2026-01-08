@@ -39,7 +39,7 @@ export type InternalWorkflowStateParam<INPUT> = Omit<
  * @private - INTERNAL USE ONLY
  */
 export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
-  data: InternalExtractWorkflowInputData<DATA>;
+  data: DATA;
   state: InternalWorkflowStateParam<INPUT>;
   getStepData: (stepId: string) => { input: any; output: any } | undefined;
   suspend: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>;

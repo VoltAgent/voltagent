@@ -487,7 +487,20 @@ export interface BaseWorkflowHistoryEntry {
  */
 export interface BaseWorkflowStepHistoryEntry {
   stepIndex: number;
-  stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race";
+  stepType:
+    | "agent"
+    | "func"
+    | "conditional-when"
+    | "parallel-all"
+    | "parallel-race"
+    | "tap"
+    | "workflow"
+    | "sleep"
+    | "sleep-until"
+    | "foreach"
+    | "loop"
+    | "branch"
+    | "map";
   stepName: string;
   status: "pending" | "running" | "completed" | "error" | "skipped"; // includes all possible statuses
   startTime?: Date; // optional since pending steps might not have started
@@ -626,7 +639,13 @@ export interface WorkflowStreamEvent {
     | "parallel-all"
     | "parallel-race"
     | "tap"
-    | "workflow";
+    | "workflow"
+    | "sleep"
+    | "sleep-until"
+    | "foreach"
+    | "loop"
+    | "branch"
+    | "map";
   /**
    * Additional metadata
    */

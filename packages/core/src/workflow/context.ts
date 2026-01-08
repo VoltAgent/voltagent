@@ -89,7 +89,20 @@ export interface WorkflowExecutionContext {
 export interface WorkflowStepContext {
   stepId: string;
   stepIndex: number;
-  stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race";
+  stepType:
+    | "agent"
+    | "func"
+    | "conditional-when"
+    | "parallel-all"
+    | "parallel-race"
+    | "tap"
+    | "workflow"
+    | "sleep"
+    | "sleep-until"
+    | "foreach"
+    | "loop"
+    | "branch"
+    | "map";
   stepName: string;
   workflowId: string;
   executionId: string;
