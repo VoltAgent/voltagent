@@ -106,7 +106,7 @@ describe.sequential("workflow hooks", () => {
     const errorInfo = hooks.onError.mock.calls[0]?.[0];
     expect(errorInfo.status).toBe("error");
     expect(errorInfo.steps.explode.status).toBe("error");
-    expect(errorInfo.steps.explode.output).toBeNull();
+    expect(errorInfo.steps.explode.output).toBeUndefined();
     expect(errorInfo.steps.explode.error?.message).toBe("boom");
   });
 

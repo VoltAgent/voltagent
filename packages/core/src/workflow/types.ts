@@ -322,7 +322,7 @@ export type WorkflowStepStatus =
 
 export type WorkflowStepData = {
   input: DangerouslyAllowAny;
-  output: DangerouslyAllowAny | null;
+  output?: DangerouslyAllowAny;
   status: WorkflowStepStatus;
   error?: Error | null;
 };
@@ -343,7 +343,7 @@ export type WorkflowHookContext<DATA, RESULT> = {
   /**
    * Error from the workflow execution, if any
    */
-  error: Error | null;
+  error: unknown | null;
   /**
    * Suspension metadata when status is suspended
    */
@@ -754,7 +754,7 @@ export interface WorkflowStreamEvent {
   /**
    * Current status of the step/event
    */
-  status: "pending" | "running" | "success" | "error" | "suspended" | "cancelled";
+  status: "pending" | "running" | "success" | "skipped" | "error" | "suspended" | "cancelled";
   /**
    * User context passed through the workflow
    */

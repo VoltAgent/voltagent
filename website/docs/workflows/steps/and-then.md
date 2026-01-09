@@ -46,7 +46,7 @@ execute: async ({ data, suspend, resumeData, retryCount }) => {
   // data: All accumulated data from previous steps
   // suspend: Function to pause workflow
   // resumeData: Data provided when resuming
-  // retryCount: Retry attempt (0 = first attempt)
+  // retryCount: 0 for the initial attempt, increments by 1 for each retry
 };
 ```
 
@@ -57,7 +57,7 @@ execute: async ({ data, suspend, resumeData, retryCount }) => {
   id: "fetch-user",
   retries: 2,
   execute: async ({ data, retryCount }) => {
-    // retryCount starts at 0 and increments per retry
+    // retryCount starts at 0, then 1/2 for each retry attempt
     const user = await fetchUser(data.userId);
     return { user };
   }
@@ -65,6 +65,8 @@ execute: async ({ data, suspend, resumeData, retryCount }) => {
 ```
 
 Retries only apply to thrown errors; suspend or cancel does not retry.
+
+`retries: 2` means up to 2 retry attempts (3 total tries including the first).
 
 You can also set workflow-wide defaults with `retryConfig` on `createWorkflowChain`; `retries` overrides it.
 

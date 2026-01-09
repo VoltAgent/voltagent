@@ -1078,16 +1078,32 @@ export function createWorkflow<
         options?: { includeEnd?: boolean },
       ): Promise<void> => {
         const hookContext = buildHookContext(status);
+        const safeHook = async (hookName: string, hook?: () => Promise<void> | void) => {
+          if (!hook) {
+            return;
+          }
+
+          try {
+            await hook();
+          } catch (error) {
+            runLogger.error("Workflow hook failed", {
+              hook: hookName,
+              error:
+                error instanceof Error ? { message: error.message, stack: error.stack } : error,
+            });
+          }
+        };
+
         if (status === "suspended") {
-          await hooks?.onSuspend?.(hookContext);
+          await safeHook("onSuspend", () => hooks?.onSuspend?.(hookContext));
         }
         if (status === "error") {
-          await hooks?.onError?.(hookContext);
+          await safeHook("onError", () => hooks?.onError?.(hookContext));
         }
-        await hooks?.onFinish?.(hookContext);
+        await safeHook("onFinish", () => hooks?.onFinish?.(hookContext));
         const shouldCallEnd = options?.includeEnd ?? status !== "suspended";
         if (shouldCallEnd) {
-          await hooks?.onEnd?.(stateManager.state, hookContext);
+          await safeHook("onEnd", () => hooks?.onEnd?.(stateManager.state, hookContext));
         }
       };
 
@@ -1408,7 +1424,7 @@ export function createWorkflow<
           // Store step input data before execution
           executionContext.stepData.set(step.id, {
             input: stateManager.state.data,
-            output: null,
+            output: undefined,
             status: "running",
             error: null,
           });
@@ -1669,7 +1685,7 @@ export function createWorkflow<
                 from: stepName,
                 input: stateManager.state.data,
                 output: result,
-                status: "success",
+                status: isSkipped ? "skipped" : "success",
                 context: options?.context,
                 timestamp: new Date().toISOString(),
                 stepIndex: index,
@@ -1722,54 +1738,6 @@ export function createWorkflow<
                   try {
                     await waitWithSignal(workflowRetryDelayMs, options?.suspendController?.signal);
                   } catch (delayError) {
-                    if (
-                      delayError instanceof Error &&
-                      delayError.message === "WORKFLOW_CANCELLED"
-                    ) {
-                      const cancellationReason = resolveCancellationReason();
-                      const interruptionSpan = traceContext.createStepSpan(
-                        index,
-                        step.type,
-                        stepName,
-                        {
-                          stepId: step.id,
-                          input: stateManager.state.data,
-                          attributes: {
-                            ...baseStepSpanAttributes,
-                            ...(stepRetryLimit > 0 && {
-                              "workflow.step.retry.count": retryCount,
-                            }),
-                          },
-                        },
-                      );
-                      return completeCancellation(interruptionSpan, cancellationReason);
-                    }
-
-                    if (
-                      delayError instanceof Error &&
-                      delayError.message === "WORKFLOW_SUSPENDED"
-                    ) {
-                      const suspensionReason =
-                        options?.suspendController?.getReason() ||
-                        "Step suspended during execution";
-                      const interruptionSpan = traceContext.createStepSpan(
-                        index,
-                        step.type,
-                        stepName,
-                        {
-                          stepId: step.id,
-                          input: stateManager.state.data,
-                          attributes: {
-                            ...baseStepSpanAttributes,
-                            ...(stepRetryLimit > 0 && {
-                              "workflow.step.retry.count": retryCount,
-                            }),
-                          },
-                        },
-                      );
-                      return handleStepSuspension(interruptionSpan, suspensionReason);
-                    }
-
                     const interruptionSpan = traceContext.createStepSpan(
                       index,
                       step.type,
@@ -1785,6 +1753,24 @@ export function createWorkflow<
                         },
                       },
                     );
+                    if (
+                      delayError instanceof Error &&
+                      delayError.message === "WORKFLOW_CANCELLED"
+                    ) {
+                      const cancellationReason = resolveCancellationReason();
+                      return completeCancellation(interruptionSpan, cancellationReason);
+                    }
+
+                    if (
+                      delayError instanceof Error &&
+                      delayError.message === "WORKFLOW_SUSPENDED"
+                    ) {
+                      const suspensionReason =
+                        options?.suspendController?.getReason() ||
+                        "Step suspended during execution";
+                      return handleStepSuspension(interruptionSpan, suspensionReason);
+                    }
+
                     traceContext.endStepSpan(interruptionSpan, "error", {
                       error: delayError as Error,
                     });

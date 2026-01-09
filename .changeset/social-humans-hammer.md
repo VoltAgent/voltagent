@@ -52,15 +52,19 @@ For-each and loops:
 createWorkflowChain({
   id: "batch-process",
   input: z.array(z.number()),
+}).andForEach({
+  id: "double-each",
+  concurrency: 2,
+  step: andThen({
+    id: "double",
+    execute: async ({ data }) => data * 2,
+  }),
+});
+
+createWorkflowChain({
+  id: "looping-flow",
+  input: z.number(),
 })
-  .andForEach({
-    id: "double-each",
-    concurrency: 2,
-    step: andThen({
-      id: "double",
-      execute: async ({ data }) => data * 2,
-    }),
-  })
   .andDoWhile({
     id: "increment-until-3",
     step: andThen({
@@ -114,7 +118,7 @@ createWorkflowChain({
   })
   .andSleepUntil({
     id: "wait-until",
-    date: new Date(Date.now() + 60_000),
+    date: () => new Date(Date.now() + 60_000),
   })
   .andThen({
     id: "continue",

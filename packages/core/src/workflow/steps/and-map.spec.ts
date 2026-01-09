@@ -37,4 +37,27 @@ describe("andMap", () => {
       constant: 42,
     });
   });
+
+  it("awaits async fn map entries", async () => {
+    const step = andMap({
+      id: "map",
+      map: {
+        value: {
+          source: "fn",
+          fn: async () => {
+            await new Promise((resolve) => setTimeout(resolve, 5));
+            return "ok";
+          },
+        },
+      },
+    });
+
+    const result = await step.execute(
+      createMockWorkflowExecuteContext({
+        data: { ok: true },
+      }),
+    );
+
+    expect(result).toEqual({ value: "ok" });
+  });
 });

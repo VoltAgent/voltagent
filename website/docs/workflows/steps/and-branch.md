@@ -22,6 +22,13 @@ const workflow = createWorkflowChain({
       }),
     },
     {
+      condition: ({ data }) => data.amount > 500,
+      step: andThen({
+        id: "flag-review",
+        execute: async ({ data }) => ({ ...data, review: true }),
+      }),
+    },
+    {
       condition: ({ data }) => data.amount < 0,
       step: andThen({
         id: "flag-invalid",

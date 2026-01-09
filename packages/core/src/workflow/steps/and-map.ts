@@ -67,7 +67,7 @@ const resolveMapEntry = async (
       return readPath(ctxValue, entry.path);
     }
     case "fn":
-      return entry.fn(context);
+      return await entry.fn(context);
     default:
       throw new Error("Unsupported map entry");
   }
