@@ -23,6 +23,7 @@ export { createSuspendController } from "./suspend-controller";
 export type {
   WorkflowConfig,
   Workflow,
+  WorkflowRetryConfig,
   WorkflowRunOptions,
   WorkflowResumeOptions,
   WorkflowSuspensionMetadata,

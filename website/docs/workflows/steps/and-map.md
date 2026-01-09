@@ -41,6 +41,7 @@ const workflow = createWorkflowChain({
       | { source: "step", stepId: string, path?: string }
       | { source: "fn", fn: (ctx) => any }
   },
+  retries?: number,
   name?: string,
   purpose?: string
 })

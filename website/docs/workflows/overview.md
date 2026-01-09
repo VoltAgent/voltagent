@@ -404,6 +404,29 @@ This allows the agent to maintain a persistent, contextual conversation with eac
 // used by the agent's memory to provide context-aware responses.
 ```
 
+### Workflow Retry Policies
+
+Set a workflow-wide default retry policy with `retryConfig`. Steps inherit it unless they define `retries` (use `retries: 0` to opt out). `delayMs` waits between retry attempts.
+
+```typescript
+const workflow = createWorkflowChain({
+  id: "ingest",
+  name: "Ingest",
+  retryConfig: { attempts: 2, delayMs: 500 },
+})
+  .andThen({
+    id: "fetch-user",
+    execute: async ({ data }) => fetchUser(data.userId),
+  })
+  .andThen({
+    id: "no-retry-step",
+    retries: 0,
+    execute: async ({ data }) => data,
+  });
+
+await workflow.run({ userId: "123" }, { retryConfig: { attempts: 1 } });
+```
+
 ### Workflow History & Observability
 
 ![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)

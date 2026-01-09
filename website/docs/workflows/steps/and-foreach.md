@@ -27,6 +27,7 @@ const workflow = createWorkflowChain({
   id: string,
   step: Step,
   concurrency?: number,
+  retries?: number,
   name?: string,
   purpose?: string
 })

@@ -42,12 +42,31 @@ const result = await workflow.run({ text: "hello" });
 ### Available Parameters
 
 ```typescript
-execute: async ({ data, suspend, resumeData }) => {
+execute: async ({ data, suspend, resumeData, retryCount }) => {
   // data: All accumulated data from previous steps
   // suspend: Function to pause workflow
   // resumeData: Data provided when resuming
+  // retryCount: Retry attempt (0 = first attempt)
 };
 ```
+
+### Retries
+
+```typescript
+.andThen({
+  id: "fetch-user",
+  retries: 2,
+  execute: async ({ data, retryCount }) => {
+    // retryCount starts at 0 and increments per retry
+    const user = await fetchUser(data.userId);
+    return { user };
+  }
+})
+```
+
+Retries only apply to thrown errors; suspend or cancel does not retry.
+
+You can also set workflow-wide defaults with `retryConfig` on `createWorkflowChain`; `retries` overrides it.
 
 ## Data Flow Example
 

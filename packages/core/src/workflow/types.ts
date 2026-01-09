@@ -199,6 +199,19 @@ export interface WorkflowStreamResult<
   abort: () => void;
 }
 
+export interface WorkflowRetryConfig {
+  /**
+   * Number of retry attempts for a step when it throws an error
+   * @default 0
+   */
+  attempts?: number;
+  /**
+   * Delay in milliseconds between retry attempts
+   * @default 0
+   */
+  delayMs?: number;
+}
+
 export interface WorkflowRunOptions {
   /**
    * The active step, this can be used to track the current step in a workflow
@@ -247,6 +260,10 @@ export interface WorkflowRunOptions {
    * If not provided, will use the workflow's logger or global logger
    */
   logger?: Logger;
+  /**
+   * Override retry settings for this workflow execution
+   */
+  retryConfig?: WorkflowRetryConfig;
 }
 
 export interface WorkflowResumeOptions {
@@ -371,6 +388,10 @@ export type WorkflowConfig<
    * If not provided, will use global observability or create a default one
    */
   observability?: VoltAgentObservability;
+  /**
+   * Default retry configuration for steps in this workflow
+   */
+  retryConfig?: WorkflowRetryConfig;
 };
 
 /**
@@ -424,6 +445,10 @@ export type Workflow<
    */
   observability?: VoltAgentObservability;
   /**
+   * Default retry configuration for steps in this workflow
+   */
+  retryConfig?: WorkflowRetryConfig;
+  /**
    * Get the full state of the workflow including all steps
    * @returns The serialized workflow state
    */
@@ -437,6 +462,7 @@ export type Workflow<
     resultSchema?: DangerouslyAllowAny;
     suspendSchema?: DangerouslyAllowAny;
     resumeSchema?: DangerouslyAllowAny;
+    retryConfig?: WorkflowRetryConfig;
   };
   /**
    * Execute the workflow with the given input

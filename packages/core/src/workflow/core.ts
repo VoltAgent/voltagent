@@ -19,6 +19,7 @@ import {
 import { WorkflowTraceContext } from "./open-telemetry/trace-context";
 import { WorkflowRegistry } from "./registry";
 import type { WorkflowStep } from "./steps";
+import { waitWithSignal } from "./steps/signal";
 
 import {
   NoOpWorkflowStreamWriter,
@@ -629,6 +630,7 @@ export function createWorkflow<
     resumeSchema,
     memory: workflowMemory,
     observability: workflowObservability,
+    retryConfig: workflowRetryConfig,
   }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>,
   ...steps: ReadonlyArray<BaseStep>
 ) {
@@ -838,6 +840,7 @@ export function createWorkflow<
       inputSchema: input,
       suspendSchema: effectiveSuspendSchema,
       resumeSchema: effectiveResumeSchema,
+      retryConfig: workflowRetryConfig,
     };
     rootSpan.setAttribute("workflow.stateSnapshot", safeStringify(workflowState));
 
@@ -1002,6 +1005,14 @@ export function createWorkflow<
         executionContext.currentStepIndex = startStepIndex;
       }
 
+      const effectiveRetryConfig = options?.retryConfig ?? workflowRetryConfig;
+      const workflowRetryLimit = Number.isFinite(effectiveRetryConfig?.attempts)
+        ? Math.max(0, Math.floor(effectiveRetryConfig?.attempts as number))
+        : 0;
+      const workflowRetryDelayMs = Number.isFinite(effectiveRetryConfig?.delayMs)
+        ? Math.max(0, Math.floor(effectiveRetryConfig?.delayMs as number))
+        : 0;
+
       try {
         for (const [index, step] of (steps as BaseStep[]).entries()) {
           // Skip already completed steps when resuming
@@ -1013,6 +1024,9 @@ export function createWorkflow<
           }
 
           const stepName = step.name || step.id || `Step ${index + 1}`;
+          const stepRetryLimit = Number.isFinite(step.retries)
+            ? Math.max(0, Math.floor(step.retries as number))
+            : workflowRetryLimit;
 
           executionContext.currentStepIndex = index;
 
@@ -1258,6 +1272,7 @@ export function createWorkflow<
             input: stateManager.state.data,
             attributes: {
               "workflow.step.function": step.execute?.name,
+              ...(stepRetryLimit > 0 && { "workflow.step.retries": stepRetryLimit }),
             },
           });
 
@@ -1330,231 +1345,278 @@ export function createWorkflow<
             throw new Error("WORKFLOW_SUSPENDED");
           };
 
-          try {
-            // Create execution context for the step with typed suspend function
-            const typedSuspendFn = (
-              reason?: string,
-              suspendData?: z.infer<typeof stepSuspendSchema>,
-            ) => suspendFn(reason, suspendData);
+          const handleStepSuspension = async (
+            suspensionReason: string,
+          ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
+            runLogger.debug(`Step ${index} suspended during execution`);
 
-            // Only pass resumeData if we're on the step that was suspended and we have resume input
-            const isResumingThisStep =
-              options?.resumeFrom && index === startStepIndex && resumeInputData !== undefined;
-
-            // Update stream writer for this specific step
-            executionContext.streamWriter = streamController
-              ? new WorkflowStreamWriterImpl(
-                  streamController,
-                  executionId,
-                  step.id,
-                  step.name || step.id,
-                  index,
-                  options?.context,
-                )
-              : new NoOpWorkflowStreamWriter();
-
-            // Create a modified execution context with the current step span
-            const stepExecutionContext = {
-              ...executionContext,
-              currentStepSpan: stepSpan, // Add the current step span for agent integration
-            };
-
-            const stepContext = createStepExecutionContext<
-              WorkflowInput<INPUT_SCHEMA>,
-              typeof stateManager.state.data,
-              z.infer<typeof stepSuspendSchema>,
-              z.infer<typeof stepResumeSchema>
-            >(
-              stateManager.state.data,
-              convertWorkflowStateToParam(
-                stateManager.state,
-                stepExecutionContext,
-                options?.suspendController?.signal,
-              ),
-              stepExecutionContext,
-              typedSuspendFn,
-              isResumingThisStep ? resumeInputData : undefined,
-            );
-            // Execute step within span context with automatic signal checking for immediate suspension
-            const result = await traceContext.withSpan(stepSpan, async () => {
-              return await executeWithSignalCheck(
-                () => step.execute(stepContext),
-                options?.suspendController?.signal,
-                options?.suspensionMode === "immediate" ? 50 : 500, // Check more frequently in immediate mode
-              );
+            // End step span as suspended with reason
+            traceContext.endStepSpan(stepSpan, "suspended", {
+              suspensionReason,
             });
 
-            // Update step output data after successful execution
-            const stepData = executionContext.stepData.get(step.id);
-            if (stepData) {
-              stepData.output = result;
-            }
+            // Get suspend data if provided
+            const suspendData = executionContext.context.get("suspendData");
 
-            // Check if the step was skipped (for conditional steps)
-            // For conditional-when steps, if the output equals the input, the condition wasn't met
-            const isSkipped =
-              step.type === "conditional-when" && result === stateManager.state.data;
-
-            stateManager.update({
-              data: result,
-              result: result,
-            });
-
-            // End step span with appropriate status
-            if (isSkipped) {
-              traceContext.endStepSpan(stepSpan, "skipped", {
-                output: result,
-                skippedReason: "Condition not met",
-              });
-            } else {
-              traceContext.endStepSpan(stepSpan, "completed", {
-                output: result,
-              });
-            }
-
-            // Log step completion with context
-            runLogger.debug(
-              `Step ${index + 1} ${isSkipped ? "skipped" : "completed"}: ${stepName} | type=${step.type}`,
+            const suspensionMetadata = stateManager.suspend(
+              suspensionReason,
               {
-                stepIndex: index,
-                stepType: step.type,
-                stepName,
-                output: result !== undefined ? result : null,
-                skipped: isSkipped,
+                stepExecutionState: stateManager.state.data,
+                completedStepsData: Array.from({ length: index }, (_, i) => i),
               },
+              index, // Current step that was suspended
+              executionContext.eventSequence, // Pass current event sequence
             );
 
-            // Emit step complete event
+            // Add suspend data to suspension metadata if provided
+            if (suspendData !== undefined && suspensionMetadata) {
+              (suspensionMetadata as WorkflowSuspensionMetadata<any>).suspendData = suspendData;
+            }
+
+            runLogger.debug(`Workflow suspended at step ${index}`, suspensionMetadata);
+
+            // Emit suspension event to stream
             emitAndCollectEvent({
-              type: "step-complete",
+              type: "workflow-suspended",
               executionId,
-              from: stepName,
+              from: step.name || step.id,
               input: stateManager.state.data,
-              output: result,
-              status: "success",
+              output: undefined,
+              status: "suspended",
               context: options?.context,
               timestamp: new Date().toISOString(),
               stepIndex: index,
-              stepType: step.type as any,
               metadata: {
-                displayName: `Step ${index + 1}: ${stepName}`,
+                reason: suspensionReason,
+                suspendData,
+                suspension: suspensionMetadata,
               },
             });
 
-            await hooks?.onStepEnd?.(stateManager.state);
-          } catch (stepError) {
-            if (stepError instanceof Error && stepError.message === "WORKFLOW_CANCELLED") {
-              const cancellationReason = resolveCancellationReason();
-              return completeCancellation(stepSpan, cancellationReason);
+            // Record suspension in trace
+            traceContext.recordSuspension(
+              index,
+              suspensionReason,
+              suspendData,
+              suspensionMetadata?.checkpoint,
+            );
+
+            // End root span as suspended
+            traceContext.end("suspended");
+
+            // Ensure spans are flushed (critical for serverless environments)
+            await observability.flushOnFinish();
+
+            // Save suspension state to workflow's own Memory V2
+            try {
+              await saveSuspensionState(
+                suspensionMetadata,
+                executionId,
+                effectiveMemory,
+                runLogger,
+                collectedEvents,
+              );
+            } catch (_) {
+              // Error already logged in saveSuspensionState, don't throw
             }
 
-            // Check if this is a suspension, not an error
-            if (stepError instanceof Error && stepError.message === "WORKFLOW_SUSPENDED") {
-              runLogger.debug(`Step ${index} suspended during execution`);
+            runLogger.trace(`Workflow execution suspended: ${executionContext.executionId}`);
 
-              // Handle suspension
-              const suspensionReason =
-                options?.suspendController?.getReason() || "Step suspended during execution";
+            // Return suspended state without throwing
+            // Don't close the stream when suspended - it will continue after resume
+            return createWorkflowExecutionResult(
+              id,
+              executionId,
+              stateManager.state.startAt,
+              new Date(),
+              "suspended",
+              null,
+              stateManager.state.usage,
+              stateManager.state.suspension,
+              stateManager.state.cancellation,
+              undefined,
+              effectiveResumeSchema,
+            );
+          };
 
-              // End step span as suspended with reason
-              traceContext.endStepSpan(stepSpan, "suspended", {
-                suspensionReason,
+          let retryCount = 0;
+          while (true) {
+            try {
+              // Create execution context for the step with typed suspend function
+              const typedSuspendFn = (
+                reason?: string,
+                suspendData?: z.infer<typeof stepSuspendSchema>,
+              ) => suspendFn(reason, suspendData);
+
+              // Only pass resumeData if we're on the step that was suspended and we have resume input
+              const isResumingThisStep =
+                options?.resumeFrom && index === startStepIndex && resumeInputData !== undefined;
+
+              // Update stream writer for this specific step
+              executionContext.streamWriter = streamController
+                ? new WorkflowStreamWriterImpl(
+                    streamController,
+                    executionId,
+                    step.id,
+                    step.name || step.id,
+                    index,
+                    options?.context,
+                  )
+                : new NoOpWorkflowStreamWriter();
+
+              // Create a modified execution context with the current step span
+              const stepExecutionContext = {
+                ...executionContext,
+                currentStepSpan: stepSpan, // Add the current step span for agent integration
+              };
+
+              const stepContext = createStepExecutionContext<
+                WorkflowInput<INPUT_SCHEMA>,
+                typeof stateManager.state.data,
+                z.infer<typeof stepSuspendSchema>,
+                z.infer<typeof stepResumeSchema>
+              >(
+                stateManager.state.data,
+                convertWorkflowStateToParam(
+                  stateManager.state,
+                  stepExecutionContext,
+                  options?.suspendController?.signal,
+                ),
+                stepExecutionContext,
+                typedSuspendFn,
+                isResumingThisStep ? resumeInputData : undefined,
+                retryCount,
+              );
+              // Execute step within span context with automatic signal checking for immediate suspension
+              const result = await traceContext.withSpan(stepSpan, async () => {
+                return await executeWithSignalCheck(
+                  () => step.execute(stepContext),
+                  options?.suspendController?.signal,
+                  options?.suspensionMode === "immediate" ? 50 : 500, // Check more frequently in immediate mode
+                );
               });
 
-              // Get suspend data if provided
-              const suspendData = executionContext.context.get("suspendData");
-
-              const suspensionMetadata = stateManager.suspend(
-                suspensionReason,
-                {
-                  stepExecutionState: stateManager.state.data,
-                  completedStepsData: Array.from({ length: index }, (_, i) => i),
-                },
-                index, // Current step that was suspended
-                executionContext.eventSequence, // Pass current event sequence
-              );
-
-              // Add suspend data to suspension metadata if provided
-              if (suspendData !== undefined && suspensionMetadata) {
-                (suspensionMetadata as WorkflowSuspensionMetadata<any>).suspendData = suspendData;
+              // Update step output data after successful execution
+              const stepData = executionContext.stepData.get(step.id);
+              if (stepData) {
+                stepData.output = result;
               }
 
-              runLogger.debug(`Workflow suspended at step ${index}`, suspensionMetadata);
+              // Check if the step was skipped (for conditional steps)
+              // For conditional-when steps, if the output equals the input, the condition wasn't met
+              const isSkipped =
+                step.type === "conditional-when" && result === stateManager.state.data;
 
-              // Emit suspension event to stream
+              stateManager.update({
+                data: result,
+                result: result,
+              });
+
+              // End step span with appropriate status
+              if (isSkipped) {
+                traceContext.endStepSpan(stepSpan, "skipped", {
+                  output: result,
+                  skippedReason: "Condition not met",
+                });
+              } else {
+                traceContext.endStepSpan(stepSpan, "completed", {
+                  output: result,
+                });
+              }
+
+              // Log step completion with context
+              runLogger.debug(
+                `Step ${index + 1} ${isSkipped ? "skipped" : "completed"}: ${stepName} | type=${step.type}`,
+                {
+                  stepIndex: index,
+                  stepType: step.type,
+                  stepName,
+                  output: result !== undefined ? result : null,
+                  skipped: isSkipped,
+                },
+              );
+
+              // Emit step complete event
               emitAndCollectEvent({
-                type: "workflow-suspended",
+                type: "step-complete",
                 executionId,
-                from: step.name || step.id,
+                from: stepName,
                 input: stateManager.state.data,
-                output: undefined,
-                status: "suspended",
+                output: result,
+                status: "success",
                 context: options?.context,
                 timestamp: new Date().toISOString(),
                 stepIndex: index,
+                stepType: step.type as any,
                 metadata: {
-                  reason: suspensionReason,
-                  suspendData,
-                  suspension: suspensionMetadata,
+                  displayName: `Step ${index + 1}: ${stepName}`,
                 },
               });
 
-              // Step suspend event removed - now handled by OpenTelemetry spans
-
-              // Workflow suspend event removed - now handled by OpenTelemetry spans
-
-              // Record suspension in trace
-              traceContext.recordSuspension(
-                index,
-                suspensionReason,
-                suspendData,
-                suspensionMetadata?.checkpoint,
-              );
-
-              // End root span as suspended
-              traceContext.end("suspended");
-
-              // Ensure spans are flushed (critical for serverless environments)
-              await observability.flushOnFinish();
-
-              // Save suspension state to workflow's own Memory V2
-              try {
-                await saveSuspensionState(
-                  suspensionMetadata,
-                  executionId,
-                  effectiveMemory,
-                  runLogger,
-                  collectedEvents,
-                );
-              } catch (_) {
-                // Error already logged in saveSuspensionState, don't throw
+              await hooks?.onStepEnd?.(stateManager.state);
+              break;
+            } catch (stepError) {
+              if (stepError instanceof Error && stepError.message === "WORKFLOW_CANCELLED") {
+                const cancellationReason = resolveCancellationReason();
+                return completeCancellation(stepSpan, cancellationReason);
               }
 
-              runLogger.trace(`Workflow execution suspended: ${executionContext.executionId}`);
+              // Check if this is a suspension, not an error
+              if (stepError instanceof Error && stepError.message === "WORKFLOW_SUSPENDED") {
+                const suspensionReason =
+                  options?.suspendController?.getReason() || "Step suspended during execution";
+                return handleStepSuspension(suspensionReason);
+              }
 
-              // Return suspended state without throwing
-              // Don't close the stream when suspended - it will continue after resume
-              return createWorkflowExecutionResult(
-                id,
-                executionId,
-                stateManager.state.startAt,
-                new Date(),
-                "suspended",
-                null,
-                stateManager.state.usage,
-                stateManager.state.suspension,
-                stateManager.state.cancellation,
-                undefined,
-                effectiveResumeSchema,
-              );
+              if (retryCount < stepRetryLimit) {
+                retryCount += 1;
+                runLogger.warn(
+                  `Step ${index + 1} failed, retrying (${retryCount}/${stepRetryLimit}): ${stepName} | type=${step.type}`,
+                  {
+                    stepIndex: index,
+                    stepType: step.type,
+                    stepName,
+                    error:
+                      stepError instanceof Error
+                        ? { message: stepError.message, stack: stepError.stack }
+                        : stepError,
+                  },
+                );
+                if (workflowRetryDelayMs > 0) {
+                  try {
+                    await waitWithSignal(workflowRetryDelayMs, options?.suspendController?.signal);
+                  } catch (delayError) {
+                    if (
+                      delayError instanceof Error &&
+                      delayError.message === "WORKFLOW_CANCELLED"
+                    ) {
+                      const cancellationReason = resolveCancellationReason();
+                      return completeCancellation(stepSpan, cancellationReason);
+                    }
+
+                    if (
+                      delayError instanceof Error &&
+                      delayError.message === "WORKFLOW_SUSPENDED"
+                    ) {
+                      const suspensionReason =
+                        options?.suspendController?.getReason() ||
+                        "Step suspended during execution";
+                      return handleStepSuspension(suspensionReason);
+                    }
+
+                    throw delayError;
+                  }
+                }
+                continue;
+              }
+
+              // End step span with error
+              traceContext.endStepSpan(stepSpan, "error", {
+                error: stepError as Error,
+              });
+
+              throw stepError; // Re-throw the original error
             }
-
-            // End step span with error
-            traceContext.endStepSpan(stepSpan, "error", {
-              error: stepError as Error,
-            });
-
-            throw stepError; // Re-throw the original error
           }
         }
 
@@ -1794,6 +1856,7 @@ export function createWorkflow<
     // ✅ Always expose memory for registry access
     memory: effectiveMemory,
     observability: workflowObservability,
+    retryConfig: workflowRetryConfig,
     getFullState: () => {
       // Return workflow state similar to agent.getFullState
       return {
@@ -1806,6 +1869,7 @@ export function createWorkflow<
         resultSchema: result,
         suspendSchema: effectiveSuspendSchema,
         resumeSchema: effectiveResumeSchema,
+        retryConfig: workflowRetryConfig,
       };
     },
     createSuspendController: () => createDefaultSuspendController(),
@@ -2171,6 +2235,7 @@ export interface SerializedWorkflowStep {
   outputSchema?: unknown;
   suspendSchema?: unknown;
   resumeSchema?: unknown;
+  retries?: number;
   agentId?: string;
   workflowId?: string;
   executeFunction?: string;
@@ -2203,6 +2268,7 @@ export function serializeWorkflowStep(step: BaseStep, index: number): Serialized
     ...(step.outputSchema && { outputSchema: step.outputSchema }),
     ...(step.suspendSchema && { suspendSchema: step.suspendSchema }),
     ...(step.resumeSchema && { resumeSchema: step.resumeSchema }),
+    ...(typeof step.retries === "number" && { retries: step.retries }),
   };
 
   // Add type-specific data

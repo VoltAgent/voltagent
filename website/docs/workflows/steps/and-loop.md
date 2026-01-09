@@ -49,6 +49,7 @@ const workflow = createWorkflowChain({
   id: string,
   step: Step,
   condition: (ctx) => boolean | Promise<boolean>,
+  retries?: number,
   name?: string,
   purpose?: string
 })
@@ -57,6 +58,7 @@ const workflow = createWorkflowChain({
   id: string,
   step: Step,
   condition: (ctx) => boolean | Promise<boolean>,
+  retries?: number,
   name?: string,
   purpose?: string
 })

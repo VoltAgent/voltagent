@@ -121,3 +121,21 @@ createWorkflowChain({
     execute: async ({ data }) => ({ ...data, resumed: true }),
   });
 ```
+
+Workflow-level retries:
+
+```ts
+createWorkflowChain({
+  id: "retry-defaults",
+  retryConfig: { attempts: 2, delayMs: 500 },
+})
+  .andThen({
+    id: "fetch-user",
+    execute: async ({ data }) => fetchUser(data.userId),
+  })
+  .andThen({
+    id: "no-retry-step",
+    retries: 0,
+    execute: async ({ data }) => data,
+  });
+```

@@ -9,7 +9,7 @@ Every workflow step has an `execute` function that receives a context object:
 ```typescript
 .andThen({
   id: "my-step",
-  execute: async ({ data, state, getStepData, suspend, resumeData }) => {
+  execute: async ({ data, state, getStepData, suspend, resumeData, retryCount }) => {
     // Your logic here
     return { result: "processed" };
   }
@@ -145,6 +145,36 @@ When a suspended workflow resumes, this contains the resume data:
     return { ...data, approved: true, approvedBy: "auto" };
   }
 })
+```
+
+### 6. `retryCount` - Retry Attempt Number
+
+If a step is configured with `retries`, this value tells you which attempt is running:
+
+```typescript
+.andThen({
+  id: "fetch-user",
+  retries: 2,
+  execute: async ({ data, retryCount }) => {
+    console.log("Attempt:", retryCount); // 0, 1, 2
+    return await fetchUser(data.userId);
+  }
+})
+```
+
+`retryCount` also increments when retries are enabled at the workflow level:
+
+```typescript
+const workflow = createWorkflowChain({
+  id: "retry-defaults",
+  retryConfig: { attempts: 2, delayMs: 250 },
+}).andThen({
+  id: "fetch-user",
+  execute: async ({ data, retryCount }) => {
+    console.log("Attempt:", retryCount);
+    return fetchUser(data.userId);
+  },
+});
 ```
 
 ## Complete Example
@@ -398,6 +428,7 @@ interface ExecuteContext<TData, TSuspendData = any, TResumeData = any> {
   getStepData: (stepId: string) => { input: any; output: any } | undefined;
   suspend: (reason?: string, data?: TSuspendData) => Promise<never>;
   resumeData?: TResumeData;
+  retryCount?: number;
 }
 ```
 

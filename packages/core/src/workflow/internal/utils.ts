@@ -73,6 +73,7 @@ export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DAT
   executionContext: WorkflowExecutionContext,
   suspendFn: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>,
   resumeData?: RESUME_DATA,
+  retryCount = 0,
 ): WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
   return {
     data,
@@ -80,6 +81,7 @@ export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DAT
     getStepData: (stepId: string) => executionContext?.stepData.get(stepId),
     suspend: suspendFn,
     resumeData,
+    retryCount,
     logger: executionContext.logger,
     writer: executionContext.streamWriter,
   };

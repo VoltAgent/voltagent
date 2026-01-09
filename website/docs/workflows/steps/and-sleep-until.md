@@ -28,6 +28,7 @@ const workflow = createWorkflowChain({
 .andSleepUntil({
   id: string,
   date: Date | ((ctx) => Date | Promise<Date>),
+  retries?: number,
   name?: string,
   purpose?: string
 })

@@ -62,6 +62,7 @@ Think of it like ordering from multiple restaurants at once - you wait for all d
 .andAll({
   id: string,
   steps: Array<Step>,
+  retries?: number,
   name?: string,           // Optional
   purpose?: string         // Optional
 })
