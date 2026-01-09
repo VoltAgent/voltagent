@@ -19,11 +19,11 @@ const workflow = createWorkflowChain({
     onStart: async (state) => {
       console.log(`Processing order ${state.data.orderId}`);
     },
-    onEnd: async (state) => {
-      if (state.status === "completed") {
-        console.log(`Order ${state.data.orderId} completed!`);
-      } else {
-        console.error(`Order failed: ${state.error}`);
+    onFinish: async (info) => {
+      if (info.status === "completed") {
+        console.log(`Order ${info.state.data.orderId} completed!`);
+      } else if (info.status === "error") {
+        console.error(`Order failed: ${info.error}`);
       }
     },
   },
@@ -43,7 +43,7 @@ await workflow.run({ orderId: "123", amount: 99.99 });
 // Order 123 completed!
 ```
 
-## The Four Hooks
+## Hook Overview
 
 ### 1. onStart
 
@@ -54,29 +54,12 @@ onStart: async (state) => {
   // state.data = initial input
   // state.executionId = unique run ID
   await logger.info("Workflow started", {
-    workflowId: state.workflowId,
     executionId: state.executionId,
   });
 };
 ```
 
-### 2. onEnd
-
-Runs once when workflow finishes:
-
-```typescript
-onEnd: async (state) => {
-  // state.status = "completed" or "error"
-  // state.result = final data (if completed)
-  // state.error = error details (if failed)
-
-  if (state.status === "error") {
-    await alertTeam(`Workflow failed: ${state.error}`);
-  }
-};
-```
-
-### 3. onStepStart
+### 2. onStepStart
 
 Runs before each step:
 
@@ -89,7 +72,7 @@ onStepStart: async (state) => {
 };
 ```
 
-### 4. onStepEnd
+### 3. onStepEnd
 
 Runs after each step succeeds:
 
@@ -99,6 +82,58 @@ onStepEnd: async (state) => {
   // state.data = data coming out of step
 
   console.timeEnd(`Step ${state.stepId}`);
+};
+```
+
+### 4. onSuspend
+
+Runs when the workflow suspends:
+
+```typescript
+onSuspend: async (info) => {
+  // info.status === "suspended"
+  // info.suspension?.reason
+  // info.suspension?.suspendData
+  await notifyTeam(`Workflow suspended: ${info.suspension?.reason}`);
+};
+```
+
+### 5. onError
+
+Runs when the workflow ends with an error:
+
+```typescript
+onError: async (info) => {
+  // info.status === "error"
+  // info.error = error details
+  await alertTeam(`Workflow failed: ${info.error}`);
+};
+```
+
+### 6. onFinish
+
+Runs when the workflow reaches a terminal state:
+
+```typescript
+onFinish: async (info) => {
+  // info.status = "completed" | "cancelled" | "suspended" | "error"
+  // info.steps["fetch-user"]?.output
+  await metrics.recordWorkflowEnd(info.status);
+};
+```
+
+`info.steps` includes `{ input, output, status, error }` snapshots keyed by step ID.
+
+### 7. onEnd (extended)
+
+Runs when the workflow ends (completed, cancelled, or error). It receives the state plus a
+structured context:
+
+```typescript
+onEnd: async (state, info) => {
+  if (info?.status === "error") {
+    await alertTeam(`Workflow failed: ${info.error}`);
+  }
 };
 ```
 
@@ -123,15 +158,12 @@ const performanceHooks = {
 
 ```typescript
 const errorHooks = {
-  onEnd: async (state) => {
-    if (state.status === "error") {
-      await errorTracker.report({
-        workflowId: state.workflowId,
-        executionId: state.executionId,
-        error: state.error,
-        input: state.data,
-      });
-    }
+  onError: async (info) => {
+    await errorTracker.report({
+      executionId: info.state.executionId,
+      error: info.error,
+      input: info.state.data,
+    });
   },
 };
 ```
@@ -143,17 +175,15 @@ const auditHooks = {
   onStart: async (state) => {
     await auditLog.create({
       action: "workflow.started",
-      workflowId: state.workflowId,
       userId: state.context?.get("userId"),
       timestamp: new Date(),
     });
   },
-  onEnd: async (state) => {
+  onFinish: async (info) => {
     await auditLog.create({
-      action: "workflow.completed",
-      workflowId: state.workflowId,
-      status: state.status,
-      duration: Date.now() - state.startTime,
+      action: "workflow.ended",
+      status: info.status,
+      duration: Date.now() - info.state.startAt.getTime(),
     });
   },
 };
@@ -169,11 +199,9 @@ const debugHooks = {
   onStepEnd: async (state) => {
     console.log(`← ${state.stepId}`, state.data);
   },
-  onEnd: async (state) => {
-    if (state.status === "error") {
-      console.error("Workflow failed:", state.error);
-      console.error("Last data:", state.data);
-    }
+  onError: async (info) => {
+    console.error("Workflow failed:", info.error);
+    console.error("Last data:", info.state.data);
   },
 };
 ```
@@ -190,7 +218,8 @@ Here's what happens when you run a workflow:
 5. onStepStart (step 2)
 6. [Step 2 executes]
 7. onStepEnd (step 2)
-8. onEnd
+8. onFinish
+9. onEnd
 ```
 
 If a step fails:
@@ -199,7 +228,19 @@ If a step fails:
 1. onStart
 2. onStepStart (step 1)
 3. [Step 1 fails with error]
-4. onEnd (with error status)
+4. onError
+5. onFinish
+6. onEnd
+```
+
+If a step suspends:
+
+```
+1. onStart
+2. onStepStart (step 1)
+3. [Step 1 suspends]
+4. onSuspend
+5. onFinish
 ```
 
 Note: `onStepEnd` is skipped for failed steps.
@@ -231,21 +272,21 @@ const productionWorkflow = createWorkflowChain({
         step: state.stepId,
       });
     },
-    onEnd: async (state) => {
-      if (state.status === "completed") {
+    onFinish: async (info) => {
+      if (info.status === "completed") {
         // Send welcome email
         await emailService.send({
-          to: state.data.email,
+          to: info.state.data.email,
           template: "welcome",
         });
 
         // Track success
         await analytics.track("onboarding.completed", {
-          userId: state.data.userId,
+          userId: info.state.data.userId,
         });
-      } else {
+      } else if (info.status === "error") {
         // Alert team about failure
-        await slack.alert(`Onboarding failed for ${state.data.userId}`);
+        await slack.alert(`Onboarding failed for ${info.state.data.userId}`);
       }
     },
   },

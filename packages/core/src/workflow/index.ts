@@ -23,12 +23,16 @@ export { createSuspendController } from "./suspend-controller";
 export type {
   WorkflowConfig,
   Workflow,
+  WorkflowHookContext,
+  WorkflowHookStatus,
   WorkflowRetryConfig,
   WorkflowRunOptions,
   WorkflowResumeOptions,
   WorkflowSuspensionMetadata,
   WorkflowSuspendController,
   WorkflowStats,
+  WorkflowStepData,
+  WorkflowStepStatus,
   WorkflowTimelineEvent,
 } from "./types";
 export type { WorkflowExecuteContext } from "./internal/types";

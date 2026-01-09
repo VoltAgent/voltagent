@@ -297,6 +297,54 @@ export interface WorkflowResumeOptions {
  * @param DATA - The type of the data
  * @param RESULT - The type of the result
  */
+export type WorkflowHookStatus = "completed" | "suspended" | "cancelled" | "error";
+
+export type WorkflowStepStatus =
+  | "running"
+  | "success"
+  | "error"
+  | "suspended"
+  | "cancelled"
+  | "skipped";
+
+export type WorkflowStepData = {
+  input: DangerouslyAllowAny;
+  output: DangerouslyAllowAny | null;
+  status: WorkflowStepStatus;
+  error?: Error | null;
+};
+
+export type WorkflowHookContext<DATA, RESULT> = {
+  /**
+   * Terminal status for the workflow execution
+   */
+  status: WorkflowHookStatus;
+  /**
+   * The current workflow state
+   */
+  state: WorkflowState<DATA, RESULT>;
+  /**
+   * Result of the workflow execution, if available
+   */
+  result: RESULT | null;
+  /**
+   * Error from the workflow execution, if any
+   */
+  error: Error | null;
+  /**
+   * Suspension metadata when status is suspended
+   */
+  suspension?: WorkflowSuspensionMetadata;
+  /**
+   * Cancellation metadata when status is cancelled
+   */
+  cancellation?: WorkflowCancellationMetadata;
+  /**
+   * Step input/output snapshots keyed by step ID
+   */
+  steps: Record<string, WorkflowStepData>;
+};
+
 export type WorkflowHooks<DATA, RESULT> = {
   /**
    * Called when the workflow starts
@@ -317,11 +365,33 @@ export type WorkflowHooks<DATA, RESULT> = {
    */
   onStepEnd?: (state: WorkflowState<DATA, RESULT>) => Promise<void>;
   /**
-   * Called when the workflow ends
-   * @param state - The current state of the workflow
+   * Called when the workflow is suspended
+   * @param context - The terminal hook context
    * @returns void
    */
-  onEnd?: (state: WorkflowState<DATA, RESULT>) => Promise<void>;
+  onSuspend?: (context: WorkflowHookContext<DATA, RESULT>) => Promise<void>;
+  /**
+   * Called when the workflow ends with an error
+   * @param context - The terminal hook context
+   * @returns void
+   */
+  onError?: (context: WorkflowHookContext<DATA, RESULT>) => Promise<void>;
+  /**
+   * Called when the workflow reaches a terminal state
+   * @param context - The terminal hook context
+   * @returns void
+   */
+  onFinish?: (context: WorkflowHookContext<DATA, RESULT>) => Promise<void>;
+  /**
+   * Called when the workflow ends (completed, cancelled, or error)
+   * @param state - The current state of the workflow
+   * @param context - The terminal hook context
+   * @returns void
+   */
+  onEnd?: (
+    state: WorkflowState<DATA, RESULT>,
+    context?: WorkflowHookContext<DATA, RESULT>,
+  ) => Promise<void>;
 };
 
 export type WorkflowInput<INPUT_SCHEMA extends InternalBaseWorkflowInputSchema> =

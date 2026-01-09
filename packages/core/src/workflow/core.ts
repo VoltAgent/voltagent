@@ -32,6 +32,8 @@ import type {
   WorkflowCancellationMetadata,
   WorkflowConfig,
   WorkflowExecutionResult,
+  WorkflowHookContext,
+  WorkflowHookStatus,
   WorkflowInput,
   WorkflowResult,
   WorkflowRunOptions,
@@ -1013,6 +1015,41 @@ export function createWorkflow<
         ? Math.max(0, Math.floor(effectiveRetryConfig?.delayMs as number))
         : 0;
 
+      const buildHookContext = (
+        status: WorkflowHookStatus,
+      ): WorkflowHookContext<WorkflowInput<INPUT_SCHEMA>, WorkflowResult<RESULT_SCHEMA>> => ({
+        status,
+        state: stateManager.state,
+        result: stateManager.state.result,
+        error: stateManager.state.error,
+        suspension: stateManager.state.suspension,
+        cancellation: stateManager.state.cancellation,
+        steps: Object.fromEntries(
+          Array.from(executionContext.stepData.entries()).map(([stepId, data]) => [
+            stepId,
+            { ...data },
+          ]),
+        ),
+      });
+
+      const runTerminalHooks = async (
+        status: WorkflowHookStatus,
+        options?: { includeEnd?: boolean },
+      ): Promise<void> => {
+        const hookContext = buildHookContext(status);
+        if (status === "suspended") {
+          await hooks?.onSuspend?.(hookContext);
+        }
+        if (status === "error") {
+          await hooks?.onError?.(hookContext);
+        }
+        await hooks?.onFinish?.(hookContext);
+        const shouldCallEnd = options?.includeEnd ?? status !== "suspended";
+        if (shouldCallEnd) {
+          await hooks?.onEnd?.(stateManager.state, hookContext);
+        }
+      };
+
       try {
         for (const [index, step] of (steps as BaseStep[]).entries()) {
           // Skip already completed steps when resuming
@@ -1046,6 +1083,8 @@ export function createWorkflow<
             const stepData = executionContext.stepData.get(step.id);
             if (stepData) {
               stepData.output = stateManager.state.data;
+              stepData.status = "cancelled";
+              stepData.error = null;
             }
 
             emitAndCollectEvent({
@@ -1112,7 +1151,7 @@ export function createWorkflow<
               },
             );
 
-            await hooks?.onEnd?.(stateManager.state);
+            await runTerminalHooks("cancelled");
 
             return createWorkflowExecutionResult(
               id,
@@ -1309,6 +1348,8 @@ export function createWorkflow<
           executionContext.stepData.set(step.id, {
             input: stateManager.state.data,
             output: null,
+            status: "running",
+            error: null,
           });
 
           // Log step start with context
@@ -1372,6 +1413,13 @@ export function createWorkflow<
               (suspensionMetadata as WorkflowSuspensionMetadata<any>).suspendData = suspendData;
             }
 
+            const stepData = executionContext.stepData.get(step.id);
+            if (stepData) {
+              stepData.output = stateManager.state.data;
+              stepData.status = "suspended";
+              stepData.error = null;
+            }
+
             runLogger.debug(`Workflow suspended at step ${index}`, suspensionMetadata);
 
             // Emit suspension event to stream
@@ -1421,6 +1469,8 @@ export function createWorkflow<
 
             runLogger.trace(`Workflow execution suspended: ${executionContext.executionId}`);
 
+            await runTerminalHooks("suspended", { includeEnd: false });
+
             // Return suspended state without throwing
             // Don't close the stream when suspended - it will continue after resume
             return createWorkflowExecutionResult(
@@ -1440,6 +1490,12 @@ export function createWorkflow<
 
           let retryCount = 0;
           while (true) {
+            const stepData = executionContext.stepData.get(step.id);
+            if (stepData) {
+              stepData.status = "running";
+              stepData.error = null;
+            }
+
             const attemptSpan = traceContext.createStepSpan(index, step.type, stepName, {
               stepId: step.id,
               input: stateManager.state.data,
@@ -1503,16 +1559,18 @@ export function createWorkflow<
                 );
               });
 
-              // Update step output data after successful execution
-              const stepData = executionContext.stepData.get(step.id);
-              if (stepData) {
-                stepData.output = result;
-              }
-
               // Check if the step was skipped (for conditional steps)
               // For conditional-when steps, if the output equals the input, the condition wasn't met
               const isSkipped =
                 step.type === "conditional-when" && result === stateManager.state.data;
+
+              // Update step output data after successful execution
+              const stepData = executionContext.stepData.get(step.id);
+              if (stepData) {
+                stepData.output = result;
+                stepData.status = isSkipped ? "skipped" : "success";
+                stepData.error = null;
+              }
 
               stateManager.update({
                 data: result,
@@ -1573,6 +1631,13 @@ export function createWorkflow<
                 const suspensionReason =
                   options?.suspendController?.getReason() || "Step suspended during execution";
                 return handleStepSuspension(attemptSpan, suspensionReason);
+              }
+
+              const stepData = executionContext.stepData.get(step.id);
+              if (stepData) {
+                stepData.status = "error";
+                stepData.error =
+                  stepError instanceof Error ? stepError : new Error(String(stepError));
               }
 
               if (retryCount < stepRetryLimit) {
@@ -1702,7 +1767,7 @@ export function createWorkflow<
           });
         }
 
-        await hooks?.onEnd?.(stateManager.state);
+        await runTerminalHooks("completed");
 
         // Log workflow completion with context
         const duration = finalState.endAt.getTime() - finalState.startAt.getTime();
@@ -1786,7 +1851,7 @@ export function createWorkflow<
             });
           }
 
-          await hooks?.onEnd?.(stateManager.state);
+          await runTerminalHooks("cancelled");
 
           return createWorkflowExecutionResult(
             id,
@@ -1815,6 +1880,9 @@ export function createWorkflow<
 
           // Ensure spans are flushed (critical for serverless environments)
           await observability.flushOnFinish();
+          if (stateManager.state.status === "suspended") {
+            await runTerminalHooks("suspended", { includeEnd: false });
+          }
           // This case should be handled in the step catch block,
           // but just in case it bubbles up here
           streamController?.close();
@@ -1879,7 +1947,7 @@ export function createWorkflow<
             error: memoryError,
           });
         }
-        await hooks?.onEnd?.(stateManager.state);
+        await runTerminalHooks("error");
 
         // Close stream after state update
         streamController?.close();

@@ -5,7 +5,7 @@ import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowExecutionContext } from "../context";
-import type { WorkflowStreamWriter } from "../types";
+import type { WorkflowStepData, WorkflowStreamWriter } from "../types";
 import type { WorkflowState } from "./state";
 
 /**
@@ -41,7 +41,7 @@ export type InternalWorkflowStateParam<INPUT> = Omit<
 export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
   data: DATA;
   state: InternalWorkflowStateParam<INPUT>;
-  getStepData: (stepId: string) => { input: any; output: any } | undefined;
+  getStepData: (stepId: string) => WorkflowStepData | undefined;
   suspend: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>;
   resumeData?: RESUME_DATA;
   retryCount?: number;

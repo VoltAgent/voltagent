@@ -2,7 +2,7 @@ import type { Span } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import type { Memory } from "../memory";
 import type { WorkflowTraceContext } from "./open-telemetry/trace-context";
-import type { WorkflowStreamWriter } from "./types";
+import type { WorkflowStepData, WorkflowStreamWriter } from "./types";
 
 /**
  * Context information for a workflow execution
@@ -54,7 +54,7 @@ export interface WorkflowExecutionContext {
    * Map of executed step data (input and output) by step ID
    * Used for accessing previous step results
    */
-  stepData: Map<string, { input: any; output: any }>;
+  stepData: Map<string, WorkflowStepData>;
   /**
    * Current event sequence number for this workflow execution
    * Used to maintain event ordering even after server restarts

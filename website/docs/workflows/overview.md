@@ -539,12 +539,15 @@ The workflow can also suspend during execution and be resumed later. For detaile
 
 Workflows provide hooks that allow you to tap into the lifecycle of a workflow run. You can execute custom logic at key points, such as before and after a step or at the beginning and end of the entire workflow. This is useful for logging, metrics, or any other side effects you want to perform.
 
-| Hook          | Trigger                                         |
-| ------------- | ----------------------------------------------- |
-| `onStart`     | Before the workflow begins execution.           |
-| `onEnd`       | After the workflow finishes (success or error). |
-| `onStepStart` | Before each individual step starts.             |
-| `onStepEnd`   | After each individual step completes.           |
+| Hook          | Trigger                                                                           |
+| ------------- | --------------------------------------------------------------------------------- |
+| `onStart`     | Before the workflow begins execution.                                             |
+| `onStepStart` | Before each individual step starts.                                               |
+| `onStepEnd`   | After each individual step completes.                                             |
+| `onSuspend`   | When the workflow suspends.                                                       |
+| `onError`     | When the workflow ends with an error.                                             |
+| `onFinish`    | When the workflow reaches a terminal state (completed/cancelled/suspended/error). |
+| `onEnd`       | After the workflow ends (completed, cancelled, or error).                         |
 
 For more details, see the [Workflow Hooks](./hooks.md) documentation.
 

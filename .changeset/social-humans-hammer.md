@@ -139,3 +139,28 @@ createWorkflowChain({
     execute: async ({ data }) => data,
   });
 ```
+
+Workflow hooks (finish/error/suspend):
+
+```ts
+createWorkflowChain({
+  id: "hooked-workflow",
+  hooks: {
+    onSuspend: async (info) => {
+      console.log("Suspended:", info.suspension?.reason);
+    },
+    onError: async (info) => {
+      console.error("Failed:", info.error);
+    },
+    onFinish: async (info) => {
+      console.log("Done:", info.status);
+    },
+    onEnd: async (state, info) => {
+      if (info?.status === "completed") {
+        console.log("Result:", state.result);
+        console.log("Steps:", Object.keys(info.steps));
+      }
+    },
+  },
+});
+```

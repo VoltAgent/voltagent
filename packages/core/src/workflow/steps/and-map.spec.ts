@@ -23,7 +23,9 @@ describe("andMap", () => {
           context: new Map([["region", { code: "eu" }]]),
         } as any,
         getStepData: (stepId) =>
-          stepId === "fetch-user" ? { input: null, output: { name: "Ada" } } : undefined,
+          stepId === "fetch-user"
+            ? { input: null, output: { name: "Ada" }, status: "success", error: null }
+            : undefined,
       }),
     );
 
