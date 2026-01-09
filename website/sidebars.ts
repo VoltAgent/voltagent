@@ -119,6 +119,7 @@ const sidebars: SidebarsConfig = {
         "workflows/steps/and-when",
         "workflows/steps/and-branch",
         "workflows/steps/and-tap",
+        "workflows/steps/and-guardrail",
         "workflows/steps/and-all",
         "workflows/steps/and-race",
         "workflows/steps/and-foreach",

@@ -427,6 +427,56 @@ const workflow = createWorkflowChain({
 await workflow.run({ userId: "123" }, { retryConfig: { attempts: 1 } });
 ```
 
+### Workflow Guardrails
+
+Guardrails let you validate or sanitize workflow inputs and outputs. Configure them at the workflow level or use `andGuardrail` inside a chain.
+
+```typescript
+import {
+  createWorkflowChain,
+  andGuardrail,
+  createInputGuardrail,
+  createOutputGuardrail,
+} from "@voltagent/core";
+
+const trimInput = createInputGuardrail({
+  name: "trim-input",
+  handler: async ({ input }) => ({
+    pass: true,
+    action: "modify",
+    modifiedInput: typeof input === "string" ? input.trim() : input,
+  }),
+});
+
+const redactOutput = createOutputGuardrail<string>({
+  name: "redact-output",
+  handler: async ({ output }) => ({
+    pass: true,
+    action: "modify",
+    modifiedOutput: output.replace(/[0-9]/g, "*"),
+  }),
+});
+
+const workflow = createWorkflowChain({
+  id: "guarded",
+  input: z.string(),
+  result: z.string(),
+  inputGuardrails: [trimInput],
+  outputGuardrails: [redactOutput],
+})
+  .andGuardrail({
+    id: "sanitize",
+    outputGuardrails: [redactOutput],
+  })
+  .andThen({
+    id: "finish",
+    execute: async ({ data }) => data,
+  });
+```
+
+Input guardrails only accept string or message inputs. For structured data, use output guardrails.
+If your guardrails rely on agent APIs or metadata, pass `guardrailAgent` in the workflow config or run options.
+
 ### Workflow History & Observability
 
 ![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)
