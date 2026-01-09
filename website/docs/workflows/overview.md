@@ -543,7 +543,7 @@ Workflows provide hooks that allow you to tap into the lifecycle of a workflow r
 | ------------- | --------------------------------------------------------------------------------- |
 | `onStart`     | Before the workflow begins execution.                                             |
 | `onStepStart` | Before each individual step starts.                                               |
-| `onStepEnd`   | After each individual step completes.                                             |
+| `onStepEnd`   | After each individual step completes successfully.                                |
 | `onSuspend`   | When the workflow suspends.                                                       |
 | `onError`     | When the workflow ends with an error.                                             |
 | `onFinish`    | When the workflow reaches a terminal state (completed/cancelled/suspended/error). |
