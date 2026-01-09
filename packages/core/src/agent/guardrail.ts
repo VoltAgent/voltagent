@@ -162,8 +162,8 @@ export function normalizeInputGuardrailList(
   );
 }
 
-export function normalizeOutputGuardrailList(
-  guardrails: OutputGuardrail<any>[],
+export function normalizeOutputGuardrailList<TOutput = any>(
+  guardrails: OutputGuardrail<TOutput>[],
   startIndex = 0,
 ): NormalizedOutputGuardrail[] {
   return guardrails.map((guardrail, index) => {

@@ -4,6 +4,7 @@ export { andWhen } from "./and-when";
 export { andAll } from "./and-all";
 export { andRace } from "./and-race";
 export { andTap } from "./and-tap";
+export { andGuardrail } from "./and-guardrail";
 export { andSleep } from "./and-sleep";
 export { andSleepUntil } from "./and-sleep-until";
 export { andForEach } from "./and-foreach";
@@ -22,6 +23,8 @@ export type {
   WorkflowStepParallelRace,
   WorkflowStepAgent,
   WorkflowStepFunc,
+  WorkflowStepGuardrail,
+  WorkflowStepGuardrailConfig,
   WorkflowStepTapConfig,
   WorkflowStepSleepConfig,
   WorkflowStepSleepUntilConfig,

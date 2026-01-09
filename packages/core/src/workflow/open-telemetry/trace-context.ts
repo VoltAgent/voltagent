@@ -254,6 +254,36 @@ export class WorkflowTraceContext {
   }
 
   /**
+   * Create a generic child span under the workflow root or an optional parent span
+   */
+  createChildSpan(
+    name: string,
+    type: string,
+    options?: {
+      label?: string;
+      attributes?: Record<string, any>;
+      kind?: SpanKind;
+      parentSpan?: Span;
+    },
+  ): Span {
+    const spanOptions: SpanOptions = {
+      kind: options?.kind || SpanKind.INTERNAL,
+      attributes: {
+        ...this.commonAttributes,
+        "span.type": type,
+        ...(options?.label && { "span.label": options.label }),
+        ...(options?.attributes || {}),
+      },
+    };
+
+    const parentContext = options?.parentSpan
+      ? trace.setSpan(this.activeContext, options.parentSpan)
+      : this.activeContext;
+
+    return this.tracer.startSpan(name, spanOptions, parentContext);
+  }
+
+  /**
    * Record a suspension event on the workflow
    */
   recordSuspension(stepIndex: number, reason: string, suspendData?: any, checkpoint?: any): void {
@@ -321,6 +351,14 @@ export class WorkflowTraceContext {
    */
   getRootSpan(): Span {
     return this.rootSpan;
+  }
+
+  /**
+   * Set input on the root span
+   */
+  setInput(input: any): void {
+    const inputStr = typeof input === "string" ? input : safeStringify(input);
+    this.rootSpan.setAttribute("input", inputStr);
   }
 
   /**

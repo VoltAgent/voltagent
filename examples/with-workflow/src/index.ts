@@ -1,5 +1,13 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, andThen, createWorkflowChain } from "@voltagent/core";
+import {
+  Agent,
+  VoltAgent,
+  andGuardrail,
+  andThen,
+  createInputGuardrail,
+  createOutputGuardrail,
+  createWorkflowChain,
+} from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -502,6 +510,46 @@ const loopAndBranchWorkflow = createWorkflowChain({
     },
   });
 
+// ==============================================================================
+// Example 8: Guardrail Workflow
+// Concepts: Workflow-level guardrails, step-level guardrails
+// ==============================================================================
+const trimInput = createInputGuardrail({
+  name: "trim-input",
+  handler: async ({ input }) => ({
+    pass: true,
+    action: "modify",
+    modifiedInput: typeof input === "string" ? input.trim() : input,
+  }),
+});
+
+const redactNumbers = createOutputGuardrail<string>({
+  name: "redact-numbers",
+  handler: async ({ output }) => ({
+    pass: true,
+    action: "modify",
+    modifiedOutput: output.replace(/[0-9]/g, "*"),
+  }),
+});
+
+const guardrailWorkflow = createWorkflowChain({
+  id: "guardrail-workflow",
+  name: "Guardrail Workflow",
+  purpose: "Applies guardrails to sanitize inputs and outputs",
+  input: z.string(),
+  result: z.string(),
+  inputGuardrails: [trimInput],
+  outputGuardrails: [redactNumbers],
+})
+  .andGuardrail({
+    id: "sanitize-step",
+    outputGuardrails: [redactNumbers],
+  })
+  .andThen({
+    id: "finish",
+    execute: async ({ data }) => data,
+  });
+
 // Register workflows with VoltAgent
 
 // Create logger
@@ -525,5 +573,6 @@ new VoltAgent({
     timedReminderWorkflow,
     batchTransformWorkflow,
     loopAndBranchWorkflow,
+    guardrailWorkflow,
   },
 });

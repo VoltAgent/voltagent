@@ -164,3 +164,50 @@ createWorkflowChain({
   },
 });
 ```
+
+Workflow guardrails (input/output + step-level):
+
+```ts
+import {
+  andGuardrail,
+  andThen,
+  createInputGuardrail,
+  createOutputGuardrail,
+  createWorkflowChain,
+} from "@voltagent/core";
+import { z } from "zod";
+
+const trimInput = createInputGuardrail({
+  name: "trim",
+  handler: async ({ input }) => ({
+    pass: true,
+    action: "modify",
+    modifiedInput: typeof input === "string" ? input.trim() : input,
+  }),
+});
+
+const redactOutput = createOutputGuardrail<string>({
+  name: "redact",
+  handler: async ({ output }) => ({
+    pass: true,
+    action: "modify",
+    modifiedOutput: output.replace(/[0-9]/g, "*"),
+  }),
+});
+
+createWorkflowChain({
+  id: "guarded-workflow",
+  input: z.string(),
+  result: z.string(),
+  inputGuardrails: [trimInput],
+  outputGuardrails: [redactOutput],
+})
+  .andGuardrail({
+    id: "sanitize-step",
+    outputGuardrails: [redactOutput],
+  })
+  .andThen({
+    id: "finish",
+    execute: async ({ data }) => data,
+  });
+```

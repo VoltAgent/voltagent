@@ -492,7 +492,8 @@ export type AgentEvalOperationType =
   | "generateText"
   | "streamText"
   | "generateObject"
-  | "streamObject";
+  | "streamObject"
+  | "workflow";
 
 export interface AgentEvalPayload {
   operationId: string;

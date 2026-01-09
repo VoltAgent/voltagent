@@ -3,9 +3,10 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { StreamTextResult, UIMessage } from "ai";
 import type * as TF from "type-fest";
 import type { z } from "zod";
+import type { Agent } from "../agent/agent";
 import type { BaseMessage } from "../agent/providers";
 import type { UsageInfo } from "../agent/providers";
-import type { UserContext } from "../agent/types";
+import type { InputGuardrail, OutputGuardrail, UserContext } from "../agent/types";
 import type { Memory } from "../memory";
 import type { VoltAgentObservability } from "../observability";
 import type { WorkflowExecutionContext } from "./context";
@@ -264,6 +265,18 @@ export interface WorkflowRunOptions {
    * Override retry settings for this workflow execution
    */
   retryConfig?: WorkflowRetryConfig;
+  /**
+   * Input guardrails to run before workflow execution
+   */
+  inputGuardrails?: InputGuardrail[];
+  /**
+   * Output guardrails to run after workflow execution
+   */
+  outputGuardrails?: OutputGuardrail<any>[];
+  /**
+   * Optional agent instance to supply to workflow guardrails
+   */
+  guardrailAgent?: Agent;
 }
 
 export interface WorkflowResumeOptions {
@@ -459,6 +472,18 @@ export type WorkflowConfig<
    */
   observability?: VoltAgentObservability;
   /**
+   * Input guardrails to run before workflow execution
+   */
+  inputGuardrails?: InputGuardrail[];
+  /**
+   * Output guardrails to run after workflow execution
+   */
+  outputGuardrails?: OutputGuardrail<any>[];
+  /**
+   * Optional agent instance to supply to workflow guardrails
+   */
+  guardrailAgent?: Agent;
+  /**
    * Default retry configuration for steps in this workflow
    */
   retryConfig?: WorkflowRetryConfig;
@@ -515,6 +540,18 @@ export type Workflow<
    */
   observability?: VoltAgentObservability;
   /**
+   * Input guardrails configured for this workflow
+   */
+  inputGuardrails?: InputGuardrail[];
+  /**
+   * Output guardrails configured for this workflow
+   */
+  outputGuardrails?: OutputGuardrail<any>[];
+  /**
+   * Optional agent instance supplied to workflow guardrails
+   */
+  guardrailAgent?: Agent;
+  /**
    * Default retry configuration for steps in this workflow
    */
   retryConfig?: WorkflowRetryConfig;
@@ -533,6 +570,10 @@ export type Workflow<
     suspendSchema?: DangerouslyAllowAny;
     resumeSchema?: DangerouslyAllowAny;
     retryConfig?: WorkflowRetryConfig;
+    guardrails?: {
+      inputCount: number;
+      outputCount: number;
+    };
   };
   /**
    * Execute the workflow with the given input
@@ -591,6 +632,7 @@ export interface BaseWorkflowStepHistoryEntry {
     | "parallel-race"
     | "tap"
     | "workflow"
+    | "guardrail"
     | "sleep"
     | "sleep-until"
     | "foreach"
@@ -736,6 +778,7 @@ export interface WorkflowStreamEvent {
     | "parallel-race"
     | "tap"
     | "workflow"
+    | "guardrail"
     | "sleep"
     | "sleep-until"
     | "foreach"

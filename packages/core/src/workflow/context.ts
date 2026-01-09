@@ -1,5 +1,6 @@
 import type { Span } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
+import type { Agent } from "../agent/agent";
 import type { Memory } from "../memory";
 import type { WorkflowTraceContext } from "./open-telemetry/trace-context";
 import type { WorkflowStepData, WorkflowStreamWriter } from "./types";
@@ -75,6 +76,10 @@ export interface WorkflowExecutionContext {
    * Manages span hierarchy and attributes for the workflow execution
    */
   traceContext?: WorkflowTraceContext;
+  /**
+   * Optional agent instance supplied to workflow guardrails
+   */
+  guardrailAgent?: Agent;
 
   /**
    * Current step span for passing to agents called within workflow steps
@@ -97,6 +102,7 @@ export interface WorkflowStepContext {
     | "parallel-race"
     | "tap"
     | "workflow"
+    | "guardrail"
     | "sleep"
     | "sleep-until"
     | "foreach"

@@ -17,6 +17,7 @@ import {
   type WorkflowStepBranchConfig,
   type WorkflowStepConditionalWhenConfig,
   type WorkflowStepForEachConfig,
+  type WorkflowStepGuardrailConfig,
   type WorkflowStepLoopConfig,
   type WorkflowStepMapConfig,
   type WorkflowStepMapEntry,
@@ -31,6 +32,7 @@ import {
   andDoUntil,
   andDoWhile,
   andForEach,
+  andGuardrail,
   andMap,
   andRace,
   andSleep,
@@ -544,6 +546,16 @@ export class WorkflowChain<
   andTap(config: any): any {
     const finalStep = andTap(config) as WorkflowStep<WorkflowInput<INPUT_SCHEMA>, any, any, any>;
     this.steps.push(finalStep);
+    return this;
+  }
+
+  /**
+   * Add a guardrail step to validate or sanitize data
+   */
+  andGuardrail(
+    config: WorkflowStepGuardrailConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andGuardrail(config));
     return this;
   }
 

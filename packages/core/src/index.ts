@@ -8,6 +8,7 @@ export {
   andAll,
   andRace,
   andTap,
+  andGuardrail,
   andSleep,
   andSleepUntil,
   andForEach,

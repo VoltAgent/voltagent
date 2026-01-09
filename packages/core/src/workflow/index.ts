@@ -6,6 +6,7 @@ export {
   andWorkflow,
   andRace,
   andTap,
+  andGuardrail,
   andSleep,
   andSleepUntil,
   andForEach,

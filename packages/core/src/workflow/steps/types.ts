@@ -1,6 +1,7 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
 import type { Agent } from "../../agent/agent";
+import type { InputGuardrail, OutputGuardrail } from "../../agent/types";
 import type {
   InternalAnyWorkflowStep,
   InternalBaseWorkflowStep,
@@ -16,6 +17,7 @@ export type WorkflowStepType =
   | "func"
   | "tap"
   | "workflow"
+  | "guardrail"
   | "conditional-when"
   | "parallel-all"
   | "parallel-race"
@@ -55,6 +57,18 @@ export interface WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_
   extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> {
   type: "workflow";
   workflow: InternalWorkflow<INPUT, DATA, RESULT>;
+}
+
+export type WorkflowStepGuardrailConfig<_INPUT, DATA> = InternalWorkflowStepConfig<{
+  inputGuardrails?: InputGuardrail[];
+  outputGuardrails?: OutputGuardrail<DATA>[];
+}>;
+
+export interface WorkflowStepGuardrail<INPUT, DATA>
+  extends InternalBaseWorkflowStep<INPUT, DATA, DATA, any, any> {
+  type: "guardrail";
+  inputGuardrails?: InputGuardrail[];
+  outputGuardrails?: OutputGuardrail<DATA>[];
 }
 
 export type WorkflowStepTapConfig<
@@ -235,6 +249,7 @@ export type WorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA = any> =
   | WorkflowStepAgent<INPUT, DATA, RESULT>
   | WorkflowStepFunc<INPUT, DATA, RESULT, SUSPEND_DATA>
   | WorkflowStepConditionalWhen<INPUT, DATA, RESULT>
+  | WorkflowStepGuardrail<INPUT, DATA>
   | WorkflowStepParallelAll<INPUT, DATA, RESULT>
   | WorkflowStepTap<INPUT, DATA, RESULT, SUSPEND_DATA>
   | WorkflowStepParallelRace<INPUT, DATA, RESULT>

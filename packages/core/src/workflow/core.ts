@@ -9,6 +9,13 @@ import { type VoltAgentObservability, createVoltAgentObservability } from "../ob
 import { AgentRegistry } from "../registries/agent-registry";
 import { randomUUID } from "../utils/id";
 import type { WorkflowExecutionContext } from "./context";
+import {
+  applyWorkflowInputGuardrails,
+  applyWorkflowOutputGuardrails,
+  createWorkflowGuardrailRuntime,
+  isWorkflowGuardrailInput,
+  resolveWorkflowGuardrailSets,
+} from "./internal/guardrails";
 import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import {
@@ -630,6 +637,9 @@ export function createWorkflow<
     result,
     suspendSchema,
     resumeSchema,
+    inputGuardrails: workflowInputGuardrails,
+    outputGuardrails: workflowOutputGuardrails,
+    guardrailAgent: workflowGuardrailAgent,
     memory: workflowMemory,
     observability: workflowObservability,
     retryConfig: workflowRetryConfig,
@@ -843,6 +853,10 @@ export function createWorkflow<
       suspendSchema: effectiveSuspendSchema,
       resumeSchema: effectiveResumeSchema,
       retryConfig: workflowRetryConfig,
+      guardrails: {
+        inputCount: workflowInputGuardrails?.length ?? 0,
+        outputCount: workflowOutputGuardrails?.length ?? 0,
+      },
     };
     rootSpan.setAttribute("workflow.stateSnapshot", safeStringify(workflowState));
 
@@ -951,7 +965,34 @@ export function createWorkflow<
         // Stream writer is always available
         streamWriter: streamWriter,
         traceContext: traceContext,
+        guardrailAgent: options?.guardrailAgent ?? workflowGuardrailAgent,
       };
+
+      const guardrailSets = resolveWorkflowGuardrailSets({
+        inputGuardrails: workflowInputGuardrails,
+        outputGuardrails: workflowOutputGuardrails,
+        optionInputGuardrails: options?.inputGuardrails,
+        optionOutputGuardrails: options?.outputGuardrails,
+      });
+      const hasWorkflowGuardrails =
+        guardrailSets.input.length > 0 || guardrailSets.output.length > 0;
+      const workflowGuardrailRuntime = hasWorkflowGuardrails
+        ? createWorkflowGuardrailRuntime({
+            workflowId: id,
+            workflowName: name,
+            executionId,
+            traceContext,
+            logger: runLogger,
+            userId: options?.userId,
+            conversationId: options?.conversationId,
+            context: contextMap,
+            guardrailAgent: executionContext.guardrailAgent,
+          })
+        : null;
+
+      if (workflowGuardrailRuntime) {
+        executionContext.guardrailAgent = workflowGuardrailRuntime.guardrailAgent;
+      }
 
       // Emit workflow start event
       emitAndCollectEvent({
@@ -1051,6 +1092,26 @@ export function createWorkflow<
       };
 
       try {
+        if (workflowGuardrailRuntime && guardrailSets.input.length > 0) {
+          if (!isWorkflowGuardrailInput(input)) {
+            throw new Error(
+              "Workflow input guardrails require string or message input. Use outputGuardrails or andGuardrail for structured data.",
+            );
+          }
+
+          const guardrailedInput = (await applyWorkflowInputGuardrails(
+            input,
+            guardrailSets.input,
+            workflowGuardrailRuntime,
+          )) as WorkflowInput<INPUT_SCHEMA>;
+
+          if (options?.resumeFrom) {
+            resumeInputData = guardrailedInput;
+          } else {
+            stateManager.update({ data: guardrailedInput });
+          }
+        }
+
         for (const [index, step] of (steps as BaseStep[]).entries()) {
           // Skip already completed steps when resuming
           if (index < startStepIndex) {
@@ -1743,6 +1804,20 @@ export function createWorkflow<
           }
         }
 
+        if (workflowGuardrailRuntime && guardrailSets.output.length > 0) {
+          const workflowOutput = stateManager.state.result ?? stateManager.state.data;
+          const guardrailedOutput = await applyWorkflowOutputGuardrails(
+            workflowOutput,
+            guardrailSets.output,
+            workflowGuardrailRuntime,
+          );
+
+          stateManager.update({
+            data: guardrailedOutput,
+            result: guardrailedOutput,
+          });
+        }
+
         const finalState = stateManager.finish();
 
         // Record workflow completion in trace
@@ -1982,6 +2057,9 @@ export function createWorkflow<
     // ✅ Always expose memory for registry access
     memory: effectiveMemory,
     observability: workflowObservability,
+    inputGuardrails: workflowInputGuardrails,
+    outputGuardrails: workflowOutputGuardrails,
+    guardrailAgent: workflowGuardrailAgent,
     retryConfig: workflowRetryConfig,
     getFullState: () => {
       // Return workflow state similar to agent.getFullState
@@ -1996,6 +2074,10 @@ export function createWorkflow<
         suspendSchema: effectiveSuspendSchema,
         resumeSchema: effectiveResumeSchema,
         retryConfig: workflowRetryConfig,
+        guardrails: {
+          inputCount: workflowInputGuardrails?.length ?? 0,
+          outputCount: workflowOutputGuardrails?.length ?? 0,
+        },
       };
     },
     createSuspendController: () => createDefaultSuspendController(),
@@ -2374,6 +2456,8 @@ export interface SerializedWorkflowStep {
   sleepUntilFn?: string;
   concurrency?: number;
   mapConfig?: string;
+  guardrailInputCount?: number;
+  guardrailOutputCount?: number;
   nestedStep?: SerializedWorkflowStep;
   subSteps?: SerializedWorkflowStep[];
   subStepsCount?: number;
@@ -2560,6 +2644,22 @@ export function serializeWorkflowStep(step: BaseStep, index: number): Serialized
         ...baseStep,
         ...(mapConfig && {
           mapConfig: safeStringify(mapConfig),
+        }),
+      };
+    }
+
+    case "guardrail": {
+      const guardrailStep = step as WorkflowStep<unknown, unknown, unknown, unknown> & {
+        inputGuardrails?: unknown[];
+        outputGuardrails?: unknown[];
+      };
+      return {
+        ...baseStep,
+        ...(guardrailStep.inputGuardrails && {
+          guardrailInputCount: guardrailStep.inputGuardrails.length,
+        }),
+        ...(guardrailStep.outputGuardrails && {
+          guardrailOutputCount: guardrailStep.outputGuardrails.length,
         }),
       };
     }

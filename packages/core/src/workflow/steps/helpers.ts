@@ -14,6 +14,7 @@ export function matchStep<INPUT, DATA, RESULT>(
     .with({ type: "func" }, (funcStep) => funcStep)
     .with({ type: "tap" }, (tapStep) => tapStep)
     .with({ type: "workflow" }, (workflowStep) => workflowStep)
+    .with({ type: "guardrail" }, (guardrailStep) => guardrailStep)
     .with({ type: "conditional-when" }, (condStep) => condStep)
     .with({ type: "parallel-all" }, (allStep) => allStep)
     .with({ type: "parallel-race" }, (raceStep) => raceStep)
