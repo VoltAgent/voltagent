@@ -62,7 +62,7 @@ describe("workflow guardrails", () => {
     expect(result.result).toBe("Code ***");
   });
 
-  it("throws when input guardrails block execution", async () => {
+  it("returns an error result when input guardrails block execution", async () => {
     const block = createInputGuardrail({
       name: "block",
       handler: async () => ({ pass: false, message: "Blocked" }),
@@ -79,7 +79,10 @@ describe("workflow guardrails", () => {
       execute: async ({ data }) => data,
     });
 
-    await expect(workflow.run("bad")).rejects.toMatchObject({
+    const result = await workflow.run("bad");
+
+    expect(result.status).toBe("error");
+    expect(result.error).toMatchObject({
       code: "GUARDRAIL_INPUT_BLOCKED",
     });
   });
