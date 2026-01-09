@@ -7,7 +7,7 @@
     "@libsql/client": "^0.15.0",
     "@tailwindcss/postcss": "^4.1.4",
     "@voltagent/cli": "^0.1.20",
-    "@voltagent/core": "^2.0.8",
+    "@voltagent/core": "^2.0.9",
     "@voltagent/libsql": "^2.0.2",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/server-hono": "^2.0.3",
