@@ -963,7 +963,10 @@ export class Agent {
   ): Promise<StreamTextResultWithContext> {
     const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
     const tenantId = this.resolveTenantId(options);
-    const buildRequest = (modelOverride?: LanguageModel, providerOverride?: string) => {
+    const buildRequest = (
+      modelOverride?: LanguageModel,
+      providerOverride?: string,
+    ): TrafficRequest<StreamTextResultWithContext> => {
       const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
       const metadata = this.buildTrafficMetadata(
         mergedOptions?.model,
@@ -978,7 +981,7 @@ export class Agent {
         execute: () => this.executeStreamText(input, mergedOptions, metadata), // Actual streaming work happens after the controller dequeues us
         extractUsage: (result: StreamTextResultWithContext) =>
           this.extractUsageFromResponse(result),
-        createFallbackRequest: (fallbackTarget) => {
+        createFallbackRequest: (fallbackTarget: FallbackChainEntry) => {
           if (this.isShortResponseFallback(fallbackTarget)) {
             return this.buildShortStreamTextFallbackRequest(
               tenantId,
@@ -1708,7 +1711,10 @@ export class Agent {
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
     const tenantId = this.resolveTenantId(options);
-    const buildRequest = (modelOverride?: LanguageModel, providerOverride?: string) => {
+    const buildRequest = (
+      modelOverride?: LanguageModel,
+      providerOverride?: string,
+    ): TrafficRequest<GenerateObjectResultWithContext<z.infer<T>>> => {
       const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
       const metadata = this.buildTrafficMetadata(
         mergedOptions?.model,
@@ -1723,7 +1729,7 @@ export class Agent {
         execute: () => this.executeGenerateObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
-        createFallbackRequest: (fallbackTarget) => {
+        createFallbackRequest: (fallbackTarget: FallbackChainEntry) => {
           if (this.isShortResponseFallback(fallbackTarget)) {
             return this.buildShortObjectFallbackRequest(
               tenantId,
@@ -2007,7 +2013,10 @@ export class Agent {
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const controller = getTrafficController({ logger: this.logger });
     const tenantId = this.resolveTenantId(options);
-    const buildRequest = (modelOverride?: LanguageModel, providerOverride?: string) => {
+    const buildRequest = (
+      modelOverride?: LanguageModel,
+      providerOverride?: string,
+    ): TrafficRequest<StreamObjectResultWithContext<z.infer<T>>> => {
       const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
       const metadata = this.buildTrafficMetadata(
         mergedOptions?.model,
@@ -2022,7 +2031,7 @@ export class Agent {
         execute: () => this.executeStreamObject(input, schema, mergedOptions, metadata),
         extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
           this.extractUsageFromResponse(result),
-        createFallbackRequest: (fallbackTarget) => {
+        createFallbackRequest: (fallbackTarget: FallbackChainEntry) => {
           if (this.isShortResponseFallback(fallbackTarget)) {
             return this.buildShortStreamObjectFallbackRequest(
               tenantId,
@@ -4394,7 +4403,7 @@ export class Agent {
     return total > 0 ? total : undefined;
   }
 
-  private resolveFallbackTarget(target: FallbackChainEntry): {
+  private resolveFallbackTarget(target: Exclude<FallbackChainEntry, { kind: "short-response" }>): {
     modelOverride?: LanguageModel;
     providerOverride?: string;
   } {
@@ -4430,7 +4439,20 @@ export class Agent {
   }
 
   private createZeroUsage(): LanguageModelUsage {
-    return { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+    return {
+      inputTokens: 0,
+      inputTokenDetails: {
+        noCacheTokens: 0,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+      },
+      outputTokens: 0,
+      outputTokenDetails: {
+        textTokens: 0,
+        reasoningTokens: 0,
+      },
+      totalTokens: 0,
+    };
   }
 
   private createShortTextStream(text: string): AsyncIterableStream<string> {
@@ -4445,17 +4467,24 @@ export class Agent {
     const id = `short-response-${randomUUID()}`;
     return createAsyncIterableReadable<VoltAgentTextStreamPart>((controller) => {
       controller.enqueue({
+        type: "text-start",
+        id,
+      } satisfies VoltAgentTextStreamPart);
+      controller.enqueue({
         type: "text-delta",
         id,
-        delta: text,
         text,
-      } as VoltAgentTextStreamPart);
+      } satisfies VoltAgentTextStreamPart);
+      controller.enqueue({
+        type: "text-end",
+        id,
+      } satisfies VoltAgentTextStreamPart);
       controller.enqueue({
         type: "finish",
         finishReason: "stop",
-        usage,
+        rawFinishReason: undefined,
         totalUsage: usage,
-      } as VoltAgentTextStreamPart);
+      } satisfies VoltAgentTextStreamPart);
       controller.close();
     });
   }
@@ -4485,8 +4514,10 @@ export class Agent {
       totalUsage: usage,
       warnings: [],
       finishReason: "stop",
+      rawFinishReason: undefined,
       steps: [],
-      experimental_output: undefined,
+      experimental_output: undefined as unknown as OutputValue<OutputSpec>,
+      output: undefined as unknown as OutputValue<OutputSpec>,
       response: {
         id: "short-response",
         modelId: "short-response",
@@ -4499,27 +4530,27 @@ export class Agent {
       },
       providerMetadata: undefined,
       experimental_providerMetadata: undefined,
-      pipeTextStreamToResponse: (response, init) => {
+      pipeTextStreamToResponse: (response: any, init?: any) => {
         pipeTextStreamToResponse({
           response,
           textStream: createTextStream(),
           ...(init ?? {}),
         });
       },
-      toTextStreamResponse: (init) => {
+      toTextStreamResponse: (init?: ResponseInit) => {
         return createTextStreamResponse({
           textStream: createTextStream(),
           ...(init ?? {}),
         });
       },
       toDataStream: () => createTextStream(),
-      toDataStreamResponse: (init) => {
+      toDataStreamResponse: (init?: ResponseInit) => {
         return createTextStreamResponse({
           textStream: createTextStream(),
           ...(init ?? {}),
         });
       },
-      pipeDataStreamToResponse: (response, init) => {
+      pipeDataStreamToResponse: (response: any, init?: any) => {
         pipeTextStreamToResponse({
           response,
           textStream: createTextStream(),
@@ -4576,7 +4607,6 @@ export class Agent {
       },
       usage: Promise.resolve(usage),
       finishReason: Promise.resolve("stop"),
-      experimental_partialOutputStream: undefined,
       toUIMessageStream: toUIMessageStream as StreamTextResultWithContext["toUIMessageStream"],
       toUIMessageStreamResponse:
         toUIMessageStreamResponse as StreamTextResultWithContext["toUIMessageStreamResponse"],
@@ -4589,7 +4619,7 @@ export class Agent {
           ...(init ?? {}),
         });
       },
-      toTextStreamResponse: (init) => {
+      toTextStreamResponse: (init?: ResponseInit) => {
         return createTextStreamResponse({
           textStream: createTextStream(),
           ...(init ?? {}),
@@ -4825,8 +4855,8 @@ export class Agent {
   private extractUsageFromResponse(
     result:
       | {
-          usage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined>;
-          totalUsage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined>;
+          usage?: LanguageModelUsage | PromiseLike<LanguageModelUsage | undefined>;
+          totalUsage?: LanguageModelUsage | PromiseLike<LanguageModelUsage | undefined>;
         }
       | undefined,
   ): Promise<LanguageModelUsage | undefined> | LanguageModelUsage | undefined {
@@ -4835,9 +4865,13 @@ export class Agent {
     }
 
     const usageCandidate =
-      (result as { totalUsage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined> })
-        ?.totalUsage ??
-      (result as { usage?: LanguageModelUsage | Promise<LanguageModelUsage | undefined> })?.usage;
+      (
+        result as {
+          totalUsage?: LanguageModelUsage | PromiseLike<LanguageModelUsage | undefined>;
+        }
+      )?.totalUsage ??
+      (result as { usage?: LanguageModelUsage | PromiseLike<LanguageModelUsage | undefined> })
+        ?.usage;
 
     if (!usageCandidate) {
       return undefined;
@@ -4872,7 +4906,7 @@ export class Agent {
     if (
       typeof (usageCandidate as PromiseLike<LanguageModelUsage | undefined>).then === "function"
     ) {
-      return (usageCandidate as Promise<LanguageModelUsage | undefined>)
+      return Promise.resolve(usageCandidate as PromiseLike<LanguageModelUsage | undefined>)
         .then((usage) => normalizeUsage(usage))
         .catch(() => undefined);
     }

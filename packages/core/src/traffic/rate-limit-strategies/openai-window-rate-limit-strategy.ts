@@ -372,8 +372,14 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
   private resolveTokenCount(usage: RateLimitUsage): number {
     const total = Number.isFinite(usage.totalTokens) ? usage.totalTokens : undefined;
     if (total !== undefined) return total;
-    const input = Number.isFinite(usage.inputTokens) ? usage.inputTokens : 0;
-    const output = Number.isFinite(usage.outputTokens) ? usage.outputTokens : 0;
+    const input =
+      typeof usage.inputTokens === "number" && Number.isFinite(usage.inputTokens)
+        ? usage.inputTokens
+        : 0;
+    const output =
+      typeof usage.outputTokens === "number" && Number.isFinite(usage.outputTokens)
+        ? usage.outputTokens
+        : 0;
     return input + output;
   }
 }

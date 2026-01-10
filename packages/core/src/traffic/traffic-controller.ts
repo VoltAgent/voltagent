@@ -400,6 +400,9 @@ export class TrafficController {
   }
 
   private drainQueue(): void {
+    // Entry point for draining the dispatch queue.
+    // This is called whenever we want to make forward progress
+    // (new request enqueued, request completed, wakeup fired, etc.)
     this.controllerLogger.trace("Drain start", {
       activeCount: this.activeCount,
       maxConcurrent: this.maxConcurrent,
@@ -407,20 +410,60 @@ export class TrafficController {
       queuedP1: this.getQueuedCount("P1"),
       queuedP2: this.getQueuedCount("P2"),
     });
+
+    // Keep attempting dispatch decisions until we are forced to stop.
+    // This loop only exits when we must wait for a future event.
     while (true) {
+      // Ask the dispatcher what to do next:
+      // - dispatch a request
+      // - skip a request
+      // - wait (optionally until a specific time)
       const decision = this.tryDispatchNext();
+
       this.controllerLogger.trace("Dispatch decision", decision);
-      if (decision.kind === "dispatch" || decision.kind === "skip") continue;
+
+      // If a request was dispatched:
+      // - activeCount increased
+      // - queue state changed
+      // We immediately loop again to see if more progress is possible.
+      if (decision.kind === "dispatch") {
+        continue;
+      }
+
+      // If a request was skipped:
+      // - something was evicted, rejected, or cleaned up
+      // - queue state changed
+      // We immediately loop again to re-evaluate the queue.
+      if (decision.kind === "skip") {
+        continue;
+      }
+
+      // If we are told to wait:
+      // - no dispatch is possible right now
+      // - we must pause draining until a future signal
       if (decision.kind === "wait") {
+        // If a concrete wake-up time is provided,
+        // schedule a timer so we retry draining at that time.
         if (decision.wakeUpAt) {
           this.controllerLogger.debug("Rate limit wait; scheduling wakeup", {
             wakeUpAt: decision.wakeUpAt,
             inMs: Math.max(0, decision.wakeUpAt - Date.now()),
           });
+
           this.scheduleRateLimitWakeUpAt(decision.wakeUpAt);
         }
+
+        // Exit the drain loop.
+        // Control will resume later via:
+        // - wake-up timer
+        // - request completion
+        // - new enqueue
         return;
       }
+
+      // Defensive exit.
+      // In practice, this should not be reached,
+      // but it guarantees the loop cannot spin forever.
       return;
     }
   }
@@ -431,43 +474,101 @@ export class TrafficController {
    */
 
   private tryDispatchNext(): DispatchDecision {
+    /**
+     * Decide what the next dispatch action should be.
+     *
+     * This method returns a single decision:
+     * - dispatch: we started a request (and should drain again immediately)
+     * - skip: we made progress by cleaning up (and should drain again immediately)
+     * - wait: no progress is possible right now (optionally until a wake-up time)
+     */
     if (this.activeCount >= this.maxConcurrent) {
+      /**
+       * Concurrency is saturated.
+       *
+       * We cannot dispatch anything right now, but we can still evict timed-out items
+       * and compute the earliest time we should wake up to retry.
+       */
       const timeoutSweep = this.processQueueTimeoutsOnly(Date.now());
-      if (timeoutSweep.evicted) return { kind: "skip" };
+
+      if (timeoutSweep.evicted) {
+        /** Queue state changed (we evicted/rejected items), so we should re-evaluate. */
+        return { kind: "skip" };
+      }
+
+      /**
+       * No eviction occurred; we must wait for either:
+       * - an in-flight request to complete (which triggers a drain), or
+       * - the next timeout deadline (if any).
+       */
       return timeoutSweep.wakeUpAt !== undefined
         ? { kind: "wait", wakeUpAt: timeoutSweep.wakeUpAt }
         : { kind: "wait" };
     }
 
+    /**
+     * Track the earliest future time at which any candidate would become dispatchable
+     * (e.g. rate limit reset); if nothing can dispatch now, we will return a wait decision.
+     */
     let earliestWakeUpAt: number | undefined;
 
     const observeWakeUpAt = (candidate?: number): void => {
       if (candidate === undefined) return;
+
       earliestWakeUpAt =
         earliestWakeUpAt === undefined ? candidate : Math.min(earliestWakeUpAt, candidate);
     };
 
+    /**
+     * Iterate priorities in weighted order, then per-tenant round-robin within a priority.
+     * We stop at the first actionable decision (dispatch/skip) to keep drain loops tight.
+     */
     const priorities = this.getPriorityDispatchOrder();
+
     for (const priority of priorities) {
       const state = this.queues[priority];
-      if (state.order.length === 0) continue;
 
+      if (state.order.length === 0) {
+        continue;
+      }
+
+      /**
+       * Within a priority, bound the scan to the number of tenants currently present.
+       * This prevents infinite loops when candidates are repeatedly non-dispatchable.
+       */
       let attempts = 0;
       const maxAttempts = state.order.length;
 
       while (attempts < maxAttempts) {
         const candidate = this.getNextTenantCandidate(priority);
         if (!candidate) break;
+
         attempts += 1;
 
         const now = Date.now();
         const result = this.processQueuedCandidate(priority, candidate, now);
+
+        /** Record the earliest "try again at" time surfaced by any candidate. */
         observeWakeUpAt(result.wakeUpAt);
-        if (result.action === "dispatch") return { kind: "dispatch" };
-        if (result.action === "skip") return { kind: "skip" };
+
+        if (result.action === "dispatch") {
+          /** We successfully started a request; draining should continue immediately. */
+          return { kind: "dispatch" };
+        }
+
+        if (result.action === "skip") {
+          /** We changed queue state (eviction/rejection/etc.); re-evaluate immediately. */
+          return { kind: "skip" };
+        }
       }
     }
 
+    /**
+     * No dispatch or skip was possible.
+     *
+     * If we observed a wake-up time (e.g. rate limit), return it so the drain loop can
+     * schedule a timer; otherwise just wait for the next external signal.
+     */
     return earliestWakeUpAt !== undefined
       ? { kind: "wait", wakeUpAt: earliestWakeUpAt }
       : { kind: "wait" };
@@ -944,6 +1045,18 @@ export class TrafficController {
   }
 
   private processQueueTimeoutsOnly(now: number): { evicted: boolean; wakeUpAt?: number } {
+    /**
+     * Sweep the queues for timeout-only work.
+     *
+     * This path is used when we cannot dispatch due to concurrency saturation.
+     * We still want to:
+     * - reject items whose queue-wait timeout has elapsed, and
+     * - compute the earliest time we should wake up to sweep again.
+     *
+     * Returns:
+     * - `evicted`: whether we rejected/removed any queued items (queue state changed)
+     * - `wakeUpAt`: earliest future deadline worth scheduling a wake-up for
+     */
     let evicted = false;
     let wakeUpAt: number | undefined;
 
@@ -952,10 +1065,15 @@ export class TrafficController {
       wakeUpAt = wakeUpAt === undefined ? candidate : Math.min(wakeUpAt, candidate);
     };
 
+    /** Walk all priorities and all tenants to perform timeout checks without dispatching. */
     for (const priority of this.priorityOrder) {
       const state = this.queues[priority];
       if (state.order.length === 0) continue;
 
+      /**
+       * Iterate over a snapshot of tenant IDs so removals during the sweep
+       * do not affect the iteration.
+       */
       for (const tenantId of [...state.order]) {
         const queue = state.queues.get(tenantId);
         if (!queue || queue.length === 0) {
@@ -963,12 +1081,21 @@ export class TrafficController {
           continue;
         }
 
+        /**
+         * Only the head item can be eligible for timeout-based rejection at any moment,
+         * since the queue is processed FIFO per tenant.
+         */
         const next = queue[0];
         const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
+        /**
+         * If the head item has a future timeout deadline, track it as a candidate wake-up.
+         * This allows the drain loop to schedule a timer and re-sweep when that deadline is hit.
+         */
         if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
           observeWakeUpAt(queueTimeoutAt);
         }
 
+        /** Reject the head item if its queue-wait timeout has triggered. */
         const queueTimeoutTriggered = this.handleQueueTimeout(next, queue, 0, now, queueTimeoutAt);
         if (queueTimeoutTriggered === "rejected") {
           evicted = true;
@@ -982,20 +1109,29 @@ export class TrafficController {
 
   private processQueuedCandidate(
     priority: TrafficPriority,
-    candidate: { item: QueuedRequest; queue: QueuedRequest[]; tenantId: string },
+    candidate: {
+      item: QueuedRequest;
+      queue: QueuedRequest[];
+      tenantId: string;
+    },
     now: number,
   ): { action: "dispatch" | "skip" | "continue"; wakeUpAt?: number } {
     const { item: next, queue, tenantId } = candidate;
+
     let wakeUpAt: number | undefined;
+
     const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
     const queueTimeoutTriggered = this.handleQueueTimeout(next, queue, 0, now, queueTimeoutAt);
+
     if (queueTimeoutTriggered === "rejected") {
       this.cleanupTenantQueue(priority, tenantId, queue);
       return { action: "skip" };
     }
+
     if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
       wakeUpAt = queueTimeoutAt;
     }
+
     const queueTimeoutExpired = queueTimeoutTriggered === "expired";
 
     this.controllerLogger.trace("Evaluate next queued request", {
@@ -1008,31 +1144,46 @@ export class TrafficController {
       queueLength: queue.length,
     });
 
-    const circuit = this.resolveCircuit(next);
-    if (circuit) {
+    /* -------------------- Circuit breaker -------------------- */
+
+    const circuitBreakerDecision = this.resolveCircuit(next);
+
+    if (circuitBreakerDecision) {
       this.controllerLogger.trace("Circuit resolution returned decision", {
         priority,
-        decision: circuit,
+        decision: circuitBreakerDecision,
         circuitKey: next.circuitKey,
         circuitStatus: next.circuitStatus,
       });
-      if (circuit.kind === "skip") {
+
+      if (circuitBreakerDecision.kind === "skip") {
         queue.shift();
         this.cleanupTenantQueue(priority, tenantId, queue);
         return { action: "skip", wakeUpAt };
       }
-      if (circuit.kind === "wait") {
+
+      if (circuitBreakerDecision.kind === "wait") {
         if (this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "circuit wait")) {
           this.cleanupTenantQueue(priority, tenantId, queue);
           return { action: "skip", wakeUpAt };
         }
+
         next.etaMs =
-          circuit.wakeUpAt !== undefined ? Math.max(0, circuit.wakeUpAt - now) : undefined;
-        return { action: "continue", wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, circuit.wakeUpAt) };
+          circuitBreakerDecision.wakeUpAt !== undefined
+            ? Math.max(0, circuitBreakerDecision.wakeUpAt - now)
+            : undefined;
+
+        return {
+          action: "continue",
+          wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, circuitBreakerDecision.wakeUpAt),
+        };
       }
     }
 
+    /* -------------------- Concurrency -------------------- */
+
     const concurrency = this.concurrencyLimiter.resolve(next, this.trafficLogger);
+
     if (concurrency.kind === "wait") {
       this.controllerLogger.trace("Concurrency gate blocked request", {
         priority,
@@ -1041,53 +1192,75 @@ export class TrafficController {
         model: next.request.metadata?.model,
         reasons: concurrency.reasons,
       });
+
       if (
         this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "concurrency wait")
       ) {
         this.cleanupTenantQueue(priority, tenantId, queue);
         return { action: "skip", wakeUpAt };
       }
+
       next.etaMs = undefined;
       return { action: "continue", wakeUpAt };
     }
 
+    /* -------------------- Adaptive limits -------------------- */
+
     const adaptive = this.resolveAdaptiveLimit(next, now);
+
     if (adaptive?.kind === "wait") {
       if (this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "adaptive wait")) {
         this.cleanupTenantQueue(priority, tenantId, queue);
         return { action: "skip", wakeUpAt };
       }
+
       next.etaMs =
         adaptive.wakeUpAt !== undefined ? Math.max(0, adaptive.wakeUpAt - now) : undefined;
-      return { action: "continue", wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, adaptive.wakeUpAt) };
+
+      return {
+        action: "continue",
+        wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, adaptive.wakeUpAt),
+      };
     }
 
-    const rateLimit = this.resolveRateLimit(next);
-    if (rateLimit) {
+    /* -------------------- Rate limits -------------------- */
+
+    const rateLimitDecision = this.resolveRateLimit(next);
+
+    if (rateLimitDecision) {
       this.controllerLogger.trace("Rate limit resolution returned decision", {
         priority,
-        decision: rateLimit,
+        decision: rateLimitDecision,
         rateLimitKey: next.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
       });
-      if (rateLimit.kind === "wait") {
+
+      if (rateLimitDecision.kind === "wait") {
         if (
           this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "rate limit wait")
         ) {
           this.cleanupTenantQueue(priority, tenantId, queue);
           return { action: "skip", wakeUpAt };
         }
+
         next.etaMs =
-          rateLimit.wakeUpAt !== undefined ? Math.max(0, rateLimit.wakeUpAt - now) : undefined;
+          rateLimitDecision.wakeUpAt !== undefined
+            ? Math.max(0, rateLimitDecision.wakeUpAt - now)
+            : undefined;
+
         return {
           action: "continue",
-          wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, rateLimit.wakeUpAt),
+          wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, rateLimitDecision.wakeUpAt),
         };
       }
+
       return { action: "continue", wakeUpAt };
     }
 
+    /* -------------------- Final queue timeout -------------------- */
+
     if (queueTimeoutExpired) {
       const timeoutError = this.createQueueTimeoutError(next, now);
+
       this.attachTrafficMetadata(
         timeoutError,
         this.buildTrafficResponseMetadata(
@@ -1097,6 +1270,7 @@ export class TrafficController {
           timeoutError,
         ),
       );
+
       this.controllerLogger.warn("Queue wait timed out before dispatch", {
         tenantId: next.tenantId,
         waitedMs: timeoutError.waitedMs,
@@ -1106,11 +1280,15 @@ export class TrafficController {
         model: next.request.metadata?.model,
         rateLimitKey: timeoutError.rateLimitKey,
       });
+
       queue.shift();
       this.cleanupTenantQueue(priority, tenantId, queue);
       next.reject(timeoutError);
+
       return { action: "skip", wakeUpAt };
     }
+
+    /* -------------------- Dispatch -------------------- */
 
     this.startRequest(next, queue, tenantId);
     return { action: "dispatch", wakeUpAt };

@@ -100,7 +100,8 @@ export class TrafficCircuitBreaker {
           priority: next.request.metadata?.priority,
           taskType: next.request.metadata?.taskType,
         };
-        (error as Record<string, unknown>).traffic = traffic;
+        (error as CircuitBreakerOpenError & { traffic?: TrafficResponseMetadata }).traffic =
+          traffic;
         next.reject(error);
         circuitLogger?.warn?.("No fallback available; rejecting request", {
           circuitKey: key,
@@ -272,6 +273,7 @@ export class TrafficCircuitBreaker {
       });
     }
 
+    //TODO: Research - should we set or push to queu with new state?
     this.circuitBreakers.set(key, state);
     circuitLogger?.trace?.("Circuit state updated", {
       circuitKey: key,
@@ -460,7 +462,7 @@ export class TrafficCircuitBreaker {
   }
 
   private normalizeFallbackTarget(
-    candidate: FallbackChainEntry,
+    candidate: Exclude<FallbackChainEntry, { kind: "short-response" }>,
     provider: string | undefined,
   ): FallbackTarget {
     if (typeof candidate === "string") {
