@@ -131,8 +131,12 @@ export class TrafficRateLimiter {
     reservedTokens?: number,
   ): void {
     if (!key || !usage) return;
-    if (typeof (usage as PromiseLike<UsageCounters | undefined>).then === "function") {
-      void (usage as Promise<UsageCounters | undefined>)
+
+    const isPromiseLike = (value: unknown): value is PromiseLike<UsageCounters | undefined> =>
+      typeof (value as PromiseLike<UsageCounters | undefined>)?.then === "function";
+
+    if (isPromiseLike(usage)) {
+      void Promise.resolve(usage)
         .then((resolved) => this.recordUsage(key, resolved, logger, reservedTokens))
         .catch(() => {});
       return;
@@ -288,8 +292,14 @@ export class TrafficRateLimiter {
   private resolveTokenCount(usage: UsageCounters): number {
     const total = Number.isFinite(usage.totalTokens) ? usage.totalTokens : undefined;
     if (total !== undefined) return total;
-    const input = Number.isFinite(usage.inputTokens) ? usage.inputTokens : 0;
-    const output = Number.isFinite(usage.outputTokens) ? usage.outputTokens : 0;
+    const input =
+      typeof usage.inputTokens === "number" && Number.isFinite(usage.inputTokens)
+        ? usage.inputTokens
+        : 0;
+    const output =
+      typeof usage.outputTokens === "number" && Number.isFinite(usage.outputTokens)
+        ? usage.outputTokens
+        : 0;
     return input + output;
   }
 }

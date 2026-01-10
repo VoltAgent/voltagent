@@ -48,7 +48,6 @@ export {
   type FallbackTarget,
   type RateLimitConfig,
   type RateLimitKey,
-  type RateLimitOptions,
   type AdaptiveLimiterConfig,
   type PriorityWeights,
   type PriorityBurstLimits,

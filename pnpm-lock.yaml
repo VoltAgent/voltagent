@@ -2965,16 +2965,16 @@ importers:
         version: link:../../../packages/cli
       '@voltagent/core':
         specifier: ^1.2.15
-        version: link:../../../packages/core
+        version: 1.5.2(@ai-sdk/provider-utils@3.0.19)(@voltagent/logger@1.0.4)(ai@5.0.113)(zod@3.25.76)
       '@voltagent/libsql':
         specifier: ^1.0.13
-        version: link:../../../packages/libsql
+        version: 1.1.0(@voltagent/core@1.5.2)(@voltagent/logger@1.0.4)(ai@5.0.113)
       '@voltagent/logger':
         specifier: ^1.0.4
-        version: link:../../../packages/logger
+        version: 1.0.4(@opentelemetry/api@1.9.0)
       '@voltagent/server-hono':
         specifier: ^1.2.5
-        version: link:../../../packages/server-hono
+        version: 1.2.11(@voltagent/core@1.5.2)(zod@3.25.76)
       ai:
         specifier: ^5.0.76
         version: 5.0.113(zod@3.25.76)
@@ -9193,6 +9193,14 @@ packages:
       hono: ^4
     dependencies:
       hono: 4.9.1
+    dev: false
+
+  /@hono/swagger-ui@0.5.2(hono@4.10.8):
+    resolution: {integrity: sha512-7wxLKdb8h7JTdZ+K8DJNE3KXQMIpJejkBTQjrYlUWF28Z1PGOKw6kUykARe5NTfueIN37jbyG/sBYsbzXzG53A==}
+    peerDependencies:
+      hono: '*'
+    dependencies:
+      hono: 4.10.8
     dev: false
 
   /@hono/swagger-ui@0.5.2(hono@4.9.1):
@@ -19926,8 +19934,159 @@ packages:
     resolution: {integrity: sha512-Z1Uc8IB57Lm6k7q6KIDu/p+JWtf3xsXJqAX/5r18hYOTpJyBn0KXUR8oTJ4WFYOcDzWC9n3IflGgHowx6U6z9Q==}
     dev: false
 
+  /@voltagent/a2a-server@1.0.2(@voltagent/core@1.5.2):
+    resolution: {integrity: sha512-WIPDM0iYvcEPKbwbYt9n1TQv9jjRUcxvAgeCAiVD8EzYYrJvHXHCHC6satpeQF8N/0jFKtEMq8a+5/3cfwM/hQ==}
+    peerDependencies:
+      '@voltagent/core': ^1.0.0
+    dependencies:
+      '@a2a-js/sdk': 0.2.5
+      '@voltagent/core': 1.5.2(@ai-sdk/provider-utils@3.0.19)(@voltagent/logger@1.0.4)(ai@5.0.113)(zod@3.25.76)
+      '@voltagent/internal': 0.0.12
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /@voltagent/core@1.5.2(@ai-sdk/provider-utils@3.0.19)(@voltagent/logger@1.0.4)(ai@5.0.113)(zod@3.25.76):
+    resolution: {integrity: sha512-g5zqV46dJle0BykMvJNT2/69bRe63SOYCWFsNfioptq0ayuKZ2rrwKd4m7FPTBD926FPlJx4NzbPARONeWYl4w==}
+    peerDependencies:
+      '@ai-sdk/provider-utils': 3.x
+      '@voltagent/logger': 1.x
+      ai: 5.x
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      '@voltagent/logger':
+        optional: true
+    dependencies:
+      '@ai-sdk/provider-utils': 3.0.19(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.24.3(zod@3.25.76)
+      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api-logs': 0.204.0
+      '@opentelemetry/context-async-hooks': 2.2.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/exporter-logs-otlp-http': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/exporter-trace-otlp-http': 0.203.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/otlp-transformer': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-logs': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-node': 2.0.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/semantic-conventions': 1.36.0
+      '@voltagent/internal': 0.0.12
+      '@voltagent/logger': 1.0.4(@opentelemetry/api@1.9.0)
+      ai: 5.0.113(zod@3.25.76)
+      ts-pattern: 5.8.0
+      type-fest: 4.41.0
+      uuid: 9.0.1
+      zod: 3.25.76
+      zod-from-json-schema: 0.5.0
+      zod-from-json-schema-v3: /zod-from-json-schema@0.0.5
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - supports-color
+    dev: false
+
+  /@voltagent/internal@0.0.12:
+    resolution: {integrity: sha512-S7ANIskxtCc+n0YzwULfvnzPyEC7YvvV+0chgpV+rW5EQbvLuzKSSrC5gmrSgzDNi+WgODysM3acZ2F9MuhLeQ==}
+    dependencies:
+      type-fest: 4.41.0
+    dev: false
+
   /@voltagent/internal@0.0.9:
     resolution: {integrity: sha512-Kaa2jW60VsfYVotuXC81LmNOJ07Lf1yq36vMteNKKa5seIsKkJ75PvIbMp52eEZ/ky/oBXrs94UXrQNqXBJ80Q==}
+    dev: false
+
+  /@voltagent/libsql@1.1.0(@voltagent/core@1.5.2)(@voltagent/logger@1.0.4)(ai@5.0.113):
+    resolution: {integrity: sha512-kCLOMULuypezGLSKP3kbbHnbZW3zy2apC+QPVlCkfxoxbwpQSxSTWv5pWr85XOCqNEFcFmIQFoa6CKlWvvBHFw==}
+    peerDependencies:
+      '@voltagent/core': ^1.0.0
+      '@voltagent/logger': ^1.0.0
+      ai: ^5.0.76
+    dependencies:
+      '@libsql/client': 0.15.10
+      '@voltagent/core': 1.5.2(@ai-sdk/provider-utils@3.0.19)(@voltagent/logger@1.0.4)(ai@5.0.113)(zod@3.25.76)
+      '@voltagent/internal': 0.0.12
+      '@voltagent/logger': 1.0.4(@opentelemetry/api@1.9.0)
+      ai: 5.0.113(zod@3.25.76)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
+  /@voltagent/logger@1.0.4(@opentelemetry/api@1.9.0):
+    resolution: {integrity: sha512-x8zo3WhdWJ7nqJArbW2fNcz6b54lo7RYfiwfnqte595wxhfBIuKV2/35ef0q3LNhoyZEtZRlsRq8G/KUBS5gVg==}
+    dependencies:
+      '@opentelemetry/api-logs': 0.204.0
+      '@opentelemetry/instrumentation': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/instrumentation-pino': 0.50.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-logs': 0.204.0(@opentelemetry/api@1.9.0)
+      '@voltagent/internal': 0.0.12
+      pino: 9.9.0
+      pino-pretty: 13.1.1
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - supports-color
+    dev: false
+
+  /@voltagent/mcp-server@1.0.3(@voltagent/core@1.5.2)(zod@3.25.76):
+    resolution: {integrity: sha512-2VsGTyb5DayiHOWZIeClNM56IAkJmjAeh5aAJLZuY0+nGzoLhANzCUyh3Z4pYGxjOKT5ohM0eWPZwMf/5O4dXA==}
+    peerDependencies:
+      '@voltagent/core': ^1.0.0
+      zod: ^3.25.0 || ^4.0.0
+    dependencies:
+      '@modelcontextprotocol/sdk': 1.24.3(zod@3.25.76)
+      '@voltagent/core': 1.5.2(@ai-sdk/provider-utils@3.0.19)(@voltagent/logger@1.0.4)(ai@5.0.113)(zod@3.25.76)
+      '@voltagent/internal': 0.0.12
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - supports-color
+    dev: false
+
+  /@voltagent/server-core@1.0.36(@voltagent/core@1.5.2)(zod@3.25.76):
+    resolution: {integrity: sha512-IpXiSI6LFfdkUNSLJREMK3rpgkkMPhED8ln21EaapKCrdVhnBFTDIIPU7+JHsM6sbSzsVyIjfFDC9BN2++kGZg==}
+    peerDependencies:
+      '@voltagent/core': ^1.0.0
+      zod: ^3.25.0 || ^4.0.0
+    dependencies:
+      '@modelcontextprotocol/sdk': 1.24.3(zod@3.25.76)
+      '@voltagent/core': 1.5.2(@ai-sdk/provider-utils@3.0.19)(@voltagent/logger@1.0.4)(ai@5.0.113)(zod@3.25.76)
+      '@voltagent/internal': 0.0.12
+      ai: 5.0.113(zod@3.25.76)
+      jsonwebtoken: 9.0.2
+      ws: 8.18.3
+      zod: 3.25.76
+      zod-from-json-schema: 0.5.0
+      zod-from-json-schema-v3: /zod-from-json-schema@0.0.5
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
+
+  /@voltagent/server-hono@1.2.11(@voltagent/core@1.5.2)(zod@3.25.76):
+    resolution: {integrity: sha512-r0DSoYeCqCd4XolP/6snF1ab4waPHxr+BXDuULZi7HvY3tqi5FX5C2Y7P2u+OU2lslRUq7DHc2LNN5bcTh+avg==}
+    peerDependencies:
+      '@voltagent/core': ^1.x
+      zod: ^3.25.0 || ^4.0.0
+    dependencies:
+      '@hono/node-server': 1.18.2(hono@4.10.8)
+      '@hono/swagger-ui': 0.5.2(hono@4.10.8)
+      '@voltagent/a2a-server': 1.0.2(@voltagent/core@1.5.2)
+      '@voltagent/core': 1.5.2(@ai-sdk/provider-utils@3.0.19)(@voltagent/logger@1.0.4)(ai@5.0.113)(zod@3.25.76)
+      '@voltagent/internal': 0.0.12
+      '@voltagent/mcp-server': 1.0.3(@voltagent/core@1.5.2)(zod@3.25.76)
+      '@voltagent/server-core': 1.0.36(@voltagent/core@1.5.2)(zod@3.25.76)
+      fetch-to-node: 2.1.0
+      hono: 4.10.8
+      openapi3-ts: 4.5.0
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - bufferutil
+      - supports-color
+      - utf-8-validate
     dev: false
 
   /@voltagent/vercel-ai@1.0.0(@voltagent/core@packages+core)(zod@3.25.76):
