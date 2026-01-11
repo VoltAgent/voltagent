@@ -387,6 +387,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.4
         version: 4.1.14
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
@@ -739,6 +742,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.4
         version: 4.1.14
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
       typescript:
         specifier: ^5.8.2
         version: 5.9.2
@@ -883,6 +889,9 @@ importers:
       '@voltagent/core':
         specifier: ^2.0.9
         version: link:../../packages/core
+      '@voltagent/server-hono':
+        specifier: ^2.0.3
+        version: link:../../packages/server-hono
       '@voltagent/vercel-ai':
         specifier: ^1.0.0
         version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
@@ -914,6 +923,9 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.1.7(@types/react@19.1.10)
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
       typescript:
         specifier: ^5.8.2
         version: 5.9.2
@@ -2035,6 +2047,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.4
         version: 4.1.14
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
