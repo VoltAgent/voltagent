@@ -66,8 +66,8 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "voltagent:run": "tsx --env-file=.env ./voltagent/server.ts",
     "start": "next start",
-    "volt": "volt"
+    "volt": "volt",
+    "voltagent:run": "tsx --env-file=.env ./voltagent/server.ts"
   }
 }

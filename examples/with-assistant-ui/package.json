@@ -49,7 +49,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbopack",
-    "voltagent:run": "tsx --env-file=.env ./voltagent/server.ts",
-    "start": "next start"
+    "start": "next start",
+    "voltagent:run": "tsx --env-file=.env ./voltagent/server.ts"
   }
 }
