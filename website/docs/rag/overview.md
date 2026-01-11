@@ -212,6 +212,16 @@ npm create voltagent-app@latest -- --example with-qdrant
 
 [**→ Full Qdrant Guide**](/docs/rag/qdrant)
 
+### LanceDB Vector Database
+
+Developer-friendly, serverless vector database that runs locally or in the cloud. Great for getting started without credentials.
+
+```bash
+npm create voltagent-app@latest -- --example with-lancedb
+```
+
+[**→ Full LanceDB Guide**](/docs/rag/lancedb)
+
 ## Choose Your Path
 
 **I want the fastest setup** → [VoltAgent Knowledge Base](/docs/rag/voltagent) (5 mins)
@@ -221,6 +231,8 @@ npm create voltagent-app@latest -- --example with-qdrant
 **I want production-ready** → [Pinecone Tutorial](/docs/rag/pinecone) (15 mins)
 
 **I want open-source and production-ready** → [Qdrant Tutorial](/docs/rag/qdrant) (10 mins)
+
+**I want embedded/serverless (No API Key)** → [LanceDB Tutorial](/docs/rag/lancedb) (5 mins)
 
 **I want to build custom** → [Build Your Own Retriever](/docs/rag/custom-retrievers)
 
