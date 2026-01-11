@@ -33,6 +33,7 @@ npx assistant-ui@latest create
 ```bash
 # Server (VoltAgent)
 pnpm add @voltagent/core @voltagent/libsql @voltagent/server-hono @ai-sdk/openai ai zod
+pnpm add -D tsx
 
 # Client (Assistant UI template already has these)
 pnpm add @assistant-ui/react @assistant-ui/react-ai-sdk @assistant-ui/react-markdown
@@ -40,12 +41,11 @@ pnpm add @assistant-ui/react @assistant-ui/react-ai-sdk @assistant-ui/react-mark
 
 ## Define your VoltAgent
 
-Create `voltagent/index.ts` and wire an agent with shared memory. You can keep it simple—no tools needed to get streaming working.
+Create `voltagent/agents.ts` and wire an agent with shared memory. You can keep it simple—no tools needed to get streaming working.
 
-```ts title="examples/with-assistant-ui/voltagent/index.ts"
+```ts title="examples/with-assistant-ui/voltagent/agents.ts"
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
-import { honoServer } from "@voltagent/server-hono";
+import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
 
@@ -85,7 +85,7 @@ const weatherTool = createTool({
   },
 });
 
-const assistantAgent = new Agent({
+export const assistantAgent = new Agent({
   name: "AssistantUIAgent",
   instructions:
     "You are a helpful AI that keeps responses concise, explains reasoning when useful, can describe attachments, and can call the getWeather tool for weather questions.",
@@ -94,25 +94,16 @@ const assistantAgent = new Agent({
   memory: sharedMemory,
 });
 
+export const agent = assistantAgent;
+```
+
 > The weather tool uses mocked data for demo purposes—swap in a real API call if needed.
 
-declare global {
-  // eslint-disable-next-line no-var
-  var voltAssistant: VoltAgent | undefined;
-}
+Re-export the agent from `voltagent/index.ts`:
 
-function getVoltAgentInstance() {
-  if (!globalThis.voltAssistant) {
-    globalThis.voltAssistant = new VoltAgent({
-      agents: { assistantAgent },
-      server: honoServer(),
-    });
-  }
-  return globalThis.voltAssistant;
-}
-
-export const voltAgent = getVoltAgentInstance();
-export const agent = assistantAgent;
+```ts title="examples/with-assistant-ui/voltagent/index.ts"
+export { agent } from "./agents";
+export { assistantAgent } from "./agents";
 ```
 
 Back the memory with LibSQL (Turso/local SQLite) so threads persist:
@@ -124,6 +115,31 @@ import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 export const sharedMemory = new Memory({
   storage: new LibSQLMemoryAdapter({}),
 });
+```
+
+## Run the VoltAgent built-in server (separate process)
+
+Create `voltagent/server.ts`:
+
+```ts title="examples/with-assistant-ui/voltagent/server.ts"
+import { VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+import { agent } from "./agents";
+
+new VoltAgent({
+  agents: { agent },
+  server: honoServer(),
+});
+```
+
+Add a script to `package.json`:
+
+```json title="package.json"
+{
+  "scripts": {
+    "voltagent:run": "tsx --env-file=.env ./voltagent/server.ts"
+  }
+}
 ```
 
 ## Expose a chat route that streams UI messages
@@ -197,6 +213,9 @@ export const Assistant = () => {
 
 ```bash
 pnpm dev
+pnpm voltagent:run
 ```
 
 Open http://localhost:3000 and chat—the UI will stream reasoning and messages from your VoltAgent agent. Attachments and thread persistence are handled automatically via the VoltAgent memory adapter.
+
+For debugging, open `https://console.voltagent.dev` and connect it to `http://localhost:3141`.

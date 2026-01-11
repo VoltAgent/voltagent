@@ -6,6 +6,7 @@
     "@ai-sdk/react": "^3.0.0",
     "@libsql/client": "^0.15.0",
     "@voltagent/core": "^2.0.9",
+    "@voltagent/server-hono": "^2.0.3",
     "@voltagent/vercel-ai": "^1.0.0",
     "@voltagent/vercel-ui": "^1.0.1",
     "ai": "^6.0.0",
@@ -18,6 +19,7 @@
     "@types/node": "^24.2.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
   "keywords": [
@@ -36,6 +38,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "voltagent:run": "tsx --env-file=.env ./voltagent/server.ts",
     "start": "next start"
   }
 }

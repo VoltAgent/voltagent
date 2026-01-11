@@ -51,3 +51,14 @@ VoltAgent is an open-source TypeScript framework for creating and managing AI ag
 ```bash
 npm create voltagent-app@latest -- --example with-nextjs-resumable-stream
 ```
+
+## Run the Example
+
+Run the Next.js app and the VoltAgent built-in server in separate terminals:
+
+```bash
+pnpm dev
+pnpm voltagent:run
+```
+
+Then open `https://console.voltagent.dev` and connect it to `http://localhost:3141`.

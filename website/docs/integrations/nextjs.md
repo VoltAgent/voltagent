@@ -42,6 +42,16 @@ npm install @voltagent/core @ai-sdk/openai @ai-sdk/react ai zod@^3.25.76
 - `ai`: Core AI SDK library for streaming and chat functionality.
 - `zod`: Used when working with structured outputs.
 
+### VoltAgent Built-in Server Dependencies (Required for Debugging)
+
+Install the VoltAgent built-in server dependencies (local REST API on `http://localhost:3141`) so you can
+debug and inspect agent runs during development through `https://console.voltagent.dev`:
+
+```bash
+npm install @voltagent/server-hono
+npm install -D tsx
+```
+
 ## Configure `next.config.ts`
 
 Next.js might try to bundle server-side packages by default. To prevent issues with certain packages, you need to mark them as external in your `next.config.ts` file:
@@ -71,15 +81,16 @@ OPENAI_API_KEY="your-openai-api-key-here"
 # Add other environment variables if needed
 ```
 
-## Create API Route
+If you run the built-in server as a separate process, make sure it loads the same env file
+(see the server script below).
 
-Create the main chat API route with the agent and singleton defined inline in `app/api/chat/route.ts`:
+## Define the Agent
 
-```typescript title="app/api/chat/route.ts"
-import { after } from "next/server";
+Create the agent in `voltagent/agents.ts`:
+
+```typescript title="voltagent/agents.ts"
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool, setWaitUntil } from "@voltagent/core";
-import { honoServer } from "@voltagent/server-hono";
+import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Simple calculator tool
@@ -102,7 +113,6 @@ const calculatorTool = createTool({
   },
 });
 
-// Main agent
 export const agent = new Agent({
   name: "CalculatorAgent",
   instructions:
@@ -110,35 +120,33 @@ export const agent = new Agent({
   model: openai("gpt-4o-mini"),
   tools: [calculatorTool],
 });
+```
 
-// VoltAgent singleton (augments global scope during dev to avoid re-instantiation)
-declare global {
-  var voltAgentInstance: VoltAgent | undefined;
-}
+Re-export it from `voltagent/index.ts`:
 
-function getVoltAgentInstance() {
-  if (!globalThis.voltAgentInstance) {
-    globalThis.voltAgentInstance = new VoltAgent({
-      agents: {
-        agent,
-      },
-      server: honoServer(),
-    });
-  }
-  return globalThis.voltAgentInstance;
-}
+```typescript title="voltagent/index.ts"
+export { agent } from "./agents";
+```
 
-export const voltAgent = getVoltAgentInstance();
+## Create API Route
+
+Create the main chat API route using only the agent. Avoid instantiating `VoltAgent` or
+`honoServer` inside Next.js handlers to prevent port conflicts and `/api` routing issues:
+
+```typescript title="app/api/chat/route.ts"
+import { after } from "next/server";
+import { setWaitUntil } from "@voltagent/core";
+import { agent } from "@/voltagent";
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
     const lastMessage = messages[messages.length - 1];
 
-    const result = await agent.streamText([lastMessage]);
-
     // Enable non-blocking OTel export for Vercel/serverless
     setWaitUntil(after);
+
+    const result = await agent.streamText([lastMessage]);
 
     return result.toUIMessageStreamResponse();
   } catch (error) {
@@ -146,6 +154,38 @@ export async function POST(req: Request) {
   }
 }
 ```
+
+## Run the VoltAgent Built-in Server (Separate Process)
+
+Next.js dev mode can spin up multiple workers. To avoid port conflicts and process exits,
+run the built-in server in a separate process. It exposes the REST API that the console uses.
+
+Create `voltagent/server.ts`:
+
+```typescript title="voltagent/server.ts"
+import { VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+import { agent } from "./agents";
+
+new VoltAgent({
+  agents: {
+    agent,
+  },
+  server: honoServer({ port: 3141 }),
+});
+```
+
+Add a script to `package.json`:
+
+```json title="package.json"
+{
+  "scripts": {
+    "voltagent:run": "tsx --env-file=.env.local ./voltagent/server.ts"
+  }
+}
+```
+
+If you use a different env file, update the `--env-file` flag accordingly.
 
 ## Build the Chat UI Component (Client Component)
 
@@ -274,6 +314,14 @@ Now you can run your Next.js development server:
 ```bash
 npm run dev
 ```
+
+Start the built-in server in a separate terminal:
+
+```bash
+npm run voltagent:run
+```
+
+Then open `https://console.voltagent.dev` and connect it to `http://localhost:3141`.
 
 This creates a simple but powerful VoltAgent application with:
 

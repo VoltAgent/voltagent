@@ -1,6 +1,6 @@
-import { chatbotAgent } from "@/lib/agent";
 import { validateAIConfig } from "@/lib/ai/config";
 import type { ChatRequest } from "@/lib/types/api";
+import { chatbotAgent } from "@/voltagent";
 
 export async function POST(req: Request) {
   try {
