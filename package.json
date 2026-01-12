@@ -45,7 +45,7 @@
   "license": "MIT",
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "biome check --apply --no-errors-on-unmatched"
+      "biome check --write --no-errors-on-unmatched"
     ],
     "*.{md,mdx}": [
       "prettier --config ./.prettierrc --write"
@@ -72,7 +72,7 @@
     "lint": "biome check .",
     "lint:ci": "biome ci .",
     "lint:error": "biome check . --diagnostic-level error",
-    "lint:fix": "biome check . --apply",
+    "lint:fix": "biome check . --write",
     "lint:staged": "lint-staged",
     "nuke": "echo 'Removing all node_modules, builds and lockfiles' && pnpm nuke:node_modules && pnpm nuke:builds && pnpm nuke:lockfiles",
     "nuke:builds": "lerna exec -- rimraf dist && lerna exec -- rimraf build",

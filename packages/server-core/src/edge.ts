@@ -9,15 +9,7 @@ export {
   LOG_ROUTES,
 } from "./routes/definitions";
 
-export {
-  handleGetAgents,
-  handleGenerateText,
-  handleStreamText,
-  handleChatStream,
-  handleResumeChatStream,
-  handleGenerateObject,
-  handleStreamObject,
-} from "./handlers/agent.handlers";
+export * from "./handlers/agent.handlers";
 
 export {
   handleGetAgent,

@@ -391,190 +391,36 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
 
       if (this.isDirectAgent(targetAgentConfig)) {
         // Direct agent - use streamText by default
-        const response = await targetAgent.streamText(messages, baseOptions);
-        const forwardingMetadata = this.buildForwardingMetadata(
-          targetAgent,
-          parentOperationContext,
-        );
-
-        // Get the UI stream writer from operationContext if available
-        const uiStreamWriter = parentOperationContext?.systemContext?.get(
-          "uiStreamWriter",
-        ) as UIMessageStreamWriter<UIMessage<unknown, UIDataTypes, UITools>>;
-
-        // Get the fullStream writer from operationContext if available
-        const fullStreamWriter = parentOperationContext?.systemContext?.get(
-          "fullStreamWriter",
-        ) as WritableStreamDefaultWriter<any>;
-
-        // If we have a UI writer, merge the subagent's stream with metadata
-        if (uiStreamWriter && response.fullStream) {
-          // Convert the subagent's fullStream to UI message stream
-          // Include all messages to maintain tool call/result pairing
-          const subagentUIStream = response.toUIMessageStream();
-
-          // Wrap the stream with metadata enricher to add metadata to all parts
-          // Apply type filters from supervisor config
-          const enrichedStream = createMetadataEnrichedStream(
-            subagentUIStream,
-            forwardingMetadata,
-            this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
+        const { finalResult: streamResult, usage: streamUsage } =
+          await this.streamTextWithForwarding(
+            targetAgent,
+            messages,
+            baseOptions,
+            parentOperationContext,
           );
-
-          // Use the writer to merge the enriched stream
-          // This handles promise tracking and error handling automatically
-          uiStreamWriter.merge(enrichedStream);
-        }
-
-        // If we have a fullStream writer, also write the subagent's fullStream events
-        if (fullStreamWriter && response.fullStream) {
-          // Get allowed event types from supervisor config
-          const allowedTypes = this.supervisorConfig?.fullStreamEventForwarding?.types || [
-            "tool-call",
-            "tool-result",
-          ];
-
-          // Write subagent's fullStream events with metadata
-          const writeSubagentFullStream = async () => {
-            try {
-              for await (const part of response.fullStream) {
-                // Check if this event type should be forwarded
-                if (!shouldForwardChunk(part, allowedTypes)) {
-                  continue; // Skip this event if not in allowed types
-                }
-
-                // Add subagent metadata to each part
-                const enrichedPart = {
-                  ...part,
-                  ...forwardingMetadata,
-                };
-                this.registerToolCallMetadata(parentOperationContext, enrichedPart, targetAgent);
-                await fullStreamWriter.write(enrichedPart);
-              }
-            } catch (error) {
-              // Log error but don't throw to avoid breaking the main flow
-              const logger = parentOperationContext?.logger || getGlobalLogger();
-              logger.error("Error writing subagent fullStream", { error });
-            }
-          };
-
-          // Start writing in background (don't await)
-          writeSubagentFullStream();
-        }
-
-        // Get the final result - check for bailed result first
-        const bailedResultFromContext = parentOperationContext?.systemContext?.get(
-          "bailedResult",
-        ) as { agentName: string; response: string } | undefined;
-        finalResult = bailedResultFromContext?.response || (await response.text);
-        usage = await response.usage;
-
-        const assistantMessage: UIMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          parts: [{ type: "text", text: finalResult }],
-        };
-        finalMessages = [taskMessage, assistantMessage];
+        finalResult = streamResult;
+        usage = streamUsage;
+        finalMessages = [taskMessage, this.createAssistantMessage(finalResult)];
       } else if (this.isStreamTextConfig(targetAgentConfig)) {
         // StreamText configuration
         const options: StreamTextOptions = { ...baseOptions, ...targetAgentConfig.options };
-        const response = await targetAgent.streamText(messages, options);
-        const forwardingMetadata = this.buildForwardingMetadata(
-          targetAgent,
-          parentOperationContext,
-        );
-
-        // Get the UI stream writer from operationContext if available
-        const uiStreamWriter = parentOperationContext?.systemContext?.get(
-          "uiStreamWriter",
-        ) as UIMessageStreamWriter<UIMessage<unknown, UIDataTypes, UITools>>;
-
-        // Get the fullStream writer from operationContext if available
-        const fullStreamWriter = parentOperationContext?.systemContext?.get(
-          "fullStreamWriter",
-        ) as WritableStreamDefaultWriter<any>;
-
-        // If we have a UI writer, merge the subagent's UI stream with metadata
-        if (uiStreamWriter && response.fullStream) {
-          // Convert the subagent's fullStream to UI message stream
-          // Include original messages to maintain tool call/result pairing
-          const subagentUIStream = response.toUIMessageStream();
-
-          // Wrap the stream with metadata enricher to add metadata to all parts
-          // Apply type filters from supervisor config
-          const enrichedStream = createMetadataEnrichedStream(
-            subagentUIStream,
-            forwardingMetadata,
-            this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
+        const { finalResult: streamResult, usage: streamUsage } =
+          await this.streamTextWithForwarding(
+            targetAgent,
+            messages,
+            options,
+            parentOperationContext,
           );
-
-          // Use the writer to merge the enriched stream
-          // This handles promise tracking and error handling automatically
-          uiStreamWriter.merge(enrichedStream);
-        }
-
-        // If we have a fullStream writer, also write the subagent's fullStream events
-        if (fullStreamWriter && response.fullStream) {
-          // Get allowed event types from supervisor config
-          const allowedTypes = this.supervisorConfig?.fullStreamEventForwarding?.types || [
-            "tool-call",
-            "tool-result",
-          ];
-
-          // Write subagent's fullStream events with metadata
-          const writeSubagentFullStream = async () => {
-            try {
-              for await (const part of response.fullStream) {
-                // Check if this event type should be forwarded
-                if (!shouldForwardChunk(part, allowedTypes)) {
-                  continue; // Skip this event if not in allowed types
-                }
-
-                // Add subagent metadata to each part
-                const enrichedPart = {
-                  ...part,
-                  ...forwardingMetadata,
-                };
-                this.registerToolCallMetadata(parentOperationContext, enrichedPart, targetAgent);
-                await fullStreamWriter.write(enrichedPart);
-              }
-            } catch (error) {
-              // Log error but don't throw to avoid breaking the main flow
-              const logger = parentOperationContext?.logger || getGlobalLogger();
-              logger.error("Error writing subagent fullStream", { error });
-            }
-          };
-
-          // Start writing in background (don't await)
-          writeSubagentFullStream();
-        }
-
-        // Get the final result - check for bailed result first
-        const bailedResultFromContext = parentOperationContext?.systemContext?.get(
-          "bailedResult",
-        ) as { agentName: string; response: string } | undefined;
-        finalResult = bailedResultFromContext?.response || (await response.text);
-        usage = await response.usage;
-
-        const assistantMessage: UIMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          parts: [{ type: "text", text: finalResult }],
-        };
-        finalMessages = [taskMessage, assistantMessage];
+        finalResult = streamResult;
+        usage = streamUsage;
+        finalMessages = [taskMessage, this.createAssistantMessage(finalResult)];
       } else if (this.isGenerateTextConfig(targetAgentConfig)) {
         // GenerateText configuration
         const options: GenerateTextOptions = { ...baseOptions, ...targetAgentConfig.options };
         const response = await targetAgent.generateText(messages, options);
         finalResult = response.text;
         usage = response.usage;
-
-        const assistantMessage: UIMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          parts: [{ type: "text", text: finalResult }],
-        };
-        finalMessages = [taskMessage, assistantMessage];
+        finalMessages = [taskMessage, this.createAssistantMessage(finalResult)];
       } else if (this.isStreamObjectConfig(targetAgentConfig)) {
         // StreamObject configuration
         const options: StreamObjectOptions = { ...baseOptions, ...targetAgentConfig.options };
@@ -585,13 +431,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         );
         const finalObject = await response.object;
         finalResult = safeStringify(finalObject);
-
-        const assistantMessage: UIMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          parts: [{ type: "text", text: finalResult }],
-        };
-        finalMessages = [taskMessage, assistantMessage];
+        finalMessages = [taskMessage, this.createAssistantMessage(finalResult)];
       } else if (this.isGenerateObjectConfig(targetAgentConfig)) {
         // GenerateObject configuration
         const options: GenerateObjectOptions = { ...baseOptions, ...targetAgentConfig.options };
@@ -602,13 +442,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         );
         finalResult = safeStringify(response);
         usage = (response as any).usage;
-
-        const assistantMessage: UIMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          parts: [{ type: "text", text: finalResult }],
-        };
-        finalMessages = [taskMessage, assistantMessage];
+        finalMessages = [taskMessage, this.createAssistantMessage(finalResult)];
       } else {
         // This should never happen due to exhaustive type checking
         throw new Error("Unknown subagent configuration type");
@@ -729,6 +563,131 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         usage: undefined,
       };
     }
+  }
+
+  private createAssistantMessage(text: string): UIMessage {
+    return {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      parts: [{ type: "text", text }],
+    };
+  }
+
+  private getStreamWriters(parentOperationContext?: OperationContext): {
+    uiStreamWriter?: UIMessageStreamWriter<UIMessage<unknown, UIDataTypes, UITools>>;
+    fullStreamWriter?: WritableStreamDefaultWriter<any>;
+  } {
+    const uiStreamWriter = parentOperationContext?.systemContext?.get(
+      "uiStreamWriter",
+    ) as UIMessageStreamWriter<UIMessage<unknown, UIDataTypes, UITools>>;
+    const fullStreamWriter = parentOperationContext?.systemContext?.get(
+      "fullStreamWriter",
+    ) as WritableStreamDefaultWriter<any>;
+    return { uiStreamWriter, fullStreamWriter };
+  }
+
+  private forwardStreamEvents(
+    response: Awaited<ReturnType<Agent["streamText"]>>,
+    forwardingMetadata: AgentMetadataContextValue,
+    parentOperationContext: OperationContext | undefined,
+    targetAgent: Agent,
+  ): void {
+    const { uiStreamWriter, fullStreamWriter } = this.getStreamWriters(parentOperationContext);
+
+    // If we have a UI writer, merge the subagent's stream with metadata
+    if (uiStreamWriter && response.fullStream) {
+      // Convert the subagent's fullStream to UI message stream
+      // Include all messages to maintain tool call/result pairing
+      const subagentUIStream = response.toUIMessageStream();
+
+      // Wrap the stream with metadata enricher to add metadata to all parts
+      // Apply type filters from supervisor config
+      const enrichedStream = createMetadataEnrichedStream(
+        subagentUIStream,
+        forwardingMetadata,
+        this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
+      );
+
+      // Use the writer to merge the enriched stream
+      // This handles promise tracking and error handling automatically
+      uiStreamWriter.merge(enrichedStream);
+    }
+
+    // If we have a fullStream writer, also write the subagent's fullStream events
+    if (fullStreamWriter && response.fullStream) {
+      this.writeFullStream(
+        response,
+        forwardingMetadata,
+        parentOperationContext,
+        targetAgent,
+        fullStreamWriter,
+      );
+    }
+  }
+
+  private writeFullStream(
+    response: Awaited<ReturnType<Agent["streamText"]>>,
+    forwardingMetadata: AgentMetadataContextValue,
+    parentOperationContext: OperationContext | undefined,
+    targetAgent: Agent,
+    fullStreamWriter: WritableStreamDefaultWriter<any>,
+  ): void {
+    // Get allowed event types from supervisor config
+    const allowedTypes = this.supervisorConfig?.fullStreamEventForwarding?.types || [
+      "tool-call",
+      "tool-result",
+    ];
+
+    // Write subagent's fullStream events with metadata
+    const writeSubagentFullStream = async () => {
+      try {
+        for await (const part of response.fullStream) {
+          // Check if this event type should be forwarded
+          if (!shouldForwardChunk(part, allowedTypes)) {
+            continue; // Skip this event if not in allowed types
+          }
+
+          // Add subagent metadata to each part
+          const enrichedPart = {
+            ...part,
+            ...forwardingMetadata,
+          };
+          this.registerToolCallMetadata(parentOperationContext, enrichedPart, targetAgent);
+          await fullStreamWriter.write(enrichedPart);
+        }
+      } catch (error) {
+        // Log error but don't throw to avoid breaking the main flow
+        const logger = parentOperationContext?.logger || getGlobalLogger();
+        logger.error("Error writing subagent fullStream", { error });
+      }
+    };
+
+    // Start writing in background (don't await)
+    writeSubagentFullStream();
+  }
+
+  private async resolveStreamResult(
+    response: Awaited<ReturnType<Agent["streamText"]>>,
+    parentOperationContext?: OperationContext,
+  ): Promise<{ finalResult: string; usage: any }> {
+    const bailedResultFromContext = parentOperationContext?.systemContext?.get("bailedResult") as
+      | { agentName: string; response: string }
+      | undefined;
+    const finalResult = bailedResultFromContext?.response || (await response.text);
+    const usage = await response.usage;
+    return { finalResult, usage };
+  }
+
+  private async streamTextWithForwarding(
+    targetAgent: Agent,
+    messages: UIMessage[],
+    options: StreamTextOptions,
+    parentOperationContext: OperationContext | undefined,
+  ): Promise<{ finalResult: string; usage: any }> {
+    const response = await targetAgent.streamText(messages, options);
+    const forwardingMetadata = this.buildForwardingMetadata(targetAgent, parentOperationContext);
+    this.forwardStreamEvents(response, forwardingMetadata, parentOperationContext, targetAgent);
+    return this.resolveStreamResult(response, parentOperationContext);
   }
 
   /**

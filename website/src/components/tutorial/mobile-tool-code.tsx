@@ -158,7 +158,6 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
               </span>
 
               {/* Tool Definition */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 data-feature="tool_definition"
                 className={`block ${getHighlightClasses(
@@ -174,7 +173,6 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
               </span>
 
               {/* Tool Name & Description */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "tool_meta",
@@ -192,7 +190,6 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
               </span>
 
               {/* Parameters */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "parameters",
@@ -214,7 +211,6 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
               </span>
 
               {/* Execute Function */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "execute",
@@ -275,7 +271,6 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
               </span>
 
               {/* Agent Creation */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses("agent")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("agent", e)}

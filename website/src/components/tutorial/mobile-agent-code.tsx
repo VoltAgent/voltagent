@@ -140,7 +140,6 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
               </span>
 
               {/* Agent Creation */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 data-feature="agent"
                 className={`block ${getHighlightClasses("agent")} break-words whitespace-pre-wrap`}
@@ -157,7 +156,6 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
               </span>
 
               {/* Agent Name */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses("name")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("name", e)}
@@ -169,7 +167,6 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
               </span>
 
               {/* Agent Description & Instructions */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses(
                   "behavior",
@@ -183,7 +180,6 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
               </span>
 
               {/* Model Selection */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses("model")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("model", e)}
@@ -205,7 +201,6 @@ export const MobileAgentCode = ({ isVisible }: MobileAgentCodeProps) => {
               </span>
 
               {/* Server Setup */}
-              {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
               <span
                 className={`block ${getHighlightClasses("server")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("server", e)}
