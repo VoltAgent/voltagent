@@ -318,7 +318,7 @@ export class GroqProvider implements LLMProvider<string> {
       }
       const functionResponse = await functionToCall(functionArgs);
       if (functionResponse === undefined) {
-        throw `Function ${functionName} returned undefined`;
+        throw new Error(`Function ${functionName} returned undefined`);
       }
       toolResults.push({
         toolCallId: toolCall.id,
