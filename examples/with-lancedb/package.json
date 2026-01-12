@@ -1,23 +1,8 @@
 {
   "name": "voltagent-example-with-lancedb",
-  "version": "1.0.0",
   "description": "Example demonstrating VoltAgent integration with LanceDB for serverless vector storage",
-  "private": true,
-  "main": "dist/index.js",
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src/index.ts",
-    "start": "node dist/index.js"
-  },
-  "keywords": [],
+  "version": "1.0.0",
   "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^24.6.2",
-    "tsx": "^4.20.4",
-    "typescript": "^5.9.3"
-  },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.1",
     "@lancedb/lancedb": "^0.23.0",
@@ -28,5 +13,20 @@
     "ai": "^6.0.0",
     "openai": "^6.15.0",
     "zod": "^3.25.76"
-  }
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.2",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "main": "dist/index.js",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "type": "module"
 }
