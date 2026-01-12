@@ -91,7 +91,7 @@ const appendTextSections = (rawText: string, parts: CaseStudyContentPart[]): voi
           content: textParts[j],
         });
       }
-      if (j < bulletSections.length && bulletSections[j]) {
+      if (j < bulletSections.length && bulletSections[j] && bulletSections[j].length > 0) {
         parts.push({
           type: "bullets",
           content: bulletSections[j],
