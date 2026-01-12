@@ -57,6 +57,7 @@ With the open-source framework, you can build intelligent agents with memory, to
 - **[Tool Registry](https://voltagent.dev/docs/agents/tools/) & [MCP](https://voltagent.dev/docs/agents/mcp/)**: Ship Zod-typed tools with lifecycle hooks and cancellation, and connect to [Model Context Protocol](https://modelcontextprotocol.io/) servers without extra glue code.
 - **[LLM Compatibility](https://voltagent.dev/docs/getting-started/providers-models/)**: Swap between OpenAI, Anthropic, Google, or other providers by changing config, not rewriting agent logic.
 - **[Memory](https://voltagent.dev/docs/agents/memory/overview/)**: Attach durable memory adapters so agents remember important context across runs.
+- **[Resumable Streaming](https://voltagent.dev/docs/agents/resumable-streaming/)**: Let clients reconnect to in-flight streams after refresh and continue receiving the same response.
 - **[Retrieval & RAG](https://voltagent.dev/docs/rag/overview/)**: Plug in retriever agents to pull facts from your data sources and ground responses (RAG) before the model answers.
 - **[VoltAgent Knowledge Base](https://voltagent.dev/docs/rag/voltagent/)**: Use the managed RAG service for document ingestion, chunking, embeddings, and search.
 - **[Voice](https://voltagent.dev/docs/agents/voice/)**: Add text-to-speech and speech-to-text capabilities with OpenAI, ElevenLabs, or custom voice providers.

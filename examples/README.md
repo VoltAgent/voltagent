@@ -7,6 +7,7 @@ What you’ll find here
 - RAG and retrieval over vectors and databases
 - Typed tool design, MCP servers, and external APIs
 - Working and persistent memory for grounded conversations
+- Resumable streaming examples for reconnecting to in-flight responses
 - Supervisor + sub‑agent orchestration and workflows
 - Deployments for Next.js, Cloudflare Workers, Netlify and more
 

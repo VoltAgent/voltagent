@@ -65,6 +65,12 @@ description: 'Attach durable memory adapters so agents remember important contex
 },
 {
 type: 'link',
+href: '/docs/agents/resumable-streaming/',
+label: 'Resumable Streaming',
+description: 'Let clients reconnect to in-flight streams after refresh and continue the same response.'
+},
+{
+type: 'link',
 href: '/docs/rag/overview/',
 label: 'Retrieval & RAG',
 description: 'Plug in retriever agents to pull facts from your data sources and ground responses (RAG) before the model answers.'
