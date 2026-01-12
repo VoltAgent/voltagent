@@ -314,7 +314,7 @@ export class GroqProvider implements LLMProvider<string> {
         toolCall.function?.arguments ? toolCall.function?.arguments : "{}",
       );
       if (functionToCall === undefined) {
-        throw `Function ${functionName} not found in tools`;
+        throw new Error(`Function ${functionName} not found in tools`);
       }
       const functionResponse = await functionToCall(functionArgs);
       if (functionResponse === undefined) {
