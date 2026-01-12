@@ -62,8 +62,7 @@ type WebSocketAuthResult = {
 };
 
 function closeUpgrade(socket: Socket, statusLine: string): void {
-  socket.write(`${statusLine}\r\n\r\n`);
-  socket.destroy();
+  socket.end(`${statusLine}\r\n\r\n`);
 }
 
 function denyUnauthorized(socket: Socket): WebSocketAuthResult {
