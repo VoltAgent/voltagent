@@ -491,14 +491,8 @@ export class Agent {
       this.supervisorConfig,
     );
 
-    // Initialize prompts helper with VoltOpsClient (agent's own or global)
-    // Priority 1: Agent's own VoltOpsClient
-    // Priority 2: Global VoltOpsClient from registry
-    const voltOpsClient =
-      this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
-    if (voltOpsClient) {
-      this.prompts = voltOpsClient.createPromptHelper(this.id);
-    }
+    // Initialize prompts helper with local prompts and VoltOps clients
+    this.prompts = VoltOpsClientClass.createPromptHelperFromSources(this.id, this.voltOpsClient);
   }
 
   // ============================================================================
@@ -2912,6 +2906,15 @@ export class Agent {
         }
         if (metadata.tags && metadata.tags.length > 0) {
           rootSpan.setAttribute("prompt.tags", safeStringify(metadata.tags));
+        }
+        if (metadata.source) {
+          rootSpan.setAttribute("prompt.source", metadata.source);
+        }
+        if (metadata.latest_version !== undefined) {
+          rootSpan.setAttribute("prompt.latest_version", metadata.latest_version);
+        }
+        if (metadata.outdated !== undefined) {
+          rootSpan.setAttribute("prompt.outdated", metadata.outdated);
         }
         if (metadata.config) {
           rootSpan.setAttribute("prompt.config", safeStringify(metadata.config));

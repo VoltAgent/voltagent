@@ -26,7 +26,7 @@ export interface VoltOpsConfig {
 
 const ENV_FILE_NAME = ".env";
 const normaliseBaseUrl = (input: string): string => input.replace(/\/?$/, "");
-const DEFAULT_API_URL = "https://api.voltagent.dev";
+const DEFAULT_API_URL = "http://localhost:3003";
 
 interface LoadedEnvFile {
   path: string;

@@ -581,6 +581,9 @@ export interface SystemMessageResponse {
     version?: number;
     labels?: string[];
     tags?: string[];
+    source?: "local-file" | "online";
+    latest_version?: number;
+    outdated?: boolean;
     config?: {
       model?: string;
       temperature?: number;

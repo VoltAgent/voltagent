@@ -178,6 +178,7 @@ export class VoltOpsPromptManagerImpl implements VoltOpsPromptManager {
         version: response.version,
         labels: response.labels,
         tags: response.tags,
+        source: "online",
         config: response.config,
       },
     };

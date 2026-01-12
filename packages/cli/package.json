@@ -9,6 +9,7 @@
     "@voltagent/evals": "^2.0.2",
     "@voltagent/internal": "^1.0.2",
     "@voltagent/sdk": "^2.0.2",
+    "adm-zip": "^0.5.12",
     "boxen": "^5.1.2",
     "bundle-require": "^5.1.0",
     "chalk": "^4.1.2",
@@ -18,6 +19,7 @@
     "esbuild": "^0.25.10",
     "figlet": "^1.7.0",
     "fs-extra": "^11.1.1",
+    "gray-matter": "^4.0.3",
     "inquirer": "^8.2.6",
     "localtunnel": "^2.0.2",
     "npm-check-updates": "^17.1.18",
@@ -29,6 +31,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
     "@types/boxen": "^3.0.1",
     "@types/figlet": "^1.5.8",
     "@types/fs-extra": "^11.0.4",

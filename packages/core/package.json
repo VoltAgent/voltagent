@@ -18,6 +18,7 @@
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "@voltagent/internal": "^1.0.2",
     "fast-glob": "^3.3.3",
+    "gray-matter": "^4.0.3",
     "micromatch": "^4.0.8",
     "ts-pattern": "^5.7.1",
     "type-fest": "^4.41.0",

@@ -957,6 +957,12 @@ export interface PromptContent {
     labels?: string[];
     /** Tags array for categorization */
     tags?: string[];
+    /** Prompt source location (e.g., "local-file" or "online") */
+    source?: "local-file" | "online";
+    /** Latest online version when available */
+    latest_version?: number;
+    /** Whether the local prompt is older than the online version */
+    outdated?: boolean;
     /** LLM configuration from prompt */
     config?: {
       model?: string;
