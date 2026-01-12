@@ -684,6 +684,7 @@ describe("VoltOpsPromptManagerImpl", () => {
         version: "v1.0",
         labels: ["production"],
         tags: ["greeting"],
+        source: "online",
         config: { temperature: 0.7 },
       });
     });

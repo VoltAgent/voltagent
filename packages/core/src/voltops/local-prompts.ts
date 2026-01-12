@@ -78,7 +78,9 @@ const normalizeStringArray = (value: unknown): string[] | undefined => {
   if (!Array.isArray(value)) {
     return undefined;
   }
-  const items = value.filter((entry): entry is string => typeof entry === "string" && entry);
+  const items = value.filter(
+    (entry): entry is string => typeof entry === "string" && entry.length > 0,
+  );
   return items.length ? items : undefined;
 };
 
@@ -177,12 +179,14 @@ const selectPromptFile = (
   const matchesLabel = (metadata: PromptMetadata, label: string): boolean =>
     Boolean(metadata.labels?.includes(label));
 
+  const label = reference.label;
+
   if (reference.version !== undefined) {
     let matching = candidates.filter(
       (candidate) => candidate.metadata.version === reference.version,
     );
-    if (reference.label) {
-      matching = matching.filter((candidate) => matchesLabel(candidate.metadata, reference.label));
+    if (label) {
+      matching = matching.filter((candidate) => matchesLabel(candidate.metadata, label));
     }
     if (matching.length === 0) {
       throw new LocalPromptNotFoundError(
@@ -192,16 +196,14 @@ const selectPromptFile = (
     return selectHighestVersion(matching);
   }
 
-  if (reference.label) {
-    let matching = candidates.filter((candidate) =>
-      matchesLabel(candidate.metadata, reference.label),
-    );
-    if (matching.length === 0 && reference.label === "latest") {
+  if (label) {
+    let matching = candidates.filter((candidate) => matchesLabel(candidate.metadata, label));
+    if (matching.length === 0 && label === "latest") {
       matching = candidates;
     }
     if (matching.length === 0) {
       throw new LocalPromptNotFoundError(
-        `Local prompt label '${reference.label}' not found for ${promptName}`,
+        `Local prompt label '${label}' not found for ${promptName}`,
       );
     }
     return selectHighestVersion(matching);
