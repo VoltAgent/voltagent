@@ -68,6 +68,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,
           userId: restConfig.userId ?? state.userId,
+          tenantId: restConfig.tenantId ?? state.tenantId,
           // No parentSpan when there's no workflow context
           output,
         });
@@ -95,6 +96,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,
           userId: restConfig.userId ?? state.userId,
+          tenantId: restConfig.tenantId ?? state.tenantId,
           // Pass the current step span as parent for proper span hierarchy
           parentSpan: state.workflowContext?.currentStepSpan,
           output,

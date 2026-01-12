@@ -841,6 +841,9 @@ export function createWorkflow<
 
     // Wrap entire execution in root span
     const rootSpan = traceContext.getRootSpan();
+    if (options?.tenantId) {
+      rootSpan.setAttribute("tenant.id", options.tenantId);
+    }
 
     // Add workflow state snapshot for remote observability
     const workflowState = {
@@ -867,6 +870,7 @@ export function createWorkflow<
         executionId,
         userId: options?.userId,
         conversationId: options?.conversationId,
+        tenantId: options?.tenantId,
         traceId: rootSpan.spanContext().traceId,
         spanId: rootSpan.spanContext().spanId,
       });
