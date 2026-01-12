@@ -259,7 +259,8 @@ export class LangfuseExporter implements SpanExporter {
       traceParams.metadata = traceInfo.rootSpan
         ? extractMetadata(traceInfo.rootSpan.attributes)
         : undefined;
-      traceParams.model = String(traceInfo.rootSpan?.attributes["ai.model.name"]) ?? undefined;
+      const modelName = traceInfo.rootSpan?.attributes["ai.model.name"];
+      traceParams.model = modelName != null ? String(modelName) : undefined;
     }
 
     return traceParams;
