@@ -1,6 +1,7 @@
 import type { Logger } from "../logger";
 import { LoggerProxy } from "../logger";
 import { randomUUID } from "../utils/id";
+import { TrafficAdaptiveLimiter } from "./traffic-adaptive-limiter";
 import { TrafficCircuitBreaker } from "./traffic-circuit-breaker";
 import { TrafficConcurrencyLimiter } from "./traffic-concurrency-limiter";
 import type { DispatchDecision, QueuedRequest, Scheduler } from "./traffic-controller-internal";
@@ -91,26 +92,10 @@ type RateLimitSnapshot = {
   retryAfterMs?: number;
 };
 
-type AdaptiveLimiterState = {
-  recent429s: number[];
-  penaltyMs: number;
-  cooldownUntil?: number;
-  last429At?: number;
-};
-
 const DEFAULT_PRIORITY_WEIGHTS: Record<TrafficPriority, number> = {
   P0: 5,
   P1: 3,
   P2: 2,
-};
-
-const DEFAULT_ADAPTIVE_LIMITER: Required<AdaptiveLimiterConfig> = {
-  windowMs: 30_000,
-  threshold: 3,
-  minPenaltyMs: 500,
-  maxPenaltyMs: 10_000,
-  penaltyMultiplier: 2,
-  decayMs: 10_000,
 };
 
 export class TrafficController {
@@ -151,8 +136,7 @@ export class TrafficController {
   private readonly rateLimitSnapshots = new Map<string, RateLimitSnapshot>();
 
   /* ---------- Adaptive limiter ---------- */
-  private readonly adaptiveLimiterConfig: Required<AdaptiveLimiterConfig>;
-  private readonly adaptiveLimiterState = new Map<string, AdaptiveLimiterState>();
+  private readonly adaptiveLimiter: TrafficAdaptiveLimiter;
 
   constructor(options: TrafficControllerOptions = {}) {
     this.maxConcurrent = options.maxConcurrent ?? Number.POSITIVE_INFINITY;
@@ -170,10 +154,10 @@ export class TrafficController {
       P2: Math.max(0, Math.floor(priorityWeights.P2)),
     };
     this.priorityCredits = { ...this.priorityWeights };
-    this.adaptiveLimiterConfig = {
-      ...DEFAULT_ADAPTIVE_LIMITER,
-      ...(options.adaptiveLimiter ?? {}),
-    };
+    this.adaptiveLimiter = new TrafficAdaptiveLimiter({
+      adaptiveLimiter: options.adaptiveLimiter,
+      buildRateLimitKey: (metadata) => this.buildRateLimitKey(metadata),
+    });
     this.logger = new LoggerProxy({ component: "traffic-controller" }, options.logger);
     this.trafficLogger = this.logger.child({ subsystem: "traffic" });
     this.controllerLogger = this.trafficLogger.child({ module: "controller" });
@@ -249,12 +233,11 @@ export class TrafficController {
     });
     this.circuitBreaker.recordSuccess(metadata, this.trafficLogger);
     const rateLimitKey = this.buildRateLimitKey(metadata);
-    const adaptiveKey = this.buildAdaptiveKey(
+    this.adaptiveLimiter.recordSuccess({
       metadata,
-      metadata?.tenantId ?? "default",
+      tenantId: metadata?.tenantId ?? "default",
       rateLimitKey,
-    );
-    this.recordAdaptiveSuccess(adaptiveKey);
+    });
     this.releaseStreamSlot(metadata, "success");
   }
 
@@ -280,13 +263,14 @@ export class TrafficController {
       statusCode: (error as { statusCode?: unknown } | null)?.statusCode,
     });
     this.circuitBreaker.recordFailure(metadata, errorForHandling, this.trafficLogger);
-    const adaptiveKey = this.buildAdaptiveKey(
-      metadata,
-      metadata?.tenantId ?? "default",
-      rateLimitKey,
-    );
     if (errorForHandling instanceof RateLimitedUpstreamError) {
-      this.recordAdaptiveRateLimitHit(adaptiveKey, errorForHandling.retryAfterMs);
+      this.adaptiveLimiter.recordRateLimitHit({
+        metadata,
+        tenantId: metadata?.tenantId ?? "default",
+        rateLimitKey,
+        retryAfterMs: errorForHandling.retryAfterMs,
+        logger: this.trafficLogger,
+      });
     }
     const traffic = this.buildTrafficResponseMetadataFromMetadata(
       metadata,
@@ -617,7 +601,6 @@ export class TrafficController {
       });
       const result = await item.request.execute();
       const rateLimitKey = item.rateLimitKey ?? this.buildRateLimitKey(item.request.metadata);
-      const adaptiveKey = this.buildAdaptiveKey(item.request.metadata, item.tenantId, rateLimitKey);
       this.controllerLogger.debug("Request succeeded", {
         tenantId: item.tenantId,
         attempt: item.attempt,
@@ -636,7 +619,11 @@ export class TrafficController {
       }
       const usage = this.usageTracker.recordUsage(item, result, this.trafficLogger);
       this.rateLimiter.recordUsage(rateLimitKey, usage, this.trafficLogger, item.reservedTokens);
-      this.recordAdaptiveSuccess(adaptiveKey);
+      this.adaptiveLimiter.recordSuccess({
+        metadata: item.request.metadata,
+        tenantId: item.tenantId,
+        rateLimitKey,
+      });
       this.attachTrafficMetadata(
         result,
         this.buildTrafficResponseMetadata(item, rateLimitKey, Date.now()),
@@ -671,7 +658,6 @@ export class TrafficController {
         logger: this.trafficLogger,
       });
       const errorForHandling = normalizedRateLimitError ?? error;
-      const adaptiveKey = this.buildAdaptiveKey(item.request.metadata, item.tenantId, rateLimitKey);
       if (typeof item.reservedTokens === "number" && item.reservedTokens > 0) {
         this.rateLimiter.recordUsage(
           rateLimitKey,
@@ -681,7 +667,13 @@ export class TrafficController {
         );
       }
       if (errorForHandling instanceof RateLimitedUpstreamError) {
-        this.recordAdaptiveRateLimitHit(adaptiveKey, errorForHandling.retryAfterMs);
+        this.adaptiveLimiter.recordRateLimitHit({
+          metadata: item.request.metadata,
+          tenantId: item.tenantId,
+          rateLimitKey,
+          retryAfterMs: errorForHandling.retryAfterMs,
+          logger: this.trafficLogger,
+        });
       }
 
       this.controllerLogger.warn("Request failed", {
@@ -1206,7 +1198,7 @@ export class TrafficController {
 
     /* -------------------- Adaptive limits -------------------- */
 
-    const adaptive = this.resolveAdaptiveLimit(next, now);
+    const adaptive = this.adaptiveLimiter.resolve(next, now);
 
     if (adaptive?.kind === "wait") {
       if (this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "adaptive wait")) {
@@ -1369,91 +1361,7 @@ export class TrafficController {
     this.scheduleDrain();
   }
 
-  private resolveAdaptiveLimit(next: QueuedRequest, now: number): DispatchDecision | null {
-    const rateLimitKey = next.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata);
-    const adaptiveKey = this.buildAdaptiveKey(next.request.metadata, next.tenantId, rateLimitKey);
-    const state = this.adaptiveLimiterState.get(adaptiveKey);
-    if (!state) return null;
-
-    this.applyAdaptiveDecay(state, now);
-    if (state.cooldownUntil !== undefined && now < state.cooldownUntil) {
-      return { kind: "wait", wakeUpAt: state.cooldownUntil };
-    }
-
-    return null;
-  }
-
-  private recordAdaptiveRateLimitHit(key: string, retryAfterMs?: number): void {
-    const state = this.getAdaptiveState(key);
-    const now = Date.now();
-    const { windowMs, threshold, minPenaltyMs, maxPenaltyMs, penaltyMultiplier } =
-      this.adaptiveLimiterConfig;
-
-    state.last429At = now;
-    state.recent429s = state.recent429s.filter((timestamp) => now - timestamp <= windowMs);
-    state.recent429s.push(now);
-
-    if (state.recent429s.length < threshold) {
-      return;
-    }
-
-    const basePenalty = state.penaltyMs > 0 ? state.penaltyMs : minPenaltyMs;
-    const nextPenalty = Math.min(
-      maxPenaltyMs,
-      Math.max(minPenaltyMs, Math.round(basePenalty * penaltyMultiplier)),
-    );
-    state.penaltyMs = nextPenalty;
-    const retryPenalty = typeof retryAfterMs === "number" ? retryAfterMs : 0;
-    const cooldownMs = Math.max(nextPenalty, retryPenalty);
-    state.cooldownUntil = now + cooldownMs;
-  }
-
-  private recordAdaptiveSuccess(key: string): void {
-    const state = this.adaptiveLimiterState.get(key);
-    if (!state) return;
-
-    const now = Date.now();
-    this.applyAdaptiveDecay(state, now);
-    if (state.penaltyMs === 0) {
-      state.cooldownUntil = undefined;
-      state.recent429s = [];
-      state.last429At = undefined;
-    }
-  }
-
-  private applyAdaptiveDecay(state: AdaptiveLimiterState, now: number): void {
-    const { decayMs, penaltyMultiplier } = this.adaptiveLimiterConfig;
-    if (state.last429At && now - state.last429At < decayMs) {
-      return;
-    }
-
-    if (state.penaltyMs > 0) {
-      state.penaltyMs = Math.max(0, Math.floor(state.penaltyMs / penaltyMultiplier));
-    }
-  }
-
-  private getAdaptiveState(key: string): AdaptiveLimiterState {
-    const existing = this.adaptiveLimiterState.get(key);
-    if (existing) return existing;
-    const created: AdaptiveLimiterState = {
-      recent429s: [],
-      penaltyMs: 0,
-    };
-    this.adaptiveLimiterState.set(key, created);
-    return created;
-  }
-
-  private buildAdaptiveKey(
-    metadata: TrafficRequestMetadata | undefined,
-    tenantId: string,
-    rateLimitKey: string,
-  ): string {
-    if (rateLimitKey.includes("tenant=")) {
-      return rateLimitKey;
-    }
-    const tenant = metadata?.tenantId ?? tenantId ?? "default";
-    return `${rateLimitKey}::tenant=${encodeURIComponent(tenant)}`;
-  }
+  // Adaptive limiter extracted to `TrafficAdaptiveLimiter`.
 
   private buildTrafficResponseMetadata(
     item: QueuedRequest,
