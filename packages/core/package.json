@@ -16,6 +16,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.0.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
+    "@voltagent/documents": "workspace:*",
     "@voltagent/internal": "^1.0.2",
     "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",

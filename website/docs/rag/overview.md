@@ -239,3 +239,42 @@ npm create voltagent-app@latest -- --example with-lancedb
 **I want to see examples** → [GitHub Examples](https://github.com/voltagent/voltagent/tree/main/examples)
 
 **I need help choosing** → Join our [Discord](https://s.voltagent.dev/discord) and ask!
+
+## Advanced Chunking
+
+For more control over how your documents are processed, VoltAgent provides a dedicated package `@voltagent/rag` with advanced chunking strategies.
+
+### Installation
+
+```bash
+npm install @voltagent/rag
+```
+
+### Available Chunkers
+
+The package includes several specialized chunkers optimized for different content types:
+
+- **RecursiveChunker**: Best for general text (keeps related context together)
+- **MarkdownChunker**: Preserves markdown structure (headers, lists, code blocks)
+- **SemanticChunker**: Uses embeddings to split text by meaning
+- **CodeChunker**: Optimized for splitting source code
+- **TokenChunker**: Fixed-size token windows
+
+### Example Usage
+
+```typescript
+import { RecursiveChunker, MarkdownChunker } from "@voltagent/rag";
+
+// 1. Recursive Chunking (Recommended for text)
+const textChunker = new RecursiveChunker();
+const textChunks = textChunker.chunk(longDocument, {
+  maxTokens: 500,
+  overlapTokens: 50,
+});
+
+// 2. Markdown Chunking (Recommended for documentation)
+const mdChunker = new MarkdownChunker();
+const mdChunks = mdChunker.chunk(markdownContent, {
+  maxTokens: 1000,
+});
+```
