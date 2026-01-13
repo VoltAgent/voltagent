@@ -107,7 +107,7 @@ export function Hero() {
   }, []);
 
   return (
-    <div className="relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
+    <div className="relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-20">
       <div className="mt-16 md:mt-24" />
       <div className="grid xs:grid-cols-1 mx-4 lg:mx-0 lg:grid-cols-2 gap-8 items-center">
         <div>
@@ -121,14 +121,14 @@ export function Hero() {
               href="https://github.com/voltagent/voltagent/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-main-emerald no-underline hover:no-underline"
+              className="text-[#00d992] no-underline font-semibold hover:no-underline"
             >
               <span
                 className="inline-block relative"
                 onMouseEnter={() => setShowHeart(true)}
                 onMouseLeave={() => setShowHeart(false)}
               >
-                Event-Driven
+                The end-to-end
                 {showHeart && (
                   <span className="absolute -right-8 top-1 animate-[zap_1.5s_ease-in-out_infinite]">
                     <BoltIcon className="w-6 h-6 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
@@ -139,41 +139,31 @@ export function Hero() {
           </h2>
 
           <h1
-            className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-bold text-left mb-6 transition-all duration-1000 tracking-[-0.025em] ${
+            className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-semibold tracking-[-0.65px] text-left mb-6 transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            TypeScript AI Agent
+            AI Agent Engineering
             <LineShadowText
-              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 ml-2 landing-sm:ml-0 italic"
+              className="text-[#00d992] landing-md:mt-4 landing-xs:mt-2 ml-2 landing-sm:ml-0 italic"
               shadowColor={"#00d992"}
             >
-              Framework
+              Platform
             </LineShadowText>
           </h1>
 
-          <p
+          <div
             className={`text-base sm:text-lg md:text-xl text-gray-400 text-left mb-12 transition-all duration-1000 delay-300 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <span className="text-white font-semibold">Build</span> agents with open-source
-            <span className="text-white font-semibold"> TypeScript </span>framework.
-            <br className="mb-1" />
-            <span className="text-white font-semibold">Debug</span> with complete{" "}
-            <span className="text-white ">LLM observability</span>,{" "}
-            <span className="text-white ">traces</span>, and{" "}
-            <span className="text-white ">evals</span>.
-            <br className="mb-1" />
-            <span className="text-white ">Automate</span> agents with{" "}
-            <span className="text-white ">triggers</span> and{" "}
-            <span className="text-white ">actions</span>.
-            <br />
-            <br />
             <span className="text-white text-base sm:text-lg md:text-xl">
-              Ship enterprise-grade multi-agents end-to-end, full code control, no black boxes.
+              Build enterprise multi-agent systems —{" "}
+              <span className="text-white/50">development</span>,{" "}
+              <span className="text-white/50">observability</span>, and{" "}
+              <span className="text-white/50">deployment</span> in one platform.
             </span>
-          </p>
+          </div>
 
           <div
             className={`flex flex-col sm:flex-row items-center sm:items-start justify-center sm:justify-start gap-4 mb-12 transition-all duration-1000 delay-500 ${
@@ -205,8 +195,82 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="landing-xs:pl-0 landing-md:pl-12 h-full items-center">
+        <div className="landing-xs:pl-0 landing-md:pl-12 h-full flex items-center justify-center">
           <AgentsAnimation />
+        </div>
+      </div>
+      {/* Platform Container */}
+      <div className="relative border border-solid border-white/10 rounded-xl md:rounded-2xl p-4 pt-6 md:p-6 mx-4 lg:mx-0 mt-16 md:mt-36">
+        {/* Badge */}
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0d1117] px-3 py-0.5 text-white/70 text-xs md:text-sm font-medium border border-solid border-white/20 rounded-full">
+          The Platform
+        </span>
+
+        {/* Two boxes with connector */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-2 md:gap-4 items-stretch">
+          {/* Core Framework Box */}
+          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-xl border border-solid border-white/10 bg-zinc-800/60 transition-colors">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <span className="text-white font-semibold text-lg md:text-xl">Core Framework</span>
+              <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-white/20 text-white/50 w-fit">
+                Open Source
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-white/50">
+              <span>Memory</span>
+              <span className="text-white/20">|</span>
+              <span>RAG</span>
+              <span className="text-white/20">|</span>
+              <span>Guardrails</span>
+              <span className="text-white/20">|</span>
+              <span>Tools</span>
+              <span className="text-white/20">|</span>
+              <span>MCP</span>
+              <span className="text-white/20">|</span>
+              <span>Voice</span>
+              <span className="text-white/20">|</span>
+              <span>Workflow</span>
+            </div>
+            <span className="text-white text-sm md:text-base">
+              Build agents with open-source TypeScript framework.
+            </span>
+          </div>
+
+          {/* Plus Connector */}
+          <div className="flex items-center justify-center py-1 md:py-0">
+            <span className="text-white/30 text-lg md:text-2xl font-light">+</span>
+          </div>
+
+          {/* VoltOps Console Box */}
+          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-xl border border-solid border-white/10 bg-zinc-800/60 transition-colors">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <span className="text-white font-semibold text-lg md:text-xl">VoltOps Console</span>
+              <div className="flex gap-2">
+                <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-white/20 text-white/50">
+                  Cloud
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-white/20 text-white/50">
+                  Self-Hosted
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-white/50">
+              <span>Observability</span>
+              <span className="text-white/20">|</span>
+              <span>Automation</span>
+              <span className="text-white/20">|</span>
+              <span>Deployment</span>
+              <span className="text-white/20">|</span>
+              <span>Evals</span>
+              <span className="text-white/20">|</span>
+              <span>Guardrails</span>
+              <span className="text-white/20">|</span>
+              <span>Prompts</span>
+            </div>
+            <span className="text-white text-sm md:text-base">
+              Automate, debug, and deploy your agents with console.
+            </span>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import VoltAgent, { Agent, createTool } from "@voltagent/core";
+import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Tools definitions - those without execute are automatically client-side
@@ -43,10 +43,4 @@ export const agent = new Agent({
   instructions: "You are a helpful assistant that demonstrates client-side tools in VoltAgent.",
   model: openai("gpt-4o-mini"),
   tools: Object.values(tools),
-});
-
-new VoltAgent({
-  agents: {
-    agent,
-  },
 });

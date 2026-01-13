@@ -75,7 +75,10 @@ export const BasicJsonSchema = z
 // Generation options schema
 export const GenerateOptionsSchema = z
   .object({
-    userId: z.string().optional().describe("Optional user ID for context tracking"),
+    userId: z
+      .string()
+      .optional()
+      .describe("Optional user ID for context tracking (required for resumable streams)"),
     conversationId: z.string().optional().describe("Optional conversation ID for context tracking"),
     context: z
       .record(z.string(), z.unknown())
@@ -135,6 +138,12 @@ export const GenerateOptionsSchema = z
       .record(z.string(), z.unknown())
       .nullish()
       .describe("Provider-specific options for AI SDK providers (e.g., OpenAI's reasoningEffort)"),
+    resumableStream: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, avoids wiring the HTTP abort signal into streams so they can be resumed (requires resumable streams and options.conversationId + options.userId). If omitted, server defaults may apply.",
+      ),
     output: z
       .object({
         type: z

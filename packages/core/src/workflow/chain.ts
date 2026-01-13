@@ -14,12 +14,29 @@ import type {
 } from "./internal/types";
 import {
   type WorkflowStep,
+  type WorkflowStepBranchConfig,
   type WorkflowStepConditionalWhenConfig,
+  type WorkflowStepForEachConfig,
+  type WorkflowStepGuardrailConfig,
+  type WorkflowStepLoopConfig,
+  type WorkflowStepMapConfig,
+  type WorkflowStepMapEntry,
+  type WorkflowStepMapResult,
   type WorkflowStepParallelAllConfig,
   type WorkflowStepParallelRaceConfig,
+  type WorkflowStepSleepConfig,
+  type WorkflowStepSleepUntilConfig,
   andAgent,
   andAll,
+  andBranch,
+  andDoUntil,
+  andDoWhile,
+  andForEach,
+  andGuardrail,
+  andMap,
   andRace,
+  andSleep,
+  andSleepUntil,
   andTap,
   andThen,
   andWhen,
@@ -32,6 +49,7 @@ import type {
   WorkflowExecutionResult,
   WorkflowInput,
   WorkflowRunOptions,
+  WorkflowStepData,
   WorkflowStepState,
   WorkflowStreamResult,
   WorkflowStreamWriter,
@@ -141,8 +159,8 @@ export class WorkflowChain<
    * ```
    *
    * @param task - The task (prompt) to execute for the agent, can be a string or a function that returns a string
-   * @param agent - The agent to execute the task using `generateObject`
-   * @param config - The config for the agent (schema) `generateObject` call
+   * @param agent - The agent to execute the task using `generateText`
+   * @param config - The config for the agent (schema) `generateText` call
    * @returns A workflow step that executes the agent with the task
    */
   andAgent<SCHEMA extends z.ZodTypeAny>(
@@ -193,7 +211,7 @@ export class WorkflowChain<
     execute: (context: {
       data: z.infer<IS>;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
-      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
@@ -225,7 +243,7 @@ export class WorkflowChain<
     execute: (context: {
       data: z.infer<IS>;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
-      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
@@ -256,7 +274,7 @@ export class WorkflowChain<
     execute: (context: {
       data: CURRENT_DATA;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
-      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
@@ -287,7 +305,7 @@ export class WorkflowChain<
     execute: (context: {
       data: CURRENT_DATA;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
-      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
@@ -330,7 +348,7 @@ export class WorkflowChain<
     execute: (context: {
       data: CURRENT_DATA;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
-      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;
       logger: Logger;
@@ -376,7 +394,7 @@ export class WorkflowChain<
       condition: (context: {
         data: z.infer<IS>;
         state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
-        getStepData: (stepId: string) => { input: any; output: any } | undefined;
+        getStepData: (stepId: string) => WorkflowStepData | undefined;
         suspend: (
           reason?: string,
           suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
@@ -414,11 +432,11 @@ export class WorkflowChain<
    *     id: "process-pending",
    *     condition: async ({ data }) => data.status === "pending",
    *     execute: async ({ data }) => {
-   *       const result = await agent.generateObject(
+   *       const result = await agent.generateText(
    *         `Process pending request for ${data.userId}`,
-   *         z.object({ processed: z.boolean() })
+   *         { output: Output.object({ schema: z.object({ processed: z.boolean() }) }) }
    *       );
-   *       return { ...data, ...result.object };
+   *       return { ...data, ...result.output };
    *     }
    *   });
    * ```
@@ -469,7 +487,7 @@ export class WorkflowChain<
     execute: (context: {
       data: z.infer<IS>;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
-      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
@@ -511,7 +529,7 @@ export class WorkflowChain<
     execute: (context: {
       data: CURRENT_DATA;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
-      getStepData: (stepId: string) => { input: any; output: any } | undefined;
+      getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;
       logger: Logger;
@@ -529,6 +547,130 @@ export class WorkflowChain<
     const finalStep = andTap(config) as WorkflowStep<WorkflowInput<INPUT_SCHEMA>, any, any, any>;
     this.steps.push(finalStep);
     return this;
+  }
+
+  /**
+   * Add a guardrail step to validate or sanitize data
+   */
+  andGuardrail(
+    config: WorkflowStepGuardrailConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andGuardrail(config));
+    return this;
+  }
+
+  /**
+   * Add a sleep step to the workflow
+   */
+  andSleep(
+    config: WorkflowStepSleepConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andSleep(config));
+    return this;
+  }
+
+  /**
+   * Add a sleep-until step to the workflow
+   */
+  andSleepUntil(
+    config: WorkflowStepSleepUntilConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andSleepUntil(config));
+    return this;
+  }
+
+  /**
+   * Add a branching step that runs all matching branches
+   */
+  andBranch<NEW_DATA>(
+    config: WorkflowStepBranchConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>,
+  ): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    Array<NEW_DATA | undefined>,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
+  > {
+    this.steps.push(andBranch(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      Array<NEW_DATA | undefined>,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Add a foreach step that runs a step for each item in an array
+   */
+  andForEach<ITEM, NEW_DATA>(
+    config: WorkflowStepForEachConfig<WorkflowInput<INPUT_SCHEMA>, ITEM, NEW_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA[], SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andForEach(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      NEW_DATA[],
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Add a do-while loop step
+   */
+  andDoWhile<NEW_DATA>(
+    config: WorkflowStepLoopConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andDoWhile(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      NEW_DATA,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Add a do-until loop step
+   */
+  andDoUntil<NEW_DATA>(
+    config: WorkflowStepLoopConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
+    this.steps.push(andDoUntil(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      NEW_DATA,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Add a mapping step to the workflow
+   */
+  andMap<
+    MAP extends Record<string, WorkflowStepMapEntry<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>>,
+  >(
+    config: WorkflowStepMapConfig<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, MAP>,
+  ): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    WorkflowStepMapResult<MAP>,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
+  > {
+    this.steps.push(andMap(config));
+    return this as unknown as WorkflowChain<
+      INPUT_SCHEMA,
+      RESULT_SCHEMA,
+      WorkflowStepMapResult<MAP>,
+      SUSPEND_SCHEMA,
+      RESUME_SCHEMA
+    >;
   }
 
   /**
@@ -588,11 +730,11 @@ export class WorkflowChain<
    *       {
    *         id: "generate-recommendations",
    *         execute: async ({ data }) => {
-   *           const result = await agent.generateObject(
+   *           const result = await agent.generateText(
    *             `Generate recommendations for user ${data.userId}`,
-   *             z.object({ recommendations: z.array(z.string()) })
+   *             { output: Output.object({ schema: z.object({ recommendations: z.array(z.string()) }) }) }
    *           );
-   *           return result.object;
+   *           return result.output;
    *         }
    *       }
    *     ]
@@ -662,11 +804,15 @@ export class WorkflowChain<
    *       {
    *         id: "ai-fallback",
    *         execute: async ({ data }) => {
-   *           const result = await agent.generateObject(
+   *           const result = await agent.generateText(
    *             `Generate fallback response for: ${data.query}`,
-   *             z.object({ source: z.literal("ai"), result: z.string() })
+   *             {
+   *               output: Output.object({
+   *                 schema: z.object({ source: z.literal("ai"), result: z.string() }),
+   *               }),
+   *             }
    *           );
-   *           return result.object;
+   *           return result.output;
    *         }
    *       }
    *     ]

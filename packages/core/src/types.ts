@@ -41,6 +41,24 @@ export interface MCPElicitationAdapter {
   sendRequest(request: unknown): Promise<unknown>;
 }
 
+export interface ResumableStreamContext {
+  conversationId: string;
+  agentId?: string;
+  userId: string;
+}
+
+export interface ResumableStreamAdapter {
+  createStream(
+    params: ResumableStreamContext & {
+      stream: ReadableStream<string>;
+      metadata?: Record<string, unknown>;
+    },
+  ): Promise<string>;
+  resumeStream(streamId: string): Promise<ReadableStream<string> | null>;
+  getActiveStreamId(params: ResumableStreamContext): Promise<string | null>;
+  clearActiveStream(params: ResumableStreamContext & { streamId?: string }): Promise<void>;
+}
+
 // Re-export VoltOps types for convenience
 export type {
   PromptReference,
@@ -124,6 +142,8 @@ export interface ServerProviderDeps {
     registry: A2AServerRegistry;
   };
   triggerRegistry: TriggerRegistry;
+  resumableStream?: ResumableStreamAdapter;
+  resumableStreamDefault?: boolean;
   ensureEnvironment?: (env?: Record<string, unknown>) => void;
 }
 

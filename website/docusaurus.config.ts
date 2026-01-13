@@ -542,7 +542,7 @@ const config: Config = {
       },
     ],
 
-    /* "./plugins/gurubase/index.js", */
+    "./plugins/gurubase/index.js",
     [
       "./plugins/docusaurus-plugin-content-mcp",
       {
@@ -575,7 +575,7 @@ const config: Config = {
     // ],
   ],
   themeConfig: {
-    image: "img/social3.png",
+    image: "img/social4.png",
     announcementBar: {
       id: "support_us",
       content:

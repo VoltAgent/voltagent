@@ -492,7 +492,8 @@ export type AgentEvalOperationType =
   | "generateText"
   | "streamText"
   | "generateObject"
-  | "streamObject";
+  | "streamObject"
+  | "workflow";
 
 export interface AgentEvalPayload {
   operationId: string;
@@ -580,6 +581,9 @@ export interface SystemMessageResponse {
     version?: number;
     labels?: string[];
     tags?: string[];
+    source?: "local-file" | "online";
+    latest_version?: number;
+    outdated?: boolean;
     config?: {
       model?: string;
       temperature?: number;

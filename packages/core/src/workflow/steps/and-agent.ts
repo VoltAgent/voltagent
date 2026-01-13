@@ -1,5 +1,5 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
-import type { UIMessage } from "ai";
+import { Output, type UIMessage } from "ai";
 import type { z } from "zod";
 import type { Agent, BaseGenerationOptions } from "../../agent/agent";
 import { convertUsage } from "../../utils/usage-converter";
@@ -33,8 +33,8 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny, INPUT, DATA> = BaseGenerati
  * ```
  *
  * @param task - The task (prompt) to execute for the agent, can be a string or a function that returns a string
- * @param agent - The agent to execute the task using `generateObject`
- * @param config - The config for the agent (schema) `generateObject` call
+ * @param agent - The agent to execute the task using `generateText`
+ * @param config - The config for the agent (schema) `generateText` call
  * @returns A workflow step that executes the agent with the task
  */
 export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
@@ -58,15 +58,18 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
       const finalTask = typeof task === "function" ? await task(context) : task;
       const finalSchema = typeof schema === "function" ? await schema(context) : schema;
 
+      const output = Output.object({ schema: finalSchema });
+
       // Create step context and publish start event
       if (!state.workflowContext) {
         // No workflow context, execute without events
-        const result = await agent.generateObject(finalTask, finalSchema, {
+        const result = await agent.generateText(finalTask, {
           ...restConfig,
           context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,
           userId: restConfig.userId ?? state.userId,
           // No parentSpan when there's no workflow context
+          output,
         });
         // Accumulate usage if available (no workflow context)
         if (result.usage && state.usage) {
@@ -81,19 +84,20 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           }
           state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
-        return result.object;
+        return result.output as z.infer<SCHEMA>;
       }
 
       // Step start event removed - now handled by OpenTelemetry spans
 
       try {
-        const result = await agent.generateObject(finalTask, finalSchema, {
+        const result = await agent.generateText(finalTask, {
           ...restConfig,
           context: restConfig.context ?? state.context,
           conversationId: restConfig.conversationId ?? state.conversationId,
           userId: restConfig.userId ?? state.userId,
           // Pass the current step span as parent for proper span hierarchy
           parentSpan: state.workflowContext?.currentStepSpan,
+          output,
         });
 
         // Step success event removed - now handled by OpenTelemetry spans
@@ -112,7 +116,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
 
-        return result.object;
+        return result.output as z.infer<SCHEMA>;
       } catch (error) {
         // Check if this is a suspension, not an error
         if (

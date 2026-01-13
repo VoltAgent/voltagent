@@ -37,6 +37,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tailwindcss": "^4.1.4",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
   "private": true,
@@ -48,6 +49,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev --turbopack",
-    "start": "next start"
+    "start": "next start",
+    "voltagent:run": "tsx --env-file=.env ./voltagent/server.ts"
   }
 }

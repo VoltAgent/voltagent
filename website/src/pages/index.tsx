@@ -29,12 +29,9 @@ export default function Home(): JSX.Element {
       </Head>
       <Layout>
         <main className="flex-1 relative overflow-hidden">
-          {/* Global Background Effects */}
           <div className="fixed inset-0 pointer-events-none">
-            {/* Base gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/3 via-transparent to-cyan-500/3" />
 
-            {/* Animated gradient orbs */}
             <div className="absolute top-[10%] left-[15%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] animate-pulse" />
             <div
               className="absolute top-[50%] right-[10%] w-[400px] h-[400px] bg-cyan-500/8 rounded-full blur-[100px] animate-pulse"
@@ -49,7 +46,6 @@ export default function Home(): JSX.Element {
               style={{ animationDelay: "3s" }}
             />
 
-            {/* Moving gradient effect */}
             <div className="absolute inset-0 opacity-30">
               <div
                 className="absolute inset-0"

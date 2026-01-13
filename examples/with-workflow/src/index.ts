@@ -1,5 +1,13 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createWorkflowChain } from "@voltagent/core";
+import {
+  Agent,
+  VoltAgent,
+  andGuardrail,
+  andThen,
+  createInputGuardrail,
+  createOutputGuardrail,
+  createWorkflowChain,
+} from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -357,6 +365,191 @@ const articleSummarizationWorkflow = createWorkflowChain({
   },
 );
 
+// ==============================================================================
+// Example 5: Timed Reminder Workflow
+// Concepts: andSleep, andSleepUntil
+// ==============================================================================
+const timedReminderWorkflow = createWorkflowChain({
+  id: "timed-reminder",
+  name: "Timed Reminder Workflow",
+  purpose: "Pause briefly, then align to a scheduled time before completing",
+  input: z.object({
+    userId: z.string(),
+    waitMs: z.number().default(200),
+  }),
+  result: z.object({
+    userId: z.string(),
+    status: z.enum(["sent"]),
+    resumedAt: z.string(),
+  }),
+})
+  .andSleep({
+    id: "pause-briefly",
+    duration: ({ data }) => Math.max(0, data.waitMs),
+  })
+  .andSleepUntil({
+    id: "align-to-next-second",
+    date: () => new Date(Date.now() + 1000),
+  })
+  .andThen({
+    id: "complete-reminder",
+    execute: async ({ data }) => ({
+      userId: data.userId,
+      status: "sent",
+      resumedAt: new Date().toISOString(),
+    }),
+  });
+
+// ==============================================================================
+// Example 6: Batch Transform Workflow
+// Concepts: andForEach, andMap
+// ==============================================================================
+const batchTransformWorkflow = createWorkflowChain({
+  id: "batch-transform",
+  name: "Batch Transform Workflow",
+  purpose: "Process arrays with for-each and map steps",
+  input: z.array(z.number()),
+  result: z.object({
+    original: z.array(z.number()),
+    doubled: z.array(z.number()),
+    count: z.number(),
+    total: z.number(),
+  }),
+})
+  .andForEach({
+    id: "double-each",
+    step: andThen({
+      id: "double",
+      execute: async ({ data }) => data * 2,
+    }),
+    concurrency: 2,
+  })
+  .andMap({
+    id: "summarize-results",
+    map: {
+      original: { source: "input" },
+      doubled: { source: "data" },
+      count: {
+        source: "fn",
+        fn: ({ data }) => (Array.isArray(data) ? data.length : 0),
+      },
+      total: {
+        source: "fn",
+        fn: ({ data }) => (Array.isArray(data) ? data.reduce((sum, value) => sum + value, 0) : 0),
+      },
+    },
+  });
+
+// ==============================================================================
+// Example 7: Loop + Branch Workflow
+// Concepts: andDoWhile, andDoUntil, andBranch
+// ==============================================================================
+const loopAndBranchWorkflow = createWorkflowChain({
+  id: "loop-and-branch",
+  name: "Loop + Branch Workflow",
+  purpose: "Demonstrate loops and branching with a simple counter",
+  input: z.object({
+    counter: z.number().default(0),
+  }),
+  result: z.object({
+    counter: z.number(),
+    label: z.enum(["ready", "warmup"]),
+  }),
+})
+  .andDoWhile({
+    id: "warmup-loop",
+    step: andThen({
+      id: "increment-warmup",
+      execute: async ({ data }) => ({ ...data, counter: data.counter + 1 }),
+    }),
+    condition: ({ data }) => data.counter < 1,
+  })
+  .andDoUntil({
+    id: "retry-loop",
+    step: andThen({
+      id: "increment-retry",
+      execute: async ({ data }) => ({ ...data, counter: data.counter + 1 }),
+    }),
+    condition: ({ data }) => data.counter >= 3,
+  })
+  .andBranch({
+    id: "categorize-counter",
+    branches: [
+      {
+        condition: ({ data }) => data.counter >= 3,
+        step: andThen({
+          id: "mark-ready",
+          execute: async ({ data }) => ({ ...data, label: "ready" as const }),
+        }),
+      },
+      {
+        condition: ({ data }) => data.counter < 3,
+        step: andThen({
+          id: "mark-warmup",
+          execute: async ({ data }) => ({ ...data, label: "warmup" as const }),
+        }),
+      },
+    ],
+  })
+  .andThen({
+    id: "select-branch",
+    execute: async ({ data }) => {
+      const results = Array.isArray(data) ? data : [];
+      const selected = results.find((entry) => entry !== undefined) as
+        | { counter: number; label: "ready" | "warmup" }
+        | undefined;
+
+      if (!selected) {
+        return { counter: 0, label: "warmup" };
+      }
+
+      return {
+        counter: selected.counter,
+        label: selected.label,
+      };
+    },
+  });
+
+// ==============================================================================
+// Example 8: Guardrail Workflow
+// Concepts: Workflow-level guardrails, step-level guardrails
+// ==============================================================================
+const trimInput = createInputGuardrail({
+  name: "trim-input",
+  handler: async ({ input }) => ({
+    pass: true,
+    action: "modify",
+    modifiedInput: typeof input === "string" ? input.trim() : input,
+  }),
+});
+
+const redactNumbers = createOutputGuardrail<string>({
+  name: "redact-numbers",
+  handler: async ({ output }) => ({
+    pass: true,
+    action: "modify",
+    modifiedOutput: output.replace(/[0-9]/g, "*"),
+  }),
+});
+
+const guardrailWorkflow = createWorkflowChain({
+  id: "guardrail-workflow",
+  name: "Guardrail Workflow",
+  purpose: "Applies guardrails to sanitize inputs and outputs",
+  input: z.string(),
+  result: z.string(),
+  inputGuardrails: [trimInput],
+  outputGuardrails: [redactNumbers],
+})
+  .andGuardrail({
+    id: "sanitize-step",
+    outputGuardrails: [redactNumbers],
+  })
+  .andThen({
+    id: "finish",
+    execute: async ({ data }) => data,
+  });
+
 // Register workflows with VoltAgent
 
 // Create logger
@@ -377,5 +570,9 @@ new VoltAgent({
     expenseApprovalWorkflow,
     contentAnalysisWorkflow,
     articleSummarizationWorkflow,
+    timedReminderWorkflow,
+    batchTransformWorkflow,
+    loopAndBranchWorkflow,
+    guardrailWorkflow,
   },
 });

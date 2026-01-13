@@ -12,6 +12,7 @@ import {
   ElicitRequestSchema,
   ListResourcesResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import type { ListResourcesResult } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@voltagent/internal";
 import { z } from "zod";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
@@ -516,22 +517,17 @@ export class MCPClient extends SimpleEventEmitter {
   }
 
   /**
-   * Retrieves a list of resource identifiers available on the server.
-   * @returns A promise resolving to an array of resource ID strings.
+   * Retrieves a list of resources available on the server.
+   * @returns A promise resolving to the MCP resources list response.
    */
-  async listResources(): Promise<string[]> {
+  async listResources(): Promise<ListResourcesResult> {
     // Renamed back from fetchAvailableResourceIds
     await this.ensureConnected(); // Use original connection check name
 
     try {
-      const result = await this.client.request(
-        { method: "resources/list" },
-        ListResourcesResultSchema,
-      );
-
-      return result.resources.map((resource: Record<string, unknown>) =>
-        typeof resource.id === "string" ? resource.id : String(resource.id),
-      );
+      return await this.client.request({ method: "resources/list" }, ListResourcesResultSchema, {
+        timeout: this.timeout,
+      });
     } catch (error) {
       this.emitError(error);
       throw error;

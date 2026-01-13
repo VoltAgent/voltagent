@@ -3,30 +3,6 @@ import { ArrowRightIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/o
 import { BoltIcon } from "@heroicons/react/24/solid";
 import type React from "react";
 
-// Santa Claus Icon Component
-const SantaIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <circle cx="12" cy="13" r="8" fill="#FDBF6F" />
-    <path d="M4 11C4 11 5 4 12 4C19 4 20 11 20 11L12 9L4 11Z" fill="#CC0000" />
-    <ellipse cx="12" cy="11" rx="9" ry="2" fill="white" />
-    <circle cx="19" cy="5" r="2.5" fill="white" />
-    <path d="M12 4C12 4 16 3 19 5" stroke="#CC0000" strokeWidth="3" strokeLinecap="round" />
-    <circle cx="9" cy="12" r="1" fill="#333" />
-    <circle cx="15" cy="12" r="1" fill="#333" />
-    <circle cx="7" cy="14" r="1.2" fill="#FF9999" opacity="0.6" />
-    <circle cx="17" cy="14" r="1.2" fill="#FF9999" opacity="0.6" />
-    <circle cx="12" cy="14" r="1.2" fill="#E88" />
-    <path
-      d="M4 15C4 15 4 22 12 22C20 22 20 15 20 15C20 15 18 16 12 16C6 16 4 15 4 15Z"
-      fill="white"
-    />
-    <path
-      d="M7 15.5C7 15.5 9 16.5 12 16.5C15 16.5 17 15.5 17 15.5C17 15.5 15 17 12 17C9 17 7 15.5 7 15.5Z"
-      fill="white"
-    />
-  </svg>
-);
-
 interface TutorialNavbarProps {
   currentStep: number;
   totalSteps: number;
@@ -70,7 +46,9 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
             <div className="flex items-center justify-between mb-3">
               {/* Logo */}
               <Link to="/docs" className="flex items-center no-underline">
-                <SantaIcon className="w-5 h-5 mr-2" />
+                <div className="flex mr-2 items-center border-2 border-solid border-main-emerald rounded-full p-1">
+                  <BoltIcon className="w-4 h-4 text-main-emerald" />
+                </div>
                 <span className="text-lg font-bold text-main-emerald">voltagent</span>
                 <span className="ml-2  text-sm  font-medium text-muted-foreground">Tutorial</span>
               </Link>
@@ -136,7 +114,9 @@ export const TutorialNavbar: React.FC<TutorialNavbarProps> = ({ currentStep, tot
           <div className="hidden md:flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/docs" className="flex items-center justify-center no-underline">
-              <SantaIcon className="w-5 h-5 mr-2" />
+              <div className="flex mr-2 items-center border-2 border-solid border-main-emerald rounded-full p-1">
+                <BoltIcon className="w-4 h-4 sm:w-4 sm:h-4 text-main-emerald" />
+              </div>
               <div className="flex items-baseline">
                 <span className="text-xl sm:text-xl font-bold text-main-emerald">voltagent</span>
                 <span className="ml-1 font-medium text-sm text-muted-foreground">Tutorial</span>

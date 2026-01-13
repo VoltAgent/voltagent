@@ -4,14 +4,14 @@
   "version": "1.0.0",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
-    "@voltagent/core": "^2.0.2",
-    "@voltagent/serverless-hono": "^2.0.2",
+    "@voltagent/core": "^2.0.10",
+    "@voltagent/serverless-hono": "^2.0.5",
     "ai": "^6.0.0",
     "hono": "^4.7.7",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250119.0",
+    "@cloudflare/workers-types": "^4.20250408.0",
     "@types/node": "^24.2.1",
     "typescript": "^5.8.2",
     "wrangler": "^3.38.0"

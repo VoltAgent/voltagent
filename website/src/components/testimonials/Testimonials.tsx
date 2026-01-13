@@ -301,12 +301,14 @@ export function Testimonials() {
   const [isDiscordRowPaused, setIsDiscordRowPaused] = useState(false);
   const [isArticlesRowPaused, setIsArticlesRowPaused] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [lockedHeight, setLockedHeight] = useState<number | null>(null);
 
   // Refs for each scrolling row
   const tweetsRowRef = useRef<HTMLDivElement>(null);
   const discordRowRef = useRef<HTMLDivElement>(null);
   const articlesRowRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Intersection Observer to pause animations when not visible
   useEffect(() => {
@@ -323,6 +325,26 @@ export function Testimonials() {
 
     return () => observer.disconnect();
   }, []);
+
+  // ResizeObserver to monitor content height changes
+  useEffect(() => {
+    if (!contentRef.current || !isVisible) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height;
+        if (height > 0) {
+          setLockedHeight(height);
+        }
+      }
+    });
+
+    resizeObserver.observe(contentRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isVisible]);
 
   // Create mixed content for seamless scrolling
   const mixedContent = [];
@@ -469,115 +491,15 @@ export function Testimonials() {
       </div>
       <style>{scrollAnimation}</style>
 
-      {/* Only render animations if component is visible */}
-      {isVisible && (
-        <>
-          {/* Tweets Row - Scrolling Left */}
-          <div className="relative mb-1">
-            <div
-              ref={tweetsRowRef}
-              className="flex overflow-hidden"
-              style={{
-                width: "100%",
-                maxWidth: "100%",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-                WebkitOverflowScrolling: "touch",
-                WebkitMaskImage:
-                  "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-                maskImage:
-                  "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-              }}
-              onMouseEnter={handleTweetsRowMouseEnter}
-              onMouseLeave={handleTweetsRowMouseLeave}
-            >
+      {/* Use locked height to preserve layout space and prevent layout shifts when the content is unmounted */}
+      <div style={{ height: lockedHeight ? `${lockedHeight}px` : "800px" }}>
+        {/* Only render animations if component is visible */}
+        {isVisible && (
+          <div ref={contentRef}>
+            {/* Tweets Row - Scrolling Left */}
+            <div className="relative mb-1">
               <div
-                className={`flex space-x-6 py-4 seamless-scroll-left ${
-                  isTweetsRowPaused ? "animation-paused" : ""
-                }`}
-              >
-                {seamlessMixedContent
-                  .filter((item) => {
-                    // Filter out tweets that don't exist or are missing required data
-                    if (item.type === "tweet") {
-                      const tweet = tweetsData?.[item.id];
-                      return tweet?.id_str && tweet.user;
-                    }
-                    return true;
-                  })
-                  .map((item, index) => (
-                    <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
-                      {item.type === "tweet" ? (
-                        <StaticTweet tweet={tweetsData?.[item.id]} />
-                      ) : (
-                        <LinkedInPost
-                          profileImage={item.data.profileImage}
-                          name={item.data.name}
-                          title={item.data.title}
-                          content={item.data.content}
-                          url={item.data.url}
-                        />
-                      )}
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Discord Messages Row - Scrolling Right */}
-          <div className="relative mb-1">
-            <div
-              ref={discordRowRef}
-              className="flex overflow-hidden"
-              style={{
-                width: "100%",
-                maxWidth: "100%",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-                WebkitOverflowScrolling: "touch",
-                WebkitMaskImage:
-                  "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-                maskImage:
-                  "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-              }}
-              onMouseEnter={handleDiscordRowMouseEnter}
-              onMouseLeave={handleDiscordRowMouseLeave}
-            >
-              <div
-                className={`flex space-x-6 py-4 seamless-scroll-right ${
-                  isDiscordRowPaused ? "animation-paused" : ""
-                }`}
-              >
-                {seamlessMixedDiscordContent.map((item, index) => (
-                  <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
-                    {item.type === "discord" ? (
-                      <DiscordMessage
-                        username={item.data.username}
-                        discriminator={item.data.discriminator}
-                        message={item.data.message}
-                        timestamp={item.data.timestamp}
-                      />
-                    ) : (
-                      <LinkedInMessage
-                        username={item.data.username}
-                        title={item.data.title}
-                        message={item.data.message}
-                        timestamp={item.data.timestamp}
-                        avatar={item.data.avatar}
-                        url={item.data.url}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Articles Section */}
-          <div className="mt-1">
-            <div className="relative">
-              <div
-                ref={articlesRowRef}
+                ref={tweetsRowRef}
                 className="flex overflow-hidden"
                 style={{
                   width: "100%",
@@ -590,42 +512,145 @@ export function Testimonials() {
                   maskImage:
                     "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
                 }}
-                onMouseEnter={handleArticlesRowMouseEnter}
-                onMouseLeave={handleArticlesRowMouseLeave}
+                onMouseEnter={handleTweetsRowMouseEnter}
+                onMouseLeave={handleTweetsRowMouseLeave}
               >
                 <div
-                  className={`flex space-x-6 py-4 seamless-scroll-articles ${
-                    isArticlesRowPaused ? "animation-paused" : ""
+                  className={`flex space-x-6 py-4 seamless-scroll-left ${
+                    isTweetsRowPaused ? "animation-paused" : ""
                   }`}
                 >
-                  {seamlessArticles.map((article, index) => (
-                    <div
-                      key={`article-${article.title.replace(/\s+/g, "-").toLowerCase()}-${index}`}
-                      className="flex-shrink-0 w-80"
-                    >
-                      <ArticleCard
-                        title={article.title}
-                        coverImage={article.coverImage}
-                        excerpt={article.excerpt}
-                        author={article.author}
-                        publication={(article as any).publication}
-                        date={(article as any).date}
-                        readTime={(article as any).readTime}
-                        url={article.url}
-                        type={article.type}
-                        videoId={article.videoId}
-                        channel={(article as any).channel}
-                        views={(article as any).views}
-                        duration={(article as any).duration}
-                      />
+                  {seamlessMixedContent
+                    .filter((item) => {
+                      // Filter out tweets that don't exist or are missing required data
+                      if (item.type === "tweet") {
+                        const tweet = tweetsData?.[item.id];
+                        return tweet?.id_str && tweet.user;
+                      }
+                      return true;
+                    })
+                    .map((item, index) => (
+                      <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
+                        {item.type === "tweet" ? (
+                          <StaticTweet tweet={tweetsData?.[item.id]} />
+                        ) : (
+                          <LinkedInPost
+                            profileImage={item.data.profileImage}
+                            name={item.data.name}
+                            title={item.data.title}
+                            content={item.data.content}
+                            url={item.data.url}
+                          />
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Discord Messages Row - Scrolling Right */}
+            <div className="relative mb-1">
+              <div
+                ref={discordRowRef}
+                className="flex overflow-hidden"
+                style={{
+                  width: "100%",
+                  maxWidth: "100%",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  WebkitOverflowScrolling: "touch",
+                  WebkitMaskImage:
+                    "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+                  maskImage:
+                    "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+                }}
+                onMouseEnter={handleDiscordRowMouseEnter}
+                onMouseLeave={handleDiscordRowMouseLeave}
+              >
+                <div
+                  className={`flex space-x-6 py-4 seamless-scroll-right ${
+                    isDiscordRowPaused ? "animation-paused" : ""
+                  }`}
+                >
+                  {seamlessMixedDiscordContent.map((item, index) => (
+                    <div key={`${item.key}-${index}`} className="flex-shrink-0 w-80">
+                      {item.type === "discord" ? (
+                        <DiscordMessage
+                          username={item.data.username}
+                          discriminator={item.data.discriminator}
+                          message={item.data.message}
+                          timestamp={item.data.timestamp}
+                        />
+                      ) : (
+                        <LinkedInMessage
+                          username={item.data.username}
+                          title={item.data.title}
+                          message={item.data.message}
+                          timestamp={item.data.timestamp}
+                          avatar={item.data.avatar}
+                          url={item.data.url}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
             </div>
+
+            {/* Articles Section */}
+            <div className="mt-1">
+              <div className="relative">
+                <div
+                  ref={articlesRowRef}
+                  className="flex overflow-hidden"
+                  style={{
+                    width: "100%",
+                    maxWidth: "100%",
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    WebkitOverflowScrolling: "touch",
+                    WebkitMaskImage:
+                      "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+                    maskImage:
+                      "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+                  }}
+                  onMouseEnter={handleArticlesRowMouseEnter}
+                  onMouseLeave={handleArticlesRowMouseLeave}
+                >
+                  <div
+                    className={`flex space-x-6 py-4 seamless-scroll-articles ${
+                      isArticlesRowPaused ? "animation-paused" : ""
+                    }`}
+                  >
+                    {seamlessArticles.map((article, index) => (
+                      <div
+                        key={`article-${article.title.replace(/\s+/g, "-").toLowerCase()}-${index}`}
+                        className="flex-shrink-0 w-80"
+                      >
+                        <ArticleCard
+                          title={article.title}
+                          coverImage={article.coverImage}
+                          excerpt={article.excerpt}
+                          author={article.author}
+                          publication={(article as any).publication}
+                          date={(article as any).date}
+                          readTime={(article as any).readTime}
+                          url={article.url}
+                          type={article.type}
+                          videoId={article.videoId}
+                          channel={(article as any).channel}
+                          views={(article as any).views}
+                          duration={(article as any).duration}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

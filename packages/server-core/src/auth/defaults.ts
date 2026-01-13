@@ -87,6 +87,7 @@ export const PROTECTED_ROUTES = [
   "POST /agents/:id/text", // generateText
   "POST /agents/:id/stream", // streamText
   "POST /agents/:id/chat", // chatStream
+  "GET /agents/:id/chat/:conversationId/stream", // resumeChatStream
   "POST /agents/:id/object", // generateObject
   "POST /agents/:id/stream-object", // streamObject
   "WS /ws/agents/:id", // WebSocket connection

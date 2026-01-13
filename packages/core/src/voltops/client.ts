@@ -22,6 +22,7 @@ import type {
 import { AgentRegistry } from "../registries/agent-registry";
 import { VoltOpsActionsClient } from "./actions/client";
 // VoltAgentExporter removed - migrated to OpenTelemetry
+import { createLocalPromptHelper, isLocalPromptNotFoundError } from "./local-prompts";
 import { VoltOpsPromptManagerImpl } from "./prompt-manager";
 import type {
   VoltOpsClient as IVoltOpsClient,
@@ -43,6 +44,7 @@ import type {
   ManagedMemoryVoltOpsClient,
   ManagedMemoryWorkflowStateUpdateInput,
   ManagedMemoryWorkingMemoryInput,
+  PromptContent,
   PromptHelper,
   PromptReference,
   VoltOpsAppendEvalRunResultsRequest,
@@ -893,7 +895,7 @@ export class VoltOpsClient implements IVoltOpsClient {
 
   /**
    * Static method to create prompt helper with priority-based fallback
-   * Priority: Agent VoltOpsClient > Global VoltOpsClient > Fallback instructions
+   * Priority: Local prompts > Agent VoltOpsClient > Global VoltOpsClient > Fallback instructions
    */
   public static createPromptHelperWithFallback(
     agentId: string,
@@ -901,18 +903,14 @@ export class VoltOpsClient implements IVoltOpsClient {
     fallbackInstructions: string,
     agentVoltOpsClient?: VoltOpsClient,
   ): PromptHelper {
-    // Priority 1: Agent-specific VoltOpsClient (highest priority)
-    if (agentVoltOpsClient?.prompts) {
-      return agentVoltOpsClient.createPromptHelper(agentId);
+    const helper = VoltOpsClient.createPromptHelperFromSources(agentId, agentVoltOpsClient);
+    if (helper) {
+      return helper;
     }
 
-    // Priority 2: Global VoltOpsClient
     const globalVoltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
-    if (globalVoltOpsClient?.prompts) {
-      return globalVoltOpsClient.createPromptHelper(agentId);
-    }
 
-    // Priority 3: Fallback to default instructions
+    // Priority 4: Fallback to default instructions
     const logger = new LoggerProxy({ component: "voltops-prompt-fallback", agentName });
 
     return {
@@ -921,14 +919,16 @@ export class VoltOpsClient implements IVoltOpsClient {
 💡 VoltOps Prompts
    
    Agent: ${agentName}
+   ❌ Local prompts: Not configured
    ❌ Agent VoltOpsClient: ${agentVoltOpsClient ? "Found but prompts disabled" : "Not configured"}
    ❌ Global VoltOpsClient: ${globalVoltOpsClient ? "Found but prompts disabled" : "Not configured"}
    ✅ Using fallback instructions
    
    Priority Order:
-   1. Agent VoltOpsClient (agent-specific, highest priority)
-   2. Global VoltOpsClient (from VoltAgent constructor)  
-   3. Fallback instructions (current)
+   1. Local prompts (.voltagent/prompts or VOLTAGENT_PROMPTS_PATH)
+   2. Agent VoltOpsClient (agent-specific, highest priority)
+   3. Global VoltOpsClient (from VoltAgent constructor)  
+   4. Fallback instructions (current)
    
    To enable dynamic prompt management:
    1. Create prompts at: http://console.voltagent.dev/prompts
@@ -947,6 +947,10 @@ export class VoltOpsClient implements IVoltOpsClient {
    new VoltAgent({
      voltOpsClient: new VoltOpsClient({ ... })
    });
+
+   To use local prompt pull:
+   1. Run: volt prompts pull
+   2. Keep prompts in .voltagent/prompts or set VOLTAGENT_PROMPTS_PATH
    
    📖 Full documentation: https://voltagent.dev/docs/agents/prompts/#3-voltops-prompt-management
         `);
@@ -960,6 +964,112 @@ export class VoltOpsClient implements IVoltOpsClient {
           type: "text",
           text: fallbackInstructions,
         };
+      },
+    };
+  }
+
+  /**
+   * Create a prompt helper from available sources without fallback instructions.
+   * Priority: Local prompts > Agent VoltOpsClient > Global VoltOpsClient.
+   */
+  public static createPromptHelperFromSources(
+    agentId: string,
+    agentVoltOpsClient?: VoltOpsClient,
+  ): PromptHelper | undefined {
+    const localHelper = createLocalPromptHelper();
+    const agentHelper = agentVoltOpsClient?.prompts
+      ? agentVoltOpsClient.createPromptHelper(agentId)
+      : undefined;
+    const globalVoltOpsClient = AgentRegistry.getInstance().getGlobalVoltOpsClient();
+    const globalHelper =
+      !agentHelper && globalVoltOpsClient?.prompts
+        ? globalVoltOpsClient.createPromptHelper(agentId)
+        : undefined;
+
+    const helpers: Array<{ source: "local" | "agent" | "global"; helper: PromptHelper }> = [];
+    const remoteHelper = agentHelper ?? globalHelper;
+    const logger = new LoggerProxy({ component: "voltops-prompt-helper" });
+    const warnedPrompts = new Set<string>();
+
+    if (localHelper) {
+      helpers.push({ source: "local", helper: localHelper.helper });
+    }
+    if (agentHelper) {
+      helpers.push({ source: "agent", helper: agentHelper });
+    }
+    if (globalHelper) {
+      helpers.push({ source: "global", helper: globalHelper });
+    }
+
+    if (helpers.length === 0) {
+      return undefined;
+    }
+
+    const warnOnOutdatedLocalPrompt = async (
+      prompt: PromptContent,
+      reference: PromptReference,
+    ): Promise<PromptContent> => {
+      const localVersion = prompt.metadata?.version;
+      if (!remoteHelper || localVersion === undefined) {
+        return prompt;
+      }
+
+      try {
+        const remotePrompt = await remoteHelper.getPrompt({
+          promptName: reference.promptName,
+          label: "latest",
+        });
+        const remoteVersion = remotePrompt.metadata?.version;
+
+        if (remoteVersion === undefined) {
+          return prompt;
+        }
+
+        const outdated = remoteVersion > localVersion;
+        prompt.metadata = {
+          ...prompt.metadata,
+          latest_version: remoteVersion,
+          outdated,
+        };
+
+        if (outdated && !warnedPrompts.has(reference.promptName)) {
+          logger.warn(
+            `Local prompt '${reference.promptName}' is behind the online version (local v${localVersion}, online v${remoteVersion}).`,
+          );
+          warnedPrompts.add(reference.promptName);
+        }
+      } catch {
+        // Ignore remote check errors; local prompt should still be used.
+      }
+
+      return prompt;
+    };
+
+    return {
+      getPrompt: async (reference: PromptReference) => {
+        let lastError: Error | null = null;
+
+        for (const entry of helpers) {
+          try {
+            const result = await entry.helper.getPrompt(reference);
+            if (entry.source === "local") {
+              return await warnOnOutdatedLocalPrompt(result, reference);
+            }
+            return result;
+          } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+            if (entry.source === "local" && isLocalPromptNotFoundError(error)) {
+              continue;
+            }
+            throw lastError;
+          }
+        }
+
+        if (lastError) {
+          throw lastError;
+        }
+
+        throw new Error("Prompt not found in configured sources");
       },
     };
   }

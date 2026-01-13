@@ -67,6 +67,69 @@ new VoltAgent({
 });
 ```
 
+## Local Prompts (CLI Pull)
+
+You can pull prompts to local Markdown files and have agents load them before making
+network calls. This is useful for offline development or fast iterations.
+
+1. Pull prompts to disk:
+
+```bash
+pnpm volt prompts pull
+```
+
+2. Keep files under `.voltagent/prompts` (default), or pull to a custom directory:
+
+```bash
+pnpm volt prompts pull --out ./.prompts
+```
+
+3. Point the runtime to the same directory:
+
+```bash
+export VOLTAGENT_PROMPTS_PATH="./.prompts"
+```
+
+4. Use prompts the same way in your agent:
+
+```typescript
+instructions: async ({ prompts }) => {
+  return await prompts.getPrompt({ promptName: "customer-support-prompt" });
+};
+```
+
+### Multiple Versions and Labels (Local)
+
+To keep more than one version locally, pull specific versions or labels. These are stored as:
+`.voltagent/prompts/<promptName>/<version>.md`.
+
+```bash
+pnpm volt prompts pull --names support-agent --prompt-version 4
+pnpm volt prompts pull --names support-agent --label production
+```
+
+Then request by version or label:
+
+```typescript
+instructions: async ({ prompts }) => {
+  return await prompts.getPrompt({
+    promptName: "support-agent",
+    version: 4,
+  });
+};
+```
+
+```typescript
+instructions: async ({ prompts }) => {
+  return await prompts.getPrompt({
+    promptName: "support-agent",
+    label: "production",
+  });
+};
+```
+
+If a local prompt is found, it is used first. If not, VoltOps is used as the fallback.
+
 ### Agent-Level VoltOpsClient
 
 Alternatively, attach the client directly to the agent:

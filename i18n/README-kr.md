@@ -1,10 +1,12 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/9259e833-0f5c-4eb6-8cc7-4e6930cc27e1" />
+<img width="1500" height="276" alt="voltagent" src="https://github.com/user-attachments/assets/d9ad69bd-b905-42a3-81af-99a0581348c0" />
 </a>
 
-<br/>
-<br/>
+<h3 align="center">
+AI 에이전트 엔지니어링 플랫폼
+</h3>
+
 <div align="center">
 <a href="../README.md">English</a> | <a href="README-cn-traditional.md">繁體中文</a> | <a href="README-cn-bsc.md">简体中文</a> | <a href="README-jp.md">日本語</a> | 한국어
 </div>
@@ -22,7 +24,6 @@
 
 <div align="center">
 
-[![GitHub stars](https://img.shields.io/github/stars/voltagent/voltagent?style=social)](https://github.com/voltagent/voltagent)
 [![GitHub issues](https://img.shields.io/github/issues/voltagent/voltagent)](https://github.com/voltagent/voltagent/issues)
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/voltagent/voltagent)](https://github.com/voltagent/voltagent/pulls)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -35,25 +36,20 @@
 
 </div>
 
-<br/>
+<h3 align="center">
+⭐ 마음에 드시면 스타를 눌러주세요 ⬆️
+</h3>
 
-**VoltAgent**는 AI 에이전트를 구축하고 오케스트레이션하기 위한 오픈 소스 TypeScript 프레임워크입니다.
-메모리, 워크플로, 도구, 그리고 내장된 LLM 관찰 가능성을 갖춘 프로덕션급 에이전트를 구축할 수 있습니다.
+VoltAgent는 두 가지 주요 부분으로 구성된 엔드투엔드 AI 에이전트 엔지니어링 플랫폼입니다:
 
-## 왜 VoltAgent인가요?
+- **[오픈소스 TypeScript 프레임워크](#core-framework)** – 메모리, RAG, 가드레일, 도구, MCP, 음성, 워크플로 등.
+- **[VoltOps 콘솔](#voltops-console)** `클라우드` `셀프 호스팅` – 관찰 가능성, 자동화, 배포, 평가, 가드레일, 프롬프트 등.
 
-- **첫날부터 프로덕션 준비**: 인프라를 처음부터 구축하는 대신 내장 메모리, 워크플로, 관찰 가능성을 갖춘 에이전트를 배포하세요.
-- **자신감 있게 코딩**: 전체 에이전트 시스템에서 타입 안전 도구, 자동 추론, 컴파일 타임 안전성을 갖춘 완전한 TypeScript 지원.
-- **프로처럼 디버그**: 내장 VoltOps 관찰 가능성으로 모든 결정을 추적하고, 성능을 모니터링하며, 외부 도구 없이 실시간으로 워크플로를 최적화하세요.
-- **복잡한 시스템을 간단하게 구축**: 프로토타입에서 프로덕션까지 확장되는 감독자 조정, 선언적 워크플로, 모듈식 아키텍처로 멀티 에이전트 팀을 오케스트레이션하세요.
+완전한 코드 제어로 에이전트를 구축하고 프로덕션 준비된 가시성과 운영으로 출시하세요.
 
-## 에이전트 개발 플랫폼
+<h2 id="core-framework">코어 TypeScript 프레임워크</h2>
 
-VoltAgent는 두 가지 보완적인 도구를 통해 AI 에이전트를 개발하고 모니터링하기 위한 완전한 플랫폼을 제공합니다.
-
-### 코어 프레임워크
-
-코어 프레임워크를 사용하면 모든 AI 제공자에 연결하면서 메모리, 도구, 다단계 워크플로를 갖춘 지능형 에이전트를 구축할 수 있습니다. 전문화된 에이전트가 감독자 조정 하에 함께 작동하는 정교한 멀티 에이전트 시스템을 만드세요.
+오픈소스 프레임워크를 사용하면 모든 AI 제공자에 연결하면서 메모리, 도구, 다단계 워크플로를 갖춘 지능형 에이전트를 구축할 수 있습니다. 전문화된 에이전트가 감독자 조정 하에 함께 작동하는 정교한 멀티 에이전트 시스템을 만드세요.
 
 - **[코어 런타임](https://voltagent.dev/docs/agents/overview/) (`@voltagent/core`)**: 타입이 지정된 역할, 도구, 메모리, 모델 제공자를 한 곳에 정의하여 모든 것을 체계적으로 유지하세요.
 - **[워크플로 엔진](https://voltagent.dev/docs/workflows/overview/)**: 커스텀 제어 흐름을 연결하는 대신 다단계 자동화를 선언적으로 설명하세요.
@@ -62,11 +58,10 @@ VoltAgent는 두 가지 보완적인 도구를 통해 AI 에이전트를 개발�
 - **[LLM 호환성](https://voltagent.dev/docs/getting-started/providers-models/)**: 에이전트 로직을 다시 작성하지 않고 구성을 변경하여 OpenAI, Anthropic, Google 또는 다른 제공자 간 전환하세요.
 - **[메모리](https://voltagent.dev/docs/agents/memory/overview/)**: 내구성 있는 메모리 어댑터를 연결하여 에이전트가 실행 간 중요한 컨텍스트를 기억하도록 하세요.
 - **[검색 & RAG](https://voltagent.dev/docs/rag/overview/)**: 데이터 소스에서 사실을 가져오고 모델이 답변하기 전에 응답을 기반으로 하는(RAG) 검색기 에이전트를 연결하세요.
-- **[평가](https://voltagent.dev/docs/evals/overview/)**: 워크플로와 함께 에이전트 평가 스위트를 실행하여 가드레일을 더 빠르게 제공하세요.
-
-### VoltOps LLM 관찰 가능성 플랫폼
-
-VoltAgent는 상세한 실행 추적, 성능 메트릭, 시각적 대시보드로 에이전트를 실시간으로 모니터링하고 디버그하기 위한 내장 [VoltOps](#built-in-llm-observability-with-voltops) LLM 관찰 가능성과 함께 제공됩니다. 에이전트가 내리는 모든 결정을 검사하고, 도구 사용을 추적하며, 내장 OpenTelemetry 기반 관찰 가능성으로 워크플로를 최적화하세요.
+- **[VoltAgent 지식 베이스](https://voltagent.dev/docs/rag/voltagent/)**: 문서 수집, 청킹, 임베딩, 검색을 위한 매니지드 RAG 서비스를 사용하세요.
+- **[음성](https://voltagent.dev/docs/agents/voice/)**: OpenAI, ElevenLabs 또는 커스텀 음성 제공자로 텍스트 음성 변환 및 음성 텍스트 변환 기능을 추가하세요.
+- **[가드레일](https://voltagent.dev/docs/guardrails/overview/)**: 런타임에 에이전트 입력 또는 출력을 가로채고 검증하여 콘텐츠 정책 및 안전 규칙을 적용하세요.
+- **[평가](https://voltagent.dev/docs/evals/overview/)**: 워크플로와 함께 에이전트 평가 스위트를 실행하여 에이전트 동작을 측정하고 개선하세요.
 
 #### MCP 서버 (@voltagent/mcp-docs-server)
 
@@ -154,7 +149,7 @@ Test your agents with VoltOps Console: https://console.voltagent.dev
 4. 채팅 시작: 에이전트 세부정보 페이지에서 오른쪽 하단의 채팅 아이콘을 클릭하여 채팅 창을 엽니다.
 5. 메시지 보내기: "안녕하세요"와 같은 메시지를 입력하고 Enter를 누르세요.
 
-![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
+[![VoltAgent Demo](https://github.com/user-attachments/assets/26340c6a-be34-48a5-9006-e822bf6098a7)](https://github.com/user-attachments/assets/26340c6a-be34-48a5-9006-e822bf6098a7)
 
 ### 첫 번째 워크플로 실행하기
 
@@ -235,7 +230,7 @@ export const expenseApprovalWorkflow = createWorkflowChain({
 
 VoltOps 콘솔에서 직접 사전 구축된 `expenseApprovalWorkflow`를 테스트할 수 있습니다:
 
-![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
+[![expense-approval](https://github.com/user-attachments/assets/3d3ea67b-4ab5-4dc0-932d-cedd92894b18)](https://github.com/user-attachments/assets/3d3ea67b-4ab5-4dc0-932d-cedd92894b18)
 
 1.  **워크플로 페이지로 이동**: 서버를 시작한 후 [워크플로 페이지](https://console.voltagent.dev/workflows)로 직접 이동하세요.
 2.  **프로젝트 선택**: 프로젝트 선택기를 사용하여 프로젝트를 선택하세요(예: "my-agent-app").
@@ -251,9 +246,22 @@ VoltOps 콘솔에서 직접 사전 구축된 `expenseApprovalWorkflow`를 테스
     ```
 5.  **결과 보기**: 실행 후 각 단계에 대한 상세 로그를 검사하고 콘솔에서 직접 최종 출력을 볼 수 있습니다.
 
-## VoltOps를 통한 내장 LLM 관찰 가능성
+## 예제
 
-VoltAgent는 에이전트를 실시간으로 모니터링, 디버그 및 최적화하는 데 도움이 되는 내장 LLM 관찰 가능성 플랫폼인 VoltOps와 함께 제공됩니다.
+더 많은 예제는 [예제 리포지토리](https://github.com/VoltAgent/voltagent/tree/main/examples)를 방문하세요.
+
+- **[Airtable 에이전트](https://voltagent.dev/examples/guides/airtable-agent)** - 새 레코드에 반응하고 VoltOps 액션으로 Airtable에 업데이트를 작성합니다.
+- **[Slack 에이전트](https://voltagent.dev/examples/guides/slack-agent)** - 채널 메시지에 응답하고 VoltOps Slack 액션으로 답장합니다.
+- **[ChatGPT 앱과 VoltAgent](https://voltagent.dev/examples/agents/chatgpt-app)** - VoltAgent를 MCP를 통해 배포하고 ChatGPT 앱에 연결합니다.
+- **[WhatsApp 주문 에이전트](https://voltagent.dev/examples/agents/whatsapp-ai-agent)** - 자연스러운 대화로 음식 주문을 처리하는 WhatsApp 챗봇을 구축합니다. ([소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp))
+- **[YouTube to 블로그 에이전트](https://voltagent.dev/examples/agents/youtube-blog-agent)** - MCP 도구를 사용한 감독자 에이전트로 YouTube 비디오를 Markdown 블로그 게시물로 변환합니다. ([소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog))
+- **[AI 광고 생성 에이전트](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)** - BrowserBase Stagehand와 Google Gemini AI를 사용하여 Instagram 광고를 생성합니다. ([소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator))
+- **[AI 레시피 생성 에이전트](https://voltagent.dev/examples/agents/recipe-generator)** - 재료와 선호도에 따라 개인화된 요리 제안을 만듭니다. ([소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator) | [비디오](https://youtu.be/KjV1c6AhlfY))
+- **[AI 연구 어시스턴트 에이전트](https://voltagent.dev/examples/agents/research-assistant)** - 포괄적인 보고서를 생성하는 멀티 에이전트 연구 워크플로. ([소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant) | [비디오](https://youtu.be/j6KAUaoZMy4))
+
+<h2 id="voltops-console">VoltOps 콘솔: LLM 관찰 가능성 - 자동화 - 배포</h2>
+
+VoltOps 콘솔은 VoltAgent의 플랫폼 측면으로, 관찰 가능성, 자동화, 배포를 제공하여 실시간 실행 추적, 성능 메트릭, 시각적 대시보드로 프로덕션 에이전트를 모니터링하고 디버그할 수 있습니다.
 
 🎬 [라이브 데모 체험](https://console.voltagent.dev/demo)
 
@@ -265,22 +273,17 @@ VoltAgent는 에이전트를 실시간으로 모니터링, 디버그 및 최적�
 
 상세한 추적 및 성능 메트릭으로 에이전트 실행 흐름을 깊이 있게 살펴보세요.
 
-<br/>
-
-![VoltOps Observability Overview](https://cdn.voltagent.dev/console/observability.png)
+<img alt="1" src="https://github.com/user-attachments/assets/21c6d05d-f333-4c61-9218-8862d16110fd" />
 
 ### 대시보드
 
 모든 에이전트, 워크플로 및 시스템 성능 메트릭에 대한 포괄적인 개요를 얻으세요.
 
-<br/>
-
-![VoltOps Dashboard](https://cdn.voltagent.dev/console/dashboard.png)
+<img alt="dashboar" src="https://github.com/user-attachments/assets/c88a5543-219e-4cf0-8f41-14a68ca297fb" />
 
 ### 로그
 
 모든 에이전트 상호작용 및 워크플로 단계에 대한 상세한 실행 로그를 추적하세요.
-<br/>
 
 ![VoltOps Logs](https://cdn.voltagent.dev/console/logs.png)
 
@@ -288,15 +291,11 @@ VoltAgent는 에이전트를 실시간으로 모니터링, 디버그 및 최적�
 
 에이전트 메모리, 컨텍스트 및 대화 기록을 검사하고 관리하세요.
 
-<br/>
-
 ![VoltOps Memory Overview](https://cdn.voltagent.dev/console/memory.png)
 
 ### 추적
 
 에이전트 동작을 이해하고 성능을 최적화하기 위해 완전한 실행 추적을 분석하세요.
-
-<br/>
 
 ![VoltOps Traces](https://cdn.voltagent.dev/console/traces.png)
 
@@ -304,114 +303,49 @@ VoltAgent는 에이전트를 실시간으로 모니터링, 디버그 및 최적�
 
 콘솔에서 직접 프롬프트를 설계, 테스트 및 개선하세요.
 
-<br/>
+<img alt="prompts" src="https://github.com/user-attachments/assets/fb6d71eb-8f81-4443-a494-08c33ec9bcc4" />
 
-![VoltOps Prompt Builder](https://cdn.voltagent.dev/console/prompt.png)
+### 배포
 
-## 예제
+원클릭 GitHub 통합 및 매니지드 인프라로 에이전트를 프로덕션에 배포하세요.
 
-완전한 소스 코드 및 비디오 튜토리얼과 함께 VoltAgent의 실제 구현을 탐색하세요.
+<img alt="deployment" src="https://github.com/user-attachments/assets/e329ab4b-7464-435a-96cc-90214e8a3cfa" />
 
-더 많은 예제 및 사용 사례는 [예제 리포지토리](https://github.com/VoltAgent/voltagent/tree/main/examples)를 방문하세요.
+📖 [VoltOps 배포 문서](https://voltagent.dev/docs/deployment/voltops/)
 
-### WhatsApp 주문 에이전트
+### 트리거 & 액션
 
-자연스러운 대화를 통해 음식 주문을 처리하고, 데이터베이스에서 메뉴 항목을 관리하며, 완전한 대화 컨텍스트로 주문을 처리하는 WhatsApp 챗봇을 구축하세요.
+웹훅, 스케줄, 커스텀 트리거로 에이전트 워크플로를 자동화하여 외부 이벤트에 반응하세요.
 
-<br/>
+<img width="1277" alt="triggers" src="https://github.com/user-attachments/assets/67e36934-2eb5-4cf1-94f8-3057d805ef65" />
 
-<img width="1111" height="347" alt="whatsapp" src="https://github.com/user-attachments/assets/dc9c4986-3e68-42f8-a450-ecd79b4dbd99" />
+### 모니터링
 
-<br/>
-<br/>
+전체 시스템에서 에이전트 상태, 성능 메트릭 및 리소스 사용량을 모니터링하세요.
 
-- 📖 [튜토리얼](https://voltagent.dev/examples/agents/whatsapp-ai-agent)
-- 💻 [소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp)
+<img alt="monitoring" src="https://github.com/user-attachments/assets/1fd1151f-5ee4-4c7c-8ec7-29874e37c48f" />
 
-### YouTube to 블로그 에이전트
+### 가드레일
 
-MCP 도구, 공유 작업 메모리 및 VoltOps 관찰 가능성을 갖춘 서브 에이전트를 조정하는 감독자 에이전트를 사용하여 YouTube 비디오를 Markdown 블로그 게시물로 변환하세요.
+에이전트가 정의된 매개변수 내에서 작동하도록 안전 경계 및 콘텐츠 필터를 설정하세요.
 
-<br/>
+<img alt="guardrails" src="https://github.com/user-attachments/assets/52bd51f0-944e-4202-9f54-7bb2e0e2d1f6" />
 
-<img width="1113" height="363" alt="youtube" src="https://github.com/user-attachments/assets/f9c944cf-8a9a-4ac5-a5f9-860ce08f058b" />
+### 평가
 
-<br/>
-<br/>
+벤치마크에 대해 에이전트 동작, 정확도 및 성능을 테스트하는 평가 스위트를 실행하세요.
 
-- 📖 [튜토리얼](https://voltagent.dev/examples/agents/youtube-blog-agent)
-- 💻 [소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-youtube-to-blog)
+<img alt="evals" src="https://github.com/user-attachments/assets/510cc180-2661-4973-a48f-074d4703d90b" />
 
-### AI 광고 생성 에이전트
+### RAG (지식 베이스)
 
-BrowserBase Stagehand를 사용하여 랜딩 페이지를 분석하고, 브랜드 데이터를 추출하며, Google Gemini AI를 통해 비주얼을 생성하는 Instagram 광고 생성기를 구현하세요.
+내장된 검색 증강 생성 기능으로 에이전트를 지식 소스에 연결하세요.
 
-<br/>
-
-<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator">
-<img width="1115" height="363" alt="instagram" src="https://github.com/user-attachments/assets/973e79c7-34ec-4f8e-8a41-9273d44234c6" />
-</a>
-
-<br/>
-<br/>
-
-- 📖 [튜토리얼](https://voltagent.dev/examples/agents/ai-instagram-ad-agent)
-- 💻 [소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-ad-creator)
-
-### AI 레시피 생성 에이전트
-
-사용 가능한 재료, 식단 선호도 및 시간 제약을 기반으로 개인화된 요리 제안을 생성하는 지능형 레시피 추천 시스템을 구축하세요.
-
-<br/>
-
-<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator">
-<img width="1111" height="363" alt="cook" src="https://github.com/user-attachments/assets/dde6ce2f-c963-4075-9825-f216bc6e3467" />
-</a>
-
-<br/>
-<br/>
-
-- 📖 [튜토리얼](https://voltagent.dev/examples/agents/recipe-generator)
-- 📹 [비디오 시청](https://youtu.be/KjV1c6AhlfY)
-- 💻 [소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-recipe-generator)
-
-### AI 연구 어시스턴트 에이전트
-
-타입 안전 데이터 흐름으로 주제를 연구하고 포괄적인 보고서를 생성하기 위해 다양한 AI 에이전트가 협업하는 멀티 에이전트 연구 워크플로를 생성하세요.
-
-<br/>
-
-<a href="https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant">
-<img width="2228" height="678" alt="research" src="https://github.com/user-attachments/assets/8f459748-132e-4ff3-9afe-0561fa5075c2" />
-</a>
-
-<br/>
-<br/>
-
-- 📖 [튜토리얼](https://voltagent.dev/examples/agents/research-assistant)
-- 📹 [비디오 시청](https://youtu.be/j6KAUaoZMy4)
-- 💻 [소스 코드](https://github.com/VoltAgent/voltagent/tree/main/examples/with-research-assistant)
-
-## 사용 사례
-
-다양한 산업 전반의 실제 비즈니스 요구 사항을 위한 AI 에이전트를 구축하세요:
-
-- **[HR 에이전트](https://voltagent.dev/use-cases/hr-agent/)** - 채용, 직원 온보딩 및 HR 지원 작업을 자동화합니다.
-- **[고객 지원 에이전트](https://voltagent.dev/use-cases/customer-support-agent/)** - 고객 질문 및 문제를 처리하는 지원 에이전트를 구축합니다.
-- **[영업 팀](https://voltagent.dev/use-cases/sales-teams/)** - 리드를 검증하고, 고객 데이터를 수집하며, 영업 아웃리치를 개인화합니다.
-- **[재무 에이전트](https://voltagent.dev/use-cases/finance-agent/)** - 송장을 관리하고, 비용을 추적하며, 재무 보고서를 생성합니다.
-- **[개발 에이전트](https://voltagent.dev/use-cases/development-agent/)** - 코드를 검토하고, 배포를 관리하며, 개발 팀을 지원합니다.
-- **[마케팅 에이전트](https://voltagent.dev/use-cases/marketing-agent/)** - 캠페인을 계획하고, 콘텐츠를 생성하며, 마케팅 성과를 분석합니다.
-- **[법률 에이전트](https://voltagent.dev/use-cases/legal-agent/)** - 계약을 검토하고, 규정 준수를 확인하며, 법률 작업을 처리합니다.
-- **[보험 에이전트](https://voltagent.dev/use-cases/insurance-agent/)** - 청구를 처리하고, 위험을 평가하며, 정책을 관리합니다.
-- **[산업 에이전트](https://voltagent.dev/use-cases/industrial-agent/)** - 장비를 모니터링하고, 유지 보수 필요를 예측하며, 안전을 보장합니다.
-- **[교육 에이전트](https://voltagent.dev/use-cases/education-agent/)** - 개인화된 튜터링을 제공하고, 학생 진행 상황을 추적하며, 학습을 지원합니다.
-- **[정부 에이전트](https://voltagent.dev/use-cases/government-agent/)** - 허가 신청을 처리하고, 혜택을 처리하며, 시민을 서비스합니다.
-- **[문서화 에이전트](https://voltagent.dev/use-cases/documentation-agent/)** - API 문서를 생성하고, 변경 로그를 작성하며, 코드에서 튜토리얼을 생성합니다.
+<img alt="rag" src="https://github.com/user-attachments/assets/a6c2f668-7ad1-4fb6-b67f-654335285f1e" />
 
 ## VoltAgent 학습하기
 
-- 📖 **[대화형 튜토리얼로 시작](https://voltagent.dev/tutorial/introduction/)**하여 AI 에이전트 구축의 기본을 배우세요.
+- **[대화형 튜토리얼로 시작](https://voltagent.dev/tutorial/introduction/)**하여 AI 에이전트 구축의 기본을 배우세요.
 - **[문서](https://voltagent.dev/docs/)**: 가이드, 개념 및 튜토리얼을 깊이 있게 살펴보세요.
 - **[예제](https://github.com/voltagent/voltagent/tree/main/examples)**: 실용적인 구현을 탐색하세요.
 - **[블로그](https://voltagent.dev/blog/)**: 기술적 통찰력 및 모범 사례에 대해 더 읽어보세요.
@@ -426,10 +360,8 @@ BrowserBase Stagehand를 사용하여 랜딩 페이지를 분석하고, 브랜�
 
 VoltAgent는 커뮤니티의 노력이며, 여러분과 같은 사람들 덕분에 계속해서 더 나아지고 있습니다.
 
-![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent&max=100)
-
-여러분의 스타는 더 많은 개발자에게 다가가는 데 도움이 됩니다! VoltAgent가 유용하다고 생각하신다면, 프로젝트를 지원하고 다른 사람들이 발견할 수 있도록 GitHub에서 스타를 주는 것을 고려해주세요.
+![Contributors](https://contrib.rocks/image?repo=voltagent/voltagent&max=500&columns=20&anon=1)
 
 ## 라이선스
 
-MIT 라이선스 하에 라이선스가 부여됩니다, Copyright © 2025-present VoltAgent.
+MIT 라이선스 하에 라이선스가 부여됩니다, Copyright © 2026-present VoltAgent.

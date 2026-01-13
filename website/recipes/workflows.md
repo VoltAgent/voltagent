@@ -75,12 +75,22 @@ new VoltAgent({
 
 ## Workflow Methods
 
-| Method        | Purpose                 |
-| ------------- | ----------------------- |
-| `.andThen()`  | Execute custom logic    |
-| `.andAgent()` | Use AI agent for a step |
-| `.andTap()`   | Side effects (logging)  |
-| `.andWhen()`  | Conditional branching   |
+| Method             | Purpose                   |
+| ------------------ | ------------------------- |
+| `.andThen()`       | Execute custom logic      |
+| `.andAgent()`      | Use AI agent for a step   |
+| `.andTap()`        | Side effects (logging)    |
+| `.andWhen()`       | Conditional branching     |
+| `.andBranch()`     | Multi-branch conditions   |
+| `.andAll()`        | Parallel execution        |
+| `.andRace()`       | First-result wins         |
+| `.andForEach()`    | Run a step per item       |
+| `.andDoWhile()`    | Loop while condition      |
+| `.andDoUntil()`    | Loop until condition      |
+| `.andSleep()`      | Pause for a duration      |
+| `.andSleepUntil()` | Pause until a date        |
+| `.andMap()`        | Compose data from sources |
+| `.andWorkflow()`   | Nested workflow step      |
 
 ## Human-in-the-Loop (Suspend/Resume)
 

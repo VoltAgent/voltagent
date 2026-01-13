@@ -404,6 +404,79 @@ This allows the agent to maintain a persistent, contextual conversation with eac
 // used by the agent's memory to provide context-aware responses.
 ```
 
+### Workflow Retry Policies
+
+Set a workflow-wide default retry policy with `retryConfig`. Steps inherit it unless they define `retries` (use `retries: 0` to opt out). `delayMs` waits between retry attempts.
+
+```typescript
+const workflow = createWorkflowChain({
+  id: "ingest",
+  name: "Ingest",
+  retryConfig: { attempts: 2, delayMs: 500 },
+})
+  .andThen({
+    id: "fetch-user",
+    execute: async ({ data }) => fetchUser(data.userId),
+  })
+  .andThen({
+    id: "no-retry-step",
+    retries: 0,
+    execute: async ({ data }) => data,
+  });
+
+await workflow.run({ userId: "123" }, { retryConfig: { attempts: 1 } });
+```
+
+### Workflow Guardrails
+
+Guardrails let you validate or sanitize workflow inputs and outputs. Configure them at the workflow level or use `andGuardrail` inside a chain.
+
+```typescript
+import {
+  createWorkflowChain,
+  andGuardrail,
+  createInputGuardrail,
+  createOutputGuardrail,
+} from "@voltagent/core";
+
+const trimInput = createInputGuardrail({
+  name: "trim-input",
+  handler: async ({ input }) => ({
+    pass: true,
+    action: "modify",
+    modifiedInput: typeof input === "string" ? input.trim() : input,
+  }),
+});
+
+const redactOutput = createOutputGuardrail<string>({
+  name: "redact-output",
+  handler: async ({ output }) => ({
+    pass: true,
+    action: "modify",
+    modifiedOutput: output.replace(/[0-9]/g, "*"),
+  }),
+});
+
+const workflow = createWorkflowChain({
+  id: "guarded",
+  input: z.string(),
+  result: z.string(),
+  inputGuardrails: [trimInput],
+  outputGuardrails: [redactOutput],
+})
+  .andGuardrail({
+    id: "sanitize",
+    outputGuardrails: [redactOutput],
+  })
+  .andThen({
+    id: "finish",
+    execute: async ({ data }) => data,
+  });
+```
+
+Input guardrails only accept string or message inputs. For structured data, use output guardrails.
+If your guardrails rely on agent APIs or metadata, pass `guardrailAgent` in the workflow config or run options.
+
 ### Workflow History & Observability
 
 ![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)
@@ -516,12 +589,15 @@ The workflow can also suspend during execution and be resumed later. For detaile
 
 Workflows provide hooks that allow you to tap into the lifecycle of a workflow run. You can execute custom logic at key points, such as before and after a step or at the beginning and end of the entire workflow. This is useful for logging, metrics, or any other side effects you want to perform.
 
-| Hook          | Trigger                                         |
-| ------------- | ----------------------------------------------- |
-| `onStart`     | Before the workflow begins execution.           |
-| `onEnd`       | After the workflow finishes (success or error). |
-| `onStepStart` | Before each individual step starts.             |
-| `onStepEnd`   | After each individual step completes.           |
+| Hook          | Trigger                                                                           |
+| ------------- | --------------------------------------------------------------------------------- |
+| `onStart`     | Before the workflow begins execution.                                             |
+| `onStepStart` | Before each individual step starts.                                               |
+| `onStepEnd`   | After each individual step completes successfully.                                |
+| `onSuspend`   | When the workflow suspends.                                                       |
+| `onError`     | When the workflow ends with an error.                                             |
+| `onFinish`    | When the workflow reaches a terminal state (completed/cancelled/suspended/error). |
+| `onEnd`       | After the workflow ends (completed, cancelled, or error).                         |
 
 For more details, see the [Workflow Hooks](./hooks.md) documentation.
 

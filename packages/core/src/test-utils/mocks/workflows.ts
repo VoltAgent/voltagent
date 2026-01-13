@@ -33,5 +33,9 @@ export function createMockWorkflowExecuteContext(
       fatal: vi.fn(),
       child: vi.fn(),
     },
+    writer: overrides.writer ?? {
+      write: vi.fn(),
+      pipeFrom: vi.fn(),
+    },
   };
 }

@@ -24,6 +24,8 @@ import { createRoute, z } from "../zod-openapi-compat";
 import { createPathParam } from "./path-params";
 
 const agentIdParam = () => createPathParam("id", "The ID of the agent", "my-agent-123");
+const conversationIdParam = () =>
+  createPathParam("conversationId", "The ID of the conversation", "chat_123");
 const workflowIdParam = () => createPathParam("id", "The ID of the workflow", "my-workflow-123");
 const executionIdParam = () =>
   createPathParam("executionId", "The ID of the execution to operate on", "exec_1234567890_abc123");
@@ -240,6 +242,83 @@ export const chatRoute = createRoute({
   tags: [...AGENT_ROUTES.chatStream.tags],
   summary: AGENT_ROUTES.chatStream.summary,
   description: AGENT_ROUTES.chatStream.description,
+});
+
+// Resume chat stream response (UI message stream)
+export const resumeChatStreamRoute = createRoute({
+  method: AGENT_ROUTES.resumeChatStream.method,
+  path: AGENT_ROUTES.resumeChatStream.path
+    .replace(":id", "{id}")
+    .replace(":conversationId", "{conversationId}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+      conversationId: conversationIdParam(),
+    }),
+    query: z.object({
+      userId: z
+        .string()
+        .min(1)
+        .openapi("QueryParam.userId", {
+          description: "User ID for resumable streams",
+          param: { name: "userId", in: "query", required: true },
+          example: "user-123",
+        }),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "text/event-stream": {
+          schema: StreamTextEventSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.resumeChatStream.responses?.[200]?.description ||
+        "Successfully resumed SSE stream for chat generation",
+    },
+    204: {
+      content: {
+        "text/plain": {
+          schema: z.string(),
+        },
+      },
+      description:
+        AGENT_ROUTES.resumeChatStream.responses?.[204]?.description ||
+        "No active stream found for the conversation",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: "Missing or invalid userId",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.resumeChatStream.responses?.[404]?.description ||
+        "Resumable streams not configured",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.resumeChatStream.responses?.[500]?.description ||
+        "Failed to resume chat stream",
+    },
+  },
+  tags: [...AGENT_ROUTES.resumeChatStream.tags],
+  summary: AGENT_ROUTES.resumeChatStream.summary,
+  description: AGENT_ROUTES.resumeChatStream.description,
 });
 
 // Generate object response

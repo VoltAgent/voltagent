@@ -5,7 +5,7 @@ import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowExecutionContext } from "../context";
-import type { WorkflowStreamWriter } from "../types";
+import type { WorkflowStepData, WorkflowStreamWriter } from "../types";
 import type { WorkflowState } from "./state";
 
 /**
@@ -39,11 +39,12 @@ export type InternalWorkflowStateParam<INPUT> = Omit<
  * @private - INTERNAL USE ONLY
  */
 export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
-  data: InternalExtractWorkflowInputData<DATA>;
+  data: DATA;
   state: InternalWorkflowStateParam<INPUT>;
-  getStepData: (stepId: string) => { input: any; output: any } | undefined;
+  getStepData: (stepId: string) => WorkflowStepData | undefined;
   suspend: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>;
   resumeData?: RESUME_DATA;
+  retryCount?: number;
   /**
    * Logger instance for this workflow execution.
    * Provides execution-scoped logging with full context (userId, conversationId, executionId).
@@ -79,6 +80,10 @@ export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
    * Description of what the step does
    */
   purpose?: string;
+  /**
+   * Number of retry attempts when the step throws an error
+   */
+  retries?: number;
 } & T;
 
 /**
@@ -118,6 +123,10 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RES
    * Optional resume data schema for this step
    */
   resumeSchema?: z.ZodTypeAny;
+  /**
+   * Number of retry attempts when the step throws an error
+   */
+  retries?: number;
   /**
    * Execute the step with the given context
    * @param context - The execution context containing data, state, and helpers

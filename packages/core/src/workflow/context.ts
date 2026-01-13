@@ -1,8 +1,9 @@
 import type { Span } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
+import type { Agent } from "../agent/agent";
 import type { Memory } from "../memory";
 import type { WorkflowTraceContext } from "./open-telemetry/trace-context";
-import type { WorkflowStreamWriter } from "./types";
+import type { WorkflowStepData, WorkflowStreamWriter } from "./types";
 
 /**
  * Context information for a workflow execution
@@ -54,7 +55,7 @@ export interface WorkflowExecutionContext {
    * Map of executed step data (input and output) by step ID
    * Used for accessing previous step results
    */
-  stepData: Map<string, { input: any; output: any }>;
+  stepData: Map<string, WorkflowStepData>;
   /**
    * Current event sequence number for this workflow execution
    * Used to maintain event ordering even after server restarts
@@ -75,6 +76,10 @@ export interface WorkflowExecutionContext {
    * Manages span hierarchy and attributes for the workflow execution
    */
   traceContext?: WorkflowTraceContext;
+  /**
+   * Optional agent instance supplied to workflow guardrails
+   */
+  guardrailAgent?: Agent;
 
   /**
    * Current step span for passing to agents called within workflow steps
@@ -89,7 +94,21 @@ export interface WorkflowExecutionContext {
 export interface WorkflowStepContext {
   stepId: string;
   stepIndex: number;
-  stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race";
+  stepType:
+    | "agent"
+    | "func"
+    | "conditional-when"
+    | "parallel-all"
+    | "parallel-race"
+    | "tap"
+    | "workflow"
+    | "guardrail"
+    | "sleep"
+    | "sleep-until"
+    | "foreach"
+    | "loop"
+    | "branch"
+    | "map";
   stepName: string;
   workflowId: string;
   executionId: string;

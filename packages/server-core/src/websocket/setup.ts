@@ -56,6 +56,142 @@ function hasWebSocketConsoleAccess(req: IncomingMessage, url: URL): boolean {
   return false;
 }
 
+type WebSocketAuthResult = {
+  user: any | null;
+  handled: boolean;
+};
+
+function closeUpgrade(socket: Socket, statusLine: string): void {
+  socket.end(`${statusLine}\r\n\r\n`);
+}
+
+function denyUnauthorized(socket: Socket): WebSocketAuthResult {
+  closeUpgrade(socket, "HTTP/1.1 401 Unauthorized");
+  return { user: null, handled: true };
+}
+
+function denyServerError(socket: Socket): WebSocketAuthResult {
+  closeUpgrade(socket, "HTTP/1.1 500 Internal Server Error");
+  return { user: null, handled: true };
+}
+
+async function verifyTokenIfPresent(
+  provider: AuthProvider<any>,
+  token: string | null,
+): Promise<any | null> {
+  if (!token) {
+    return null;
+  }
+  try {
+    return await provider.verifyToken(token);
+  } catch {
+    return null;
+  }
+}
+
+async function verifyTokenOrReject(params: {
+  provider: AuthProvider<any>;
+  token: string | null;
+  socket: Socket;
+  logger?: Logger;
+  missingTokenLog: string;
+}): Promise<WebSocketAuthResult> {
+  const { provider, token, socket, logger, missingTokenLog } = params;
+
+  if (!token) {
+    logger?.debug(missingTokenLog);
+    return denyUnauthorized(socket);
+  }
+
+  try {
+    const user = await provider.verifyToken(token);
+    return { user, handled: false };
+  } catch (error) {
+    logger?.debug("[WebSocket] Token verification failed:", { error });
+    return denyUnauthorized(socket);
+  }
+}
+
+async function resolveAuthNextUser(params: {
+  auth: AuthNextConfig<any> | AuthProvider<any>;
+  path: string;
+  req: IncomingMessage;
+  url: URL;
+  socket: Socket;
+  logger?: Logger;
+}): Promise<WebSocketAuthResult> {
+  const { auth, path, req, url, socket, logger } = params;
+  const config = normalizeAuthNextConfig(auth);
+  const provider = config.provider;
+  const access = resolveAuthNextAccess("WS", path, config);
+
+  if (access === "public") {
+    const user = await verifyTokenIfPresent(provider, url.searchParams.get("token"));
+    return { user, handled: false };
+  }
+
+  if (access === "console") {
+    const hasAccess = hasWebSocketConsoleAccess(req, url);
+    if (!hasAccess) {
+      logger?.debug("[WebSocket] Unauthorized console connection attempt");
+      return denyUnauthorized(socket);
+    }
+    return { user: { id: "console", type: "console-access" }, handled: false };
+  }
+
+  if (isWebSocketDevBypass(req, url)) {
+    // Dev bypass for local testing
+    return { user: null, handled: false };
+  }
+
+  return verifyTokenOrReject({
+    provider,
+    token: url.searchParams.get("token"),
+    socket,
+    logger,
+    missingTokenLog: "[WebSocket] No token provided for protected WebSocket",
+  });
+}
+
+async function resolveLegacyAuthUser(params: {
+  auth: AuthProvider<any>;
+  path: string;
+  req: IncomingMessage;
+  url: URL;
+  socket: Socket;
+  logger?: Logger;
+}): Promise<WebSocketAuthResult> {
+  const { auth, path, req, url, socket, logger } = params;
+
+  if (path.includes("/observability")) {
+    const hasAccess = hasWebSocketConsoleAccess(req, url);
+    if (!hasAccess) {
+      logger?.debug("[WebSocket] Unauthorized observability connection attempt");
+      return denyUnauthorized(socket);
+    }
+    return { user: { id: "console", type: "console-access" }, handled: false };
+  }
+
+  const hasConsoleAccess = hasWebSocketConsoleAccess(req, url);
+  if (hasConsoleAccess) {
+    return { user: { id: "console", type: "console-access" }, handled: false };
+  }
+
+  const needsAuth = requiresAuth("WS", path, auth.publicRoutes, auth.defaultPrivate);
+  if (needsAuth) {
+    return verifyTokenOrReject({
+      provider: auth,
+      token: url.searchParams.get("token"),
+      socket,
+      logger,
+      missingTokenLog: "[WebSocket] No token provided for protected WebSocket",
+    });
+  }
+
+  const user = await verifyTokenIfPresent(auth, url.searchParams.get("token"));
+  return { user, handled: false };
+}
+
 /**
  * Create and configure a WebSocket server
  * @param deps Server provider dependencies
@@ -98,119 +234,34 @@ export function setupWebSocketUpgrade(
     const url = new URL(req.url || "", "http://localhost");
     const path = url.pathname;
 
-    if (path.startsWith(pathPrefix)) {
-      let user: any = null;
+    if (!path.startsWith(pathPrefix)) {
+      socket.destroy();
+      return;
+    }
 
-      // Check authentication if auth provider is configured
-      if (auth) {
-        try {
-          if (isAuthNextConfig(auth)) {
-            const config = normalizeAuthNextConfig(auth);
-            const provider = config.provider;
-            const access = resolveAuthNextAccess("WS", path, config);
+    let user: any = null;
 
-            if (access === "public") {
-              const token = url.searchParams.get("token");
-              if (token) {
-                try {
-                  user = await provider.verifyToken(token);
-                } catch {
-                  // Ignore token errors on public routes
-                }
-              }
-            } else if (access === "console") {
-              const hasAccess = hasWebSocketConsoleAccess(req, url);
-              if (!hasAccess) {
-                logger?.debug("[WebSocket] Unauthorized console connection attempt");
-                socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-                socket.destroy();
-                return;
-              }
-              user = { id: "console", type: "console-access" };
-            } else {
-              if (isWebSocketDevBypass(req, url)) {
-                // Dev bypass for local testing
-              } else {
-                const token = url.searchParams.get("token");
-                if (token) {
-                  try {
-                    user = await provider.verifyToken(token);
-                  } catch (error) {
-                    logger?.debug("[WebSocket] Token verification failed:", { error });
-                    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-                    socket.destroy();
-                    return;
-                  }
-                } else {
-                  logger?.debug("[WebSocket] No token provided for protected WebSocket");
-                  socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-                  socket.destroy();
-                  return;
-                }
-              }
-            }
-          } else {
-            // Legacy auth flow
-            if (path.includes("/observability")) {
-              const hasAccess = hasWebSocketConsoleAccess(req, url);
-              if (!hasAccess) {
-                logger?.debug("[WebSocket] Unauthorized observability connection attempt");
-                socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-                socket.destroy();
-                return;
-              }
-              user = { id: "console", type: "console-access" };
-            } else {
-              const hasConsoleAccess = hasWebSocketConsoleAccess(req, url);
-              if (hasConsoleAccess) {
-                user = { id: "console", type: "console-access" };
-              } else {
-                const needsAuth = requiresAuth("WS", path, auth.publicRoutes, auth.defaultPrivate);
+    // Check authentication if auth provider is configured
+    if (auth) {
+      try {
+        const authResult = isAuthNextConfig(auth)
+          ? await resolveAuthNextUser({ auth, path, req, url, socket, logger })
+          : await resolveLegacyAuthUser({ auth, path, req, url, socket, logger });
 
-                if (needsAuth) {
-                  const token = url.searchParams.get("token");
-                  if (token) {
-                    try {
-                      user = await auth.verifyToken(token);
-                    } catch (error) {
-                      logger?.debug("[WebSocket] Token verification failed:", { error });
-                      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-                      socket.destroy();
-                      return;
-                    }
-                  } else {
-                    logger?.debug("[WebSocket] No token provided for protected WebSocket");
-                    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-                    socket.destroy();
-                    return;
-                  }
-                } else {
-                  const token = url.searchParams.get("token");
-                  if (token) {
-                    try {
-                      user = await auth.verifyToken(token);
-                    } catch {
-                      // Ignore token errors on public routes
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } catch (error) {
-          logger?.error("[WebSocket] Auth error:", { error });
-          socket.write("HTTP/1.1 500 Internal Server Error\r\n\r\n");
-          socket.destroy();
+        if (authResult.handled) {
           return;
         }
+        user = authResult.user;
+      } catch (error) {
+        logger?.error("[WebSocket] Auth error:", { error });
+        denyServerError(socket);
+        return;
       }
-
-      // Proceed with WebSocket upgrade
-      wss.handleUpgrade(req, socket, head, (websocket) => {
-        wss.emit("connection", websocket, req, user);
-      });
-    } else {
-      socket.destroy();
     }
+
+    // Proceed with WebSocket upgrade
+    wss.handleUpgrade(req, socket, head, (websocket) => {
+      wss.emit("connection", websocket, req, user);
+    });
   });
 }

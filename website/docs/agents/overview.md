@@ -198,6 +198,8 @@ The server exposes the following REST endpoints:
 - `POST /agents/:id/stream` - Stream raw fullStream events (SSE)
 - `POST /agents/:id/chat` - Stream UI messages for useChat hook (SSE)
 
+If you need clients to reconnect after refresh and continue the same response, enable resumable streaming. See [Resumable Streaming](/docs/agents/resumable-streaming/).
+
 #### Structured Data
 
 - `POST /agents/:id/object` - Generate structured object (synchronous)

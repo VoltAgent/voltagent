@@ -27,7 +27,7 @@ export const createBaseDependencyInstaller = async (
   const baseDependencies: Record<string, string> = {
     "@voltagent/core": "^2.0.0",
     "@voltagent/libsql": "^2.0.0",
-    ai: "^5.0.12",
+    ai: "^6.0.0",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/logger": "^2.0.0",
     dotenv: "^16.4.7",

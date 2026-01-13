@@ -13,35 +13,38 @@ import { z } from "zod";
 const workflow = createWorkflowChain({
   id: "get-user-data",
   input: z.object({ userId: z.string() }),
-}).andRace([
-  // Fast: Check cache (100ms)
-  andThen({
-    id: "check-cache",
-    execute: async ({ data }) => {
-      const cached = await checkCache(data.userId);
-      if (cached) return { data: cached, source: "cache" };
-      throw new Error("Not in cache");
-    },
-  }),
+}).andRace({
+  id: "race-user-data",
+  steps: [
+    // Fast: Check cache (100ms)
+    andThen({
+      id: "check-cache",
+      execute: async ({ data }) => {
+        const cached = await checkCache(data.userId);
+        if (cached) return { data: cached, source: "cache" };
+        throw new Error("Not in cache");
+      },
+    }),
 
-  // Medium: Database (300ms)
-  andThen({
-    id: "check-database",
-    execute: async ({ data }) => {
-      const user = await database.getUser(data.userId);
-      return { data: user, source: "database" };
-    },
-  }),
+    // Medium: Database (300ms)
+    andThen({
+      id: "check-database",
+      execute: async ({ data }) => {
+        const user = await database.getUser(data.userId);
+        return { data: user, source: "database" };
+      },
+    }),
 
-  // Slow: External API (1000ms)
-  andThen({
-    id: "fetch-from-api",
-    execute: async ({ data }) => {
-      const response = await fetch(`/api/users/${data.userId}`);
-      return { data: await response.json(), source: "api" };
-    },
-  }),
-]);
+    // Slow: External API (1000ms)
+    andThen({
+      id: "fetch-from-api",
+      execute: async ({ data }) => {
+        const response = await fetch(`/api/users/${data.userId}`);
+        return { data: await response.json(), source: "api" };
+      },
+    }),
+  ],
+});
 
 const result = await workflow.run({ userId: "123" });
 // If cache has data: returns in ~100ms from cache
@@ -62,7 +65,13 @@ Think of it like a race - whoever crosses the finish line first wins, regardless
 ## Function Signature
 
 ```typescript
-.andRace([step1, step2, step3])  // Array of steps to race
+.andRace({
+  id: string,
+  steps: Array<Step>,
+  retries?: number,
+  name?: string,
+  purpose?: string
+})
 ```
 
 ## Common Patterns
@@ -72,24 +81,27 @@ Think of it like a race - whoever crosses the finish line first wins, regardless
 Add a timeout to any operation:
 
 ```typescript
-.andRace([
-  // Main operation
-  andThen({
-    id: "slow-api",
-    execute: async ({ data }) => {
-      const result = await slowAPICall(data);
-      return { result, timedOut: false };
-    }
-  }),
-  // Timeout after 5 seconds
-  andThen({
-    id: "timeout",
-    execute: async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      return { result: "Timeout", timedOut: true };
-    }
-  })
-])
+.andRace({
+  id: "timeout-race",
+  steps: [
+    // Main operation
+    andThen({
+      id: "slow-api",
+      execute: async ({ data }) => {
+        const result = await slowAPICall(data);
+        return { result, timedOut: false };
+      }
+    }),
+    // Timeout after 5 seconds
+    andThen({
+      id: "timeout",
+      execute: async () => {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        return { result: "Timeout", timedOut: true };
+      }
+    })
+  ]
+})
 ```
 
 ### Multiple AI Providers
@@ -97,23 +109,26 @@ Add a timeout to any operation:
 Get response from fastest AI:
 
 ```typescript
-.andRace([
-  andAgent(
-    ({ data }) => data.prompt,
-    openaiAgent,
-    { schema: z.object({ response: z.string(), ai: z.literal("openai") }) }
-  ),
-  andAgent(
-    ({ data }) => data.prompt,
-    claudeAgent,
-    { schema: z.object({ response: z.string(), ai: z.literal("claude") }) }
-  ),
-  andAgent(
-    ({ data }) => data.prompt,
-    geminiAgent,
-    { schema: z.object({ response: z.string(), ai: z.literal("gemini") }) }
-  )
-])
+.andRace({
+  id: "ai-provider-race",
+  steps: [
+    andAgent(
+      ({ data }) => data.prompt,
+      openaiAgent,
+      { schema: z.object({ response: z.string(), ai: z.literal("openai") }) }
+    ),
+    andAgent(
+      ({ data }) => data.prompt,
+      claudeAgent,
+      { schema: z.object({ response: z.string(), ai: z.literal("claude") }) }
+    ),
+    andAgent(
+      ({ data }) => data.prompt,
+      geminiAgent,
+      { schema: z.object({ response: z.string(), ai: z.literal("gemini") }) }
+    )
+  ]
+})
 ```
 
 ### Cache vs Database
@@ -121,26 +136,29 @@ Get response from fastest AI:
 Try cache first, fall back to database:
 
 ```typescript
-.andRace([
-  // Try cache (fast)
-  andThen({
-    id: "cache-lookup",
-    execute: async ({ data }) => {
-      const cached = await cache.get(data.key);
-      if (!cached) throw new Error("Cache miss");
-      return { value: cached, from: "cache" };
-    }
-  }),
-  // Fall back to database (slower)
-  andThen({
-    id: "db-lookup",
-    execute: async ({ data }) => {
-      const value = await db.find(data.key);
-      await cache.set(data.key, value); // Update cache
-      return { value, from: "database" };
-    }
-  })
-])
+.andRace({
+  id: "cache-db-race",
+  steps: [
+    // Try cache (fast)
+    andThen({
+      id: "cache-lookup",
+      execute: async ({ data }) => {
+        const cached = await cache.get(data.key);
+        if (!cached) throw new Error("Cache miss");
+        return { value: cached, from: "cache" };
+      }
+    }),
+    // Fall back to database (slower)
+    andThen({
+      id: "db-lookup",
+      execute: async ({ data }) => {
+        const value = await db.find(data.key);
+        await cache.set(data.key, value); // Update cache
+        return { value, from: "database" };
+      }
+    })
+  ]
+})
 ```
 
 ## Error Handling
@@ -148,24 +166,27 @@ Try cache first, fall back to database:
 If the fastest step fails, the race continues:
 
 ```typescript
-.andRace([
-  andThen({
-    id: "unreliable-fast",
-    execute: async () => {
-      if (Math.random() > 0.5) {
-        throw new Error("Failed!");
+.andRace({
+  id: "error-race",
+  steps: [
+    andThen({
+      id: "unreliable-fast",
+      execute: async () => {
+        if (Math.random() > 0.5) {
+          throw new Error("Failed!");
+        }
+        return { result: "fast" };
       }
-      return { result: "fast" };
-    }
-  }),
-  andThen({
-    id: "reliable-slow",
-    execute: async () => {
-      await sleep(1000);
-      return { result: "slow but reliable" };
-    }
-  })
-])
+    }),
+    andThen({
+      id: "reliable-slow",
+      execute: async () => {
+        await sleep(1000);
+        return { result: "slow but reliable" };
+      }
+    })
+  ]
+})
 // If fast fails, you get slow result
 // If fast succeeds, you get fast result
 ```
@@ -177,11 +198,14 @@ If the fastest step fails, the race continues:
 .andThen({ execute: async () => await slowAPI() })
 
 // With race: Usually fast (50ms)
-.andRace([
-  andThen({ execute: async () => await cache() }),    // 50ms
-  andThen({ execute: async () => await database() }), // 500ms
-  andThen({ execute: async () => await slowAPI() })   // 2000ms
-])
+.andRace({
+  id: "perf-race",
+  steps: [
+    andThen({ execute: async () => await cache() }),    // 50ms
+    andThen({ execute: async () => await database() }), // 500ms
+    andThen({ execute: async () => await slowAPI() })   // 2000ms
+  ]
+})
 ```
 
 ## Best Practices
@@ -190,17 +214,20 @@ If the fastest step fails, the race continues:
 
 ```typescript
 // Good: Fastest first
-.andRace([
-  cacheStep,    // 10ms
-  databaseStep, // 100ms
-  apiStep       // 1000ms
-])
+.andRace({
+  id: "fastest-first",
+  steps: [
+    cacheStep,    // 10ms
+    databaseStep, // 100ms
+    apiStep       // 1000ms
+  ]
+})
 ```
 
 ### 2. Handle Different Results
 
 ```typescript
-.andRace([...steps])
+.andRace({ id: "race-results", steps: [...steps] })
 .andThen({
   execute: async ({ data }) => {
     // Check which source won
@@ -216,11 +243,14 @@ If the fastest step fails, the race continues:
 
 ```typescript
 // Multiple APIs for reliability
-.andRace([
-  primaryAPI,
-  backupAPI,
-  fallbackAPI
-])
+.andRace({
+  id: "redundancy-race",
+  steps: [
+    primaryAPI,
+    backupAPI,
+    fallbackAPI
+  ]
+})
 ```
 
 ## Comparison with andAll

@@ -616,7 +616,20 @@ describe("MCPClient", () => {
       });
 
       mockRequest.mockResolvedValue({
-        resources: [{ id: "resource1" }, { id: "resource2" }, { id: 3 }],
+        resources: [
+          {
+            uri: "mcp://resource/1",
+            name: "resource1",
+            description: "Resource 1",
+            mimeType: "text/plain",
+          },
+          {
+            uri: "mcp://resource/2",
+            name: "resource2",
+            description: "Resource 2",
+            mimeType: "text/plain",
+          },
+        ],
       });
     });
 
@@ -624,8 +637,25 @@ describe("MCPClient", () => {
       const resources = await client.listResources();
 
       expect(mockConnect).toHaveBeenCalled();
-      expect(mockRequest).toHaveBeenCalledWith({ method: "resources/list" }, expect.any(Object));
-      expect(resources).toEqual(["resource1", "resource2", "3"]);
+      expect(mockRequest).toHaveBeenCalledWith({ method: "resources/list" }, expect.any(Object), {
+        timeout: expect.any(Number),
+      });
+      expect(resources).toEqual({
+        resources: [
+          {
+            uri: "mcp://resource/1",
+            name: "resource1",
+            description: "Resource 1",
+            mimeType: "text/plain",
+          },
+          {
+            uri: "mcp://resource/2",
+            name: "resource2",
+            description: "Resource 2",
+            mimeType: "text/plain",
+          },
+        ],
+      });
     });
 
     it("should handle errors when listing resources", async () => {

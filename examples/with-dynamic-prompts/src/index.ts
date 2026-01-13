@@ -19,7 +19,7 @@ const supportAgent = new Agent({
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
-      promptName: "customer-support-prompt",
+      promptName: "Customer Support",
       variables: {
         companyName: "VoltAgent",
         tone: "friendly and professional",
@@ -37,6 +37,6 @@ new VoltAgent({
     supportAgent,
   },
   logger,
-  server: honoServer({ port: 3141 }),
+  server: honoServer(),
   voltOpsClient: voltOpsClient,
 });

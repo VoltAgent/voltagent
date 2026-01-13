@@ -103,6 +103,8 @@ export class MemoryManager {
   ): Promise<void> {
     if (!this.conversationMemory || !userId) return;
 
+    const messageWithMetadata = this.applyOperationMetadata(message, context);
+
     // Use contextual logger from operation context - PRESERVED
     const memoryLogger = context.logger.child({
       operation: "write",
@@ -110,9 +112,10 @@ export class MemoryManager {
 
     // Event tracking with OpenTelemetry spans
     const trace = context.traceContext;
-    const spanInput = { userId, conversationId, message };
+    const spanInput = { userId, conversationId, message: messageWithMetadata };
     const writeSpan = trace.createChildSpan("memory.write", "memory", {
-      label: message.role === "user" ? "Persist User Message" : "Persist Assistant Message",
+      label:
+        messageWithMetadata.role === "user" ? "Persist User Message" : "Persist Assistant Message",
       attributes: {
         "memory.operation": "write",
         input: safeStringify(spanInput),
@@ -137,7 +140,7 @@ export class MemoryManager {
 
           // Add message to conversation using Memory V2's saveMessageWithContext
           await this.conversationMemory?.saveMessageWithContext(
-            message,
+            messageWithMetadata,
             userId,
             conversationId,
             {
@@ -158,7 +161,7 @@ export class MemoryManager {
       memoryLogger.debug("[Memory] Write successful (1 record)", {
         event: LogEvents.MEMORY_OPERATION_COMPLETED,
         operation: "write",
-        message,
+        message: messageWithMetadata,
       });
     } catch (error) {
       // End span with error
@@ -175,6 +178,30 @@ export class MemoryManager {
         },
       );
     }
+  }
+
+  private applyOperationMetadata(message: UIMessage, context: OperationContext): UIMessage {
+    const operationId = context.operationId;
+    if (!operationId) {
+      return message;
+    }
+
+    const existingMetadata =
+      typeof message.metadata === "object" && message.metadata !== null
+        ? (message.metadata as Record<string, unknown>)
+        : undefined;
+
+    if (existingMetadata?.operationId === operationId) {
+      return message;
+    }
+
+    return {
+      ...message,
+      metadata: {
+        ...(existingMetadata ?? {}),
+        operationId,
+      },
+    };
   }
 
   async saveConversationSteps(

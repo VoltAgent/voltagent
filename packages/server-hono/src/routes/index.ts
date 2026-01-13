@@ -17,6 +17,7 @@ import {
   handleGetWorkflows,
   handleInstallUpdates,
   handleListWorkflowRuns,
+  handleResumeChatStream,
   handleResumeWorkflow,
   handleStreamObject,
   handleStreamText,
@@ -33,6 +34,7 @@ import {
   getAgentsRoute,
   getWorkflowsRoute,
   objectRoute,
+  resumeChatStreamRoute,
   resumeWorkflowRoute,
   streamObjectRoute,
   streamRoute,
@@ -120,6 +122,18 @@ export function registerAgentRoutes(
 
     // Handler now always returns a Response object
     return response;
+  });
+
+  // GET /agents/:id/chat/:conversationId/stream - Resume chat stream (UI message stream SSE)
+  app.openapi(resumeChatStreamRoute, async (c) => {
+    const agentId = c.req.param("id");
+    const conversationId = c.req.param("conversationId");
+    const userId = c.req.query("userId");
+    if (!agentId || !conversationId) {
+      throw new Error("Missing agent or conversation id parameter");
+    }
+
+    return handleResumeChatStream(agentId, conversationId, deps, logger, userId);
   });
 
   // POST /agents/:id/object - Generate object

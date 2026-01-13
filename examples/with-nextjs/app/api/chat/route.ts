@@ -1,4 +1,4 @@
-import { supervisorAgent, voltAgent } from "@/voltagent";
+import { supervisorAgent } from "@/voltagent";
 import { setWaitUntil } from "@voltagent/core";
 import { after } from "next/server";
 

@@ -569,7 +569,6 @@ export default function TutorialIntroduction() {
 
                     {/* Card 4 - Model Selection */}
                     <div className="relative h-full">
-                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                       <div
                         className={`h-[100px] p-3 rounded-lg ${
                           highlightedSection === "model"
@@ -596,7 +595,6 @@ export default function TutorialIntroduction() {
 
                     {/* Card 5 - Server */}
                     <div className="relative h-full">
-                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                       <div
                         className={`h-[100px] p-3 rounded-lg ${
                           highlightedSection === "server"

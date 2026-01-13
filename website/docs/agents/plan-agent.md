@@ -61,7 +61,7 @@ const agent = new PlanAgent({
   tools: [internetSearch],
 });
 
-const result = await agent.generateText("What is LangGraph?");
+const result = await agent.generateText("What is VoltAgent?");
 console.log(result.text);
 ```
 

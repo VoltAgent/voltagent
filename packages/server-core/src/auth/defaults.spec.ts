@@ -95,6 +95,7 @@ describe("Auth Defaults", () => {
       it("should require auth for agent execution endpoints", () => {
         expect(requiresAuth("POST", "/agents/my-agent/text")).toBe(true);
         expect(requiresAuth("POST", "/agents/123/stream")).toBe(true);
+        expect(requiresAuth("GET", "/agents/123/chat/conv-1/stream")).toBe(true);
         expect(requiresAuth("POST", "/agents/abc/object")).toBe(true);
         expect(requiresAuth("POST", "/agents/test/stream-object")).toBe(true);
       });

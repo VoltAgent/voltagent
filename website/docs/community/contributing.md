@@ -32,6 +32,7 @@ VoltAgent is a monorepo containing several key packages:
 - `@voltagent/voice`: Handles voice input/output capabilities. Contributions could involve new STT/TTS integrations or improving voice interaction logic.
 - `@voltagent/server-hono`: Recommended HTTP server provider for VoltAgent (Hono-based).
 - `@voltagent/libsql`: LibSQL/Turso/SQLite memory adapter for persistent memory.
+- `@voltagent/cloudflare-d1`: Cloudflare D1 memory adapter for Workers.
 - `@voltagent/postgres`: PostgreSQL memory adapter for persistent memory.
 - `@voltagent/supabase`: Supabase memory adapter for persistent memory.
 - `@voltagent/langfuse-exporter`: Langfuse OpenTelemetry exporter integration.

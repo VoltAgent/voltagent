@@ -1,5 +1,453 @@
 # @voltagent/core
 
+## 2.0.10
+
+### Patch Changes
+
+- [#934](https://github.com/VoltAgent/voltagent/pull/934) [`12519f5`](https://github.com/VoltAgent/voltagent/commit/12519f572b3facbd32d35f939be08a0ad1b40b45) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: offline-first local prompts with version + label selection
+
+  ### What's New
+  - Local prompt resolution now supports multiple versions and labels stored as
+    `.voltagent/prompts/<promptName>/<version>.md`.
+  - Local files are used first; VoltOps is only queried if the local prompt is missing.
+  - If a local prompt is behind the online version, the agent logs a warning and records metadata.
+  - CLI `pull` can target labels or versions; `push` compares local vs online and creates new versions.
+
+  ### CLI Usage
+
+  ```bash
+  # Pull latest prompts (default)
+  volt prompts pull
+
+  # Pull a specific label or version (stored under .voltagent/prompts/<name>/<version>.md)
+  volt prompts pull --names support-agent --label production
+  volt prompts pull --names support-agent --prompt-version 4
+
+  # Push local changes (creates new versions after diff/confirm)
+  volt prompts push
+  ```
+
+  ### Agent Usage
+
+  ```typescript
+  instructions: async ({ prompts }) => {
+    return await prompts.getPrompt({
+      promptName: "support-agent",
+      version: 4,
+    });
+  };
+  ```
+
+  ```typescript
+  instructions: async ({ prompts }) => {
+    return await prompts.getPrompt({
+      promptName: "support-agent",
+      label: "production",
+    });
+  };
+  ```
+
+  ### Offline-First Workflow
+  - Pull once, then run fully offline with local Markdown files.
+  - Point the runtime to your local directory:
+
+  ```bash
+  export VOLTAGENT_PROMPTS_PATH="./.voltagent/prompts"
+  ```
+
+- [#935](https://github.com/VoltAgent/voltagent/pull/935) [`e7d984f`](https://github.com/VoltAgent/voltagent/commit/e7d984fe391cd2732886c7903f028ce33f40cfab) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: MCPClient.listResources now returns the raw MCP `resources/list` response.
+
+## 2.0.9
+
+### Patch Changes
+
+- [#929](https://github.com/VoltAgent/voltagent/pull/929) [`78ff377`](https://github.com/VoltAgent/voltagent/commit/78ff377b200c48e90a2e3ab510d0d25ccca86c5a) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow control steps (branch, foreach, loop, map, sleep)
+
+  ```ts
+  import {
+    createWorkflowChain,
+    andThen,
+    andBranch,
+    andForEach,
+    andDoWhile,
+    andDoUntil,
+    andMap,
+    andSleep,
+    andSleepUntil,
+  } from "@voltagent/core";
+  import { z } from "zod";
+  ```
+
+  Branching:
+
+  ```ts
+  const workflow = createWorkflowChain({
+    id: "branching-flow",
+    input: z.object({ amount: z.number() }),
+  }).andBranch({
+    id: "rules",
+    branches: [
+      {
+        condition: ({ data }) => data.amount > 1000,
+        step: andThen({
+          id: "flag-large",
+          execute: async ({ data }) => ({ ...data, large: true }),
+        }),
+      },
+      {
+        condition: ({ data }) => data.amount < 0,
+        step: andThen({
+          id: "flag-invalid",
+          execute: async ({ data }) => ({ ...data, invalid: true }),
+        }),
+      },
+    ],
+  });
+  ```
+
+  For-each and loops:
+
+  ```ts
+  createWorkflowChain({
+    id: "batch-process",
+    input: z.array(z.number()),
+  }).andForEach({
+    id: "double-each",
+    concurrency: 2,
+    step: andThen({
+      id: "double",
+      execute: async ({ data }) => data * 2,
+    }),
+  });
+
+  createWorkflowChain({
+    id: "looping-flow",
+    input: z.number(),
+  })
+    .andDoWhile({
+      id: "increment-until-3",
+      step: andThen({
+        id: "increment",
+        execute: async ({ data }) => data + 1,
+      }),
+      condition: ({ data }) => data < 3,
+    })
+    .andDoUntil({
+      id: "increment-until-2",
+      step: andThen({
+        id: "increment-until",
+        execute: async ({ data }) => data + 1,
+      }),
+      condition: ({ data }) => data >= 2,
+    });
+  ```
+
+  Data shaping:
+
+  ```ts
+  createWorkflowChain({
+    id: "compose-result",
+    input: z.object({ userId: z.string() }),
+  })
+    .andThen({
+      id: "fetch-user",
+      execute: async ({ data }) => ({ name: "Ada", id: data.userId }),
+    })
+    .andMap({
+      id: "shape-output",
+      map: {
+        userId: { source: "data", path: "userId" },
+        name: { source: "step", stepId: "fetch-user", path: "name" },
+        region: { source: "context", key: "region" },
+        constant: { source: "value", value: "ok" },
+      },
+    });
+  ```
+
+  Sleep:
+
+  ```ts
+  createWorkflowChain({
+    id: "delayed-step",
+    input: z.object({ id: z.string() }),
+  })
+    .andSleep({
+      id: "pause",
+      duration: 500,
+    })
+    .andSleepUntil({
+      id: "wait-until",
+      date: () => new Date(Date.now() + 60_000),
+    })
+    .andThen({
+      id: "continue",
+      execute: async ({ data }) => ({ ...data, resumed: true }),
+    });
+  ```
+
+  Workflow-level retries:
+
+  ```ts
+  createWorkflowChain({
+    id: "retry-defaults",
+    retryConfig: { attempts: 2, delayMs: 500 },
+  })
+    .andThen({
+      id: "fetch-user",
+      execute: async ({ data }) => fetchUser(data.userId),
+    })
+    .andThen({
+      id: "no-retry-step",
+      retries: 0,
+      execute: async ({ data }) => data,
+    });
+  ```
+
+  Workflow hooks (finish/error/suspend):
+
+  ```ts
+  createWorkflowChain({
+    id: "hooked-workflow",
+    hooks: {
+      onSuspend: async (info) => {
+        console.log("Suspended:", info.suspension?.reason);
+      },
+      onError: async (info) => {
+        console.error("Failed:", info.error);
+      },
+      onFinish: async (info) => {
+        console.log("Done:", info.status);
+      },
+      onEnd: async (state, info) => {
+        if (info?.status === "completed") {
+          console.log("Result:", state.result);
+          console.log("Steps:", Object.keys(info.steps));
+        }
+      },
+    },
+  });
+  ```
+
+  Workflow guardrails (input/output + step-level):
+
+  ```ts
+  import {
+    andGuardrail,
+    andThen,
+    createInputGuardrail,
+    createOutputGuardrail,
+    createWorkflowChain,
+  } from "@voltagent/core";
+  import { z } from "zod";
+
+  const trimInput = createInputGuardrail({
+    name: "trim",
+    handler: async ({ input }) => ({
+      pass: true,
+      action: "modify",
+      modifiedInput: typeof input === "string" ? input.trim() : input,
+    }),
+  });
+
+  const redactOutput = createOutputGuardrail<string>({
+    name: "redact",
+    handler: async ({ output }) => ({
+      pass: true,
+      action: "modify",
+      modifiedOutput: output.replace(/[0-9]/g, "*"),
+    }),
+  });
+
+  createWorkflowChain({
+    id: "guarded-workflow",
+    input: z.string(),
+    result: z.string(),
+    inputGuardrails: [trimInput],
+    outputGuardrails: [redactOutput],
+  })
+    .andGuardrail({
+      id: "sanitize-step",
+      outputGuardrails: [redactOutput],
+    })
+    .andThen({
+      id: "finish",
+      execute: async ({ data }) => data,
+    });
+  ```
+
+## 2.0.8
+
+### Patch Changes
+
+- [#927](https://github.com/VoltAgent/voltagent/pull/927) [`2712078`](https://github.com/VoltAgent/voltagent/commit/27120782e6e278a53d049ae2a60ce9981140d490) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: enable `andAgent` tool usage by switching to `generateText` with `Output.object` while keeping structured output
+
+  Example:
+
+  ```ts
+  import { Agent, createTool, createWorkflowChain } from "@voltagent/core";
+  import { z } from "zod";
+  import { openai } from "@ai-sdk/openai";
+
+  const getWeather = createTool({
+    name: "get_weather",
+    description: "Get weather for a city",
+    parameters: z.object({ city: z.string() }),
+    execute: async ({ city }) => ({ city, temp: 72, condition: "sunny" }),
+  });
+
+  const agent = new Agent({
+    name: "WeatherAgent",
+    model: openai("gpt-4o-mini"),
+    tools: [getWeather],
+  });
+
+  const workflow = createWorkflowChain({
+    id: "weather-flow",
+    input: z.object({ city: z.string() }),
+  }).andAgent(({ data }) => `What is the weather in ${data.city}?`, agent, {
+    schema: z.object({ temp: z.number(), condition: z.string() }),
+  });
+  ```
+
+## 2.0.7
+
+### Patch Changes
+
+- [#921](https://github.com/VoltAgent/voltagent/pull/921) [`c4591fa`](https://github.com/VoltAgent/voltagent/commit/c4591fa92de6df75a22a758b0232669053bd2b62) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add resumable streaming support via @voltagent/resumable-streams, with server adapters that let clients reconnect to in-flight streams.
+
+  ```ts
+  import { openai } from "@ai-sdk/openai";
+  import { Agent, VoltAgent } from "@voltagent/core";
+  import {
+    createResumableStreamAdapter,
+    createResumableStreamRedisStore,
+  } from "@voltagent/resumable-streams";
+  import { honoServer } from "@voltagent/server-hono";
+
+  const streamStore = await createResumableStreamRedisStore();
+  const resumableStream = await createResumableStreamAdapter({ streamStore });
+
+  const agent = new Agent({
+    id: "assistant",
+    name: "Resumable Stream Agent",
+    instructions: "You are a helpful assistant.",
+    model: openai("gpt-4o-mini"),
+  });
+
+  new VoltAgent({
+    agents: { assistant: agent },
+    server: honoServer({
+      resumableStream: { adapter: resumableStream },
+    }),
+  });
+
+  await fetch("http://localhost:3141/agents/assistant/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: `{"input":"Hello!","options":{"conversationId":"conv-1","userId":"user-1","resumableStream":true}}`,
+  });
+
+  // Resume the same stream after reconnect/refresh
+  const resumeResponse = await fetch(
+    "http://localhost:3141/agents/assistant/chat/conv-1/stream?userId=user-1"
+  );
+
+  const reader = resumeResponse.body?.getReader();
+  const decoder = new TextDecoder();
+  while (reader) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    console.log(chunk);
+  }
+  ```
+
+  AI SDK client (resume on refresh):
+
+  ```tsx
+  import { useChat } from "@ai-sdk/react";
+  import { DefaultChatTransport } from "ai";
+
+  const { messages, sendMessage } = useChat({
+    id: chatId,
+    messages: initialMessages,
+    resume: true,
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      prepareSendMessagesRequest: ({ id, messages }) => ({
+        body: {
+          message: messages[messages.length - 1],
+          options: { conversationId: id, userId },
+        },
+      }),
+      prepareReconnectToStreamRequest: ({ id }) => ({
+        api: `/api/chat/${id}/stream?userId=${encodeURIComponent(userId)}`,
+      }),
+    }),
+  });
+  ```
+
+## 2.0.6
+
+### Patch Changes
+
+- [`ad5ebe7`](https://github.com/VoltAgent/voltagent/commit/ad5ebe7f02a059b647d4862faeab537b293ab387) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: OutputSpec export
+
+## 2.0.5
+
+### Patch Changes
+
+- [#916](https://github.com/VoltAgent/voltagent/pull/916) [`0707471`](https://github.com/VoltAgent/voltagent/commit/070747195992828845d7c4c4ff9711f3638c32f8) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: infer structured output types for `generateText`
+
+  `generateText` now propagates the provided `Output.*` spec into the return type, so `result.output` is no longer `unknown` when using `Output.object`, `Output.array`, etc.
+
+## 2.0.4
+
+### Patch Changes
+
+- [#911](https://github.com/VoltAgent/voltagent/pull/911) [`975831a`](https://github.com/VoltAgent/voltagent/commit/975831a852ea471adb621a1d87990a8ffbc5ed31) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: expose Cloudflare Workers `env` bindings in serverless contexts
+
+  When using `@voltagent/serverless-hono` on Cloudflare Workers, the runtime `env` is now injected into the
+  context map for agent requests, workflow runs, and tool executions. `@voltagent/core` exports
+  `SERVERLESS_ENV_CONTEXT_KEY` so you can access bindings like D1 from `options.context` (tools) or
+  `state.context` (workflow steps). Tool execution also accepts `context` as a `Map`, preserving
+  `userId`/`conversationId` when provided that way.
+
+  `@voltagent/core` is also marked as side-effect free so edge bundlers can tree-shake the PlanAgent
+  filesystem backend, avoiding Node-only dependency loading when it is not used.
+
+  Usage:
+
+  ```ts
+  import { createTool, SERVERLESS_ENV_CONTEXT_KEY } from "@voltagent/core";
+  import type { D1Database } from "@cloudflare/workers-types";
+  import { z } from "zod";
+
+  type Env = { DB: D1Database };
+
+  export const listUsers = createTool({
+    name: "list-users",
+    description: "Fetch users from D1",
+    parameters: z.object({}),
+    execute: async (_args, options) => {
+      const env = options?.context?.get(SERVERLESS_ENV_CONTEXT_KEY) as Env | undefined;
+      const db = env?.DB;
+      if (!db) {
+        throw new Error("D1 binding is missing (env.DB)");
+      }
+
+      const { results } = await db.prepare("SELECT id, name FROM users").all();
+      return results;
+    },
+  });
+  ```
+
+## 2.0.3
+
+### Patch Changes
+
+- [#909](https://github.com/VoltAgent/voltagent/pull/909) [`b4301c7`](https://github.com/VoltAgent/voltagent/commit/b4301c73656ea96ea276cb37b4bf72af7fd8c926) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: avoid TS4053 declaration emit errors when exporting `generateText` wrappers by decoupling ai-sdk `Output` types from public results
+
 ## 2.0.2
 
 ### Patch Changes

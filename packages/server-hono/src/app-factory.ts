@@ -1,5 +1,6 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import type { ServerProviderDeps } from "@voltagent/core";
+import { resolveResumableStreamDeps } from "@voltagent/resumable-streams";
 import {
   getLandingPageHTML,
   getOpenApiDoc,
@@ -35,17 +36,27 @@ export async function createApp(
 
   // Get logger from dependencies or use global
   const logger = getOrCreateLogger(deps, "api-server");
+  const resumableStreamConfig = config.resumableStream;
+  const baseDeps = await resolveResumableStreamDeps(deps, resumableStreamConfig?.adapter, logger);
+  const resumableStreamDefault =
+    typeof resumableStreamConfig?.defaultEnabled === "boolean"
+      ? resumableStreamConfig.defaultEnabled
+      : baseDeps.resumableStreamDefault;
+  const resolvedDeps: ServerProviderDeps = {
+    ...baseDeps,
+    ...(resumableStreamDefault !== undefined ? { resumableStreamDefault } : {}),
+  };
   // Register all routes with dependencies
   const routes = {
-    agents: () => registerAgentRoutes(app as any, deps, logger),
-    workflows: () => registerWorkflowRoutes(app as any, deps, logger),
-    logs: () => registerLogRoutes(app as any, deps, logger),
-    updates: () => registerUpdateRoutes(app as any, deps, logger),
-    observability: () => registerObservabilityRoutes(app as any, deps, logger),
-    tools: () => registerToolRoutes(app as any, deps as any, logger),
-    triggers: () => registerTriggerRoutes(app as any, deps, logger),
-    mcp: () => registerMcpRoutes(app as any, deps as any, logger),
-    a2a: () => registerA2ARoutes(app as any, deps as any, logger),
+    agents: () => registerAgentRoutes(app as any, resolvedDeps, logger),
+    workflows: () => registerWorkflowRoutes(app as any, resolvedDeps, logger),
+    logs: () => registerLogRoutes(app as any, resolvedDeps, logger),
+    updates: () => registerUpdateRoutes(app as any, resolvedDeps, logger),
+    observability: () => registerObservabilityRoutes(app as any, resolvedDeps, logger),
+    tools: () => registerToolRoutes(app as any, resolvedDeps as any, logger),
+    triggers: () => registerTriggerRoutes(app as any, resolvedDeps, logger),
+    mcp: () => registerMcpRoutes(app as any, resolvedDeps as any, logger),
+    a2a: () => registerA2ARoutes(app as any, resolvedDeps as any, logger),
     doc: () => {
       app.get("/doc", (c) => {
         const baseDoc = getOpenApiDoc(port || config.port || 3141);

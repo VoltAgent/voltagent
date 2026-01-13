@@ -1,0 +1,56 @@
+{
+  "name": "@voltagent/resumable-streams",
+  "description": "Resumable stream utilities for VoltAgent",
+  "version": "2.0.1",
+  "author": "VoltAgent Team",
+  "dependencies": {
+    "@voltagent/core": "^2.0.7",
+    "@voltagent/internal": "^1.0.2",
+    "redis": "^4.7.0",
+    "resumable-stream": "^2.2.10"
+  },
+  "devDependencies": {},
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "ai",
+    "resumable",
+    "streams",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "peerDependencies": {
+    "@voltagent/core": "^2.0.0",
+    "ai": "^6.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/resumable-streams"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "types": "dist/index.d.ts"
+}
