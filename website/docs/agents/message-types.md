@@ -151,6 +151,22 @@ conversationHistory.forEach((msg) => {
 });
 ```
 
+#### Feedback metadata
+
+When feedback is enabled, VoltAgent attaches feedback metadata to assistant UI messages under `message.metadata.feedback`. This is how UIs can show thumbs up/down and submit feedback later.
+
+```ts
+const feedback = message.metadata?.feedback as
+  | { traceId?: string; key?: string; url?: string }
+  | undefined;
+
+if (feedback?.url) {
+  console.log("Submit feedback to:", feedback.url);
+}
+```
+
+See [Feedback](/docs/observability/feedback) for the full flow and API examples.
+
 ### 3. VoltAgentTextStreamPart (Streaming Extension)
 
 **VoltAgentTextStreamPart** extends AI SDK's `TextStreamPart` with SubAgent metadata, enabling multi-agent coordination during streaming.

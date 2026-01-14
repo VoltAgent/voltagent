@@ -120,6 +120,39 @@ export type VoltOpsClientOptions = {
   };
 };
 
+export type VoltOpsFeedbackConfig = {
+  type: "continuous" | "categorical" | "freeform";
+  min?: number;
+  max?: number;
+  categories?: Array<{
+    value: string | number;
+    label?: string;
+    description?: string;
+  }>;
+  [key: string]: any;
+};
+
+export type VoltOpsFeedbackExpiresIn = {
+  days?: number;
+  hours?: number;
+  minutes?: number;
+};
+
+export type VoltOpsFeedbackToken = {
+  id: string;
+  url: string;
+  expiresAt: string;
+  feedbackConfig?: VoltOpsFeedbackConfig | null;
+};
+
+export type VoltOpsFeedbackTokenCreateInput = {
+  traceId: string;
+  key: string;
+  feedbackConfig?: VoltOpsFeedbackConfig | null;
+  expiresAt?: Date | string;
+  expiresIn?: VoltOpsFeedbackExpiresIn;
+};
+
 /**
  * Cached prompt data for performance optimization
  */
@@ -905,6 +938,9 @@ export interface VoltOpsClient {
 
   /** Evaluations API surface */
   evals: VoltOpsEvalsApi;
+
+  /** Create a feedback token for the given trace */
+  createFeedbackToken(input: VoltOpsFeedbackTokenCreateInput): Promise<VoltOpsFeedbackToken>;
 
   /** Create a prompt helper for agent instructions */
   createPromptHelper(agentId: string, historyEntryId?: string): PromptHelper;

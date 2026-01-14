@@ -147,6 +147,8 @@ export * from "./events/types";
 export type {
   AgentOptions,
   AgentSummarizationOptions,
+  AgentFeedbackOptions,
+  AgentFeedbackMetadata,
   AgentResponse,
   AgentFullState,
   ApiToolInfo,

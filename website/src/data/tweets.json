@@ -5,7 +5,10 @@
     "text": "VoltAgent = IKEA instructions for AI agents…",
     "created_at": "2025-04-28T20:41:15.000Z",
     "lang": "ca",
-    "display_text_range": [0, 44],
+    "display_text_range": [
+      0,
+      44
+    ],
     "entities": {
       "hashtags": [],
       "urls": [],
@@ -27,7 +30,10 @@
       "text": "🚨🚨🚨 VoltAgent is now live. 🚨🚨🚨\n\nAn open-source AI Agent Framework. \n\n🔍 Built-in observability\n🧠 Multi-agent architecture\n⚡ Supervisor-based coordination\n🪄 Native tool support &amp; memory\n🧩 First-class TypeScript DX\n\nForget no-code lock-ins.\nEverything you need is in one https://t.co/5wcCP91jGA",
       "created_at": "2025-04-21T07:14:10.000Z",
       "lang": "en",
-      "display_text_range": [0, 281],
+      "display_text_range": [
+        0,
+        281
+      ],
       "entities": {
         "hashtags": [],
         "urls": [],
@@ -35,7 +41,10 @@
         "symbols": [],
         "media": [
           {
-            "indices": [272, 295],
+            "indices": [
+              272,
+              295
+            ],
             "url": "https://t.co/5wcCP91jGA",
             "display_url": "pic.x.com/5wcCP91jGA",
             "expanded_url": "https://x.com/voltagent_dev/status/1914216071734894795/photo/1"
@@ -68,13 +77,19 @@
     "text": "Such a beautiful architecture diagram, Claude, ty 🥹\n\nCurrently assembling some AI agents\n\nIt's agent volt⚡️ time! \n\nRemember, @voltagent_dev  = IKEA instructions for AI agents… https://t.co/rpBP28d4ei",
     "created_at": "2025-06-03T01:08:10.000Z",
     "lang": "en",
-    "display_text_range": [0, 177],
+    "display_text_range": [
+      0,
+      177
+    ],
     "entities": {
       "hashtags": [],
       "urls": [],
       "user_mentions": [
         {
-          "indices": [126, 140],
+          "indices": [
+            126,
+            140
+          ],
           "id_str": "1912724805406863360",
           "name": "voltagent",
           "screen_name": "voltagent_dev"
@@ -83,7 +98,10 @@
       "symbols": [],
       "media": [
         {
-          "indices": [177, 200],
+          "indices": [
+            177,
+            200
+          ],
           "url": "https://t.co/rpBP28d4ei",
           "display_url": "pic.x.com/rpBP28d4ei",
           "expanded_url": "https://x.com/siimh/status/1929706642851193172/photo/1"
@@ -119,12 +137,18 @@
     "text": "🤔 What happens when real-time data meets AI?\n\n💪 The team at @voltagent_dev integrated @peakacom  into their chatbot, enabling it to access live data and making it smarter as a result.\n\n✍️ Check out the blog post for the details👇\n🔗 https://t.co/RoNXr7Y9ZP",
     "created_at": "2025-04-29T17:05:47.000Z",
     "lang": "en",
-    "display_text_range": [0, 258],
+    "display_text_range": [
+      0,
+      258
+    ],
     "entities": {
       "hashtags": [],
       "urls": [
         {
-          "indices": [231, 254],
+          "indices": [
+            231,
+            254
+          ],
           "url": "https://t.co/RoNXr7Y9ZP",
           "display_url": "voltagent.dev/blog/data-awar…",
           "expanded_url": "https://voltagent.dev/blog/data-aware-chatbot-voltagent-peaka"
@@ -132,13 +156,19 @@
       ],
       "user_mentions": [
         {
-          "indices": [60, 74],
+          "indices": [
+            60,
+            74
+          ],
           "id_str": "1912724805406863360",
           "name": "voltagent",
           "screen_name": "voltagent_dev"
         },
         {
-          "indices": [86, 95],
+          "indices": [
+            86,
+            95
+          ],
           "id_str": "1301806903308189696",
           "name": "Peaka",
           "screen_name": "peakacom"
@@ -163,12 +193,18 @@
     "text": "@tomsiwik if you're building in typescript, you need to see voltagent.  \n\ntheir state and memory features are solid. \n\njust built a sales pipeline for a client with it, and it runs smoothly.  huge win for complex systems.\n\nhttps://t.co/ZuCR9qgqcj",
     "created_at": "2025-07-30T12:37:04.000Z",
     "lang": "en",
-    "display_text_range": [10, 246],
+    "display_text_range": [
+      10,
+      246
+    ],
     "entities": {
       "hashtags": [],
       "urls": [
         {
-          "indices": [223, 246],
+          "indices": [
+            223,
+            246
+          ],
           "url": "https://t.co/ZuCR9qgqcj",
           "display_url": "voltagent.dev/docs/agents/me…",
           "expanded_url": "https://voltagent.dev/docs/agents/memory/overview/"
@@ -196,13 +232,19 @@
     "text": "Gonna try use @voltagent_dev in SupaPM -  Nuxt project. I had planned rolling my own agents for now but voltagent looks promising. I’ll let you know how I get on https://t.co/4ltNgHGEhn",
     "created_at": "2025-05-26T18:42:43.000Z",
     "lang": "en",
-    "display_text_range": [0, 161],
+    "display_text_range": [
+      0,
+      161
+    ],
     "entities": {
       "hashtags": [],
       "urls": [],
       "user_mentions": [
         {
-          "indices": [14, 28],
+          "indices": [
+            14,
+            28
+          ],
           "id_str": "1912724805406863360",
           "name": "voltagent",
           "screen_name": "voltagent_dev"
@@ -211,7 +253,10 @@
       "symbols": [],
       "media": [
         {
-          "indices": [162, 185],
+          "indices": [
+            162,
+            185
+          ],
           "url": "https://t.co/4ltNgHGEhn",
           "display_url": "pic.x.com/4ltNgHGEhn",
           "expanded_url": "https://x.com/cderm/status/1927072927213596780/video/1"
@@ -255,25 +300,37 @@
     "text": "It's great to see more agentic tools looking at @tursodatabase for their database needs. Today we have a guest post from @voltagent_dev CEO @omerfarukaplak.\n\nWhat makes Turso Cloud great for their use case? You can easily create individual databases per project that are then",
     "created_at": "2025-05-26T17:30:30.000Z",
     "lang": "en",
-    "display_text_range": [0, 275],
+    "display_text_range": [
+      0,
+      275
+    ],
     "entities": {
       "hashtags": [],
       "urls": [],
       "user_mentions": [
         {
-          "indices": [48, 62],
+          "indices": [
+            48,
+            62
+          ],
           "id_str": "1432739296008671245",
           "name": "Turso",
           "screen_name": "tursodatabase"
         },
         {
-          "indices": [121, 135],
+          "indices": [
+            121,
+            135
+          ],
           "id_str": "1912724805406863360",
           "name": "voltagent",
           "screen_name": "voltagent_dev"
         },
         {
-          "indices": [140, 155],
+          "indices": [
+            140,
+            155
+          ],
           "id_str": "1151088688148955136",
           "name": "Omer Aplak",
           "screen_name": "omerfarukaplak"
@@ -298,21 +355,33 @@
     "text": "#VoltAgent を試した手順・内容を記事に書いた\n（ I wrote an article detailing the steps I took to try out VoltAgent ）\n\n●VoltAgent（TypeScript の AIエージェントフレームワーク）を軽く試してみる - #Qiita\nhttps://t.co/Udxy7OyUFi",
     "created_at": "2025-05-19T15:24:17.000Z",
     "lang": "ja",
-    "display_text_range": [0, 181],
+    "display_text_range": [
+      0,
+      181
+    ],
     "entities": {
       "hashtags": [
         {
-          "indices": [0, 10],
+          "indices": [
+            0,
+            10
+          ],
           "text": "VoltAgent"
         },
         {
-          "indices": [151, 157],
+          "indices": [
+            151,
+            157
+          ],
           "text": "Qiita"
         }
       ],
       "urls": [
         {
-          "indices": [158, 181],
+          "indices": [
+            158,
+            181
+          ],
           "url": "https://t.co/Udxy7OyUFi",
           "display_url": "qiita.com/youtoy/items/6…",
           "expanded_url": "https://qiita.com/youtoy/items/6990e175e92c54265580"
@@ -338,12 +407,18 @@
     "text": "voltagent、早速解説動画出しました！⚡️\n\n本当は言いたくない解説もしたので、絶対にみないでください！！！(見てください)\n\nhttps://t.co/eyIvYupNtV",
     "created_at": "2025-05-19T03:16:50.000Z",
     "lang": "ja",
-    "display_text_range": [0, 90],
+    "display_text_range": [
+      0,
+      90
+    ],
     "entities": {
       "hashtags": [],
       "urls": [
         {
-          "indices": [67, 90],
+          "indices": [
+            67,
+            90
+          ],
           "url": "https://t.co/eyIvYupNtV",
           "display_url": "youtu.be/5WARn6C9ITM?si…",
           "expanded_url": "https://youtu.be/5WARn6C9ITM?si=rBDflUMGFNeyrorH"
@@ -369,19 +444,28 @@
     "text": "@Arindam_1729 @voltagent_dev It’s super easy to use! I imported the repo and used the docs for context with Windsurf and I made 3 agents yesterday.",
     "created_at": "2025-05-16T12:18:10.000Z",
     "lang": "en",
-    "display_text_range": [29, 147],
+    "display_text_range": [
+      29,
+      147
+    ],
     "entities": {
       "hashtags": [],
       "urls": [],
       "user_mentions": [
         {
-          "indices": [0, 13],
+          "indices": [
+            0,
+            13
+          ],
           "id_str": "1533666605279891457",
           "name": "Arindam Majumder 𝕏",
           "screen_name": "Arindam_1729"
         },
         {
-          "indices": [14, 28],
+          "indices": [
+            14,
+            28
+          ],
           "id_str": "1912724805406863360",
           "name": "voltagent",
           "screen_name": "voltagent_dev"
@@ -408,7 +492,10 @@
     "text": "Build powerful AI agents without the boilerplate. Just TypeScript, logic, and control. https://t.co/SHO0Jbui4m",
     "created_at": "2025-05-08T15:33:57.000Z",
     "lang": "en",
-    "display_text_range": [0, 86],
+    "display_text_range": [
+      0,
+      86
+    ],
     "entities": {
       "hashtags": [],
       "urls": [],
@@ -416,7 +503,10 @@
       "symbols": [],
       "media": [
         {
-          "indices": [87, 110],
+          "indices": [
+            87,
+            110
+          ],
           "url": "https://t.co/SHO0Jbui4m",
           "display_url": "pic.x.com/SHO0Jbui4m",
           "expanded_url": "https://x.com/GithubProjects/status/1920502438215250259/photo/1"
@@ -452,12 +542,18 @@
     "text": "明日はこれを触るか……。\n\nAIエージェント系、どんどん発展してますね。\n\n最終的にはOpenAI、Google、あるいは中国系AIが総取りなんだろうけど。\n\nVoltAgent - Open Source TypeScript AI Agent Framework https://t.co/CiddI3z4yw",
     "created_at": "2025-05-18T11:04:46.000Z",
     "lang": "ja",
-    "display_text_range": [0, 157],
+    "display_text_range": [
+      0,
+      157
+    ],
     "entities": {
       "hashtags": [],
       "urls": [
         {
-          "indices": [134, 157],
+          "indices": [
+            134,
+            157
+          ],
           "url": "https://t.co/CiddI3z4yw",
           "display_url": "voltagent.dev",
           "expanded_url": "https://voltagent.dev/"
@@ -483,12 +579,18 @@
     "text": "JavaScript devs working in AI, this is worth a look...\n\nJust came across @voltagent_dev. They’re bridging the gap → code-first flexibility meets visual intuition, built specifically for JavaScript.\n\n👉 https://t.co/LtTAdsk9qW https://t.co/6Y5ymA9SxO",
     "created_at": "2025-04-28T07:32:45.000Z",
     "lang": "en",
-    "display_text_range": [0, 225],
+    "display_text_range": [
+      0,
+      225
+    ],
     "entities": {
       "hashtags": [],
       "urls": [
         {
-          "indices": [201, 224],
+          "indices": [
+            201,
+            224
+          ],
           "url": "https://t.co/LtTAdsk9qW",
           "display_url": "voltagent.dev",
           "expanded_url": "https://voltagent.dev/"
@@ -496,7 +598,10 @@
       ],
       "user_mentions": [
         {
-          "indices": [73, 87],
+          "indices": [
+            73,
+            87
+          ],
           "id_str": "1912724805406863360",
           "name": "voltagent",
           "screen_name": "voltagent_dev"
@@ -505,7 +610,10 @@
       "symbols": [],
       "media": [
         {
-          "indices": [225, 248],
+          "indices": [
+            225,
+            248
+          ],
           "url": "https://t.co/6Y5ymA9SxO",
           "display_url": "pic.x.com/6Y5ymA9SxO",
           "expanded_url": "https://x.com/jsmasterypro/status/1916757463426302247/video/1"
@@ -553,12 +661,18 @@
     "text": "像拼乐高一样组合 AI 功能\nVoltAgent  一个开源的 TypeScript 框架，专为快速构建AI智能体应用设计。它通过提供现成模块和工具包，让开发者无需从零写代码就能创建由大语言模型驱动的智能系统。\n🧩https://t.co/MaiM9xMKxU https://t.co/yzFhuynSo6",
     "created_at": "2025-04-24T00:25:55.000Z",
     "lang": "zh",
-    "display_text_range": [0, 131],
+    "display_text_range": [
+      0,
+      131
+    ],
     "entities": {
       "hashtags": [],
       "urls": [
         {
-          "indices": [107, 130],
+          "indices": [
+            107,
+            130
+          ],
           "url": "https://t.co/MaiM9xMKxU",
           "display_url": "github.com/VoltAgent/volt…",
           "expanded_url": "https://github.com/VoltAgent/voltagent"
@@ -568,7 +682,10 @@
       "symbols": [],
       "media": [
         {
-          "indices": [131, 154],
+          "indices": [
+            131,
+            154
+          ],
           "url": "https://t.co/yzFhuynSo6",
           "display_url": "pic.x.com/yzFhuynSo6",
           "expanded_url": "https://x.com/geekbb/status/1915200495461028321/photo/1"
@@ -604,7 +721,10 @@
     "text": "朝活でVoltAgentをちゃんと使ってみている\n直感的で良い\n\nこれは流行るかもしれない",
     "created_at": "2025-05-19T00:33:58.000Z",
     "lang": "ja",
-    "display_text_range": [0, 45],
+    "display_text_range": [
+      0,
+      45
+    ],
     "entities": {
       "hashtags": [],
       "urls": [],

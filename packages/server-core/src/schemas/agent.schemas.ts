@@ -72,6 +72,43 @@ export const BasicJsonSchema = z
   .passthrough()
   .describe("The Zod schema for the desired object output (passed as JSON)");
 
+const FeedbackConfigSchema = z
+  .object({
+    type: z.enum(["continuous", "categorical", "freeform"]),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    categories: z
+      .array(
+        z.object({
+          value: z.union([z.string(), z.number()]),
+          label: z.string().optional(),
+          description: z.string().optional(),
+        }),
+      )
+      .optional(),
+  })
+  .passthrough()
+  .describe("Feedback configuration for the trace");
+
+const FeedbackExpiresInSchema = z
+  .object({
+    days: z.number().int().optional(),
+    hours: z.number().int().optional(),
+    minutes: z.number().int().optional(),
+  })
+  .passthrough()
+  .describe("Relative expiration for feedback tokens");
+
+const FeedbackOptionsSchema = z
+  .object({
+    key: z.string().optional().describe("Feedback key for the trace"),
+    feedbackConfig: FeedbackConfigSchema.nullish().optional(),
+    expiresAt: z.string().optional().describe("Absolute expiration timestamp (ISO 8601)"),
+    expiresIn: FeedbackExpiresInSchema.optional(),
+  })
+  .passthrough()
+  .describe("Feedback options for the generated trace");
+
 // Generation options schema
 export const GenerateOptionsSchema = z
   .object({
@@ -155,6 +192,10 @@ export const GenerateOptionsSchema = z
       })
       .optional()
       .describe("Structured output configuration for schema-guided generation"),
+    feedback: z
+      .union([z.boolean(), FeedbackOptionsSchema])
+      .optional()
+      .describe("Enable or configure feedback tokens for the trace"),
   })
   .passthrough();
 
@@ -189,6 +230,18 @@ export const TextResponseSchema = z.object({
         toolCalls: z.array(z.any()).optional(),
         toolResults: z.array(z.any()).optional(),
         output: z.any().optional().describe("Structured output when output is used"),
+        feedback: z
+          .object({
+            traceId: z.string(),
+            key: z.string(),
+            url: z.string(),
+            tokenId: z.string().optional(),
+            expiresAt: z.string().optional(),
+            feedbackConfig: FeedbackConfigSchema.nullish().optional(),
+          })
+          .nullable()
+          .optional()
+          .describe("Feedback metadata for the trace"),
       })
       .describe("AI SDK formatted response"),
   ]),

@@ -106,6 +106,26 @@ export class ConversationBuffer {
     return this.messages.map((message) => this.cloneMessage(message));
   }
 
+  addMetadataToLastAssistantMessage(metadata: Record<string, unknown>): void {
+    if (!metadata || Object.keys(metadata).length === 0) {
+      return;
+    }
+
+    const lastAssistantIndex = this.findLastAssistantIndex();
+    if (lastAssistantIndex === -1) {
+      return;
+    }
+
+    const target = this.messages[lastAssistantIndex];
+    const existing =
+      typeof target.metadata === "object" && target.metadata !== null ? target.metadata : {};
+    target.metadata = {
+      ...(existing as Record<string, unknown>),
+      ...metadata,
+    } as UIMessage["metadata"];
+    this.pendingMessageIds.add(target.id);
+  }
+
   private appendExistingMessage(
     message: UIMessage,
     options: { markAsSaved?: boolean } = { markAsSaved: true },

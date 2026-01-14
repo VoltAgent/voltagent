@@ -109,6 +109,37 @@ const [fullText, usage, finishReason] = await Promise.all([
 console.log(`\nTotal: ${fullText.length} chars, ${usage?.totalTokens} tokens`);
 ```
 
+### Feedback (optional)
+
+If you have VoltOps API keys configured, you can enable feedback per agent or per call. VoltAgent creates a short-lived feedback token and attaches it to the assistant message metadata and the result object.
+
+```ts
+const result = await agent.generateText("Summarize this trace", {
+  feedback: {
+    key: "satisfaction",
+    feedbackConfig: {
+      type: "categorical",
+      categories: [
+        { value: 1, label: "Satisfied" },
+        { value: 0, label: "Unsatisfied" },
+      ],
+    },
+  },
+});
+
+console.log(result.feedback?.url);
+```
+
+If the feedback key is already registered, you can pass only `key` and let the stored config populate the token.
+
+```ts
+const result = await agent.generateText("Quick rating?", {
+  feedback: { key: "satisfaction" },
+});
+```
+
+For end-to-end examples (SDK, API, and useChat), see [Feedback](/docs/observability/feedback).
+
 ### Structured Data Generation
 
 Use `output` with `generateText`/`streamText` to get structured data while still using tools and all agent capabilities.

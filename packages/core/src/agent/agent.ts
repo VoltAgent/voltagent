@@ -117,6 +117,8 @@ import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
   AgentEvalConfig,
   AgentEvalOperationType,
+  AgentFeedbackMetadata,
+  AgentFeedbackOptions,
   AgentFullState,
   AgentGuardrailState,
   AgentOptions,
@@ -133,6 +135,7 @@ import type {
 const BUFFER_CONTEXT_KEY = Symbol("conversationBuffer");
 const QUEUE_CONTEXT_KEY = Symbol("memoryPersistQueue");
 const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
+const DEFAULT_FEEDBACK_KEY = "satisfaction";
 
 // ============================================================================
 // Types
@@ -183,6 +186,8 @@ export type StreamTextResultWithContext<
   toTextStreamResponse: AIStreamTextResult<TOOLS, any>["toTextStreamResponse"];
   // Additional context field
   context: Map<string | symbol, unknown>;
+  // Feedback metadata for the trace, if enabled
+  feedback?: AgentFeedbackMetadata | null;
 } & Record<never, OUTPUT>;
 
 /**
@@ -223,6 +228,8 @@ export interface GenerateTextResultWithContext<
   // Typed structured output override if provided by callers
   experimental_output: OutputValue<OUTPUT>;
   output: OutputValue<OUTPUT>;
+  // Feedback metadata for the trace, if enabled
+  feedback?: AgentFeedbackMetadata | null;
 }
 
 type LLMOperation = "streamText" | "generateText" | "streamObject" | "generateObject";
@@ -243,7 +250,7 @@ function cloneGenerateTextResultWithContext<
   overrides: Partial<
     Pick<
       GenerateTextResultWithContext<TOOLS, OUTPUT>,
-      "text" | "context" | "toolCalls" | "toolResults"
+      "text" | "context" | "toolCalls" | "toolResults" | "feedback"
     >
   >,
 ): GenerateTextResultWithContext<TOOLS, OUTPUT> {
@@ -300,6 +307,19 @@ function applyForcedToolChoice(
   };
 }
 
+type Deferred<T> = {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+};
+
+function createDeferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolver) => {
+    resolve = resolver;
+  });
+  return { promise, resolve };
+}
+
 /**
  * Base options for all generation methods
  * Extends AI SDK's CallSettings for full compatibility
@@ -330,6 +350,7 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
 
   // Steps control
   maxSteps?: number;
+  feedback?: boolean | AgentFeedbackOptions;
   /**
    * Custom stop condition for ai-sdk step execution.
    * When provided, this overrides VoltAgent's default `stepCountIs(maxSteps)`.
@@ -421,6 +442,7 @@ export class Agent {
   private readonly voltOpsClient?: VoltOpsClient;
   private readonly prompts?: PromptHelper;
   private readonly evalConfig?: AgentEvalConfig;
+  private readonly feedbackOptions?: AgentFeedbackOptions | boolean;
   private readonly inputGuardrails: NormalizedInputGuardrail[];
   private readonly outputGuardrails: NormalizedOutputGuardrail[];
   private readonly observabilityAuthWarningState: ObservabilityFlushState = {
@@ -446,6 +468,7 @@ export class Agent {
     this.context = toContextMap(options.context);
     this.voltOpsClient = options.voltOpsClient;
     this.evalConfig = options.eval;
+    this.feedbackOptions = options.feedback;
     this.inputGuardrails = normalizeInputGuardrailList(options.inputGuardrails || []);
     this.outputGuardrails = normalizeOutputGuardrailList(options.outputGuardrails || []);
 
@@ -509,6 +532,11 @@ export class Agent {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
+    const feedbackOptions = this.resolveFeedbackOptions(options);
+    const feedbackClient = feedbackOptions ? this.getFeedbackClient() : undefined;
+    const shouldDeferPersist = Boolean(feedbackOptions && feedbackClient);
+    let feedbackMetadata: AgentFeedbackMetadata | null = null;
+    const feedbackFlushCompleted = false;
 
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
@@ -516,6 +544,8 @@ export class Agent {
       const guardrailSet = this.resolveGuardrailSets(options);
       const buffer = this.getConversationBuffer(oc);
       const persistQueue = this.getMemoryPersistQueue(oc);
+      const feedbackPromise =
+        feedbackOptions && feedbackClient ? this.createFeedbackMetadata(oc, options) : null;
       let effectiveInput: typeof input = input;
       try {
         effectiveInput = await executeInputGuardrails(
@@ -603,6 +633,7 @@ export class Agent {
           parentAgentId,
           parentOperationContext,
           hooks,
+          feedback: _feedback,
           maxSteps: userMaxSteps,
           tools: userTools,
           output,
@@ -672,7 +703,9 @@ export class Agent {
 
         this.recordStepResults(result.steps, oc);
 
-        await persistQueue.flush(buffer, oc);
+        if (!shouldDeferPersist) {
+          await persistQueue.flush(buffer, oc);
+        }
 
         const usageInfo = convertUsage(result.usage);
         const finalText = await executeOutputGuardrails({
@@ -749,11 +782,24 @@ export class Agent {
         // Close span after scheduling scorers
         oc.traceContext.end("completed");
 
+        if (feedbackPromise) {
+          feedbackMetadata = await feedbackPromise;
+        }
+
+        if (feedbackMetadata) {
+          buffer.addMetadataToLastAssistantMessage({ feedback: feedbackMetadata });
+        }
+
+        if (shouldDeferPersist) {
+          await persistQueue.flush(buffer, oc);
+        }
+
         return cloneGenerateTextResultWithContext(result, {
           text: finalText,
           context: oc.context,
           toolCalls: aggregatedToolCalls,
           toolResults: aggregatedToolResults,
+          feedback: feedbackMetadata,
         });
       } catch (error) {
         // Check if this is a BailError (subagent early termination via abort)
@@ -826,12 +872,14 @@ export class Agent {
       } finally {
         // Ensure all spans are exported before returning (critical for serverless)
         // Uses waitUntil if available to avoid blocking
-        await flushObservability(
-          this.getObservability(),
-          oc.logger ?? this.logger,
-          this.observabilityAuthWarningState,
-          "generateText:finally",
-        );
+        if (!feedbackFlushCompleted) {
+          await flushObservability(
+            this.getObservability(),
+            oc.logger ?? this.logger,
+            this.observabilityAuthWarningState,
+            "generateText:finally",
+          );
+        }
       }
     });
   }
@@ -845,6 +893,24 @@ export class Agent {
   ): Promise<StreamTextResultWithContext> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
+    const feedbackOptions = this.resolveFeedbackOptions(options);
+    const feedbackClient = feedbackOptions ? this.getFeedbackClient() : undefined;
+    const shouldDeferPersist = Boolean(feedbackOptions && feedbackClient);
+    const feedbackDeferred = feedbackOptions
+      ? createDeferred<AgentFeedbackMetadata | null>()
+      : null;
+    let feedbackValue: AgentFeedbackMetadata | null = null;
+    const feedbackFlushCompleted = false;
+    let feedbackResolved = false;
+    let feedbackFinalizeRequested = false;
+    let feedbackApplied = false;
+    const resolveFeedbackDeferred = (value: AgentFeedbackMetadata | null) => {
+      if (!feedbackDeferred || feedbackResolved) {
+        return;
+      }
+      feedbackResolved = true;
+      feedbackDeferred.resolve(value);
+    };
 
     // Wrap entire execution in root span to ensure all logs have trace context
     const rootSpan = oc.traceContext.getRootSpan();
@@ -853,6 +919,33 @@ export class Agent {
       const guardrailSet = this.resolveGuardrailSets(options);
       const buffer = this.getConversationBuffer(oc);
       const persistQueue = this.getMemoryPersistQueue(oc);
+      const scheduleFeedbackPersist = (metadata: AgentFeedbackMetadata | null) => {
+        if (!metadata || feedbackApplied) {
+          return;
+        }
+        feedbackApplied = true;
+        buffer.addMetadataToLastAssistantMessage({ feedback: metadata });
+        if (shouldDeferPersist) {
+          void persistQueue.flush(buffer, oc).catch((error) => {
+            oc.logger?.debug?.("Failed to persist feedback metadata", { error });
+          });
+        }
+      };
+      const feedbackPromise =
+        feedbackOptions && feedbackClient ? this.createFeedbackMetadata(oc, options) : null;
+      if (feedbackPromise) {
+        feedbackPromise
+          .then((metadata) => {
+            feedbackValue = metadata;
+            resolveFeedbackDeferred(metadata);
+            if (feedbackFinalizeRequested) {
+              scheduleFeedbackPersist(metadata);
+            }
+          })
+          .catch(() => resolveFeedbackDeferred(null));
+      } else if (feedbackDeferred) {
+        resolveFeedbackDeferred(null);
+      }
       let effectiveInput: typeof input = input;
       try {
         effectiveInput = await executeInputGuardrails(
@@ -936,6 +1029,7 @@ export class Agent {
           parentAgentId,
           parentOperationContext,
           hooks,
+          feedback: _feedback,
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
@@ -1006,6 +1100,8 @@ export class Agent {
               return;
             }
 
+            resolveFeedbackDeferred(null);
+
             // Log the error
             methodLogger.error("Stream error occurred", {
               error: actualError,
@@ -1049,7 +1145,9 @@ export class Agent {
               finishReason: finalResult.finishReason,
             });
 
-            await persistQueue.flush(buffer, oc);
+            if (!shouldDeferPersist) {
+              await persistQueue.flush(buffer, oc);
+            }
 
             // History update removed - using OpenTelemetry only
 
@@ -1190,14 +1288,29 @@ export class Agent {
 
             oc.traceContext.end("completed");
 
-            // Ensure all spans are exported on finish
-            // Uses waitUntil if available to avoid blocking
-            await flushObservability(
-              this.getObservability(),
-              oc.logger ?? this.logger,
-              this.observabilityAuthWarningState,
-              "streamText:onFinish",
-            );
+            feedbackFinalizeRequested = true;
+
+            if (!feedbackResolved && feedbackDeferred) {
+              await feedbackDeferred.promise;
+            }
+
+            if (feedbackResolved && feedbackValue) {
+              scheduleFeedbackPersist(feedbackValue);
+            } else if (shouldDeferPersist) {
+              void persistQueue.flush(buffer, oc).catch((error) => {
+                oc.logger?.debug?.("Failed to persist deferred messages", { error });
+              });
+            }
+
+            // Schedule span flush without blocking the response
+            if (!feedbackFlushCompleted) {
+              void flushObservability(
+                this.getObservability(),
+                oc.logger ?? this.logger,
+                this.observabilityAuthWarningState,
+                "streamText:onFinish",
+              );
+            }
           },
         });
 
@@ -1417,22 +1530,54 @@ export class Agent {
           });
         };
 
+        const attachFeedbackMetadata = (
+          baseStream: ToUIMessageStreamReturn,
+        ): ToUIMessageStreamReturn => {
+          if (!feedbackDeferred) {
+            return baseStream;
+          }
+
+          return createAsyncIterableReadable<UIStreamChunk>(async (controller) => {
+            const reader = (baseStream as ReadableStream<UIStreamChunk>).getReader();
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value !== undefined) {
+                  controller.enqueue(value);
+                }
+              }
+              if (feedbackResolved && feedbackValue) {
+                controller.enqueue({
+                  type: "message-metadata",
+                  messageMetadata: {
+                    feedback: feedbackValue,
+                  },
+                } as UIStreamChunk);
+              }
+              controller.close();
+            } catch (error) {
+              controller.error(error);
+            } finally {
+              reader.releaseLock();
+            }
+          });
+        };
+
         const toUIMessageStreamSanitized = (
           streamOptions?: ToUIMessageStreamOptions,
         ): ToUIMessageStreamReturn => {
-          if (agent.subAgentManager.hasSubAgents()) {
-            return createMergedUIStream(streamOptions);
-          }
-          return getGuardrailAwareUIStream(streamOptions);
+          const baseStream = agent.subAgentManager.hasSubAgents()
+            ? createMergedUIStream(streamOptions)
+            : getGuardrailAwareUIStream(streamOptions);
+          return attachFeedbackMetadata(baseStream);
         };
 
         const toUIMessageStreamResponseSanitized = (
           options?: ToUIMessageStreamResponseOptions,
         ): ReturnType<typeof result.toUIMessageStreamResponse> => {
           const streamOptions = options as ToUIMessageStreamOptions | undefined;
-          const stream = agent.subAgentManager.hasSubAgents()
-            ? createMergedUIStream(streamOptions)
-            : getGuardrailAwareUIStream(streamOptions);
+          const stream = toUIMessageStreamSanitized(streamOptions);
           const responseInit = options ? { ...options } : {};
           return createUIMessageStreamResponse({
             stream,
@@ -1445,9 +1590,7 @@ export class Agent {
           init?: Parameters<typeof result.pipeUIMessageStreamToResponse>[1],
         ): void => {
           const streamOptions = init as ToUIMessageStreamOptions | undefined;
-          const stream = agent.subAgentManager.hasSubAgents()
-            ? createMergedUIStream(streamOptions)
-            : getGuardrailAwareUIStream(streamOptions);
+          const stream = toUIMessageStreamSanitized(streamOptions);
           const initOptions = init ? { ...init } : {};
           pipeUIMessageStreamToResponse({
             response,
@@ -1489,6 +1632,9 @@ export class Agent {
             });
           },
           context: oc.context,
+          get feedback() {
+            return feedbackValue;
+          },
         };
 
         return resultWithContext;
@@ -1596,6 +1742,7 @@ export class Agent {
           parentAgentId,
           parentOperationContext,
           hooks,
+          feedback: _feedback,
           maxSteps: userMaxSteps,
           tools: userTools,
           output: _output,
@@ -1830,6 +1977,7 @@ export class Agent {
           parentAgentId,
           parentOperationContext,
           hooks,
+          feedback: _feedback,
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
@@ -2552,6 +2700,87 @@ export class Agent {
     }
 
     return this.defaultObservability;
+  }
+
+  private resolveFeedbackOptions(
+    options?: BaseGenerationOptions,
+  ): AgentFeedbackOptions | undefined {
+    const raw = options?.feedback ?? this.feedbackOptions;
+    if (!raw) {
+      return undefined;
+    }
+    if (raw === true) {
+      return {};
+    }
+    return raw;
+  }
+
+  private getFeedbackTraceId(oc: OperationContext): string | undefined {
+    try {
+      return oc.traceContext.getRootSpan().spanContext().traceId;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private getFeedbackClient(): VoltOpsClient | undefined {
+    const voltOpsClient =
+      this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
+    if (!voltOpsClient || typeof voltOpsClient.hasValidKeys !== "function") {
+      return undefined;
+    }
+    if (!voltOpsClient.hasValidKeys()) {
+      return undefined;
+    }
+    return voltOpsClient;
+  }
+
+  private async createFeedbackMetadata(
+    oc: OperationContext,
+    options?: BaseGenerationOptions,
+  ): Promise<AgentFeedbackMetadata | null> {
+    const feedbackOptions = this.resolveFeedbackOptions(options);
+    if (!feedbackOptions) {
+      return null;
+    }
+
+    const voltOpsClient = this.getFeedbackClient();
+    if (!voltOpsClient) {
+      return null;
+    }
+
+    const traceId = this.getFeedbackTraceId(oc);
+    if (!traceId) {
+      return null;
+    }
+
+    const key = feedbackOptions.key?.trim() || DEFAULT_FEEDBACK_KEY;
+
+    try {
+      const token = await voltOpsClient.createFeedbackToken({
+        traceId,
+        key,
+        feedbackConfig: feedbackOptions.feedbackConfig ?? null,
+        expiresAt: feedbackOptions.expiresAt,
+        expiresIn: feedbackOptions.expiresIn,
+      });
+
+      return {
+        traceId,
+        key,
+        url: token.url,
+        tokenId: token.id,
+        expiresAt: token.expiresAt,
+        feedbackConfig: token.feedbackConfig ?? feedbackOptions.feedbackConfig ?? null,
+      };
+    } catch (error) {
+      oc.logger.debug("Failed to create feedback token", {
+        traceId,
+        key,
+        error,
+      });
+      return null;
+    }
   }
 
   /**

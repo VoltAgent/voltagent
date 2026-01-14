@@ -92,6 +92,7 @@ export async function handleGenerateText(
         finishReason: result.finishReason,
         toolCalls: result.toolCalls,
         toolResults: result.toolResults,
+        feedback: result.feedback ?? null,
         // Try to access output safely - getter throws if not defined
         ...(() => {
           try {

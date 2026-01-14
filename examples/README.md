@@ -108,6 +108,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Hugging Face (MCP)](./with-hugging-face-mcp) — Access HF tools and models through MCP from agents.
 - [JWT Auth](./with-jwt-auth) — Protect agent endpoints with JWT verification and helpers.
 - [Langfuse](./with-langfuse) — Send traces and metrics to Langfuse for observability.
+- [Feedback Templates](./with-feedback) — Configure per-agent feedback templates for thumbs, numeric, and categorical feedback.
 - [Live Evals](./with-live-evals) — Run online evaluations against prompts/agents during development.
 - [MCP Basics](./with-mcp) — Connect to MCP servers and call tools from an agent.
 - [MCP Elicitation](./with-mcp-elicitation) — Handle `elicitation/create` requests from MCP tools with per-request handlers.

@@ -272,6 +272,7 @@ const sidebars: SidebarsConfig = {
         "observability/overview",
         "observability/developer-console",
         "observability/logging",
+        "observability/feedback",
         "observability/langfuse",
       ],
     },

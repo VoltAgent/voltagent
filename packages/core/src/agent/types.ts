@@ -34,6 +34,8 @@ import type {
   DynamicValueOptions,
   PromptContent,
   PromptHelper,
+  VoltOpsFeedbackConfig,
+  VoltOpsFeedbackExpiresIn,
 } from "../voltops/types";
 import type { ContextInput } from "./agent";
 import type { AgentHooks } from "./hooks";
@@ -50,6 +52,22 @@ export interface ApiToolInfo {
   description: string;
   parameters?: any;
 }
+
+export type AgentFeedbackOptions = {
+  key?: string;
+  feedbackConfig?: VoltOpsFeedbackConfig | null;
+  expiresAt?: Date | string;
+  expiresIn?: VoltOpsFeedbackExpiresIn;
+};
+
+export type AgentFeedbackMetadata = {
+  traceId: string;
+  key: string;
+  url: string;
+  tokenId?: string;
+  expiresAt?: string;
+  feedbackConfig?: VoltOpsFeedbackConfig | null;
+};
 
 /**
  * Tool with node_id for agent state
@@ -466,6 +484,7 @@ export type AgentOptions = {
   temperature?: number;
   maxOutputTokens?: number;
   maxSteps?: number;
+  feedback?: AgentFeedbackOptions | boolean;
   /**
    * Default stop condition for step execution (ai-sdk `stopWhen`).
    * Per-call `stopWhen` in method options overrides this.
@@ -666,6 +685,9 @@ export interface CommonGenerateOptions {
 
   // Maximum number of steps for this specific request (overrides agent's maxSteps)
   maxSteps?: number;
+
+  // Feedback configuration for trace satisfaction links
+  feedback?: AgentFeedbackOptions | boolean;
 
   // AbortController for cancelling the operation and accessing the signal
   abortController?: AbortController;
@@ -982,6 +1004,9 @@ export interface StreamTextFinishResult {
   /** Token usage information (if available). */
   usage?: UsageInfo;
 
+  /** Feedback metadata for the trace, if enabled. */
+  feedback?: AgentFeedbackMetadata | null;
+
   /** The reason the stream finished (if available, e.g., 'stop', 'length', 'tool-calls'). */
   finishReason?: string;
 
@@ -1041,6 +1066,8 @@ export interface StandardizedTextResult {
   text: string;
   /** Token usage information (if available). */
   usage?: UsageInfo;
+  /** Feedback metadata for the trace, if enabled. */
+  feedback?: AgentFeedbackMetadata | null;
   /** Original provider response (if needed). */
   providerResponse?: unknown;
   /** Finish reason (if available from provider). */
