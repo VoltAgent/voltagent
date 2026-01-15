@@ -217,12 +217,14 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+      retryCount?: number;
       logger: Logger;
       writer: WorkflowStreamWriter;
     }) => Promise<z.infer<OS>>;
     id: string;
     name?: string;
     purpose?: string;
+    retries?: number;
   }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<OS>, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 
   /**
@@ -249,12 +251,14 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+      retryCount?: number;
       logger: Logger;
       writer: WorkflowStreamWriter;
     }) => Promise<NEW_DATA>;
     id: string;
     name?: string;
     purpose?: string;
+    retries?: number;
   }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 
   /**
@@ -280,12 +284,14 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+      retryCount?: number;
       logger: Logger;
       writer: WorkflowStreamWriter;
     }) => Promise<z.infer<OS>>;
     id: string;
     name?: string;
     purpose?: string;
+    retries?: number;
   }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<OS>, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 
   /**
@@ -311,12 +317,14 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: z.infer<RS>;
+      retryCount?: number;
       logger: Logger;
       writer: WorkflowStreamWriter;
     }) => Promise<NEW_DATA>;
     id: string;
     name?: string;
     purpose?: string;
+    retries?: number;
   }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 
   /**
@@ -351,12 +359,14 @@ export class WorkflowChain<
       getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;
+      retryCount?: number;
       logger: Logger;
       writer: WorkflowStreamWriter;
     }) => Promise<NEW_DATA>;
     id: string;
     name?: string;
     purpose?: string;
+    retries?: number;
     inputSchema?: never;
     outputSchema?: never;
     suspendSchema?: z.ZodTypeAny;
@@ -493,12 +503,14 @@ export class WorkflowChain<
         suspendData?: SS extends z.ZodTypeAny ? z.infer<SS> : z.infer<SUSPEND_SCHEMA>,
       ) => Promise<never>;
       resumeData?: RS extends z.ZodTypeAny ? z.infer<RS> : z.infer<RESUME_SCHEMA>;
+      retryCount?: number;
       logger: Logger;
       writer: WorkflowStreamWriter;
     }) => Promise<void>;
     id: string;
     name?: string;
     purpose?: string;
+    retries?: number;
   }): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, CURRENT_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
 
   /**
@@ -532,12 +544,14 @@ export class WorkflowChain<
       getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;
+      retryCount?: number;
       logger: Logger;
       writer: WorkflowStreamWriter;
     }) => Promise<void>;
     id: string;
     name?: string;
     purpose?: string;
+    retries?: number;
     inputSchema?: never;
     suspendSchema?: z.ZodTypeAny;
     resumeSchema?: z.ZodTypeAny;
