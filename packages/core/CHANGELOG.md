@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.0.13
+
+### Patch Changes
+
+- [#946](https://github.com/VoltAgent/voltagent/pull/946) [`f5187b1`](https://github.com/VoltAgent/voltagent/commit/f5187b1c31224dea01261d12ca17d6a31d7e56f2) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: export workflow step and hook types from the core entrypoint - #939
+
 ## 2.0.12
 
 ### Patch Changes
