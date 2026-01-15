@@ -3740,8 +3740,6 @@ export class Agent {
               return await handleToolError(e);
             });
             yield errorResult;
-          } finally {
-            oc.traceContext.endChildSpan(toolSpan, "completed", {});
           }
         }.call(this);
       }
