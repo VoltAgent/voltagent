@@ -46,6 +46,58 @@ Each tool has:
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
 
+## Streaming Tool Results (Preliminary)
+
+If your tool can provide progress or intermediate status, return an `AsyncIterable` from `execute`.
+Each `yield` is emitted as a preliminary tool result, and the **last yielded value** is treated as the final result.
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const weatherOutputSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("loading"),
+    text: z.string(),
+    weather: z.undefined().optional(),
+  }),
+  z.object({
+    status: z.literal("success"),
+    text: z.string(),
+    weather: z.object({
+      location: z.string(),
+      temperature: z.number(),
+    }),
+  }),
+]);
+
+const weatherTool = createTool({
+  name: "get_weather",
+  description: "Get the current weather for a location",
+  parameters: z.object({
+    location: z.string().describe("The city name"),
+  }),
+  outputSchema: weatherOutputSchema,
+  async *execute({ location }) {
+    yield {
+      status: "loading" as const,
+      text: `Getting weather for ${location}`,
+      weather: undefined,
+    };
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    const temperature = 72 + Math.floor(Math.random() * 21) - 10;
+
+    yield {
+      status: "success" as const,
+      text: `The weather in ${location} is ${temperature}F`,
+      weather: { location, temperature },
+    };
+  },
+});
+```
+
 ### Tool Tags
 
 Tags are optional string labels that help organize and categorize tools.

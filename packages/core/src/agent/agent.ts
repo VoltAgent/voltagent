@@ -50,7 +50,7 @@ import { TRIGGER_CONTEXT_KEY } from "../observability/context-keys";
 import { type ObservabilityFlushState, flushObservability } from "../observability/utils";
 import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { Tool, Toolkit, VercelTool } from "../tool";
+import type { Tool, ToolExecutionResult, Toolkit, VercelTool } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
 import { randomUUID } from "../utils/id";
@@ -318,6 +318,22 @@ function createDeferred<T>(): Deferred<T> {
     resolve = resolver;
   });
   return { promise, resolve };
+}
+
+const asyncGeneratorFunction = Object.getPrototypeOf(async function* () {}).constructor;
+
+function isAsyncGeneratorFunction(
+  value: unknown,
+): value is (...args: any[]) => AsyncIterable<unknown> {
+  return typeof value === "function" && value.constructor === asyncGeneratorFunction;
+}
+
+function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  return typeof (value as AsyncIterable<unknown>)[Symbol.asyncIterator] === "function";
 }
 
 /**
@@ -3583,8 +3599,8 @@ export class Agent {
   private createToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
-  ): (tool: BaseTool) => (args: any, options?: ToolExecutionOptions) => Promise<any> {
-    return (tool: BaseTool) => async (args: any, options?: ToolExecutionOptions) => {
+  ): (tool: BaseTool) => (args: any, options?: ToolExecutionOptions) => ToolExecutionResult<any> {
+    return (tool: BaseTool) => (args: any, options?: ToolExecutionOptions) => {
       // AI SDK passes ToolExecutionOptions with fields: toolCallId, messages, abortSignal
       const toolCallId = options?.toolCallId ?? randomUUID();
       const messages = options?.messages ?? [];
@@ -3621,8 +3637,116 @@ export class Agent {
       oc.systemContext.set("historyEntryId", oc.operationId);
       oc.systemContext.set("parentToolSpan", toolSpan);
 
-      // Execute tool and handle span lifecycle
-      return await oc.traceContext.withSpan(toolSpan, async () => {
+      const handleToolSuccess = async (result: any, validatedResult: any) => {
+        toolSpan.setAttribute("output", safeStringify(result));
+        toolSpan.setStatus({ code: SpanStatusCode.OK });
+        toolSpan.end();
+
+        await hooks.onToolEnd?.({
+          agent: this,
+          tool,
+          output: validatedResult,
+          error: undefined,
+          context: oc,
+          options: executionOptions,
+        });
+      };
+
+      const handleToolError = async (errorValue: unknown) => {
+        const error = errorValue instanceof Error ? errorValue : new Error(String(errorValue));
+        const voltAgentError = createVoltAgentError(error, {
+          stage: "tool_execution",
+          toolError: {
+            toolCallId,
+            toolName: tool.name,
+            toolExecutionError: error,
+            toolArguments: args,
+          },
+        });
+        const errorResult = buildToolErrorResult(error, toolCallId, tool.name);
+
+        toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+        toolSpan.recordException(error);
+        toolSpan.end();
+
+        await hooks.onToolEnd?.({
+          agent: this,
+          tool,
+          output: undefined,
+          error: voltAgentError,
+          context: oc,
+          options: executionOptions,
+        });
+
+        if (isToolDeniedError(errorValue)) {
+          oc.abortController.abort(errorValue);
+        }
+
+        return errorResult;
+      };
+
+      const execute = tool.execute;
+      if (execute && isAsyncGeneratorFunction(execute)) {
+        return async function* (this: Agent): AsyncGenerator<any, void, void> {
+          try {
+            await oc.traceContext.withSpan(toolSpan, async () => {
+              await hooks.onToolStart?.({
+                agent: this,
+                tool,
+                context: oc,
+                args,
+                options: executionOptions,
+              });
+            });
+
+            const result = execute(args, executionOptions);
+
+            if (!isAsyncIterable(result)) {
+              const resolved = await result;
+              const validatedResult = await this.validateToolOutput(resolved, tool);
+              await oc.traceContext.withSpan(toolSpan, async () => {
+                await handleToolSuccess(resolved, validatedResult);
+              });
+              yield resolved;
+              return;
+            }
+
+            const iterator = result[Symbol.asyncIterator]();
+            let finalOutput: any = undefined;
+            let validatedResult: any = undefined;
+            let hasOutput = false;
+
+            while (true) {
+              const next = await oc.traceContext.withSpan(toolSpan, () => iterator.next());
+              if (next.done) {
+                break;
+              }
+
+              finalOutput = next.value;
+              hasOutput = true;
+              validatedResult = await this.validateToolOutput(finalOutput, tool);
+              yield finalOutput;
+            }
+
+            if (!hasOutput) {
+              validatedResult = await this.validateToolOutput(finalOutput, tool);
+            }
+
+            await oc.traceContext.withSpan(toolSpan, async () => {
+              await handleToolSuccess(finalOutput, validatedResult);
+            });
+          } catch (e) {
+            const errorResult = await oc.traceContext.withSpan(toolSpan, async () => {
+              return await handleToolError(e);
+            });
+            yield errorResult;
+          } finally {
+            oc.traceContext.endChildSpan(toolSpan, "completed", {});
+          }
+        }.call(this);
+      }
+
+      return oc.traceContext.withSpan(toolSpan, async () => {
         try {
           // Call tool start hook - can throw ToolDeniedError
           await hooks.onToolStart?.({
@@ -3637,56 +3761,23 @@ export class Agent {
           if (!tool.execute) {
             throw new Error(`Tool ${tool.name} does not have "execute" method`);
           }
-          const result = await tool.execute(args, executionOptions);
+          let result = await tool.execute(args, executionOptions);
+
+          if (isAsyncIterable(result)) {
+            let lastOutput: any = undefined;
+            for await (const output of result) {
+              lastOutput = output;
+            }
+            result = lastOutput;
+          }
+
           const validatedResult = await this.validateToolOutput(result, tool);
 
-          // End OTEL span
-          toolSpan.setAttribute("output", safeStringify(result));
-          toolSpan.setStatus({ code: SpanStatusCode.OK });
-          toolSpan.end();
-
-          // Call tool end hook
-          await hooks.onToolEnd?.({
-            agent: this,
-            tool,
-            output: validatedResult,
-            error: undefined,
-            context: oc,
-            options: executionOptions,
-          });
+          await handleToolSuccess(result, validatedResult);
 
           return result;
         } catch (e) {
-          const error = e instanceof Error ? e : new Error(String(e));
-          const voltAgentError = createVoltAgentError(error, {
-            stage: "tool_execution",
-            toolError: {
-              toolCallId,
-              toolName: tool.name,
-              toolExecutionError: error,
-              toolArguments: args,
-            },
-          });
-          const errorResult = buildToolErrorResult(error, toolCallId, tool.name);
-
-          toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-          toolSpan.recordException(error);
-          toolSpan.end();
-
-          await hooks.onToolEnd?.({
-            agent: this,
-            tool,
-            output: undefined,
-            error: voltAgentError,
-            context: oc,
-            options: executionOptions,
-          });
-
-          if (isToolDeniedError(e)) {
-            oc.abortController.abort(e);
-          }
-
-          return errorResult;
+          return await handleToolError(e);
         } finally {
           // End the span if it was created
           oc.traceContext.endChildSpan(toolSpan, "completed", {});

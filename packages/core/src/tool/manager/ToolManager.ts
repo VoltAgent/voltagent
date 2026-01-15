@@ -2,7 +2,7 @@ import type { ToolExecutionOptions } from "@ai-sdk/provider-utils";
 import type { Logger } from "@voltagent/internal";
 import type { ApiToolInfo } from "../../agent/types";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
-import type { AgentTool, ProviderTool, VercelTool } from "../index";
+import type { AgentTool, ProviderTool, ToolExecutionResult, VercelTool } from "../index";
 import type { Toolkit } from "../toolkit";
 import { BaseToolManager } from "./BaseToolManager";
 import { ToolkitManager } from "./ToolkitManager";
@@ -48,12 +48,12 @@ export class ToolManager extends BaseToolManager<AgentTool | VercelTool | Toolki
   public prepareToolsForExecution(
     createToolExecuteFunction: (
       tool: AgentTool,
-    ) => (args: any, options?: ToolExecutionOptions) => Promise<any>,
+    ) => (args: any, options?: ToolExecutionOptions) => ToolExecutionResult<any>,
   ): Record<string, any> {
     type ManagedTool = {
       description: string;
       inputSchema: AgentTool["parameters"];
-      execute?: (args: any, options?: ToolExecutionOptions) => Promise<any>;
+      execute?: (args: any, options?: ToolExecutionOptions) => ToolExecutionResult<any>;
       needsApproval?: AgentTool["needsApproval"];
       providerOptions?: AgentTool["providerOptions"];
       toModelOutput?: AgentTool["toModelOutput"];

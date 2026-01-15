@@ -362,7 +362,7 @@ export function createTestAgent(options?: Partial<AgentOptions>): Agent {
  */
 export function createMockTool(
   name: string,
-  execute?: (params: any, options?: any) => Promise<any> | any,
+  execute?: (params: any, options?: any) => PromiseLike<any> | AsyncIterable<any> | any,
   options?: {
     description?: string;
     parameters?: ToolSchema;

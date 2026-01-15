@@ -9,6 +9,8 @@ import { LoggerProxy } from "../logger";
  */
 type JSONValue = string | number | boolean | null | { [key: string]: JSONValue } | Array<JSONValue>;
 
+export type ToolExecutionResult<T> = PromiseLike<T> | AsyncIterable<T> | T;
+
 /**
  * Tool result output format for multi-modal content.
  * Matches AI SDK's LanguageModelV2ToolResultOutput type.
@@ -134,11 +136,12 @@ export type ToolOptions<
    * Function to execute when the tool is called.
    * @param args - The arguments passed to the tool
    * @param options - Optional execution options including context, abort signals, etc.
+   * @returns A result or an AsyncIterable of results (last value is final).
    */
   execute?: (
     args: z.infer<T>,
     options?: ToolExecuteOptions,
-  ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
+  ) => ToolExecutionResult<O extends ToolSchema ? z.infer<O> : unknown>;
 };
 
 /**
@@ -205,11 +208,12 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
    * Function to execute when the tool is called.
    * @param args - The arguments passed to the tool
    * @param options - Optional execution options including context, abort signals, etc.
+   * @returns A result or an AsyncIterable of results (last value is final).
    */
   readonly execute?: (
     args: z.infer<T>,
     options?: ToolExecuteOptions,
-  ) => Promise<O extends ToolSchema ? z.infer<O> : unknown>;
+  ) => ToolExecutionResult<O extends ToolSchema ? z.infer<O> : unknown>;
 
   /**
    * Whether this tool should be executed on the client side.

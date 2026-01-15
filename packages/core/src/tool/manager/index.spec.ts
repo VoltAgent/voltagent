@@ -1,6 +1,13 @@
 import { z } from "zod";
 import type { ToolExecuteOptions } from "../../agent/providers/base/types";
-import { type AgentTool, type ProviderTool, Tool, ToolManager, createTool } from "../index";
+import {
+  type AgentTool,
+  type ProviderTool,
+  Tool,
+  type ToolExecutionResult,
+  ToolManager,
+  createTool,
+} from "../index";
 import { createToolkit } from "../toolkit";
 import type { Toolkit } from "../toolkit";
 
@@ -234,7 +241,7 @@ describe("ToolManager", () => {
       const serverToolEntry = preparedTools[mockTool1.name] as {
         description: string;
         inputSchema: unknown;
-        execute?: (args: any, options?: ToolExecuteOptions) => Promise<any>;
+        execute?: (args: any, options?: ToolExecuteOptions) => ToolExecutionResult<any>;
       };
 
       expect(createToolExecuteFunction).toHaveBeenCalledTimes(1);
@@ -262,7 +269,7 @@ describe("ToolManager", () => {
       const clientToolEntry = preparedTools[clientTool.name] as {
         description: string;
         inputSchema: unknown;
-        execute?: (args: any, options?: ToolExecuteOptions) => Promise<any>;
+        execute?: (args: any, options?: ToolExecuteOptions) => ToolExecutionResult<any>;
       };
 
       expect(createToolExecuteFunction).not.toHaveBeenCalled();
