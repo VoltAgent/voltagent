@@ -2180,7 +2180,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/evals
       '@voltagent/scorers':
-        specifier: ^2.0.2
+        specifier: ^2.0.3
         version: link:../../packages/scorers
       '@voltagent/sdk':
         specifier: ^2.0.2

@@ -1,5 +1,11 @@
 # @voltagent/scorers
 
+## 2.0.3
+
+### Patch Changes
+
+- [`a803d31`](https://github.com/VoltAgent/voltagent/commit/a803d310069d614c90e47c7b958a0c84b62a5732) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: align LLM scorer response schemas with OpenAI strict response_format requirements, avoiding invalid schema errors in live evals
+
 ## 2.0.2
 
 ### Patch Changes
