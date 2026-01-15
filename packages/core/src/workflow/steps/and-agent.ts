@@ -14,6 +14,11 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny, INPUT, DATA> = BaseGenerati
       ) => SCHEMA | Promise<SCHEMA>);
 };
 
+type AgentResultMapper<INPUT, DATA, SCHEMA extends z.ZodTypeAny, RESULT> = (
+  output: z.infer<SCHEMA>,
+  context: WorkflowExecuteContext<INPUT, DATA, any, any>,
+) => Promise<RESULT> | RESULT;
+
 /**
  * Creates an agent step for a workflow
  *
@@ -35,9 +40,10 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny, INPUT, DATA> = BaseGenerati
  * @param task - The task (prompt) to execute for the agent, can be a string or a function that returns a string
  * @param agent - The agent to execute the task using `generateText`
  * @param config - The config for the agent (schema) `generateText` call
+ * @param map - Optional mapper to shape or merge the agent output with existing data
  * @returns A workflow step that executes the agent with the task
  */
-export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
+export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny, RESULT = z.infer<SCHEMA>>(
   task:
     | UIMessage[]
     | ModelMessage[]
@@ -45,6 +51,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
     | InternalWorkflowFunc<INPUT, DATA, UIMessage[] | ModelMessage[] | string, any, any>,
   agent: Agent,
   config: AgentConfig<SCHEMA, INPUT, DATA>,
+  map?: AgentResultMapper<INPUT, DATA, SCHEMA, RESULT>,
 ) {
   return {
     type: "agent",
@@ -59,6 +66,14 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
       const finalSchema = typeof schema === "function" ? await schema(context) : schema;
 
       const output = Output.object({ schema: finalSchema });
+
+      const mapOutput = async (outputValue: z.infer<SCHEMA>) => {
+        if (map) {
+          return (await map(outputValue, context)) as RESULT;
+        }
+
+        return outputValue as RESULT;
+      };
 
       // Create step context and publish start event
       if (!state.workflowContext) {
@@ -84,7 +99,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           }
           state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
-        return result.output as z.infer<SCHEMA>;
+        return mapOutput(result.output as z.infer<SCHEMA>);
       }
 
       // Step start event removed - now handled by OpenTelemetry spans
@@ -116,7 +131,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
           state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
 
-        return result.output as z.infer<SCHEMA>;
+        return mapOutput(result.output as z.infer<SCHEMA>);
       } catch (error) {
         // Check if this is a suspension, not an error
         if (
@@ -133,5 +148,5 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny>(
         throw error;
       }
     },
-  } satisfies WorkflowStepAgent<INPUT, DATA, z.infer<SCHEMA>>;
+  } satisfies WorkflowStepAgent<INPUT, DATA, RESULT>;
 }

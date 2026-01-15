@@ -38,9 +38,10 @@ const result = await workflow.run({ text: "I love this!" });
 
 ```typescript
 .andAgent(
-  prompt,    // What to ask the AI
-  agent,     // Which AI to use
-  { schema } // What shape the answer should be
+  prompt,     // What to ask the AI
+  agent,      // Which AI to use
+  { schema }, // What shape the answer should be
+  map?        // Optional: merge/shape output with existing data
 )
 ```
 
@@ -49,6 +50,8 @@ const result = await workflow.run({ text: "I love this!" });
 - ✅ You get **structured, typed responses** based on your schema
 - ✅ The agent **can use tools** during this step
 - ❌ **Streaming is not supported** (response returns when complete)
+
+By default, the step result replaces the workflow data with the agent output. If you need to keep previous data, use the optional mapper (4th argument) to merge or reshape the output.
 
 **Need streaming or custom tool handling?** Use [andThen](./and-then.md) to call the agent directly with `streamText` or `generateText`.
 
@@ -77,6 +80,14 @@ const result = await workflow.run({ text: "I love this!" });
   ],
   agent,
   { schema }
+)
+
+// Merge agent output with existing data
+.andAgent(
+  ({ data }) => `Classify: ${data.email}`,
+  agent,
+  { schema: z.object({ type: z.enum(["support", "sales", "spam"]) }) },
+  (output, { data }) => ({ ...data, emailType: output.type })
 )
 ```
 
@@ -131,6 +142,22 @@ const result = await workflow.run({ text: "I love this!" });
 )
 ```
 
+### Merge Output With Existing Data
+
+```typescript
+.andAgent(
+  ({ data }) => `What type of email is this: ${data.email}`,
+  agent,
+  {
+    schema: z.object({
+      type: z.enum(["support", "sales", "spam"]),
+      priority: z.enum(["low", "medium", "high"]),
+    }),
+  },
+  (output, { data }) => ({ ...data, emailType: output })
+)
+```
+
 ## Dynamic Prompts
 
 Build prompts from workflow data:
@@ -156,22 +183,27 @@ Combine AI with logic:
 ```typescript
 createWorkflowChain({ id: "smart-email" })
   // Step 1: Classify with AI
-  .andAgent(({ data }) => `What type of email is this: ${data.email}`, agent, {
-    schema: z.object({
-      type: z.enum(["support", "sales", "spam"]),
-      priority: z.enum(["low", "medium", "high"]),
-    }),
-  })
+  .andAgent(
+    ({ data }) => `What type of email is this: ${data.email}`,
+    agent,
+    {
+      schema: z.object({
+        type: z.enum(["support", "sales", "spam"]),
+        priority: z.enum(["low", "medium", "high"]),
+      }),
+    },
+    (output, { data }) => ({ ...data, emailType: output })
+  )
   // Step 2: Route based on classification
   .andThen({
     id: "route-email",
     execute: async ({ data }) => {
-      if (data.type === "spam") {
+      if (data.emailType.type === "spam") {
         return { action: "delete" };
       }
       return {
         action: "forward",
-        to: data.type === "support" ? "support@" : "sales@",
+        to: data.emailType.type === "support" ? "support@" : "sales@",
       };
     },
   });

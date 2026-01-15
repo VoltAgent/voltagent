@@ -161,6 +161,7 @@ export class WorkflowChain<
    * @param task - The task (prompt) to execute for the agent, can be a string or a function that returns a string
    * @param agent - The agent to execute the task using `generateText`
    * @param config - The config for the agent (schema) `generateText` call
+   * @param map - Optional mapper to shape or merge the agent output with existing data
    * @returns A workflow step that executes the agent with the task
    */
   andAgent<SCHEMA extends z.ZodTypeAny>(
@@ -177,17 +178,63 @@ export class WorkflowChain<
         >,
     agent: Agent,
     config: AgentConfig<SCHEMA, INPUT_SCHEMA, CURRENT_DATA>,
-  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>, SUSPEND_SCHEMA, RESUME_SCHEMA> {
-    const step = andAgent(task, agent, config) as unknown as WorkflowStep<
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+
+  andAgent<SCHEMA extends z.ZodTypeAny, NEW_DATA>(
+    task:
+      | string
+      | UIMessage[]
+      | ModelMessage[]
+      | InternalWorkflowFunc<
+          WorkflowInput<INPUT_SCHEMA>,
+          CURRENT_DATA,
+          string | UIMessage[] | ModelMessage[],
+          any,
+          any
+        >,
+    agent: Agent,
+    config: AgentConfig<SCHEMA, INPUT_SCHEMA, CURRENT_DATA>,
+    map: (
+      output: z.infer<SCHEMA>,
+      context: WorkflowExecuteContext<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, any, any>,
+    ) => Promise<NEW_DATA> | NEW_DATA,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+
+  andAgent(
+    task:
+      | string
+      | UIMessage[]
+      | ModelMessage[]
+      | InternalWorkflowFunc<
+          WorkflowInput<INPUT_SCHEMA>,
+          CURRENT_DATA,
+          string | UIMessage[] | ModelMessage[],
+          any,
+          any
+        >,
+    agent: Agent,
+    config: AgentConfig<z.ZodTypeAny, INPUT_SCHEMA, CURRENT_DATA>,
+    map?: (
+      output: unknown,
+      context: WorkflowExecuteContext<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, any, any>,
+    ) => Promise<unknown> | unknown,
+  ): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    DangerouslyAllowAny,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
+  > {
+    const step = andAgent(task, agent, config, map) as unknown as WorkflowStep<
       WorkflowInput<INPUT_SCHEMA>,
       CURRENT_DATA,
-      z.infer<SCHEMA> | DangerouslyAllowAny
+      DangerouslyAllowAny
     >;
     this.steps.push(step);
     return this as unknown as WorkflowChain<
       INPUT_SCHEMA,
       RESULT_SCHEMA,
-      z.infer<SCHEMA>,
+      DangerouslyAllowAny,
       SUSPEND_SCHEMA,
       RESUME_SCHEMA
     >;
