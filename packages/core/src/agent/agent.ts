@@ -536,7 +536,6 @@ export class Agent {
     const feedbackClient = feedbackOptions ? this.getFeedbackClient() : undefined;
     const shouldDeferPersist = Boolean(feedbackOptions && feedbackClient);
     let feedbackMetadata: AgentFeedbackMetadata | null = null;
-    const feedbackFlushCompleted = false;
 
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
@@ -872,14 +871,12 @@ export class Agent {
       } finally {
         // Ensure all spans are exported before returning (critical for serverless)
         // Uses waitUntil if available to avoid blocking
-        if (!feedbackFlushCompleted) {
-          await flushObservability(
-            this.getObservability(),
-            oc.logger ?? this.logger,
-            this.observabilityAuthWarningState,
-            "generateText:finally",
-          );
-        }
+        await flushObservability(
+          this.getObservability(),
+          oc.logger ?? this.logger,
+          this.observabilityAuthWarningState,
+          "generateText:finally",
+        );
       }
     });
   }
@@ -900,7 +897,6 @@ export class Agent {
       ? createDeferred<AgentFeedbackMetadata | null>()
       : null;
     let feedbackValue: AgentFeedbackMetadata | null = null;
-    const feedbackFlushCompleted = false;
     let feedbackResolved = false;
     let feedbackFinalizeRequested = false;
     let feedbackApplied = false;
@@ -1303,14 +1299,12 @@ export class Agent {
             }
 
             // Schedule span flush without blocking the response
-            if (!feedbackFlushCompleted) {
-              void flushObservability(
-                this.getObservability(),
-                oc.logger ?? this.logger,
-                this.observabilityAuthWarningState,
-                "streamText:onFinish",
-              );
-            }
+            void flushObservability(
+              this.getObservability(),
+              oc.logger ?? this.logger,
+              this.observabilityAuthWarningState,
+              "streamText:onFinish",
+            );
           },
         });
 
@@ -1546,6 +1540,9 @@ export class Agent {
                 if (value !== undefined) {
                   controller.enqueue(value);
                 }
+              }
+              if (feedbackDeferred) {
+                await feedbackDeferred.promise;
               }
               if (feedbackResolved && feedbackValue) {
                 controller.enqueue({

@@ -91,18 +91,21 @@ const result = await agent.generateText("How was the answer?", {
 
 ### Streaming feedback metadata
 
-For streaming, feedback metadata is exposed on the stream result and also appended to the UI message stream.
+For streaming, VoltAgent attaches feedback metadata to the stream wrapper returned by `agent.streamText`. The `onFinish` callback receives the underlying AI SDK `StreamTextResult`, which does not include VoltAgent feedback metadata. Read feedback from the returned stream wrapper after the stream completes.
 
 ```ts
 const stream = await agent.streamText("Explain this trace", {
   feedback: true,
   onFinish: async (result) => {
-    // result.feedback contains the metadata
-    console.log(result.feedback);
+    // result is the AI SDK StreamTextResult (no VoltAgent feedback here)
+    console.log(await result.text);
   },
 });
 
-// Access the latest feedback metadata after the token is created
+for await (const _chunk of stream.textStream) {
+  // consume stream output
+}
+
 console.log(stream.feedback);
 ```
 
