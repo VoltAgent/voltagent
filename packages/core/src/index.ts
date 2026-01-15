@@ -25,7 +25,12 @@ export type {
 export type {
   Workflow,
   WorkflowConfig,
+  WorkflowHookContext,
+  WorkflowHookStatus,
+  WorkflowHooks,
   WorkflowStats,
+  WorkflowStepData,
+  WorkflowStepStatus,
   WorkflowTimelineEvent,
   RegisteredWorkflow,
 } from "./workflow";
