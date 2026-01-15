@@ -5,7 +5,7 @@
     "@ai-sdk/openai": "^3.0.0",
     "@pinecone-database/pinecone": "^6.1.1",
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.0.13",
+    "@voltagent/core": "^2.0.14",
     "@voltagent/libsql": "^2.0.2",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/server-hono": "^2.0.3",
