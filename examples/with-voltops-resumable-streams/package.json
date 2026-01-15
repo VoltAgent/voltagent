@@ -5,7 +5,7 @@
   "author": "",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
-    "@voltagent/core": "^2.0.10",
+    "@voltagent/core": "^2.0.11",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/resumable-streams": "^2.0.1",
     "@voltagent/server-hono": "^2.0.3",

@@ -6,7 +6,7 @@
     "@ai-sdk/openai": "^3.0.0",
     "@tavily/core": "^0.6.3",
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.0.10",
+    "@voltagent/core": "^2.0.11",
     "@voltagent/libsql": "^2.0.2",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/server-hono": "^2.0.3",
