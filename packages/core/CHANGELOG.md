@@ -1,5 +1,53 @@
 # @voltagent/core
 
+## 2.0.12
+
+### Patch Changes
+
+- [#942](https://github.com/VoltAgent/voltagent/pull/942) [`c992dac`](https://github.com/VoltAgent/voltagent/commit/c992dac5cba383f426c4c8a236ff02e5717d0a97) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: surface resolved model ids for dynamic models in execution logs and spans.
+
+- [#943](https://github.com/VoltAgent/voltagent/pull/943) [`6217716`](https://github.com/VoltAgent/voltagent/commit/6217716c7c30ea36eff10d81d730da1427df6e84) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: allow merging `andAgent` output with existing workflow data via an optional mapper
+
+  ```ts
+  .andAgent(
+    ({ data }) => `What type of email is this: ${data.email}`,
+    agent,
+    {
+      schema: z.object({
+        type: z.enum(["support", "sales", "spam"]),
+        priority: z.enum(["low", "medium", "high"]),
+      }),
+    },
+    (output, { data }) => ({ ...data, emailType: output })
+  )
+  ```
+
+- [#945](https://github.com/VoltAgent/voltagent/pull/945) [`ac9ef8d`](https://github.com/VoltAgent/voltagent/commit/ac9ef8d53f59e167c0cac5b333716942ea3b5bbf) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: expose step-level retries typing in workflow chains
+
+  Type definitions now include `retries` and `retryCount` for `andThen` and `andTap`, matching the runtime behavior.
+
+  ```ts
+  import { createWorkflowChain } from "@voltagent/core";
+
+  createWorkflowChain({ id: "retry-demo" })
+    .andThen({
+      id: "fetch-user",
+      retries: 2,
+      execute: async ({ data, retryCount }) => {
+        if (retryCount && retryCount < 2) {
+          throw new Error("transient");
+        }
+        return { ...data, ok: true };
+      },
+    })
+    .andTap({
+      id: "audit",
+      execute: async ({ data, retryCount }) => {
+        console.log("tap", retryCount, data);
+      },
+    });
+  ```
+
 ## 2.0.11
 
 ### Patch Changes
