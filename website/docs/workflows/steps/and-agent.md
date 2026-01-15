@@ -87,7 +87,7 @@ By default, the step result replaces the workflow data with the agent output. If
   ({ data }) => `Classify: ${data.email}`,
   agent,
   { schema: z.object({ type: z.enum(["support", "sales", "spam"]) }) },
-  (output, { data }) => ({ ...data, emailType: output.type })
+  (output, { data }) => ({ ...data, emailType: output })
 )
 ```
 
