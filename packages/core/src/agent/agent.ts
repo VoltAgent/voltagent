@@ -561,7 +561,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const contextLimit = options?.contextLimit;
 
         // Add model attributes and all options
@@ -960,7 +960,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const contextLimit = options?.contextLimit;
 
         // Add model attributes to root span if TraceContext exists
@@ -1102,7 +1102,7 @@ export class Agent {
             methodLogger.error("Stream error occurred", {
               error: actualError,
               agentName: this.name,
-              modelName: this.getModelName(),
+              modelName,
             });
 
             finalizeLLMSpan(SpanStatusCode.ERROR, { message: (actualError as Error)?.message });
@@ -1683,7 +1683,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const schemaName = schema.description || "unknown";
 
         // Add model attributes and all options
@@ -1918,7 +1918,7 @@ export class Agent {
           options,
         );
 
-        const modelName = this.getModelName();
+        const modelName = this.getModelName(model);
         const schemaName = schema.description || "unknown";
 
         // Add model attributes and all options
@@ -2010,7 +2010,7 @@ export class Agent {
             methodLogger.error("Stream object error occurred", {
               error: actualError,
               agentName: this.name,
-              modelName: this.getModelName(),
+              modelName,
               schemaName: schemaName,
             });
 
@@ -4169,9 +4169,16 @@ export class Agent {
   }
 
   /**
-   * Get the model name
+   * Get the model name.
+   * Pass a resolved model to return its modelId (useful for dynamic models).
    */
-  public getModelName(): string {
+  public getModelName(model?: LanguageModel | string): string {
+    if (model) {
+      if (typeof model === "string") {
+        return model;
+      }
+      return model.modelId || "unknown";
+    }
     if (typeof this.model === "function") {
       return "dynamic";
     }
