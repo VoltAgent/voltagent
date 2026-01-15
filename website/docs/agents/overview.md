@@ -138,7 +138,7 @@ const result = await agent.generateText("Quick rating?", {
 });
 ```
 
-For end-to-end examples (SDK, API, and useChat), see [Feedback](/docs/observability/feedback).
+For end-to-end examples (SDK, API, and useChat), see [Feedback](/observability-docs/feedback).
 
 ### Structured Data Generation
 

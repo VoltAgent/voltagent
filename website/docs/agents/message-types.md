@@ -165,7 +165,7 @@ if (feedback?.url) {
 }
 ```
 
-See [Feedback](/docs/observability/feedback) for the full flow and API examples.
+See [Feedback](/observability-docs/feedback) for the full flow and API examples.
 
 ### 3. VoltAgentTextStreamPart (Streaming Extension)
 
