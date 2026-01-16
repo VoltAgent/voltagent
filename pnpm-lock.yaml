@@ -187,9 +187,6 @@ importers:
 
   examples/github-star-stories:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -227,18 +224,6 @@ importers:
 
   examples/next-js-chatbot-starter-template:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
-      '@ai-sdk/google':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
-      '@ai-sdk/groq':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@ai-sdk/react':
         specifier: ^3.0.0
         version: 3.0.3(react@19.2.3)(zod@3.25.76)
@@ -399,9 +384,6 @@ importers:
 
   examples/with-a2a-server:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/a2a-server':
         specifier: ^2.0.2
         version: link:../../packages/a2a-server
@@ -436,12 +418,6 @@ importers:
 
   examples/with-ad-creator:
     dependencies:
-      '@ai-sdk/google':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@browserbasehq/sdk':
         specifier: ^2.6.0
         version: 2.6.0
@@ -500,9 +476,6 @@ importers:
 
   examples/with-agent-tool:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
         specifier: ^2.1.0
         version: link:../../packages/core
@@ -525,9 +498,6 @@ importers:
 
   examples/with-airtable:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -565,12 +535,6 @@ importers:
 
   examples/with-amazon-bedrock:
     dependencies:
-      '@ai-sdk/amazon-bedrock':
-        specifier: ^3.0.0
-        version: 3.0.7(zod@3.25.76)
-      '@aws-sdk/credential-providers':
-        specifier: ~3.799.0
-        version: 3.799.0
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -605,9 +569,6 @@ importers:
 
   examples/with-anthropic:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -642,9 +603,6 @@ importers:
 
   examples/with-assistant-ui:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@assistant-ui/react':
         specifier: ^0.11.47
         version: 0.11.50(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)
@@ -788,9 +746,6 @@ importers:
 
   examples/with-cerbos:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@cerbos/grpc':
         specifier: ^0.23.0
         version: 0.23.7(@bufbuild/protobuf@2.10.1)(@cerbos/api@0.4.0)
@@ -828,9 +783,6 @@ importers:
 
   examples/with-chroma:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@chroma-core/default-embed':
         specifier: ^0.1.8
         version: 0.1.8
@@ -877,9 +829,6 @@ importers:
 
   examples/with-client-side-tools:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@ai-sdk/react':
         specifier: ^3.0.0
         version: 3.0.3(react@19.2.3)(zod@3.25.76)
@@ -932,9 +881,6 @@ importers:
 
   examples/with-cloudflare-workers:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
         specifier: ^2.1.0
         version: link:../../packages/core
@@ -966,9 +912,6 @@ importers:
 
   examples/with-composio-mcp:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1005,10 +948,10 @@ importers:
     dependencies:
       '@copilotkit/react-core':
         specifier: ^1.50.0
-        version: 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1)
+        version: 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.3.5)
       '@copilotkit/react-ui':
         specifier: ^1.50.0
-        version: 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1)
+        version: 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.3.5)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -1034,9 +977,6 @@ importers:
 
   examples/with-copilotkit/server:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@copilotkit/runtime':
         specifier: ^1.50.0
         version: 1.50.0(@langchain/core@0.3.70)(openai@5.23.2)
@@ -1068,9 +1008,6 @@ importers:
 
   examples/with-custom-endpoints:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1105,9 +1042,6 @@ importers:
 
   examples/with-dynamic-parameters:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1142,9 +1076,6 @@ importers:
 
   examples/with-dynamic-prompts:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1179,9 +1110,6 @@ importers:
 
   examples/with-feedback:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1196,7 +1124,7 @@ importers:
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -1210,9 +1138,6 @@ importers:
 
   examples/with-google-ai:
     dependencies:
-      '@ai-sdk/google':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1290,9 +1215,6 @@ importers:
 
   examples/with-google-drive-mcp/server:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.18.2(hono@4.9.1)
@@ -1339,9 +1261,6 @@ importers:
 
   examples/with-google-vertex-ai:
     dependencies:
-      '@ai-sdk/google-vertex':
-        specifier: ^3.0.25
-        version: 3.0.25(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1376,9 +1295,6 @@ importers:
 
   examples/with-groq-ai:
     dependencies:
-      '@ai-sdk/groq':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1413,9 +1329,6 @@ importers:
 
   examples/with-guardrails:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1430,7 +1343,7 @@ importers:
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -1444,9 +1357,6 @@ importers:
 
   examples/with-hooks:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1481,9 +1391,6 @@ importers:
 
   examples/with-hugging-face-mcp:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1518,9 +1425,6 @@ importers:
 
   examples/with-jwt-auth:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
         specifier: ^2.0.2
         version: link:../../packages/core
@@ -1595,9 +1499,6 @@ importers:
 
   examples/with-langfuse:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1635,9 +1536,6 @@ importers:
 
   examples/with-live-evals:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
         specifier: ^2.0.2
         version: link:../../packages/core
@@ -1663,9 +1561,6 @@ importers:
 
   examples/with-mcp:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1700,9 +1595,6 @@ importers:
 
   examples/with-mcp-elicitation:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1737,9 +1629,6 @@ importers:
 
   examples/with-mcp-server:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
         specifier: ^2.1.0
         version: link:../../packages/core
@@ -1771,9 +1660,6 @@ importers:
 
   examples/with-memory-rest-api:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -1802,9 +1688,6 @@ importers:
 
   examples/with-nestjs:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.7(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -1860,9 +1743,6 @@ importers:
 
   examples/with-netlify-functions:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
         specifier: ^2.1.0
         version: link:../../packages/core
@@ -1891,9 +1771,6 @@ importers:
 
   examples/with-nextjs:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@ai-sdk/react':
         specifier: ^3.0.0
         version: 3.0.3(react@19.2.3)(zod@3.25.76)
@@ -1967,9 +1844,6 @@ importers:
 
   examples/with-nextjs-resumable-stream:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@ai-sdk/react':
         specifier: ^3.0.0
         version: 3.0.3(react@19.2.3)(zod@3.25.76)
@@ -2127,9 +2001,6 @@ importers:
 
   examples/with-nuxt:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@nuxt/eslint':
         specifier: ^1.9.0
         version: 1.9.0(@vue/compiler-sfc@3.5.22)(eslint@9.33.0)(typescript@5.9.3)(vite@7.2.7)
@@ -2167,9 +2038,6 @@ importers:
 
   examples/with-offline-evals:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2238,9 +2106,6 @@ importers:
 
   examples/with-peaka-mcp:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2275,9 +2140,6 @@ importers:
 
   examples/with-pinecone:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@pinecone-database/pinecone':
         specifier: ^6.1.1
         version: 6.1.2
@@ -2318,9 +2180,6 @@ importers:
 
   examples/with-planagents:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@tavily/core':
         specifier: ^0.6.3
         version: 0.6.3
@@ -2358,9 +2217,6 @@ importers:
 
   examples/with-playwright:
     dependencies:
-      '@ai-sdk/mistral':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@playwright/browser-chromium':
         specifier: 1.51.1
         version: 1.51.1
@@ -2419,9 +2275,6 @@ importers:
 
   examples/with-postgres:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2456,9 +2309,6 @@ importers:
 
   examples/with-qdrant:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@qdrant/js-client-rest':
         specifier: ^1.15.0
         version: 1.15.0(typescript@5.9.2)
@@ -2499,9 +2349,6 @@ importers:
 
   examples/with-rag-chatbot:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2536,9 +2383,6 @@ importers:
 
   examples/with-recipe-generator:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2570,9 +2414,6 @@ importers:
 
   examples/with-research-assistant:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2604,9 +2445,6 @@ importers:
 
   examples/with-resumable-streams:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@voltagent/core':
         specifier: ^2.1.0
         version: link:../../packages/core
@@ -2621,7 +2459,7 @@ importers:
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -2635,9 +2473,6 @@ importers:
 
   examples/with-retrieval:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2672,9 +2507,6 @@ importers:
 
   examples/with-slack:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2749,9 +2581,6 @@ importers:
 
   examples/with-supabase:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@supabase/supabase-js':
         specifier: ^2.49.4
         version: 2.55.0
@@ -2789,9 +2618,6 @@ importers:
 
   examples/with-tavily-search:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2826,9 +2652,6 @@ importers:
 
   examples/with-thinking-tool:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2900,9 +2723,6 @@ importers:
 
   examples/with-turso:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -2974,9 +2794,6 @@ importers:
 
   examples/with-vercel-ai:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3011,9 +2828,6 @@ importers:
 
   examples/with-viteval:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3066,9 +2880,6 @@ importers:
 
   examples/with-voice-elevenlabs:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3106,9 +2917,6 @@ importers:
 
   examples/with-voice-openai:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3152,9 +2960,6 @@ importers:
 
   examples/with-voice-xsai:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3198,9 +3003,6 @@ importers:
 
   examples/with-voltagent-actions:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3232,9 +3034,6 @@ importers:
 
   examples/with-voltagent-exporter:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3303,9 +3102,6 @@ importers:
 
   examples/with-voltops-resumable-streams:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@voltagent/core':
         specifier: ^2.1.0
         version: link:../../packages/core
@@ -3320,7 +3116,7 @@ importers:
         version: link:../../packages/server-hono
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -3334,9 +3130,6 @@ importers:
 
   examples/with-voltops-retrieval:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3371,9 +3164,6 @@ importers:
 
   examples/with-whatsapp:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@supabase/supabase-js':
         specifier: ^2.49.4
         version: 2.58.0
@@ -3414,9 +3204,6 @@ importers:
 
   examples/with-workflow:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3451,9 +3238,6 @@ importers:
 
   examples/with-working-memory:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3488,9 +3272,6 @@ importers:
 
   examples/with-youtube-to-blog:
     dependencies:
-      '@ai-sdk/openai':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.21
         version: link:../../packages/cli
@@ -3525,12 +3306,6 @@ importers:
 
   examples/with-zapier-mcp:
     dependencies:
-      '@ai-sdk/amazon-bedrock':
-        specifier: ^3.0.0
-        version: 3.0.7(zod@3.25.76)
-      '@aws-sdk/credential-providers':
-        specifier: ~3.799.0
-        version: 3.799.0
       '@voltagent/core':
         specifier: ~2.1.0
         version: link:../../packages/core
@@ -3733,7 +3508,7 @@ importers:
         version: link:../logger
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
 
   packages/core:
     dependencies:
@@ -3793,7 +3568,7 @@ importers:
         version: 1.0.1
       '@gitlab/gitlab-ai-provider':
         specifier: ^3.1.1
-        version: 3.1.1(@ai-sdk/provider-utils@4.0.1)(@ai-sdk/provider@3.0.0)(graphql@16.11.0)(ws@8.18.3)
+        version: 3.1.1(@ai-sdk/provider-utils@4.0.1)(@ai-sdk/provider@3.0.4)(graphql@16.11.0)(ws@8.18.3)
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.1
         version: 1.17.2
@@ -3865,7 +3640,7 @@ importers:
         version: 9.0.1
       workers-ai-provider:
         specifier: ^3.0.2
-        version: 3.0.2(@ai-sdk/provider-utils@4.0.1)(@ai-sdk/provider@3.0.0)(ai@6.0.3)(zod@3.25.76)
+        version: 3.0.2(@ai-sdk/provider-utils@4.0.1)(@ai-sdk/provider@3.0.4)(ai@6.0.3)(zod@3.25.76)
       zod-from-json-schema:
         specifier: ^0.5.0
         version: 0.5.0
@@ -4041,7 +3816,7 @@ importers:
         version: link:../logger
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
 
   packages/logger:
     dependencies:
@@ -4107,7 +3882,7 @@ importers:
         version: link:../core
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
 
   packages/rag:
     dependencies:
@@ -4129,7 +3904,7 @@ importers:
         version: link:../internal
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
       redis:
         specifier: ^4.7.0
         version: 4.7.1
@@ -4330,7 +4105,7 @@ importers:
         version: link:../logger
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
 
   packages/voice:
     dependencies:
@@ -4380,7 +4155,7 @@ importers:
         version: link:../core
       ai:
         specifier: ^6.0.0
-        version: 6.0.3(zod@4.2.1)
+        version: 6.0.3(zod@4.3.5)
 
 packages:
 
@@ -4733,16 +4508,16 @@ packages:
       '@vercel/oidc': 3.0.5
       zod: 3.25.76
 
-  /@ai-sdk/gateway@3.0.2(zod@4.2.1):
+  /@ai-sdk/gateway@3.0.2(zod@4.3.5):
     resolution: {integrity: sha512-giJEg9ob45htbu3iautK+2kvplY2JnTj7ir4wZzYSQWvqGatWfBBfDuNCU5wSJt9BCGjymM5ZS9ziD42JGCZBw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
       '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.2.1)
+      '@ai-sdk/provider-utils': 4.0.1(zod@4.3.5)
       '@vercel/oidc': 3.0.5
-      zod: 4.2.1
+      zod: 4.3.5
 
   /@ai-sdk/google-vertex@3.0.25(zod@3.25.76):
     resolution: {integrity: sha512-X4VRfFHTMr50wo8qvoA4WmxmehSAMzEAiJ5pPn0/EPB4kxytz53g7BijRBDL+MZpqXRNiwF3taf4p3P1WUMnVA==}
@@ -5095,6 +4870,18 @@ packages:
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 4.2.1
+    dev: false
+
+  /@ai-sdk/provider-utils@4.0.1(zod@4.3.5):
+    resolution: {integrity: sha512-de2v8gH9zj47tRI38oSxhQIewmNc+OZjYIOOaMoVWKL65ERSav2PYYZHPSPCrfOeLMkv+Dyh8Y0QGwkO29wMWQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+    dependencies:
+      '@ai-sdk/provider': 3.0.0
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.0.6
+      zod: 4.3.5
 
   /@ai-sdk/provider-utils@4.0.8(zod@3.25.76):
     resolution: {integrity: sha512-ns9gN7MmpI8vTRandzgz+KK/zNMLzhrriiKECMt4euLtQFSBgNfydtagPOX4j4pS1/3KvHF6RivhT3gNQgBZsg==}
@@ -5579,33 +5366,6 @@ packages:
       tslib: 2.8.1
     dev: false
 
-  /@aws-crypto/sha256-browser@5.2.0:
-    resolution: {integrity: sha512-AXfN/lGotSQwu6HNcEsIASo7kWXZ5HYWvfOmSNKDsEqC4OashTp8alTmaz+F7TC2L083SFv5RdB+qU3Vs1kZqw==}
-    dependencies:
-      '@aws-crypto/sha256-js': 5.2.0
-      '@aws-crypto/supports-web-crypto': 5.2.0
-      '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.775.0
-      '@aws-sdk/util-locate-window': 3.804.0
-      '@smithy/util-utf8': 2.3.0
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-crypto/sha256-js@5.2.0:
-    resolution: {integrity: sha512-FFQQyu7edu4ufvIZ+OadFpHHOt+eSTBaYaki44c+akjg7qZg9oOQeLlk77F6tSYqjDAFClrHJk9tMf0HdVyOvA==}
-    engines: {node: '>=16.0.0'}
-    dependencies:
-      '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.775.0
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-crypto/supports-web-crypto@5.2.0:
-    resolution: {integrity: sha512-iAvUotm021kM33eCdNfwIN//F77/IADDSs58i+MDaOqFrVjZo9bAal0NK7HurRuWLLpF1iLX7gbWrjHjeo+YFg==}
-    dependencies:
-      tslib: 2.8.1
-    dev: false
-
   /@aws-crypto/util@5.2.0:
     resolution: {integrity: sha512-4RkU9EsI6ZpBve5fseQlGNUWKMa1RLPQ1dnjnQoe07ldfIzcsGb5hC5W0Dm7u423KWzawlrpbjXBrXCEv9zazQ==}
     dependencies:
@@ -5614,434 +5374,10 @@ packages:
       tslib: 2.8.1
     dev: false
 
-  /@aws-sdk/client-cognito-identity@3.799.0:
-    resolution: {integrity: sha512-gg1sncxYDpYWetey3v/nw9zSkL/Vj2potpeO9sYWY2brcm8SbGh106I6IM/gX6KnY9Y2Bre8xb+JoZGz6ntcnw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-crypto/sha256-browser': 5.2.0
-      '@aws-crypto/sha256-js': 5.2.0
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/credential-provider-node': 3.799.0
-      '@aws-sdk/middleware-host-header': 3.775.0
-      '@aws-sdk/middleware-logger': 3.775.0
-      '@aws-sdk/middleware-recursion-detection': 3.775.0
-      '@aws-sdk/middleware-user-agent': 3.799.0
-      '@aws-sdk/region-config-resolver': 3.775.0
-      '@aws-sdk/types': 3.775.0
-      '@aws-sdk/util-endpoints': 3.787.0
-      '@aws-sdk/util-user-agent-browser': 3.775.0
-      '@aws-sdk/util-user-agent-node': 3.799.0
-      '@smithy/config-resolver': 4.1.5
-      '@smithy/core': 3.8.0
-      '@smithy/fetch-http-handler': 5.1.1
-      '@smithy/hash-node': 4.0.5
-      '@smithy/invalid-dependency': 4.0.5
-      '@smithy/middleware-content-length': 4.0.5
-      '@smithy/middleware-endpoint': 4.1.18
-      '@smithy/middleware-retry': 4.1.19
-      '@smithy/middleware-serde': 4.0.9
-      '@smithy/middleware-stack': 4.0.5
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/node-http-handler': 4.1.1
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/smithy-client': 4.4.10
-      '@smithy/types': 4.3.2
-      '@smithy/url-parser': 4.0.5
-      '@smithy/util-base64': 4.0.0
-      '@smithy/util-body-length-browser': 4.0.0
-      '@smithy/util-body-length-node': 4.0.0
-      '@smithy/util-defaults-mode-browser': 4.0.26
-      '@smithy/util-defaults-mode-node': 4.0.26
-      '@smithy/util-endpoints': 3.0.7
-      '@smithy/util-middleware': 4.0.5
-      '@smithy/util-retry': 4.0.7
-      '@smithy/util-utf8': 4.0.0
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/client-sso@3.799.0:
-    resolution: {integrity: sha512-/i/LG7AiWPmPxKCA2jnR2zaf7B3HYSTbxaZI21ElIz9wASlNAsKr8CnLY7qb50kOyXiNfQ834S5Q3Gl8dX9o3Q==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-crypto/sha256-browser': 5.2.0
-      '@aws-crypto/sha256-js': 5.2.0
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/middleware-host-header': 3.775.0
-      '@aws-sdk/middleware-logger': 3.775.0
-      '@aws-sdk/middleware-recursion-detection': 3.775.0
-      '@aws-sdk/middleware-user-agent': 3.799.0
-      '@aws-sdk/region-config-resolver': 3.775.0
-      '@aws-sdk/types': 3.775.0
-      '@aws-sdk/util-endpoints': 3.787.0
-      '@aws-sdk/util-user-agent-browser': 3.775.0
-      '@aws-sdk/util-user-agent-node': 3.799.0
-      '@smithy/config-resolver': 4.1.5
-      '@smithy/core': 3.8.0
-      '@smithy/fetch-http-handler': 5.1.1
-      '@smithy/hash-node': 4.0.5
-      '@smithy/invalid-dependency': 4.0.5
-      '@smithy/middleware-content-length': 4.0.5
-      '@smithy/middleware-endpoint': 4.1.18
-      '@smithy/middleware-retry': 4.1.19
-      '@smithy/middleware-serde': 4.0.9
-      '@smithy/middleware-stack': 4.0.5
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/node-http-handler': 4.1.1
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/smithy-client': 4.4.10
-      '@smithy/types': 4.3.2
-      '@smithy/url-parser': 4.0.5
-      '@smithy/util-base64': 4.0.0
-      '@smithy/util-body-length-browser': 4.0.0
-      '@smithy/util-body-length-node': 4.0.0
-      '@smithy/util-defaults-mode-browser': 4.0.26
-      '@smithy/util-defaults-mode-node': 4.0.26
-      '@smithy/util-endpoints': 3.0.7
-      '@smithy/util-middleware': 4.0.5
-      '@smithy/util-retry': 4.0.7
-      '@smithy/util-utf8': 4.0.0
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/core@3.799.0:
-    resolution: {integrity: sha512-hkKF3Zpc6+H8GI1rlttYVRh9uEE77cqAzLmLpY3iu7sql8cZgPERRBfaFct8p1SaDyrksLNiboD1vKW58mbsYg==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/types': 3.775.0
-      '@smithy/core': 3.8.0
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/property-provider': 4.0.5
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/signature-v4': 5.1.3
-      '@smithy/smithy-client': 4.4.10
-      '@smithy/types': 4.3.2
-      '@smithy/util-middleware': 4.0.5
-      fast-xml-parser: 4.4.1
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/credential-provider-cognito-identity@3.799.0:
-    resolution: {integrity: sha512-qHOqGsvt/z1bvjJRzndW8VaRfbGBhoETZpoRYNbfCbrNH2IRM98KRUlYH1EJ1wFFkT0gUDJr+oIOUCvRlgRW1Q==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/client-cognito-identity': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/property-provider': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/credential-provider-env@3.799.0:
-    resolution: {integrity: sha512-vT/SSWtbUIOW/U21qgEySmmO44SFWIA7WeQPX1OrI8WJ5n7OEI23JWLHjLvHTkYmuZK6z1rPcv7HzRgmuGRibA==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/property-provider': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/credential-provider-http@3.799.0:
-    resolution: {integrity: sha512-2CjBpOWmhaPAExOgHnIB5nOkS5ef+mfRlJ1JC4nsnjAx0nrK4tk0XRE0LYz11P3+ue+a86cU8WTmBo+qjnGxPQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/fetch-http-handler': 5.1.1
-      '@smithy/node-http-handler': 4.1.1
-      '@smithy/property-provider': 4.0.5
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/smithy-client': 4.4.10
-      '@smithy/types': 4.3.2
-      '@smithy/util-stream': 4.2.4
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/credential-provider-ini@3.799.0:
-    resolution: {integrity: sha512-M9ubILFxerqw4QJwk83MnjtZyoA2eNCiea5V+PzZeHlwk2PON/EnawKqy65x9/hMHGoSvvNuby7iMAmPptu7yw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/credential-provider-env': 3.799.0
-      '@aws-sdk/credential-provider-http': 3.799.0
-      '@aws-sdk/credential-provider-process': 3.799.0
-      '@aws-sdk/credential-provider-sso': 3.799.0
-      '@aws-sdk/credential-provider-web-identity': 3.799.0
-      '@aws-sdk/nested-clients': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/credential-provider-imds': 4.0.7
-      '@smithy/property-provider': 4.0.5
-      '@smithy/shared-ini-file-loader': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/credential-provider-node@3.799.0:
-    resolution: {integrity: sha512-nd9fSJc0wUlgKUkIr2ldJhcIIrzJFS29AGZoyY22J3xih63nNDv61eTGVMsDZzHlV21XzMlPEljTR7axiimckg==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/credential-provider-env': 3.799.0
-      '@aws-sdk/credential-provider-http': 3.799.0
-      '@aws-sdk/credential-provider-ini': 3.799.0
-      '@aws-sdk/credential-provider-process': 3.799.0
-      '@aws-sdk/credential-provider-sso': 3.799.0
-      '@aws-sdk/credential-provider-web-identity': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/credential-provider-imds': 4.0.7
-      '@smithy/property-provider': 4.0.5
-      '@smithy/shared-ini-file-loader': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/credential-provider-process@3.799.0:
-    resolution: {integrity: sha512-g8jmNs2k98WNHMYcea1YKA+7ao2Ma4w0P42Dz4YpcI155pQHxHx25RwbOG+rsAKuo3bKwkW53HVE/ZTKhcWFgw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/property-provider': 4.0.5
-      '@smithy/shared-ini-file-loader': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/credential-provider-sso@3.799.0:
-    resolution: {integrity: sha512-lQv27QkNU9FJFZqEf5DIEN3uXEN409Iaym9WJzhOouGtxvTIAWiD23OYh1u8PvBdrordJGS2YddfQvhcmq9akw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/client-sso': 3.799.0
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/token-providers': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/property-provider': 4.0.5
-      '@smithy/shared-ini-file-loader': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/credential-provider-web-identity@3.799.0:
-    resolution: {integrity: sha512-8k1i9ut+BEg0QZ+I6UQMxGNR1T8paLmAOAZXU+nLQR0lcxS6lr8v+dqofgzQPuHLBkWNCr1Av1IKeL3bJjgU7g==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/nested-clients': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/property-provider': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/credential-providers@3.799.0:
-    resolution: {integrity: sha512-Gk10skoEri6zsCPxn34Zpu6Z1B5R3RLwqDw1krNl+B1P749gB6i7XULXZUOotqpum0T0q4euOwAB8XWuTOkKew==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/client-cognito-identity': 3.799.0
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/credential-provider-cognito-identity': 3.799.0
-      '@aws-sdk/credential-provider-env': 3.799.0
-      '@aws-sdk/credential-provider-http': 3.799.0
-      '@aws-sdk/credential-provider-ini': 3.799.0
-      '@aws-sdk/credential-provider-node': 3.799.0
-      '@aws-sdk/credential-provider-process': 3.799.0
-      '@aws-sdk/credential-provider-sso': 3.799.0
-      '@aws-sdk/credential-provider-web-identity': 3.799.0
-      '@aws-sdk/nested-clients': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/config-resolver': 4.1.5
-      '@smithy/core': 3.8.0
-      '@smithy/credential-provider-imds': 4.0.7
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/property-provider': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/middleware-host-header@3.775.0:
-    resolution: {integrity: sha512-tkSegM0Z6WMXpLB8oPys/d+umYIocvO298mGvcMCncpRl77L9XkvSLJIFzaHes+o7djAgIduYw8wKIMStFss2w==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/types': 3.775.0
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/middleware-logger@3.775.0:
-    resolution: {integrity: sha512-FaxO1xom4MAoUJsldmR92nT1G6uZxTdNYOFYtdHfd6N2wcNaTuxgjIvqzg5y7QIH9kn58XX/dzf1iTjgqUStZw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/types': 3.775.0
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/middleware-recursion-detection@3.775.0:
-    resolution: {integrity: sha512-GLCzC8D0A0YDG5u3F5U03Vb9j5tcOEFhr8oc6PDk0k0vm5VwtZOE6LvK7hcCSoAB4HXyOUM0sQuXrbaAh9OwXA==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/types': 3.775.0
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/middleware-user-agent@3.799.0:
-    resolution: {integrity: sha512-TropQZanbOTxa+p+Nl4fWkzlRhgFwDfW+Wb6TR3jZN7IXHNlPpgGFpdrgvBExhW/RBhqr+94OsR8Ou58lp3hhA==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@aws-sdk/util-endpoints': 3.787.0
-      '@smithy/core': 3.8.0
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/nested-clients@3.799.0:
-    resolution: {integrity: sha512-zILlWh7asrcQG9JYMYgnvEQBfwmWKfED0yWCf3UNAmQcfS9wkCAWCgicNy/y5KvNvEYnHidsU117STtyuUNG5g==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-crypto/sha256-browser': 5.2.0
-      '@aws-crypto/sha256-js': 5.2.0
-      '@aws-sdk/core': 3.799.0
-      '@aws-sdk/middleware-host-header': 3.775.0
-      '@aws-sdk/middleware-logger': 3.775.0
-      '@aws-sdk/middleware-recursion-detection': 3.775.0
-      '@aws-sdk/middleware-user-agent': 3.799.0
-      '@aws-sdk/region-config-resolver': 3.775.0
-      '@aws-sdk/types': 3.775.0
-      '@aws-sdk/util-endpoints': 3.787.0
-      '@aws-sdk/util-user-agent-browser': 3.775.0
-      '@aws-sdk/util-user-agent-node': 3.799.0
-      '@smithy/config-resolver': 4.1.5
-      '@smithy/core': 3.8.0
-      '@smithy/fetch-http-handler': 5.1.1
-      '@smithy/hash-node': 4.0.5
-      '@smithy/invalid-dependency': 4.0.5
-      '@smithy/middleware-content-length': 4.0.5
-      '@smithy/middleware-endpoint': 4.1.18
-      '@smithy/middleware-retry': 4.1.19
-      '@smithy/middleware-serde': 4.0.9
-      '@smithy/middleware-stack': 4.0.5
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/node-http-handler': 4.1.1
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/smithy-client': 4.4.10
-      '@smithy/types': 4.3.2
-      '@smithy/url-parser': 4.0.5
-      '@smithy/util-base64': 4.0.0
-      '@smithy/util-body-length-browser': 4.0.0
-      '@smithy/util-body-length-node': 4.0.0
-      '@smithy/util-defaults-mode-browser': 4.0.26
-      '@smithy/util-defaults-mode-node': 4.0.26
-      '@smithy/util-endpoints': 3.0.7
-      '@smithy/util-middleware': 4.0.5
-      '@smithy/util-retry': 4.0.7
-      '@smithy/util-utf8': 4.0.0
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/region-config-resolver@3.775.0:
-    resolution: {integrity: sha512-40iH3LJjrQS3LKUJAl7Wj0bln7RFPEvUYKFxtP8a+oKFDO0F65F52xZxIJbPn6sHkxWDAnZlGgdjZXM3p2g5wQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/types': 3.775.0
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/types': 4.3.2
-      '@smithy/util-config-provider': 4.0.0
-      '@smithy/util-middleware': 4.0.5
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/token-providers@3.799.0:
-    resolution: {integrity: sha512-/8iDjnsJs/D8AhGbDAmdF5oSHzE4jsDsM2RIIxmBAKTZXkaaclQBNX9CmAqLKQmO3IUMZsDH2KENHLVAk/N/mw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/nested-clients': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/property-provider': 4.0.5
-      '@smithy/shared-ini-file-loader': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-    dev: false
-
-  /@aws-sdk/types@3.775.0:
-    resolution: {integrity: sha512-ZoGKwa4C9fC9Av6bdfqcW6Ix5ot05F/S4VxWR2nHuMv7hzfmAjTOcUiWT7UR4hM/U0whf84VhDtXN/DWAk52KA==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
   /@aws-sdk/types@3.862.0:
     resolution: {integrity: sha512-Bei+RL0cDxxV+lW2UezLbCYYNeJm6Nzee0TpW0FfyTRBhH9C1XQh4+x+IClriXvgBnRquTMMYsmJfvx8iyLKrg==}
     engines: {node: '>=18.0.0'}
     dependencies:
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/util-endpoints@3.787.0:
-    resolution: {integrity: sha512-fd3zkiOkwnbdbN0Xp9TsP5SWrmv0SpT70YEdbb8wAj2DWQwiCmFszaSs+YCvhoCdmlR3Wl9Spu0pGpSAGKeYvQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@aws-sdk/types': 3.775.0
-      '@smithy/types': 4.3.2
-      '@smithy/util-endpoints': 3.0.7
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/util-locate-window@3.804.0:
-    resolution: {integrity: sha512-zVoRfpmBVPodYlnMjgVjfGoEZagyRF5IPn3Uo6ZvOZp24chnW/FRstH7ESDHDDRga4z3V+ElUQHKpFDXWyBW5A==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/util-user-agent-browser@3.775.0:
-    resolution: {integrity: sha512-txw2wkiJmZKVdDbscK7VBK+u+TJnRtlUjRTLei+elZg2ADhpQxfVAQl436FUeIv6AhB/oRHW6/K/EAGXUSWi0A==}
-    dependencies:
-      '@aws-sdk/types': 3.775.0
-      '@smithy/types': 4.3.2
-      bowser: 2.12.0
-      tslib: 2.8.1
-    dev: false
-
-  /@aws-sdk/util-user-agent-node@3.799.0:
-    resolution: {integrity: sha512-iXBk38RbIWPF5Nq9O4AnktORAzXovSVqWYClvS1qbE7ILsnTLJbagU9HlU25O2iV5COVh1qZkwuP5NHQ2yTEyw==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      aws-crt: '>=1.0.0'
-    peerDependenciesMeta:
-      aws-crt:
-        optional: true
-    dependencies:
-      '@aws-sdk/middleware-user-agent': 3.799.0
-      '@aws-sdk/types': 3.775.0
-      '@smithy/node-config-provider': 4.1.4
       '@smithy/types': 4.3.2
       tslib: 2.8.1
     dev: false
@@ -8492,7 +7828,7 @@ packages:
     hasBin: true
     dev: false
 
-  /@copilotkit/react-core@1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1):
+  /@copilotkit/react-core@1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.3.5):
     resolution: {integrity: sha512-JfUEvmgXgPz7wIQq9EFXWGDMtYLIVKSNqPdJROEomZXLhREDlxpg+jr5KHvoOPUlSnVLzuPObRKSdeJTwVOGsQ==}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
@@ -8509,7 +7845,7 @@ packages:
       react-dom: 19.2.3(react@19.2.3)
       react-markdown: 8.0.7(@types/react@19.2.7)(react@19.2.3)
       untruncate-json: 0.0.1
-      zod: 4.2.1
+      zod: 4.3.5
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -8518,12 +7854,12 @@ packages:
       - supports-color
     dev: false
 
-  /@copilotkit/react-ui@1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1):
+  /@copilotkit/react-ui@1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.3.5):
     resolution: {integrity: sha512-BB4d5yrf3n3P0stCI7DLLo22EhesNz4ELuSKFT39P+GEjKMVcpZu+mR6NgkbIkrmU6cFxxsrJKv20p7T+EBnoA==}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
     dependencies:
-      '@copilotkit/react-core': 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.2.1)
+      '@copilotkit/react-core': 1.50.0(@types/react-dom@19.2.3)(@types/react@19.2.7)(react-dom@19.2.3)(react@19.2.3)(zod@4.3.5)
       '@copilotkit/runtime-client-gql': 1.50.0(react@19.2.3)
       '@copilotkit/shared': 1.50.0
       '@headlessui/react': 2.2.9(react-dom@19.2.3)(react@19.2.3)
@@ -9500,14 +8836,14 @@ packages:
     resolution: {integrity: sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==}
     dev: true
 
-  /@gitlab/gitlab-ai-provider@3.1.1(@ai-sdk/provider-utils@4.0.1)(@ai-sdk/provider@3.0.0)(graphql@16.11.0)(ws@8.18.3):
+  /@gitlab/gitlab-ai-provider@3.1.1(@ai-sdk/provider-utils@4.0.1)(@ai-sdk/provider@3.0.4)(graphql@16.11.0)(ws@8.18.3):
     resolution: {integrity: sha512-7AtFrCflq2NzC99bj7YaqbQDCZyaScM1+L4ujllV5syiRTFE239Uhnd/yEkPXa7sUAnNRfN3CWusCkQ2zK/q9g==}
     engines: {node: '>=18'}
     peerDependencies:
       '@ai-sdk/provider': '>=2.0.0'
       '@ai-sdk/provider-utils': '>=3.0.0'
     dependencies:
-      '@ai-sdk/provider': 3.0.0
+      '@ai-sdk/provider': 3.0.4
       '@ai-sdk/provider-utils': 4.0.1(zod@3.25.76)
       '@anthropic-ai/sdk': 0.71.2(zod@3.25.76)
       '@anycable/core': 0.9.2
@@ -17557,53 +16893,6 @@ packages:
       '@sinonjs/commons': 3.0.1
     dev: true
 
-  /@smithy/abort-controller@4.0.5:
-    resolution: {integrity: sha512-jcrqdTQurIrBbUm4W2YdLVMQDoL0sA9DTxYd2s+R/y+2U9NLOP7Xf/YqfSg1FZhlZIYEnvk2mwbyvIfdLEPo8g==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/config-resolver@4.1.5:
-    resolution: {integrity: sha512-viuHMxBAqydkB0AfWwHIdwf/PRH2z5KHGUzqyRtS/Wv+n3IHI993Sk76VCA7dD/+GzgGOmlJDITfPcJC1nIVIw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/types': 4.3.2
-      '@smithy/util-config-provider': 4.0.0
-      '@smithy/util-middleware': 4.0.5
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/core@3.8.0:
-    resolution: {integrity: sha512-EYqsIYJmkR1VhVE9pccnk353xhs+lB6btdutJEtsp7R055haMJp2yE16eSxw8fv+G0WUY6vqxyYOP8kOqawxYQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/middleware-serde': 4.0.9
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/types': 4.3.2
-      '@smithy/util-base64': 4.0.0
-      '@smithy/util-body-length-browser': 4.0.0
-      '@smithy/util-middleware': 4.0.5
-      '@smithy/util-stream': 4.2.4
-      '@smithy/util-utf8': 4.0.0
-      '@types/uuid': 9.0.8
-      tslib: 2.8.1
-      uuid: 9.0.1
-    dev: false
-
-  /@smithy/credential-provider-imds@4.0.7:
-    resolution: {integrity: sha512-dDzrMXA8d8riFNiPvytxn0mNwR4B3h8lgrQ5UjAGu6T9z/kRg/Xncf4tEQHE/+t25sY8IH3CowcmWi+1U5B1Gw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/property-provider': 4.0.5
-      '@smithy/types': 4.3.2
-      '@smithy/url-parser': 4.0.5
-      tslib: 2.8.1
-    dev: false
-
   /@smithy/eventstream-codec@4.0.5:
     resolution: {integrity: sha512-miEUN+nz2UTNoRYRhRqVTJCx7jMeILdAurStT2XoS+mhokkmz1xAPp95DFW9Gxt4iF2VBqpeF9HbTQ3kY1viOA==}
     engines: {node: '>=18.0.0'}
@@ -17611,35 +16900,6 @@ packages:
       '@aws-crypto/crc32': 5.2.0
       '@smithy/types': 4.3.2
       '@smithy/util-hex-encoding': 4.0.0
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/fetch-http-handler@5.1.1:
-    resolution: {integrity: sha512-61WjM0PWmZJR+SnmzaKI7t7G0UkkNFboDpzIdzSoy7TByUzlxo18Qlh9s71qug4AY4hlH/CwXdubMtkcNEb/sQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/querystring-builder': 4.0.5
-      '@smithy/types': 4.3.2
-      '@smithy/util-base64': 4.0.0
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/hash-node@4.0.5:
-    resolution: {integrity: sha512-cv1HHkKhpyRb6ahD8Vcfb2Hgz67vNIXEp2vnhzfxLFGRukLCNEA5QdsorbUEzXma1Rco0u3rx5VTqbM06GcZqQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      '@smithy/util-buffer-from': 4.0.0
-      '@smithy/util-utf8': 4.0.0
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/invalid-dependency@4.0.5:
-    resolution: {integrity: sha512-IVnb78Qtf7EJpoEVo7qJ8BEXQwgC4n3igeJNNKEj/MLYtapnx8A67Zt/J3RXAj2xSO1910zk0LdFiygSemuLow==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
       tslib: 2.8.1
     dev: false
 
@@ -17657,192 +16917,8 @@ packages:
       tslib: 2.8.1
     dev: false
 
-  /@smithy/middleware-content-length@4.0.5:
-    resolution: {integrity: sha512-l1jlNZoYzoCC7p0zCtBDE5OBXZ95yMKlRlftooE5jPWQn4YBPLgsp+oeHp7iMHaTGoUdFqmHOPa8c9G3gBsRpQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/middleware-endpoint@4.1.18:
-    resolution: {integrity: sha512-ZhvqcVRPZxnZlokcPaTwb+r+h4yOIOCJmx0v2d1bpVlmP465g3qpVSf7wxcq5zZdu4jb0H4yIMxuPwDJSQc3MQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/core': 3.8.0
-      '@smithy/middleware-serde': 4.0.9
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/shared-ini-file-loader': 4.0.5
-      '@smithy/types': 4.3.2
-      '@smithy/url-parser': 4.0.5
-      '@smithy/util-middleware': 4.0.5
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/middleware-retry@4.1.19:
-    resolution: {integrity: sha512-X58zx/NVECjeuUB6A8HBu4bhx72EoUz+T5jTMIyeNKx2lf+Gs9TmWPNNkH+5QF0COjpInP/xSpJGJ7xEnAklQQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/service-error-classification': 4.0.7
-      '@smithy/smithy-client': 4.4.10
-      '@smithy/types': 4.3.2
-      '@smithy/util-middleware': 4.0.5
-      '@smithy/util-retry': 4.0.7
-      '@types/uuid': 9.0.8
-      tslib: 2.8.1
-      uuid: 9.0.1
-    dev: false
-
-  /@smithy/middleware-serde@4.0.9:
-    resolution: {integrity: sha512-uAFFR4dpeoJPGz8x9mhxp+RPjo5wW0QEEIPPPbLXiRRWeCATf/Km3gKIVR5vaP8bN1kgsPhcEeh+IZvUlBv6Xg==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/middleware-stack@4.0.5:
-    resolution: {integrity: sha512-/yoHDXZPh3ocRVyeWQFvC44u8seu3eYzZRveCMfgMOBcNKnAmOvjbL9+Cp5XKSIi9iYA9PECUuW2teDAk8T+OQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/node-config-provider@4.1.4:
-    resolution: {integrity: sha512-+UDQV/k42jLEPPHSn39l0Bmc4sB1xtdI9Gd47fzo/0PbXzJ7ylgaOByVjF5EeQIumkepnrJyfx86dPa9p47Y+w==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/property-provider': 4.0.5
-      '@smithy/shared-ini-file-loader': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/node-http-handler@4.1.1:
-    resolution: {integrity: sha512-RHnlHqFpoVdjSPPiYy/t40Zovf3BBHc2oemgD7VsVTFFZrU5erFFe0n52OANZZ/5sbshgD93sOh5r6I35Xmpaw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/abort-controller': 4.0.5
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/querystring-builder': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/property-provider@4.0.5:
-    resolution: {integrity: sha512-R/bswf59T/n9ZgfgUICAZoWYKBHcsVDurAGX88zsiUtOTA/xUAPyiT+qkNCPwFn43pZqN84M4MiUsbSGQmgFIQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/protocol-http@5.1.3:
-    resolution: {integrity: sha512-fCJd2ZR7D22XhDY0l+92pUag/7je2BztPRQ01gU5bMChcyI0rlly7QFibnYHzcxDvccMjlpM/Q1ev8ceRIb48w==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/querystring-builder@4.0.5:
-    resolution: {integrity: sha512-NJeSCU57piZ56c+/wY+AbAw6rxCCAOZLCIniRE7wqvndqxcKKDOXzwWjrY7wGKEISfhL9gBbAaWWgHsUGedk+A==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      '@smithy/util-uri-escape': 4.0.0
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/querystring-parser@4.0.5:
-    resolution: {integrity: sha512-6SV7md2CzNG/WUeTjVe6Dj8noH32r4MnUeFKZrnVYsQxpGSIcphAanQMayi8jJLZAWm6pdM9ZXvKCpWOsIGg0w==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/service-error-classification@4.0.7:
-    resolution: {integrity: sha512-XvRHOipqpwNhEjDf2L5gJowZEm5nsxC16pAZOeEcsygdjv9A2jdOh3YoDQvOXBGTsaJk6mNWtzWalOB9976Wlg==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-    dev: false
-
-  /@smithy/shared-ini-file-loader@4.0.5:
-    resolution: {integrity: sha512-YVVwehRDuehgoXdEL4r1tAAzdaDgaC9EQvhK0lEbfnbrd0bd5+CTQumbdPryX3J2shT7ZqQE+jPW4lmNBAB8JQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/signature-v4@5.1.3:
-    resolution: {integrity: sha512-mARDSXSEgllNzMw6N+mC+r1AQlEBO3meEAkR/UlfAgnMzJUB3goRBWgip1EAMG99wh36MDqzo86SfIX5Y+VEaw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/is-array-buffer': 4.0.0
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/types': 4.3.2
-      '@smithy/util-hex-encoding': 4.0.0
-      '@smithy/util-middleware': 4.0.5
-      '@smithy/util-uri-escape': 4.0.0
-      '@smithy/util-utf8': 4.0.0
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/smithy-client@4.4.10:
-    resolution: {integrity: sha512-iW6HjXqN0oPtRS0NK/zzZ4zZeGESIFcxj2FkWed3mcK8jdSdHzvnCKXSjvewESKAgGKAbJRA+OsaqKhkdYRbQQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/core': 3.8.0
-      '@smithy/middleware-endpoint': 4.1.18
-      '@smithy/middleware-stack': 4.0.5
-      '@smithy/protocol-http': 5.1.3
-      '@smithy/types': 4.3.2
-      '@smithy/util-stream': 4.2.4
-      tslib: 2.8.1
-    dev: false
-
   /@smithy/types@4.3.2:
     resolution: {integrity: sha512-QO4zghLxiQ5W9UZmX2Lo0nta2PuE1sSrXUYDoaB6HMR762C0P7v/HEPHf6ZdglTVssJG1bsrSBxdc3quvDSihw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/url-parser@4.0.5:
-    resolution: {integrity: sha512-j+733Um7f1/DXjYhCbvNXABV53NyCRRA54C7bNEIxNPs0YjfRxeMKjjgm2jvTYrciZyCjsicHwQ6Q0ylo+NAUw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/querystring-parser': 4.0.5
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-base64@4.0.0:
-    resolution: {integrity: sha512-CvHfCmO2mchox9kjrtzoHkWHxjHZzaFojLc8quxXY7WAAMAg43nuxwv95tATVgQFNDwd4M9S1qFzj40Ul41Kmg==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/util-buffer-from': 4.0.0
-      '@smithy/util-utf8': 4.0.0
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-body-length-browser@4.0.0:
-    resolution: {integrity: sha512-sNi3DL0/k64/LO3A256M+m3CDdG6V7WKWHdAiBBMUN8S3hK3aMPhwnPik2A/a2ONN+9doY9UxaLfgqsIRg69QA==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-body-length-node@4.0.0:
-    resolution: {integrity: sha512-q0iDP3VsZzqJyje8xJWEJCNIu3lktUGVoSy1KB0UWym2CL1siV3artm+u1DFYTLejpsrdGyCSWBdGNjJzfDPjg==}
     engines: {node: '>=18.0.0'}
     dependencies:
       tslib: 2.8.1
@@ -17864,86 +16940,8 @@ packages:
       tslib: 2.8.1
     dev: false
 
-  /@smithy/util-config-provider@4.0.0:
-    resolution: {integrity: sha512-L1RBVzLyfE8OXH+1hsJ8p+acNUSirQnWQ6/EgpchV88G6zGBTDPdXiiExei6Z1wR2RxYvxY/XLw6AMNCCt8H3w==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-defaults-mode-browser@4.0.26:
-    resolution: {integrity: sha512-xgl75aHIS/3rrGp7iTxQAOELYeyiwBu+eEgAk4xfKwJJ0L8VUjhO2shsDpeil54BOFsqmk5xfdesiewbUY5tKQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/property-provider': 4.0.5
-      '@smithy/smithy-client': 4.4.10
-      '@smithy/types': 4.3.2
-      bowser: 2.12.0
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-defaults-mode-node@4.0.26:
-    resolution: {integrity: sha512-z81yyIkGiLLYVDetKTUeCZQ8x20EEzvQjrqJtb/mXnevLq2+w3XCEWTJ2pMp401b6BkEkHVfXb/cROBpVauLMQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/config-resolver': 4.1.5
-      '@smithy/credential-provider-imds': 4.0.7
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/property-provider': 4.0.5
-      '@smithy/smithy-client': 4.4.10
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-endpoints@3.0.7:
-    resolution: {integrity: sha512-klGBP+RpBp6V5JbrY2C/VKnHXn3d5V2YrifZbmMY8os7M6m8wdYFoO6w/fe5VkP+YVwrEktW3IWYaSQVNZJ8oQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/node-config-provider': 4.1.4
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
   /@smithy/util-hex-encoding@4.0.0:
     resolution: {integrity: sha512-Yk5mLhHtfIgW2W2WQZWSg5kuMZCVbvhFmC7rV4IO2QqnZdbEFPmQnCcGMAX2z/8Qj3B9hYYNjZOhWym+RwhePw==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-middleware@4.0.5:
-    resolution: {integrity: sha512-N40PfqsZHRSsByGB81HhSo+uvMxEHT+9e255S53pfBw/wI6WKDI7Jw9oyu5tJTLwZzV5DsMha3ji8jk9dsHmQQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-retry@4.0.7:
-    resolution: {integrity: sha512-TTO6rt0ppK70alZpkjwy+3nQlTiqNfoXja+qwuAchIEAIoSZW8Qyd76dvBv3I5bCpE38APafG23Y/u270NspiQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/service-error-classification': 4.0.7
-      '@smithy/types': 4.3.2
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-stream@4.2.4:
-    resolution: {integrity: sha512-vSKnvNZX2BXzl0U2RgCLOwWaAP9x/ddd/XobPK02pCbzRm5s55M53uwb1rl/Ts7RXZvdJZerPkA+en2FDghLuQ==}
-    engines: {node: '>=18.0.0'}
-    dependencies:
-      '@smithy/fetch-http-handler': 5.1.1
-      '@smithy/node-http-handler': 4.1.1
-      '@smithy/types': 4.3.2
-      '@smithy/util-base64': 4.0.0
-      '@smithy/util-buffer-from': 4.0.0
-      '@smithy/util-hex-encoding': 4.0.0
-      '@smithy/util-utf8': 4.0.0
-      tslib: 2.8.1
-    dev: false
-
-  /@smithy/util-uri-escape@4.0.0:
-    resolution: {integrity: sha512-77yfbCbQMtgtTylO9itEAdpPXSog3ZxMe09AEhm0dU0NLTalV70ghDZFR+Nfi1C60jnJoh/Re4090/DuZh2Omg==}
     engines: {node: '>=18.0.0'}
     dependencies:
       tslib: 2.8.1
@@ -19966,10 +18964,6 @@ packages:
   /@types/uuid@10.0.0:
     resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
 
-  /@types/uuid@9.0.8:
-    resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
-    dev: false
-
   /@types/validator@13.15.10:
     resolution: {integrity: sha512-T8L6i7wCuyoK8A/ZeLYt1+q0ty3Zb9+qbSSvrIVitzT3YjZqkTZ40IbRsPanlB4h1QB3JVL1SYCdR6ngtFYcuA==}
 
@@ -21691,17 +20685,17 @@ packages:
       '@opentelemetry/api': 1.9.0
       zod: 3.25.76
 
-  /ai@6.0.3(zod@4.2.1):
+  /ai@6.0.3(zod@4.3.5):
     resolution: {integrity: sha512-OOo+/C+sEyscoLnbY3w42vjQDICioVNyS+F+ogwq6O5RJL/vgWGuiLzFwuP7oHTeni/MkmX8tIge48GTdaV7QQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
     dependencies:
-      '@ai-sdk/gateway': 3.0.2(zod@4.2.1)
+      '@ai-sdk/gateway': 3.0.2(zod@4.3.5)
       '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.2.1)
+      '@ai-sdk/provider-utils': 4.0.1(zod@4.3.5)
       '@opentelemetry/api': 1.9.0
-      zod: 4.2.1
+      zod: 4.3.5
 
   /ajv-errors@3.0.0(ajv@8.17.1):
     resolution: {integrity: sha512-V3wD15YHfHz6y0KdhYFjyy9vWtEVALT9UrxfN3zqlI6dMioHnJrqOYfyPKol3oqrnCM9uwkcdCwkJ0WUcbLMTQ==}
@@ -22553,10 +21547,6 @@ packages:
   /boolean@3.2.0:
     resolution: {integrity: sha512-d0II/GO9uf9lfUHH2BQsjxzRJZBdsjgsBiW4BvhWk/3qoKwQFjIDVN19PfX8F2D/r9PCMTtLWjYVCFrpeYUzsw==}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
-    dev: false
-
-  /bowser@2.12.0:
-    resolution: {integrity: sha512-HcOcTudTeEWgbHh0Y1Tyb6fdeR71m4b/QACf0D4KswGTsNeIJQmg38mRENZPAYPZvGFN3fk3604XbQEPdxXdKg==}
     dev: false
 
   /boxen@5.1.2:
@@ -26375,13 +25365,6 @@ packages:
   /fast-uri@3.0.6:
     resolution: {integrity: sha512-Atfo14OibSv5wAp4VWNsFYE1AchQRTv9cBGWET4pZWHzYshFSS9NQI6I57rdKn9croWVMbYFbLhJ+yJvmZIIHw==}
 
-  /fast-xml-parser@4.4.1:
-    resolution: {integrity: sha512-xkjOecfnKGkSsOwtZ5Pz7Us/T6mrbPQrq0nh+aCO5V9nk5NLWmasAHumTKjiPJPWANe+kAZ84Jc8ooJkzZ88Sw==}
-    hasBin: true
-    dependencies:
-      strnum: 1.1.2
-    dev: false
-
   /fastest-levenshtein@1.0.16:
     resolution: {integrity: sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==}
     engines: {node: '>= 4.9.1'}
@@ -29975,7 +28958,7 @@ packages:
       openapi-types: 12.1.3
       p-retry: 4.6.2
       uuid: 10.0.0
-      yaml: 2.8.1
+      yaml: 2.8.2
       zod: 3.25.76
     transitivePeerDependencies:
       - '@opentelemetry/api'
@@ -37535,10 +36518,6 @@ packages:
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dev: true
 
-  /strnum@1.1.2:
-    resolution: {integrity: sha512-vrN+B7DBIoTTZjnPNewwhx6cBA/H+IS7rfW68n7XxC1y7uoiGQBxaKzqucGUgavX15dJgiGztLJ8vxuEzwqBdA==}
-    dev: false
-
   /strong-log-transformer@2.1.0:
     resolution: {integrity: sha512-B3Hgul+z0L9a236FAUC9iZsL+nVHgoCJnqCbN588DjYxvGXaXaaFbfmQ/JhvKjZwsOukuR72XbHv71Qkug0HxA==}
     engines: {node: '>=4'}
@@ -40662,7 +39641,7 @@ packages:
       '@cloudflare/workerd-linux-arm64': 1.20250718.0
       '@cloudflare/workerd-windows-64': 1.20250718.0
 
-  /workers-ai-provider@3.0.2(@ai-sdk/provider-utils@4.0.1)(@ai-sdk/provider@3.0.0)(ai@6.0.3)(zod@3.25.76):
+  /workers-ai-provider@3.0.2(@ai-sdk/provider-utils@4.0.1)(@ai-sdk/provider@3.0.4)(ai@6.0.3)(zod@3.25.76):
     resolution: {integrity: sha512-HUPu5aQrPOHHaoBiRoUiNzK5wtVtCFl0g/OO3gk9wguGEUK4m81qrqmdte6xlkWeKtujCHIDfIdIN6rZAnzVew==}
     peerDependencies:
       '@ai-sdk/provider': ^3.0.0
@@ -40670,7 +39649,7 @@ packages:
       ai: ^6.0.0
       zod: ^3.25.0 || ^4.0.0
     dependencies:
-      '@ai-sdk/provider': 3.0.0
+      '@ai-sdk/provider': 3.0.4
       '@ai-sdk/provider-utils': 4.0.1(zod@3.25.76)
       ai: 6.0.3(zod@3.25.76)
       zod: 3.25.76
@@ -41088,7 +40067,6 @@ packages:
 
   /zod@4.3.5:
     resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
-    dev: false
 
   /zustand@4.5.7(@types/react@19.1.10)(react@19.2.3):
     resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
