@@ -79,7 +79,7 @@ type PlanAgentSubagentConfigDefinition = Exclude<SubAgentConfig, Agent>;
 
 type PlanAgentCustomSubagentDefinition = Omit<
   AgentOptions,
-  "instructions" | "tools" | "toolkits" | "subAgents" | "supervisorConfig"
+  "instructions" | "tools" | "toolkits" | "subAgents" | "supervisorConfig" | "model"
 > & {
   name: string;
   description?: string;
@@ -88,6 +88,17 @@ type PlanAgentCustomSubagentDefinition = Omit<
   tools?: (Tool<any, any> | Toolkit | VercelTool)[];
   toolkits?: Toolkit[];
 };
+
+type PlanAgentCustomSubagentRuntimeDefinition = {
+  name: string;
+  description?: string;
+  systemPrompt: string;
+  model?: unknown;
+  tools?: (Tool<any, any> | Toolkit | VercelTool)[];
+  toolkits?: Toolkit[];
+  memory?: AgentOptions["memory"];
+  logger?: Logger;
+} & Record<string, unknown>;
 
 export type PlanAgentSubagentDefinition =
   | Agent
@@ -553,20 +564,21 @@ function normalizeSubagentDefinitions(options: {
       continue;
     }
 
-    const custom = definition as PlanAgentCustomSubagentDefinition;
+    const custom = definition as PlanAgentCustomSubagentRuntimeDefinition;
     const tools = custom.tools ?? defaultTools;
     const toolkits = custom.toolkits ?? defaultToolkits;
+    const model = (custom.model as AgentOptions["model"] | undefined) ?? defaultModel;
 
     const agent = new Agent({
-      ...custom,
+      ...(custom as Record<string, unknown>),
       name: custom.name,
-      model: custom.model ?? defaultModel,
+      model,
       instructions: custom.systemPrompt,
       tools,
       toolkits,
       memory: custom.memory ?? defaultMemory,
       logger: custom.logger ?? defaultLogger,
-    });
+    } as AgentOptions);
 
     normalized.push({
       name: agent.name,
