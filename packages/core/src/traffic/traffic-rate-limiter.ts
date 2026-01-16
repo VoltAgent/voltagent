@@ -55,13 +55,17 @@ export class TrafficRateLimiter {
 
   resolve(next: QueuedRequest, key: string, logger?: Logger): DispatchDecision | null {
     const strategy = this.strategies.get(key) ?? this.createStrategy(key, logger);
-    const requestDecision = strategy.resolve(next, logger);
-    if (requestDecision?.kind === "wait") {
+
+    // strategyDecision contains both stategy specific
+    //  - request rate limiting
+    //  - token rate limitng
+    const strategyDecision = strategy.resolve(next, logger);
+    if (strategyDecision?.kind === "wait") {
       const tokenDecision = strategy.handlesTokenLimits
         ? null
         : this.resolveTokenLimit(next, key, logger, false);
       if (tokenDecision?.kind === "wait") {
-        const requestWakeUp = requestDecision.wakeUpAt;
+        const requestWakeUp = strategyDecision.wakeUpAt;
         const tokenWakeUp = tokenDecision.wakeUpAt;
         if (tokenWakeUp !== undefined && requestWakeUp !== undefined) {
           return { kind: "wait", wakeUpAt: Math.min(requestWakeUp, tokenWakeUp) };
@@ -70,17 +74,21 @@ export class TrafficRateLimiter {
           return tokenDecision;
         }
       }
-      return requestDecision;
+      return strategyDecision;
     }
 
-    const tokenDecision = strategy.handlesTokenLimits
+    // Fallback token-bucket decision.
+    // This is ONLY evaluated when the strategy does NOT handle token limits itself.
+    // If the strategy owns token limits, tokenDecision is intentionally null
+    // and token blocking must already be reflected in requestDecision.
+    const fallbackTokenDecision = strategy.handlesTokenLimits
       ? null
       : this.resolveTokenLimit(next, key, logger, true);
-    if (tokenDecision?.kind === "wait") {
-      return tokenDecision;
+    if (fallbackTokenDecision?.kind === "wait") {
+      return fallbackTokenDecision;
     }
 
-    return requestDecision;
+    return strategyDecision;
   }
 
   notifyDispatch(key: string | undefined, logger?: Logger): void {

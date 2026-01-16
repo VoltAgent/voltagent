@@ -312,7 +312,7 @@ export class TrafficController {
       resetAt: update.state.resetAt,
       nextAllowedAt: update.state.nextAllowedAt,
       resetRequestsMs: update.headerSnapshot.resetRequestsMs,
-      resetTokensMs: update.headerSnapshot.resetTokensMs,
+      // resetTokensMs: update.headerSnapshot.resetTokensMs,
     });
 
     this.rateLimitSnapshots.set(update.key, {
@@ -473,9 +473,9 @@ export class TrafficController {
        * We cannot dispatch anything right now, but we can still evict timed-out items
        * and compute the earliest time we should wake up to retry.
        */
-      const timeoutSweep = this.processQueueTimeoutsOnly(Date.now());
+      const timeoutCheck = this.evictTimedOutQueuedRequests(Date.now());
 
-      if (timeoutSweep.evicted) {
+      if (timeoutCheck.evicted) {
         /** Queue state changed (we evicted/rejected items), so we should re-evaluate. */
         return { kind: "skip" };
       }
@@ -485,8 +485,8 @@ export class TrafficController {
        * - an in-flight request to complete (which triggers a drain), or
        * - the next timeout deadline (if any).
        */
-      return timeoutSweep.wakeUpAt !== undefined
-        ? { kind: "wait", wakeUpAt: timeoutSweep.wakeUpAt }
+      return timeoutCheck.wakeUpAt !== undefined
+        ? { kind: "wait", wakeUpAt: timeoutCheck.wakeUpAt }
         : { kind: "wait" };
     }
 
@@ -496,7 +496,7 @@ export class TrafficController {
      */
     let earliestWakeUpAt: number | undefined;
 
-    const observeWakeUpAt = (candidate?: number): void => {
+    const updateWakeUpAt = (candidate?: number): void => {
       if (candidate === undefined) return;
 
       earliestWakeUpAt =
@@ -533,7 +533,7 @@ export class TrafficController {
         const result = this.processQueuedCandidate(priority, candidate, now);
 
         /** Record the earliest "try again at" time surfaced by any candidate. */
-        observeWakeUpAt(result.wakeUpAt);
+        updateWakeUpAt(result.wakeUpAt);
 
         if (result.action === "dispatch") {
           /** We successfully started a request; draining should continue immediately. */
@@ -819,29 +819,26 @@ export class TrafficController {
    */
 
   private resolveQueueTimeoutAt(next: QueuedRequest): number | undefined {
-    if (next.queueTimeoutDisabled) {
-      return next.request.deadlineAt;
-    }
-    const maxQueueWaitMs = next.request.maxQueueWaitMs;
-    const normalizedMaxWait =
+    if (next.queueTimeoutDisabled) return next.request.deadlineAt;
+
+    const { maxQueueWaitMs, deadlineAt } = next.request;
+
+    const queueTimeoutAt =
       typeof maxQueueWaitMs === "number" && Number.isFinite(maxQueueWaitMs)
-        ? Math.max(0, maxQueueWaitMs)
+        ? next.enqueuedAt + Math.max(0, maxQueueWaitMs)
         : undefined;
-    const timeoutAt =
-      normalizedMaxWait !== undefined ? next.enqueuedAt + normalizedMaxWait : undefined;
-    const deadlineAt = next.request.deadlineAt;
-    if (timeoutAt === undefined) return deadlineAt;
-    if (deadlineAt === undefined) return timeoutAt;
-    return Math.min(timeoutAt, deadlineAt);
+
+    if (queueTimeoutAt === undefined) return deadlineAt;
+    if (deadlineAt === undefined) return queueTimeoutAt;
+
+    return Math.min(queueTimeoutAt, deadlineAt);
   }
 
   private handleQueueTimeout(
     next: QueuedRequest,
-    queue: QueuedRequest[],
-    index: number,
     now: number,
     queueTimeoutAt?: number,
-  ): "none" | "expired" | "rejected" {
+  ): "none" | "expired" {
     if (queueTimeoutAt === undefined) return "none";
     if (now < queueTimeoutAt) return "none";
 
@@ -854,28 +851,14 @@ export class TrafficController {
       return "none";
     }
 
-    const timeoutError = this.createQueueTimeoutError(next, now);
-    this.attachTrafficMetadata(
-      timeoutError,
-      this.buildTrafficResponseMetadata(
-        next,
-        timeoutError.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
-        now,
-        timeoutError,
-      ),
-    );
-    this.controllerLogger.warn("Queue wait timed out; rejecting request", {
-      tenantId: next.tenantId,
-      waitedMs: timeoutError.waitedMs,
-      maxQueueWaitMs: timeoutError.maxQueueWaitMs,
-      deadlineAt: timeoutError.deadlineAt,
-      provider: next.request.metadata?.provider,
-      model: next.request.metadata?.model,
-      rateLimitKey: timeoutError.rateLimitKey,
-    });
-    queue.splice(index, 1);
-    next.reject(timeoutError);
-    return "rejected";
+    /**
+     * The request has exceeded its queue-wait budget (maxQueueWaitMs/deadlineAt),
+     * but we intentionally do not reject it here.
+     *
+     * Rejection is deferred to "wait boundaries" (e.g. rate-limit/circuit/concurrency waits)
+     * so we can tag the reason and preserve the option to apply fallback/defer strategies.
+     */
+    return "expired";
   }
 
   private rejectIfQueueTimedOut(
@@ -1036,9 +1019,9 @@ export class TrafficController {
     return this.rateLimitKeyBuilder(metadata);
   }
 
-  private processQueueTimeoutsOnly(now: number): { evicted: boolean; wakeUpAt?: number } {
+  private evictTimedOutQueuedRequests(now: number): { evicted: boolean; wakeUpAt?: number } {
     /**
-     * Sweep the queues for timeout-only work.
+     * Evict timed-out queued requests (no dispatch).
      *
      * This path is used when we cannot dispatch due to concurrency saturation.
      * We still want to:
@@ -1052,7 +1035,7 @@ export class TrafficController {
     let evicted = false;
     let wakeUpAt: number | undefined;
 
-    const observeWakeUpAt = (candidate?: number): void => {
+    const updateWakeUpAt = (candidate?: number): void => {
       if (candidate === undefined) return;
       wakeUpAt = wakeUpAt === undefined ? candidate : Math.min(wakeUpAt, candidate);
     };
@@ -1078,18 +1061,32 @@ export class TrafficController {
          * since the queue is processed FIFO per tenant.
          */
         const next = queue[0];
+        const queueTimeoutAtBefore = this.resolveQueueTimeoutAt(next);
+
+        /** Determine whether the head item has exceeded its queue-wait budget (without rejecting yet). */
+        const queueTimeoutTriggered = this.handleQueueTimeout(next, now, queueTimeoutAtBefore);
+
+        /**
+         * Re-resolve after timeout handling, since queue-timeout fallback may mutate the request
+         * and intentionally disable further maxQueueWaitMs checks.
+         */
         const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
         /**
          * If the head item has a future timeout deadline, track it as a candidate wake-up.
          * This allows the drain loop to schedule a timer and re-sweep when that deadline is hit.
          */
         if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
-          observeWakeUpAt(queueTimeoutAt);
+          updateWakeUpAt(queueTimeoutAt);
         }
 
-        /** Reject the head item if its queue-wait timeout has triggered. */
-        const queueTimeoutTriggered = this.handleQueueTimeout(next, queue, 0, now, queueTimeoutAt);
-        if (queueTimeoutTriggered === "rejected") {
+        /**
+         * We are at a wait boundary (global concurrency saturation). If the request is expired
+         * and no queue-timeout fallback was applied, reject it now to avoid waiting beyond budget.
+         */
+        if (
+          queueTimeoutTriggered === "expired" &&
+          this.rejectIfQueueTimedOut(true, next, queue, 0, now, "global concurrency wait")
+        ) {
           evicted = true;
           this.cleanupTenantQueue(priority, tenantId, queue);
         }
@@ -1112,19 +1109,19 @@ export class TrafficController {
 
     let wakeUpAt: number | undefined;
 
-    const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
-    const queueTimeoutTriggered = this.handleQueueTimeout(next, queue, 0, now, queueTimeoutAt);
+    const queueTimeoutAtBefore = this.resolveQueueTimeoutAt(next);
+    const queueTimeoutTriggered = this.handleQueueTimeout(next, now, queueTimeoutAtBefore);
+    const queueTimeoutExpired = queueTimeoutTriggered === "expired";
 
-    if (queueTimeoutTriggered === "rejected") {
-      this.cleanupTenantQueue(priority, tenantId, queue);
-      return { action: "skip" };
-    }
+    /**
+     * Re-resolve after timeout handling, since queue-timeout fallback may mutate the request
+     * and intentionally disable further maxQueueWaitMs checks.
+     */
+    const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
 
     if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
       wakeUpAt = queueTimeoutAt;
     }
-
-    const queueTimeoutExpired = queueTimeoutTriggered === "expired";
 
     this.controllerLogger.trace("Evaluate next queued request", {
       priority,
@@ -1157,6 +1154,8 @@ export class TrafficController {
       if (circuitBreakerDecision.kind === "wait") {
         if (this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "circuit wait")) {
           this.cleanupTenantQueue(priority, tenantId, queue);
+
+          // !! Does wakeupAt work?
           return { action: "skip", wakeUpAt };
         }
 
@@ -1186,6 +1185,7 @@ export class TrafficController {
       });
 
       if (
+        // !! understnad this
         this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "concurrency wait")
       ) {
         this.cleanupTenantQueue(priority, tenantId, queue);

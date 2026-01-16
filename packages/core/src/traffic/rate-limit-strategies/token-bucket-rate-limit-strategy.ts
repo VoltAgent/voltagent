@@ -76,11 +76,12 @@ export class TokenBucketRateLimitStrategy implements RateLimitStrategy {
   }
 
   resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
-    const rateLimitLogger = logger?.child({ module: "rate-limiter" });
+    const log = logger?.child({ module: "rate-limiter" });
     const now = Date.now();
 
+    // 1. Cooldown gate (from Retry-After / headers)
     if (this.cooldownUntil !== undefined && now < this.cooldownUntil) {
-      rateLimitLogger?.debug?.("Token bucket cooldown active; waiting", {
+      log?.debug?.("Token bucket cooldown active; waiting", {
         rateLimitKey: this.key,
         cooldownUntil: this.cooldownUntil,
         waitMs: this.cooldownUntil - now,
@@ -88,13 +89,18 @@ export class TokenBucketRateLimitStrategy implements RateLimitStrategy {
       return { kind: "wait", wakeUpAt: this.cooldownUntil };
     }
 
+    // 2. No bucket configured → no rate limiting
     const bucket = this.bucket;
-    if (!bucket) return null;
+    if (!bucket) {
+      return null;
+    }
 
+    // 3. Refill tokens based on elapsed time
     refillTokenBucket(bucket, now);
 
+    // 4. Invalid configuration → block indefinitely
     if (bucket.capacity <= 0) {
-      rateLimitLogger?.debug?.("Token bucket misconfigured; blocking", {
+      log?.debug?.("Token bucket misconfigured; blocking", {
         rateLimitKey: this.key,
         capacity: bucket.capacity,
         refillPerSecond: bucket.refillPerSecond,
@@ -102,20 +108,24 @@ export class TokenBucketRateLimitStrategy implements RateLimitStrategy {
       return { kind: "wait" };
     }
 
+    // 5. Happy path: token available → consume and proceed
     if (bucket.tokens >= 1) {
       bucket.tokens -= 1;
       next.rateLimitKey = this.key;
-      rateLimitLogger?.trace?.("Consumed token bucket token", {
+
+      log?.trace?.("Consumed token bucket token", {
         rateLimitKey: this.key,
         tokens: bucket.tokens,
         capacity: bucket.capacity,
         refillPerSecond: bucket.refillPerSecond,
       });
+
       return null;
     }
 
+    // 6. Bucket empty and cannot refill → block indefinitely
     if (bucket.refillPerSecond <= 0) {
-      rateLimitLogger?.debug?.("Token bucket has no refill; blocking", {
+      log?.debug?.("Token bucket has no refill; blocking", {
         rateLimitKey: this.key,
         capacity: bucket.capacity,
         refillPerSecond: bucket.refillPerSecond,
@@ -123,10 +133,12 @@ export class TokenBucketRateLimitStrategy implements RateLimitStrategy {
       return { kind: "wait" };
     }
 
+    // 7. Bucket empty but refillable → wait until next token
     const requiredTokens = 1 - bucket.tokens;
     const waitMs = Math.max(1, Math.ceil((requiredTokens / bucket.refillPerSecond) * 1000));
     const wakeUpAt = now + waitMs;
-    rateLimitLogger?.debug?.("Token bucket empty; waiting", {
+
+    log?.debug?.("Token bucket empty; waiting", {
       rateLimitKey: this.key,
       tokens: bucket.tokens,
       capacity: bucket.capacity,
@@ -134,6 +146,7 @@ export class TokenBucketRateLimitStrategy implements RateLimitStrategy {
       wakeUpAt,
       waitMs,
     });
+
     return { kind: "wait", wakeUpAt };
   }
 

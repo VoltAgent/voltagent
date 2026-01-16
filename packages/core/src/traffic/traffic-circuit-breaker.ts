@@ -25,10 +25,39 @@ import type {
   TrafficResponseMetadata,
 } from "./traffic-types";
 
+/**
+ * TrafficCircuitBreaker
+ * =====================
+ *
+ * Purpose:
+ * - Prevent hammering unhealthy provider/model combinations
+ * - Open circuits on repeated failures or timeouts
+ * - Allow controlled recovery via probes (half-open)
+ * - Reroute requests using fallback chains or wait policies
+ *
+ * Scope:
+ * - Per provider+model (rateLimitKey)
+ * - Integrates with queueing, retries, and fallback routing
+ */
 export class TrafficCircuitBreaker {
+  /**
+   * Circuit state per provider/model key
+   */
   private readonly circuitBreakers = new Map<string, CircuitState>();
+
+  /**
+   * Fallback chains per model or provider::model
+   */
   private readonly fallbackChains: Map<string, FallbackChainEntry[]>;
+
+  /**
+   * Optional global fallback policy configuration
+   */
   private readonly fallbackPolicy?: FallbackPolicyConfig;
+
+  /**
+   * Canonical key builder for provider/model isolation
+   */
   private readonly buildRateLimitKey: (metadata?: TrafficRequestMetadata) => string;
 
   constructor(options: {
@@ -37,254 +66,271 @@ export class TrafficCircuitBreaker {
     buildRateLimitKey: (metadata?: TrafficRequestMetadata) => string;
   }) {
     this.buildRateLimitKey = options.buildRateLimitKey;
-    const chains = options.fallbackChains ?? DEFAULT_FALLBACK_CHAINS;
-    this.fallbackChains = new Map(Object.entries(chains));
+    this.fallbackChains = new Map(
+      Object.entries(options.fallbackChains ?? DEFAULT_FALLBACK_CHAINS),
+    );
     this.fallbackPolicy = options.fallbackPolicy;
   }
 
-  resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
-    const circuitLogger = logger?.child({ module: "circuit-breaker" });
-    const visitedKeys = new Set<string>();
+  // ===========================================================================
+  // 1. REQUEST ADMISSION (ENTRYPOINT)
+  // ===========================================================================
 
+  /**
+   * resolve()
+   *
+   * Called BEFORE dispatch.
+   *
+   * Decides whether:
+   * - request may proceed
+   * - request must wait
+   * - request should be rerouted to fallback
+   * - request must be rejected immediately
+   */
+  resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
+    const log = logger?.child({ module: "circuit-breaker" });
+    const visitedCircuitKeys = new Set<string>();
+
+    /**
+     * Loop exists ONLY to allow multi-step fallback traversal.
+     * Each iteration represents "try current model, else fallback".
+     */
     while (true) {
-      const key = this.buildRateLimitKey(next.request.metadata);
-      next.circuitKey = key;
-      visitedKeys.add(key);
-      circuitLogger?.trace?.("Circuit resolve step", {
-        circuitKey: key,
+      const circuitKey = this.buildRateLimitKey(next.request.metadata);
+      next.circuitKey = circuitKey;
+      visitedCircuitKeys.add(circuitKey);
+
+      log?.trace?.("Evaluating circuit", {
+        circuitKey,
         provider: next.request.metadata?.provider,
         model: next.request.metadata?.model,
       });
 
-      const evaluation = this.evaluateCircuitState(key, circuitLogger);
+      // ---- Circuit evaluation (pure decision) ----
+      const evaluation = this.evaluateCircuitState(circuitKey, log);
       next.circuitStatus = evaluation.state;
-      circuitLogger?.debug?.("Circuit evaluated", {
-        circuitKey: key,
-        state: evaluation.state,
-        allowRequest: evaluation.allowRequest,
-        retryAfterMs: evaluation.retryAfterMs,
-      });
 
-      if (evaluation.allowRequest) return null;
+      if (evaluation.allowRequest) {
+        // Circuit allows traffic → proceed normally
+        return null;
+      }
 
+      // ---- Circuit is OPEN ----
       const { policy, policyId } = this.resolveFallbackPolicy(next.request.metadata);
+
+      // Path A: policy says "wait"
       if (policy.mode === "wait") {
         const wakeUpAt =
           evaluation.retryAfterMs !== undefined ? Date.now() + evaluation.retryAfterMs : undefined;
-        circuitLogger?.debug?.("Circuit open; waiting per fallback policy", {
-          circuitKey: key,
+
+        log?.debug?.("Circuit open; waiting", {
+          circuitKey,
           policyId,
           retryAfterMs: evaluation.retryAfterMs,
-          wakeUpAt,
         });
+
         return { kind: "wait", wakeUpAt };
       }
 
-      const fallback = this.findFallbackTarget(next.request.metadata, visitedKeys, circuitLogger);
-      circuitLogger?.debug?.("Circuit open; attempting fallback", {
-        circuitKey: key,
-        currentModel: next.request.metadata?.model,
-        fallback,
-        visitedKeys: Array.from(visitedKeys),
-      });
+      // Path B: policy allows fallback
+      const fallback = this.findFallbackTarget(next.request.metadata, visitedCircuitKeys, log);
+
       if (!fallback || !next.request.createFallbackRequest) {
-        const error = new CircuitBreakerOpenError(
-          `Circuit open for ${key}`,
-          next.request.metadata,
-          evaluation.retryAfterMs,
-        );
-        const traffic: TrafficResponseMetadata = {
-          rateLimitKey: key,
-          retryAfterMs: evaluation.retryAfterMs,
-          tenantId: next.request.metadata?.tenantId ?? next.tenantId,
-          priority: next.request.metadata?.priority,
-          taskType: next.request.metadata?.taskType,
-        };
-        (error as CircuitBreakerOpenError & { traffic?: TrafficResponseMetadata }).traffic =
-          traffic;
-        next.reject(error);
-        circuitLogger?.warn?.("No fallback available; rejecting request", {
-          circuitKey: key,
-          retryAfterMs: evaluation.retryAfterMs,
-        });
+        // No viable fallback → reject fast
+        this.rejectCircuitOpen(next, circuitKey, evaluation.retryAfterMs, log);
         return { kind: "skip" };
       }
 
       const fallbackRequest = next.request.createFallbackRequest(fallback);
       if (!fallbackRequest) {
-        circuitLogger?.warn?.("createFallbackRequest returned undefined; skipping", {
-          circuitKey: key,
-          fallback,
-        });
+        log?.warn?.("Fallback creation failed; skipping", { fallback });
         return { kind: "skip" };
       }
 
-      this.applyFallbackRequest(next, fallbackRequest, fallback, circuitLogger, {
-        previousCircuitKey: key,
+      // Switch request context and retry loop with fallback model
+      this.applyFallbackRequest(next, fallbackRequest, fallback, log, {
+        previousCircuitKey: circuitKey,
         reason: "circuit-open",
+        policyId,
       });
     }
   }
 
+  // ===========================================================================
+  // 2. QUEUE TIMEOUT FALLBACK
+  // ===========================================================================
+
+  /**
+   * tryFallback()
+   *
+   * Used when a request waited too long in queue.
+   * Does NOT consider circuit state again; only policy + availability.
+   */
   tryFallback(next: QueuedRequest, reason: "queue-timeout", logger?: Logger): boolean {
-    const circuitLogger = logger?.child({ module: "circuit-breaker" });
+    const log = logger?.child({ module: "circuit-breaker" });
     const { policy, policyId } = this.resolveFallbackPolicy(next.request.metadata);
+
     if (policy.mode === "wait") {
-      circuitLogger?.debug?.("Fallback skipped by policy", {
-        policyId,
-        reason,
-        provider: next.request.metadata?.provider,
-        model: next.request.metadata?.model,
-      });
+      log?.debug?.("Queue-timeout fallback disabled by policy", { policyId });
       return false;
     }
 
-    const visitedKeys = new Set<string>();
-    const key = this.buildRateLimitKey(next.request.metadata);
-    visitedKeys.add(key);
+    const visited = new Set<string>();
+    visited.add(this.buildRateLimitKey(next.request.metadata));
 
-    const fallback = this.findFallbackTarget(next.request.metadata, visitedKeys, circuitLogger);
-    if (!fallback || !next.request.createFallbackRequest) {
-      circuitLogger?.debug?.("Fallback unavailable for request", {
-        reason,
-        provider: next.request.metadata?.provider,
-        model: next.request.metadata?.model,
-        fallback,
-      });
-      return false;
-    }
+    const fallback = this.findFallbackTarget(next.request.metadata, visited, log);
+    if (!fallback || !next.request.createFallbackRequest) return false;
 
     const fallbackRequest = next.request.createFallbackRequest(fallback);
-    if (!fallbackRequest) {
-      circuitLogger?.warn?.("createFallbackRequest returned undefined; skipping", {
-        reason,
-        fallback,
-      });
-      return false;
-    }
+    if (!fallbackRequest) return false;
 
-    this.applyFallbackRequest(next, fallbackRequest, fallback, circuitLogger, {
-      previousCircuitKey: key,
+    this.applyFallbackRequest(next, fallbackRequest, fallback, log, {
       reason,
       policyId,
     });
+
     return true;
   }
 
-  markTrial(item: QueuedRequest, logger?: Logger): void {
-    const circuitLogger = logger?.child({ module: "circuit-breaker" });
-    const key = item.circuitKey;
-    if (!key) return;
-    const state = this.circuitBreakers.get(key);
-    if (state && state.status === "half-open" && !state.trialInFlight) {
-      state.trialInFlight = true;
-      circuitLogger?.debug?.("Marked half-open trial in flight", { circuitKey: key });
-    }
-  }
+  // ===========================================================================
+  // 3. CIRCUIT STATE MUTATION (AFTER EXECUTION)
+  // ===========================================================================
 
+  /**
+   * recordSuccess()
+   *
+   * Any successful response resets the circuit entirely.
+   */
   recordSuccess(metadata?: TrafficRequestMetadata, logger?: Logger): void {
-    const circuitLogger = logger?.child({ module: "circuit-breaker" });
+    const log = logger?.child({ module: "circuit-breaker" });
     const key = this.buildRateLimitKey(metadata);
+
     this.circuitBreakers.delete(key);
-    circuitLogger?.debug?.("Circuit success; cleared circuit state", {
+
+    log?.debug?.("Circuit reset after success", {
       circuitKey: key,
       provider: metadata?.provider,
       model: metadata?.model,
     });
   }
 
+  /**
+   * recordFailure()
+   *
+   * Observes a failure and decides whether to open the circuit.
+   */
   recordFailure(
     metadata: TrafficRequestMetadata | undefined,
     error: unknown,
     logger?: Logger,
   ): void {
-    const circuitLogger = logger?.child({ module: "circuit-breaker" });
+    const log = logger?.child({ module: "circuit-breaker" });
     const key = this.buildRateLimitKey(metadata);
+
+    // ---------------------------------------------------------------------------
+    // STEP 1: Decide whether this failure should affect the circuit breaker
+    // ---------------------------------------------------------------------------
+
     const status = extractStatusCode(error, logger);
     const isTimeout = status === 408 || isTimeoutError(error, logger);
-    const isStatusEligible = this.isCircuitBreakerStatus(status);
-    const isTimeoutEligible = !isStatusEligible && isTimeout;
-    const isEligible = isStatusEligible || isTimeoutEligible;
 
-    circuitLogger?.debug?.("Circuit failure observed", {
-      circuitKey: key,
-      status,
-      isTimeout,
-      eligible: isEligible,
-      provider: metadata?.provider,
-      model: metadata?.model,
-    });
+    const isEligibleFailure =
+      this.isCircuitBreakerStatus(status) || (!this.isCircuitBreakerStatus(status) && isTimeout);
 
-    if (!isEligible) {
+    if (!isEligibleFailure) {
+      // Any non-eligible error resets the circuit history
       this.circuitBreakers.delete(key);
-      circuitLogger?.debug?.("Failure not eligible for circuit breaker; cleared circuit state", {
-        circuitKey: key,
-        status,
-        isTimeout,
-      });
       return;
     }
 
+    // ---------------------------------------------------------------------------
+    // STEP 2: Load (or create) circuit state
+    // ---------------------------------------------------------------------------
+
     const now = Date.now();
+
     const state =
       this.circuitBreakers.get(key) ??
-      ({ status: "closed", failureTimestamps: [], timeoutTimestamps: [] } as CircuitState);
+      ({
+        status: "closed",
+        failureTimestamps: [],
+        timeoutTimestamps: [],
+      } as CircuitState);
+
+    // ---------------------------------------------------------------------------
+    // STEP 3: Forget old failures (this is the "rolling window")
+    // ---------------------------------------------------------------------------
+    // Meaning:
+    //   "Only failures within the last N milliseconds matter"
+
+    const failureWindowStart = now - CIRCUIT_FAILURE_WINDOW_MS;
+    const timeoutWindowStart = now - CIRCUIT_TIMEOUT_WINDOW_MS;
 
     state.failureTimestamps = state.failureTimestamps.filter(
-      (t) => now - t <= CIRCUIT_FAILURE_WINDOW_MS,
-    );
-    state.timeoutTimestamps = state.timeoutTimestamps.filter(
-      (t) => now - t <= CIRCUIT_TIMEOUT_WINDOW_MS,
+      (timestamp) => timestamp >= failureWindowStart,
     );
 
+    state.timeoutTimestamps = state.timeoutTimestamps.filter(
+      (timestamp) => timestamp >= timeoutWindowStart,
+    );
+
+    // ---------------------------------------------------------------------------
+    // STEP 4: Record the current failure
+    // ---------------------------------------------------------------------------
+
     state.failureTimestamps.push(now);
-    if (isTimeoutEligible) {
+
+    if (isTimeout) {
       state.timeoutTimestamps.push(now);
     }
 
-    if (
-      state.status === "half-open" ||
-      state.failureTimestamps.length >= CIRCUIT_FAILURE_THRESHOLD ||
-      state.timeoutTimestamps.length >= CIRCUIT_TIMEOUT_THRESHOLD
-    ) {
-      const openReasons: string[] = [];
-      if (state.status === "half-open") openReasons.push("half-open-failure");
-      if (state.failureTimestamps.length >= CIRCUIT_FAILURE_THRESHOLD) {
-        openReasons.push("failure-threshold");
-      }
-      if (state.timeoutTimestamps.length >= CIRCUIT_TIMEOUT_THRESHOLD) {
-        openReasons.push("timeout-threshold");
-      }
+    // ---------------------------------------------------------------------------
+    // STEP 5: Decide whether the circuit must open
+    // ---------------------------------------------------------------------------
+    // The circuit opens if:
+    //   - A failure happens during half-open (probe failed), OR
+    //   - Too many failures in the recent window, OR
+    //   - Too many timeouts in the recent window
 
+    const exceededFailureThreshold = state.failureTimestamps.length >= CIRCUIT_FAILURE_THRESHOLD;
+
+    const exceededTimeoutThreshold = state.timeoutTimestamps.length >= CIRCUIT_TIMEOUT_THRESHOLD;
+
+    const shouldOpenCircuit =
+      state.status === "half-open" || exceededFailureThreshold || exceededTimeoutThreshold;
+
+    if (shouldOpenCircuit) {
       state.status = "open";
       state.openedAt = now;
       state.trialInFlight = false;
       state.nextProbeAt = now + CIRCUIT_PROBE_INTERVAL_MS;
-      circuitLogger?.warn?.("Circuit opened", {
+
+      log?.warn?.("Circuit opened", {
         circuitKey: key,
-        openReasons,
-        status,
-        isTimeout,
         failureCount: state.failureTimestamps.length,
-        failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
         timeoutCount: state.timeoutTimestamps.length,
+        failureThreshold: CIRCUIT_FAILURE_THRESHOLD,
         timeoutThreshold: CIRCUIT_TIMEOUT_THRESHOLD,
-        openedAt: state.openedAt,
       });
     }
 
-    //TODO: Research - should we set or push to queu with new state?
+    // ---------------------------------------------------------------------------
+    // STEP 6: Persist updated state
+    // ---------------------------------------------------------------------------
+
     this.circuitBreakers.set(key, state);
-    circuitLogger?.trace?.("Circuit state updated", {
-      circuitKey: key,
-      status: state.status,
-      failureCount: state.failureTimestamps.length,
-      failureWindowMs: CIRCUIT_FAILURE_WINDOW_MS,
-      timeoutCount: state.timeoutTimestamps.length,
-      timeoutWindowMs: CIRCUIT_TIMEOUT_WINDOW_MS,
-    });
   }
 
+  // ===========================================================================
+  // 4. CIRCUIT STATE EVALUATION (PURE)
+  // ===========================================================================
+
+  /**
+   * evaluateCircuitState()
+   *
+   * Pure decision function.
+   * Does NOT mutate request.
+   */
   private evaluateCircuitState(
     key: string,
     logger?: Logger,
@@ -294,32 +340,26 @@ export class TrafficCircuitBreaker {
     retryAfterMs?: number;
   } {
     const state = this.circuitBreakers.get(key);
-    if (!state) {
-      logger?.trace?.("Circuit state missing; allow request", { circuitKey: key });
-      return { allowRequest: true, state: "closed" };
-    }
+    if (!state) return { allowRequest: true, state: "closed" };
 
     const now = Date.now();
 
     if (state.status === "open") {
       const elapsed = state.openedAt ? now - state.openedAt : 0;
-      if (state.nextProbeAt === undefined) {
-        state.nextProbeAt = now + CIRCUIT_PROBE_INTERVAL_MS;
-      }
       const cooldownRemaining = Math.max(0, CIRCUIT_COOLDOWN_MS - elapsed);
-      const probeRemaining = Math.max(0, state.nextProbeAt - now);
-      if (probeRemaining === 0 || cooldownRemaining === 0) {
+      const probeRemaining = Math.max(0, (state.nextProbeAt ?? 0) - now);
+
+      if (cooldownRemaining === 0 || probeRemaining === 0) {
         state.status = "half-open";
         state.trialInFlight = false;
         state.failureTimestamps = [];
         state.timeoutTimestamps = [];
         state.nextProbeAt = undefined;
-        logger?.debug?.("Circuit transitioned to half-open", {
-          circuitKey: key,
-          reason: cooldownRemaining === 0 ? "cooldown" : "probe",
-        });
+
+        logger?.debug?.("Circuit half-open", { circuitKey: key });
         return { allowRequest: true, state: "half-open" };
       }
+
       return {
         allowRequest: false,
         state: "open",
@@ -334,33 +374,78 @@ export class TrafficCircuitBreaker {
     return { allowRequest: true, state: state.status };
   }
 
+  // ===========================================================================
+  // 5. FALLBACK RESOLUTION
+  // ===========================================================================
+
   private resolveFallbackPolicy(metadata: TrafficRequestMetadata | undefined): {
     policy: FallbackPolicy;
     policyId?: string;
   } {
-    const policyId =
+    const rawPolicyId =
       metadata?.fallbackPolicyId ??
       (metadata?.taskType
         ? this.fallbackPolicy?.taskTypePolicyIds?.[metadata.taskType]
         : undefined) ??
       this.fallbackPolicy?.defaultPolicyId;
 
-    const policy = policyId ? this.fallbackPolicy?.policies?.[policyId] : undefined;
+    const policyId = rawPolicyId && rawPolicyId.length > 0 ? rawPolicyId : undefined;
+    const configuredPolicy = policyId ? this.fallbackPolicy?.policies?.[policyId] : undefined;
+
     return {
-      policy: policy ?? { mode: "fallback" },
+      policy: configuredPolicy ?? { mode: "fallback" },
       policyId,
     };
   }
 
+  private findFallbackTarget(
+    metadata: TrafficRequestMetadata | undefined,
+    visitedKeys: Set<string>,
+    logger?: Logger,
+  ): FallbackChainEntry | undefined {
+    const currentModel = metadata?.model;
+    if (!currentModel) return;
+
+    const provider = metadata?.provider;
+    const chain = this.resolveFallbackChain(provider, currentModel);
+    if (!chain) return;
+
+    for (const candidate of chain) {
+      if (this.isShortResponseFallback(candidate)) return candidate;
+
+      const target = this.normalizeFallbackTarget(candidate, provider);
+      const candidateKey = this.buildRateLimitKey({
+        ...(metadata ?? {}),
+        provider: target.provider,
+        model: target.model,
+      });
+
+      if (visitedKeys.has(candidateKey)) continue;
+
+      if (this.evaluateCircuitState(candidateKey, logger).allowRequest) {
+        visitedKeys.add(candidateKey);
+        return candidate;
+      }
+    }
+
+    return undefined;
+  }
+
+  // ===========================================================================
+  // 6. FALLBACK APPLICATION (REQUEST MUTATION)
+  // ===========================================================================
+
   private applyFallbackRequest<TResponse>(
     next: QueuedRequest<TResponse>,
     fallbackRequest: QueuedRequest<TResponse>["request"],
-    fallback: FallbackChainEntry,
+    _fallback: FallbackChainEntry,
     logger?: Logger,
     context?: { previousCircuitKey?: string; reason?: string; policyId?: string },
   ): void {
     next.request = fallbackRequest;
     next.attempt = 1;
+
+    // Reset scheduling & concurrency metadata
     next.estimatedTokens = fallbackRequest.estimatedTokens;
     next.reservedTokens = undefined;
     next.tenantConcurrencyKey = undefined;
@@ -369,16 +454,59 @@ export class TrafficCircuitBreaker {
     next.etaMs = undefined;
     next.circuitKey = undefined;
     next.circuitStatus = undefined;
-    next.extractUsage = fallbackRequest.extractUsage;
+
     if (context?.reason === "queue-timeout") {
       next.queueTimeoutDisabled = true;
     }
-    logger?.debug?.("Switched to fallback request", {
-      previousCircuitKey: context?.previousCircuitKey,
-      fallbackModel: fallback,
-      reason: context?.reason,
-      policyId: context?.policyId,
-    });
+
+    logger?.debug?.("Applied fallback request", context);
+  }
+
+  // ===========================================================================
+  // 7. SMALL HELPERS
+  // ===========================================================================
+
+  private rejectCircuitOpen(
+    next: QueuedRequest,
+    circuitKey: string,
+    retryAfterMs?: number,
+    logger?: Logger,
+  ): void {
+    const error = new CircuitBreakerOpenError(
+      `Circuit open for ${circuitKey}`,
+      next.request.metadata,
+      retryAfterMs,
+    );
+
+    (error as CircuitBreakerOpenError & { traffic?: TrafficResponseMetadata }).traffic = {
+      rateLimitKey: circuitKey,
+      retryAfterMs,
+      tenantId: next.request.metadata?.tenantId ?? next.tenantId,
+      priority: next.request.metadata?.priority,
+      taskType: next.request.metadata?.taskType,
+    };
+
+    next.reject(error);
+    logger?.warn?.("Circuit open; rejecting request", { circuitKey, retryAfterMs });
+  }
+
+  private resolveFallbackChain(
+    provider: string | undefined,
+    model: string,
+  ): FallbackChainEntry[] | undefined {
+    return (
+      (provider ? this.fallbackChains.get(`${provider}::${model}`) : undefined) ??
+      this.fallbackChains.get(model)
+    );
+  }
+
+  private normalizeFallbackTarget(
+    candidate: Exclude<FallbackChainEntry, { kind: "short-response" }>,
+    provider: string | undefined,
+  ): FallbackTarget {
+    return typeof candidate === "string"
+      ? { provider, model: candidate }
+      : { provider: candidate.provider ?? provider, model: candidate.model };
   }
 
   private isShortResponseFallback(
@@ -388,93 +516,33 @@ export class TrafficCircuitBreaker {
       typeof candidate === "object" &&
       candidate !== null &&
       "kind" in candidate &&
-      (candidate as { kind?: string }).kind === "short-response"
+      candidate.kind === "short-response"
     );
-  }
-
-  private findFallbackTarget(
-    metadata: TrafficRequestMetadata | undefined,
-    visitedKeys: Set<string>,
-    logger?: Logger,
-  ): FallbackChainEntry | undefined {
-    const currentModel = metadata?.model;
-    if (!currentModel) {
-      logger?.trace?.("No current model; no fallback", {});
-      return undefined;
-    }
-
-    const provider = metadata?.provider;
-    const chain = this.resolveFallbackChain(provider, currentModel);
-    if (!chain) {
-      logger?.trace?.("No fallback chain for model", {
-        currentModel,
-        provider,
-      });
-      return undefined;
-    }
-
-    for (const candidate of chain) {
-      if (this.isShortResponseFallback(candidate)) {
-        logger?.debug?.("Selected short-response fallback", {
-          currentModel,
-          currentProvider: provider,
-        });
-        return candidate;
-      }
-      const target = this.normalizeFallbackTarget(candidate, provider);
-      const candidateMetadata: TrafficRequestMetadata = {
-        ...(metadata ?? {}),
-        provider: target.provider ?? provider,
-        model: target.model,
-      };
-      const candidateKey = this.buildRateLimitKey(candidateMetadata);
-      if (visitedKeys.has(candidateKey)) {
-        continue;
-      }
-
-      const evaluation = this.evaluateCircuitState(candidateKey, logger);
-      if (evaluation.allowRequest) {
-        visitedKeys.add(candidateKey);
-        logger?.debug?.("Selected fallback target", {
-          currentModel,
-          currentProvider: provider,
-          fallbackModel: target.model,
-          fallbackProvider: target.provider ?? provider,
-          fallbackCircuitKey: candidateKey,
-        });
-        return candidate;
-      }
-    }
-
-    return undefined;
-  }
-
-  private resolveFallbackChain(
-    provider: string | undefined,
-    model: string,
-  ): FallbackChainEntry[] | undefined {
-    const providerKey = provider ? `${provider}::${model}` : undefined;
-    if (providerKey) {
-      const providerChain = this.fallbackChains.get(providerKey);
-      if (providerChain) return providerChain;
-    }
-    return this.fallbackChains.get(model);
-  }
-
-  private normalizeFallbackTarget(
-    candidate: Exclude<FallbackChainEntry, { kind: "short-response" }>,
-    provider: string | undefined,
-  ): FallbackTarget {
-    if (typeof candidate === "string") {
-      return { provider, model: candidate };
-    }
-    return {
-      provider: candidate.provider ?? provider,
-      model: candidate.model,
-    };
   }
 
   private isCircuitBreakerStatus(status?: number): boolean {
     return status === 429 || (status !== undefined && status >= 500);
+  }
+
+  /**
+   * markTrial()
+   *
+   * Called when a request is actually dispatched while the circuit
+   * is in half-open state.
+   *
+   * Ensures that only ONE probe request is in-flight at any time.
+   */
+  markTrial(item: QueuedRequest, logger?: Logger): void {
+    const log = logger?.child({ module: "circuit-breaker" });
+    const key = item.circuitKey;
+    if (!key) return;
+
+    const state = this.circuitBreakers.get(key);
+    if (!state) return;
+
+    if (state.status === "half-open" && !state.trialInFlight) {
+      state.trialInFlight = true;
+      log?.debug?.("Marked half-open trial in flight", { circuitKey: key });
+    }
   }
 }
