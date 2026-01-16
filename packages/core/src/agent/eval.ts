@@ -16,12 +16,16 @@ import {
 } from "../eval/runtime";
 import type { VoltAgentObservability } from "../observability";
 import { randomUUID } from "../utils/id";
+import type { VoltOpsClient } from "../voltops/client";
 import type {
   AgentEvalConfig,
   AgentEvalContext,
+  AgentEvalFeedbackHelper,
+  AgentEvalFeedbackSaveInput,
   AgentEvalOperationType,
   AgentEvalPayload,
   AgentEvalResult,
+  AgentEvalResultCallbackArgs,
   AgentEvalScorerConfig,
   OperationContext,
 } from "./types";
@@ -254,6 +258,7 @@ export interface AgentEvalHost {
   readonly logger: Logger;
   readonly evalConfig?: AgentEvalConfig;
   getObservability(): VoltAgentObservability;
+  getVoltOpsClient?: () => VoltOpsClient | undefined;
 }
 
 export interface EnqueueEvalScoringArgs {
@@ -1092,11 +1097,76 @@ async function invokeEvalResultCallback(
   }
 
   try {
-    await config.onResult(result);
+    const feedback = createEvalFeedbackHelper(host, result);
+    const payload: AgentEvalResultCallbackArgs = {
+      ...result,
+      result,
+      feedback,
+    };
+    await config.onResult(payload);
   } catch (error) {
     host.logger.warn(`[Agent:${host.name}] Eval scorer onResult callback failed`, {
       error: error instanceof Error ? error.message : error,
       scorerId: result.scorerId,
     });
   }
+}
+
+function createEvalFeedbackHelper(
+  host: AgentEvalHost,
+  result: AgentEvalResult,
+): AgentEvalFeedbackHelper {
+  return {
+    save: async (input: AgentEvalFeedbackSaveInput) => {
+      const rawKey = typeof input.key === "string" ? input.key.trim() : "";
+      if (!rawKey) {
+        throw new Error("feedback key is required");
+      }
+
+      const traceId = input.traceId ?? result.payload.traceId;
+      if (!traceId) {
+        throw new Error("feedback traceId is required");
+      }
+
+      const client = resolveEvalFeedbackClient(host);
+      if (!client) {
+        host.logger.debug("Eval feedback save skipped: VoltOps client unavailable", {
+          scorerId: result.scorerId,
+          traceId,
+        });
+        return null;
+      }
+
+      return await client.createFeedback({
+        traceId,
+        key: rawKey,
+        id: input.id,
+        score: input.score,
+        value: input.value,
+        correction: input.correction,
+        comment: input.comment,
+        feedbackConfig: input.feedbackConfig,
+        feedbackSource: input.feedbackSource,
+        feedbackSourceType: input.feedbackSourceType,
+        createdAt: input.createdAt,
+      });
+    },
+  };
+}
+
+function resolveEvalFeedbackClient(host: AgentEvalHost): VoltOpsClient | undefined {
+  if (!host.getVoltOpsClient) {
+    return undefined;
+  }
+
+  const client = host.getVoltOpsClient();
+  if (!client) {
+    return undefined;
+  }
+
+  if (typeof client.hasValidKeys === "function" && !client.hasValidKeys()) {
+    return undefined;
+  }
+
+  return client;
 }

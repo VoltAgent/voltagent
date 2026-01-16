@@ -21,6 +21,11 @@ const observability = new VoltAgentObservability();
 
 const judgeModel = openai("gpt-4o-mini");
 const moderationModel = openai("gpt-4o-mini");
+const helpfulnessJudgeAgent = new Agent({
+  name: "helpfulness-judge",
+  model: judgeModel,
+  instructions: "You evaluate helpfulness of responses",
+});
 
 const keywordMatchScorer = buildScorer({
   id: "keyword-match",
@@ -59,6 +64,14 @@ const keywordMatchScorer = buildScorer({
         ? `Output contains the keyword "${keyword}".`
         : `Output does not contain the keyword "${keyword}".`,
     };
+  })
+  .build();
+
+const customScorer = buildScorer({
+  id: "response-length",
+})
+  .score(() => {
+    return { score: 1 };
   })
   .build();
 
@@ -118,13 +131,7 @@ Assistant Response: ${context.payload.output}
 
 Provide a score from 0 to 1 and explain your reasoning.`;
 
-    const agent = new Agent({
-      name: "helpfulness-judge",
-      model: judgeModel,
-      instructions: "You evaluate helpfulness of responses",
-    });
-
-    const response = await agent.generateObject(prompt, HELPFULNESS_SCHEMA);
+    const response = await helpfulnessJudgeAgent.generateObject(prompt, HELPFULNESS_SCHEMA);
 
     const rawResults = context.results.raw;
     rawResults.helpfulnessJudge = response.object;
@@ -243,6 +250,20 @@ const supportAgent = new Agent({
           criteria:
             "Reward answers that are specific to VoltAgent features and actionable guidance.",
         },
+        onResult: async ({ result, feedback }) => {
+          await feedback.save({
+            key: "helpfulness",
+            score: result.score ?? null,
+            comment: typeof result.metadata?.reason === "string" ? result.metadata.reason : null,
+            feedbackSourceType: "model",
+            feedbackSource: {
+              type: "model",
+              metadata: {
+                scorerId: result.scorerId,
+              },
+            },
+          });
+        },
       },
       levenshtein: {
         scorer: scorers.levenshtein,
@@ -275,15 +296,61 @@ const supportAgent = new Agent({
   },
 });
 
+const singleEvalAgent = new Agent({
+  name: "single-eval-demo",
+  instructions: "You are a helpful assistant that answers questions about VoltAgent.",
+  model: openai("gpt-4o-mini"),
+  eval: {
+    sampling: { type: "ratio", rate: 1 },
+    scorers: {
+      responseLength: {
+        scorer: customScorer,
+      },
+    },
+  },
+});
+
+const scorerFeedbackAgent = new Agent({
+  name: "scorer-feedback-demo",
+  instructions: "You are a helpful assistant that answers questions about VoltAgent.",
+  model: openai("gpt-4o-mini"),
+  eval: {
+    sampling: { type: "ratio", rate: 1 },
+    scorers: {
+      "scorer-feedback": {
+        scorer: helpfulnessJudgeScorer,
+        onResult: async ({ result, feedback }) => {
+          await feedback.save({
+            key: "helpfulness",
+            score: result.score ?? null,
+            comment: typeof result.metadata?.reason === "string" ? result.metadata.reason : null,
+            feedbackSourceType: "model",
+            feedbackSource: {
+              type: "model",
+              metadata: {
+                scorerId: result.scorerId,
+              },
+            },
+          });
+        },
+      },
+    },
+  },
+});
+
 new VoltAgent({
-  agents: { support: supportAgent },
+  agents: {
+    support: supportAgent,
+    singleEval: singleEvalAgent,
+    scorerFeedback: scorerFeedbackAgent,
+  },
   server: honoServer(),
   observability,
 });
 
 (async () => {
   const question = "How can I enable live eval scorers in VoltAgent?";
-  const result = await supportAgent.generateText(question);
+  const result = await singleEvalAgent.generateText(question);
 
   console.log("Question:\n", question, "\n");
   console.log("Agent response:\n", result.text, "\n");

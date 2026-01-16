@@ -36,6 +36,8 @@ export type {
   VoltOpsCreateScorerRequest,
   VoltOpsScorerSummary,
   VoltOpsFeedbackConfig,
+  VoltOpsFeedback,
+  VoltOpsFeedbackCreateInput,
   VoltOpsFeedbackExpiresIn,
   VoltOpsFeedbackToken,
   VoltOpsFeedbackTokenCreateInput,

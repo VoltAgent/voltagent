@@ -55,7 +55,9 @@ import type {
   VoltOpsEvalRunSummary,
   VoltOpsEvalsApi,
   VoltOpsFailEvalRunRequest,
+  VoltOpsFeedback,
   VoltOpsFeedbackConfig,
+  VoltOpsFeedbackCreateInput,
   VoltOpsFeedbackToken,
   VoltOpsFeedbackTokenCreateInput,
   VoltOpsPromptManager,
@@ -280,6 +282,43 @@ export class VoltOpsClient implements IVoltOpsClient {
       expiresAt,
       feedbackConfig,
     };
+  }
+
+  public async createFeedback(input: VoltOpsFeedbackCreateInput): Promise<VoltOpsFeedback> {
+    const payload: Record<string, unknown> = {
+      trace_id: input.traceId,
+      key: input.key,
+    };
+
+    if (input.id !== undefined) {
+      payload.id = input.id;
+    }
+    if (input.score !== undefined) {
+      payload.score = input.score;
+    }
+    if (input.value !== undefined) {
+      payload.value = input.value;
+    }
+    if (input.correction !== undefined) {
+      payload.correction = input.correction;
+    }
+    if (input.comment !== undefined) {
+      payload.comment = input.comment;
+    }
+    if (input.feedbackConfig !== undefined) {
+      payload.feedback_config = input.feedbackConfig;
+    }
+    if (input.feedbackSource !== undefined) {
+      payload.feedback_source = input.feedbackSource;
+    }
+    if (input.feedbackSourceType !== undefined) {
+      payload.feedback_source_type = input.feedbackSourceType;
+    }
+    if (input.createdAt !== undefined) {
+      payload.created_at = input.createdAt;
+    }
+
+    return await this.request<VoltOpsFeedback>("POST", "/api/public/feedback", payload);
   }
 
   // getObservabilityExporter removed - observability now handled by VoltAgentObservability

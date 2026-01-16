@@ -34,7 +34,9 @@ import type {
   DynamicValueOptions,
   PromptContent,
   PromptHelper,
+  VoltOpsFeedback,
   VoltOpsFeedbackConfig,
+  VoltOpsFeedbackCreateInput,
   VoltOpsFeedbackExpiresIn,
 } from "../voltops/types";
 import type { ContextInput } from "./agent";
@@ -560,6 +562,19 @@ export interface AgentEvalResult {
   rawPayload: AgentEvalPayload;
 }
 
+export type AgentEvalFeedbackSaveInput = Omit<VoltOpsFeedbackCreateInput, "traceId"> & {
+  traceId?: string;
+};
+
+export type AgentEvalFeedbackHelper = {
+  save: (input: AgentEvalFeedbackSaveInput) => Promise<VoltOpsFeedback | null>;
+};
+
+export type AgentEvalResultCallbackArgs = AgentEvalResult & {
+  result: AgentEvalResult;
+  feedback: AgentEvalFeedbackHelper;
+};
+
 export interface AgentEvalScorerConfig {
   scorer: AgentEvalScorerReference;
   params?:
@@ -569,7 +584,7 @@ export interface AgentEvalScorerConfig {
       ) => AgentEvalParams | undefined | Promise<AgentEvalParams | undefined>);
   sampling?: AgentEvalSamplingPolicy;
   id?: string;
-  onResult?: (result: AgentEvalResult) => void | Promise<void>;
+  onResult?: (result: AgentEvalResultCallbackArgs) => void | Promise<void>;
   buildPayload?: (
     context: AgentEvalContext,
   ) => Record<string, unknown> | Promise<Record<string, unknown>>;

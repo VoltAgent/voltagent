@@ -153,6 +153,37 @@ export type VoltOpsFeedbackTokenCreateInput = {
   expiresIn?: VoltOpsFeedbackExpiresIn;
 };
 
+export type VoltOpsFeedbackCreateInput = {
+  traceId: string;
+  key: string;
+  id?: string;
+  score?: number | boolean | null;
+  value?: unknown;
+  correction?: unknown;
+  comment?: string | null;
+  feedbackConfig?: VoltOpsFeedbackConfig | null;
+  feedbackSource?: Record<string, unknown> | null;
+  feedbackSourceType?: string;
+  createdAt?: Date | string;
+};
+
+export type VoltOpsFeedback = {
+  id: string;
+  trace_id: string;
+  key: string;
+  score?: number | boolean | null;
+  value?: unknown;
+  correction?: unknown;
+  comment?: string | null;
+  feedback_source?: Record<string, unknown> | null;
+  feedback_source_type?: string | null;
+  feedback_config?: VoltOpsFeedbackConfig | null;
+  created_at?: string;
+  updated_at?: string;
+  source_info?: Record<string, unknown> | null;
+  [key: string]: unknown;
+};
+
 /**
  * Cached prompt data for performance optimization
  */
@@ -941,6 +972,9 @@ export interface VoltOpsClient {
 
   /** Create a feedback token for the given trace */
   createFeedbackToken(input: VoltOpsFeedbackTokenCreateInput): Promise<VoltOpsFeedbackToken>;
+
+  /** Create a feedback entry for the given trace */
+  createFeedback(input: VoltOpsFeedbackCreateInput): Promise<VoltOpsFeedback>;
 
   /** Create a prompt helper for agent instructions */
   createPromptHelper(agentId: string, historyEntryId?: string): PromptHelper;

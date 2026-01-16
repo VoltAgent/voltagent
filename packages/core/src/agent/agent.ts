@@ -2686,6 +2686,16 @@ export class Agent {
       logger: this.logger,
       evalConfig: this.evalConfig,
       getObservability: () => this.getObservability(),
+      getVoltOpsClient: () => {
+        const client = this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
+        if (!client || typeof client.hasValidKeys !== "function") {
+          return undefined;
+        }
+        if (!client.hasValidKeys()) {
+          return undefined;
+        }
+        return client;
+      },
     };
   }
 
