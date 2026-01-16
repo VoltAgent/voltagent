@@ -1,5 +1,5 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
-import type { FinishReason, LanguageModel, LanguageModelUsage, UIMessage } from "ai";
+import type { FinishReason, LanguageModelUsage, UIMessage } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
