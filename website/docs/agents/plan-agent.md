@@ -65,6 +65,42 @@ const result = await agent.generateText("What is VoltAgent?");
 console.log(result.text);
 ```
 
+## Dynamic systemPrompt
+
+`systemPrompt` can be a function that resolves per request. It receives `{ context, prompts }` and can return a string or a VoltOps prompt payload.
+
+```ts
+const agent = new PlanAgent({
+  name: "DynamicPlanner",
+  model: openai("gpt-4o"),
+  systemPrompt: async ({ context }) => {
+    const tenant = context.get("tenant") ?? "default";
+    return `Tenant: ${tenant}. Keep answers concise.`;
+  },
+});
+
+const context = new Map<string | symbol, unknown>();
+context.set("tenant", "acme");
+
+const result = await agent.generateText("Summarize the roadmap", { context });
+console.log(result.text);
+```
+
+If you return a chat prompt:
+
+```ts
+const agent = new PlanAgent({
+  name: "DynamicChatPlanner",
+  model: openai("gpt-4o"),
+  systemPrompt: async () => ({
+    type: "chat",
+    messages: [{ role: "system", content: "You are a precise planner." }],
+  }),
+});
+```
+
+PlanAgent still appends its base prompt and any extension prompts.
+
 ## Built-in capabilities
 
 ### Planning with write_todos
@@ -230,6 +266,7 @@ const agent = new PlanAgent({
 
 ## Configuration reference (high-level)
 
+- `systemPrompt`: static string or dynamic function for per-request prompts
 - `planning`: configure or disable planning (`write_todos`)
 - `filesystem`: configure backend and tool prompts
 - `task`: configure task tool prompts and limits

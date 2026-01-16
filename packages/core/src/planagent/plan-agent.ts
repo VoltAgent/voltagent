@@ -8,12 +8,13 @@ import { FORCED_TOOL_CHOICE_CONTEXT_KEY } from "../agent/context-keys";
 import type { AgentHooks } from "../agent/hooks";
 import { SubAgentManager } from "../agent/subagent";
 import type { SubAgentConfig } from "../agent/subagent/types";
-import type { AgentOptions, OperationContext } from "../agent/types";
+import type { AgentOptions, InstructionsDynamicValue, OperationContext } from "../agent/types";
 import type { Tool, VercelTool } from "../tool";
 import { createTool } from "../tool";
 import type { Toolkit } from "../tool/toolkit";
 import { createToolkit } from "../tool/toolkit";
 import { randomUUID } from "../utils/id";
+import type { PromptContent } from "../voltops/types";
 import { PLAN_PROGRESS_CONTEXT_KEY, PLAN_WRITTEN_CONTEXT_KEY } from "./context-keys";
 import {
   FILESYSTEM_SYSTEM_PROMPT,
@@ -100,7 +101,7 @@ export type PlanAgentOptions = Omit<
   AgentOptions,
   "instructions" | "tools" | "toolkits" | "subAgents" | "supervisorConfig"
 > & {
-  systemPrompt?: string;
+  systemPrompt?: InstructionsDynamicValue;
   tools?: (Tool<any, any> | Toolkit | VercelTool)[];
   toolkits?: Toolkit[];
   subagents?: PlanAgentSubagentDefinition[];
@@ -138,6 +139,74 @@ export type PlanAgentExtension = {
   name: string;
   apply: (context: PlanAgentExtensionContext) => PlanAgentExtensionResult | null | undefined;
 };
+
+function buildBaseSystemPrompt(systemPrompt?: string | null): string {
+  return systemPrompt ? `${systemPrompt}\n\n${BASE_PROMPT}` : BASE_PROMPT;
+}
+
+function appendExtensionPrompts(basePrompt: string, extensionPrompts: string[]): string {
+  return extensionPrompts.length > 0 ? [basePrompt, ...extensionPrompts].join("\n\n") : basePrompt;
+}
+
+function isPromptContent(value: unknown): value is PromptContent {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const { type } = value as { type?: string };
+  return type === "text" || type === "chat";
+}
+
+function mergeSystemPromptWithExtensions(
+  resolved: string | PromptContent | null | undefined,
+  extensionPrompts: string[],
+): string | PromptContent {
+  if (isPromptContent(resolved)) {
+    if (resolved.type === "text") {
+      const basePrompt = buildBaseSystemPrompt(resolved.text ?? "");
+      const mergedPrompt = appendExtensionPrompts(basePrompt, extensionPrompts);
+      return { ...resolved, text: mergedPrompt };
+    }
+
+    const messages = Array.isArray(resolved.messages) ? [...resolved.messages] : [];
+    const extraSystemContent = appendExtensionPrompts(BASE_PROMPT, extensionPrompts);
+
+    if (messages.length === 0) {
+      messages.push({ role: "system", content: extraSystemContent });
+      return { ...resolved, messages };
+    }
+
+    let lastSystemIndex = -1;
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].role === "system") {
+        lastSystemIndex = i;
+        break;
+      }
+    }
+
+    if (lastSystemIndex >= 0) {
+      const target = messages[lastSystemIndex];
+      if (
+        target?.role === "system" &&
+        typeof target.content === "string" &&
+        target.content.trim().length > 0
+      ) {
+        messages[lastSystemIndex] = {
+          ...target,
+          content: `${target.content}\n\n${extraSystemContent}`,
+        };
+      } else {
+        messages.push({ role: "system", content: extraSystemContent });
+      }
+    } else {
+      messages.push({ role: "system", content: extraSystemContent });
+    }
+
+    return { ...resolved, messages };
+  }
+
+  const basePrompt = buildBaseSystemPrompt(typeof resolved === "string" ? resolved : "");
+  return appendExtensionPrompts(basePrompt, extensionPrompts);
+}
 
 function buildTaskToolDescription(subagentDescriptions: string[]): string {
   const availableAgents =
@@ -814,7 +883,9 @@ export class PlanAgent extends Agent {
           ((context: FilesystemBackendContext) =>
             new InMemoryFilesystemBackend(context.state.files || {}));
 
-    const baseSystemPrompt = systemPrompt ? `${systemPrompt}\n\n${BASE_PROMPT}` : BASE_PROMPT;
+    const baseSystemPrompt = buildBaseSystemPrompt(
+      typeof systemPrompt === "string" ? systemPrompt : undefined,
+    );
     const taskOptions = task === false ? undefined : task;
     const taskSystemPrompt =
       taskOptions?.systemPrompt === undefined
@@ -842,10 +913,12 @@ export class PlanAgent extends Agent {
       .map((result) => result.systemPrompt)
       .filter((prompt): prompt is string => Boolean(prompt && prompt.trim().length > 0));
 
-    const finalSystemPrompt =
-      extensionPrompts.length > 0
-        ? [baseSystemPrompt, ...extensionPrompts].join("\n\n")
-        : baseSystemPrompt;
+    const finalSystemPrompt = appendExtensionPrompts(baseSystemPrompt, extensionPrompts);
+    const instructions: InstructionsDynamicValue =
+      typeof systemPrompt === "function"
+        ? async (dynamicOptions) =>
+            mergeSystemPromptWithExtensions(await systemPrompt(dynamicOptions), extensionPrompts)
+        : finalSystemPrompt;
 
     const extensionHooks = extensionResults.flatMap((result) =>
       result.hooks ? [result.hooks] : [],
@@ -875,7 +948,7 @@ export class PlanAgent extends Agent {
     super({
       ...agentOptions,
       name: name || "plan-agent",
-      instructions: finalSystemPrompt,
+      instructions,
       summarization,
       tools: [],
       toolkits: [],
