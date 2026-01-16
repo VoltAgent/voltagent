@@ -95,7 +95,6 @@ The process stays attached to stdin/stdout so an MCP client can negotiate transp
 ```ts title="src/mcp/server.ts"
 import { MCPServer } from "@voltagent/mcp-server";
 import { Agent, createTool } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const status = createTool({
@@ -110,7 +109,7 @@ const status = createTool({
 const assistant = new Agent({
   name: "Support Agent",
   instructions: "Route customer tickets to the correct queue.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [status],
 });
 

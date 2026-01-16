@@ -1,7 +1,7 @@
 import {
   Agent,
+  type AgentModelReference,
   type BuilderScoreContext,
-  type LanguageModel,
   type LocalScorerDefinition,
   buildScorer,
 } from "@voltagent/core";
@@ -74,7 +74,7 @@ function normalizeText(value: unknown): string {
 
 interface EvaluateChoiceArgs {
   context: BuilderScoreContext<Record<string, unknown>, Record<string, unknown>>;
-  model: LanguageModel;
+  model: AgentModelReference;
   buildPrompt: (
     context: BuilderScoreContext<Record<string, unknown>, Record<string, unknown>>,
   ) => string | Promise<string>;
@@ -190,7 +190,7 @@ interface ChoiceScorerOptions {
   id: string;
   name: string;
   resultKey: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   maxOutputTokens?: number;
   buildPrompt: (
     context: BuilderScoreContext<Record<string, unknown>, Record<string, unknown>>,
@@ -257,7 +257,7 @@ function createChoiceScorer(
 export interface FactualityScorerOptions {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   maxOutputTokens?: number;
 }
 
@@ -314,7 +314,7 @@ export function createFactualityScorer(
 export interface SummaryScorerOptions {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   maxOutputTokens?: number;
 }
 
@@ -362,7 +362,7 @@ export function createSummaryScorer(
 export interface HumorScorerOptions {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   maxOutputTokens?: number;
 }
 
@@ -405,7 +405,7 @@ export function createHumorScorer(
 export interface PossibleScorerOptions {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   maxOutputTokens?: number;
 }
 
@@ -453,7 +453,7 @@ export function createPossibleScorer(
 export interface TranslationScorerOptions {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   maxOutputTokens?: number;
 }
 

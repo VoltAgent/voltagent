@@ -2,7 +2,6 @@ import "dotenv/config";
 import { VoltAgent, VoltOpsClient, Agent, Memory, VoltAgentObservability } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { openai } from "@ai-sdk/openai";
 import { {{serverFactory}} } from "{{serverPackage}}";
 import { expenseApprovalWorkflow } from "./workflows";
 import { weatherTool } from "./tools";
@@ -31,7 +30,7 @@ const observability = new VoltAgentObservability({
 const agent = new Agent({
   name: "{{projectName}}",
   instructions: "A helpful assistant that can check weather and help with various tasks",
-  model: openai("gpt-4o-mini"),
+  model: "{{modelId}}",
   tools: [weatherTool],
   memory,
 });

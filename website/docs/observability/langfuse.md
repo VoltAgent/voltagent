@@ -25,7 +25,6 @@ In your application (e.g., `src/index.ts`) import the observability class and th
 
 ```typescript
 import { Agent, VoltAgent, VoltAgentObservability } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 import { createLangfuseSpanProcessor } from "@voltagent/langfuse-exporter";
 ```
 
@@ -46,7 +45,7 @@ const observability = new VoltAgentObservability({
 const agent = new Agent({
   name: "my-voltagent-app",
   instructions: "A helpful assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({

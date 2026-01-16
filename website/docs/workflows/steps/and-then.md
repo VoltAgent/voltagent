@@ -157,7 +157,6 @@ When you need streaming or custom tool handling, call the agent directly:
 ```typescript
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 const searchTool = createTool({
   name: "search_database",
@@ -171,7 +170,7 @@ const searchTool = createTool({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [searchTool],
 });
 

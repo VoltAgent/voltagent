@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createTool, createTriggers } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal";
 import { createPinoLogger } from "@voltagent/logger";
@@ -66,7 +65,7 @@ const airtableAgent = new Agent({
   instructions: `You process newly created Airtable records.
 Create a concise summary, assign a priority (High/Medium/Low), set a status (New/In Progress/Blocked/Done), and list next steps.`,
   tools: [updateAirtableRecord],
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({

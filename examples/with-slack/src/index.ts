@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createTool, createTriggers } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VoltOpsClient } from "@voltagent/sdk";
@@ -54,7 +53,7 @@ const slackAgent = new Agent({
   name: "slack-agent",
   instructions: "You are a Slack assistant.",
   tools: [weatherTool, sendSlackMessage],
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({

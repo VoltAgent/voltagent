@@ -47,7 +47,7 @@ const createAgentStub = () => ({
   getMemory: () => false,
 });
 
-const resolveValue = async <T>(value: T): Promise<T> => value;
+const resolveModel = async (_value: unknown, _context: OperationContext): Promise<any> => ({});
 
 describe("applySummarization", () => {
   it("returns messages when summarization is disabled", async () => {
@@ -59,7 +59,7 @@ describe("applySummarization", () => {
       operationContext: oc,
       summarization: { enabled: false },
       model: {} as any,
-      resolveValue,
+      resolveModel,
       agent: createAgentStub(),
     });
 
@@ -89,7 +89,7 @@ describe("applySummarization", () => {
         maxOutputTokens: 200,
       },
       model: {} as any,
-      resolveValue,
+      resolveModel,
       agent: createAgentStub(),
     });
 

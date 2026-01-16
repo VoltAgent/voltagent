@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { openai } from "@ai-sdk/openai";
 import { Memory, NodeFilesystemBackend, PlanAgent, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -27,7 +26,7 @@ const researchInstructions = [
 const agent = new PlanAgent({
   name: "deep-research-agent",
   systemPrompt: researchInstructions,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [internetSearch],
   memory,
   maxSteps: 100,

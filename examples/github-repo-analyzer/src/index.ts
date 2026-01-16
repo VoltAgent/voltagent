@@ -28,7 +28,7 @@ const memory = new Memory({
 const starsFetcherAgent = new Agent({
   name: "Stars Fetcher",
   instructions: "Fetches the number of stars for a GitHub repository using the GitHub API",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [fetchRepoStarsTool],
   memory: memory,
 });
@@ -37,7 +37,7 @@ const starsFetcherAgent = new Agent({
 const contributorsFetcherAgent = new Agent({
   name: "Contributors Fetcher",
   instructions: "Fetches the list of contributors for a GitHub repository using the GitHub API",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [fetchRepoContributorsTool],
   memory: memory,
 });
@@ -46,7 +46,7 @@ const contributorsFetcherAgent = new Agent({
 const analyzerAgent = new Agent({
   name: "Repo Analyzer",
   instructions: "Analyzes repository statistics and provides insights",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: memory,
 });
 
@@ -60,7 +60,7 @@ const supervisorAgent = new Agent({
 
 Example input: https://github.com/vercel/ai-sdk or vercel/ai-sdk
 `,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   subAgents: [starsFetcherAgent, contributorsFetcherAgent, analyzerAgent],
   memory: memory,
 });

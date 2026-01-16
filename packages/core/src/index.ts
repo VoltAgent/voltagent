@@ -148,10 +148,25 @@ export type {
 } from "./memory/types";
 
 export * from "./agent/providers";
+export {
+  ModelProviderRegistry,
+  type LanguageModelFactory,
+  type ModelProvider,
+  type ModelProviderEntry,
+  type ModelProviderLoader,
+} from "./registries/model-provider-registry";
+export type {
+  ModelForProvider,
+  ModelRouterModelId,
+  ProviderId,
+  ProviderModelsMap,
+} from "./registries/model-provider-types.generated";
 export * from "./events/types";
 export type {
   AgentOptions,
   AgentSummarizationOptions,
+  AgentModelReference,
+  AgentModelValue,
   AgentFeedbackOptions,
   AgentFeedbackMetadata,
   AgentResponse,

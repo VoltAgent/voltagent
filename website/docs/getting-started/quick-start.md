@@ -115,6 +115,10 @@ MISTRAL_API_KEY=your-api-key-here
   </TabItem>
 </Tabs>
 
+:::info model strings
+VoltAgent also supports `provider/model` strings like `openai/gpt-4o-mini`. If you use model strings, you do not need to import provider packages in your app. Just set the appropriate API key env vars.
+:::
+
 Now start the development server:
 
 <Tabs>

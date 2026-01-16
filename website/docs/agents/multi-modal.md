@@ -15,12 +15,11 @@ Both message formats are from the AI SDK and re-exported by VoltAgent. To send i
 ```ts
 import { Agent } from "@voltagent/core";
 import type { BaseMessage } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "vision-assistant",
   instructions: "Analyze images and answer questions about them.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 const messages: BaseMessage[] = [

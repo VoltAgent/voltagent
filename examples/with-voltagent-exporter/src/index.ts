@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -14,7 +13,7 @@ const logger = createPinoLogger({
 const agent = new Agent({
   name: "Base Agent",
   instructions: "You are a helpful assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [weatherTool, searchTool, checkCalendarTool, addCalendarEventTool],
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({

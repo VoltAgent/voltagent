@@ -22,12 +22,11 @@ VoltAgent 1.x introduces a pluggable server architecture:
 ```typescript
 import { Agent, VoltAgent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "You are a helpful assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({
@@ -44,12 +43,11 @@ new VoltAgent({
 ```typescript
 import { Agent, VoltAgent } from "@voltagent/core";
 import { elysiaServer } from "@voltagent/server-elysia";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "You are a helpful assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({
@@ -60,6 +58,8 @@ new VoltAgent({
   }),
 });
 ```
+
+You can also set `model` to a string like `openai/gpt-4o-mini` instead of importing a provider package.
 
 The server starts automatically and displays:
 

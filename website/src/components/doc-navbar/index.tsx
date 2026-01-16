@@ -31,6 +31,12 @@ const tabs: TabConfig[] = [
     match: (pathname) => pathname.startsWith("/docs/overview/"),
   },
   {
+    id: "models",
+    label: "Models",
+    href: "/models-docs/",
+    match: (pathname) => pathname.startsWith("/models-docs/"),
+  },
+  {
     id: "observability",
     label: "Observability",
     href: "/observability-docs/",
@@ -173,6 +179,16 @@ export default function DocNavbar() {
               onClick={() => setIsMenuOpen(false)}
             >
               VoltAgent
+            </Link>
+            <Link
+              to="/models-docs/"
+              className={clsx(
+                styles.mobileNavLink,
+                activeTab === "models" && styles.mobileNavLinkActive,
+              )}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Models
             </Link>
             <Link
               to="/observability-docs/"

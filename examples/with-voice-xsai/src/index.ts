@@ -1,6 +1,5 @@
 import { createReadStream, createWriteStream } from "node:fs";
 import { join } from "node:path";
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -20,7 +19,7 @@ const voiceProvider = new XSAIVoiceProvider({
 const agent = new Agent({
   name: "Voice Assistant",
   instructions: "Speaks & listens via xsAI",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   voice: voiceProvider,
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({

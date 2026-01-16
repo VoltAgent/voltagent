@@ -13,12 +13,11 @@ Start with a normal `Agent` if you only need straightforward responses.
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "Answer questions clearly and concisely.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 const result = await agent.generateText("What is VoltAgent?");
@@ -31,7 +30,6 @@ PlanAgent works like `Agent`, but adds planning, filesystem, and subagent toolin
 
 ```ts
 import { PlanAgent, createTool } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const internetSearch = createTool({
@@ -57,7 +55,7 @@ const internetSearch = createTool({
 const agent = new PlanAgent({
   name: "Researcher",
   systemPrompt: "You are an expert researcher. Produce clear, sourced answers.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: [internetSearch],
 });
 
@@ -75,7 +73,7 @@ PlanAgent injects a planning prompt and a `write_todos` tool. The agent is expec
 const agent = new PlanAgent({
   name: "Planner",
   systemPrompt: "Plan carefully before acting.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   planning: {
     systemPrompt: "Always plan any multi-step task. Keep 4-8 concise steps and update as you go.",
   },
@@ -88,7 +86,7 @@ Disable planning if you want a lighter agent:
 const agent = new PlanAgent({
   name: "NoPlan",
   systemPrompt: "Answer quickly.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   planning: false,
 });
 ```
@@ -107,7 +105,7 @@ import { NodeFilesystemBackend } from "@voltagent/core";
 const agent = new PlanAgent({
   name: "FileAgent",
   systemPrompt: "Use the filesystem to store and retrieve context.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   filesystem: {
     backend: new NodeFilesystemBackend({
       rootDir: process.cwd(),
@@ -125,7 +123,7 @@ PlanAgent adds a `task` tool that can delegate work to subagents for isolated, m
 const agent = new PlanAgent({
   name: "Supervisor",
   systemPrompt: "Delegate deep research tasks to subagents.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   subagents: [
     {
       name: "research-analyst",
@@ -143,7 +141,7 @@ You can also tune the task tool behavior:
 const agent = new PlanAgent({
   name: "Supervisor",
   systemPrompt: "Delegate when helpful.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   task: {
     taskDescription: "Use subagents for complex, independent work.",
     maxSteps: 6,
@@ -157,7 +155,7 @@ PlanAgent also adds a default `general-purpose` subagent unless you disable it:
 const agent = new PlanAgent({
   name: "Supervisor",
   systemPrompt: "Delegate when helpful.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   generalPurposeAgent: false,
 });
 ```
@@ -170,7 +168,7 @@ PlanAgent can automatically summarize older conversation history and keep recent
 const agent = new PlanAgent({
   name: "Summarizer",
   systemPrompt: "Keep context tight.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   summarization: {
     triggerTokens: 120_000,
     keepMessages: 6,
@@ -185,7 +183,7 @@ Disable it when you want full context preserved:
 const agent = new PlanAgent({
   name: "NoSummary",
   systemPrompt: "Keep full context.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   summarization: false,
 });
 ```
@@ -198,7 +196,7 @@ Large tool outputs can be offloaded to the filesystem to keep the model context 
 const agent = new PlanAgent({
   name: "Evictor",
   systemPrompt: "Store large tool outputs on the filesystem.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   toolResultEviction: {
     enabled: true,
     tokenLimit: 20000,
@@ -223,7 +221,7 @@ const debugExtension: PlanAgentExtension = {
 const agent = new PlanAgent({
   name: "Extended",
   systemPrompt: "Be helpful.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   extensions: [debugExtension],
 });
 ```

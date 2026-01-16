@@ -129,7 +129,6 @@ The defaults work for most cases. If you want to fine-tune sampling or batching,
 
 ```ts
 import { VoltAgent, Agent, VoltAgentObservability } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const observability = new VoltAgentObservability({
   serviceName: "my-service", // Optional service metadata
@@ -148,7 +147,7 @@ const observability = new VoltAgentObservability({
 const agent = new Agent({
   name: "My Agent",
   instructions: "You are a helpful assistant.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({ agents: { main: agent }, observability });

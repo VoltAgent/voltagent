@@ -1,11 +1,11 @@
 import {
   Agent,
+  type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
-import type { LanguageModel } from "ai";
 import { z } from "zod";
 
 const CONTEXT_PRECISION_PROMPT = `Given question, answer and context verify if the context was useful in arriving at the given answer. Give verdict as "1" if useful and "0" if not with json output.
@@ -63,7 +63,7 @@ export interface ContextPrecisionScorerOptions<
 > {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   options?: ContextPrecisionOptions;
   metadata?: Record<string, unknown> | null;
   buildPayload?: (context: ContextPrecisionScoreContext<Payload, Params>) => {

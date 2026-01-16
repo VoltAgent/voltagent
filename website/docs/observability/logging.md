@@ -193,7 +193,7 @@ import { createPinoLogger } from "@voltagent/logger";
 
 const agent = new Agent({
   name: "CustomerSupport",
-  model: anthropic("claude-3-5-sonnet"),
+  model: "anthropic/claude-3-5-sonnet",
   instructions: "You are a helpful customer support agent",
 
   // This agent needs more detailed logs

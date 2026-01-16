@@ -60,12 +60,11 @@ Now, let's enhance our workflow. We'll add an AI agent to analyze the sentiment 
 ```typescript
 import { VoltAgent, createWorkflowChain, Agent } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 // Define an AI agent to use in our workflow
 const agent = new Agent({
   name: "Analyzer",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: "You are a text analyzer.",
 });
 
@@ -118,11 +117,10 @@ Finally, let's add a step that only runs if a condition is met. We'll check if t
 ```typescript
 import { VoltAgent, createWorkflowChain, Agent, andThen } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Analyzer",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: "You are a text analyzer.",
 });
 

@@ -4,7 +4,7 @@ import type { LanguageModel, UIMessage } from "ai";
 import { generateText } from "ai";
 import type { Memory } from "../memory";
 import { randomUUID } from "../utils/id";
-import type { AgentSummarizationOptions, DynamicValue, OperationContext } from "./types";
+import type { AgentModelValue, AgentSummarizationOptions, OperationContext } from "./types";
 
 const SUMMARY_METADATA_KEY = "agent";
 const SUMMARY_STATE_CACHE_KEY = Symbol("agentSummaryState");
@@ -37,21 +37,21 @@ type SummarizationAgent = {
   getMemory: () => Memory | false | undefined;
 };
 
-type ResolveValue = <T>(value: T | DynamicValue<T>, context: OperationContext) => Promise<T>;
+type ResolveModel = (value: AgentModelValue, context: OperationContext) => Promise<LanguageModel>;
 
 export const applySummarization = async ({
   messages,
   operationContext,
   summarization,
   model,
-  resolveValue,
+  resolveModel,
   agent,
 }: {
   messages: UIMessage[];
   operationContext: OperationContext;
   summarization?: AgentSummarizationOptions | false;
-  model: LanguageModel | DynamicValue<LanguageModel>;
-  resolveValue: ResolveValue;
+  model: AgentModelValue;
+  resolveModel: ResolveModel;
   agent: SummarizationAgent;
 }): Promise<UIMessage[]> => {
   const config = summarization;
@@ -123,7 +123,7 @@ export const applySummarization = async ({
 
       try {
         const summaryModel = config.model ?? model;
-        const resolvedModel = await resolveValue(summaryModel, oc);
+        const resolvedModel = await resolveModel(summaryModel, oc);
         const summaryMessages: Array<{ role: "system" | "user"; content: string }> = [];
         if (systemPrompt.trim()) {
           summaryMessages.push({ role: "system" as const, content: systemPrompt });

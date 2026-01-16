@@ -32,7 +32,7 @@ npx assistant-ui@latest create
 
 ```bash
 # Server (VoltAgent)
-pnpm add @voltagent/core @voltagent/libsql @voltagent/server-hono @ai-sdk/openai ai zod
+pnpm add @voltagent/core @voltagent/libsql @voltagent/server-hono ai zod
 pnpm add -D tsx
 
 # Client (Assistant UI template already has these)
@@ -44,7 +44,6 @@ pnpm add @assistant-ui/react @assistant-ui/react-ai-sdk @assistant-ui/react-mark
 Create `voltagent/agents.ts` and wire an agent with shared memory. You can keep it simple—no tools needed to get streaming working.
 
 ```ts title="examples/with-assistant-ui/voltagent/agents.ts"
-import { openai } from "@ai-sdk/openai";
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
@@ -89,7 +88,7 @@ export const assistantAgent = new Agent({
   name: "AssistantUIAgent",
   instructions:
     "You are a helpful AI that keeps responses concise, explains reasoning when useful, can describe attachments, and can call the getWeather tool for weather questions.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [weatherTool],
   memory: sharedMemory,
 });

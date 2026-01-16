@@ -110,7 +110,6 @@ Create `src/retriever/index.ts`:
 ```typescript
 import fs from "node:fs/promises";
 import path from "node:path";
-import { openai } from "@ai-sdk/openai";
 import { connect } from "@lancedb/lancedb";
 import { BaseRetriever, type BaseMessage, type RetrieveOptions } from "@voltagent/core";
 import { embed } from "ai";

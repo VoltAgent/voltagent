@@ -50,7 +50,6 @@ database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ## Configuration (Workers)
 
 ```ts
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { D1MemoryAdapter } from "@voltagent/cloudflare-d1";
 import { serverlessHono } from "@voltagent/serverless-hono";
@@ -73,7 +72,7 @@ const createWorker = (env: Env) => {
 
   const agent = new Agent({
     name: "Assistant",
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     tools: [weatherTool],
     memory,
   });

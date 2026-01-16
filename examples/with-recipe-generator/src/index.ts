@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -47,7 +46,7 @@ const agent = new Agent({
         - Serving size adjustments
         - Common mistakes to avoid
         - Pairing suggestions`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: await mcpConfig.getTools(),
 });
 

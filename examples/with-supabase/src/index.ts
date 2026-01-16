@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -25,7 +24,7 @@ const memory = new Memory({
 const agent = new Agent({
   name: "Asistant",
   instructions: "A helpful assistant that answers questions without using tools",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: memory, // Pass the SupabaseMemory instance
 });
 

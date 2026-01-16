@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent } from "@voltagent/core";
 import type { Memory } from "@voltagent/core";
 import { pageExtractTool } from "../tools/browserbase/page-extract.tool";
@@ -38,7 +37,7 @@ export const createLandingPageAnalyzer = (memory: Memory) => {
     Focus on understanding what makes the brand unique and how it positions itself.
 
     Output format should be structured JSON data that can be easily consumed by other agents.`,
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     tools: [pageNavigateTool, pageExtractTool, pageObserveTool, screenshotTool],
     memory,
   });

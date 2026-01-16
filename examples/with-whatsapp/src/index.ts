@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -66,7 +65,7 @@ Order Flow:
    - Confirm order and clear working memory
 
 Always be friendly and helpful. Start with "Welcome!" greeting.`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [listMenuItemsTool, createOrderTool, checkOrderStatusTool],
   memory,
 });

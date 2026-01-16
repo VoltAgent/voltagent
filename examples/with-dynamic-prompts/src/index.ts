@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -16,7 +15,7 @@ const voltOpsClient = new VoltOpsClient({
 
 const supportAgent = new Agent({
   name: "SupportAgent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
       promptName: "Customer Support",

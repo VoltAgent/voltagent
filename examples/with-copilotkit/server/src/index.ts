@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { registerCopilotKitRoutes } from "@voltagent/ag-ui";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
@@ -46,14 +45,14 @@ const weatherTool = createTool({
 const weatherAgent = new Agent({
   name: "WeatherAgent",
   instructions: "You are a friendly weather agent.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [weatherTool],
 });
 
 const storyAgent = new Agent({
   name: "StoryAgent",
   instructions: "You are a friendly storyteller. Write short, vivid stories in Turkish.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({

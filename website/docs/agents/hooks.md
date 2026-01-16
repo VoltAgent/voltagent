@@ -27,7 +27,6 @@ import {
   type OnToolEndHookArgs,
   type OnHandoffHookArgs,
 } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 // Define a collection of hooks using the helper
 const myAgentHooks = createHooks({
@@ -141,7 +140,7 @@ const myAgentHooks = createHooks({
 const agentWithHooks = new Agent({
   name: "My Agent with Hooks",
   instructions: "An assistant demonstrating hooks",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks: myAgentHooks,
 });
 
@@ -149,7 +148,7 @@ const agentWithHooks = new Agent({
 const agentWithInlineHooks = new Agent({
   name: "Inline Hooks Agent",
   instructions: "Another assistant",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks: {
     onStart: async ({ agent, context }) => {
       /* ... */
@@ -173,7 +172,7 @@ Method-level hooks do not override agent-level hooks. Both will execute. For mos
 const agent = new Agent({
   name: "My Agent with Hooks",
   instructions: "An assistant demonstrating hooks",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks: myAgentHooks,
 });
 
@@ -192,7 +191,7 @@ For example, store conversation history only for specific endpoints:
 const agent = new Agent({
   name: "Translation Agent",
   instructions: "A translation agent that translates text from English to French",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 // for the translate endpoint, we don't want to store the conversation history
@@ -427,7 +426,6 @@ Transform messages before they reach the LLM using `onPrepareMessages` and messa
 
 ```ts
 import { Agent, createHooks, messageHelpers } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const enhancedHooks = createHooks({
   onPrepareMessages: async ({ messages, context }) => {
@@ -471,7 +469,7 @@ const enhancedHooks = createHooks({
 const agent = new Agent({
   name: "Privacy-Aware Assistant",
   instructions: "A helpful assistant that protects user privacy",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   hooks: enhancedHooks,
 });
 

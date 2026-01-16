@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { NodeFilesystemBackend, PlanAgent } from "@voltagent/core";
 import { sharedMemory } from "./memory";
 import { internetSearch } from "./tools";
@@ -15,7 +14,7 @@ const researchInstructions = [
 export const agent = new PlanAgent({
   name: "deep-research-agent",
   systemPrompt: researchInstructions,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [internetSearch],
   memory: sharedMemory,
   maxSteps: 100,

@@ -1,15 +1,7 @@
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-
-const bedrock = createAmazonBedrock({
-  region: "us-east-1",
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  sessionToken: process.env.AWS_SESSION_TOKEN,
-});
 
 async function main() {
   try {
@@ -36,7 +28,7 @@ async function main() {
       name: "Zapier MCP Agent",
       instructions: "A helpful assistant using a lightweight provider",
       tools: zapierTools,
-      model: bedrock("amazon.nova-lite-v1:0"),
+      model: "amazon-bedrock/amazon.nova-lite-v1:0",
       markdown: true,
       memory: new Memory({
         storage: new LibSQLMemoryAdapter({

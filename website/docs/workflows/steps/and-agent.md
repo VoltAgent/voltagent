@@ -7,13 +7,12 @@
 ```typescript
 import { createWorkflowChain, Agent } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 // Create an agent
 const agent = new Agent({
   name: "Assistant",
   // Pass an ai-sdk model directly
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: "Be concise and helpful",
 });
 
@@ -216,7 +215,6 @@ createWorkflowChain({ id: "smart-email" })
 ```typescript
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 const getWeatherTool = createTool({
   name: "get_weather",
@@ -229,7 +227,7 @@ const getWeatherTool = createTool({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [getWeatherTool],
 });
 

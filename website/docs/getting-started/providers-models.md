@@ -8,14 +8,73 @@ import TabItem from '@theme/TabItem';
 
 # Providers & Models
 
-VoltAgent is built directly on top of the [Vercel AI SDK](https://ai-sdk.dev). You choose an ai-sdk provider package (OpenAI, Anthropic, Google, Mistral, Groq, Ollama, etc.) and pass the resulting `LanguageModel` to your `Agent` via the `model` prop.
+VoltAgent is built directly on top of the [Vercel AI SDK](https://ai-sdk.dev). You can either:
 
-- No extra VoltAgent provider package is required.
-- Full compatibility with ai-sdk’s streaming, tool calling, and structured outputs.
+- Pass a `LanguageModel` from an ai-sdk provider package, or
+- Use a model string like `openai/gpt-4o-mini` and let VoltAgent resolve it with the built-in model router.
+
+Both approaches are fully compatible with ai-sdk streaming, tool calling, and structured outputs. For the router, VoltAgent ships with a registry snapshot generated from [models.dev](https://models.dev).
+
+## Model Strings (Model Router)
+
+Model strings remove the need to import provider packages in your app:
+
+```typescript
+import { Agent } from "@voltagent/core";
+
+const agent = new Agent({
+  name: "my-agent",
+  instructions: "You are a helpful assistant",
+  model: "openai/gpt-4o-mini",
+});
+```
+
+Other examples:
+
+```typescript
+const claudeAgent = new Agent({
+  name: "claude-agent",
+  instructions: "Answer with concise reasoning",
+  model: "anthropic/claude-3-5-sonnet",
+});
+
+const geminiAgent = new Agent({
+  name: "gemini-agent",
+  instructions: "Respond in Turkish",
+  model: "google/gemini-2.0-flash",
+});
+```
+
+If you need provider-specific configuration or want to use the ai-sdk APIs directly, pass a `LanguageModel` instead.
+See [Model Router & Registry](/docs/getting-started/model-router) for how strings are resolved and how env vars are mapped.
+For the full provider directory, see [Models](/models-docs/).
 
 ## Installation
 
-Install the ai-sdk provider(s) you want to use:
+Install the AI SDK base package (required):
+
+<Tabs>
+  <TabItem value="npm" label="npm">
+    ```bash
+    npm install ai
+    ```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+    ```bash
+    yarn add ai
+    ```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+    ```bash
+    pnpm add ai
+    ```
+
+  </TabItem>
+</Tabs>
+
+If you plan to import ai-sdk providers directly (for embeddings or provider-specific helpers like `openai.embedding(...)`), install those packages too. If you only use model strings, you can skip them:
 
 <Tabs>
   <TabItem value="npm" label="npm">
@@ -59,7 +118,23 @@ Install the ai-sdk provider(s) you want to use:
   </TabItem>
 </Tabs>
 
-## Usage Example
+If you only use model strings, you can skip installing provider packages.
+
+## Usage Examples
+
+### Model Strings
+
+```typescript
+import { Agent } from "@voltagent/core";
+
+const agent = new Agent({
+  name: "my-agent",
+  instructions: "You are a helpful assistant",
+  model: "openai/gpt-4o-mini",
+});
+```
+
+### Direct ai-sdk Provider
 
 ```typescript
 import { Agent } from "@voltagent/core";
@@ -73,6 +148,8 @@ const agent = new Agent({
 ```
 
 ## Available Providers
+
+The lists below describe ai-sdk provider packages. Model strings are resolved through VoltAgent's registry and map to these providers under the hood.
 
 ### First-Party AI SDK Providers
 
@@ -239,10 +316,9 @@ const agent = new Agent({
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { anthropic } from "@ai-sdk/anthropic";
 
 const agent = new Agent({
-  model: anthropic("claude-3-5-sonnet"),
+  model: "anthropic/claude-3-5-sonnet",
   instructions: "You are a helpful assistant",
 });
 ```
@@ -267,10 +343,16 @@ GROQ_API_KEY=your-key
 # And so on...
 ```
 
+OpenAI-compatible providers may also need a base URL. You can set a provider-specific override like:
+
+```bash
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+```
+
 ## Next Steps
 
 1. Choose a provider based on your needs (performance, cost, capabilities)
-2. Install the corresponding package
+2. Install the corresponding package if you plan to import the provider
 3. Configure your API keys
 4. Start building with VoltAgent!
 

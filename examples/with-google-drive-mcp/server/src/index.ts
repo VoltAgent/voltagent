@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { serve } from "@hono/node-server";
 import { createTool } from "@voltagent/core";
 import { type Context, Hono } from "hono";

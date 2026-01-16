@@ -22,7 +22,7 @@ const agent = new Agent({
   name: "Managed Memory Agent",
   instructions:
     "A helpful assistant that stores conversations in VoltAgent Managed Memory via VoltOps.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({
     storage: managedMemory,
     vector: managedVector,

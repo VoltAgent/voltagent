@@ -157,7 +157,6 @@ Store as environment variables: `SUPABASE_URL` and `SUPABASE_KEY`
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { SupabaseMemoryAdapter } from "@voltagent/supabase";
-import { openai } from "@ai-sdk/openai";
 
 // Using URL and key
 const memory = new Memory({
@@ -180,7 +179,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```
@@ -247,7 +246,6 @@ See [Semantic Search](./semantic-search.md).
 import { Agent, Memory } from "@voltagent/core";
 import { SupabaseMemoryAdapter } from "@voltagent/supabase";
 import { createClient } from "@supabase/supabase-js";
-import { openai } from "@ai-sdk/openai";
 
 const supabaseClient = createClient(
   process.env.SUPABASE_URL!,
@@ -262,7 +260,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```

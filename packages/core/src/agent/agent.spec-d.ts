@@ -3,6 +3,7 @@ import type { FinishReason, LanguageModel, LanguageModelUsage, UIMessage } from 
 import { MockLanguageModelV3 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
+import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
 import type { BaseRetriever } from "../retriever/retriever";
 import { Tool, type Toolkit, createTool } from "../tool";
 import type { StreamEventType } from "../utils/streams";
@@ -19,6 +20,8 @@ import {
 } from "./agent";
 import type { SubAgentConfig } from "./subagent/types";
 import type {
+  AgentModelReference,
+  AgentModelValue,
   AgentOperationOutput,
   AgentOptions,
   InstructionsDynamicValue,
@@ -68,6 +71,16 @@ describe("Agent Type System", () => {
         name: "Test Agent",
         instructions: "Test instructions",
         model: mockModel,
+      });
+
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
+    });
+
+    it("should accept provider/model string models", () => {
+      const agent = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: "openai/gpt-4o-mini",
       });
 
       expectTypeOf(agent).toMatchTypeOf<Agent>();
@@ -211,7 +224,7 @@ describe("Agent Type System", () => {
       });
 
       // Dynamic model function
-      const dynamicModelFn: DynamicValue<LanguageModel> = async (options) => {
+      const dynamicModelFn: DynamicValue<AgentModelReference> = async (options) => {
         expectTypeOf(options.context).toMatchTypeOf<Map<string | symbol, unknown>>();
         return mockModel;
       };
@@ -222,8 +235,18 @@ describe("Agent Type System", () => {
         model: dynamicModelFn,
       });
 
+      const dynamicStringModelFn: DynamicValue<AgentModelReference> = async () =>
+        "openai/gpt-4o-mini";
+
+      const dynamicStringAgent = new Agent({
+        name: "Test",
+        instructions: "Test",
+        model: dynamicStringModelFn,
+      });
+
       expectTypeOf(staticAgent).toMatchTypeOf<Agent>();
       expectTypeOf(dynamicAgent).toMatchTypeOf<Agent>();
+      expectTypeOf(dynamicStringAgent).toMatchTypeOf<Agent>();
     });
     it("should handle InstructionsDynamicValue", () => {
       // Static string
@@ -247,15 +270,23 @@ describe("Agent Type System", () => {
 
     it("should handle ModelDynamicValue", () => {
       // Static model
-      const staticModel: ModelDynamicValue<string> = "gpt-4o-mini";
-      expectTypeOf(staticModel).toMatchTypeOf<ModelDynamicValue<string>>();
+      const staticModel: ModelDynamicValue<ModelRouterModelId> = "openai/gpt-4o-mini";
+      expectTypeOf(staticModel).toMatchTypeOf<ModelDynamicValue<ModelRouterModelId>>();
 
       // Dynamic model
-      const dynamicModel: ModelDynamicValue<string> = async (options) => {
+      const dynamicModel: ModelDynamicValue<ModelRouterModelId> = async (options) => {
         expectTypeOf(options).toMatchTypeOf<{ context?: UserContext }>();
-        return "gpt-4o-mini";
+        return "openai/gpt-4o-mini";
       };
-      expectTypeOf(dynamicModel).toMatchTypeOf<ModelDynamicValue<string>>();
+      expectTypeOf(dynamicModel).toMatchTypeOf<ModelDynamicValue<ModelRouterModelId>>();
+    });
+
+    it("should handle AgentModelValue", () => {
+      const staticModel: AgentModelValue = "openai/gpt-4o-mini";
+      expectTypeOf(staticModel).toMatchTypeOf<AgentModelValue>();
+
+      const dynamicModel: AgentModelValue = async () => mockModel;
+      expectTypeOf(dynamicModel).toMatchTypeOf<AgentModelValue>();
     });
 
     it("should handle ToolsDynamicValue", () => {
@@ -895,8 +926,8 @@ describe("Agent Type System", () => {
     });
 
     it("should reject invalid dynamic value types", () => {
-      // @ts-expect-error - dynamic model must return LanguageModel
-      const _invalidDynamicModel: DynamicValue<LanguageModel> = async () => "not-a-model";
+      // @ts-expect-error - dynamic model must return LanguageModel or provider/model string
+      const _invalidDynamicModel: DynamicValue<AgentModelReference> = async () => 123;
 
       // @ts-expect-error - dynamic instructions must return string or PromptContent
       const _invalidDynamicInstructions: InstructionsDynamicValue = async () => 123;

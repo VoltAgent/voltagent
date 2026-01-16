@@ -20,16 +20,25 @@ An agent requires three properties: a name, instructions, and a model.
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "Answer questions clearly and concisely.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 ```
 
-The `instructions` property defines the agent's behavior. The `model` comes from [ai-sdk](https://sdk.vercel.ai) and can be any supported provider (OpenAI, Anthropic, Google, etc.).
+You can also use a model string instead of importing a provider:
+
+```ts
+const agent = new Agent({
+  name: "Assistant",
+  instructions: "Answer questions clearly and concisely.",
+  model: "openai/gpt-4o",
+});
+```
+
+The `instructions` property defines the agent's behavior. The `model` can be an ai-sdk `LanguageModel` or a `provider/model` string resolved by VoltAgent. See [Model Router & Registry](/docs/getting-started/model-router) for details.
 
 ## Using Agents: Direct Method Calls
 
@@ -205,12 +214,11 @@ Create a `VoltAgent` instance with a server provider:
 ```ts
 import { VoltAgent, Agent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "assistant",
   instructions: "Answer questions clearly.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 new VoltAgent({
@@ -324,7 +332,7 @@ const agent = new Agent({
   // Required
   name: "MyAgent", // Agent identifier
   instructions: "You are a helpful assistant", // Behavior guidelines
-  model: openai("gpt-4o"), // AI model to use (ai-sdk)
+  model: "openai/gpt-4o", // Model string or ai-sdk LanguageModel
 
   // Optional
   id: "custom-id", // Unique ID (auto-generated if not provided)
@@ -377,7 +385,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Agent with Memory",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   memory,
 });
 ```
@@ -407,7 +415,7 @@ const weatherTool = createTool({
 const agent = new Agent({
   name: "Weather Assistant",
   instructions: "Answer weather questions using the get_weather tool.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: [weatherTool],
 });
 ```
@@ -422,19 +430,19 @@ Agents can be converted to tools and used by other agents:
 const writerAgent = new Agent({
   id: "writer",
   purpose: "Writes blog posts",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 const editorAgent = new Agent({
   id: "editor",
   purpose: "Edits content",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 // Coordinator uses them as tools
 const coordinator = new Agent({
   tools: [writerAgent.toTool(), editorAgent.toTool()],
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 ```
 
@@ -446,12 +454,11 @@ Guardrails run before and after the model call to validate inputs or adjust outp
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Guarded Assistant",
   instructions: "Answer briefly.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   inputGuardrails: [
     {
       id: "reject-empty",
@@ -495,19 +502,19 @@ Sub-agents let you delegate tasks to specialized agents. The parent agent can ca
 const researchAgent = new Agent({
   name: "Researcher",
   instructions: "Research topics thoroughly.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 const writerAgent = new Agent({
   name: "Writer",
   instructions: "Write clear, concise content.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 const coordinator = new Agent({
   name: "Coordinator",
   instructions: "Delegate research to Researcher and writing to Writer.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   subAgents: [researchAgent, writerAgent],
 });
 ```
@@ -522,7 +529,7 @@ When streaming with sub-agents, by default only `tool-call` and `tool-result` ev
 const coordinator = new Agent({
   name: "Coordinator",
   instructions: "Coordinate between agents.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   subAgents: [researchAgent, writerAgent],
   supervisorConfig: {
     fullStreamEventForwarding: {
@@ -565,7 +572,7 @@ const hooks = createHooks({
 const agent = new Agent({
   name: "Agent",
   instructions: "Answer questions.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   hooks,
 });
 ```
@@ -581,7 +588,7 @@ Instructions can be static strings, dynamic functions, or managed remotely via V
 const agent1 = new Agent({
   name: "Assistant",
   instructions: "Answer questions.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 
 // Dynamic instructions
@@ -591,7 +598,7 @@ const agent2 = new Agent({
     const tier = context.get("tier") || "free";
     return tier === "premium" ? "Provide detailed answers." : "Provide concise answers.";
   },
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
 });
 ```
 
@@ -610,7 +617,7 @@ const agent = new Agent({
   },
   model: ({ context }) => {
     const tier = context.get("tier");
-    return tier === "premium" ? openai("gpt-4o") : openai("gpt-4o-mini");
+    return tier === "premium" ? "openai/gpt-4o" : "openai/gpt-4o-mini";
   },
 });
 
@@ -662,7 +669,7 @@ class SimpleRetriever extends BaseRetriever {
 const agent = new Agent({
   name: "Assistant",
   instructions: "Answer using retrieved context.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   retriever: new SimpleRetriever(),
 });
 ```
@@ -671,21 +678,18 @@ const agent = new Agent({
 
 ### Models and Providers
 
-VoltAgent uses [ai-sdk](https://sdk.vercel.ai) models directly. Switch providers by changing the model import.
+VoltAgent can use [ai-sdk](https://sdk.vercel.ai) models directly, but model strings are the default. Switch providers by changing the model string (or import another provider).
 
 ```ts
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-
 const agent1 = new Agent({
   name: "OpenAI Agent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   instructions: "Answer questions.",
 });
 
 const agent2 = new Agent({
   name: "Anthropic Agent",
-  model: anthropic("claude-3-5-sonnet"),
+  model: "anthropic/claude-3-5-sonnet",
   instructions: "Answer questions.",
 });
 ```
@@ -719,7 +723,7 @@ Enable automatic markdown formatting in text responses by setting `markdown: tru
 const agent = new Agent({
   name: "Assistant",
   instructions: "Answer questions clearly.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   markdown: true,
 });
 
@@ -735,7 +739,7 @@ const result = await agent.generateText("Explain how to make tea.");
 // Set maxSteps at agent level
 const agent = new Agent({
   name: "Agent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   maxSteps: 5, // Default for all operations
 });
 
@@ -785,7 +789,7 @@ const mcpTools = await mcpConfig.getTools();
 
 const agent = new Agent({
   name: "Agent",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: mcpTools,
 });
 ```
@@ -807,7 +811,7 @@ const voice = new OpenAIVoiceProvider({
 
 const agent = new Agent({
   name: "Voice Assistant",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   voice,
 });
 

@@ -2,7 +2,6 @@
   "name": "voltagent-example-with-playwright",
   "author": "",
   "dependencies": {
-    "@ai-sdk/mistral": "^3.0.0",
     "@playwright/browser-chromium": "1.51.1",
     "@playwright/browser-firefox": "1.51.1",
     "@playwright/browser-webkit": "1.51.1",

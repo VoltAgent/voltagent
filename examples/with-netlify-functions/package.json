@@ -3,7 +3,6 @@
   "description": "VoltAgent example deployed as a Netlify Function",
   "version": "1.0.0",
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.0",
     "@voltagent/core": "^2.1.0",
     "@voltagent/serverless-hono": "^2.0.5",
     "ai": "^6.0.0",

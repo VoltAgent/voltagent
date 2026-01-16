@@ -72,7 +72,7 @@ Install VoltAgent packages and development tools:
 npm install --save-dev typescript tsx tsdown @types/node @voltagent/cli
 
 # Install dependencies
-npm install @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
+npm install @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai zod@3
 ```
 
   </TabItem>
@@ -83,7 +83,7 @@ npm install @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/
 yarn add --dev typescript tsx tsdown @types/node @voltagent/cli
 
 # Install dependencies
-yarn add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
+yarn add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai zod@3
 ```
 
   </TabItem>
@@ -94,7 +94,7 @@ yarn add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/log
 pnpm add --save-dev typescript tsx tsdown @types/node @voltagent/cli
 
 # Install dependencies
-pnpm add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai @ai-sdk/openai@^2 zod@3
+pnpm add @voltagent/core @voltagent/libsql @voltagent/server-hono @voltagent/logger ai zod@3
 ```
 
   </TabItem>
@@ -118,7 +118,6 @@ Create `src/index.ts`:
 import { VoltAgent, Agent, Memory } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono"; // HTTP server
 import { LibSQLMemoryAdapter } from "@voltagent/libsql"; // For persistent memory
-import { openai } from "@ai-sdk/openai"; // Example model
 import { createPinoLogger } from "@voltagent/logger";
 
 // Create logger (optional but recommended)
@@ -131,8 +130,8 @@ const logger = createPinoLogger({
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
-  // VoltAgent uses ai-sdk directly - pick any ai-sdk model
-  model: openai("gpt-4o-mini"),
+  // VoltAgent uses model strings - pick any provider/model id
+  model: "openai/gpt-4o-mini",
   // Optional: Add persistent memory (remove this to use default in-memory storage)
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({

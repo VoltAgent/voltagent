@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import {
@@ -20,7 +19,7 @@ async function start() {
     id: "assistant",
     name: "Resumable Stream Agent",
     instructions: "You are a helpful assistant.",
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
   });
 
   const port = Number(process.env.PORT ?? 3141);

@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { GRPC } from "@cerbos/grpc";
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import type { MCPCanParams } from "@voltagent/core";
@@ -82,7 +81,7 @@ Available actions depend on the user's role:
 - Admins have full access including delete
 
 Always be helpful and explain what actions are available.`,
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     tools,
   });
 

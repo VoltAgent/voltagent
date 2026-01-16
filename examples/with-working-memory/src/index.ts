@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import {
   Agent,
   AiSdkEmbeddingAdapter,
@@ -62,7 +61,7 @@ const jsonMemory = new Memory({
 const jsonAgent = new Agent({
   name: "JSON Memory Agent",
   instructions: "You are a helpful assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: jsonMemory,
 });
 
@@ -104,7 +103,7 @@ const markdownMemory = new Memory({
 const markdownAgent = new Agent({
   name: "Markdown Memory Agent",
   instructions: "You are a helpful assistant.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: markdownMemory,
 });
 

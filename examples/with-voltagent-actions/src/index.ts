@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -20,7 +19,7 @@ const airtableAgent = new Agent({
   name: "Airtable Actions Assistant",
   instructions:
     "You are an operations assistant who manages Airtable records using the provided actions. List, inspect, create, update, or delete rows exactly as requested.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [
     listAirtableRecordsTool,
     createAirtableRecordTool,
@@ -45,7 +44,7 @@ async function bootstrap() {
     name: "VoltOps MCP Actions Agent",
     instructions:
       "You orchestrate Airtable syncs exclusively through the VoltOps MCP tools (airtable_create_record, airtable_list_records, etc.). Always pick the appropriate tool and feed it the payload requested by the user.",
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     tools: voltopsTools.airtable.getTools(),
   });
 
@@ -53,7 +52,7 @@ async function bootstrap() {
     name: "VoltOps Slack MCP Agent",
     instructions:
       "You orchestrate Slack workflows exclusively through the VoltOps Slack MCP tools (slack_post_message, slack_get_message_permalink, etc.). Always use the tool that best matches the user's request.",
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     tools: voltopsTools.slack.getTools(),
   });
 
@@ -61,7 +60,7 @@ async function bootstrap() {
     name: "Composio MCP Actions Agent",
     instructions:
       "You orchestrate Airtable syncs exclusively through the VoltOps MCP tools (airtable_create_record, airtable_list_records, etc.). Always pick the appropriate tool and feed it the payload requested by the user.",
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     tools: voltopsTools.composio.getTools(),
   });
 

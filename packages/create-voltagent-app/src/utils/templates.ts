@@ -79,30 +79,8 @@ export const getBaseTemplates = (): TemplateFile[] => {
           .replace(/{{serverPackage}}/g, serverConfig.package)
           .replace(/{{serverFactory}}/g, serverConfig.factory);
 
-        // Replace import statement
-        result = result.replace('import { openai } from "@ai-sdk/openai";', config.import);
-
-        // Add extra code after imports if needed (for Ollama)
-        if ("extraCode" in config && config.extraCode) {
-          // Find the position after all imports
-          const importRegex = /^import\s+.+from\s+["'].+["'];?\s*$/gm;
-          let lastImportIndex = -1;
-          let match: RegExpExecArray | null;
-
-          match = importRegex.exec(result);
-          while (match !== null) {
-            lastImportIndex = match.index + match[0].length;
-            match = importRegex.exec(result);
-          }
-
-          if (lastImportIndex !== -1) {
-            result =
-              result.slice(0, lastImportIndex) + config.extraCode + result.slice(lastImportIndex);
-          }
-        }
-
-        // Replace model instantiation
-        result = result.replace('openai("gpt-4o-mini")', config.model);
+        // Replace model id
+        result = result.replace(/{{modelId}}/g, config.model);
 
         return result;
       },

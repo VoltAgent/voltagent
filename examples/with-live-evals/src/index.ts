@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import VoltAgent, { Agent, VoltAgentObservability, buildScorer } from "@voltagent/core";
 import {
   createAnswerCorrectnessScorer,
@@ -19,8 +18,8 @@ import { z } from "zod";
 
 const observability = new VoltAgentObservability();
 
-const judgeModel = openai("gpt-4o-mini");
-const moderationModel = openai("gpt-4o-mini");
+const judgeModel = "openai/gpt-4o-mini";
+const moderationModel = "openai/gpt-4o-mini";
 const helpfulnessJudgeAgent = new Agent({
   name: "helpfulness-judge",
   model: judgeModel,
@@ -159,7 +158,7 @@ const supportAgent = new Agent({
   name: "live-scorer-demo",
   instructions:
     "You are a helpful assistant that answers questions about VoltAgent concisely and accurately.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   eval: {
     sampling: { type: "ratio", rate: 1 },
     scorers: {
@@ -299,7 +298,7 @@ const supportAgent = new Agent({
 const singleEvalAgent = new Agent({
   name: "single-eval-demo",
   instructions: "You are a helpful assistant that answers questions about VoltAgent.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   eval: {
     sampling: { type: "ratio", rate: 1 },
     scorers: {
@@ -313,7 +312,7 @@ const singleEvalAgent = new Agent({
 const scorerFeedbackAgent = new Agent({
   name: "scorer-feedback-demo",
   instructions: "You are a helpful assistant that answers questions about VoltAgent.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   eval: {
     sampling: { type: "ratio", rate: 1 },
     scorers: {

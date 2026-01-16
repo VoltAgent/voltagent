@@ -102,7 +102,7 @@ const safetyGuardrails = createDefaultSafetyGuardrails({
 const agent = new Agent({
   name: "Support",
   instructions: "Answer without revealing PII",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   outputGuardrails: [...piiGuardrails, ...safetyGuardrails],
 });
 ```
@@ -218,7 +218,7 @@ const inputGuardrails = createDefaultInputSafetyGuardrails();
 const agent = new Agent({
   name: "Support",
   instructions: "Answer user questions safely",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   inputGuardrails,
 });
 ```

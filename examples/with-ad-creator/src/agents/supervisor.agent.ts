@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent } from "@voltagent/core";
 import type { Memory } from "@voltagent/core";
 import { createAdCreatorAgent } from "./ad-creator.agent";
@@ -47,7 +46,7 @@ export const createSupervisorAgent = (memory: Memory) => {
     - Executive summary at the end
     - Highlight key deliverables
     - Include next steps recommendations`,
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     subAgents: [landingPageAnalyzer, adCreator],
     supervisorConfig: {
       customGuidelines: [

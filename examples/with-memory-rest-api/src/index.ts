@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
@@ -21,7 +20,7 @@ const memoryAdapter = new PostgreSQLMemoryAdapter({
 const agent = new Agent({
   name: "Memory REST API Agent",
   instructions: "You are a helpful assistant.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({
     storage: memoryAdapter,
   }),

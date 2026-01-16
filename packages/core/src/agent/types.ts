@@ -29,6 +29,7 @@ import type { Logger } from "@voltagent/internal";
 import type { LocalScorerDefinition, SamplingPolicy } from "../eval/runtime";
 import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
 import type { VoltAgentObservability } from "../observability";
+import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
 import type {
   DynamicValue,
   DynamicValueOptions,
@@ -171,6 +172,16 @@ export type InstructionsDynamicValue = string | DynamicValue<string | PromptCont
  * Enhanced dynamic value for models that supports static or dynamic values
  */
 export type ModelDynamicValue<T> = T | DynamicValue<T>;
+
+/**
+ * Supported model references for agents (AI SDK models or provider/model strings)
+ */
+export type AgentModelReference = LanguageModel | ModelRouterModelId;
+
+/**
+ * Agent model value that can be static or dynamic
+ */
+export type AgentModelValue = ModelDynamicValue<AgentModelReference>;
 
 /**
  * Enhanced dynamic value for tools that supports static or dynamic values
@@ -445,7 +456,7 @@ export type AgentSummarizationOptions = {
   keepMessages?: number;
   maxOutputTokens?: number;
   systemPrompt?: string | null;
-  model?: LanguageModel | DynamicValue<LanguageModel>;
+  model?: AgentModelValue;
 };
 
 /**
@@ -458,7 +469,7 @@ export type AgentOptions = {
   purpose?: string;
 
   // Core AI
-  model: LanguageModel | DynamicValue<LanguageModel>;
+  model: AgentModelValue;
   instructions: InstructionsDynamicValue;
 
   // Tools & Memory

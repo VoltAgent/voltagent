@@ -2,7 +2,6 @@
   "name": "voltagent-example-with-qdrant",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.0",
     "@qdrant/js-client-rest": "^1.15.0",
     "@voltagent/cli": "^0.1.21",
     "@voltagent/core": "^2.1.0",

@@ -1,11 +1,11 @@
 import {
   Agent,
+  type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
-import type { LanguageModel } from "ai";
 import { z } from "zod";
 
 const CONTEXT_RECALL_EXTRACT_PROMPT = `Given the context and ground truth (expected output), extract all factual statements from the ground truth.
@@ -75,7 +75,7 @@ export interface ContextRecallScorerOptions<
 > {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   options?: ContextRecallOptions;
   metadata?: Record<string, unknown> | null;
   buildPayload?: (context: ContextRecallScoreContext<Payload, Params>) => {

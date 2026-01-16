@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
@@ -43,7 +42,7 @@ export const assistantAgent = new Agent({
   name: "AssistantUIAgent",
   instructions:
     "You are a helpful AI that keeps responses concise, explains reasoning when useful, can gracefully describe any image or file attachments the user provides, and can call the getWeather tool for weather questions. Ask clarifying questions when context is missing.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [weatherTool],
   memory: sharedMemory,
 });

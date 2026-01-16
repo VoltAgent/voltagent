@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { createTool } from "@voltagent/core";
 import honoServer from "@voltagent/server-hono";
@@ -54,7 +53,7 @@ const uppercaseAgent = new Agent({
   name: "UppercaseAgent",
   instructions:
     "You are a text transformer. When given text, use the uppercase tool to convert it to uppercase and return the result.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [uppercaseTool],
   memory: sharedMemory,
 });
@@ -63,7 +62,7 @@ const wordCountAgent = new Agent({
   name: "WordCountAgent",
   instructions:
     "You are a text analyzer. When given text, use the countWords tool to count the words and return the count.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [wordCountTool],
   memory: sharedMemory,
 });
@@ -72,7 +71,7 @@ const storyWriterAgent = new Agent({
   name: "StoryWriterAgent",
   instructions:
     "You are a creative story writer. When given text, use the writeStory tool to acknowledge the topic, then write EXACTLY a 50-word story about or inspired by that text. Be creative and engaging. Make sure your story is exactly 50 words, no more, no less.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [storyWriterTool],
   memory: sharedMemory,
 });
@@ -94,7 +93,7 @@ Present the results in this exact format:
 [50-word story here]
 
 Make sure to format each section clearly with bold headers and proper spacing.`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [uppercaseTool, wordCountTool, storyWriterTool],
   memory: sharedMemory,
 });

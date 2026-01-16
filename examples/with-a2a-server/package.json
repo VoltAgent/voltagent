@@ -1,7 +1,6 @@
 {
   "name": "voltagent-example-with-a2a-server",
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.0",
     "@voltagent/a2a-server": "^2.0.2",
     "@voltagent/core": "^2.1.0",
     "@voltagent/internal": "^1.0.2",

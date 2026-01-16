@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -15,7 +14,7 @@ const agent = new Agent({
   name: "Simple Custom Endpoints Agent",
   instructions:
     "You are a helpful assistant with access to simple custom endpoints: /api/health, /api/hello/:name, /api/calculate, and /api/delete-all",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({
       url: "file:./.voltagent/memory.db",

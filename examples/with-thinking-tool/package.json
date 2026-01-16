@@ -2,7 +2,6 @@
   "name": "voltagent-example-with-thinking-tool",
   "author": "",
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.0",
     "@voltagent/cli": "^0.1.21",
     "@voltagent/core": "^2.1.0",
     "@voltagent/libsql": "^2.0.2",

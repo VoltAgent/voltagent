@@ -99,7 +99,6 @@ import { VoltAgent, Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono"; // or elysiaServer from @voltagent/server-elysia
-import { openai } from "@ai-sdk/openai";
 import { expenseApprovalWorkflow } from "./workflows";
 import { weatherTool } from "./tools";
 
@@ -120,7 +119,7 @@ const memory = new Memory({
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that can check weather and help with various tasks",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [weatherTool],
   memory,
 });

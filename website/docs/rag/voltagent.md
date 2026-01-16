@@ -98,7 +98,6 @@ OPENAI_API_KEY=sk-your-openai-api-key-here
 The retriever automatically searches your knowledge base before each response and injects relevant context:
 
 ```typescript
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { VoltAgentRagRetriever } from "@voltagent/core";
 
@@ -114,7 +113,7 @@ const agent = new Agent({
   name: "RAG Assistant",
   instructions:
     "A helpful assistant that searches your knowledge base and uses relevant context to answer.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   retriever, // Automatic context injection
 });
 
@@ -133,7 +132,6 @@ console.log(result.text);
 Let the agent decide when to search using the retriever as a tool:
 
 ```typescript
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { VoltAgentRagRetriever } from "@voltagent/core";
 
@@ -147,7 +145,7 @@ const agent = new Agent({
   name: "RAG Assistant (Tool-based)",
   instructions:
     "Call the search_knowledge_base tool whenever you need to look something up from the knowledge base.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [retriever.tool], // Use as a tool
 });
 

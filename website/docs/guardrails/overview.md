@@ -301,12 +301,11 @@ Add guardrails to the `outputGuardrails` array when constructing an agent:
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Support",
   instructions: "Answer questions concisely",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   outputGuardrails: [digitGuardrail, trackingGuardrail, fundingLimitGuardrail],
 });
 ```
@@ -598,12 +597,11 @@ Add guardrails to the `inputGuardrails` array when constructing an agent:
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Support",
   instructions: "Answer user questions",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   inputGuardrails: [profanityGuardrail, validationGuardrail, sanitizeGuardrail],
 });
 ```

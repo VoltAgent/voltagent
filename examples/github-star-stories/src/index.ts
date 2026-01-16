@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, VoltOpsClient, createTool, createTriggers } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 /* import { honoServer } from "@voltagent/server-hono"; */
@@ -13,7 +12,7 @@ const logger = createPinoLogger({
 
 const storytellerAgent = new Agent({
   name: "StarStoryAgent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [fetchGithubProfileTool, shareDiscordStoryTool],
   instructions: `You celebrate developers who star our GitHub repository with fun and creative messages!
 

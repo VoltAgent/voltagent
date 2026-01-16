@@ -212,7 +212,7 @@ Optional adapters:
 - `@voltagent/postgres`: PostgreSQL storage adapter
 - `@voltagent/supabase`: Supabase storage adapter
 
-Note: `@voltagent/core@1.x` declares `ai@^5` as a peer dependency. Your application must install `ai` (and a provider like `@ai-sdk/openai`) to use LLM features. If `ai` is missing, you will get a module resolution error at runtime when calling generation methods.
+Note: `@voltagent/core@1.x` declares `ai@^5` as a peer dependency. Your application must install `ai`. If you want to import ai-sdk providers directly, install those packages too. If `ai` is missing, you will get a module resolution error at runtime when calling generation methods.
 
 Node runtime requirement:
 
@@ -232,7 +232,6 @@ import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 // highlight-end
 import { createPinoLogger } from "@voltagent/logger";
-import { openai } from "@ai-sdk/openai";
 
 const logger = createPinoLogger({ name: "my-app", level: "info" });
 
@@ -246,7 +245,7 @@ const agent = new Agent({
   name: "my-app",
   instructions: "Helpful assistant",
   // REMOVE (0.1.x): llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   // highlight-next-line
   memory,
 });
@@ -280,7 +279,7 @@ Summary of changes:
 - Delete: Built-in server options (`port`, `enableSwaggerUI`, `autoStart`, custom endpoints on core)
 - Add: `Memory` + `LibSQLMemoryAdapter` for persistent LibSQL/Turso-backed memory
 - Add: `honoServer()` as the server provider
-- Keep: `model: openai("...")` (or any ai-sdk provider)
+- Keep: `model: "openai/..."` (or any ai-sdk provider), or use `model: "provider/model"`
 
 Custom routes and auth (server):
 
@@ -356,13 +355,12 @@ VoltAgent no longer uses a custom provider wrapper. The `@voltagent/vercel-ai` p
 ```ts
 import { Agent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "my-app",
   instructions: "Helpful assistant",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 ```
 
@@ -370,17 +368,28 @@ const agent = new Agent({
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "my-app",
   instructions: "Helpful assistant",
   // VoltAgent uses ai-sdk directly - just provide a model
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 ```
 
-You can swap `openai(...)` for any ai-sdk provider, e.g. `anthropic("claude-3-5-sonnet")`, `google("gemini-1.5-pro")`, etc.
+You can swap `openai/...` for any provider string, e.g. `"anthropic/claude-3-5-sonnet"`, `"google/gemini-1.5-pro"`, etc.
+
+Or use a model string:
+
+```ts
+import { Agent } from "@voltagent/core";
+
+const agent = new Agent({
+  name: "my-app",
+  instructions: "Helpful assistant",
+  model: "openai/gpt-4o-mini",
+});
+```
 
 ### Package changes
 
@@ -388,18 +397,22 @@ You can swap `openai(...)` for any ai-sdk provider, e.g. `anthropic("claude-3-5-
   - npm: `npm uninstall @voltagent/vercel-ai`
   - yarn: `yarn remove @voltagent/vercel-ai`
   - pnpm: `pnpm remove @voltagent/vercel-ai`
-- Install the ai base library and a provider:
-  - npm: `npm install ai @ai-sdk/openai`
-  - yarn: `yarn add ai @ai-sdk/openai`
-  - pnpm: `pnpm add ai @ai-sdk/openai`
+- Install the ai base library:
+  - npm: `npm install ai`
+  - yarn: `yarn add ai`
+  - pnpm: `pnpm add ai`
+- Install provider packages only if you plan to import them:
+  - npm: `npm install @ai-sdk/openai`
+  - yarn: `yarn add @ai-sdk/openai`
+  - pnpm: `pnpm add @ai-sdk/openai`
 
-> Note: `@voltagent/core@1.x` declares `ai@^5` as a peer dependency. Your application must install `ai` (and a provider like `@ai-sdk/openai`) to use LLM features. If `ai` is missing, you will get a module resolution error at runtime when calling generation methods.
+> Note: `@voltagent/core@1.x` declares `ai@^5` as a peer dependency. Your application must install `ai`. If you want to import ai-sdk providers directly, install those packages too. If `ai` is missing, you will get a module resolution error at runtime when calling generation methods.
 
 ### Code changes checklist
 
 - Remove `import { VercelAIProvider } from "@voltagent/vercel-ai"` from all files
 - Remove `llm: new VercelAIProvider()` from `Agent` configuration
-- Keep `model: ...` and import the appropriate ai-sdk provider
+- Keep `model: ...` and either import the appropriate ai-sdk provider or use a `provider/model` string
 - Move `provider: { ... }` call settings to top-level options (e.g., `temperature`, `maxOutputTokens`, `topP`, `stopSequences`)
 - Put provider-specific knobs under `providerOptions` if needed
 - Remove deprecated `memoryOptions` from Agent constructor; configure limits on your `Memory` instance (e.g., `storageLimit`) or adapter
@@ -445,13 +458,12 @@ VoltAgent 1.x introduces a new `Memory` class that unifies conversation history,
 import { Agent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { LibSQLStorage } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
   llm: new VercelAIProvider(),
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   // Persistent memory
   memory: new LibSQLStorage({
     url: "file:./.voltagent/memory.db",
@@ -464,12 +476,11 @@ const agent = new Agent({
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   // Optional: persistent memory (remove to use default in-memory)
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({

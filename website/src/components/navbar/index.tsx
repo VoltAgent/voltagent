@@ -50,6 +50,11 @@ const docTabs = [
     match: (path: string) => path.startsWith("/docs/overview/"),
   },
   {
+    label: "Models",
+    href: "/models-docs/",
+    match: (path: string) => path.startsWith("/models-docs/"),
+  },
+  {
     label: "Observability",
     href: "/observability-docs/",
     match: (path: string) => path.startsWith("/observability-docs/"),
@@ -132,6 +137,7 @@ export default function Navbar() {
   // Check if current page is a docs page
   const isDocsPage =
     location.pathname.includes("/docs") ||
+    location.pathname.includes("/models-docs") ||
     location.pathname.includes("/observability-docs") ||
     location.pathname.includes("/evaluation-docs") ||
     location.pathname.includes("/prompt-engineering-docs") ||

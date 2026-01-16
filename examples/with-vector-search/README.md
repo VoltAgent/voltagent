@@ -73,7 +73,7 @@ const memory = new Memory({
   vector: new LibSQLVectorAdapter(),
 });
 
-const agent = new Agent({ name: "Semantic Memory Agent", model: openai("gpt-4o-mini"), memory });
+const agent = new Agent({ name: "Semantic Memory Agent", model: "openai/gpt-4o-mini", memory });
 new VoltAgent({ agents: { agent }, server: honoServer({ port: 3142 }) });
 ```
 

@@ -58,11 +58,10 @@ const content: MessageContent = [
 
 ```typescript
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
 
 // Using MessageContent in direct AI SDK calls
 const result = await generateText({
-  model: openai("gpt-4"),
+  model: "openai/gpt-4",
   messages: [
     {
       role: "user",

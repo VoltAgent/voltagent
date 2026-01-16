@@ -61,17 +61,14 @@ This example demonstrates how to integrate VoltAgent with a Zapier Model Context
 
 ## Using OpenAI
 
-If you prefer to use OpenAI instead of Amazon Bedrock, you can modify the code in `src/index.ts` to use the OpenAI provider:
+If you prefer to use OpenAI instead of Amazon Bedrock, update `src/index.ts` to use a model string and set `OPENAI_API_KEY`:
 
-```typescript
-import { OpenAIProvider } from "@voltagent/openai";
-
-const openai = new OpenAIProvider({
-  apiKey: process.env.OPENAI_API_KEY!,
+```ts
+const agent = new Agent({
+  // ...
+  model: "openai/gpt-4o-mini",
 });
 ```
-
-Replace `process.env.OPENAI_API_KEY` with your actual OpenAI API key.
 
 ## Setup
 
@@ -83,13 +80,13 @@ Replace `process.env.OPENAI_API_KEY` with your actual OpenAI API key.
    ZAPIER_MCP_URL=https://your-zapier-mcp-server-url
    AWS_ACCESS_KEY_ID=your_aws_access_key
    AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+   AWS_REGION=us-east-1
    AWS_SESSION_TOKEN=your_aws_session_token  # Optional, if using temporary credentials
    ```
 
    Replace the values with your actual Zapier MCP URL and AWS credentials.
 
 2. **Get Your Zapier MCP URL:**
-
    - Set up a Zapier MCP server as described in the [Zapier MCP documentation](https://zapier.com/mcp).
    - Copy the MCP server URL for use in your `.env` file.
 

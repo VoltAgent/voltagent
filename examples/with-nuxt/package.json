@@ -1,7 +1,6 @@
 {
   "name": "voltagent-example-with-nuxt",
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.0",
     "@nuxt/eslint": "^1.9.0",
     "@nuxt/ui": "^4.0.0",
     "@voltagent/core": "^2.1.0",

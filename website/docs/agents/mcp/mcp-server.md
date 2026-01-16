@@ -180,7 +180,6 @@ const tools = await mcpConfig.getTools();
 Sometimes you want MCP clients to see helpers that are not (yet) registered with VoltAgent. Provide them as keyed objects (just like the main `VoltAgent` config) via the `agents`, `workflows`, or `tools` fields to append entries that live only on the MCP side:
 
 ```ts title="src/mcp/server.ts"
-import { openai } from "@ai-sdk/openai";
 import { Agent, createTool, createWorkflowChain } from "@voltagent/core";
 import { MCPServer } from "@voltagent/mcp-server";
 import { z } from "zod";
@@ -199,7 +198,7 @@ const supportAgent = new Agent({
   purpose: "Route customer tickets to the correct queue.",
   instructions:
     "Use internal knowledge to triage customer tickets and respond with routing guidance.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [statusTool],
 });
 

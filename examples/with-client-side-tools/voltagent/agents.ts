@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 
@@ -41,6 +40,6 @@ export const agent = new Agent({
   id: "assistant",
   name: "Assistant",
   instructions: "You are a helpful assistant that demonstrates client-side tools in VoltAgent.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: Object.values(tools),
 });

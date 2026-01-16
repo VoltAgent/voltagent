@@ -50,7 +50,6 @@ When a stream starts, a new `streamId` is created, the stream store persists the
 Create a Redis-backed store, build the adapter, and pass it to the Hono server.
 
 ```ts
-import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import {
   createResumableStreamAdapter,
@@ -65,7 +64,7 @@ const agent = new Agent({
   id: "assistant",
   name: "Resumable Stream Agent",
   instructions: "You are a helpful assistant.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({

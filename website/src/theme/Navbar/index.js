@@ -9,6 +9,7 @@ export default function Navbar() {
   const windowSize = useWindowSize();
   const isDocsPage =
     location.pathname.includes("/docs") ||
+    location.pathname.includes("/models-docs") ||
     location.pathname.includes("/observability-docs") ||
     location.pathname.includes("/evaluation-docs") ||
     location.pathname.includes("/prompt-engineering-docs") ||

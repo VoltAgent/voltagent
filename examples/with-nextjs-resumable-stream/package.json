@@ -2,7 +2,6 @@
   "name": "voltagent-example-with-nextjs-resumable-stream",
   "version": "0.1.0",
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.0",
     "@ai-sdk/react": "^3.0.0",
     "@libsql/client": "^0.15.0",
     "@radix-ui/react-avatar": "^1.1.10",

@@ -1,7 +1,7 @@
 import {
   Agent,
+  type AgentModelReference,
   type BuilderScoreContext,
-  type LanguageModel,
   type LocalScorerDefinition,
   buildScorer,
 } from "@voltagent/core";
@@ -11,7 +11,7 @@ import { z } from "zod";
 export interface ModerationScorerOptions {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   /** Threshold used to decide pass/fail based on the highest category score. Defaults to 0.5. */
   threshold?: number;
   /** Optional override for the prompt builder. */
@@ -233,7 +233,7 @@ function mapModerationResponse(
 
 async function runModerationJudge(args: {
   context: BuilderScoreContext<ModerationPayload, Record<string, unknown>>;
-  model: LanguageModel;
+  model: AgentModelReference;
   buildPrompt: NonNullable<ModerationScorerOptions["buildPrompt"]>;
   categories: readonly string[];
   threshold: number;

@@ -1,9 +1,3 @@
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { createGroq } from "@ai-sdk/groq";
-import { openai } from "@ai-sdk/openai";
-import type { LanguageModel } from "ai";
-
 /**
  * AI Provider Configuration
  *
@@ -25,34 +19,34 @@ export interface AIConfig {
   apiKey?: string;
 }
 
+const MODEL_ENV_VARS: Record<AIProvider, string> = {
+  openai: "OPENAI_MODEL",
+  anthropic: "ANTHROPIC_MODEL",
+  google: "GOOGLE_MODEL",
+  groq: "GROQ_MODEL",
+};
+
+function normalizeModelId(provider: AIProvider, modelId: string): string {
+  return modelId.includes("/") ? modelId : `${provider}/${modelId}`;
+}
+
+function resolveProviderModel(provider: AIProvider): string {
+  const envVar = MODEL_ENV_VARS[provider];
+  const modelId = (process.env[envVar] as string | undefined) ?? getDefaultModel(provider);
+  return normalizeModelId(provider, modelId);
+}
+
 /**
  * Get the AI model based on environment configuration
  */
-export function getAIModel(): LanguageModel {
+export function getAIModel(): string {
   const provider = (process.env.AI_PROVIDER || "openai") as AIProvider;
-  const modelName = getDefaultModel(provider);
-
-  switch (provider) {
-    case "openai":
-      return openai(process.env.OPENAI_MODEL || modelName);
-
-    case "anthropic":
-      return anthropic(process.env.ANTHROPIC_MODEL || modelName);
-
-    case "google":
-      return google(process.env.GOOGLE_MODEL || modelName);
-
-    case "groq": {
-      const groq = createGroq({
-        apiKey: process.env.GROQ_API_KEY,
-      });
-      return groq(process.env.GROQ_MODEL || modelName);
-    }
-
-    default:
-      console.warn(`Unknown provider: ${provider}, falling back to OpenAI`);
-      return openai("gpt-4o-mini");
+  if (!MODEL_ENV_VARS[provider]) {
+    console.warn(`Unknown provider: ${provider}, falling back to OpenAI`);
+    return "openai/gpt-4o-mini";
   }
+
+  return resolveProviderModel(provider);
 }
 
 /**
@@ -77,7 +71,7 @@ export function getAIConfig(): AIConfig {
 
   return {
     provider,
-    model: getDefaultModel(provider),
+    model: resolveProviderModel(provider),
     apiKey: getAPIKey(provider),
   };
 }

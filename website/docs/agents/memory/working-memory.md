@@ -25,7 +25,6 @@ Scope options:
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
@@ -49,7 +48,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```
@@ -206,7 +205,6 @@ All official adapters (LibSQL, Postgres, Supabase, Managed Memory) support both 
 ```ts
 import { Agent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const userPreferencesSchema = z.object({
@@ -228,7 +226,7 @@ const memory = new Memory({
 const agent = new Agent({
   name: "Personal Assistant",
   instructions: "Adapt responses based on user preferences stored in working memory.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 
@@ -269,7 +267,7 @@ const projectMemory = new Memory({
 const agent = new Agent({
   name: "Project Manager",
   instructions: "Track project context and help with sprint planning.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: projectMemory,
 });
 

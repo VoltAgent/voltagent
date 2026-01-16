@@ -568,13 +568,12 @@ Message helpers integrate with agent hooks for message transformation.
 
 ```typescript
 import { Agent, messageHelpers } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "A helpful assistant",
   // Direct ai-sdk model; no custom provider needed
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 
   hooks: {
     onPrepareMessages: async ({ messages }) => {

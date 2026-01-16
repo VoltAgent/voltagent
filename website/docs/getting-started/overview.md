@@ -106,13 +106,12 @@ description: 'Deploy your agents to production with one-click GitHub integration
 ```tsx
 import { VoltAgent, Agent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "my-voltagent-app",
   instructions: "A helpful assistant that answers questions without using tools",
-  // VoltAgent uses the AI SDK directly - pick any ai-sdk model
-  model: openai("gpt-4o-mini"),
+  // VoltAgent uses the AI SDK directly - pass a LanguageModel or "provider/model"
+  model: "openai/gpt-4o-mini",
 });
 
 // Serve your agent over HTTP (default port 3141)
@@ -126,14 +125,13 @@ new VoltAgent({
 
 ```typescript
 import { createWorkflowChain, andThen, andAgent, Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 // First, define an agent to be used in the workflow
 const agent = new Agent({
   name: "summarizer-agent",
   instructions: "You are an expert at summarizing text.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 // Then, create the workflow that uses the agent

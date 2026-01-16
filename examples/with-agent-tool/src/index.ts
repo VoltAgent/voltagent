@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import VoltAgent, { Agent } from "@voltagent/core";
 
 /**
@@ -24,7 +23,7 @@ const writerAgent = new Agent({
     - Well-structured body paragraphs
     - A strong conclusion
     Keep it around 400-500 words.`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   temperature: 0.7,
 });
 
@@ -40,7 +39,7 @@ const editorAgent = new Agent({
     - Ensuring proper grammar and punctuation
     - Making the content more engaging
     Return ONLY the edited content, no explanations.`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   temperature: 0.5,
 });
 
@@ -56,7 +55,7 @@ const publisherAgent = new Agent({
     3. Return the final polished blog post
 
     Always use both tools in sequence. Be concise in your coordination.`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   // Convert specialized agents to tools that the publisher can use
   tools: [writerAgent.toTool(), editorAgent.toTool()],
   maxSteps: 10, // Allow enough steps for tool calls

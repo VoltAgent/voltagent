@@ -26,7 +26,7 @@ const memory = new Memory({
 const agent = new Agent({
   name: "Base Agent",
   instructions: "You are a helpful assistant that can provide weather information",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: memory,
   tools: [weatherTool],
 });

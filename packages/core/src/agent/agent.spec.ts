@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
+import { ModelProviderRegistry } from "../registries/model-provider-registry";
 import { Tool } from "../tool";
 import { Agent, renameProviderOptions } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
@@ -166,6 +167,54 @@ describe("Agent", () => {
       }
 
       expect(result.text).toBe("Generated response");
+    });
+
+    it("should resolve string model ids via registry", async () => {
+      const registry = ModelProviderRegistry.getInstance();
+      registry.registerProvider("mock", (modelId) => {
+        expect(modelId).toBe("test-model");
+        return mockModel as any;
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: "mock/test-model",
+      });
+
+      const mockResponse = {
+        text: "Generated response",
+        content: [{ type: "text", text: "Generated response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      };
+
+      vi.mocked(ai.generateText).mockResolvedValue(mockResponse as any);
+
+      await agent.generateText("Hello, world!");
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      expect(callArgs.model).toBe(mockModel);
+
+      registry.unregisterProvider("mock");
     });
 
     it("should generate text from UIMessage array", async () => {

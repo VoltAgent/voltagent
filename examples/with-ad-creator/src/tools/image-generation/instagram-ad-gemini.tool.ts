@@ -1,6 +1,5 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { google } from "@ai-sdk/google";
 import { Agent, createTool } from "@voltagent/core";
 import sharp from "sharp";
 import { z } from "zod";
@@ -10,7 +9,7 @@ const creativeBriefAgent = new Agent({
   purpose: "Transform product information into rich Instagram creative direction",
   instructions:
     "You take raw product inputs and return an inspiring creative direction for an Instagram ad.",
-  model: google("gemini-2.0-flash-exp"),
+  model: "google/gemini-2.0-flash-exp",
 });
 
 const imageGenerationAgent = new Agent({
@@ -18,7 +17,7 @@ const imageGenerationAgent = new Agent({
   purpose: "Generate high-converting Instagram visuals",
   instructions:
     "You receive fully prepared prompts and return the best possible Instagram-ready visual output.",
-  model: google("gemini-2.5-flash-image-preview"),
+  model: "google/gemini-2.5-flash-image-preview",
 });
 
 export const generateInstagramAdGeminiTool = createTool({

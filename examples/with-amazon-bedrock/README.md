@@ -119,7 +119,7 @@ This example demonstrates:
 
 - **Amazon Bedrock Integration** - Access to Claude, Llama, Mistral, and Titan models
 - **AWS Credential Chain** - Automatic credential detection (env vars, profiles, IAM roles)
-- **Vercel AI SDK** - Using `@ai-sdk/amazon-bedrock` provider
+- **Model Router** - Use `amazon-bedrock/<model>` strings with VoltAgent
 - **Custom Tools** - Weather tool example for function calling
 - **Server Mode** - REST API server on port 4000
 
@@ -131,43 +131,32 @@ The example uses Claude 3.5 Sonnet by default. You can change it in `src/index.t
 
 ```typescript
 // Claude models
-model: bedrock("anthropic.claude-3-5-sonnet-20240620-v1:0");
-model: bedrock("anthropic.claude-3-opus-20240229-v1:0");
+model: "amazon-bedrock/anthropic.claude-3-5-sonnet-20240620-v1:0";
+model: "amazon-bedrock/anthropic.claude-3-opus-20240229-v1:0";
 
 // Llama models
-model: bedrock("meta.llama3-2-3b-instruct-v1:0");
-model: bedrock("meta.llama3-1-70b-instruct-v1:0");
+model: "amazon-bedrock/meta.llama3-2-3b-instruct-v1:0";
+model: "amazon-bedrock/meta.llama3-1-70b-instruct-v1:0";
 
 // Mistral models
-model: bedrock("mistral.mistral-large-2407-v1:0");
+model: "amazon-bedrock/mistral.mistral-large-2407-v1:0";
 
 // Titan models
-model: bedrock("amazon.titan-text-premier-v1:0");
+model: "amazon-bedrock/amazon.titan-text-premier-v1:0";
 ```
 
 See [Bedrock documentation](https://docs.aws.amazon.com/bedrock/) for all available models.
 
 ### AWS Authentication
 
-The example uses `fromNodeProviderChain` from `@aws-sdk/credential-providers` for automatic credential detection:
+VoltAgent reads Amazon Bedrock credentials from the standard AWS environment variables:
 
-```typescript
-import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `AWS_SESSION_TOKEN` (optional, for temporary credentials)
 
-const bedrock = createAmazonBedrock({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentialProvider: fromNodeProviderChain(),
-});
-```
-
-This automatically checks for credentials in the following order:
-
-1. Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
-2. AWS profiles (`AWS_PROFILE` environment variable)
-3. Shared credentials file (`~/.aws/credentials`)
-4. ECS container credentials
-5. EC2 instance metadata service
-6. IAM roles (when running on AWS infrastructure)
+If you already have AWS profiles or IAM roles configured locally, they are picked up automatically by the provider.
 
 ## Project Structure
 

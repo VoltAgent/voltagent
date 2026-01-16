@@ -33,11 +33,10 @@ Follow the prompts, selecting TypeScript and App Router.
 Install the necessary VoltAgent packages and dependencies:
 
 ```bash
-npm install @voltagent/core @ai-sdk/openai @ai-sdk/react ai zod@^3.25.76
+npm install @voltagent/core @ai-sdk/react ai zod@^3.25.76
 ```
 
 - `@voltagent/core`: The core VoltAgent library.
-- `@ai-sdk/openai`: The ai-sdk provider for OpenAI (or your preferred provider).
 - `@ai-sdk/react`: React hooks for AI SDK integration.
 - `ai`: Core AI SDK library for streaming and chat functionality.
 - `zod`: Used when working with structured outputs.
@@ -89,7 +88,6 @@ If you run the built-in server as a separate process, make sure it loads the sam
 Create the agent in `voltagent/agents.ts`:
 
 ```typescript title="voltagent/agents.ts"
-import { openai } from "@ai-sdk/openai";
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
 
@@ -117,7 +115,7 @@ export const agent = new Agent({
   name: "CalculatorAgent",
   instructions:
     "You are a helpful calculator assistant. When users ask you to calculate something, use the calculate tool to perform the math and then explain the result clearly.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [calculatorTool],
 });
 ```

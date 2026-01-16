@@ -1,4 +1,4 @@
-import { Agent, buildScorer } from "@voltagent/core";
+import { Agent, type AgentModelReference, buildScorer } from "@voltagent/core";
 import type { ExperimentRuntimePayload, ExperimentScorerConfig } from "@voltagent/evals";
 import {
   createAnswerCorrectnessScorer,
@@ -14,7 +14,6 @@ import {
   createTranslationScorer,
   scorers,
 } from "@voltagent/scorers";
-import type { LanguageModel } from "ai";
 import { z } from "zod";
 
 import type { SupportDatasetItem } from "./dataset.js";
@@ -22,8 +21,8 @@ import type { SupportDatasetItem } from "./dataset.js";
 type SupportRuntime = ExperimentRuntimePayload<SupportDatasetItem>;
 
 interface SupportModels {
-  judgeModel: LanguageModel;
-  moderationModel: LanguageModel;
+  judgeModel: AgentModelReference;
+  moderationModel: AgentModelReference;
 }
 
 const HELPFULNESS_SCHEMA = z.object({
@@ -73,7 +72,7 @@ function createKeywordMatchScorer() {
     .build();
 }
 
-function createHelpfulnessJudgeScorer(judgeModel: LanguageModel) {
+function createHelpfulnessJudgeScorer(judgeModel: AgentModelReference) {
   const agent = new Agent({
     name: "helpfulness-judge",
     model: judgeModel,

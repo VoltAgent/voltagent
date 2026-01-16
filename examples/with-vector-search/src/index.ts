@@ -25,7 +25,7 @@ const agent = new Agent({
   name: "Semantic Memory Agent",
   instructions:
     "You are a helpful assistant. Use semantic memory to recall relevant past messages when answering.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 

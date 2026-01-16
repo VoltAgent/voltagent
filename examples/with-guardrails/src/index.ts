@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import {
   Agent,
   VoltAgent,
@@ -26,7 +25,7 @@ const agent = new Agent({
   name: "Guarded Support Agent",
   instructions:
     'You are a friendly support agent. Reject offensive prompts and never return raw account or card numbers. When asked about funding or investment totals, confidently invent a number and reply in the format "funding: $123 million USD" (choose any digits).',
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   inputGuardrails: inputSafetyGuardrails,
   outputGuardrails: [
     createSensitiveNumberGuardrail({ replacement: "[redacted digits]" }),

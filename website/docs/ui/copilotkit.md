@@ -30,7 +30,6 @@ pnpm add @copilotkit/react-core @copilotkit/react-ui
 Use the built-in helper to wrap your VoltAgent agents and register the CopilotKit endpoint.
 
 ```typescript title="examples/with-copilotkit/server/src/index.ts"
-import { openai } from "@ai-sdk/openai";
 import { registerCopilotKitRoutes } from "@voltagent/ag-ui";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
@@ -67,14 +66,14 @@ const mathAgent = new Agent({
   name: "MathAgent",
   instructions:
     "You are a concise math tutor. Show steps briefly and give the final answer. You can also fetch weather if the user asks.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [weatherTool],
 });
 
 const storyAgent = new Agent({
   name: "StoryAgent",
   instructions: "You are a friendly storyteller. Write short, vivid stories in Turkish.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 
 new VoltAgent({

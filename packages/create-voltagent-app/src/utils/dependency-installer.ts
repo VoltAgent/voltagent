@@ -1,4 +1,4 @@
-import { execSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import path from "node:path";
 import { SERVER_CONFIG, type ServerProvider } from "../types";
 import { createSpinner } from "./animation";
@@ -137,37 +137,4 @@ export const createBaseDependencyInstaller = async (
       }
     },
   };
-};
-
-/**
- * Installs provider-specific dependencies
- */
-export const installProviderDependency = async (
-  targetDir: string,
-  providerPackage: string,
-  providerVersion: string,
-  extraPackages: readonly string[] = [],
-): Promise<void> => {
-  const displayName = [`${providerPackage}@${providerVersion}`, ...extraPackages].join(", ");
-  const spinner = createSpinner(`Installing ${displayName}`);
-  spinner.start();
-
-  try {
-    const toInstall = [`${providerPackage}@${providerVersion}`, ...extraPackages].join(" ");
-
-    execSync(`npm install ${toInstall} --loglevel=error`, {
-      cwd: targetDir,
-      stdio: ["ignore", "ignore", "pipe"], // Only capture stderr
-    });
-    spinner.stop();
-    logger.success(`Installed: ${displayName} 🎯`);
-  } catch (error) {
-    spinner.stop();
-    logger.error(`Failed to install ${displayName}`);
-    // Show error details if available
-    if (error instanceof Error && "stderr" in error) {
-      console.error((error as any).stderr?.toString());
-    }
-    logger.warning("You can install the provider packages manually later.");
-  }
 };

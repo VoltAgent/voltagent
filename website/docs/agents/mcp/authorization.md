@@ -174,7 +174,7 @@ const tools = await mcp.getTools();
 
 const agent = new Agent({
   name: "Assistant",
-  llm: new VercelAIProvider({ model: openai("gpt-4o") }),
+  model: "openai/gpt-4o",
   tools,
 });
 
@@ -468,7 +468,7 @@ const agent = new Agent({
   name: "Finance Assistant",
   instructions: `You are a finance assistant that helps users manage expenses.
 Available actions depend on the user's role.`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools,
 });
 

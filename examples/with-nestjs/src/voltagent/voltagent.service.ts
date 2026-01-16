@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Injectable, Logger } from "@nestjs/common";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
 import type { ServerProviderDeps } from "@voltagent/core";
@@ -47,7 +46,7 @@ export class VoltAgentService {
       name: "TextAgent",
       instructions:
         "You are a helpful text processing assistant. When users ask you to process text, use the uppercase tool to convert it to uppercase and explain what you did.",
-      model: openai("gpt-4o-mini"),
+      model: "openai/gpt-4o-mini",
       tools: [upperCaseTool],
     });
 

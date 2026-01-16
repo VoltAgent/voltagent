@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -24,7 +23,7 @@ const agentWithRetriever = new Agent({
   name: "Assistant with Retriever",
   instructions:
     "You are a helpful assistant. You have access to a knowledge base about VoltAgent and LanceDB. You automatically retrieve relevant information to answer user questions.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   retriever: retriever,
   memory,
 });
@@ -34,7 +33,7 @@ const agentWithTools = new Agent({
   name: "Assistant with Tools",
   instructions:
     "You represent a helpful assistant that can search the knowledge base using tools. Decide when to search based on the user's question.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [retriever.tool],
   memory,
 });

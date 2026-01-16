@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -18,7 +17,7 @@ const memoryStorage = new LibSQLMemoryAdapter({
 const agent = new Agent({
   name: "Turso Memory Agent",
   instructions: "A helpful assistant that remembers conversations using Turso/LibSQL.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({
     storage: memoryStorage,
   }), // Use the configured LibSQL storage

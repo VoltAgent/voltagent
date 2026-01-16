@@ -191,12 +191,11 @@ Add tools when creating an agent. The model decides when to use them based on th
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Weather Assistant",
   instructions: "An assistant that provides weather information",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: [weatherTool],
 });
 
@@ -227,7 +226,7 @@ const calculatorTool = createTool({
 const agent = new Agent({
   name: "Multi-Tool Assistant",
   instructions: "An assistant that can check weather and perform calculations",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: [weatherTool, calculatorTool],
 });
 
@@ -662,7 +661,6 @@ Hooks let you respond to tool execution events for logging, UI updates, or addit
 
 ```ts
 import { Agent, createHooks, isAbortError } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const hooks = createHooks({
   onToolStart({ agent, tool, context, args }) {
@@ -690,7 +688,7 @@ const hooks = createHooks({
 const agent = new Agent({
   name: "Assistant with Tool Hooks",
   instructions: "An assistant that logs tool execution",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: [weatherTool],
   hooks: hooks,
 });
@@ -727,7 +725,7 @@ const hooks = createHooks({
 const agent = new Agent({
   name: "Controlled Assistant",
   instructions: "An assistant with tag-based access control",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: [queryTool, updateTool, weatherTool],
   hooks: hooks,
 });
@@ -993,7 +991,6 @@ Connect to MCP servers and use their tools with your agents:
 
 ```ts
 import { Agent, MCPConfiguration } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 // Configure MCP servers
 const mcpConfig = new MCPConfiguration({
@@ -1023,7 +1020,7 @@ const allMcpTools = await mcpConfig.getTools();
 const agent = new Agent({
   name: "MCP-Enhanced Assistant",
   description: "Assistant with MCP tools",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   tools: allMcpTools,
 });
 ```

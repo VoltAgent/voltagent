@@ -80,7 +80,7 @@ const memory = new Memory({
   workingMemory: { enabled: true, scope: "conversation", schema: workingMemorySchema },
 });
 
-const agent = new Agent({ name: "Working Memory Agent", model: openai("gpt-4o-mini"), memory });
+const agent = new Agent({ name: "Working Memory Agent", model: "openai/gpt-4o-mini", memory });
 
 new VoltAgent({ agents: { agent }, server: honoServer({ port: 3141 }) });
 ```

@@ -1,12 +1,12 @@
 import {
   Agent,
+  type AgentModelReference,
   type BuilderPrepareContext,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
-import type { LanguageModel } from "ai";
 import { z } from "zod";
 
 const QUESTION_GEN_PROMPT = `Generate a question for the given answer and Identify if answer is noncommittal. Give noncommittal as 1 if the answer is noncommittal and 0 if the answer is committal. A noncommittal answer is one that is evasive, vague, or ambiguous. For example, "I don't know" or "I'm not sure" are noncommittal answers
@@ -79,7 +79,7 @@ export interface AnswerRelevancyScorerOptions<
 > {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   options?: AnswerRelevancyOptions;
   metadata?: Record<string, unknown> | null;
   buildPayload?: (context: AnswerRelevancySharedContext<Payload, Params>) => {

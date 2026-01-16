@@ -21,7 +21,6 @@ A tool requires:
 ```typescript
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 // Define a simple weather tool
 const getWeatherTool = createTool({
@@ -43,7 +42,7 @@ const getWeatherTool = createTool({
 const agent = new Agent({
   name: "WeatherAgent",
   instructions: "An agent that can fetch weather information.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [getWeatherTool], // Add the tool to the agent
 });
 
@@ -57,7 +56,6 @@ Tools can access operation metadata, user context, and control mechanisms throug
 ```typescript
 import { Agent, createTool } from "@voltagent/core";
 import { z } from "zod";
-import { openai } from "@ai-sdk/openai";
 
 // Tool that uses operation context
 const contextAwareWeatherTool = createTool({
@@ -96,7 +94,7 @@ context.set("preferredUnits", "fahrenheit");
 const agent = new Agent({
   name: "WeatherAgent",
   instructions: "An agent that respects user preferences",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [contextAwareWeatherTool],
 });
 
@@ -243,7 +241,7 @@ import { Agent, createTool, createToolkit, type Toolkit } from "@voltagent/core"
 const agent = new Agent({
   name: "MultiToolAgent",
   instructions: "An agent with various tools and toolkits.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [
     getWeatherTool, // Add an individual tool
     myCalculatorToolkit, // Add a toolkit

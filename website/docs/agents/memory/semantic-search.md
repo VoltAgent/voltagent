@@ -23,7 +23,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```
@@ -199,7 +199,7 @@ const memory = new Memory({
 const agent = new Agent({
   name: "Research Assistant",
   instructions: "Help users recall past discussions and find relevant information.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 

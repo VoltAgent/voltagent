@@ -5,7 +5,7 @@ This example shows how to deploy a VoltAgent agent as a Netlify Function (Node 2
 ## Features
 
 - ⚙️ Runs on Netlify Functions (AWS Lambda) with Node.js 20
-- 🤖 Uses `@ai-sdk/openai` for completions
+- 🤖 Uses model strings like `openai/gpt-4o-mini` for completions
 - 🧰 Includes a sample weather tool
 - 🔁 `netlify.toml` redirects every route to the function so `/agents`, `/observability`, etc. continue to work
 

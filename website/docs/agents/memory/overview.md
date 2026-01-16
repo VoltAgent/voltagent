@@ -58,19 +58,18 @@ Agents accept a `memory` option:
 
 ```ts
 import { Agent, Memory } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 // Default: in-memory storage (no persistence)
 const agent1 = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   // memory: undefined // implicit default
 });
 
 // Disable memory entirely
 const agent2 = new Agent({
   name: "Stateless",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: false,
 });
 
@@ -79,7 +78,7 @@ import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
 const agent3 = new Agent({
   name: "Persistent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
   }),
@@ -111,7 +110,6 @@ const response = await agent.generateText("What did we discuss yesterday?", {
 import { Agent, Memory } from "@voltagent/core";
 import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
 import { VoltOpsClient } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
@@ -127,7 +125,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```
@@ -156,7 +154,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Smart Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 

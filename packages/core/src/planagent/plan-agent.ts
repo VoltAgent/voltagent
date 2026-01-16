@@ -75,20 +75,27 @@ const TASK_SYSTEM_PROMPT = [
   "- You should use the `task` tool whenever you have a complex task that will take multiple steps, and is independent from other tasks that the agent needs to complete. These agents are highly competent and efficient.",
 ].join("\n");
 
+type PlanAgentSubagentConfigDefinition = Exclude<SubAgentConfig, Agent>;
+
+type PlanAgentCustomSubagentDefinition = Omit<
+  AgentOptions,
+  "instructions" | "tools" | "toolkits" | "subAgents" | "supervisorConfig"
+> & {
+  name: string;
+  description?: string;
+  systemPrompt: string;
+  model?: AgentOptions["model"];
+  tools?: (Tool<any, any> | Toolkit | VercelTool)[];
+  toolkits?: Toolkit[];
+};
+
 export type PlanAgentSubagentDefinition =
   | Agent
-  | SubAgentConfig
-  | (Omit<
-      AgentOptions,
-      "instructions" | "tools" | "toolkits" | "subAgents" | "supervisorConfig"
-    > & {
-      name: string;
-      description?: string;
-      systemPrompt: string;
-      model?: AgentOptions["model"];
-      tools?: (Tool<any, any> | Toolkit | VercelTool)[];
-      toolkits?: Toolkit[];
-    });
+  | PlanAgentSubagentConfigDefinition
+  | PlanAgentCustomSubagentDefinition;
+
+const isSubAgentConfigDefinition = (value: unknown): value is PlanAgentSubagentConfigDefinition =>
+  Boolean(value && typeof value === "object" && "method" in value && "agent" in value);
 
 export type TaskToolOptions = {
   systemPrompt?: string | null;
@@ -520,12 +527,12 @@ function normalizeSubagentDefinitions(options: {
   defaultMemory: AgentOptions["memory"];
   defaultLogger?: Logger;
 }): Array<{ name: string; description: string; config: SubAgentConfig }> {
-  const { definitions, defaultModel, defaultTools, defaultToolkits, defaultMemory, defaultLogger } =
-    options;
+  const { defaultModel, defaultTools, defaultToolkits, defaultMemory, defaultLogger } = options;
 
   const normalized: Array<{ name: string; description: string; config: SubAgentConfig }> = [];
+  const rawDefinitions = options.definitions as unknown[];
 
-  for (const definition of definitions) {
+  for (const definition of rawDefinitions) {
     if (definition instanceof Agent) {
       normalized.push({
         name: definition.name,
@@ -535,9 +542,9 @@ function normalizeSubagentDefinitions(options: {
       continue;
     }
 
-    if (definition && typeof definition === "object" && "method" in definition) {
-      const config = definition as SubAgentConfig;
-      const agent = "agent" in config ? config.agent : (config as Agent);
+    if (isSubAgentConfigDefinition(definition)) {
+      const config = definition as PlanAgentSubagentConfigDefinition;
+      const agent = config.agent;
       normalized.push({
         name: agent.name,
         description: getAgentDescription(agent),
@@ -546,7 +553,7 @@ function normalizeSubagentDefinitions(options: {
       continue;
     }
 
-    const custom = definition as Exclude<PlanAgentSubagentDefinition, Agent | SubAgentConfig>;
+    const custom = definition as PlanAgentCustomSubagentDefinition;
     const tools = custom.tools ?? defaultTools;
     const toolkits = custom.toolkits ?? defaultToolkits;
 

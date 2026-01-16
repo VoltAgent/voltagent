@@ -11,19 +11,18 @@ Summarization shortens long conversations by inserting a system summary and keep
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "Answer questions clearly.",
-  model: openai("gpt-4o"),
+  model: "openai/gpt-4o",
   summarization: {
     enabled: true,
     triggerTokens: 120_000,
     keepMessages: 6,
     maxOutputTokens: 800,
     systemPrompt: "Summarize the conversation for the next step.",
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
   },
 });
 ```

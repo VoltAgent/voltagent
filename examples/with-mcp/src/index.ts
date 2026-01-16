@@ -1,5 +1,4 @@
 import path from "node:path";
-import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -24,7 +23,7 @@ const mcpConfig = new MCPConfiguration({
 const agent = new Agent({
   name: "MCP Example Agent",
   instructions: "You help users read and write files",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: await mcpConfig.getTools(),
   memory: new Memory({
     storage: new LibSQLMemoryAdapter({

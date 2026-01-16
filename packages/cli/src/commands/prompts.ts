@@ -408,6 +408,398 @@ const buildCreatePayload = (local: LocalPrompt) => ({
   commit_message: local.commitMessage,
 });
 
+type AuthConfig = Awaited<ReturnType<typeof resolveAuthConfig>>;
+
+type PullCommandOptions = {
+  out: string;
+  names?: string[];
+  label?: string;
+  promptVersion?: string;
+  clean?: boolean;
+};
+
+type PushCommandOptions = {
+  out: string;
+  names?: string[];
+  yes?: boolean;
+};
+
+type PullContext = {
+  outputDir: string;
+  defaultOutputDir: string;
+  promptNames?: string[];
+  label?: string;
+  version?: number;
+  hasTargetedSelection: boolean;
+};
+
+const buildPullContext = (options: PullCommandOptions): PullContext => {
+  const outputDir = path.resolve(process.cwd(), options.out || DEFAULT_OUTPUT_DIR);
+  const defaultOutputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const promptNames = normalizePromptNames(options.names);
+  const label = options.label?.trim() || undefined;
+  const version =
+    options.promptVersion !== undefined ? Number.parseInt(options.promptVersion, 10) : undefined;
+
+  if (options.promptVersion !== undefined && Number.isNaN(version)) {
+    throw new Error("Version must be a number.");
+  }
+
+  const hasTargetedSelection = label !== undefined || version !== undefined;
+  if (hasTargetedSelection && (!promptNames || promptNames.length === 0)) {
+    throw new Error("Use --names with --label or --prompt-version.");
+  }
+
+  return {
+    outputDir,
+    defaultOutputDir,
+    promptNames,
+    label,
+    version,
+    hasTargetedSelection,
+  };
+};
+
+const prepareOutputDir = async (outputDir: string, shouldClean?: boolean) => {
+  if (shouldClean) {
+    await fsExtra.remove(outputDir);
+  }
+  await fsExtra.ensureDir(outputDir);
+};
+
+const logPullSuccess = (outputDir: string, defaultOutputDir: string, outPath: string) => {
+  console.log(chalk.green(`\nSuccess: prompts pulled to ${outputDir}`));
+
+  if (outputDir !== defaultOutputDir) {
+    console.log(
+      chalk.yellow(`Set VOLTAGENT_PROMPTS_PATH=${outPath} to use this directory at runtime.`),
+    );
+  }
+};
+
+const writeRemotePromptToDisk = async (outputDir: string, remote: RemotePrompt): Promise<void> => {
+  const markdown = buildMarkdownFromRemotePrompt(remote);
+  const relativePath =
+    remote.version !== undefined
+      ? path.join(remote.name, `${remote.version}.md`)
+      : `${remote.name}.md`;
+  const targetPath = resolveEntryPath(outputDir, relativePath);
+
+  if (!targetPath) {
+    throw new Error(`Invalid prompt filename returned: ${relativePath}`);
+  }
+
+  await fsExtra.ensureDir(path.dirname(targetPath));
+  await fsExtra.writeFile(targetPath, markdown, "utf8");
+};
+
+const downloadTargetedPrompts = async (options: {
+  auth: AuthConfig;
+  outputDir: string;
+  promptNames: string[];
+  label?: string;
+  version?: number;
+}): Promise<{ downloaded: string[]; missing: string[] }> => {
+  const { auth, outputDir, promptNames, label, version } = options;
+  const spinner = ora("Downloading prompts...").start();
+  const downloaded: string[] = [];
+  const missing: string[] = [];
+
+  for (const name of promptNames) {
+    const remote = await fetchRemotePrompt(auth.baseUrl, auth, name, {
+      label,
+      version,
+    });
+
+    if (!remote) {
+      missing.push(name);
+      continue;
+    }
+
+    await writeRemotePromptToDisk(outputDir, remote);
+    downloaded.push(remote.name);
+  }
+
+  if (downloaded.length > 0) {
+    spinner.succeed(`Downloaded ${downloaded.length} prompt file(s).`);
+  } else {
+    spinner.stop();
+  }
+
+  return { downloaded, missing };
+};
+
+const fetchPromptExport = async (auth: AuthConfig, promptNames?: string[]): Promise<Response> => {
+  const params = new URLSearchParams();
+  if (promptNames && promptNames.length > 0) {
+    params.set("promptNames", promptNames.join(","));
+  }
+
+  const url = `${auth.baseUrl}/prompts/public/export/markdown${
+    params.toString() ? `?${params.toString()}` : ""
+  }`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "x-public-key": auth.publicKey,
+      "x-secret-key": auth.secretKey,
+    },
+  });
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    throw new Error(
+      `Failed to export prompts: ${response.status} ${response.statusText}${
+        details ? ` - ${details}` : ""
+      }`,
+    );
+  }
+
+  return response;
+};
+
+const writeZipExport = async (outputDir: string, buffer: Buffer): Promise<number> => {
+  const zip = new AdmZip(buffer);
+  const entries = zip.getEntries();
+  let fileCount = 0;
+
+  for (const entry of entries) {
+    if (entry.isDirectory) {
+      continue;
+    }
+
+    if (
+      entry.entryName.includes("__MACOSX") ||
+      entry.entryName.split("/").pop()?.startsWith("._")
+    ) {
+      continue;
+    }
+
+    const resolvedPath = resolveEntryPath(outputDir, entry.entryName);
+    if (!resolvedPath) {
+      continue;
+    }
+
+    await fsExtra.ensureDir(path.dirname(resolvedPath));
+    await fsExtra.writeFile(resolvedPath, entry.getData());
+    fileCount++;
+  }
+
+  return fileCount;
+};
+
+const writeTextExport = async (
+  outputDir: string,
+  content: string,
+  filename: string,
+): Promise<void> => {
+  const targetPath = resolveEntryPath(outputDir, filename);
+  if (!targetPath) {
+    throw new Error(`Invalid prompt filename returned: ${filename}`);
+  }
+
+  await fsExtra.ensureDir(path.dirname(targetPath));
+  await fsExtra.writeFile(targetPath, content, "utf8");
+};
+
+const downloadPromptExport = async (options: {
+  auth: AuthConfig;
+  outputDir: string;
+  promptNames?: string[];
+}): Promise<{ filename?: string; fileCount?: number }> => {
+  const { auth, outputDir, promptNames } = options;
+  const spinner = ora("Downloading prompts...").start();
+  const response = await fetchPromptExport(auth, promptNames);
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const contentDisposition = response.headers.get("content-disposition");
+
+  if (contentType.includes("application/zip")) {
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const fileCount = await writeZipExport(outputDir, buffer);
+    spinner.succeed(`Downloaded ${fileCount} prompt file(s).`);
+    return { fileCount };
+  }
+
+  const content = await response.text();
+  const filename =
+    extractFilename(contentDisposition) ||
+    (promptNames?.length === 1 ? `${promptNames[0]}.md` : "prompts.md");
+
+  await writeTextExport(outputDir, content, filename);
+  spinner.succeed(`Downloaded ${filename}.`);
+
+  return { filename };
+};
+
+const listMissingPromptNames = (baseDir: string, promptNames: string[]): string[] =>
+  promptNames.filter((name) => {
+    const directPath = path.resolve(baseDir, name.endsWith(".md") ? name : `${name}.md`);
+    if (fsExtra.existsSync(directPath)) {
+      return false;
+    }
+
+    const promptName = name.endsWith(".md") ? name.slice(0, -3) : name;
+    const baseFile = path.resolve(baseDir, `${promptName}.md`);
+    if (fsExtra.existsSync(baseFile)) {
+      return false;
+    }
+
+    const dirPath = path.resolve(baseDir, promptName);
+    return !fsExtra.existsSync(dirPath);
+  });
+
+const parsePromptFilesWithErrors = async (
+  files: string[],
+): Promise<{ localPrompts: LocalPrompt[]; parseErrors: string[] }> => {
+  const localPrompts: LocalPrompt[] = [];
+  const parseErrors: string[] = [];
+
+  for (const file of files) {
+    try {
+      localPrompts.push(await parsePromptFile(file));
+    } catch (error) {
+      parseErrors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  return { localPrompts, parseErrors };
+};
+
+const groupPromptsByName = (prompts: LocalPrompt[]): Map<string, LocalPrompt[]> => {
+  const grouped = new Map<string, LocalPrompt[]>();
+  for (const prompt of prompts) {
+    const existing = grouped.get(prompt.name);
+    if (existing) {
+      existing.push(prompt);
+    } else {
+      grouped.set(prompt.name, [prompt]);
+    }
+  }
+  return grouped;
+};
+
+const getVersionValue = (prompt: LocalPrompt): number =>
+  typeof prompt.version === "number" ? prompt.version : -1;
+
+const selectLatestPrompt = (prompts: LocalPrompt[]): LocalPrompt => {
+  const latestLabelled = prompts.filter((prompt) => prompt.allLabels.includes("latest"));
+  const candidates = latestLabelled.length > 0 ? latestLabelled : prompts;
+  return candidates.reduce((best, current) =>
+    getVersionValue(current) > getVersionValue(best) ? current : best,
+  );
+};
+
+const selectPromptsForPush = (
+  groupedPrompts: Map<string, LocalPrompt[]>,
+): {
+  selectedPrompts: LocalPrompt[];
+  skipped: Array<{ name: string; count: number; version: string }>;
+} => {
+  const selectedPrompts: LocalPrompt[] = [];
+  const skipped: Array<{ name: string; count: number; version: string }> = [];
+
+  for (const [name, prompts] of groupedPrompts) {
+    if (prompts.length === 1) {
+      selectedPrompts.push(prompts[0]);
+      continue;
+    }
+
+    const selected = selectLatestPrompt(prompts);
+    const skippedEntries = prompts.filter((prompt) => prompt.filePath !== selected.filePath);
+    selectedPrompts.push(selected);
+
+    if (skippedEntries.length > 0) {
+      const selectedVersion = selected.version !== undefined ? `v${selected.version}` : "latest";
+      skipped.push({ name, count: skippedEntries.length, version: selectedVersion });
+    }
+  }
+
+  return { selectedPrompts, skipped };
+};
+
+const buildDiffResults = async (
+  auth: AuthConfig,
+  selectedPrompts: LocalPrompt[],
+): Promise<
+  Array<{
+    local: LocalPrompt;
+    remote: RemotePrompt | null;
+    diffs: string[];
+  }>
+> => {
+  const diffResults: Array<{
+    local: LocalPrompt;
+    remote: RemotePrompt | null;
+    diffs: string[];
+  }> = [];
+
+  const spinner = ora("Comparing local prompts with remote...").start();
+  for (const prompt of selectedPrompts) {
+    const remote = await fetchRemotePrompt(auth.baseUrl, auth, prompt.name);
+    const diffs = buildDiffSummary(prompt, remote);
+    if (diffs.length > 0) {
+      diffResults.push({ local: prompt, remote, diffs });
+    }
+  }
+  spinner.stop();
+
+  return diffResults;
+};
+
+const renderDiffResults = (diffResults: Array<{ local: LocalPrompt; diffs: string[] }>): void => {
+  for (const entry of diffResults) {
+    console.log(chalk.yellow(`\n${entry.local.name}`));
+    entry.diffs.forEach((diff) => console.log(chalk.gray(`- ${diff}`)));
+  }
+};
+
+const confirmPromptPush = async (count: number, yes?: boolean): Promise<boolean> => {
+  if (yes) {
+    return true;
+  }
+  const result = await inquirer.prompt<{ confirm: boolean }>([
+    {
+      type: "confirm",
+      name: "confirm",
+      message: `Push ${count} prompt(s) to VoltAgent?`,
+      default: false,
+    },
+  ]);
+  return result.confirm;
+};
+
+const pushDiffResults = async (
+  auth: AuthConfig,
+  diffResults: Array<{ local: LocalPrompt }>,
+): Promise<void> => {
+  const pushSpinner = ora("Pushing prompts...").start();
+  for (const entry of diffResults) {
+    const payload = buildCreatePayload(entry.local);
+    const url = `${auth.baseUrl}/prompts/public/${encodeURIComponent(entry.local.name)}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "x-public-key": auth.publicKey,
+        "x-secret-key": auth.secretKey,
+        "Content-Type": "application/json",
+      },
+      body: safeStringify(payload),
+    });
+
+    if (!response.ok) {
+      const details = await response.text().catch(() => "");
+      throw new Error(
+        `Failed to push prompt '${entry.local.name}': ${response.status} ${response.statusText}${
+          details ? ` - ${details}` : ""
+        }`,
+      );
+    }
+  }
+  pushSpinner.succeed(`Pushed ${diffResults.length} prompt(s).`);
+};
+
 export const registerPromptsCommand = (program: Command): void => {
   const prompts = program.command("prompts").description("Manage VoltAgent prompts");
 
@@ -419,193 +811,50 @@ export const registerPromptsCommand = (program: Command): void => {
     .option("-l, --label <label>", "Prompt label to pull (requires --names)")
     .option("--prompt-version <version>", "Prompt version to pull (requires --names)")
     .option("--clean", "Remove existing prompt files before pulling", false)
-    .action(
-      async (options: {
-        out: string;
-        names?: string[];
-        label?: string;
-        promptVersion?: string;
-        clean?: boolean;
-      }) => {
-        try {
-          const auth = await resolveAuthConfig({ promptIfMissing: true });
-          const outputDir = path.resolve(process.cwd(), options.out || DEFAULT_OUTPUT_DIR);
-          const defaultOutputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
-          const promptNames = normalizePromptNames(options.names);
-          const label = options.label?.trim() || undefined;
-          const version =
-            options.promptVersion !== undefined
-              ? Number.parseInt(options.promptVersion, 10)
-              : undefined;
+    .action(async (options: PullCommandOptions) => {
+      try {
+        const auth = await resolveAuthConfig({ promptIfMissing: true });
+        const context = buildPullContext(options);
 
-          if (options.promptVersion !== undefined && Number.isNaN(version)) {
-            throw new Error("Version must be a number.");
-          }
+        await prepareOutputDir(context.outputDir, options.clean);
 
-          const hasTargetedSelection = label !== undefined || version !== undefined;
-          if (hasTargetedSelection && (!promptNames || promptNames.length === 0)) {
-            throw new Error("Use --names with --label or --prompt-version.");
-          }
-
-          if (options.clean) {
-            await fsExtra.remove(outputDir);
-          }
-          await fsExtra.ensureDir(outputDir);
-
-          if (hasTargetedSelection && promptNames) {
-            const spinner = ora("Downloading prompts...").start();
-            const downloaded: string[] = [];
-            const missing: string[] = [];
-
-            for (const name of promptNames) {
-              const remote = await fetchRemotePrompt(auth.baseUrl, auth, name, {
-                label,
-                version,
-              });
-
-              if (!remote) {
-                missing.push(name);
-                continue;
-              }
-
-              const markdown = buildMarkdownFromRemotePrompt(remote);
-              const relativePath =
-                remote.version !== undefined
-                  ? path.join(remote.name, `${remote.version}.md`)
-                  : `${remote.name}.md`;
-              const targetPath = resolveEntryPath(outputDir, relativePath);
-
-              if (!targetPath) {
-                throw new Error(`Invalid prompt filename returned: ${relativePath}`);
-              }
-
-              await fsExtra.ensureDir(path.dirname(targetPath));
-              await fsExtra.writeFile(targetPath, markdown, "utf8");
-              downloaded.push(remote.name);
-            }
-
-            if (downloaded.length > 0) {
-              spinner.succeed(`Downloaded ${downloaded.length} prompt file(s).`);
-            } else {
-              spinner.stop();
-            }
-
-            if (missing.length > 0) {
-              console.log(chalk.yellow(`Missing prompts: ${missing.join(", ")}`));
-            }
-
-            console.log(chalk.green(`\nSuccess: prompts pulled to ${outputDir}`));
-
-            if (outputDir !== defaultOutputDir) {
-              console.log(
-                chalk.yellow(
-                  `Set VOLTAGENT_PROMPTS_PATH=${options.out} to use this directory at runtime.`,
-                ),
-              );
-            }
-
-            return;
-          }
-
-          const params = new URLSearchParams();
-          if (promptNames && promptNames.length > 0) {
-            params.set("promptNames", promptNames.join(","));
-          }
-
-          const url = `${auth.baseUrl}/prompts/public/export/markdown${
-            params.toString() ? `?${params.toString()}` : ""
-          }`;
-
-          const spinner = ora("Downloading prompts...").start();
-          const response = await fetch(url, {
-            method: "GET",
-            headers: {
-              "x-public-key": auth.publicKey,
-              "x-secret-key": auth.secretKey,
-            },
+        if (context.hasTargetedSelection && context.promptNames) {
+          const { missing } = await downloadTargetedPrompts({
+            auth,
+            outputDir: context.outputDir,
+            promptNames: context.promptNames,
+            label: context.label,
+            version: context.version,
           });
 
-          if (!response.ok) {
-            const details = await response.text().catch(() => "");
-            throw new Error(
-              `Failed to export prompts: ${response.status} ${response.statusText}${
-                details ? ` - ${details}` : ""
-              }`,
-            );
+          if (missing.length > 0) {
+            console.log(chalk.yellow(`Missing prompts: ${missing.join(", ")}`));
           }
 
-          const contentType = response.headers.get("content-type") ?? "";
-          const contentDisposition = response.headers.get("content-disposition");
-
-          if (contentType.includes("application/zip")) {
-            const buffer = Buffer.from(await response.arrayBuffer());
-            const zip = new AdmZip(buffer);
-            const entries = zip.getEntries();
-            let fileCount = 0;
-
-            for (const entry of entries) {
-              if (entry.isDirectory) {
-                continue;
-              }
-
-              if (
-                entry.entryName.includes("__MACOSX") ||
-                entry.entryName.split("/").pop()?.startsWith("._")
-              ) {
-                continue;
-              }
-
-              const resolvedPath = resolveEntryPath(outputDir, entry.entryName);
-              if (!resolvedPath) {
-                continue;
-              }
-
-              await fsExtra.ensureDir(path.dirname(resolvedPath));
-              await fsExtra.writeFile(resolvedPath, entry.getData());
-              fileCount++;
-            }
-
-            spinner.succeed(`Downloaded ${fileCount} prompt file(s).`);
-          } else {
-            const content = await response.text();
-            const filename =
-              extractFilename(contentDisposition) ||
-              (promptNames?.length === 1 ? `${promptNames[0]}.md` : "prompts.md");
-            const targetPath = resolveEntryPath(outputDir, filename);
-
-            if (!targetPath) {
-              throw new Error(`Invalid prompt filename returned: ${filename}`);
-            }
-
-            await fsExtra.ensureDir(path.dirname(targetPath));
-            await fsExtra.writeFile(targetPath, content, "utf8");
-
-            spinner.succeed(`Downloaded ${filename}.`);
-          }
-
-          console.log(chalk.green(`\nSuccess: prompts pulled to ${outputDir}`));
-
-          if (outputDir !== defaultOutputDir) {
-            console.log(
-              chalk.yellow(
-                `Set VOLTAGENT_PROMPTS_PATH=${options.out} to use this directory at runtime.`,
-              ),
-            );
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(chalk.red("\nPrompt pull failed"));
-          console.error(chalk.red(errorMessage));
-
-          captureError({
-            command: "prompts pull",
-            errorMessage,
-          });
-
-          process.exit(1);
+          logPullSuccess(context.outputDir, context.defaultOutputDir, options.out);
+          return;
         }
-      },
-    );
+
+        await downloadPromptExport({
+          auth,
+          outputDir: context.outputDir,
+          promptNames: context.promptNames,
+        });
+
+        logPullSuccess(context.outputDir, context.defaultOutputDir, options.out);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(chalk.red("\nPrompt pull failed"));
+        console.error(chalk.red(errorMessage));
+
+        captureError({
+          command: "prompts pull",
+          errorMessage,
+        });
+
+        process.exit(1);
+      }
+    });
 
   prompts
     .command("push")
@@ -613,7 +862,7 @@ export const registerPromptsCommand = (program: Command): void => {
     .option("-o, --out <path>", "Input directory", DEFAULT_OUTPUT_DIR)
     .option("-n, --names <names...>", "Prompt names to push (comma-separated or repeatable)")
     .option("-y, --yes", "Skip confirmation prompts", false)
-    .action(async (options: { out: string; names?: string[]; yes?: boolean }) => {
+    .action(async (options: PushCommandOptions) => {
       try {
         const auth = await resolveAuthConfig({ promptIfMissing: true });
         const baseDir = path.resolve(process.cwd(), options.out || DEFAULT_OUTPUT_DIR);
@@ -625,21 +874,7 @@ export const registerPromptsCommand = (program: Command): void => {
         }
 
         if (promptNames && promptNames.length > 0) {
-          const missing = promptNames.filter((name) => {
-            const directPath = path.resolve(baseDir, name.endsWith(".md") ? name : `${name}.md`);
-            if (fsExtra.existsSync(directPath)) {
-              return false;
-            }
-
-            const promptName = name.endsWith(".md") ? name.slice(0, -3) : name;
-            const baseFile = path.resolve(baseDir, `${promptName}.md`);
-            if (fsExtra.existsSync(baseFile)) {
-              return false;
-            }
-
-            const dirPath = path.resolve(baseDir, promptName);
-            return !fsExtra.existsSync(dirPath);
-          });
+          const missing = listMissingPromptNames(baseDir, promptNames);
           if (missing.length > 0) {
             console.log(chalk.yellow(`Missing local prompt files: ${missing.join(", ")}`));
           }
@@ -652,16 +887,7 @@ export const registerPromptsCommand = (program: Command): void => {
           return;
         }
 
-        const localPrompts: LocalPrompt[] = [];
-        const parseErrors: string[] = [];
-
-        for (const file of files) {
-          try {
-            localPrompts.push(await parsePromptFile(file));
-          } catch (error) {
-            parseErrors.push(error instanceof Error ? error.message : String(error));
-          }
-        }
+        const { localPrompts, parseErrors } = await parsePromptFilesWithErrors(files);
 
         if (parseErrors.length > 0) {
           console.error(chalk.red("Failed to parse prompt files:"));
@@ -669,117 +895,33 @@ export const registerPromptsCommand = (program: Command): void => {
           process.exit(1);
         }
 
-        const groupedPrompts = new Map<string, LocalPrompt[]>();
-        for (const prompt of localPrompts) {
-          const existing = groupedPrompts.get(prompt.name);
-          if (existing) {
-            existing.push(prompt);
-          } else {
-            groupedPrompts.set(prompt.name, [prompt]);
-          }
-        }
+        const groupedPrompts = groupPromptsByName(localPrompts);
+        const { selectedPrompts, skipped } = selectPromptsForPush(groupedPrompts);
 
-        const getVersionValue = (prompt: LocalPrompt): number =>
-          typeof prompt.version === "number" ? prompt.version : -1;
-
-        const selectLatestPrompt = (prompts: LocalPrompt[]): LocalPrompt => {
-          const latestLabelled = prompts.filter((prompt) => prompt.allLabels.includes("latest"));
-          const candidates = latestLabelled.length > 0 ? latestLabelled : prompts;
-          return candidates.reduce((best, current) =>
-            getVersionValue(current) > getVersionValue(best) ? current : best,
+        for (const entry of skipped) {
+          console.log(
+            chalk.yellow(
+              `Multiple local versions found for '${entry.name}'. Pushing ${entry.version}; skipping ${entry.count} file(s).`,
+            ),
           );
-        };
-
-        const selectedPrompts: LocalPrompt[] = [];
-        for (const [name, prompts] of groupedPrompts) {
-          if (prompts.length === 1) {
-            selectedPrompts.push(prompts[0]);
-            continue;
-          }
-
-          const selected = selectLatestPrompt(prompts);
-          const skipped = prompts.filter((prompt) => prompt.filePath !== selected.filePath);
-          selectedPrompts.push(selected);
-
-          if (skipped.length > 0) {
-            const selectedVersion =
-              selected.version !== undefined ? `v${selected.version}` : "latest";
-            console.log(
-              chalk.yellow(
-                `Multiple local versions found for '${name}'. Pushing ${selectedVersion}; skipping ${skipped.length} file(s).`,
-              ),
-            );
-          }
         }
 
-        const diffResults: Array<{
-          local: LocalPrompt;
-          remote: RemotePrompt | null;
-          diffs: string[];
-        }> = [];
-
-        const spinner = ora("Comparing local prompts with remote...").start();
-        for (const prompt of selectedPrompts) {
-          const remote = await fetchRemotePrompt(auth.baseUrl, auth, prompt.name);
-          const diffs = buildDiffSummary(prompt, remote);
-          if (diffs.length > 0) {
-            diffResults.push({ local: prompt, remote, diffs });
-          }
-        }
-        spinner.stop();
+        const diffResults = await buildDiffResults(auth, selectedPrompts);
 
         if (diffResults.length === 0) {
           console.log(chalk.green("No differences detected. Nothing to push."));
           return;
         }
 
-        for (const entry of diffResults) {
-          console.log(chalk.yellow(`\n${entry.local.name}`));
-          entry.diffs.forEach((diff) => console.log(chalk.gray(`- ${diff}`)));
-        }
+        renderDiffResults(diffResults);
 
-        const shouldPush =
-          options.yes ||
-          (
-            await inquirer.prompt<{ confirm: boolean }>([
-              {
-                type: "confirm",
-                name: "confirm",
-                message: `Push ${diffResults.length} prompt(s) to VoltAgent?`,
-                default: false,
-              },
-            ])
-          ).confirm;
-
+        const shouldPush = await confirmPromptPush(diffResults.length, options.yes);
         if (!shouldPush) {
           console.log(chalk.yellow("Push canceled."));
           return;
         }
 
-        const pushSpinner = ora("Pushing prompts...").start();
-        for (const entry of diffResults) {
-          const payload = buildCreatePayload(entry.local);
-          const url = `${auth.baseUrl}/prompts/public/${encodeURIComponent(entry.local.name)}`;
-          const response = await fetch(url, {
-            method: "POST",
-            headers: {
-              "x-public-key": auth.publicKey,
-              "x-secret-key": auth.secretKey,
-              "Content-Type": "application/json",
-            },
-            body: safeStringify(payload),
-          });
-
-          if (!response.ok) {
-            const details = await response.text().catch(() => "");
-            throw new Error(
-              `Failed to push prompt '${entry.local.name}': ${response.status} ${response.statusText}${
-                details ? ` - ${details}` : ""
-              }`,
-            );
-          }
-        }
-        pushSpinner.succeed(`Pushed ${diffResults.length} prompt(s).`);
+        await pushDiffResults(auth, diffResults);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(chalk.red("\nPrompt push failed"));

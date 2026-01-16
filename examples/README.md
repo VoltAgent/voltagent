@@ -90,7 +90,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [GitHub Star Stories](./github-star-stories) — Celebrate new GitHub stars with enriched profiles, AI-written stories, and VoltOps Discord actions.
 - [SDK Trace Example](./sdk-trace-example) — OpenTelemetry tracing wired to VoltOps so you can inspect spans and events.
 - [Agent‑to‑Agent Server](./with-a2a-server) — Expose agents over HTTP so other agents/services can call them.
-- [Amazon Bedrock](./with-amazon-bedrock) — Run AWS Bedrock models by configuring credentials and providers in VoltAgent.
+- [Amazon Bedrock](./with-amazon-bedrock) — Run AWS Bedrock models by configuring credentials and model IDs in VoltAgent.
 - [Anthropic](./with-anthropic) — Use Claude models as your agent’s LLM via the AI SDK.
 - [Chroma](./with-chroma) — RAG with Chroma vectors showing automatic vs tool‑driven retrieval patterns.
 - [Client‑side Tools](./with-client-side-tools) — Next.js UI triggers typed client‑side tools safely, VoltAgent on the server.

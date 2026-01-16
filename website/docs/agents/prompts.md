@@ -18,11 +18,10 @@ Static instructions are literal strings assigned to the `instructions` property.
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "SupportAgent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: "You are a customer support agent. Help users with their questions.",
 });
 ```
@@ -60,7 +59,7 @@ Functions can return a plain string based on context:
 ```typescript
 const agent = new Agent({
   name: "SupportAgent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: async ({ context }) => {
     const userTier = context.get("userTier") || "basic";
 
@@ -92,7 +91,7 @@ Functions can also return `PromptContent` objects for text or chat-based instruc
 ```typescript
 const agent = new Agent({
   name: "SupportAgent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: async ({ context }) => {
     return {
       type: "text",
@@ -106,11 +105,10 @@ const agent = new Agent({
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "ChatAgent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: async () => {
     return {
       type: "chat",
@@ -137,11 +135,10 @@ const agent = new Agent({
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { anthropic } from "@ai-sdk/anthropic";
 
 const agent = new Agent({
   name: "CachedAgent",
-  model: anthropic("claude-3-7-sonnet-20250219"),
+  model: "anthropic/claude-3-7-sonnet-20250219",
   instructions: async () => {
     return {
       type: "chat",
@@ -207,7 +204,6 @@ For complete documentation on VoltOps Prompt Management, see:
 
 ```typescript
 import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
@@ -216,7 +212,7 @@ const voltOpsClient = new VoltOpsClient({
 
 const agent = new Agent({
   name: "SupportAgent",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
       promptName: "customer-support-prompt",
@@ -267,7 +263,7 @@ Avoid when:
 ```typescript
 const agent = new Agent({
   instructions: "You are a code reviewer. Focus on security and performance.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 ```
 
@@ -281,7 +277,7 @@ const agent = new Agent({
       ? "You are a premium support agent with deep technical expertise."
       : "You are a support agent providing efficient solutions.";
   },
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 ```
 
@@ -295,7 +291,7 @@ const agent = new Agent({
       label: process.env.NODE_ENV === "production" ? "production" : "development",
     });
   },
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   voltOpsClient: voltOpsClient,
 });
 ```

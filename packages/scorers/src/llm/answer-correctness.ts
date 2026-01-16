@@ -1,11 +1,11 @@
 import {
   Agent,
+  type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
-import type { LanguageModel } from "ai";
 import { z } from "zod";
 
 const ANSWER_CORRECTNESS_PROMPT = `Given a ground truth and an answer, analyze each statement in the answer and classify them in one of the following categories:
@@ -51,7 +51,7 @@ export interface AnswerCorrectnessScorerOptions<
 > {
   id?: string;
   name?: string;
-  model: LanguageModel;
+  model: AgentModelReference;
   options?: AnswerCorrectnessOptions;
   metadata?: Record<string, unknown> | null;
   buildPayload?: (context: AnswerCorrectnessScoreContext<Payload, Params>) => {

@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { startMcpServer } from "./mcp-server.js";
@@ -30,7 +29,7 @@ const agent = new Agent({
     "When the user asks to delete a customer, call the MCP tool demo_customer_delete.",
     "Keep responses short and confirm the outcome.",
   ].join("\n"),
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools,
   logger,
 });

@@ -13,13 +13,12 @@ Agents use in-memory storage by default when no `memory` option is provided:
 
 ```ts
 import { Agent } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 // Uses InMemoryStorageAdapter automatically
 const agent = new Agent({
   name: "Assistant",
   instructions: "Help users with questions.",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
 });
 ```
 
@@ -29,7 +28,6 @@ Configure storage limits explicitly:
 
 ```ts
 import { Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new InMemoryStorageAdapter(),
@@ -37,7 +35,7 @@ const memory = new Memory({
 
 const agent = new Agent({
   name: "Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory,
 });
 ```
@@ -96,11 +94,10 @@ Test agent logic without database setup:
 
 ```ts
 import { Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
 
 const testAgent = new Agent({
   name: "Test Assistant",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   memory: new Memory({
     storage: new InMemoryStorageAdapter(),
   }),
@@ -122,7 +119,7 @@ Serverless functions or ephemeral containers where persistence isn't needed:
 export async function handler(event) {
   const agent = new Agent({
     name: "Serverless Assistant",
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     // Default in-memory storage
   });
 

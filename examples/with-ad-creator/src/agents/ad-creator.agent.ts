@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent } from "@voltagent/core";
 import type { Memory } from "@voltagent/core";
 import { generateInstagramAdGeminiTool } from "../tools/image-generation/instagram-ad-gemini.tool";
@@ -37,7 +36,7 @@ export const createAdCreatorAgent = (memory: Memory) => {
     - Creative rationale
     - Performance optimization suggestions
     - Engagement predictions`,
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     tools: [generateInstagramAdGeminiTool],
     memory,
   });

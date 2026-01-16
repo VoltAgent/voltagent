@@ -43,6 +43,7 @@ const sidebars: SidebarsConfig = {
           },
         },
         "getting-started/providers-models",
+        "getting-started/model-router",
         "getting-started/comparison",
         "getting-started/migration-guide",
       ],

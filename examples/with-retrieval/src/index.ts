@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -22,7 +21,7 @@ const agent = new Agent({
   name: "Assistant with Retrieval",
   instructions:
     "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   retriever: retriever,
   memory,
 });
@@ -32,7 +31,7 @@ const agentWithTools = new Agent({
   name: "Assistant with Retrieval and Tools",
   instructions:
     "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [retriever.tool],
   memory,
 });

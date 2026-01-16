@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -35,7 +34,7 @@ Example queries you can handle:
 - "Search for the best restaurants in Paris"
 - "What's the current weather in New York?"
 - "Extract content from this URL: https://example.com/article"`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   tools: [tavilySearchTool, tavilyExtractTool],
   memory,
 });

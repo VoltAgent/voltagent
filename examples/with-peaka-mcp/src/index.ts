@@ -3,8 +3,6 @@ import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 
-import { openai } from "@ai-sdk/openai";
-
 const mcp = new MCPConfiguration({
   servers: {
     peaka: {
@@ -26,7 +24,7 @@ const mcp = new MCPConfiguration({
   const agent = new Agent({
     name: "Peaka Data Assistant",
     instructions: "An assistant that can query Peaka's sample data.",
-    model: openai("gpt-4o-mini"),
+    model: "openai/gpt-4o-mini",
     tools: [...tools],
     markdown: true,
     memory: new Memory({

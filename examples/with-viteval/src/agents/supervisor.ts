@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent } from "@voltagent/core";
 import { generalAgent } from "./general";
 import { geographyAgent } from "./geography";
@@ -29,6 +28,6 @@ Available agents:
 Analyze the user query and decide which agent should handle it.
 Consider the subject matter and route to the most appropriate specialized agent.
 Pass the user query to the specialized agent and return the response from the specialized agent to the user.`,
-  model: openai("gpt-4o-mini"),
+  model: "openai/gpt-4o-mini",
   subAgents: [generalAgent, mathAgent, geographyAgent, historyAgent, scienceAgent],
 });

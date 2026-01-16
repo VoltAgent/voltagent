@@ -49,6 +49,7 @@ import { type VoltAgentObservability, createVoltAgentObservability } from "../ob
 import { TRIGGER_CONTEXT_KEY } from "../observability/context-keys";
 import { type ObservabilityFlushState, flushObservability } from "../observability/utils";
 import { AgentRegistry } from "../registries/agent-registry";
+import { ModelProviderRegistry } from "../registries/model-provider-registry";
 import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, ToolExecutionResult, Toolkit, VercelTool } from "../tool";
 import { createTool } from "../tool";
@@ -121,6 +122,7 @@ import type {
   AgentFeedbackOptions,
   AgentFullState,
   AgentGuardrailState,
+  AgentModelValue,
   AgentOptions,
   AgentSummarizationOptions,
   DynamicValue,
@@ -435,7 +437,7 @@ export class Agent {
   readonly name: string;
   readonly purpose?: string;
   readonly instructions: InstructionsDynamicValue;
-  readonly model: LanguageModel | DynamicValue<LanguageModel>;
+  readonly model: AgentModelValue;
   readonly dynamicTools?: DynamicValue<(Tool<any, any> | Toolkit)[]>;
   readonly hooks: AgentHooks;
   readonly temperature?: number;
@@ -2288,7 +2290,7 @@ export class Agent {
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
 
     // Resolve dynamic values
-    const model = await this.resolveValue(this.model, oc);
+    const model = await this.resolveModel(this.model, oc);
     const dynamicToolList = (await this.resolveValue(this.dynamicTools, oc)) || [];
 
     // Merge agent tools with option tools
@@ -3082,7 +3084,7 @@ export class Agent {
       operationContext: oc,
       summarization: this.summarization,
       model: this.model,
-      resolveValue: this.resolveValue.bind(this),
+      resolveModel: this.resolveModel.bind(this),
       agent: this,
     });
 
@@ -3540,6 +3542,17 @@ export class Agent {
       return await dynamicValue(resolveOptions);
     }
     return value;
+  }
+
+  /**
+   * Resolve agent model value (LanguageModel or provider/model string)
+   */
+  private async resolveModel(value: AgentModelValue, oc: OperationContext): Promise<LanguageModel> {
+    const resolved = await this.resolveValue(value, oc);
+    if (typeof resolved === "string") {
+      return await ModelProviderRegistry.getInstance().resolveLanguageModel(resolved);
+    }
+    return resolved;
   }
 
   /**
