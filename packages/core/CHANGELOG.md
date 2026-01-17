@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.1.2
+
+### Patch Changes
+
+- [#957](https://github.com/VoltAgent/voltagent/pull/957) [`7fc3122`](https://github.com/VoltAgent/voltagent/commit/7fc31223d585ba023832731407440337b61a3d71) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: prevent workflow failures from observability flush concurrency limits by serializing flushes and defaulting to serverless-only flush in auto mode
+
 ## 2.1.1
 
 ### Patch Changes
