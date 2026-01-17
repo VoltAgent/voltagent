@@ -1,5 +1,28 @@
 # @voltagent/core
 
+## 2.1.3
+
+### Patch Changes
+
+- [#959](https://github.com/VoltAgent/voltagent/pull/959) [`99ba28c`](https://github.com/VoltAgent/voltagent/commit/99ba28c1a531ff6cabb08a5b3daea3db3dd69629) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: allow PlanAgent task tool to forward subagent stream events via supervisorConfig
+
+  Example:
+
+  ```ts
+  const agent = new PlanAgent({
+    name: "Supervisor",
+    systemPrompt: "Delegate when helpful.",
+    model: "openai/gpt-4o",
+    task: {
+      supervisorConfig: {
+        fullStreamEventForwarding: {
+          types: ["tool-call", "tool-result", "text-delta"],
+        },
+      },
+    },
+  });
+  ```
+
 ## 2.1.2
 
 ### Patch Changes
