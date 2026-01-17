@@ -185,6 +185,23 @@ const agent = new PlanAgent({
 });
 ```
 
+To forward subagent stream events when you call `planAgent.streamText(...)`, configure the task's supervisor config:
+
+```ts
+const agent = new PlanAgent({
+  name: "Supervisor",
+  systemPrompt: "Delegate when helpful.",
+  model: "openai/gpt-4o",
+  task: {
+    supervisorConfig: {
+      fullStreamEventForwarding: {
+        types: ["tool-call", "tool-result", "text-delta"],
+      },
+    },
+  },
+});
+```
+
 PlanAgent also adds a default `general-purpose` subagent unless you disable it:
 
 ```ts

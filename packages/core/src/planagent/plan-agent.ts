@@ -8,7 +8,12 @@ import { FORCED_TOOL_CHOICE_CONTEXT_KEY } from "../agent/context-keys";
 import type { AgentHooks } from "../agent/hooks";
 import { SubAgentManager } from "../agent/subagent";
 import type { SubAgentConfig } from "../agent/subagent/types";
-import type { AgentOptions, InstructionsDynamicValue, OperationContext } from "../agent/types";
+import type {
+  AgentOptions,
+  InstructionsDynamicValue,
+  OperationContext,
+  SupervisorConfig,
+} from "../agent/types";
 import type { Tool, VercelTool } from "../tool";
 import { createTool } from "../tool";
 import type { Toolkit } from "../tool/toolkit";
@@ -113,6 +118,7 @@ export type TaskToolOptions = {
   systemPrompt?: string | null;
   taskDescription?: string | null;
   maxSteps?: number;
+  supervisorConfig?: SupervisorConfig;
 };
 
 export type PlanAgentOptions = Omit<
@@ -673,6 +679,7 @@ function createTaskToolkit(options: {
   const subAgentManager = new SubAgentManager(
     sourceAgent.name,
     subagents.map((s) => s.config),
+    taskOptions?.supervisorConfig,
   );
   const subagentDescriptions = subagents.map(
     (subagent) => `${subagent.name}: ${subagent.description}`,
