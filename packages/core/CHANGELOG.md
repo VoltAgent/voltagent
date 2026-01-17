@@ -1,5 +1,76 @@
 # @voltagent/core
 
+## 2.1.1
+
+### Patch Changes
+
+- [#955](https://github.com/VoltAgent/voltagent/pull/955) [`1b00284`](https://github.com/VoltAgent/voltagent/commit/1b00284db76ae98204c9a989f6bea493c423fe2c) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add a model registry + router so you can use `provider/model` strings without importing provider packages
+
+  Usage:
+
+  ```ts
+  import { Agent } from "@voltagent/core";
+
+  const openaiAgent = new Agent({
+    name: "openai-agent",
+    instructions: "Summarize the report in 3 bullets.",
+    model: "openai/gpt-4o-mini",
+  });
+
+  const anthropicAgent = new Agent({
+    name: "anthropic-agent",
+    instructions: "Turn notes into action items.",
+    model: "anthropic/claude-3-5-sonnet",
+  });
+
+  const geminiAgent = new Agent({
+    name: "gemini-agent",
+    instructions: "Translate to Turkish.",
+    model: "google/gemini-2.0-flash",
+  });
+  ```
+
+- [#954](https://github.com/VoltAgent/voltagent/pull/954) [`c57f80c`](https://github.com/VoltAgent/voltagent/commit/c57f80c7026ac74c6971c95f33ccb6cf1cafd903) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: PlanAgent supports dynamic systemPrompt functions with prompt merging
+
+  ### What's New
+  - `systemPrompt` can now be a function that resolves per request (string or VoltOps prompt payload).
+  - Base PlanAgent instructions and extension prompts are appended consistently for dynamic prompts.
+
+  ### Usage
+
+  ```ts
+  import { PlanAgent } from "@voltagent/core";
+  import { openai } from "@ai-sdk/openai";
+
+  const agent = new PlanAgent({
+    name: "DynamicPlanner",
+    model: openai("gpt-4o"),
+    systemPrompt: async ({ context }) => {
+      const tenant = context.get("tenant") ?? "default";
+      return `Tenant: ${tenant}. Keep answers concise.`;
+    },
+  });
+
+  const context = new Map<string | symbol, unknown>();
+  context.set("tenant", "acme");
+
+  const result = await agent.generateText("Summarize the roadmap", { context });
+  console.log(result.text);
+  ```
+
+  Chat-style prompt support:
+
+  ```ts
+  const agent = new PlanAgent({
+    name: "DynamicChatPlanner",
+    model: openai("gpt-4o"),
+    systemPrompt: async () => ({
+      type: "chat",
+      messages: [{ role: "system", content: "You are a precise planner." }],
+    }),
+  });
+  ```
+
 ## 2.1.0
 
 ### Minor Changes
