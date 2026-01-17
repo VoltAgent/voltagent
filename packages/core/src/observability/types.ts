@@ -25,6 +25,13 @@ export interface ObservabilityConfig {
   logger?: Logger;
   resourceAttributes?: Record<string, any>;
   spanFilters?: SpanFilterConfig;
+  /**
+   * Controls whether flushOnFinish() runs automatically.
+   * - "auto": flush only in serverless (default)
+   * - "always": always flush
+   * - "never": never flush
+   */
+  flushOnFinishStrategy?: "auto" | "always" | "never";
   voltOpsSync?: {
     sampling?: ObservabilitySamplingConfig;
     // BatchSpanProcessor configuration

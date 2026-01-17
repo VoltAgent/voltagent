@@ -72,6 +72,7 @@ export class ServerlessVoltAgentObservability {
   private spanFilterOptions?: SpanFilterOptions;
   private instrumentationScopeName: string;
   private spanStack: Span[] = [];
+  private flushLock: Promise<void> = Promise.resolve();
 
   constructor(config: ObservabilityConfig = {}) {
     this.config = { ...config };
@@ -412,14 +413,23 @@ export class ServerlessVoltAgentObservability {
    * This is the preferred method to call at the end of a request.
    */
   async flushOnFinish(): Promise<void> {
-    const waitUntil = (globalThis as ObservabilityGlobals).___voltagent_wait_until;
+    const strategy = this.config.flushOnFinishStrategy ?? "auto";
+    if (strategy === "never") {
+      return;
+    }
 
-    if (waitUntil) {
+    const waitUntil = (globalThis as ObservabilityGlobals).___voltagent_wait_until;
+    const scheduleFlush = () =>
+      this.withFlushLock(async () => {
+        await this.forceFlush();
+      });
+
+    if (strategy !== "always" && waitUntil) {
       try {
         // If waitUntil is available (Cloudflare/Vercel), schedule flush in background
         // and return immediately to unblock the response.
         waitUntil(
-          this.forceFlush().catch((err) => {
+          scheduleFlush().catch((err) => {
             // eslint-disable-next-line no-console
             console.warn("[voltagent] Background flush failed", err);
           }),
@@ -434,7 +444,21 @@ export class ServerlessVoltAgentObservability {
     }
 
     // Fallback: Must wait for flush to ensure data is sent
-    await this.forceFlush();
+    await scheduleFlush();
+  }
+
+  private async withFlushLock<T>(fn: () => Promise<T>): Promise<T> {
+    const previous = this.flushLock;
+    let release!: () => void;
+    this.flushLock = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
   }
 
   getProvider(): BasicTracerProvider {

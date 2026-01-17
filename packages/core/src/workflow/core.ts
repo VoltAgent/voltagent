@@ -1184,7 +1184,7 @@ export function createWorkflow<
             traceContext.end("cancelled");
 
             // Ensure spans are flushed (critical for serverless environments)
-            await observability.flushOnFinish();
+            await safeFlushOnFinish(observability);
 
             workflowRegistry.activeExecutions.delete(executionId);
 
@@ -1355,7 +1355,7 @@ export function createWorkflow<
             traceContext.end("suspended");
 
             // Ensure spans are flushed (critical for serverless environments)
-            await observability.flushOnFinish();
+            await safeFlushOnFinish(observability);
 
             // Log workflow suspension with context
             runLogger.debug(
@@ -1529,7 +1529,7 @@ export function createWorkflow<
             traceContext.end("suspended");
 
             // Ensure spans are flushed (critical for serverless environments)
-            await observability.flushOnFinish();
+            await safeFlushOnFinish(observability);
 
             // Save suspension state to workflow's own Memory V2
             try {
@@ -1812,7 +1812,7 @@ export function createWorkflow<
         traceContext.end("completed");
 
         // Ensure spans are flushed (critical for serverless environments)
-        await observability.flushOnFinish();
+        await safeFlushOnFinish(observability);
 
         // Update Memory V2 state to completed with events and output
         try {
@@ -1881,7 +1881,7 @@ export function createWorkflow<
           traceContext.end("cancelled");
 
           // Ensure spans are flushed (critical for serverless environments)
-          await observability.flushOnFinish();
+          await safeFlushOnFinish(observability);
 
           workflowRegistry.activeExecutions.delete(executionId);
 
@@ -1940,7 +1940,7 @@ export function createWorkflow<
           traceContext.end("suspended");
 
           // Ensure spans are flushed (critical for serverless environments)
-          await observability.flushOnFinish();
+          await safeFlushOnFinish(observability);
           if (stateManager.state.status === "suspended") {
             await runTerminalHooks("suspended", { includeEnd: false });
           }
@@ -1966,7 +1966,7 @@ export function createWorkflow<
         traceContext.end("error", error as Error);
 
         // Ensure spans are flushed (critical for serverless environments)
-        await observability.flushOnFinish();
+        await safeFlushOnFinish(observability);
 
         // Log workflow error with context
         runLogger.debug(
@@ -2404,6 +2404,14 @@ async function executeWithSignalCheck<T>(
 
   // Race between the actual function and abort signal
   return Promise.race([fn(), abortPromise]);
+}
+
+async function safeFlushOnFinish(observability: VoltAgentObservability): Promise<void> {
+  try {
+    await observability.flushOnFinish();
+  } catch {
+    // Swallow flush errors to avoid failing the workflow.
+  }
 }
 
 /**

@@ -39,6 +39,7 @@ export class VoltAgentObservability {
   private logger: Logger;
   private spanFilterOptions?: SpanFilterOptions;
   private instrumentationScopeName: string;
+  private flushLock: Promise<void> = Promise.resolve();
 
   constructor(config: ObservabilityConfig = {}) {
     this.config = config;
@@ -382,7 +383,37 @@ export class VoltAgentObservability {
    * is incorrectly detected or if we are in a short-lived process.
    */
   async flushOnFinish(): Promise<void> {
-    await this.forceFlush();
+    if (!this.shouldFlushOnFinish()) {
+      return;
+    }
+    await this.withFlushLock(async () => {
+      await this.forceFlush();
+    });
+  }
+
+  private shouldFlushOnFinish(): boolean {
+    const strategy = this.config.flushOnFinishStrategy ?? "auto";
+    if (strategy === "never") {
+      return false;
+    }
+    if (strategy === "always") {
+      return true;
+    }
+    return false;
+  }
+
+  private async withFlushLock<T>(fn: () => Promise<T>): Promise<T> {
+    const previous = this.flushLock;
+    let release!: () => void;
+    this.flushLock = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
   }
 
   getProvider(): NodeTracerProvider {
