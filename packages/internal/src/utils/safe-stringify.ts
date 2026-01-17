@@ -26,34 +26,38 @@ export function safeStringify(
 }
 
 function safeStringifyReplacer(seen: WeakSet<DangerouslyAllowAny>) {
-  const replacer = (_key: string, value: DangerouslyAllowAny) => {
-    // Handle objects with a custom `.toJSON()` method.
-    if (typeof value?.toJSON === "function") {
-      // biome-ignore lint/style/noParameterAssign: needed to handle circular references
-      value = value.toJSON();
+  const stack: DangerouslyAllowAny[] = [];
+  return function safeStringifyCircularReplacer(
+    this: DangerouslyAllowAny,
+    _key: string,
+    value: DangerouslyAllowAny,
+  ) {
+    if (stack.length === 0) {
+      stack.push(this);
+    } else {
+      const thisIndex = stack.indexOf(this);
+      if (thisIndex === -1) {
+        stack.push(this);
+      } else {
+        stack.splice(thisIndex + 1);
+      }
     }
 
-    if (!(value !== null && typeof value === "object")) {
-      return value;
+    if (value && typeof value === "object") {
+      if (typeof value.toJSON === "function") {
+        // biome-ignore lint/style/noParameterAssign: needed to handle circular references
+        value = value.toJSON();
+      }
+
+      if (stack.includes(value)) {
+        return "[Circular]";
+      }
+
+      if (!seen.has(value)) {
+        seen.add(value);
+      }
     }
 
-    if (seen.has(value)) {
-      return "[Circular]";
-    }
-
-    seen.add(value);
-
-    const newValue = Array.isArray(value) ? [] : {};
-
-    for (const [key2, value2] of Object.entries(value)) {
-      // @ts-expect-error - ignore as this is needed to handle circular references
-      newValue[key2] = replacer(key2, value2);
-    }
-
-    seen.delete(value);
-
-    return newValue;
+    return value;
   };
-
-  return replacer;
 }
