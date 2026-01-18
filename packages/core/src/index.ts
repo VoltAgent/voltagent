@@ -81,10 +81,15 @@ export {
   createDefaultSafetyGuardrails,
 } from "./agent/guardrails/defaults";
 export { createInputGuardrail, createOutputGuardrail } from "./agent/guardrail";
+export { createInputMiddleware, createOutputMiddleware } from "./agent/middleware";
 export type {
   CreateInputGuardrailOptions,
   CreateOutputGuardrailOptions,
 } from "./agent/guardrail";
+export type {
+  CreateInputMiddlewareOptions,
+  CreateOutputMiddlewareOptions,
+} from "./agent/middleware";
 
 // Observability exports
 export { VoltAgentObservability } from "./observability";
@@ -166,6 +171,7 @@ export type {
   AgentOptions,
   AgentSummarizationOptions,
   AgentModelReference,
+  AgentModelConfig,
   AgentModelValue,
   AgentFeedbackOptions,
   AgentFeedbackMetadata,
@@ -207,10 +213,25 @@ export type {
   InputGuardrailResult,
   OutputGuardrailArgs,
   OutputGuardrailResult,
+  InputMiddleware,
+  OutputMiddleware,
+  InputMiddlewareArgs,
+  OutputMiddlewareArgs,
+  InputMiddlewareResult,
+  OutputMiddlewareResult,
+  MiddlewareFunction,
+  MiddlewareDefinition,
+  MiddlewareDirection,
+  MiddlewareContext,
 } from "./agent/types";
-export type { VoltAgentError, AbortError } from "./agent/errors";
+export type {
+  VoltAgentError,
+  AbortError,
+  MiddlewareAbortError,
+  MiddlewareAbortOptions,
+} from "./agent/errors";
 export { ToolDeniedError, ClientHTTPError } from "./agent/errors";
-export { isAbortError, isVoltAgentError } from "./agent/errors";
+export { isAbortError, isMiddlewareAbortError, isVoltAgentError } from "./agent/errors";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";
 export * from "./utils";

@@ -40,6 +40,9 @@ const agent = new Agent({
 
 The `instructions` property defines the agent's behavior. The `model` can be an ai-sdk `LanguageModel` or a `provider/model` string resolved by VoltAgent. See [Model Router & Registry](/docs/getting-started/model-router) for details.
 
+To configure fallback lists and per-model retries, see [Retries and Fallbacks](/docs/agents/retries-fallback).
+To run pre-guardrail input/output handlers, see [Middleware](/docs/agents/middleware).
+
 ## Using Agents: Direct Method Calls
 
 Agents have two core methods for generating responses:

@@ -210,8 +210,8 @@ const result = await supervisor.streamText("Process data");
 // result contains error message like "Error in DataProcessor: Stream failed"
 ```
 
-:::info Native Retry Support
-VoltAgent uses the AI SDK's native retry mechanism (default: 3 attempts). Setting `throwOnStreamError: true` is useful for custom error handling or logging at a higher level, not for implementing retry logic.
+:::info Retry Behavior
+VoltAgent retries model calls based on `maxRetries`. `throwOnStreamError` controls how stream errors are surfaced; it does not change retry or fallback behavior.
 :::
 
 **Silent Errors - Custom Messaging:**

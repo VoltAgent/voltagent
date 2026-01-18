@@ -40,7 +40,7 @@ const agent = new Agent({
 
 ## Provider Selection
 
-Choose any ai-sdk provider package that fits your needs (OpenAI, Anthropic, Google, Groq, Mistral, Vertex, Bedrock, etc.), or use model strings.
+Use any ai-sdk provider package you have configured (OpenAI, Anthropic, Google, Groq, Mistral, Vertex, Bedrock, etc.), or use model strings.
 For installation and an up-to-date model matrix, see:
 
 **[Providers & Models](/docs/getting-started/providers-models)**
@@ -48,3 +48,9 @@ For installation and an up-to-date model matrix, see:
 For how model strings are resolved and how environment variables map, see:
 
 **[Model Router & Registry](/docs/getting-started/model-router)**
+
+## Retries and Fallbacks
+
+For retry counts and fallback lists, see:
+
+**[Retries and Fallbacks](/docs/agents/retries-fallback)**

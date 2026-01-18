@@ -287,6 +287,12 @@ describe("Agent Type System", () => {
 
       const dynamicModel: AgentModelValue = async () => mockModel;
       expectTypeOf(dynamicModel).toMatchTypeOf<AgentModelValue>();
+
+      const fallbackModels: AgentModelValue = [
+        { model: "openai/gpt-4o-mini", maxRetries: 2 },
+        { model: async () => mockModel, enabled: false },
+      ];
+      expectTypeOf(fallbackModels).toMatchTypeOf<AgentModelValue>();
     });
 
     it("should handle ToolsDynamicValue", () => {

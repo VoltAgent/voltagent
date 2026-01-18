@@ -9,6 +9,7 @@ export enum NodeType {
   MESSAGE = "message",
   OUTPUT = "output",
   GUARDRAIL = "guardrail",
+  MIDDLEWARE = "middleware",
   RETRIEVER = "retriever",
   VECTOR = "vector",
   EMBEDDING = "embedding",

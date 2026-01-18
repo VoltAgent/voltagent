@@ -4,7 +4,7 @@ import type { AgentTool } from "../../tool";
 import type { Agent } from "../agent";
 import type { AbortError, CancellationError, VoltAgentError } from "../errors";
 import type { ToolExecuteOptions, UsageInfo } from "../providers/base/types";
-import type { AgentOperationOutput, OperationContext } from "../types";
+import type { AgentEvalOperationType, AgentOperationOutput, OperationContext } from "../types";
 
 // Argument Object Interfaces (old API restored, adapted for AI SDK types)
 export interface OnStartHookArgs {
@@ -114,6 +114,54 @@ export interface OnStepFinishHookArgs {
   context: OperationContext;
 }
 
+export type RetrySource = "llm" | "middleware";
+
+export interface OnRetryHookArgsBase {
+  agent: Agent;
+  context: OperationContext;
+  operation: AgentEvalOperationType;
+  source: RetrySource;
+}
+
+export interface OnRetryLLMHookArgs extends OnRetryHookArgsBase {
+  source: "llm";
+  modelName: string;
+  modelIndex: number;
+  attempt: number;
+  nextAttempt: number;
+  maxRetries: number;
+  error: unknown;
+  isRetryable?: boolean;
+  statusCode?: number;
+}
+
+export interface OnRetryMiddlewareHookArgs extends OnRetryHookArgsBase {
+  source: "middleware";
+  middlewareId?: string | null;
+  retryCount: number;
+  maxRetries: number;
+  reason?: string;
+  metadata?: unknown;
+}
+
+export type OnRetryHookArgs = OnRetryLLMHookArgs | OnRetryMiddlewareHookArgs;
+
+export type FallbackStage = "resolve" | "execute";
+
+export interface OnFallbackHookArgs {
+  agent: Agent;
+  context: OperationContext;
+  operation: AgentEvalOperationType;
+  stage: FallbackStage;
+  fromModel: string;
+  fromModelIndex: number;
+  maxRetries: number;
+  attempt?: number;
+  error: unknown;
+  nextModel?: string | null;
+  nextModelIndex?: number;
+}
+
 // Hook Type Aliases (object-arg style)
 export type AgentHookOnStart = (args: OnStartHookArgs) => Promise<void> | void;
 export type AgentHookOnEnd = (args: OnEndHookArgs) => Promise<void> | void;
@@ -129,6 +177,8 @@ export type AgentHookOnPrepareModelMessages = (
 ) => Promise<OnPrepareModelMessagesHookResult> | OnPrepareModelMessagesHookResult;
 export type AgentHookOnError = (args: OnErrorHookArgs) => Promise<void> | void;
 export type AgentHookOnStepFinish = (args: OnStepFinishHookArgs) => Promise<void> | void;
+export type AgentHookOnRetry = (args: OnRetryHookArgs) => Promise<void> | void;
+export type AgentHookOnFallback = (args: OnFallbackHookArgs) => Promise<void> | void;
 
 /**
  * Type definition for agent hooks using single argument objects.
@@ -145,6 +195,8 @@ export type AgentHooks = {
   // Additional (kept for convenience)
   onError?: AgentHookOnError;
   onStepFinish?: AgentHookOnStepFinish;
+  onRetry?: AgentHookOnRetry;
+  onFallback?: AgentHookOnFallback;
 };
 
 /**
@@ -161,6 +213,8 @@ const defaultHooks: Required<AgentHooks> = {
   onPrepareModelMessages: async (_args: OnPrepareModelMessagesHookArgs) => ({}),
   onError: async (_args: OnErrorHookArgs) => {},
   onStepFinish: async (_args: OnStepFinishHookArgs) => {},
+  onRetry: async (_args: OnRetryHookArgs) => {},
+  onFallback: async (_args: OnFallbackHookArgs) => {},
 };
 
 /**
@@ -178,5 +232,7 @@ export function createHooks(hooks: Partial<AgentHooks> = {}): AgentHooks {
     onPrepareModelMessages: hooks.onPrepareModelMessages || defaultHooks.onPrepareModelMessages,
     onError: hooks.onError || defaultHooks.onError,
     onStepFinish: hooks.onStepFinish || defaultHooks.onStepFinish,
+    onRetry: hooks.onRetry || defaultHooks.onRetry,
+    onFallback: hooks.onFallback || defaultHooks.onFallback,
   };
 }

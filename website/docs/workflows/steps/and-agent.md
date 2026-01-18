@@ -1,4 +1,4 @@
-# andAgent
+# AndAgent
 
 > Add AI to your workflow. Get structured, typed responses from language models.
 
@@ -91,6 +91,64 @@ By default, the step result replaces the workflow data with the agent output. If
   (output, { data }) => ({ ...data, emailType: output })
 )
 ```
+
+## Middleware and Retries
+
+`andAgent` passes the config object to `agent.generateText`, so you can use
+`inputMiddlewares`, `outputMiddlewares`, `maxMiddlewareRetries`, and `maxRetries`
+per step.
+
+```ts
+import { Agent, createInputMiddleware, createOutputMiddleware } from "@voltagent/core";
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+
+const redactInput = createInputMiddleware({
+  name: "RedactPII",
+  handler: ({ input }) => {
+    if (typeof input !== "string") return input;
+    return input.replace(/\b\d{16}\b/g, "[redacted]");
+  },
+});
+
+const requireSource = createOutputMiddleware<string>({
+  name: "RequireSource",
+  handler: ({ output, abort }) => {
+    if (!output.includes("source:")) {
+      abort("Missing source in summary", { retry: true });
+    }
+    return output;
+  },
+});
+
+const agent = new Agent({
+  name: "Assistant",
+  model: "openai/gpt-4o-mini",
+  instructions: "Summarize documents with sources.",
+});
+
+createWorkflowChain({
+  id: "doc-summary",
+  input: z.object({ text: z.string() }),
+}).andAgent(async ({ data }) => `Summarize and include source lines: ${data.text}`, agent, {
+  schema: z.object({
+    summary: z.string(),
+    sources: z.array(z.string()),
+  }),
+  inputMiddlewares: [redactInput],
+  outputMiddlewares: [requireSource],
+  maxMiddlewareRetries: 1,
+  maxRetries: 2,
+});
+```
+
+Retry behavior:
+
+- `maxRetries` controls LLM retries for the selected model (total attempts = `maxRetries + 1`).
+- `maxMiddlewareRetries` controls retries triggered by `abort(..., { retry: true })`.
+- A middleware retry restarts the step: middlewares, guardrails, hooks, model selection, and fallback.
+- Output middleware runs on the model text and can trigger retries. It does not change the parsed
+  object returned by `andAgent`.
 
 ## Common Patterns
 

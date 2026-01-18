@@ -17,7 +17,7 @@ import type { StreamEvent } from "../utils/streams";
 import type { Voice } from "../voice/types";
 import type { VoltOpsClient } from "../voltops/client";
 import type { Agent } from "./agent";
-import type { CancellationError, VoltAgentError } from "./errors";
+import type { CancellationError, MiddlewareAbortOptions, VoltAgentError } from "./errors";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
@@ -179,9 +179,33 @@ export type ModelDynamicValue<T> = T | DynamicValue<T>;
 export type AgentModelReference = LanguageModel | ModelRouterModelId;
 
 /**
- * Agent model value that can be static or dynamic
+ * Model fallback configuration for agents.
  */
-export type AgentModelValue = ModelDynamicValue<AgentModelReference>;
+export type AgentModelConfig = {
+  /**
+   * Optional stable identifier for the model entry (useful for logging).
+   */
+  id?: string;
+  /**
+   * Model reference (static or dynamic).
+   */
+  model: ModelDynamicValue<AgentModelReference>;
+  /**
+   * Maximum number of retries for this model before falling back.
+   * Defaults to the agent's maxRetries.
+   */
+  maxRetries?: number;
+  /**
+   * Whether this model is enabled for fallback selection.
+   * @default true
+   */
+  enabled?: boolean;
+};
+
+/**
+ * Agent model value that can be static, dynamic, or a fallback list.
+ */
+export type AgentModelValue = ModelDynamicValue<AgentModelReference> | AgentModelConfig[];
 
 /**
  * Enhanced dynamic value for tools that supports static or dynamic values
@@ -450,6 +474,71 @@ export type OutputGuardrail<TOutput = unknown> =
   | OutputGuardrailFunction<TOutput>
   | OutputGuardrailDefinition<TOutput>;
 
+// -----------------------------------------------------------------------------
+// Middleware Types
+// -----------------------------------------------------------------------------
+
+export type MiddlewareDirection = "input" | "output";
+
+export type MiddlewareFunctionMetadata = {
+  middlewareId?: string;
+  middlewareName?: string;
+  middlewareDescription?: string;
+  middlewareTags?: string[];
+};
+
+export type MiddlewareFunction<TArgs, TResult> = ((args: TArgs) => TResult | Promise<TResult>) &
+  MiddlewareFunctionMetadata;
+
+export interface MiddlewareDefinition<TArgs, TResult> {
+  id?: string;
+  name?: string;
+  description?: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+  handler: MiddlewareFunction<TArgs, TResult>;
+}
+
+export interface MiddlewareContext {
+  agent: Agent;
+  context: OperationContext;
+  operation: AgentEvalOperationType;
+  retryCount: number;
+}
+
+export interface InputMiddlewareArgs extends MiddlewareContext {
+  input: string | UIMessage[] | BaseMessage[];
+  originalInput: string | UIMessage[] | BaseMessage[];
+  abort: <TMetadata = unknown>(
+    reason?: string,
+    options?: MiddlewareAbortOptions<TMetadata>,
+  ) => never;
+}
+
+export type InputMiddlewareResult = string | UIMessage[] | BaseMessage[] | undefined;
+
+export interface OutputMiddlewareArgs<TOutput = unknown> extends MiddlewareContext {
+  output: TOutput;
+  originalOutput: TOutput;
+  usage?: UsageInfo;
+  finishReason?: string | null;
+  warnings?: unknown[] | null;
+  abort: <TMetadata = unknown>(
+    reason?: string,
+    options?: MiddlewareAbortOptions<TMetadata>,
+  ) => never;
+}
+
+export type OutputMiddlewareResult<TOutput = unknown> = TOutput | undefined;
+
+export type InputMiddleware =
+  | MiddlewareDefinition<InputMiddlewareArgs, InputMiddlewareResult>
+  | MiddlewareFunction<InputMiddlewareArgs, InputMiddlewareResult>;
+
+export type OutputMiddleware<TOutput = unknown> =
+  | MiddlewareDefinition<OutputMiddlewareArgs<TOutput>, OutputMiddlewareResult<TOutput>>
+  | MiddlewareFunction<OutputMiddlewareArgs<TOutput>, OutputMiddlewareResult<TOutput>>;
+
 export type AgentSummarizationOptions = {
   enabled?: boolean;
   triggerTokens?: number;
@@ -493,10 +582,24 @@ export type AgentOptions = {
   inputGuardrails?: InputGuardrail[];
   outputGuardrails?: OutputGuardrail<any>[];
 
+  // Middleware
+  inputMiddlewares?: InputMiddleware[];
+  outputMiddlewares?: OutputMiddleware<any>[];
+  /**
+   * Default retry count for middleware-triggered retries.
+   * Per-call maxMiddlewareRetries overrides this value.
+   */
+  maxMiddlewareRetries?: number;
+
   // Configuration
   temperature?: number;
   maxOutputTokens?: number;
   maxSteps?: number;
+  /**
+   * Default retry count for model calls before falling back.
+   * Overridden by per-model maxRetries or per-call maxRetries.
+   */
+  maxRetries?: number;
   feedback?: AgentFeedbackOptions | boolean;
   /**
    * Default stop condition for step execution (ai-sdk `stopWhen`).

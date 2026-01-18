@@ -164,6 +164,7 @@ export class AgentTraceContext {
       | "vector"
       | "agent"
       | "guardrail"
+      | "middleware"
       | "llm"
       | "summary",
     options?: {
@@ -200,6 +201,7 @@ export class AgentTraceContext {
       | "vector"
       | "agent"
       | "guardrail"
+      | "middleware"
       | "llm"
       | "summary",
     options?: {
