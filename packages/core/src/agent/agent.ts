@@ -4276,6 +4276,9 @@ export class Agent {
         modelName = this.getModelName(resolvedModel);
       } catch (error) {
         lastError = error;
+        if (oc.abortController.signal.aborted) {
+          throw error;
+        }
         const candidateModelName =
           typeof candidate.model === "string"
             ? candidate.model
@@ -4350,6 +4353,9 @@ export class Agent {
           return { result, modelName, modelIndex: index, maxRetries };
         } catch (error) {
           lastError = error;
+          if (oc.abortController.signal.aborted) {
+            throw error;
+          }
           const fallbackEligible = this.shouldFallbackOnError(error);
           const retryEligible = fallbackEligible && this.isRetryableError(error);
           const canRetry = retryEligible && !isLastAttempt;
@@ -4447,7 +4453,14 @@ export class Agent {
     stream: AsyncIterableStream<PART>,
     state: { hasOutput: boolean; lastError?: unknown },
   ): Promise<{ status: "ok" } | { status: "error"; error: unknown }> {
-    const reader = (stream as ReadableStream<PART>).getReader();
+    const readableStream = stream as ReadableStream<PART>;
+    const reader =
+      readableStream && typeof readableStream.getReader === "function"
+        ? readableStream.getReader()
+        : null;
+    if (!reader) {
+      return { status: "ok" };
+    }
     let sawNonStart = false;
 
     try {
