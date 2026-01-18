@@ -31,7 +31,6 @@ const normalizeInput = createInputMiddleware({
 const requireSignature = createOutputMiddleware<string>({
   name: "RequireSignature",
   handler: ({ output, abort }) => {
-    console.log("output", output);
     if (!output.includes("-- Support")) {
       abort(
         'Retry required. Respond again and end the response with "-- Support". Do not omit it.',
@@ -60,7 +59,3 @@ new VoltAgent({
   server: honoServer(),
   logger,
 });
-
-(async () => {
-  await agent.generateText("selam");
-})();

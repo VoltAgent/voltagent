@@ -83,8 +83,8 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 ## All Examples
 
 - [Base Starter](./base) — Minimal VoltAgent starter with a single agent, memory, and dev server.
-- [Retries and Fallbacks](./with-retries-fallback) - Model fallback list with per-model retries and agent-level defaults.
-- [Middleware](./with-middleware) - Input/output middleware with retry feedback.
+- [Retries and Fallbacks](./with-retries-fallback) — Model fallback list with per-model retries and agent-level defaults.
+- [Middleware](./with-middleware) — Input/output middleware with retry feedback.
 - [PlanAgents](./with-planagents) — Quickstart for PlanAgents with planning, filesystem tools, and subagent tasks.
 - [Slack](./with-slack) — Slack app mention bot that replies in the same channel/thread via VoltOps Slack actions.
 - [Airtable](./with-airtable) — React to new Airtable records and write updates back using VoltOps Airtable actions.
