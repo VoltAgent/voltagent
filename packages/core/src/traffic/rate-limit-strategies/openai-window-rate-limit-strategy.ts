@@ -54,13 +54,20 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
    * - Requests are blocked only when headers or 429 responses instruct us to wait.
    */
   resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
-    // --- Request window enforcement ---
-    if (this.requestsPerMinute !== undefined || this.requestState) {
-      const decision = this.resolveRequestWindow(next, logger);
-      if (decision) return decision;
-    } else {
-      // Bootstrap protection: allow exactly one in-flight request
-      if (!next.rateLimitKey && this.tokensPerMinute === undefined) {
+    const now = Date.now();
+    const requestState = this.ensureRequestState(now);
+    const tokenState = this.ensureTokenState(now);
+
+    if (!requestState || !tokenState) {
+      if (requestState && requestState.remaining <= 0 && now < requestState.resetAt) {
+        return { kind: "wait", wakeUpAt: requestState.resetAt };
+      }
+      if (tokenState && tokenState.remaining <= 0 && now < tokenState.resetAt) {
+        return { kind: "wait", wakeUpAt: tokenState.resetAt };
+      }
+
+      // Bootstrap after reset: allow a single probe request until headers refresh.
+      if (!next.rateLimitKey) {
         const log = logger?.child({ module: "rate-limiter" });
 
         if (this.bootstrapReserved >= 1) {
@@ -79,6 +86,14 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
           bootstrapReserved: this.bootstrapReserved,
         });
       }
+
+      return null;
+    }
+
+    // --- Request window enforcement ---
+    if (this.requestsPerMinute !== undefined || this.requestState) {
+      const decision = this.resolveRequestWindow(next, logger);
+      if (decision) return decision;
     }
 
     // --- Token window enforcement ---
@@ -92,7 +107,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
   onDispatch(_logger?: Logger): void {}
 
   onComplete(_logger?: Logger): void {
-    if (this.requestState || this.requestsPerMinute !== undefined) {
+    if (this.requestState) {
       const now = Date.now();
       const state = this.ensureRequestState(now);
       if (!state) return;
@@ -237,20 +252,15 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
   // STATE MANAGEMENT
   // ---------------------------------------------------------------------------
 
-  private ensureRequestState(now: number): RateLimitWindowState {
+  private ensureRequestState(now: number): RateLimitWindowState | undefined {
     const configuredLimit = this.requestsPerMinute;
     const state = this.requestState;
 
-    if (!state || now >= state.resetAt) {
-      const limit = configuredLimit ?? state?.limit ?? 0;
-      this.requestState = {
-        limit,
-        remaining: limit,
-        resetAt: now + this.windowMs,
-        slotReservedForStream: 0,
-        nextAllowedAt: now,
-      };
-      return this.requestState;
+    if (!state) return undefined;
+
+    if (now >= state.resetAt) {
+      this.requestState = undefined; // After reset, discard state and re-bootstrap.
+      return undefined;
     }
 
     if (configuredLimit !== undefined && configuredLimit !== state.limit) {
@@ -265,28 +275,11 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     const configuredLimit = this.tokensPerMinute;
     const state = this.tokenState;
 
-    if (!state) {
-      if (configuredLimit === undefined) return undefined;
-      this.tokenState = {
-        limit: configuredLimit,
-        remaining: configuredLimit,
-        resetAt: now + this.windowMs,
-        slotReservedForStream: 0,
-        nextAllowedAt: now,
-      };
-      return this.tokenState;
-    }
+    if (!state) return undefined;
 
     if (now >= state.resetAt) {
-      const limit = configuredLimit ?? state.limit;
-      this.tokenState = {
-        limit,
-        remaining: limit,
-        resetAt: now + this.windowMs,
-        slotReservedForStream: 0,
-        nextAllowedAt: now,
-      };
-      return this.tokenState;
+      this.tokenState = undefined; // After reset, discard state and re-bootstrap.
+      return undefined;
     }
 
     if (configuredLimit !== undefined && configuredLimit !== state.limit) {
