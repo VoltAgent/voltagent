@@ -47,6 +47,9 @@ function safeStringifyReplacer(seen: WeakSet<DangerouslyAllowAny>) {
       if (typeof value.toJSON === "function") {
         // biome-ignore lint/style/noParameterAssign: needed to handle circular references
         value = value.toJSON();
+        if (!(value && typeof value === "object")) {
+          return value;
+        }
       }
 
       if (stack.includes(value)) {
