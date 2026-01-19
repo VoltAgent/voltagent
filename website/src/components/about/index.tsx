@@ -71,6 +71,7 @@ export function Manifesto() {
 
         const contributorsData = await contributorsResponse.json();
         const loveData = await loveResponse.json();
+        console.log(contributorsData, loveData);
 
         setContributors(contributorsData.contributors);
         setStars(loveData.stars);
@@ -227,7 +228,7 @@ export function Manifesto() {
           Angel Investors
         </h2>
 
-        <div className="grid grid-cols-2 place-items-center gap-6 sm:gap-8 md:gap-12 max-w-3xl mx-auto mt-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 place-items-center gap-6 sm:gap-8 md:gap-12 max-w-3xl mx-auto mt-6">
           {/* Static angel investors, no loading needed */}
           <div className="flex flex-col items-center text-center">
             <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
@@ -292,6 +293,29 @@ export function Manifesto() {
               </a>
             </div>
           </div>
+
+          <div className="flex flex-col items-center text-center">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+              <img
+                src="https://cdn.voltagent.dev/website/team/berkay.jpeg"
+                alt="Berkay Mollamustafaoglu"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white font-medium text-lg">Berkay Mollamustafaoglu</span>
+            <p className="text-main-emerald text-sm mt-1">CEO at Actioner</p>
+            <div className="flex space-x-3 mt-0">
+              <a
+                href="https://www.linkedin.com/in/berkay/"
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-gray-400 hover:text-main-emerald transition-colors"
+                aria-label="LinkedIn Profile"
+              >
+                <LinkedInLogo className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -318,7 +342,7 @@ export function Manifesto() {
                     <SkeletonText width="60%" height="0.75rem" />
                   </div>
                 ))
-            : contributors?.slice(3).map((contributor) => (
+            : contributors?.map((contributor) => (
                 <a
                   key={contributor.login}
                   href={contributor.html_url}
