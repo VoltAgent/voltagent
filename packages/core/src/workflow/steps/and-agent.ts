@@ -1,12 +1,25 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
-import { Output, type UIMessage } from "ai";
+import { type InferGenerateOutput, Output, type UIMessage } from "ai";
 import type { z } from "zod";
 import type { Agent, BaseGenerationOptions } from "../../agent/agent";
 import { convertUsage } from "../../utils/usage-converter";
 import type { InternalWorkflowFunc, WorkflowExecuteContext } from "../internal/types";
 import type { WorkflowStepAgent } from "./types";
 
-export type AgentConfig<SCHEMA extends z.ZodTypeAny, INPUT, DATA> = BaseGenerationOptions & {
+type OutputSpec = Output.Output<unknown, unknown>;
+
+export type AgentOutputSchema = OutputSpec | z.ZodTypeAny;
+
+export type InferAgentOutput<SCHEMA extends AgentOutputSchema> = SCHEMA extends OutputSpec
+  ? InferGenerateOutput<SCHEMA>
+  : SCHEMA extends z.ZodTypeAny
+    ? z.infer<SCHEMA>
+    : never;
+
+export type AgentConfig<SCHEMA extends AgentOutputSchema, INPUT, DATA> = Omit<
+  BaseGenerationOptions,
+  "output"
+> & {
   schema:
     | SCHEMA
     | ((
@@ -14,10 +27,20 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny, INPUT, DATA> = BaseGenerati
       ) => SCHEMA | Promise<SCHEMA>);
 };
 
-type AgentResultMapper<INPUT, DATA, SCHEMA extends z.ZodTypeAny, RESULT> = (
-  output: z.infer<SCHEMA>,
+type AgentResultMapper<INPUT, DATA, SCHEMA extends AgentOutputSchema, RESULT> = (
+  output: InferAgentOutput<SCHEMA>,
   context: WorkflowExecuteContext<INPUT, DATA, any, any>,
 ) => Promise<RESULT> | RESULT;
+
+const isOutputSpec = (value: unknown): value is OutputSpec => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as OutputSpec;
+  return (
+    typeof candidate.parseCompleteOutput === "function" &&
+    typeof candidate.parsePartialOutput === "function" &&
+    "responseFormat" in candidate
+  );
+};
 
 /**
  * Creates an agent step for a workflow
@@ -39,11 +62,16 @@ type AgentResultMapper<INPUT, DATA, SCHEMA extends z.ZodTypeAny, RESULT> = (
  *
  * @param task - The task (prompt) to execute for the agent, can be a string or a function that returns a string
  * @param agent - The agent to execute the task using `generateText`
- * @param config - The config for the agent (schema) `generateText` call
+ * @param config - The config for the agent (schema/output) `generateText` call
  * @param map - Optional mapper to shape or merge the agent output with existing data
  * @returns A workflow step that executes the agent with the task
  */
-export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny, RESULT = z.infer<SCHEMA>>(
+export function andAgent<
+  INPUT,
+  DATA,
+  SCHEMA extends AgentOutputSchema,
+  RESULT = InferAgentOutput<SCHEMA>,
+>(
   task:
     | UIMessage[]
     | ModelMessage[]
@@ -64,10 +92,11 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny, RESULT = z.in
       const { schema, ...restConfig } = config;
       const finalTask = typeof task === "function" ? await task(context) : task;
       const finalSchema = typeof schema === "function" ? await schema(context) : schema;
+      const output = isOutputSpec(finalSchema)
+        ? finalSchema
+        : Output.object({ schema: finalSchema });
 
-      const output = Output.object({ schema: finalSchema });
-
-      const mapOutput = async (outputValue: z.infer<SCHEMA>) => {
+      const mapOutput = async (outputValue: InferAgentOutput<SCHEMA>) => {
         if (map) {
           return (await map(outputValue, context)) as RESULT;
         }
@@ -99,7 +128,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny, RESULT = z.in
           }
           state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
-        return mapOutput(result.output as z.infer<SCHEMA>);
+        return mapOutput(result.output as InferAgentOutput<SCHEMA>);
       }
 
       // Step start event removed - now handled by OpenTelemetry spans
@@ -131,7 +160,7 @@ export function andAgent<INPUT, DATA, SCHEMA extends z.ZodTypeAny, RESULT = z.in
           state.usage.totalTokens += convertedUsage?.totalTokens || 0;
         }
 
-        return mapOutput(result.output as z.infer<SCHEMA>);
+        return mapOutput(result.output as InferAgentOutput<SCHEMA>);
       } catch (error) {
         // Check if this is a suspension, not an error
         if (

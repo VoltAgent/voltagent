@@ -1,3 +1,4 @@
+import { Output } from "ai";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
 import type { Agent } from "../agent/agent";
@@ -437,6 +438,27 @@ describe("workflow chain - type inference", () => {
               keywords: string[];
             }>();
             return { analysis: `${data.sentiment}: ${data.keywords.join(", ")}` };
+          },
+        });
+
+      expectTypeOf(workflow).not.toBeNever();
+    });
+
+    it("should infer andAgent output from output specs", () => {
+      const workflow = createWorkflowChain({
+        id: "test-agent-output",
+        name: "Test Agent Output",
+        input: z.object({ prompt: z.string() }),
+        result: z.array(z.string()),
+      })
+        .andAgent(async ({ data }) => `List: ${data.prompt}`, mockAgent, {
+          schema: Output.array({ element: z.string() }),
+        })
+        .andThen({
+          id: "ensure-array",
+          execute: async ({ data }) => {
+            expectTypeOf(data).toEqualTypeOf<string[]>();
+            return data;
           },
         });
 

@@ -33,20 +33,20 @@ const result = await workflow.run({ text: "I love this!" });
 
 ## How It Works
 
-`andAgent` = AI prompt + structured output schema:
+`andAgent` = AI prompt + structured output schema (Zod or `Output.*`):
 
 ```typescript
 .andAgent(
   prompt,     // What to ask the AI
   agent,      // Which AI to use
-  { schema }, // What shape the answer should be
+  { schema }, // Zod schema or ai-sdk Output.* spec
   map?        // Optional: merge/shape output with existing data
 )
 ```
 
 If you pass a function for `prompt`, it must return a Promise (use `async`) and resolve to a string, `UIMessage[]`, or `ModelMessage[]`.
 
-**Important:** `andAgent` uses `generateText` with `Output.object` under the hood, which means:
+**Important:** `andAgent` uses `generateText`. If you pass a Zod schema, it is wrapped with `Output.object`. If you pass an `Output.*` spec, it is used directly. This means:
 
 - ✅ You get **structured, typed responses** based on your schema
 - ✅ The agent **can use tools** during this step
@@ -89,6 +89,14 @@ By default, the step result replaces the workflow data with the agent output. If
   agent,
   { schema: z.object({ type: z.enum(["support", "sales", "spam"]) }) },
   (output, { data }) => ({ ...data, emailType: output })
+)
+
+// Use Output.* for non-object outputs (arrays, choices, json, text)
+// (Requires: import { Output } from "ai";)
+.andAgent(
+  async ({ data }) => `List tags for: ${data.topic}`,
+  agent,
+  { schema: Output.array({ element: z.string() }) }
 )
 ```
 
@@ -198,6 +206,24 @@ Retry behavior:
       mainTopic: z.string()
     })
   }
+)
+```
+
+### Arrays and Choices
+
+Requires `import { Output } from "ai";`
+
+```typescript
+.andAgent(
+  async ({ data }) => `Give 3 tags for: ${data.topic}`,
+  agent,
+  { schema: Output.array({ element: z.string() }) }
+)
+
+.andAgent(
+  async ({ data }) => `Pick a category for: ${data.title}`,
+  agent,
+  { schema: Output.choice({ options: ["news", "blog", "doc"] }) }
 )
 ```
 

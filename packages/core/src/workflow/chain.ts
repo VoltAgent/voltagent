@@ -3,7 +3,7 @@ import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { UIMessage } from "ai";
 import type { z } from "zod";
-import type { Agent, BaseGenerationOptions } from "../agent/agent";
+import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
 import type {
   InternalAnyWorkflowStep,
@@ -42,6 +42,7 @@ import {
   andWhen,
   andWorkflow,
 } from "./steps";
+import type { AgentConfig, AgentOutputSchema, InferAgentOutput } from "./steps/and-agent";
 import type { InternalWorkflow } from "./steps/types";
 import type {
   Workflow,
@@ -55,23 +56,7 @@ import type {
   WorkflowStreamWriter,
 } from "./types";
 
-/**
- * Agent configuration for the chain
- */
-export type AgentConfig<
-  SCHEMA extends z.ZodTypeAny,
-  INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
-  CURRENT_DATA,
-> = BaseGenerationOptions & {
-  schema:
-    | SCHEMA
-    | ((
-        context: Omit<
-          WorkflowExecuteContext<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, any, any>,
-          "suspend" | "writer"
-        >,
-      ) => SCHEMA | Promise<SCHEMA>);
-};
+export type { AgentConfig } from "./steps/and-agent";
 
 /**
  * A workflow chain that provides a fluent API for building workflows
@@ -164,7 +149,7 @@ export class WorkflowChain<
    * @param map - Optional mapper to shape or merge the agent output with existing data
    * @returns A workflow step that executes the agent with the task
    */
-  andAgent<SCHEMA extends z.ZodTypeAny>(
+  andAgent<SCHEMA extends AgentOutputSchema>(
     task:
       | string
       | UIMessage[]
@@ -177,10 +162,16 @@ export class WorkflowChain<
           any
         >,
     agent: Agent,
-    config: AgentConfig<SCHEMA, INPUT_SCHEMA, CURRENT_DATA>,
-  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, z.infer<SCHEMA>, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+    config: AgentConfig<SCHEMA, WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>,
+  ): WorkflowChain<
+    INPUT_SCHEMA,
+    RESULT_SCHEMA,
+    InferAgentOutput<SCHEMA>,
+    SUSPEND_SCHEMA,
+    RESUME_SCHEMA
+  >;
 
-  andAgent<SCHEMA extends z.ZodTypeAny, NEW_DATA>(
+  andAgent<SCHEMA extends AgentOutputSchema, NEW_DATA>(
     task:
       | string
       | UIMessage[]
@@ -193,9 +184,9 @@ export class WorkflowChain<
           any
         >,
     agent: Agent,
-    config: AgentConfig<SCHEMA, INPUT_SCHEMA, CURRENT_DATA>,
+    config: AgentConfig<SCHEMA, WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>,
     map: (
-      output: z.infer<SCHEMA>,
+      output: InferAgentOutput<SCHEMA>,
       context: WorkflowExecuteContext<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, any, any>,
     ) => Promise<NEW_DATA> | NEW_DATA,
   ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
@@ -213,7 +204,7 @@ export class WorkflowChain<
           any
         >,
     agent: Agent,
-    config: AgentConfig<z.ZodTypeAny, INPUT_SCHEMA, CURRENT_DATA>,
+    config: AgentConfig<AgentOutputSchema, WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA>,
     map?: (
       output: unknown,
       context: WorkflowExecuteContext<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, any, any>,

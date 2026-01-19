@@ -1,4 +1,5 @@
 import { safeStringify } from "@voltagent/internal";
+import { Output } from "ai";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
@@ -48,5 +49,33 @@ describe("andAgent", () => {
       userId: "u-1",
       emailType: { type: "support", priority: "high" },
     });
+  });
+
+  it("supports output specs for non-object schemas", async () => {
+    const agent = createTestAgent({
+      model: createMockLanguageModel({
+        doGenerate: {
+          ...defaultMockResponse,
+          content: [
+            {
+              type: "text" as const,
+              text: safeStringify({ elements: ["alpha", "beta"] }),
+            },
+          ],
+        },
+      }),
+    });
+
+    const step = andAgent(({ data }) => `List tags for ${data.topic}`, agent, {
+      schema: Output.array({ element: z.string() }),
+    });
+
+    const result = await step.execute(
+      createMockWorkflowExecuteContext({
+        data: { topic: "workflow" },
+      }),
+    );
+
+    expect(result).toEqual(["alpha", "beta"]);
   });
 });
