@@ -1,5 +1,38 @@
 # @voltagent/core
 
+## 2.1.4
+
+### Patch Changes
+
+- [#965](https://github.com/VoltAgent/voltagent/pull/965) [`0feb8b0`](https://github.com/VoltAgent/voltagent/commit/0feb8b049c6edd7474e496c0e0a829b1bf568f28) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: allow `andAgent` schema to accept `Output.*` specs (arrays, choices, json, text)
+
+  `andAgent` now supports the same output flexibility as `agent.generateText`, so you can return non-object
+  structures from workflow steps.
+
+  Usage:
+
+  ```ts
+  import { Output } from "ai";
+  import { z } from "zod";
+  import { Agent, createWorkflowChain } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Tagger",
+    model: "openai/gpt-4o-mini",
+    instructions: "Return tags only.",
+  });
+
+  const workflow = createWorkflowChain({
+    id: "tag-workflow",
+    input: z.object({ topic: z.string() }),
+  }).andAgent(async ({ data }) => `List tags for ${data.topic}`, agent, {
+    schema: Output.array({ element: z.string() }),
+  });
+
+  const result = await workflow.run({ topic: "workflows" });
+  // result: string[]
+  ```
+
 ## 2.1.3
 
 ### Patch Changes
