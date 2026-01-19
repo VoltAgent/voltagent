@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "author": "",
   "dependencies": {
-    "@voltagent/core": "^2.1.2",
+    "@voltagent/core": "^2.1.3",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/resumable-streams": "^2.0.1",
     "@voltagent/server-hono": "^2.0.3",

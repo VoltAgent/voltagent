@@ -1,5 +1,11 @@
 # @voltagent/internal
 
+## 1.0.3
+
+### Patch Changes
+
+- [#961](https://github.com/VoltAgent/voltagent/pull/961) [`c39fedd`](https://github.com/VoltAgent/voltagent/commit/c39fedd794486d630f509b5c91aa30f8fe5dc596) Thanks [@rallu](https://github.com/rallu)! - fix(internal): improve safeStringify function to handle circular references more effectively
+
 ## 1.0.2
 
 ### Patch Changes

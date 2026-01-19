@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "dependencies": {
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.1.2",
+    "@voltagent/core": "^2.1.3",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/server-hono": "^2.0.3",
     "@voltagent/serverless-hono": "^2.0.5",
