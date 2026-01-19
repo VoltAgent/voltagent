@@ -18,13 +18,14 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
   readonly handlesTokenLimits = true;
 
   private readonly key: string;
-  private readonly windowMs = 60_000;
 
   private readonly requestsPerMinute?: number;
   private readonly tokensPerMinute?: number;
 
   private requestState?: RateLimitWindowState;
   private tokenState?: RateLimitWindowState;
+  // NOTE: `remaining` tracks total budget; in-flight usage is via `slotReservedForStream`.
+  private retryAfterUntil?: number;
 
   // Used only during bootstrap when headers are not yet known
   private bootstrapReserved = 0;
@@ -55,50 +56,49 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
    */
   resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
     const now = Date.now();
+    if (this.retryAfterUntil !== undefined) {
+      if (now < this.retryAfterUntil) {
+        return { kind: "wait", wakeUpAt: this.retryAfterUntil }; // Retry-After blocks all traffic.
+      }
+      this.retryAfterUntil = undefined; // Expired Retry-After no longer applies.
+    }
     const requestState = this.ensureRequestState(now);
     const tokenState = this.ensureTokenState(now);
 
-    if (!requestState || !tokenState) {
-      if (requestState && requestState.remaining <= 0 && now < requestState.resetAt) {
-        return { kind: "wait", wakeUpAt: requestState.resetAt };
-      }
-      if (tokenState && tokenState.remaining <= 0 && now < tokenState.resetAt) {
-        return { kind: "wait", wakeUpAt: tokenState.resetAt };
-      }
-
-      // Bootstrap after reset: allow a single probe request until headers refresh.
-      if (!next.rateLimitKey) {
-        const log = logger?.child({ module: "rate-limiter" });
-
-        if (this.bootstrapReserved >= 1) {
-          log?.debug?.("OpenAI rate limit bootstrap active; waiting", {
-            rateLimitKey: this.key,
-            bootstrapReserved: this.bootstrapReserved,
-          });
-          return { kind: "wait" };
-        }
-
-        this.bootstrapReserved += 1;
-        next.rateLimitKey = this.key;
-
-        log?.debug?.("OpenAI rate limit bootstrap reserved", {
-          rateLimitKey: this.key,
-          bootstrapReserved: this.bootstrapReserved,
-        });
-      }
-
-      return null;
-    }
-
     // --- Request window enforcement ---
     if (this.requestsPerMinute !== undefined || this.requestState) {
-      const decision = this.resolveRequestWindow(next, logger);
-      if (decision) return decision;
+      if (requestState) {
+        const decision = this.resolveRequestWindow(next, logger);
+        if (decision) return decision;
+      }
     }
 
     // --- Token window enforcement ---
-    const tokenDecision = this.resolveTokenWindow(next, logger);
-    if (tokenDecision) return tokenDecision;
+    if (tokenState) {
+      const tokenDecision = this.resolveTokenWindow(next, logger);
+      if (tokenDecision) return tokenDecision;
+    }
+
+    const needsBootstrap = !requestState && !tokenState;
+    if (needsBootstrap && !next.rateLimitKey) {
+      const log = logger?.child({ module: "rate-limiter" });
+
+      if (this.bootstrapReserved >= 1) {
+        log?.debug?.("OpenAI rate limit bootstrap active; waiting", {
+          rateLimitKey: this.key,
+          bootstrapReserved: this.bootstrapReserved,
+        });
+        return { kind: "wait" };
+      }
+
+      this.bootstrapReserved += 1;
+      next.rateLimitKey = this.key;
+
+      log?.debug?.("OpenAI rate limit bootstrap reserved", {
+        rateLimitKey: this.key,
+        bootstrapReserved: this.bootstrapReserved,
+      });
+    }
 
     return null;
   }
@@ -112,9 +112,10 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       const state = this.ensureRequestState(now);
       if (!state) return;
 
-      if (state.slotReservedForStream > 0) state.slotReservedForStream -= 1;
-      state.remaining = Math.max(0, state.remaining - 1);
-      return;
+      if (state.slotReservedForStream > 0) {
+        state.slotReservedForStream -= 1;
+        state.remaining = Math.max(0, state.remaining - 1);
+      }
     }
 
     if (this.bootstrapReserved > 0) {
@@ -197,17 +198,29 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     const state = this.ensureRequestState(now);
     if (!state) return null;
 
+    // remaining is treated as budget; in-flight reservations are tracked separately.
     const reserved = state.slotReservedForStream;
     const effectiveRemaining = Math.max(0, state.remaining - reserved);
 
-    if (effectiveRemaining <= 0 && now < state.resetAt) {
-      log?.debug?.("OpenAI request window exhausted; waiting for reset", {
+    const probeAt = state.resetAt + RATE_LIMIT_PROBE_DELAY_MS;
+    if (effectiveRemaining <= 0 && now < probeAt) {
+      log?.debug?.("OpenAI request window exhausted; waiting for probe", {
+        rateLimitKey: this.key,
+        remaining: state.remaining,
+        reserved,
+        resetAt: state.resetAt,
+        probeAt,
+      });
+      return { kind: "wait", wakeUpAt: probeAt };
+    }
+    if (effectiveRemaining <= 0 && reserved > 0) {
+      log?.debug?.("OpenAI request window exhausted but in-flight reservations exist; waiting", {
         rateLimitKey: this.key,
         remaining: state.remaining,
         reserved,
         resetAt: state.resetAt,
       });
-      return { kind: "wait", wakeUpAt: state.resetAt };
+      return { kind: "wait", wakeUpAt: probeAt };
     }
 
     state.slotReservedForStream += 1;
@@ -305,10 +318,14 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     const resetTokens = readHeaderValue(headers, "x-ratelimit-reset-tokens");
     const retryAfter = readHeaderValue(headers, "retry-after");
 
+    const now = Date.now();
     const limit = Number(limitTokens);
     const remaining = Number(remainingTokens);
     const resetTokensMs = resetTokens ? parseResetDurationToMs(resetTokens) : undefined;
     const retryAfterMs = retryAfter ? parseRetryAfterMs(retryAfter) : undefined;
+    if (retryAfterMs !== undefined) {
+      this.retryAfterUntil = Math.max(this.retryAfterUntil ?? 0, now + retryAfterMs);
+    }
 
     if (!Number.isFinite(limit) || !Number.isFinite(remaining) || resetTokensMs === undefined) {
       log?.trace?.("OpenAI token headers missing or invalid; skipping", {
@@ -317,7 +334,6 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       return undefined;
     }
 
-    const now = Date.now();
     const configuredLimit = this.tokensPerMinute;
     const effectiveLimit = configuredLimit === undefined ? limit : Math.min(configuredLimit, limit);
 
@@ -329,7 +345,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       remaining: clampedRemaining,
       resetAt,
       slotReservedForStream: 0,
-      nextAllowedAt: now,
+      nextAllowedAt: now, // Unused while pacing is disabled.
     };
 
     log?.debug?.("OpenAI token headers applied", {
@@ -365,10 +381,16 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     const remainingRequests = readHeaderValue(headers, "x-ratelimit-remaining-requests");
     const resetRequests = readHeaderValue(headers, "x-ratelimit-reset-requests");
     const retryAfter = readHeaderValue(headers, "retry-after");
-    const retryAfterMs = retryAfter ? parseRetryAfterMs(retryAfter) : undefined;
-
     const now = Date.now();
-    const existing = this.requestState;
+    const retryAfterMs = retryAfter ? parseRetryAfterMs(retryAfter) : undefined;
+    if (retryAfterMs !== undefined) {
+      this.retryAfterUntil = Math.max(this.retryAfterUntil ?? 0, now + retryAfterMs);
+    }
+    const existingRaw = this.requestState;
+    const existing = existingRaw && now < existingRaw.resetAt ? existingRaw : undefined;
+    if (!existing && existingRaw) {
+      this.requestState = undefined; // Drop expired state on header updates.
+    }
     const configuredLimit = this.requestsPerMinute;
     let state: RateLimitWindowState | undefined;
     let headerSnapshot: {
@@ -412,7 +434,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
         remaining: clampedRemaining,
         resetAt,
         slotReservedForStream: reserved,
-        nextAllowedAt: now,
+        nextAllowedAt: now, // Unused while pacing is disabled.
       };
       headerSnapshot = {
         limitRequests,
@@ -432,25 +454,14 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     }
 
     if (!state) {
-      if (retryAfterMs === undefined) return undefined;
-      const targetAt = now + retryAfterMs;
-      const limit = configuredLimit ?? existing?.limit ?? 1;
-      state = {
-        limit,
-        remaining: 0,
-        resetAt: Math.max(existing?.resetAt ?? targetAt, targetAt),
-        slotReservedForStream: Math.max(0, existing?.slotReservedForStream ?? 0),
-        nextAllowedAt: Math.max(existing?.nextAllowedAt ?? now, targetAt),
+      if (!existing || retryAfterMs === undefined) return undefined;
+      return {
+        key: this.key,
+        headerSnapshot: { retryAfter, retryAfterMs },
+        state: existing,
       };
-      headerSnapshot = { retryAfter, retryAfterMs };
-    } else if (retryAfterMs !== undefined) {
-      const targetAt = now + retryAfterMs;
-      state = {
-        ...state,
-        remaining: 0,
-        resetAt: Math.max(state.resetAt, targetAt),
-        nextAllowedAt: Math.max(state.nextAllowedAt, targetAt),
-      };
+    }
+    if (retryAfterMs !== undefined) {
       headerSnapshot = { ...headerSnapshot, retryAfter, retryAfterMs };
     }
 
