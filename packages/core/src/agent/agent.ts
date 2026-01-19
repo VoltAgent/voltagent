@@ -6138,7 +6138,7 @@ export class Agent {
     const now = Date.now();
     const effectiveRemaining = Math.max(
       0,
-      updateResult.state.remaining - updateResult.state.reserved,
+      updateResult.state.remaining - updateResult.state.slotReservedForStream,
     );
     const resetInMs = Math.max(0, updateResult.state.resetAt - now);
     const nextAllowedInMs = Math.max(0, updateResult.state.nextAllowedAt - now);
@@ -6146,7 +6146,7 @@ export class Agent {
       rateLimitKey: updateResult.key,
       limit: updateResult.state.limit,
       remaining: updateResult.state.remaining,
-      reserved: updateResult.state.reserved,
+      reserved: updateResult.state.slotReservedForStream,
       effectiveRemaining,
       resetAt: updateResult.state.resetAt,
       resetInMs,

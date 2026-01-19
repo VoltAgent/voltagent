@@ -1,10 +1,5 @@
 import type { Logger } from "../../logger";
-import {
-  RATE_LIMIT_EXHAUSTION_BUFFER,
-  RATE_LIMIT_MIN_PACE_INTERVAL_MS,
-  RATE_LIMIT_NEXT_ALLOWED_UPDATE_THRESHOLD_MS,
-  RATE_LIMIT_PROBE_DELAY_MS,
-} from "../traffic-constants";
+import { RATE_LIMIT_PROBE_DELAY_MS } from "../traffic-constants";
 import type {
   DispatchDecision,
   QueuedRequest,
@@ -52,6 +47,14 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
    * 1. Enforce request-rate window (RPM)
    * 2. Enforce token-rate window (TPM)
    * 3. Otherwise allow
+   * Rate limiting is fully reactive.
+   *
+   * OpenAI response headers and 429/Retry-After are the sole source of truth.
+   * No proactive pacing or smoothing is applied.
+   *
+   * Behavior:
+   * - Requests are allowed immediately while headers report remaining quota.
+   * - Requests are blocked only when headers or 429 responses instruct us to wait.
    */
   resolve(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
     // --- Request window enforcement ---
@@ -92,6 +95,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
     return null;
   }
 
+  // TODO: Can this handle streams?
   onDispatch(logger?: Logger): void {
     if (this.requestsPerMinute === undefined) {
       this.window.onDispatch(logger);
@@ -103,7 +107,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       const now = Date.now();
       const state = this.ensureRequestState(now);
 
-      if (state.reserved > 0) state.reserved -= 1;
+      if (state.slotReservedForStream > 0) state.slotReservedForStream -= 1;
       state.remaining = Math.max(0, state.remaining - 1);
       return;
     }
@@ -171,67 +175,42 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
   // REQUEST WINDOW (RPM)
   // ---------------------------------------------------------------------------
 
+  /**
+   * NOTE FOR MAINTAINERS:
+   *
+   * This strategy is intentionally reactive-only.
+   * Request pacing / smoothing is NOT applied.
+   *
+   * To add pacing in the future:
+   * 1. Compute a pacing timestamp based on:
+   *    - remaining requests
+   *    - time until resetAt
+   * 2. Before allowing a request, block until that timestamp.
+   * 3. Ensure pacing is ignored once remaining <= 0 (reset waiting takes priority).
+   *
+   * Do NOT mix pacing with header parsing.
+   * Pacing must act only on already-derived window state.
+   */
   private resolveRequestWindow(next: QueuedRequest, logger?: Logger): DispatchDecision | null {
     const log = logger?.child({ module: "rate-limiter" });
     const now = Date.now();
     const state = this.ensureRequestState(now);
 
-    const effectiveRemaining = Math.max(0, state.remaining - state.reserved);
-    const probeAt = state.resetAt + RATE_LIMIT_PROBE_DELAY_MS;
+    const reserved = state.slotReservedForStream;
+    const effectiveRemaining = Math.max(0, state.remaining - reserved);
 
-    // Exhaustion handling
-    if (effectiveRemaining <= RATE_LIMIT_EXHAUSTION_BUFFER) {
-      if (now < probeAt) {
-        log?.debug?.("OpenAI request window exhausted; waiting for probe", {
-          rateLimitKey: this.key,
-          remaining: state.remaining,
-          reserved: state.reserved,
-          resetAt: state.resetAt,
-          probeAt,
-        });
-        return { kind: "wait", wakeUpAt: probeAt };
-      }
-
-      if (state.reserved > 0) {
-        log?.debug?.("OpenAI request window exhausted but in-flight reservations exist; waiting", {
-          rateLimitKey: this.key,
-          remaining: state.remaining,
-          reserved: state.reserved,
-          resetAt: state.resetAt,
-        });
-        return { kind: "wait" };
-      }
-    }
-
-    // Pacing
-    if (now < state.nextAllowedAt) {
-      const wakeUpAt = Math.min(state.resetAt, state.nextAllowedAt);
-      log?.debug?.("OpenAI request pacing; waiting", {
+    if (effectiveRemaining <= 0 && now < state.resetAt) {
+      log?.debug?.("OpenAI request window exhausted; waiting for reset", {
         rateLimitKey: this.key,
-        nextAllowedAt: state.nextAllowedAt,
-        waitMs: wakeUpAt - now,
+        remaining: state.remaining,
+        reserved,
+        resetAt: state.resetAt,
       });
-      return { kind: "wait", wakeUpAt };
+      return { kind: "wait", wakeUpAt: state.resetAt };
     }
 
-    // Reserve slot
-    state.reserved += 1;
+    state.slotReservedForStream += 1;
     next.rateLimitKey = this.key;
-
-    const remainingWindowMs = Math.max(0, state.resetAt - now);
-    const intervalMs = Math.max(
-      RATE_LIMIT_MIN_PACE_INTERVAL_MS,
-      Math.ceil(remainingWindowMs / Math.max(effectiveRemaining, 1)),
-    );
-
-    const candidateNext = Math.max(state.nextAllowedAt, now + intervalMs);
-    if (
-      state.nextAllowedAt <= now ||
-      candidateNext >= state.nextAllowedAt + RATE_LIMIT_NEXT_ALLOWED_UPDATE_THRESHOLD_MS
-    ) {
-      state.nextAllowedAt = candidateNext;
-    }
-
     return null;
   }
 
@@ -281,7 +260,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
         limit,
         remaining: limit,
         resetAt: now + this.windowMs,
-        reserved: 0,
+        slotReservedForStream: 0,
         nextAllowedAt: now,
       };
       return this.requestState;
@@ -300,7 +279,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
         limit: configuredLimit,
         remaining: configuredLimit,
         resetAt: now + this.windowMs,
-        reserved: 0,
+        slotReservedForStream: 0,
         nextAllowedAt: now,
       };
       return this.tokenState;
@@ -312,7 +291,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
         limit,
         remaining: limit,
         resetAt: now + this.windowMs,
-        reserved: 0,
+        slotReservedForStream: 0,
         nextAllowedAt: now,
       };
       return this.tokenState;
@@ -364,7 +343,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
       limit: effectiveLimit,
       remaining: clampedRemaining,
       resetAt,
-      reserved: 0,
+      slotReservedForStream: 0,
       nextAllowedAt: now,
     };
 

@@ -218,7 +218,7 @@ export class TokenBucketRateLimitStrategy implements RateLimitStrategy {
       limit: 1,
       remaining: 0,
       resetAt: appliedUntil,
-      reserved: 0,
+      slotReservedForStream: 0,
       nextAllowedAt: appliedUntil,
     };
 

@@ -38,7 +38,7 @@ export class DefaultRateLimitStrategy implements RateLimitStrategy {
     }
 
     const now = Date.now();
-    const effectiveRemaining = Math.max(0, state.remaining - state.reserved);
+    const effectiveRemaining = Math.max(0, state.remaining - state.slotReservedForStream);
     const probeAt = state.resetAt + RATE_LIMIT_PROBE_DELAY_MS;
 
     if (effectiveRemaining <= RATE_LIMIT_EXHAUSTION_BUFFER) {
@@ -46,18 +46,18 @@ export class DefaultRateLimitStrategy implements RateLimitStrategy {
         rateLimitLogger?.debug?.("Rate limit exhausted; waiting for probe", {
           rateLimitKey: this.key,
           remaining: state.remaining,
-          reserved: state.reserved,
+          reserved: state.slotReservedForStream,
           effectiveRemaining,
           resetAt: state.resetAt,
           probeAt,
         });
         return { kind: "wait", wakeUpAt: probeAt };
       }
-      if (state.reserved > 0) {
+      if (state.slotReservedForStream > 0) {
         rateLimitLogger?.debug?.("Rate limit exhausted but in-flight reservations exist; waiting", {
           rateLimitKey: this.key,
           remaining: state.remaining,
-          reserved: state.reserved,
+          reserved: state.slotReservedForStream,
           effectiveRemaining,
           resetAt: state.resetAt,
         });
@@ -75,11 +75,11 @@ export class DefaultRateLimitStrategy implements RateLimitStrategy {
       return { kind: "wait", wakeUpAt: Math.min(state.resetAt, state.nextAllowedAt) };
     }
 
-    state.reserved += 1;
+    state.slotReservedForStream += 1;
     next.rateLimitKey = this.key;
     rateLimitLogger?.trace?.("Reserved rate limit token", {
       rateLimitKey: this.key,
-      reserved: state.reserved,
+      reserved: state.slotReservedForStream,
       remaining: state.remaining,
       resetAt: state.resetAt,
       nextAllowedAt: state.nextAllowedAt,
@@ -114,11 +114,11 @@ export class DefaultRateLimitStrategy implements RateLimitStrategy {
   onComplete(logger?: Logger): void {
     const rateLimitLogger = logger?.child({ module: "rate-limiter" });
     const state = this.state;
-    if (!state || state.reserved <= 0) return;
-    state.reserved -= 1;
+    if (!state || state.slotReservedForStream <= 0) return;
+    state.slotReservedForStream -= 1;
     rateLimitLogger?.trace?.("Released rate limit reservation", {
       rateLimitKey: this.key,
-      reserved: state.reserved,
+      reserved: state.slotReservedForStream,
       remaining: state.remaining,
       resetAt: state.resetAt,
       nextAllowedAt: state.nextAllowedAt,
@@ -167,13 +167,13 @@ export class DefaultRateLimitStrategy implements RateLimitStrategy {
       const isSameWindow = !!existing && now < existing.resetAt;
       const resetAt = isSameWindow ? Math.max(existing.resetAt, parsedResetAt) : parsedResetAt;
       const nextAllowedAt = isSameWindow ? Math.max(existing.nextAllowedAt, now) : now;
-      const reserved = Math.max(0, existing?.reserved ?? 0);
+      const reserved = Math.max(0, existing?.slotReservedForStream ?? 0);
 
       state = {
         limit,
         remaining: isSameWindow ? Math.min(existing.remaining, remaining) : remaining,
         resetAt,
-        reserved,
+        slotReservedForStream: reserved,
         nextAllowedAt,
       };
       headerSnapshot = {
@@ -207,7 +207,7 @@ export class DefaultRateLimitStrategy implements RateLimitStrategy {
         limit: existing?.limit ?? 1,
         remaining: 0,
         resetAt: isSameWindow ? Math.max(existing.resetAt, targetAt) : targetAt,
-        reserved: Math.max(0, existing?.reserved ?? 0),
+        slotReservedForStream: Math.max(0, existing?.slotReservedForStream ?? 0),
         nextAllowedAt: Math.max(existing?.nextAllowedAt ?? now, targetAt),
       };
       headerSnapshot = { retryAfter, retryAfterMs };
@@ -227,7 +227,7 @@ export class DefaultRateLimitStrategy implements RateLimitStrategy {
       rateLimitKey: this.key,
       limit: state.limit,
       remaining: state.remaining,
-      effectiveRemaining: Math.max(0, state.remaining - state.reserved),
+      effectiveRemaining: Math.max(0, state.remaining - state.slotReservedForStream),
       resetAt: state.resetAt,
       nextAllowedAt: state.nextAllowedAt,
       resetRequestsMs: headerSnapshot?.resetRequestsMs,

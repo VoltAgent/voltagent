@@ -116,6 +116,7 @@ export class TrafficCircuitBreaker {
       }
 
       // ---- Circuit is OPEN ----
+      //TODO: How are fallbacks stored at t = 0?
       const { policy, policyId } = this.resolveFallbackPolicy(next.request.metadata);
 
       // Path A: policy says "wait"
@@ -148,6 +149,7 @@ export class TrafficCircuitBreaker {
       }
 
       // Switch request context and retry loop with fallback model
+      //TODO: Why do we loop back again for the mod request?
       this.applyFallbackRequest(next, fallbackRequest, fallback, log, {
         previousCircuitKey: circuitKey,
         reason: "circuit-open",

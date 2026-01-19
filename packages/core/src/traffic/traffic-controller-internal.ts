@@ -22,7 +22,7 @@ export interface RateLimitWindowState {
   limit: number;
   remaining: number;
   resetAt: number;
-  reserved: number;
+  slotReservedForStream: number;
   nextAllowedAt: number;
 }
 

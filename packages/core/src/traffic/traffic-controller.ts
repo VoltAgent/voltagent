@@ -308,7 +308,7 @@ export class TrafficController {
       rateLimitKey: update.key,
       limit: update.state.limit,
       remaining: update.state.remaining,
-      reserved: update.state.reserved,
+      reserved: update.state.slotReservedForStream,
       resetAt: update.state.resetAt,
       nextAllowedAt: update.state.nextAllowedAt,
       resetRequestsMs: update.headerSnapshot.resetRequestsMs,
@@ -397,6 +397,12 @@ export class TrafficController {
 
     // Keep attempting dispatch decisions until we are forced to stop.
     // This loop only exits when we must wait for a future event.
+    // TODO: This `wait` means two different things:
+    // 1) work exists but cannot run yet
+    // 2) no work exists at all
+    // Mixing these makes the control flow hard to understand.
+    // We should separate these cases in the future.
+
     while (true) {
       // Ask the dispatcher what to do next:
       // - dispatch a request
@@ -473,6 +479,7 @@ export class TrafficController {
        * We cannot dispatch anything right now, but we can still evict timed-out items
        * and compute the earliest time we should wake up to retry.
        */
+      // TODO - eviction happens only for the head elememts why?
       const timeoutCheck = this.evictTimedOutQueuedRequests(Date.now());
 
       if (timeoutCheck.evicted) {
@@ -507,6 +514,8 @@ export class TrafficController {
      * Iterate priorities in weighted order, then per-tenant round-robin within a priority.
      * We stop at the first actionable decision (dispatch/skip) to keep drain loops tight.
      */
+    // TODO : How is priority assinged?
+    // TODO : How is tenant id stored?
     const priorities = this.getPriorityDispatchOrder();
 
     for (const priority of priorities) {
@@ -809,7 +818,7 @@ export class TrafficController {
    * ============================================================
    */
 
-  private resolveCircuit(next: QueuedRequest): DispatchDecision | null {
+  private resolveCircuitBreakerGate(next: QueuedRequest): DispatchDecision | null {
     return this.circuitBreaker.resolve(next, this.trafficLogger);
   }
 
@@ -858,6 +867,7 @@ export class TrafficController {
      * Rejection is deferred to "wait boundaries" (e.g. rate-limit/circuit/concurrency waits)
      * so we can tag the reason and preserve the option to apply fallback/defer strategies.
      */
+    // TODO - even if the fallback failed and we have not crossed deadline - we show expired
     return "expired";
   }
 
@@ -1070,6 +1080,7 @@ export class TrafficController {
          * Re-resolve after timeout handling, since queue-timeout fallback may mutate the request
          * and intentionally disable further maxQueueWaitMs checks.
          */
+        // TODO : Case what if enqueuedAt + maxQueueWaitMs  is present and deadline is not present?
         const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
         /**
          * If the head item has a future timeout deadline, track it as a candidate wake-up.
@@ -1109,6 +1120,7 @@ export class TrafficController {
 
     let wakeUpAt: number | undefined;
 
+    //get the earliest timeout for the queues taking top items into account
     const queueTimeoutAtBefore = this.resolveQueueTimeoutAt(next);
     const queueTimeoutTriggered = this.handleQueueTimeout(next, now, queueTimeoutAtBefore);
     const queueTimeoutExpired = queueTimeoutTriggered === "expired";
@@ -1123,6 +1135,7 @@ export class TrafficController {
       wakeUpAt = queueTimeoutAt;
     }
 
+    // TODO: If something is expired why do we proceed to gates?
     this.controllerLogger.trace("Evaluate next queued request", {
       priority,
       tenantId: next.tenantId,
@@ -1135,7 +1148,7 @@ export class TrafficController {
 
     /* -------------------- Circuit breaker -------------------- */
 
-    const circuitBreakerDecision = this.resolveCircuit(next);
+    const circuitBreakerDecision = this.resolveCircuitBreakerGate(next);
 
     if (circuitBreakerDecision) {
       this.controllerLogger.trace("Circuit resolution returned decision", {

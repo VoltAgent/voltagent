@@ -61,17 +61,18 @@ export class TrafficRateLimiter {
     //  - token rate limitng
     const strategyDecision = strategy.resolve(next, logger);
     if (strategyDecision?.kind === "wait") {
-      const tokenDecision = strategy.handlesTokenLimits
+      //Fallback Token Limiting = local token guarding in case strategy does not guard against token use
+      const fallbackTokenDecision = strategy.handlesTokenLimits
         ? null
-        : this.resolveTokenLimit(next, key, logger, false);
-      if (tokenDecision?.kind === "wait") {
+        : this.resolveFallbackTokenLimit(next, key, logger, false);
+      if (fallbackTokenDecision?.kind === "wait") {
         const requestWakeUp = strategyDecision.wakeUpAt;
-        const tokenWakeUp = tokenDecision.wakeUpAt;
+        const tokenWakeUp = fallbackTokenDecision.wakeUpAt;
         if (tokenWakeUp !== undefined && requestWakeUp !== undefined) {
           return { kind: "wait", wakeUpAt: Math.min(requestWakeUp, tokenWakeUp) };
         }
         if (tokenWakeUp !== undefined && requestWakeUp === undefined) {
-          return tokenDecision;
+          return fallbackTokenDecision;
         }
       }
       return strategyDecision;
@@ -83,7 +84,7 @@ export class TrafficRateLimiter {
     // and token blocking must already be reflected in requestDecision.
     const fallbackTokenDecision = strategy.handlesTokenLimits
       ? null
-      : this.resolveTokenLimit(next, key, logger, true);
+      : this.resolveFallbackTokenLimit(next, key, logger, true);
     if (fallbackTokenDecision?.kind === "wait") {
       return fallbackTokenDecision;
     }
@@ -205,54 +206,84 @@ export class TrafficRateLimiter {
     return created;
   }
 
-  private resolveTokenLimit(
+  private resolveFallbackTokenLimit(
     next: QueuedRequest,
     key: string,
     logger?: Logger,
     reserveTokens = true,
   ): DispatchDecision | null {
-    const bucket = this.getTokenRateState(key, logger);
-    if (!bucket) return null;
+    /* ---------------------------------------------
+     * 1. Load fallback token bucket (if any)
+     * --------------------------------------------- */
+    const tokenBucket = this.getTokenRateState(key, logger);
+    if (!tokenBucket) return null;
 
+    /* ---------------------------------------------
+     * 2. Refill tokens based on elapsed time
+     * --------------------------------------------- */
     const now = Date.now();
-    this.refillTokenRate(bucket, now);
+    this.refillTokenRate(tokenBucket, now);
 
-    if (bucket.capacity <= 0) {
+    /* ---------------------------------------------
+     * 3. Sanity check: token bucket must be usable
+     * --------------------------------------------- */
+    if (tokenBucket.capacity <= 0) {
       logger?.child({ module: "rate-limiter" })?.debug?.("Token limit misconfigured; blocking", {
         rateLimitKey: key,
-        capacity: bucket.capacity,
-        refillPerSecond: bucket.refillPerSecond,
+        capacity: tokenBucket.capacity,
+        refillPerSecond: tokenBucket.refillPerSecond,
       });
       return { kind: "wait" };
     }
 
+    /* ---------------------------------------------
+     * 4. Determine how many tokens this request needs
+     * --------------------------------------------- */
     const estimatedTokens = next.estimatedTokens;
-    if (typeof estimatedTokens === "number" && estimatedTokens > 0) {
-      if (bucket.tokens >= estimatedTokens) {
+
+    const hasEstimate = typeof estimatedTokens === "number" && estimatedTokens > 0;
+
+    const availableTokens = tokenBucket.tokens;
+
+    /* ---------------------------------------------
+     * 5. Fast path: enough tokens → allow (reserve)
+     * --------------------------------------------- */
+    if (hasEstimate) {
+      if (availableTokens >= estimatedTokens) {
         if (reserveTokens) {
-          bucket.tokens -= estimatedTokens;
+          tokenBucket.tokens -= estimatedTokens;
           next.reservedTokens = estimatedTokens;
         }
         return null;
       }
-    } else if (bucket.tokens >= 0) {
-      return null;
+    } else {
+      // No estimate → allow as long as bucket is non-negative
+      if (availableTokens >= 0) {
+        return null;
+      }
     }
 
-    if (bucket.refillPerSecond <= 0) {
+    /* ---------------------------------------------
+     * 6. Not enough tokens → can we ever refill?
+     * --------------------------------------------- */
+    if (tokenBucket.refillPerSecond <= 0) {
       logger?.child({ module: "rate-limiter" })?.debug?.("Token limit has no refill; blocking", {
         rateLimitKey: key,
-        capacity: bucket.capacity,
-        refillPerSecond: bucket.refillPerSecond,
+        capacity: tokenBucket.capacity,
+        refillPerSecond: tokenBucket.refillPerSecond,
       });
       return { kind: "wait" };
     }
 
-    const requiredTokens =
-      typeof estimatedTokens === "number" && estimatedTokens > 0
-        ? Math.max(estimatedTokens - bucket.tokens, 1)
-        : -bucket.tokens;
-    const waitMs = Math.max(1, Math.ceil((requiredTokens / bucket.refillPerSecond) * 1000));
+    /* ---------------------------------------------
+     * 7. Compute when tokens will be sufficient
+     * --------------------------------------------- */
+    const tokensNeeded = hasEstimate
+      ? Math.max(estimatedTokens - availableTokens, 1)
+      : -availableTokens;
+
+    const waitMs = Math.max(1, Math.ceil((tokensNeeded / tokenBucket.refillPerSecond) * 1000));
+
     return { kind: "wait", wakeUpAt: now + waitMs };
   }
 
