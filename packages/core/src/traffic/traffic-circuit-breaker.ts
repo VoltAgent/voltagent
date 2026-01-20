@@ -116,7 +116,6 @@ export class TrafficCircuitBreaker {
       }
 
       // ---- Circuit is OPEN ----
-      //TODO: How are fallbacks stored at t = 0?
       const { policy, policyId } = this.resolveFallbackPolicy(next.request.metadata);
 
       // Path A: policy says "wait"
@@ -418,7 +417,18 @@ export class TrafficCircuitBreaker {
     if (!chain) return;
 
     for (const candidate of chain) {
-      if (this.isShortResponseFallback(candidate)) return candidate;
+      if (this.isShortResponseFallback(candidate)) {
+        const shortResponseKey = this.buildRateLimitKey({
+          ...(metadata ?? {}),
+          provider: "short-response",
+          model: "short-response",
+        });
+        if (visitedKeys.has(shortResponseKey)) {
+          continue;
+        }
+        visitedKeys.add(shortResponseKey);
+        return candidate;
+      }
 
       const target = this.normalizeFallbackTarget(candidate, provider);
       const candidateKey = this.buildRateLimitKey({
