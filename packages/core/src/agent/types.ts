@@ -30,6 +30,7 @@ import type { LocalScorerDefinition, SamplingPolicy } from "../eval/runtime";
 import type { MemoryOptions, MemoryStorageMetadata, WorkingMemorySummary } from "../memory/types";
 import type { VoltAgentObservability } from "../observability";
 import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
+import type { TrafficPriority } from "../traffic/traffic-controller";
 import type {
   DynamicValue,
   DynamicValueOptions,
@@ -600,6 +601,10 @@ export type AgentOptions = {
    * Overridden by per-model maxRetries or per-call maxRetries.
    */
   maxRetries?: number;
+   * Default scheduling priority for this agent's LLM calls.
+   * Defaults to P1 when unspecified.
+   */
+  trafficPriority?: TrafficPriority;
   feedback?: AgentFeedbackOptions | boolean;
   /**
    * Default stop condition for step execution (ai-sdk `stopWhen`).
@@ -639,6 +644,7 @@ export interface AgentEvalPayload {
   rawOutput?: unknown;
   userId?: string;
   conversationId?: string;
+  tenantId?: string;
   traceId: string;
   spanId: string;
   metadata?: Record<string, unknown>;
@@ -1055,6 +1061,21 @@ export type OperationContext = {
   /** Optional conversation identifier associated with this operation */
   conversationId?: string;
 
+  /** Optional tenant identifier propagated across nested operations */
+  tenantId?: string;
+
+  /** Optional key identifier for per-key traffic limits */
+  apiKeyId?: string;
+
+  /** Optional region identifier for per-region traffic limits */
+  region?: string;
+
+  /** Optional endpoint identifier for per-endpoint traffic limits */
+  endpoint?: string;
+
+  /** Optional tenant tier identifier for per-tier traffic limits */
+  tenantTier?: string;
+
   /** User-managed context map for this operation */
   readonly context: Map<string | symbol, unknown>;
 
@@ -1078,6 +1099,9 @@ export type OperationContext = {
 
   /** Conversation steps for building full message history including tool calls/results */
   conversationSteps?: StepWithContent[];
+
+  /** Scheduling priority propagated from parent calls */
+  priority?: TrafficPriority;
 
   /** AbortController for cancelling the operation and accessing the signal */
   abortController: AbortController;

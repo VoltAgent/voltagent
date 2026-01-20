@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { extractTenantId } from "./utils";
 
 const CONTEXT_PRECISION_PROMPT = `Given question, answer and context verify if the context was useful in arriving at the given answer. Give verdict as "1" if useful and "0" if not with json output.
 
@@ -109,6 +110,7 @@ export function createContextPrecisionScorer<
       const agent = new Agent({
         name: "context-precision-evaluator",
         model,
+        trafficPriority: "P2",
         instructions: "You evaluate if context was useful for arriving at the answer",
       });
 
@@ -116,12 +118,15 @@ export function createContextPrecisionScorer<
       const contextText = Array.isArray(payload.context)
         ? payload.context.join("\n")
         : payload.context;
+      const tenantId = extractTenantId(context);
 
       const prompt = CONTEXT_PRECISION_PROMPT.replace("{{question}}", payload.input)
         .replace("{{context}}", contextText)
         .replace("{{answer}}", payload.output);
 
-      const response = await agent.generateObject(prompt, CONTEXT_PRECISION_SCHEMA);
+      const response = await agent.generateObject(prompt, CONTEXT_PRECISION_SCHEMA, {
+        tenantId,
+      });
 
       context.results.raw.contextPrecisionVerdict = response.object;
 

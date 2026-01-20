@@ -55,6 +55,14 @@ import type { BaseRetriever } from "../retriever/retriever";
 import type { Tool, ToolExecutionResult, Toolkit, VercelTool } from "../tool";
 import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
+import {
+  type FallbackChainEntry,
+  type TrafficPriority,
+  type TrafficRequestMetadata,
+  getTrafficController,
+} from "../traffic/traffic-controller";
+import { findHeaders } from "../traffic/traffic-error-utils";
+import type { TrafficRequest } from "../traffic/traffic-types";
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
@@ -364,8 +372,42 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   // Context
   userId?: string;
   conversationId?: string;
+  tenantId?: string;
+  /**
+   * Optional key metadata for per-key rate limits.
+   */
+  apiKeyId?: string;
+  /**
+   * Optional region metadata for per-region rate limits.
+   */
+  region?: string;
+  /**
+   * Optional endpoint metadata for per-endpoint rate limits.
+   */
+  endpoint?: string;
+  /**
+   * Optional tenant tier metadata for per-tier rate limits.
+   */
+  tenantTier?: string;
   context?: ContextInput;
   elicitation?: (request: unknown) => Promise<unknown>;
+  /**
+   * Optional priority override for scheduling.
+   * Defaults to agent-level priority when omitted.
+   */
+  trafficPriority?: TrafficPriority;
+  /**
+   * Optional maximum time to wait in the queue before timing out.
+   */
+  maxQueueWaitMs?: number;
+  /**
+   * Optional task classification for circuit-breaker fallback policies.
+   */
+  taskType?: string;
+  /**
+   * Optional explicit fallback policy id.
+   */
+  fallbackPolicyId?: string;
 
   // Parent tracking
   parentAgentId?: string;
@@ -411,6 +453,8 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
 
   // Provider-specific options
   providerOptions?: ProviderOptions;
+  // Optional per-call model override (used for fallbacks)
+  model?: LanguageModel | string;
 
   // Structured output (for schema-guided generation)
   output?: OutputSpec;
@@ -471,6 +515,7 @@ export class Agent {
   readonly voice?: Voice;
   readonly retriever?: BaseRetriever;
   readonly supervisorConfig?: SupervisorConfig;
+  private readonly trafficPriority: TrafficPriority;
   private readonly context?: Map<string | symbol, unknown>;
 
   private readonly logger: Logger;
@@ -506,6 +551,7 @@ export class Agent {
     this.maxOutputTokens = options.maxOutputTokens;
     this.maxSteps = options.maxSteps || 5;
     this.maxRetries = options.maxRetries ?? DEFAULT_LLM_MAX_RETRIES;
+    this.trafficPriority = options.trafficPriority ?? "P1";
     this.stopWhen = options.stopWhen;
     this.markdown = options.markdown ?? false;
     this.voice = options.voice;
@@ -581,6 +627,46 @@ export class Agent {
   async generateText<OUTPUT extends OutputSpec = OutputSpec>(
     input: string | UIMessage[] | BaseMessage[],
     options?: GenerateTextOptions<OUTPUT>,
+  ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
+    const controller = getTrafficController({ logger: this.logger }); // Use shared controller so all agent calls flow through central queue/metrics
+    const buildRequest = (modelOverride?: LanguageModel | string, providerOverride?: string) => {
+      const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
+      const tenantId = this.resolveTenantId(mergedOptions);
+      const metadata = this.buildTrafficMetadata(
+        mergedOptions?.model,
+        mergedOptions,
+        providerOverride,
+      ); // Compute once per queued request (including per-call model overrides)
+      return {
+        tenantId,
+        metadata,
+        maxQueueWaitMs: options?.maxQueueWaitMs,
+        estimatedTokens: this.estimateTokens(input, mergedOptions),
+        execute: () => this.executeGenerateText(input, mergedOptions, metadata), // Defer actual execution so controller can schedule it
+        extractUsage: (result) => this.extractUsageFromResponse(result),
+        createFallbackRequest: (fallbackTarget) => {
+          if (this.isShortResponseFallback(fallbackTarget)) {
+            return this.buildShortTextFallbackRequest(
+              tenantId,
+              metadata,
+              mergedOptions,
+              fallbackTarget.text,
+            );
+          }
+          const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
+            this.resolveFallbackTarget(fallbackTarget);
+          return buildRequest(fallbackModel, fallbackProvider);
+        },
+      };
+    };
+
+    return controller.handleText(buildRequest(options?.model));
+  }
+
+  private async executeGenerateText<OUTPUT extends OutputSpec = OutputSpec>(
+    input: string | UIMessage[] | BaseMessage[],
+    options?: GenerateTextOptions<OUTPUT>,
+    trafficMetadata?: TrafficRequestMetadata,
   ): Promise<GenerateTextResultWithContext<ToolSet, OUTPUT>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
@@ -703,9 +789,19 @@ export class Agent {
               maxSteps: userMaxSteps,
               tools: userTools,
               output,
+              maxQueueWaitMs,
+              taskType,
+              fallbackPolicyId,
               providerOptions,
+              maxRetries: _maxRetries, // Always disable provider retries (TrafficController handles retries)
+              model: _model, // Exclude model so aiSDKOptions doesn't override resolved model
               ...aiSDKOptions
             } = options || {};
+            void _model;
+            void _maxRetries;
+            void maxQueueWaitMs;
+            void taskType;
+            void fallbackPolicyId;
 
             const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
               | ToolChoice<Record<string, unknown>>
@@ -746,6 +842,12 @@ export class Agent {
                 });
                 const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
 
+                methodLogger.info("[AI SDK] Calling generateText", {
+                  messageCount: messages.length,
+                  modelName: resolvedModelName,
+                  tools: tools ? Object.keys(tools) : [],
+                });
+
                 try {
                   const response = await oc.traceContext.withSpan(llmSpan, () =>
                     generateText({
@@ -769,6 +871,18 @@ export class Agent {
                     }),
                   );
 
+                  methodLogger.info("[AI SDK] Received generateText result", {
+                    finishReason: response.finishReason,
+                    usage: response.usage ? safeStringify(response.usage) : undefined,
+                    stepCount: response.steps?.length ?? 0,
+                    rawResult: safeStringify(response),
+                  });
+                  this.updateTrafficControllerRateLimits(
+                    response.response,
+                    trafficMetadata,
+                    methodLogger,
+                  );
+
                   const resolvedProviderUsage = response.usage
                     ? await Promise.resolve(response.usage)
                     : undefined;
@@ -779,6 +893,7 @@ export class Agent {
 
                   return response;
                 } catch (error) {
+                  this.updateTrafficControllerRateLimits(error, trafficMetadata, methodLogger);
                   finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
                   throw error;
                 }
@@ -1036,6 +1151,47 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
+    const controller = getTrafficController({ logger: this.logger }); // Same controller handles streaming to keep ordering/backpressure consistent
+    const buildRequest = (modelOverride?: LanguageModel | string, providerOverride?: string) => {
+      const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
+      const tenantId = this.resolveTenantId(mergedOptions);
+      const metadata = this.buildTrafficMetadata(
+        mergedOptions?.model,
+        mergedOptions,
+        providerOverride,
+      ); // Compute once per queued request (including per-call model overrides)
+      return {
+        tenantId,
+        metadata,
+        maxQueueWaitMs: options?.maxQueueWaitMs,
+        estimatedTokens: this.estimateTokens(input, mergedOptions),
+        execute: () => this.executeStreamText(input, mergedOptions, metadata), // Actual streaming work happens after the controller dequeues us
+        extractUsage: (result: StreamTextResultWithContext) =>
+          this.extractUsageFromResponse(result),
+        createFallbackRequest: (fallbackTarget: FallbackChainEntry) => {
+          if (this.isShortResponseFallback(fallbackTarget)) {
+            return this.buildShortStreamTextFallbackRequest(
+              tenantId,
+              metadata,
+              mergedOptions,
+              fallbackTarget.text,
+            );
+          }
+          const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
+            this.resolveFallbackTarget(fallbackTarget);
+          return buildRequest(fallbackModel, fallbackProvider);
+        },
+      };
+    };
+
+    return controller.handleStream(buildRequest(options?.model));
+  }
+
+  private async executeStreamText(
+    input: string | UIMessage[] | BaseMessage[],
+    options?: StreamTextOptions,
+    trafficMetadata?: TrafficRequestMetadata,
+  ): Promise<StreamTextResultWithContext> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const feedbackOptions = this.resolveFeedbackOptions(options);
@@ -1227,9 +1383,19 @@ export class Agent {
           tools: userTools,
           onFinish: userOnFinish,
           output,
+          maxQueueWaitMs,
+          taskType,
+          fallbackPolicyId,
           providerOptions,
+          maxRetries: _maxRetries, // Always disable provider retries (TrafficController handles retries)
+          model: _model, // Exclude model from aiSDKOptions to avoid overriding resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
+        void _maxRetries;
+        void maxQueueWaitMs;
+        void taskType;
+        void fallbackPolicyId;
 
         const forcedToolChoice = oc.systemContext.get(FORCED_TOOL_CHOICE_CONTEXT_KEY) as
           | ToolChoice<Record<string, unknown>>
@@ -1277,6 +1443,13 @@ export class Agent {
               },
             });
             const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+            const trafficController = getTrafficController({ logger: this.logger });
+
+            methodLogger.info("[AI SDK] Calling streamText", {
+              messageCount: messages.length,
+              modelName: resolvedModelName,
+              tools: tools ? Object.keys(tools) : [],
+            });
 
             const streamResult = streamText({
               model: resolvedModel,
@@ -1359,6 +1532,8 @@ export class Agent {
                   errorMessage: (actualError as Error)?.message,
                 });
 
+                this.updateTrafficControllerRateLimits(actualError, trafficMetadata, methodLogger);
+                trafficController.reportStreamFailure(trafficMetadata, actualError);
                 finalizeLLMSpan(SpanStatusCode.ERROR, { message: (actualError as Error)?.message });
 
                 // History update removed - using OpenTelemetry only
@@ -1397,6 +1572,18 @@ export class Agent {
                 );
               },
               onFinish: async (finalResult) => {
+                methodLogger.info("[AI SDK] streamText finished", {
+                  finishReason: finalResult.finishReason,
+                  usage: finalResult.totalUsage ? safeStringify(finalResult.totalUsage) : undefined,
+                  stepCount: finalResult.steps?.length ?? 0,
+                  rawResult: safeStringify(finalResult),
+                });
+                this.updateTrafficControllerRateLimits(
+                  finalResult.response,
+                  trafficMetadata,
+                  methodLogger,
+                );
+                trafficController.reportStreamSuccess(trafficMetadata);
                 const providerUsage = finalResult.usage
                   ? await Promise.resolve(finalResult.usage)
                   : undefined;
@@ -1950,6 +2137,49 @@ export class Agent {
     schema: T,
     options?: GenerateObjectOptions,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
+    const controller = getTrafficController({ logger: this.logger });
+    const buildRequest = (modelOverride?: LanguageModel | string, providerOverride?: string) => {
+      const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
+      const tenantId = this.resolveTenantId(mergedOptions);
+      const metadata = this.buildTrafficMetadata(
+        mergedOptions?.model,
+        mergedOptions,
+        providerOverride,
+      ); // Compute once per queued request (including per-call model overrides)
+      return {
+        tenantId,
+        metadata,
+        maxQueueWaitMs: options?.maxQueueWaitMs,
+        estimatedTokens: this.estimateTokens(input, mergedOptions),
+        execute: () => this.executeGenerateObject(input, schema, mergedOptions, metadata),
+        extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
+          this.extractUsageFromResponse(result),
+        createFallbackRequest: (fallbackTarget: FallbackChainEntry) => {
+          if (this.isShortResponseFallback(fallbackTarget)) {
+            return this.buildShortObjectFallbackRequest(
+              tenantId,
+              metadata,
+              schema,
+              mergedOptions,
+              fallbackTarget.text,
+            );
+          }
+          const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
+            this.resolveFallbackTarget(fallbackTarget);
+          return buildRequest(fallbackModel, fallbackProvider);
+        },
+      };
+    };
+
+    return controller.handleText(buildRequest(options?.model));
+  }
+
+  private async executeGenerateObject<T extends z.ZodType>(
+    input: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    options?: GenerateObjectOptions,
+    trafficMetadata?: TrafficRequestMetadata,
+  ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
     const methodLogger = oc.logger;
@@ -2049,16 +2279,31 @@ export class Agent {
               maxSteps: userMaxSteps,
               tools: userTools,
               output: _output,
+              taskType,
+              fallbackPolicyId,
+              maxQueueWaitMs,
               providerOptions,
+              maxRetries: _maxRetries, // Always disable provider retries (TrafficController handles retries)
+              model: _model, // Exclude model so spread does not override resolved model
               ...aiSDKOptions
             } = options || {};
+            void _model;
+            void _maxRetries;
+            void taskType;
+            void fallbackPolicyId;
+            void maxQueueWaitMs;
 
             const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
               oc,
               operation: "generateObject",
               options,
-              run: async ({ model: resolvedModel }) => {
-                return await generateObject({
+              run: async ({ model: resolvedModel, modelName: resolvedModelName }) => {
+                methodLogger.info("[AI SDK] Calling generateObject", {
+                  messageCount: messages.length,
+                  modelName: resolvedModelName,
+                  schemaName,
+                });
+                const response = await generateObject({
                   model: resolvedModel,
                   messages,
                   schema,
@@ -2073,6 +2318,18 @@ export class Agent {
                   // VoltAgent controlled
                   abortSignal: oc.abortController.signal,
                 });
+                methodLogger.info("[AI SDK] Received generateObject result", {
+                  finishReason: response.finishReason,
+                  usage: response.usage ? safeStringify(response.usage) : undefined,
+                  warnings: response.warnings,
+                  rawResult: safeStringify(response),
+                });
+                this.updateTrafficControllerRateLimits(
+                  response.response,
+                  trafficMetadata,
+                  methodLogger,
+                );
+                return response;
               },
             });
 
@@ -2240,6 +2497,7 @@ export class Agent {
           }
         }
       } catch (error) {
+        this.updateTrafficControllerRateLimits(error, trafficMetadata, methodLogger);
         await this.flushPendingMessagesOnError(oc).catch(() => {});
         return this.handleError(error as Error, oc, options, startTime);
       } finally {
@@ -2263,6 +2521,49 @@ export class Agent {
     input: string | UIMessage[] | BaseMessage[],
     schema: T,
     options?: StreamObjectOptions,
+  ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
+    const controller = getTrafficController({ logger: this.logger });
+    const buildRequest = (modelOverride?: LanguageModel | string, providerOverride?: string) => {
+      const mergedOptions = this.mergeOptionsWithModel(options, modelOverride);
+      const tenantId = this.resolveTenantId(mergedOptions);
+      const metadata = this.buildTrafficMetadata(
+        mergedOptions?.model,
+        mergedOptions,
+        providerOverride,
+      );
+      return {
+        tenantId,
+        metadata,
+        maxQueueWaitMs: options?.maxQueueWaitMs,
+        estimatedTokens: this.estimateTokens(input, mergedOptions),
+        execute: () => this.executeStreamObject(input, schema, mergedOptions, metadata),
+        extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
+          this.extractUsageFromResponse(result),
+        createFallbackRequest: (fallbackTarget: FallbackChainEntry) => {
+          if (this.isShortResponseFallback(fallbackTarget)) {
+            return this.buildShortStreamObjectFallbackRequest(
+              tenantId,
+              metadata,
+              schema,
+              mergedOptions,
+              fallbackTarget.text,
+            );
+          }
+          const { modelOverride: fallbackModel, providerOverride: fallbackProvider } =
+            this.resolveFallbackTarget(fallbackTarget);
+          return buildRequest(fallbackModel, fallbackProvider);
+        },
+      };
+    };
+
+    return controller.handleStream(buildRequest(options?.model));
+  }
+
+  private async executeStreamObject<T extends z.ZodType>(
+    input: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    options?: StreamObjectOptions,
+    trafficMetadata?: TrafficRequestMetadata,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
@@ -2398,13 +2699,24 @@ export class Agent {
           tools: userTools,
           onFinish: userOnFinish,
           output: _output,
+          taskType,
+          fallbackPolicyId,
+          maxQueueWaitMs,
           providerOptions,
+          maxRetries: _maxRetries, // Always disable provider retries (TrafficController handles retries)
+          model: _model, // Exclude model so aiSDKOptions cannot override resolved model
           ...aiSDKOptions
         } = options || {};
+        void _model;
+        void _maxRetries;
+        void taskType;
+        void fallbackPolicyId;
+        void maxQueueWaitMs;
 
         let guardrailObjectPromise!: Promise<z.infer<T>>;
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
         let rejectGuardrailObject: ((reason: unknown) => void) | undefined;
+        const trafficController = getTrafficController({ logger: this.logger });
 
         const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
           oc,
@@ -2421,6 +2733,11 @@ export class Agent {
             const attemptState: { hasOutput: boolean; lastError?: unknown } = {
               hasOutput: false,
             };
+            methodLogger.info("[AI SDK] Calling streamObject", {
+              messageCount: messages.length,
+              modelName: resolvedModelName,
+              schemaName,
+            });
             const streamResult = streamObject({
               model: resolvedModel,
               messages,
@@ -2463,6 +2780,8 @@ export class Agent {
                   attempt,
                   maxRetries,
                 });
+                this.updateTrafficControllerRateLimits(actualError, trafficMetadata, methodLogger);
+                trafficController.reportStreamFailure(trafficMetadata, actualError);
 
                 methodLogger.debug(recoveryMessage, {
                   operation: "streamObject",
@@ -2520,6 +2839,17 @@ export class Agent {
               },
               onFinish: async (finalResult: any) => {
                 try {
+                  methodLogger.info("[AI SDK] streamObject finished", {
+                    finishReason: finalResult.finishReason,
+                    usage: finalResult.usage ? safeStringify(finalResult.usage) : undefined,
+                    rawResult: safeStringify(finalResult),
+                  });
+                  this.updateTrafficControllerRateLimits(
+                    finalResult.response,
+                    trafficMetadata,
+                    methodLogger,
+                  );
+                  trafficController.reportStreamSuccess(trafficMetadata);
                   const usageInfo = convertUsage(finalResult.usage as any);
                   let finalObject = finalResult.object as z.infer<T>;
                   if (guardrailSet.output.length > 0) {
@@ -2832,7 +3162,9 @@ export class Agent {
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
 
-    const modelName = this.getModelName();
+    const selectedModel = options?.model ?? this.model;
+    const model = await this.resolveValue(selectedModel, oc);
+    const modelName = this.getModelName(model);
     const dynamicToolList = (await this.resolveValue(this.dynamicTools, oc)) || [];
 
     // Merge agent tools with option tools
@@ -2883,6 +3215,12 @@ export class Agent {
   ): OperationContext {
     const operationId = randomUUID();
     const startTimeDate = new Date();
+    const priority = this.resolveTrafficPriority(options);
+    const tenantId = this.resolveTenantId(options);
+    const apiKeyId = options?.apiKeyId ?? options?.parentOperationContext?.apiKeyId;
+    const region = options?.region ?? options?.parentOperationContext?.region;
+    const endpoint = options?.endpoint ?? options?.parentOperationContext?.endpoint;
+    const tenantTier = options?.tenantTier ?? options?.parentOperationContext?.tenantTier;
 
     // Prefer reusing an existing context instance to preserve reference across calls/subagents
     const runtimeContext = toContextMap(options?.context);
@@ -2933,6 +3271,7 @@ export class Agent {
       operationId,
       userId: options?.userId,
       conversationId: options?.conversationId,
+      tenantId,
       executionId: operationId,
     });
 
@@ -2947,6 +3286,9 @@ export class Agent {
       parentAgentId: options?.parentAgentId,
       input,
     });
+    if (tenantId) {
+      traceContext.getRootSpan().setAttribute("tenant.id", tenantId);
+    }
     traceContext.getRootSpan().setAttribute("voltagent.operation_id", operationId);
 
     // Use parent's AbortController if available, otherwise create new one
@@ -2984,8 +3326,14 @@ export class Agent {
       logger,
       conversationSteps: options?.parentOperationContext?.conversationSteps || [],
       abortController,
+      priority,
       userId: options?.userId,
       conversationId: options?.conversationId,
+      tenantId,
+      apiKeyId,
+      region,
+      endpoint,
+      tenantTier,
       parentAgentId: options?.parentAgentId,
       traceContext,
       startTime: startTimeDate,
@@ -4124,6 +4472,20 @@ export class Agent {
     return value;
   }
 
+  private mergeOptionsWithModel<T extends BaseGenerationOptions>(
+    options: T | undefined,
+    modelOverride?: LanguageModel | string,
+  ): T | undefined {
+    if (!options && modelOverride === undefined) {
+      return undefined;
+    }
+
+    return {
+      ...(options ?? {}),
+      ...(modelOverride !== undefined ? { model: modelOverride } : {}),
+    } as T;
+  }
+
   private getModelCandidates(): AgentModelConfig[] {
     if (Array.isArray(this.model)) {
       if (this.model.length === 0) {
@@ -5247,12 +5609,657 @@ export class Agent {
     return this.subAgentManager.calculateMaxSteps(this.maxSteps);
   }
 
+  private resolveTrafficPriority(options?: BaseGenerationOptions): TrafficPriority {
+    const normalize = (value?: TrafficPriority): TrafficPriority | undefined => {
+      if (value === "P0" || value === "P1" || value === "P2") {
+        return value;
+      }
+      return undefined;
+    };
+
+    const parentPriority = normalize(options?.parentOperationContext?.priority);
+    const localPriority = normalize(options?.trafficPriority) ?? this.trafficPriority ?? "P1";
+
+    if (parentPriority) {
+      return this.pickHigherPriority(parentPriority, localPriority);
+    }
+
+    return localPriority;
+  }
+
+  private resolveTenantId(options?: BaseGenerationOptions): string {
+    const parentTenant = options?.parentOperationContext?.tenantId;
+    if (parentTenant) {
+      return parentTenant;
+    }
+
+    if (options?.tenantId) {
+      return options.tenantId;
+    }
+
+    return "default";
+  }
+
+  private pickHigherPriority(a: TrafficPriority, b: TrafficPriority): TrafficPriority {
+    const rank: Record<TrafficPriority, number> = { P0: 0, P1: 1, P2: 2 };
+    return rank[a] <= rank[b] ? a : b;
+  }
+
+  private buildTrafficMetadata(
+    modelOverride?: AgentModelValue,
+    options?: BaseGenerationOptions,
+    providerOverride?: string,
+  ): TrafficRequestMetadata {
+    const provider =
+      providerOverride ??
+      this.resolveProvider(modelOverride) ??
+      this.resolveProvider(this.model) ??
+      undefined;
+    const priority = this.resolveTrafficPriority(options);
+    const apiKeyId = options?.apiKeyId ?? options?.parentOperationContext?.apiKeyId;
+    const region = options?.region ?? options?.parentOperationContext?.region;
+    const endpoint = options?.endpoint ?? options?.parentOperationContext?.endpoint;
+    const tenantTier = options?.tenantTier ?? options?.parentOperationContext?.tenantTier;
+
+    return {
+      agentId: this.id, // Identify which agent issued the request
+      agentName: this.name, // Human-readable label for logs/metrics
+      model: this.getModelName(modelOverride), // Used for future capacity policies
+      provider, // Allows per-provider throttling later
+      priority,
+      tenantId: this.resolveTenantId(options),
+      apiKeyId,
+      region,
+      endpoint,
+      tenantTier,
+      taskType: options?.taskType,
+      fallbackPolicyId: options?.fallbackPolicyId,
+    };
+  }
+
+  private estimateTokens(
+    input: string | UIMessage[] | BaseMessage[],
+    options?: BaseGenerationOptions,
+  ): number | undefined {
+    let text = "";
+    if (typeof input === "string") {
+      text = input;
+    } else if (Array.isArray(input)) {
+      text = input
+        .map((message) => {
+          if (typeof message === "string") return message;
+          if (message && typeof message === "object") {
+            const content = (message as { content?: unknown }).content;
+            if (typeof content === "string") return content;
+            if (content !== undefined) return safeStringify(content);
+            return safeStringify(message);
+          }
+          return String(message ?? "");
+        })
+        .join(" ");
+    } else if (input) {
+      text = safeStringify(input);
+    }
+
+    const inputTokens = text ? Math.ceil(text.length / 4) : 0;
+    const outputTokensRaw =
+      typeof options?.maxOutputTokens === "number" ? options.maxOutputTokens : this.maxOutputTokens;
+    const outputTokens =
+      typeof outputTokensRaw === "number" && Number.isFinite(outputTokensRaw)
+        ? Math.max(0, Math.floor(outputTokensRaw))
+        : 0;
+    const total = inputTokens + outputTokens;
+    return total > 0 ? total : undefined;
+  }
+
+  private resolveFallbackTarget(target: FallbackChainEntry): {
+    modelOverride?: LanguageModel | string;
+    providerOverride?: string;
+  } {
+    if (typeof target === "string") {
+      return { modelOverride: target };
+    }
+    return {
+      modelOverride: target.model,
+      providerOverride: target.provider,
+    };
+  }
+
+  private isShortResponseFallback(
+    target: FallbackChainEntry,
+  ): target is { kind: "short-response"; text: string } {
+    return (
+      typeof target === "object" &&
+      target !== null &&
+      "kind" in target &&
+      (target as { kind?: string }).kind === "short-response"
+    );
+  }
+
+  private buildShortResponseMetadata(
+    baseMetadata: TrafficRequestMetadata | undefined,
+  ): TrafficRequestMetadata {
+    const metadata = baseMetadata ?? this.buildTrafficMetadata();
+    return {
+      ...metadata,
+      provider: "short-response",
+      model: "short-response",
+    };
+  }
+
+  private createZeroUsage(): LanguageModelUsage {
+    return {
+      inputTokens: 0,
+      inputTokenDetails: {
+        noCacheTokens: 0,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+      },
+      outputTokens: 0,
+      outputTokenDetails: {
+        textTokens: 0,
+        reasoningTokens: 0,
+      },
+      totalTokens: 0,
+    };
+  }
+
+  private createShortTextStream(text: string): AsyncIterableStream<string> {
+    return createAsyncIterableReadable<string>((controller) => {
+      controller.enqueue(text);
+      controller.close();
+    });
+  }
+
+  private createShortFullStream(text: string): AsyncIterableStream<VoltAgentTextStreamPart> {
+    const usage = this.createZeroUsage();
+    const id = `short-response-${randomUUID()}`;
+    return createAsyncIterableReadable<VoltAgentTextStreamPart>((controller) => {
+      controller.enqueue({
+        type: "text-start",
+        id,
+      } satisfies VoltAgentTextStreamPart);
+      controller.enqueue({
+        type: "text-delta",
+        id,
+        text,
+      } satisfies VoltAgentTextStreamPart);
+      controller.enqueue({
+        type: "text-end",
+        id,
+      } satisfies VoltAgentTextStreamPart);
+      controller.enqueue({
+        type: "finish",
+        finishReason: "stop",
+        rawFinishReason: undefined,
+        totalUsage: usage,
+      } satisfies VoltAgentTextStreamPart);
+      controller.close();
+    });
+  }
+
+  private createShortTextResult(
+    text: string,
+    options?: GenerateTextOptions,
+  ): GenerateTextResultWithContext {
+    const usage = this.createZeroUsage();
+    const context = toContextMap(options?.context) ?? new Map();
+    const createTextStream = (): AsyncIterableStream<string> => this.createShortTextStream(text);
+
+    return {
+      text,
+      content: [],
+      reasoning: [],
+      reasoningText: "",
+      files: [],
+      sources: [],
+      toolCalls: [],
+      staticToolCalls: [],
+      dynamicToolCalls: [],
+      toolResults: [],
+      staticToolResults: [],
+      dynamicToolResults: [],
+      usage,
+      totalUsage: usage,
+      warnings: [],
+      finishReason: "stop",
+      rawFinishReason: undefined,
+      steps: [],
+      experimental_output: undefined as unknown as OutputValue<OutputSpec>,
+      output: undefined as unknown as OutputValue<OutputSpec>,
+      response: {
+        id: "short-response",
+        modelId: "short-response",
+        timestamp: new Date(),
+        messages: [],
+      },
+      context,
+      request: {
+        body: {},
+      },
+      providerMetadata: undefined,
+      experimental_providerMetadata: undefined,
+      pipeTextStreamToResponse: (response: any, init?: any) => {
+        pipeTextStreamToResponse({
+          response,
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      toTextStreamResponse: (init?: ResponseInit) => {
+        return createTextStreamResponse({
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      toDataStream: () => createTextStream(),
+      toDataStreamResponse: (init?: ResponseInit) => {
+        return createTextStreamResponse({
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      pipeDataStreamToResponse: (response: any, init?: any) => {
+        pipeTextStreamToResponse({
+          response,
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+    } as GenerateTextResultWithContext;
+  }
+
+  private createShortStreamTextResult(
+    text: string,
+    options?: StreamTextOptions,
+  ): StreamTextResultWithContext {
+    const usage = this.createZeroUsage();
+    const context = toContextMap(options?.context) ?? new Map();
+    const createTextStream = (): AsyncIterableStream<string> => this.createShortTextStream(text);
+    const createFullStream = (): AsyncIterableStream<VoltAgentTextStreamPart> =>
+      this.createShortFullStream(text);
+
+    const toUIMessageStream = (_options?: unknown) =>
+      createUIMessageStream({
+        execute: async ({ writer }) => {
+          writer.write({ type: "text", text } as any);
+        },
+        onError: (error) => String(error),
+      });
+
+    const toUIMessageStreamResponse = (options?: ResponseInit) => {
+      const stream = toUIMessageStream(options);
+      const responseInit = options ? { ...options } : {};
+      return createUIMessageStreamResponse({
+        stream,
+        ...responseInit,
+      });
+    };
+
+    const pipeUIMessageStreamToResponse = (response: any, init?: ResponseInit) => {
+      const stream = toUIMessageStream(init);
+      const initOptions = init ? { ...init } : {};
+      pipeUIMessageStreamToResponse({
+        response,
+        stream,
+        ...initOptions,
+      });
+    };
+
+    return {
+      text: Promise.resolve(text),
+      get textStream() {
+        return createTextStream();
+      },
+      get fullStream() {
+        return createFullStream();
+      },
+      usage: Promise.resolve(usage),
+      finishReason: Promise.resolve("stop"),
+      toUIMessageStream: toUIMessageStream as StreamTextResultWithContext["toUIMessageStream"],
+      toUIMessageStreamResponse:
+        toUIMessageStreamResponse as StreamTextResultWithContext["toUIMessageStreamResponse"],
+      pipeUIMessageStreamToResponse:
+        pipeUIMessageStreamToResponse as StreamTextResultWithContext["pipeUIMessageStreamToResponse"],
+      pipeTextStreamToResponse: (response, init) => {
+        pipeTextStreamToResponse({
+          response,
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      toTextStreamResponse: (init?: ResponseInit) => {
+        return createTextStreamResponse({
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      context,
+    };
+  }
+
+  private resolveShortResponseObject<T extends z.ZodType>(schema: T, text: string): z.infer<T> {
+    const candidates: unknown[] = [];
+    if (text.length > 0) {
+      try {
+        candidates.push(JSON.parse(text));
+      } catch {}
+    }
+    candidates.push(text);
+    candidates.push({ text });
+    for (const candidate of candidates) {
+      const parsed = schema.safeParse(candidate);
+      if (parsed.success) {
+        return parsed.data;
+      }
+    }
+    return (candidates[0] ?? text) as z.infer<T>;
+  }
+
+  private createShortObjectResult<T extends z.ZodType>(
+    schema: T,
+    text: string,
+    options?: GenerateObjectOptions,
+  ): GenerateObjectResultWithContext<z.infer<T>> {
+    const object = this.resolveShortResponseObject(schema, text);
+    const usage = this.createZeroUsage();
+    const context = toContextMap(options?.context) ?? new Map();
+
+    return {
+      object,
+      usage,
+      warnings: [],
+      finishReason: "stop",
+      response: {
+        id: "short-response",
+        modelId: "short-response",
+        timestamp: new Date(),
+        messages: [],
+      },
+      context,
+      request: {
+        body: {},
+      },
+      reasoning: "",
+      providerMetadata: undefined,
+      toJsonResponse: (init?: ResponseInit) => {
+        const responseInit = init ? { ...init } : {};
+        const headers = {
+          "content-type": "application/json",
+          ...(responseInit.headers ?? {}),
+        };
+        return new Response(safeStringify(object), {
+          ...responseInit,
+          headers,
+        });
+      },
+    } as GenerateObjectResultWithContext<z.infer<T>>;
+  }
+
+  private createShortStreamObjectResult<T extends z.ZodType>(
+    schema: T,
+    text: string,
+    options?: StreamObjectOptions,
+  ): StreamObjectResultWithContext<z.infer<T>> {
+    const object = this.resolveShortResponseObject(schema, text);
+    const usage = this.createZeroUsage();
+    const context = toContextMap(options?.context) ?? new Map();
+    const textPayload = safeStringify(object);
+    const createTextStream = (): AsyncIterableStream<string> =>
+      this.createShortTextStream(textPayload);
+
+    const partialObjectStream = new ReadableStream<Partial<z.infer<T>>>({
+      start(controller) {
+        controller.enqueue(object);
+        controller.close();
+      },
+    });
+
+    return {
+      object: Promise.resolve(object),
+      partialObjectStream,
+      textStream: createTextStream(),
+      warnings: Promise.resolve(undefined),
+      usage: Promise.resolve(usage),
+      finishReason: Promise.resolve("stop"),
+      pipeTextStreamToResponse: (response, init) => {
+        pipeTextStreamToResponse({
+          response,
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      toTextStreamResponse: (init) => {
+        return createTextStreamResponse({
+          textStream: createTextStream(),
+          ...(init ?? {}),
+        });
+      },
+      context,
+    };
+  }
+
+  private buildShortTextFallbackRequest(
+    tenantId: string,
+    metadata: TrafficRequestMetadata | undefined,
+    options: GenerateTextOptions | undefined,
+    text: string,
+  ): TrafficRequest<GenerateTextResultWithContext> {
+    const shortMetadata = this.buildShortResponseMetadata(metadata);
+    return {
+      tenantId,
+      metadata: shortMetadata,
+      maxQueueWaitMs: options?.maxQueueWaitMs,
+      estimatedTokens: 0,
+      execute: async () => this.createShortTextResult(text, options),
+      extractUsage: (result: GenerateTextResultWithContext) =>
+        this.extractUsageFromResponse(result),
+    };
+  }
+
+  private buildShortStreamTextFallbackRequest(
+    tenantId: string,
+    metadata: TrafficRequestMetadata | undefined,
+    options: StreamTextOptions | undefined,
+    text: string,
+  ): TrafficRequest<StreamTextResultWithContext> {
+    const shortMetadata = this.buildShortResponseMetadata(metadata);
+    return {
+      tenantId,
+      metadata: shortMetadata,
+      maxQueueWaitMs: options?.maxQueueWaitMs,
+      estimatedTokens: 0,
+      execute: async () => this.createShortStreamTextResult(text, options),
+      extractUsage: (result: StreamTextResultWithContext) => this.extractUsageFromResponse(result),
+    };
+  }
+
+  private buildShortObjectFallbackRequest<T extends z.ZodType>(
+    tenantId: string,
+    metadata: TrafficRequestMetadata | undefined,
+    schema: T,
+    options: GenerateObjectOptions | undefined,
+    text: string,
+  ): TrafficRequest<GenerateObjectResultWithContext<z.infer<T>>> {
+    const shortMetadata = this.buildShortResponseMetadata(metadata);
+    return {
+      tenantId,
+      metadata: shortMetadata,
+      maxQueueWaitMs: options?.maxQueueWaitMs,
+      estimatedTokens: 0,
+      execute: async () => this.createShortObjectResult(schema, text, options),
+      extractUsage: (result: GenerateObjectResultWithContext<z.infer<T>>) =>
+        this.extractUsageFromResponse(result),
+    };
+  }
+
+  private buildShortStreamObjectFallbackRequest<T extends z.ZodType>(
+    tenantId: string,
+    metadata: TrafficRequestMetadata | undefined,
+    schema: T,
+    options: StreamObjectOptions | undefined,
+    text: string,
+  ): TrafficRequest<StreamObjectResultWithContext<z.infer<T>>> {
+    const shortMetadata = this.buildShortResponseMetadata(metadata);
+    return {
+      tenantId,
+      metadata: shortMetadata,
+      maxQueueWaitMs: options?.maxQueueWaitMs,
+      estimatedTokens: 0,
+      execute: async () => this.createShortStreamObjectResult(schema, text, options),
+      extractUsage: (result: StreamObjectResultWithContext<z.infer<T>>) =>
+        this.extractUsageFromResponse(result),
+    };
+  }
+
+  private updateTrafficControllerRateLimits(
+    response: unknown,
+    metadata: TrafficRequestMetadata | undefined,
+    logger?: Logger,
+  ): void {
+    const headerCandidates = findHeaders(response);
+    if (headerCandidates.length === 0) {
+      logger?.debug?.("[Traffic] No headers found for rate limit update");
+      return;
+    }
+
+    const controller = getTrafficController();
+    const effectiveMetadata = metadata ?? this.buildTrafficMetadata();
+    let updateResult: ReturnType<typeof controller.updateRateLimitFromHeaders> | undefined;
+    for (const headers of headerCandidates) {
+      updateResult = controller.updateRateLimitFromHeaders(effectiveMetadata, headers);
+      if (updateResult) break;
+    }
+
+    if (!updateResult) {
+      logger?.debug?.("[Traffic] No rate limit headers applied from response");
+      return;
+    }
+
+    const now = Date.now();
+    const effectiveRemaining = Math.max(
+      0,
+      updateResult.state.remaining - updateResult.state.slotReservedForStream,
+    );
+    const resetInMs = Math.max(0, updateResult.state.resetAt - now);
+    const nextAllowedInMs = Math.max(0, updateResult.state.nextAllowedAt - now);
+    logger?.info?.("[Traffic] Applied rate limit from response headers", {
+      rateLimitKey: updateResult.key,
+      limit: updateResult.state.limit,
+      remaining: updateResult.state.remaining,
+      reserved: updateResult.state.slotReservedForStream,
+      effectiveRemaining,
+      resetAt: updateResult.state.resetAt,
+      resetInMs,
+      nextAllowedAt: updateResult.state.nextAllowedAt,
+      nextAllowedInMs,
+      headers: {
+        limitRequests: updateResult.headerSnapshot.limitRequests,
+        remainingRequests: updateResult.headerSnapshot.remainingRequests,
+        resetRequestsMs: updateResult.headerSnapshot.resetRequestsMs,
+      },
+    });
+  }
+
+  private extractUsageFromResponse(
+    result:
+      | {
+          usage?: LanguageModelUsage | PromiseLike<LanguageModelUsage | undefined>;
+          totalUsage?: LanguageModelUsage | PromiseLike<LanguageModelUsage | undefined>;
+        }
+      | undefined,
+  ): Promise<LanguageModelUsage | undefined> | LanguageModelUsage | undefined {
+    if (!result) {
+      return undefined;
+    }
+
+    const usageCandidate =
+      (
+        result as {
+          totalUsage?: LanguageModelUsage | PromiseLike<LanguageModelUsage | undefined>;
+        }
+      )?.totalUsage ??
+      (result as { usage?: LanguageModelUsage | PromiseLike<LanguageModelUsage | undefined> })
+        ?.usage;
+
+    if (!usageCandidate) {
+      return undefined;
+    }
+
+    const normalizeUsage = (
+      usage: LanguageModelUsage | undefined,
+    ): LanguageModelUsage | undefined => {
+      if (!usage) return undefined;
+      const input = Number.isFinite(usage.inputTokens) ? (usage.inputTokens as number) : undefined;
+      const output = Number.isFinite(usage.outputTokens)
+        ? (usage.outputTokens as number)
+        : undefined;
+      const total = Number.isFinite(usage.totalTokens) ? (usage.totalTokens as number) : undefined;
+
+      if (total === undefined && input === undefined && output === undefined) {
+        return undefined;
+      }
+
+      const safeInput = input ?? 0;
+      const safeOutput = output ?? 0;
+      const safeTotal = total ?? safeInput + safeOutput;
+
+      return {
+        ...usage,
+        inputTokens: safeInput,
+        outputTokens: safeOutput,
+        totalTokens: safeTotal,
+      };
+    };
+
+    if (
+      typeof (usageCandidate as PromiseLike<LanguageModelUsage | undefined>).then === "function"
+    ) {
+      return Promise.resolve(usageCandidate as PromiseLike<LanguageModelUsage | undefined>)
+        .then((usage) => normalizeUsage(usage))
+        .catch(() => undefined);
+    }
+
+    return normalizeUsage(usageCandidate as LanguageModelUsage);
+  }
+
+  private resolveProvider(model: AgentModelValue | undefined): string | undefined {
+    if (
+      model &&
+      typeof model === "object" &&
+      !Array.isArray(model) &&
+      "provider" in model &&
+      typeof (model as any).provider === "string"
+    ) {
+      return (model as any).provider;
+    }
+
+    return undefined;
+  }
+
   /**
    * Get the model name.
    * Pass a resolved model to return its modelId (useful for dynamic models).
    */
-  public getModelName(model?: LanguageModel | string): string {
-    if (model) {
+  public getModelName(model?: AgentModelValue): string {
+    if (model !== undefined) {
+      if (Array.isArray(model)) {
+        const primary = model.find((entry) => entry.enabled !== false) ?? model[0];
+        if (!primary) {
+          return "unknown";
+        }
+        const modelValue = primary.model;
+        if (typeof modelValue === "function") {
+          return "dynamic";
+        }
+        if (typeof modelValue === "string") {
+          return modelValue;
+        }
+        return modelValue.modelId || "unknown";
+      }
+      if (typeof model === "function") {
+        return "dynamic";
+      }
       if (typeof model === "string") {
         return model;
       }

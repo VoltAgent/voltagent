@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { extractTenantId } from "./utils";
 
 const CONTEXT_RECALL_EXTRACT_PROMPT = `Given the context and ground truth (expected output), extract all factual statements from the ground truth.
 
@@ -120,6 +121,7 @@ export function createContextRecallScorer<
       const agent = new Agent({
         name: "context-recall-evaluator",
         model,
+        trafficPriority: "P2",
         instructions: "You evaluate how well provided context supports factual statements",
       });
 
@@ -127,6 +129,7 @@ export function createContextRecallScorer<
       const contextText = Array.isArray(payload.context)
         ? payload.context.join("\n")
         : payload.context;
+      const tenantId = extractTenantId(context);
 
       // Extract statements from expected output
       const extractPrompt = CONTEXT_RECALL_EXTRACT_PROMPT.replace(
@@ -134,7 +137,9 @@ export function createContextRecallScorer<
         contextText,
       ).replace("{{expected}}", payload.expected);
 
-      const extractResponse = await agent.generateObject(extractPrompt, EXTRACT_SCHEMA);
+      const extractResponse = await agent.generateObject(extractPrompt, EXTRACT_SCHEMA, {
+        tenantId,
+      });
       const statements = extractResponse.object.statements;
 
       if (statements.length === 0) {
@@ -152,7 +157,9 @@ export function createContextRecallScorer<
           contextText,
         ).replace("{{statement}}", statement);
 
-        const verifyResponse = await agent.generateObject(verifyPrompt, VERIFY_SCHEMA);
+        const verifyResponse = await agent.generateObject(verifyPrompt, VERIFY_SCHEMA, {
+          tenantId,
+        });
         verdicts.push({
           statement,
           verdict: verifyResponse.object.verdict,

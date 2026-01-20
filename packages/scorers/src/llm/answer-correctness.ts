@@ -7,6 +7,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { extractTenantId } from "./utils";
 
 const ANSWER_CORRECTNESS_PROMPT = `Given a ground truth and an answer, analyze each statement in the answer and classify them in one of the following categories:
 
@@ -84,15 +85,17 @@ export function createAnswerCorrectnessScorer<
     const agent = new Agent({
       name: "answer-correctness-classifier",
       model,
+      trafficPriority: "P2",
       instructions: "You classify statements for answer correctness evaluation",
     });
 
+    const tenantId = extractTenantId(context);
     const payload = resolvePayload(context, buildPayload);
     const prompt = ANSWER_CORRECTNESS_PROMPT.replace("{{question}}", payload.input)
       .replace("{{answer}}", payload.output)
       .replace("{{ground_truth}}", payload.expected);
 
-    const response = await agent.generateObject(prompt, CLASSIFICATION_SCHEMA);
+    const response = await agent.generateObject(prompt, CLASSIFICATION_SCHEMA, { tenantId });
     const normalized = normalizeClassification(response.object);
 
     return {

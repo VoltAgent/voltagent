@@ -117,6 +117,18 @@ export const GenerateOptionsSchema = z
       .optional()
       .describe("Optional user ID for context tracking (required for resumable streams)"),
     conversationId: z.string().optional().describe("Optional conversation ID for context tracking"),
+    tenantId: z.string().optional().describe("Optional tenant ID for traffic limits"),
+    trafficPriority: z
+      .enum(["P0", "P1", "P2"])
+      .optional()
+      .describe("Optional traffic priority for scheduling (P0, P1, P2)"),
+    apiKeyId: z.string().optional().describe("Optional API key identifier for traffic limits"),
+    region: z.string().optional().describe("Optional region identifier for traffic limits"),
+    endpoint: z.string().optional().describe("Optional endpoint identifier for traffic limits"),
+    tenantTier: z
+      .string()
+      .optional()
+      .describe("Optional tenant tier identifier for traffic limits"),
     context: z
       .record(z.string(), z.unknown())
       .nullish()
@@ -134,6 +146,14 @@ export const GenerateOptionsSchema = z
       .positive()
       .optional()
       .describe("Maximum number of steps for this request"),
+    maxQueueWaitMs: z
+      .number()
+      .int()
+      .nonnegative()
+      .optional()
+      .describe("Maximum time to wait in the queue before timing out (ms)"),
+    taskType: z.string().optional().describe("Optional task classification for fallback policy"),
+    fallbackPolicyId: z.string().optional().describe("Optional explicit fallback policy id"),
     temperature: z
       .number()
       .min(0)

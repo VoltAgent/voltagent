@@ -1,6 +1,5 @@
 import { createTool } from "@voltagent/core";
 import z from "zod";
-
 export const weatherTool = createTool({
   id: "get-weather",
   name: "getWeather",
@@ -10,7 +9,6 @@ export const weatherTool = createTool({
   }),
   execute: async ({ location }, context) => {
     context?.logger?.info(`Fetching weather for ${location}`);
-
     const mockWeatherData = {
       location,
       temperature: Math.floor(Math.random() * 30) + 5,
@@ -20,7 +18,6 @@ export const weatherTool = createTool({
       humidity: Math.floor(Math.random() * 60) + 30,
       windSpeed: Math.floor(Math.random() * 30),
     };
-
     return {
       weather: mockWeatherData,
       message: `Current weather in ${location}: ${mockWeatherData.temperature}°C and ${mockWeatherData.condition.toLowerCase()} with ${mockWeatherData.humidity}% humidity and wind speed of ${mockWeatherData.windSpeed} km/h.`,

@@ -8,6 +8,7 @@ import {
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
+import { extractTenantId } from "./utils";
 
 const QUESTION_GEN_PROMPT = `Generate a question for the given answer and Identify if answer is noncommittal. Give noncommittal as 1 if the answer is noncommittal and 0 if the answer is committal. A noncommittal answer is one that is evasive, vague, or ambiguous. For example, "I don't know" or "I'm not sure" are noncommittal answers
 
@@ -119,9 +120,11 @@ export function createAnswerRelevancyScorer<
     const agent = new Agent({
       name: "question-generator",
       model,
+      trafficPriority: "P2",
       instructions: "You generate questions from answers to evaluate relevancy",
     });
 
+    const tenantId = extractTenantId(context);
     const payload = resolvePayload(context, buildPayload);
     const questions: GeneratedQuestion[] = [];
 
@@ -131,7 +134,7 @@ export function createAnswerRelevancyScorer<
         payload.context,
       );
 
-      const response = await agent.generateObject(prompt, QUESTION_SCHEMA);
+      const response = await agent.generateObject(prompt, QUESTION_SCHEMA, { tenantId });
       questions.push({
         question: response.object.question,
         noncommittal: response.object.noncommittal === 1,

@@ -34,6 +34,29 @@ export type {
   WorkflowTimelineEvent,
   RegisteredWorkflow,
 } from "./workflow";
+export {
+  // Surface traffic controller so downstream consumers can route agent calls through the shared scheduler
+  TrafficController,
+  CircuitBreakerOpenError,
+  QueueWaitTimeoutError,
+  RateLimitedUpstreamError,
+  getTrafficController,
+  type FallbackChainEntry,
+  type FallbackPolicy,
+  type FallbackPolicyConfig,
+  type FallbackPolicyMode,
+  type FallbackTarget,
+  type RateLimitConfig,
+  type RateLimitKey,
+  type AdaptiveLimiterConfig,
+  type PriorityWeights,
+  type PriorityBurstLimits,
+  type TrafficRequest,
+  type TrafficRequestMetadata,
+  type TrafficResponseMetadata,
+  type TrafficPriority,
+  type TrafficRequestType,
+} from "./traffic/traffic-controller";
 // Export new Agent from agent.ts
 export {
   Agent,

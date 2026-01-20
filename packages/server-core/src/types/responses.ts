@@ -1,10 +1,12 @@
 /**
  * Framework-agnostic response types for server handlers
  */
+import type { TrafficResponseMetadata } from "@voltagent/core";
 
 export interface SuccessResponse<T = any> {
   success: true;
   data: T;
+  traffic?: TrafficResponseMetadata;
 }
 
 export interface ErrorResponse {
@@ -13,6 +15,7 @@ export interface ErrorResponse {
   httpStatus?: number;
   code?: string;
   name?: string;
+  traffic?: TrafficResponseMetadata;
 }
 
 export type ApiResponse<T = any> = SuccessResponse<T> | ErrorResponse;

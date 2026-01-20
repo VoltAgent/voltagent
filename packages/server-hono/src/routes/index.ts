@@ -2,6 +2,7 @@ import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
   UPDATE_ROUTES,
+  buildTrafficHeaders,
   handleCancelWorkflow,
   handleChatStream,
   handleCheckUpdates,
@@ -89,11 +90,12 @@ export function registerAgentRoutes(
 
     const signal = c.req.raw.signal;
     const response = await handleGenerateText(agentId, body, deps, logger, signal);
+    const trafficHeaders = buildTrafficHeaders(response.traffic);
     if (!response.success) {
       const { httpStatus, ...details } = response;
-      return c.json(details, httpStatus || 500);
+      return c.json(details, httpStatus || 500, trafficHeaders);
     }
-    return c.json(response, 200);
+    return c.json(response, 200, trafficHeaders);
   });
 
   // POST /agents/:id/stream - Stream text (raw fullStream SSE)
@@ -145,11 +147,12 @@ export function registerAgentRoutes(
     const body = await c.req.json();
     const signal = c.req.raw.signal;
     const response = await handleGenerateObject(agentId, body, deps, logger, signal);
+    const trafficHeaders = buildTrafficHeaders(response.traffic);
     if (!response.success) {
       const { httpStatus, ...details } = response;
-      return c.json(details, httpStatus || 500);
+      return c.json(details, httpStatus || 500, trafficHeaders);
     }
-    return c.json(response, 200);
+    return c.json(response, 200, trafficHeaders);
   });
 
   // POST /agents/:id/stream-object - Stream object
