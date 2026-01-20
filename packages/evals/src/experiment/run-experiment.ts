@@ -1,7 +1,11 @@
 import { type LocalScorerExecutionResult, runLocalScorers } from "@voltagent/scorers";
-import type { VoltOpsRestClient } from "@voltagent/sdk";
+import { VoltOpsRestClient } from "@voltagent/sdk";
 
-import { resolveVoltOpsDatasetStream } from "../voltops/dataset.js";
+import {
+  type VoltOpsDatasetClient,
+  isVoltOpsDatasetClient,
+  resolveVoltOpsDatasetStream,
+} from "../voltops/dataset.js";
 import {
   type VoltOpsClientLike,
   type VoltOpsRunManager,
@@ -605,6 +609,64 @@ function mergeMetadata(
   return Object.keys(normalizedBase).length > 0 ? normalizedBase : null;
 }
 
+type VoltOpsClientOptionsLike = {
+  baseUrl?: unknown;
+  publicKey?: unknown;
+  secretKey?: unknown;
+};
+
+function normalizeClientOption(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function extractVoltOpsClientOptions(
+  value: unknown,
+): { baseUrl?: string; publicKey: string; secretKey: string } | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const options = (value as { options?: VoltOpsClientOptionsLike }).options;
+  if (!options || typeof options !== "object") {
+    return undefined;
+  }
+
+  const publicKey = normalizeClientOption(options.publicKey);
+  const secretKey = normalizeClientOption(options.secretKey);
+  const baseUrl = normalizeClientOption(options.baseUrl);
+
+  if (!publicKey || !secretKey) {
+    return undefined;
+  }
+
+  return {
+    baseUrl,
+    publicKey,
+    secretKey,
+  };
+}
+
+function coerceVoltOpsDatasetClient(value: unknown): VoltOpsDatasetClient | undefined {
+  if (isVoltOpsDatasetClient(value)) {
+    return value;
+  }
+
+  const options = extractVoltOpsClientOptions(value);
+  if (!options) {
+    return undefined;
+  }
+
+  try {
+    return new VoltOpsRestClient(options);
+  } catch {
+    return undefined;
+  }
+}
+
 function attachVoltOpsDatasetResolver<Item extends ExperimentDatasetItem>(
   descriptor: ExperimentConfig<Item>["dataset"],
   voltOpsClient: unknown,
@@ -617,7 +679,8 @@ function attachVoltOpsDatasetResolver<Item extends ExperimentDatasetItem>(
     return descriptor;
   }
 
-  if (!voltOpsClient || !isVoltOpsDatasetClient(voltOpsClient)) {
+  const datasetClient = coerceVoltOpsDatasetClient(voltOpsClient);
+  if (!datasetClient) {
     return descriptor;
   }
 
@@ -625,7 +688,7 @@ function attachVoltOpsDatasetResolver<Item extends ExperimentDatasetItem>(
     ...descriptor,
     resolve: async ({ limit, signal }) =>
       resolveVoltOpsDatasetStream<Item>({
-        sdk: voltOpsClient,
+        sdk: datasetClient,
         config: {
           id: descriptor.id,
           name: descriptor.name,
@@ -636,14 +699,4 @@ function attachVoltOpsDatasetResolver<Item extends ExperimentDatasetItem>(
         signal,
       }),
   };
-}
-
-function isVoltOpsDatasetClient(value: unknown): value is VoltOpsRestClient {
-  return Boolean(
-    value &&
-      typeof value === "object" &&
-      typeof (value as VoltOpsRestClient).resolveDatasetVersionId === "function" &&
-      typeof (value as VoltOpsRestClient).getDataset === "function" &&
-      typeof (value as VoltOpsRestClient).listDatasetItems === "function",
-  );
 }

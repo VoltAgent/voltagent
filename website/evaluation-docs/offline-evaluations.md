@@ -254,19 +254,19 @@ console.log("Summary:", {
 
 - `concurrency` - Number of items processed in parallel (default: 1)
 - `signal` - AbortSignal to cancel the run
-- `voltOpsClient` - VoltOps SDK instance for telemetry and cloud datasets
+- `voltOpsClient` - VoltOps client instance for telemetry and cloud datasets (VoltOpsClient or VoltOpsRestClient)
 - `onProgress` - Callback invoked after each item with `{ completed, total? }`
 - `onItem` - Callback invoked after each item with `{ index, item, result, summary }`
 
 Example with all options:
 
 ```ts
-import { VoltOpsRestClient } from "@voltagent/sdk";
+import { VoltOpsClient } from "@voltagent/sdk";
 
 const result = await runExperiment(experiment, {
   concurrency: 4,
   signal: abortController.signal,
-  voltOpsClient: new VoltOpsRestClient({
+  voltOpsClient: new VoltOpsClient({
     publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
     secretKey: process.env.VOLTAGENT_SECRET_KEY,
   }),

@@ -100,11 +100,11 @@ npm run volt eval run \
 ```
 
 ```ts title="Node script"
-import { VoltOpsRestClient } from "@voltagent/sdk";
+import { VoltOpsClient } from "@voltagent/core";
 import { runExperiment } from "@voltagent/evals";
 import experiment from "./experiments/support-nightly.experiment";
 
-const voltOpsClient = new VoltOpsRestClient({
+const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
   secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
