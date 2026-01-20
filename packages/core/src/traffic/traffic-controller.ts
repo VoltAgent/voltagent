@@ -18,6 +18,7 @@ import {
   TrafficRateLimiter,
 } from "./traffic-rate-limiter";
 import { buildRetryPlanWithPolicy } from "./traffic-retry";
+import { TimeoutPriorityQueue } from "./traffic-timeout-queue";
 import type {
   AdaptiveLimiterConfig,
   FallbackChainEntry,
@@ -109,11 +110,7 @@ export class TrafficController {
   private readonly trafficLogger: Logger;
   private readonly controllerLogger: Logger;
 
-  private readonly timeoutHeap: Array<{
-    at: number;
-    version: number;
-    item: QueuedRequest;
-  }> = [];
+  private readonly timeoutQueue = new TimeoutPriorityQueue<QueuedRequest>();
   private timeoutVersionCounter = 0;
   private readonly concurrencyLimiter: TrafficConcurrencyLimiter;
 
@@ -860,6 +857,20 @@ export class TrafficController {
     return Math.min(queueTimeoutAt, deadlineAt);
   }
 
+  private recordQueueTimeoutEntry(item: QueuedRequest, queueTimeoutAt?: number): void {
+    const previous = item.queueTimeoutAt;
+    item.queueTimeoutAt = queueTimeoutAt;
+    if (queueTimeoutAt === previous) return;
+    this.timeoutVersionCounter += 1;
+    item.timeoutVersion = this.timeoutVersionCounter;
+    if (queueTimeoutAt === undefined) return;
+    this.timeoutQueue.push({
+      at: queueTimeoutAt,
+      version: this.timeoutVersionCounter,
+      item,
+    });
+  }
+
   private handleQueueTimeout(
     next: QueuedRequest,
     now: number,
@@ -939,8 +950,7 @@ export class TrafficController {
 
   private enqueueItem(item: QueuedRequest): void {
     const queueTimeoutAt = this.resolveQueueTimeoutAt(item);
-    item.queueTimeoutAt = queueTimeoutAt;
-    item.timeoutVersion = this.timeoutVersionCounter;
+    this.recordQueueTimeoutEntry(item, queueTimeoutAt);
 
     const state = this.queues[item.priority];
     const tenantId = item.tenantId;
@@ -1103,6 +1113,7 @@ export class TrafficController {
          */
         // TODO : Case what if enqueuedAt + maxQueueWaitMs  is present and deadline is not present?
         const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
+        this.recordQueueTimeoutEntry(next, queueTimeoutAt);
         /**
          * If the head item has a future timeout deadline, track it as a candidate wake-up.
          * This allows the drain loop to schedule a timer and re-sweep when that deadline is hit.
@@ -1151,6 +1162,7 @@ export class TrafficController {
      * and intentionally disable further maxQueueWaitMs checks.
      */
     const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
+    this.recordQueueTimeoutEntry(next, queueTimeoutAt);
 
     if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
       wakeUpAt = queueTimeoutAt;
