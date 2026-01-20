@@ -61,7 +61,7 @@ export class DefaultRateLimitStrategy implements RateLimitStrategy {
           effectiveRemaining,
           resetAt: state.resetAt,
         });
-        return { kind: "wait" };
+        return { kind: "blocked" };
       }
     }
 

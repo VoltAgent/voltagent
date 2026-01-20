@@ -105,7 +105,7 @@ export class TokenBucketRateLimitStrategy implements RateLimitStrategy {
         capacity: bucket.capacity,
         refillPerSecond: bucket.refillPerSecond,
       });
-      return { kind: "wait" };
+      return { kind: "blocked" };
     }
 
     // 5. Happy path: token available → consume and proceed
@@ -130,7 +130,7 @@ export class TokenBucketRateLimitStrategy implements RateLimitStrategy {
         capacity: bucket.capacity,
         refillPerSecond: bucket.refillPerSecond,
       });
-      return { kind: "wait" };
+      return { kind: "blocked" };
     }
 
     // 7. Bucket empty but refillable → wait until next token

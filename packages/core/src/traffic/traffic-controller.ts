@@ -396,18 +396,15 @@ export class TrafficController {
     });
 
     // Keep attempting dispatch decisions until we are forced to stop.
-    // This loop only exits when we must wait for a future event.
-    // TODO: This `wait` means two different things:
-    // 1) work exists but cannot run yet
-    // 2) no work exists at all
-    // Mixing these makes the control flow hard to understand.
-    // We should separate these cases in the future.
+    // This loop only exits when we must wait for a timer or an external signal.
 
     while (true) {
       // Ask the dispatcher what to do next:
       // - dispatch a request
       // - skip a request
-      // - wait (optionally until a specific time)
+      // - wait (until a specific time)
+      // - blocked (await external signal)
+      // - idle (no work)
       const decision = this.tryDispatchNext();
 
       this.controllerLogger.trace("Dispatch decision", decision);
@@ -434,20 +431,22 @@ export class TrafficController {
       if (decision.kind === "wait") {
         // If a concrete wake-up time is provided,
         // schedule a timer so we retry draining at that time.
-        if (decision.wakeUpAt) {
-          this.controllerLogger.debug("Rate limit wait; scheduling wakeup", {
-            wakeUpAt: decision.wakeUpAt,
-            inMs: Math.max(0, decision.wakeUpAt - Date.now()),
-          });
+        this.controllerLogger.debug("Rate limit wait; scheduling wakeup", {
+          wakeUpAt: decision.wakeUpAt,
+          inMs: Math.max(0, decision.wakeUpAt - Date.now()),
+        });
 
-          this.scheduleRateLimitWakeUpAt(decision.wakeUpAt);
-        }
+        this.scheduleRateLimitWakeUpAt(decision.wakeUpAt);
 
         // Exit the drain loop.
         // Control will resume later via:
         // - wake-up timer
         // - request completion
         // - new enqueue
+        return;
+      }
+
+      if (decision.kind === "blocked" || decision.kind === "idle") {
         return;
       }
 
@@ -470,7 +469,9 @@ export class TrafficController {
      * This method returns a single decision:
      * - dispatch: we started a request (and should drain again immediately)
      * - skip: we made progress by cleaning up (and should drain again immediately)
-     * - wait: no progress is possible right now (optionally until a wake-up time)
+     * - wait: no progress is possible right now (until a wake-up time)
+     * - blocked: work exists but needs an external signal to continue
+     * - idle: no work exists
      */
     if (this.activeCount >= this.maxConcurrent) {
       /**
@@ -492,9 +493,13 @@ export class TrafficController {
        * - an in-flight request to complete (which triggers a drain), or
        * - the next timeout deadline (if any).
        */
-      return timeoutCheck.wakeUpAt !== undefined
-        ? { kind: "wait", wakeUpAt: timeoutCheck.wakeUpAt }
-        : { kind: "wait" };
+      if (timeoutCheck.wakeUpAt !== undefined) {
+        return { kind: "wait", wakeUpAt: timeoutCheck.wakeUpAt };
+      }
+
+      const hasQueued =
+        this.getQueuedCount("P0") + this.getQueuedCount("P1") + this.getQueuedCount("P2") > 0;
+      return hasQueued ? { kind: "blocked" } : { kind: "idle" };
     }
 
     /**
@@ -518,6 +523,8 @@ export class TrafficController {
     // TODO : How is tenant id stored?
     const priorities = this.getPriorityDispatchOrder();
 
+    let sawCandidate = false;
+
     for (const priority of priorities) {
       const state = this.queues[priority];
 
@@ -537,6 +544,7 @@ export class TrafficController {
         if (!candidate) break;
 
         attempts += 1;
+        sawCandidate = true;
 
         const now = Date.now();
         const result = this.processQueuedCandidate(priority, candidate, now);
@@ -560,11 +568,13 @@ export class TrafficController {
      * No dispatch or skip was possible.
      *
      * If we observed a wake-up time (e.g. rate limit), return it so the drain loop can
-     * schedule a timer; otherwise just wait for the next external signal.
+     * schedule a timer; otherwise report blocked/idle and await external signals.
      */
     return earliestWakeUpAt !== undefined
       ? { kind: "wait", wakeUpAt: earliestWakeUpAt }
-      : { kind: "wait" };
+      : sawCandidate
+        ? { kind: "blocked" }
+        : { kind: "idle" };
   }
 
   private startRequest(item: QueuedRequest, queue: QueuedRequest[], tenantId: string): void {
@@ -1172,10 +1182,7 @@ export class TrafficController {
           return { action: "skip", wakeUpAt };
         }
 
-        next.etaMs =
-          circuitBreakerDecision.wakeUpAt !== undefined
-            ? Math.max(0, circuitBreakerDecision.wakeUpAt - now)
-            : undefined;
+        next.etaMs = Math.max(0, circuitBreakerDecision.wakeUpAt - now);
 
         return {
           action: "continue",
@@ -1219,8 +1226,7 @@ export class TrafficController {
         return { action: "skip", wakeUpAt };
       }
 
-      next.etaMs =
-        adaptive.wakeUpAt !== undefined ? Math.max(0, adaptive.wakeUpAt - now) : undefined;
+      next.etaMs = Math.max(0, adaptive.wakeUpAt - now);
 
       return {
         action: "continue",
@@ -1247,15 +1253,23 @@ export class TrafficController {
           return { action: "skip", wakeUpAt };
         }
 
-        next.etaMs =
-          rateLimitDecision.wakeUpAt !== undefined
-            ? Math.max(0, rateLimitDecision.wakeUpAt - now)
-            : undefined;
+        next.etaMs = Math.max(0, rateLimitDecision.wakeUpAt - now);
 
         return {
           action: "continue",
           wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, rateLimitDecision.wakeUpAt),
         };
+      }
+      if (rateLimitDecision.kind === "blocked") {
+        if (
+          this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "rate limit blocked")
+        ) {
+          this.cleanupTenantQueue(priority, tenantId, queue);
+          return { action: "skip", wakeUpAt };
+        }
+
+        next.etaMs = undefined;
+        return { action: "continue", wakeUpAt };
       }
 
       return { action: "continue", wakeUpAt };

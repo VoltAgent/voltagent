@@ -5,7 +5,9 @@ export type Scheduler = (callback: () => void) => void;
 export type DispatchDecision =
   | { kind: "dispatch" }
   | { kind: "skip" }
-  | { kind: "wait"; wakeUpAt?: number };
+  | { kind: "wait"; wakeUpAt: number }
+  | { kind: "blocked" }
+  | { kind: "idle" };
 
 export type CircuitStateStatus = "closed" | "open" | "half-open";
 

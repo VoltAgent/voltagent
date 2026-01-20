@@ -88,7 +88,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
           rateLimitKey: this.key,
           bootstrapReserved: this.bootstrapReserved,
         });
-        return { kind: "wait" };
+        return { kind: "blocked" };
       }
 
       this.bootstrapReserved += 1;

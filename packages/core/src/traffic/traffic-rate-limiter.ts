@@ -68,13 +68,14 @@ export class TrafficRateLimiter {
       if (fallbackTokenDecision?.kind === "wait") {
         const requestWakeUp = strategyDecision.wakeUpAt;
         const tokenWakeUp = fallbackTokenDecision.wakeUpAt;
-        if (tokenWakeUp !== undefined && requestWakeUp !== undefined) {
-          return { kind: "wait", wakeUpAt: Math.min(requestWakeUp, tokenWakeUp) };
-        }
-        if (tokenWakeUp !== undefined && requestWakeUp === undefined) {
-          return fallbackTokenDecision;
-        }
+        return { kind: "wait", wakeUpAt: Math.min(requestWakeUp, tokenWakeUp) };
       }
+      if (fallbackTokenDecision?.kind === "blocked") {
+        return fallbackTokenDecision;
+      }
+      return strategyDecision;
+    }
+    if (strategyDecision?.kind === "blocked") {
       return strategyDecision;
     }
 
@@ -86,6 +87,9 @@ export class TrafficRateLimiter {
       ? null
       : this.resolveFallbackTokenLimit(next, key, logger, true);
     if (fallbackTokenDecision?.kind === "wait") {
+      return fallbackTokenDecision;
+    }
+    if (fallbackTokenDecision?.kind === "blocked") {
       return fallbackTokenDecision;
     }
 
@@ -233,7 +237,7 @@ export class TrafficRateLimiter {
         capacity: tokenBucket.capacity,
         refillPerSecond: tokenBucket.refillPerSecond,
       });
-      return { kind: "wait" };
+      return { kind: "blocked" };
     }
 
     /* ---------------------------------------------
@@ -272,7 +276,7 @@ export class TrafficRateLimiter {
         capacity: tokenBucket.capacity,
         refillPerSecond: tokenBucket.refillPerSecond,
       });
-      return { kind: "wait" };
+      return { kind: "blocked" };
     }
 
     /* ---------------------------------------------
