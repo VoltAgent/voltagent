@@ -1180,6 +1180,13 @@ describe("Agent", () => {
   });
 
   describe("Global Memory Defaults", () => {
+    beforeEach(() => {
+      const registry = AgentRegistry.getInstance();
+      registry.setGlobalAgentMemory(undefined);
+      registry.setGlobalWorkflowMemory(undefined);
+      registry.setGlobalMemory(undefined);
+    });
+
     afterEach(() => {
       const registry = AgentRegistry.getInstance();
       registry.setGlobalAgentMemory(undefined);
