@@ -646,14 +646,16 @@ export function createWorkflow<
   }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>,
   ...steps: ReadonlyArray<BaseStep>
 ) {
-  // ✅ Ensure every workflow has Memory V2 (like Agent system)
-  const effectiveMemory = workflowMemory || new MemoryV2({ storage: new InMemoryStorageAdapter() });
+  const hasExplicitMemory = workflowMemory !== undefined;
+  const globalWorkflowMemory = AgentRegistry.getInstance().getGlobalWorkflowMemory();
+  const fallbackMemory = new MemoryV2({ storage: new InMemoryStorageAdapter() });
+  let defaultMemory = workflowMemory ?? globalWorkflowMemory ?? fallbackMemory;
 
   // Helper function to save suspension state to memory
   const saveSuspensionState = async (
     suspensionData: any,
     executionId: string,
-    memory: typeof effectiveMemory,
+    memory: MemoryV2,
     logger: Logger,
     events: Array<{
       id: string;
@@ -730,6 +732,7 @@ export function createWorkflow<
     externalStreamController?: WorkflowStreamController | null,
   ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> => {
     const workflowRegistry = WorkflowRegistry.getInstance();
+    const executionMemory = options?.memory ?? defaultMemory;
 
     let executionId: string;
 
@@ -811,7 +814,7 @@ export function createWorkflow<
     let resumedFrom: { traceId: string; spanId: string } | undefined;
     if (options?.resumeFrom?.executionId) {
       try {
-        const workflowState = await effectiveMemory.getWorkflowState(executionId);
+        const workflowState = await executionMemory.getWorkflowState(executionId);
         // Look for trace IDs from the original execution
         if (workflowState?.metadata?.traceId && workflowState?.metadata?.spanId) {
           resumedFrom = {
@@ -883,11 +886,11 @@ export function createWorkflow<
 
         // Get the existing state and update its status
         try {
-          const workflowState = await effectiveMemory.getWorkflowState(executionId);
+          const workflowState = await executionMemory.getWorkflowState(executionId);
           if (workflowState) {
             runLogger.debug(`Found existing workflow state with status: ${workflowState.status}`);
             // Update state to running and clear suspension metadata
-            await effectiveMemory.updateWorkflowState(executionId, {
+            await executionMemory.updateWorkflowState(executionId, {
               status: "running",
               suspension: undefined, // Clear suspension metadata
               metadata: {
@@ -925,7 +928,7 @@ export function createWorkflow<
         };
 
         try {
-          await effectiveMemory.setWorkflowState(executionId, workflowState);
+          await executionMemory.setWorkflowState(executionId, workflowState);
           runLogger.trace(`Created workflow state in Memory V2 for ${executionId}`);
         } catch (error) {
           runLogger.error("Failed to create workflow state in Memory V2:", { error });
@@ -955,7 +958,7 @@ export function createWorkflow<
         steps: [],
         signal: options?.suspendController?.signal, // Get signal from suspendController
         // Store effective memory for use in steps if needed
-        memory: effectiveMemory,
+        memory: executionMemory,
         // Initialize step data map for tracking inputs/outputs
         stepData: new Map(),
         // Initialize event sequence - restore from resume or start at 0
@@ -1189,7 +1192,7 @@ export function createWorkflow<
             workflowRegistry.activeExecutions.delete(executionId);
 
             try {
-              await effectiveMemory.updateWorkflowState(executionId, {
+              await executionMemory.updateWorkflowState(executionId, {
                 status: "cancelled",
                 events: collectedEvents,
                 cancellation: {
@@ -1332,7 +1335,7 @@ export function createWorkflow<
               await saveSuspensionState(
                 suspensionData,
                 executionId,
-                effectiveMemory,
+                executionMemory,
                 runLogger,
                 collectedEvents,
               );
@@ -1536,7 +1539,7 @@ export function createWorkflow<
               await saveSuspensionState(
                 suspensionMetadata,
                 executionId,
-                effectiveMemory,
+                executionMemory,
                 runLogger,
                 collectedEvents,
               );
@@ -1816,7 +1819,7 @@ export function createWorkflow<
 
         // Update Memory V2 state to completed with events and output
         try {
-          await effectiveMemory.updateWorkflowState(executionContext.executionId, {
+          await executionMemory.updateWorkflowState(executionContext.executionId, {
             status: "completed",
             events: collectedEvents,
             output: finalState.result,
@@ -1898,7 +1901,7 @@ export function createWorkflow<
           streamController?.close();
 
           try {
-            await effectiveMemory.updateWorkflowState(executionId, {
+            await executionMemory.updateWorkflowState(executionId, {
               status: "cancelled",
               metadata: {
                 ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
@@ -1993,7 +1996,7 @@ export function createWorkflow<
         }
         // Persist error status to Memory V2 so /state reflects the failure
         try {
-          await effectiveMemory.updateWorkflowState(executionId, {
+          await executionMemory.updateWorkflowState(executionId, {
             status: "error",
             events: collectedEvents,
             // Store a lightweight error summary in metadata for debugging
@@ -2031,7 +2034,9 @@ export function createWorkflow<
     }); // Close the withSpan callback
   };
 
-  return {
+  const workflow: Workflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA> & {
+    __setDefaultMemory?: (memory: MemoryV2) => void;
+  } = {
     id,
     name,
     purpose: purpose ?? "No purpose provided",
@@ -2041,7 +2046,7 @@ export function createWorkflow<
     suspendSchema: effectiveSuspendSchema as SUSPEND_SCHEMA,
     resumeSchema: effectiveResumeSchema as RESUME_SCHEMA,
     // ✅ Always expose memory for registry access
-    memory: effectiveMemory,
+    memory: defaultMemory,
     observability: workflowObservability,
     inputGuardrails: workflowInputGuardrails,
     outputGuardrails: workflowOutputGuardrails,
@@ -2265,7 +2270,19 @@ export function createWorkflow<
 
       return streamResult;
     },
-  } satisfies Workflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>;
+  };
+
+  const setDefaultMemory = (memory: MemoryV2): void => {
+    if (hasExplicitMemory) {
+      return;
+    }
+    defaultMemory = memory;
+    workflow.memory = memory;
+  };
+
+  workflow.__setDefaultMemory = setDefaultMemory;
+
+  return workflow;
 }
 
 /*

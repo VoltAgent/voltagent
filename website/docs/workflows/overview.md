@@ -483,6 +483,22 @@ One of the most powerful features of VoltAgent is its built-in observability lay
 
 This execution history is stored using a **memory provider**. By default, VoltAgent uses `InMemoryStorage` for in-memory storage during development.
 
+To set a default memory provider for all workflows, configure `workflowMemory` (or the shared `memory` fallback) when creating `VoltAgent`.
+
+```ts
+import { Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+
+const workflowMemory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/workflows.db" }),
+});
+
+new VoltAgent({
+  workflowMemory,
+  workflows: { workflow },
+});
+```
+
 The `memory` property in the `createWorkflowChain` configuration allows you to **override this default storage mechanism**. This is useful when moving to production or if you want persistent storage.
 
 You can use several providers to store workflow history:

@@ -1,5 +1,6 @@
 import type { Logger } from "@voltagent/internal";
 import type { Agent } from "../agent/agent";
+import type { Memory } from "../memory";
 import type { VoltAgentObservability } from "../observability";
 import type { VoltOpsClient } from "../voltops/client";
 
@@ -21,6 +22,9 @@ export class AgentRegistry {
   private globalVoltOpsClient?: VoltOpsClient;
   private globalLogger?: Logger;
   private globalObservability?: VoltAgentObservability;
+  private globalMemory?: Memory;
+  private globalAgentMemory?: Memory;
+  private globalWorkflowMemory?: Memory;
 
   /**
    * Track parent-child relationships between agents (child -> parents)
@@ -229,5 +233,47 @@ export class AgentRegistry {
    */
   public getGlobalObservability(): VoltAgentObservability | undefined {
     return this.globalObservability;
+  }
+
+  /**
+   * Set the global fallback Memory instance.
+   */
+  public setGlobalMemory(memory: Memory | undefined): void {
+    this.globalMemory = memory;
+  }
+
+  /**
+   * Get the global fallback Memory instance.
+   */
+  public getGlobalMemory(): Memory | undefined {
+    return this.globalMemory;
+  }
+
+  /**
+   * Set the global default Memory instance for agents.
+   */
+  public setGlobalAgentMemory(memory: Memory | undefined): void {
+    this.globalAgentMemory = memory;
+  }
+
+  /**
+   * Get the global default Memory instance for agents.
+   */
+  public getGlobalAgentMemory(): Memory | undefined {
+    return this.globalAgentMemory ?? this.globalMemory;
+  }
+
+  /**
+   * Set the global default Memory instance for workflows.
+   */
+  public setGlobalWorkflowMemory(memory: Memory | undefined): void {
+    this.globalWorkflowMemory = memory;
+  }
+
+  /**
+   * Get the global default Memory instance for workflows.
+   */
+  public getGlobalWorkflowMemory(): Memory | undefined {
+    return this.globalWorkflowMemory ?? this.globalMemory;
   }
 }

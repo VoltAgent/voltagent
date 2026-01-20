@@ -677,6 +677,20 @@ export class MemoryManager {
     return this.conversationMemory;
   }
 
+  /**
+   * Replace the Memory instance used for this manager.
+   */
+  setMemory(memory: Memory | false): void {
+    if (memory === false) {
+      this.conversationMemory = undefined;
+      return;
+    }
+
+    if (memory instanceof Memory) {
+      this.conversationMemory = memory;
+    }
+  }
+
   // ============================================================================
   // Working Memory Proxy Methods
   // ============================================================================

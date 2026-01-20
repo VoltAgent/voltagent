@@ -10,6 +10,7 @@ import type { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
 import type { AgentStatus } from "./agent/types";
 import type { MCPServerRegistry } from "./mcp";
+import type { Memory } from "./memory";
 import type { VoltAgentObservability } from "./observability";
 import type { ToolStatusInfo } from "./tool";
 import type { TriggerRegistry } from "./triggers/registry";
@@ -212,6 +213,20 @@ export type VoltAgentOptions = {
         DangerouslyAllowAny
       >
   >;
+  /**
+   * Default Memory instance used when agent/workflow defaults are not provided.
+   */
+  memory?: Memory;
+  /**
+   * Default Memory instance used for agents when they don't specify one.
+   * Falls back to `memory` when not provided.
+   */
+  agentMemory?: Memory;
+  /**
+   * Default Memory instance used for workflows when they don't specify one.
+   * Falls back to `memory` when not provided.
+   */
+  workflowMemory?: Memory;
   /** Optional VoltOps trigger handlers */
   triggers?: VoltAgentTriggersConfig;
   /**

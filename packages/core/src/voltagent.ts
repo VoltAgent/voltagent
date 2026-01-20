@@ -6,6 +6,7 @@ import { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
 import { getGlobalLogger } from "./logger";
 import { MCPServerRegistry } from "./mcp";
+import type { Memory } from "./memory";
 import {
   ServerlessVoltAgentObservability,
   type VoltAgentObservability,
@@ -32,6 +33,8 @@ export class VoltAgent {
   private serverlessProvider?: IServerlessProvider;
   private logger: Logger;
   private observability?: VoltAgentObservability;
+  private defaultAgentMemory?: Memory;
+  private defaultWorkflowMemory?: Memory;
   private readonly mcpServers = new Set<MCPServerLike>();
   private readonly mcpServerRegistry = new MCPServerRegistry();
   private readonly a2aServers = new Set<A2AServerLike>();
@@ -47,6 +50,17 @@ export class VoltAgent {
       this.ensureEnvironment();
     };
     this.agentRefs = options.agents ?? {};
+    this.defaultAgentMemory = options.agentMemory ?? options.memory;
+    this.defaultWorkflowMemory = options.workflowMemory ?? options.memory;
+    if (options.memory) {
+      this.registry.setGlobalMemory(options.memory);
+    }
+    if (options.agentMemory) {
+      this.registry.setGlobalAgentMemory(options.agentMemory);
+    }
+    if (options.workflowMemory) {
+      this.registry.setGlobalWorkflowMemory(options.workflowMemory);
+    }
 
     // Initialize logger
     this.logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
@@ -337,8 +351,33 @@ export class VoltAgent {
     Object.entries(triggers).forEach(([name, config]) => this.registerTrigger(name, config));
   }
 
+  private applyDefaultMemoryToAgent(agent: Agent): void {
+    if (!this.defaultAgentMemory) {
+      return;
+    }
+    agent.__setDefaultMemory(this.defaultAgentMemory);
+  }
+
+  private applyDefaultMemoryToWorkflow(
+    workflow: Workflow<
+      DangerouslyAllowAny,
+      DangerouslyAllowAny,
+      DangerouslyAllowAny,
+      DangerouslyAllowAny
+    >,
+  ): void {
+    if (!this.defaultWorkflowMemory) {
+      return;
+    }
+    const workflowWithDefaults = workflow as typeof workflow & {
+      __setDefaultMemory?: (memory: Memory) => void;
+    };
+    workflowWithDefaults.__setDefaultMemory?.(this.defaultWorkflowMemory);
+  }
+
   public registerAgent(agent: Agent): void {
     // Register the agent
+    this.applyDefaultMemoryToAgent(agent);
     this.registry.registerAgent(agent);
   }
 
@@ -441,6 +480,7 @@ export class VoltAgent {
     Object.values(workflows).forEach((workflow) => {
       // If it's a WorkflowChain, convert to Workflow first
       const workflowInstance = "toWorkflow" in workflow ? workflow.toWorkflow() : workflow;
+      this.applyDefaultMemoryToWorkflow(workflowInstance);
       this.workflowRegistry.registerWorkflow(workflowInstance);
     });
   }
@@ -456,6 +496,7 @@ export class VoltAgent {
       DangerouslyAllowAny
     >,
   ): void {
+    this.applyDefaultMemoryToWorkflow(workflow);
     this.workflowRegistry.registerWorkflow(workflow);
   }
 

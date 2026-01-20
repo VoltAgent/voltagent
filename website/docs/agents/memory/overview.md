@@ -85,6 +85,34 @@ const agent3 = new Agent({
 });
 ```
 
+### Global Defaults (VoltAgent)
+
+Set default memory instances once at the VoltAgent entrypoint. Defaults apply only when an agent or workflow does not specify `memory`. An explicit `memory: false` on an agent disables memory and bypasses defaults.
+
+```ts
+import { Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+
+const agentMemory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/agent.db" }),
+});
+
+const workflowMemory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/workflows.db" }),
+});
+
+new VoltAgent({
+  agentMemory,
+  workflowMemory,
+  // memory: sharedFallbackMemory,
+});
+```
+
+**Precedence**
+
+- Agents: agent `memory` > `agentMemory` > `memory` > built-in in-memory
+- Workflows: workflow `memory` > `workflowMemory` > `memory` > built-in in-memory
+
 ## Usage with User and Conversation IDs
 
 Provide `userId` and `conversationId` in generation calls to scope memory:

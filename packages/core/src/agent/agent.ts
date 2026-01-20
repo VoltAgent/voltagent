@@ -476,6 +476,7 @@ export class Agent {
   private readonly logger: Logger;
   private readonly memoryManager: MemoryManager;
   private readonly memory?: Memory | false;
+  private readonly memoryConfigured: boolean;
   private readonly summarization?: AgentSummarizationOptions | false;
   private defaultObservability?: VoltAgentObservability;
   private readonly toolManager: ToolManager;
@@ -542,11 +543,15 @@ export class Agent {
     });
 
     // Store Memory
+    this.memoryConfigured = options.memory !== undefined;
     this.memory = options.memory;
     this.summarization = options.summarization;
 
     // Initialize memory manager
-    this.memoryManager = new MemoryManager(this.id, this.memory, {}, this.logger);
+    const resolvedMemory = this.memoryConfigured
+      ? options.memory
+      : AgentRegistry.getInstance().getGlobalAgentMemory();
+    this.memoryManager = new MemoryManager(this.id, resolvedMemory, {}, this.logger);
 
     // Initialize tool manager with static tools
     const staticTools = typeof options.tools === "function" ? [] : options.tools;
@@ -5376,6 +5381,9 @@ export class Agent {
           })
         : [];
 
+    const activeMemory = this.getMemory();
+    const memoryInstance: Memory | undefined = activeMemory || undefined;
+
     return {
       id: this.id,
       name: this.name,
@@ -5399,26 +5407,24 @@ export class Agent {
         ...this.memoryManager.getMemoryState(),
         node_id: createNodeId(NodeType.MEMORY, this.id),
         // Add vector DB and embedding info if Memory V2 is configured
-        vectorDB:
-          this.memory && typeof this.memory === "object" && this.memory.getVectorAdapter?.()
-            ? {
-                enabled: true,
-                adapter: this.memory.getVectorAdapter()?.constructor.name || "Unknown",
-                dimension: this.memory.getEmbeddingAdapter?.()?.getDimensions() || 0,
-                status: "idle",
-                node_id: createNodeId(NodeType.VECTOR, this.id),
-              }
-            : null,
-        embeddingModel:
-          this.memory && typeof this.memory === "object" && this.memory.getEmbeddingAdapter?.()
-            ? {
-                enabled: true,
-                model: this.memory.getEmbeddingAdapter()?.getModelName() || "unknown",
-                dimension: this.memory.getEmbeddingAdapter()?.getDimensions() || 0,
-                status: "idle",
-                node_id: createNodeId(NodeType.EMBEDDING, this.id),
-              }
-            : null,
+        vectorDB: memoryInstance?.getVectorAdapter?.()
+          ? {
+              enabled: true,
+              adapter: memoryInstance.getVectorAdapter()?.constructor.name || "Unknown",
+              dimension: memoryInstance.getEmbeddingAdapter?.()?.getDimensions() || 0,
+              status: "idle",
+              node_id: createNodeId(NodeType.VECTOR, this.id),
+            }
+          : null,
+        embeddingModel: memoryInstance?.getEmbeddingAdapter?.()
+          ? {
+              enabled: true,
+              model: memoryInstance.getEmbeddingAdapter()?.getModelName() || "unknown",
+              dimension: memoryInstance.getEmbeddingAdapter()?.getDimensions() || 0,
+              status: "idle",
+              node_id: createNodeId(NodeType.EMBEDDING, this.id),
+            }
+          : null,
       },
 
       retriever: this.retriever
@@ -5580,6 +5586,16 @@ export class Agent {
     }
 
     return this.memory ?? this.memoryManager.getMemory();
+  }
+
+  /**
+   * Internal: apply a default Memory instance when none was configured explicitly.
+   */
+  public __setDefaultMemory(memory: Memory): void {
+    if (this.memoryConfigured || this.memory === false) {
+      return;
+    }
+    this.memoryManager.setMemory(memory);
   }
 
   /**
