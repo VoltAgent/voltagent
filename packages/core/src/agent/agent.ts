@@ -59,6 +59,7 @@ import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import { convertUsage } from "../utils/usage-converter";
+import { normalizeFinishUsageStream, resolveFinishUsage } from "../utils/usage-normalizer";
 import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
@@ -793,10 +794,16 @@ export class Agent {
               this.temperature,
             );
 
+            const providerUsage = result.usage ? await Promise.resolve(result.usage) : undefined;
+            const usageForFinish = resolveFinishUsage({
+              providerMetadata: (result as { providerMetadata?: unknown }).providerMetadata,
+              usage: providerUsage,
+              totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
+            });
             const { toolCalls: aggregatedToolCalls, toolResults: aggregatedToolResults } =
               this.collectToolDataFromResult(result);
 
-            const usageInfo = convertUsage(result.usage);
+            const usageInfo = convertUsage(usageForFinish);
             const middlewareText = await runOutputMiddlewares<string>(
               result.text,
               oc,
@@ -846,9 +853,8 @@ export class Agent {
             });
 
             // Log successful completion with usage details
-            const providerUsage = result.usage;
-            const tokenInfo = providerUsage
-              ? `${providerUsage.totalTokens} tokens`
+            const tokenInfo = usageForFinish
+              ? `${usageForFinish.totalTokens} tokens`
               : "no usage data";
             methodLogger.debug(
               buildAgentLogMessage(
@@ -860,14 +866,14 @@ export class Agent {
                 event: LogEvents.AGENT_GENERATION_COMPLETED,
                 duration: Date.now() - startTime,
                 finishReason: result.finishReason,
-                usage: result.usage,
+                usage: usageForFinish,
                 toolCalls: aggregatedToolCalls.length,
                 text: finalText,
               },
             );
 
             // Add usage to span
-            this.setTraceContextUsage(oc.traceContext, result.usage);
+            this.setTraceContextUsage(oc.traceContext, usageForFinish);
             oc.traceContext.setOutput(finalText);
             oc.traceContext.setFinishReason(result.finishReason);
 
@@ -885,7 +891,7 @@ export class Agent {
               operation: "generateText",
               metadata: {
                 finishReason: result.finishReason,
-                usage: result.usage ? JSON.parse(safeStringify(result.usage)) : undefined,
+                usage: usageForFinish ? JSON.parse(safeStringify(usageForFinish)) : undefined,
                 toolCalls: aggregatedToolCalls,
               },
             });
@@ -1240,7 +1246,6 @@ export class Agent {
 
         let guardrailPipeline: GuardrailPipeline | null = null;
         let sanitizedTextPromise!: PromiseLike<string>;
-
         const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
           oc,
           operation: "streamText",
@@ -1400,6 +1405,11 @@ export class Agent {
                 const providerUsage = finalResult.usage
                   ? await Promise.resolve(finalResult.usage)
                   : undefined;
+                const usageForFinish = resolveFinishUsage({
+                  providerMetadata: finalResult.providerMetadata,
+                  usage: providerUsage,
+                  totalUsage: finalResult.totalUsage,
+                });
                 finalizeLLMSpan(SpanStatusCode.OK, {
                   usage: providerUsage,
                   finishReason: finalResult.finishReason,
@@ -1414,9 +1424,9 @@ export class Agent {
                 // Event tracking now handled by OpenTelemetry spans
 
                 // Add usage to span
-                this.setTraceContextUsage(oc.traceContext, finalResult.totalUsage);
+                this.setTraceContextUsage(oc.traceContext, usageForFinish);
 
-                const usage = convertUsage(finalResult.totalUsage);
+                const usage = convertUsage(usageForFinish);
                 let finalText: string;
 
                 // Check if we aborted due to subagent bail (early termination)
@@ -1524,7 +1534,7 @@ export class Agent {
                     event: LogEvents.AGENT_GENERATION_COMPLETED,
                     duration: Date.now() - startTime,
                     finishReason: finalResult.finishReason,
-                    usage: finalResult.usage,
+                    usage: usageForFinish,
                     toolCalls: finalResult.toolCalls?.length || 0,
                     text: finalText,
                   },
@@ -1536,15 +1546,13 @@ export class Agent {
                   operation: "streamText",
                   metadata: {
                     finishReason: finalResult.finishReason,
-                    usage: finalResult.totalUsage
-                      ? JSON.parse(safeStringify(finalResult.totalUsage))
-                      : undefined,
+                    usage: usageForFinish ? JSON.parse(safeStringify(usageForFinish)) : undefined,
                     toolCalls: finalResult.toolCalls,
                   },
                 });
 
                 finalizeLLMSpan(SpanStatusCode.OK, {
-                  usage: finalResult.totalUsage,
+                  usage: usageForFinish,
                   finishReason: finalResult.finishReason,
                 });
 
@@ -1653,6 +1661,8 @@ export class Agent {
             }
           };
 
+          const parentStream = normalizeFinishUsageStream(wrapWithAbortHandling(result.fullStream));
+
           if (agent.subAgentManager.hasSubAgents()) {
             const createMergedFullStream =
               async function* (): AsyncIterable<VoltAgentTextStreamPart> {
@@ -1663,11 +1673,7 @@ export class Agent {
 
                 const writeParentStream = async () => {
                   try {
-                    // Wrap AI SDK stream with abort handling before iterating
-                    // This ensures the loop exits cleanly when abort is triggered
-                    const abortAwareParentStream = wrapWithAbortHandling(result.fullStream);
-
-                    for await (const part of abortAwareParentStream) {
+                    for await (const part of parentStream) {
                       // No manual abort check needed - wrapper handles it
                       await writer.write(part as VoltAgentTextStreamPart);
                     }
@@ -1709,8 +1715,8 @@ export class Agent {
             return createMergedFullStream();
           }
 
-          // For non-subagent case, wrap the stream with abort handling
-          return wrapWithAbortHandling(result.fullStream);
+          // For non-subagent case, wrap the stream with abort handling and usage normalization
+          return parentStream;
         };
 
         const guardrailContext = guardrailStreamingEnabled
@@ -2084,7 +2090,13 @@ export class Agent {
               this.temperature,
             );
 
-            const usageInfo = convertUsage(result.usage);
+            const providerUsage = result.usage ? await Promise.resolve(result.usage) : undefined;
+            const usageForFinish = resolveFinishUsage({
+              providerMetadata: (result as { providerMetadata?: unknown }).providerMetadata,
+              usage: providerUsage,
+              totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
+            });
+            const usageInfo = convertUsage(usageForFinish);
             const middlewareObject = await runOutputMiddlewares<z.infer<T>>(
               result.object,
               oc,
@@ -2144,7 +2156,7 @@ export class Agent {
             // Event tracking now handled by OpenTelemetry spans
 
             // Add usage to span
-            this.setTraceContextUsage(oc.traceContext, result.usage);
+            this.setTraceContextUsage(oc.traceContext, usageForFinish);
             oc.traceContext.setOutput(finalObject);
 
             // Set output in operation context
@@ -2156,7 +2168,7 @@ export class Agent {
               operation: "generateObject",
               metadata: {
                 finishReason: result.finishReason,
-                usage: result.usage ? JSON.parse(safeStringify(result.usage)) : undefined,
+                usage: usageForFinish ? JSON.parse(safeStringify(usageForFinish)) : undefined,
                 schemaName,
               },
             });
@@ -2180,8 +2192,9 @@ export class Agent {
             });
 
             // Log successful completion
-            const usage = result.usage;
-            const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+            const tokenInfo = usageForFinish
+              ? `${usageForFinish.totalTokens} tokens`
+              : "no usage data";
             methodLogger.debug(
               buildAgentLogMessage(
                 this.name,
@@ -2192,7 +2205,7 @@ export class Agent {
                 event: LogEvents.AGENT_GENERATION_COMPLETED,
                 duration: Date.now() - startTime,
                 finishReason: result.finishReason,
-                usage: result.usage,
+                usage: usageForFinish,
                 schemaName,
               },
             );
@@ -2520,7 +2533,15 @@ export class Agent {
               },
               onFinish: async (finalResult: any) => {
                 try {
-                  const usageInfo = convertUsage(finalResult.usage as any);
+                  const providerUsage = finalResult.usage
+                    ? await Promise.resolve(finalResult.usage)
+                    : undefined;
+                  const usageForFinish = resolveFinishUsage({
+                    providerMetadata: finalResult.providerMetadata,
+                    usage: providerUsage,
+                    totalUsage: (finalResult as { totalUsage?: LanguageModelUsage }).totalUsage,
+                  });
+                  const usageInfo = convertUsage(usageForFinish);
                   let finalObject = finalResult.object as z.infer<T>;
                   if (guardrailSet.output.length > 0) {
                     finalObject = await executeOutputGuardrails({
@@ -2563,7 +2584,7 @@ export class Agent {
                   }
 
                   // Add usage to span
-                  this.setTraceContextUsage(oc.traceContext, finalResult.usage);
+                  this.setTraceContextUsage(oc.traceContext, usageForFinish);
                   oc.traceContext.setOutput(finalObject);
 
                   // Set output in operation context
@@ -2592,8 +2613,9 @@ export class Agent {
                     await userOnFinish(guardrailedResult);
                   }
 
-                  const usage = finalResult.usage as any;
-                  const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+                  const tokenInfo = usageForFinish
+                    ? `${usageForFinish.totalTokens} tokens`
+                    : "no usage data";
                   methodLogger.debug(
                     buildAgentLogMessage(
                       this.name,
@@ -2604,7 +2626,7 @@ export class Agent {
                       event: LogEvents.AGENT_GENERATION_COMPLETED,
                       duration: Date.now() - startTime,
                       finishReason: finalResult.finishReason,
-                      usage: finalResult.usage,
+                      usage: usageForFinish,
                       schemaName,
                     },
                   );
@@ -2615,9 +2637,7 @@ export class Agent {
                     operation: "streamObject",
                     metadata: {
                       finishReason: finalResult.finishReason,
-                      usage: finalResult.usage
-                        ? JSON.parse(safeStringify(finalResult.usage))
-                        : undefined,
+                      usage: usageForFinish ? JSON.parse(safeStringify(usageForFinish)) : undefined,
                       schemaName,
                     },
                   });

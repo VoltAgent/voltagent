@@ -667,6 +667,71 @@ describe("Agent", () => {
       const text = await result.text;
       expect(text).toBe("Streamed response");
     });
+
+    it("uses last-step usage for finish events when provider is anthropic", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const lastStepUsage = {
+        inputTokens: 10,
+        outputTokens: 5,
+        totalTokens: 15,
+        raw: {
+          cache_creation_input_tokens: 10,
+        },
+      };
+      const summedUsage = {
+        inputTokens: 25,
+        outputTokens: 10,
+        totalTokens: 35,
+      };
+
+      const mockStream = {
+        text: Promise.resolve("Streamed response"),
+        textStream: (async function* () {
+          yield "Streamed response";
+        })(),
+        fullStream: (async function* () {
+          yield {
+            type: "finish-step" as const,
+            usage: lastStepUsage,
+            finishReason: "stop",
+            rawFinishReason: "stop",
+            providerMetadata: { anthropic: {} },
+            response: {},
+          };
+          yield {
+            type: "finish" as const,
+            finishReason: "stop",
+            rawFinishReason: "stop",
+            totalUsage: summedUsage,
+          };
+        })(),
+        usage: Promise.resolve(lastStepUsage),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        toUIMessageStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText("Stream this");
+      const parts: any[] = [];
+      for await (const part of result.fullStream) {
+        parts.push(part);
+      }
+
+      const finishPart = parts.find((part) => part.type === "finish");
+      expect(finishPart?.totalUsage).toEqual(lastStepUsage);
+    });
   });
 
   describe("Tool Management", () => {
