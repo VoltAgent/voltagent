@@ -431,7 +431,7 @@ export class OpenAIWindowRateLimitStrategy implements RateLimitStrategy {
 
       state = {
         limit: effectiveLimit,
-        remaining: clampedRemaining,
+        remaining: clampedRemaining + reserved,
         resetAt,
         slotReservedForStream: reserved,
         nextAllowedAt: now, // Unused while pacing is disabled.
