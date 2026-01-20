@@ -108,6 +108,13 @@ export class TrafficController {
   private readonly logger: Logger;
   private readonly trafficLogger: Logger;
   private readonly controllerLogger: Logger;
+
+  private readonly timeoutHeap: Array<{
+    at: number;
+    version: number;
+    item: QueuedRequest;
+  }> = [];
+  private timeoutVersionCounter = 0;
   private readonly concurrencyLimiter: TrafficConcurrencyLimiter;
 
   private readonly queues: Record<TrafficPriority, TenantQueueState> = {
