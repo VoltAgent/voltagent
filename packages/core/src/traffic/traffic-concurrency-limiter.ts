@@ -125,6 +125,8 @@ export class TrafficConcurrencyLimiter {
    * Example key: "tenant-123"
    */
   private readonly inFlightByTenant = new Map<string, number>();
+  private readonly providerModelLimitCache = new Map<string, number>();
+  private readonly tenantLimitCache = new Map<string, number>();
 
   /**
    * Function that converts request metadata into a stable provider/model key.
@@ -171,7 +173,7 @@ export class TrafficConcurrencyLimiter {
    * "If this request started *now*, would it violate any concurrency limits?"
    *
    * IMPORTANT:
-   * - Does NOT mutate state.
+   * - Stores resolved keys on the request for acquire/release symmetry.
    * - Must be followed by acquire(...) if allowed.
    */
   resolve(next: QueuedRequest, logger?: Logger): ConcurrencyDecision {
@@ -185,6 +187,7 @@ export class TrafficConcurrencyLimiter {
     // --- Provider/Model gate -----------------------------------------------
     if (this.providerModelEnabled) {
       const providerModelKey = this.buildProviderModelKey(next.request.metadata);
+      next.providerModelConcurrencyKey = providerModelKey;
       const providerModelLimit = this.resolveProviderModelLimit(
         providerModelKey,
         next.request.metadata,
@@ -207,6 +210,7 @@ export class TrafficConcurrencyLimiter {
     // --- Tenant gate --------------------------------------------------------
     if (this.tenantEnabled) {
       const tenantKey = next.tenantId;
+      next.tenantConcurrencyKey = tenantKey;
       const tenantLimit = this.resolveTenantLimit(
         tenantKey,
         next.request.metadata,
@@ -257,14 +261,15 @@ export class TrafficConcurrencyLimiter {
 
     let tenantKey: string | undefined;
     if (this.tenantEnabled) {
-      tenantKey = next.tenantId;
+      tenantKey = next.tenantConcurrencyKey ?? next.tenantId;
       next.tenantConcurrencyKey = tenantKey;
       incrementInFlight(this.inFlightByTenant, tenantKey);
     }
 
     let providerModelKey: string | undefined;
     if (this.providerModelEnabled) {
-      providerModelKey = this.buildProviderModelKey(next.request.metadata);
+      providerModelKey =
+        next.providerModelConcurrencyKey ?? this.buildProviderModelKey(next.request.metadata);
       next.providerModelConcurrencyKey = providerModelKey;
       incrementInFlight(this.inFlightByProviderModel, providerModelKey);
     }
@@ -342,14 +347,22 @@ export class TrafficConcurrencyLimiter {
 
     if (typeof policy === "function") {
       try {
-        return toNonNegativeIntegerLimit(policy(tenantId, metadata));
+        const resolved = toNonNegativeIntegerLimit(policy(tenantId, metadata));
+        if (resolved === undefined) {
+          this.tenantLimitCache.delete(tenantId);
+        } else {
+          this.tenantLimitCache.set(tenantId, resolved);
+        }
+        return resolved;
       } catch (error) {
-        logger?.warn?.("Tenant concurrency resolver threw; ignoring", {
+        const cachedLimit = this.tenantLimitCache.get(tenantId);
+        logger?.warn?.("Tenant concurrency resolver threw; using cached limit", {
           tenantId,
+          cachedLimit,
           errorName: (error as { name?: unknown } | null)?.name,
           errorMessage: (error as { message?: unknown } | null)?.message,
         });
-        return undefined;
+        return cachedLimit;
       }
     }
 
@@ -375,16 +388,24 @@ export class TrafficConcurrencyLimiter {
 
     if (typeof policy === "function") {
       try {
-        return toNonNegativeIntegerLimit(policy(metadata, key));
+        const resolved = toNonNegativeIntegerLimit(policy(metadata, key));
+        if (resolved === undefined) {
+          this.providerModelLimitCache.delete(key);
+        } else {
+          this.providerModelLimitCache.set(key, resolved);
+        }
+        return resolved;
       } catch (error) {
-        logger?.warn?.("Provider/model concurrency resolver threw; ignoring", {
+        const cachedLimit = this.providerModelLimitCache.get(key);
+        logger?.warn?.("Provider/model concurrency resolver threw; using cached limit", {
           key,
           provider: metadata?.provider,
           model: metadata?.model,
+          cachedLimit,
           errorName: (error as { name?: unknown } | null)?.name,
           errorMessage: (error as { message?: unknown } | null)?.message,
         });
-        return undefined;
+        return cachedLimit;
       }
     }
 
