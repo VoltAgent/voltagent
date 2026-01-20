@@ -908,6 +908,10 @@ export class TrafficController {
     reason: string,
   ): boolean {
     if (!queueTimeoutExpired) return false;
+    if (!this.removeQueuedItem(queue, next, index)) {
+      return false;
+    }
+    this.cleanupTenantQueue(next.priority, next.tenantId, queue);
     const timeoutError = this.createQueueTimeoutError(next, now);
     this.attachTrafficMetadata(
       timeoutError,
@@ -928,7 +932,6 @@ export class TrafficController {
       rateLimitKey: timeoutError.rateLimitKey,
       reason,
     });
-    queue.splice(index, 1);
     next.reject(timeoutError);
     return true;
   }
@@ -1050,6 +1053,16 @@ export class TrafficController {
     if (state.index >= state.order.length) {
       state.index = 0;
     }
+  }
+
+  private removeQueuedItem(queue: QueuedRequest[], item: QueuedRequest, index?: number): boolean {
+    const resolvedIndex =
+      typeof index === "number" && index >= 0 && queue[index] === item
+        ? index
+        : queue.indexOf(item);
+    if (resolvedIndex === -1) return false;
+    queue.splice(resolvedIndex, 1);
+    return true;
   }
 
   private resolvePriority(metadata?: TrafficRequestMetadata): TrafficPriority {
