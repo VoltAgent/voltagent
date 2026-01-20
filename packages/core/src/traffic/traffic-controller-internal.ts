@@ -54,6 +54,8 @@ export interface QueuedRequest<TResponse = unknown> {
 
   circuitKey?: string;
   circuitStatus?: CircuitStateStatus;
+  queueTimeoutAt?: number;
+  timeoutVersion?: number;
 
   extractUsage?: TrafficRequest<TResponse>["extractUsage"];
 }
