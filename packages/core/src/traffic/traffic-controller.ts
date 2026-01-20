@@ -1076,6 +1076,22 @@ export class TrafficController {
     let evicted = false;
     let wakeUpAt: number | undefined;
 
+    while (true) {
+      const entry = this.timeoutQueue.peek();
+      if (!entry || entry.at > now) break;
+      const expired = this.timeoutQueue.pop();
+      if (!expired || expired.version !== expired.item.timeoutVersion) continue;
+      const state = this.queues[expired.item.priority];
+      const queue = state.queues.get(expired.item.tenantId);
+      if (!queue) continue;
+      const index = queue.indexOf(expired.item);
+      if (index === -1) continue;
+      if (this.rejectIfQueueTimedOut(true, expired.item, queue, index, now, "timeout sweep")) {
+        evicted = true;
+        this.cleanupTenantQueue(expired.item.priority, expired.item.tenantId, queue);
+      }
+    }
+
     /** Walk all priorities and all tenants to perform timeout checks without dispatching. */
     for (const priority of this.priorityOrder) {
       const state = this.queues[priority];
