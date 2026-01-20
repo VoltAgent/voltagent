@@ -1223,11 +1223,14 @@ export class TrafficController {
 
       if (circuitBreakerDecision.kind === "wait") {
         // Queue timeout is enforced before gates, so no timeout rejection here.
-        next.etaMs = Math.max(0, circuitBreakerDecision.wakeUpAt - now);
+        const circuitWakeUpAt = Number.isFinite(circuitBreakerDecision.wakeUpAt)
+          ? circuitBreakerDecision.wakeUpAt
+          : undefined;
+        next.etaMs = circuitWakeUpAt !== undefined ? Math.max(0, circuitWakeUpAt - now) : undefined;
 
         return {
           action: "continue",
-          wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, circuitBreakerDecision.wakeUpAt),
+          wakeUpAt: this.pickEarlierWakeUp(wakeUpAt, circuitWakeUpAt),
         };
       }
     }

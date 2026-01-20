@@ -121,13 +121,13 @@ export class TrafficCircuitBreaker {
 
       // Path A: policy says "wait"
       if (policy.mode === "wait") {
-        const wakeUpAt =
-          evaluation.retryAfterMs !== undefined ? Date.now() + evaluation.retryAfterMs : undefined;
+        const retryAfterMs = evaluation.retryAfterMs ?? CIRCUIT_PROBE_INTERVAL_MS;
+        const wakeUpAt = Date.now() + retryAfterMs;
 
         log?.debug?.("Circuit open; waiting", {
           circuitKey,
           policyId,
-          retryAfterMs: evaluation.retryAfterMs,
+          retryAfterMs,
         });
 
         return { kind: "wait", wakeUpAt };
@@ -144,7 +144,8 @@ export class TrafficCircuitBreaker {
 
       const fallbackRequest = next.request.createFallbackRequest(fallback);
       if (!fallbackRequest) {
-        log?.warn?.("Fallback creation failed; skipping", { fallback });
+        log?.warn?.("Fallback creation failed; rejecting", { fallback });
+        this.rejectCircuitOpen(next, circuitKey, evaluation.retryAfterMs, log);
         return { kind: "skip" };
       }
 
@@ -370,7 +371,11 @@ export class TrafficCircuitBreaker {
     }
 
     if (state.status === "half-open" && state.trialInFlight) {
-      return { allowRequest: false, state: "half-open" };
+      return {
+        allowRequest: false,
+        state: "half-open",
+        retryAfterMs: CIRCUIT_PROBE_INTERVAL_MS,
+      };
     }
 
     return { allowRequest: true, state: state.status };
