@@ -938,6 +938,10 @@ export class TrafficController {
   }
 
   private enqueueItem(item: QueuedRequest): void {
+    const queueTimeoutAt = this.resolveQueueTimeoutAt(item);
+    item.queueTimeoutAt = queueTimeoutAt;
+    item.timeoutVersion = this.timeoutVersionCounter;
+
     const state = this.queues[item.priority];
     const tenantId = item.tenantId;
     let queue = state.queues.get(tenantId);
