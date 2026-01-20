@@ -891,11 +891,8 @@ export class TrafficController {
     }
 
     /**
-     * The request has exceeded its queue-wait budget (maxQueueWaitMs/deadlineAt),
-     * but we intentionally do not reject it here.
-     *
-     * Rejection is deferred to "wait boundaries" (e.g. rate-limit/circuit/concurrency waits)
-     * so we can tag the reason and preserve the option to apply fallback/defer strategies.
+     * The request has exceeded its queue-wait budget (maxQueueWaitMs/deadlineAt).
+     * Rejection happens in processQueuedCandidate before any gate checks.
      */
     // TODO - even if the fallback failed and we have not crossed deadline - we show expired
     return "expired";
@@ -1134,15 +1131,13 @@ export class TrafficController {
         const queueTimeoutTriggered = this.handleQueueTimeout(next, now, queueTimeoutAtBefore);
 
         /**
-         * Re-resolve after timeout handling, since queue-timeout fallback may mutate the request
-         * and intentionally disable further maxQueueWaitMs checks.
+         * Re-resolve after timeout handling to keep queue-timeout tracking consistent.
          */
-        // TODO : Case what if enqueuedAt + maxQueueWaitMs  is present and deadline is not present?
         const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
         this.recordQueueTimeoutEntry(next, queueTimeoutAt);
         /**
          * We are at a wait boundary (global concurrency saturation). If the request is expired
-         * and no queue-timeout fallback was applied, reject it now to avoid waiting beyond budget.
+         * reject it now to avoid waiting beyond the configured timeout.
          */
         if (
           queueTimeoutTriggered === "expired" &&
@@ -1181,8 +1176,7 @@ export class TrafficController {
     const queueTimeoutExpired = queueTimeoutTriggered === "expired";
 
     /**
-     * Re-resolve after timeout handling, since queue-timeout fallback may mutate the request
-     * and intentionally disable further maxQueueWaitMs checks.
+     * Re-resolve after timeout handling to keep queue-timeout tracking consistent.
      */
     const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
     this.recordQueueTimeoutEntry(next, queueTimeoutAt);
@@ -1191,7 +1185,14 @@ export class TrafficController {
       wakeUpAt = queueTimeoutAt;
     }
 
-    // TODO: If something is expired why do we proceed to gates?
+    if (queueTimeoutExpired) {
+      // Hard stop: reject immediately when the queue timeout is already expired.
+      if (this.rejectIfQueueTimedOut(true, next, queue, 0, now, "queue timeout expired")) {
+        return { action: "skip", wakeUpAt };
+      }
+    }
+
+    // Only non-expired items reach gate checks below.
     this.controllerLogger.trace("Evaluate next queued request", {
       priority,
       tenantId: next.tenantId,
@@ -1221,13 +1222,7 @@ export class TrafficController {
       }
 
       if (circuitBreakerDecision.kind === "wait") {
-        if (this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "circuit wait")) {
-          this.cleanupTenantQueue(priority, tenantId, queue);
-
-          // !! Does wakeupAt work?
-          return { action: "skip", wakeUpAt };
-        }
-
+        // Queue timeout is enforced before gates, so no timeout rejection here.
         next.etaMs = Math.max(0, circuitBreakerDecision.wakeUpAt - now);
 
         return {
@@ -1250,14 +1245,7 @@ export class TrafficController {
         reasons: concurrency.reasons,
       });
 
-      if (
-        // !! understnad this
-        this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "concurrency wait")
-      ) {
-        this.cleanupTenantQueue(priority, tenantId, queue);
-        return { action: "skip", wakeUpAt };
-      }
-
+      // Queue timeout is enforced before gates, so no timeout rejection here.
       next.etaMs = undefined;
       return { action: "continue", wakeUpAt };
     }
@@ -1267,11 +1255,7 @@ export class TrafficController {
     const adaptive = this.adaptiveLimiter.resolve(next, now);
 
     if (adaptive?.kind === "wait") {
-      if (this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "adaptive wait")) {
-        this.cleanupTenantQueue(priority, tenantId, queue);
-        return { action: "skip", wakeUpAt };
-      }
-
+      // Queue timeout is enforced before gates, so no timeout rejection here.
       next.etaMs = Math.max(0, adaptive.wakeUpAt - now);
 
       return {
@@ -1292,13 +1276,7 @@ export class TrafficController {
       });
 
       if (rateLimitDecision.kind === "wait") {
-        if (
-          this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "rate limit wait")
-        ) {
-          this.cleanupTenantQueue(priority, tenantId, queue);
-          return { action: "skip", wakeUpAt };
-        }
-
+        // Queue timeout is enforced before gates, so no timeout rejection here.
         next.etaMs = Math.max(0, rateLimitDecision.wakeUpAt - now);
 
         return {
@@ -1307,13 +1285,7 @@ export class TrafficController {
         };
       }
       if (rateLimitDecision.kind === "blocked") {
-        if (
-          this.rejectIfQueueTimedOut(queueTimeoutExpired, next, queue, 0, now, "rate limit blocked")
-        ) {
-          this.cleanupTenantQueue(priority, tenantId, queue);
-          return { action: "skip", wakeUpAt };
-        }
-
+        // Queue timeout is enforced before gates, so no timeout rejection here.
         next.etaMs = undefined;
         return { action: "continue", wakeUpAt };
       }
