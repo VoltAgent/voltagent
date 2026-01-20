@@ -1076,11 +1076,6 @@ export class TrafficController {
     let evicted = false;
     let wakeUpAt: number | undefined;
 
-    const updateWakeUpAt = (candidate?: number): void => {
-      if (candidate === undefined) return;
-      wakeUpAt = wakeUpAt === undefined ? candidate : Math.min(wakeUpAt, candidate);
-    };
-
     /** Walk all priorities and all tenants to perform timeout checks without dispatching. */
     for (const priority of this.priorityOrder) {
       const state = this.queues[priority];
@@ -1115,14 +1110,6 @@ export class TrafficController {
         const queueTimeoutAt = this.resolveQueueTimeoutAt(next);
         this.recordQueueTimeoutEntry(next, queueTimeoutAt);
         /**
-         * If the head item has a future timeout deadline, track it as a candidate wake-up.
-         * This allows the drain loop to schedule a timer and re-sweep when that deadline is hit.
-         */
-        if (queueTimeoutAt !== undefined && now < queueTimeoutAt) {
-          updateWakeUpAt(queueTimeoutAt);
-        }
-
-        /**
          * We are at a wait boundary (global concurrency saturation). If the request is expired
          * and no queue-timeout fallback was applied, reject it now to avoid waiting beyond budget.
          */
@@ -1134,6 +1121,11 @@ export class TrafficController {
           this.cleanupTenantQueue(priority, tenantId, queue);
         }
       }
+    }
+
+    const nextTimeout = this.timeoutQueue.peek()?.at;
+    if (nextTimeout !== undefined && now < nextTimeout) {
+      wakeUpAt = nextTimeout;
     }
 
     return { evicted, wakeUpAt };
