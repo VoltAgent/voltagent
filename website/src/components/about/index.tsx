@@ -71,7 +71,6 @@ export function Manifesto() {
 
         const contributorsData = await contributorsResponse.json();
         const loveData = await loveResponse.json();
-        console.log(contributorsData, loveData);
 
         setContributors(contributorsData.contributors);
         setStars(loveData.stars);
