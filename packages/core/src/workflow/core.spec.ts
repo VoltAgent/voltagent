@@ -1,8 +1,9 @@
 import type { UIMessageChunk } from "ai";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
+import { AgentRegistry } from "../registries/agent-registry";
 import { createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andThen } from "./steps";
@@ -204,5 +205,84 @@ describe.sequential("workflow streaming", () => {
     for (const chunk of parsedChunks) {
       expect(allowedTypes.includes(chunk.type)).toBe(true);
     }
+  });
+});
+
+describe.sequential("workflow memory defaults", () => {
+  beforeEach(() => {
+    const registry = AgentRegistry.getInstance();
+    registry.setGlobalWorkflowMemory(undefined);
+    registry.setGlobalMemory(undefined);
+  });
+
+  afterEach(() => {
+    const registry = AgentRegistry.getInstance();
+    registry.setGlobalWorkflowMemory(undefined);
+    registry.setGlobalMemory(undefined);
+  });
+
+  it("should use global workflow memory when not configured", () => {
+    const registry = AgentRegistry.getInstance();
+    const globalWorkflowMemory = new Memory({ storage: new InMemoryStorageAdapter() });
+    registry.setGlobalWorkflowMemory(globalWorkflowMemory);
+
+    const workflow = createWorkflow(
+      {
+        id: "global-workflow-memory",
+        name: "Global Workflow Memory",
+        input: z.object({ value: z.string() }),
+        result: z.object({ value: z.string() }),
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    expect(workflow.memory).toBe(globalWorkflowMemory);
+  });
+
+  it("should fall back to global memory when workflow memory is not set", () => {
+    const registry = AgentRegistry.getInstance();
+    const globalMemory = new Memory({ storage: new InMemoryStorageAdapter() });
+    registry.setGlobalMemory(globalMemory);
+
+    const workflow = createWorkflow(
+      {
+        id: "global-memory-fallback",
+        name: "Global Memory Fallback",
+        input: z.object({ value: z.string() }),
+        result: z.object({ value: z.string() }),
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    expect(workflow.memory).toBe(globalMemory);
+  });
+
+  it("should prefer explicit memory over global defaults", () => {
+    const registry = AgentRegistry.getInstance();
+    const globalWorkflowMemory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const explicitMemory = new Memory({ storage: new InMemoryStorageAdapter() });
+    registry.setGlobalWorkflowMemory(globalWorkflowMemory);
+
+    const workflow = createWorkflow(
+      {
+        id: "explicit-memory",
+        name: "Explicit Memory",
+        input: z.object({ value: z.string() }),
+        result: z.object({ value: z.string() }),
+        memory: explicitMemory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    expect(workflow.memory).toBe(explicitMemory);
   });
 });

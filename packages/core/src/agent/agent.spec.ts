@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
+import { AgentRegistry } from "../registries/agent-registry";
 import { ModelProviderRegistry } from "../registries/model-provider-registry";
 import { Tool } from "../tool";
 import { Agent, renameProviderOptions } from "./agent";
@@ -1175,6 +1176,64 @@ describe("Agent", () => {
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
       // Context limit should be respected
       expect(callArgs).toBeDefined();
+    });
+  });
+
+  describe("Global Memory Defaults", () => {
+    afterEach(() => {
+      const registry = AgentRegistry.getInstance();
+      registry.setGlobalAgentMemory(undefined);
+      registry.setGlobalWorkflowMemory(undefined);
+      registry.setGlobalMemory(undefined);
+    });
+
+    it("should use global agent memory when not configured", () => {
+      const registry = AgentRegistry.getInstance();
+      const globalMemory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+      registry.setGlobalAgentMemory(globalMemory);
+
+      const agent = new Agent({
+        name: "DefaultMemoryAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      expect(agent.getMemory()).toBe(globalMemory);
+    });
+
+    it("should fall back to global memory when agent memory is not set", () => {
+      const registry = AgentRegistry.getInstance();
+      const globalMemory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+      registry.setGlobalMemory(globalMemory);
+
+      const agent = new Agent({
+        name: "FallbackMemoryAgent",
+        instructions: "Test",
+        model: mockModel as any,
+      });
+
+      expect(agent.getMemory()).toBe(globalMemory);
+    });
+
+    it("should not override explicit memory disabled", () => {
+      const registry = AgentRegistry.getInstance();
+      const globalMemory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
+      registry.setGlobalAgentMemory(globalMemory);
+
+      const agent = new Agent({
+        name: "StatelessAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        memory: false,
+      });
+
+      expect(agent.getMemory()).toBe(false);
     });
   });
 
