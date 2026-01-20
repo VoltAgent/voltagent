@@ -501,6 +501,8 @@ export class TrafficController {
         return { kind: "wait", wakeUpAt: timeoutCheck.wakeUpAt };
       }
 
+      // No eviction but we hit the max concurrency limit
+      //So block this
       const hasQueued =
         this.getQueuedCount("P0") + this.getQueuedCount("P1") + this.getQueuedCount("P2") > 0;
       return hasQueued ? { kind: "blocked" } : { kind: "idle" };
