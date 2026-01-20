@@ -3,7 +3,7 @@
   "description": "VoltAgent example for Cloudflare Workers deployment with in-memory storage",
   "version": "1.0.0",
   "dependencies": {
-    "@voltagent/core": "^2.1.4",
+    "@voltagent/core": "^2.1.5",
     "@voltagent/serverless-hono": "^2.0.5",
     "ai": "^6.0.0",
     "hono": "^4.7.7",

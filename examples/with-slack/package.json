@@ -3,7 +3,7 @@
   "author": "",
   "dependencies": {
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.1.4",
+    "@voltagent/core": "^2.1.5",
     "@voltagent/libsql": "^2.0.2",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/sdk": "^2.0.2",
