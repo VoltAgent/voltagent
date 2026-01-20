@@ -1296,38 +1296,6 @@ export class TrafficController {
       return { action: "continue", wakeUpAt };
     }
 
-    /* -------------------- Final queue timeout -------------------- */
-
-    if (queueTimeoutExpired) {
-      const timeoutError = this.createQueueTimeoutError(next, now);
-
-      this.attachTrafficMetadata(
-        timeoutError,
-        this.buildTrafficResponseMetadata(
-          next,
-          timeoutError.rateLimitKey ?? this.buildRateLimitKey(next.request.metadata),
-          now,
-          timeoutError,
-        ),
-      );
-
-      this.controllerLogger.warn("Queue wait timed out before dispatch", {
-        tenantId: next.tenantId,
-        waitedMs: timeoutError.waitedMs,
-        maxQueueWaitMs: timeoutError.maxQueueWaitMs,
-        deadlineAt: timeoutError.deadlineAt,
-        provider: next.request.metadata?.provider,
-        model: next.request.metadata?.model,
-        rateLimitKey: timeoutError.rateLimitKey,
-      });
-
-      queue.shift();
-      this.cleanupTenantQueue(priority, tenantId, queue);
-      next.reject(timeoutError);
-
-      return { action: "skip", wakeUpAt };
-    }
-
     /* -------------------- Dispatch -------------------- */
 
     this.startRequest(next, queue, tenantId);
