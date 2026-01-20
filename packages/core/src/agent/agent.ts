@@ -62,6 +62,7 @@ import {
   getTrafficController,
 } from "../traffic/traffic-controller";
 import { findHeaders } from "../traffic/traffic-error-utils";
+import type { TrafficRequest } from "../traffic/traffic-types";
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
