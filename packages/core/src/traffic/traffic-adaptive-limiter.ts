@@ -81,11 +81,14 @@ export class TrafficAdaptiveLimiter {
     this.applyPenaltyDecay(state, now);
 
     // If still in cooldown, instruct scheduler to wait
-    if (state.cooldownUntil !== undefined && now < state.cooldownUntil) {
-      return {
-        kind: "wait",
-        wakeUpAt: state.cooldownUntil,
-      };
+    if (state.cooldownUntil !== undefined) {
+      if (now < state.cooldownUntil) {
+        return {
+          kind: "wait",
+          wakeUpAt: state.cooldownUntil,
+        };
+      }
+      state.cooldownUntil = undefined;
     }
 
     return null;
@@ -245,12 +248,18 @@ export class TrafficAdaptiveLimiter {
   ): string {
     const baseKey = rateLimitKeyOverride ?? this.buildRateLimitKey(metadata);
 
-    // If tenant is already encoded, do not duplicate
-    if (baseKey.includes("tenant=")) {
-      return baseKey;
-    }
-
     const tenant = metadata?.tenantId ?? tenantId ?? "default";
+
+    const baseParts = baseKey.split("::");
+    let updated = false;
+    const normalizedParts = baseParts.map((part) => {
+      if (!part.startsWith("tenant=")) return part;
+      updated = true;
+      return `tenant=${encodeURIComponent(tenant)}`;
+    });
+    if (updated) {
+      return normalizedParts.join("::");
+    }
 
     return `${baseKey}::tenant=${encodeURIComponent(tenant)}`;
   }
