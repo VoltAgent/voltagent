@@ -803,6 +803,33 @@ END OF MIGRATION SQL
     this.log(`Cleared messages for user ${userId}`);
   }
 
+  /**
+   * Delete specific messages by ID for a conversation
+   */
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    await this.initialize();
+
+    if (messageIds.length === 0) {
+      return;
+    }
+
+    const messagesTable = `${this.baseTableName}_messages`;
+    const { error } = await this.client
+      .from(messagesTable)
+      .delete()
+      .eq("conversation_id", conversationId)
+      .eq("user_id", userId)
+      .in("message_id", messageIds);
+
+    if (error) {
+      throw new Error(`Failed to delete messages: ${error.message}`);
+    }
+  }
+
   // ============================================================================
   // Conversation Operations
   // ============================================================================
@@ -975,6 +1002,32 @@ END OF MIGRATION SQL
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     }));
+  }
+
+  /**
+   * Count conversations with filters
+   */
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
+    await this.initialize();
+
+    const conversationsTable = `${this.baseTableName}_conversations`;
+    let query = this.client.from(conversationsTable).select("id", { count: "exact", head: true });
+
+    if (options.userId) {
+      query = query.eq("user_id", options.userId);
+    }
+
+    if (options.resourceId) {
+      query = query.eq("resource_id", options.resourceId);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to count conversations: ${error.message}`);
+    }
+
+    return count ?? 0;
   }
 
   /**

@@ -735,6 +735,26 @@ export class LibSQLMemoryCore implements StorageAdapter {
     }
   }
 
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    await this.initialize();
+
+    if (messageIds.length === 0) {
+      return;
+    }
+
+    const messagesTable = `${this.tablePrefix}_messages`;
+    const placeholders = messageIds.map(() => "?").join(",");
+    const sql = `DELETE FROM ${messagesTable} WHERE conversation_id = ? AND user_id = ? AND message_id IN (${placeholders})`;
+    await this.client.execute({
+      sql,
+      args: [conversationId, userId, ...messageIds],
+    });
+  }
+
   // ============================================================================
   // Conversation Operations
   // ============================================================================
@@ -874,6 +894,28 @@ export class LibSQLMemoryCore implements StorageAdapter {
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string,
     }));
+  }
+
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
+    await this.initialize();
+
+    const conversationsTable = `${this.tablePrefix}_conversations`;
+    let sql = `SELECT COUNT(*) as count FROM ${conversationsTable} WHERE 1=1`;
+    const args: any[] = [];
+
+    if (options.userId) {
+      sql += " AND user_id = ?";
+      args.push(options.userId);
+    }
+
+    if (options.resourceId) {
+      sql += " AND resource_id = ?";
+      args.push(options.resourceId);
+    }
+
+    const result = await this.client.execute({ sql, args });
+    const count = Number(result.rows[0]?.count ?? 0);
+    return Number.isNaN(count) ? 0 : count;
   }
 
   async updateConversation(

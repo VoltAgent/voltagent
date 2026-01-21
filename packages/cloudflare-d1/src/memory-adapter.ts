@@ -789,6 +789,23 @@ export class D1MemoryAdapter implements StorageAdapter {
     );
   }
 
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    await this.ensureInitialized();
+
+    if (messageIds.length === 0) {
+      return;
+    }
+
+    const messagesTable = `${this.tablePrefix}_messages`;
+    const placeholders = messageIds.map(() => "?").join(",");
+    const sql = `DELETE FROM ${messagesTable} WHERE conversation_id = ? AND user_id = ? AND message_id IN (${placeholders})`;
+    await this.run(sql, [conversationId, userId, ...messageIds]);
+  }
+
   // ==========================================================================
   // Conversation Operations
   // ==========================================================================
@@ -960,6 +977,27 @@ export class D1MemoryAdapter implements StorageAdapter {
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string,
     }));
+  }
+
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
+    await this.ensureInitialized();
+
+    const conversationsTable = `${this.tablePrefix}_conversations`;
+    let sql = `SELECT COUNT(*) as count FROM ${conversationsTable} WHERE 1=1`;
+    const args: unknown[] = [];
+
+    if (options.userId) {
+      sql += " AND user_id = ?";
+      args.push(options.userId);
+    }
+
+    if (options.resourceId) {
+      sql += " AND resource_id = ?";
+      args.push(options.resourceId);
+    }
+
+    const rows = await this.all<{ count?: number }>(sql, args);
+    return rows[0]?.count ?? 0;
   }
 
   async updateConversation(

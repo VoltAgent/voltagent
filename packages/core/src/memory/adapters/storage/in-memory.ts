@@ -116,7 +116,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     options?: GetMessagesOptions,
     _context?: OperationContext,
   ): Promise<UIMessage<{ createdAt: Date }>[]> {
-    const { limit = 100, before, after, roles } = options || {};
+    const { limit, before, after, roles } = options || {};
 
     // Get user's messages or return empty array
     const userMessages = this.storage[userId] || {};
@@ -206,6 +206,25 @@ export class InMemoryStorageAdapter implements StorageAdapter {
       result: step.result ? { ...step.result } : step.result,
       usage: step.usage ? { ...step.usage } : step.usage,
     }));
+  }
+
+  /**
+   * Delete specific messages by ID for a conversation
+   */
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+    _context?: OperationContext,
+  ): Promise<void> {
+    if (!this.storage[userId]?.[conversationId]) {
+      return;
+    }
+
+    const ids = new Set(messageIds);
+    this.storage[userId][conversationId] = this.storage[userId][conversationId].filter(
+      (message) => !ids.has(message.id),
+    );
   }
 
   /**
@@ -334,6 +353,23 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     conversations = conversations.slice(offset, offset + limit);
 
     return conversations.map((c) => deepClone(c));
+  }
+
+  /**
+   * Count conversations matching query filters
+   */
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
+    let conversations = Array.from(this.conversations.values());
+
+    if (options.userId) {
+      conversations = conversations.filter((c) => c.userId === options.userId);
+    }
+
+    if (options.resourceId) {
+      conversations = conversations.filter((c) => c.resourceId === options.resourceId);
+    }
+
+    return conversations.length;
   }
 
   /**

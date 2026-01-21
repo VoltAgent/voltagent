@@ -118,7 +118,13 @@ export function registerMemoryRoutes(
 
   app.post(MEMORY_ROUTES.saveMessages.path, async (c) => {
     const query = c.req.query();
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch (error) {
+      logger.warn("Invalid JSON body for save messages", { error });
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
     logger.trace("POST /api/memory/save-messages - saving messages", {
       messageCount: Array.isArray(body?.messages) ? body.messages.length : 0,
     });
@@ -131,7 +137,13 @@ export function registerMemoryRoutes(
 
   app.post(MEMORY_ROUTES.createConversation.path, async (c) => {
     const query = c.req.query();
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch (error) {
+      logger.warn("Invalid JSON body for create conversation", { error });
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
     logger.trace("POST /api/memory/conversations - creating conversation");
     const response = await handleCreateMemoryConversation(deps, {
       ...body,
@@ -143,7 +155,13 @@ export function registerMemoryRoutes(
   app.patch(MEMORY_ROUTES.updateConversation.path, async (c) => {
     const conversationId = c.req.param("conversationId");
     const query = c.req.query();
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch (error) {
+      logger.warn("Invalid JSON body for update conversation", { error, conversationId });
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
     logger.trace(`PATCH /api/memory/conversations/${conversationId} - updating conversation`);
     const response = await handleUpdateMemoryConversation(deps, conversationId, {
       ...body,
@@ -165,7 +183,13 @@ export function registerMemoryRoutes(
   app.post(MEMORY_ROUTES.cloneConversation.path, async (c) => {
     const conversationId = c.req.param("conversationId");
     const query = c.req.query();
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch (error) {
+      logger.warn("Invalid JSON body for clone conversation", { error, conversationId });
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
     logger.trace(`POST /api/memory/conversations/${conversationId}/clone - cloning conversation`);
     const response = await handleCloneMemoryConversation(deps, conversationId, {
       ...body,
@@ -177,7 +201,13 @@ export function registerMemoryRoutes(
   app.post(MEMORY_ROUTES.updateWorkingMemory.path, async (c) => {
     const conversationId = c.req.param("conversationId");
     const query = c.req.query();
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch (error) {
+      logger.warn("Invalid JSON body for update working memory", { error, conversationId });
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
     logger.trace(
       `POST /api/memory/conversations/${conversationId}/working-memory - updating working memory`,
     );
@@ -190,7 +220,13 @@ export function registerMemoryRoutes(
 
   app.post(MEMORY_ROUTES.deleteMessages.path, async (c) => {
     const query = c.req.query();
-    const body = await c.req.json();
+    let body: any;
+    try {
+      body = await c.req.json();
+    } catch (error) {
+      logger.warn("Invalid JSON body for delete messages", { error });
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
     logger.trace("POST /api/memory/messages/delete - deleting messages");
     const response = await handleDeleteMemoryMessages(deps, {
       ...body,

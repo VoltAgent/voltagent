@@ -1063,6 +1063,10 @@ export const MEMORY_ROUTES = {
         description: "Invalid request body",
         contentType: "application/json",
       },
+      409: {
+        description: "Conversation already exists",
+        contentType: "application/json",
+      },
       500: {
         description: "Failed to create conversation",
         contentType: "application/json",
@@ -1131,6 +1135,10 @@ export const MEMORY_ROUTES = {
       },
       404: {
         description: "Conversation not found",
+        contentType: "application/json",
+      },
+      409: {
+        description: "Conversation already exists",
         contentType: "application/json",
       },
       500: {

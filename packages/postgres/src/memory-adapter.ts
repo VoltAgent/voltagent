@@ -779,6 +779,33 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     }
   }
 
+  /**
+   * Delete specific messages by ID for a conversation
+   */
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    await this.initPromise;
+
+    if (messageIds.length === 0) {
+      return;
+    }
+
+    const client = await this.pool.connect();
+    try {
+      const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      await client.query(
+        `DELETE FROM ${messagesTable}
+         WHERE conversation_id = $1 AND user_id = $2 AND message_id = ANY($3::text[])`,
+        [conversationId, userId, messageIds],
+      );
+    } finally {
+      client.release();
+    }
+  }
+
   // ============================================================================
   // Conversation Operations
   // ============================================================================
@@ -956,6 +983,39 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Count conversations with filters
+   */
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
+    await this.initPromise;
+
+    const client = await this.pool.connect();
+    try {
+      const conversationsTable = this.getTableName(`${this.tablePrefix}_conversations`);
+      let sql = `SELECT COUNT(*) as count FROM ${conversationsTable} WHERE 1=1`;
+      const params: any[] = [];
+      let paramCount = 1;
+
+      if (options.userId) {
+        sql += ` AND user_id = $${paramCount}`;
+        params.push(options.userId);
+        paramCount++;
+      }
+
+      if (options.resourceId) {
+        sql += ` AND resource_id = $${paramCount}`;
+        params.push(options.resourceId);
+        paramCount++;
+      }
+
+      const result = await client.query(sql, params);
+      const count = Number(result.rows[0]?.count ?? 0);
+      return Number.isNaN(count) ? 0 : count;
     } finally {
       client.release();
     }

@@ -131,20 +131,26 @@ export async function handleListMemoryConversations(
     }
 
     const resourceId = query.resourceId ?? resolved.resourceId;
-    const conversations = await resolved.memory.queryConversations({
-      userId: query.userId,
-      resourceId,
-      limit: query.limit,
-      offset: query.offset,
-      orderBy: query.orderBy,
-      orderDirection: query.orderDirection,
-    });
+    const [conversations, total] = await Promise.all([
+      resolved.memory.queryConversations({
+        userId: query.userId,
+        resourceId,
+        limit: query.limit,
+        offset: query.offset,
+        orderBy: query.orderBy,
+        orderDirection: query.orderDirection,
+      }),
+      resolved.memory.countConversations({
+        userId: query.userId,
+        resourceId,
+      }),
+    ]);
 
     return {
       success: true,
       data: {
         conversations,
-        total: conversations.length,
+        total,
         limit: query.limit ?? conversations.length,
         offset: query.offset ?? 0,
       },
@@ -621,9 +627,7 @@ export async function handleCloneMemoryConversation(
     let messageCount = 0;
     const includeMessages = body.includeMessages !== false;
     if (includeMessages) {
-      const messages = await resolved.memory.getMessages(source.userId, conversationId, {
-        limit: 0,
-      });
+      const messages = await resolved.memory.getMessages(source.userId, conversationId);
       if (messages.length > 0) {
         await resolved.memory.addMessages(messages, conversation.userId, conversation.id);
         messageCount = messages.length;
@@ -758,18 +762,10 @@ export async function handleDeleteMemoryMessages(
       };
     }
 
-    const messages = await resolved.memory.getMessages(body.userId, body.conversationId, {
-      limit: 0,
-    });
-    const toKeep = messages.filter((message) => !body.messageIds?.includes(message.id));
-
-    // Best-effort delete: clear and rehydrate remaining messages.
-    await resolved.memory.clearMessages(body.userId, body.conversationId);
-    if (toKeep.length > 0) {
-      await resolved.memory.addMessages(toKeep, body.userId, body.conversationId);
-    }
-
-    const deleted = messages.length - toKeep.length;
+    const messages = await resolved.memory.getMessages(body.userId, body.conversationId);
+    const idsToDelete = new Set(body.messageIds);
+    const deleted = messages.filter((message) => idsToDelete.has(message.id)).length;
+    await resolved.memory.deleteMessages(body.messageIds, body.userId, body.conversationId);
     return {
       success: true,
       data: { deleted },

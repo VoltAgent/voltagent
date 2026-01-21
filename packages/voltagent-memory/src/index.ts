@@ -260,6 +260,40 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     }).then(() => undefined);
   }
 
+  deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+    _context?: OperationContext,
+  ): Promise<void> {
+    return this.withClientContext(async ({ client, database }) => {
+      if (messageIds.length === 0) {
+        return;
+      }
+
+      this.log(
+        "Deleting managed memory messages",
+        safeStringify({ count: messageIds.length, userId, conversationId }),
+      );
+
+      const messages = await client.managedMemory.messages.list(database.id, {
+        userId,
+        conversationId,
+      });
+      const idsToDelete = new Set(messageIds);
+      const toKeep = messages.filter((message) => !idsToDelete.has(message.id));
+
+      await client.managedMemory.messages.clear(database.id, { userId, conversationId });
+      if (toKeep.length > 0) {
+        await client.managedMemory.messages.addBatch(database.id, {
+          messages: toKeep,
+          userId,
+          conversationId,
+        });
+      }
+    }).then(() => undefined);
+  }
+
   createConversation(input: CreateConversationInput): Promise<Conversation> {
     return this.withClientContext(({ client, database }) => {
       this.log("Creating managed memory conversation", safeStringify({ conversationId: input.id }));
@@ -295,6 +329,35 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     return this.withClientContext(({ client, database }) => {
       this.log("Querying managed memory conversations", safeStringify(options));
       return client.managedMemory.conversations.query(database.id, options);
+    });
+  }
+
+  countConversations(options: ConversationQueryOptions): Promise<number> {
+    return this.withClientContext(async ({ client, database }) => {
+      const pageSize = 200;
+      let offset = 0;
+      let total = 0;
+
+      while (true) {
+        const page = await client.managedMemory.conversations.query(database.id, {
+          userId: options.userId,
+          resourceId: options.resourceId,
+          orderBy: options.orderBy,
+          orderDirection: options.orderDirection,
+          limit: pageSize,
+          offset,
+        });
+
+        total += page.length;
+
+        if (page.length < pageSize) {
+          break;
+        }
+
+        offset += pageSize;
+      }
+
+      return total;
     });
   }
 

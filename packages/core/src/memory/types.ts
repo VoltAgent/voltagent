@@ -358,6 +358,17 @@ export interface StorageAdapter {
     context?: OperationContext,
   ): Promise<UIMessage<{ createdAt: Date }>[]>;
   clearMessages(userId: string, conversationId?: string, context?: OperationContext): Promise<void>;
+  /**
+   * Delete specific messages by ID for a conversation.
+   * Adapters should perform an atomic delete when possible. If atomic deletes or transactions
+   * are unavailable, a best-effort deletion (for example, clear + rehydrate) may be used.
+   */
+  deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void>;
 
   // Conversation operations
   createConversation(input: CreateConversationInput): Promise<Conversation>;
@@ -368,6 +379,10 @@ export interface StorageAdapter {
     options?: Omit<ConversationQueryOptions, "userId">,
   ): Promise<Conversation[]>;
   queryConversations(options: ConversationQueryOptions): Promise<Conversation[]>;
+  /**
+   * Count conversations matching query filters (limit/offset ignored).
+   */
+  countConversations(options: ConversationQueryOptions): Promise<number>;
   updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,

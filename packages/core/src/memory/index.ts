@@ -134,6 +134,19 @@ export class Memory {
     return this.storage.clearMessages(userId, conversationId, context);
   }
 
+  /**
+   * Delete specific messages by ID for a conversation
+   * Adapters should delete atomically when possible; otherwise a best-effort delete may be used.
+   */
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+    context?: OperationContext,
+  ): Promise<void> {
+    return this.storage.deleteMessages(messageIds, userId, conversationId, context);
+  }
+
   async getConversationSteps(
     userId: string,
     conversationId: string,
@@ -178,6 +191,13 @@ export class Memory {
    */
   async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
     return this.storage.queryConversations(options);
+  }
+
+  /**
+   * Count conversations with the same filtering as queryConversations (ignores limit/offset)
+   */
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
+    return this.storage.countConversations(options);
   }
 
   /**
