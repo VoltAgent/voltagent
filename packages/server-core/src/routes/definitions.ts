@@ -798,7 +798,7 @@ export const OBSERVABILITY_MEMORY_ROUTES = {
     description:
       "Retrieve conversations stored in memory with optional filtering by agent or user. Results are paginated and sorted by last update by default.",
     tags: ["Observability", "Memory"],
-    operationId: "listMemoryConversations",
+    operationId: "listObservabilityMemoryConversations",
     responses: {
       200: {
         description: "Successfully retrieved conversations",

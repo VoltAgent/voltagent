@@ -41,6 +41,26 @@ function parseDate(value?: string): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
+const orderByAllowlist = new Set(["created_at", "updated_at", "title"]);
+
+function parseOrderBy(value?: string): "created_at" | "updated_at" | "title" | undefined {
+  if (!value || !orderByAllowlist.has(value)) {
+    return undefined;
+  }
+  return value as "created_at" | "updated_at" | "title";
+}
+
+function parseOrderDirection(value?: string): "ASC" | "DESC" | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const normalized = value.toUpperCase();
+  if (normalized === "ASC" || normalized === "DESC") {
+    return normalized;
+  }
+  return undefined;
+}
+
 type MemoryRoutesCompat = typeof MEMORY_ROUTES & {
   getWorkingMemory?: { path: string };
 };
@@ -67,8 +87,8 @@ export function registerMemoryRoutes(
       userId: query.userId,
       limit: parseNumber(query.limit),
       offset: parseNumber(query.offset),
-      orderBy: query.orderBy as "created_at" | "updated_at" | "title" | undefined,
-      orderDirection: query.orderDirection as "ASC" | "DESC" | undefined,
+      orderBy: parseOrderBy(query.orderBy),
+      orderDirection: parseOrderDirection(query.orderDirection),
     });
 
     return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
