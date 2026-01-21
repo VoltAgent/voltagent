@@ -26,7 +26,7 @@ VoltAgent exposes memory endpoints under `/api/memory/*` for managing conversati
 curl "http://localhost:3141/api/memory/conversations?userId=user-123&limit=20"
 ```
 
-**Response**
+### Response
 
 ```json
 {
@@ -62,7 +62,7 @@ curl "http://localhost:3141/api/memory/conversations/conv-001"
 
 **Endpoint:** `POST /api/memory/conversations`
 
-**Request Body**
+### Request Body
 
 ```json
 {
@@ -77,7 +77,7 @@ curl "http://localhost:3141/api/memory/conversations/conv-001"
 
 **Endpoint:** `PATCH /api/memory/conversations/:conversationId`
 
-**Request Body**
+### Request Body
 
 ```json
 {
@@ -98,7 +98,7 @@ curl -X DELETE "http://localhost:3141/api/memory/conversations/conv-001"
 
 **Endpoint:** `POST /api/memory/conversations/:conversationId/clone`
 
-**Request Body**
+### Request Body
 
 ```json
 {
@@ -127,7 +127,7 @@ Notes:
 
 **Endpoint:** `POST /api/memory/save-messages`
 
-**Request Body**
+### Request Body
 
 ```json
 {
@@ -157,7 +157,7 @@ Notes:
 
 **Endpoint:** `POST /api/memory/messages/delete`
 
-**Request Body**
+### Request Body
 
 ```json
 {
@@ -185,7 +185,7 @@ Notes:
 
 **Endpoint:** `POST /api/memory/conversations/:conversationId/working-memory`
 
-**Request Body**
+### Request Body
 
 ```json
 {

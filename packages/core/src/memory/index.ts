@@ -144,6 +144,8 @@ export class Memory {
     conversationId: string,
     context?: OperationContext,
   ): Promise<void> {
+    await this.storage.deleteMessages(messageIds, userId, conversationId, context);
+
     if (this.vector && messageIds.length > 0) {
       try {
         const vectorIds = messageIds.map((id) => `msg_${conversationId}_${id}`);
@@ -155,8 +157,6 @@ export class Memory {
         );
       }
     }
-
-    return this.storage.deleteMessages(messageIds, userId, conversationId, context);
   }
 
   async getConversationSteps(

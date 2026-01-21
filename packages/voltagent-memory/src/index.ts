@@ -275,8 +275,26 @@ export class ManagedMemoryAdapter implements StorageAdapter {
         "Deleting managed memory messages",
         safeStringify({ count: messageIds.length, userId, conversationId }),
       );
+
+      const messages = await client.managedMemory.messages.list(database.id, {
+        userId,
+        conversationId,
+      });
+      const existingIds = new Set(messages.map((message) => message.id));
+      const matchedIds = Array.from(
+        new Set(messageIds.filter((messageId) => existingIds.has(messageId))),
+      );
+
+      if (matchedIds.length === 0) {
+        this.log(
+          "No managed memory messages matched for deletion",
+          safeStringify({ count: 0, userId, conversationId }),
+        );
+        return;
+      }
+
       await client.managedMemory.messages.delete(database.id, {
-        messageIds,
+        messageIds: matchedIds,
         userId,
         conversationId,
       });
