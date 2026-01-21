@@ -91,6 +91,23 @@ Default port is 3141, but may vary based on configuration.
 }
 ```
 
+## Memory Endpoints
+
+| Method | Path                                                       | Description           | Auth |
+| ------ | ---------------------------------------------------------- | --------------------- | ---- |
+| GET    | `/api/memory/conversations`                                | List conversations    | Yes  |
+| GET    | `/api/memory/conversations/:conversationId`                | Get conversation      | Yes  |
+| GET    | `/api/memory/conversations/:conversationId/messages`       | List messages         | Yes  |
+| GET    | `/api/memory/conversations/:conversationId/working-memory` | Get working memory    | Yes  |
+| POST   | `/api/memory/save-messages`                                | Save messages         | Yes  |
+| POST   | `/api/memory/conversations`                                | Create conversation   | Yes  |
+| PATCH  | `/api/memory/conversations/:conversationId`                | Update conversation   | Yes  |
+| DELETE | `/api/memory/conversations/:conversationId`                | Delete conversation   | Yes  |
+| POST   | `/api/memory/conversations/:conversationId/clone`          | Clone conversation    | Yes  |
+| POST   | `/api/memory/conversations/:conversationId/working-memory` | Update working memory | Yes  |
+| POST   | `/api/memory/messages/delete`                              | Delete messages       | Yes  |
+| GET    | `/api/memory/search`                                       | Search memory         | Yes  |
+
 ## Logging & Observability
 
 | Method | Path                                  | Description                 | Auth |
@@ -284,6 +301,7 @@ Note: The server reads its port from the `honoServer({ port })` config. `PORT` i
 - **[Server Architecture](./server-architecture.md)** - Understanding server design
 - **[Agent Endpoints](./endpoints/agents.md)** - Detailed agent API
 - **[Workflow Endpoints](./endpoints/workflows.md)** - Workflow execution details
+- **[Memory Endpoints](./endpoints/memory.md)** - Conversation and message APIs
 - **[Authentication](./authentication.md)** - Security and auth setup
 - **[Custom Endpoints](./custom-endpoints.md)** - Adding custom routes
 

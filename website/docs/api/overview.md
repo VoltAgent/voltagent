@@ -114,6 +114,21 @@ Get the raw OpenAPI 3.1 spec at [`http://localhost:3141/doc`](http://localhost:3
 - `GET /tools` - List all registered tools (across agents)
 - `POST /tools/:name/execute` - Execute a tool directly over HTTP
 
+### Memory Endpoints
+
+- `GET /api/memory/conversations` - List conversations
+- `GET /api/memory/conversations/:conversationId` - Get conversation
+- `GET /api/memory/conversations/:conversationId/messages` - List messages
+- `GET /api/memory/conversations/:conversationId/working-memory` - Get working memory
+- `POST /api/memory/save-messages` - Save messages
+- `POST /api/memory/conversations` - Create conversation
+- `PATCH /api/memory/conversations/:conversationId` - Update conversation
+- `DELETE /api/memory/conversations/:conversationId` - Delete conversation
+- `POST /api/memory/conversations/:conversationId/clone` - Clone conversation
+- `POST /api/memory/conversations/:conversationId/working-memory` - Update working memory
+- `POST /api/memory/messages/delete` - Delete messages
+- `GET /api/memory/search` - Search memory
+
 ### Observability & Logs
 
 - `POST /setup-observability` - Configure `.env` with VoltAgent keys
@@ -136,6 +151,7 @@ Get the raw OpenAPI 3.1 spec at [`http://localhost:3141/doc`](http://localhost:3
 - **[Server Architecture](./server-architecture.md)** - Understanding the pluggable server design
 - **[Agent Endpoints](./endpoints/agents.md)** - Complete agent API reference with examples
 - **[Workflow Endpoints](./endpoints/workflows.md)** - Workflow execution and management
+- **[Memory Endpoints](./endpoints/memory.md)** - Conversation and message storage APIs
 - **[Authentication](./authentication.md)** - Securing your API endpoints
 - **[Streaming](./streaming.md)** - Real-time features with SSE and WebSocket
 - **[Custom Endpoints](./custom-endpoints.md)** - Adding your own REST endpoints

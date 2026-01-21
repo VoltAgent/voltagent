@@ -27,6 +27,7 @@ export * from "./handlers/log.handlers";
 export * from "./handlers/update.handlers";
 export * from "./handlers/observability.handlers";
 export * from "./handlers/trigger.handlers";
+export * from "./handlers/memory.handlers";
 export * from "./handlers/memory-observability.handlers";
 export { setupObservabilityHandler } from "./handlers/observability-setup.handler";
 

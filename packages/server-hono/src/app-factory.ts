@@ -14,6 +14,7 @@ import {
   registerAgentRoutes,
   registerLogRoutes,
   registerMcpRoutes,
+  registerMemoryRoutes,
   registerObservabilityRoutes,
   registerToolRoutes,
   registerTriggerRoutes,
@@ -53,6 +54,7 @@ export async function createApp(
     logs: () => registerLogRoutes(app as any, resolvedDeps, logger),
     updates: () => registerUpdateRoutes(app as any, resolvedDeps, logger),
     observability: () => registerObservabilityRoutes(app as any, resolvedDeps, logger),
+    memory: () => registerMemoryRoutes(app as any, resolvedDeps, logger),
     tools: () => registerToolRoutes(app as any, resolvedDeps as any, logger),
     triggers: () => registerTriggerRoutes(app as any, resolvedDeps, logger),
     mcp: () => registerMcpRoutes(app as any, resolvedDeps as any, logger),
@@ -121,6 +123,7 @@ export async function createApp(
     routes.logs();
     routes.updates();
     routes.observability();
+    routes.memory();
     routes.triggers();
     routes.mcp();
     routes.a2a();

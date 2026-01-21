@@ -48,6 +48,7 @@ export { registerMcpRoutes } from "./mcp.routes";
 export { registerA2ARoutes } from "./a2a.routes";
 export { registerToolRoutes } from "./tool.routes";
 export { registerTriggerRoutes } from "./trigger.routes";
+export { registerMemoryRoutes } from "./memory.routes";
 
 /**
  * Register agent routes

@@ -7,3 +7,4 @@ export { registerA2ARoutes } from "./a2a.routes";
 export { registerToolRoutes } from "./tool.routes";
 export { registerTriggerRoutes } from "./trigger.routes";
 export { registerObservabilityRoutes } from "./observability";
+export { registerMemoryRoutes } from "./memory.routes";

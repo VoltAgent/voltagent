@@ -60,6 +60,7 @@ await agent.generateText("What's my name?", {
 For detailed configuration, provider setup, and advanced features:
 
 - **[Memory Overview](./memory/overview.md)** - Full memory system documentation
+- **[Memory API Endpoints](../api/endpoints/memory.md)** - HTTP endpoints for conversations and messages
 - **[Managed Memory](./memory/managed-memory.md)** - Production-ready hosted storage
 - **[Semantic Search](./memory/semantic-search.md)** - Vector-based message retrieval
 - **[Working Memory](./memory/working-memory.md)** - Compact context management

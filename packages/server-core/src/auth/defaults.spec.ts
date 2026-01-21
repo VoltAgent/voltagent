@@ -127,6 +127,12 @@ describe("Auth Defaults", () => {
         expect(requiresAuth("DELETE", "/observability/spans/123")).toBe(true);
       });
 
+      it("should require auth for memory endpoints via wildcard", () => {
+        expect(requiresAuth("GET", "/api/memory/conversations")).toBe(true);
+        expect(requiresAuth("GET", "/api/memory/conversations/conv-1/messages")).toBe(true);
+        expect(requiresAuth("POST", "/api/memory/save-messages")).toBe(true);
+      });
+
       it("should require auth for system update endpoints", () => {
         expect(requiresAuth("GET", "/updates")).toBe(true);
         expect(requiresAuth("POST", "/updates")).toBe(true);

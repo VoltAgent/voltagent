@@ -933,6 +933,285 @@ export const TOOL_ROUTES = {
 } as const;
 
 /**
+ * Memory route definitions
+ */
+export const MEMORY_ROUTES = {
+  listConversations: {
+    method: "get" as const,
+    path: "/api/memory/conversations",
+    summary: "List memory conversations",
+    description:
+      "Retrieve conversations stored in memory with optional filtering by resource or user.",
+    tags: ["Memory"],
+    operationId: "listMemoryConversations",
+    responses: {
+      200: {
+        description: "Successfully retrieved memory conversations",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid query parameters",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to list memory conversations",
+        contentType: "application/json",
+      },
+    },
+  },
+  getConversation: {
+    method: "get" as const,
+    path: "/api/memory/conversations/:conversationId",
+    summary: "Get conversation by ID",
+    description: "Retrieve a single conversation by ID from memory storage.",
+    tags: ["Memory"],
+    operationId: "getMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully retrieved conversation",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  listMessages: {
+    method: "get" as const,
+    path: "/api/memory/conversations/:conversationId/messages",
+    summary: "List conversation messages",
+    description: "Retrieve messages for a conversation with optional filtering.",
+    tags: ["Memory"],
+    operationId: "listMemoryConversationMessages",
+    responses: {
+      200: {
+        description: "Successfully retrieved conversation messages",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve conversation messages",
+        contentType: "application/json",
+      },
+    },
+  },
+  getMemoryWorkingMemory: {
+    method: "get" as const,
+    path: "/api/memory/conversations/:conversationId/working-memory",
+    summary: "Get working memory",
+    description: "Retrieve working memory content for a conversation.",
+    tags: ["Memory"],
+    operationId: "getMemoryWorkingMemory",
+    responses: {
+      200: {
+        description: "Successfully retrieved working memory",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Working memory not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve working memory",
+        contentType: "application/json",
+      },
+    },
+  },
+  saveMessages: {
+    method: "post" as const,
+    path: "/api/memory/save-messages",
+    summary: "Save messages",
+    description: "Persist new messages into memory storage.",
+    tags: ["Memory"],
+    operationId: "saveMemoryMessages",
+    responses: {
+      200: {
+        description: "Successfully saved messages",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to save messages",
+        contentType: "application/json",
+      },
+    },
+  },
+  createConversation: {
+    method: "post" as const,
+    path: "/api/memory/conversations",
+    summary: "Create conversation",
+    description: "Create a new conversation in memory storage.",
+    tags: ["Memory"],
+    operationId: "createMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully created conversation",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to create conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  updateConversation: {
+    method: "patch" as const,
+    path: "/api/memory/conversations/:conversationId",
+    summary: "Update conversation",
+    description: "Update an existing conversation in memory storage.",
+    tags: ["Memory"],
+    operationId: "updateMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully updated conversation",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to update conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  deleteConversation: {
+    method: "delete" as const,
+    path: "/api/memory/conversations/:conversationId",
+    summary: "Delete conversation",
+    description: "Delete a conversation and its messages from memory storage.",
+    tags: ["Memory"],
+    operationId: "deleteMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully deleted conversation",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to delete conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  cloneConversation: {
+    method: "post" as const,
+    path: "/api/memory/conversations/:conversationId/clone",
+    summary: "Clone conversation",
+    description: "Create a copy of a conversation, optionally including messages.",
+    tags: ["Memory"],
+    operationId: "cloneMemoryConversation",
+    responses: {
+      200: {
+        description: "Successfully cloned conversation",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to clone conversation",
+        contentType: "application/json",
+      },
+    },
+  },
+  updateWorkingMemory: {
+    method: "post" as const,
+    path: "/api/memory/conversations/:conversationId/working-memory",
+    summary: "Update working memory",
+    description: "Update working memory content for a conversation.",
+    tags: ["Memory"],
+    operationId: "updateMemoryWorkingMemory",
+    responses: {
+      200: {
+        description: "Successfully updated working memory",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Conversation not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to update working memory",
+        contentType: "application/json",
+      },
+    },
+  },
+  deleteMessages: {
+    method: "post" as const,
+    path: "/api/memory/messages/delete",
+    summary: "Delete messages",
+    description: "Delete specific messages from memory storage.",
+    tags: ["Memory"],
+    operationId: "deleteMemoryMessages",
+    responses: {
+      200: {
+        description: "Successfully deleted messages",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request body",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to delete messages",
+        contentType: "application/json",
+      },
+    },
+  },
+  searchMemory: {
+    method: "get" as const,
+    path: "/api/memory/search",
+    summary: "Search memory",
+    description: "Search memory using semantic search when available.",
+    tags: ["Memory"],
+    operationId: "searchMemory",
+    responses: {
+      200: {
+        description: "Successfully searched memory",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid query parameters",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to search memory",
+        contentType: "application/json",
+      },
+    },
+  },
+} as const;
+
+/**
  * All route definitions combined
  */
 export const ALL_ROUTES = {
@@ -941,6 +1220,7 @@ export const ALL_ROUTES = {
   ...TOOL_ROUTES,
   ...LOG_ROUTES,
   ...UPDATE_ROUTES,
+  ...MEMORY_ROUTES,
   ...OBSERVABILITY_ROUTES,
   ...OBSERVABILITY_MEMORY_ROUTES,
 } as const;

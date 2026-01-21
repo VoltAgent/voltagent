@@ -26,6 +26,7 @@ import {
   type A2ARequestContext,
   A2A_ROUTES,
   AGENT_ROUTES,
+  MEMORY_ROUTES,
   OBSERVABILITY_MEMORY_ROUTES,
   OBSERVABILITY_ROUTES,
   TOOL_ROUTES,
@@ -38,6 +39,10 @@ import {
   getConversationStepsHandler,
   handleChatStream,
   handleCheckUpdates,
+  handleCloneMemoryConversation,
+  handleCreateMemoryConversation,
+  handleDeleteMemoryConversation,
+  handleDeleteMemoryMessages,
   handleExecuteTool,
   handleExecuteWorkflow,
   handleGenerateObject,
@@ -46,18 +51,26 @@ import {
   handleGetAgentHistory,
   handleGetAgents,
   handleGetLogs,
+  handleGetMemoryConversation,
+  handleGetMemoryWorkingMemory,
   handleGetWorkflow,
   handleGetWorkflowState,
   handleGetWorkflows,
   handleInstallUpdates,
+  handleListMemoryConversationMessages,
+  handleListMemoryConversations,
   handleListTools,
   handleListWorkflowRuns,
   handleResumeChatStream,
   handleResumeWorkflow,
+  handleSaveMemoryMessages,
+  handleSearchMemory,
   handleStreamObject,
   handleStreamText,
   handleStreamWorkflow,
   handleSuspendWorkflow,
+  handleUpdateMemoryConversation,
+  handleUpdateMemoryWorkingMemory,
   isErrorResponse,
   mapLogResponse,
   parseJsonRpcRequest,
@@ -82,6 +95,39 @@ async function readJsonBody<T>(c: any, logger: Logger): Promise<T | undefined> {
     return undefined;
   }
 }
+
+function parseNumber(value?: string): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function parseFloatValue(value?: string): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const parsed = Number.parseFloat(value);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function parseDate(value?: string): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+type MemoryRoutesCompat = typeof MEMORY_ROUTES & {
+  getWorkingMemory?: { path: string };
+};
+
+const memoryWorkingMemoryPath =
+  (MEMORY_ROUTES as MemoryRoutesCompat).getMemoryWorkingMemory?.path ??
+  (MEMORY_ROUTES as MemoryRoutesCompat).getWorkingMemory?.path ??
+  "/api/memory/conversations/:conversationId/working-memory";
 
 function extractHeaders(
   headers: Headers | NodeJS.Dict<string | string[] | undefined>,
@@ -489,6 +535,159 @@ export function registerUpdateRoutes(app: Hono, deps: ServerProviderDeps, logger
     const body = (await readJsonBody<{ packageName?: string }>(c, logger)) ?? {};
     const response = await handleInstallUpdates(body.packageName, deps, logger);
     return c.json(response, response.success ? 200 : 500);
+  });
+}
+
+export function registerMemoryRoutes(app: Hono, deps: ServerProviderDeps, logger: Logger) {
+  app.get(MEMORY_ROUTES.listConversations.path, async (c) => {
+    const query = c.req.query();
+    const response = await handleListMemoryConversations(deps, {
+      agentId: query.agentId,
+      resourceId: query.resourceId,
+      userId: query.userId,
+      limit: parseNumber(query.limit),
+      offset: parseNumber(query.offset),
+      orderBy: query.orderBy as "created_at" | "updated_at" | "title" | undefined,
+      orderDirection: query.orderDirection as "ASC" | "DESC" | undefined,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.get(MEMORY_ROUTES.getConversation.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const response = await handleGetMemoryConversation(deps, conversationId, {
+      agentId: query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.get(MEMORY_ROUTES.listMessages.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const response = await handleListMemoryConversationMessages(deps, conversationId, {
+      agentId: query.agentId,
+      limit: parseNumber(query.limit),
+      before: parseDate(query.before),
+      after: parseDate(query.after),
+      roles: query.roles ? query.roles.split(",") : undefined,
+      userId: query.userId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.get(memoryWorkingMemoryPath, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const response = await handleGetMemoryWorkingMemory(deps, conversationId, {
+      agentId: query.agentId,
+      scope: query.scope === "user" ? "user" : "conversation",
+      userId: query.userId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.saveMessages.path, async (c) => {
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleSaveMemoryMessages(deps, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.createConversation.path, async (c) => {
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleCreateMemoryConversation(deps, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.patch(MEMORY_ROUTES.updateConversation.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleUpdateMemoryConversation(deps, conversationId, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.delete(MEMORY_ROUTES.deleteConversation.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const response = await handleDeleteMemoryConversation(deps, conversationId, {
+      agentId: query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.cloneConversation.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleCloneMemoryConversation(deps, conversationId, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.updateWorkingMemory.path, async (c) => {
+    const conversationId = c.req.param("conversationId");
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleUpdateMemoryWorkingMemory(deps, conversationId, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.post(MEMORY_ROUTES.deleteMessages.path, async (c) => {
+    const query = c.req.query();
+    const body = await readJsonBody<any>(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleDeleteMemoryMessages(deps, {
+      ...body,
+      agentId: (body.agentId as string | undefined) ?? query.agentId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
+  });
+
+  app.get(MEMORY_ROUTES.searchMemory.path, async (c) => {
+    const query = c.req.query();
+    const response = await handleSearchMemory(deps, {
+      agentId: query.agentId,
+      searchQuery: query.searchQuery,
+      limit: parseNumber(query.limit),
+      threshold: parseFloatValue(query.threshold),
+      conversationId: query.conversationId,
+      userId: query.userId,
+    });
+    return c.json(response, response.success ? 200 : (response.httpStatus ?? 500));
   });
 }
 

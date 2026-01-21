@@ -111,6 +111,11 @@ export const PROTECTED_ROUTES = [
   "POST /workflows/:id/executions/:executionId/cancel", // Cancel execution
 
   // ========================================
+  // MEMORY (User Data)
+  // ========================================
+  "/api/memory/*", // All memory endpoints (GET/POST/PATCH/DELETE)
+
+  // ========================================
   // OBSERVABILITY (Admin/Internal Tooling)
   // Covers all observability endpoints:
   // - /observability/traces
