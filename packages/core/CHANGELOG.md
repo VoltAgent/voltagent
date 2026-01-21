@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.1.6
+
+### Patch Changes
+
+- [#973](https://github.com/VoltAgent/voltagent/pull/973) [`9221498`](https://github.com/VoltAgent/voltagent/commit/9221498c71eb77759380d17e50521abfd213a64c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: normalize Anthropic usage for finish events so totals reflect the last step in multi-step runs
+
 ## 2.1.5
 
 ### Patch Changes

@@ -1,5 +1,27 @@
 # @voltagent/evals
 
+## 2.0.3
+
+### Patch Changes
+
+- [#970](https://github.com/VoltAgent/voltagent/pull/970) [`ed6075a`](https://github.com/VoltAgent/voltagent/commit/ed6075a3a5e02449a087d579fcfa8af59981cdf5) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: allow `runExperiment` to accept a `VoltOpsClient` directly by adapting it for dataset resolution when needed.
+
+  ```ts
+  import { VoltOpsClient } from "@voltagent/core";
+  import { runExperiment } from "@voltagent/evals";
+  import experiment from "./experiments/support-nightly.experiment";
+
+  const voltOpsClient = new VoltOpsClient({
+    publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
+    secretKey: process.env.VOLTAGENT_SECRET_KEY,
+  });
+
+  const result = await runExperiment(experiment, {
+    voltOpsClient,
+    concurrency: 4,
+  });
+  ```
+
 ## 2.0.2
 
 ### Patch Changes

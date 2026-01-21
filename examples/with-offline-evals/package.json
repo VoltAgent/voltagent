@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "dependencies": {
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.1.5",
-    "@voltagent/evals": "^2.0.2",
+    "@voltagent/core": "^2.1.6",
+    "@voltagent/evals": "^2.0.3",
     "@voltagent/scorers": "^2.0.4",
     "@voltagent/sdk": "^2.0.2",
     "ai": "^6.0.0",

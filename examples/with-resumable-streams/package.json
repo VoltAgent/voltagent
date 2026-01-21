@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "author": "",
   "dependencies": {
-    "@voltagent/core": "^2.1.5",
+    "@voltagent/core": "^2.1.6",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/resumable-streams": "^2.0.1",
-    "@voltagent/server-hono": "^2.0.3",
+    "@voltagent/server-hono": "^2.0.4",
     "ai": "^6.0.0"
   },
   "devDependencies": {
