@@ -60,6 +60,15 @@ export async function* normalizeFinishUsageStream<T extends StreamPartWithUsage>
       }
     }
 
+    if (part.type === "finish" && !useLastStepUsage) {
+      if (shouldUseLastStepUsage(part.providerMetadata, lastStepUsage)) {
+        useLastStepUsage = true;
+        if (part.usage) {
+          lastStepUsage = part.usage;
+        }
+      }
+    }
+
     if (part.type === "finish" && useLastStepUsage && lastStepUsage) {
       if (part.totalUsage !== undefined) {
         yield { ...part, totalUsage: lastStepUsage };

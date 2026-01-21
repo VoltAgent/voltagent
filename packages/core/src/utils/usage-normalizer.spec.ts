@@ -124,6 +124,32 @@ describe("normalizeFinishUsageStream", () => {
     expect(normalized[2].totalUsage).toEqual(lastStepUsage);
   });
 
+  it("uses finish metadata to override totalUsage when finish-step metadata is missing", async () => {
+    const lastStepUsage: LanguageModelUsage = {
+      inputTokens: 9,
+      outputTokens: 4,
+      totalTokens: 13,
+    };
+    const totalUsage: LanguageModelUsage = {
+      inputTokens: 20,
+      outputTokens: 10,
+      totalTokens: 30,
+    };
+    const parts = [
+      { type: "finish-step", usage: lastStepUsage },
+      {
+        type: "finish",
+        finishReason: "stop",
+        totalUsage,
+        providerMetadata: { anthropic: { model: "claude" } },
+      },
+    ];
+
+    const normalized = await collectStream(normalizeFinishUsageStream(toAsync(parts)));
+
+    expect(normalized[1].totalUsage).toEqual(lastStepUsage);
+  });
+
   it("overrides totalUsage when cache fields indicate anthropic usage", async () => {
     const lastStepUsage = {
       inputTokens: 8,
