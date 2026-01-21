@@ -144,6 +144,18 @@ export class Memory {
     conversationId: string,
     context?: OperationContext,
   ): Promise<void> {
+    if (this.vector && messageIds.length > 0) {
+      try {
+        const vectorIds = messageIds.map((id) => `msg_${conversationId}_${id}`);
+        await this.vector.deleteBatch(vectorIds);
+      } catch (error) {
+        console.warn(
+          `Failed to delete vectors for conversation ${conversationId} messages:`,
+          error,
+        );
+      }
+    }
+
     return this.storage.deleteMessages(messageIds, userId, conversationId, context);
   }
 

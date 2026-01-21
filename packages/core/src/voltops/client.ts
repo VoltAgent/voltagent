@@ -32,6 +32,7 @@ import type {
   ManagedMemoryCredentialCreateResult,
   ManagedMemoryCredentialListResult,
   ManagedMemoryDatabaseSummary,
+  ManagedMemoryDeleteMessagesInput,
   ManagedMemoryDeleteVectorsInput,
   ManagedMemoryGetConversationStepsInput,
   ManagedMemoryGetMessagesInput,
@@ -439,6 +440,7 @@ export class VoltOpsClient implements IVoltOpsClient {
         addBatch: (databaseId, input) => this.addManagedMemoryMessages(databaseId, input),
         list: (databaseId, input) => this.getManagedMemoryMessages(databaseId, input),
         clear: (databaseId, input) => this.clearManagedMemoryMessages(databaseId, input),
+        delete: (databaseId, input) => this.deleteManagedMemoryMessages(databaseId, input),
       },
       conversations: {
         create: (databaseId, input) => this.createManagedMemoryConversation(databaseId, input),
@@ -597,6 +599,21 @@ export class VoltOpsClient implements IVoltOpsClient {
 
     if (!payload?.success) {
       throw new Error("Failed to clear managed memory messages via VoltOps");
+    }
+  }
+
+  private async deleteManagedMemoryMessages(
+    databaseId: string,
+    input: ManagedMemoryDeleteMessagesInput,
+  ): Promise<void> {
+    const payload = await this.request<{ success: boolean }>(
+      "POST",
+      `/managed-memory/projects/databases/${databaseId}/messages/delete`,
+      input,
+    );
+
+    if (!payload?.success) {
+      throw new Error("Failed to delete managed memory messages via VoltOps");
     }
   }
 

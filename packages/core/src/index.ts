@@ -298,6 +298,7 @@ export type {
   ManagedMemoryAddMessagesInput,
   ManagedMemoryGetMessagesInput,
   ManagedMemoryClearMessagesInput,
+  ManagedMemoryDeleteMessagesInput,
   ManagedMemoryUpdateConversationInput,
   ManagedMemoryWorkingMemoryInput,
   ManagedMemorySetWorkingMemoryInput,

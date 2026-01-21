@@ -1116,6 +1116,12 @@ export interface ManagedMemoryClearMessagesInput {
   conversationId?: string;
 }
 
+export interface ManagedMemoryDeleteMessagesInput {
+  conversationId: string;
+  userId: string;
+  messageIds: string[];
+}
+
 export interface ManagedMemoryGetConversationStepsInput {
   conversationId: string;
   userId: string;
@@ -1178,6 +1184,7 @@ export interface ManagedMemoryMessagesClient {
   addBatch(databaseId: string, input: ManagedMemoryAddMessagesInput): Promise<void>;
   list(databaseId: string, input: ManagedMemoryGetMessagesInput): Promise<UIMessage[]>;
   clear(databaseId: string, input: ManagedMemoryClearMessagesInput): Promise<void>;
+  delete(databaseId: string, input: ManagedMemoryDeleteMessagesInput): Promise<void>;
 }
 
 export interface ManagedMemoryConversationsClient {
