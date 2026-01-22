@@ -382,7 +382,12 @@ onFallback: async ({ stage, fromModel, nextModel, operation }) => {
 ### `onToolStart`
 
 - **Triggered:** Before an agent executes a tool.
-- **Argument Object (`OnToolStartHookArgs`):** `{ agent: Agent, tool: AgentTool, args: any, context: OperationContext }`
+- **Argument Object (`OnToolStartHookArgs`):**
+  - `agent`: Agent instance running the tool
+  - `tool`: The tool being executed
+  - `args`: Tool input arguments
+  - `context`: Operation context for the current call
+  - `options`: ToolExecuteOptions (includes `toolContext`, `abortController`, etc.)
 - **Use Cases:** Logging tool usage, inspecting tool arguments, or validating inputs before execution.
 
 ```ts
@@ -396,7 +401,14 @@ onToolStart: async ({ agent, tool, args, context }) => {
 ### `onToolEnd`
 
 - **Triggered:** After a tool execution completes or throws an error.
-- **Argument Object (`OnToolEndHookArgs`):** `{ agent: Agent, tool: AgentTool, output: unknown | undefined, error: VoltAgentError | undefined, context: OperationContext }`
+- **Argument Object (`OnToolEndHookArgs`):**
+  - `agent`: Agent instance running the tool
+  - `tool`: The tool that completed
+  - `output`: Tool output (undefined on error)
+  - `error`: VoltAgentError when tool throws (undefined on success)
+  - `context`: Operation context for the current call
+  - `options`: ToolExecuteOptions (includes `toolContext`, `abortController`, etc.)
+- **Return:** `{ output }` to replace the tool result. The replacement is validated again if the tool has an `outputSchema`.
 - **Use Cases:** Logging tool results or errors, post-processing output, triggering actions based on success or failure.
 
 ```ts
@@ -413,6 +425,37 @@ onToolEnd: async ({ agent, tool, output, error, context }) => {
     );
   }
 };
+```
+
+### Tool-level hooks (per tool)
+
+Tool hooks run for a specific tool instance and are called before/after execution. Tool-level `onEnd` runs before agent-level `onToolEnd`. If both return `{ output }`, the agent hook wins. Any override is re-validated when `outputSchema` is present.
+
+**Tool hook parameters:**
+
+- `onStart`: `{ tool, args, options }`
+- `onEnd`: `{ tool, args, output, error, options }` (return `{ output }` to override)
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const normalizeTool = createTool({
+  name: "normalize_text",
+  description: "Normalize and trim text",
+  parameters: z.object({ text: z.string() }),
+  execute: async ({ text }) => text,
+  hooks: {
+    onStart: ({ tool }) => {
+      console.log(`[tool] ${tool.name} starting`);
+    },
+    onEnd: ({ output }) => {
+      if (typeof output === "string") {
+        return { output: output.trim() };
+      }
+    },
+  },
+});
 ```
 
 ### `onHandoff`

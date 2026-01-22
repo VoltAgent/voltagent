@@ -46,6 +46,39 @@ Each tool has:
 
 The `execute` function's parameter types are automatically inferred from the Zod schema, providing full IntelliSense support.
 
+## Tool Hooks
+
+You can attach tool-specific hooks to observe or post-process a tool result. Tool hooks run before agent-level hooks, and agent `onToolEnd` can still override the output afterward.
+
+**Hook parameters:**
+
+- `onStart`: `{ tool, args, options }`
+- `onEnd`: `{ tool, args, output, error, options }` (return `{ output }` to override the result)
+
+> Overrides are re-validated if the tool has an `outputSchema`. For streaming tools (AsyncIterable), overrides apply only to the final output.
+
+```ts
+import { createTool } from "@voltagent/core";
+import { z } from "zod";
+
+const summarizeTool = createTool({
+  name: "summarize_text",
+  description: "Summarize text with a hard cap",
+  parameters: z.object({ text: z.string() }),
+  execute: async ({ text }) => text,
+  hooks: {
+    onStart: ({ tool }) => {
+      console.log(`[tool] ${tool.name} starting`);
+    },
+    onEnd: ({ output }) => {
+      if (typeof output === "string") {
+        return { output: output.slice(0, 500) };
+      }
+    },
+  },
+});
+```
+
 ## Streaming Tool Results (Preliminary)
 
 If your tool can provide progress or intermediate status, return an `AsyncIterable` from `execute`.

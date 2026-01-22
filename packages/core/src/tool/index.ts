@@ -11,6 +11,36 @@ type JSONValue = string | number | boolean | null | { [key: string]: JSONValue }
 
 export type ToolExecutionResult<T> = PromiseLike<T> | AsyncIterable<T> | T;
 
+export interface ToolHookOnStartArgs {
+  tool: Tool<any, any>;
+  args: unknown;
+  options?: ToolExecuteOptions;
+}
+
+export interface ToolHookOnEndArgs {
+  tool: Tool<any, any>;
+  args: unknown;
+  /** The successful output from the tool. Undefined on error. */
+  output: unknown | undefined;
+  /** The error if the tool execution failed. */
+  error: unknown | undefined;
+  options?: ToolExecuteOptions;
+}
+
+export interface ToolHookOnEndResult {
+  output?: unknown;
+}
+
+export type ToolHookOnStart = (args: ToolHookOnStartArgs) => Promise<void> | void;
+export type ToolHookOnEnd = (
+  args: ToolHookOnEndArgs,
+) => Promise<ToolHookOnEndResult | undefined> | ToolHookOnEndResult | undefined;
+
+export type ToolHooks = {
+  onStart?: ToolHookOnStart;
+  onEnd?: ToolHookOnEnd;
+};
+
 /**
  * Tool result output format for multi-modal content.
  * Matches AI SDK's LanguageModelV2ToolResultOutput type.
@@ -142,6 +172,11 @@ export type ToolOptions<
     args: z.infer<T>,
     options?: ToolExecuteOptions,
   ) => ToolExecutionResult<O extends ToolSchema ? z.infer<O> : unknown>;
+
+  /**
+   * Optional tool-specific hooks for lifecycle events.
+   */
+  hooks?: ToolHooks;
 };
 
 /**
@@ -199,6 +234,11 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
   }) => ToolResultOutput;
 
   /**
+   * Optional tool-specific hooks for lifecycle events.
+   */
+  readonly hooks?: ToolHooks;
+
+  /**
    * Internal discriminator to make runtime/type checks simpler across module boundaries.
    * Marking our Tool instances with a stable string avoids instanceof issues.
    */
@@ -248,6 +288,7 @@ export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | unde
     this.providerOptions = options.providerOptions;
     this.toModelOutput = options.toModelOutput;
     this.execute = options.execute;
+    this.hooks = options.hooks;
   }
 }
 

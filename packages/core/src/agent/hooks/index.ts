@@ -70,6 +70,10 @@ export interface OnToolEndHookArgs {
   options?: ToolExecuteOptions;
 }
 
+export interface OnToolEndHookResult {
+  output?: unknown;
+}
+
 export interface OnPrepareMessagesHookArgs {
   /** The messages that will be sent to the LLM (AI SDK UIMessage). */
   messages: UIMessage[];
@@ -168,7 +172,9 @@ export type AgentHookOnEnd = (args: OnEndHookArgs) => Promise<void> | void;
 export type AgentHookOnHandoff = (args: OnHandoffHookArgs) => Promise<void> | void;
 export type AgentHookOnHandoffComplete = (args: OnHandoffCompleteHookArgs) => Promise<void> | void;
 export type AgentHookOnToolStart = (args: OnToolStartHookArgs) => Promise<void> | void;
-export type AgentHookOnToolEnd = (args: OnToolEndHookArgs) => Promise<void> | void;
+export type AgentHookOnToolEnd = (
+  args: OnToolEndHookArgs,
+) => Promise<OnToolEndHookResult | undefined> | OnToolEndHookResult | undefined;
 export type AgentHookOnPrepareMessages = (
   args: OnPrepareMessagesHookArgs,
 ) => Promise<OnPrepareMessagesHookResult> | OnPrepareMessagesHookResult;

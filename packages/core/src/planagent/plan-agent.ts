@@ -551,6 +551,38 @@ function chainPrepareModelMessagesHooks(
   };
 }
 
+function chainToolEndHooks(
+  hooks: Array<AgentHooks["onToolEnd"] | null | undefined>,
+): AgentHooks["onToolEnd"] | undefined {
+  const sequence = compactHooks(hooks);
+  if (sequence.length === 0) {
+    return undefined;
+  }
+  return async (args) => {
+    if (args.error) {
+      for (const hook of sequence) {
+        await hook(args);
+      }
+      return;
+    }
+
+    let currentOutput = args.output;
+    let hasOverride = false;
+    for (const hook of sequence) {
+      const result = await hook({ ...args, output: currentOutput });
+      if (result && Object.prototype.hasOwnProperty.call(result, "output")) {
+        currentOutput = result.output;
+        hasOverride = true;
+      }
+    }
+
+    if (hasOverride) {
+      return { output: currentOutput };
+    }
+    return;
+  };
+}
+
 function composeAgentHooks(sequences: {
   onStart?: AgentHooks["onStart"][];
   onEnd?: AgentHooks["onEnd"][];
@@ -569,7 +601,7 @@ function composeAgentHooks(sequences: {
     onHandoff: chainVoidHooks(sequences.onHandoff ?? []),
     onHandoffComplete: chainVoidHooks(sequences.onHandoffComplete ?? []),
     onToolStart: chainVoidHooks(sequences.onToolStart ?? []),
-    onToolEnd: chainVoidHooks(sequences.onToolEnd ?? []),
+    onToolEnd: chainToolEndHooks(sequences.onToolEnd ?? []),
     onPrepareMessages: chainPrepareMessagesHooks(sequences.onPrepareMessages ?? []),
     onPrepareModelMessages: chainPrepareModelMessagesHooks(sequences.onPrepareModelMessages ?? []),
     onError: chainVoidHooks(sequences.onError ?? []),

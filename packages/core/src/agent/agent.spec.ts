@@ -892,6 +892,98 @@ describe("Agent", () => {
 
       operationContext.traceContext.end("completed");
     });
+
+    it("allows onToolEnd to override tool output", async () => {
+      const onToolEnd = vi.fn().mockResolvedValue({ output: "trimmed" });
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: createHooks({ onToolEnd }),
+      });
+
+      const tool = new Tool({
+        name: "text-tool",
+        description: "Returns text",
+        parameters: z.object({}),
+        execute: async () => "original",
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(tool);
+      const result = await execute({});
+
+      expect(result).toBe("trimmed");
+      expect(onToolEnd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool,
+          output: "original",
+          error: undefined,
+        }),
+      );
+
+      operationContext.traceContext.end("completed");
+    });
+
+    it("supports tool-level hooks for start and end", async () => {
+      const toolOnStart = vi.fn();
+      const toolOnEnd = vi.fn().mockResolvedValue({ output: "tool-hook" });
+      const onToolEnd = vi.fn().mockResolvedValue({ output: "agent-hook" });
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: createHooks({ onToolEnd }),
+      });
+
+      const tool = new Tool({
+        name: "hooked-tool",
+        description: "Returns text",
+        parameters: z.object({}),
+        execute: async () => "original",
+        hooks: {
+          onStart: toolOnStart,
+          onEnd: toolOnEnd,
+        },
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(tool);
+      const result = await execute({});
+
+      expect(result).toBe("agent-hook");
+      expect(toolOnStart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool,
+        }),
+      );
+      expect(toolOnEnd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool,
+          output: "original",
+          error: undefined,
+        }),
+      );
+      expect(onToolEnd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool,
+          output: "tool-hook",
+          error: undefined,
+        }),
+      );
+
+      operationContext.traceContext.end("completed");
+    });
   });
 
   describe("Agent as Tool (toTool)", () => {
