@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/libsql",
   "description": "VoltAgent LibSQL - LibSQL/Turso Memory provider integration for VoltAgent",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "dependencies": {
     "@libsql/client": "^0.15.0",
     "@voltagent/internal": "^1.0.2"

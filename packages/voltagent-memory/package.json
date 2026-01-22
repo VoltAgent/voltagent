@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/voltagent-memory",
   "description": "VoltAgent managed memory adapter backed by VoltOps",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "dependencies": {
     "@voltagent/internal": "^1.0.2"
   },

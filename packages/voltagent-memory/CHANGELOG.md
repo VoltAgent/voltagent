@@ -1,5 +1,11 @@
 # @voltagent/voltagent-memory
 
+## 1.0.3
+
+### Patch Changes
+
+- [`b0fae14`](https://github.com/VoltAgent/voltagent/commit/b0fae149569a65439ce5f6e7f8039be6b97086e1) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: bump version
+
 ## 1.0.2
 
 ### Patch Changes
