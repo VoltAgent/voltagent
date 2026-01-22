@@ -88,6 +88,11 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "tool-hooks",
+          label: "Tool Hooks",
+        },
+        {
+          type: "doc",
           id: "retrying",
           label: "Retrying",
         },
