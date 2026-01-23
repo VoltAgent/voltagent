@@ -723,18 +723,21 @@ export interface WorkflowStats {
 /**
  * Event emitted during workflow streaming
  */
+export type WorkflowStreamEventType =
+  | "workflow-start"
+  | "workflow-suspended"
+  | "workflow-complete"
+  | "workflow-cancelled"
+  | "workflow-error"
+  | "step-start"
+  | "step-complete"
+  | (string & {});
+
 export interface WorkflowStreamEvent {
   /**
    * Type of the event (e.g., "step-start", "step-complete", "custom", "agent-stream")
    */
-  type:
-    | "workflow-start"
-    | "workflow-suspended"
-    | "workflow-complete"
-    | "workflow-cancelled"
-    | "workflow-error"
-    | "step-start"
-    | "step-complete";
+  type: WorkflowStreamEventType;
   /**
    * Unique execution ID for this workflow run
    */
@@ -802,7 +805,9 @@ export interface WorkflowStreamWriter {
   /**
    * Write a custom event to the stream
    */
-  write(event: Partial<WorkflowStreamEvent> & { type: string }): void;
+  write(
+    event: Omit<Partial<WorkflowStreamEvent>, "type"> & { type: WorkflowStreamEventType },
+  ): void;
 
   /**
    * Pipe events from an agent's fullStream to the workflow stream

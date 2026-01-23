@@ -1,7 +1,7 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { VoltAgentTextStreamPart } from "../agent/subagent/types";
 import type { UserContext } from "../agent/types";
-import type { WorkflowStreamEvent, WorkflowStreamWriter } from "./types";
+import type { WorkflowStreamEvent, WorkflowStreamEventType, WorkflowStreamWriter } from "./types";
 
 /**
  * Controller for managing workflow stream execution
@@ -89,7 +89,9 @@ export class WorkflowStreamController {
  * This writer silently discards all events, used when .run() is called
  */
 export class NoOpWorkflowStreamWriter implements WorkflowStreamWriter {
-  write(_event: Partial<WorkflowStreamEvent> & { type: string }): void {
+  write(
+    _event: Omit<Partial<WorkflowStreamEvent>, "type"> & { type: WorkflowStreamEventType },
+  ): void {
     // Do nothing - events are discarded when not streaming
   }
 
@@ -124,7 +126,9 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
   /**
    * Write a custom event to the stream
    */
-  write(event: Partial<WorkflowStreamEvent> & { type: string }): void {
+  write(
+    event: Omit<Partial<WorkflowStreamEvent>, "type"> & { type: WorkflowStreamEventType },
+  ): void {
     this.controller.emit({
       type: event.type,
       executionId: this.executionId,
