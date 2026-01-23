@@ -159,16 +159,40 @@ export interface WorkflowStepSleepUntil<INPUT, DATA>
   date: Date | InternalWorkflowFunc<INPUT, DATA, Date, any, any>;
 }
 
-export type WorkflowStepForEachConfig<INPUT, ITEM, RESULT> = InternalWorkflowStepConfig<{
-  step: InternalAnyWorkflowStep<INPUT, ITEM, RESULT>;
+export type WorkflowStepForEachItemsFunc<INPUT, DATA, ITEM> = InternalWorkflowFunc<
+  INPUT,
+  DATA,
+  ITEM[],
+  any,
+  any
+>;
+
+export type WorkflowStepForEachMapFunc<INPUT, DATA, ITEM, MAP_DATA> = (
+  context: WorkflowExecuteContext<INPUT, DATA, any, any>,
+  item: ITEM,
+  index: number,
+) => Promise<MAP_DATA> | MAP_DATA;
+
+export type WorkflowStepForEachConfig<
+  INPUT,
+  DATA,
+  ITEM,
+  RESULT,
+  MAP_DATA = ITEM,
+> = InternalWorkflowStepConfig<{
+  step: InternalAnyWorkflowStep<INPUT, MAP_DATA, RESULT>;
   concurrency?: number;
+  items?: WorkflowStepForEachItemsFunc<INPUT, DATA, ITEM>;
+  map?: WorkflowStepForEachMapFunc<INPUT, DATA, ITEM, MAP_DATA>;
 }>;
 
-export interface WorkflowStepForEach<INPUT, ITEM, RESULT>
-  extends InternalBaseWorkflowStep<INPUT, ITEM[], RESULT[], any, any> {
+export interface WorkflowStepForEach<INPUT, DATA, ITEM, RESULT, MAP_DATA = ITEM>
+  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT[], any, any> {
   type: "foreach";
-  step: InternalAnyWorkflowStep<INPUT, ITEM, RESULT>;
+  step: InternalAnyWorkflowStep<INPUT, MAP_DATA, RESULT>;
   concurrency?: number;
+  items?: WorkflowStepForEachItemsFunc<INPUT, DATA, ITEM>;
+  map?: WorkflowStepForEachMapFunc<INPUT, DATA, ITEM, MAP_DATA>;
 }
 
 export type WorkflowStepLoopConfig<INPUT, DATA, RESULT> = InternalWorkflowStepConfig<{
@@ -256,7 +280,7 @@ export type WorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA = any> =
   | WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA>
   | WorkflowStepSleep<INPUT, DATA>
   | WorkflowStepSleepUntil<INPUT, DATA>
-  | WorkflowStepForEach<INPUT, any, any>
+  | WorkflowStepForEach<INPUT, any, any, any>
   | WorkflowStepLoop<INPUT, DATA, RESULT>
   | WorkflowStepBranch<INPUT, DATA, RESULT>
   | WorkflowStepMap<INPUT, DATA, Record<string, WorkflowStepMapEntry<INPUT, DATA>>>;

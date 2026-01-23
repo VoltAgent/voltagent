@@ -81,6 +81,45 @@ describe("andForEach", () => {
     expect(result).toEqual([2, 4, 6]);
   });
 
+  it("uses items selector to iterate nested arrays", async () => {
+    const step = andForEach({
+      id: "foreach-selector",
+      items: ({ data }) => data.items,
+      step: andThen({
+        id: "double",
+        execute: async ({ data }) => data * 2,
+      }),
+    });
+
+    const result = await step.execute(
+      createMockWorkflowExecuteContext({
+        data: { items: [1, 2, 3] },
+      }),
+    );
+
+    expect(result).toEqual([2, 4, 6]);
+  });
+
+  it("maps items before executing the step", async () => {
+    const step = andForEach({
+      id: "foreach-map",
+      items: ({ data }) => data.values,
+      map: ({ data }, item) => ({ label: data.label, value: item }),
+      step: andThen({
+        id: "format",
+        execute: async ({ data }) => `${data.label}:${data.value}`,
+      }),
+    });
+
+    const result = await step.execute(
+      createMockWorkflowExecuteContext({
+        data: { label: "A", values: [1, 2] },
+      }),
+    );
+
+    expect(result).toEqual(["A:1", "A:2"]);
+  });
+
   it("respects the concurrency limit", async () => {
     let inFlight = 0;
     let maxInFlight = 0;
@@ -122,6 +161,25 @@ describe("andForEach", () => {
       step.execute(
         createMockWorkflowExecuteContext({
           data: { value: 1 } as any,
+        }),
+      ),
+    ).rejects.toThrow("andForEach expects array input data");
+  });
+
+  it("throws when items selector does not return an array", async () => {
+    const step = andForEach({
+      id: "foreach-selector-invalid",
+      items: () => "not-array" as any,
+      step: andThen({
+        id: "noop",
+        execute: async ({ data }) => data,
+      }),
+    });
+
+    await expect(
+      step.execute(
+        createMockWorkflowExecuteContext({
+          data: { items: [1] },
         }),
       ),
     ).rejects.toThrow("andForEach expects array input data");

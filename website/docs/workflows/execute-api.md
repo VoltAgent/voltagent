@@ -9,7 +9,16 @@ Every workflow step has an `execute` function that receives a context object:
 ```typescript
 .andThen({
   id: "my-step",
-  execute: async ({ data, state, getStepData, suspend, resumeData, retryCount }) => {
+  execute: async ({
+    data,
+    state,
+    workflowState,
+    setWorkflowState,
+    getStepData,
+    suspend,
+    resumeData,
+    retryCount,
+  }) => {
     // Your logic here
     return { result: "processed" };
   }
@@ -78,7 +87,26 @@ Contains metadata about the current workflow execution:
 })
 ```
 
-### 3. `getStepData` - Access Any Previous Step
+For shared state across steps, see [Workflow State](./workflow-state.md).
+
+### 3. `workflowState` and `setWorkflowState` - Shared State
+
+Use shared state when you need cross-step context without changing the main data payload:
+
+```typescript
+.andThen({
+  id: "stash-user",
+  execute: async ({ data, setWorkflowState }) => {
+    setWorkflowState((previous) => ({
+      ...previous,
+      userId: data.userId,
+    }));
+    return data;
+  }
+})
+```
+
+### 4. `getStepData` - Access Any Previous Step
 
 Get data from any step that has already executed:
 
@@ -99,7 +127,7 @@ Get data from any step that has already executed:
 })
 ```
 
-### 4. `suspend` - Pause the Workflow
+### 5. `suspend` - Pause the Workflow
 
 Pause execution and wait for external input (like human approval):
 
@@ -118,7 +146,7 @@ Pause execution and wait for external input (like human approval):
 })
 ```
 
-### 5. `resumeData` - Data from Resume
+### 6. `resumeData` - Data from Resume
 
 When a suspended workflow resumes, this contains the resume data:
 
@@ -147,7 +175,7 @@ When a suspended workflow resumes, this contains the resume data:
 })
 ```
 
-### 6. `retryCount` - Retry Attempt Number
+### 7. `retryCount` - Retry Attempt Number
 
 If a step is configured with `retries`, this value tells you which attempt is running:
 
@@ -425,6 +453,12 @@ The execute function is fully type-safe:
 interface ExecuteContext<TData, TSuspendData = any, TResumeData = any> {
   data: TData;
   state: WorkflowState;
+  workflowState: Record<string, unknown>;
+  setWorkflowState: (
+    update:
+      | Record<string, unknown>
+      | ((previous: Record<string, unknown>) => Record<string, unknown>)
+  ) => void;
   getStepData: (stepId: string) => { input: any; output: any } | undefined;
   suspend: (reason?: string, data?: TSuspendData) => Promise<never>;
   resumeData?: TResumeData;

@@ -5,7 +5,12 @@ import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowExecutionContext } from "../context";
-import type { WorkflowStepData, WorkflowStreamWriter } from "../types";
+import type {
+  WorkflowStateStore,
+  WorkflowStateUpdater,
+  WorkflowStepData,
+  WorkflowStreamWriter,
+} from "../types";
 import type { WorkflowState } from "./state";
 
 /**
@@ -45,6 +50,8 @@ export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> 
   suspend: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>;
   resumeData?: RESUME_DATA;
   retryCount?: number;
+  workflowState: WorkflowStateStore;
+  setWorkflowState: (update: WorkflowStateUpdater) => void;
   /**
    * Logger instance for this workflow execution.
    * Provides execution-scoped logging with full context (userId, conversationId, executionId).

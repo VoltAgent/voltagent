@@ -2,6 +2,7 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { vi } from "vitest";
 import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowExecuteContext } from "../../workflow/internal/types";
+import type { WorkflowStateUpdater } from "../../workflow/types";
 
 export type MockWorkflowInput = BaseMessage | BaseMessage[] | string | object;
 
@@ -19,11 +20,13 @@ export type MockWorkflowExecuteContext<
 export function createMockWorkflowExecuteContext(
   overrides: Partial<MockWorkflowExecuteContext> = {},
 ) {
-  return {
+  const context: MockWorkflowExecuteContext = {
     data: overrides.data ?? ({} as DangerouslyAllowAny),
     state: overrides.state ?? ({} as DangerouslyAllowAny),
     getStepData: overrides.getStepData ?? (() => undefined),
     suspend: overrides.suspend ?? vi.fn(),
+    workflowState: overrides.workflowState ?? {},
+    setWorkflowState: (() => undefined) as MockWorkflowExecuteContext["setWorkflowState"],
     logger: overrides.logger ?? {
       trace: vi.fn(),
       debug: vi.fn(),
@@ -38,4 +41,13 @@ export function createMockWorkflowExecuteContext(
       pipeFrom: vi.fn(),
     },
   };
+
+  context.setWorkflowState =
+    overrides.setWorkflowState ??
+    ((update: WorkflowStateUpdater) => {
+      const nextState = typeof update === "function" ? update(context.workflowState) : update;
+      context.workflowState = nextState;
+    });
+
+  return context;
 }

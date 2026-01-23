@@ -78,6 +78,61 @@ describe.sequential("workflow.run", () => {
       resume: expect.any(Function),
     });
   });
+
+  it("should persist workflowState across steps", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "workflow-state",
+        name: "Workflow State",
+        input: z.object({
+          name: z.string(),
+        }),
+        result: z.object({
+          greeting: z.string(),
+          plan: z.string(),
+        }),
+        memory,
+      },
+      andThen({
+        id: "set-state",
+        execute: async ({ data, setWorkflowState }) => {
+          setWorkflowState((previous) => ({
+            ...previous,
+            userName: data.name,
+          }));
+          return data;
+        },
+      }),
+      andThen({
+        id: "read-state",
+        execute: async ({ workflowState }) => {
+          return {
+            greeting: `hi ${workflowState.userName as string}`,
+            plan: workflowState.plan as string,
+          };
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const result = await workflow.run(
+      { name: "Ada" },
+      {
+        workflowState: {
+          plan: "pro",
+        },
+      },
+    );
+
+    expect(result.result).toEqual({
+      greeting: "hi Ada",
+      plan: "pro",
+    });
+  });
 });
 
 describe.sequential("workflow streaming", () => {

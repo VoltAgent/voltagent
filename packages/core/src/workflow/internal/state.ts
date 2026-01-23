@@ -7,6 +7,7 @@ import { getGlobalLogger } from "../../logger";
 import type {
   WorkflowCancellationMetadata,
   WorkflowRunOptions,
+  WorkflowStateStore,
   WorkflowSuspensionMetadata,
 } from "../types";
 import type { InternalExtractWorkflowInputData } from "./types";
@@ -32,6 +33,8 @@ export type WorkflowState<INPUT, RESULT> = {
   input: InternalExtractWorkflowInputData<INPUT>;
   /** current data being processed */
   data: DangerouslyAllowAny;
+  /** shared workflow state across steps */
+  workflowState: WorkflowStateStore;
   /** the result of workflow execution, null until execution is complete */
   result: RESULT | null;
   error: Error | null;
@@ -136,6 +139,7 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
       startAt: new Date(),
       endAt: null,
       data: data,
+      workflowState: config?.workflowState ?? {},
       status: "running",
       result: null,
       error: null,
@@ -243,16 +247,27 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
 
 type MutableWorkflowState<DATA, RESULT> = Pick<
   Partial<WorkflowState<DATA, RESULT>>,
-  "data" | "result"
+  "data" | "result" | "workflowState"
 >;
 
 function transformToMutableState<DATA, RESULT>(
   state: MutableWorkflowState<DATA, RESULT>,
 ): MutableWorkflowState<DATA, RESULT> {
-  return {
-    data: state.data,
-    result: state.result,
-  };
+  const nextState: MutableWorkflowState<DATA, RESULT> = {};
+
+  if (state.data !== undefined) {
+    nextState.data = state.data;
+  }
+
+  if (state.result !== undefined) {
+    nextState.result = state.result;
+  }
+
+  if (state.workflowState !== undefined) {
+    nextState.workflowState = state.workflowState;
+  }
+
+  return nextState;
 }
 
 function assertCanMutate(value: unknown): asserts value is RunningWorkflowState {

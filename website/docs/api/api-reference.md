@@ -86,7 +86,8 @@ Default port is 3141, but may vary based on configuration.
     "userId": "string",
     "conversationId": "string",
     "executionId": "string",
-    "context": {}
+    "context": {},
+    "workflowState": {}
   }
 }
 ```

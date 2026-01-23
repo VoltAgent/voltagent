@@ -32,6 +32,8 @@ export type {
   WorkflowResumeOptions,
   WorkflowSuspensionMetadata,
   WorkflowSuspendController,
+  WorkflowStateStore,
+  WorkflowStateUpdater,
   WorkflowStats,
   WorkflowStepData,
   WorkflowStepStatus,

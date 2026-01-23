@@ -50,6 +50,8 @@ import type {
   WorkflowExecutionResult,
   WorkflowInput,
   WorkflowRunOptions,
+  WorkflowStateStore,
+  WorkflowStateUpdater,
   WorkflowStepData,
   WorkflowStepState,
   WorkflowStreamResult,
@@ -249,6 +251,8 @@ export class WorkflowChain<
     execute: (context: {
       data: z.infer<IS>;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
+      workflowState: WorkflowStateStore;
+      setWorkflowState: (update: WorkflowStateUpdater) => void;
       getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
@@ -283,6 +287,8 @@ export class WorkflowChain<
     execute: (context: {
       data: z.infer<IS>;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
+      workflowState: WorkflowStateStore;
+      setWorkflowState: (update: WorkflowStateUpdater) => void;
       getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
@@ -316,6 +322,8 @@ export class WorkflowChain<
     execute: (context: {
       data: CURRENT_DATA;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
+      workflowState: WorkflowStateStore;
+      setWorkflowState: (update: WorkflowStateUpdater) => void;
       getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
@@ -349,6 +357,8 @@ export class WorkflowChain<
     execute: (context: {
       data: CURRENT_DATA;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
+      workflowState: WorkflowStateStore;
+      setWorkflowState: (update: WorkflowStateUpdater) => void;
       getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
@@ -394,6 +404,8 @@ export class WorkflowChain<
     execute: (context: {
       data: CURRENT_DATA;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
+      workflowState: WorkflowStateStore;
+      setWorkflowState: (update: WorkflowStateUpdater) => void;
       getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;
@@ -442,6 +454,8 @@ export class WorkflowChain<
       condition: (context: {
         data: z.infer<IS>;
         state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
+        workflowState: WorkflowStateStore;
+        setWorkflowState: (update: WorkflowStateUpdater) => void;
         getStepData: (stepId: string) => WorkflowStepData | undefined;
         suspend: (
           reason?: string,
@@ -535,6 +549,8 @@ export class WorkflowChain<
     execute: (context: {
       data: z.infer<IS>;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
+      workflowState: WorkflowStateStore;
+      setWorkflowState: (update: WorkflowStateUpdater) => void;
       getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (
         reason?: string,
@@ -579,6 +595,8 @@ export class WorkflowChain<
     execute: (context: {
       data: CURRENT_DATA;
       state: WorkflowStepState<WorkflowInput<INPUT_SCHEMA>>;
+      workflowState: WorkflowStateStore;
+      setWorkflowState: (update: WorkflowStateUpdater) => void;
       getStepData: (stepId: string) => WorkflowStepData | undefined;
       suspend: (reason?: string, suspendData?: z.infer<SUSPEND_SCHEMA>) => Promise<never>;
       resumeData?: z.infer<RESUME_SCHEMA>;
@@ -656,8 +674,14 @@ export class WorkflowChain<
   /**
    * Add a foreach step that runs a step for each item in an array
    */
-  andForEach<ITEM, NEW_DATA>(
-    config: WorkflowStepForEachConfig<WorkflowInput<INPUT_SCHEMA>, ITEM, NEW_DATA>,
+  andForEach<ITEM, NEW_DATA, MAP_DATA = ITEM>(
+    config: WorkflowStepForEachConfig<
+      WorkflowInput<INPUT_SCHEMA>,
+      CURRENT_DATA,
+      ITEM,
+      NEW_DATA,
+      MAP_DATA
+    >,
   ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA[], SUSPEND_SCHEMA, RESUME_SCHEMA> {
     this.steps.push(andForEach(config));
     return this as unknown as WorkflowChain<

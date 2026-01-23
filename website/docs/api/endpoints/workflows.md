@@ -231,6 +231,10 @@ Execute a workflow synchronously and wait for completion.
     "context": {
       "priority": "high",
       "department": "sales"
+    },
+    "workflowState": {
+      "plan": "pro",
+      "region": "eu"
     }
   }
 }
@@ -243,6 +247,7 @@ Execute a workflow synchronously and wait for completion.
 | `conversationId` | string | Conversation context |
 | `executionId` | string | Custom execution ID |
 | `context` | object | Additional context data |
+| `workflowState` | object | Shared state available to workflow steps |
 
 **Response (Completed):**
 

@@ -131,6 +131,7 @@ export interface WorkflowStateEntry {
     checkpoint?: {
       stepExecutionState?: any;
       completedStepsData?: any[];
+      workflowState?: Record<string, unknown>;
     };
     suspendData?: any;
   };

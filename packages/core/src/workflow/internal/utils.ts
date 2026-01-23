@@ -7,7 +7,7 @@ import {
 } from "ai";
 import type { WorkflowExecutionContext } from "../context";
 import type { WorkflowStreamController } from "../stream";
-import type { WorkflowStreamEvent } from "../types";
+import type { WorkflowStateUpdater, WorkflowStreamEvent } from "../types";
 import type { WorkflowState } from "./state";
 import type {
   InternalWorkflowStateParam,
@@ -32,6 +32,7 @@ export function convertWorkflowStateToParam<INPUT>(
     conversationId: state.conversationId,
     userId: state.userId,
     context: state.context,
+    workflowState: state.workflowState,
     active: state.active,
     startAt: state.startAt,
     endAt: state.endAt,
@@ -74,6 +75,7 @@ export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DAT
   suspendFn: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>,
   resumeData?: RESUME_DATA,
   retryCount = 0,
+  setWorkflowState?: (update: WorkflowStateUpdater) => void,
 ): WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
   return {
     data,
@@ -82,6 +84,8 @@ export function createStepExecutionContext<INPUT, DATA, SUSPEND_DATA, RESUME_DAT
     suspend: suspendFn,
     resumeData,
     retryCount,
+    workflowState: executionContext.workflowState,
+    setWorkflowState: setWorkflowState ?? (() => undefined),
     logger: executionContext.logger,
     writer: executionContext.streamWriter,
   };

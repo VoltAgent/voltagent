@@ -6,12 +6,15 @@ import type { WorkflowStepForEach, WorkflowStepForEachConfig } from "./types";
 
 /**
  * Creates a foreach step that runs a step for each item in an array.
+ * Use items to select the array and map to shape each item before execution.
  */
-export function andForEach<INPUT, ITEM, RESULT>({
+export function andForEach<INPUT, DATA, ITEM, RESULT, MAP_DATA = ITEM>({
   step,
   concurrency = 1,
+  items,
+  map,
   ...config
-}: WorkflowStepForEachConfig<INPUT, ITEM, RESULT>) {
+}: WorkflowStepForEachConfig<INPUT, DATA, ITEM, RESULT, MAP_DATA>) {
   const finalStep = matchStep(step);
 
   return {
@@ -19,14 +22,18 @@ export function andForEach<INPUT, ITEM, RESULT>({
     type: "foreach",
     step,
     concurrency,
+    items,
+    map,
     execute: async (context) => {
       const { data, state } = context;
-      if (!Array.isArray(data)) {
+
+      const selectedItems = items ? await items(context) : data;
+      if (!Array.isArray(selectedItems)) {
         throw new Error("andForEach expects array input data");
       }
 
-      const items = data as ITEM[];
-      if (items.length === 0) {
+      const itemList = selectedItems as ITEM[];
+      if (itemList.length === 0) {
         return [];
       }
 
@@ -60,12 +67,14 @@ export function andForEach<INPUT, ITEM, RESULT>({
           workflowContext: undefined,
         };
 
-        const executeStep = () =>
-          finalStep.execute({
+        const executeStep = async () => {
+          const itemData = map ? await map(context, item, index) : item;
+          return finalStep.execute({
             ...context,
-            data: item,
+            data: itemData as MAP_DATA,
             state: subState,
           });
+        };
 
         try {
           const result =
@@ -88,25 +97,28 @@ export function andForEach<INPUT, ITEM, RESULT>({
 
       if (maxConcurrency === 1) {
         const results: RESULT[] = [];
-        for (let index = 0; index < items.length; index += 1) {
-          results.push(await runItem(items[index] as ITEM, index));
+        for (let index = 0; index < itemList.length; index += 1) {
+          results.push(await runItem(itemList[index] as ITEM, index));
         }
         return results;
       }
 
-      const results = new Array<RESULT>(items.length);
+      const results = new Array<RESULT>(itemList.length);
       let nextIndex = 0;
 
-      const workers = Array.from({ length: Math.min(maxConcurrency, items.length) }, async () => {
-        while (nextIndex < items.length) {
-          const index = nextIndex;
-          nextIndex += 1;
-          results[index] = await runItem(items[index] as ITEM, index);
-        }
-      });
+      const workers = Array.from(
+        { length: Math.min(maxConcurrency, itemList.length) },
+        async () => {
+          while (nextIndex < itemList.length) {
+            const index = nextIndex;
+            nextIndex += 1;
+            results[index] = await runItem(itemList[index] as ITEM, index);
+          }
+        },
+      );
 
       await Promise.all(workers);
       return results;
     },
-  } satisfies WorkflowStepForEach<INPUT, ITEM, RESULT>;
+  } satisfies WorkflowStepForEach<INPUT, DATA, ITEM, RESULT, MAP_DATA>;
 }

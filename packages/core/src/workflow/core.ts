@@ -44,6 +44,7 @@ import type {
   WorkflowInput,
   WorkflowResult,
   WorkflowRunOptions,
+  WorkflowStateUpdater,
   WorkflowStreamResult,
   WorkflowSuspensionMetadata,
 } from "./types";
@@ -809,6 +810,7 @@ export function createWorkflow<
         : options?.context
           ? new Map(Object.entries(options.context))
           : new Map();
+    const workflowStateStore = options?.workflowState ?? {};
 
     // Get previous trace IDs if resuming
     let resumedFrom: { traceId: string; spanId: string } | undefined;
@@ -952,6 +954,7 @@ export function createWorkflow<
         executionId: executionId,
         workflowName: name,
         context: contextMap, // Use the converted Map
+        workflowState: workflowStateStore,
         isActive: true,
         startTime: new Date(),
         currentStepIndex: 0,
@@ -1028,11 +1031,13 @@ export function createWorkflow<
           ...options,
           executionId: executionId, // Use the resumed execution ID
           active: options.resumeFrom.resumeStepIndex,
+          workflowState: workflowStateStore,
         });
       } else {
         stateManager.start(input, {
           ...options,
           executionId: executionId, // Use the created execution ID
+          workflowState: workflowStateStore,
         });
       }
 
@@ -1045,6 +1050,12 @@ export function createWorkflow<
         stateManager.update({
           data: options.resumeFrom.checkpoint?.stepExecutionState,
         });
+        if (options.resumeFrom.checkpoint?.workflowState) {
+          stateManager.update({
+            workflowState: options.resumeFrom.checkpoint.workflowState,
+          });
+          executionContext.workflowState = options.resumeFrom.checkpoint.workflowState;
+        }
         // Store the resume input separately to pass to the step
         resumeInputData = options.resumeFrom.resumeData;
         // Update execution context for resume
@@ -1322,6 +1333,7 @@ export function createWorkflow<
               completedStepsData: (steps as BaseStep[])
                 .slice(0, index)
                 .map((s, i) => ({ stepIndex: i, stepName: s.name || `Step ${i + 1}` })),
+              workflowState: stateManager.state.workflowState,
             };
 
             runLogger.debug(
@@ -1483,6 +1495,7 @@ export function createWorkflow<
               {
                 stepExecutionState: stateManager.state.data,
                 completedStepsData: Array.from({ length: index }, (_, i) => i),
+                workflowState: stateManager.state.workflowState,
               },
               index, // Current step that was suspended
               executionContext.eventSequence, // Pass current event sequence
@@ -1630,6 +1643,13 @@ export function createWorkflow<
                 isResumingThisStep ? resumeInputData : undefined,
                 retryCount,
               );
+              stepContext.setWorkflowState = (update: WorkflowStateUpdater) => {
+                const currentState = stateManager.state.workflowState;
+                const nextState = typeof update === "function" ? update(currentState) : update;
+                stateManager.update({ workflowState: nextState });
+                executionContext.workflowState = nextState;
+                stepContext.workflowState = nextState;
+              };
               // Execute step within span context with automatic signal checking for immediate suspension
               const result = await traceContext.withSpan(attemptSpan, async () => {
                 return await executeWithSignalCheck(

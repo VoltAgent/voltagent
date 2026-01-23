@@ -29,6 +29,8 @@ export type {
   WorkflowStepSleepConfig,
   WorkflowStepSleepUntilConfig,
   WorkflowStepForEachConfig,
+  WorkflowStepForEachItemsFunc,
+  WorkflowStepForEachMapFunc,
   WorkflowStepLoopConfig,
   WorkflowStepBranchConfig,
   WorkflowStepMapConfig,

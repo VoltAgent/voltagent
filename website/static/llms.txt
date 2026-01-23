@@ -518,6 +518,7 @@ Workflows enable type-safe, multi-step AI pipelines with built-in observability.
 *   `[Suspend & Resume](/docs/workflows/suspend-resume.md)`
 *   `[Workflow Hooks](/docs/workflows/hooks.md)`
 *   `[Execute API](/docs/workflows/execute-api.md)`
+*   `[Workflow State](/docs/workflows/workflow-state.md)`
 
 ---
 

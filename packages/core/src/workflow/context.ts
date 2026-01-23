@@ -3,7 +3,7 @@ import type { Logger } from "@voltagent/internal";
 import type { Agent } from "../agent/agent";
 import type { Memory } from "../memory";
 import type { WorkflowTraceContext } from "./open-telemetry/trace-context";
-import type { WorkflowStepData, WorkflowStreamWriter } from "./types";
+import type { WorkflowStateStore, WorkflowStepData, WorkflowStreamWriter } from "./types";
 
 /**
  * Context information for a workflow execution
@@ -26,6 +26,10 @@ export interface WorkflowExecutionContext {
    * User-defined context passed around during execution
    */
   context: Map<string | symbol, unknown>;
+  /**
+   * Shared workflow state available to all steps
+   */
+  workflowState: WorkflowStateStore;
   /**
    * Whether the workflow is still actively running
    */

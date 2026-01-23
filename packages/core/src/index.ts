@@ -29,6 +29,8 @@ export type {
   WorkflowHookStatus,
   WorkflowHooks,
   WorkflowStats,
+  WorkflowStateStore,
+  WorkflowStateUpdater,
   WorkflowStepData,
   WorkflowStepStatus,
   WorkflowTimelineEvent,
