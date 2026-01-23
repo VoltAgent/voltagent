@@ -44,6 +44,7 @@ import type {
   WorkflowInput,
   WorkflowResult,
   WorkflowRunOptions,
+  WorkflowStateStore,
   WorkflowStateUpdater,
   WorkflowStreamResult,
   WorkflowSuspensionMetadata,
@@ -671,11 +672,13 @@ export function createWorkflow<
       metadata?: Record<string, unknown>;
       context?: Record<string, unknown>;
     }>,
+    workflowState?: WorkflowStateStore,
   ): Promise<void> => {
     try {
       logger.trace(`Storing suspension checkpoint for execution ${executionId}`);
       await memory.updateWorkflowState(executionId, {
         status: "suspended",
+        workflowState,
         suspension: suspensionData
           ? {
               suspendedAt: suspensionData.suspendedAt,
@@ -1352,6 +1355,7 @@ export function createWorkflow<
                 executionMemory,
                 runLogger,
                 collectedEvents,
+                stateManager.state.workflowState,
               );
             } catch (_) {
               // Error already logged in saveSuspensionState, don't throw
@@ -1557,6 +1561,7 @@ export function createWorkflow<
                 executionMemory,
                 runLogger,
                 collectedEvents,
+                stateManager.state.workflowState,
               );
             } catch (_) {
               // Error already logged in saveSuspensionState, don't throw
