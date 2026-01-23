@@ -6,7 +6,7 @@
 import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { MessageRole, UsageInfo } from "../agent/providers/base/types";
-import type { OperationContext } from "../agent/types";
+import type { AgentModelValue, OperationContext } from "../agent/types";
 import type { EmbeddingModelReference, EmbeddingOptions } from "./adapters/embedding/types";
 
 // ============================================================================
@@ -100,6 +100,20 @@ export interface GetConversationStepsOptions {
 
 // biome-ignore lint/complexity/noBannedTypes: <explanation>
 export type MemoryOptions = {};
+
+export type ConversationTitleConfig = {
+  enabled?: boolean;
+  model?: AgentModelValue;
+  maxOutputTokens?: number;
+  maxLength?: number;
+  systemPrompt?: string | null;
+};
+
+export type ConversationTitleGenerator = (params: {
+  input: OperationContext["input"] | UIMessage;
+  context: OperationContext;
+  defaultTitle: string;
+}) => Promise<string | null>;
 
 // ============================================================================
 // Workflow State Types
@@ -259,6 +273,13 @@ export interface MemoryConfig {
    * Enables agents to maintain important context
    */
   workingMemory?: WorkingMemoryConfig;
+
+  /**
+   * Automatically generate a title for new conversations using the agent's model
+   * (or the override model if provided).
+   * @default false
+   */
+  generateTitle?: boolean | ConversationTitleConfig;
 }
 
 /**

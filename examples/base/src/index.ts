@@ -14,6 +14,7 @@ const memory = new Memory({
   storage: new LibSQLMemoryAdapter(),
   embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter(),
+  generateTitle: true,
 });
 
 const agent = new Agent({

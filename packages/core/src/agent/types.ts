@@ -634,6 +634,7 @@ export type AgentOptions = {
 
 export type AgentEvalOperationType =
   | "generateText"
+  | "generateTitle"
   | "streamText"
   | "generateObject"
   | "streamObject"

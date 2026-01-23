@@ -26,6 +26,42 @@ VoltAgent's `Memory` class stores conversation history and optional semantic sea
 - Auto-creates conversations on first message
 - Configurable message limits (oldest pruned first)
 
+### Conversation Titles (Optional)
+
+When enabled, VoltAgent generates a concise title from the first user message. Title generation runs only when the conversation is created and does not overwrite existing titles.
+
+```ts
+import { Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  generateTitle: true,
+});
+```
+
+Custom configuration:
+
+```ts
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  generateTitle: {
+    enabled: true,
+    model: "gpt-4o-mini", // default agent model
+    systemPrompt: "Generate a short title (max 6 words).",
+    maxLength: 60,
+    maxOutputTokens: 24,
+  },
+});
+```
+
+Notes:
+
+- The agent's main model is used unless `generateTitle.model` is provided.
+- `generateTitle.model` accepts either a provider/model string or an AI SDK model instance.
+- Only the first user message is summarized.
+- If you create conversations manually via the Memory API, set `title` explicitly.
+
 ### Conversation Steps
 
 - Every LLM/text/tool step can be recorded with metadata (operationId, agent/sub-agent IDs, usage, tool arguments/results).

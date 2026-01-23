@@ -77,6 +77,7 @@ export class Memory {
   private readonly vector?: VectorAdapter;
   private embeddingCache?: BatchEmbeddingCache;
   private readonly workingMemoryConfig?: WorkingMemoryConfig;
+  private readonly titleGenerationConfig?: MemoryConfig["generateTitle"];
 
   // Internal properties for Agent integration
   private resourceId?: string;
@@ -87,6 +88,7 @@ export class Memory {
     this.embedding = resolveEmbeddingAdapter(options.embedding);
     this.vector = options.vector;
     this.workingMemoryConfig = options.workingMemory;
+    this.titleGenerationConfig = options.generateTitle;
 
     // Initialize embedding cache if enabled
     if (options.enableCache && this.embedding) {
@@ -1120,6 +1122,13 @@ Remember:
   getStorageMetadata(): MemoryStorageMetadata {
     const adapter = this.storage?.constructor?.name || "UnknownStorageAdapter";
     return { adapter };
+  }
+
+  /**
+   * Get conversation title generation configuration
+   */
+  getTitleGenerationConfig(): MemoryConfig["generateTitle"] | undefined {
+    return this.titleGenerationConfig;
   }
 
   /**

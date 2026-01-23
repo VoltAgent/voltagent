@@ -92,6 +92,32 @@ describe("MemoryManager", () => {
       expect(messages[0].id).toBe("msg-1");
     });
 
+    it("should generate a title when creating a conversation", async () => {
+      const context = createMockOperationContext();
+      context.input = "Plan a weekend trip to Rome.";
+
+      const titleGenerator = vi.fn().mockResolvedValue("Rome Weekend Plan");
+      const managerWithTitle = new MemoryManager(
+        "agent-1",
+        memory,
+        {},
+        getGlobalLogger().child({ test: true }),
+        titleGenerator,
+      );
+
+      const message = createTestUIMessage({
+        id: "msg-1",
+        role: "assistant",
+        parts: [{ type: "text", text: "Sure, let's plan it." }],
+      });
+
+      await managerWithTitle.saveMessage(context, message, "user-1", "conv-title");
+
+      const conversation = await memory.getConversation("conv-title");
+      expect(conversation?.title).toBe("Rome Weekend Plan");
+      expect(titleGenerator).toHaveBeenCalledTimes(1);
+    });
+
     it("should handle errors gracefully", async () => {
       // Create manager with mocked memory that throws error
       const errorMemory = new Memory({

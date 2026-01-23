@@ -73,6 +73,8 @@ curl "http://localhost:3141/api/memory/conversations/conv-001"
 }
 ```
 
+`title` is optional. If omitted, the server stores an empty title. Auto-title generation happens only when an agent creates the conversation with `generateTitle` enabled on `Memory`.
+
 ## Update Conversation
 
 **Endpoint:** `PATCH /api/memory/conversations/:conversationId`

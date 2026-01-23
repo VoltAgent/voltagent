@@ -44,8 +44,10 @@ import {
 import { z } from "zod";
 import { LogEvents, LoggerProxy } from "../logger";
 import { ActionType, buildAgentLogMessage } from "../logger/message-builder";
-import type { Memory, MemoryUpdateMode } from "../memory";
+import { Memory } from "../memory";
+import type { MemoryUpdateMode } from "../memory";
 import { MemoryManager } from "../memory/manager/memory-manager";
+import type { ConversationTitleConfig, ConversationTitleGenerator } from "../memory/types";
 import { type VoltAgentObservability, createVoltAgentObservability } from "../observability";
 import { TRIGGER_CONTEXT_KEY } from "../observability/context-keys";
 import { type ObservabilityFlushState, flushObservability } from "../observability/utils";
@@ -171,6 +173,14 @@ const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
 const ABORT_LISTENER_ATTACHED_KEY = Symbol("abortListenerAttached");
 const MIDDLEWARE_RETRY_FEEDBACK_KEY = Symbol("middlewareRetryFeedback");
 const DEFAULT_FEEDBACK_KEY = "satisfaction";
+const DEFAULT_CONVERSATION_TITLE_PROMPT = [
+  "You generate concise titles for new conversations.",
+  "Summarize the user's first message in a short phrase.",
+  "Keep it under 80 characters and return only the title.",
+].join("\n");
+const DEFAULT_CONVERSATION_TITLE_MAX_OUTPUT_TOKENS = 32;
+const DEFAULT_CONVERSATION_TITLE_MAX_CHARS = 80;
+const CONVERSATION_TITLE_INPUT_MAX_CHARS = 2000;
 
 // ============================================================================
 // Types
@@ -190,6 +200,18 @@ export type ContextInput = Map<string | symbol, unknown> | Record<string | symbo
 function toContextMap(context?: ContextInput): Map<string | symbol, unknown> | undefined {
   if (!context) return undefined;
   return context instanceof Map ? context : new Map(Object.entries(context));
+}
+
+function sanitizeConversationTitle(text: string, maxLength: number): string {
+  const trimmed = text.replace(/\s+/g, " ").trim();
+  if (!trimmed) return "";
+
+  const unquoted = trimmed.replace(/^["'`]+|["'`]+$/g, "");
+  if (!Number.isFinite(maxLength) || maxLength <= 0) {
+    return unquoted;
+  }
+
+  return unquoted.length > maxLength ? unquoted.slice(0, maxLength).trim() : unquoted;
 }
 
 /**
@@ -267,7 +289,12 @@ export interface GenerateTextResultWithContext<
   feedback?: AgentFeedbackMetadata | null;
 }
 
-type LLMOperation = "streamText" | "generateText" | "streamObject" | "generateObject";
+type LLMOperation =
+  | "streamText"
+  | "generateText"
+  | "streamObject"
+  | "generateObject"
+  | "generateTitle";
 
 /**
  * Extended GenerateObjectResult that includes context
@@ -579,7 +606,16 @@ export class Agent {
     const resolvedMemory = this.memoryConfigured
       ? options.memory
       : AgentRegistry.getInstance().getGlobalAgentMemory();
-    this.memoryManager = new MemoryManager(this.id, resolvedMemory, {}, this.logger);
+    const titleGenerator = this.createConversationTitleGenerator(
+      resolvedMemory instanceof Memory ? resolvedMemory : undefined,
+    );
+    this.memoryManager = new MemoryManager(
+      this.id,
+      resolvedMemory,
+      {},
+      this.logger,
+      titleGenerator,
+    );
 
     // Initialize tool manager with static tools
     const staticTools = typeof options.tools === "function" ? [] : options.tools;
@@ -3153,11 +3189,14 @@ export class Agent {
       tools?: ToolSet;
       providerOptions?: ProviderOptions;
       callOptions?: Record<string, unknown>;
+      label?: string;
     },
   ): Span {
-    const attributes = this.buildLLMSpanAttributes(params);
+    const { label, ...spanParams } = params;
+    const attributes = this.buildLLMSpanAttributes(spanParams);
     const span = oc.traceContext.createChildSpan(`llm:${params.operation}`, "llm", {
       kind: SpanKind.CLIENT,
+      label,
       attributes,
     });
     return span;
@@ -3479,6 +3518,106 @@ export class Agent {
       if (textParts.length > 0) return textParts.join(" ");
     }
     return undefined;
+  }
+
+  private createConversationTitleGenerator(
+    memory?: Memory,
+  ): ConversationTitleGenerator | undefined {
+    const rawConfig = memory?.getTitleGenerationConfig?.();
+    if (!rawConfig) {
+      return undefined;
+    }
+
+    const normalized: ConversationTitleConfig =
+      typeof rawConfig === "boolean" ? { enabled: rawConfig } : { ...rawConfig };
+    const enabled = normalized.enabled ?? true;
+    if (!enabled) {
+      return undefined;
+    }
+
+    const systemPrompt =
+      normalized.systemPrompt === undefined
+        ? DEFAULT_CONVERSATION_TITLE_PROMPT
+        : (normalized.systemPrompt ?? "");
+    const maxOutputTokens =
+      typeof normalized.maxOutputTokens === "number" && Number.isFinite(normalized.maxOutputTokens)
+        ? Math.max(1, normalized.maxOutputTokens)
+        : DEFAULT_CONVERSATION_TITLE_MAX_OUTPUT_TOKENS;
+    const maxLength =
+      typeof normalized.maxLength === "number" && Number.isFinite(normalized.maxLength)
+        ? Math.max(1, normalized.maxLength)
+        : DEFAULT_CONVERSATION_TITLE_MAX_CHARS;
+
+    const modelOverride = normalized.model;
+
+    return async ({ input, context }) => {
+      const inputForQuery = typeof input === "string" || Array.isArray(input) ? input : [input];
+      const query = this.extractUserQuery(inputForQuery as string | UIMessage[] | BaseMessage[]);
+      const trimmed = query?.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      const limitedInput =
+        trimmed.length > CONVERSATION_TITLE_INPUT_MAX_CHARS
+          ? trimmed.slice(0, CONVERSATION_TITLE_INPUT_MAX_CHARS)
+          : trimmed;
+
+      try {
+        const resolvedModel = await this.resolveModel(modelOverride ?? this.model, context);
+        const messages: Array<{ role: "system" | "user"; content: string }> = [];
+        if (systemPrompt.trim()) {
+          messages.push({ role: "system", content: systemPrompt });
+        }
+        messages.push({ role: "user", content: limitedInput });
+        const modelName = this.getModelName(resolvedModel);
+        const llmSpan = this.createLLMSpan(context, {
+          operation: "generateTitle",
+          modelName,
+          isStreaming: false,
+          messages,
+          callOptions: {
+            temperature: 0,
+            maxOutputTokens,
+          },
+          label: "Generate Conversation Title",
+        });
+        llmSpan.setAttribute("input", limitedInput);
+        const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+
+        try {
+          const result = await context.traceContext.withSpan(llmSpan, () =>
+            generateText({
+              model: resolvedModel,
+              messages,
+              temperature: 0,
+              maxOutputTokens,
+              abortSignal: context.abortController.signal,
+            }),
+          );
+
+          const resolvedUsage = result.usage ? await Promise.resolve(result.usage) : undefined;
+          const title = sanitizeConversationTitle(result.text ?? "", maxLength);
+          if (title) {
+            llmSpan.setAttribute("output", title);
+          }
+          finalizeLLMSpan(SpanStatusCode.OK, {
+            usage: resolvedUsage,
+            finishReason: result.finishReason,
+          });
+
+          return title || null;
+        } catch (error) {
+          finalizeLLMSpan(SpanStatusCode.ERROR, { message: (error as Error).message });
+          throw error;
+        }
+      } catch (error) {
+        context.logger.debug("[Memory] Failed to generate conversation title", {
+          error: safeStringify(error),
+        });
+        return null;
+      }
+    };
   }
 
   /**
