@@ -921,6 +921,7 @@ export function createWorkflow<
           status: "running" as const,
           input,
           context: options?.context ? Array.from(options.context.entries()) : undefined,
+          workflowState: workflowStateStore,
           metadata: {
             traceId: rootSpan.spanContext().traceId,
             spanId: rootSpan.spanContext().spanId,
@@ -1205,6 +1206,7 @@ export function createWorkflow<
             try {
               await executionMemory.updateWorkflowState(executionId, {
                 status: "cancelled",
+                workflowState: stateManager.state.workflowState,
                 events: collectedEvents,
                 cancellation: {
                   cancelledAt: new Date(),
@@ -1848,6 +1850,7 @@ export function createWorkflow<
         try {
           await executionMemory.updateWorkflowState(executionContext.executionId, {
             status: "completed",
+            workflowState: stateManager.state.workflowState,
             events: collectedEvents,
             output: finalState.result,
             updatedAt: new Date(),
@@ -1930,6 +1933,7 @@ export function createWorkflow<
           try {
             await executionMemory.updateWorkflowState(executionId, {
               status: "cancelled",
+              workflowState: stateManager.state.workflowState,
               metadata: {
                 ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
                 cancellationReason,
@@ -2025,6 +2029,7 @@ export function createWorkflow<
         try {
           await executionMemory.updateWorkflowState(executionId, {
             status: "error",
+            workflowState: stateManager.state.workflowState,
             events: collectedEvents,
             // Store a lightweight error summary in metadata for debugging
             metadata: {
