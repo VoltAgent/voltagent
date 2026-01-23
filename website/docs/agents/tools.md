@@ -688,9 +688,9 @@ function ReadClipboardTool({
 
 **Important**: You must call `addToolResult` to send the tool result back to the model. Without this, the model considers the tool call a failure.
 
-## Tool Hooks
+## Agent Tool Hooks
 
-Hooks let you respond to tool execution events for logging, UI updates, or additional actions.
+Hooks let you respond to tool execution events for logging, UI updates, or additional actions. For tool-level hooks (per tool), see the **Tool Hooks** section above.
 
 ```ts
 import { Agent, createHooks, isAbortError } from "@voltagent/core";

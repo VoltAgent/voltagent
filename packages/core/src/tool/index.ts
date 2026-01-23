@@ -34,7 +34,7 @@ export interface ToolHookOnEndResult {
 export type ToolHookOnStart = (args: ToolHookOnStartArgs) => Promise<void> | void;
 export type ToolHookOnEnd = (
   args: ToolHookOnEndArgs,
-) => Promise<ToolHookOnEndResult | undefined> | ToolHookOnEndResult | undefined;
+) => Promise<ToolHookOnEndResult | undefined> | Promise<void> | ToolHookOnEndResult | undefined;
 
 export type ToolHooks = {
   onStart?: ToolHookOnStart;
