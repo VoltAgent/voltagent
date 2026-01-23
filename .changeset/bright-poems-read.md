@@ -4,12 +4,12 @@
 
 feat: workflowState + andForEach selector/map
 
-### Neler Yeni
+### What's New
 
-- `workflowState` ve `setWorkflowState` ile adımlar arasi paylasilan state eklendi (suspend/resume sonrasi da korunur).
-- `andForEach` icin `items` selector ve opsiyonel `map` desteği geldi (parent data kaybolmadan iterate).
+- `workflowState` and `setWorkflowState` add shared state across steps (preserved after suspend/resume).
+- `andForEach` now supports an `items` selector and optional `map` (iterate without losing parent data).
 
-### Workflow State Kullanimi
+### Workflow State Usage
 
 ```ts
 const result = await workflow.run(
