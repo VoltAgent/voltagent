@@ -4599,6 +4599,26 @@ export class Agent {
       this.toolManager.prepareToolsForExecution(createToolExecuteFunction);
 
     const toolRouting = this.resolveToolRouting(options);
+    if (toolRouting === false) {
+      const routerNames = new Set<string>();
+      this.toolManager
+        .getAllBaseTools()
+        .filter((tool) => isToolRouter(tool))
+        .forEach((tool) => routerNames.add(tool.name));
+      runtimeTools
+        .filter((tool) => isToolRouter(tool))
+        .forEach((tool) => routerNames.add(tool.name));
+
+      const filteredStaticTools = Object.fromEntries(
+        Object.entries(preparedStaticTools).filter(([name]) => !routerNames.has(name)),
+      );
+      const filteredDynamicTools = Object.fromEntries(
+        Object.entries(preparedDynamicTools).filter(([name]) => !routerNames.has(name)),
+      );
+
+      return { ...filteredStaticTools, ...filteredDynamicTools };
+    }
+
     if (!toolRouting) {
       return { ...preparedStaticTools, ...preparedDynamicTools };
     }
@@ -5132,6 +5152,43 @@ export class Agent {
     return (result.output ?? {}) as Record<string, unknown>;
   }
 
+  private async resolveProviderToolArgs(params: {
+    tool: ProviderTool;
+    query: string;
+    oc: OperationContext;
+    executionModel?: AgentModelValue;
+  }): Promise<Record<string, unknown>> {
+    const { tool, query, oc, executionModel } = params;
+    const schema = tool.args as unknown;
+    const prompt = [
+      "Generate JSON arguments for the tool based on the user request.",
+      `Tool name: ${tool.name}`,
+      tool.description ? `Tool description: ${tool.description}` : "",
+      schema ? `Tool schema: ${safeStringify(schema)}` : "",
+      `User request: ${query}`,
+      "Return only a JSON object that matches the tool schema.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const result = await this.runInternalGenerateText({
+      oc,
+      modelValue: executionModel,
+      messages: [
+        {
+          role: "system",
+          content: "You generate tool arguments that strictly match the provided schema.",
+        },
+        { role: "user", content: prompt },
+      ],
+      output: Output.object({ schema: schema as any }),
+      toolChoice: "none",
+      temperature: 0,
+    });
+
+    return (result.output ?? {}) as Record<string, unknown>;
+  }
+
   private async executeProviderToolViaRouter(params: {
     tool: ProviderTool;
     query: string;
@@ -5159,25 +5216,58 @@ export class Agent {
     const needsApproval = (tool as { needsApproval?: Tool<any, any>["needsApproval"] })
       .needsApproval;
     if (needsApproval === true) {
-      throw new ToolDeniedError({
+      return {
         toolName: tool.name,
-        message: `Tool ${tool.name} requires approval.`,
-        code: "TOOL_FORBIDDEN",
-        httpStatus: 403,
-      });
+        toolCallId,
+        error: `Tool ${tool.name} requires approval.`,
+      };
+    }
+
+    let approvedArgs: Record<string, unknown> | undefined;
+    if (needsApproval) {
+      try {
+        approvedArgs = await this.resolveProviderToolArgs({
+          tool,
+          query,
+          oc,
+          executionModel,
+        });
+        await this.ensureToolApproval(tool, approvedArgs, executionOptions, toolCallId);
+      } catch (error) {
+        if (isToolDeniedError(error)) {
+          return {
+            toolName: tool.name,
+            toolCallId,
+            error: error.message,
+          };
+        }
+        return {
+          toolName: tool.name,
+          toolCallId,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     }
 
     const tools: Record<string, any> = {
       [tool.name]: tool,
     };
 
+    const approvedArgsInstruction = approvedArgs
+      ? `Use these tool arguments: ${safeStringify(approvedArgs)}`
+      : "";
     const result = await this.runInternalGenerateText({
       oc,
       modelValue: executionModel,
       messages: [
         {
           role: "system",
-          content: "Call the required tool with appropriate arguments to satisfy the request.",
+          content: [
+            "Call the required tool with appropriate arguments to satisfy the request.",
+            approvedArgsInstruction,
+          ]
+            .filter(Boolean)
+            .join("\n"),
         },
         { role: "user", content: query },
       ],
@@ -5194,26 +5284,6 @@ export class Agent {
 
     if (toolCall?.toolCallId && executionOptions.toolContext) {
       executionOptions.toolContext.callId = toolCall.toolCallId;
-    }
-
-    if (toolCall) {
-      try {
-        await this.ensureToolApproval(
-          tool,
-          toolCall.input as Record<string, unknown>,
-          executionOptions,
-          toolCall.toolCallId ?? toolCallId,
-        );
-      } catch (error) {
-        if (isToolDeniedError(error)) {
-          return {
-            toolName: tool.name,
-            toolCallId: toolCall.toolCallId ?? toolCallId,
-            error: error.message,
-          };
-        }
-        throw error;
-      }
     }
 
     if (toolCall) {
