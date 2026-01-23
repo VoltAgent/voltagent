@@ -4,7 +4,7 @@ description: Why exposing every tool to the model doesn’t scale, and how VoltA
 tags: [agents]
 slug: tool-routing
 authors: necatiozmen
-image: https://cdn.voltagent.dev/2025-10-21-ai-agent-examples/social.png
+image: https://cdn.voltagent.dev/2026-01-23-tool-routing/social.png
 ---
 
 Tool Routing is now available in VoltAgent.
