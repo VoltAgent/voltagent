@@ -4705,6 +4705,7 @@ export class Agent {
 
       const resolveToolEndOutput = async (currentOutput: any) => {
         let output = currentOutput;
+        let overrideProvided = false;
 
         const toolHookResult = await tool.hooks?.onEnd?.({
           tool,
@@ -4715,6 +4716,7 @@ export class Agent {
         });
         if (hasOutputOverride(toolHookResult)) {
           output = toolHookResult.output;
+          overrideProvided = true;
         }
 
         const agentHookResult = await hooks.onToolEnd?.({
@@ -4727,9 +4729,10 @@ export class Agent {
         });
         if (hasOutputOverride(agentHookResult)) {
           output = agentHookResult.output;
+          overrideProvided = true;
         }
 
-        if (output !== currentOutput) {
+        if (overrideProvided) {
           output = await this.validateToolOutput(output, tool);
         }
 

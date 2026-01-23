@@ -174,7 +174,7 @@ export type AgentHookOnHandoffComplete = (args: OnHandoffCompleteHookArgs) => Pr
 export type AgentHookOnToolStart = (args: OnToolStartHookArgs) => Promise<void> | void;
 export type AgentHookOnToolEnd = (
   args: OnToolEndHookArgs,
-) => Promise<OnToolEndHookResult | undefined> | OnToolEndHookResult | undefined;
+) => Promise<OnToolEndHookResult | undefined> | Promise<void> | OnToolEndHookResult | undefined;
 export type AgentHookOnPrepareMessages = (
   args: OnPrepareMessagesHookArgs,
 ) => Promise<OnPrepareMessagesHookResult> | OnPrepareMessagesHookResult;
