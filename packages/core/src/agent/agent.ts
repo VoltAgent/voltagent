@@ -93,7 +93,7 @@ import {
   type EnqueueEvalScoringArgs,
   enqueueEvalScoring as enqueueEvalScoringHelper,
 } from "./eval";
-import type { AgentHooks } from "./hooks";
+import type { AgentHooks, OnToolEndHookResult } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type {
   BaseMessage,
@@ -5761,8 +5761,14 @@ export class Agent {
         await this.hooks.onToolStart?.(...args);
       },
       onToolEnd: async (...args) => {
-        await options.hooks?.onToolEnd?.(...args);
-        await this.hooks.onToolEnd?.(...args);
+        const resOptions = await options.hooks?.onToolEnd?.(...args);
+        const resThis = await this.hooks.onToolEnd?.(...args);
+        if (resThis && typeof resThis === "object") {
+          return resThis as OnToolEndHookResult;
+        }
+        if (resOptions && typeof resOptions === "object") {
+          return resOptions as OnToolEndHookResult;
+        }
         return undefined;
       },
       onStepFinish: async (...args) => {

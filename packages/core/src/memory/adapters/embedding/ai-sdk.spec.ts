@@ -1,5 +1,5 @@
 import type { EmbedManyResult, EmbedResult, EmbeddingModel } from "ai";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ModelProviderRegistry } from "../../../registries/model-provider-registry";
 import { AiSdkEmbeddingAdapter } from "./ai-sdk";
 
@@ -12,6 +12,10 @@ vi.mock("ai", () => ({
 describe("AiSdkEmbeddingAdapter", () => {
   let mockModel: Exclude<EmbeddingModel, string>;
   let adapter: AiSdkEmbeddingAdapter;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -209,8 +213,6 @@ describe("AiSdkEmbeddingAdapter", () => {
         value: "test text",
       });
       expect(stringAdapter.getModelName()).toBe("openai/text-embedding-3-small");
-
-      resolveSpy.mockRestore();
     });
   });
 });

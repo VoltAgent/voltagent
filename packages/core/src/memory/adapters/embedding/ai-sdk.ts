@@ -3,6 +3,10 @@ import type { EmbeddingModel } from "ai";
 import { ModelProviderRegistry } from "../../../registries/model-provider-registry";
 import type { EmbeddingAdapter, EmbeddingModelReference, EmbeddingOptions } from "./types";
 
+const BARE_MODEL_NAME_REGEX = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
+
+const isValidBareModelName = (value: string): boolean => BARE_MODEL_NAME_REGEX.test(value);
+
 /**
  * AI SDK Embedding Adapter
  * Wraps Vercel AI SDK embedding models for use with Memory V2
@@ -15,11 +19,17 @@ export class AiSdkEmbeddingAdapter implements EmbeddingAdapter {
   private modelResolvePromise?: Promise<EmbeddingModel>;
 
   constructor(model: EmbeddingModelReference, options: EmbeddingOptions = {}) {
-    const normalizedModel = typeof model === "string" ? model.trim() : model;
-    this.model = normalizedModel;
-    // EmbeddingModel can be either a string or an object with modelId
-    this.modelName =
-      typeof normalizedModel === "string" ? normalizedModel : normalizedModel.modelId;
+    if (typeof model === "string") {
+      const trimmed = model.trim();
+      if (!trimmed) {
+        throw new Error("Embedding model is required.");
+      }
+      this.model = trimmed;
+      this.modelName = trimmed;
+    } else {
+      this.model = model;
+      this.modelName = model.modelId;
+    }
     this.dimensions = 0; // Will be set after first embedding
     this.options = {
       maxBatchSize: options.maxBatchSize ?? 100,
@@ -38,11 +48,14 @@ export class AiSdkEmbeddingAdapter implements EmbeddingAdapter {
 
     const trimmed = this.model.trim();
     if (!trimmed) {
-      return trimmed;
+      throw new Error("Embedding model is required.");
     }
 
     const hasProviderPrefix = trimmed.includes("/") || trimmed.includes(":");
     if (!hasProviderPrefix) {
+      if (!isValidBareModelName(trimmed)) {
+        throw new Error(`Invalid embedding model id "${trimmed}".`);
+      }
       this.model = trimmed;
       this.modelName = trimmed;
       return trimmed;

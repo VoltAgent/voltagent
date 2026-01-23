@@ -124,10 +124,20 @@ new VoltAgent({
 ## Pooling Provider and MCP Tools
 
 ```typescript
+import { MCPConfiguration } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const mcp = new MCPConfiguration({
+  servers: [{ name: "zapier", url: process.env.ZAPIER_MCP_URL ?? "" }],
+});
+
+// MCP docs: /docs/agents/mcp/mcp/
+const mcpTools = await mcp.getTools();
+
 toolRouting: {
   pool: [
     openai.tools.webSearch(),
-    mcpToolkit,
+    ...mcpTools,
   ],
 }
 ```

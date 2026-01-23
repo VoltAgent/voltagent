@@ -48,7 +48,7 @@ const defaultToolText = (tool: ToolRouterCandidate): string => {
   }
   if (tool.parameters) {
     const normalized =
-      typeof tool.parameters === "object" ? tool.parameters : zodSchemaToJsonUI(tool.parameters);
+      typeof tool.parameters === "object" ? zodSchemaToJsonUI(tool.parameters) : tool.parameters;
     parts.push(`Parameters: ${safeStringify(normalized)}`);
   }
   return parts.join("\n");

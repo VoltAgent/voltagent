@@ -239,7 +239,6 @@ The embedding router accepts several model forms and supports a custom tool text
 
 - `"openai/text-embedding-3-small"`
 - `"text-embedding-3-small"`
-- `"openai/text-embedding-3-small"`
 
 Provider-qualified strings use the same model registry and type list as agent model strings.
 
