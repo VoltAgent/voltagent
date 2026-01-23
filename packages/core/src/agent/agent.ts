@@ -4708,6 +4708,11 @@ export class Agent {
       };
 
       const runToolStartHooks = async () => {
+        await tool.hooks?.onStart?.({
+          tool,
+          args,
+          options: executionOptions,
+        });
         await hooks.onToolStart?.({
           agent: this,
           tool,
@@ -4715,11 +4720,23 @@ export class Agent {
           args,
           options: executionOptions,
         });
+      };
 
-        await tool.hooks?.onStart?.({
-          tool,
-          args,
-          options: executionOptions,
+      let spanOutcome:
+        | { status: "completed"; output?: unknown }
+        | { status: "error"; error?: Error | any }
+        | null = null;
+
+      const finalizeToolSpan = () => {
+        const shouldEnd =
+          typeof toolSpan.isRecording === "function" ? toolSpan.isRecording() : true;
+        if (!shouldEnd) {
+          return;
+        }
+        const status = spanOutcome?.status ?? "completed";
+        oc.traceContext.endChildSpan(toolSpan, status, {
+          output: spanOutcome?.status === "completed" ? spanOutcome.output : undefined,
+          error: spanOutcome?.status === "error" ? spanOutcome.error : undefined,
         });
       };
 
@@ -4761,10 +4778,7 @@ export class Agent {
 
       const handleToolSuccess = async (_result: any, validatedResult: any) => {
         const finalOutput = await resolveToolEndOutput(validatedResult);
-
-        toolSpan.setAttribute("output", safeStringify(finalOutput));
-        toolSpan.setStatus({ code: SpanStatusCode.OK });
-        toolSpan.end();
+        spanOutcome = { status: "completed", output: finalOutput };
 
         return finalOutput;
       };
@@ -4782,9 +4796,15 @@ export class Agent {
         });
         const errorResult = buildToolErrorResult(error, toolCallId, tool.name);
 
-        toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-        toolSpan.recordException(error);
-        toolSpan.end();
+        spanOutcome = { status: "error", error: voltAgentError };
+
+        await tool.hooks?.onEnd?.({
+          tool,
+          args,
+          output: undefined,
+          error: voltAgentError,
+          options: executionOptions,
+        });
 
         await tool.hooks?.onEnd?.({
           tool,
@@ -4866,6 +4886,8 @@ export class Agent {
               return await handleToolError(e);
             });
             yield errorResult;
+          } finally {
+            finalizeToolSpan();
           }
         }.call(this);
       }
@@ -4897,8 +4919,7 @@ export class Agent {
         } catch (e) {
           return await handleToolError(e);
         } finally {
-          // End the span if it was created
-          oc.traceContext.endChildSpan(toolSpan, "completed", {});
+          finalizeToolSpan();
         }
       });
     };
