@@ -1646,6 +1646,13 @@ export function createWorkflow<
               stepContext.setWorkflowState = (update: WorkflowStateUpdater) => {
                 const currentState = stateManager.state.workflowState;
                 const nextState = typeof update === "function" ? update(currentState) : update;
+                stepContext.state.workflowState = nextState;
+                const executionContextState = (
+                  executionContext as { state?: { workflowState?: typeof nextState } }
+                ).state;
+                if (executionContextState) {
+                  executionContextState.workflowState = nextState;
+                }
                 stateManager.update({ workflowState: nextState });
                 executionContext.workflowState = nextState;
                 stepContext.workflowState = nextState;
