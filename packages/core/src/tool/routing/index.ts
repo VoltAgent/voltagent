@@ -11,6 +11,7 @@ import type {
   ToolRouterInput,
   ToolRouterMetadata,
   ToolRouterMode,
+  ToolRouterResult,
   ToolRouterStrategy,
   ToolRoutingEmbeddingInput,
 } from "./types";
@@ -51,15 +52,25 @@ export const createToolRouter = (options: CreateToolRouterOptions): ToolRouter =
     parallel: options.parallel,
   };
 
-  const execute = async (input: ToolRouterInput, execOptions?: ToolExecuteOptions) => {
+  const routerToolRef: { current?: ToolRouter } = {};
+
+  const execute = async (
+    input: ToolRouterInput,
+    execOptions?: ToolExecuteOptions,
+  ): Promise<ToolRouterResult> => {
     const agent = execOptions?.systemContext?.get(AGENT_REF_CONTEXT_KEY) as Agent | undefined;
     const executor = agent && (agent as any).__executeToolRouter;
     if (typeof executor !== "function") {
       throw new Error("Tool router requires an Agent execution context.");
     }
 
+    const router = routerToolRef.current;
+    if (!router) {
+      throw new Error("Tool router is not initialized.");
+    }
+
     return await executor.call(agent, {
-      router: tool as ToolRouter,
+      router,
       input,
       options: execOptions,
     });
@@ -74,6 +85,7 @@ export const createToolRouter = (options: CreateToolRouterOptions): ToolRouter =
 
   const routerTool = tool as ToolRouter;
   routerTool[TOOL_ROUTER_SYMBOL] = metadata;
+  routerToolRef.current = routerTool;
 
   return routerTool;
 };
