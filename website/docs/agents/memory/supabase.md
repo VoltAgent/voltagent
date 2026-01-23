@@ -224,16 +224,15 @@ See [Working Memory](./working-memory.md).
 ### Semantic Search
 
 ```ts
-import { Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { Memory, InMemoryVectorAdapter } from "@voltagent/core";
 import { SupabaseMemoryAdapter } from "@voltagent/supabase";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new SupabaseMemoryAdapter({
     supabaseUrl: process.env.SUPABASE_URL!,
     supabaseKey: process.env.SUPABASE_KEY!,
   }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new InMemoryVectorAdapter(), // or pgvector adapter
 });
 ```

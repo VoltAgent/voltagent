@@ -12,7 +12,8 @@ import type { StopWhen } from "../ai-types";
 import type { LanguageModel, TextStreamPart, UIMessage } from "ai";
 import type { Memory } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { Tool, Toolkit, VercelTool } from "../tool";
+import type { ProviderTool, Tool, Toolkit, VercelTool } from "../tool";
+import type { ToolRoutingConfig } from "../tool/routing/types";
 import type { StreamEvent } from "../utils/streams";
 import type { Voice } from "../voice/types";
 import type { VoltOpsClient } from "../voltops/client";
@@ -56,6 +57,12 @@ export interface ApiToolInfo {
   parameters?: any;
 }
 
+export interface AgentToolRoutingState {
+  routers?: ApiToolInfo[];
+  expose?: ApiToolInfo[];
+  pool?: ApiToolInfo[];
+}
+
 export type AgentFeedbackOptions = {
   key?: string;
   feedbackConfig?: VoltOpsFeedbackConfig | null;
@@ -75,9 +82,9 @@ export type AgentFeedbackMetadata = {
 /**
  * Tool with node_id for agent state
  */
-export interface ToolWithNodeId extends BaseTool {
+export type ToolWithNodeId = (BaseTool | ProviderTool) & {
   node_id: string;
-}
+};
 
 export interface AgentScorerState {
   key: string;
@@ -151,6 +158,7 @@ export interface AgentFullState {
   model: string;
   node_id: string;
   tools: ToolWithNodeId[];
+  toolRouting?: AgentToolRoutingState;
   subAgents: SubAgentStateData[];
   memory: AgentMemoryState;
   scorers?: AgentScorerState[];
@@ -564,6 +572,7 @@ export type AgentOptions = {
   // Tools & Memory
   tools?: (Tool<any, any> | Toolkit | VercelTool)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
   toolkits?: Toolkit[];
+  toolRouting?: ToolRoutingConfig | false;
   memory?: Memory | false;
   summarization?: AgentSummarizationOptions | false;
 

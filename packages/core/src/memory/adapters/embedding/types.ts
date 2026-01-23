@@ -1,3 +1,10 @@
+import type { EmbeddingModel } from "ai";
+import type { EmbeddingRouterModelId } from "../../../registries/embedding-model-router-types";
+
+type EmbeddingModelInstance = Exclude<EmbeddingModel, string>;
+
+export type EmbeddingModelReference = EmbeddingRouterModelId | EmbeddingModelInstance;
+
 /**
  * Embedding adapter interface for converting text to vectors
  */

@@ -2,6 +2,7 @@ import type { Logger } from "@voltagent/internal";
 import type { Agent } from "../agent/agent";
 import type { Memory } from "../memory";
 import type { VoltAgentObservability } from "../observability";
+import type { ToolRoutingConfig } from "../tool/routing/types";
 import type { VoltOpsClient } from "../voltops/client";
 
 /**
@@ -25,6 +26,7 @@ export class AgentRegistry {
   private globalMemory?: Memory;
   private globalAgentMemory?: Memory;
   private globalWorkflowMemory?: Memory;
+  private globalToolRouting?: ToolRoutingConfig;
 
   /**
    * Track parent-child relationships between agents (child -> parents)
@@ -275,5 +277,19 @@ export class AgentRegistry {
    */
   public getGlobalWorkflowMemory(): Memory | undefined {
     return this.globalWorkflowMemory ?? this.globalMemory;
+  }
+
+  /**
+   * Set the global default tool routing configuration.
+   */
+  public setGlobalToolRouting(toolRouting: ToolRoutingConfig | undefined): void {
+    this.globalToolRouting = toolRouting;
+  }
+
+  /**
+   * Get the global default tool routing configuration.
+   */
+  public getGlobalToolRouting(): ToolRoutingConfig | undefined {
+    return this.globalToolRouting;
   }
 }

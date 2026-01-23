@@ -147,6 +147,7 @@ export {
 export { InMemoryStorageAdapter } from "./memory/adapters/storage/in-memory";
 export { InMemoryVectorAdapter } from "./memory/adapters/vector/in-memory";
 export { AiSdkEmbeddingAdapter } from "./memory/adapters/embedding/ai-sdk";
+export type { EmbeddingModelReference } from "./memory/adapters/embedding/types";
 export type {
   WorkingMemoryScope,
   WorkingMemoryConfig,
@@ -155,6 +156,7 @@ export type {
 export * from "./agent/providers";
 export {
   ModelProviderRegistry,
+  type EmbeddingModelFactory,
   type LanguageModelFactory,
   type ModelProvider,
   type ModelProviderEntry,
@@ -166,6 +168,7 @@ export type {
   ProviderId,
   ProviderModelsMap,
 } from "./registries/model-provider-types.generated";
+export type { EmbeddingRouterModelId } from "./registries/embedding-model-router-types";
 export * from "./events/types";
 export type {
   AgentOptions,

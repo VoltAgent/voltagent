@@ -69,17 +69,11 @@ See [Working Memory](./working-memory.md) for configuration details.
 Combine with `InMemoryVectorAdapter` for semantic search during development:
 
 ```ts
-import {
-  Memory,
-  AiSdkEmbeddingAdapter,
-  InMemoryVectorAdapter,
-  InMemoryStorageAdapter,
-} from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
+import { Memory, InMemoryVectorAdapter, InMemoryStorageAdapter } from "@voltagent/core";
 
 const memory = new Memory({
   storage: new InMemoryStorageAdapter(),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new InMemoryVectorAdapter(),
 });
 ```

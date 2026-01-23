@@ -150,7 +150,7 @@ See [Working Memory](./working-memory.md) for configuration details.
 
 ### Semantic Search (Optional)
 
-D1 provides storage only. To enable semantic search, pair it with an embedding + vector adapter (for example, `AiSdkEmbeddingAdapter` and `InMemoryVectorAdapter`).
+D1 provides storage only. To enable semantic search, pair it with an embedding model string (for example, `openai/text-embedding-3-small`) and a vector adapter such as `InMemoryVectorAdapter`.
 
 See [Semantic Search](./semantic-search.md) for usage.
 

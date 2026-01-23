@@ -1,11 +1,7 @@
-import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { authNext, honoServer, jwtAuth } from "@voltagent/server-hono";
-
-// Import Memory and TelemetryStore from core
-import { AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
-import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 
 // Import tools
 import { weatherTool } from "./tools/index.js";
@@ -19,7 +15,7 @@ const logger = createPinoLogger({
 // Create Memory instance with vector support for semantic search and working memory
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter(),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter(),
 });
 

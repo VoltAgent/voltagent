@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { openai } from "@ai-sdk/openai";
 import { type Connection, type Table, connect } from "@lancedb/lancedb";
 import { type BaseMessage, BaseRetriever, type RetrieveOptions } from "@voltagent/core";
 import { embed } from "ai";
@@ -40,7 +39,7 @@ let table: Table | null = null;
 
 async function getEmbedding(text: string): Promise<number[]> {
   const { embedding } = await embed({
-    model: openai.embedding("text-embedding-3-small"),
+    model: "openai/text-embedding-3-small",
     value: text,
   });
   return embedding;

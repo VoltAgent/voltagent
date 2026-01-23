@@ -91,11 +91,11 @@ const memory = new Memory({
 ## With Vector Search
 
 ```typescript
-import { AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { InMemoryVectorAdapter } from "@voltagent/core";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter(),
-  embedding: new AiSdkEmbeddingAdapter(openai.embeddingModel("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new InMemoryVectorAdapter(),
 });
 ```

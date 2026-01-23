@@ -61,6 +61,9 @@ export class VoltAgent {
     if (options.workflowMemory) {
       this.registry.setGlobalWorkflowMemory(options.workflowMemory);
     }
+    if (options.toolRouting) {
+      this.registry.setGlobalToolRouting(options.toolRouting);
+    }
 
     // Initialize logger
     this.logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
@@ -378,6 +381,7 @@ export class VoltAgent {
   public registerAgent(agent: Agent): void {
     // Register the agent
     this.applyDefaultMemoryToAgent(agent);
+    agent.__setDefaultToolRouting?.(this.registry.getGlobalToolRouting());
     this.registry.registerAgent(agent);
   }
 

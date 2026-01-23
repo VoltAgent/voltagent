@@ -74,7 +74,7 @@ Install the AI SDK base package (required):
   </TabItem>
 </Tabs>
 
-If you plan to import ai-sdk providers directly (for embeddings or provider-specific helpers like `openai.embedding(...)`), install those packages too. If you only use model strings, you can skip them:
+If you plan to import ai-sdk providers directly (for embeddings or provider-specific helpers), install those packages too. If you only use model strings such as `openai/text-embedding-3-small`, you can skip them:
 
 <Tabs>
   <TabItem value="npm" label="npm">

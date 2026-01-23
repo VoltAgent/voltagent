@@ -62,8 +62,7 @@ npm create voltagent-app@latest -- --example with-working-memory
 ## Snippet
 
 ```ts
-import { openai } from "@ai-sdk/openai";
-import { Agent, AiSdkEmbeddingAdapter, Memory, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -75,7 +74,7 @@ const workingMemorySchema = z.object({
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter(),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter(),
   workingMemory: { enabled: true, scope: "conversation", schema: workingMemorySchema },
 });

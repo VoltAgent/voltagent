@@ -268,7 +268,7 @@ import { openai } from "@ai-sdk/openai";
 
 const scorer = createAnswerRelevancyScorer({
   model: openai("gpt-4o-mini"),
-  embeddingModel: openai.embedding("text-embedding-3-small"),
+  embeddingModel: "openai/text-embedding-3-small",
   strictness: 3,
   buildPayload: ({ payload, params }) => ({
     input: String(payload.input),
@@ -848,7 +848,7 @@ const allScorers = [
   }),
   createAnswerRelevancyScorer({
     model: openai("gpt-4o-mini"),
-    embeddingModel: openai.embedding("text-embedding-3-small"),
+    embeddingModel: "openai/text-embedding-3-small",
   }),
 ];
 

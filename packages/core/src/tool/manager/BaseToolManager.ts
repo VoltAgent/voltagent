@@ -198,6 +198,23 @@ export abstract class BaseToolManager<
   }
 
   /**
+   * Get a tool by name across standalone tools and toolkits.
+   */
+  getToolByName(toolName: string): BaseTool | ProviderTool | undefined {
+    const standalone = this.baseTools.get(toolName) ?? this.providerTools.get(toolName);
+    if (standalone) {
+      return standalone;
+    }
+    for (const toolkit of this.toolkits.values()) {
+      const tool = toolkit.getToolByName(toolName);
+      if (tool) {
+        return tool;
+      }
+    }
+    return undefined;
+  }
+
+  /**
    * Get names of all tools (standalone and inside toolkits), deduplicated.
    */
   getAllToolNames(): string[] {

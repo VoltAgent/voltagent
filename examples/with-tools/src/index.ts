@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, AiSdkEmbeddingAdapter, Memory, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -15,7 +15,7 @@ const logger = createPinoLogger({
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({}),
-  embedding: new AiSdkEmbeddingAdapter(openai.embeddingModel("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter(),
 });
 

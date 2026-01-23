@@ -492,15 +492,14 @@ const agent = new Agent({
 
 ### Optional: Vector search and working memory
 
-To enable semantic search and working-memory features, add an embedding adapter and a vector adapter. For example, using ai-sdk embeddings and the in-memory vector store:
+To enable semantic search and working-memory features, add an embedding model string and a vector adapter. For example, using ai-sdk embeddings and the in-memory vector store:
 
 ```ts
-import { Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai"; // or any ai-sdk embedding model
+import { Memory, InMemoryVectorAdapter } from "@voltagent/core";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new InMemoryVectorAdapter(),
   // optional working-memory config
   workingMemory: {

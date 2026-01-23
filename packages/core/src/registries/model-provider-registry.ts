@@ -1,14 +1,20 @@
 import { safeStringify } from "@voltagent/internal";
-import type { LanguageModel } from "ai";
+import type { EmbeddingModel, LanguageModel } from "ai";
 import {
   MODEL_PROVIDER_REGISTRY,
   type ModelProviderRegistryEntry,
 } from "./model-provider-registry.generated";
 
 export type LanguageModelFactory = (modelId: string) => LanguageModel;
+type EmbeddingModelInstance = Exclude<EmbeddingModel, string>;
+export type EmbeddingModelFactory = (modelId: string) => EmbeddingModelInstance;
 
 export type ModelProvider = {
   languageModel: LanguageModelFactory;
+  embeddingModel?: EmbeddingModelFactory;
+  embedding?: EmbeddingModelFactory;
+  textEmbeddingModel?: EmbeddingModelFactory;
+  textEmbedding?: EmbeddingModelFactory;
 };
 
 export type ModelProviderEntry = ModelProvider | LanguageModelFactory;
@@ -506,6 +512,25 @@ const isModelProvider = (value: unknown): value is ModelProvider =>
 const isLanguageModelFactory = (value: unknown): value is LanguageModelFactory =>
   typeof value === "function";
 
+const resolveEmbeddingFactory = (
+  provider: ModelProviderEntry,
+): EmbeddingModelFactory | undefined => {
+  const candidate = provider as {
+    embeddingModel?: EmbeddingModelFactory;
+    embedding?: EmbeddingModelFactory;
+    textEmbeddingModel?: EmbeddingModelFactory;
+    textEmbedding?: EmbeddingModelFactory;
+  };
+
+  const factory =
+    candidate.embeddingModel ??
+    candidate.embedding ??
+    candidate.textEmbeddingModel ??
+    candidate.textEmbedding;
+
+  return typeof factory === "function" ? factory.bind(provider as object) : undefined;
+};
+
 const resolveProviderExport = (
   moduleExports: Record<string, unknown>,
   exportName: string,
@@ -755,8 +780,9 @@ const splitModelId = (value: string): { providerId: string; modelId: string } =>
 
 export class ModelProviderRegistry {
   private providers = new Map<string, LanguageModelFactory>();
+  private providerEntries = new Map<string, ModelProviderEntry>();
   private loaders = new Map<string, ModelProviderLoader>();
-  private loading = new Map<string, Promise<LanguageModelFactory>>();
+  private entryLoading = new Map<string, Promise<ModelProviderEntry>>();
   private dynamicRegistry = new Map<string, ModelProviderRegistryEntry>();
   private refreshInterval: ReturnType<typeof setInterval> | null = null;
   private lastRefreshTime: Date | null = null;
@@ -804,7 +830,11 @@ export class ModelProviderRegistry {
 
   private registerProviderConfig(config: ModelProviderRegistryEntry): void {
     const providerId = normalizeProviderId(config.id);
-    if (this.providers.has(providerId) || this.loaders.has(providerId)) {
+    if (
+      this.providers.has(providerId) ||
+      this.providerEntries.has(providerId) ||
+      this.loaders.has(providerId)
+    ) {
       return;
     }
     this.registerProviderLoader(providerId, this.createProviderLoader(config));
@@ -944,6 +974,7 @@ export class ModelProviderRegistry {
 
   public registerProvider(providerId: string, provider: ModelProviderEntry): void {
     const normalizedId = normalizeProviderId(providerId);
+    this.providerEntries.set(normalizedId, provider);
     this.providers.set(normalizedId, this.normalizeProvider(provider, normalizedId));
   }
 
@@ -955,10 +986,16 @@ export class ModelProviderRegistry {
   public unregisterProvider(providerId: string): void {
     const normalizedId = normalizeProviderId(providerId);
     this.providers.delete(normalizedId);
+    this.providerEntries.delete(normalizedId);
+    this.entryLoading.delete(normalizedId);
   }
 
   public listProviders(): string[] {
-    const providers = new Set<string>([...this.providers.keys(), ...this.loaders.keys()]);
+    const providers = new Set<string>([
+      ...this.providers.keys(),
+      ...this.providerEntries.keys(),
+      ...this.loaders.keys(),
+    ]);
     return [...providers].sort();
   }
 
@@ -975,9 +1012,43 @@ export class ModelProviderRegistry {
     return provider(resolvedModelId);
   }
 
+  public async resolveEmbeddingModel(modelId: string): Promise<EmbeddingModelInstance> {
+    const { providerId, modelId: resolvedModelId } = splitModelId(modelId);
+    const providerEntry = await this.getProviderEntry(providerId);
+    if (!providerEntry) {
+      const available = this.listProviders();
+      const availableMessage = available.length
+        ? `Available providers: ${available.join(", ")}.`
+        : "No providers are registered.";
+      throw new Error(`No provider registered for "${providerId}". ${availableMessage}`);
+    }
+
+    const embeddingFactory = resolveEmbeddingFactory(providerEntry);
+    if (!embeddingFactory) {
+      throw new Error(`Provider "${providerId}" does not support embedding models.`);
+    }
+
+    return embeddingFactory(resolvedModelId);
+  }
+
   private async getProvider(providerId: string): Promise<LanguageModelFactory | undefined> {
     const normalizedId = normalizeProviderId(providerId);
     const existing = this.providers.get(normalizedId);
+    if (existing) {
+      return existing;
+    }
+    const entry = await this.getProviderEntry(normalizedId);
+    if (!entry) {
+      return undefined;
+    }
+    const normalizedProvider = this.normalizeProvider(entry, normalizedId);
+    this.providers.set(normalizedId, normalizedProvider);
+    return normalizedProvider;
+  }
+
+  private async getProviderEntry(providerId: string): Promise<ModelProviderEntry | undefined> {
+    const normalizedId = normalizeProviderId(providerId);
+    const existing = this.providerEntries.get(normalizedId);
     if (existing) {
       return existing;
     }
@@ -987,22 +1058,24 @@ export class ModelProviderRegistry {
       return undefined;
     }
 
-    const pending = this.loading.get(normalizedId);
+    const pending = this.entryLoading.get(normalizedId);
     if (pending) {
       return pending;
     }
 
     const loadPromise = loader()
       .then((provider) => {
-        const normalizedProvider = this.normalizeProvider(provider, normalizedId);
-        this.providers.set(normalizedId, normalizedProvider);
-        return normalizedProvider;
+        this.providerEntries.set(normalizedId, provider);
+        if (!this.providers.has(normalizedId)) {
+          this.providers.set(normalizedId, this.normalizeProvider(provider, normalizedId));
+        }
+        return provider;
       })
       .finally(() => {
-        this.loading.delete(normalizedId);
+        this.entryLoading.delete(normalizedId);
       });
 
-    this.loading.set(normalizedId, loadPromise);
+    this.entryLoading.set(normalizedId, loadPromise);
     return loadPromise;
   }
 

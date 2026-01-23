@@ -7,6 +7,7 @@ import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { MessageRole, UsageInfo } from "../agent/providers/base/types";
 import type { OperationContext } from "../agent/types";
+import type { EmbeddingModelReference, EmbeddingOptions } from "./adapters/embedding/types";
 
 // ============================================================================
 // Core Types (Re-exported from existing memory system)
@@ -226,9 +227,9 @@ export interface MemoryConfig {
   storage: StorageAdapter;
 
   /**
-   * Optional embedding adapter for semantic operations
+   * Optional embedding adapter or model reference for semantic operations
    */
-  embedding?: EmbeddingAdapter;
+  embedding?: EmbeddingAdapterInput;
 
   /**
    * Optional vector adapter for similarity search
@@ -259,6 +260,21 @@ export interface MemoryConfig {
    */
   workingMemory?: WorkingMemoryConfig;
 }
+
+/**
+ * Embedding adapter config for Memory
+ */
+export type EmbeddingAdapterConfig = EmbeddingOptions & {
+  model: EmbeddingModelReference;
+};
+
+/**
+ * Embedding input options for Memory
+ */
+export type EmbeddingAdapterInput =
+  | EmbeddingAdapter
+  | EmbeddingModelReference
+  | EmbeddingAdapterConfig;
 
 /**
  * Metadata about the underlying storage adapter

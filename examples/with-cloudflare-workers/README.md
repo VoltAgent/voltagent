@@ -149,7 +149,7 @@ This example uses in-memory storage adapters:
 ```typescript
 const memory = new Memory({
   storage: new InMemoryStorageAdapter(),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new InMemoryVectorAdapter(),
 });
 ```

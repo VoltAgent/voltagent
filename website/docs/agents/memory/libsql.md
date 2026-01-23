@@ -98,13 +98,12 @@ See [Working Memory](./working-memory.md) for configuration details.
 Use `LibSQLVectorAdapter` for persistent vector storage:
 
 ```ts
-import { Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+import { Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
 });
 ```

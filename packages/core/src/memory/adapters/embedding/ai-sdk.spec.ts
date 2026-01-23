@@ -1,5 +1,6 @@
 import type { EmbedManyResult, EmbedResult, EmbeddingModel } from "ai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ModelProviderRegistry } from "../../../registries/model-provider-registry";
 import { AiSdkEmbeddingAdapter } from "./ai-sdk";
 
 // Mock the AI SDK
@@ -9,7 +10,7 @@ vi.mock("ai", () => ({
 }));
 
 describe("AiSdkEmbeddingAdapter", () => {
-  let mockModel: EmbeddingModel;
+  let mockModel: Exclude<EmbeddingModel, string>;
   let adapter: AiSdkEmbeddingAdapter;
 
   beforeEach(() => {
@@ -19,7 +20,7 @@ describe("AiSdkEmbeddingAdapter", () => {
       modelId: "test-model",
       provider: "test-provider",
       doEmbed: vi.fn(),
-    } as unknown as EmbeddingModel;
+    } as unknown as Exclude<EmbeddingModel, string>;
 
     adapter = new AiSdkEmbeddingAdapter(mockModel, {
       maxBatchSize: 2,
@@ -175,6 +176,41 @@ describe("AiSdkEmbeddingAdapter", () => {
   describe("getModelName", () => {
     it("should return the model ID", () => {
       expect(adapter.getModelName()).toBe("test-model");
+    });
+  });
+
+  describe("model resolution", () => {
+    it("should resolve provider-qualified model strings via the registry", async () => {
+      const mockEmbedding = [0.1, 0.2];
+      const { embed } = await import("ai");
+      vi.mocked(embed).mockResolvedValue({
+        value: "test text",
+        embedding: mockEmbedding,
+        usage: { tokens: 10 },
+      } as EmbedResult<string>);
+
+      const resolvedModel = {
+        modelId: "text-embedding-3-small",
+        provider: "openai",
+        doEmbed: vi.fn(),
+      } as unknown as Exclude<EmbeddingModel, string>;
+
+      const registry = ModelProviderRegistry.getInstance();
+      const resolveSpy = vi
+        .spyOn(registry, "resolveEmbeddingModel")
+        .mockResolvedValue(resolvedModel);
+
+      const stringAdapter = new AiSdkEmbeddingAdapter("openai/text-embedding-3-small");
+      await stringAdapter.embed("test text");
+
+      expect(resolveSpy).toHaveBeenCalledWith("openai/text-embedding-3-small");
+      expect(embed).toHaveBeenCalledWith({
+        model: resolvedModel,
+        value: "test text",
+      });
+      expect(stringAdapter.getModelName()).toBe("openai/text-embedding-3-small");
+
+      resolveSpy.mockRestore();
     });
   });
 });

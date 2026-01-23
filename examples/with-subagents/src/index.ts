@@ -1,7 +1,5 @@
-import { openai } from "@ai-sdk/openai";
 import {
   Agent,
-  AiSdkEmbeddingAdapter,
   InMemoryVectorAdapter,
   Memory,
   VoltAgent,
@@ -21,7 +19,7 @@ const logger = createPinoLogger({
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter(),
-  embedding: new AiSdkEmbeddingAdapter(openai.embeddingModel("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new InMemoryVectorAdapter(),
 });
 

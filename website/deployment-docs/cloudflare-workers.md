@@ -311,7 +311,7 @@ const memory = new Memory({
   vector: new PostgresVectorAdapter({
     connectionString: env.POSTGRES_URL,
   }),
-  // embedding adapter (e.g. AiSdkEmbeddingAdapter) stays the same
+  embedding: "openai/text-embedding-3-small",
 });
 
 const agent = new Agent({

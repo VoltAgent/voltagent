@@ -13,6 +13,7 @@ import type { MCPServerRegistry } from "./mcp";
 import type { Memory } from "./memory";
 import type { VoltAgentObservability } from "./observability";
 import type { ToolStatusInfo } from "./tool";
+import type { ToolRoutingConfig } from "./tool/routing/types";
 import type { TriggerRegistry } from "./triggers/registry";
 import type { VoltAgentTriggersConfig } from "./triggers/types";
 import type { VoltOpsClient } from "./voltops/client";
@@ -227,6 +228,10 @@ export type VoltAgentOptions = {
    * Falls back to `memory` when not provided.
    */
   workflowMemory?: Memory;
+  /**
+   * Global tool routing defaults (applied to agents without explicit toolRouting config).
+   */
+  toolRouting?: ToolRoutingConfig;
   /** Optional VoltOps trigger handlers */
   triggers?: VoltAgentTriggersConfig;
   /**

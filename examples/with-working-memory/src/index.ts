@@ -1,10 +1,4 @@
-import {
-  Agent,
-  AiSdkEmbeddingAdapter,
-  Memory,
-  VoltAgent,
-  VoltAgentObservability,
-} from "@voltagent/core";
+import { Agent, Memory, VoltAgent, VoltAgentObservability } from "@voltagent/core";
 import {
   LibSQLMemoryAdapter,
   LibSQLObservabilityAdapter,

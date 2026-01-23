@@ -16,6 +16,7 @@ import type {
 } from "../agent/types";
 import type { Tool, VercelTool } from "../tool";
 import { createTool } from "../tool";
+import type { ToolRoutingConfig } from "../tool/routing/types";
 import type { Toolkit } from "../tool/toolkit";
 import { createToolkit } from "../tool/toolkit";
 import { randomUUID } from "../utils/id";
@@ -102,6 +103,7 @@ type PlanAgentCustomSubagentRuntimeDefinition = {
   model?: unknown;
   tools?: (Tool<any, any> | Toolkit | VercelTool)[];
   toolkits?: Toolkit[];
+  toolRouting?: ToolRoutingConfig | false;
   memory?: AgentOptions["memory"];
   logger?: Logger;
 } & Record<string, unknown>;
@@ -128,6 +130,7 @@ export type PlanAgentOptions = Omit<
   systemPrompt?: InstructionsDynamicValue;
   tools?: (Tool<any, any> | Toolkit | VercelTool)[];
   toolkits?: Toolkit[];
+  toolRouting?: ToolRoutingConfig | false;
   subagents?: PlanAgentSubagentDefinition[];
   generalPurposeAgent?: boolean;
   planning?: PlanningToolkitOptions | false;
@@ -563,7 +566,7 @@ function chainToolEndHooks(
       for (const hook of sequence) {
         await hook(args);
       }
-      return;
+      return undefined;
     }
 
     let currentOutput = args.output;
@@ -579,7 +582,7 @@ function chainToolEndHooks(
     if (hasOverride) {
       return { output: currentOutput };
     }
-    return;
+    return undefined;
   };
 }
 
@@ -644,8 +647,16 @@ function normalizeSubagentDefinitions(options: {
   defaultToolkits: Toolkit[];
   defaultMemory: AgentOptions["memory"];
   defaultLogger?: Logger;
+  defaultToolRouting?: ToolRoutingConfig | false;
 }): Array<{ name: string; description: string; config: SubAgentConfig }> {
-  const { defaultModel, defaultTools, defaultToolkits, defaultMemory, defaultLogger } = options;
+  const {
+    defaultModel,
+    defaultTools,
+    defaultToolkits,
+    defaultMemory,
+    defaultLogger,
+    defaultToolRouting,
+  } = options;
 
   const normalized: Array<{ name: string; description: string; config: SubAgentConfig }> = [];
   const rawDefinitions = options.definitions as unknown[];
@@ -683,6 +694,7 @@ function normalizeSubagentDefinitions(options: {
       instructions: custom.systemPrompt,
       tools,
       toolkits,
+      toolRouting: custom.toolRouting ?? defaultToolRouting,
       memory: custom.memory ?? defaultMemory,
       logger: custom.logger ?? defaultLogger,
     } as AgentOptions);
@@ -824,16 +836,17 @@ function createPlanningExtension(options: {
           },
           onToolEnd: async (args) => {
             if (args.error) {
-              return;
+              return undefined;
             }
 
             if (args.tool.name === WRITE_TODOS_TOOL_NAME) {
               args.context.systemContext.set(PLAN_WRITTEN_CONTEXT_KEY, true);
               args.context.systemContext.delete(FORCED_TOOL_CHOICE_CONTEXT_KEY);
-              return;
+              return undefined;
             }
 
             markPlanProgress(args.context);
+            return undefined;
           },
           onStepFinish: async (args) => {
             const step = args.step as StepResult<ToolSet> | undefined;
@@ -1084,6 +1097,7 @@ export class PlanAgent extends Agent {
       defaultToolkits: subagentToolkits,
       defaultMemory: options.memory,
       defaultLogger: options.logger,
+      defaultToolRouting: options.toolRouting,
     });
 
     if (generalPurposeAgent) {
@@ -1098,6 +1112,7 @@ export class PlanAgent extends Agent {
           instructions: DEFAULT_SUBAGENT_PROMPT,
           tools: wrappedTools,
           toolkits: subagentToolkits,
+          toolRouting: options.toolRouting,
           memory: options.memory,
           logger: options.logger,
         });

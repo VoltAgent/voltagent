@@ -6,6 +6,7 @@ import { type Logger, safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { OperationContext } from "../agent/types";
+import { AiSdkEmbeddingAdapter } from "./adapters/embedding/ai-sdk";
 import { EmbeddingAdapterNotConfiguredError, VectorAdapterNotConfiguredError } from "./errors";
 import type {
   Conversation,
@@ -14,6 +15,8 @@ import type {
   CreateConversationInput,
   Document,
   EmbeddingAdapter,
+  EmbeddingAdapterConfig,
+  EmbeddingAdapterInput,
   GetConversationStepsOptions,
   GetMessagesOptions,
   MemoryConfig,
@@ -29,6 +32,40 @@ import type {
   WorkingMemoryUpdateOptions,
 } from "./types";
 import { BatchEmbeddingCache } from "./utils/cache";
+
+const isEmbeddingAdapter = (value: EmbeddingAdapterInput): value is EmbeddingAdapter =>
+  typeof value === "object" &&
+  value !== null &&
+  "embed" in value &&
+  typeof (value as EmbeddingAdapter).embed === "function" &&
+  "embedBatch" in value &&
+  typeof (value as EmbeddingAdapter).embedBatch === "function";
+
+const isEmbeddingAdapterConfig = (value: EmbeddingAdapterInput): value is EmbeddingAdapterConfig =>
+  typeof value === "object" && value !== null && "model" in value && !isEmbeddingAdapter(value);
+
+const resolveEmbeddingAdapter = (
+  embedding?: EmbeddingAdapterInput,
+): EmbeddingAdapter | undefined => {
+  if (!embedding) {
+    return undefined;
+  }
+
+  if (isEmbeddingAdapter(embedding)) {
+    return embedding;
+  }
+
+  if (typeof embedding === "string") {
+    return new AiSdkEmbeddingAdapter(embedding);
+  }
+
+  if (isEmbeddingAdapterConfig(embedding)) {
+    const { model, ...options } = embedding;
+    return new AiSdkEmbeddingAdapter(model, options);
+  }
+
+  return new AiSdkEmbeddingAdapter(embedding);
+};
 
 /**
  * Memory Class
@@ -47,7 +84,7 @@ export class Memory {
 
   constructor(options: MemoryConfig) {
     this.storage = options.storage;
-    this.embedding = options.embedding;
+    this.embedding = resolveEmbeddingAdapter(options.embedding);
     this.vector = options.vector;
     this.workingMemoryConfig = options.workingMemory;
 

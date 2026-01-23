@@ -173,7 +173,7 @@ export class LanceDBRetriever extends BaseRetriever {
 
     // 2. Generate Embedding
     const { embedding } = await embed({
-      model: openai.embedding("text-embedding-3-small"),
+      model: "openai/text-embedding-3-small",
       value: searchText,
     });
 
@@ -199,7 +199,7 @@ You can swap OpenAI for other providers:
 ```typescript
 // Using a larger model
 const { embedding } = await embed({
-  model: openai.embedding("text-embedding-3-large"),
+  model: "openai/text-embedding-3-large",
   value: query,
 });
 ```
@@ -212,7 +212,7 @@ async function addDocument(text: string, metadata: Record<string, any>) {
   const table = await db.openTable(tableName);
 
   const { embedding } = await embed({
-    model: openai.embedding("text-embedding-3-small"),
+    model: "openai/text-embedding-3-small",
     value: text,
   });
 

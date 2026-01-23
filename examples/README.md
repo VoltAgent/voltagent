@@ -132,6 +132,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 - [Supabase](./with-supabase) — Use Supabase auth/database in tools and server endpoints.
 - [Tavily Search](./with-tavily-search) — Augment answers with web results from Tavily.
 - [Thinking Tool](./with-thinking-tool) — Structured reasoning via a dedicated “thinking” tool and schema.
+- [Tool Routing](./with-tool-routing) — Route large tool pools through a small set of router tools.
 - [Tools](./with-tools) — Author Zod‑typed tools with cancellation and streaming support.
 - [VoltOps Actions + Airtable](./with-voltagent-actions) — Call VoltOps Actions as tools to create and list Airtable records.
 - [Turso](./with-turso) — Persist memory on LibSQL/Turso with simple setup.

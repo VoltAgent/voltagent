@@ -161,14 +161,13 @@ const agent = new Agent({
 ### Semantic Search + Working Memory
 
 ```ts
-import { Agent, Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { Agent, Memory, InMemoryVectorAdapter } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
-import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new InMemoryVectorAdapter(),
   workingMemory: {
     enabled: true,

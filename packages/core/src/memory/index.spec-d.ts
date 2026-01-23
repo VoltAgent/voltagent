@@ -96,6 +96,28 @@ describe("Memory V2 Type System", () => {
       expectTypeOf(memory).toMatchTypeOf<Memory>();
     });
 
+    it("should accept embedding model string", () => {
+      const memory = new Memory({
+        storage: mockStorageAdapter,
+        embedding: "openai/text-embedding-3-small",
+      });
+
+      expectTypeOf(memory).toMatchTypeOf<Memory>();
+    });
+
+    it("should accept embedding config object", () => {
+      const memory = new Memory({
+        storage: mockStorageAdapter,
+        embedding: {
+          model: "openai/text-embedding-3-small",
+          normalize: true,
+          maxBatchSize: 50,
+        },
+      });
+
+      expectTypeOf(memory).toMatchTypeOf<Memory>();
+    });
+
     it("should accept optional VectorAdapter", () => {
       const memory = new Memory({
         storage: mockStorageAdapter,

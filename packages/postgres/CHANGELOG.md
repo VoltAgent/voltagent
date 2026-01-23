@@ -372,7 +372,7 @@
   ## New: PostgresVectorAdapter
 
   ```typescript
-  import { Agent, Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+  import { Agent, Memory } from "@voltagent/core";
   import { PostgresMemoryAdapter, PostgresVectorAdapter } from "@voltagent/postgres";
   import { openai } from "@ai-sdk/openai";
 
@@ -380,7 +380,7 @@
     storage: new PostgresMemoryAdapter({
       connectionString: process.env.DATABASE_URL,
     }),
-    embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+    embedding: "openai/text-embedding-3-small",
     vector: new PostgresVectorAdapter({
       connectionString: process.env.DATABASE_URL,
     }),

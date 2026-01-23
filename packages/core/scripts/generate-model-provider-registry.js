@@ -7,6 +7,7 @@ const API_URL = "https://models.dev/api.json";
 const OUTPUT_DIR = path.resolve(__dirname, "../src/registries");
 const REGISTRY_PATH = path.join(OUTPUT_DIR, "model-provider-registry.generated.ts");
 const TYPES_PATH = path.join(OUTPUT_DIR, "model-provider-types.generated.ts");
+const EMBEDDING_TYPES_PATH = path.join(OUTPUT_DIR, "embedding-model-router-types.generated.ts");
 
 const HEADER = `/**
  * THIS FILE IS AUTO-GENERATED - DO NOT EDIT
@@ -19,6 +20,15 @@ const normalizeModelId = (id) => id.trim();
 
 const isDeprecatedModel = (modelInfo) =>
   Boolean(modelInfo && typeof modelInfo === "object" && modelInfo.status === "deprecated");
+
+const isEmbeddingModel = (modelId, modelInfo) => {
+  const id = normalizeModelId(modelId).toLowerCase();
+  const family =
+    modelInfo && typeof modelInfo === "object" && typeof modelInfo.family === "string"
+      ? modelInfo.family.toLowerCase()
+      : "";
+  return id.includes("embed") || id.includes("embedding") || family.includes("embed");
+};
 
 const formatStringLiteral = (value) =>
   `'${String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
@@ -39,6 +49,7 @@ async function run() {
 
   const registry = {};
   const providerModels = {};
+  const providerEmbeddingModels = {};
 
   for (const [providerId, info] of providers) {
     const normalizedId = normalizeProviderId(info.id || providerId);
@@ -58,6 +69,18 @@ async function run() {
       .sort();
 
     providerModels[normalizedId] = models;
+
+    const embeddingModels = Object.entries(info.models)
+      .filter(
+        ([modelId, modelInfo]) =>
+          !isDeprecatedModel(modelInfo) && isEmbeddingModel(modelId, modelInfo),
+      )
+      .map(([modelId]) => normalizeModelId(modelId))
+      .sort();
+
+    if (embeddingModels.length) {
+      providerEmbeddingModels[normalizedId] = embeddingModels;
+    }
   }
 
   const registryContent = `${HEADER}
@@ -97,15 +120,37 @@ export type ModelRouterModelId =
 export type ModelForProvider<P extends ProviderId> = ProviderModelsMap[P][number];
 `;
 
+  const embeddingModelLines = Object.entries(providerEmbeddingModels).map(
+    ([providerId, models]) => {
+      const modelLines = models.map((modelId) => `    ${formatStringLiteral(modelId)},`).join("\n");
+      return `  readonly ${formatStringLiteral(providerId)}: readonly [\n${modelLines}\n  ];`;
+    },
+  );
+
+  const embeddingTypesContent = `${HEADER}
+export type EmbeddingModelsMap = {
+${embeddingModelLines.join("\n")}
+};
+
+export type EmbeddingProviderId = keyof EmbeddingModelsMap;
+
+export type EmbeddingRouterModelId =
+  | {
+      [P in EmbeddingProviderId]: \`\${P}/\${EmbeddingModelsMap[P][number]}\`;
+    }[EmbeddingProviderId]
+  | (string & {});
+`;
+
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   fs.writeFileSync(REGISTRY_PATH, registryContent, "utf8");
   fs.writeFileSync(TYPES_PATH, typesContent, "utf8");
+  fs.writeFileSync(EMBEDDING_TYPES_PATH, embeddingTypesContent, "utf8");
 
   console.info(
     `Generated ${path.relative(process.cwd(), REGISTRY_PATH)} and ${path.relative(
       process.cwd(),
       TYPES_PATH,
-    )}`,
+    )} and ${path.relative(process.cwd(), EMBEDDING_TYPES_PATH)}`,
   );
 }
 

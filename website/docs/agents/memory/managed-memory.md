@@ -126,14 +126,13 @@ Enable semantic search with `ManagedMemoryVectorAdapter`:
 
 ```ts
 import { ManagedMemoryAdapter, ManagedMemoryVectorAdapter } from "@voltagent/voltagent-memory";
-import { AiSdkEmbeddingAdapter, Memory } from "@voltagent/core";
-import { openai } from "@ai-sdk/openai";
+import { Memory } from "@voltagent/core";
 
 const memory = new Memory({
   storage: new ManagedMemoryAdapter({
     databaseName: "production-memory",
   }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new ManagedMemoryVectorAdapter({
     databaseName: "production-memory",
   }),

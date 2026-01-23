@@ -64,6 +64,23 @@ export type { ProviderOptions } from "@ai-sdk/provider-utils";
 export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
 // Export Toolkit type and createToolkit function
 export { type Toolkit, createToolkit } from "./toolkit";
+// Export tool routing helpers
+export { createToolRouter, createEmbeddingToolRouterStrategy, isToolRouter } from "./routing";
+export type {
+  ToolArgumentResolver,
+  ToolRouter,
+  ToolRouterCandidate,
+  ToolRouterContext,
+  ToolRouterInput,
+  ToolRouterMode,
+  ToolRouterResult,
+  ToolRouterResultItem,
+  ToolRouterSelection,
+  ToolRouterStrategy,
+  ToolRoutingConfig,
+  ToolRoutingEmbeddingConfig,
+  ToolRoutingEmbeddingInput,
+} from "./routing/types";
 
 /**
  * Tool definition compatible with Vercel AI SDK

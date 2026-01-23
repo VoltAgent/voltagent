@@ -131,15 +131,14 @@ See [Working Memory](./working-memory.md) for configuration details.
 Store vector embeddings directly in PostgreSQL for semantic search (no extensions required):
 
 ```ts
-import { Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+import { Memory } from "@voltagent/core";
 import { PostgreSQLMemoryAdapter, PostgresVectorAdapter } from "@voltagent/postgres";
-import { openai } from "@ai-sdk/openai";
 
 const memory = new Memory({
   storage: new PostgreSQLMemoryAdapter({
     connection: process.env.DATABASE_URL!,
   }),
-  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  embedding: "openai/text-embedding-3-small",
   vector: new PostgresVectorAdapter({
     connection: process.env.DATABASE_URL!,
   }),
