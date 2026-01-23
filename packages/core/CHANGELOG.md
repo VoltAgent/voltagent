@@ -1,5 +1,195 @@
 # @voltagent/core
 
+## 2.2.0
+
+### Minor Changes
+
+- [#978](https://github.com/VoltAgent/voltagent/pull/978) [`db394ce`](https://github.com/VoltAgent/voltagent/commit/db394ce5fb07496b17715d0b8e044c3323fcb438) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: allow tool-specific hooks and let `onToolEnd` override tool output #975
+
+  Tool hooks run alongside agent hooks. `onToolEnd` can now return `{ output }` to replace the tool result (validated again if an output schema exists).
+
+  ```ts
+  import { Agent, createTool } from "@voltagent/core";
+  import { z } from "zod";
+
+  const normalizeTool = createTool({
+    name: "normalize_text",
+    description: "Normalizes and truncates text",
+    parameters: z.object({ text: z.string() }),
+    execute: async ({ text }) => text,
+    hooks: {
+      onStart: ({ tool }) => {
+        console.log(`[tool] ${tool.name} starting`);
+      },
+      onEnd: ({ output }) => {
+        if (typeof output === "string") {
+          return { output: output.slice(0, 1000) };
+        }
+      },
+    },
+  });
+
+  const agent = new Agent({
+    name: "ToolHooksAgent",
+    instructions: "Use tools as needed.",
+    model: myModel,
+    tools: [normalizeTool],
+    hooks: {
+      onToolEnd: ({ output }) => {
+        if (typeof output === "string") {
+          return { output: output.trim() };
+        }
+      },
+    },
+  });
+  ```
+
+### Patch Changes
+
+- [#985](https://github.com/VoltAgent/voltagent/pull/985) [`85f8611`](https://github.com/VoltAgent/voltagent/commit/85f8611ca8cd3ea48f45b24da43fc9962c89fef9) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: workflowState + andForEach selector/map
+
+  ### What's New
+  - `workflowState` and `setWorkflowState` add shared state across steps (preserved after suspend/resume).
+  - `andForEach` now supports an `items` selector and optional `map` (iterate without losing parent data).
+
+  ### Workflow State Usage
+
+  ```ts
+  const result = await workflow.run(
+    { userId: "user-123" },
+    {
+      workflowState: {
+        plan: "pro",
+      },
+    }
+  );
+
+  createWorkflowChain({
+    id: "state-demo",
+    input: z.object({ userId: z.string() }),
+  })
+    .andThen({
+      id: "cache-user",
+      execute: async ({ data, setWorkflowState }) => {
+        setWorkflowState((prev) => ({
+          ...prev,
+          userId: data.userId,
+        }));
+        return data;
+      },
+    })
+    .andThen({
+      id: "use-cache",
+      execute: async ({ workflowState }) => {
+        return { cachedUserId: workflowState.userId };
+      },
+    });
+  ```
+
+  ### andForEach Selector + Map
+
+  ```ts
+  createWorkflowChain({
+    id: "batch-process",
+    input: z.object({
+      label: z.string(),
+      values: z.array(z.number()),
+    }),
+  }).andForEach({
+    id: "label-items",
+    items: ({ data }) => data.values,
+    map: ({ data }, item) => ({ label: data.label, value: item }),
+    step: andThen({
+      id: "format",
+      execute: async ({ data }) => `${data.label}:${data.value}`,
+    }),
+  });
+  ```
+
+- [#983](https://github.com/VoltAgent/voltagent/pull/983) [`96ebba3`](https://github.com/VoltAgent/voltagent/commit/96ebba353116e49b5a4eabeb53fa302e6a05da51) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: allow custom workflow stream event types while preserving IntelliSense for built-in names
+
+- [#986](https://github.com/VoltAgent/voltagent/pull/986) [`850b5bb`](https://github.com/VoltAgent/voltagent/commit/850b5bb77f666c05bb26043ea45600c3fd212e2f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add optional conversation title generation on conversation creation. Titles are derived from the first user message, respect a max length, and can use the agent model or a configured override. #981
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { LibSQLMemoryAdapter } from "@voltagent/libsql";
+
+  const memory = new Memory({
+    storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+    generateTitle: {
+      enabled: true,
+      model: "gpt-4o-mini", // defaults to the agent model when omitted
+      systemPrompt: "Generate a short title (max 6 words).",
+      maxLength: 60,
+      maxOutputTokens: 24,
+    },
+  });
+  ```
+
+- [#980](https://github.com/VoltAgent/voltagent/pull/980) [`b65715e`](https://github.com/VoltAgent/voltagent/commit/b65715e5833f80c5a7a598c6815506fd06008b71) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add tool routing for agents with router tools, pool/expose controls, and embedding routing.
+
+  Embedding model strings also accept provider-qualified IDs like `openai/text-embedding-3-small` using the same model registry as agent model strings.
+
+  Basic embedding router:
+
+  ```ts
+  import { openai } from "@ai-sdk/openai";
+  import { Agent, createTool } from "@voltagent/core";
+  import { z } from "zod";
+
+  const getWeather = createTool({
+    name: "get_weather",
+    description: "Get the current weather for a city",
+    parameters: z.object({ location: z.string() }),
+    execute: async ({ location }) => ({ location, temperatureC: 22 }),
+  });
+
+  const agent = new Agent({
+    name: "Tool Routing Agent",
+    instructions: "Use tool_router for tools. Pass the user request as the query.",
+    model: "openai/gpt-4o-mini",
+    tools: [getWeather],
+    toolRouting: {
+      embedding: openai.embedding("text-embedding-3-small"),
+      topK: 2,
+    },
+  });
+  ```
+
+  Pool and expose:
+
+  ```ts
+  const agent = new Agent({
+    name: "Support Agent",
+    instructions: "Use tool_router for tools.",
+    model: "openai/gpt-4o-mini",
+    toolRouting: {
+      embedding: "text-embedding-3-small",
+      pool: [getWeather],
+      expose: [getStatus],
+    },
+  });
+  ```
+
+  Custom router strategy + resolver mode:
+
+  ```ts
+  import { createToolRouter, type ToolArgumentResolver } from "@voltagent/core";
+
+  const resolver: ToolArgumentResolver = async ({ query, tool }) => {
+    if (tool.name === "get_weather") return { location: query };
+    return {};
+  };
+
+  const router = createToolRouter({
+    name: "tool_router",
+    description: "Route requests with a resolver",
+    embedding: "text-embedding-3-small",
+    mode: "resolver",
+    resolver,
+  });
+  ```
+
 ## 2.1.6
 
 ### Patch Changes

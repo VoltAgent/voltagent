@@ -3,7 +3,7 @@
   "dependencies": {
     "@nuxt/eslint": "^1.9.0",
     "@nuxt/ui": "^4.0.0",
-    "@voltagent/core": "^2.1.6",
+    "@voltagent/core": "^2.2.0",
     "@voltagent/libsql": "^2.0.3",
     "@voltagent/server-hono": "^2.0.4",
     "ai": "^6.0.0",
