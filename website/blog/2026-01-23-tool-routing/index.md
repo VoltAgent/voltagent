@@ -13,7 +13,7 @@ When your agent has “too many tools”, the naive setup stops working: passing
 
 This post explains the idea (tool search with embeddings) and how it shows up in VoltAgent as **Tool Routing**: a small set of **router tools** the model can call, backed by a larger hidden tool **pool** (plus optional `expose` for tools you still want visible).
 
-If you just want the API reference: `https://voltagent.dev/docs/tools/tool-routing/`.
+If you just want the API reference: [Tool Routing docs](https://voltagent.dev/docs/tools/tool-routing/).
 
 ## The problem: “just give the model all tools”
 
@@ -136,7 +136,7 @@ Routing is most useful when you separate:
 
 You’ll use this a lot when you want “a tiny visible tool surface” but still keep some utilities directly callable (like `get_status`).
 
-For the full `pool`/`expose` example, see `https://voltagent.dev/docs/tools/tool-routing/`.
+For the full `pool`/`expose` example, see the [Tool Routing docs](https://voltagent.dev/docs/tools/tool-routing/).
 
 ## Multiple routers + custom strategy
 
@@ -198,19 +198,19 @@ Sometimes “pick the tool” is the hard part, but “fill the args” is easy 
 
 Resolver mode lets you provide a function that turns `(query, tool)` into tool args, so you don’t rely on the LLM to generate parameters.
 
-I’m not including the full resolver snippet here to keep the article short—see `https://voltagent.dev/docs/tools/tool-routing/` for the complete example.
+I’m not including the full resolver snippet here to keep the article short—see the [Tool Routing docs](https://voltagent.dev/docs/tools/tool-routing/) for the complete example.
 
 ## Execution model override
 
 If you want routing/argument steps to run with a different model, set `executionModel`.
 
-This is a small knob, so I’ll just point you to the doc snippet: `https://voltagent.dev/docs/tools/tool-routing/`.
+This is a small knob, so I’ll just point you to the [Tool Routing docs](https://voltagent.dev/docs/tools/tool-routing/).
 
 ## Provider tools and MCP tools
 
 The pool/expose lists accept Vercel AI SDK tools too (including provider-defined tools). Example: add `openai.tools.webSearch()` to the pool.
 
-Again, skipping the full snippet here—see `https://voltagent.dev/docs/tools/tool-routing/`.
+Again, skipping the full snippet here—see the [Tool Routing docs](https://voltagent.dev/docs/tools/tool-routing/).
 
 ## Hooks, approval, and errors
 
@@ -243,7 +243,3 @@ Don’t use it when:
 ## Summary
 
 Tool Routing keeps the model-facing tool list small, and moves “pick the right tool(s)” into a router layer that can use embeddings or your own strategy. It’s mainly about scaling tool use without bloating prompts, while keeping approvals/guardrails/hooks and tracing intact.
-
-## References
-
-- VoltAgent Tool Routing docs: `https://voltagent.dev/docs/tools/tool-routing/`

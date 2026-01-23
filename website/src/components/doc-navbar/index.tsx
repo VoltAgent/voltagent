@@ -26,7 +26,7 @@ const tabs: TabConfig[] = [
   },
   {
     id: "voltagent",
-    label: "VoltAgent",
+    label: "VoltAgent Framework",
     href: "/docs/overview/",
     match: (pathname) => pathname.startsWith("/docs/overview/"),
   },
