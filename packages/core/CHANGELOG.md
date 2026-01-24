@@ -1,5 +1,44 @@
 # @voltagent/core
 
+## 2.2.1
+
+### Patch Changes
+
+- [#987](https://github.com/VoltAgent/voltagent/pull/987) [`12a3d6e`](https://github.com/VoltAgent/voltagent/commit/12a3d6eb5db86979f9d81f29e6787da7e3750f47) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: auto-inherit VoltAgent spans for wrapped agent calls
+
+  Agent calls now attach to the active VoltAgent workflow/agent span by default when `parentSpan` is not provided. This keeps wrapper logic (like `andThen` + `generateText`) inside the same trace without needing `andAgent`. Ambient framework spans are still ignored; only VoltAgent workflow/agent spans are eligible.
+
+  Example:
+
+  ```ts
+  const contentAgent = new Agent({
+    name: "ContentAgent",
+    model: "openai/gpt-4o-mini",
+    instructions: "Write concise summaries.",
+  });
+
+  const wrappedAgentWorkflow = createWorkflowChain({
+    id: "wrapped-agent-call",
+    name: "Wrapped Agent Call Workflow",
+    input: z.object({ topic: z.string() }),
+    result: z.object({ summary: z.string() }),
+  }).andThen({
+    id: "maybe-call-agent",
+    execute: async ({ data }) => {
+      const { text } = await contentAgent.generateText(
+        `Write a single-sentence summary about: ${data.topic}`
+      );
+      return { summary: text.trim() };
+    },
+  });
+  ```
+
+  Opt out when you want a fresh trace:
+
+  ```ts
+  await contentAgent.generateText("...", { inheritParentSpan: false });
+  ```
+
 ## 2.2.0
 
 ### Minor Changes

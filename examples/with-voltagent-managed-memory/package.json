@@ -3,7 +3,7 @@
   "author": "",
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
-    "@voltagent/core": "^2.2.0",
+    "@voltagent/core": "^2.2.1",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/server-hono": "^2.0.4",
     "@voltagent/voltagent-memory": "^1.0.3",
