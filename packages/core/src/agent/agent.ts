@@ -415,6 +415,7 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
   parentAgentId?: string;
   parentOperationContext?: OperationContext;
   parentSpan?: Span; // Optional parent span for OpenTelemetry context propagation
+  inheritParentSpan?: boolean; // Use active VoltAgent span if parentSpan is not provided
 
   // Memory
   contextLimit?: number;
@@ -516,6 +517,7 @@ export class Agent {
   readonly maxRetries: number;
   readonly stopWhen?: StopWhen;
   readonly markdown: boolean;
+  readonly inheritParentSpan: boolean;
   readonly voice?: Voice;
   readonly retriever?: BaseRetriever;
   readonly supervisorConfig?: SupervisorConfig;
@@ -561,6 +563,7 @@ export class Agent {
     this.maxRetries = options.maxRetries ?? DEFAULT_LLM_MAX_RETRIES;
     this.stopWhen = options.stopWhen;
     this.markdown = options.markdown ?? false;
+    this.inheritParentSpan = options.inheritParentSpan ?? true;
     this.voice = options.voice;
     this.retriever = options.retriever;
     this.supervisorConfig = options.supervisorConfig;
@@ -3029,6 +3032,7 @@ export class Agent {
       conversationId: options?.conversationId,
       operationId,
       parentSpan: options?.parentSpan,
+      inheritParentSpan: options?.inheritParentSpan ?? this.inheritParentSpan,
       parentAgentId: options?.parentAgentId,
       input,
     });

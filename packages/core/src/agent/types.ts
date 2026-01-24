@@ -616,6 +616,11 @@ export type AgentOptions = {
    */
   stopWhen?: StopWhen;
   markdown?: boolean;
+  /**
+   * When true, use the active VoltAgent span as the parent if parentSpan is not provided.
+   * Defaults to true.
+   */
+  inheritParentSpan?: boolean;
 
   // Voice
   voice?: Voice;

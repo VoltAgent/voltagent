@@ -549,6 +549,43 @@ const guardrailWorkflow = createWorkflowChain({
     execute: async ({ data }) => data,
   });
 
+// ==============================================================================
+// Example 9: Wrapped Agent Call Workflow
+// Concepts: Agent call inside andThen; parent span inheritance
+// ==============================================================================
+const wrappedAgentWorkflow = createWorkflowChain({
+  id: "wrapped-agent-call",
+  name: "Wrapped Agent Call Workflow",
+  purpose: "Call an agent from a custom step without using andAgent",
+  input: z.object({
+    topic: z.string(),
+    useAgent: z.boolean().default(true),
+  }),
+  result: z.object({
+    summary: z.string(),
+    usedAgent: z.boolean(),
+  }),
+}).andThen({
+  id: "maybe-call-agent",
+  execute: async ({ data }) => {
+    if (!data.useAgent) {
+      return {
+        summary: `Skipped agent for ${data.topic}.`,
+        usedAgent: false,
+      };
+    }
+
+    const { text } = await contentAgent.generateText(
+      `Write a single-sentence summary about: ${data.topic}`,
+    );
+
+    return {
+      summary: text.trim(),
+      usedAgent: true,
+    };
+  },
+});
+
 // Register workflows with VoltAgent
 
 // Create logger
@@ -573,5 +610,6 @@ new VoltAgent({
     batchTransformWorkflow,
     loopAndBranchWorkflow,
     guardrailWorkflow,
+    wrappedAgentWorkflow,
   },
 });

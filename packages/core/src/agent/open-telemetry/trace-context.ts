@@ -42,6 +42,28 @@ const popActiveSpan = (span: Span) => {
 const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
   typeof value === "object" && value !== null && typeof (value as any).then === "function";
 
+type SpanAttributes = Record<string, unknown>;
+type ResolvedParentSpan = {
+  span: Span;
+  parentType: "agent" | "workflow" | "unknown";
+  agentInfo?: { id?: string; name?: string };
+};
+
+const getSpanAttributes = (span?: Span): SpanAttributes =>
+  (span as unknown as { attributes?: SpanAttributes })?.attributes ?? {};
+
+const isWorkflowSpan = (attributes: SpanAttributes): boolean =>
+  attributes["entity.type"] === "workflow" || attributes["span.type"] === "workflow-step";
+
+const isAgentSpan = (attributes: SpanAttributes): boolean => attributes["entity.type"] === "agent";
+
+const getAgentInfo = (attributes: SpanAttributes): { id?: string; name?: string } => ({
+  id:
+    (attributes["entity.id"] as string | undefined) ??
+    (attributes["eval.source.agent_id"] as string | undefined),
+  name: attributes["entity.name"] as string | undefined,
+});
+
 export interface TraceContextOptions {
   agentId: string;
   agentName?: string;
@@ -49,6 +71,7 @@ export interface TraceContextOptions {
   conversationId?: string;
   operationId: string;
   parentSpan?: Span;
+  inheritParentSpan?: boolean;
   parentAgentId?: string;
   input?: string | UIMessage[] | BaseMessage[];
 }
@@ -66,13 +89,16 @@ export class AgentTraceContext {
   ) {
     this.tracer = observability.getTracer();
 
-    const resolvedParent = this.resolveParentSpan(options.parentSpan);
+    const resolvedParent = this.resolveParentSpan(options.parentSpan, options.inheritParentSpan);
     const parentSpan = resolvedParent?.span ?? options.parentSpan;
-    const parentAgentId = options.parentAgentId ?? resolvedParent?.agentInfo?.id;
-    const parentAgentName = resolvedParent?.agentInfo?.name;
+    const isWorkflowParent = resolvedParent?.parentType === "workflow";
+    const isSubagent = !!parentSpan && !isWorkflowParent;
+    const parentAgentId = isSubagent
+      ? (options.parentAgentId ?? resolvedParent?.agentInfo?.id)
+      : undefined;
+    const parentAgentName = isSubagent ? resolvedParent?.agentInfo?.name : undefined;
 
     // Store common attributes once - these will be inherited by all child spans
-    const isSubagent = !!parentSpan;
     const commonAttributes: Record<string, any> = {
       ...(options.userId && { "user.id": options.userId }),
       ...(options.conversationId && { "conversation.id": options.conversationId }),
@@ -124,9 +150,9 @@ export class AgentTraceContext {
       spanAttributes.input = inputStr;
     }
 
-    // If we have a parent span, this agent is being called as a subagent
+    // If we have an agent parent span, this agent is being called as a subagent
     // Create a more descriptive span name to show the hierarchy clearly
-    const spanName = parentSpan ? `subagent:${options.agentName || operationName}` : operationName;
+    const spanName = isSubagent ? `subagent:${options.agentName || operationName}` : operationName;
 
     this.rootSpan = this.tracer.startSpan(
       spanName,
@@ -136,7 +162,7 @@ export class AgentTraceContext {
           ...spanAttributes,
           "agent.state": "running", // Track initial agent state
           // Mark as subagent if we have a parent span
-          ...(parentSpan && {
+          ...(isSubagent && {
             "agent.is_subagent": true,
             "voltagent.is_subagent": true,
           }),
@@ -451,9 +477,19 @@ export class AgentTraceContext {
 
   private resolveParentSpan(
     explicitParent?: Span,
-  ): { span: Span; agentInfo?: { id?: string; name?: string } } | undefined {
+    inheritParentSpan?: boolean,
+  ): ResolvedParentSpan | undefined {
     if (explicitParent) {
-      return { span: explicitParent };
+      const attributes = getSpanAttributes(explicitParent);
+      return {
+        span: explicitParent,
+        parentType: isWorkflowSpan(attributes)
+          ? "workflow"
+          : isAgentSpan(attributes)
+            ? "agent"
+            : "unknown",
+        agentInfo: isAgentSpan(attributes) ? getAgentInfo(attributes) : undefined,
+      };
     }
 
     const activeSpan = trace.getSpan(context.active());
@@ -461,23 +497,37 @@ export class AgentTraceContext {
       return undefined;
     }
 
-    const attributes =
-      (activeSpan as unknown as { attributes?: Record<string, unknown> }).attributes ?? {};
-
+    const attributes = getSpanAttributes(activeSpan);
     const spanType = attributes["span.type"];
     const scorerId = attributes["eval.scorer.id"];
-    if (spanType !== "scorer" && scorerId === undefined) {
+    if (spanType === "scorer" || scorerId !== undefined) {
+      return {
+        span: activeSpan,
+        parentType: "agent",
+        agentInfo: getAgentInfo(attributes),
+      };
+    }
+
+    if (!inheritParentSpan) {
       return undefined;
     }
 
-    const agentInfo = {
-      id:
-        (attributes["entity.id"] as string | undefined) ??
-        (attributes["eval.source.agent_id"] as string | undefined),
-      name: attributes["entity.name"] as string | undefined,
-    };
+    if (isWorkflowSpan(attributes)) {
+      return {
+        span: activeSpan,
+        parentType: "workflow",
+      };
+    }
 
-    return { span: activeSpan, agentInfo };
+    if (isAgentSpan(attributes)) {
+      return {
+        span: activeSpan,
+        parentType: "agent",
+        agentInfo: getAgentInfo(attributes),
+      };
+    }
+
+    return undefined;
   }
 
   /**
