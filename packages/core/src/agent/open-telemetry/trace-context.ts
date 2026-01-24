@@ -92,10 +92,9 @@ export class AgentTraceContext {
     const resolvedParent = this.resolveParentSpan(options.parentSpan, options.inheritParentSpan);
     const parentSpan = resolvedParent?.span ?? options.parentSpan;
     const isWorkflowParent = resolvedParent?.parentType === "workflow";
-    const isSubagent = !!parentSpan && !isWorkflowParent;
-    const parentAgentId = isSubagent
-      ? (options.parentAgentId ?? resolvedParent?.agentInfo?.id)
-      : undefined;
+    const explicitParentAgentId = options.parentAgentId ?? resolvedParent?.agentInfo?.id;
+    const isSubagent = !!parentSpan && !isWorkflowParent && !!explicitParentAgentId;
+    const parentAgentId = isSubagent ? explicitParentAgentId : undefined;
     const parentAgentName = isSubagent ? resolvedParent?.agentInfo?.name : undefined;
 
     // Store common attributes once - these will be inherited by all child spans
@@ -150,7 +149,7 @@ export class AgentTraceContext {
       spanAttributes.input = inputStr;
     }
 
-    // If we have an agent parent span, this agent is being called as a subagent
+    // If we have an explicit agent parent, this agent is being called as a subagent
     // Create a more descriptive span name to show the hierarchy clearly
     const spanName = isSubagent ? `subagent:${options.agentName || operationName}` : operationName;
 
@@ -161,7 +160,7 @@ export class AgentTraceContext {
         attributes: {
           ...spanAttributes,
           "agent.state": "running", // Track initial agent state
-          // Mark as subagent if we have a parent span
+          // Mark as subagent only when an explicit agent parent is present
           ...(isSubagent && {
             "agent.is_subagent": true,
             "voltagent.is_subagent": true,
