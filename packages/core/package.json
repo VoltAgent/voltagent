@@ -70,7 +70,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "license": "MIT",
   "main": "dist/index.js",
@@ -93,12 +94,15 @@
   },
   "scripts": {
     "attw": "attw --pack",
+    "prebuild": "node ../../scripts/sync-docs-mcp.js",
     "build": "tsup",
     "dev": "tsup --watch",
     "generate:model-registry": "node scripts/generate-model-provider-registry.js",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
+    "prepack": "node ../../scripts/sync-docs-mcp.js",
     "publint": "publint --strict",
+    "sync-docs": "node ../../scripts/sync-docs-mcp.js",
     "test": "vitest --reporter=hanging-process --reporter=default --typecheck",
     "test:coverage": "vitest run --coverage --typecheck",
     "test:single": "vitest run --reporter=verbose",

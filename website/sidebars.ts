@@ -32,8 +32,7 @@ const sidebars: SidebarsConfig = {
           },
           items: ["getting-started/quick-start", "getting-started/manual-setup"],
         },
-        "getting-started/voltagent-instance",
-        "getting-started/mcp-docs-server",
+        "getting-started/ai-assistants",
         {
           type: "link",
           label: "5-Step Tutorial",
@@ -99,6 +98,11 @@ const sidebars: SidebarsConfig = {
         "agents/cancellation",
         "agents/resumable-streaming",
       ],
+    },
+    {
+      type: "doc",
+      id: "agents/voltagent-instance",
+      label: "VoltAgent Instance",
     },
     {
       type: "category",
