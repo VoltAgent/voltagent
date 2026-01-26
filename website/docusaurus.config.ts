@@ -546,11 +546,11 @@ const config: Config = {
             from: "/examples/agents/chatgpt-app/",
           },
           {
-            to: "/docs/ai-assistants/",
+            to: "/docs/getting-started/ai-assistants/",
             from: "/docs/getting-started/mcp-docs-server/",
           },
           {
-            to: "/docs/ai-assistants/",
+            to: "/docs/getting-started/ai-assistants/",
             from: "/docs/skills/",
           },
         ],

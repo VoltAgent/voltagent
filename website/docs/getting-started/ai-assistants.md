@@ -102,11 +102,11 @@ Or configure your IDE directly.
 
 Restart your IDE and ask:
 
-```
+```text
 How do I create an agent in VoltAgent?
 ```
 
-```
+```text
 Do you have a Next.js example with VoltAgent?
 ```
 

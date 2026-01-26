@@ -54,6 +54,11 @@ const sidebars: SidebarsConfig = {
       collapsed: true,
       items: [
         "agents/overview",
+        {
+          type: "doc",
+          id: "agents/voltagent-instance",
+          label: "VoltAgent Instance",
+        },
         "agents/prompts",
         "agents/tools",
         {
@@ -98,11 +103,6 @@ const sidebars: SidebarsConfig = {
         "agents/cancellation",
         "agents/resumable-streaming",
       ],
-    },
-    {
-      type: "doc",
-      id: "agents/voltagent-instance",
-      label: "VoltAgent Instance",
     },
     {
       type: "category",
