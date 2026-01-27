@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## Unreleased
+
+### Breaking Changes
+
+- Tool routing now uses `searchTools` + `callTool` instead of router tools. `createToolRouter` and router-specific APIs are removed. Configure routing via `toolRouting` with `embedding`, `topK`, `pool`, `expose`, and `enforceSearchBeforeCall`.
+
 ## 2.2.1
 
 ### Patch Changes

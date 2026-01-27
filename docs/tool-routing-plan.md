@@ -1,25 +1,22 @@
 # Tool Routing Implementation Plan
 
-This document captures the agreed implementation plan for VoltAgent tool routing with router tools, tool pools, and optional embedding-based selection. We will track execution with Markdown checkboxes.
+This document captures the implementation plan for VoltAgent tool routing with `searchTools` + `callTool`, a hidden tool pool, and optional embedding-based search.
 
 ## Decisions (Locked)
 
 - Tool routing config is supported at both Agent and VoltAgent levels (global default + per-agent override).
 - Pool includes user-defined tools, provider-defined tools, and MCP tools.
-- Default router execution mode is "agent"; users can override.
-- Agent mode uses the same model by default; can be overridden with executionModel.
-- Args are generated via generateText with structured output (schema-based output).
-- Provider tool selection triggers agent-mode fallback and emits an info log.
-- Embedding selection auto-activates when an embedding model or adapter is provided.
+- `searchTools` returns tool metadata + schemas; `callTool` executes a selected tool by name.
+- `callTool` enforces a prior search by default (configurable).
+- Embedding search auto-activates when an embedding model or adapter is provided.
 - Embedding index uses in-memory cache (extensible later).
-- Router executes multiple selected tools in parallel.
-- API visibility includes pool tools (not hidden); observability also includes pool tools.
+- Pool tools are hidden from the model by default; only `searchTools`, `callTool`, and `expose` tools are visible.
 - Tool approvals and hooks (tool hooks + agent onToolStart/onToolEnd) still run for pool tools.
 
 ## Scope
 
-- Core API: ToolRoutingConfig, ToolRouterStrategy, ToolRouter, execution modes.
-- Agent runtime: tool pool, router execution, tool execution path reuse.
+- Core API: ToolRoutingConfig (embedding/topK/pool/expose/enforceSearchBeforeCall).
+- Agent runtime: tool pool, search tool, call tool, validation + approvals.
 - Embedding strategy: optional selector using EmbeddingAdapter / AiSdkEmbeddingAdapter.
 - Documentation: recipe + usage examples.
 
@@ -27,73 +24,46 @@ This document captures the agreed implementation plan for VoltAgent tool routing
 
 ### 1) API + Types
 
-- [x] Add ToolRoutingConfig (global + per-agent) to types.
-- [x] Define ToolRouterStrategy interface and ToolRouter types.
-- [x] Define execution mode enums and router result types.
-- [x] Define embedding strategy config (embedding model/adapter, topK, cache).
+- [x] Update ToolRoutingConfig for search + call.
+- [x] Define search strategy types and embedding config.
+- [x] Remove router-only types from public API.
 
 ### 2) Registry + Defaults
 
-- [x] Add global toolRouting defaults to AgentRegistry.
+- [x] Keep global toolRouting defaults in AgentRegistry.
 - [x] Wire VoltAgentOptions.toolRouting to registry defaults.
-- [x] Add agent internal setter to apply default tool routing when unset.
+- [x] Keep agent internal setter to apply default tool routing when unset.
 
 ### 3) Tool Pool Manager
 
-- [x] Introduce ToolPoolManager (or extend ToolManager) to hold pool tools.
-- [x] Add lookup by name (for executing pool tools).
-- [x] Ensure pool supports user-defined, provider-defined, and MCP tools.
+- [x] Pool supports user-defined, provider-defined, and MCP tools.
+- [x] Lookup by name for callTool execution.
 
-### 4) Router Tool Runtime
+### 4) Search + Call Runtime
 
-- [x] Implement createToolRouter (router tool factory).
-- [x] Agent.prepareTools uses routers + exposed tools; pool tools are not added to LLM tools by default.
-- [x] Router execution path:
-  - [x] Select tools via strategy.
-  - [x] Execute selected tools in parallel.
-  - [x] Return structured router output.
-- [x] Ensure tool hooks + approvals run (no bypass).
+- [x] Implement `searchTools` and `callTool` tools.
+- [x] Agent.prepareTools exposes only search/call + `expose` tools when routing is enabled.
+- [x] Search uses embedding strategy when configured.
+- [x] callTool validates args, enforces approvals, and executes tools from pool.
 
-### 5) Agent Mode Execution
+### 5) Observability + API
 
-- [x] Implement agent-mode arg generation via generateText with structured output.
-- [x] Default to agent model; allow executionModel override.
-- [x] Provider tool fallback:
-  - [x] Force toolChoice to the selected provider tool.
-  - [x] Log info for fallback.
+- [x] Add search selection metadata to spans/logs (safeStringify).
+- [x] Ensure pool tools appear in API state without being exposed to the model.
 
-### 6) Embedding Strategy (Optional)
+### 6) Tests
 
-- [x] Add embedding-based ToolRouterStrategy.
-- [x] Auto-enable when embedding model/adapter is provided.
-- [x] Implement tool-to-text serialization and in-memory embedding cache.
-- [x] Invalidate cache when tool pool changes.
-
-### 7) Observability + API
-
-- [x] Include pool tools in API responses (getToolsForApi / /agents).
-- [x] Add router + selection metadata to spans/logs (safeStringify).
-- [x] Ensure pool tools appear in observability with correct tool names.
-
-### 8) Tests
-
-- [ ] Unit tests for strategy selection and router output shape.
-- [ ] Agent-mode arg generation tests (schema output).
+- [ ] Search selection tests (embedding + fallback).
+- [ ] callTool validation + error path tests.
 - [ ] Provider tool fallback tests.
-- [ ] Embedding strategy tests (cache + selection order).
+- [ ] Embedding cache tests.
 
-### 9) Docs + Recipes
+### 7) Docs + Recipes
 
-- [x] New recipe: tool routing with router + pool.
-- [x] Embedding-based routing example.
-- [x] Update sidebars (if needed).
-
-## Open Questions
-
-- None.
+- [x] Update docs and recipes for search + call.
+- [x] Update examples and blog references.
 
 ## Notes
 
 - Use safeStringify for logs and span attributes.
-- Keep output schemas for router results explicit.
-- Maintain compatibility with PlanAgent (router tools should work there too).
+- Maintain compatibility with PlanAgent (tool routing config should still work there).

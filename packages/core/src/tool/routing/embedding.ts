@@ -7,10 +7,10 @@ import type {
 import { cosineSimilarity } from "../../memory/utils/vector-math";
 import { zodSchemaToJsonUI } from "../../utils/toolParser";
 import type {
-  ToolRouterCandidate,
-  ToolRouterStrategy,
   ToolRoutingEmbeddingConfig,
   ToolRoutingEmbeddingInput,
+  ToolSearchCandidate,
+  ToolSearchStrategy,
 } from "./types";
 
 const isEmbeddingAdapter = (value: unknown): value is EmbeddingAdapter => {
@@ -37,7 +37,20 @@ const normalizeEmbeddingConfig = (input: ToolRoutingEmbeddingInput): ToolRouting
   };
 };
 
-const defaultToolText = (tool: ToolRouterCandidate): string => {
+const normalizeParametersForText = (value: unknown): unknown => {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const candidate = value as { _def?: unknown; def?: unknown };
+  if (candidate._def || candidate.def) {
+    return zodSchemaToJsonUI(value);
+  }
+
+  return value;
+};
+
+const defaultToolText = (tool: ToolSearchCandidate): string => {
   const parts: string[] = [];
   parts.push(`Tool: ${tool.name}`);
   if (tool.description) {
@@ -47,16 +60,15 @@ const defaultToolText = (tool: ToolRouterCandidate): string => {
     parts.push(`Tags: ${tool.tags.join(", ")}`);
   }
   if (tool.parameters) {
-    const normalized =
-      typeof tool.parameters === "object" ? zodSchemaToJsonUI(tool.parameters) : tool.parameters;
+    const normalized = normalizeParametersForText(tool.parameters);
     parts.push(`Parameters: ${safeStringify(normalized)}`);
   }
   return parts.join("\n");
 };
 
-export const createEmbeddingToolRouterStrategy = (
+export const createEmbeddingToolSearchStrategy = (
   input: ToolRoutingEmbeddingInput,
-): ToolRouterStrategy => {
+): ToolSearchStrategy => {
   const config = normalizeEmbeddingConfig(input);
   const adapter = isEmbeddingAdapter(config.model)
     ? config.model
@@ -68,7 +80,7 @@ export const createEmbeddingToolRouterStrategy = (
   const cache = new Map<string, { text: string; embedding: number[] }>();
 
   const getToolEmbeddings = async (
-    tools: ToolRouterCandidate[],
+    tools: ToolSearchCandidate[],
   ): Promise<{ embeddings: number[][]; stats: { cached: number; computed: number } }> => {
     const texts: { name: string; text: string }[] = tools.map((tool) => ({
       name: tool.name,
@@ -116,39 +128,39 @@ export const createEmbeddingToolRouterStrategy = (
       }
 
       const oc = context?.operationContext;
-      const routerName = context?.routerName;
+      const searchToolName = context?.searchToolName;
       const parentSpan = context?.parentSpan;
       const dimensions = adapter.getDimensions();
       const embeddingSpanAttributes = {
         "embedding.model": adapter.getModelName(),
         ...(dimensions ? { "embedding.dimensions": dimensions } : {}),
-        ...(routerName ? { "tool.router.name": routerName } : {}),
-        "tool.router.query": query,
-        "tool.router.tool_count": tools.length,
-        "tool.router.top_k": topK,
-        "tool.router.strategy": "embedding",
+        ...(searchToolName ? { "tool.search.name": searchToolName } : {}),
+        "tool.search.query": query,
+        "tool.search.candidates": tools.length,
+        "tool.search.top_k": topK,
+        "tool.search.strategy": "embedding",
         input: query,
       };
       const embeddingSpan = oc?.traceContext
         ? parentSpan
           ? oc.traceContext.createChildSpanWithParent(
               parentSpan,
-              `tool.router.embedding:${routerName ?? "router"}`,
+              `tool.search.embedding:${searchToolName ?? "search"}`,
               "embedding",
               {
-                label: routerName
-                  ? `Tool Router Embedding: ${routerName}`
-                  : "Tool Router Embedding",
+                label: searchToolName
+                  ? `Tool Search Embedding: ${searchToolName}`
+                  : "Tool Search Embedding",
                 attributes: embeddingSpanAttributes,
               },
             )
           : oc.traceContext.createChildSpan(
-              `tool.router.embedding:${routerName ?? "router"}`,
+              `tool.search.embedding:${searchToolName ?? "search"}`,
               "embedding",
               {
-                label: routerName
-                  ? `Tool Router Embedding: ${routerName}`
-                  : "Tool Router Embedding",
+                label: searchToolName
+                  ? `Tool Search Embedding: ${searchToolName}`
+                  : "Tool Search Embedding",
                 attributes: embeddingSpanAttributes,
               },
             )
@@ -181,8 +193,8 @@ export const createEmbeddingToolRouterStrategy = (
         const { scored, stats } = await oc.traceContext.withSpan(embeddingSpan, runSelection);
         oc.traceContext.endChildSpan(embeddingSpan, "completed", {
           attributes: {
-            "tool.router.embedding.cache_hits": stats.cached,
-            "tool.router.embedding.cache_misses": stats.computed,
+            "tool.search.embedding.cache_hits": stats.cached,
+            "tool.search.embedding.cache_misses": stats.computed,
           },
         });
         return scored.sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, Math.max(0, topK));

@@ -79,7 +79,7 @@ const logger = createPinoLogger({
 const agent = new Agent({
   name: "Tool Routing Agent",
   instructions:
-    "You are a helpful assistant. Use tool_router when you need tools, and pass the user request as the query.",
+    "You are a helpful assistant. When you need a tool, call searchTools with the user request, then call callTool with the exact tool name and schema-compliant arguments.",
   model: "openai/gpt-4o-mini",
   toolRouting: {
     embedding: "openai/text-embedding-3-small",
