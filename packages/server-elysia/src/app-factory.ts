@@ -1,6 +1,7 @@
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import type { ServerProviderDeps } from "@voltagent/core";
+import { resolveResumableStreamDeps } from "@voltagent/resumable-streams";
 import {
   getLandingPageHTML,
   getOpenApiDoc,
@@ -40,18 +41,30 @@ export async function createApp(
   // Get logger from dependencies or use global
   const logger = getOrCreateLogger(deps, "api-server");
 
+  // Resolve resumable stream dependencies (like server-hono does)
+  const resumableStreamConfig = config.resumableStream;
+  const baseDeps = await resolveResumableStreamDeps(deps, resumableStreamConfig?.adapter, logger);
+  const resumableStreamDefault =
+    typeof resumableStreamConfig?.defaultEnabled === "boolean"
+      ? resumableStreamConfig.defaultEnabled
+      : baseDeps.resumableStreamDefault;
+  const resolvedDeps: ServerProviderDeps = {
+    ...baseDeps,
+    ...(resumableStreamDefault !== undefined ? { resumableStreamDefault } : {}),
+  };
+
   // Register all routes with dependencies
   const routes = {
-    agents: () => registerAgentRoutes(app, deps, logger),
-    workflows: () => registerWorkflowRoutes(app, deps, logger),
-    logs: () => registerLogRoutes(app, deps, logger),
-    updates: () => registerUpdateRoutes(app, deps, logger),
-    observability: () => registerObservabilityRoutes(app, deps, logger),
-    memory: () => registerMemoryRoutes(app, deps, logger),
-    tools: () => registerToolRoutes(app, deps, logger),
-    triggers: () => registerTriggerRoutes(app, deps, logger),
-    mcp: () => registerMcpRoutes(app, deps as any, logger),
-    a2a: () => registerA2ARoutes(app, deps as any, logger),
+    agents: () => registerAgentRoutes(app, resolvedDeps, logger),
+    workflows: () => registerWorkflowRoutes(app, resolvedDeps, logger),
+    logs: () => registerLogRoutes(app, resolvedDeps, logger),
+    updates: () => registerUpdateRoutes(app, resolvedDeps, logger),
+    observability: () => registerObservabilityRoutes(app, resolvedDeps, logger),
+    memory: () => registerMemoryRoutes(app, resolvedDeps, logger),
+    tools: () => registerToolRoutes(app, resolvedDeps, logger),
+    triggers: () => registerTriggerRoutes(app, resolvedDeps, logger),
+    mcp: () => registerMcpRoutes(app, resolvedDeps, logger),
+    a2a: () => registerA2ARoutes(app, resolvedDeps, logger),
     doc: () => {
       app.get("/doc", () => {
         const baseDoc = getOpenApiDoc(port || config.port || 3141);
@@ -79,14 +92,16 @@ export async function createApp(
   const middlewares = {
     cors: () => {
       if (config.cors !== false) {
-        const corsConfig: any = {
-          origin: config.cors?.origin || "*",
-          methods: config.cors?.allowMethods || ["GET", "POST", "PUT", "DELETE", "PATCH"],
-          allowedHeaders: config.cors?.allowHeaders || ["Content-Type", "Authorization"],
-          credentials: config.cors?.credentials,
-          maxAge: config.cors?.maxAge,
-        };
-        app.use(cors(corsConfig));
+        app.use(
+          cors({
+            origin: config.cors?.origin ?? "*",
+            methods: config.cors?.allowMethods ?? ["GET", "POST", "PUT", "DELETE", "PATCH"],
+            allowedHeaders: config.cors?.allowHeaders ?? ["Content-Type", "Authorization"],
+            credentials: config.cors?.credentials ?? false,
+            maxAge: config.cors?.maxAge ?? 86400,
+            exposeHeaders: config.cors?.exposeHeaders,
+          } as Parameters<typeof cors>[0]),
+        );
       }
     },
     auth: () => {

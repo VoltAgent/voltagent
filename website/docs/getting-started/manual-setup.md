@@ -64,6 +64,10 @@ export default defineConfig({
 
 Install VoltAgent packages and development tools:
 
+:::tip Skills for AI assistants
+If you use an AI coding assistant, see [Docs for AI Assistants](/docs/ai-assistants) for local skills or MCP access.
+:::
+
 <Tabs>
   <TabItem value="npm" label="npm" default>
 

@@ -142,6 +142,7 @@ dist
 
 # VoltAgent
 .voltagent
+packages/core/docs
 
 # Create VoltAgent App
 !packages/create-voltagent-app/templates/base/.env
@@ -174,5 +175,4 @@ node_modules/
 !packages/core/src/observability/logs
 # Local Netlify folder
 .netlify
-
 

@@ -90,6 +90,7 @@
     "publish": "lerna publish",
     "sp": "syncpack",
     "start": "lerna run start",
+    "sync:docs-mcp": "node scripts/sync-docs-mcp.js",
     "test": "lerna run test --stream",
     "test:all": "lerna run test --stream --scope @voltagent/*",
     "test:all:coverage": "pnpm test:all -- -- --coverage",

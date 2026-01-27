@@ -505,6 +505,10 @@ const config: Config = {
             from: "/docs/providers/contributing/",
           },
           {
+            to: "/docs/agents/voltagent-instance/",
+            from: "/docs/getting-started/voltagent-instance/",
+          },
+          {
             to: "/models-docs/",
             from: "/docs/models/",
           },
@@ -540,6 +544,14 @@ const config: Config = {
           {
             to: "/recipes-and-guides/chatgpt-app/",
             from: "/examples/agents/chatgpt-app/",
+          },
+          {
+            to: "/docs/ai-assistants/",
+            from: "/docs/getting-started/mcp-docs-server/",
+          },
+          {
+            to: "/docs/ai-assistants/",
+            from: "/docs/skills/",
           },
         ],
       },

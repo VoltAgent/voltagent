@@ -39,33 +39,57 @@ export class ElysiaServerProvider extends BaseServerProvider {
     // Store app instance for custom endpoint extraction
     this.app = app;
 
-    try {
-      // Elysia's listen() method returns a server instance (works in Bun)
-      const server = app.listen({
-        port,
-        hostname: this.elysiaConfig.hostname || "0.0.0.0",
-      });
-
-      return server as unknown as Server;
-    } catch (error: unknown) {
-      // Fallback for Node.js environment where WebStandard listen is not supported
-      if (
-        error instanceof Error &&
-        (error.message.includes("WebStandard does not support listen") ||
-          error.message.includes("is not a function"))
-      ) {
-        const { createServer } = await import("node:http");
-        const server = createServer(app.fetch);
-
-        return new Promise((resolve, reject) => {
-          server.once("error", reject);
-          server.listen(port, this.elysiaConfig.hostname || "0.0.0.0", () => {
-            resolve(server);
-          });
+    // Elysia's app.listen() is designed for Bun runtime and doesn't work properly in Node.js
+    const { createServer } = await import("node:http");
+    const server = createServer(async (req, res) => {
+      try {
+        const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+        const headers = new Headers();
+        for (const [key, value] of Object.entries(req.headers)) {
+          if (value) {
+            headers.set(key, Array.isArray(value) ? value.join(", ") : value);
+          }
+        }
+        const body = req.method !== "GET" && req.method !== "HEAD" ? req : undefined;
+        const request = new Request(url.toString(), {
+          method: req.method,
+          headers,
+          body,
+          duplex: "half",
+        } as RequestInit);
+        const response = await app.fetch(request);
+        res.statusCode = response.status;
+        response.headers.forEach((value, key) => {
+          res.setHeader(key, value);
         });
+        if (response.body) {
+          const reader = response.body.getReader();
+          const pump = async (): Promise<void> => {
+            const { done, value } = await reader.read();
+            if (done) {
+              res.end();
+              return;
+            }
+            res.write(value);
+            await pump();
+          };
+          await pump();
+        } else {
+          res.end();
+        }
+      } catch (error) {
+        console.error("Request error:", error);
+        res.statusCode = 500;
+        res.end("Internal Server Error");
       }
-      throw error;
-    }
+    });
+
+    return new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(port, this.elysiaConfig.hostname || "0.0.0.0", () => {
+        resolve(server);
+      });
+    });
   }
 
   /**

@@ -1,10 +1,10 @@
 # @voltagent/core
 
-## Unreleased
+## 2.2.2
 
-### Breaking Changes
+### Patch Changes
 
-- Tool routing now uses `searchTools` + `callTool` instead of router tools. `createToolRouter` and router-specific APIs are removed. Configure routing via `toolRouting` with `embedding`, `topK`, `pool`, `expose`, and `enforceSearchBeforeCall`.
+- [#990](https://github.com/VoltAgent/voltagent/pull/990) [`fd17a51`](https://github.com/VoltAgent/voltagent/commit/fd17a51dae914436a6185c13a43865813a5431bb) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: ship embedded docs inside @voltagent/core (packages/core/docs) and keep them synced during build/pack for offline, version-matched docs lookup
 
 ## 2.2.1
 
