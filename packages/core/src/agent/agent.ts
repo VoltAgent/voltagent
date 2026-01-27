@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import type {
   ModelMessage,
   ProviderOptions,
@@ -4792,14 +4793,22 @@ export class Agent {
     oc.systemContext.set(TOOL_ROUTING_CONTEXT_KEY, toolRouting);
     if (toolRouting === false) {
       const supportNames = this.getToolRoutingSupportToolNames();
-      const filteredStaticTools = Object.fromEntries(
-        Object.entries(preparedStaticTools).filter(([name]) => !supportNames.has(name)),
-      );
-      const filteredDynamicTools = Object.fromEntries(
-        Object.entries(preparedDynamicTools).filter(([name]) => !supportNames.has(name)),
-      );
+      const allNames = new Set([
+        ...Object.keys(preparedStaticTools),
+        ...Object.keys(preparedDynamicTools),
+      ]);
+      const conflicts = [...allNames].filter((name) => supportNames.has(name));
+      if (conflicts.length > 0) {
+        throw new Error(
+          [
+            "toolRouting is disabled but reserved routing tool names are in use:",
+            conflicts.join(", "),
+            "Rename these tools or enable toolRouting to use the built-in names.",
+          ].join(" "),
+        );
+      }
 
-      return { ...filteredStaticTools, ...filteredDynamicTools };
+      return { ...preparedStaticTools, ...preparedDynamicTools };
     }
 
     if (!toolRouting) {
@@ -5546,20 +5555,12 @@ export class Agent {
       toolName: tool.name,
     });
 
-    const needsApproval = (tool as { needsApproval?: Tool<any, any>["needsApproval"] })
-      .needsApproval;
-    if (needsApproval === true) {
-      throw new Error(`Tool ${tool.name} requires approval.`);
-    }
-
-    if (needsApproval) {
-      await this.ensureToolApproval(
-        tool,
-        args,
-        executionOptions,
-        executionOptions.toolContext?.callId ?? randomUUID(),
-      );
-    }
+    await this.ensureToolApproval(
+      tool,
+      args,
+      executionOptions,
+      executionOptions.toolContext?.callId ?? randomUUID(),
+    );
 
     const tools: Record<string, any> = {
       [tool.name]: tool,
@@ -5595,9 +5596,7 @@ export class Agent {
 
     if (toolCall) {
       const callInput = toolCall.input ?? {};
-      const requested = safeStringify(args);
-      const received = safeStringify(callInput);
-      if (requested !== received) {
+      if (!isDeepStrictEqual(args, callInput)) {
         throw new Error(
           `Provider tool "${tool.name}" received arguments that do not match callTool input.`,
         );
