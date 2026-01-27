@@ -4,7 +4,7 @@
   "author": "",
   "dependencies": {
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.2.1",
+    "@voltagent/core": "^2.2.2",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/postgres": "^2.0.3",
     "@voltagent/server-hono": "^2.0.4",

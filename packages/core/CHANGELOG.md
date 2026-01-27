@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.2.2
+
+### Patch Changes
+
+- [#990](https://github.com/VoltAgent/voltagent/pull/990) [`fd17a51`](https://github.com/VoltAgent/voltagent/commit/fd17a51dae914436a6185c13a43865813a5431bb) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: ship embedded docs inside @voltagent/core (packages/core/docs) and keep them synced during build/pack for offline, version-matched docs lookup
+
 ## 2.2.1
 
 ### Patch Changes
