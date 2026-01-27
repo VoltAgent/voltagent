@@ -5131,6 +5131,26 @@ export class Agent {
     return tool.name === TOOL_ROUTING_SEARCH_TOOL_NAME || tool.name === TOOL_ROUTING_CALL_TOOL_NAME;
   }
 
+  private isToolExecutableForRouting(tool: BaseTool | ProviderTool): boolean {
+    if (isProviderTool(tool)) {
+      const callableFlag = (tool as { callable?: boolean }).callable;
+      if (callableFlag === false) {
+        return false;
+      }
+      const callFn = (tool as { call?: unknown }).call;
+      if (callFn !== undefined) {
+        return typeof callFn === "function";
+      }
+      return true;
+    }
+
+    if ((tool as Tool<any, any>).isClientSide?.()) {
+      return false;
+    }
+
+    return typeof (tool as Tool<any, any>).execute === "function";
+  }
+
   private getToolRoutingFromContext(options?: ToolExecuteOptions): ToolRoutingConfig | undefined {
     const contextValue =
       options?.systemContext?.get(TOOL_ROUTING_CONTEXT_KEY) ??
@@ -5161,6 +5181,7 @@ export class Agent {
     return this.toolPoolManager
       .getAllTools()
       .filter((tool) => !this.isToolRoutingSupportTool(tool))
+      .filter((tool) => this.isToolExecutableForRouting(tool))
       .map((tool) => {
         const tags = "tags" in tool ? (tool as { tags?: string[] }).tags : undefined;
         const parameters = isProviderTool(tool) ? tool.args : (tool as Tool<any, any>).parameters;
