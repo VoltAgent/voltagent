@@ -63,8 +63,8 @@ export async function createApp(
     memory: () => registerMemoryRoutes(app, resolvedDeps, logger),
     tools: () => registerToolRoutes(app, resolvedDeps, logger),
     triggers: () => registerTriggerRoutes(app, resolvedDeps, logger),
-    mcp: () => registerMcpRoutes(app, resolvedDeps as any, logger),
-    a2a: () => registerA2ARoutes(app, resolvedDeps as any, logger),
+    mcp: () => registerMcpRoutes(app, resolvedDeps, logger),
+    a2a: () => registerA2ARoutes(app, resolvedDeps, logger),
     doc: () => {
       app.get("/doc", () => {
         const baseDoc = getOpenApiDoc(port || config.port || 3141);
