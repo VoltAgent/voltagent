@@ -1,5 +1,11 @@
 # @voltagent/server-elysia
 
+## 2.0.2
+
+### Patch Changes
+
+- [#993](https://github.com/VoltAgent/voltagent/pull/993) [`48cc93f`](https://github.com/VoltAgent/voltagent/commit/48cc93f005684b48e882be78742e4d5c59d1665f) Thanks [@Artist-MOBAI](https://github.com/Artist-MOBAI)! - fix(server-elysia): Add Node.js compatibility and VoltOps Console support
+
 ## 2.0.1
 
 ### Patch Changes

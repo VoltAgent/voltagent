@@ -19,6 +19,7 @@ VoltAgent provides a complete platform for developing and monitoring AI agents t
 
 For end-to-end walkthroughs (e.g., Slack agent), see the [Recipes & Guides](/recipes-and-guides/) section.
 Need a frontend? Check the [UI integration guides](/docs/ui/overview/) for ready-made chat UIs (AI SDK, CopilotKit, Assistant UI) backed by VoltAgent.
+Want docs access for AI assistants? See [Docs for AI Assistants](/docs/ai-assistants).
 
 ### Core Framework
 

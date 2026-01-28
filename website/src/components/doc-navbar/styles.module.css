@@ -174,8 +174,8 @@
   transition: background 0.2s ease;
 }
 
-.tabActive { color: #f2f2f2; }
-.tabActive::after { background: #10b981; }
+.tab.tabActive { color: #f2f2f2; }
+.tab.tabActive::after { background: #10b981; }
 
 .mobileMenu {
   margin-top: 0.75rem;

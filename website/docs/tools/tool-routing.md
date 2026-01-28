@@ -4,18 +4,23 @@ title: Tool Routing
 
 # Tool Routing
 
-Tool routing exposes a small set of router tools to the model and keeps the full tool pool hidden. A router receives a query, selects tools from the pool, and runs them. The router itself is a tool, so it appears in the agent tool list and can be called by the model.
+Tool routing keeps the full tool pool hidden and exposes two system tools to the model:
+
+- `searchTools` returns tool metadata and schemas for a query.
+- `callTool` executes a tool by name with validated arguments.
+
+Only `searchTools`, `callTool`, and any tools listed in `toolRouting.expose` are visible to the model.
 
 ## How Tool Routing Works
 
-- A router is created with `createToolRouter` or via `toolRouting.embedding`.
-- The router selects tools from the pool based on a strategy.
-- The router executes selected tools and returns their results as its own tool output.
-- Only routers and any tools listed in `toolRouting.expose` are visible to the model.
+- Tool routing builds a hidden pool from `toolRouting.pool` or all registered tools (by default).
+- The model calls `searchTools` with the user request and receives tool details.
+- The model calls `callTool` with the exact tool name and schema-compliant arguments.
+- Pool tools stay hidden unless explicitly exposed.
 
-## Quick Setup With Embedding Routing
+## Quick Setup With Embedding Search
 
-This configuration creates a default router named `tool_router` and uses embeddings to rank tools in the pool.
+This configuration enables embedding-based tool search and exposes only `searchTools` and `callTool` to the model.
 
 ```ts
 import { openai } from "@ai-sdk/openai";
@@ -49,7 +54,8 @@ const getTimeZone = createTool({
 
 const agent = new Agent({
   name: "Tool Routing Agent",
-  instructions: "Use tool_router when you need a tool. Pass the user request as the query.",
+  instructions:
+    "When you need a tool, call searchTools with the user request, then call callTool with the exact tool name and schema-compliant arguments.",
   model: "openai/gpt-4o-mini",
   tools: [getWeather, getTimeZone],
   toolRouting: {
@@ -61,8 +67,8 @@ const agent = new Agent({
 
 Notes:
 
-- If `toolRouting.pool` is not set, the pool defaults to all non-router tools registered in the agent.
-- If `toolRouting.expose` is not set, only routers are visible to the model.
+- If `toolRouting.pool` is not set, the pool defaults to all tools registered in the agent.
+- If `toolRouting.expose` is not set, only `searchTools` and `callTool` are visible to the model.
 
 ## Tool Pool and Exposed Tools
 
@@ -88,7 +94,8 @@ const getStatus = createTool({
 
 const agent = new Agent({
   name: "Support Agent",
-  instructions: "Use tool_router for tool lookups.",
+  instructions:
+    "Use searchTools to find tool schemas, then call callTool with validated arguments.",
   model: "openai/gpt-4o-mini",
   toolRouting: {
     embedding: "text-embedding-3-small",
@@ -98,168 +105,55 @@ const agent = new Agent({
 });
 ```
 
-## Multiple Routers With Custom Strategy
+## Enforcing Search Before Call
 
-You can register multiple routers and define a custom strategy per router. A router strategy receives the query and the full list of tool candidates and returns tool names.
+By default, `callTool` requires the tool to appear in a prior `searchTools` result.
+You can disable this behavior:
 
 ```ts
-import { Agent, createToolRouter, type ToolRouterStrategy } from "@voltagent/core";
-
-const weatherStrategy: ToolRouterStrategy = {
-  select: async ({ tools, topK, query }) => {
-    const candidates = tools.filter(
-      (tool) => tool.tags?.includes("weather") || tool.name.startsWith("weather_")
-    );
-    return candidates.slice(0, topK).map((tool) => ({
-      name: tool.name,
-      reason: `matched weather tags for query: ${query}`,
-    }));
-  },
-};
-
-const financeStrategy: ToolRouterStrategy = {
-  select: async ({ tools, topK }) => {
-    const candidates = tools.filter((tool) => tool.tags?.includes("finance"));
-    return candidates.slice(0, topK).map((tool) => ({ name: tool.name }));
-  },
-};
-
-const weatherRouter = createToolRouter({
-  name: "weather_router",
-  description: "Route weather-related requests",
-  strategy: weatherStrategy,
-});
-
-const financeRouter = createToolRouter({
-  name: "finance_router",
-  description: "Route finance-related requests",
-  strategy: financeStrategy,
-});
-
 const agent = new Agent({
-  name: "Multi Router Agent",
-  instructions: "Use weather_router or finance_router based on the request.",
+  name: "Relaxed Agent",
+  instructions: "Use searchTools before callTool when possible.",
   model: "openai/gpt-4o-mini",
-  tools: [weatherRouter, financeRouter],
   toolRouting: {
     pool: [
       /* tools and toolkits */
     ],
-    topK: 1,
-  },
-});
-```
-
-## Resolver Mode
-
-Resolver mode bypasses LLM argument generation and uses a function to produce tool arguments.
-
-```ts
-import { Agent, createToolRouter, type ToolArgumentResolver } from "@voltagent/core";
-
-const resolver: ToolArgumentResolver = async ({ query, tool }) => {
-  if (tool.name === "get_weather") {
-    return { location: query };
-  }
-  return {};
-};
-
-const router = createToolRouter({
-  name: "tool_router",
-  description: "Route requests with a resolver",
-  embedding: "text-embedding-3-small",
-  mode: "resolver",
-  resolver,
-});
-
-const agent = new Agent({
-  name: "Resolver Agent",
-  instructions: "Use tool_router for tools.",
-  model: "openai/gpt-4o-mini",
-  tools: [router],
-  toolRouting: {
-    pool: [
-      /* tools and toolkits */
-    ],
-  },
-});
-```
-
-## Execution Model Override
-
-Router argument generation (agent mode) and provider-tool fallback use the router execution model if provided.
-
-```ts
-const agent = new Agent({
-  name: "Model Override Agent",
-  instructions: "Use tool_router for tools.",
-  model: "openai/gpt-4o-mini",
-  tools: [
-    /* tools */
-  ],
-  toolRouting: {
-    embedding: "text-embedding-3-small",
-    executionModel: "openai/gpt-4o",
-  },
-});
-```
-
-## Provider Tools and MCP Tools
-
-Pool and expose lists accept Vercel AI SDK tools, including provider-defined tools. MCP tools can be added if they are represented as Vercel tools.
-
-```ts
-import { openai } from "@ai-sdk/openai";
-import { Agent, createTool } from "@voltagent/core";
-import { z } from "zod";
-
-const localTool = createTool({
-  name: "get_weather",
-  description: "Get the current weather for a city",
-  parameters: z.object({ location: z.string() }),
-  execute: async ({ location }) => ({ location, temperatureC: 22 }),
-});
-
-const webSearch = openai.tools.webSearch();
-
-const agent = new Agent({
-  name: "Mixed Pool Agent",
-  instructions: "Use tool_router for tools.",
-  model: "openai/gpt-4o-mini",
-  toolRouting: {
-    embedding: "openai/text-embedding-3-small",
-    pool: [localTool, webSearch],
+    enforceSearchBeforeCall: false,
   },
 });
 ```
 
 ## Embedding Configuration
 
-The embedding router accepts several model forms and supports a custom tool text format.
+`toolRouting.embedding` accepts either a model string or an object with extra options.
 
 - `"openai/text-embedding-3-small"`
 - `"text-embedding-3-small"`
 
-Provider-qualified strings use the same model registry and type list as agent model strings.
+Provider-qualified strings use the same registry and type list as agent model strings.
 
 ```ts
-import { createToolRouter } from "@voltagent/core";
-
-const router = createToolRouter({
-  name: "tool_router",
-  description: "Route with custom embedding text",
-  embedding: {
-    model: "openai/text-embedding-3-small",
-    topK: 3,
-    toolText: (tool) => {
-      const tags = tool.tags?.join(", ") ?? "";
-      return [tool.name, tool.description, tags].filter(Boolean).join("\n");
+const agent = new Agent({
+  name: "Custom Embedding Agent",
+  instructions:
+    "Use searchTools to discover tool schemas, then call callTool with the right arguments.",
+  model: "openai/gpt-4o-mini",
+  toolRouting: {
+    embedding: {
+      model: "openai/text-embedding-3-small",
+      topK: 3,
+      toolText: (tool) => {
+        const tags = tool.tags?.join(", ") ?? "";
+        return [tool.name, tool.description, tags].filter(Boolean).join("\n");
+      },
     },
   },
 });
 ```
 
-The embedding strategy caches vectors in memory. The cache is reset when the process restarts. A tool text change for a given tool name triggers a new embedding for that tool.
+The embedding search caches vectors in memory. The cache is reset when the process restarts.
+A tool text change for a given tool name triggers a new embedding for that tool.
 
 ## Per-Call Overrides
 
@@ -280,19 +174,19 @@ const routed = await agent.generateText("What time is it in Berlin?", {
 
 ## Hooks, Approval, and Error Handling
 
-- `needsApproval`, input/output guardrails, and tool hooks still run when tools are executed via a router.
-- If a selected tool is not in the pool, the router returns an error for that selection.
-- If a provider tool requires approval, the router returns a tool error.
-- When `parallel` is true (default), selected tools execute concurrently.
+- `needsApproval`, input/output guardrails, and tool hooks still run when tools are executed via `callTool`.
+- If a tool is not in the pool, `callTool` returns a tool error.
+- `callTool` validates arguments against the target schema and surfaces validation errors for retries.
+- Provider tools and MCP tools can be pooled; execution still runs through approvals and hooks.
 
 ## Observability
 
 Tool routing adds spans for selection and embedding steps:
 
-- `tool.router.selection:*` spans include `tool.router.candidates`, `tool.router.selection.count`, and selected names.
-- `tool.router.embedding:*` spans include `embedding.model`, `embedding.dimensions`, and cache hit/miss counts.
+- `tool.search.selection:*` spans include `tool.search.candidates`, `tool.search.selection.count`, and selected names.
+- `tool.search.embedding:*` spans include `embedding.model`, `embedding.dimensions`, and cache hit/miss counts.
 
-These spans appear under the router tool span in the execution trace.
+These spans appear under the `searchTools` tool span in the execution trace.
 
 ## PlanAgent
 

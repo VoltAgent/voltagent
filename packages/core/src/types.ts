@@ -229,7 +229,8 @@ export type VoltAgentOptions = {
    */
   workflowMemory?: Memory;
   /**
-   * Global tool routing defaults (applied to agents without explicit toolRouting config).
+   * Global tool routing defaults (search + call workflow).
+   * When enabled, agents expose searchTools/callTool and hide pool tools from the model.
    */
   toolRouting?: ToolRoutingConfig;
   /** Optional VoltOps trigger handlers */

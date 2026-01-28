@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import type {
   ModelMessage,
   ProviderOptions,
@@ -26,7 +27,7 @@ import {
   type FinishReason,
   type InferGenerateOutput,
   type LanguageModelUsage,
-  Output,
+  type Output,
   type Warning,
   consumeStream,
   convertToModelMessages,
@@ -58,15 +59,19 @@ import type { ProviderTool, Tool, ToolExecutionResult, Toolkit, VercelTool } fro
 import { createTool } from "../tool";
 import { isProviderTool } from "../tool/manager";
 import { ToolManager } from "../tool/manager";
-import { createToolRouter, isToolRouter } from "../tool/routing";
-import { TOOL_ROUTER_SYMBOL } from "../tool/routing/constants";
+import { createEmbeddingToolSearchStrategy } from "../tool/routing";
+import {
+  TOOL_ROUTING_CALL_TOOL_NAME,
+  TOOL_ROUTING_INTERNAL_TOOL_SYMBOL,
+  TOOL_ROUTING_SEARCH_TOOL_NAME,
+} from "../tool/routing/constants";
 import type {
-  ToolArgumentResolver,
-  ToolRouter,
-  ToolRouterCandidate,
-  ToolRouterInput,
-  ToolRouterResult,
-  ToolRouterSelection,
+  ToolRoutingConfig,
+  ToolSearchCandidate,
+  ToolSearchResult,
+  ToolSearchResultItem,
+  ToolSearchSelection,
+  ToolSearchStrategy,
 } from "../tool/routing/types";
 import { randomUUID } from "../utils/id";
 import { convertModelMessagesToUIMessages } from "../utils/message-converter";
@@ -109,9 +114,13 @@ import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
 import type { SamplingPolicy } from "../eval/runtime";
 import type { ConversationStepRecord } from "../memory/types";
-import type { ToolRoutingConfig } from "../tool/routing/types";
 import { applySummarization } from "./apply-summarization";
-import { AGENT_REF_CONTEXT_KEY, FORCED_TOOL_CHOICE_CONTEXT_KEY } from "./context-keys";
+import {
+  AGENT_REF_CONTEXT_KEY,
+  FORCED_TOOL_CHOICE_CONTEXT_KEY,
+  TOOL_ROUTING_CONTEXT_KEY,
+  TOOL_ROUTING_SEARCHED_TOOLS_CONTEXT_KEY,
+} from "./context-keys";
 import { ConversationBuffer } from "./conversation-buffer";
 import {
   type NormalizedInputGuardrail,
@@ -181,6 +190,44 @@ const DEFAULT_CONVERSATION_TITLE_PROMPT = [
 const DEFAULT_CONVERSATION_TITLE_MAX_OUTPUT_TOKENS = 32;
 const DEFAULT_CONVERSATION_TITLE_MAX_CHARS = 80;
 const CONVERSATION_TITLE_INPUT_MAX_CHARS = 2000;
+const DEFAULT_TOOL_SEARCH_TOP_K = 1;
+
+const searchToolsParameters = z.object({
+  query: z.string().describe("User request or query to search tools for."),
+  topK: z.number().int().positive().optional().describe("Maximum number of tools to return."),
+});
+
+const searchToolsOutputSchema = z.object({
+  query: z.string(),
+  selections: z.array(
+    z.object({
+      name: z.string(),
+      score: z.number().optional(),
+      reason: z.string().optional(),
+    }),
+  ),
+  tools: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string().nullable(),
+      tags: z.array(z.string()).nullable(),
+      parametersSchema: z.any().nullable(),
+      outputSchema: z.any().nullable(),
+      score: z.number().optional(),
+      reason: z.string().optional(),
+    }),
+  ),
+});
+
+const callToolParameters = z.object({
+  name: z.string().describe("The exact name of the tool to call."),
+  args: z
+    .record(z.string(), z.any())
+    .nullable()
+    .optional()
+    .default({})
+    .describe("Arguments to pass to the tool."),
+});
 
 // ============================================================================
 // Types
@@ -548,6 +595,7 @@ export class Agent {
   private toolRoutingConfigured: boolean;
   private toolRoutingExposedNames: Set<string> = new Set();
   private toolRoutingPoolExplicit = false;
+  private toolRoutingSearchStrategy?: ToolSearchStrategy;
 
   constructor(options: AgentOptions) {
     this.id = options.id || options.name;
@@ -4742,24 +4790,25 @@ export class Agent {
       this.toolManager.prepareToolsForExecution(createToolExecuteFunction);
 
     const toolRouting = this.resolveToolRouting(options);
+    oc.systemContext.set(TOOL_ROUTING_CONTEXT_KEY, toolRouting);
     if (toolRouting === false) {
-      const routerNames = new Set<string>();
-      this.toolManager
-        .getAllBaseTools()
-        .filter((tool) => isToolRouter(tool))
-        .forEach((tool) => routerNames.add(tool.name));
-      runtimeTools
-        .filter((tool) => isToolRouter(tool))
-        .forEach((tool) => routerNames.add(tool.name));
+      const supportNames = this.getToolRoutingSupportToolNames();
+      const allNames = new Set([
+        ...Object.keys(preparedStaticTools),
+        ...Object.keys(preparedDynamicTools),
+      ]);
+      const conflicts = [...allNames].filter((name) => supportNames.has(name));
+      if (conflicts.length > 0) {
+        throw new Error(
+          [
+            "toolRouting is disabled but reserved routing tool names are in use:",
+            conflicts.join(", "),
+            "Rename these tools or enable toolRouting to use the built-in names.",
+          ].join(" "),
+        );
+      }
 
-      const filteredStaticTools = Object.fromEntries(
-        Object.entries(preparedStaticTools).filter(([name]) => !routerNames.has(name)),
-      );
-      const filteredDynamicTools = Object.fromEntries(
-        Object.entries(preparedDynamicTools).filter(([name]) => !routerNames.has(name)),
-      );
-
-      return { ...filteredStaticTools, ...filteredDynamicTools };
+      return { ...preparedStaticTools, ...preparedDynamicTools };
     }
 
     if (!toolRouting) {
@@ -5068,372 +5117,488 @@ export class Agent {
     };
   }
 
-  /**
-   * Internal: execute a tool router with access to the agent runtime.
-   */
-  public async __executeToolRouter(params: {
-    router: ToolRouter;
-    input: ToolRouterInput;
-    options?: ToolExecuteOptions;
-  }): Promise<ToolRouterResult> {
-    const { router, input, options } = params;
-    if (!options) {
-      throw new Error("Tool router execution requires tool options.");
-    }
-
-    const metadata = (router as ToolRouter)[TOOL_ROUTER_SYMBOL];
-    if (!metadata) {
-      throw new Error("Tool router metadata is missing.");
-    }
-
-    const oc = options as OperationContext;
-    const toolRouting = this.resolveToolRouting();
-    const routingConfig = toolRouting && typeof toolRouting === "object" ? toolRouting : undefined;
-    const mode = metadata.mode ?? routingConfig?.mode;
-    const effectiveMode = mode ?? "agent";
-    const executionModel = metadata.executionModel ?? routingConfig?.executionModel;
-    const topK = Math.max(1, input.topK ?? metadata.topK ?? routingConfig?.topK ?? 1);
-    const parallel = metadata.parallel ?? routingConfig?.parallel ?? true;
-
-    const candidates = this.buildToolRouterCandidates();
-    const parentToolSpan = oc.systemContext.get("parentToolSpan") as Span | undefined;
-    const selectionSpanAttributes = {
-      "tool.name": router.name,
-      "tool.description": router.description,
-      "tool.router.name": router.name,
-      "tool.router.query": input.query,
-      "tool.router.candidates": candidates.length,
-      "tool.router.top_k": topK,
-      input: input.query,
-    };
-    const selectionSpan = parentToolSpan
-      ? oc.traceContext.createChildSpanWithParent(
-          parentToolSpan,
-          `tool.router.selection:${router.name}`,
-          "tool",
-          {
-            label: `Tool Router Selection: ${router.name}`,
-            attributes: selectionSpanAttributes,
-          },
-        )
-      : oc.traceContext.createChildSpan(`tool.router.selection:${router.name}`, "tool", {
-          label: `Tool Router Selection: ${router.name}`,
-          attributes: selectionSpanAttributes,
-        });
-
-    const context = {
-      agentId: this.id,
-      agentName: this.name,
-      operationContext: oc,
-      routerName: router.name,
-      parentSpan: selectionSpan,
-    };
-
-    let selections: ToolRouterSelection[] = [];
-    try {
-      selections = await oc.traceContext.withSpan(selectionSpan, () =>
-        metadata.strategy.select({
-          query: input.query,
-          tools: candidates,
-          topK,
-          context,
-        }),
-      );
-      oc.traceContext.endChildSpan(selectionSpan, "completed", {
-        output: selections,
-        attributes: {
-          "tool.router.selection.count": selections.length,
-          "tool.router.selection.names": safeStringify(
-            selections.map((selection) => selection.name),
-          ),
-        },
-      });
-      oc.logger.debug("Tool router selections computed", {
-        router: router.name,
-        query: input.query,
-        selections: safeStringify(selections),
-      });
-    } catch (error) {
-      oc.traceContext.endChildSpan(selectionSpan, "error", {
-        output: { error: error instanceof Error ? error.message : String(error) },
-      });
-      throw error;
-    }
-
-    const hooks =
-      ((options as { hooks?: AgentHooks }).hooks as AgentHooks | undefined) ??
-      this.getMergedHooks();
-
-    const executeSelection = async (
-      selection: ToolRouterSelection,
-    ): Promise<{ toolName: string; toolCallId?: string; output?: unknown; error?: string }> => {
-      const tool = this.toolPoolManager.getToolByName(selection.name);
-      if (!tool) {
-        return {
-          toolName: selection.name,
-          error: "Tool not found in pool.",
-        };
-      }
-
-      if (isProviderTool(tool)) {
-        return this.executeProviderToolViaRouter({
-          tool,
-          query: input.query,
-          oc,
-          hooks,
-          executionModel,
-        });
-      }
-
-      const toolCallId = randomUUID();
-      const executionOptions: ToolExecuteOptions = {
-        ...oc,
-        toolContext: {
-          name: tool.name,
-          callId: toolCallId,
-          messages: [],
-          abortSignal: oc.abortController.signal,
-        },
-      };
-      executionOptions.hooks = hooks;
-
-      try {
-        const args = await this.resolveRoutedToolArgs({
-          tool,
-          query: input.query,
-          mode: effectiveMode,
-          resolver: metadata.resolver,
-          executionModel,
-          oc,
-        });
-        await this.ensureToolApproval(tool, args, executionOptions, toolCallId);
-
-        const execute = this.createToolExecutionFactory(oc, hooks)(tool);
-        const output = await execute(args, {
-          toolCallId,
-          messages: executionOptions.toolContext?.messages ?? [],
-          abortSignal: executionOptions.toolContext?.abortSignal,
-        });
-        return {
-          toolName: tool.name,
-          toolCallId,
-          output,
-        };
-      } catch (error) {
-        return {
-          toolName: tool.name,
-          toolCallId,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
-    };
-
-    const results: ToolRouterResult["results"] = [];
-    if (parallel) {
-      const resolved = await Promise.all(
-        selections.map((selection) => executeSelection(selection)),
-      );
-      results.push(...resolved);
-    } else {
-      for (const selection of selections) {
-        results.push(await executeSelection(selection));
-      }
-    }
-
-    return {
-      query: input.query,
-      selections,
-      results,
-    };
+  private getToolRoutingSupportToolNames(): Set<string> {
+    return new Set([TOOL_ROUTING_SEARCH_TOOL_NAME, TOOL_ROUTING_CALL_TOOL_NAME]);
   }
 
-  private buildToolRouterCandidates(): ToolRouterCandidate[] {
+  private isToolRoutingSupportTool(tool: BaseTool | ProviderTool): boolean {
+    if (!tool || typeof tool !== "object") {
+      return false;
+    }
+    if (TOOL_ROUTING_INTERNAL_TOOL_SYMBOL in tool) {
+      return true;
+    }
+    return tool.name === TOOL_ROUTING_SEARCH_TOOL_NAME || tool.name === TOOL_ROUTING_CALL_TOOL_NAME;
+  }
+
+  private isToolExecutableForRouting(tool: BaseTool | ProviderTool): boolean {
+    if (isProviderTool(tool)) {
+      const callableFlag = (tool as { callable?: boolean }).callable;
+      if (callableFlag === false) {
+        return false;
+      }
+      const callFn = (tool as { call?: unknown }).call;
+      if (callFn !== undefined) {
+        return typeof callFn === "function";
+      }
+      return true;
+    }
+
+    if ((tool as Tool<any, any>).isClientSide?.()) {
+      return false;
+    }
+
+    return typeof (tool as Tool<any, any>).execute === "function";
+  }
+
+  private getToolRoutingFromContext(options?: ToolExecuteOptions): ToolRoutingConfig | undefined {
+    const contextValue =
+      options?.systemContext?.get(TOOL_ROUTING_CONTEXT_KEY) ??
+      options?.context?.get(TOOL_ROUTING_CONTEXT_KEY);
+    if (contextValue === false) {
+      return undefined;
+    }
+    if (contextValue && typeof contextValue === "object") {
+      return contextValue as ToolRoutingConfig;
+    }
+    if (this.toolRouting && typeof this.toolRouting === "object") {
+      return this.toolRouting;
+    }
+    return undefined;
+  }
+
+  private getToolSearchStrategy(toolRouting?: ToolRoutingConfig): ToolSearchStrategy | undefined {
+    if (!toolRouting?.embedding) {
+      return undefined;
+    }
+    if (toolRouting === this.toolRouting && this.toolRoutingSearchStrategy) {
+      return this.toolRoutingSearchStrategy;
+    }
+    return createEmbeddingToolSearchStrategy(toolRouting.embedding);
+  }
+
+  private buildToolSearchCandidates(): ToolSearchCandidate[] {
     return this.toolPoolManager
       .getAllTools()
-      .filter((tool) => !isToolRouter(tool))
+      .filter((tool) => !this.isToolRoutingSupportTool(tool))
+      .filter((tool) => this.isToolExecutableForRouting(tool))
       .map((tool) => {
-        const parameters = isProviderTool(tool)
-          ? tool.args
-          : zodSchemaToJsonUI((tool as Tool<any, any>).parameters);
         const tags = "tags" in tool ? (tool as { tags?: string[] }).tags : undefined;
+        const parameters = isProviderTool(tool) ? tool.args : (tool as Tool<any, any>).parameters;
+        const outputSchema = !isProviderTool(tool)
+          ? (tool as Tool<any, any>).outputSchema
+          : undefined;
         return {
           name: tool.name,
           description: tool.description || "",
           tags,
           parameters,
+          outputSchema,
           tool,
         };
       });
   }
 
-  private async resolveRoutedToolArgs(params: {
-    tool: Tool<any, any>;
-    query: string;
-    mode: "agent" | "resolver";
-    resolver?: ToolArgumentResolver;
-    executionModel?: AgentModelValue;
-    oc: OperationContext;
-  }): Promise<Record<string, unknown>> {
-    const { tool, query, mode, resolver, executionModel, oc } = params;
-    if (mode === "resolver") {
-      if (!resolver) {
-        throw new Error("Tool router resolver mode requires a resolver function.");
-      }
-      return await resolver({
-        query,
-        tool,
-        context: { agentId: this.id, agentName: this.name, operationContext: oc },
-      });
+  private rankToolSearchCandidates(
+    query: string,
+    candidates: ToolSearchCandidate[],
+    topK: number,
+  ): ToolSearchSelection[] {
+    if (candidates.length === 0) {
+      return [];
     }
 
-    const schema = zodSchemaToJsonUI(tool.parameters);
-    const prompt = [
-      "Generate JSON arguments for the tool based on the user request.",
-      `Tool name: ${tool.name}`,
-      tool.description ? `Tool description: ${tool.description}` : "",
-      schema ? `Tool schema: ${safeStringify(schema)}` : "",
-      `User request: ${query}`,
-      "Return only a JSON object that matches the tool schema.",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const normalized = query.trim().toLowerCase();
+    const tokens = normalized.length > 0 ? normalized.split(/\s+/).filter(Boolean) : [];
 
-    const result = await this.runInternalGenerateText({
-      oc,
-      modelValue: executionModel,
-      messages: [
-        {
-          role: "system",
-          content: "You generate tool arguments that strictly match the provided schema.",
-        },
-        { role: "user", content: prompt },
-      ],
-      output: Output.object({ schema: tool.parameters }),
-      toolChoice: "none",
-      temperature: 0,
+    const scored = candidates.map((candidate) => {
+      const name = candidate.name.toLowerCase();
+      const description = (candidate.description ?? "").toLowerCase();
+      const tags = (candidate.tags ?? []).map((tag) => tag.toLowerCase());
+      let score = 0;
+
+      if (normalized.length > 0 && name.includes(normalized)) {
+        score += 4;
+      }
+      if (normalized.length > 0 && description.includes(normalized)) {
+        score += 2;
+      }
+
+      for (const token of tokens) {
+        if (name.includes(token)) {
+          score += 2;
+        }
+        if (description.includes(token)) {
+          score += 1;
+        }
+        if (tags.includes(token)) {
+          score += 1;
+        }
+      }
+
+      return { name: candidate.name, score };
     });
 
-    return (result.output ?? {}) as Record<string, unknown>;
+    scored.sort((a, b) => {
+      const scoreDiff = (b.score ?? 0) - (a.score ?? 0);
+      if (scoreDiff !== 0) {
+        return scoreDiff;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    const hasMatches = scored.some((entry) => (entry.score ?? 0) > 0);
+    const filtered = hasMatches ? scored.filter((entry) => (entry.score ?? 0) > 0) : scored;
+    return filtered.slice(0, Math.max(0, topK));
   }
 
-  private async resolveProviderToolArgs(params: {
-    tool: ProviderTool;
+  private async selectToolSearchCandidates(params: {
     query: string;
+    topK: number;
+    candidates: ToolSearchCandidate[];
     oc: OperationContext;
-    executionModel?: AgentModelValue;
-  }): Promise<Record<string, unknown>> {
-    const { tool, query, oc, executionModel } = params;
-    const schema = tool.args as unknown;
-    const prompt = [
-      "Generate JSON arguments for the tool based on the user request.",
-      `Tool name: ${tool.name}`,
-      tool.description ? `Tool description: ${tool.description}` : "",
-      schema ? `Tool schema: ${safeStringify(schema)}` : "",
-      `User request: ${query}`,
-      "Return only a JSON object that matches the tool schema.",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    parentSpan?: Span;
+    toolRouting?: ToolRoutingConfig;
+  }): Promise<ToolSearchSelection[]> {
+    const { query, topK, candidates, oc, parentSpan, toolRouting } = params;
+    const strategy = this.getToolSearchStrategy(toolRouting);
 
-    const result = await this.runInternalGenerateText({
-      oc,
-      modelValue: executionModel,
-      messages: [
-        {
-          role: "system",
-          content: "You generate tool arguments that strictly match the provided schema.",
-        },
-        { role: "user", content: prompt },
-      ],
-      output: Output.object({ schema: schema as any }),
-      toolChoice: "none",
-      temperature: 0,
+    if (!strategy) {
+      return this.rankToolSearchCandidates(query, candidates, topK);
+    }
+
+    return await strategy.select({
+      query,
+      tools: candidates,
+      topK,
+      context: {
+        agentId: this.id,
+        agentName: this.name,
+        operationContext: oc,
+        searchToolName: TOOL_ROUTING_SEARCH_TOOL_NAME,
+        parentSpan,
+      },
     });
-
-    return (result.output ?? {}) as Record<string, unknown>;
   }
 
-  private async executeProviderToolViaRouter(params: {
+  private toToolSearchResultItem(
+    candidate: ToolSearchCandidate,
+    selection: ToolSearchSelection,
+  ): ToolSearchResultItem {
+    const parametersSchema = isProviderTool(candidate.tool)
+      ? (candidate.tool.args ?? null)
+      : zodSchemaToJsonUI((candidate.tool as Tool<any, any>).parameters);
+    const outputSchema =
+      !isProviderTool(candidate.tool) && (candidate.tool as Tool<any, any>).outputSchema
+        ? zodSchemaToJsonUI((candidate.tool as Tool<any, any>).outputSchema)
+        : null;
+
+    return {
+      name: candidate.name,
+      description: candidate.description || null,
+      tags: candidate.tags ?? null,
+      parametersSchema,
+      outputSchema,
+      score: selection.score,
+      reason: selection.reason,
+    };
+  }
+
+  private recordSearchedTools(options: ToolExecuteOptions | undefined, toolNames: string[]): void {
+    const context = options?.systemContext ?? options?.context;
+    if (!context || toolNames.length === 0) {
+      return;
+    }
+
+    const existing = context.get(TOOL_ROUTING_SEARCHED_TOOLS_CONTEXT_KEY);
+    const searched =
+      existing instanceof Set
+        ? new Set(existing)
+        : Array.isArray(existing)
+          ? new Set(existing.filter((value) => typeof value === "string"))
+          : new Set<string>();
+
+    for (const name of toolNames) {
+      searched.add(name);
+    }
+
+    context.set(TOOL_ROUTING_SEARCHED_TOOLS_CONTEXT_KEY, searched);
+  }
+
+  private getSearchedTools(options: ToolExecuteOptions | undefined): Set<string> {
+    const context = options?.systemContext ?? options?.context;
+    if (!context) {
+      return new Set();
+    }
+
+    const existing = context.get(TOOL_ROUTING_SEARCHED_TOOLS_CONTEXT_KEY);
+    if (existing instanceof Set) {
+      return existing;
+    }
+    if (Array.isArray(existing)) {
+      return new Set(existing.filter((value) => typeof value === "string"));
+    }
+    return new Set();
+  }
+
+  private createToolRoutingSearchTool(): Tool<any, any> {
+    const tool = createTool({
+      name: TOOL_ROUTING_SEARCH_TOOL_NAME,
+      description:
+        "Search available tools and inspect their schemas. Always call this before callTool when tool routing is enabled.",
+      parameters: searchToolsParameters,
+      outputSchema: searchToolsOutputSchema,
+      execute: async ({ query, topK }, options) => {
+        if (!options) {
+          throw new Error("searchTools requires tool execution options.");
+        }
+
+        const oc = options as OperationContext;
+        const toolRouting = this.getToolRoutingFromContext(options);
+        const embeddingTopK =
+          toolRouting?.embedding &&
+          typeof toolRouting.embedding === "object" &&
+          toolRouting.embedding !== null &&
+          "topK" in toolRouting.embedding
+            ? (toolRouting.embedding as { topK?: number }).topK
+            : undefined;
+        const effectiveTopK = Math.max(
+          1,
+          topK ?? toolRouting?.topK ?? embeddingTopK ?? DEFAULT_TOOL_SEARCH_TOP_K,
+        );
+        const candidates = this.buildToolSearchCandidates();
+        const parentToolSpan = oc.systemContext.get("parentToolSpan") as Span | undefined;
+        const selectionSpanAttributes = {
+          "tool.name": TOOL_ROUTING_SEARCH_TOOL_NAME,
+          "tool.search.name": TOOL_ROUTING_SEARCH_TOOL_NAME,
+          "tool.search.query": query,
+          "tool.search.candidates": candidates.length,
+          "tool.search.top_k": effectiveTopK,
+          input: query,
+        };
+        const selectionSpan = parentToolSpan
+          ? oc.traceContext.createChildSpanWithParent(
+              parentToolSpan,
+              `tool.search.selection:${TOOL_ROUTING_SEARCH_TOOL_NAME}`,
+              "tool",
+              {
+                label: `Tool Search Selection: ${TOOL_ROUTING_SEARCH_TOOL_NAME}`,
+                attributes: selectionSpanAttributes,
+              },
+            )
+          : oc.traceContext.createChildSpan(
+              `tool.search.selection:${TOOL_ROUTING_SEARCH_TOOL_NAME}`,
+              "tool",
+              {
+                label: `Tool Search Selection: ${TOOL_ROUTING_SEARCH_TOOL_NAME}`,
+                attributes: selectionSpanAttributes,
+              },
+            );
+
+        let selections: ToolSearchSelection[] = [];
+        try {
+          selections = await oc.traceContext.withSpan(selectionSpan, () =>
+            this.selectToolSearchCandidates({
+              query,
+              topK: effectiveTopK,
+              candidates,
+              oc,
+              parentSpan: selectionSpan,
+              toolRouting,
+            }),
+          );
+          if (selections.length > 1) {
+            const seen = new Set<string>();
+            selections = selections.filter((selection) => {
+              if (seen.has(selection.name)) {
+                return false;
+              }
+              seen.add(selection.name);
+              return true;
+            });
+          }
+          oc.traceContext.endChildSpan(selectionSpan, "completed", {
+            output: selections,
+            attributes: {
+              "tool.search.selection.count": selections.length,
+              "tool.search.selection.names": safeStringify(
+                selections.map((selection) => selection.name),
+              ),
+            },
+          });
+          oc.logger.debug("Tool search selections computed", {
+            tool: TOOL_ROUTING_SEARCH_TOOL_NAME,
+            query,
+            selections: safeStringify(selections),
+          });
+        } catch (error) {
+          oc.traceContext.endChildSpan(selectionSpan, "error", {
+            output: { error: error instanceof Error ? error.message : String(error) },
+          });
+          throw error;
+        }
+
+        const candidateByName = new Map(candidates.map((candidate) => [candidate.name, candidate]));
+        const tools = selections
+          .map((selection) => {
+            const candidate = candidateByName.get(selection.name);
+            return candidate ? this.toToolSearchResultItem(candidate, selection) : null;
+          })
+          .filter((item): item is ToolSearchResultItem => Boolean(item));
+
+        this.recordSearchedTools(
+          options,
+          tools.map((toolItem) => toolItem.name),
+        );
+
+        return {
+          query,
+          selections,
+          tools,
+        } satisfies ToolSearchResult;
+      },
+    });
+
+    (tool as any)[TOOL_ROUTING_INTERNAL_TOOL_SYMBOL] = "search";
+    return tool;
+  }
+
+  private createToolRoutingCallTool(): Tool<any, any> {
+    const tool = createTool({
+      name: TOOL_ROUTING_CALL_TOOL_NAME,
+      description:
+        "Call a tool by name with validated arguments. Always call searchTools first and follow the returned schema.",
+      parameters: callToolParameters,
+      execute: async ({ name, args }, options) => {
+        if (!options) {
+          throw new Error("callTool requires tool execution options.");
+        }
+
+        if (name === TOOL_ROUTING_CALL_TOOL_NAME || name === TOOL_ROUTING_SEARCH_TOOL_NAME) {
+          throw new Error(
+            `Tool "${name}" cannot be called via callTool to avoid recursion. Use it directly instead.`,
+          );
+        }
+
+        const oc = options as OperationContext;
+        const toolRouting = this.getToolRoutingFromContext(options);
+        const enforceSearch = toolRouting?.enforceSearchBeforeCall ?? true;
+        const rawArgs = args ?? {};
+
+        const target = this.toolPoolManager.getToolByName(name);
+        if (!target || this.isToolRoutingSupportTool(target)) {
+          throw new Error(`Tool not found in pool: ${name}`);
+        }
+
+        if (enforceSearch) {
+          const searchedTools = this.getSearchedTools(options);
+          if (!searchedTools.has(name)) {
+            throw new Error(
+              `Tool "${name}" must be searched via ${TOOL_ROUTING_SEARCH_TOOL_NAME} before calling.`,
+            );
+          }
+        }
+
+        const hooks =
+          ((options as { hooks?: AgentHooks }).hooks as AgentHooks | undefined) ??
+          this.getMergedHooks();
+        const toolCallId = randomUUID();
+        const executionOptions: ToolExecuteOptions = {
+          ...oc,
+          toolContext: {
+            name: target.name,
+            callId: toolCallId,
+            messages: options.toolContext?.messages ?? [],
+            abortSignal: oc.abortController.signal,
+          },
+        };
+        executionOptions.hooks = hooks;
+
+        if (isProviderTool(target)) {
+          return await this.executeProviderToolViaCallTool({
+            tool: target,
+            args: rawArgs,
+            oc,
+            hooks,
+            executionOptions,
+          });
+        }
+
+        if (!target.execute || target.isClientSide?.()) {
+          throw new Error(
+            `Tool "${target.name}" cannot be executed on the server or has no execute handler.`,
+          );
+        }
+
+        let parsedArgs: Record<string, unknown> = rawArgs;
+        const schema = (target as Tool<any, any>).parameters;
+        if (schema && typeof schema.safeParse === "function") {
+          const parsed = schema.safeParse(rawArgs);
+          if (!parsed.success) {
+            const error = new Error(
+              `Invalid arguments for tool "${name}": ${parsed.error.message}`,
+            );
+            Object.assign(error, { validationErrors: parsed.error.errors });
+            throw error;
+          }
+          parsedArgs = parsed.data as Record<string, unknown>;
+        }
+
+        await this.ensureToolApproval(
+          target as Tool<any, any>,
+          parsedArgs,
+          executionOptions,
+          toolCallId,
+        );
+
+        const execute = this.createToolExecutionFactory(oc, hooks)(target as Tool<any, any>);
+        return await execute(parsedArgs, {
+          toolCallId,
+          messages: executionOptions.toolContext?.messages ?? [],
+          abortSignal: executionOptions.toolContext?.abortSignal,
+        });
+      },
+    });
+
+    (tool as any)[TOOL_ROUTING_INTERNAL_TOOL_SYMBOL] = "call";
+    return tool;
+  }
+
+  private async executeProviderToolViaCallTool(params: {
     tool: ProviderTool;
-    query: string;
+    args: Record<string, unknown>;
     oc: OperationContext;
     hooks: AgentHooks;
-    executionModel?: AgentModelValue;
-  }): Promise<{ toolName: string; toolCallId?: string; output?: unknown; error?: string }> {
-    const { tool, query, oc, hooks, executionModel } = params;
-    oc.logger.info("Tool router using provider tool fallback", {
+    executionOptions: ToolExecuteOptions;
+  }): Promise<unknown> {
+    const { tool, args, oc, hooks, executionOptions } = params;
+    oc.logger.info("Tool routing executing provider tool via callTool", {
       toolName: tool.name,
-      query,
     });
-    const toolCallId = randomUUID();
-    const executionOptions: ToolExecuteOptions = {
-      ...oc,
-      toolContext: {
-        name: tool.name,
-        callId: toolCallId,
-        messages: [],
-        abortSignal: oc.abortController.signal,
-      },
-    };
-    executionOptions.hooks = hooks;
 
-    const needsApproval = (tool as { needsApproval?: Tool<any, any>["needsApproval"] })
-      .needsApproval;
-    if (needsApproval === true) {
-      return {
-        toolName: tool.name,
-        toolCallId,
-        error: `Tool ${tool.name} requires approval.`,
-      };
-    }
-
-    let approvedArgs: Record<string, unknown> | undefined;
-    if (needsApproval) {
-      try {
-        approvedArgs = await this.resolveProviderToolArgs({
-          tool,
-          query,
-          oc,
-          executionModel,
-        });
-        await this.ensureToolApproval(tool, approvedArgs, executionOptions, toolCallId);
-      } catch (error) {
-        if (isToolDeniedError(error)) {
-          return {
-            toolName: tool.name,
-            toolCallId,
-            error: error.message,
-          };
-        }
-        return {
-          toolName: tool.name,
-          toolCallId,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
-    }
+    await this.ensureToolApproval(
+      tool,
+      args,
+      executionOptions,
+      executionOptions.toolContext?.callId ?? randomUUID(),
+    );
 
     const tools: Record<string, any> = {
       [tool.name]: tool,
     };
 
-    const approvedArgsInstruction = approvedArgs
-      ? `Use these tool arguments: ${safeStringify(approvedArgs)}`
-      : "";
+    const argsInstruction = `Use these tool arguments exactly: ${safeStringify(args)}`;
     const result = await this.runInternalGenerateText({
       oc,
-      modelValue: executionModel,
       messages: [
         {
           role: "system",
           content: [
-            "Call the required tool with appropriate arguments to satisfy the request.",
-            approvedArgsInstruction,
-          ]
-            .filter(Boolean)
-            .join("\n"),
+            "Call the required tool with the provided arguments.",
+            "Return only the tool call.",
+          ].join("\n"),
         },
-        { role: "user", content: query },
+        { role: "user", content: argsInstruction },
       ],
       tools,
       toolChoice: { type: "tool", toolName: tool.name },
@@ -5451,21 +5616,23 @@ export class Agent {
     }
 
     if (toolCall) {
+      const callInput = toolCall.input ?? {};
+      if (!isDeepStrictEqual(args, callInput)) {
+        throw new Error(
+          `Provider tool "${tool.name}" received arguments that do not match callTool input.`,
+        );
+      }
       await hooks.onToolStart?.({
         agent: this,
         tool: tool as any,
-        args: toolCall.input,
+        args: callInput,
         context: oc,
         options: executionOptions,
       });
     }
 
     if (!toolResult) {
-      return {
-        toolName: tool.name,
-        toolCallId: toolCall?.toolCallId ?? toolCallId,
-        error: "Provider tool did not return a result.",
-      };
+      throw new Error("Provider tool did not return a result.");
     }
 
     const toolError =
@@ -5486,18 +5653,10 @@ export class Agent {
     });
 
     if (toolError) {
-      return {
-        toolName: tool.name,
-        toolCallId: toolResult.toolCallId ?? toolCallId,
-        error: toolError,
-      };
+      throw new Error(toolError);
     }
 
-    return {
-      toolName: tool.name,
-      toolCallId: toolResult.toolCallId ?? toolCallId,
-      output: toolResult.output,
-    };
+    return toolResult.output;
   }
 
   private async ensureToolApproval(
@@ -6216,26 +6375,32 @@ export class Agent {
       this.toolRouting && typeof this.toolRouting === "object" ? this.toolRouting : undefined;
     const toolRoutingState: AgentToolRoutingState | undefined = toolRoutingConfig
       ? (() => {
-          const routerTools = this.toolManager
-            .getAllBaseTools()
-            .filter((tool) => isToolRouter(tool));
-          const routerApiTools =
-            routerTools.length > 0
-              ? new ToolManager(routerTools, this.logger).getToolsForApi()
-              : [];
-          const routerNames = new Set(routerApiTools.map((tool) => tool.name));
+          const supportNames = this.getToolRoutingSupportToolNames();
+          const searchTool = this.toolManager.getToolByName(TOOL_ROUTING_SEARCH_TOOL_NAME);
+          const callTool = this.toolManager.getToolByName(TOOL_ROUTING_CALL_TOOL_NAME);
+          const searchApiTool =
+            searchTool && this.isToolRoutingSupportTool(searchTool)
+              ? new ToolManager([searchTool], this.logger).getToolsForApi()[0]
+              : undefined;
+          const callApiTool =
+            callTool && this.isToolRoutingSupportTool(callTool)
+              ? new ToolManager([callTool], this.logger).getToolsForApi()[0]
+              : undefined;
           const poolApiTools = this.toolPoolManager
             .getToolsForApi()
-            .filter((tool) => !routerNames.has(tool.name));
+            .filter((tool) => !supportNames.has(tool.name));
           const exposeApiTools =
             toolRoutingConfig.expose && toolRoutingConfig.expose.length > 0
               ? new ToolManager(toolRoutingConfig.expose, this.logger).getToolsForApi()
               : [];
 
           return {
-            routers: routerApiTools.length > 0 ? routerApiTools : undefined,
+            search: searchApiTool,
+            call: callApiTool,
             expose: exposeApiTools.length > 0 ? exposeApiTools : undefined,
             pool: poolApiTools.length > 0 ? poolApiTools : undefined,
+            enforceSearchBeforeCall: toolRoutingConfig.enforceSearchBeforeCall ?? true,
+            topK: toolRoutingConfig.topK,
           };
         })()
       : undefined;
@@ -6504,22 +6669,28 @@ export class Agent {
   private applyToolRoutingConfig(toolRouting?: ToolRoutingConfig | false): void {
     if (!toolRouting) {
       this.toolRoutingPoolExplicit = false;
+      this.toolRoutingSearchStrategy = undefined;
+      this.toolRoutingExposedNames = new Set();
+      this.removeToolRoutingSupportTools();
       return;
     }
 
     this.toolRoutingPoolExplicit = Object.prototype.hasOwnProperty.call(toolRouting, "pool");
     this.toolRoutingExposedNames = new Set();
 
-    const routers = this.resolveToolRoutingRouters(toolRouting);
-    if (routers.length > 0) {
-      this.toolManager.addItems(routers);
-    }
-    routers.forEach((router) => this.toolRoutingExposedNames.add(router.name));
+    this.toolRoutingSearchStrategy = toolRouting.embedding
+      ? createEmbeddingToolSearchStrategy(toolRouting.embedding)
+      : undefined;
 
-    const existingRouters = this.toolManager
-      .getAllBaseTools()
-      .filter((tool) => isToolRouter(tool)) as ToolRouter[];
-    existingRouters.forEach((router) => this.toolRoutingExposedNames.add(router.name));
+    const searchTool = this.createToolRoutingSearchTool();
+    const callTool = this.createToolRoutingCallTool();
+    this.upsertToolRoutingSupportTool(searchTool);
+    this.upsertToolRoutingSupportTool(callTool);
+    this.toolRoutingExposedNames.add(searchTool.name);
+    this.toolRoutingExposedNames.add(callTool.name);
+
+    this.assertNoToolRoutingNameConflicts(toolRouting.expose, "toolRouting.expose");
+    this.assertNoToolRoutingNameConflicts(toolRouting.pool, "toolRouting.pool");
 
     if (toolRouting.expose && toolRouting.expose.length > 0) {
       this.toolManager.addItems(toolRouting.expose);
@@ -6529,38 +6700,61 @@ export class Agent {
     if (toolRouting.pool && toolRouting.pool.length > 0) {
       this.toolPoolManager.addItems(toolRouting.pool);
     } else if (!this.toolRoutingPoolExplicit) {
-      const autoPool = this.toolManager.getAllTools().filter((tool) => !isToolRouter(tool));
+      const autoPool = this.toolManager
+        .getAllTools()
+        .filter((tool) => !this.isToolRoutingSupportTool(tool));
       if (autoPool.length > 0) {
         this.toolPoolManager.addItems(autoPool);
       }
     }
   }
 
-  private resolveToolRoutingRouters(toolRouting: ToolRoutingConfig): ToolRouter[] {
-    if (toolRouting.routers && toolRouting.routers.length > 0) {
-      return toolRouting.routers;
+  private removeToolRoutingSupportTools(): void {
+    for (const name of this.getToolRoutingSupportToolNames()) {
+      const existing = this.toolManager.getToolByName(name);
+      if (existing && this.isToolRoutingSupportTool(existing)) {
+        this.toolManager.removeTool(name);
+      }
+    }
+  }
+
+  private upsertToolRoutingSupportTool(tool: Tool<any, any>): void {
+    const existing = this.toolManager.getToolByName(tool.name);
+    if (existing && !this.isToolRoutingSupportTool(existing)) {
+      throw new Error(
+        `Tool routing requires reserved tool name "${tool.name}". Rename the conflicting tool to enable tool routing.`,
+      );
     }
 
-    if (toolRouting.embedding) {
-      const embeddingConfig =
-        typeof toolRouting.embedding === "object" &&
-        toolRouting.embedding !== null &&
-        "model" in toolRouting.embedding
-          ? (toolRouting.embedding as { topK?: number })
-          : undefined;
-      const router = createToolRouter({
-        name: "tool_router",
-        description: "Routes requests to the most relevant tool and executes it.",
-        embedding: toolRouting.embedding,
-        mode: toolRouting.mode,
-        executionModel: toolRouting.executionModel,
-        topK: toolRouting.topK ?? embeddingConfig?.topK,
-        parallel: toolRouting.parallel,
-      });
-      return [router];
+    if (existing && this.isToolRoutingSupportTool(existing)) {
+      this.toolManager.removeTool(tool.name);
     }
 
-    return [];
+    this.toolManager.addStandaloneTool(tool);
+  }
+
+  private assertNoToolRoutingNameConflicts(
+    items: (Tool<any, any> | Toolkit | VercelTool)[] | undefined,
+    scope: string,
+  ): void {
+    if (!items || items.length === 0) {
+      return;
+    }
+
+    const reservedNames = this.getToolRoutingSupportToolNames();
+    const manager = new ToolManager(items, this.logger);
+    const conflicts = manager
+      .getAllToolNames()
+      .filter((name) => reservedNames.has(name))
+      .sort();
+
+    if (conflicts.length > 0) {
+      throw new Error(
+        `Tool routing reserves tool names ${conflicts.join(
+          ", ",
+        )}. Remove them from ${scope} or rename the conflicting tools.`,
+      );
+    }
   }
 
   private resolveToolRouting(
@@ -6578,12 +6772,8 @@ export class Agent {
     }
 
     const exposedNames = new Set<string>();
-    toolRouting.routers?.forEach((router) => exposedNames.add(router.name));
-
-    const existingRouters = this.toolManager
-      .getAllBaseTools()
-      .filter((tool) => isToolRouter(tool)) as ToolRouter[];
-    existingRouters.forEach((router) => exposedNames.add(router.name));
+    exposedNames.add(TOOL_ROUTING_SEARCH_TOOL_NAME);
+    exposedNames.add(TOOL_ROUTING_CALL_TOOL_NAME);
 
     if (toolRouting.expose && toolRouting.expose.length > 0) {
       const exposedManager = new ToolManager(toolRouting.expose, this.logger);

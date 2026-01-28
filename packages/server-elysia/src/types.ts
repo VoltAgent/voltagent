@@ -1,3 +1,4 @@
+import type { ResumableStreamAdapter } from "@voltagent/core";
 import type { AuthNextConfig, AuthProvider } from "@voltagent/server-core";
 import type { Elysia } from "elysia";
 
@@ -12,6 +13,11 @@ type CORSOptions = {
 
 export interface ElysiaServerConfig {
   port?: number;
+
+  resumableStream?: {
+    adapter: ResumableStreamAdapter;
+    defaultEnabled?: boolean;
+  };
 
   enableSwaggerUI?: boolean;
 

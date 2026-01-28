@@ -68,8 +68,13 @@ const tabs: TabConfig[] = [
   },
 ];
 
+function normalizePathname(pathname: string): string {
+  return pathname.endsWith("/") ? pathname : `${pathname}/`;
+}
+
 function getActiveTabFromPathname(pathname: string): string {
-  const match = tabs.find((tab) => tab.match(pathname));
+  const normalizedPathname = normalizePathname(pathname);
+  const match = tabs.find((tab) => tab.match(normalizedPathname));
   return match?.id ?? "voltagent";
 }
 

@@ -2,14 +2,14 @@
 id: tool-routing
 title: Tool Routing
 slug: tool-routing
-description: Route a large tool pool through a small set of router tools.
+description: Route a large tool pool through searchTools and callTool.
 ---
 
 # Tool Routing
 
-Tool routing keeps prompts small by exposing only a few router tools. Routers select and execute tools from a larger pool on demand.
+Tool routing keeps prompts small by exposing only `searchTools` and `callTool`. The model searches for tools, then calls the chosen tool with validated arguments.
 
-## Quick Setup (Embedding Router)
+## Quick Setup (Embedding Search)
 
 ```typescript
 import { Agent, createTool, VoltAgent } from "@voltagent/core";
@@ -38,7 +38,8 @@ const convertCurrencyTool = createTool({
 
 const agent = new Agent({
   name: "Assistant",
-  instructions: "Use tool_router for tool access.",
+  instructions:
+    "When you need a tool, call searchTools with the user request, then call callTool with the exact tool name and schema-compliant arguments.",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool, convertCurrencyTool],
   toolRouting: {
@@ -50,7 +51,7 @@ const agent = new Agent({
 new VoltAgent({ agents: { agent } });
 ```
 
-If `toolRouting.pool` is not provided, VoltAgent uses the agent's registered tools as the pool (router tools are excluded).
+If `toolRouting.pool` is not provided, VoltAgent uses the agent's registered tools as the pool (the routing helper tools are excluded).
 
 ## Explicit Pools (Two Categories)
 
@@ -66,7 +67,7 @@ toolRouting: {
 
 ## Expose Tools Directly
 
-Expose specific tools to the model alongside routers:
+Expose specific tools to the model alongside `searchTools` and `callTool`:
 
 ```typescript
 toolRouting: {
@@ -75,40 +76,16 @@ toolRouting: {
 }
 ```
 
-## Custom Router Strategy
+## Enforce Search Before Call
+
+By default, `callTool` enforces a prior `searchTools` call. Disable it if needed:
 
 ```typescript
-import { createToolRouter } from "@voltagent/core";
-
-const router = createToolRouter({
-  name: "tool_router",
-  description: "Route to the best tool and execute it.",
-  strategy: {
-    select: async ({ query, tools, topK }) => {
-      const matches = tools
-        .filter((tool) => tool.description?.toLowerCase().includes(query.toLowerCase()))
-        .slice(0, topK);
-      return matches.map((tool, index) => ({ name: tool.name, score: 1 - index * 0.01 }));
-    },
-  },
-  mode: "resolver",
-  resolver: async ({ query, tool }) => {
-    return { query, tool: tool.name };
-  },
-});
-
-const agent = new Agent({
-  name: "Custom Router Agent",
-  instructions: "Route requests with tool_router.",
-  model: openai("gpt-4o-mini"),
-  toolRouting: {
-    routers: [router],
-    pool: [weatherTool, convertCurrencyTool],
-  },
-});
+toolRouting: {
+  pool: [weatherTool, convertCurrencyTool],
+  enforceSearchBeforeCall: false,
+}
 ```
-
-`mode: "agent"` is the default and uses the agent model to generate tool arguments. Use `resolver` when you want to build arguments deterministically.
 
 ## Global Defaults
 

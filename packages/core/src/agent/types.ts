@@ -58,9 +58,12 @@ export interface ApiToolInfo {
 }
 
 export interface AgentToolRoutingState {
-  routers?: ApiToolInfo[];
+  search?: ApiToolInfo;
+  call?: ApiToolInfo;
   expose?: ApiToolInfo[];
   pool?: ApiToolInfo[];
+  enforceSearchBeforeCall?: boolean;
+  topK?: number;
 }
 
 export type AgentFeedbackOptions = {

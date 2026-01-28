@@ -45,7 +45,7 @@ import styles from "./styles.module.css";
 const docTabs = [
   { label: "Home", href: "/docs/", match: (path: string) => path === "/docs/" },
   {
-    label: "VoltAgent",
+    label: "VoltAgent Framework",
     href: "/docs/overview/",
     match: (path: string) => path.startsWith("/docs/overview/"),
   },
@@ -94,6 +94,9 @@ export default function Navbar() {
   const isMobile = useMediaQuery("(max-width: 768px)", { defaultValue: true });
 
   const location = useLocation();
+  const normalizedPathname = location.pathname.endsWith("/")
+    ? location.pathname
+    : `${location.pathname}/`;
   const { stars, recent_stargazers, loading: isLoadingStars, error: starsError } = useGitHubStars();
 
   // Icon mapping for use cases
@@ -112,14 +115,6 @@ export default function Navbar() {
     "documentation-agent": DocumentTextIcon,
   };
 
-  const _isActive = (path: string) => {
-    const currentPath = location.pathname.endsWith("/")
-      ? location.pathname
-      : `${location.pathname}/`;
-    const checkPath = path.endsWith("/") ? path : `${path}/`;
-    return currentPath.startsWith(checkPath);
-  };
-
   // Helper function to format star count
   const formatStarCount = (count: number | null | undefined): string => {
     if (count === null || count === undefined) return "✨";
@@ -136,14 +131,14 @@ export default function Navbar() {
 
   // Check if current page is a docs page
   const isDocsPage =
-    location.pathname.includes("/docs") ||
-    location.pathname.includes("/models-docs") ||
-    location.pathname.includes("/observability-docs") ||
-    location.pathname.includes("/evaluation-docs") ||
-    location.pathname.includes("/prompt-engineering-docs") ||
-    location.pathname.includes("/deployment-docs") ||
-    location.pathname.includes("/actions-triggers-docs") ||
-    location.pathname.startsWith("/recipes-and-guides/");
+    normalizedPathname.includes("/docs") ||
+    normalizedPathname.includes("/models-docs") ||
+    normalizedPathname.includes("/observability-docs") ||
+    normalizedPathname.includes("/evaluation-docs") ||
+    normalizedPathname.includes("/prompt-engineering-docs") ||
+    normalizedPathname.includes("/deployment-docs") ||
+    normalizedPathname.includes("/actions-triggers-docs") ||
+    normalizedPathname.startsWith("/recipes-and-guides/");
 
   // Render docs navbar for documentation pages
   if (isDocsPage) {
@@ -228,7 +223,7 @@ export default function Navbar() {
                 to={tab.href}
                 className={clsx(
                   styles.docsTab,
-                  tab.match(location.pathname) && styles.docsTabActive,
+                  tab.match(normalizedPathname) && styles.docsTabActive,
                 )}
               >
                 {tab.label}

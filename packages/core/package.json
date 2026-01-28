@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/core",
   "description": "VoltAgent Core - AI agent framework for JavaScript",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^3.0.0",
     "@ai-sdk/anthropic": "^3.0.0",
@@ -70,7 +70,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "docs"
   ],
   "license": "MIT",
   "main": "dist/index.js",
@@ -98,7 +99,10 @@
     "generate:model-registry": "node scripts/generate-model-provider-registry.js",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
+    "prebuild": "node ../../scripts/sync-docs-mcp.js",
+    "prepack": "node ../../scripts/sync-docs-mcp.js",
     "publint": "publint --strict",
+    "sync-docs": "node ../../scripts/sync-docs-mcp.js",
     "test": "vitest --reporter=hanging-process --reporter=default --typecheck",
     "test:coverage": "vitest run --coverage --typecheck",
     "test:single": "vitest run --reporter=verbose",
