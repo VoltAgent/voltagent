@@ -1,5 +1,15 @@
 # @voltagent/core
 
+## 2.3.1
+
+### Patch Changes
+
+- [#998](https://github.com/VoltAgent/voltagent/pull/998) [`e209e3a`](https://github.com/VoltAgent/voltagent/commit/e209e3aa35a5ecb233f8743569cb65e18f003357) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Add separate workflow examples demonstrating both APIs:
+  - `with-workflow`: Uses `createWorkflow` functional API with step functions as arguments
+  - `with-workflow-chain`: Uses `createWorkflowChain` fluent chaining API
+
+  Both examples now demonstrate `workflowState` and `setWorkflowState` for persisting data across steps.
+
 ## 2.3.0
 
 ### Minor Changes
