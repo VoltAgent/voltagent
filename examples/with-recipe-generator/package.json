@@ -3,7 +3,7 @@
   "author": "",
   "dependencies": {
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.2.2",
+    "@voltagent/core": "^2.3.0",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/server-hono": "^2.0.4",
     "ai": "^6.0.0",

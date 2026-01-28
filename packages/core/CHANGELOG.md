@@ -1,5 +1,75 @@
 # @voltagent/core
 
+## 2.3.0
+
+### Minor Changes
+
+- [#991](https://github.com/VoltAgent/voltagent/pull/991) [`e0b6693`](https://github.com/VoltAgent/voltagent/commit/e0b6693dcdd18821735607cbd10ac1fa250c552e) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: replace tool routers with `searchTools` + `callTool` tool routing
+
+  Tool routing now exposes two system tools instead of router tools. The model must search first, then call the selected tool with schema-compliant args. `createToolRouter` and `toolRouting.routers` are removed.
+
+  Migration guide
+  1. Remove router tools and `toolRouting.routers`
+
+  Before:
+
+  ```ts
+  import { Agent, createToolRouter } from "@voltagent/core";
+
+  const router = createToolRouter({
+    name: "tool_router",
+    description: "Route requests to tools",
+    embedding: "openai/text-embedding-3-small",
+  });
+
+  const agent = new Agent({
+    name: "Tool Routing Agent",
+    instructions: "Use tool_router when you need a tool.",
+    tools: [router],
+    toolRouting: {
+      routers: [router],
+      pool: [
+        /* tools */
+      ],
+      topK: 2,
+    },
+  });
+  ```
+
+  After:
+
+  ```ts
+  import { Agent } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Tool Routing Agent",
+    instructions:
+      "When you need a tool, call searchTools with the user request, then call callTool with the exact tool name and schema-compliant arguments.",
+    toolRouting: {
+      embedding: "openai/text-embedding-3-small",
+      pool: [
+        /* tools */
+      ],
+      topK: 2,
+    },
+  });
+  ```
+
+  2. Optional: disable search enforcement if needed
+
+  ```ts
+  const agent = new Agent({
+    name: "Relaxed Agent",
+    instructions: "Use searchTools before callTool when possible.",
+    toolRouting: {
+      pool: [
+        /* tools */
+      ],
+      enforceSearchBeforeCall: false,
+    },
+  });
+  ```
+
 ## 2.2.2
 
 ### Patch Changes
