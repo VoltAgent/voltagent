@@ -43,7 +43,7 @@ Escape the limitations of no-code builders and the complexity of starting from s
 </div>
 
 > [!TIP]
-> Looking for the **chaining API**? See the [with-workflow-chain](../with-workflow-chain) example which uses `createWorkflowChain` for a fluent, method-chaining approach.
+> Looking for the **functional API**? See the [with-workflow](../with-workflow) example which uses `createWorkflow` with step functions passed as arguments.
 
 ## VoltAgent: Build AI Agents Fast and Flexibly
 
@@ -52,7 +52,7 @@ VoltAgent is an open-source TypeScript framework for creating and managing AI ag
 ## Try Example
 
 ```bash
-npm create voltagent-app@latest -- --example with-workflow
+npm create voltagent-app@latest -- --example with-workflow-chain
 ```
 
 ## More Information

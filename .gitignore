@@ -176,3 +176,5 @@ node_modules/
 .netlify
 
 
+# serena
+.serena
