@@ -157,7 +157,7 @@ export function createSensitiveNumberGuardrail(
 
       const sanitized = safeSegment.replace(digitPattern, replacement);
 
-      return { ...part, text: sanitized };
+      return { ...part, text: sanitized, delta: sanitized };
     },
   });
 }
@@ -227,7 +227,7 @@ export function createEmailRedactorGuardrail(
 
       const sanitized = safeSegment.replace(EMAIL_REGEX, replacement);
 
-      return { ...part, text: sanitized };
+      return { ...part, text: sanitized, delta: sanitized };
     },
   });
 }
@@ -297,7 +297,7 @@ export function createPhoneNumberGuardrail(
 
       const sanitized = safeSegment.replace(PHONE_REGEX, replacement);
 
-      return { ...part, text: sanitized };
+      return { ...part, text: sanitized, delta: sanitized };
     },
   });
 }
@@ -378,7 +378,7 @@ export function createProfanityGuardrail(
         abort("Output blocked due to profanity.");
       }
 
-      return { ...part, text: sanitized };
+      return { ...part, text: sanitized, delta: sanitized };
     },
   });
 }
@@ -471,7 +471,7 @@ export function createMaxLengthGuardrail(
         abort(`Output blocked. Maximum length of ${maxCharacters} characters exceeded.`);
       }
 
-      return { ...part, text: emitText };
+      return { ...part, text: emitText, delta: emitText };
     },
   });
 }
