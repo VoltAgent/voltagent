@@ -367,13 +367,13 @@ for await (const chunk of result.fullStreamToUIMessageStream()) {
 Use `fullStreamToUIMessageStreamResponse()` to create an HTTP response suitable for the AI SDK's `useChat` hook:
 
 ```ts
-// In your API route (e.g., Next.js, Express, Hono)
-app.post("/api/chat", async (req, res) => {
-  const result = await supervisorAgent.streamText(req.body.input);
+// app/api/chat/route.ts
+export async function POST(req: Request) {
+  const { input } = await req.json();
+  const result = await supervisorAgent.streamText(input);
 
-  // Returns a Response object with SSE stream
   return result.fullStreamToUIMessageStreamResponse();
-});
+}
 ```
 
 #### Configuration Options

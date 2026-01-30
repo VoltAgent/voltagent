@@ -52,10 +52,11 @@ export {
 } from "./agent/agent";
 export * from "./planagent";
 export * from "./agent/hooks";
-export { createSubagent } from "./agent/subagent/types";
+export { createSubagent, SUBAGENT_METADATA_KEYS } from "./agent/subagent/types";
 export type {
   SubAgentConfig,
   SubAgentMethod,
+  SubagentMetadata,
   StreamTextSubAgentConfig,
   GenerateTextSubAgentConfig,
   StreamObjectSubAgentConfig,

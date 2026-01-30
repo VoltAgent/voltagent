@@ -1,5 +1,4 @@
 import { createInputGuardrail, createOutputGuardrail } from "../guardrail";
-import type { VoltAgentTextStreamPart } from "../subagent/types";
 import type { GuardrailSeverity, InputGuardrail, OutputGuardrail } from "../types";
 
 type BaseGuardrailOptions = {
@@ -158,12 +157,7 @@ export function createSensitiveNumberGuardrail(
 
       const sanitized = safeSegment.replace(digitPattern, replacement);
 
-      const clone = { ...part } as { [key: string]: unknown };
-      if ("text" in clone) {
-        clone.text = undefined;
-      }
-      clone.delta = sanitized;
-      return clone as VoltAgentTextStreamPart;
+      return { ...part, text: sanitized };
     },
   });
 }
@@ -233,12 +227,7 @@ export function createEmailRedactorGuardrail(
 
       const sanitized = safeSegment.replace(EMAIL_REGEX, replacement);
 
-      const clone = { ...part } as { [key: string]: unknown };
-      if ("text" in clone) {
-        clone.text = undefined;
-      }
-      clone.delta = sanitized;
-      return clone as VoltAgentTextStreamPart;
+      return { ...part, text: sanitized };
     },
   });
 }
@@ -308,12 +297,7 @@ export function createPhoneNumberGuardrail(
 
       const sanitized = safeSegment.replace(PHONE_REGEX, replacement);
 
-      const clone = { ...part } as { [key: string]: unknown };
-      if ("text" in clone) {
-        clone.text = undefined;
-      }
-      clone.delta = sanitized;
-      return clone as VoltAgentTextStreamPart;
+      return { ...part, text: sanitized };
     },
   });
 }
@@ -394,12 +378,7 @@ export function createProfanityGuardrail(
         abort("Output blocked due to profanity.");
       }
 
-      const clone = { ...part } as { [key: string]: unknown };
-      if ("text" in clone) {
-        clone.text = undefined;
-      }
-      clone.delta = sanitized;
-      return clone as VoltAgentTextStreamPart;
+      return { ...part, text: sanitized };
     },
   });
 }
@@ -492,12 +471,7 @@ export function createMaxLengthGuardrail(
         abort(`Output blocked. Maximum length of ${maxCharacters} characters exceeded.`);
       }
 
-      const clone = { ...part } as { [key: string]: unknown };
-      if ("text" in clone) {
-        clone.text = undefined;
-      }
-      clone.delta = emitText;
-      return clone as VoltAgentTextStreamPart;
+      return { ...part, text: emitText };
     },
   });
 }

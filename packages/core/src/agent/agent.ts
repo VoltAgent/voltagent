@@ -151,7 +151,8 @@ import {
 } from "./streaming/guardrail-stream";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
-import type { VoltAgentTextStreamPart } from "./subagent/types";
+import { SUBAGENT_METADATA_KEYS } from "./subagent/types";
+import type { SubagentMetadata, VoltAgentTextStreamPart } from "./subagent/types";
 import type {
   AgentEvalConfig,
   AgentEvalOperationType,
@@ -233,30 +234,17 @@ const callToolParameters = z.object({
 // Types
 // ============================================================================
 
-// Subagent metadata keys from VoltAgentTextStreamPart
-const SUBAGENT_METADATA_KEYS = [
-  "subAgentId",
-  "subAgentName",
-  "executingAgentId",
-  "executingAgentName",
-  "parentAgentId",
-  "parentAgentName",
-  "agentPath",
-] as const;
-
 /**
  * Extracts subagent metadata fields from a stream part
  */
-function extractSubagentMetadata(
-  part: VoltAgentTextStreamPart,
-): Pick<VoltAgentTextStreamPart, (typeof SUBAGENT_METADATA_KEYS)[number]> {
+function extractSubagentMetadata(part: VoltAgentTextStreamPart): SubagentMetadata {
   const metadata: Record<string, unknown> = {};
   for (const key of SUBAGENT_METADATA_KEYS) {
     if (part[key] != null) {
       metadata[key] = part[key];
     }
   }
-  return metadata as Pick<VoltAgentTextStreamPart, (typeof SUBAGENT_METADATA_KEYS)[number]>;
+  return metadata as SubagentMetadata;
 }
 
 /**
@@ -265,15 +253,8 @@ function extractSubagentMetadata(
  */
 export type UIMessageChunkWithMetadata = {
   type: string;
-  subAgentId?: string;
-  subAgentName?: string;
-  executingAgentId?: string;
-  executingAgentName?: string;
-  parentAgentId?: string;
-  parentAgentName?: string;
-  agentPath?: string[];
   [key: string]: unknown;
-};
+} & SubagentMetadata;
 
 /**
  * Converts a fullStream part to UIMessageChunk format with subagent metadata
