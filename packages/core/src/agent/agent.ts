@@ -260,13 +260,29 @@ function extractSubagentMetadata(
 }
 
 /**
+ * Base UIMessageChunk with subagent metadata fields.
+ * Uses a permissive base that allows UIMessageStream to accept our extended chunks.
+ */
+export type UIMessageChunkWithMetadata = {
+  type: string;
+  subAgentId?: string;
+  subAgentName?: string;
+  executingAgentId?: string;
+  executingAgentName?: string;
+  parentAgentId?: string;
+  parentAgentName?: string;
+  agentPath?: string[];
+  [key: string]: unknown;
+};
+
+/**
  * Converts a fullStream part to UIMessageChunk format with subagent metadata
  * @internal Exported for testing purposes
  */
 export function convertFullStreamPartToUIMessageChunk(
   part: VoltAgentTextStreamPart,
   options: FullStreamToUIMessageStreamOptions,
-): Record<string, unknown> | undefined {
+): UIMessageChunkWithMetadata | undefined {
   // Check if this event type should be included based on the types filter
   if (options.types && options.types.length > 0 && !options.types.includes(part.type)) {
     return undefined;
@@ -408,7 +424,7 @@ export type FullStreamToUIMessageStreamOptions = {
   /** Error handler */
   onError?: (error: unknown) => string;
   /** Filter to only include specific event types (if not set, includes all) */
-  types?: string[];
+  types?: Array<VoltAgentTextStreamPart["type"]>;
 };
 
 export type StreamTextResultWithContext<
@@ -429,7 +445,9 @@ export type StreamTextResultWithContext<
   pipeTextStreamToResponse: AIStreamTextResult<TOOLS, any>["pipeTextStreamToResponse"];
   toTextStreamResponse: AIStreamTextResult<TOOLS, any>["toTextStreamResponse"];
   // Convert fullStream to UIMessageStream with subagent metadata preserved
-  fullStreamToUIMessageStream: (options?: FullStreamToUIMessageStreamOptions) => AsyncIterable<any>;
+  fullStreamToUIMessageStream: (
+    options?: FullStreamToUIMessageStreamOptions,
+  ) => AsyncIterable<UIMessageChunkWithMetadata>;
   fullStreamToUIMessageStreamResponse: (options?: FullStreamToUIMessageStreamOptions) => Response;
   // Additional context field
   context: Map<string | symbol, unknown>;
@@ -2225,7 +2243,8 @@ export class Agent {
                 for await (const part of fullStream) {
                   const converted = convertFullStreamPartToUIMessageChunk(part, opts);
                   if (converted) {
-                    writer.write(converted as any);
+                    // Cast needed: UIMessageChunkWithMetadata extends base UI chunk with subagent metadata
+                    writer.write(converted as Parameters<typeof writer.write>[0]);
                   }
                 }
               },
