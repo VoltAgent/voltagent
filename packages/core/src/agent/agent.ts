@@ -261,8 +261,9 @@ function extractSubagentMetadata(
 
 /**
  * Converts a fullStream part to UIMessageChunk format with subagent metadata
+ * @internal Exported for testing purposes
  */
-function convertFullStreamPartToUIMessageChunk(
+export function convertFullStreamPartToUIMessageChunk(
   part: VoltAgentTextStreamPart,
   options: FullStreamToUIMessageStreamOptions,
 ): Record<string, unknown> | undefined {
@@ -275,15 +276,15 @@ function convertFullStreamPartToUIMessageChunk(
 
   switch (part.type) {
     case "text-delta":
-      return { type: "text-delta", id: part.id, delta: part.text };
+      return { type: "text-delta", id: part.id, delta: part.text, ...meta };
 
     case "reasoning-delta":
       if (!options.sendReasoning) return undefined;
-      return { type: "reasoning-delta", id: part.id, delta: part.text };
+      return { type: "reasoning-delta", id: part.id, delta: part.text, ...meta };
 
     case "source":
       if (!options.sendSources) return undefined;
-      return part;
+      return { ...part, ...meta };
 
     case "tool-call":
       return {
@@ -291,6 +292,7 @@ function convertFullStreamPartToUIMessageChunk(
         toolCallId: part.toolCallId,
         toolName: part.toolName,
         input: "input" in part ? part.input : (part as Record<string, unknown>).args,
+        ...meta,
       };
 
     case "tool-result":
@@ -298,6 +300,7 @@ function convertFullStreamPartToUIMessageChunk(
         type: "tool-output-available",
         toolCallId: part.toolCallId,
         output: "output" in part ? part.output : (part as Record<string, unknown>).result,
+        ...meta,
       };
 
     case "tool-input-start":
@@ -305,6 +308,7 @@ function convertFullStreamPartToUIMessageChunk(
         type: "tool-input-start",
         toolCallId: part.id,
         toolName: part.toolName,
+        ...meta,
       };
 
     case "tool-input-delta":
@@ -312,6 +316,7 @@ function convertFullStreamPartToUIMessageChunk(
         type: "tool-input-delta",
         toolCallId: part.id,
         inputTextDelta: part.delta,
+        ...meta,
       };
 
     case "tool-error":
@@ -319,6 +324,7 @@ function convertFullStreamPartToUIMessageChunk(
         type: "tool-output-error",
         toolCallId: part.toolCallId,
         errorText: String(part.error),
+        ...meta,
       };
 
     case "start-step":
