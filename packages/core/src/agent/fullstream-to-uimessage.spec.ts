@@ -242,27 +242,145 @@ describe("convertFullStreamPartToUIMessageChunk", () => {
   });
 
   describe("options filtering", () => {
-    it("should filter by types when specified", () => {
-      const textPart: VoltAgentTextStreamPart = {
+    it("should include all events by default when options are undefined", () => {
+      const emptyOptions: FullStreamToUIMessageStreamOptions = {};
+
+      const textPart = { type: "text-delta", id: "t-1", text: "Hi" } as VoltAgentTextStreamPart;
+      const toolCallPart = {
+        type: "tool-call",
+        toolCallId: "tc-1",
+        toolName: "search",
+        input: {},
+      } as VoltAgentTextStreamPart;
+      const toolResultPart = {
+        type: "tool-result",
+        toolCallId: "tc-1",
+        output: {},
+      } as VoltAgentTextStreamPart;
+      const errorPart = { type: "error", error: new Error("fail") } as VoltAgentTextStreamPart;
+
+      // All should be included when options are empty/undefined
+      expect(convertFullStreamPartToUIMessageChunk(textPart, emptyOptions)).toBeDefined();
+      expect(convertFullStreamPartToUIMessageChunk(toolCallPart, emptyOptions)).toBeDefined();
+      expect(convertFullStreamPartToUIMessageChunk(toolResultPart, emptyOptions)).toBeDefined();
+      expect(convertFullStreamPartToUIMessageChunk(errorPart, emptyOptions)).toBeDefined();
+    });
+
+    it("should respect sendTextDelta option", () => {
+      const part: VoltAgentTextStreamPart = {
         type: "text-delta",
         id: "text-1",
         text: "Hello",
       } as VoltAgentTextStreamPart;
 
-      const toolPart: VoltAgentTextStreamPart = {
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendTextDelta: false }),
+      ).toBeUndefined();
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendTextDelta: true }),
+      ).toBeDefined();
+    });
+
+    it("should respect sendToolCall option", () => {
+      const part: VoltAgentTextStreamPart = {
         type: "tool-call",
         toolCallId: "tool-1",
         toolName: "search",
         input: {},
       } as VoltAgentTextStreamPart;
 
-      const options: FullStreamToUIMessageStreamOptions = {
-        ...defaultOptions,
-        types: ["text-delta"],
-      };
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendToolCall: false }),
+      ).toBeUndefined();
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendToolCall: true }),
+      ).toBeDefined();
+    });
 
-      expect(convertFullStreamPartToUIMessageChunk(textPart, options)).toBeDefined();
-      expect(convertFullStreamPartToUIMessageChunk(toolPart, options)).toBeUndefined();
+    it("should respect sendToolResult option", () => {
+      const part: VoltAgentTextStreamPart = {
+        type: "tool-result",
+        toolCallId: "tool-1",
+        output: { result: "done" },
+      } as VoltAgentTextStreamPart;
+
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendToolResult: false }),
+      ).toBeUndefined();
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendToolResult: true }),
+      ).toBeDefined();
+    });
+
+    it("should respect sendToolInputStart option", () => {
+      const part: VoltAgentTextStreamPart = {
+        type: "tool-input-start",
+        id: "tool-1",
+        toolName: "search",
+      } as VoltAgentTextStreamPart;
+
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, {
+          ...defaultOptions,
+          sendToolInputStart: false,
+        }),
+      ).toBeUndefined();
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, {
+          ...defaultOptions,
+          sendToolInputStart: true,
+        }),
+      ).toBeDefined();
+    });
+
+    it("should respect sendToolInputDelta option", () => {
+      const part: VoltAgentTextStreamPart = {
+        type: "tool-input-delta",
+        id: "tool-1",
+        delta: '{"x":',
+      } as VoltAgentTextStreamPart;
+
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, {
+          ...defaultOptions,
+          sendToolInputDelta: false,
+        }),
+      ).toBeUndefined();
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, {
+          ...defaultOptions,
+          sendToolInputDelta: true,
+        }),
+      ).toBeDefined();
+    });
+
+    it("should respect sendToolError option", () => {
+      const part: VoltAgentTextStreamPart = {
+        type: "tool-error",
+        toolCallId: "tool-1",
+        error: new Error("failed"),
+      } as VoltAgentTextStreamPart;
+
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendToolError: false }),
+      ).toBeUndefined();
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendToolError: true }),
+      ).toBeDefined();
+    });
+
+    it("should respect sendError option", () => {
+      const part: VoltAgentTextStreamPart = {
+        type: "error",
+        error: new Error("stream error"),
+      } as VoltAgentTextStreamPart;
+
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendError: false }),
+      ).toBeUndefined();
+      expect(
+        convertFullStreamPartToUIMessageChunk(part, { ...defaultOptions, sendError: true }),
+      ).toBeDefined();
     });
 
     it("should respect sendReasoning option", () => {

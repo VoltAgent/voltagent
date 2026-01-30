@@ -264,26 +264,23 @@ export function convertFullStreamPartToUIMessageChunk(
   part: VoltAgentTextStreamPart,
   options: FullStreamToUIMessageStreamOptions,
 ): UIMessageChunkWithMetadata | undefined {
-  // Check if this event type should be included based on the types filter
-  if (options.types && options.types.length > 0 && !options.types.includes(part.type)) {
-    return undefined;
-  }
-
   const meta = extractSubagentMetadata(part);
 
   switch (part.type) {
     case "text-delta":
+      if (options.sendTextDelta === false) return undefined;
       return { type: "text-delta", id: part.id, delta: part.text, ...meta };
 
     case "reasoning-delta":
-      if (!options.sendReasoning) return undefined;
+      if (options.sendReasoning === false) return undefined;
       return { type: "reasoning-delta", id: part.id, delta: part.text, ...meta };
 
     case "source":
-      if (!options.sendSources) return undefined;
+      if (options.sendSources === false) return undefined;
       return { ...part, ...meta };
 
     case "tool-call":
+      if (options.sendToolCall === false) return undefined;
       return {
         type: "tool-input-available",
         toolCallId: part.toolCallId,
@@ -293,6 +290,7 @@ export function convertFullStreamPartToUIMessageChunk(
       };
 
     case "tool-result":
+      if (options.sendToolResult === false) return undefined;
       return {
         type: "tool-output-available",
         toolCallId: part.toolCallId,
@@ -301,6 +299,7 @@ export function convertFullStreamPartToUIMessageChunk(
       };
 
     case "tool-input-start":
+      if (options.sendToolInputStart === false) return undefined;
       return {
         type: "tool-input-start",
         toolCallId: part.id,
@@ -309,6 +308,7 @@ export function convertFullStreamPartToUIMessageChunk(
       };
 
     case "tool-input-delta":
+      if (options.sendToolInputDelta === false) return undefined;
       return {
         type: "tool-input-delta",
         toolCallId: part.id,
@@ -317,6 +317,7 @@ export function convertFullStreamPartToUIMessageChunk(
       };
 
     case "tool-error":
+      if (options.sendToolError === false) return undefined;
       return {
         type: "tool-output-error",
         toolCallId: part.toolCallId,
@@ -325,22 +326,23 @@ export function convertFullStreamPartToUIMessageChunk(
       };
 
     case "start-step":
-      if (!options.sendStart) return undefined;
+      if (options.sendStart === false) return undefined;
       return { type: "start-step", ...meta };
 
     case "finish-step":
-      if (!options.sendFinish) return undefined;
+      if (options.sendFinish === false) return undefined;
       return { type: "finish-step", finishReason: part.finishReason, usage: part.usage, ...meta };
 
     case "start":
-      if (!options.sendStart) return undefined;
+      if (options.sendStart === false) return undefined;
       return { type: "start", ...meta };
 
     case "finish":
-      if (!options.sendFinish) return undefined;
+      if (options.sendFinish === false) return undefined;
       return { type: "finish", finishReason: part.finishReason, usage: part.totalUsage, ...meta };
 
     case "error":
+      if (options.sendError === false) return undefined;
       return {
         type: "error",
         error: options.onError ? options.onError(part.error) : String(part.error),
@@ -394,18 +396,30 @@ function sanitizeConversationTitle(text: string, maxLength: number): string {
  * Options for fullStreamToUIMessageStream conversion
  */
 export type FullStreamToUIMessageStreamOptions = {
+  /** Include text delta content in the stream */
+  sendTextDelta?: boolean;
   /** Include reasoning/thinking content in the stream */
   sendReasoning?: boolean;
   /** Include source annotations in the stream */
   sendSources?: boolean;
+  /** Include tool-call events in the stream */
+  sendToolCall?: boolean;
+  /** Include tool-result events in the stream */
+  sendToolResult?: boolean;
+  /** Include tool-input-start events in the stream */
+  sendToolInputStart?: boolean;
+  /** Include tool-input-delta events in the stream */
+  sendToolInputDelta?: boolean;
+  /** Include tool-error events in the stream */
+  sendToolError?: boolean;
   /** Send start events */
   sendStart?: boolean;
   /** Send finish events */
   sendFinish?: boolean;
+  /** Include error events in the stream */
+  sendError?: boolean;
   /** Error handler */
   onError?: (error: unknown) => string;
-  /** Filter to only include specific event types (if not set, includes all) */
-  types?: Array<VoltAgentTextStreamPart["type"]>;
 };
 
 export type StreamTextResultWithContext<
@@ -2184,12 +2198,18 @@ export class Agent {
           },
           fullStreamToUIMessageStream: (streamOptions?: FullStreamToUIMessageStreamOptions) => {
             const opts: FullStreamToUIMessageStreamOptions = {
-              sendReasoning: streamOptions?.sendReasoning ?? true,
-              sendSources: streamOptions?.sendSources ?? true,
-              sendStart: streamOptions?.sendStart ?? true,
-              sendFinish: streamOptions?.sendFinish ?? true,
+              sendTextDelta: streamOptions?.sendTextDelta,
+              sendReasoning: streamOptions?.sendReasoning,
+              sendSources: streamOptions?.sendSources,
+              sendToolCall: streamOptions?.sendToolCall,
+              sendToolResult: streamOptions?.sendToolResult,
+              sendToolInputStart: streamOptions?.sendToolInputStart,
+              sendToolInputDelta: streamOptions?.sendToolInputDelta,
+              sendToolError: streamOptions?.sendToolError,
+              sendStart: streamOptions?.sendStart,
+              sendFinish: streamOptions?.sendFinish,
+              sendError: streamOptions?.sendError,
               onError: streamOptions?.onError ?? ((e: unknown) => String(e)),
-              types: streamOptions?.types,
             };
 
             const fullStream = getGuardrailAwareFullStream();
@@ -2209,12 +2229,18 @@ export class Agent {
             streamOptions?: FullStreamToUIMessageStreamOptions,
           ) => {
             const opts: FullStreamToUIMessageStreamOptions = {
-              sendReasoning: streamOptions?.sendReasoning ?? true,
-              sendSources: streamOptions?.sendSources ?? true,
-              sendStart: streamOptions?.sendStart ?? true,
-              sendFinish: streamOptions?.sendFinish ?? true,
+              sendTextDelta: streamOptions?.sendTextDelta,
+              sendReasoning: streamOptions?.sendReasoning,
+              sendSources: streamOptions?.sendSources,
+              sendToolCall: streamOptions?.sendToolCall,
+              sendToolResult: streamOptions?.sendToolResult,
+              sendToolInputStart: streamOptions?.sendToolInputStart,
+              sendToolInputDelta: streamOptions?.sendToolInputDelta,
+              sendToolError: streamOptions?.sendToolError,
+              sendStart: streamOptions?.sendStart,
+              sendFinish: streamOptions?.sendFinish,
+              sendError: streamOptions?.sendError,
               onError: streamOptions?.onError ?? ((e: unknown) => String(e)),
-              types: streamOptions?.types,
             };
 
             const fullStream = getGuardrailAwareFullStream();

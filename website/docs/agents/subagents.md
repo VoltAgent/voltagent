@@ -343,171 +343,72 @@ This allows you to:
 
 ### Converting fullStream to UI Message Format
 
-VoltAgent provides `fullStreamToUIMessageStream` and `fullStreamToUIMessageStreamResponse` methods to convert the raw fullStream into a format compatible with the AI SDK's `useChat` hook while preserving subagent metadata. This is useful when building custom frontends that need to display which agent produced each chunk.
+`fullStreamToUIMessageStream` and `fullStreamToUIMessageStreamResponse` convert the raw fullStream into a format compatible with the AI SDK's `useChat` hook while preserving subagent metadata.
 
 #### Basic Usage
 
 ```ts
 const result = await supervisorAgent.streamText("Create and edit content");
 
-// Returns an AsyncIterable of UI message chunks with subagent metadata
 for await (const chunk of result.fullStreamToUIMessageStream()) {
-  console.log(`Type: ${chunk.type}`);
   if (chunk.subAgentName) {
-    console.log(`From sub-agent: ${chunk.subAgentName}`);
-  }
-  if (chunk.type === "text-delta") {
-    console.log(`Text: ${chunk.delta}`);
+    console.log(`[${chunk.subAgentName}] ${chunk.type}`);
   }
 }
 ```
 
 #### HTTP Response for useChat
 
-Use `fullStreamToUIMessageStreamResponse()` to create an HTTP response suitable for the AI SDK's `useChat` hook:
-
 ```ts
-// app/api/chat/route.ts
 export async function POST(req: Request) {
   const { input } = await req.json();
   const result = await supervisorAgent.streamText(input);
-
   return result.fullStreamToUIMessageStreamResponse();
 }
 ```
 
 #### Configuration Options
 
-Both methods accept options to control what events are included:
-
 ```ts
 const stream = result.fullStreamToUIMessageStream({
-  // Include reasoning/thinking content (default: true)
-  sendReasoning: true,
-
-  // Include source annotations (default: true)
-  sendSources: true,
-
-  // Include start events (default: true)
-  sendStart: true,
-
-  // Include finish events (default: true)
-  sendFinish: true,
-
-  // Custom error handler
+  // All options default to true (included). Set to false to exclude.
+  sendTextDelta: true, // text content deltas
+  sendReasoning: true, // reasoning/thinking content
+  sendSources: true, // source annotations
+  sendToolCall: true, // tool-call → tool-input-available
+  sendToolResult: true, // tool-result → tool-output-available
+  sendToolInputStart: true, // tool streaming start
+  sendToolInputDelta: true, // tool streaming deltas
+  sendToolError: true, // tool-error → tool-output-error
+  sendStart: true, // start/start-step events
+  sendFinish: true, // finish/finish-step events
+  sendError: true, // error events
   onError: (error) => `Error: ${error}`,
-
-  // Filter to specific event types only
-  types: ["text-delta", "tool-input-available", "tool-output-available"],
 });
 ```
 
-#### Event Type Filtering
+Some event types are mapped to different UI chunk names:
 
-Use the `types` option to receive only specific events:
+| Original Event | UI Chunk Type           |
+| -------------- | ----------------------- |
+| `tool-call`    | `tool-input-available`  |
+| `tool-result`  | `tool-output-available` |
+| `tool-error`   | `tool-output-error`     |
 
-```ts
-// Only text deltas and tool events
-const stream = result.fullStreamToUIMessageStream({
-  types: ["text-delta", "tool-input-available", "tool-output-available"],
-});
+Other events (`text-delta`, `reasoning-delta`, `source`, `start`, `finish`, `error`, etc.) keep their original names.
 
-// Only text content (no tools, reasoning, or metadata events)
-const stream = result.fullStreamToUIMessageStream({
-  types: ["text-delta"],
-  sendStart: false,
-  sendFinish: false,
-});
-```
-
-#### UI Message Chunk Types
-
-The converted chunks include standard UI message types with additional subagent metadata:
-
-| Chunk Type              | Description                   | Original Event     |
-| ----------------------- | ----------------------------- | ------------------ |
-| `text-delta`            | Text content chunk            | `text-delta`       |
-| `reasoning-delta`       | Model reasoning content       | `reasoning-delta`  |
-| `source`                | Source annotation             | `source`           |
-| `tool-input-start`      | Tool call started             | `tool-input-start` |
-| `tool-input-delta`      | Tool input streaming          | `tool-input-delta` |
-| `tool-input-available`  | Complete tool call with input | `tool-call`        |
-| `tool-output-available` | Tool result                   | `tool-result`      |
-| `tool-output-error`     | Tool error                    | `tool-error`       |
-| `start-step`            | Step started                  | `start-step`       |
-| `finish-step`           | Step finished                 | `finish-step`      |
-| `start`                 | Stream started                | `start`            |
-| `finish`                | Stream finished               | `finish`           |
-| `error`                 | Error occurred                | `error`            |
-
-#### Subagent Metadata on Chunks
-
-Every chunk from a subagent includes metadata fields:
+#### Example: Chat UI with Agent Attribution
 
 ```ts
-interface UIMessageChunkWithMetadata {
-  type: string;
-  subAgentId?: string; // ID of the sub-agent that produced this chunk
-  subAgentName?: string; // Name of the sub-agent
-  executingAgentId?: string; // Same as subAgentId (reserved for nested handoffs)
-  executingAgentName?: string;
-  parentAgentId?: string; // ID of the supervisor that forwarded the chunk
-  parentAgentName?: string;
-  agentPath?: string[]; // Ordered names from supervisor → executing agent
-  // ... other fields specific to the chunk type
-}
-```
-
-#### Use Cases
-
-**Building a chat UI with agent attribution:**
-
-```ts
-// React component example
 function ChatMessage({ chunk }) {
-  const agentLabel = chunk.subAgentName
-    ? `[${chunk.subAgentName}]`
-    : "[Supervisor]";
-
+  const label = chunk.subAgentName ? `[${chunk.subAgentName}]` : "[Supervisor]";
   return (
     <div className="message">
-      <span className="agent-label">{agentLabel}</span>
+      <span className="agent-label">{label}</span>
       {chunk.type === "text-delta" && <span>{chunk.delta}</span>}
-      {chunk.type === "tool-input-available" && (
-        <span className="tool-call">Calling {chunk.toolName}...</span>
-      )}
     </div>
   );
 }
-```
-
-**Custom streaming API endpoint:**
-
-```ts
-// Express/Hono route
-app.post("/chat", async (c) => {
-  const { input } = await c.req.json();
-  const result = await supervisor.streamText(input);
-
-  // Return response compatible with useChat
-  return result.fullStreamToUIMessageStreamResponse({
-    sendReasoning: false, // Hide internal reasoning
-    types: ["text-delta", "tool-input-available", "tool-output-available"],
-  });
-});
-```
-
-**Filtering events for a minimal UI:**
-
-```ts
-// Only show text and final results
-const stream = result.fullStreamToUIMessageStream({
-  types: ["text-delta"],
-  sendStart: false,
-  sendFinish: false,
-  sendReasoning: false,
-  sendSources: false,
-});
 ```
 
 #### Filtering Historical Conversations
