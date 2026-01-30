@@ -7,6 +7,7 @@ export const ELEVENLABS_MODELS = [
   "eleven_multilingual_sts_v2",
   "eleven_english_sts_v2",
   "scribe_v1",
+  "scribe_v2",
 ] as const;
 
 export type ElevenLabsModel = (typeof ELEVENLABS_MODELS)[number];
@@ -22,7 +23,7 @@ export type ElevenLabsVoiceOptions = BaseVoiceProviderOptions & {
 
   /**
    * Model to use for speech recognition
-   * @default "scribe_v1"
+   * @default "scribe_v2"
    */
   speechModel?: ElevenLabsModel;
 

@@ -14,7 +14,7 @@ export class ElevenLabsVoiceProvider extends BaseVoiceProvider {
 
   constructor(options: ElevenLabsVoiceOptions) {
     super(options);
-    this.speechModel = options.speechModel || "scribe_v1";
+    this.speechModel = options.speechModel || "scribe_v2";
     this.ttsModel = options.ttsModel || "eleven_multilingual_v2";
     this.voice = options.voice || "Callum";
     this.voiceSettings = {
