@@ -361,12 +361,6 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
 
     const conversationsCollection = this.getCollection("conversations");
 
-    // Check if conversation already exists
-    const existing = await conversationsCollection.findOne({ _id: input.id } as any);
-    if (existing) {
-      throw new ConversationAlreadyExistsError(input.id);
-    }
-
     const now = new Date();
     const conversation = {
       _id: input.id,
@@ -378,7 +372,14 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
       updatedAt: now,
     };
 
-    await conversationsCollection.insertOne(conversation as any);
+    try {
+      await conversationsCollection.insertOne(conversation as any);
+    } catch (error: any) {
+      if (error.code === 11000) {
+        throw new ConversationAlreadyExistsError(input.id);
+      }
+      throw error;
+    }
 
     this.log(`Created conversation ${input.id}`);
 
