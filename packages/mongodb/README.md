@@ -32,9 +32,9 @@ const memory = new Memory({
 
 ## Configuration
 
-| Option | Type | Default | Description |
-| str | str | str | str |
-| `connection` | `string` | required | MongoDB connection URI |
-| `database` | `string` | `"voltagent"` | Database name |
-| `collectionPrefix` | `string` | `"voltagent_memory"` | Prefix for collections |
-| `debug` | `boolean` | `false` | Enable debug logging |
+| Option             | Type      | Default              | Description            |
+| ------------------ | --------- | -------------------- | ---------------------- |
+| `connection`       | `string`  | required             | MongoDB connection URI |
+| `database`         | `string`  | `"voltagent"`        | Database name          |
+| `collectionPrefix` | `string`  | `"voltagent_memory"` | Prefix for collections |
+| `debug`            | `boolean` | `false`              | Enable debug logging   |

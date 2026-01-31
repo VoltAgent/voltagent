@@ -577,30 +577,33 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
 
     const stepsCollection = this.getCollection("steps");
 
-    const operations = steps.map((step) => ({
-      replaceOne: {
-        filter: { _id: step.id || this.generateId() },
-        replacement: {
-          _id: step.id || this.generateId(),
-          conversationId: step.conversationId,
-          userId: step.userId,
-          agentId: step.agentId,
-          agentName: step.agentName,
-          operationId: step.operationId,
-          stepIndex: step.stepIndex,
-          type: step.type,
-          role: step.role,
-          content: step.content,
-          arguments: step.arguments,
-          result: step.result,
-          usage: step.usage,
-          subAgentId: step.subAgentId,
-          subAgentName: step.subAgentName,
-          createdAt: new Date(),
+    const operations = steps.map((step) => {
+      const id = step.id || this.generateId();
+      return {
+        replaceOne: {
+          filter: { _id: id },
+          replacement: {
+            _id: id,
+            conversationId: step.conversationId,
+            userId: step.userId,
+            agentId: step.agentId,
+            agentName: step.agentName,
+            operationId: step.operationId,
+            stepIndex: step.stepIndex,
+            type: step.type,
+            role: step.role,
+            content: step.content,
+            arguments: step.arguments,
+            result: step.result,
+            usage: step.usage,
+            subAgentId: step.subAgentId,
+            subAgentName: step.subAgentName,
+            createdAt: new Date(),
+          },
+          upsert: true,
         },
-        upsert: true,
-      },
-    }));
+      };
+    });
 
     await stepsCollection.bulkWrite(operations as any);
 
@@ -807,8 +810,8 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
       userId: (state as any).userId,
       conversationId: (state as any).conversationId,
       metadata: (state as any).metadata,
-      createdAt: (state as any).createdAt.toISOString(),
-      updatedAt: (state as any).updatedAt.toISOString(),
+      createdAt: (state as any).createdAt,
+      updatedAt: (state as any).updatedAt,
     };
   }
 
@@ -862,8 +865,8 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
       userId: state.userId,
       conversationId: state.conversationId,
       metadata: state.metadata,
-      createdAt: state.createdAt.toISOString(),
-      updatedAt: state.updatedAt.toISOString(),
+      createdAt: state.createdAt,
+      updatedAt: state.updatedAt,
     }));
   }
 
