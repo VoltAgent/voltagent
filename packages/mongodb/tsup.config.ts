@@ -11,6 +11,7 @@ export default defineConfig({
   outDir: "dist",
   minify: false,
   dts: true,
+  external: ["@voltagent/core", "ai", "mongodb"],
   esbuildPlugins: [markAsExternalPlugin],
   esbuildOptions(options) {
     options.keepNames = true;
