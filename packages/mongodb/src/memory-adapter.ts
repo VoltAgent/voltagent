@@ -317,6 +317,21 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
   }
 
   /**
+   * Delete all messages for a conversation
+   */
+  async deleteMessages(conversationId: string): Promise<void> {
+    await this.initPromise;
+
+    const messagesCollection = this.getCollection("messages");
+    const stepsCollection = this.getCollection("steps");
+
+    await messagesCollection.deleteMany({ conversationId });
+    await stepsCollection.deleteMany({ conversationId });
+
+    this.log(`Deleted messages for conversation ${conversationId}`);
+  }
+
+  /**
    * Clear messages for a conversation or all conversations for a user
    */
   async clearMessages(userId: string, conversationId?: string): Promise<void> {
@@ -359,7 +374,7 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
   async createConversation(input: CreateConversationInput): Promise<Conversation> {
     await this.initPromise;
 
-    const conversationsCollection = this.getCollection("conversations");
+    const conversationsCollection = this.getCollection<any>("conversations");
 
     const now = new Date();
     const conversation = {
@@ -373,7 +388,7 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
     };
 
     try {
-      await conversationsCollection.insertOne(conversation as any);
+      await conversationsCollection.insertOne(conversation);
     } catch (error: any) {
       if (error.code === 11000) {
         throw new ConversationAlreadyExistsError(input.id);
@@ -392,6 +407,16 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
       createdAt: conversation.createdAt.toISOString(),
       updatedAt: conversation.updatedAt.toISOString(),
     };
+  }
+
+  /**
+   * Count conversations for a user
+   */
+  async countConversations(userId: string): Promise<number> {
+    await this.initPromise;
+
+    const conversationsCollection = this.getCollection("conversations");
+    return conversationsCollection.countDocuments({ userId });
   }
 
   /**
