@@ -317,18 +317,24 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
   }
 
   /**
-   * Delete all messages for a conversation
+   * Delete specific messages
    */
-  async deleteMessages(conversationId: string): Promise<void> {
+  async deleteMessages(
+    messageIds: string[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
     await this.initPromise;
 
     const messagesCollection = this.getCollection("messages");
-    const stepsCollection = this.getCollection("steps");
 
-    await messagesCollection.deleteMany({ conversationId });
-    await stepsCollection.deleteMany({ conversationId });
+    await messagesCollection.deleteMany({
+      conversationId,
+      userId,
+      messageId: { $in: messageIds },
+    });
 
-    this.log(`Deleted messages for conversation ${conversationId}`);
+    this.log(`Deleted ${messageIds.length} messages from conversation ${conversationId}`);
   }
 
   /**
@@ -410,13 +416,23 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
   }
 
   /**
-   * Count conversations for a user
+   * Count conversations based on filters
    */
-  async countConversations(userId: string): Promise<number> {
+  async countConversations(options: ConversationQueryOptions): Promise<number> {
     await this.initPromise;
 
     const conversationsCollection = this.getCollection("conversations");
-    return conversationsCollection.countDocuments({ userId });
+    const filter: any = {};
+
+    if (options.userId) {
+      filter.userId = options.userId;
+    }
+
+    if (options.resourceId) {
+      filter.resourceId = options.resourceId;
+    }
+
+    return conversationsCollection.countDocuments(filter);
   }
 
   /**
