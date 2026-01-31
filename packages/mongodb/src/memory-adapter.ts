@@ -210,7 +210,6 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
 
     try {
       await messagesCollection.insertOne({
-        _id: undefined,
         conversationId,
         messageId,
         userId,
@@ -249,7 +248,6 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
     }
 
     const documentsToInsert = messages.map((message) => ({
-      _id: undefined, // Let MongoDB generate ObjectId
       conversationId,
       messageId: message.id || this.generateId(),
       userId,
@@ -623,25 +621,29 @@ export class MongoDBMemoryAdapter implements StorageAdapter {
     const operations = steps.map((step) => {
       const id = step.id || this.generateId();
       return {
-        replaceOne: {
+        updateOne: {
           filter: { _id: id },
-          replacement: {
-            _id: id,
-            conversationId: step.conversationId,
-            userId: step.userId,
-            agentId: step.agentId,
-            agentName: step.agentName,
-            operationId: step.operationId,
-            stepIndex: step.stepIndex,
-            type: step.type,
-            role: step.role,
-            content: step.content,
-            arguments: step.arguments,
-            result: step.result,
-            usage: step.usage,
-            subAgentId: step.subAgentId,
-            subAgentName: step.subAgentName,
-            createdAt: new Date(),
+          update: {
+            $set: {
+              conversationId: step.conversationId,
+              userId: step.userId,
+              agentId: step.agentId,
+              agentName: step.agentName,
+              operationId: step.operationId,
+              stepIndex: step.stepIndex,
+              type: step.type,
+              role: step.role,
+              content: step.content,
+              arguments: step.arguments,
+              result: step.result,
+              usage: step.usage,
+              subAgentId: step.subAgentId,
+              subAgentName: step.subAgentName,
+            },
+            $setOnInsert: {
+              _id: id,
+              createdAt: new Date(),
+            },
           },
           upsert: true,
         },
