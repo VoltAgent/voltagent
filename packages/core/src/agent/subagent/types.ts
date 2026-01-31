@@ -132,46 +132,66 @@ export function createSubagent<TAgent extends Agent>(
 }
 
 /**
+ * Subagent metadata fields that are added to stream parts.
+ * This interface is the single source of truth for subagent metadata keys.
+ */
+export interface SubagentMetadata {
+  /**
+   * Optional identifier for the subagent that generated this event
+   */
+  subAgentId?: string;
+
+  /**
+   * Optional identifier for the agent that actually executed the step
+   * (same as subAgentId for first-level handoffs)
+   */
+  executingAgentId?: string;
+
+  /**
+   * Optional name of the subagent that generated this event
+   */
+  subAgentName?: string;
+
+  /**
+   * Optional name of the agent that actually executed the step
+   * (same as subAgentName for first-level handoffs)
+   */
+  executingAgentName?: string;
+
+  /**
+   * Parent agent reference when forwarded through supervisors
+   */
+  parentAgentId?: string;
+  parentAgentName?: string;
+
+  /**
+   * Ordered list of agent names from supervisor -> executing agent
+   */
+  agentPath?: string[];
+}
+
+/**
+ * Keys of SubagentMetadata - derived from the interface.
+ * Uses a typed object to ensure compile-time safety.
+ */
+export const SUBAGENT_METADATA_KEYS = Object.keys({
+  subAgentId: 0,
+  subAgentName: 0,
+  executingAgentId: 0,
+  executingAgentName: 0,
+  parentAgentId: 0,
+  parentAgentName: 0,
+  agentPath: 0,
+} as const as Record<keyof SubagentMetadata, 0>) as (keyof SubagentMetadata)[];
+
+/**
  * Extended TextStreamPart type that includes optional subagent metadata.
  * This type extends ai-sdk's TextStreamPart to support subagent event forwarding.
  *
  * @template TOOLS - The tool set type parameter from ai-sdk
  */
 export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<string, any>> =
-  TextStreamPart<TOOLS> & {
-    /**
-     * Optional identifier for the subagent that generated this event
-     */
-    subAgentId?: string;
-
-    /**
-     * Optional identifier for the agent that actually executed the step
-     * (same as subAgentId for first-level handoffs)
-     */
-    executingAgentId?: string;
-
-    /**
-     * Optional name of the subagent that generated this event
-     */
-    subAgentName?: string;
-
-    /**
-     * Optional name of the agent that actually executed the step
-     * (same as subAgentName for first-level handoffs)
-     */
-    executingAgentName?: string;
-
-    /**
-     * Parent agent reference when forwarded through supervisors
-     */
-    parentAgentId?: string;
-    parentAgentName?: string;
-
-    /**
-     * Ordered list of agent names from supervisor -> executing agent
-     */
-    agentPath?: string[];
-  };
+  TextStreamPart<TOOLS> & SubagentMetadata;
 
 /**
  * Extended StreamTextResult that uses VoltAgentTextStreamPart for fullStream.

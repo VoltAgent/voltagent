@@ -257,6 +257,8 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         pipeUIMessageStreamToResponse: vi.fn(),
         pipeTextStreamToResponse: vi.fn(),
         toTextStreamResponse: vi.fn(),
+        fullStreamToUIMessageStream: vi.fn(),
+        fullStreamToUIMessageStreamResponse: vi.fn(),
       };
 
       return result;
