@@ -1,0 +1,18 @@
+services:
+  mongodb-test:
+    image: mongo:7.0
+    container_name: 'voltagent-mongodb-test'
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: voltagent_test
+    volumes:
+      - test_mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  test_mongodb_data:
