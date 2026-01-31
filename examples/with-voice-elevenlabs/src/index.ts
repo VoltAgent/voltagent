@@ -17,7 +17,7 @@ const voiceProvider = new ElevenLabsVoiceProvider({
   apiKey: process.env.ELEVENLABS_API_KEY || "",
   voice: "Adam", // Default voice, you can change to any available voice
   ttsModel: "eleven_multilingual_v2",
-  speechModel: "scribe_v1",
+  speechModel: "scribe_v2",
   options: {
     stability: 0.5,
     similarityBoost: 0.75,

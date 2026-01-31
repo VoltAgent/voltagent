@@ -7,7 +7,7 @@
     "@voltagent/libsql": "^2.0.3",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/server-hono": "^2.0.4",
-    "@voltagent/voice": "^2.0.2",
+    "@voltagent/voice": "^2.1.0",
     "ai": "^6.0.0",
     "dotenv": "^16.4.5",
     "openai": "^4.91.0",
