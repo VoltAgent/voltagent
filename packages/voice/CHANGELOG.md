@@ -1,5 +1,15 @@
 # @voltagent/voice
 
+## 2.1.0
+
+### Minor Changes
+
+- [#1005](https://github.com/VoltAgent/voltagent/pull/1005) [`3a646b3`](https://github.com/VoltAgent/voltagent/commit/3a646b34da6d4138f51bd89213f0a02412a1a3cd) Thanks [@alienteavend](https://github.com/alienteavend)! - feat(voice): add scribe_v2 to eleventlabs models and change to default
+
+  Added scribe_v2 elevenlabs model
+
+  Resolves #1004
+
 ## 2.0.2
 
 ### Patch Changes

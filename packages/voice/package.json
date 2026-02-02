@@ -1,7 +1,7 @@
 {
   "name": "@voltagent/voice",
   "description": "VoltAgent Voice - Voice capabilities for AI agents",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "dependencies": {
     "@xsai/generate-speech": "0.4.0-beta.1",
     "@xsai/generate-transcription": "0.4.0-beta.1",

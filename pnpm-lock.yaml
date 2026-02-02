@@ -3041,8 +3041,8 @@ importers:
         specifier: ^2.0.4
         version: link:../../packages/server-hono
       '@voltagent/voice':
-        specifier: ^2.0.2
-        version: 2.1.0(@voltagent/core@packages+core)(zod@3.25.76)
+        specifier: ^2.1.0
+        version: link:../../packages/voice
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@3.25.76)
@@ -3078,8 +3078,8 @@ importers:
         specifier: ^2.0.4
         version: link:../../packages/server-hono
       '@voltagent/voice':
-        specifier: ^2.0.2
-        version: 2.1.0(@voltagent/core@packages+core)(zod@3.25.76)
+        specifier: ^2.1.0
+        version: link:../../packages/voice
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@3.25.76)
@@ -3121,8 +3121,8 @@ importers:
         specifier: ^2.0.4
         version: link:../../packages/server-hono
       '@voltagent/voice':
-        specifier: ^2.0.2
-        version: 2.1.0(@voltagent/core@packages+core)(zod@3.25.76)
+        specifier: ^2.1.0
+        version: link:../../packages/voice
       ai:
         specifier: ^6.0.0
         version: 6.0.3(zod@3.25.76)
@@ -20006,22 +20006,6 @@ packages:
       ts-pattern: 5.8.0
       type-fest: 4.41.0
       zod: 3.25.76
-    dev: false
-
-  /@voltagent/voice@2.1.0(@voltagent/core@packages+core)(zod@3.25.76):
-    resolution: {integrity: sha512-TByV1ci+aV4q6cgNImZCDsMAkEP6tRXhcEF+WrXHisldCNynNfp8WiJvRwNdRRPkLVaqqXmj20Mnj0j6Avr81w==}
-    peerDependencies:
-      '@voltagent/core': ^2.0.0
-    dependencies:
-      '@voltagent/core': link:packages/core
-      '@xsai/generate-speech': 0.4.0-beta.1
-      '@xsai/generate-transcription': 0.4.0-beta.1
-      elevenlabs: 1.59.0
-      openai: 4.104.0(ws@8.18.3)(zod@3.25.76)
-    transitivePeerDependencies:
-      - encoding
-      - ws
-      - zod
     dev: false
 
   /@vue-macros/common@3.0.0-beta.16(vue@3.5.22):
