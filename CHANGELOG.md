@@ -11,7 +11,7 @@
     `.voltagent/prompts/<promptName>/<version>.md`.
   - Local files are used first; VoltOps is only queried if the local prompt is missing.
   - If a local prompt is behind the online version, the agent logs a warning and records metadata.
-  - CLI `pull` can target labels or versions; `push` compares local vs online and creates new versions.
+  - CLI `pull` can target labels or versions; `push` compares local vs online and creates new versions
 
   ### CLI Usage
 
