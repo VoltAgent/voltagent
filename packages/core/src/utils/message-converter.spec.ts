@@ -93,6 +93,28 @@ describe("convertResponseMessagesToUIMessages", () => {
     });
   });
 
+  it("keeps empty reasoning when OpenAI item metadata is present", async () => {
+    const messages: AssistantModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "reasoning",
+            text: "",
+            providerOptions: { openai: { itemId: "rs_123" } },
+          },
+        ],
+      },
+    ];
+
+    const result = await convertResponseMessagesToUIMessages(messages);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].parts).toEqual([
+      { type: "reasoning", text: "", providerMetadata: { openai: { itemId: "rs_123" } } },
+    ]);
+  });
+
   it("should handle tool calls", async () => {
     const messages: AssistantModelMessage[] = [
       {
@@ -540,6 +562,27 @@ describe("convertModelMessagesToUIMessages (AI SDK v5)", () => {
     expect(ui[0].parts[1].type).toBe("file");
     expect(ui[0].parts[1].mediaType).toBe("application/octet-stream");
     expect(typeof (ui[0].parts[1] as any).url).toBe("string");
+  });
+
+  it("keeps empty reasoning parts with OpenAI metadata in model conversion", () => {
+    const messages: ModelMessage[] = [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "reasoning",
+            text: "",
+            providerOptions: { openai: { itemId: "rs_meta" } },
+          } as any,
+        ],
+      },
+    ];
+
+    const ui = convertModelMessagesToUIMessages(messages);
+    expect(ui).toHaveLength(1);
+    expect(ui[0].parts).toEqual([
+      { type: "reasoning", text: "", providerMetadata: { openai: { itemId: "rs_meta" } } },
+    ]);
   });
 
   it("maps image parts to UI file parts (url)", () => {

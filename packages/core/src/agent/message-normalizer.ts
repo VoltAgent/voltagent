@@ -6,6 +6,8 @@ const WORKING_MEMORY_TOOL_NAMES = new Set([
   "clear_working_memory",
 ]);
 
+const OPENAI_REASONING_ID_PREFIX = "rs_";
+
 type ToolLikePart = UIMessagePart<any, any> & {
   toolCallId?: string;
   state?: string;
@@ -27,6 +29,9 @@ type SanitizeMessagesOptions = {
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
+
+const isOpenAIReasoningId = (value: string): boolean =>
+  value.trim().startsWith(OPENAI_REASONING_ID_PREFIX);
 
 const safeClone = <T>(value: T): T => {
   if (!isObject(value) && !Array.isArray(value)) {
@@ -87,7 +92,78 @@ const sanitizeReasoningProviderMetadata = (
   return cloned;
 };
 
+const extractOpenAIReasoningId = (metadata: Record<string, unknown>): string | undefined => {
+  const openai = metadata.openai;
+  if (!isObject(openai)) {
+    return undefined;
+  }
+
+  if (typeof (openai as Record<string, unknown>).itemId === "string") {
+    const itemId = ((openai as Record<string, unknown>).itemId as string).trim();
+    if (itemId) {
+      return itemId;
+    }
+  }
+
+  if (typeof (openai as Record<string, unknown>).reasoning_trace_id === "string") {
+    const traceId = ((openai as Record<string, unknown>).reasoning_trace_id as string).trim();
+    if (traceId) {
+      return traceId;
+    }
+  }
+
+  const reasoning = (openai as Record<string, unknown>).reasoning;
+  if (isObject(reasoning)) {
+    const reasoningId = typeof reasoning.id === "string" ? reasoning.id.trim() : "";
+    if (reasoningId) {
+      return reasoningId;
+    }
+  }
+
+  return undefined;
+};
+
+const buildOpenAIReasoningProviderMetadata = (
+  providerMetadata: Record<string, unknown> | undefined,
+  reasoningId: string,
+): Record<string, unknown> | undefined => {
+  const openai =
+    providerMetadata && isObject(providerMetadata.openai) ? providerMetadata.openai : undefined;
+  const openaiMeta = isObject(openai) ? (openai as Record<string, unknown>) : undefined;
+
+  const itemId =
+    typeof openaiMeta?.itemId === "string"
+      ? openaiMeta.itemId.trim()
+      : isOpenAIReasoningId(reasoningId)
+        ? reasoningId
+        : "";
+
+  const reasoningEncryptedContent =
+    typeof openaiMeta?.reasoningEncryptedContent === "string"
+      ? openaiMeta.reasoningEncryptedContent
+      : undefined;
+
+  if (!itemId && !reasoningEncryptedContent) {
+    return undefined;
+  }
+
+  const openaiPayload: Record<string, unknown> = {};
+  if (itemId) {
+    openaiPayload.itemId = itemId;
+  }
+  if (reasoningEncryptedContent) {
+    openaiPayload.reasoningEncryptedContent = reasoningEncryptedContent;
+  }
+
+  return { openai: openaiPayload };
+};
+
 const extractReasoningIdFromMetadata = (metadata: Record<string, unknown>): string | undefined => {
+  const openaiReasoningId = extractOpenAIReasoningId(metadata);
+  if (openaiReasoningId) {
+    return openaiReasoningId;
+  }
+
   const visit = (value: unknown, hasReasoningContext: boolean): string | undefined => {
     if (Array.isArray(value)) {
       for (const element of value) {
@@ -150,6 +226,10 @@ const normalizeReasoning = (part: TextLikePart) => {
 
   if (reasoningId) {
     normalized.reasoningId = reasoningId;
+  }
+  const openaiMetadata = buildOpenAIReasoningProviderMetadata(providerMetadata, reasoningId);
+  if (openaiMetadata) {
+    normalized.providerMetadata = openaiMetadata;
   }
   if ((part as any).reasoningConfidence !== undefined) {
     normalized.reasoningConfidence = (part as any).reasoningConfidence;
@@ -480,11 +560,38 @@ const removeProviderExecutedToolsWithoutReasoning = (
   );
 };
 
+const hasOpenAIReasoningContext = (parts: UIMessagePart<any, any>[]): boolean => {
+  for (const part of parts) {
+    if (part.type !== "reasoning") {
+      continue;
+    }
+
+    const reasoningId =
+      typeof (part as any).reasoningId === "string" ? (part as any).reasoningId.trim() : "";
+    if (reasoningId && isOpenAIReasoningId(reasoningId)) {
+      return true;
+    }
+
+    const providerMetadata = (part as any).providerMetadata;
+    if (isObject(providerMetadata)) {
+      const openai = providerMetadata.openai;
+      if (isObject(openai)) {
+        const itemId = typeof openai.itemId === "string" ? openai.itemId.trim() : "";
+        if (itemId) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+};
+
 const stripReasoningLinkedProviderMetadata = (
   parts: UIMessagePart<any, any>[],
 ): UIMessagePart<any, any>[] => {
-  const hasReasoning = parts.some((part) => part.type === "reasoning");
-  if (hasReasoning) {
+  const hasOpenAIReasoning = hasOpenAIReasoningContext(parts);
+  if (hasOpenAIReasoning) {
     return parts;
   }
 

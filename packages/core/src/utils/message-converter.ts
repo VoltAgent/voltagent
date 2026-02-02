@@ -7,6 +7,42 @@ import type { FileUIPart, ReasoningUIPart, TextUIPart, ToolUIPart, UIMessage } f
 import { bytesToBase64 } from "./base64";
 import { randomUUID } from "./id";
 
+const hasOpenAIReasoningProviderOptions = (providerOptions: unknown): boolean => {
+  if (!providerOptions || typeof providerOptions !== "object") {
+    return false;
+  }
+
+  const openai = (providerOptions as Record<string, any>).openai;
+  if (!openai || typeof openai !== "object") {
+    return false;
+  }
+
+  const itemId = typeof openai.itemId === "string" ? openai.itemId.trim() : "";
+  if (itemId) {
+    return true;
+  }
+
+  const reasoningTraceId =
+    typeof openai.reasoning_trace_id === "string" ? openai.reasoning_trace_id.trim() : "";
+  if (reasoningTraceId) {
+    return true;
+  }
+
+  const reasoning = openai.reasoning;
+  if (reasoning && typeof reasoning === "object") {
+    const reasoningId = typeof reasoning.id === "string" ? reasoning.id.trim() : "";
+    if (reasoningId) {
+      return true;
+    }
+  }
+
+  if (typeof openai.reasoningEncryptedContent === "string" && openai.reasoningEncryptedContent) {
+    return true;
+  }
+
+  return false;
+};
+
 /**
  * Convert response messages to UIMessages for batch saving
  * This follows the same pattern as AI SDK's internal toUIMessageStream conversion
@@ -47,10 +83,19 @@ export async function convertResponseMessagesToUIMessages(
             break;
           }
           case "reasoning": {
-            if (contentPart.text && contentPart.text.length > 0) {
+            const reasoningText = typeof contentPart.text === "string" ? contentPart.text : "";
+            const hasReasoningId =
+              typeof (contentPart as any).id === "string" &&
+              (contentPart as any).id.trim().length > 0;
+            const shouldKeep =
+              reasoningText.length > 0 ||
+              hasReasoningId ||
+              hasOpenAIReasoningProviderOptions(contentPart.providerOptions);
+
+            if (shouldKeep) {
               uiMessage.parts.push({
                 type: "reasoning",
-                text: contentPart.text,
+                text: reasoningText,
                 ...(contentPart.providerOptions
                   ? { providerMetadata: contentPart.providerOptions }
                   : {}),
@@ -406,10 +451,19 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
           break;
         }
         case "reasoning": {
-          if (contentPart.text && contentPart.text.length > 0) {
+          const reasoningText = typeof contentPart.text === "string" ? contentPart.text : "";
+          const hasReasoningId =
+            typeof (contentPart as any).id === "string" &&
+            (contentPart as any).id.trim().length > 0;
+          const shouldKeep =
+            reasoningText.length > 0 ||
+            hasReasoningId ||
+            hasOpenAIReasoningProviderOptions(contentPart.providerOptions);
+
+          if (shouldKeep) {
             ui.parts.push({
               type: "reasoning",
-              text: contentPart.text,
+              text: reasoningText,
               ...(contentPart.providerOptions
                 ? { providerMetadata: contentPart.providerOptions as any }
                 : {}),

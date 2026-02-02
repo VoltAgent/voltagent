@@ -111,7 +111,7 @@ describe("message-normalizer", () => {
     });
   });
 
-  it("derives reasoning id from provider metadata without retaining the metadata", () => {
+  it("derives reasoning id from provider metadata and keeps the OpenAI item id", () => {
     const message = baseMessage([
       {
         type: "reasoning",
@@ -128,7 +128,7 @@ describe("message-normalizer", () => {
       text: "step",
       reasoningId: "rs_123",
     });
-    expect(part.providerMetadata).toBeUndefined();
+    expect(part.providerMetadata).toEqual({ openai: { itemId: "rs_123" } });
   });
 
   it("retains incomplete tool calls so follow-up results can merge later", () => {
@@ -314,7 +314,7 @@ describe("message-normalizer", () => {
     expect(parts[0]).toMatchObject({ type: "reasoning", reasoningId: "rs_123", text: "   " });
   });
 
-  it("retains reasoning parts when reasoning id exists only in provider metadata", () => {
+  it("retains reasoning parts when reasoning id exists only in provider metadata (OpenAI)", () => {
     const message = baseMessage([
       {
         type: "reasoning",
@@ -333,7 +333,39 @@ describe("message-normalizer", () => {
       reasoningId: "rs_meta",
       text: "",
     });
-    expect((parts[0] as any).providerMetadata).toBeUndefined();
+    expect((parts[0] as any).providerMetadata).toEqual({ openai: { itemId: "rs_meta" } });
+  });
+
+  it("keeps OpenAI tool metadata when reasoning is derived from OpenAI itemId", () => {
+    const message = baseMessage([
+      {
+        type: "reasoning",
+        text: "",
+        providerMetadata: { openai: { itemId: "rs_openai" } },
+      } as any,
+      {
+        type: "tool-weather_lookup",
+        toolCallId: "call-openai",
+        state: "input-available",
+        input: { location: "NYC" },
+        providerExecuted: false,
+        callProviderMetadata: { openai: { itemId: "fc_openai" } },
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const parts = (sanitized as UIMessage).parts;
+    expect(parts).toHaveLength(2);
+    expect(parts[0]).toMatchObject({
+      type: "reasoning",
+      reasoningId: "rs_openai",
+      text: "",
+    });
+    expect((parts[0] as any).providerMetadata).toEqual({ openai: { itemId: "rs_openai" } });
+
+    const toolPart = parts.find((part: any) => part.type === "tool-weather_lookup") as any;
+    expect(toolPart.callProviderMetadata).toEqual({ openai: { itemId: "fc_openai" } });
   });
 
   it("sanitizes collections while preserving message ordering", () => {
