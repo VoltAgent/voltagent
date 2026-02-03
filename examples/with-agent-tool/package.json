@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "author": "",
   "dependencies": {
-    "@voltagent/core": "^2.3.1",
+    "@voltagent/core": "^2.3.2",
     "ai": "^6.0.0",
     "zod": "^3.25.76"
   },

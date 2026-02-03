@@ -1,5 +1,11 @@
 # @voltagent/core
 
+## 2.3.2
+
+### Patch Changes
+
+- [#1011](https://github.com/VoltAgent/voltagent/pull/1011) [`38a80bc`](https://github.com/VoltAgent/voltagent/commit/38a80bcaee42d1d397f9bcfb2f1cf6c50d938cd6) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: preserve OpenAI reasoning/tool metadata during summarization so function_call items keep their required reasoning references and no longer error
+
 ## 2.3.1
 
 ### Patch Changes

@@ -4,7 +4,7 @@
   "dependencies": {
     "@ai-sdk/react": "^3.0.0",
     "@libsql/client": "^0.15.0",
-    "@voltagent/core": "^2.3.1",
+    "@voltagent/core": "^2.3.2",
     "@voltagent/server-hono": "^2.0.4",
     "@voltagent/vercel-ai": "^1.0.0",
     "@voltagent/vercel-ui": "^1.0.1",
