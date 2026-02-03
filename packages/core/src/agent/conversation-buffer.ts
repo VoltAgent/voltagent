@@ -106,14 +106,25 @@ export class ConversationBuffer {
     return this.messages.map((message) => this.cloneMessage(message));
   }
 
-  addMetadataToLastAssistantMessage(metadata: Record<string, unknown>): void {
+  addMetadataToLastAssistantMessage(
+    metadata: Record<string, unknown>,
+    options?: { requirePending?: boolean },
+  ): boolean {
     if (!metadata || Object.keys(metadata).length === 0) {
-      return;
+      return false;
     }
 
-    const lastAssistantIndex = this.findLastAssistantIndex();
+    let lastAssistantIndex = this.findLastAssistantIndex({
+      pendingOnly: options?.requirePending,
+    });
     if (lastAssistantIndex === -1) {
-      return;
+      if (options?.requirePending) {
+        return false;
+      }
+      lastAssistantIndex = this.findLastAssistantIndex();
+    }
+    if (lastAssistantIndex === -1) {
+      return false;
     }
 
     const target = this.messages[lastAssistantIndex];
@@ -124,6 +135,7 @@ export class ConversationBuffer {
       ...metadata,
     } as UIMessage["metadata"];
     this.pendingMessageIds.add(target.id);
+    return true;
   }
 
   private appendExistingMessage(
@@ -308,9 +320,12 @@ export class ConversationBuffer {
     }
   }
 
-  private findLastAssistantIndex(): number {
+  private findLastAssistantIndex(options?: { pendingOnly?: boolean }): number {
     for (let i = this.messages.length - 1; i >= 0; i--) {
       if (this.messages[i].role === "assistant") {
+        if (options?.pendingOnly && !this.pendingMessageIds.has(this.messages[i].id)) {
+          continue;
+        }
         return i;
       }
     }

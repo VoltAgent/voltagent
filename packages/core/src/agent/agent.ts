@@ -1020,7 +1020,20 @@ export class Agent {
             }
 
             if (feedbackMetadata) {
-              buffer.addMetadataToLastAssistantMessage({ feedback: feedbackMetadata });
+              const metadataApplied = buffer.addMetadataToLastAssistantMessage(
+                { feedback: feedbackMetadata },
+                { requirePending: true },
+              );
+              if (!metadataApplied) {
+                const responseMessages = result.response?.messages as ModelMessage[] | undefined;
+                if (responseMessages?.length) {
+                  buffer.addModelMessages(responseMessages, "response");
+                  buffer.addMetadataToLastAssistantMessage(
+                    { feedback: feedbackMetadata },
+                    { requirePending: true },
+                  );
+                }
+              }
             }
 
             if (shouldDeferPersist) {
@@ -1170,6 +1183,7 @@ export class Agent {
     let feedbackResolved = false;
     let feedbackFinalizeRequested = false;
     let feedbackApplied = false;
+    let latestResponseMessages: ModelMessage[] | undefined;
     const resolveFeedbackDeferred = (value: AgentFeedbackMetadata | null) => {
       if (!feedbackDeferred || feedbackResolved) {
         return;
@@ -1193,7 +1207,17 @@ export class Agent {
           return;
         }
         feedbackApplied = true;
-        buffer.addMetadataToLastAssistantMessage({ feedback: metadata });
+        const metadataApplied = buffer.addMetadataToLastAssistantMessage(
+          { feedback: metadata },
+          { requirePending: true },
+        );
+        if (!metadataApplied && latestResponseMessages?.length) {
+          buffer.addModelMessages(latestResponseMessages, "response");
+          buffer.addMetadataToLastAssistantMessage(
+            { feedback: metadata },
+            { requirePending: true },
+          );
+        }
         if (shouldDeferPersist) {
           void persistQueue.flush(buffer, oc).catch((error) => {
             oc.logger?.debug?.("Failed to persist feedback metadata", { error });
@@ -1518,6 +1542,9 @@ export class Agent {
                 );
               },
               onFinish: async (finalResult) => {
+                latestResponseMessages = finalResult.response?.messages as
+                  | ModelMessage[]
+                  | undefined;
                 const providerUsage = finalResult.usage
                   ? await Promise.resolve(finalResult.usage)
                   : undefined;
