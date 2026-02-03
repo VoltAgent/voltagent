@@ -1,4 +1,4 @@
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import React, { useState } from "react";
@@ -8,6 +8,49 @@ import { DotPattern } from "../components/ui/dot-pattern";
 
 export default function Pricing2(): JSX.Element {
   const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+
+  const toggleFAQ = (index: number) => {
+    setOpenFAQ(openFAQ === index ? null : index);
+  };
+
+  const faqData = [
+    {
+      question: "What's the difference between VoltAgent Core Framework and VoltOps?",
+      answer:
+        "VoltAgent Core Framework is our free and open-source TypeScript framework for building AI agents. VoltOps is the paid console for observability, automation, deployment, and evals. Available as cloud or self-hosted.",
+    },
+    {
+      question: "Do you offer a free trial?",
+      answer:
+        "Yes! Both Core ($50/month) and Pro ($250/month) plans include a 14-day free trial. You can explore all features without any commitment. The Developer plan is always free with limited usage, perfect for personal projects and experimentation.",
+    },
+    {
+      question: "What counts as a trace in VoltOps?",
+      answer:
+        "A trace represents a single execution flow through your AI agent or application. This includes LLM calls, tool usage, function calls, and any nested operations that occur during a single request or conversation turn. Each user interaction that triggers your AI system typically generates one trace.",
+    },
+    {
+      question: "What happens when I exceed my trace limit?",
+      answer:
+        "Core plan includes 50,000 traces/month and Pro plan includes 250,000 traces/month. If you exceed these limits, you'll be charged $10 for every additional 5,000 traces. You can set up billing alerts in your dashboard to monitor usage and avoid unexpected charges.",
+    },
+    {
+      question: "Where is my data stored and is it secure?",
+      answer:
+        "For our cloud offering, VoltOps data is securely stored in SOC 2 compliant data centers with encryption at rest and in transit. For Enterprise customers, we offer self-hosted options where all data remains in your own infrastructure and never leaves your environment.",
+    },
+    {
+      question: "Can I self-host VoltOps?",
+      answer:
+        "Yes! VoltOps Enterprise plan includes self-hosted deployment options. You can run VoltOps entirely within your own infrastructure, ensuring your sensitive AI application data never leaves your environment while still getting full monitoring capabilities.",
+    },
+    {
+      question: "Will you train on the data that I send to VoltOps?",
+      answer:
+        "No, absolutely not. VoltOps never uses your data to train models or for any other purpose beyond providing you with monitoring and analytics. Your AI application data is strictly used only for observability features and remains completely private to your organization.",
+    },
+  ];
 
   const pricingTiers = [
     {
@@ -292,7 +335,7 @@ export default function Pricing2(): JSX.Element {
                 </div>
               </motion.div>
 
-              {/* Pricing Cards Grid - 3 columns */}
+              {/* Pricing Cards Grid - 3 columns on desktop, 2 on tablet (with Enterprise as 4th card) */}
               <div className="grid grid-cols-1 landing-sm:grid-cols-2 landing-lg:grid-cols-3 gap-4 landing-xs:gap-3 landing-sm:gap-4">
                 {pricingTiers.map((tier, index) => (
                   <motion.div
@@ -394,14 +437,64 @@ export default function Pricing2(): JSX.Element {
                     </div>
                   </motion.div>
                 ))}
+
+                {/* Enterprise Card - Only visible on tablet and mobile (below landing-lg) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="landing-lg:hidden relative rounded-xl border-solid border border-[#2b2d2f] bg-[#1a1b1e] backdrop-blur-sm transition-all duration-300 flex flex-col hover:border-gray-600"
+                >
+                  <div className="p-5 landing-xs:p-4 landing-sm:p-5 flex flex-col h-full">
+                    {/* Header */}
+                    <div className="text-left mb-4">
+                      <h3 className="text-2xl font-semibold text-white">Enterprise</h3>
+                      <p className="text-gray-400 text-sm mt-2">For large-scale deployments</p>
+                    </div>
+
+                    {/* CTA Button */}
+                    <a
+                      href="https://forms.gle/nmXKC7RbYhouBs2A6"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex mb-4 landing-xs:mb-3 items-center justify-center no-underline border-solid border font-semibold rounded-md transition-colors cursor-pointer px-3 py-2 text-sm landing-xs:text-xs bg-transparent text-white border-[#2b2d2f] hover:bg-white/5"
+                    >
+                      Contact us
+                    </a>
+
+                    {/* Price */}
+                    <div className="text-left mb-4 landing-xs:mb-3">
+                      <div className="flex items-baseline justify-start">
+                        <span className="text-[28px] font-bold text-white">Custom</span>
+                      </div>
+                    </div>
+
+                    {/* INCLUDES label */}
+                    <div className="text-[15px] text-[#9CA3AF] font-semibold mb-2 text-left">
+                      INCLUDES:
+                    </div>
+
+                    {/* Features */}
+                    <div className="space-y-2 landing-xs:space-y-1.5 flex-1">
+                      {enterpriseFeatures.map((feature) => (
+                        <div key={feature} className="flex items-center text-left">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-3 flex-shrink-0" />
+                          <span className="text-[15px] leading-tight text-[#9CA3AF]">
+                            {feature}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
               </div>
 
-              {/* Enterprise - Full Width Horizontal */}
+              {/* Enterprise - Full Width Horizontal (Only visible on desktop - landing-lg and above) */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="mt-4 bg-[#1a1b1e] rounded-xl border border-[#2b2d2f] p-5"
+                className="hidden landing-lg:block mt-4 bg-[#1a1b1e] rounded-xl border border-[#2b2d2f] p-5"
               >
                 <div className="flex flex-col landing-md:flex-row landing-md:items-center landing-md:justify-between gap-4 landing-md:gap-6">
                   <div className="flex items-center gap-3 flex-shrink-0">
@@ -530,6 +623,72 @@ export default function Pricing2(): JSX.Element {
             </div>
           </section>
         </div>
+
+        {/* FAQ Section */}
+        <section className="py-8 landing-sm:py-16 landing-md:py-20 px-4 landing-xs:px-3 landing-sm:px-6">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-center mb-12 landing-xs:mb-8 landing-sm:mb-16"
+            >
+              <h2 className="text-3xl landing-xs:text-lg landing-sm:text-3xl md:text-4xl font-bold text-white mb-4 landing-xs:mb-3">
+                Frequently Asked Questions
+              </h2>
+              <p className="text-gray-400 text-lg landing-xs:text-xs landing-sm:text-lg">
+                Everything you need to know about VoltOps LLM Observability
+              </p>
+            </motion.div>
+
+            <div className="space-y-4 landing-xs:space-y-2">
+              {faqData.map((faq, index) => (
+                <motion.div
+                  key={faq.question}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 * index }}
+                  className="bg-[#1a1b1e] border border-solid border-[#2b2d2f] rounded-lg landing-xs:rounded-md overflow-hidden hover:border-gray-500 transition-colors"
+                >
+                  <div
+                    onClick={() => toggleFAQ(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        toggleFAQ(index);
+                      }
+                    }}
+                    className="w-full text-left p-6 landing-xs:p-3 landing-sm:p-5 flex items-center justify-between focus:outline-none focus:bg-gray-800/20 hover:bg-gray-800/20 transition-colors cursor-pointer"
+                  >
+                    <span className="text-lg landing-xs:text-xs landing-sm:text-lg font-semibold text-white pr-4 landing-xs:pr-2">
+                      {faq.question}
+                    </span>
+                    <ChevronDownIcon
+                      className={`w-5 h-5 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
+                        openFAQ === index ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      height: openFAQ === index ? "auto" : 0,
+                      opacity: openFAQ === index ? 1 : 0,
+                    }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-6 pb-6 landing-xs:px-3 landing-xs:pb-3 landing-sm:px-5 landing-sm:pb-5">
+                      <p className="text-gray-400 leading-relaxed landing-xs:text-xs landing-sm:text-base">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* Pricing Calculator Modal */}
         <PricingCalculatorModal isOpen={calculatorOpen} onClose={() => setCalculatorOpen(false)} />
