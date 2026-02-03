@@ -619,7 +619,7 @@ END OF MIGRATION SQL
     }
 
     // Order by creation time and apply limit
-    query = query.order("created_at", { ascending: true });
+    query = query.order("created_at", { ascending: false });
     if (limit && limit > 0) {
       query = query.limit(limit);
     }
@@ -631,7 +631,7 @@ END OF MIGRATION SQL
     }
 
     // Convert to UIMessages with on-the-fly migration for old format
-    return (data || []).map((row) => {
+    return (data || []).reverse().map((row) => {
       // Determine parts based on whether we have new format (parts) or old format (content)
       let parts: any;
 
