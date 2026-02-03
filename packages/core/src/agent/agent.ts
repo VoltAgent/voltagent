@@ -1,9 +1,11 @@
 import { isDeepStrictEqual } from "node:util";
 import type {
+  AssistantModelMessage,
   ModelMessage,
   ProviderOptions,
   SystemModelMessage,
   ToolExecutionOptions,
+  ToolModelMessage,
 } from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
 import { SpanKind, SpanStatusCode, context as otelContext } from "@opentelemetry/api";
@@ -191,6 +193,83 @@ const DEFAULT_CONVERSATION_TITLE_MAX_OUTPUT_TOKENS = 32;
 const DEFAULT_CONVERSATION_TITLE_MAX_CHARS = 80;
 const CONVERSATION_TITLE_INPUT_MAX_CHARS = 2000;
 const DEFAULT_TOOL_SEARCH_TOP_K = 1;
+
+type ResponseMessage = AssistantModelMessage | ToolModelMessage;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const hasNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+const isAssistantContentPart = (value: unknown): boolean => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  switch (value.type) {
+    case "text":
+    case "reasoning":
+      return typeof value.text === "string";
+    case "tool-call":
+    case "tool-result":
+      return hasNonEmptyString(value.toolCallId) && hasNonEmptyString(value.toolName);
+    case "tool-approval-request":
+      return hasNonEmptyString(value.toolCallId) && hasNonEmptyString(value.approvalId);
+    case "image":
+      return "image" in value && value.image != null;
+    case "file":
+      return hasNonEmptyString(value.mediaType) && "data" in value && value.data != null;
+    default:
+      return false;
+  }
+};
+
+const isToolContentPart = (value: unknown): boolean => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  switch (value.type) {
+    case "tool-result":
+      return hasNonEmptyString(value.toolCallId) && hasNonEmptyString(value.toolName);
+    case "tool-approval-response":
+      return hasNonEmptyString(value.approvalId) && typeof value.approved === "boolean";
+    default:
+      return false;
+  }
+};
+
+const isResponseMessage = (value: unknown): value is ResponseMessage => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (value.role === "assistant") {
+    if (typeof value.content === "string") {
+      return true;
+    }
+    if (Array.isArray(value.content)) {
+      return value.content.every(isAssistantContentPart);
+    }
+    return false;
+  }
+
+  if (value.role === "tool") {
+    return Array.isArray(value.content) && value.content.every(isToolContentPart);
+  }
+
+  return false;
+};
+
+const filterResponseMessages = (messages: unknown): ModelMessage[] | undefined => {
+  if (!Array.isArray(messages)) {
+    return undefined;
+  }
+
+  const filtered = messages.filter(isResponseMessage);
+  return filtered.length > 0 ? filtered : undefined;
+};
 
 const searchToolsParameters = z.object({
   query: z.string().describe("User request or query to search tools for."),
@@ -1025,7 +1104,7 @@ export class Agent {
                 { requirePending: true },
               );
               if (!metadataApplied) {
-                const responseMessages = result.response?.messages as ModelMessage[] | undefined;
+                const responseMessages = filterResponseMessages(result.response?.messages);
                 if (responseMessages?.length) {
                   buffer.addModelMessages(responseMessages, "response");
                   buffer.addMetadataToLastAssistantMessage(
@@ -1542,9 +1621,7 @@ export class Agent {
                 );
               },
               onFinish: async (finalResult) => {
-                latestResponseMessages = finalResult.response?.messages as
-                  | ModelMessage[]
-                  | undefined;
+                latestResponseMessages = filterResponseMessages(finalResult.response?.messages);
                 const providerUsage = finalResult.usage
                   ? await Promise.resolve(finalResult.usage)
                   : undefined;
@@ -5869,7 +5946,7 @@ export class Agent {
         }
       }
 
-      const responseMessages = event.response?.messages as ModelMessage[] | undefined;
+      const responseMessages = filterResponseMessages(event.response?.messages);
       if (responseMessages && responseMessages.length > 0) {
         buffer.addModelMessages(responseMessages, "response");
       }
