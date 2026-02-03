@@ -573,8 +573,12 @@ export class LibSQLMemoryCore implements StorageAdapter {
     const messagesTable = `${this.tablePrefix}_messages`;
     const { limit, before, after, roles } = options || {};
 
-    let sql = `SELECT * FROM ${messagesTable}
-               WHERE conversation_id = ? AND user_id = ?`;
+    let sql = `
+      SELECT * FROM (
+        SELECT *
+        FROM ${messagesTable}
+        WHERE conversation_id = ? AND user_id = ?
+    `;
     const args: any[] = [conversationId, userId];
 
     if (roles && roles.length > 0) {
@@ -593,11 +597,13 @@ export class LibSQLMemoryCore implements StorageAdapter {
       args.push(after.toISOString());
     }
 
-    sql += " ORDER BY created_at ASC";
+    sql += " ORDER BY created_at DESC";
     if (limit && limit > 0) {
       sql += " LIMIT ?";
       args.push(limit);
     }
+
+    sql += " ) AS subq ORDER BY created_at ASC";
 
     const result = await this.client.execute({ sql, args });
 
