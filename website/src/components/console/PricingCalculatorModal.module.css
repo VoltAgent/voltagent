@@ -1,22 +1,21 @@
 /* Custom range slider styles */
 .rangeSlider::-webkit-slider-thumb {
   appearance: none;
-  height: 20px;
-  width: 20px;
+  height: 18px;
+  width: 18px;
   border-radius: 50%;
-  background: #00d992;
+  background: #ffffff;
   cursor: pointer;
-  border: 2px solid #191c24;
-  box-shadow: 0 0 0 1px rgba(0, 217, 146, 0.3);
+  border: 2px solid #1a1b1e;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .rangeSlider::-moz-range-thumb {
-  height: 20px;
-  width: 20px;
+  height: 18px;
+  width: 18px;
   border-radius: 50%;
-  background: #00d992;
+  background: #ffffff;
   cursor: pointer;
-  border: 2px solid #191c24;
-  box-shadow: 0 0 0 1px rgba(0, 217, 146, 0.3);
-  border: none;
+  border: 2px solid #1a1b1e;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
