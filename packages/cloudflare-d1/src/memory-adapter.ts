@@ -615,8 +615,9 @@ export class D1MemoryAdapter implements StorageAdapter {
     const messagesTable = `${this.tablePrefix}_messages`;
     const { limit, before, after, roles } = options || {};
 
-    let sql = `SELECT * FROM ${messagesTable}
-               WHERE conversation_id = ? AND user_id = ?`;
+    let sql = `SELECT * FROM (
+             SELECT * FROM ${messagesTable}
+             WHERE conversation_id = ? AND user_id = ?`;
     const args: unknown[] = [conversationId, userId];
 
     if (roles && roles.length > 0) {
@@ -635,11 +636,13 @@ export class D1MemoryAdapter implements StorageAdapter {
       args.push(after.toISOString());
     }
 
-    sql += " ORDER BY created_at ASC";
+    sql += " ORDER BY created_at DESC";
     if (limit && limit > 0) {
       sql += " LIMIT ?";
       args.push(limit);
     }
+
+    sql += " ) AS subq ORDER BY created_at ASC";
 
     const rows = await this.all<D1Row>(sql, args);
 
