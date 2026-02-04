@@ -147,6 +147,37 @@ describe("message-normalizer", () => {
     expect(((sanitized as UIMessage).parts[0] as any).state).toBe("input-available");
   });
 
+  it("keeps tool runs with pending, error, or denied states", () => {
+    const message = baseMessage([
+      {
+        type: "tool-search",
+        toolCallId: "call-streaming",
+        state: "input-streaming",
+        input: { query: "streaming" },
+      } as any,
+      {
+        type: "tool-search",
+        toolCallId: "call-error",
+        state: "output-error",
+        errorText: "Tool failed",
+      } as any,
+      {
+        type: "tool-search",
+        toolCallId: "call-denied",
+        state: "output-denied",
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const parts = (sanitized as UIMessage).parts as any[];
+    expect(parts.map((part) => part.state)).toEqual([
+      "input-streaming",
+      "output-error",
+      "output-denied",
+    ]);
+  });
+
   it("preserves tool approval metadata for approval flows", () => {
     const message = baseMessage([
       {

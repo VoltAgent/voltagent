@@ -595,9 +595,9 @@ const isPrunableEmptyToolRun = (part: UIMessagePart<any, any>): boolean => {
   if (typeof part.type !== "string" || !part.type.startsWith("tool-")) {
     return false;
   }
-  const hasPendingState = (part as any).state === "input-available";
-  const hasResult =
-    (part as any).state === "output-available" || (part as any).output !== undefined;
+  const state = (part as any).state;
+  const hasPendingState = state === "input-available" || state === "input-streaming";
+  const hasResult = hasToolOutput(part as ToolLikePart);
   if (!hasPendingState && !hasResult && (part as any).input == null) {
     return true;
   }
