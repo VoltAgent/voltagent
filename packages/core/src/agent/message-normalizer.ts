@@ -261,7 +261,12 @@ const isToolLikePart = (part: UIMessagePart<any, any>): part is ToolLikePart => 
 
 const hasToolOutput = (part: ToolLikePart): boolean => {
   const state = typeof part.state === "string" ? part.state : undefined;
-  if (state === "output-available" || state === "output-error" || state === "output-denied") {
+  if (
+    state === "output-available" ||
+    state === "output-streaming" ||
+    state === "output-error" ||
+    state === "output-denied"
+  ) {
     return true;
   }
   return part.output !== undefined;

@@ -178,6 +178,20 @@ describe("message-normalizer", () => {
     ]);
   });
 
+  it("keeps tool runs with output-streaming state", () => {
+    const message = baseMessage([
+      {
+        type: "tool-search",
+        toolCallId: "call-streaming-output",
+        state: "output-streaming",
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    expect(((sanitized as UIMessage).parts[0] as any).state).toBe("output-streaming");
+  });
+
   it("preserves tool approval metadata for approval flows", () => {
     const message = baseMessage([
       {
