@@ -351,21 +351,45 @@ export const sanitizeMessagesForModel = (
   return addStepStartsBetweenToolRuns(filtered);
 };
 
+const findNextContentPart = (
+  parts: UIMessagePart<any, any>[],
+  startIndex: number,
+): { kind: "working-memory" } | { kind: "part"; part: UIMessagePart<any, any> } | undefined => {
+  for (let index = startIndex; index < parts.length; index += 1) {
+    const candidate = parts[index];
+    if (!candidate) {
+      continue;
+    }
+    if (candidate.type === "step-start") {
+      continue;
+    }
+    if (isToolLikePart(candidate) && isWorkingMemoryTool(candidate as ToolLikePart)) {
+      return { kind: "working-memory" };
+    }
+    const normalized = normalizeGenericPart(candidate);
+    if (!normalized) {
+      continue;
+    }
+    if (isPrunableEmptyToolRun(normalized)) {
+      continue;
+    }
+    return { kind: "part", part: normalized };
+  }
+  return undefined;
+};
+
 export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null => {
   const sanitizedParts: UIMessagePart<any, any>[] = [];
 
   for (let index = 0; index < message.parts.length; index += 1) {
     const part = message.parts[index];
-    const nextPart = message.parts[index + 1];
     if (part?.type === "reasoning") {
       const text = typeof (part as any).text === "string" ? (part as any).text.trim() : "";
-      if (
-        text.length === 0 &&
-        nextPart &&
-        isToolLikePart(nextPart as UIMessagePart<any, any>) &&
-        isWorkingMemoryTool(nextPart as ToolLikePart)
-      ) {
-        continue;
+      if (text.length === 0) {
+        const nextContent = findNextContentPart(message.parts, index + 1);
+        if (nextContent?.kind === "working-memory") {
+          continue;
+        }
       }
     }
     const normalized = normalizeGenericPart(part);
@@ -558,18 +582,26 @@ const addStepStartsBetweenToolRuns = (messages: UIMessage[]): UIMessage[] => {
 const pruneEmptyToolRuns = (parts: UIMessagePart<any, any>[]): UIMessagePart<any, any>[] => {
   const cleaned: UIMessagePart<any, any>[] = [];
   for (const part of parts) {
-    if (typeof part.type === "string" && part.type.startsWith("tool-")) {
-      const hasPendingState = (part as any).state === "input-available";
-      const hasResult =
-        (part as any).state === "output-available" || (part as any).output !== undefined;
-      if (!hasPendingState && !hasResult && (part as any).input == null) {
-        continue;
-      }
+    if (isPrunableEmptyToolRun(part)) {
+      continue;
     }
 
     cleaned.push(part);
   }
   return cleaned;
+};
+
+const isPrunableEmptyToolRun = (part: UIMessagePart<any, any>): boolean => {
+  if (typeof part.type !== "string" || !part.type.startsWith("tool-")) {
+    return false;
+  }
+  const hasPendingState = (part as any).state === "input-available";
+  const hasResult =
+    (part as any).state === "output-available" || (part as any).output !== undefined;
+  if (!hasPendingState && !hasResult && (part as any).input == null) {
+    return true;
+  }
+  return false;
 };
 
 const removeProviderExecutedToolsWithoutReasoning = (
