@@ -389,12 +389,9 @@ export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null =>
   for (let index = 0; index < message.parts.length; index += 1) {
     const part = message.parts[index];
     if (part?.type === "reasoning") {
-      const text = typeof (part as any).text === "string" ? (part as any).text.trim() : "";
-      if (text.length === 0) {
-        const nextContent = findNextContentPart(message.parts, index + 1);
-        if (nextContent?.kind === "working-memory") {
-          continue;
-        }
+      const nextContent = findNextContentPart(message.parts, index + 1);
+      if (nextContent?.kind === "working-memory") {
+        continue;
       }
     }
     const normalized = normalizeGenericPart(part);
