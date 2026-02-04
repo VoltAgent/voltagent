@@ -354,7 +354,20 @@ export const sanitizeMessagesForModel = (
 export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null => {
   const sanitizedParts: UIMessagePart<any, any>[] = [];
 
-  for (const part of message.parts) {
+  for (let index = 0; index < message.parts.length; index += 1) {
+    const part = message.parts[index];
+    const nextPart = message.parts[index + 1];
+    if (part?.type === "reasoning") {
+      const text = typeof (part as any).text === "string" ? (part as any).text.trim() : "";
+      if (
+        text.length === 0 &&
+        nextPart &&
+        isToolLikePart(nextPart as UIMessagePart<any, any>) &&
+        isWorkingMemoryTool(nextPart as ToolLikePart)
+      ) {
+        continue;
+      }
+    }
     const normalized = normalizeGenericPart(part);
     if (!normalized) {
       continue;
@@ -462,7 +475,27 @@ const filterIncompleteToolCallsForModel = (messages: UIMessage[]): UIMessage[] =
       return true;
     });
 
-    const pruned = collapseRedundantStepStarts(parts);
+    let pruned = collapseRedundantStepStarts(parts);
+    const hasTextContent = pruned.some(
+      (part) =>
+        part.type === "text" &&
+        typeof (part as any).text === "string" &&
+        (part as any).text.trim().length > 0,
+    );
+    const hasToolPart = pruned.some((part) => isToolLikePart(part));
+    const hasNonReasoningPart = pruned.some((part) => part.type !== "reasoning");
+    const shouldDropEmptyReasoning =
+      (!hasTextContent && hasToolPart) || (mutated && !hasNonReasoningPart);
+
+    if (shouldDropEmptyReasoning) {
+      pruned = pruned.filter((part) => {
+        if (part.type !== "reasoning") {
+          return true;
+        }
+        const text = typeof (part as any).text === "string" ? (part as any).text.trim() : "";
+        return text.length > 0;
+      });
+    }
     if (pruned.length === 0) {
       continue;
     }

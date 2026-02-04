@@ -428,6 +428,98 @@ describe("message-normalizer", () => {
     expect(sanitized[0].role).toBe("user");
   });
 
+  it("drops orphaned empty reasoning when incomplete tool calls are pruned", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "reasoning",
+          text: "",
+          providerMetadata: { openai: { itemId: "rs_123" } },
+        } as any,
+        {
+          type: "tool-search",
+          toolCallId: "call-123",
+          state: "input-available",
+          input: { query: "hello" },
+        } as any,
+      ]),
+      baseMessage([{ type: "text", text: "next turn" } as any], "user"),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages);
+
+    expect(sanitized).toHaveLength(1);
+    expect(sanitized[0].role).toBe("user");
+  });
+
+  it("drops empty reasoning when assistant message only contains tool output", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "reasoning",
+          text: "",
+          providerMetadata: { openai: { itemId: "rs_123" } },
+        } as any,
+        {
+          type: "tool-search",
+          toolCallId: "call-456",
+          state: "output-available",
+          output: { results: [] },
+        } as any,
+      ]),
+      baseMessage([{ type: "text", text: "next turn" } as any], "user"),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages);
+
+    expect(sanitized).toHaveLength(2);
+    expect(sanitized[0].role).toBe("assistant");
+    expect(sanitized[0].parts.some((part) => part.type === "reasoning")).toBe(false);
+    expect(sanitized[1].role).toBe("user");
+  });
+
+  it("drops empty reasoning that precedes working-memory tool calls", () => {
+    const message = baseMessage([
+      {
+        type: "reasoning",
+        text: "Planning next steps.",
+        providerMetadata: { openai: { itemId: "rs_text" } },
+      } as any,
+      {
+        type: "tool-search",
+        toolCallId: "call-1",
+        state: "output-available",
+        output: { result: true },
+      } as any,
+      {
+        type: "reasoning",
+        text: "",
+        providerMetadata: { openai: { itemId: "rs_empty" } },
+      } as any,
+      {
+        type: "tool-update_working_memory",
+        toolCallId: "call-2",
+        state: "output-available",
+        output: { type: "text", value: "ok" },
+      } as any,
+      { type: "step-start" } as any,
+      { type: "text", text: "final answer" } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const parts = (sanitized as UIMessage).parts;
+    expect(parts.some((part: any) => part.type === "tool-update_working_memory")).toBe(false);
+    expect(
+      parts.some(
+        (part: any) =>
+          part.type === "reasoning" && part.providerMetadata?.openai?.itemId === "rs_empty",
+      ),
+    ).toBe(false);
+    expect(parts.some((part: any) => part.type === "reasoning")).toBe(true);
+    expect(parts.some((part: any) => part.type === "text")).toBe(true);
+  });
+
   it("preserves approval responses on the last assistant message", () => {
     const messages: UIMessage[] = [
       baseMessage([
