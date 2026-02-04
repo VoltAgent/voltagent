@@ -484,6 +484,7 @@ END OF MIGRATION SQL
     await this.initialize();
 
     const messagesTable = `${this.baseTableName}_messages`;
+    const messageId = message.id || this.generateId();
 
     // Ensure conversation exists
     const conversation = await this.getConversation(conversationId);
@@ -492,16 +493,18 @@ END OF MIGRATION SQL
     }
 
     // Insert message
-    const { error } = await this.client.from(messagesTable).insert({
-      conversation_id: conversationId,
-      message_id: message.id || this.generateId(),
-      user_id: userId,
-      role: message.role,
-      parts: message.parts,
-      metadata: message.metadata || null,
-      format_version: 2,
-      created_at: new Date().toISOString(),
-    });
+    const { error } = await this.client.from(messagesTable).upsert(
+      {
+        conversation_id: conversationId,
+        message_id: messageId,
+        user_id: userId,
+        role: message.role,
+        parts: message.parts,
+        metadata: message.metadata || null,
+        format_version: 2,
+      },
+      { onConflict: "conversation_id,message_id" },
+    );
 
     if (error) {
       throw new Error(`Failed to add message: ${error.message}`);
@@ -524,8 +527,6 @@ END OF MIGRATION SQL
       throw new ConversationNotFoundError(conversationId);
     }
 
-    const now = new Date().toISOString();
-
     // Prepare messages for batch insert
     const messagesToInsert = messages.map((message) => ({
       conversation_id: conversationId,
@@ -535,11 +536,12 @@ END OF MIGRATION SQL
       parts: message.parts,
       metadata: message.metadata || null,
       format_version: 2,
-      created_at: now,
     }));
 
     // Insert all messages
-    const { error } = await this.client.from(messagesTable).insert(messagesToInsert);
+    const { error } = await this.client
+      .from(messagesTable)
+      .upsert(messagesToInsert, { onConflict: "conversation_id,message_id" });
 
     if (error) {
       throw new Error(`Failed to add messages: ${error.message}`);

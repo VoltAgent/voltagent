@@ -325,6 +325,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       await client.query("BEGIN");
 
       const messagesTable = this.getTableName(`${this.tablePrefix}_messages`);
+      const messageId = message.id || this.generateId();
 
       // Ensure conversation exists
       const conversation = await this.getConversation(conversationId);
@@ -336,10 +337,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       await client.query(
         `INSERT INTO ${messagesTable} 
          (conversation_id, message_id, user_id, role, parts, metadata, format_version, created_at) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (conversation_id, message_id) DO UPDATE SET
+           user_id = EXCLUDED.user_id,
+           role = EXCLUDED.role,
+           parts = EXCLUDED.parts,
+           metadata = EXCLUDED.metadata,
+           format_version = EXCLUDED.format_version`,
         [
           conversationId,
-          message.id || this.generateId(),
+          messageId,
           userId,
           message.role,
           safeStringify(message.parts),
@@ -381,13 +388,20 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
       // Insert all messages
       for (const message of messages) {
+        const messageId = message.id || this.generateId();
         await client.query(
           `INSERT INTO ${messagesTable} 
            (conversation_id, message_id, user_id, role, parts, metadata, format_version, created_at) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           ON CONFLICT (conversation_id, message_id) DO UPDATE SET
+             user_id = EXCLUDED.user_id,
+             role = EXCLUDED.role,
+             parts = EXCLUDED.parts,
+             metadata = EXCLUDED.metadata,
+             format_version = EXCLUDED.format_version`,
           [
             conversationId,
-            message.id || this.generateId(),
+            messageId,
             userId,
             message.role,
             safeStringify(message.parts),
