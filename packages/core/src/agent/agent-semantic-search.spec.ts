@@ -20,6 +20,7 @@ vi.mock("ai", () => ({
   streamObject: vi.fn(),
   convertToModelMessages: vi.fn((messages) => messages),
   stepCountIs: vi.fn(() => vi.fn(() => false)),
+  validateUIMessages: vi.fn(async ({ messages }) => messages),
 }));
 
 // Mock embedding adapter

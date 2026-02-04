@@ -721,11 +721,13 @@ describe("Agent", () => {
 
       result.toUIMessageStream();
 
-      expect(mockStream.toUIMessageStream).toHaveBeenCalledWith(
+      const callArgs = mockStream.toUIMessageStream.mock.calls[0]?.[0];
+      expect(callArgs).toEqual(
         expect.objectContaining({
-          generateMessageId: savedMessage?.id,
+          generateMessageId: expect.any(Function),
         }),
       );
+      expect(callArgs?.generateMessageId()).toBe(savedMessage?.id);
     });
 
     it("uses last-step usage for finish events when provider is anthropic", async () => {
