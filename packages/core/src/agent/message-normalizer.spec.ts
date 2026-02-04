@@ -523,7 +523,7 @@ describe("message-normalizer", () => {
     expect(sanitized[1].role).toBe("user");
   });
 
-  it("drops reasoning that precedes working-memory tool calls", () => {
+  it("drops empty reasoning that precedes working-memory tool calls", () => {
     const message = baseMessage([
       {
         type: "reasoning",
@@ -538,7 +538,7 @@ describe("message-normalizer", () => {
       } as any,
       {
         type: "reasoning",
-        text: "Updating memory.",
+        text: "",
         providerMetadata: { openai: { itemId: "rs_empty" } },
       } as any,
       {
@@ -565,11 +565,11 @@ describe("message-normalizer", () => {
     expect(parts.some((part: any) => part.type === "text")).toBe(true);
   });
 
-  it("drops reasoning when prunable parts sit before working-memory tools", () => {
+  it("drops empty reasoning when prunable parts sit before working-memory tools", () => {
     const message = baseMessage([
       {
         type: "reasoning",
-        text: "Prepping memory update.",
+        text: "",
         providerMetadata: { openai: { itemId: "rs_empty" } },
       } as any,
       {
