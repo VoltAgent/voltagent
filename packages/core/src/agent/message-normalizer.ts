@@ -56,6 +56,14 @@ const safeClone = <T>(value: T): T => {
   }
 };
 
+const compactObject = <T extends Record<string, unknown>>(value: T): T => {
+  const entries = Object.entries(value).filter(([, entryValue]) => entryValue !== undefined);
+  if (entries.length === Object.keys(value).length) {
+    return value;
+  }
+  return Object.fromEntries(entries) as T;
+};
+
 const normalizeText = (part: TextLikePart) => {
   const text = typeof part.text === "string" ? part.text : "";
   if (!text.trim()) {
@@ -599,20 +607,44 @@ const stripReasoningLinkedProviderMetadata = (
     if (!isObject(metadata)) {
       return undefined;
     }
+
     const cloned = { ...(metadata as Record<string, unknown>) };
     const openaiMetadata = cloned.openai;
-    if (
-      !isObject(openaiMetadata) ||
-      !(
-        "itemId" in openaiMetadata ||
-        "reasoning_trace_id" in openaiMetadata ||
-        ("reasoning" in openaiMetadata &&
-          isObject((openaiMetadata as Record<string, unknown>).reasoning))
-      )
-    ) {
+    if (!isObject(openaiMetadata)) {
       return metadata as Record<string, unknown>;
     }
-    const { openai, ...cleanedMetadata } = cloned;
+
+    const openaiClone = { ...(openaiMetadata as Record<string, unknown>) };
+    let changed = false;
+
+    if (typeof openaiClone.itemId === "string") {
+      const itemId = openaiClone.itemId.trim();
+      if (itemId && isOpenAIReasoningId(itemId)) {
+        openaiClone.itemId = undefined;
+        changed = true;
+      }
+    }
+
+    if (typeof openaiClone.reasoning_trace_id === "string") {
+      openaiClone.reasoning_trace_id = undefined;
+      changed = true;
+    }
+
+    if ("reasoning" in openaiClone) {
+      openaiClone.reasoning = undefined;
+      changed = true;
+    }
+
+    if (!changed) {
+      return metadata as Record<string, unknown>;
+    }
+
+    const cleanedOpenai = compactObject(openaiClone);
+    const nextMetadata = {
+      ...cloned,
+      openai: Object.keys(cleanedOpenai).length > 0 ? cleanedOpenai : undefined,
+    };
+    const cleanedMetadata = compactObject(nextMetadata);
     return Object.keys(cleanedMetadata).length > 0 ? cleanedMetadata : undefined;
   };
 

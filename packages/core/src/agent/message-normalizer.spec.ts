@@ -189,7 +189,7 @@ describe("message-normalizer", () => {
       {
         type: "text",
         text: "final answer",
-        providerMetadata: { openai: { itemId: "msg_123" }, other: { keep: true } },
+        providerMetadata: { openai: { itemId: "rs_123" }, other: { keep: true } },
       } as any,
     ]);
 
@@ -206,7 +206,7 @@ describe("message-normalizer", () => {
       {
         type: "text",
         text: "final answer",
-        providerMetadata: { openai: { itemId: "msg_123" } },
+        providerMetadata: { openai: { itemId: "rs_123" } },
       } as any,
     ]);
     sanitized = sanitizeMessageForModel(message);
@@ -214,6 +214,25 @@ describe("message-normalizer", () => {
     expect(part).toEqual({
       type: "text",
       text: "final answer",
+    });
+  });
+
+  it("keeps non-reasoning OpenAI itemIds when no reasoning parts exist", () => {
+    const message = baseMessage([
+      {
+        type: "text",
+        text: "final answer",
+        providerMetadata: { openai: { itemId: "msg_123" } },
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const part = (sanitized as UIMessage).parts[0];
+    expect(part).toEqual({
+      type: "text",
+      text: "final answer",
+      providerMetadata: { openai: { itemId: "msg_123" } },
     });
   });
 
@@ -244,7 +263,7 @@ describe("message-normalizer", () => {
     expect(parts[0]).toEqual({ type: "text", text: "summary" });
   });
 
-  it("removes OpenAI metadata from tool parts when reasoning is absent", () => {
+  it("keeps non-reasoning OpenAI metadata on tool parts when reasoning is absent", () => {
     const message = baseMessage([
       {
         type: "tool-weather_lookup",
@@ -259,7 +278,10 @@ describe("message-normalizer", () => {
     const sanitized = sanitizeMessageForModel(message);
     expect(sanitized).not.toBeNull();
     const part = (sanitized as UIMessage).parts[0] as any;
-    expect(part.callProviderMetadata).toEqual({ other: { keep: true } });
+    expect(part.callProviderMetadata).toEqual({
+      openai: { itemId: "fc_123" },
+      other: { keep: true },
+    });
   });
 
   it("keeps OpenAI metadata on tool parts when reasoning is present", () => {

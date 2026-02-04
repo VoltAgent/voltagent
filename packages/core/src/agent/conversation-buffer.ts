@@ -12,6 +12,44 @@ interface PendingMessage {
   message: UIMessage;
 }
 
+const extractOpenAIItemId = (metadata: unknown): string => {
+  if (!metadata || typeof metadata !== "object") {
+    return "";
+  }
+
+  const openai = (metadata as { openai?: unknown }).openai;
+  if (!openai || typeof openai !== "object") {
+    return "";
+  }
+
+  const openaiRecord = openai as Record<string, unknown>;
+  const itemId = typeof openaiRecord.itemId === "string" ? openaiRecord.itemId.trim() : "";
+  if (itemId) {
+    return itemId;
+  }
+
+  const traceId =
+    typeof openaiRecord.reasoning_trace_id === "string"
+      ? openaiRecord.reasoning_trace_id.trim()
+      : "";
+  if (traceId) {
+    return traceId;
+  }
+
+  const reasoning = openaiRecord.reasoning;
+  if (reasoning && typeof reasoning === "object") {
+    const reasoningId =
+      typeof (reasoning as Record<string, unknown>).id === "string"
+        ? ((reasoning as Record<string, unknown>).id as string).trim()
+        : "";
+    if (reasoningId) {
+      return reasoningId;
+    }
+  }
+
+  return "";
+};
+
 /**
  * Lightweight buffer that merges tool call/result pairs while keeping VoltAgent's UIMessage format intact.
  */
@@ -486,8 +524,13 @@ export class ConversationBuffer {
     switch (part.type) {
       case "text":
         return `text:${part.text}:${JSON.stringify((part as any).providerMetadata ?? null)}`;
-      case "reasoning":
-        return `reasoning:${part.text}`;
+      case "reasoning": {
+        const reasoningText = typeof (part as any).text === "string" ? (part as any).text : "";
+        const reasoningId =
+          typeof (part as any).reasoningId === "string" ? (part as any).reasoningId.trim() : "";
+        const openaiItemId = extractOpenAIItemId((part as any).providerMetadata);
+        return `reasoning:${reasoningText}:${reasoningId}:${openaiItemId}`;
+      }
       case "step-start":
         return "step-start";
       default: {
