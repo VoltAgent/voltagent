@@ -3295,14 +3295,6 @@ export class Agent {
       return existing;
     }
 
-    if (!oc.userId || !oc.conversationId) {
-      return null;
-    }
-
-    if (!this.memoryManager.hasConversationMemory()) {
-      return null;
-    }
-
     const messageId = generateId();
     const placeholder: UIMessage = {
       id: messageId,
@@ -3311,9 +3303,17 @@ export class Agent {
     };
 
     buffer.ingestUIMessages([placeholder], false);
-    await this.memoryManager.saveMessage(oc, placeholder, oc.userId, oc.conversationId);
-
     oc.systemContext.set(STREAM_RESPONSE_MESSAGE_ID_KEY, messageId);
+
+    if (!oc.userId || !oc.conversationId) {
+      return messageId;
+    }
+
+    if (!this.memoryManager.hasConversationMemory()) {
+      return messageId;
+    }
+
+    await this.memoryManager.saveMessage(oc, placeholder, oc.userId, oc.conversationId);
     return messageId;
   }
 
