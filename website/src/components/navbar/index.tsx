@@ -398,6 +398,9 @@ export default function Navbar() {
             <Link to="/docs/" className={`${styles.navLink}  `}>
               Documentation
             </Link>
+            <Link to="/pricing/" className={`${styles.navLink}`}>
+              Pricing
+            </Link>
 
             <div className={`${styles.navLink} group relative`}>
               <div className="flex items-center cursor-pointer">
@@ -712,6 +715,9 @@ export default function Navbar() {
           </Link>
           <Link to="/recipes-and-guides/" className={`${styles.mobileNavLink}`}>
             Recipes & Guides
+          </Link>
+          <Link to="/pricing/" className={`${styles.mobileNavLink}`}>
+            Pricing
           </Link>
 
           <div className={styles.mobileNavLink}>

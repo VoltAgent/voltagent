@@ -665,6 +665,11 @@ const config: Config = {
           label: "MCP",
           position: "left",
         },
+        {
+          to: "/pricing",
+          label: "Pricing",
+          position: "left",
+        },
       ],
     },
     footer: {
