@@ -1,5 +1,11 @@
 # @voltagent/libsql
 
+## 2.1.0
+
+### Minor Changes
+
+- [#1013](https://github.com/VoltAgent/voltagent/pull/1013) [`a35626a`](https://github.com/VoltAgent/voltagent/commit/a35626a29a9cfdc2375ac4276d58f87e0ef79f68) Thanks [@fengyun99](https://github.com/fengyun99)! - The SQL statement has been modified. Previously, the query returned the earliest messages instead of the most recent ones.
+
 ## 2.0.3
 
 ### Patch Changes

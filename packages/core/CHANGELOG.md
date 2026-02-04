@@ -1,5 +1,19 @@
 # @voltagent/core
 
+## 2.3.3
+
+### Patch Changes
+
+- [#1014](https://github.com/VoltAgent/voltagent/pull/1014) [`e121adc`](https://github.com/VoltAgent/voltagent/commit/e121adcb8604c3b2dd82b720103874f7c0b3485d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: persist feedback metadata on assistant messages so history reloads keep feedback actions
+
+- [#1017](https://github.com/VoltAgent/voltagent/pull/1017) [`c706872`](https://github.com/VoltAgent/voltagent/commit/c70687293b55b910e9f94c36a2602811e524f2ce) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: align OpenAI reasoning metadata handling with AI SDK
+  - preserve non-reasoning OpenAI itemIds (e.g. msg*/fc*) when reasoning parts are absent
+  - only strip reasoning-linked OpenAI metadata (rs\_/reasoning_trace_id/reasoning) when no reasoning context exists
+  - include OpenAI reasoning itemId in ConversationBuffer signatures to avoid dropping distinct reasoning parts during merge
+
+- [#1016](https://github.com/VoltAgent/voltagent/pull/1016) [`238f87f`](https://github.com/VoltAgent/voltagent/commit/238f87ff66ce16c8b37a1d599958563516819102) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: validate UI/response messages and keep streaming response message IDs consistent across UI streams - #1010
+  fix(postgres/supabase): upsert conversation messages by (conversation_id, message_id) to avoid duplicate insert failures
+
 ## 2.3.2
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @voltagent/supabase
 
+## 2.1.0
+
+### Minor Changes
+
+- [#1013](https://github.com/VoltAgent/voltagent/pull/1013) [`a35626a`](https://github.com/VoltAgent/voltagent/commit/a35626a29a9cfdc2375ac4276d58f87e0ef79f68) Thanks [@fengyun99](https://github.com/fengyun99)! - The SQL statement has been modified. Previously, the query returned the earliest messages instead of the most recent ones.
+
+### Patch Changes
+
+- [#1016](https://github.com/VoltAgent/voltagent/pull/1016) [`238f87f`](https://github.com/VoltAgent/voltagent/commit/238f87ff66ce16c8b37a1d599958563516819102) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: validate UI/response messages and keep streaming response message IDs consistent across UI streams - #1010
+  fix(postgres/supabase): upsert conversation messages by (conversation_id, message_id) to avoid duplicate insert failures
+
 ## 2.0.3
 
 ### Patch Changes
