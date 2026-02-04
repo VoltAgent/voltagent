@@ -392,12 +392,16 @@ export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null =>
       const text = typeof (part as any).text === "string" ? (part as any).text.trim() : undefined;
       const content =
         typeof (part as any).content === "string" ? (part as any).content.trim() : undefined;
-      const id =
+      const explicitId =
         typeof (part as any).id === "string"
           ? (part as any).id.trim()
           : typeof (part as any).reasoningId === "string"
             ? (part as any).reasoningId.trim()
             : undefined;
+      const providerMetadata = (part as any).providerMetadata;
+      const metadataReasoningId =
+        isObject(providerMetadata) ? extractReasoningIdFromMetadata(providerMetadata) : undefined;
+      const id = explicitId || metadataReasoningId;
       const isEmptyReasoning = !text && !content && !id;
       const nextContent = findNextContentPart(message.parts, index + 1);
       if (isEmptyReasoning && nextContent?.kind === "working-memory") {
