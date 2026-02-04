@@ -341,6 +341,76 @@ This allows you to:
 - Filter events by specific sub-agent
 - Apply different handling logic based on the event source
 
+### Converting fullStream to UI Message Format
+
+`fullStreamToUIMessageStream` and `fullStreamToUIMessageStreamResponse` convert the raw fullStream into a format compatible with the AI SDK's `useChat` hook while preserving subagent metadata.
+
+#### Basic Usage
+
+```ts
+const result = await supervisorAgent.streamText("Create and edit content");
+
+for await (const chunk of result.fullStreamToUIMessageStream()) {
+  if (chunk.subAgentName) {
+    console.log(`[${chunk.subAgentName}] ${chunk.type}`);
+  }
+}
+```
+
+#### HTTP Response for useChat
+
+```ts
+export async function POST(req: Request) {
+  const { input } = await req.json();
+  const result = await supervisorAgent.streamText(input);
+  return result.fullStreamToUIMessageStreamResponse();
+}
+```
+
+#### Configuration Options
+
+```ts
+const stream = result.fullStreamToUIMessageStream({
+  // All options default to true (included). Set to false to exclude.
+  sendTextDelta: true, // text content deltas
+  sendReasoning: true, // reasoning/thinking content
+  sendSources: true, // source annotations
+  sendToolCall: true, // tool-call → tool-input-available
+  sendToolResult: true, // tool-result → tool-output-available
+  sendToolInputStart: true, // tool streaming start
+  sendToolInputDelta: true, // tool streaming deltas
+  sendToolError: true, // tool-error → tool-output-error
+  sendStart: true, // start/start-step events
+  sendFinish: true, // finish/finish-step events
+  sendError: true, // error events
+  onError: (error) => `Error: ${error}`,
+});
+```
+
+Some event types are mapped to different UI chunk names:
+
+| Original Event | UI Chunk Type           |
+| -------------- | ----------------------- |
+| `tool-call`    | `tool-input-available`  |
+| `tool-result`  | `tool-output-available` |
+| `tool-error`   | `tool-output-error`     |
+
+Other events (`text-delta`, `reasoning-delta`, `source`, `start`, `finish`, `error`, etc.) keep their original names.
+
+#### Example: Chat UI with Agent Attribution
+
+```ts
+function ChatMessage({ chunk }) {
+  const label = chunk.subAgentName ? `[${chunk.subAgentName}]` : "[Supervisor]";
+  return (
+    <div className="message">
+      <span className="agent-label">{label}</span>
+      {chunk.type === "text-delta" && <span>{chunk.delta}</span>}
+    </div>
+  );
+}
+```
+
 #### Filtering Historical Conversations
 
 Sub-agent metadata is also persisted in memory, so you can apply the same filtering logic when you replay a conversation later:

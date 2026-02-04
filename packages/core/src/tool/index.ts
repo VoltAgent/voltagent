@@ -61,7 +61,7 @@ export type { Tool as VercelTool } from "ai";
 export type { ProviderOptions } from "@ai-sdk/provider-utils";
 
 // Export ToolManager and related types
-export { ToolManager, ToolStatus, ToolStatusInfo } from "./manager";
+export { ToolManager, type ToolStatus, type ToolStatusInfo } from "./manager";
 // Export Toolkit type and createToolkit function
 export { type Toolkit, createToolkit } from "./toolkit";
 // Export tool routing helpers

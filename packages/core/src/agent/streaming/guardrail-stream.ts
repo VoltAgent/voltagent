@@ -35,7 +35,7 @@ export function sanitizeFinishStreamPart(
     return finishPart;
   }
 
-  const cloned: Record<string, unknown> = { ...finishPart };
+  const cloned: VoltAgentTextStreamPart & Record<string, unknown> = { ...finishPart };
 
   if (typeof cloned.text === "string") {
     cloned.text = sanitizedText;

@@ -155,7 +155,8 @@ import {
 } from "./streaming/guardrail-stream";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
-import type { VoltAgentTextStreamPart } from "./subagent/types";
+import { SUBAGENT_METADATA_KEYS } from "./subagent/types";
+import type { SubagentMetadata, VoltAgentTextStreamPart } from "./subagent/types";
 import type {
   AgentEvalConfig,
   AgentEvalOperationType,
@@ -315,6 +316,126 @@ const callToolParameters = z.object({
 // Types
 // ============================================================================
 
+/**
+ * Extracts subagent metadata fields from a stream part
+ */
+function extractSubagentMetadata(part: VoltAgentTextStreamPart): SubagentMetadata {
+  const metadata: Record<string, unknown> = {};
+  for (const key of SUBAGENT_METADATA_KEYS) {
+    if (part[key] != null) {
+      metadata[key] = part[key];
+    }
+  }
+  return metadata as SubagentMetadata;
+}
+
+/**
+ * Base UIMessageChunk with subagent metadata fields.
+ * Uses a permissive base that allows UIMessageStream to accept our extended chunks.
+ */
+export type UIMessageChunkWithMetadata = {
+  type: string;
+  [key: string]: unknown;
+} & SubagentMetadata;
+
+/**
+ * Converts a fullStream part to UIMessageChunk format with subagent metadata
+ * @internal Exported for testing purposes
+ */
+export function convertFullStreamPartToUIMessageChunk(
+  part: VoltAgentTextStreamPart,
+  options: FullStreamToUIMessageStreamOptions,
+): UIMessageChunkWithMetadata | undefined {
+  const meta = extractSubagentMetadata(part);
+
+  switch (part.type) {
+    case "text-delta":
+      if (options.sendTextDelta === false) return undefined;
+      return { type: "text-delta", id: part.id, delta: part.text, ...meta };
+
+    case "reasoning-delta":
+      if (options.sendReasoning === false) return undefined;
+      return { type: "reasoning-delta", id: part.id, delta: part.text, ...meta };
+
+    case "source":
+      if (options.sendSources === false) return undefined;
+      return { ...part, ...meta };
+
+    case "tool-call":
+      if (options.sendToolCall === false) return undefined;
+      return {
+        type: "tool-input-available",
+        toolCallId: part.toolCallId,
+        toolName: part.toolName,
+        input: "input" in part ? part.input : (part as Record<string, unknown>).args,
+        ...meta,
+      };
+
+    case "tool-result":
+      if (options.sendToolResult === false) return undefined;
+      return {
+        type: "tool-output-available",
+        toolCallId: part.toolCallId,
+        output: "output" in part ? part.output : (part as Record<string, unknown>).result,
+        ...meta,
+      };
+
+    case "tool-input-start":
+      if (options.sendToolInputStart === false) return undefined;
+      return {
+        type: "tool-input-start",
+        toolCallId: part.id,
+        toolName: part.toolName,
+        ...meta,
+      };
+
+    case "tool-input-delta":
+      if (options.sendToolInputDelta === false) return undefined;
+      return {
+        type: "tool-input-delta",
+        toolCallId: part.id,
+        inputTextDelta: part.delta,
+        ...meta,
+      };
+
+    case "tool-error":
+      if (options.sendToolError === false) return undefined;
+      return {
+        type: "tool-output-error",
+        toolCallId: part.toolCallId,
+        errorText: String(part.error),
+        ...meta,
+      };
+
+    case "start-step":
+      if (options.sendStart === false) return undefined;
+      return { type: "start-step", ...meta };
+
+    case "finish-step":
+      if (options.sendFinish === false) return undefined;
+      return { type: "finish-step", finishReason: part.finishReason, usage: part.usage, ...meta };
+
+    case "start":
+      if (options.sendStart === false) return undefined;
+      return { type: "start", ...meta };
+
+    case "finish":
+      if (options.sendFinish === false) return undefined;
+      return { type: "finish", finishReason: part.finishReason, usage: part.totalUsage, ...meta };
+
+    case "error":
+      if (options.sendError === false) return undefined;
+      return {
+        type: "error",
+        error: options.onError ? options.onError(part.error) : String(part.error),
+        ...meta,
+      };
+
+    default:
+      return undefined;
+  }
+}
+
 export type OutputSpec = Output.Output<unknown, unknown>;
 type OutputValue<OUTPUT extends OutputSpec> = InferGenerateOutput<OUTPUT>;
 
@@ -353,6 +474,36 @@ function sanitizeConversationTitle(text: string, maxLength: number): string {
 /**
  * Extended StreamTextResult that includes context
  */
+/**
+ * Options for fullStreamToUIMessageStream conversion
+ */
+export type FullStreamToUIMessageStreamOptions = {
+  /** Include text delta content in the stream */
+  sendTextDelta?: boolean;
+  /** Include reasoning/thinking content in the stream */
+  sendReasoning?: boolean;
+  /** Include source annotations in the stream */
+  sendSources?: boolean;
+  /** Include tool-call events in the stream */
+  sendToolCall?: boolean;
+  /** Include tool-result events in the stream */
+  sendToolResult?: boolean;
+  /** Include tool-input-start events in the stream */
+  sendToolInputStart?: boolean;
+  /** Include tool-input-delta events in the stream */
+  sendToolInputDelta?: boolean;
+  /** Include tool-error events in the stream */
+  sendToolError?: boolean;
+  /** Send start events */
+  sendStart?: boolean;
+  /** Send finish events */
+  sendFinish?: boolean;
+  /** Include error events in the stream */
+  sendError?: boolean;
+  /** Error handler */
+  onError?: (error: unknown) => string;
+};
+
 export type StreamTextResultWithContext<
   TOOLS extends ToolSet = Record<string, any>,
   OUTPUT = unknown,
@@ -370,6 +521,11 @@ export type StreamTextResultWithContext<
   pipeUIMessageStreamToResponse: AIStreamTextResult<TOOLS, any>["pipeUIMessageStreamToResponse"];
   pipeTextStreamToResponse: AIStreamTextResult<TOOLS, any>["pipeTextStreamToResponse"];
   toTextStreamResponse: AIStreamTextResult<TOOLS, any>["toTextStreamResponse"];
+  // Convert fullStream to UIMessageStream with subagent metadata preserved
+  fullStreamToUIMessageStream: (
+    options?: FullStreamToUIMessageStreamOptions,
+  ) => AsyncIterable<UIMessageChunkWithMetadata>;
+  fullStreamToUIMessageStreamResponse: (options?: FullStreamToUIMessageStreamOptions) => Response;
   // Additional context field
   context: Map<string | symbol, unknown>;
   // Feedback metadata for the trace, if enabled
@@ -2160,6 +2316,70 @@ export class Agent {
               textStream: getGuardrailAwareTextStream(),
               ...(init ?? {}),
             });
+          },
+          fullStreamToUIMessageStream: (streamOptions?: FullStreamToUIMessageStreamOptions) => {
+            const opts: FullStreamToUIMessageStreamOptions = {
+              sendTextDelta: streamOptions?.sendTextDelta,
+              sendReasoning: streamOptions?.sendReasoning,
+              sendSources: streamOptions?.sendSources,
+              sendToolCall: streamOptions?.sendToolCall,
+              sendToolResult: streamOptions?.sendToolResult,
+              sendToolInputStart: streamOptions?.sendToolInputStart,
+              sendToolInputDelta: streamOptions?.sendToolInputDelta,
+              sendToolError: streamOptions?.sendToolError,
+              sendStart: streamOptions?.sendStart,
+              sendFinish: streamOptions?.sendFinish,
+              sendError: streamOptions?.sendError,
+              onError: streamOptions?.onError ?? ((e: unknown) => String(e)),
+            };
+
+            const fullStream = getGuardrailAwareFullStream();
+
+            async function* generateUIStream() {
+              for await (const part of fullStream) {
+                const converted = convertFullStreamPartToUIMessageChunk(part, opts);
+                if (converted) {
+                  yield converted;
+                }
+              }
+            }
+
+            return generateUIStream();
+          },
+          fullStreamToUIMessageStreamResponse: (
+            streamOptions?: FullStreamToUIMessageStreamOptions,
+          ) => {
+            const opts: FullStreamToUIMessageStreamOptions = {
+              sendTextDelta: streamOptions?.sendTextDelta,
+              sendReasoning: streamOptions?.sendReasoning,
+              sendSources: streamOptions?.sendSources,
+              sendToolCall: streamOptions?.sendToolCall,
+              sendToolResult: streamOptions?.sendToolResult,
+              sendToolInputStart: streamOptions?.sendToolInputStart,
+              sendToolInputDelta: streamOptions?.sendToolInputDelta,
+              sendToolError: streamOptions?.sendToolError,
+              sendStart: streamOptions?.sendStart,
+              sendFinish: streamOptions?.sendFinish,
+              sendError: streamOptions?.sendError,
+              onError: streamOptions?.onError ?? ((e: unknown) => String(e)),
+            };
+
+            const fullStream = getGuardrailAwareFullStream();
+
+            const uiStream = createUIMessageStream({
+              execute: async ({ writer }) => {
+                for await (const part of fullStream) {
+                  const converted = convertFullStreamPartToUIMessageChunk(part, opts);
+                  if (converted) {
+                    // Cast needed: UIMessageChunkWithMetadata extends base UI chunk with subagent metadata
+                    writer.write(converted as Parameters<typeof writer.write>[0]);
+                  }
+                }
+              },
+              onError: opts.onError,
+            });
+
+            return createUIMessageStreamResponse({ stream: uiStream });
           },
           context: oc.context,
           get feedback() {

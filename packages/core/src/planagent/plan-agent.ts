@@ -1158,5 +1158,13 @@ export class PlanAgent extends Agent {
     if (wrappedTools.length > 0) {
       this.addTools(wrappedTools);
     }
+
+    // Register subagents with the parent Agent class so that streamText()
+    // creates the fullStreamWriter for subagent event forwarding
+    if (normalizedSubagents.length > 0) {
+      for (const subagent of normalizedSubagents) {
+        this.addSubAgent(subagent.config);
+      }
+    }
   }
 }
