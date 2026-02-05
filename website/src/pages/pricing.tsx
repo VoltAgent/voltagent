@@ -462,19 +462,11 @@ export default function Pricing(): JSX.Element {
                       <button
                         type="button"
                         onClick={() => {
-                          if (tier.name === "Enterprise") {
-                            window.open(
-                              "https://forms.gle/BrnyFF4unP9pZxAh7",
-                              "_blank",
-                              "noopener,noreferrer",
-                            );
-                          } else {
-                            window.open(
-                              "https://console.voltagent.dev",
-                              "_blank",
-                              "noopener,noreferrer",
-                            );
-                          }
+                          window.open(
+                            "https://console.voltagent.dev",
+                            "_blank",
+                            "noopener,noreferrer",
+                          );
                         }}
                         className={`w-full inline-flex mb-4 landing-xs:mb-3 items-center justify-center no-underline border-solid border font-semibold rounded-md transition-colors cursor-pointer px-4 py-2.5 text-base landing-xs:text-sm ${
                           tier.buttonVariant === "primary"
