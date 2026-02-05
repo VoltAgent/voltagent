@@ -523,6 +523,42 @@ describe("message-normalizer", () => {
     expect(sanitized[1].role).toBe("user");
   });
 
+  it("drops standalone OpenAI reasoning items when they are the only assistant part", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "reasoning",
+          text: "",
+          providerMetadata: { openai: { itemId: "rs_only" } },
+        } as any,
+      ]),
+      baseMessage([{ type: "text", text: "next turn" } as any], "user"),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages);
+
+    expect(sanitized).toHaveLength(1);
+    expect(sanitized[0].role).toBe("user");
+  });
+
+  it("drops standalone OpenAI reasoning items even when reasoning text exists", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "reasoning",
+          text: "Thinking...",
+          providerMetadata: { openai: { itemId: "rs_only_text" } },
+        } as any,
+      ]),
+      baseMessage([{ type: "text", text: "next turn" } as any], "user"),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages);
+
+    expect(sanitized).toHaveLength(1);
+    expect(sanitized[0].role).toBe("user");
+  });
+
   it("drops empty reasoning that precedes working-memory tool calls", () => {
     const message = baseMessage([
       {
