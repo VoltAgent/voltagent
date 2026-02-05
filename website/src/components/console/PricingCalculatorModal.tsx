@@ -106,10 +106,14 @@ const PricingCalculatorModal = ({ isOpen, onClose }: PricingCalculatorModalProps
           <label className="block text-sm font-medium text-gray-300 mb-3">Select Plan:</label>
           <div className="grid grid-cols-2 gap-2">
             <div
-              onClick={() => setSelectedPlan("core")}
+              onClick={() => {
+                setSelectedPlan("core");
+                if (traceCount > 100000) setTraceCount(100000);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   setSelectedPlan("core");
+                  if (traceCount > 100000) setTraceCount(100000);
                 }
               }}
               role="button"
