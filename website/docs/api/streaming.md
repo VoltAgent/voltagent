@@ -77,7 +77,7 @@ while (true) {
   for (const line of lines) {
     if (line.startsWith("data: ")) {
       const event = JSON.parse(line.slice(6));
-      // Handle event.type: 'text-delta', 'tool-call', 'tool-result', 'finish'
+      // Handle event.type: 'start' (includes messageId), 'text-delta', 'tool-call', 'tool-result', 'finish'
     }
   }
 }

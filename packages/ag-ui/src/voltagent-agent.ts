@@ -85,6 +85,9 @@ export class VoltAgentAGUI extends AbstractAgent {
 
           for await (const part of result.fullStream) {
             debugLog("fullStream part", { partType: part.type, id: (part as any).id });
+            if ((part.type === "start" || part.type === "start-step") && part.messageId) {
+              currentMessageId = part.messageId;
+            }
             const events = convertVoltStreamPartToEvents(part, currentMessageId);
             if (!events) continue;
 
@@ -393,10 +396,11 @@ function convertVoltStreamPartToEvents(
       return null;
     }
     case "text-delta": {
+      const messageId = part.messageId ?? fallbackMessageId;
       const event: TextMessageChunkEvent = {
         type: EventType.TEXT_MESSAGE_CHUNK,
         delta: part.text ?? "",
-        messageId: part.id ?? fallbackMessageId,
+        messageId,
         role: "assistant",
       };
       return [event];

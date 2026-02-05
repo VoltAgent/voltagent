@@ -682,6 +682,9 @@ describe("Agent", () => {
         })(),
         fullStream: (async function* () {
           yield {
+            type: "start" as const,
+          };
+          yield {
             type: "text-delta" as const,
             id: "text-1",
             delta: "Streamed response",
@@ -731,6 +734,14 @@ describe("Agent", () => {
       expect(typeof generatedId).toBe("string");
       expect(generatedId).not.toBe("");
       expect(callArgs?.generateMessageId()).toBe(generatedId);
+
+      const parts: any[] = [];
+      for await (const part of result.fullStream) {
+        parts.push(part);
+      }
+      expect(parts).toHaveLength(2);
+      expect(parts[0]).toEqual(expect.objectContaining({ type: "start", messageId: generatedId }));
+      expect(parts[1]).toEqual(expect.objectContaining({ type: "text-delta", id: "text-1" }));
     });
 
     it("uses last-step usage for finish events when provider is anthropic", async () => {
