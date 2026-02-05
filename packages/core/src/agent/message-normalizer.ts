@@ -261,12 +261,7 @@ const isToolLikePart = (part: UIMessagePart<any, any>): part is ToolLikePart => 
 
 const hasToolOutput = (part: ToolLikePart): boolean => {
   const state = typeof part.state === "string" ? part.state : undefined;
-  if (
-    state === "output-available" ||
-    state === "output-streaming" ||
-    state === "output-error" ||
-    state === "output-denied"
-  ) {
+  if (state === "output-available" || state === "output-error" || state === "output-denied") {
     return true;
   }
   return part.output !== undefined;
@@ -279,6 +274,96 @@ const isWorkingMemoryTool = (part: ToolLikePart): boolean => {
   const toolName = toolNameFromType((part as any).type);
   if (!toolName) return false;
   return WORKING_MEMORY_TOOL_NAMES.has(toolName);
+};
+
+const isWorkingMemoryToolPart = (part: UIMessagePart<any, any>): boolean => {
+  if (typeof part.type !== "string") {
+    return false;
+  }
+  if (!part.type.startsWith("tool-")) {
+    return false;
+  }
+  const toolName = toolNameFromType(part.type);
+  if (!toolName) {
+    return false;
+  }
+  return WORKING_MEMORY_TOOL_NAMES.has(toolName);
+};
+
+const isEmptyTextPart = (part: UIMessagePart<any, any>): boolean => {
+  if (part.type !== "text") {
+    return false;
+  }
+  const text = typeof (part as any).text === "string" ? (part as any).text : "";
+  return text.trim().length === 0;
+};
+
+const isPrunableToolPart = (part: UIMessagePart<any, any>): boolean => {
+  if (typeof part.type !== "string" || !part.type.startsWith("tool-")) {
+    return false;
+  }
+  const hasPendingState = (part as any).state === "input-available";
+  const hasResult =
+    (part as any).state === "output-available" || (part as any).output !== undefined;
+  if (hasPendingState || hasResult) {
+    return false;
+  }
+  return (part as any).input == null;
+};
+
+const isPrunablePartBeforeWorkingMemory = (part: UIMessagePart<any, any>): boolean => {
+  if (part.type === "step-start") {
+    return true;
+  }
+  if (part.type === "file" && !isObject(part as any)) {
+    return true;
+  }
+  if (part.type === "file" && !(part as any).url) {
+    return true;
+  }
+  if (isEmptyTextPart(part)) {
+    return true;
+  }
+  if (isWorkingMemoryToolPart(part)) {
+    return true;
+  }
+  if (isPrunableToolPart(part)) {
+    return true;
+  }
+  return false;
+};
+
+const shouldDropEmptyReasoningBeforeWorkingMemory = (
+  parts: UIMessagePart<any, any>[],
+  index: number,
+): boolean => {
+  const part = parts[index];
+  if (part.type !== "reasoning") {
+    return false;
+  }
+
+  const text = typeof (part as any).text === "string" ? (part as any).text : "";
+  if (text.trim().length > 0) {
+    return false;
+  }
+
+  for (let nextIndex = index + 1; nextIndex < parts.length; nextIndex += 1) {
+    const next = parts[nextIndex];
+    if (isPrunablePartBeforeWorkingMemory(next)) {
+      if (isWorkingMemoryToolPart(next)) {
+        return true;
+      }
+      continue;
+    }
+
+    if (isWorkingMemoryToolPart(next)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  return false;
 };
 
 const normalizeToolOutputPayload = (output: unknown): unknown => {
@@ -356,58 +441,15 @@ export const sanitizeMessagesForModel = (
   return addStepStartsBetweenToolRuns(filtered);
 };
 
-const findNextContentPart = (
-  parts: UIMessagePart<any, any>[],
-  startIndex: number,
-): { kind: "working-memory" } | { kind: "part"; part: UIMessagePart<any, any> } | undefined => {
-  for (let index = startIndex; index < parts.length; index += 1) {
-    const candidate = parts[index];
-    if (!candidate) {
-      continue;
-    }
-    if (candidate.type === "step-start") {
-      continue;
-    }
-    if (isToolLikePart(candidate) && isWorkingMemoryTool(candidate as ToolLikePart)) {
-      return { kind: "working-memory" };
-    }
-    const normalized = normalizeGenericPart(candidate);
-    if (!normalized) {
-      continue;
-    }
-    if (isPrunableEmptyToolRun(normalized)) {
-      continue;
-    }
-    return { kind: "part", part: normalized };
-  }
-  return undefined;
-};
-
 export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null => {
   const sanitizedParts: UIMessagePart<any, any>[] = [];
 
   for (let index = 0; index < message.parts.length; index += 1) {
     const part = message.parts[index];
-    if (part?.type === "reasoning") {
-      const text = typeof (part as any).text === "string" ? (part as any).text.trim() : undefined;
-      const content =
-        typeof (part as any).content === "string" ? (part as any).content.trim() : undefined;
-      const explicitId =
-        typeof (part as any).id === "string"
-          ? (part as any).id.trim()
-          : typeof (part as any).reasoningId === "string"
-            ? (part as any).reasoningId.trim()
-            : undefined;
-      const providerMetadata = (part as any).providerMetadata;
-      const metadataReasoningId =
-        isObject(providerMetadata) ? extractReasoningIdFromMetadata(providerMetadata) : undefined;
-      const id = explicitId || metadataReasoningId;
-      const isEmptyReasoning = !text && !content && !id;
-      const nextContent = findNextContentPart(message.parts, index + 1);
-      if (isEmptyReasoning && nextContent?.kind === "working-memory") {
-        continue;
-      }
+    if (shouldDropEmptyReasoningBeforeWorkingMemory(message.parts, index)) {
+      continue;
     }
+
     const normalized = normalizeGenericPart(part);
     if (!normalized) {
       continue;
@@ -515,27 +557,7 @@ const filterIncompleteToolCallsForModel = (messages: UIMessage[]): UIMessage[] =
       return true;
     });
 
-    let pruned = collapseRedundantStepStarts(parts);
-    const hasTextContent = pruned.some(
-      (part) =>
-        part.type === "text" &&
-        typeof (part as any).text === "string" &&
-        (part as any).text.trim().length > 0,
-    );
-    const hasToolPart = pruned.some((part) => isToolLikePart(part));
-    const hasNonReasoningPart = pruned.some((part) => part.type !== "reasoning");
-    const shouldDropEmptyReasoning =
-      (!hasTextContent && hasToolPart) || (mutated && !hasNonReasoningPart);
-
-    if (shouldDropEmptyReasoning) {
-      pruned = pruned.filter((part) => {
-        if (part.type !== "reasoning") {
-          return true;
-        }
-        const text = typeof (part as any).text === "string" ? (part as any).text.trim() : "";
-        return text.length > 0;
-      });
-    }
+    const pruned = collapseRedundantStepStarts(parts);
     if (pruned.length === 0) {
       continue;
     }
@@ -598,26 +620,18 @@ const addStepStartsBetweenToolRuns = (messages: UIMessage[]): UIMessage[] => {
 const pruneEmptyToolRuns = (parts: UIMessagePart<any, any>[]): UIMessagePart<any, any>[] => {
   const cleaned: UIMessagePart<any, any>[] = [];
   for (const part of parts) {
-    if (isPrunableEmptyToolRun(part)) {
-      continue;
+    if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+      const hasPendingState = (part as any).state === "input-available";
+      const hasResult =
+        (part as any).state === "output-available" || (part as any).output !== undefined;
+      if (!hasPendingState && !hasResult && (part as any).input == null) {
+        continue;
+      }
     }
 
     cleaned.push(part);
   }
   return cleaned;
-};
-
-const isPrunableEmptyToolRun = (part: UIMessagePart<any, any>): boolean => {
-  if (typeof part.type !== "string" || !part.type.startsWith("tool-")) {
-    return false;
-  }
-  const state = (part as any).state;
-  const hasPendingState = state === "input-available" || state === "input-streaming";
-  const hasResult = hasToolOutput(part as ToolLikePart);
-  if (!hasPendingState && !hasResult && (part as any).input == null) {
-    return true;
-  }
-  return false;
 };
 
 const removeProviderExecutedToolsWithoutReasoning = (

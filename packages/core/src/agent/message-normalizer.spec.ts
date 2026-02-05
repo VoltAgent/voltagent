@@ -643,4 +643,52 @@ describe("message-normalizer", () => {
     expect(sanitized[0].parts).toHaveLength(3);
     expect(sanitized[0].parts[1]).toEqual({ type: "step-start" });
   });
+
+  it("drops empty reasoning that precedes working-memory tool calls", () => {
+    const message = baseMessage([
+      {
+        type: "reasoning",
+        text: "",
+        providerMetadata: { openai: { itemId: "rs_openai" } },
+      } as any,
+      {
+        type: "tool-update_working_memory",
+        toolCallId: "call-1",
+        state: "output-available",
+        output: { content: "secret" },
+      } as any,
+      { type: "text", text: "visible" } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const parts = (sanitized as UIMessage).parts;
+    expect(parts.some((part: any) => part.type === "reasoning")).toBe(false);
+    expect(parts.some((part: any) => part.type === "text")).toBe(true);
+  });
+
+  it("drops empty reasoning when prunable parts sit before working-memory tools", () => {
+    const message = baseMessage([
+      {
+        type: "reasoning",
+        text: "",
+        providerMetadata: { openai: { itemId: "rs_openai" } },
+      } as any,
+      { type: "text", text: "   " } as any,
+      { type: "step-start" } as any,
+      {
+        type: "tool-update_working_memory",
+        toolCallId: "call-2",
+        state: "input-available",
+        input: { content: "secret" },
+      } as any,
+      { type: "text", text: "visible" } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const parts = (sanitized as UIMessage).parts;
+    expect(parts.some((part: any) => part.type === "reasoning")).toBe(false);
+    expect(parts.some((part: any) => part.type === "text")).toBe(true);
+  });
 });
