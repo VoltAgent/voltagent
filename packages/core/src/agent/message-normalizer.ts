@@ -261,10 +261,35 @@ const isToolLikePart = (part: UIMessagePart<any, any>): part is ToolLikePart => 
 
 const hasToolOutput = (part: ToolLikePart): boolean => {
   const state = typeof part.state === "string" ? part.state : undefined;
-  if (state === "output-available" || state === "output-error" || state === "output-denied") {
+  if (
+    state === "output-available" ||
+    state === "output-error" ||
+    state === "output-denied" ||
+    state === "output-streaming"
+  ) {
     return true;
   }
   return part.output !== undefined;
+};
+
+const isToolInputState = (state: string | undefined): boolean =>
+  state === "input-available" ||
+  state === "input-streaming" ||
+  state === "approval-requested" ||
+  state === "approval-responded";
+
+const isToolOutputState = (state: string | undefined): boolean =>
+  state === "output-available" ||
+  state === "output-error" ||
+  state === "output-denied" ||
+  state === "output-streaming";
+
+const hasToolInput = (part: ToolLikePart): boolean => {
+  const state = typeof part.state === "string" ? part.state : undefined;
+  if (isToolInputState(state)) {
+    return true;
+  }
+  return part.input !== undefined;
 };
 
 const isApprovalResponded = (part: ToolLikePart): boolean =>
@@ -298,14 +323,22 @@ const isEmptyTextPart = (part: UIMessagePart<any, any>): boolean => {
   return text.trim().length === 0;
 };
 
+const isEmptyReasoningPart = (part: UIMessagePart<any, any>): boolean => {
+  if (part.type !== "reasoning") {
+    return false;
+  }
+  const text = typeof (part as any).text === "string" ? (part as any).text : "";
+  return text.trim().length === 0;
+};
+
 const isPrunableToolPart = (part: UIMessagePart<any, any>): boolean => {
   if (typeof part.type !== "string" || !part.type.startsWith("tool-")) {
     return false;
   }
-  const hasPendingState = (part as any).state === "input-available";
-  const hasResult =
-    (part as any).state === "output-available" || (part as any).output !== undefined;
-  if (hasPendingState || hasResult) {
+  const state = typeof (part as any).state === "string" ? (part as any).state : undefined;
+  const hasPendingState = isToolInputState(state);
+  const hasResult = isToolOutputState(state) || (part as any).output !== undefined;
+  if (hasPendingState || hasResult || (part as any).input !== undefined) {
     return false;
   }
   return (part as any).input == null;
@@ -342,8 +375,7 @@ const shouldDropEmptyReasoningBeforeWorkingMemory = (
     return false;
   }
 
-  const text = typeof (part as any).text === "string" ? (part as any).text : "";
-  if (text.trim().length > 0) {
+  if (!isEmptyReasoningPart(part)) {
     return false;
   }
 
@@ -364,6 +396,51 @@ const shouldDropEmptyReasoningBeforeWorkingMemory = (
   }
 
   return false;
+};
+
+const removeEmptyReasoningWithOnlyToolOutputs = (
+  parts: UIMessagePart<any, any>[],
+): UIMessagePart<any, any>[] => {
+  const hasText = parts.some(
+    (part) =>
+      part.type === "text" &&
+      typeof (part as any).text === "string" &&
+      (part as any).text.trim().length > 0,
+  );
+  if (hasText) {
+    return parts;
+  }
+
+  const toolParts = parts.filter((part) => isToolLikePart(part)) as ToolLikePart[];
+  if (toolParts.length === 0) {
+    return parts;
+  }
+
+  const hasOutput = toolParts.some((part) => hasToolOutput(part));
+  const hasInput = toolParts.some((part) => hasToolInput(part));
+  if (!hasOutput || hasInput) {
+    return parts;
+  }
+
+  return parts.filter((part) => !isEmptyReasoningPart(part));
+};
+
+const dropOrphanedEmptyReasoning = (
+  parts: UIMessagePart<any, any>[],
+): UIMessagePart<any, any>[] => {
+  const nonReasoning = parts.filter((part) => part.type !== "reasoning");
+  if (nonReasoning.length > 0) {
+    return parts;
+  }
+
+  const hasNonEmptyReasoning = parts.some(
+    (part) => part.type === "reasoning" && !isEmptyReasoningPart(part),
+  );
+  if (hasNonEmptyReasoning) {
+    return parts;
+  }
+
+  return [];
 };
 
 const normalizeToolOutputPayload = (output: unknown): unknown => {
@@ -460,8 +537,9 @@ export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null =>
   const pruned = collapseRedundantStepStarts(pruneEmptyToolRuns(sanitizedParts));
   const withoutDanglingTools = removeProviderExecutedToolsWithoutReasoning(pruned);
   const normalizedParts = stripReasoningLinkedProviderMetadata(withoutDanglingTools);
+  const trimmedReasoning = removeEmptyReasoningWithOnlyToolOutputs(normalizedParts);
 
-  const effectiveParts = normalizedParts.filter((part) => {
+  const effectiveParts = trimmedReasoning.filter((part) => {
     if (part.type === "text") {
       return typeof (part as any).text === "string" && (part as any).text.trim().length > 0;
     }
@@ -562,12 +640,17 @@ const filterIncompleteToolCallsForModel = (messages: UIMessage[]): UIMessage[] =
       continue;
     }
 
-    if (!mutated && pruned.length === message.parts.length) {
+    const withoutOrphanedReasoning = mutated ? dropOrphanedEmptyReasoning(pruned) : pruned;
+    if (withoutOrphanedReasoning.length === 0) {
+      continue;
+    }
+
+    if (!mutated && withoutOrphanedReasoning.length === message.parts.length) {
       filtered.push(message);
     } else {
       filtered.push({
         ...message,
-        parts: pruned,
+        parts: withoutOrphanedReasoning,
       });
     }
   }
@@ -621,9 +704,9 @@ const pruneEmptyToolRuns = (parts: UIMessagePart<any, any>[]): UIMessagePart<any
   const cleaned: UIMessagePart<any, any>[] = [];
   for (const part of parts) {
     if (typeof part.type === "string" && part.type.startsWith("tool-")) {
-      const hasPendingState = (part as any).state === "input-available";
-      const hasResult =
-        (part as any).state === "output-available" || (part as any).output !== undefined;
+      const state = typeof (part as any).state === "string" ? (part as any).state : undefined;
+      const hasPendingState = isToolInputState(state);
+      const hasResult = isToolOutputState(state) || (part as any).output !== undefined;
       if (!hasPendingState && !hasResult && (part as any).input == null) {
         continue;
       }
