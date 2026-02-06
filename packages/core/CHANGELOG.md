@@ -1,5 +1,14 @@
 # @voltagent/core
 
+## 2.3.4
+
+### Patch Changes
+
+- [#1020](https://github.com/VoltAgent/voltagent/pull/1020) [`d751955`](https://github.com/VoltAgent/voltagent/commit/d751955a69b2aedb6082a377fc0aa0799e4bf05c) Thanks [@chrisisagile](https://github.com/chrisisagile)! - Drop orphan reasoning parts when tool-only messages are sanitized.
+  Fixes #1019.
+
+- [#1022](https://github.com/VoltAgent/voltagent/pull/1022) [`48d94af`](https://github.com/VoltAgent/voltagent/commit/48d94af243f8fbd37cb92fa3803eb877208ac34c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: keep streaming message ids consistent with memory by emitting `messageId` on start/start-step chunks and using it for UI stream mapping (leaving text-part ids intact).
+
 ## 2.3.3
 
 ### Patch Changes

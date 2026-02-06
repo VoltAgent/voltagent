@@ -1,5 +1,11 @@
 # @voltagent/ag-ui
 
+## 1.0.3
+
+### Patch Changes
+
+- [#1022](https://github.com/VoltAgent/voltagent/pull/1022) [`48d94af`](https://github.com/VoltAgent/voltagent/commit/48d94af243f8fbd37cb92fa3803eb877208ac34c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: keep streaming message ids consistent with memory by emitting `messageId` on start/start-step chunks and using it for UI stream mapping (leaving text-part ids intact).
+
 ## 1.0.2
 
 ### Patch Changes
