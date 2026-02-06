@@ -1,26 +1,12 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
 
-const OPENAI_REASONING_ID_PREFIX = "rs_";
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const hasOpenAIItemId = (providerOptions: unknown): boolean => {
-  if (!isObject(providerOptions)) {
-    return false;
-  }
-
-  const openai = (providerOptions as { openai?: unknown }).openai;
-  if (!isObject(openai)) {
-    return false;
-  }
-
-  const itemId = typeof openai.itemId === "string" ? openai.itemId.trim() : "";
-  return itemId.length > 0;
-};
-
-const isOpenAIReasoningId = (value: string): boolean =>
-  value.trim().startsWith(OPENAI_REASONING_ID_PREFIX);
+import {
+  hasOpenAIItemId,
+  hasOpenAIItemIdForPart as hasOpenAIItemIdForPartBase,
+  isObject,
+  isOpenAIReasoningId,
+  stripDanglingOpenAIReasoningFromParts,
+} from "./openai-reasoning-utils";
 
 const isOpenAIReasoningPart = (part: unknown): boolean => {
   if (!isObject(part)) {
@@ -48,8 +34,9 @@ const hasOpenAIItemIdForPart = (part: unknown): boolean => {
   if (!isObject(part)) {
     return false;
   }
-  const providerOptions = (part as { providerOptions?: unknown }).providerOptions;
-  return hasOpenAIItemId(providerOptions);
+  return hasOpenAIItemIdForPartBase(part, {
+    getProviderMetadata: (value) => (value as { providerOptions?: unknown }).providerOptions,
+  });
 };
 
 export const stripDanglingOpenAIReasoningFromModelMessages = (
@@ -63,35 +50,14 @@ export const stripDanglingOpenAIReasoningFromModelMessages = (
         return message;
       }
 
-      const parts = [];
       const content = message.content as unknown[];
+      const { parts, changed: partsChanged } = stripDanglingOpenAIReasoningFromParts(content, {
+        isReasoningPart: isOpenAIReasoningPart,
+        hasOpenAIItemIdForPart,
+        getNextPart: (parts, index) => parts[index + 1],
+      });
 
-      for (let index = 0; index < content.length; index += 1) {
-        const part = content[index];
-        if (!isOpenAIReasoningPart(part)) {
-          parts.push(part);
-          continue;
-        }
-
-        const next = content[index + 1];
-
-        if (!next) {
-          changed = true;
-          continue;
-        }
-        if (isOpenAIReasoningPart(next)) {
-          changed = true;
-          continue;
-        }
-        if (!hasOpenAIItemIdForPart(next)) {
-          changed = true;
-          continue;
-        }
-
-        parts.push(part);
-      }
-
-      if (parts.length === content.length) {
+      if (!partsChanged) {
         return message;
       }
 
@@ -101,9 +67,11 @@ export const stripDanglingOpenAIReasoningFromModelMessages = (
         return null;
       }
 
+      const assistantMessage = message as Extract<ModelMessage, { role: "assistant" }>;
+
       return {
-        ...message,
-        content: parts as ModelMessage["content"],
+        ...assistantMessage,
+        content: parts as typeof assistantMessage.content,
       } satisfies ModelMessage;
     })
     .filter((message): message is ModelMessage => Boolean(message));

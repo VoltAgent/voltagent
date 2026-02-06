@@ -1,12 +1,18 @@
+import { safeStringify } from "@voltagent/internal";
 import type { UIMessage, UIMessagePart } from "ai";
+
+import {
+  hasOpenAIItemIdForPart as hasOpenAIItemIdForPartBase,
+  isObject,
+  isOpenAIReasoningId,
+  stripDanglingOpenAIReasoningFromParts,
+} from "./openai-reasoning-utils";
 
 const WORKING_MEMORY_TOOL_NAMES = new Set([
   "update_working_memory",
   "get_working_memory",
   "clear_working_memory",
 ]);
-
-const OPENAI_REASONING_ID_PREFIX = "rs_";
 
 type ToolLikePart = UIMessagePart<any, any> & {
   toolCallId?: string;
@@ -27,12 +33,6 @@ type SanitizeMessagesOptions = {
   filterIncompleteToolCalls?: boolean;
 };
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const isOpenAIReasoningId = (value: string): boolean =>
-  value.trim().startsWith(OPENAI_REASONING_ID_PREFIX);
-
 const safeClone = <T>(value: T): T => {
   if (!isObject(value) && !Array.isArray(value)) {
     return value;
@@ -47,7 +47,7 @@ const safeClone = <T>(value: T): T => {
   }
 
   try {
-    return JSON.parse(JSON.stringify(value)) as T;
+    return JSON.parse(safeStringify(value)) as T;
   } catch (_error) {
     if (Array.isArray(value)) {
       return value.slice() as T;
@@ -407,25 +407,13 @@ const endsWithOpenAIReasoning = (parts: UIMessagePart<any, any>[]): boolean => {
   return false;
 };
 
-const hasOpenAIItemId = (metadata: unknown): boolean => {
-  if (!isObject(metadata)) {
-    return false;
-  }
-  const openai = (metadata as { openai?: unknown }).openai;
-  if (!isObject(openai)) {
-    return false;
-  }
-  const itemId = typeof openai.itemId === "string" ? openai.itemId.trim() : "";
-  return Boolean(itemId);
-};
-
 const hasOpenAIItemIdForPart = (part: UIMessagePart<any, any>): boolean => {
-  if (typeof part.type === "string" && part.type.startsWith("tool-")) {
-    if (hasOpenAIItemId((part as any).callProviderMetadata)) {
-      return true;
-    }
-  }
-  return hasOpenAIItemId((part as any).providerMetadata);
+  return hasOpenAIItemIdForPartBase(part, {
+    isToolPart: (candidate) =>
+      typeof (candidate as any).type === "string" && (candidate as any).type.startsWith("tool-"),
+    getCallProviderMetadata: (candidate) => (candidate as any).callProviderMetadata,
+    getProviderMetadata: (candidate) => (candidate as any).providerMetadata,
+  });
 };
 
 const stripDanglingOpenAIReasoning = (messages: UIMessage[]): UIMessage[] => {
@@ -437,36 +425,20 @@ const stripDanglingOpenAIReasoning = (messages: UIMessage[]): UIMessage[] => {
       continue;
     }
 
-    const parts: UIMessagePart<any, any>[] = [];
-    for (let index = 0; index < message.parts.length; index += 1) {
-      const part = message.parts[index];
-      if (!isOpenAIReasoningPart(part)) {
-        parts.push(part);
-        continue;
-      }
-
-      let next: UIMessagePart<any, any> | undefined;
-      for (let nextIndex = index + 1; nextIndex < message.parts.length; nextIndex += 1) {
-        const candidate = message.parts[nextIndex];
-        if (candidate.type === "step-start") {
-          continue;
+    const { parts } = stripDanglingOpenAIReasoningFromParts(message.parts, {
+      isReasoningPart: isOpenAIReasoningPart,
+      hasOpenAIItemIdForPart,
+      getNextPart: (parts, index) => {
+        for (let nextIndex = index + 1; nextIndex < parts.length; nextIndex += 1) {
+          const candidate = parts[nextIndex];
+          if (candidate.type === "step-start") {
+            continue;
+          }
+          return candidate;
         }
-        next = candidate;
-        break;
-      }
-
-      if (!next) {
-        continue;
-      }
-      if (isOpenAIReasoningPart(next)) {
-        continue;
-      }
-      if (!hasOpenAIItemIdForPart(next)) {
-        continue;
-      }
-
-      parts.push(part);
-    }
+        return undefined;
+      },
+    });
 
     if (parts.length === 0) {
       continue;
@@ -496,7 +468,7 @@ const mergeTrailingReasoningAssistantMessages = (messages: UIMessage[]): UIMessa
       last.parts = [...last.parts, ...message.parts];
       continue;
     }
-    merged.push(message);
+    merged.push({ ...message, parts: [...message.parts] });
   }
 
   return merged;
@@ -523,6 +495,7 @@ export const sanitizeMessagesForModel = (
     const sanitizedToolCount = countToolLikeParts(merged);
     const filteredToolCount = countToolLikeParts(filtered);
     if (filteredToolCount < sanitizedToolCount) {
+      // Keep the merged set to avoid orphaning reasoning item references when tools were removed.
       return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(merged));
     }
   }
