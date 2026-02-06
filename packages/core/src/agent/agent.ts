@@ -105,6 +105,7 @@ import {
   enqueueEvalScoring as enqueueEvalScoringHelper,
 } from "./eval";
 import type { AgentHooks, OnToolEndHookResult } from "./hooks";
+import { stripDanglingOpenAIReasoningFromModelMessages } from "./model-message-normalizer";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type {
   BaseMessage,
@@ -3085,6 +3086,8 @@ export class Agent {
         messages = result.modelMessages;
       }
     }
+
+    messages = stripDanglingOpenAIReasoningFromModelMessages(messages);
 
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();

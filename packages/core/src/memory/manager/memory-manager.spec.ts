@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { sanitizeMessagesForModel } from "../../agent/message-normalizer";
 import type { OperationContext } from "../../agent/types";
 import { getGlobalLogger } from "../../logger";
 import { Memory } from "../../memory";
@@ -160,47 +159,6 @@ describe("MemoryManager", () => {
       expect(messages).toHaveLength(2);
       expect(messages[0].id).toBe("msg-1");
       expect(messages[1].id).toBe("msg-2");
-    });
-
-    it("drops empty reasoning that precedes working-memory tool calls on reload", async () => {
-      const context = createMockOperationContext();
-
-      const assistantMessage = createTestUIMessage({
-        id: "assistant-1",
-        role: "assistant",
-        parts: [
-          {
-            type: "reasoning",
-            text: "",
-            providerMetadata: { openai: { itemId: "rs_123" } },
-          } as any,
-          {
-            type: "tool-search",
-            toolCallId: "call-123",
-            state: "input-available",
-            input: { query: "hello" },
-          } as any,
-          {
-            type: "tool-update_working_memory",
-            toolCallId: "call-999",
-            state: "output-available",
-            output: { type: "text", value: "ok" },
-          } as any,
-        ],
-      });
-
-      await manager.saveMessage(context, assistantMessage, "user-1", "conv-1");
-
-      const reloaded = await manager.getMessages(context, "user-1", "conv-1");
-      const nextTurn = {
-        id: "user-2",
-        role: "user",
-        parts: [{ type: "text", text: "next turn" }],
-      };
-
-      const sanitized = sanitizeMessagesForModel([...reloaded, nextTurn]);
-      expect(sanitized).toHaveLength(1);
-      expect(sanitized[0].role).toBe("user");
     });
 
     it("should return empty array when memory is disabled", async () => {

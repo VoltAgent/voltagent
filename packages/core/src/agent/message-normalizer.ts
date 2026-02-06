@@ -284,14 +284,6 @@ const isToolOutputState = (state: string | undefined): boolean =>
   state === "output-denied" ||
   state === "output-streaming";
 
-const hasToolInput = (part: ToolLikePart): boolean => {
-  const state = typeof part.state === "string" ? part.state : undefined;
-  if (isToolInputState(state)) {
-    return true;
-  }
-  return part.input !== undefined;
-};
-
 const isApprovalResponded = (part: ToolLikePart): boolean =>
   Boolean((part as any).approval && (part as any).approval.approved != null);
 
@@ -299,148 +291,6 @@ const isWorkingMemoryTool = (part: ToolLikePart): boolean => {
   const toolName = toolNameFromType((part as any).type);
   if (!toolName) return false;
   return WORKING_MEMORY_TOOL_NAMES.has(toolName);
-};
-
-const isWorkingMemoryToolPart = (part: UIMessagePart<any, any>): boolean => {
-  if (typeof part.type !== "string") {
-    return false;
-  }
-  if (!part.type.startsWith("tool-")) {
-    return false;
-  }
-  const toolName = toolNameFromType(part.type);
-  if (!toolName) {
-    return false;
-  }
-  return WORKING_MEMORY_TOOL_NAMES.has(toolName);
-};
-
-const isEmptyTextPart = (part: UIMessagePart<any, any>): boolean => {
-  if (part.type !== "text") {
-    return false;
-  }
-  const text = typeof (part as any).text === "string" ? (part as any).text : "";
-  return text.trim().length === 0;
-};
-
-const isEmptyReasoningPart = (part: UIMessagePart<any, any>): boolean => {
-  if (part.type !== "reasoning") {
-    return false;
-  }
-  const text = typeof (part as any).text === "string" ? (part as any).text : "";
-  return text.trim().length === 0;
-};
-
-const isPrunableToolPart = (part: UIMessagePart<any, any>): boolean => {
-  if (typeof part.type !== "string" || !part.type.startsWith("tool-")) {
-    return false;
-  }
-  const state = typeof (part as any).state === "string" ? (part as any).state : undefined;
-  const hasPendingState = isToolInputState(state);
-  const hasResult = isToolOutputState(state) || (part as any).output !== undefined;
-  if (hasPendingState || hasResult || (part as any).input !== undefined) {
-    return false;
-  }
-  return (part as any).input == null;
-};
-
-const isPrunablePartBeforeWorkingMemory = (part: UIMessagePart<any, any>): boolean => {
-  if (part.type === "step-start") {
-    return true;
-  }
-  if (part.type === "file" && !isObject(part as any)) {
-    return true;
-  }
-  if (part.type === "file" && !(part as any).url) {
-    return true;
-  }
-  if (isEmptyTextPart(part)) {
-    return true;
-  }
-  if (isWorkingMemoryToolPart(part)) {
-    return true;
-  }
-  if (isPrunableToolPart(part)) {
-    return true;
-  }
-  return false;
-};
-
-const shouldDropEmptyReasoningBeforeWorkingMemory = (
-  parts: UIMessagePart<any, any>[],
-  index: number,
-): boolean => {
-  const part = parts[index];
-  if (part.type !== "reasoning") {
-    return false;
-  }
-
-  if (!isEmptyReasoningPart(part)) {
-    return false;
-  }
-
-  for (let nextIndex = index + 1; nextIndex < parts.length; nextIndex += 1) {
-    const next = parts[nextIndex];
-    if (isPrunablePartBeforeWorkingMemory(next)) {
-      if (isWorkingMemoryToolPart(next)) {
-        return true;
-      }
-      continue;
-    }
-
-    if (isWorkingMemoryToolPart(next)) {
-      return true;
-    }
-
-    return false;
-  }
-
-  return false;
-};
-
-const removeEmptyReasoningWithOnlyToolOutputs = (
-  parts: UIMessagePart<any, any>[],
-): UIMessagePart<any, any>[] => {
-  const hasText = parts.some(
-    (part) =>
-      part.type === "text" &&
-      typeof (part as any).text === "string" &&
-      (part as any).text.trim().length > 0,
-  );
-  if (hasText) {
-    return parts;
-  }
-
-  const toolParts = parts.filter((part) => isToolLikePart(part)) as ToolLikePart[];
-  if (toolParts.length === 0) {
-    return parts;
-  }
-
-  const hasOutput = toolParts.some((part) => hasToolOutput(part));
-  const hasInput = toolParts.some((part) => hasToolInput(part));
-  if (!hasOutput || hasInput) {
-    return parts;
-  }
-
-  return parts.filter((part) => !isEmptyReasoningPart(part));
-};
-
-const dropOrphanedEmptyReasoning = (
-  parts: UIMessagePart<any, any>[],
-): UIMessagePart<any, any>[] => {
-  const nonReasoning = parts.filter((part) => part.type !== "reasoning");
-  if (nonReasoning.length > 0) {
-    return parts;
-  }
-
-  const hasNonEmptyReasoning = parts.some(
-    (part) => part.type === "reasoning" && !isEmptyReasoningPart(part),
-  );
-  if (hasNonEmptyReasoning) {
-    return parts;
-  }
-
-  return [];
 };
 
 const normalizeToolOutputPayload = (output: unknown): unknown => {
@@ -501,6 +351,157 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
   return normalized as UIMessagePart<any, any>;
 };
 
+const hasOpenAIReasoningInMessages = (messages: UIMessage[]): boolean =>
+  messages.some(
+    (message) => message.role === "assistant" && hasOpenAIReasoningContext(message.parts),
+  );
+
+const countToolLikeParts = (messages: UIMessage[]): number =>
+  messages.reduce(
+    (count, message) => count + message.parts.filter((part) => isToolLikePart(part)).length,
+    0,
+  );
+
+const isOpenAIReasoningPart = (part: UIMessagePart<any, any>): boolean => {
+  if (part.type !== "reasoning") {
+    return false;
+  }
+
+  const reasoningId =
+    typeof (part as any).reasoningId === "string" ? (part as any).reasoningId.trim() : "";
+  if (reasoningId && isOpenAIReasoningId(reasoningId)) {
+    return true;
+  }
+
+  const providerMetadata = (part as any).providerMetadata;
+  if (isObject(providerMetadata)) {
+    const openai = providerMetadata.openai;
+    if (isObject(openai)) {
+      const itemId = typeof openai.itemId === "string" ? openai.itemId.trim() : "";
+      if (itemId && isOpenAIReasoningId(itemId)) {
+        return true;
+      }
+      if (typeof openai.reasoning_trace_id === "string" && openai.reasoning_trace_id.trim()) {
+        return true;
+      }
+      if (isObject(openai.reasoning)) {
+        const id = typeof openai.reasoning.id === "string" ? openai.reasoning.id.trim() : "";
+        if (id && isOpenAIReasoningId(id)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+};
+
+const endsWithOpenAIReasoning = (parts: UIMessagePart<any, any>[]): boolean => {
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const part = parts[index];
+    if (part.type === "step-start") {
+      continue;
+    }
+    return isOpenAIReasoningPart(part);
+  }
+  return false;
+};
+
+const hasOpenAIItemId = (metadata: unknown): boolean => {
+  if (!isObject(metadata)) {
+    return false;
+  }
+  const openai = (metadata as { openai?: unknown }).openai;
+  if (!isObject(openai)) {
+    return false;
+  }
+  const itemId = typeof openai.itemId === "string" ? openai.itemId.trim() : "";
+  return Boolean(itemId);
+};
+
+const hasOpenAIItemIdForPart = (part: UIMessagePart<any, any>): boolean => {
+  if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+    if (hasOpenAIItemId((part as any).callProviderMetadata)) {
+      return true;
+    }
+  }
+  return hasOpenAIItemId((part as any).providerMetadata);
+};
+
+const stripDanglingOpenAIReasoning = (messages: UIMessage[]): UIMessage[] => {
+  const result: UIMessage[] = [];
+
+  for (const message of messages) {
+    if (message.role !== "assistant") {
+      result.push(message);
+      continue;
+    }
+
+    const parts: UIMessagePart<any, any>[] = [];
+    for (let index = 0; index < message.parts.length; index += 1) {
+      const part = message.parts[index];
+      if (!isOpenAIReasoningPart(part)) {
+        parts.push(part);
+        continue;
+      }
+
+      let next: UIMessagePart<any, any> | undefined;
+      for (let nextIndex = index + 1; nextIndex < message.parts.length; nextIndex += 1) {
+        const candidate = message.parts[nextIndex];
+        if (candidate.type === "step-start") {
+          continue;
+        }
+        next = candidate;
+        break;
+      }
+
+      if (!next) {
+        continue;
+      }
+      if (isOpenAIReasoningPart(next)) {
+        continue;
+      }
+      if (!hasOpenAIItemIdForPart(next)) {
+        continue;
+      }
+
+      parts.push(part);
+    }
+
+    if (parts.length === 0) {
+      continue;
+    }
+
+    result.push({
+      ...message,
+      parts,
+      ...(message.metadata ? { metadata: safeClone(message.metadata) } : {}),
+    });
+  }
+
+  return result;
+};
+
+const mergeTrailingReasoningAssistantMessages = (messages: UIMessage[]): UIMessage[] => {
+  const merged: UIMessage[] = [];
+
+  for (const message of messages) {
+    const last = merged.at(-1);
+    if (
+      last &&
+      last.role === "assistant" &&
+      message.role === "assistant" &&
+      endsWithOpenAIReasoning(last.parts)
+    ) {
+      last.parts = [...last.parts, ...message.parts];
+      continue;
+    }
+    merged.push(message);
+  }
+
+  return merged;
+};
+
 export const sanitizeMessagesForModel = (
   messages: UIMessage[],
   options: SanitizeMessagesOptions = {},
@@ -509,24 +510,30 @@ export const sanitizeMessagesForModel = (
     .map((message) => sanitizeMessageForModel(message))
     .filter((message): message is UIMessage => Boolean(message));
 
+  const merged = mergeTrailingReasoningAssistantMessages(sanitized);
   const shouldFilterIncomplete = options.filterIncompleteToolCalls !== false;
 
-  const filtered = shouldFilterIncomplete
-    ? filterIncompleteToolCallsForModel(sanitized)
-    : sanitized;
+  if (!shouldFilterIncomplete) {
+    return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(merged));
+  }
 
-  return addStepStartsBetweenToolRuns(filtered);
+  const filtered = filterIncompleteToolCallsForModel(merged);
+  const hasOpenAIReasoning = hasOpenAIReasoningInMessages(merged);
+  if (hasOpenAIReasoning) {
+    const sanitizedToolCount = countToolLikeParts(merged);
+    const filteredToolCount = countToolLikeParts(filtered);
+    if (filteredToolCount < sanitizedToolCount) {
+      return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(merged));
+    }
+  }
+
+  return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(filtered));
 };
 
 export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null => {
   const sanitizedParts: UIMessagePart<any, any>[] = [];
 
-  for (let index = 0; index < message.parts.length; index += 1) {
-    const part = message.parts[index];
-    if (shouldDropEmptyReasoningBeforeWorkingMemory(message.parts, index)) {
-      continue;
-    }
-
+  for (const part of message.parts) {
     const normalized = normalizeGenericPart(part);
     if (!normalized) {
       continue;
@@ -537,9 +544,8 @@ export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null =>
   const pruned = collapseRedundantStepStarts(pruneEmptyToolRuns(sanitizedParts));
   const withoutDanglingTools = removeProviderExecutedToolsWithoutReasoning(pruned);
   const normalizedParts = stripReasoningLinkedProviderMetadata(withoutDanglingTools);
-  const trimmedReasoning = removeEmptyReasoningWithOnlyToolOutputs(normalizedParts);
 
-  const effectiveParts = trimmedReasoning.filter((part) => {
+  const effectiveParts = normalizedParts.filter((part) => {
     if (part.type === "text") {
       return typeof (part as any).text === "string" && (part as any).text.trim().length > 0;
     }
@@ -640,17 +646,12 @@ const filterIncompleteToolCallsForModel = (messages: UIMessage[]): UIMessage[] =
       continue;
     }
 
-    const withoutOrphanedReasoning = mutated ? dropOrphanedEmptyReasoning(pruned) : pruned;
-    if (withoutOrphanedReasoning.length === 0) {
-      continue;
-    }
-
-    if (!mutated && withoutOrphanedReasoning.length === message.parts.length) {
+    if (!mutated && pruned.length === message.parts.length) {
       filtered.push(message);
     } else {
       filtered.push({
         ...message,
-        parts: withoutOrphanedReasoning,
+        parts: pruned,
       });
     }
   }
