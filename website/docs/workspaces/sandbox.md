@@ -126,3 +126,51 @@ const daytonaWorkspace = new Workspace({
   }),
 });
 ```
+
+## Custom sandbox provider
+
+You can implement `WorkspaceSandbox` and plug it into `Workspace` directly.
+
+```ts
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+import { Workspace } from "@voltagent/core";
+
+class CustomSandbox implements WorkspaceSandbox {
+  name = "custom";
+  status = "ready" as const;
+
+  getInfo() {
+    return { provider: "custom-sandbox", status: this.status };
+  }
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const start = Date.now();
+    // TODO: run command in your custom environment
+    // Respect options.timeoutMs, options.signal, and stream via onStdout/onStderr when possible.
+
+    return {
+      stdout: "",
+      stderr: "",
+      exitCode: 0,
+      durationMs: Date.now() - start,
+      timedOut: false,
+      aborted: false,
+      stdoutTruncated: false,
+      stderrTruncated: false,
+    };
+  }
+}
+
+const workspace = new Workspace({
+  sandbox: new CustomSandbox(),
+});
+```
+
+Notes:
+
+- `onStdout`/`onStderr` are optional streaming hooks for UI integration.
+- `timeoutMs` and `signal` should be enforced to avoid runaway processes.
