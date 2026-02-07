@@ -258,6 +258,9 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
 
       if (SUPPORTS_NOFOLLOW) {
         const stat = await fs.lstat(resolvedPath);
+        if (stat.isSymbolicLink()) {
+          return `Error: Symlinks are not allowed: ${filePath}`;
+        }
         if (!stat.isFile()) {
           return `Error: File '${filePath}' not found`;
         }
@@ -310,6 +313,9 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
 
     if (SUPPORTS_NOFOLLOW) {
       stat = await fs.lstat(resolvedPath);
+      if (stat.isSymbolicLink()) {
+        throw new Error(`Symlinks are not allowed: ${filePath}`);
+      }
       if (!stat.isFile()) throw new Error(`File '${filePath}' not found`);
       const fd = await fs.open(
         resolvedPath,
@@ -747,6 +753,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
       absolute: true,
       onlyFiles: true,
       dot: true,
+      followSymbolicLinks: false,
     });
 
     let matchCount = 0;
@@ -760,7 +767,11 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
           }
         }
 
-        const stat = await fs.stat(fp);
+        const stat = await fs.lstat(fp);
+        if (stat.isSymbolicLink()) {
+          continue;
+        }
+        await this.assertPathContained(fp);
         if (stat.size > this.maxFileSizeBytes) {
           continue;
         }

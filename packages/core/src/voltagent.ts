@@ -76,7 +76,8 @@ export class VoltAgent {
     }
 
     // Initialize logger
-    this.logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
+    const logger = (options.logger || getGlobalLogger()).child({ component: "voltagent" });
+    this.logger = logger;
 
     // Handle unified VoltOps client before observability so factories can reuse it
     if (options.voltOpsClient) {
@@ -196,13 +197,23 @@ export class VoltAgent {
 
     if (workspaceInitPromise) {
       void (async () => {
-        await workspaceInitPromise;
-        finalizeInit();
-      })().catch((error) => {
-        this.logger.error("Failed to initialize workspace:", error);
-      });
+        try {
+          await workspaceInitPromise;
+        } catch (error) {
+          logger.error("Workspace initialization failed:", { error });
+        }
+        try {
+          finalizeInit();
+        } catch (error) {
+          logger.error("finalizeInit failed:", { error });
+        }
+      })();
     } else {
-      finalizeInit();
+      try {
+        finalizeInit();
+      } catch (error) {
+        logger.error("finalizeInit failed:", { error });
+      }
     }
   }
 

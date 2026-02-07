@@ -259,9 +259,16 @@ export function grepMatchesFromFiles(
 
   if (glob) {
     filtered = Object.fromEntries(
-      Object.entries(filtered).filter(([fp]) =>
-        micromatch.isMatch(basename(fp), glob, { dot: true, nobrace: false }),
-      ),
+      Object.entries(filtered).filter(([fp]) => {
+        let relative = fp.substring(normalizedPath.length);
+        if (relative.startsWith("/")) {
+          relative = relative.substring(1);
+        }
+        if (!relative) {
+          relative = basename(fp);
+        }
+        return micromatch.isMatch(relative, glob, { dot: true, nobrace: false });
+      }),
     );
   }
 

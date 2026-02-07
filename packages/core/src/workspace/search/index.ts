@@ -231,7 +231,12 @@ export class WorkspaceSearch {
     };
 
     if (this.autoIndexPaths && this.autoIndexPaths.length > 0) {
-      this.autoIndexPromise = this.indexPaths(this.autoIndexPaths).then(() => undefined);
+      this.autoIndexPromise = this.indexPaths(this.autoIndexPaths)
+        .then(() => undefined)
+        .catch((error) => {
+          console.error("Workspace search auto-index failed:", error);
+          return undefined;
+        });
     }
   }
 
@@ -269,7 +274,12 @@ export class WorkspaceSearch {
       return;
     }
     if (!this.autoIndexPromise) {
-      this.autoIndexPromise = this.indexPaths(this.autoIndexPaths).then(() => undefined);
+      this.autoIndexPromise = this.indexPaths(this.autoIndexPaths)
+        .then(() => undefined)
+        .catch((error) => {
+          console.error("Workspace search auto-index failed:", error);
+          return undefined;
+        });
     }
     await this.autoIndexPromise;
   }
@@ -714,12 +724,6 @@ export const createWorkspaceSearchToolkit = (
   };
 
   const isToolEnabled = (name: WorkspaceSearchToolName) => {
-    if (
-      (name === "workspace_index" || name === "workspace_index_content") &&
-      context.filesystem?.readOnly
-    ) {
-      return false;
-    }
     const policy = resolveToolPolicy(name);
     return policy?.enabled ?? true;
   };

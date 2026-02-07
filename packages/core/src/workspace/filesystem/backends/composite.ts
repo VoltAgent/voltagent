@@ -74,8 +74,10 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
 
   async lsInfo(path: string): Promise<FileInfo[]> {
     for (const [routePrefix, backend] of this.sortedRoutes) {
-      if (path.startsWith(routePrefix.replace(/\/$/, ""))) {
-        const suffix = path.substring(routePrefix.length);
+      const normalizedPrefix = routePrefix.endsWith("/") ? routePrefix : `${routePrefix}/`;
+      const prefixRoot = normalizedPrefix.slice(0, -1);
+      if (path === prefixRoot || path.startsWith(normalizedPrefix)) {
+        const suffix = path === prefixRoot ? "" : path.substring(normalizedPrefix.length);
         const searchPath = suffix ? `/${suffix}` : "/";
         const infos = await backend.lsInfo(searchPath);
 
@@ -174,9 +176,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     glob: string | null = null,
   ): Promise<GrepMatch[] | string> {
     for (const [routePrefix, backend] of this.sortedRoutes) {
-      if (path.startsWith(routePrefix.replace(/\/$/, ""))) {
-        const searchPath = path.substring(routePrefix.length - 1);
-        const raw = await backend.grepRaw(pattern, searchPath || "/", glob);
+      const normalizedPrefix = routePrefix.endsWith("/") ? routePrefix : `${routePrefix}/`;
+      const prefixRoot = normalizedPrefix.slice(0, -1);
+      if (path === prefixRoot || path.startsWith(normalizedPrefix)) {
+        const suffix = path === prefixRoot ? "" : path.substring(normalizedPrefix.length);
+        const searchPath = suffix ? `/${suffix}` : "/";
+        const raw = await backend.grepRaw(pattern, searchPath, glob);
 
         if (typeof raw === "string") {
           return raw;
@@ -190,19 +195,21 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     }
 
     const allMatches: GrepMatch[] = [];
+    const errors: string[] = [];
     const rawDefault = await this.defaultBackend.grepRaw(pattern, path, glob);
 
     if (typeof rawDefault === "string") {
-      return rawDefault;
+      errors.push(rawDefault);
+    } else {
+      allMatches.push(...rawDefault);
     }
-
-    allMatches.push(...rawDefault);
 
     for (const [routePrefix, backend] of Object.entries(this.routes)) {
       const raw = await backend.grepRaw(pattern, "/", glob);
 
       if (typeof raw === "string") {
-        return raw;
+        errors.push(raw);
+        continue;
       }
 
       allMatches.push(
@@ -213,6 +220,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       );
     }
 
+    if (allMatches.length > 0) {
+      return allMatches;
+    }
+    if (errors.length > 0) {
+      return errors[0];
+    }
     return allMatches;
   }
 
@@ -220,9 +233,12 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     const results: FileInfo[] = [];
 
     for (const [routePrefix, backend] of this.sortedRoutes) {
-      if (path.startsWith(routePrefix.replace(/\/$/, ""))) {
-        const searchPath = path.substring(routePrefix.length - 1);
-        const infos = await backend.globInfo(pattern, searchPath || "/");
+      const normalizedPrefix = routePrefix.endsWith("/") ? routePrefix : `${routePrefix}/`;
+      const prefixRoot = normalizedPrefix.slice(0, -1);
+      if (path === prefixRoot || path.startsWith(normalizedPrefix)) {
+        const suffix = path === prefixRoot ? "" : path.substring(normalizedPrefix.length);
+        const searchPath = suffix ? `/${suffix}` : "/";
+        const infos = await backend.globInfo(pattern, searchPath);
 
         return infos.map((info) => ({
           ...info,
@@ -251,7 +267,15 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
   async write(filePath: string, content: string, options?: WriteOptions): Promise<WriteResult> {
     const [backend, strippedKey] = this.getBackendAndKey(filePath);
     const result = await backend.write(strippedKey, content, options);
-    return this.remapFilesUpdateResult(result, this.getMountPrefix(filePath));
+    const matchedPrefix = this.getMountPrefix(filePath);
+    const remapped = this.remapFilesUpdateResult(result, matchedPrefix);
+    if (!remapped.path || !matchedPrefix || backend === this.defaultBackend) {
+      return remapped;
+    }
+    return {
+      ...remapped,
+      path: matchedPrefix.slice(0, -1) + remapped.path,
+    };
   }
 
   async edit(
@@ -262,7 +286,15 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
   ): Promise<EditResult> {
     const [backend, strippedKey] = this.getBackendAndKey(filePath);
     const result = await backend.edit(strippedKey, oldString, newString, replaceAll);
-    return this.remapFilesUpdateResult(result, this.getMountPrefix(filePath));
+    const matchedPrefix = this.getMountPrefix(filePath);
+    const remapped = this.remapFilesUpdateResult(result, matchedPrefix);
+    if (!remapped.path || !matchedPrefix || backend === this.defaultBackend) {
+      return remapped;
+    }
+    return {
+      ...remapped,
+      path: matchedPrefix.slice(0, -1) + remapped.path,
+    };
   }
 
   async delete(filePath: string, options?: DeleteOptions): Promise<DeleteResult> {
@@ -271,17 +303,19 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       return { error: "Delete operation is not supported by this filesystem backend." };
     }
     const result = await backend.delete(strippedKey, options);
-    return this.remapFilesUpdateResult(result, this.getMountPrefix(filePath));
+    const matchedPrefix = this.getMountPrefix(filePath);
+    const remapped = this.remapFilesUpdateResult(result, matchedPrefix);
+    if (!remapped.path || !matchedPrefix || backend === this.defaultBackend) {
+      return remapped;
+    }
+    return {
+      ...remapped,
+      path: matchedPrefix.slice(0, -1) + remapped.path,
+    };
   }
 
   async mkdir(path: string, recursive = true): Promise<MkdirResult> {
-    let matchedPrefix: string | undefined;
-    for (const [routePrefix] of this.sortedRoutes) {
-      if (path.startsWith(routePrefix)) {
-        matchedPrefix = routePrefix;
-        break;
-      }
-    }
+    const matchedPrefix = this.getMountPrefix(path);
 
     const [backend, strippedKey] = this.getBackendAndKey(path);
     if (!backend.mkdir) {

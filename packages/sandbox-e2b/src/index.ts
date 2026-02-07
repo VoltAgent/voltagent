@@ -389,8 +389,26 @@ export class E2BSandbox implements WorkspaceSandbox {
     const runCommand = async (): Promise<E2BCommandResult> => {
       const commandLine = buildCommandLine(command, options.args);
       const runOptions: Record<string, unknown> = {
-        onStdout: (data: string) => appendOutput(stdoutBuffer, data, maxOutputBytes),
-        onStderr: (data: string) => appendOutput(stderrBuffer, data, maxOutputBytes),
+        onStdout: (data: string) => {
+          appendOutput(stdoutBuffer, data, maxOutputBytes);
+          if (options.onStdout) {
+            try {
+              options.onStdout(data);
+            } catch {
+              // ignore streaming callback errors
+            }
+          }
+        },
+        onStderr: (data: string) => {
+          appendOutput(stderrBuffer, data, maxOutputBytes);
+          if (options.onStderr) {
+            try {
+              options.onStderr(data);
+            } catch {
+              // ignore streaming callback errors
+            }
+          }
+        },
       };
 
       if (this.cwd || options.cwd) {
