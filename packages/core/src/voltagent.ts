@@ -65,12 +65,14 @@ export class VoltAgent {
     if (options.toolRouting) {
       this.registry.setGlobalToolRouting(options.toolRouting);
     }
+    let workspaceInitPromise: Promise<void> | undefined;
     if (options.workspace) {
       const workspaceInstance =
         options.workspace instanceof Workspace
           ? options.workspace
           : new Workspace(options.workspace);
       this.registry.setGlobalWorkspace(workspaceInstance);
+      workspaceInitPromise = workspaceInstance.init();
     }
 
     // Initialize logger
@@ -112,82 +114,95 @@ export class VoltAgent {
     // Setup graceful shutdown handlers
     this.setupShutdownHandlers();
 
-    // ✅ NOW register agents - they can access global telemetry exporter
-    this.registerAgents(options.agents);
-    this.registerTriggers(options.triggers);
+    const finalizeInit = () => {
+      // ✅ NOW register agents - they can access global telemetry exporter
+      this.registerAgents(options.agents);
+      this.registerTriggers(options.triggers);
 
-    // Register workflows if provided
-    if (options.workflows) {
-      this.registerWorkflows(options.workflows);
-    }
-
-    // Handle server provider if provided
-    if (options.server) {
-      this.serverInstance = options.server({
-        agentRegistry: this.registry,
-        workflowRegistry: this.workflowRegistry,
-        logger: this.logger,
-        voltOpsClient: this.registry.getGlobalVoltOpsClient(),
-        observability: this.observability,
-        mcp: {
-          registry: this.mcpServerRegistry,
-        },
-        a2a: {
-          registry: this.a2aServerRegistry,
-        },
-        triggerRegistry: this.triggerRegistry,
-        ensureEnvironment: this.ensureEnvironmentBinding,
-      });
-    }
-
-    if (options.serverless) {
-      this.serverlessProvider = options.serverless({
-        agentRegistry: this.registry,
-        workflowRegistry: this.workflowRegistry,
-        logger: this.logger,
-        voltOpsClient: this.registry.getGlobalVoltOpsClient(),
-        observability: this.observability,
-        mcp: {
-          registry: this.mcpServerRegistry,
-        },
-        a2a: {
-          registry: this.a2aServerRegistry,
-        },
-        triggerRegistry: this.triggerRegistry,
-        ensureEnvironment: this.ensureEnvironmentBinding,
-      });
-    }
-
-    if (options.mcpServers) {
-      for (const entry of Object.values(options.mcpServers)) {
-        this.initializeMCPServer(entry);
+      // Register workflows if provided
+      if (options.workflows) {
+        this.registerWorkflows(options.workflows);
       }
-    }
 
-    if (options.a2aServers) {
-      for (const entry of Object.values(options.a2aServers)) {
-        this.initializeA2AServer(entry);
-      }
-    }
-
-    // Check dependencies if enabled (run in background)
-    if (options.checkDependencies !== false) {
-      // Run dependency check in background to not block startup
-      Promise.resolve().then(() => {
-        this.checkDependencies().catch(() => {
-          // Silently ignore errors
+      // Handle server provider if provided
+      if (options.server) {
+        this.serverInstance = options.server({
+          agentRegistry: this.registry,
+          workflowRegistry: this.workflowRegistry,
+          logger: this.logger,
+          voltOpsClient: this.registry.getGlobalVoltOpsClient(),
+          observability: this.observability,
+          mcp: {
+            registry: this.mcpServerRegistry,
+          },
+          a2a: {
+            registry: this.a2aServerRegistry,
+          },
+          triggerRegistry: this.triggerRegistry,
+          ensureEnvironment: this.ensureEnvironmentBinding,
         });
-      });
-    }
+      }
 
-    // Auto-start server if provided
-    if (this.serverInstance) {
-      this.startServer().catch((err) => {
-        this.logger.error("Failed to start server:", err);
-        if (typeof process !== "undefined" && typeof process.exit === "function") {
-          process.exit(1);
+      if (options.serverless) {
+        this.serverlessProvider = options.serverless({
+          agentRegistry: this.registry,
+          workflowRegistry: this.workflowRegistry,
+          logger: this.logger,
+          voltOpsClient: this.registry.getGlobalVoltOpsClient(),
+          observability: this.observability,
+          mcp: {
+            registry: this.mcpServerRegistry,
+          },
+          a2a: {
+            registry: this.a2aServerRegistry,
+          },
+          triggerRegistry: this.triggerRegistry,
+          ensureEnvironment: this.ensureEnvironmentBinding,
+        });
+      }
+
+      if (options.mcpServers) {
+        for (const entry of Object.values(options.mcpServers)) {
+          this.initializeMCPServer(entry);
         }
+      }
+
+      if (options.a2aServers) {
+        for (const entry of Object.values(options.a2aServers)) {
+          this.initializeA2AServer(entry);
+        }
+      }
+
+      // Check dependencies if enabled (run in background)
+      if (options.checkDependencies !== false) {
+        // Run dependency check in background to not block startup
+        Promise.resolve().then(() => {
+          this.checkDependencies().catch(() => {
+            // Silently ignore errors
+          });
+        });
+      }
+
+      // Auto-start server if provided
+      if (this.serverInstance) {
+        this.startServer().catch((err) => {
+          this.logger.error("Failed to start server:", err);
+          if (typeof process !== "undefined" && typeof process.exit === "function") {
+            process.exit(1);
+          }
+        });
+      }
+    };
+
+    if (workspaceInitPromise) {
+      void (async () => {
+        await workspaceInitPromise;
+        finalizeInit();
+      })().catch((error) => {
+        this.logger.error("Failed to initialize workspace:", error);
       });
+    } else {
+      finalizeInit();
     }
   }
 

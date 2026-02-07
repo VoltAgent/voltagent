@@ -1,4 +1,5 @@
-import type { Span } from "@opentelemetry/api";
+import type { AttributeValue, Span } from "@opentelemetry/api";
+import { safeStringify } from "@voltagent/internal";
 import matter from "gray-matter";
 import { z } from "zod";
 import type { Agent } from "../../agent/agent";
@@ -229,10 +230,38 @@ const setWorkspaceSpanAttributes = (
   }
 
   for (const [key, value] of Object.entries(attributes)) {
-    if (value !== undefined) {
-      toolSpan.setAttribute(key, value as never);
+    const normalized = normalizeAttributeValue(value);
+    if (normalized !== undefined) {
+      toolSpan.setAttribute(key, normalized);
     }
   }
+};
+
+const normalizeAttributeValue = (value: unknown): AttributeValue | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "bigint" || typeof value === "symbol") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    const allPrimitive = value.every(
+      (item) => typeof item === "string" || typeof item === "number" || typeof item === "boolean",
+    );
+    if (allPrimitive) {
+      return value as AttributeValue;
+    }
+    const serialized = safeStringify(value);
+    return typeof serialized === "string" ? serialized : undefined;
+  }
+  if (typeof value === "object" || typeof value === "function") {
+    const serialized = safeStringify(value);
+    return typeof serialized === "string" ? serialized : undefined;
+  }
+  return undefined;
 };
 
 const buildWorkspaceAttributes = (workspace?: WorkspaceIdentity): Record<string, unknown> => ({

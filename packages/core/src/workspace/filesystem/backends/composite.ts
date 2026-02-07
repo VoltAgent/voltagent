@@ -315,16 +315,21 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
       return { error: "Rmdir operation is not supported by this filesystem backend." };
     }
     const result = await backend.rmdir(strippedKey, recursive);
-    if (result.error || !result.path) {
+    if (result.error) {
       return result;
     }
     if (!matchedPrefix || backend === this.defaultBackend) {
       return result;
     }
 
+    const remapped = this.remapFilesUpdateResult(result, matchedPrefix);
+    if (!remapped.path) {
+      return remapped;
+    }
+
     return {
-      ...result,
-      path: matchedPrefix.slice(0, -1) + result.path,
+      ...remapped,
+      path: matchedPrefix.slice(0, -1) + remapped.path,
     };
   }
 }

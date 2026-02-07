@@ -143,18 +143,21 @@ export function performStringReplacement(
   return [newContent, occurrences];
 }
 
-export function truncateIfTooLong(result: string[] | string): string[] | string {
+export function truncateIfTooLong(
+  result: string[] | string,
+  maxChars: number = TOOL_RESULT_TOKEN_LIMIT * 4,
+): string[] | string {
   if (Array.isArray(result)) {
     const totalChars = result.reduce((sum, item) => sum + item.length, 0);
-    if (totalChars > TOOL_RESULT_TOKEN_LIMIT * 4) {
-      const truncateAt = Math.floor((result.length * TOOL_RESULT_TOKEN_LIMIT * 4) / totalChars);
+    if (totalChars > maxChars) {
+      const truncateAt = Math.floor((result.length * maxChars) / totalChars);
       return [...result.slice(0, truncateAt), TRUNCATION_GUIDANCE];
     }
     return result;
   }
 
-  if (result.length > TOOL_RESULT_TOKEN_LIMIT * 4) {
-    return `${result.substring(0, TOOL_RESULT_TOKEN_LIMIT * 4)}\n${TRUNCATION_GUIDANCE}`;
+  if (result.length > maxChars) {
+    return `${result.substring(0, maxChars)}\n${TRUNCATION_GUIDANCE}`;
   }
   return result;
 }

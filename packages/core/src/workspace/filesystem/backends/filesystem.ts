@@ -752,8 +752,12 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     let matchCount = 0;
     for (const fp of files) {
       try {
-        if (includeGlob && !micromatch.isMatch(path.basename(fp), includeGlob)) {
-          continue;
+        if (includeGlob) {
+          const relativePath = path.relative(root, fp);
+          const normalizedRelative = relativePath.split(path.sep).join("/");
+          if (!micromatch.isMatch(normalizedRelative, includeGlob)) {
+            continue;
+          }
         }
 
         const stat = await fs.stat(fp);

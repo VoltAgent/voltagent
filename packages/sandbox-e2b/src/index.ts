@@ -127,11 +127,15 @@ const truncateOutput = (
   if (maxBytes <= 0) {
     return { content: "", truncated: true };
   }
-  const size = Buffer.byteLength(value, "utf-8");
-  if (size <= maxBytes) {
+  const buffer = Buffer.from(value, "utf-8");
+  if (buffer.length <= maxBytes) {
     return { content: value, truncated: false };
   }
-  const truncated = Buffer.from(value, "utf-8").subarray(0, maxBytes).toString("utf-8");
+  let end = maxBytes;
+  while (end > 0 && (buffer[end] & 0xc0) === 0x80) {
+    end -= 1;
+  }
+  const truncated = buffer.subarray(0, end).toString("utf-8");
   return { content: truncated, truncated: true };
 };
 
@@ -276,10 +280,15 @@ export class E2BSandbox implements WorkspaceSandbox {
       return this.sandbox;
     }
     if (!this.sandboxPromise) {
-      this.sandboxPromise = this.createSandbox().then((sandbox) => {
-        this.sandbox = sandbox;
-        return sandbox;
-      });
+      this.sandboxPromise = this.createSandbox()
+        .then((sandbox) => {
+          this.sandbox = sandbox;
+          return sandbox;
+        })
+        .catch((error) => {
+          this.sandboxPromise = undefined;
+          throw error;
+        });
     }
     return this.sandboxPromise;
   }
@@ -365,7 +374,7 @@ export class E2BSandbox implements WorkspaceSandbox {
     if (options.signal) {
       abortListener = () => {
         aborted = true;
-        void requestKill();
+        requestKill().catch(() => undefined);
       };
       options.signal.addEventListener("abort", abortListener, { once: true });
     }
@@ -373,7 +382,7 @@ export class E2BSandbox implements WorkspaceSandbox {
     if (timeoutMs > 0) {
       timeoutId = setTimeout(() => {
         timedOut = true;
-        void requestKill();
+        requestKill().catch(() => undefined);
       }, timeoutMs);
     }
 
@@ -414,6 +423,7 @@ export class E2BSandbox implements WorkspaceSandbox {
         commandHandle = response;
         if (aborted || timedOut) {
           await this.killCommand(sandbox, response);
+          return {};
         }
         if (options.stdin !== undefined) {
           await this.sendStdin(sandbox, response, options.stdin);

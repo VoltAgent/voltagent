@@ -15,7 +15,7 @@ import { createTool } from "../../tool";
 import { createToolkit } from "../../tool/toolkit";
 import type { Toolkit } from "../../tool/toolkit";
 import type { WorkspaceFilesystem } from "../filesystem";
-import { validatePath } from "../filesystem/utils";
+import { truncateIfTooLong, validatePath } from "../filesystem/utils";
 import { withOperationTimeout } from "../timeout";
 import type {
   WorkspaceToolPolicies,
@@ -35,6 +35,7 @@ import type {
 
 const DEFAULT_TOP_K = 5;
 const DEFAULT_SNIPPET_LENGTH = 240;
+const DEFAULT_MAX_RESULT_CHARS = 2000;
 const DEFAULT_MAX_FILE_BYTES = 2 * 1024 * 1024;
 const DEFAULT_HYBRID_LEXICAL_WEIGHT = 0.5;
 const DEFAULT_HYBRID_VECTOR_WEIGHT = 0.5;
@@ -672,14 +673,17 @@ const formatSearchResults = (results: WorkspaceSearchResult[]): string => {
     if (result.lineRange) {
       lines.push(`   lines ${result.lineRange.start}-${result.lineRange.end}`);
     }
-    if (result.content) {
-      lines.push(`   ${result.content}`);
-    } else if (result.snippet) {
-      lines.push(`   ${result.snippet}`);
+    const content = result.snippet || result.content;
+    if (content) {
+      const truncated = truncateIfTooLong(content, DEFAULT_MAX_RESULT_CHARS);
+      const text = Array.isArray(truncated) ? truncated.join("\n") : truncated;
+      lines.push(`   ${text}`);
     }
   });
 
-  return lines.join("\n");
+  const output = lines.join("\n");
+  const truncatedOutput = truncateIfTooLong(output);
+  return Array.isArray(truncatedOutput) ? truncatedOutput.join("\n") : truncatedOutput;
 };
 
 export const createWorkspaceSearchToolkit = (
