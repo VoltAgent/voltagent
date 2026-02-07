@@ -179,3 +179,7 @@ node_modules/
 
 # serena
 .serena
+
+
+# example skills
+!examples/with-workspace/workspace/skills

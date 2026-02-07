@@ -4,6 +4,7 @@ import type { Memory } from "../memory";
 import type { VoltAgentObservability } from "../observability";
 import type { ToolRoutingConfig } from "../tool/routing/types";
 import type { VoltOpsClient } from "../voltops/client";
+import type { Workspace } from "../workspace";
 
 /**
  * Registry to manage and track agents
@@ -27,6 +28,7 @@ export class AgentRegistry {
   private globalAgentMemory?: Memory;
   private globalWorkflowMemory?: Memory;
   private globalToolRouting?: ToolRoutingConfig;
+  private globalWorkspace?: Workspace;
 
   /**
    * Track parent-child relationships between agents (child -> parents)
@@ -291,5 +293,19 @@ export class AgentRegistry {
    */
   public getGlobalToolRouting(): ToolRoutingConfig | undefined {
     return this.globalToolRouting;
+  }
+
+  /**
+   * Set the global Workspace instance.
+   */
+  public setGlobalWorkspace(workspace: Workspace | undefined): void {
+    this.globalWorkspace = workspace;
+  }
+
+  /**
+   * Get the global Workspace instance.
+   */
+  public getGlobalWorkspace(): Workspace | undefined {
+    return this.globalWorkspace;
   }
 }

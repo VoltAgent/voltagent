@@ -125,7 +125,13 @@ export type TaskToolOptions = {
 
 export type PlanAgentOptions = Omit<
   AgentOptions,
-  "instructions" | "tools" | "toolkits" | "subAgents" | "supervisorConfig"
+  | "instructions"
+  | "tools"
+  | "toolkits"
+  | "subAgents"
+  | "supervisorConfig"
+  | "workspace"
+  | "workspaceToolkits"
 > & {
   systemPrompt?: InstructionsDynamicValue;
   tools?: (Tool<any, any> | Toolkit | VercelTool)[];
@@ -1016,8 +1022,12 @@ export class PlanAgent extends Agent {
       onError: [...extensionHooks.map((hook) => hook.onError), hooks?.onError],
     });
 
+    const sanitizedAgentOptions = { ...(agentOptions as AgentOptions) };
+    (sanitizedAgentOptions as Record<string, unknown>).workspace = undefined;
+    (sanitizedAgentOptions as Record<string, unknown>).workspaceToolkits = undefined;
+
     super({
-      ...agentOptions,
+      ...sanitizedAgentOptions,
       name: name || "plan-agent",
       instructions,
       summarization,

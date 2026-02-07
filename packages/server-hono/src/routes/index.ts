@@ -10,13 +10,18 @@ import {
   handleGenerateText,
   handleGetAgent,
   handleGetAgentHistory,
+  handleGetAgentWorkspaceInfo,
+  handleGetAgentWorkspaceSkill,
   handleGetAgents,
   handleGetLogs,
   handleGetWorkflow,
   handleGetWorkflowState,
   handleGetWorkflows,
   handleInstallUpdates,
+  handleListAgentWorkspaceFiles,
+  handleListAgentWorkspaceSkills,
   handleListWorkflowRuns,
+  handleReadAgentWorkspaceFile,
   handleResumeChatStream,
   handleResumeWorkflow,
   handleStreamObject,
@@ -41,6 +46,11 @@ import {
   streamWorkflowRoute,
   suspendWorkflowRoute,
   textRoute,
+  workspaceGetSkillRoute,
+  workspaceInfoRoute,
+  workspaceListFilesRoute,
+  workspaceListSkillsRoute,
+  workspaceReadFileRoute,
 } from "./agent.routes";
 import { getLogsRoute } from "./log.routes";
 import { registerTriggerRoutes } from "./trigger.routes";
@@ -180,6 +190,75 @@ export function registerAgentRoutes(
       return c.json(response, 500);
     }
     return c.json(response, 200);
+  });
+
+  // GET /agents/:id/workspace - Workspace info
+  app.openapi(workspaceInfoRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    const response = await handleGetAgentWorkspaceInfo(agentId, deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  // GET /agents/:id/workspace/ls - List workspace files
+  app.openapi(workspaceListFilesRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    const path = c.req.query("path") || undefined;
+    const response = await handleListAgentWorkspaceFiles(agentId, { path }, deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  // GET /agents/:id/workspace/read - Read workspace file
+  app.openapi(workspaceReadFileRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    const path = c.req.query("path") || undefined;
+    const offset = c.req.query("offset");
+    const limit = c.req.query("limit");
+    const response = await handleReadAgentWorkspaceFile(
+      agentId,
+      { path, offset, limit },
+      deps,
+      logger,
+    );
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  // GET /agents/:id/workspace/skills - List workspace skills
+  app.openapi(workspaceListSkillsRoute, async (c) => {
+    const agentId = c.req.param("id");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    const refresh = c.req.query("refresh");
+    const response = await handleListAgentWorkspaceSkills(agentId, { refresh }, deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
+  });
+
+  // GET /agents/:id/workspace/skills/:skillId - Get workspace skill
+  app.openapi(workspaceGetSkillRoute, async (c) => {
+    const agentId = c.req.param("id");
+    const skillId = c.req.param("skillId");
+    if (!agentId) {
+      return c.json({ success: false, error: "Missing agent id parameter" }, 400);
+    }
+    if (!skillId) {
+      return c.json({ success: false, error: "Missing skillId parameter" }, 400);
+    }
+    const response = await handleGetAgentWorkspaceSkill(agentId, skillId, deps, logger);
+    const status = response.success ? 200 : response.httpStatus || 500;
+    return c.json(response, status);
   });
 
   // More agent routes can be added here...

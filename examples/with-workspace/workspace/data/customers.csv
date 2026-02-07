@@ -1,0 +1,6 @@
+customer_id,segment,mrr,region,plan
+C-001,mid-market,1200,NA,Pro
+C-002,enterprise,9000,EU,Enterprise
+C-003,smb,300,NA,Starter
+C-004,mid-market,1800,APAC,Pro
+C-005,enterprise,15000,NA,Enterprise

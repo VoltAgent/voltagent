@@ -1,0 +1,38 @@
+{
+  "name": "voltagent-example-with-workspace",
+  "author": "",
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.0",
+    "@voltagent/cli": "^0.1.21",
+    "@voltagent/core": "^2.3.3",
+    "@voltagent/libsql": "^2.1.0",
+    "@voltagent/logger": "^2.0.2",
+    "@voltagent/server-hono": "^2.0.4",
+    "ai": "^6.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "voltagent"
+  ],
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "examples/with-workspace"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "type": "module"
+}

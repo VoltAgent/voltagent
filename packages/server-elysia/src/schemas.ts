@@ -17,6 +17,11 @@ import {
   WorkflowResumeResponseSchema as ZodWorkflowResumeResponseSchema,
   WorkflowSuspendRequestSchema as ZodWorkflowSuspendRequestSchema,
   WorkflowSuspendResponseSchema as ZodWorkflowSuspendResponseSchema,
+  WorkspaceFileListSchema as ZodWorkspaceFileListSchema,
+  WorkspaceInfoSchema as ZodWorkspaceInfoSchema,
+  WorkspaceReadFileSchema as ZodWorkspaceReadFileSchema,
+  WorkspaceSkillListSchema as ZodWorkspaceSkillListSchema,
+  WorkspaceSkillSchema as ZodWorkspaceSkillSchema,
 } from "@voltagent/server-core";
 import { t } from "elysia";
 import { zodToTypeBox } from "./utils/zod-adapter";
@@ -38,6 +43,13 @@ export const TextResponseSchema = zodToTypeBox(ZodTextResponseSchema);
 // Object generation schemas
 export const ObjectRequestSchema = zodToTypeBox(ZodObjectRequestSchema);
 export const ObjectResponseSchema = zodToTypeBox(ZodObjectResponseSchema);
+
+// Workspace schemas
+export const WorkspaceInfoSchema = zodToTypeBox(ZodWorkspaceInfoSchema);
+export const WorkspaceFileListSchema = zodToTypeBox(ZodWorkspaceFileListSchema);
+export const WorkspaceReadFileSchema = zodToTypeBox(ZodWorkspaceReadFileSchema);
+export const WorkspaceSkillListSchema = zodToTypeBox(ZodWorkspaceSkillListSchema);
+export const WorkspaceSkillSchema = zodToTypeBox(ZodWorkspaceSkillSchema);
 
 // Workflow schemas
 export const WorkflowResponseSchema = zodToTypeBox(ZodWorkflowResponseSchema);

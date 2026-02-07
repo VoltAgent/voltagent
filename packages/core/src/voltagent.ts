@@ -22,6 +22,7 @@ import { VoltOpsClient } from "./voltops/client";
 import type { Workflow } from "./workflow";
 import type { WorkflowChain } from "./workflow/chain";
 import { WorkflowRegistry } from "./workflow/registry";
+import { Workspace } from "./workspace";
 
 /**
  * Main VoltAgent class for managing agents and server
@@ -63,6 +64,13 @@ export class VoltAgent {
     }
     if (options.toolRouting) {
       this.registry.setGlobalToolRouting(options.toolRouting);
+    }
+    if (options.workspace) {
+      const workspaceInstance =
+        options.workspace instanceof Workspace
+          ? options.workspace
+          : new Workspace(options.workspace);
+      this.registry.setGlobalWorkspace(workspaceInstance);
     }
 
     // Initialize logger

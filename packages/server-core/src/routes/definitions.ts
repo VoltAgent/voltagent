@@ -262,6 +262,125 @@ export const AGENT_ROUTES = {
       },
     },
   },
+  getWorkspace: {
+    method: "get" as const,
+    path: "/agents/:id/workspace",
+    summary: "Get agent workspace info",
+    description:
+      "Retrieve workspace configuration metadata for an agent, including capabilities (filesystem, sandbox, search, skills).",
+    tags: ["Agent Workspace"],
+    operationId: "getAgentWorkspace",
+    responses: {
+      200: {
+        description: "Successfully retrieved workspace info",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent or workspace not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve workspace info due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  listWorkspaceFiles: {
+    method: "get" as const,
+    path: "/agents/:id/workspace/ls",
+    summary: "List workspace files",
+    description: "List files and directories under a workspace path.",
+    tags: ["Agent Workspace"],
+    operationId: "listWorkspaceFiles",
+    responses: {
+      200: {
+        description: "Successfully listed workspace files",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request parameters",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent or workspace not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to list workspace files due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  readWorkspaceFile: {
+    method: "get" as const,
+    path: "/agents/:id/workspace/read",
+    summary: "Read workspace file",
+    description: "Read a file from the workspace filesystem.",
+    tags: ["Agent Workspace"],
+    operationId: "readWorkspaceFile",
+    responses: {
+      200: {
+        description: "Successfully read workspace file",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request parameters",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent or workspace not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to read workspace file due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  listWorkspaceSkills: {
+    method: "get" as const,
+    path: "/agents/:id/workspace/skills",
+    summary: "List workspace skills",
+    description: "List available workspace skills for an agent.",
+    tags: ["Agent Workspace"],
+    operationId: "listWorkspaceSkills",
+    responses: {
+      200: {
+        description: "Successfully listed workspace skills",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent, workspace, or skills not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to list workspace skills due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getWorkspaceSkill: {
+    method: "get" as const,
+    path: "/agents/:id/workspace/skills/:skillId",
+    summary: "Get workspace skill",
+    description: "Retrieve a specific workspace skill including its instructions.",
+    tags: ["Agent Workspace"],
+    operationId: "getWorkspaceSkill",
+    responses: {
+      200: {
+        description: "Successfully retrieved workspace skill",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent, workspace, or skill not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve workspace skill due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
 } as const;
 
 /**

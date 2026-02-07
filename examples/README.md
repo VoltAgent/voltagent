@@ -83,6 +83,7 @@ Create a multi-agent research workflow where different AI agents collaborate to 
 ## All Examples
 
 - [Base Starter](./base) — Minimal VoltAgent starter with a single agent, memory, and dev server.
+- [Workspace](./with-workspace) — Workspace filesystem, sandbox execution, search, and skills.
 - [Summarization](./with-summarization) — Agent summarization with a low trigger window for easy testing.
 - [Retries and Fallbacks](./with-retries-fallback) — Model fallback list with per-model retries and agent-level defaults.
 - [Middleware](./with-middleware) — Input/output middleware with retry feedback.

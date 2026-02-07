@@ -1,3 +1,5 @@
+import type { FileData } from "../workspace/filesystem";
+
 export type PlanAgentTodoStatus = "pending" | "in_progress" | "done";
 
 export type PlanAgentTodoItem = {
@@ -8,11 +10,7 @@ export type PlanAgentTodoItem = {
   updatedAt?: string;
 };
 
-export type PlanAgentFileData = {
-  content: string[];
-  created_at: string;
-  modified_at: string;
-};
+export type PlanAgentFileData = FileData;
 
 export type PlanAgentState = {
   todos?: PlanAgentTodoItem[];

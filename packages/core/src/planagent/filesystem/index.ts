@@ -1,3 +1,4 @@
+import type { Span } from "@opentelemetry/api";
 import { z } from "zod";
 import type { Agent } from "../../agent/agent";
 import type { OperationContext } from "../../agent/types";
@@ -41,6 +42,7 @@ export const FILESYSTEM_SYSTEM_PROMPT = `You have access to a virtual filesystem
 - read_file: read a file from the filesystem
 - write_file: write to a file in the filesystem
 - edit_file: edit a file in the filesystem
+- delete_file: delete a file from the filesystem
 - glob: find files matching a pattern (e.g., "**/*.ts")
 - grep: search for text within files`;
 
@@ -50,6 +52,7 @@ export const WRITE_FILE_TOOL_DESCRIPTION =
   "Write content to a new file. Returns an error if the file already exists";
 export const EDIT_FILE_TOOL_DESCRIPTION =
   "Edit a file by replacing a specific string with a new string";
+export const DELETE_FILE_TOOL_DESCRIPTION = "Delete a file from the filesystem";
 export const GLOB_TOOL_DESCRIPTION =
   "Find files matching a glob pattern (e.g., '**/*.ts' for all TypeScript files)";
 export const GREP_TOOL_DESCRIPTION =
@@ -89,10 +92,26 @@ function mergeFileUpdates(
   return result;
 }
 
+function setWorkspaceSpanAttributes(
+  operationContext: OperationContext,
+  attributes: Record<string, unknown>,
+): void {
+  const toolSpan = operationContext.systemContext.get("parentToolSpan") as Span | undefined;
+  if (!toolSpan) {
+    return;
+  }
+
+  for (const [key, value] of Object.entries(attributes)) {
+    if (value !== undefined) {
+      toolSpan.setAttribute(key, value as never);
+    }
+  }
+}
+
 async function applyFilesUpdate(
   agent: Agent,
   operationContext: OperationContext,
-  filesUpdate: Record<string, PlanAgentFileData> | null | undefined,
+  filesUpdate: FilesUpdate | null | undefined,
 ): Promise<void> {
   if (!filesUpdate) {
     return;
@@ -155,6 +174,10 @@ function createLsTool(
     }),
     execute: async (input, executeOptions) => {
       const operationContext = executeOptions as OperationContext;
+      setWorkspaceSpanAttributes(operationContext, {
+        "workspace.operation": "filesystem.list",
+        "workspace.fs.path": input.path || "/",
+      });
       const state = await loadPlanAgentState(agent, operationContext);
       const resolvedBackend = resolveBackend(backend, {
         agent,
@@ -190,6 +213,12 @@ function createReadFileTool(
     }),
     execute: async (input, executeOptions) => {
       const operationContext = executeOptions as OperationContext;
+      setWorkspaceSpanAttributes(operationContext, {
+        "workspace.operation": "filesystem.read",
+        "workspace.fs.path": input.file_path,
+        "workspace.fs.offset": input.offset,
+        "workspace.fs.limit": input.limit,
+      });
       const state = await loadPlanAgentState(agent, operationContext);
       const resolvedBackend = resolveBackend(backend, {
         agent,
@@ -215,6 +244,11 @@ function createWriteFileTool(
     }),
     execute: async (input, executeOptions) => {
       const operationContext = executeOptions as OperationContext;
+      setWorkspaceSpanAttributes(operationContext, {
+        "workspace.operation": "filesystem.write",
+        "workspace.fs.path": input.file_path,
+        "workspace.fs.bytes": input.content.length,
+      });
       const state = await loadPlanAgentState(agent, operationContext);
       const resolvedBackend = resolveBackend(backend, {
         agent,
@@ -253,6 +287,10 @@ function createEditFileTool(
     }),
     execute: async (input, executeOptions) => {
       const operationContext = executeOptions as OperationContext;
+      setWorkspaceSpanAttributes(operationContext, {
+        "workspace.operation": "filesystem.edit",
+        "workspace.fs.path": input.file_path,
+      });
       const state = await loadPlanAgentState(agent, operationContext);
       const resolvedBackend = resolveBackend(backend, {
         agent,
@@ -271,8 +309,50 @@ function createEditFileTool(
         return result.error;
       }
 
+      setWorkspaceSpanAttributes(operationContext, {
+        "workspace.fs.occurrences": result.occurrences,
+      });
       await applyFilesUpdate(agent, operationContext, result.filesUpdate || undefined);
       return `Successfully replaced ${result.occurrences ?? 0} occurrence(s) in '${input.file_path}'`;
+    },
+  });
+}
+
+function createDeleteFileTool(
+  agent: Agent,
+  backend: FilesystemBackend | FilesystemBackendFactory,
+  options: { customDescription: string | undefined },
+) {
+  return createTool({
+    name: "delete_file",
+    description: options.customDescription || DELETE_FILE_TOOL_DESCRIPTION,
+    parameters: z.object({
+      file_path: z.string().describe("Absolute path to the file to delete"),
+    }),
+    execute: async (input, executeOptions) => {
+      const operationContext = executeOptions as OperationContext;
+      setWorkspaceSpanAttributes(operationContext, {
+        "workspace.operation": "filesystem.delete",
+        "workspace.fs.path": input.file_path,
+      });
+      const state = await loadPlanAgentState(agent, operationContext);
+      const resolvedBackend = resolveBackend(backend, {
+        agent,
+        operationContext,
+        state,
+      });
+
+      if (!resolvedBackend.delete) {
+        return "Delete operation is not supported by the configured filesystem backend.";
+      }
+
+      const result = await resolvedBackend.delete(input.file_path);
+      if (result.error) {
+        return result.error;
+      }
+
+      await applyFilesUpdate(agent, operationContext, result.filesUpdate || undefined);
+      return `Successfully deleted '${input.file_path}'`;
     },
   });
 }
@@ -291,6 +371,11 @@ function createGlobTool(
     }),
     execute: async (input, executeOptions) => {
       const operationContext = executeOptions as OperationContext;
+      setWorkspaceSpanAttributes(operationContext, {
+        "workspace.operation": "filesystem.glob",
+        "workspace.fs.path": input.path || "/",
+        "workspace.fs.pattern": input.pattern,
+      });
       const state = await loadPlanAgentState(agent, operationContext);
       const resolvedBackend = resolveBackend(backend, {
         agent,
@@ -323,6 +408,12 @@ function createGrepTool(
     }),
     execute: async (input, executeOptions) => {
       const operationContext = executeOptions as OperationContext;
+      setWorkspaceSpanAttributes(operationContext, {
+        "workspace.operation": "filesystem.grep",
+        "workspace.fs.path": input.path || "/",
+        "workspace.search.query": input.pattern,
+        "workspace.fs.pattern": input.glob ?? undefined,
+      });
       const state = await loadPlanAgentState(agent, operationContext);
       const resolvedBackend = resolveBackend(backend, {
         agent,
@@ -357,6 +448,9 @@ export function createFilesystemToolkit(
     }),
     createEditFileTool(agent, backend, {
       customDescription: options.customToolDescriptions?.edit_file,
+    }),
+    createDeleteFileTool(agent, backend, {
+      customDescription: options.customToolDescriptions?.delete_file,
     }),
     createGlobTool(agent, backend, { customDescription: options.customToolDescriptions?.glob }),
     createGrepTool(agent, backend, { customDescription: options.customToolDescriptions?.grep }),

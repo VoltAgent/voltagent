@@ -1,0 +1,46 @@
+{
+  "name": "@voltagent/sandbox-daytona",
+  "description": "VoltAgent Daytona sandbox provider",
+  "version": "0.1.0",
+  "dependencies": {
+    "@daytonaio/sdk": "^0.139.0"
+  },
+  "devDependencies": {
+    "@voltagent/core": "^2.0.0",
+    "@types/node": "^24.2.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.2"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "peerDependencies": {
+    "@voltagent/core": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VoltAgent/voltagent.git",
+    "directory": "packages/sandbox-daytona"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "types": "dist/index.d.ts"
+}

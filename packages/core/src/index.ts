@@ -51,6 +51,7 @@ export {
   type StreamObjectResultWithContext,
 } from "./agent/agent";
 export * from "./planagent";
+export * from "./workspace";
 export * from "./agent/hooks";
 export { createSubagent } from "./agent/subagent/types";
 export type {
@@ -180,6 +181,7 @@ export type {
   AgentModelValue,
   AgentFeedbackOptions,
   AgentFeedbackMetadata,
+  WorkspaceToolkitOptions,
   AgentResponse,
   AgentFullState,
   ApiToolInfo,

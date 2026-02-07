@@ -56,6 +56,61 @@ export const AgentListSchema = z
   .array(AgentResponseSchema)
   .describe("Array of agent objects with their configurations");
 
+// Workspace schemas
+export const WorkspaceInfoSchema = z.object({
+  id: z.string().describe("Workspace ID"),
+  name: z.string().optional().describe("Workspace name"),
+  scope: z.enum(["agent", "conversation"]).optional().describe("Workspace scope"),
+  capabilities: z.object({
+    filesystem: z.boolean().describe("Filesystem access enabled"),
+    sandbox: z.boolean().describe("Sandbox execution enabled"),
+    search: z.boolean().describe("Search enabled"),
+    skills: z.boolean().describe("Skills enabled"),
+  }),
+});
+
+export const WorkspaceFileInfoSchema = z.object({
+  path: z.string(),
+  is_dir: z.boolean(),
+  size: z.number().optional(),
+  modified_at: z.string().optional(),
+});
+
+export const WorkspaceFileListSchema = z.object({
+  path: z.string(),
+  entries: z.array(WorkspaceFileInfoSchema),
+});
+
+export const WorkspaceReadFileSchema = z.object({
+  path: z.string(),
+  content: z.string(),
+});
+
+export const WorkspaceSkillMetadataSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  version: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  path: z.string(),
+  root: z.string(),
+  references: z.array(z.string()).optional(),
+  scripts: z.array(z.string()).optional(),
+  assets: z.array(z.string()).optional(),
+});
+
+export const WorkspaceSkillListItemSchema = WorkspaceSkillMetadataSchema.extend({
+  active: z.boolean().describe("Whether the skill is currently activated"),
+});
+
+export const WorkspaceSkillListSchema = z.object({
+  skills: z.array(WorkspaceSkillListItemSchema),
+});
+
+export const WorkspaceSkillSchema = WorkspaceSkillMetadataSchema.extend({
+  instructions: z.string(),
+});
+
 // Basic JSON schema for structured output (used in both output and object generation)
 export const BasicJsonSchema = z
   .object({

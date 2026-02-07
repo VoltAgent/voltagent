@@ -19,6 +19,11 @@ import {
   WorkflowStreamEventSchema,
   WorkflowSuspendRequestSchema,
   WorkflowSuspendResponseSchema,
+  WorkspaceFileListSchema,
+  WorkspaceInfoSchema,
+  WorkspaceReadFileSchema,
+  WorkspaceSkillListSchema,
+  WorkspaceSkillSchema,
 } from "@voltagent/server-core";
 import { createRoute, z } from "../zod-openapi-compat";
 import { createPathParam } from "./path-params";
@@ -420,6 +425,277 @@ Example event: 'data: {"partialUpdate": {...}}\n\n' or 'data: {"finalObject": {.
   tags: [...AGENT_ROUTES.streamObject.tags],
   summary: AGENT_ROUTES.streamObject.summary,
   description: AGENT_ROUTES.streamObject.description,
+});
+
+export const workspaceInfoRoute = createRoute({
+  method: AGENT_ROUTES.getWorkspace.method,
+  path: AGENT_ROUTES.getWorkspace.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceInfoSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspace.responses?.[200]?.description ||
+        "Successfully retrieved workspace info",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspace.responses?.[404]?.description || "Agent or workspace not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspace.responses?.[500]?.description ||
+        "Failed to retrieve workspace info",
+    },
+  },
+  tags: [...AGENT_ROUTES.getWorkspace.tags],
+  summary: AGENT_ROUTES.getWorkspace.summary,
+  description: AGENT_ROUTES.getWorkspace.description,
+});
+
+export const workspaceListFilesRoute = createRoute({
+  method: AGENT_ROUTES.listWorkspaceFiles.method,
+  path: AGENT_ROUTES.listWorkspaceFiles.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+    query: z.object({
+      path: z.string().optional().describe("Workspace path to list"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceFileListSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceFiles.responses?.[200]?.description ||
+        "Successfully listed workspace files",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceFiles.responses?.[400]?.description ||
+        "Invalid request parameters",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceFiles.responses?.[404]?.description ||
+        "Agent or workspace not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceFiles.responses?.[500]?.description ||
+        "Failed to list workspace files",
+    },
+  },
+  tags: [...AGENT_ROUTES.listWorkspaceFiles.tags],
+  summary: AGENT_ROUTES.listWorkspaceFiles.summary,
+  description: AGENT_ROUTES.listWorkspaceFiles.description,
+});
+
+export const workspaceReadFileRoute = createRoute({
+  method: AGENT_ROUTES.readWorkspaceFile.method,
+  path: AGENT_ROUTES.readWorkspaceFile.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+    query: z.object({
+      path: z.string().describe("File path to read"),
+      offset: z.number({ coerce: true }).optional().describe("Line offset (0-indexed)"),
+      limit: z.number({ coerce: true }).optional().describe("Max lines to read"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceReadFileSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.readWorkspaceFile.responses?.[200]?.description ||
+        "Successfully read workspace file",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.readWorkspaceFile.responses?.[400]?.description ||
+        "Invalid request parameters",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.readWorkspaceFile.responses?.[404]?.description ||
+        "Agent or workspace not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.readWorkspaceFile.responses?.[500]?.description ||
+        "Failed to read workspace file",
+    },
+  },
+  tags: [...AGENT_ROUTES.readWorkspaceFile.tags],
+  summary: AGENT_ROUTES.readWorkspaceFile.summary,
+  description: AGENT_ROUTES.readWorkspaceFile.description,
+});
+
+export const workspaceListSkillsRoute = createRoute({
+  method: AGENT_ROUTES.listWorkspaceSkills.method,
+  path: AGENT_ROUTES.listWorkspaceSkills.path.replace(":id", "{id}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+    }),
+    query: z.object({
+      refresh: z.boolean({ coerce: true }).optional().describe("Refresh skill discovery"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceSkillListSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceSkills.responses?.[200]?.description ||
+        "Successfully listed workspace skills",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceSkills.responses?.[404]?.description ||
+        "Agent, workspace, or skills not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.listWorkspaceSkills.responses?.[500]?.description ||
+        "Failed to list workspace skills",
+    },
+  },
+  tags: [...AGENT_ROUTES.listWorkspaceSkills.tags],
+  summary: AGENT_ROUTES.listWorkspaceSkills.summary,
+  description: AGENT_ROUTES.listWorkspaceSkills.description,
+});
+
+export const workspaceGetSkillRoute = createRoute({
+  method: AGENT_ROUTES.getWorkspaceSkill.method,
+  path: AGENT_ROUTES.getWorkspaceSkill.path.replace(":id", "{id}").replace(":skillId", "{skillId}"),
+  request: {
+    params: z.object({
+      id: agentIdParam(),
+      skillId: z.string().describe("Skill identifier"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.literal(true),
+            data: WorkspaceSkillSchema,
+          }),
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspaceSkill.responses?.[200]?.description ||
+        "Successfully retrieved workspace skill",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspaceSkill.responses?.[404]?.description ||
+        "Agent, workspace, or skill not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        AGENT_ROUTES.getWorkspaceSkill.responses?.[500]?.description ||
+        "Failed to retrieve workspace skill",
+    },
+  },
+  tags: [...AGENT_ROUTES.getWorkspaceSkill.tags],
+  summary: AGENT_ROUTES.getWorkspaceSkill.summary,
+  description: AGENT_ROUTES.getWorkspaceSkill.description,
 });
 
 export const getWorkflowsRoute = createRoute({

@@ -6,7 +6,12 @@ import {
   handleGenerateText,
   handleGetAgent,
   handleGetAgentHistory,
+  handleGetAgentWorkspaceInfo,
+  handleGetAgentWorkspaceSkill,
   handleGetAgents,
+  handleListAgentWorkspaceFiles,
+  handleListAgentWorkspaceSkills,
+  handleReadAgentWorkspaceFile,
   handleStreamObject,
   handleStreamText,
   mapLogResponse,
@@ -22,6 +27,11 @@ import {
   ObjectResponseSchema,
   TextRequestSchema,
   TextResponseSchema,
+  WorkspaceFileListSchema,
+  WorkspaceInfoSchema,
+  WorkspaceReadFileSchema,
+  WorkspaceSkillListSchema,
+  WorkspaceSkillSchema,
 } from "../schemas";
 
 // Agent ID parameter
@@ -33,6 +43,25 @@ const AgentIdParam = t.Object({
 const HistoryQuery = t.Object({
   page: t.Optional(t.String()),
   limit: t.Optional(t.String()),
+});
+
+const WorkspaceListQuery = t.Object({
+  path: t.Optional(t.String()),
+});
+
+const WorkspaceReadQuery = t.Object({
+  path: t.String(),
+  offset: t.Optional(t.String()),
+  limit: t.Optional(t.String()),
+});
+
+const WorkspaceSkillsQuery = t.Object({
+  refresh: t.Optional(t.String()),
+});
+
+const WorkspaceSkillParams = t.Object({
+  id: t.String(),
+  skillId: t.String(),
 });
 
 /**
@@ -225,6 +254,171 @@ export function registerAgentRoutes(app: Elysia, deps: ServerProviderDeps, logge
       detail: {
         summary: "Get agent history",
         description: "Retrieve the execution history of an agent with pagination",
+        tags: ["Agents"],
+      },
+    },
+  );
+
+  // GET /agents/:id/workspace - Workspace info
+  app.get(
+    "/agents/:id/workspace",
+    async ({ params, set }) => {
+      const response = await handleGetAgentWorkspaceInfo(params.id, deps, logger);
+      if (!response.success) {
+        set.status = response.httpStatus || 500;
+        return response;
+      }
+      return response;
+    },
+    {
+      params: AgentIdParam,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+          data: WorkspaceInfoSchema,
+        }),
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "Get agent workspace info",
+        description: "Retrieve workspace metadata and capabilities for an agent",
+        tags: ["Agents"],
+      },
+    },
+  );
+
+  // GET /agents/:id/workspace/ls - List workspace files
+  app.get(
+    "/agents/:id/workspace/ls",
+    async ({ params, query, set }) => {
+      const response = await handleListAgentWorkspaceFiles(
+        params.id,
+        { path: query.path },
+        deps,
+        logger,
+      );
+      if (!response.success) {
+        set.status = response.httpStatus || 500;
+        return response;
+      }
+      return response;
+    },
+    {
+      params: AgentIdParam,
+      query: WorkspaceListQuery,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+          data: WorkspaceFileListSchema,
+        }),
+        400: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "List workspace files",
+        description: "List files and directories under a workspace path",
+        tags: ["Agents"],
+      },
+    },
+  );
+
+  // GET /agents/:id/workspace/read - Read workspace file
+  app.get(
+    "/agents/:id/workspace/read",
+    async ({ params, query, set }) => {
+      const response = await handleReadAgentWorkspaceFile(
+        params.id,
+        { path: query.path, offset: query.offset, limit: query.limit },
+        deps,
+        logger,
+      );
+      if (!response.success) {
+        set.status = response.httpStatus || 500;
+        return response;
+      }
+      return response;
+    },
+    {
+      params: AgentIdParam,
+      query: WorkspaceReadQuery,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+          data: WorkspaceReadFileSchema,
+        }),
+        400: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "Read workspace file",
+        description: "Read a file from the workspace filesystem",
+        tags: ["Agents"],
+      },
+    },
+  );
+
+  // GET /agents/:id/workspace/skills - List workspace skills
+  app.get(
+    "/agents/:id/workspace/skills",
+    async ({ params, query, set }) => {
+      const response = await handleListAgentWorkspaceSkills(
+        params.id,
+        { refresh: query.refresh },
+        deps,
+        logger,
+      );
+      if (!response.success) {
+        set.status = response.httpStatus || 500;
+        return response;
+      }
+      return response;
+    },
+    {
+      params: AgentIdParam,
+      query: WorkspaceSkillsQuery,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+          data: WorkspaceSkillListSchema,
+        }),
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "List workspace skills",
+        description: "List available workspace skills for an agent",
+        tags: ["Agents"],
+      },
+    },
+  );
+
+  // GET /agents/:id/workspace/skills/:skillId - Get workspace skill
+  app.get(
+    "/agents/:id/workspace/skills/:skillId",
+    async ({ params, set }) => {
+      const response = await handleGetAgentWorkspaceSkill(params.id, params.skillId, deps, logger);
+      if (!response.success) {
+        set.status = response.httpStatus || 500;
+        return response;
+      }
+      return response;
+    },
+    {
+      params: WorkspaceSkillParams,
+      response: {
+        200: t.Object({
+          success: t.Literal(true),
+          data: WorkspaceSkillSchema,
+        }),
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "Get workspace skill",
+        description: "Retrieve a specific workspace skill including instructions",
         tags: ["Agents"],
       },
     },

@@ -1,0 +1,14 @@
+**Insight Summary for customers.csv**
+
+- **Total Customers:** 5
+- **Total MRR:** $20,300
+- **Average MRR:** $4,060
+- **Segments:** mid-market, enterprise, smb
+- **Plans Offered:** Pro, Enterprise, Starter
+
+**Outliers:**
+- C-005 (Enterprise) has the highest MRR at $15,000.
+
+**Next Steps:**
+1. Consider strategies to upsell to existing customers in the mid-market segment.
+2. Investigate the low MRR of the smb segment to identify potential issues.

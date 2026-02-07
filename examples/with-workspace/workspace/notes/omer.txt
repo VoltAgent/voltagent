@@ -1,0 +1,2163 @@
+SSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300gSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300mSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300nSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300tSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300bSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300aSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300zSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300ıSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300nSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300dSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300aSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300tSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300oSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300pSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300lSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300aSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300mSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300MSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300RSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300RSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300vSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300nSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300ySegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300üSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300kSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300sSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300kSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300MSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300RSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300RSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300’Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300lSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300ıSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300mSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300üSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300şSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300tSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300rSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300iSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300:Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300
+Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300SSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300gSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300mSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300nSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300tSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300,Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300TSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300oSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300pSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300lSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300aSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300mSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300MSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300RSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300RSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300,Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300ESegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300nSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300YSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300üSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300kSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300sSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300kSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300MSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300RSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300RSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300’Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300lSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300ıSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300MSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300üSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300şSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300tSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300rSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300iSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300
+Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300mSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300iSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300dSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300-Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300mSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300aSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300rSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300kSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300tSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300,Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3003Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300,Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300CSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300-Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3004Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300
+Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300nSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300tSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300rSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300pSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300rSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300iSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300sSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300eSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300,Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3002Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3004Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300,Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300CSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300-Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3005Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300
+Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300sSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300mSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300bSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300,Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3003Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300,Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300 Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300CSegment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300-Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3000Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 3003Segment Bazında Toplam MRR ve En Yüksek MRR'lı Müşteri:
+
+Segmentler:
+1. Mid-Market:
+   - Toplam MRR: 3000
+   - En Yüksek MRR'lı Müşteri: C-004, MRR: 1800
+
+2. Enterprise:
+   - Toplam MRR: 24000
+   - En Yüksek MRR'lı Müşteri: C-005, MRR: 15000
+
+3. SMB:
+   - Toplam MRR: 300
+   - En Yüksek MRR'lı Müşteri: C-003, MRR: 300

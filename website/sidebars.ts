@@ -63,6 +63,28 @@ const sidebars: SidebarsConfig = {
         "agents/tools",
         {
           type: "doc",
+          id: "agents/workspace",
+          label: "Workspace",
+          customProps: {
+            badge: {
+              label: "Experimental",
+              variant: "accent",
+            },
+          },
+        },
+        {
+          type: "doc",
+          id: "agents/workspace-skills",
+          label: "Workspace Skills",
+          customProps: {
+            badge: {
+              label: "Experimental",
+              variant: "accent",
+            },
+          },
+        },
+        {
+          type: "doc",
           id: "agents/plan-agent",
           label: "PlanAgent",
           customProps: {

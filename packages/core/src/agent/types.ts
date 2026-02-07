@@ -41,6 +41,14 @@ import type {
   VoltOpsFeedbackCreateInput,
   VoltOpsFeedbackExpiresIn,
 } from "../voltops/types";
+import type {
+  Workspace,
+  WorkspaceConfig,
+  WorkspaceFilesystemToolkitOptions,
+  WorkspaceSandboxToolkitOptions,
+  WorkspaceSearchToolkitOptions,
+  WorkspaceSkillsToolkitOptions,
+} from "../workspace";
 import type { ContextInput } from "./agent";
 import type { AgentHooks } from "./hooks";
 import type { AgentTraceContext } from "./open-telemetry/trace-context";
@@ -87,6 +95,13 @@ export type AgentFeedbackMetadata = {
  */
 export type ToolWithNodeId = (BaseTool | ProviderTool) & {
   node_id: string;
+};
+
+export type WorkspaceToolkitOptions = {
+  filesystem?: WorkspaceFilesystemToolkitOptions | false;
+  sandbox?: WorkspaceSandboxToolkitOptions | false;
+  search?: WorkspaceSearchToolkitOptions | false;
+  skills?: WorkspaceSkillsToolkitOptions | false;
 };
 
 export interface AgentScorerState {
@@ -576,6 +591,8 @@ export type AgentOptions = {
   tools?: (Tool<any, any> | Toolkit | VercelTool)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
   toolkits?: Toolkit[];
   toolRouting?: ToolRoutingConfig | false;
+  workspace?: Workspace | WorkspaceConfig | false;
+  workspaceToolkits?: WorkspaceToolkitOptions | false;
   memory?: Memory | false;
   summarization?: AgentSummarizationOptions | false;
 

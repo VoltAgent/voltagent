@@ -20,6 +20,7 @@ import type { VoltOpsClient } from "./voltops/client";
 import type { WorkflowChain } from "./workflow/chain";
 import type { RegisteredWorkflow } from "./workflow/registry";
 import type { Workflow, WorkflowSuspendController } from "./workflow/types";
+import type { Workspace, WorkspaceConfig } from "./workspace";
 
 export interface MCPLoggingAdapter {
   setLevel?(level: string): Promise<void> | void;
@@ -233,6 +234,11 @@ export type VoltAgentOptions = {
    * When enabled, agents expose searchTools/callTool and hide pool tools from the model.
    */
   toolRouting?: ToolRoutingConfig;
+  /**
+   * Optional global workspace instance or configuration.
+   * Agents inherit this workspace unless they explicitly provide their own workspace or set it to false.
+   */
+  workspace?: Workspace | WorkspaceConfig;
   /** Optional VoltOps trigger handlers */
   triggers?: VoltAgentTriggersConfig;
   /**
