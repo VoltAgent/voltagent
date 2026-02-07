@@ -63,28 +63,6 @@ const sidebars: SidebarsConfig = {
         "agents/tools",
         {
           type: "doc",
-          id: "agents/workspace",
-          label: "Workspace",
-          customProps: {
-            badge: {
-              label: "Experimental",
-              variant: "accent",
-            },
-          },
-        },
-        {
-          type: "doc",
-          id: "agents/workspace-skills",
-          label: "Workspace Skills",
-          customProps: {
-            badge: {
-              label: "Experimental",
-              variant: "accent",
-            },
-          },
-        },
-        {
-          type: "doc",
           id: "agents/plan-agent",
           label: "PlanAgent",
           customProps: {
@@ -137,6 +115,79 @@ const sidebars: SidebarsConfig = {
         },
       },
       items: ["guardrails/overview", "guardrails/built-in"],
+    },
+    {
+      type: "category",
+      label: "Workspaces",
+      collapsed: true,
+      items: [
+        {
+          type: "doc",
+          id: "workspaces/overview",
+          label: "Overview",
+          customProps: {
+            badge: {
+              label: "Experimental",
+              variant: "accent",
+            },
+          },
+        },
+        {
+          type: "doc",
+          id: "workspaces/filesystem",
+          label: "Filesystem",
+          customProps: {
+            badge: {
+              label: "Experimental",
+              variant: "accent",
+            },
+          },
+        },
+        {
+          type: "doc",
+          id: "workspaces/search",
+          label: "Search",
+          customProps: {
+            badge: {
+              label: "Experimental",
+              variant: "accent",
+            },
+          },
+        },
+        {
+          type: "doc",
+          id: "workspaces/sandbox",
+          label: "Sandbox",
+          customProps: {
+            badge: {
+              label: "Experimental",
+              variant: "accent",
+            },
+          },
+        },
+        {
+          type: "doc",
+          id: "workspaces/skills",
+          label: "Skills",
+          customProps: {
+            badge: {
+              label: "Experimental",
+              variant: "accent",
+            },
+          },
+        },
+        {
+          type: "doc",
+          id: "workspaces/security",
+          label: "Security",
+          customProps: {
+            badge: {
+              label: "Experimental",
+              variant: "accent",
+            },
+          },
+        },
+      ],
     },
     {
       type: "category",

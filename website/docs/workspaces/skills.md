@@ -1,6 +1,6 @@
 ---
 title: Workspace Skills
-slug: /agents/workspace-skills
+slug: /workspaces/skills
 ---
 
 # Workspace Skills
