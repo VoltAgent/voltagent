@@ -569,6 +569,12 @@ export class VoltAgent {
       this.logger.info("[VoltAgent] Suspending active workflows...");
       await this.workflowRegistry.suspendAllActiveWorkflows();
 
+      const globalWorkspace = this.registry.getGlobalWorkspace();
+      if (globalWorkspace) {
+        this.logger.info("[VoltAgent] Destroying global workspace...");
+        await globalWorkspace.destroy();
+      }
+
       // Shutdown telemetry
       if (this.observability) {
         this.logger.info("[VoltAgent] Shutting down telemetry...");

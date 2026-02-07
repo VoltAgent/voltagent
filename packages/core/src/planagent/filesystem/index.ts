@@ -1,4 +1,5 @@
-import type { Span } from "@opentelemetry/api";
+import type { AttributeValue, Span } from "@opentelemetry/api";
+import { safeStringify } from "@voltagent/internal";
 import { z } from "zod";
 import type { Agent } from "../../agent/agent";
 import type { OperationContext } from "../../agent/types";
@@ -102,10 +103,38 @@ function setWorkspaceSpanAttributes(
   }
 
   for (const [key, value] of Object.entries(attributes)) {
-    if (value !== undefined) {
-      toolSpan.setAttribute(key, value as never);
+    const normalized = normalizeAttributeValue(value);
+    if (normalized !== undefined) {
+      toolSpan.setAttribute(key, normalized);
     }
   }
+}
+
+function normalizeAttributeValue(value: unknown): AttributeValue | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "bigint" || typeof value === "symbol") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    const allPrimitive = value.every(
+      (item) => typeof item === "string" || typeof item === "number" || typeof item === "boolean",
+    );
+    if (allPrimitive) {
+      return value as AttributeValue;
+    }
+    const serialized = safeStringify(value);
+    return typeof serialized === "string" ? serialized : undefined;
+  }
+  if (typeof value === "object" || typeof value === "function") {
+    const serialized = safeStringify(value);
+    return typeof serialized === "string" ? serialized : undefined;
+  }
+  return undefined;
 }
 
 async function applyFilesUpdate(
@@ -200,16 +229,12 @@ function createReadFileTool(
     description: options.customDescription || READ_FILE_TOOL_DESCRIPTION,
     parameters: z.object({
       file_path: z.string().describe("Absolute path to the file to read"),
-      offset: z
-        .number({ coerce: true })
+      offset: z.coerce
+        .number()
         .optional()
         .default(0)
         .describe("Line offset to start reading from (0-indexed)"),
-      limit: z
-        .number({ coerce: true })
-        .optional()
-        .default(2000)
-        .describe("Maximum number of lines to read"),
+      limit: z.coerce.number().optional().default(2000).describe("Maximum number of lines to read"),
     }),
     execute: async (input, executeOptions) => {
       const operationContext = executeOptions as OperationContext;

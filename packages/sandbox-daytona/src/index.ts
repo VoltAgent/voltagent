@@ -1,3 +1,4 @@
+import * as daytonaModule from "@daytonaio/sdk";
 import type {
   WorkspaceSandbox,
   WorkspaceSandboxExecuteOptions,
@@ -105,15 +106,6 @@ const truncateOutput = (
 const extractString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
 
-let daytonaModulePromise: Promise<DaytonaModule> | undefined;
-
-const loadDaytonaModule = async (): Promise<DaytonaModule> => {
-  if (!daytonaModulePromise) {
-    daytonaModulePromise = import("@daytonaio/sdk").then((mod) => mod as unknown as DaytonaModule);
-  }
-  return daytonaModulePromise;
-};
-
 export class DaytonaSandbox implements WorkspaceSandbox {
   name = "daytona";
   private readonly apiKey?: string;
@@ -158,7 +150,7 @@ export class DaytonaSandbox implements WorkspaceSandbox {
   }
 
   private async createSandbox(): Promise<DaytonaSandboxInstance> {
-    const { Daytona } = await loadDaytonaModule();
+    const { Daytona } = daytonaModule as unknown as DaytonaModule;
     const client = new Daytona(this.buildClientOptions());
     const options = this.createTimeoutSeconds ? { timeout: this.createTimeoutSeconds } : undefined;
     return await client.create(this.createParams, options);
@@ -169,10 +161,15 @@ export class DaytonaSandbox implements WorkspaceSandbox {
       return this.sandbox;
     }
     if (!this.sandboxPromise) {
-      this.sandboxPromise = this.createSandbox().then((sandbox) => {
-        this.sandbox = sandbox;
-        return sandbox;
-      });
+      this.sandboxPromise = this.createSandbox()
+        .then((sandbox) => {
+          this.sandbox = sandbox;
+          return sandbox;
+        })
+        .catch((error) => {
+          this.sandboxPromise = undefined;
+          throw error;
+        });
     }
     return this.sandboxPromise;
   }

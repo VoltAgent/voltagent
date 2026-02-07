@@ -1046,13 +1046,10 @@ export const createWorkspaceSkillsToolkit = (
     parameters: z.object({
       query: z.string().describe("Search query"),
       mode: z.enum(["bm25", "vector", "hybrid"]).optional().describe("Search mode"),
-      top_k: z.number({ coerce: true }).optional().default(DEFAULT_TOP_K),
-      snippet_length: z
-        .number({ coerce: true })
-        .optional()
-        .describe("Snippet length for each result"),
-      lexical_weight: z.number({ coerce: true }).optional().describe("Hybrid lexical weight"),
-      vector_weight: z.number({ coerce: true }).optional().describe("Hybrid vector weight"),
+      top_k: z.coerce.number().optional().default(DEFAULT_TOP_K),
+      snippet_length: z.coerce.number().optional().describe("Snippet length for each result"),
+      lexical_weight: z.coerce.number().optional().describe("Hybrid lexical weight"),
+      vector_weight: z.coerce.number().optional().describe("Hybrid vector weight"),
     }),
     execute: async (input, executeOptions) =>
       withOperationTimeout(

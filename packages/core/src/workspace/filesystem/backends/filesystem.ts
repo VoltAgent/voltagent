@@ -4,6 +4,9 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import micromatch from "micromatch";
 import {
+  MAX_GREP_LINE_LENGTH,
+  MAX_GREP_MATCHES,
+  assessRegexPattern,
   checkEmptyContent,
   formatContentWithLineNumbers,
   performStringReplacement,
@@ -481,7 +484,10 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
       let content: string;
 
       if (SUPPORTS_NOFOLLOW) {
-        const stat = await fs.stat(resolvedPath);
+        const stat = await fs.lstat(resolvedPath);
+        if (stat.isSymbolicLink()) {
+          return { error: `Error: Symlinks are not allowed: ${filePath}` };
+        }
         if (!stat.isFile()) {
           return { error: `Error: File '${filePath}' not found` };
         }
@@ -594,10 +600,14 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     dirPath = "/",
     glob: string | null = null,
   ): Promise<GrepMatch[] | string> {
-    try {
-      new RegExp(pattern);
-    } catch (e: any) {
-      return `Invalid regex pattern: ${e.message}`;
+    const safety = assessRegexPattern(pattern);
+    const useLiteral = !safety.safe;
+    if (!useLiteral) {
+      try {
+        new RegExp(pattern);
+      } catch (e: any) {
+        return `Invalid regex pattern: ${e.message}`;
+      }
     }
 
     let baseFull: string;
@@ -614,9 +624,9 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
       return [];
     }
 
-    let results = await this.ripgrepSearch(pattern, baseFull, glob);
+    let results = await this.ripgrepSearch(pattern, baseFull, glob, useLiteral);
     if (results === null) {
-      results = await this.fallbackSearch(pattern, baseFull, glob);
+      results = await this.fallbackSearch(pattern, baseFull, glob, useLiteral);
     }
 
     const matches: GrepMatch[] = [];
@@ -632,9 +642,13 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     pattern: string,
     baseFull: string,
     includeGlob: string | null,
+    literal = false,
   ): Promise<Record<string, Array<[number, string]>> | null> {
     return new Promise((resolve) => {
       const args = ["--json"];
+      if (literal) {
+        args.push("-F");
+      }
       if (includeGlob) {
         args.push("--glob", includeGlob);
       }
@@ -709,12 +723,18 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     pattern: string,
     baseFull: string,
     includeGlob: string | null,
+    forceLiteral = false,
   ): Promise<Record<string, Array<[number, string]>>> {
-    let regex: RegExp;
-    try {
-      regex = new RegExp(pattern);
-    } catch {
-      return {};
+    const safety = assessRegexPattern(pattern);
+    const useLiteral = forceLiteral || !safety.safe;
+
+    let regex: RegExp | null = null;
+    if (!useLiteral) {
+      try {
+        regex = new RegExp(pattern);
+      } catch {
+        return {};
+      }
     }
 
     const results: Record<string, Array<[number, string]>> = {};
@@ -729,6 +749,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
       dot: true,
     });
 
+    let matchCount = 0;
     for (const fp of files) {
       try {
         if (includeGlob && !micromatch.isMatch(path.basename(fp), includeGlob)) {
@@ -745,7 +766,22 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
-          if (regex.test(line)) {
+          if (matchCount >= MAX_GREP_MATCHES) {
+            return results;
+          }
+          const candidate =
+            line.length > MAX_GREP_LINE_LENGTH ? line.slice(0, MAX_GREP_LINE_LENGTH) : line;
+          let matched = false;
+          if (useLiteral) {
+            matched = candidate.includes(pattern);
+          } else if (regex) {
+            try {
+              matched = regex.test(candidate);
+            } catch {
+              matched = false;
+            }
+          }
+          if (matched) {
             let virtPath: string | undefined;
             if (this.virtualMode) {
               try {
@@ -768,6 +804,10 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
               results[virtPath] = [];
             }
             results[virtPath].push([i + 1, line]);
+            matchCount++;
+            if (matchCount >= MAX_GREP_MATCHES) {
+              return results;
+            }
           }
         }
       } catch {

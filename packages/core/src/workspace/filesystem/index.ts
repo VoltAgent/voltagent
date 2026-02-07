@@ -619,16 +619,12 @@ const createReadFileTool = (
     needsApproval: options.needsApproval,
     parameters: z.object({
       file_path: z.string().describe("Absolute path to the file to read"),
-      offset: z
-        .number({ coerce: true })
+      offset: z.coerce
+        .number()
         .optional()
         .default(0)
         .describe("Line offset to start reading from (0-indexed)"),
-      limit: z
-        .number({ coerce: true })
-        .optional()
-        .default(2000)
-        .describe("Maximum number of lines to read"),
+      limit: z.coerce.number().optional().default(2000).describe("Maximum number of lines to read"),
     }),
     execute: async (input, executeOptions) =>
       withOperationTimeout(
@@ -1041,8 +1037,8 @@ const createListTreeTool = (
     needsApproval: options.needsApproval,
     parameters: z.object({
       path: z.string().optional().default("/").describe("Base directory path (default: /)"),
-      max_depth: z
-        .number({ coerce: true })
+      max_depth: z.coerce
+        .number()
         .int()
         .min(1)
         .optional()

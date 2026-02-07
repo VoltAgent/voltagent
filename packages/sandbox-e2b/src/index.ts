@@ -3,6 +3,7 @@ import type {
   WorkspaceSandboxExecuteOptions,
   WorkspaceSandboxResult,
 } from "@voltagent/core";
+import * as e2bModule from "e2b";
 
 export type E2BSandboxOptions = {
   apiKey?: string;
@@ -217,15 +218,6 @@ const isCommandHandle = (value: unknown): value is E2BCommandHandle => {
   return typeof (value as E2BCommandHandle).wait === "function";
 };
 
-let e2bModulePromise: Promise<E2BModule> | undefined;
-
-const loadE2BModule = async (): Promise<E2BModule> => {
-  if (!e2bModulePromise) {
-    e2bModulePromise = import("e2b").then((mod) => mod as unknown as E2BModule);
-  }
-  return e2bModulePromise;
-};
-
 export class E2BSandbox implements WorkspaceSandbox {
   name = "e2b";
   private readonly apiKey?: string;
@@ -266,7 +258,7 @@ export class E2BSandbox implements WorkspaceSandbox {
   }
 
   private async createSandbox(): Promise<E2BSdkSandbox> {
-    const { Sandbox } = await loadE2BModule();
+    const { Sandbox } = e2bModule as unknown as E2BModule;
     if (this.sandboxId) {
       const connectOptions = this.buildSandboxOptions(this.connectOptions);
       return await Sandbox.connect(this.sandboxId, connectOptions);

@@ -1,3 +1,4 @@
+import { posix as posixPath } from "node:path";
 import type {
   DeleteOptions,
   DeleteResult,
@@ -34,6 +35,41 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     }
 
     return [this.defaultBackend, key];
+  }
+
+  private getMountPrefix(key: string): string | null {
+    for (const [prefix] of this.sortedRoutes) {
+      if (key.startsWith(prefix)) {
+        return prefix;
+      }
+    }
+    return null;
+  }
+
+  private remapFilesUpdate(
+    filesUpdate: Record<string, FileData | null>,
+    mountPrefix: string,
+  ): Record<string, FileData | null> {
+    const prefix = mountPrefix.endsWith("/") ? mountPrefix.slice(0, -1) : mountPrefix;
+    const remapped: Record<string, FileData | null> = {};
+    for (const [key, value] of Object.entries(filesUpdate)) {
+      const normalizedKey = key.startsWith("/") ? key : `/${key}`;
+      const mappedPath = posixPath.normalize(`${prefix}${normalizedKey}`);
+      remapped[mappedPath] = value;
+    }
+    return remapped;
+  }
+
+  private remapFilesUpdateResult<
+    T extends { filesUpdate?: Record<string, FileData | null> | null },
+  >(result: T, mountPrefix: string | null): T {
+    if (!mountPrefix || !result.filesUpdate) {
+      return result;
+    }
+    return {
+      ...result,
+      filesUpdate: this.remapFilesUpdate(result.filesUpdate, mountPrefix),
+    };
   }
 
   async lsInfo(path: string): Promise<FileInfo[]> {
@@ -214,7 +250,8 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
 
   async write(filePath: string, content: string, options?: WriteOptions): Promise<WriteResult> {
     const [backend, strippedKey] = this.getBackendAndKey(filePath);
-    return await backend.write(strippedKey, content, options);
+    const result = await backend.write(strippedKey, content, options);
+    return this.remapFilesUpdateResult(result, this.getMountPrefix(filePath));
   }
 
   async edit(
@@ -224,7 +261,8 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     replaceAll = false,
   ): Promise<EditResult> {
     const [backend, strippedKey] = this.getBackendAndKey(filePath);
-    return await backend.edit(strippedKey, oldString, newString, replaceAll);
+    const result = await backend.edit(strippedKey, oldString, newString, replaceAll);
+    return this.remapFilesUpdateResult(result, this.getMountPrefix(filePath));
   }
 
   async delete(filePath: string, options?: DeleteOptions): Promise<DeleteResult> {
@@ -232,7 +270,8 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     if (!backend.delete) {
       return { error: "Delete operation is not supported by this filesystem backend." };
     }
-    return await backend.delete(strippedKey, options);
+    const result = await backend.delete(strippedKey, options);
+    return this.remapFilesUpdateResult(result, this.getMountPrefix(filePath));
   }
 
   async mkdir(path: string, recursive = true): Promise<MkdirResult> {

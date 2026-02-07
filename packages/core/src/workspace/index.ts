@@ -169,13 +169,29 @@ export class Workspace {
       this.status = "initializing";
       this.initPromise = (async () => {
         try {
+          if (this.status === "destroyed") {
+            return;
+          }
           this.filesystem.init();
+          if (this.status === "destroyed") {
+            return;
+          }
           await this.sandbox?.start?.();
+          if (this.status === "destroyed") {
+            return;
+          }
           await this.searchService?.init?.();
+          if (this.status === "destroyed") {
+            return;
+          }
           await this.skills?.init?.();
-          this.status = "ready";
+          if (this.status !== "destroyed") {
+            this.status = "ready";
+          }
         } catch (error) {
-          this.status = "error";
+          if (this.status !== "destroyed") {
+            this.status = "error";
+          }
           throw error;
         } finally {
           this.initPromise = undefined;
@@ -189,11 +205,14 @@ export class Workspace {
     if (this.status === "destroyed") {
       return;
     }
+    this.status = "destroyed";
+    if (this.initPromise) {
+      await this.initPromise.catch(() => undefined);
+    }
     await this.sandbox?.destroy?.();
     this.searchService?.destroy();
     this.skills?.destroy();
     this.filesystem.destroy();
-    this.status = "destroyed";
   }
 
   getInfo(): WorkspaceInfo {

@@ -728,10 +728,7 @@ export const createWorkspaceSearchToolkit = (
     parameters: z.object({
       path: z.string().optional().default("/").describe("Base path to index (default: /)"),
       glob: z.string().optional().default("**/*").describe("Glob pattern to select files"),
-      max_file_bytes: z
-        .number({ coerce: true })
-        .optional()
-        .describe("Override maximum file size to index"),
+      max_file_bytes: z.coerce.number().optional().describe("Override maximum file size to index"),
     }),
     execute: async (input, executeOptions) =>
       withOperationTimeout(
@@ -824,25 +821,22 @@ export const createWorkspaceSearchToolkit = (
     parameters: z.object({
       query: z.string().describe("Search query"),
       mode: z.enum(["bm25", "vector", "hybrid"]).optional().describe("Search mode"),
-      top_k: z.number({ coerce: true }).optional().default(DEFAULT_TOP_K),
+      top_k: z.coerce.number().optional().default(DEFAULT_TOP_K),
       path: z.string().optional().default("/").describe("Base path filter (default: /)"),
       glob: z.string().optional().describe("Optional glob filter"),
-      snippet_length: z
-        .number({ coerce: true })
-        .optional()
-        .describe("Snippet length for each result"),
+      snippet_length: z.coerce.number().optional().describe("Snippet length for each result"),
       include_content: z
         .boolean()
         .optional()
         .default(true)
         .describe("Include full content in results (default: true). Set false to prefer snippets."),
-      min_score: z.number({ coerce: true }).optional().describe("Minimum normalized score (0-1)"),
-      lexical_weight: z
-        .number({ coerce: true })
+      min_score: z.coerce.number().optional().describe("Minimum normalized score (0-1)"),
+      lexical_weight: z.coerce
+        .number()
         .optional()
         .describe("Hybrid lexical weight (0-1). Defaults to 1 - vector_weight if omitted"),
-      vector_weight: z
-        .number({ coerce: true })
+      vector_weight: z.coerce
+        .number()
         .optional()
         .describe("Hybrid vector weight (0-1). 0 = BM25 only, 1 = vector only"),
     }),

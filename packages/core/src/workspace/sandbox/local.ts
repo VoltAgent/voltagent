@@ -357,7 +357,8 @@ const buildSandboxedCommand = async (params: {
       ...(params.isolation?.bwrapArgs ?? []),
     ];
 
-    if (params.isolation?.allowNetwork === false) {
+    const allowNetwork = params.isolation?.allowNetwork === true;
+    if (!allowNetwork) {
       bwrapArgs.push("--unshare-net");
     }
 

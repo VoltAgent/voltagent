@@ -3,10 +3,31 @@ import type { FileData, GrepMatch } from "./backends/backend";
 
 export const EMPTY_CONTENT_WARNING = "System reminder: File exists but has empty contents";
 export const MAX_LINE_LENGTH = 10000;
+export const MAX_GREP_LINE_LENGTH = MAX_LINE_LENGTH;
+export const MAX_REGEX_PATTERN_LENGTH = 500;
+export const MAX_GREP_MATCHES = 5000;
 export const LINE_NUMBER_WIDTH = 6;
 export const TOOL_RESULT_TOKEN_LIMIT = 20000;
 export const TRUNCATION_GUIDANCE =
   "... [results truncated, try being more specific with your parameters]";
+
+type RegexSafetyResult = { safe: true } | { safe: false; reason: string };
+
+const NESTED_QUANTIFIER_PATTERN = /\((?:[^()\\]|\\.)*[*+{](?:[^()\\]|\\.)*\)\s*[*+{]/;
+const OVERLAPPING_QUANTIFIER_PATTERN = /(\.\*|\.\+|\.\{[^}]+\})\s*[*+{]/;
+
+export function assessRegexPattern(pattern: string): RegexSafetyResult {
+  if (pattern.length > MAX_REGEX_PATTERN_LENGTH) {
+    return {
+      safe: false,
+      reason: `Pattern length exceeds ${MAX_REGEX_PATTERN_LENGTH} characters`,
+    };
+  }
+  if (NESTED_QUANTIFIER_PATTERN.test(pattern) || OVERLAPPING_QUANTIFIER_PATTERN.test(pattern)) {
+    return { safe: false, reason: "Pattern contains nested or overlapping quantifiers" };
+  }
+  return { safe: true };
+}
 
 export function sanitizeToolCallId(toolCallId: string): string {
   return toolCallId.replace(/\./g, "_").replace(/\//g, "_").replace(/\\/g, "_");
@@ -210,6 +231,11 @@ export function grepMatchesFromFiles(
   path: string | null = null,
   glob: string | null = null,
 ): GrepMatch[] | string {
+  const safety = assessRegexPattern(pattern);
+  if (!safety.safe) {
+    return `Unsafe regex pattern: ${safety.reason}`;
+  }
+
   let regex: RegExp;
   try {
     regex = new RegExp(pattern);
@@ -241,8 +267,19 @@ export function grepMatchesFromFiles(
     for (let i = 0; i < fileData.content.length; i++) {
       const line = fileData.content[i];
       const lineNum = i + 1;
-      if (regex.test(line)) {
+      const candidate =
+        line.length > MAX_GREP_LINE_LENGTH ? line.slice(0, MAX_GREP_LINE_LENGTH) : line;
+      let matched = false;
+      try {
+        matched = regex.test(candidate);
+      } catch {
+        matched = false;
+      }
+      if (matched) {
         matches.push({ path: filePath, line: lineNum, text: line });
+        if (matches.length >= MAX_GREP_MATCHES) {
+          return matches;
+        }
       }
     }
   }
