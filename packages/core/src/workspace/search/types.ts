@@ -53,6 +53,7 @@ export type WorkspaceSearchResult = {
 
 export type WorkspaceSearchIndexSummary = {
   indexed: number;
+  vectorIndexed?: number;
   skipped: number;
   errors: string[];
 };

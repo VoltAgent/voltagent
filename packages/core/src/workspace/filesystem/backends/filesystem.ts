@@ -860,6 +860,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
         absolute: true,
         onlyFiles: true,
         dot: true,
+        followSymbolicLinks: false,
       });
 
       for (const matchedPath of matches) {

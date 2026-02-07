@@ -347,13 +347,82 @@ export class E2BSandbox implements WorkspaceSandbox {
       };
     }
 
-    const sandbox = await this.getSandbox();
+    const timeoutMs =
+      options.timeoutMs === undefined ? this.defaultTimeoutMs : Math.max(0, options.timeoutMs);
+    const deadline = timeoutMs > 0 ? startTime + timeoutMs : undefined;
+    let aborted = false;
+    let timedOut = false;
+
+    const sandbox =
+      timeoutMs > 0
+        ? await new Promise<E2BSdkSandbox | null>((resolve, reject) => {
+            const remaining = deadline ? Math.max(0, deadline - Date.now()) : timeoutMs;
+            if (remaining <= 0) {
+              timedOut = true;
+              resolve(null);
+              return;
+            }
+            let settled = false;
+            const creationTimeoutId = setTimeout(() => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              timedOut = true;
+              resolve(null);
+            }, remaining);
+            this.getSandbox()
+              .then((resolved) => {
+                if (settled) {
+                  return;
+                }
+                settled = true;
+                clearTimeout(creationTimeoutId);
+                resolve(resolved);
+              })
+              .catch((error) => {
+                if (settled) {
+                  return;
+                }
+                settled = true;
+                clearTimeout(creationTimeoutId);
+                reject(error);
+              });
+          })
+        : await this.getSandbox();
+
+    if (!sandbox) {
+      return {
+        stdout: "",
+        stderr: "",
+        exitCode: null,
+        durationMs: Date.now() - startTime,
+        timedOut: true,
+        aborted: false,
+        stdoutTruncated: false,
+        stderrTruncated: false,
+      };
+    }
+
     const maxOutputBytes =
       options.maxOutputBytes === undefined
         ? this.maxOutputBytes
         : Math.max(0, options.maxOutputBytes);
-    const timeoutMs =
-      options.timeoutMs === undefined ? this.defaultTimeoutMs : Math.max(0, options.timeoutMs);
+    const effectiveTimeoutMs =
+      deadline !== undefined ? Math.max(0, deadline - Date.now()) : timeoutMs;
+    if (deadline !== undefined && effectiveTimeoutMs === 0) {
+      timedOut = true;
+      return {
+        stdout: "",
+        stderr: "",
+        exitCode: null,
+        durationMs: Date.now() - startTime,
+        timedOut,
+        aborted,
+        stdoutTruncated: false,
+        stderrTruncated: false,
+      };
+    }
     const envs = {
       ...this.env,
       ...normalizeEnv(options.env),
@@ -361,8 +430,6 @@ export class E2BSandbox implements WorkspaceSandbox {
 
     const stdoutBuffer = initOutputBuffer();
     const stderrBuffer = initOutputBuffer();
-    let aborted = false;
-    let timedOut = false;
     let commandHandle: E2BCommandHandle | undefined;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     let abortListener: (() => void) | undefined;
@@ -379,11 +446,11 @@ export class E2BSandbox implements WorkspaceSandbox {
       options.signal.addEventListener("abort", abortListener, { once: true });
     }
 
-    if (timeoutMs > 0) {
+    if (effectiveTimeoutMs > 0) {
       timeoutId = setTimeout(() => {
         timedOut = true;
         requestKill().catch(() => undefined);
-      }, timeoutMs);
+      }, effectiveTimeoutMs);
     }
 
     const runCommand = async (): Promise<E2BCommandResult> => {
@@ -420,14 +487,15 @@ export class E2BSandbox implements WorkspaceSandbox {
       if (Object.keys(envs).length > 0) {
         runOptions.envs = envs;
       }
-      if (timeoutMs >= 0) {
-        runOptions.timeoutMs = timeoutMs;
+      if (effectiveTimeoutMs >= 0) {
+        runOptions.timeoutMs = effectiveTimeoutMs;
       }
       if (this.requestTimeoutMs !== undefined) {
         runOptions.requestTimeoutMs = this.requestTimeoutMs;
       }
 
-      const needsHandle = options.stdin !== undefined || Boolean(options.signal) || timeoutMs > 0;
+      const needsHandle =
+        options.stdin !== undefined || Boolean(options.signal) || effectiveTimeoutMs > 0;
       if (needsHandle) {
         runOptions.background = true;
       }

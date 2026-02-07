@@ -43,6 +43,7 @@ export class VoltAgent {
   private readonly ensureEnvironmentBinding: (env?: Record<string, unknown>) => void;
   private readonly triggerRegistry: TriggerRegistry;
   private readonly agentRefs: Record<string, Agent>;
+  public readonly ready: Promise<void>;
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
@@ -195,26 +196,20 @@ export class VoltAgent {
       }
     };
 
-    if (workspaceInitPromise) {
-      void (async () => {
+    this.ready = (async () => {
+      if (workspaceInitPromise) {
         try {
           await workspaceInitPromise;
         } catch (error) {
           logger.error("Workspace initialization failed:", { error });
         }
-        try {
-          finalizeInit();
-        } catch (error) {
-          logger.error("finalizeInit failed:", { error });
-        }
-      })();
-    } else {
+      }
       try {
         finalizeInit();
       } catch (error) {
         logger.error("finalizeInit failed:", { error });
       }
-    }
+    })();
   }
 
   serverless(): IServerlessProvider {

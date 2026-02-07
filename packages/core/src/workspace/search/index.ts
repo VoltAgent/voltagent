@@ -291,6 +291,7 @@ export class WorkspaceSearch {
     const targets = paths && paths.length > 0 ? paths : (this.autoIndexPaths ?? []);
     const summary: WorkspaceSearchIndexSummary = {
       indexed: 0,
+      vectorIndexed: this.embedding && this.vector ? 0 : undefined,
       skipped: 0,
       errors: [],
     };
@@ -351,6 +352,9 @@ export class WorkspaceSearch {
 
       const result = await this.indexDocuments(docs);
       summary.indexed += result.indexed;
+      if (result.vectorIndexed !== undefined) {
+        summary.vectorIndexed = (summary.vectorIndexed ?? 0) + result.vectorIndexed;
+      }
       summary.skipped += result.skipped;
       summary.errors.push(...result.errors);
     }
@@ -361,6 +365,7 @@ export class WorkspaceSearch {
   async indexDocuments(docs: WorkspaceSearchDocument[]): Promise<WorkspaceSearchIndexSummary> {
     const summary: WorkspaceSearchIndexSummary = {
       indexed: 0,
+      vectorIndexed: this.embedding && this.vector ? 0 : undefined,
       skipped: 0,
       errors: [],
     };
@@ -379,6 +384,8 @@ export class WorkspaceSearch {
       this.documents.set(doc.id, doc);
     }
 
+    summary.indexed += docs.length;
+
     if (this.embedding && this.vector) {
       try {
         const embeddings = await this.embedding.embedBatch(docs.map((doc) => doc.content));
@@ -390,6 +397,7 @@ export class WorkspaceSearch {
           },
         }));
         await this.vector.storeBatch(items);
+        summary.vectorIndexed = (summary.vectorIndexed ?? 0) + docs.length;
       } catch (error: any) {
         summary.errors.push(
           `Vector indexing failed: ${error?.message ? String(error.message) : "unknown error"}`,
@@ -397,7 +405,6 @@ export class WorkspaceSearch {
       }
     }
 
-    summary.indexed += docs.length;
     return summary;
   }
 
@@ -657,6 +664,9 @@ const buildWorkspaceAttributes = (workspace?: WorkspaceIdentity): Record<string,
 
 const formatIndexSummary = (summary: WorkspaceSearchIndexSummary): string => {
   const lines = [`Indexed ${summary.indexed} file(s).`, `Skipped ${summary.skipped} file(s).`];
+  if (summary.vectorIndexed !== undefined) {
+    lines.push(`Vector indexed ${summary.vectorIndexed} file(s).`);
+  }
   if (summary.errors.length > 0) {
     lines.push("Errors:");
     lines.push(...summary.errors.map((err) => `- ${err}`));
