@@ -147,6 +147,51 @@ describe("message-normalizer", () => {
     expect(((sanitized as UIMessage).parts[0] as any).state).toBe("input-available");
   });
 
+  it("keeps tool runs with pending, error, or denied states", () => {
+    const message = baseMessage([
+      {
+        type: "tool-search",
+        toolCallId: "call-streaming",
+        state: "input-streaming",
+        input: { query: "streaming" },
+      } as any,
+      {
+        type: "tool-search",
+        toolCallId: "call-error",
+        state: "output-error",
+        errorText: "Tool failed",
+      } as any,
+      {
+        type: "tool-search",
+        toolCallId: "call-denied",
+        state: "output-denied",
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    const parts = (sanitized as UIMessage).parts as any[];
+    expect(parts.map((part) => part.state)).toEqual([
+      "input-streaming",
+      "output-error",
+      "output-denied",
+    ]);
+  });
+
+  it("keeps tool runs with output-streaming state", () => {
+    const message = baseMessage([
+      {
+        type: "tool-search",
+        toolCallId: "call-streaming-output",
+        state: "output-streaming",
+      } as any,
+    ]);
+
+    const sanitized = sanitizeMessageForModel(message);
+    expect(sanitized).not.toBeNull();
+    expect(((sanitized as UIMessage).parts[0] as any).state).toBe("output-streaming");
+  });
+
   it("preserves tool approval metadata for approval flows", () => {
     const message = baseMessage([
       {
@@ -390,6 +435,97 @@ describe("message-normalizer", () => {
     expect(toolPart.callProviderMetadata).toEqual({ openai: { itemId: "fc_openai" } });
   });
 
+  it("drops OpenAI reasoning when no following item exists", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "reasoning",
+          text: "",
+          providerMetadata: { openai: { itemId: "rs_only" } },
+        } as any,
+      ]),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages, { filterIncompleteToolCalls: false });
+
+    expect(sanitized).toHaveLength(0);
+  });
+
+  it("drops OpenAI reasoning when the next item lacks an OpenAI itemId", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "reasoning",
+          text: "",
+          providerMetadata: { openai: { itemId: "rs_no_follow" } },
+        } as any,
+        {
+          type: "text",
+          text: "still keep this text",
+        } as any,
+      ]),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages, { filterIncompleteToolCalls: false });
+
+    expect(sanitized).toHaveLength(1);
+    const parts = sanitized[0].parts;
+    expect(parts).toHaveLength(1);
+    expect(parts[0]).toEqual({ type: "text", text: "still keep this text" });
+  });
+
+  it("preserves OpenAI tool metadata when reasoning exists in another message", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "reasoning",
+          text: "",
+          providerMetadata: { openai: { itemId: "rs_cross" } },
+        } as any,
+      ]),
+      baseMessage([
+        {
+          type: "tool-search",
+          toolCallId: "call-cross",
+          state: "input-available",
+          input: { query: "hello" },
+          callProviderMetadata: { openai: { itemId: "fc_cross" } },
+        } as any,
+      ]),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages, { filterIncompleteToolCalls: false });
+    expect(sanitized).toHaveLength(1);
+    const toolPart = sanitized[0].parts.find(
+      (part: any) => typeof part.type === "string" && part.type.startsWith("tool-"),
+    ) as any;
+    expect(toolPart.callProviderMetadata).toEqual({ openai: { itemId: "fc_cross" } });
+  });
+
+  it("preserves OpenAI text metadata when reasoning exists in another message", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "reasoning",
+          text: "",
+          providerMetadata: { openai: { itemId: "rs_cross_text" } },
+        } as any,
+      ]),
+      baseMessage([
+        {
+          type: "text",
+          text: "final answer",
+          providerMetadata: { openai: { itemId: "msg_cross" } },
+        } as any,
+      ]),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages, { filterIncompleteToolCalls: false });
+    expect(sanitized).toHaveLength(1);
+    const textPart = sanitized[0].parts.find((part: any) => part.type === "text") as any;
+    expect(textPart.providerMetadata).toEqual({ openai: { itemId: "msg_cross" } });
+  });
+
   it("sanitizes collections while preserving message ordering", () => {
     const messages: UIMessage[] = [
       baseMessage([
@@ -426,6 +562,41 @@ describe("message-normalizer", () => {
 
     expect(sanitized).toHaveLength(1);
     expect(sanitized[0].role).toBe("user");
+  });
+
+  it("keeps tool calls when OpenAI reasoning items exist in the conversation", () => {
+    const messages: UIMessage[] = [
+      baseMessage([
+        {
+          type: "reasoning",
+          text: "",
+          providerMetadata: { openai: { itemId: "rs_123" } },
+        } as any,
+      ]),
+      baseMessage([
+        {
+          type: "tool-search",
+          toolCallId: "call-123",
+          state: "input-available",
+          input: { query: "hello" },
+          callProviderMetadata: { openai: { itemId: "fc_123" } },
+        } as any,
+      ]),
+      baseMessage([{ type: "text", text: "follow up" } as any], "user"),
+    ];
+
+    const sanitized = sanitizeMessagesForModel(messages);
+
+    expect(sanitized).toHaveLength(2);
+    const toolParts = sanitized[0].parts.filter(
+      (part: any) => typeof part.type === "string" && part.type.startsWith("tool-"),
+    );
+    expect(toolParts).toHaveLength(1);
+    expect(toolParts[0]).toMatchObject({
+      type: "tool-search",
+      toolCallId: "call-123",
+      callProviderMetadata: { openai: { itemId: "fc_123" } },
+    });
   });
 
   it("preserves approval responses on the last assistant message", () => {

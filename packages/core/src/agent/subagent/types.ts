@@ -140,6 +140,11 @@ export function createSubagent<TAgent extends Agent>(
 export type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<string, any>> =
   TextStreamPart<TOOLS> & {
     /**
+     * Optional response message identifier (carried on start/step chunks).
+     */
+    messageId?: string;
+
+    /**
      * Optional identifier for the subagent that generated this event
      */
     subAgentId?: string;

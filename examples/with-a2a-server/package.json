@@ -2,7 +2,7 @@
   "name": "voltagent-example-with-a2a-server",
   "dependencies": {
     "@voltagent/a2a-server": "^2.0.2",
-    "@voltagent/core": "^2.3.3",
+    "@voltagent/core": "^2.3.4",
     "@voltagent/internal": "^1.0.3",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/server-hono": "^2.0.4",

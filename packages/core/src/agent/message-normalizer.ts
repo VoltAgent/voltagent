@@ -1,12 +1,18 @@
+import { safeStringify } from "@voltagent/internal";
 import type { UIMessage, UIMessagePart } from "ai";
+
+import {
+  hasOpenAIItemIdForPart as hasOpenAIItemIdForPartBase,
+  isObject,
+  isOpenAIReasoningId,
+  stripDanglingOpenAIReasoningFromParts,
+} from "./openai-reasoning-utils";
 
 const WORKING_MEMORY_TOOL_NAMES = new Set([
   "update_working_memory",
   "get_working_memory",
   "clear_working_memory",
 ]);
-
-const OPENAI_REASONING_ID_PREFIX = "rs_";
 
 type ToolLikePart = UIMessagePart<any, any> & {
   toolCallId?: string;
@@ -27,12 +33,6 @@ type SanitizeMessagesOptions = {
   filterIncompleteToolCalls?: boolean;
 };
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const isOpenAIReasoningId = (value: string): boolean =>
-  value.trim().startsWith(OPENAI_REASONING_ID_PREFIX);
-
 const safeClone = <T>(value: T): T => {
   if (!isObject(value) && !Array.isArray(value)) {
     return value;
@@ -47,7 +47,7 @@ const safeClone = <T>(value: T): T => {
   }
 
   try {
-    return JSON.parse(JSON.stringify(value)) as T;
+    return JSON.parse(safeStringify(value)) as T;
   } catch (_error) {
     if (Array.isArray(value)) {
       return value.slice() as T;
@@ -261,11 +261,28 @@ const isToolLikePart = (part: UIMessagePart<any, any>): part is ToolLikePart => 
 
 const hasToolOutput = (part: ToolLikePart): boolean => {
   const state = typeof part.state === "string" ? part.state : undefined;
-  if (state === "output-available" || state === "output-error" || state === "output-denied") {
+  if (
+    state === "output-available" ||
+    state === "output-error" ||
+    state === "output-denied" ||
+    state === "output-streaming"
+  ) {
     return true;
   }
   return part.output !== undefined;
 };
+
+const isToolInputState = (state: string | undefined): boolean =>
+  state === "input-available" ||
+  state === "input-streaming" ||
+  state === "approval-requested" ||
+  state === "approval-responded";
+
+const isToolOutputState = (state: string | undefined): boolean =>
+  state === "output-available" ||
+  state === "output-error" ||
+  state === "output-denied" ||
+  state === "output-streaming";
 
 const isApprovalResponded = (part: ToolLikePart): boolean =>
   Boolean((part as any).approval && (part as any).approval.approved != null);
@@ -334,6 +351,129 @@ const normalizeToolPart = (part: ToolLikePart): UIMessagePart<any, any> | null =
   return normalized as UIMessagePart<any, any>;
 };
 
+const hasOpenAIReasoningInMessages = (messages: UIMessage[]): boolean =>
+  messages.some(
+    (message) => message.role === "assistant" && hasOpenAIReasoningContext(message.parts),
+  );
+
+const countToolLikeParts = (messages: UIMessage[]): number =>
+  messages.reduce(
+    (count, message) => count + message.parts.filter((part) => isToolLikePart(part)).length,
+    0,
+  );
+
+const isOpenAIReasoningPart = (part: UIMessagePart<any, any>): boolean => {
+  if (part.type !== "reasoning") {
+    return false;
+  }
+
+  const reasoningId =
+    typeof (part as any).reasoningId === "string" ? (part as any).reasoningId.trim() : "";
+  if (reasoningId && isOpenAIReasoningId(reasoningId)) {
+    return true;
+  }
+
+  const providerMetadata = (part as any).providerMetadata;
+  if (isObject(providerMetadata)) {
+    const openai = providerMetadata.openai;
+    if (isObject(openai)) {
+      const itemId = typeof openai.itemId === "string" ? openai.itemId.trim() : "";
+      if (itemId && isOpenAIReasoningId(itemId)) {
+        return true;
+      }
+      if (typeof openai.reasoning_trace_id === "string" && openai.reasoning_trace_id.trim()) {
+        return true;
+      }
+      if (isObject(openai.reasoning)) {
+        const id = typeof openai.reasoning.id === "string" ? openai.reasoning.id.trim() : "";
+        if (id && isOpenAIReasoningId(id)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+};
+
+const endsWithOpenAIReasoning = (parts: UIMessagePart<any, any>[]): boolean => {
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const part = parts[index];
+    if (part.type === "step-start") {
+      continue;
+    }
+    return isOpenAIReasoningPart(part);
+  }
+  return false;
+};
+
+const hasOpenAIItemIdForPart = (part: UIMessagePart<any, any>): boolean => {
+  return hasOpenAIItemIdForPartBase(part, {
+    isToolPart: (candidate) =>
+      typeof (candidate as any).type === "string" && (candidate as any).type.startsWith("tool-"),
+    getCallProviderMetadata: (candidate) => (candidate as any).callProviderMetadata,
+    getProviderMetadata: (candidate) => (candidate as any).providerMetadata,
+  });
+};
+
+const stripDanglingOpenAIReasoning = (messages: UIMessage[]): UIMessage[] => {
+  const result: UIMessage[] = [];
+
+  for (const message of messages) {
+    if (message.role !== "assistant") {
+      result.push(message);
+      continue;
+    }
+
+    const { parts } = stripDanglingOpenAIReasoningFromParts(message.parts, {
+      isReasoningPart: isOpenAIReasoningPart,
+      hasOpenAIItemIdForPart,
+      getNextPart: (parts, index) => {
+        for (let nextIndex = index + 1; nextIndex < parts.length; nextIndex += 1) {
+          const candidate = parts[nextIndex];
+          if (candidate.type === "step-start") {
+            continue;
+          }
+          return candidate;
+        }
+        return undefined;
+      },
+    });
+
+    if (parts.length === 0) {
+      continue;
+    }
+
+    result.push({
+      ...message,
+      parts,
+      ...(message.metadata ? { metadata: safeClone(message.metadata) } : {}),
+    });
+  }
+
+  return result;
+};
+
+const mergeTrailingReasoningAssistantMessages = (messages: UIMessage[]): UIMessage[] => {
+  const merged: UIMessage[] = [];
+
+  for (const message of messages) {
+    const last = merged.at(-1);
+    if (
+      last &&
+      last.role === "assistant" &&
+      message.role === "assistant" &&
+      endsWithOpenAIReasoning(last.parts)
+    ) {
+      last.parts = [...last.parts, ...message.parts];
+      continue;
+    }
+    merged.push({ ...message, parts: [...message.parts] });
+  }
+
+  return merged;
+};
+
 export const sanitizeMessagesForModel = (
   messages: UIMessage[],
   options: SanitizeMessagesOptions = {},
@@ -342,13 +482,25 @@ export const sanitizeMessagesForModel = (
     .map((message) => sanitizeMessageForModel(message))
     .filter((message): message is UIMessage => Boolean(message));
 
+  const merged = mergeTrailingReasoningAssistantMessages(sanitized);
   const shouldFilterIncomplete = options.filterIncompleteToolCalls !== false;
 
-  const filtered = shouldFilterIncomplete
-    ? filterIncompleteToolCallsForModel(sanitized)
-    : sanitized;
+  if (!shouldFilterIncomplete) {
+    return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(merged));
+  }
 
-  return addStepStartsBetweenToolRuns(filtered);
+  const filtered = filterIncompleteToolCallsForModel(merged);
+  const hasOpenAIReasoning = hasOpenAIReasoningInMessages(merged);
+  if (hasOpenAIReasoning) {
+    const sanitizedToolCount = countToolLikeParts(merged);
+    const filteredToolCount = countToolLikeParts(filtered);
+    if (filteredToolCount < sanitizedToolCount) {
+      // Keep the merged set to avoid orphaning reasoning item references when tools were removed.
+      return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(merged));
+    }
+  }
+
+  return addStepStartsBetweenToolRuns(stripDanglingOpenAIReasoning(filtered));
 };
 
 export const sanitizeMessageForModel = (message: UIMessage): UIMessage | null => {
@@ -526,9 +678,9 @@ const pruneEmptyToolRuns = (parts: UIMessagePart<any, any>[]): UIMessagePart<any
   const cleaned: UIMessagePart<any, any>[] = [];
   for (const part of parts) {
     if (typeof part.type === "string" && part.type.startsWith("tool-")) {
-      const hasPendingState = (part as any).state === "input-available";
-      const hasResult =
-        (part as any).state === "output-available" || (part as any).output !== undefined;
+      const state = typeof (part as any).state === "string" ? (part as any).state : undefined;
+      const hasPendingState = isToolInputState(state);
+      const hasResult = isToolOutputState(state) || (part as any).output !== undefined;
       if (!hasPendingState && !hasResult && (part as any).input == null) {
         continue;
       }

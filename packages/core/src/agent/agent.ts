@@ -106,6 +106,7 @@ import {
   enqueueEvalScoring as enqueueEvalScoringHelper,
 } from "./eval";
 import type { AgentHooks, OnToolEndHookResult } from "./hooks";
+import { stripDanglingOpenAIReasoningFromModelMessages } from "./model-message-normalizer";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type {
   BaseMessage,
@@ -1925,6 +1926,27 @@ export class Agent {
             generateMessageId: () => responseMessageId,
           };
         };
+        const applyResponseMessageIdToStream = (
+          baseStream: AsyncIterable<VoltAgentTextStreamPart>,
+        ): AsyncIterable<VoltAgentTextStreamPart> => {
+          if (!responseMessageId) {
+            return baseStream;
+          }
+          return (async function* () {
+            for await (const part of baseStream) {
+              if (part.type !== "start" && part.type !== "start-step") {
+                yield part;
+                continue;
+              }
+              const currentMessageId = (part as { messageId?: string }).messageId;
+              if (currentMessageId === responseMessageId) {
+                yield part;
+                continue;
+              }
+              yield { ...part, messageId: responseMessageId };
+            }
+          })();
+        };
 
         const createBaseFullStream = (): AsyncIterable<VoltAgentTextStreamPart> => {
           // Wrap the base stream with abort handling
@@ -1969,7 +1991,9 @@ export class Agent {
             }
           };
 
-          const parentStream = normalizeFinishUsageStream(wrapWithAbortHandling(result.fullStream));
+          const parentStream = applyResponseMessageIdToStream(
+            normalizeFinishUsageStream(wrapWithAbortHandling(result.fullStream)),
+          );
 
           if (agent.subAgentManager.hasSubAgents()) {
             const createMergedFullStream =
@@ -3164,6 +3188,8 @@ export class Agent {
         messages = result.modelMessages;
       }
     }
+
+    messages = stripDanglingOpenAIReasoningFromModelMessages(messages);
 
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();

@@ -175,6 +175,10 @@ export class WorkflowStreamWriterImpl implements WorkflowStreamWriter {
         metadata.partId = part.id;
       }
 
+      if ("messageId" in part && part.messageId !== undefined) {
+        metadata.messageId = part.messageId;
+      }
+
       if ("providerMetadata" in part && part.providerMetadata !== undefined) {
         metadata.providerMetadata = part.providerMetadata;
       }
