@@ -176,11 +176,9 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     glob: string | null = null,
   ): Promise<GrepMatch[] | string> {
     for (const [routePrefix, backend] of this.sortedRoutes) {
-      const normalizedPrefix = routePrefix.endsWith("/") ? routePrefix : `${routePrefix}/`;
-      const prefixRoot = normalizedPrefix.slice(0, -1);
-      if (path === prefixRoot || path.startsWith(normalizedPrefix)) {
-        const suffix = path === prefixRoot ? "" : path.substring(normalizedPrefix.length);
-        const searchPath = suffix ? `/${suffix}` : "/";
+      const prefix = routePrefix.replace(/\/$/, "");
+      if (path.startsWith(prefix)) {
+        const searchPath = path.substring(prefix.length) || "/";
         const raw = await backend.grepRaw(pattern, searchPath, glob);
 
         if (typeof raw === "string") {

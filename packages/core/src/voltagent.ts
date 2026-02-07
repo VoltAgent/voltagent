@@ -44,6 +44,8 @@ export class VoltAgent {
   private readonly triggerRegistry: TriggerRegistry;
   private readonly agentRefs: Record<string, Agent>;
   public readonly ready: Promise<void>;
+  public initError?: unknown;
+  public degraded = false;
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
@@ -202,12 +204,15 @@ export class VoltAgent {
           await workspaceInitPromise;
         } catch (error) {
           logger.error("Workspace initialization failed:", { error });
+          this.initError = error;
+          this.degraded = true;
         }
       }
       try {
         finalizeInit();
       } catch (error) {
         logger.error("finalizeInit failed:", { error });
+        throw error;
       }
     })();
   }

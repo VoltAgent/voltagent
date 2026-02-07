@@ -134,7 +134,9 @@ const matchesPathFilter = (docPath: string, basePath: string | null, glob?: stri
     return true;
   }
 
-  const relative = basePath ? docPath.slice(basePath.length) : docPath.replace(/^\/+/, "");
+  const relative = basePath
+    ? docPath.slice(basePath.length).replace(/^\/+/, "")
+    : docPath.replace(/^\/+/, "");
   return micromatch.isMatch(relative, glob, { dot: true, nobrace: false });
 };
 

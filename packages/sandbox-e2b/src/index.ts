@@ -487,7 +487,7 @@ export class E2BSandbox implements WorkspaceSandbox {
       if (Object.keys(envs).length > 0) {
         runOptions.envs = envs;
       }
-      if (effectiveTimeoutMs >= 0) {
+      if (effectiveTimeoutMs > 0) {
         runOptions.timeoutMs = effectiveTimeoutMs;
       }
       if (this.requestTimeoutMs !== undefined) {

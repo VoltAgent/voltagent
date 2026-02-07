@@ -662,65 +662,111 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
 
       const proc = spawn("rg", args, { timeout: 30000 });
       const results: Record<string, Array<[number, string]>> = {};
-      let output = "";
+      let buffer = "";
+      let matchCount = 0;
+      let resolved = false;
+
+      const finish = (value: Record<string, Array<[number, string]>> | null) => {
+        if (resolved) {
+          return;
+        }
+        resolved = true;
+        resolve(value);
+      };
+
+      const handleLine = (line: string) => {
+        if (!line.trim()) {
+          return;
+        }
+        try {
+          const data = JSON.parse(line);
+          if (data.type !== "match") {
+            return;
+          }
+
+          const pdata = data.data || {};
+          const ftext = pdata.path?.text;
+          if (!ftext) {
+            return;
+          }
+
+          let virtPath: string | undefined;
+          if (this.virtualMode) {
+            try {
+              const resolvedPath = path.resolve(ftext);
+              const relative = path.relative(this.cwd, resolvedPath);
+              if (relative.startsWith("..")) {
+                return;
+              }
+              const normalizedRelative = relative.split(path.sep).join("/");
+              virtPath = `/${normalizedRelative}`;
+            } catch {
+              return;
+            }
+          } else {
+            virtPath = ftext;
+          }
+
+          if (!virtPath) {
+            return;
+          }
+
+          const ln = pdata.line_number;
+          const lt = pdata.lines?.text?.replace(/\n$/, "") || "";
+          if (ln === undefined) {
+            return;
+          }
+
+          if (!results[virtPath]) {
+            results[virtPath] = [];
+          }
+          results[virtPath].push([ln, lt]);
+          matchCount += 1;
+          if (matchCount >= MAX_GREP_MATCHES) {
+            try {
+              proc.kill();
+            } catch {
+              // ignore kill failures
+            }
+            finish(results);
+          }
+        } catch {
+          // ignore parse errors
+        }
+      };
 
       proc.stdout.on("data", (data) => {
-        output += data.toString();
+        if (resolved) {
+          return;
+        }
+        buffer += data.toString();
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          handleLine(line);
+          if (resolved) {
+            return;
+          }
+        }
       });
 
       proc.on("close", (code) => {
+        if (resolved) {
+          return;
+        }
         if (code !== 0 && code !== 1) {
-          resolve(null);
+          finish(null);
           return;
         }
 
-        for (const line of output.split("\n")) {
-          if (!line.trim()) continue;
-          try {
-            const data = JSON.parse(line);
-            if (data.type !== "match") continue;
-
-            const pdata = data.data || {};
-            const ftext = pdata.path?.text;
-            if (!ftext) continue;
-
-            let virtPath: string | undefined;
-            if (this.virtualMode) {
-              try {
-                const resolved = path.resolve(ftext);
-                const relative = path.relative(this.cwd, resolved);
-                if (relative.startsWith("..")) continue;
-                const normalizedRelative = relative.split(path.sep).join("/");
-                virtPath = `/${normalizedRelative}`;
-              } catch {
-                // ignore path errors
-              }
-            } else {
-              virtPath = ftext;
-            }
-
-            if (!virtPath) {
-              continue;
-            }
-
-            const ln = pdata.line_number;
-            const lt = pdata.lines?.text?.replace(/\n$/, "") || "";
-            if (ln === undefined) continue;
-
-            if (!results[virtPath]) {
-              results[virtPath] = [];
-            }
-            results[virtPath].push([ln, lt]);
-          } catch {
-            // ignore parse errors
-          }
+        if (buffer.trim()) {
+          handleLine(buffer);
         }
-
-        resolve(results);
+        finish(results);
       });
 
       proc.on("error", () => {
-        resolve(null);
+        finish(null);
       });
     });
   }
