@@ -159,7 +159,7 @@ export class Workspace {
   }
 
   async init(): Promise<void> {
-    if (this.status === "destroyed") {
+    if (this.isDestroyed()) {
       throw new Error("Workspace has been destroyed.");
     }
     if (this.status === "ready") {
@@ -169,27 +169,27 @@ export class Workspace {
       this.status = "initializing";
       this.initPromise = (async () => {
         try {
-          if (this.status === "destroyed") {
+          if (this.isDestroyed()) {
             return;
           }
           this.filesystem.init();
-          if (this.status === "destroyed") {
+          if (this.isDestroyed()) {
             return;
           }
           await this.sandbox?.start?.();
-          if (this.status === "destroyed") {
+          if (this.isDestroyed()) {
             return;
           }
           await this.searchService?.init?.();
-          if (this.status === "destroyed") {
+          if (this.isDestroyed()) {
             return;
           }
           await this.skills?.init?.();
-          if (this.status !== "destroyed") {
+          if (!this.isDestroyed()) {
             this.status = "ready";
           }
         } catch (error) {
-          if (this.status !== "destroyed") {
+          if (!this.isDestroyed()) {
             this.status = "error";
           }
           throw error;
@@ -202,7 +202,7 @@ export class Workspace {
   }
 
   async destroy(): Promise<void> {
-    if (this.status === "destroyed") {
+    if (this.isDestroyed()) {
       return;
     }
     this.status = "destroyed";
@@ -213,6 +213,10 @@ export class Workspace {
     this.searchService?.destroy();
     this.skills?.destroy();
     this.filesystem.destroy();
+  }
+
+  private isDestroyed(): boolean {
+    return this.status === "destroyed";
   }
 
   getInfo(): WorkspaceInfo {
