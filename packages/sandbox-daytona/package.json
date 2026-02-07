@@ -1,13 +1,13 @@
 {
   "name": "@voltagent/sandbox-daytona",
   "description": "VoltAgent Daytona sandbox provider",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "dependencies": {
     "@daytonaio/sdk": "^0.139.0"
   },
   "devDependencies": {
-    "@voltagent/core": "^2.0.0",
     "@types/node": "^24.2.1",
+    "@voltagent/core": "^2.0.0",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2"
   },
