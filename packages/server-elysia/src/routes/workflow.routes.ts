@@ -64,13 +64,6 @@ const WorkflowIdParam = t.Object({
 });
 
 /**
- * Execution ID parameter schema
- */
-const ExecutionIdParam = t.Object({
-  executionId: t.String({ description: "Workflow execution ID" }),
-});
-
-/**
  * Workflow and execution ID parameters schema
  */
 const WorkflowExecutionParams = t.Object({
@@ -215,9 +208,9 @@ export function registerWorkflowRoutes(
     },
   );
 
-  // POST /workflows/executions/:executionId/suspend - Suspend workflow execution
+  // POST /workflows/:id/executions/:executionId/suspend - Suspend workflow execution
   app.post(
-    "/workflows/executions/:executionId/suspend",
+    "/workflows/:id/executions/:executionId/suspend",
     async ({ params, body }) => {
       const response = await handleSuspendWorkflow(params.executionId, body, deps, logger);
       if (!response.success) {
@@ -226,7 +219,7 @@ export function registerWorkflowRoutes(
       return response;
     },
     {
-      params: ExecutionIdParam,
+      params: WorkflowExecutionParams,
       body: WorkflowSuspendRequestSchema,
       response: {
         200: WorkflowSuspendResponseSchema,
@@ -241,9 +234,9 @@ export function registerWorkflowRoutes(
     },
   );
 
-  // POST /workflows/executions/:executionId/cancel - Cancel workflow execution
+  // POST /workflows/:id/executions/:executionId/cancel - Cancel workflow execution
   app.post(
-    "/workflows/executions/:executionId/cancel",
+    "/workflows/:id/executions/:executionId/cancel",
     async ({ params, body }) => {
       const response = await handleCancelWorkflow(params.executionId, body, deps, logger);
       if (!response.success) {
@@ -259,7 +252,7 @@ export function registerWorkflowRoutes(
       return response;
     },
     {
-      params: ExecutionIdParam,
+      params: WorkflowExecutionParams,
       body: WorkflowCancelRequestSchema,
       response: {
         200: WorkflowCancelResponseSchema,

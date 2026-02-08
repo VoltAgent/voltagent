@@ -37,6 +37,7 @@ import {
   executeTriggerHandler,
   getConversationMessagesHandler,
   getConversationStepsHandler,
+  handleCancelWorkflow,
   handleChatStream,
   handleCheckUpdates,
   handleCloneMemoryConversation,
@@ -492,6 +493,25 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
     }
     const response = await handleSuspendWorkflow(executionId, body, deps, logger);
     return c.json(response, response.success ? 200 : 500);
+  });
+
+  app.post(WORKFLOW_ROUTES.cancelWorkflow.path, async (c) => {
+    const executionId = c.req.param("executionId");
+    const body = await readJsonBody(c, logger);
+    if (!body) {
+      return c.json({ success: false, error: "Invalid JSON body" }, 400);
+    }
+    const response = await handleCancelWorkflow(executionId, body, deps, logger);
+    if (response.success) {
+      return c.json(response, 200);
+    }
+    const errorMessage = response.error || "";
+    const status = errorMessage.includes("not found")
+      ? 404
+      : errorMessage.includes("not cancellable")
+        ? 409
+        : 500;
+    return c.json(response, status);
   });
 
   app.post(WORKFLOW_ROUTES.resumeWorkflow.path, async (c) => {
