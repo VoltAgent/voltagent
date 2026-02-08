@@ -405,10 +405,14 @@ export class WorkspaceSkills {
     const autoIndex = options.autoIndex ?? false;
 
     if (autoDiscover) {
-      this.autoDiscoverPromise = this.discoverSkills().then(() => undefined);
+      this.autoDiscoverPromise = this.discoverSkills()
+        .then(() => undefined)
+        .catch(() => undefined);
     }
     if (autoIndex) {
-      this.autoIndexPromise = this.indexSkills().then(() => undefined);
+      this.autoIndexPromise = this.indexSkills()
+        .then(() => undefined)
+        .catch(() => undefined);
     }
   }
 
@@ -448,7 +452,9 @@ export class WorkspaceSkills {
       return;
     }
     if (!this.autoDiscoverPromise) {
-      this.autoDiscoverPromise = this.discoverSkills().then(() => undefined);
+      this.autoDiscoverPromise = this.discoverSkills()
+        .then(() => undefined)
+        .catch(() => undefined);
     }
     await this.autoDiscoverPromise;
   }
@@ -483,7 +489,9 @@ export class WorkspaceSkills {
       return;
     }
     if (!this.autoIndexPromise) {
-      this.autoIndexPromise = this.indexSkills().then(() => undefined);
+      this.autoIndexPromise = this.indexSkills()
+        .then(() => undefined)
+        .catch(() => undefined);
     }
     await this.autoIndexPromise;
   }
@@ -718,15 +726,30 @@ export class WorkspaceSkills {
     if (this.embedding && this.vector) {
       try {
         const embeddings = await this.embedding.embedBatch(docs.map((doc) => doc.content));
-        const items: VectorItem[] = docs.map((doc, idx) => ({
-          id: doc.id,
-          vector: embeddings[idx],
-          metadata: {
-            skill_name: doc.name,
-            path: doc.metadata?.path,
-          },
-        }));
-        await this.vector.storeBatch(items);
+        if (!Array.isArray(embeddings) || embeddings.length !== docs.length) {
+          throw new Error(
+            `Embedding batch size mismatch (expected ${docs.length}, got ${Array.isArray(embeddings) ? embeddings.length : "non-array"})`,
+          );
+        }
+        const items: VectorItem[] = [];
+        embeddings.forEach((vector, idx) => {
+          if (!vector) {
+            summary.errors.push(`Vector embedding missing for skill ${docs[idx]?.id ?? "unknown"}`);
+            return;
+          }
+          const doc = docs[idx];
+          items.push({
+            id: doc.id,
+            vector,
+            metadata: {
+              skill_name: doc.name,
+              path: doc.metadata?.path,
+            },
+          });
+        });
+        if (items.length > 0) {
+          await this.vector.storeBatch(items);
+        }
       } catch (error: any) {
         summary.errors.push(
           `Vector indexing failed: ${error?.message ? String(error.message) : "unknown error"}`,
