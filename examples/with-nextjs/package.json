@@ -9,7 +9,7 @@
     "@voltagent/core": "^2.3.5",
     "@voltagent/libsql": "^2.1.0",
     "@voltagent/logger": "^2.0.2",
-    "@voltagent/server-hono": "^2.0.5",
+    "@voltagent/server-hono": "^2.0.6",
     "ai": "^6.0.0",
     "import-in-the-middle": "^1.14.2",
     "next": "^16.0.7",

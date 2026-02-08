@@ -1,5 +1,11 @@
 # @voltagent/serverless-hono
 
+## 2.0.8
+
+### Patch Changes
+
+- [#1030](https://github.com/VoltAgent/voltagent/pull/1030) [`eb99a01`](https://github.com/VoltAgent/voltagent/commit/eb99a0174129853fa07f30b9a95935c8733f8b91) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: add workflow cancel support in serverless-hono and align Elysia suspend/cancel routes to the canonical `/workflows/:id/executions/:executionId` paths
+
 ## 2.0.7
 
 ### Patch Changes

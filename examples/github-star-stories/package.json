@@ -5,8 +5,8 @@
     "@voltagent/cli": "^0.1.21",
     "@voltagent/core": "^2.3.5",
     "@voltagent/logger": "^2.0.2",
-    "@voltagent/server-hono": "^2.0.5",
-    "@voltagent/serverless-hono": "^2.0.7",
+    "@voltagent/server-hono": "^2.0.6",
+    "@voltagent/serverless-hono": "^2.0.8",
     "dotenv": "^16.4.5",
     "wrangler": "^3.38.0",
     "zod": "^3.25.76"

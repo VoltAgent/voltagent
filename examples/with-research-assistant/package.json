@@ -6,7 +6,7 @@
     "@voltagent/core": "^2.3.5",
     "@voltagent/libsql": "^2.1.0",
     "@voltagent/logger": "^2.0.2",
-    "@voltagent/server-hono": "^2.0.5",
+    "@voltagent/server-hono": "^2.0.6",
     "zod": "^3.25.76"
   },
   "devDependencies": {

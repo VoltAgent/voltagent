@@ -21,7 +21,7 @@
     "@voltagent/internal": "^1.0.3",
     "@voltagent/libsql": "^2.1.0",
     "@voltagent/resumable-streams": "^2.0.1",
-    "@voltagent/server-hono": "^2.0.5",
+    "@voltagent/server-hono": "^2.0.6",
     "@xyflow/react": "^12.9.2",
     "ai": "^6.0.0",
     "class-variance-authority": "^0.7.1",

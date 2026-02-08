@@ -6,7 +6,7 @@
     "@voltagent/core": "^2.3.5",
     "@voltagent/libsql": "^2.1.0",
     "@voltagent/logger": "^2.0.2",
-    "@voltagent/server-hono": "^2.0.5",
+    "@voltagent/server-hono": "^2.0.6",
     "ai": "^6.0.0",
     "consola": "^3.4.2",
     "envalid": "^8.1.0",

@@ -1,5 +1,11 @@
 # @voltagent/server-hono
 
+## 2.0.6
+
+### Patch Changes
+
+- [#1031](https://github.com/VoltAgent/voltagent/pull/1031) [`2cb15ec`](https://github.com/VoltAgent/voltagent/commit/2cb15ecb49b8569d181bd12bdc96e6927874c4c7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: include `memory` and `tools` in `configureFullApp` route typings #1028
+
 ## 2.0.5
 
 ### Patch Changes
