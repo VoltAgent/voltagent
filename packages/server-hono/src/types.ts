@@ -121,6 +121,8 @@ export interface HonoServerConfig {
       logs: () => void;
       updates: () => void;
       observability: () => void;
+      memory: () => void;
+      tools: () => void;
       triggers: () => void;
       mcp: () => void;
       a2a: () => void;
