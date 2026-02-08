@@ -211,11 +211,18 @@ export function registerWorkflowRoutes(
   // POST /workflows/:id/executions/:executionId/suspend - Suspend workflow execution
   app.post(
     "/workflows/:id/executions/:executionId/suspend",
-    async ({ params, body }) => {
+    async ({ params, body, set }) => {
       const response = await handleSuspendWorkflow(params.executionId, body, deps, logger);
       if (!response.success) {
-        throw new Error("Failed to suspend workflow");
+        const errorMessage = response.error || "";
+        set.status = errorMessage.includes("not found")
+          ? 404
+          : errorMessage.includes("not supported") || errorMessage.includes("suspendable")
+            ? 400
+            : 500;
+        return response;
       }
+      set.status = 200;
       return response;
     },
     {
@@ -237,18 +244,18 @@ export function registerWorkflowRoutes(
   // POST /workflows/:id/executions/:executionId/cancel - Cancel workflow execution
   app.post(
     "/workflows/:id/executions/:executionId/cancel",
-    async ({ params, body }) => {
+    async ({ params, body, set }) => {
       const response = await handleCancelWorkflow(params.executionId, body, deps, logger);
       if (!response.success) {
         const errorMessage = response.error || "";
-        if (errorMessage.includes("not found")) {
-          throw new Error("Execution not found");
-        }
-        if (errorMessage.includes("not cancellable")) {
-          throw new Error("Execution is not in a cancellable state");
-        }
-        throw new Error("Failed to cancel workflow");
+        set.status = errorMessage.includes("not found")
+          ? 404
+          : errorMessage.includes("not cancellable")
+            ? 409
+            : 500;
+        return response;
       }
+      set.status = 200;
       return response;
     },
     {
