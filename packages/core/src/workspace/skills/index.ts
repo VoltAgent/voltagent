@@ -405,14 +405,22 @@ export class WorkspaceSkills {
     const autoIndex = options.autoIndex ?? false;
 
     if (autoDiscover) {
-      this.autoDiscoverPromise = this.discoverSkills()
-        .then(() => undefined)
-        .catch(() => undefined);
+      const promise = this.discoverSkills().then(() => undefined);
+      this.autoDiscoverPromise = promise;
+      promise.catch(() => {
+        if (this.autoDiscoverPromise === promise) {
+          this.autoDiscoverPromise = undefined;
+        }
+      });
     }
     if (autoIndex) {
-      this.autoIndexPromise = this.indexSkills()
-        .then(() => undefined)
-        .catch(() => undefined);
+      const promise = this.indexSkills().then(() => undefined);
+      this.autoIndexPromise = promise;
+      promise.catch(() => {
+        if (this.autoIndexPromise === promise) {
+          this.autoIndexPromise = undefined;
+        }
+      });
     }
   }
 
@@ -452,11 +460,23 @@ export class WorkspaceSkills {
       return;
     }
     if (!this.autoDiscoverPromise) {
-      this.autoDiscoverPromise = this.discoverSkills()
-        .then(() => undefined)
-        .catch(() => undefined);
+      const promise = this.discoverSkills().then(() => undefined);
+      this.autoDiscoverPromise = promise;
+      promise.catch(() => {
+        if (this.autoDiscoverPromise === promise) {
+          this.autoDiscoverPromise = undefined;
+        }
+      });
     }
-    await this.autoDiscoverPromise;
+    const promise = this.autoDiscoverPromise;
+    try {
+      await promise;
+    } catch (error) {
+      if (this.autoDiscoverPromise === promise) {
+        this.autoDiscoverPromise = undefined;
+      }
+      throw error;
+    }
   }
 
   private async ensureRootPaths(): Promise<void> {
@@ -489,11 +509,23 @@ export class WorkspaceSkills {
       return;
     }
     if (!this.autoIndexPromise) {
-      this.autoIndexPromise = this.indexSkills()
-        .then(() => undefined)
-        .catch(() => undefined);
+      const promise = this.indexSkills().then(() => undefined);
+      this.autoIndexPromise = promise;
+      promise.catch(() => {
+        if (this.autoIndexPromise === promise) {
+          this.autoIndexPromise = undefined;
+        }
+      });
     }
-    await this.autoIndexPromise;
+    const promise = this.autoIndexPromise;
+    try {
+      await promise;
+    } catch (error) {
+      if (this.autoIndexPromise === promise) {
+        this.autoIndexPromise = undefined;
+      }
+      throw error;
+    }
   }
 
   async discoverSkills(options: { refresh?: boolean } = {}): Promise<WorkspaceSkillMetadata[]> {
@@ -1286,15 +1318,22 @@ export const createWorkspaceSkillsToolkit = (
       return `File not allowed for ${kind}. Available: ${available}`;
     }
 
-    const content = await context.skills.readFileContent(resolvedPath);
-
     setWorkspaceSpanAttributes(operationContext, {
       "workspace.skills.name": skill.name,
       "workspace.skills.source": resolvedPath,
       "workspace.fs.path": resolvedPath,
     });
 
-    return content || "(empty)";
+    try {
+      const content = await context.skills.readFileContent(resolvedPath);
+      return content || "(empty)";
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setWorkspaceSpanAttributes(operationContext, {
+        "workspace.error": message,
+      });
+      return `Error reading skill file: ${message}`;
+    }
   };
 
   const readReferenceTool = createTool({
