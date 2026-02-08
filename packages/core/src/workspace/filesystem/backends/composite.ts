@@ -175,6 +175,7 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     path = "/",
     glob: string | null = null,
   ): Promise<GrepMatch[] | string> {
+    const errors: string[] = [];
     for (const [routePrefix, backend] of this.sortedRoutes) {
       const prefix = routePrefix.replace(/\/$/, "");
       if (path.startsWith(prefix)) {
@@ -182,7 +183,8 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
         const raw = await backend.grepRaw(pattern, searchPath, glob);
 
         if (typeof raw === "string") {
-          return raw;
+          errors.push(raw);
+          continue;
         }
 
         return raw.map((match) => ({
@@ -193,7 +195,6 @@ export class CompositeFilesystemBackend implements FilesystemBackend {
     }
 
     const allMatches: GrepMatch[] = [];
-    const errors: string[] = [];
     const rawDefault = await this.defaultBackend.grepRaw(pattern, path, glob);
 
     if (typeof rawDefault === "string") {
