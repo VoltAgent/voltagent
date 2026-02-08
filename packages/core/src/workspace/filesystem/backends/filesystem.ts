@@ -790,7 +790,7 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
     }
 
     const results: Record<string, Array<[number, string]>> = {};
-    const stat = await fs.stat(baseFull);
+    const stat = await fs.lstat(baseFull);
     const root = stat.isDirectory() ? baseFull : path.dirname(baseFull);
 
     const fg = await loadFastGlob();

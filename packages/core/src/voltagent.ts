@@ -214,7 +214,11 @@ export class VoltAgent {
         logger.error("finalizeInit failed:", { error });
         throw error;
       }
-    })();
+    })().catch((error) => {
+      logger.error("Agent initialization failed:", { error });
+      this.initError = error;
+      this.degraded = true;
+    });
   }
 
   serverless(): IServerlessProvider {

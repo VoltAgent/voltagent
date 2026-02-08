@@ -163,11 +163,13 @@ const escapeShellArg = (value: string): string => {
   return `'${value.replace(/'/g, "'\\''")}'`;
 };
 
+// buildCommandLine escapes both command and arguments; pass a program name in `command`.
 const buildCommandLine = (command: string, args?: string[]): string => {
+  const safeCommand = escapeShellArg(command);
   if (!args || args.length === 0) {
-    return command;
+    return safeCommand;
   }
-  return [command, ...args].map(escapeShellArg).join(" ");
+  return [safeCommand, ...args.map(escapeShellArg)].join(" ");
 };
 
 const normalizeEnv = (env?: Record<string, string | undefined>): Record<string, string> => {
