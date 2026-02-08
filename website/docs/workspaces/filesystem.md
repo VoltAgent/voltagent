@@ -95,4 +95,4 @@ const agent = new Agent({
 - Avoid exposing absolute host paths.
 - Prefer read-only mode for untrusted agents.
 
-For broader recommendations, see [Workspace Security](./security).
+For broader recommendations, see [Workspace Security](../security).
