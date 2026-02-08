@@ -430,6 +430,26 @@ export class NodeFilesystemBackend implements FilesystemBackendProtocol {
           await fd.close();
         }
       } else {
+        try {
+          const stat = await fs.lstat(resolvedPath);
+          if (stat.isSymbolicLink()) {
+            return {
+              error: `Cannot write to ${filePath} because it is a symlink. Symlinks are not allowed.`,
+            };
+          }
+          if (!stat.isFile()) {
+            return {
+              error: `Cannot write to ${filePath} because it is not a file.`,
+            };
+          }
+          if (!overwrite) {
+            return {
+              error: `Cannot write to ${filePath} because it already exists. Read and then make an edit, or write to a new path.`,
+            };
+          }
+        } catch {
+          // File does not exist
+        }
         await fs.writeFile(resolvedPath, content, "utf-8");
       }
 

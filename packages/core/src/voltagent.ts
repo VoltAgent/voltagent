@@ -199,25 +199,66 @@ export class VoltAgent {
     };
 
     this.ready = (async () => {
+      let workspaceError: unknown;
+      let finalizeError: unknown;
       if (workspaceInitPromise) {
         try {
           await workspaceInitPromise;
         } catch (error) {
+          workspaceError = error;
           logger.error("Workspace initialization failed:", { error });
-          this.initError = error;
-          this.degraded = true;
         }
       }
       try {
         finalizeInit();
       } catch (error) {
+        finalizeError = error;
         logger.error("finalizeInit failed:", { error });
-        throw error;
+      }
+
+      if (workspaceError || finalizeError) {
+        this.degraded = true;
+        if (workspaceError && finalizeError) {
+          this.initError = new AggregateError(
+            [workspaceError, finalizeError],
+            "Workspace and finalizeInit failed",
+          );
+          logger.error("Agent initialization encountered multiple failures:", {
+            workspaceError,
+            finalizeError,
+          });
+        } else {
+          this.initError = workspaceError ?? finalizeError;
+          logger.error("Agent initialization failed:", {
+            error: this.initError,
+          });
+        }
+      }
+
+      if (finalizeError) {
+        throw finalizeError;
       }
     })().catch((error) => {
-      logger.error("Agent initialization failed:", { error });
-      this.initError = error;
       this.degraded = true;
+      if (this.initError) {
+        if (this.initError instanceof AggregateError) {
+          const aggregated = (this.initError as AggregateError).errors;
+          if (!aggregated.includes(error)) {
+            this.initError = new AggregateError(
+              [...aggregated, error],
+              "Agent initialization failed",
+            );
+          }
+        } else if (this.initError !== error) {
+          this.initError = new AggregateError(
+            [this.initError, error],
+            "Agent initialization failed",
+          );
+        }
+      } else {
+        this.initError = error;
+      }
+      logger.error("Agent initialization failed:", { error });
     });
   }
 
