@@ -1,13 +1,13 @@
 {
   "name": "@voltagent/sandbox-e2b",
   "description": "VoltAgent E2B sandbox provider",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "dependencies": {
     "e2b": "^2.12.0"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
-    "@voltagent/core": "^2.0.0",
+    "@voltagent/core": "^2.3.5",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2"
   },
