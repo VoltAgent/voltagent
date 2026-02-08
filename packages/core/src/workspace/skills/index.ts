@@ -492,13 +492,18 @@ export class WorkspaceSkills {
     }
     if (!this.rootResolvePromise) {
       this.rootResolvePromise = (async () => {
-        const resolved = await this.rootResolver?.({
-          workspace: this.workspaceIdentity,
-          filesystem: this.filesystem,
-        });
-        const normalized = normalizeStringArray(resolved) ?? DEFAULT_SKILL_ROOTS;
-        this.rootPaths = normalized.map(normalizeRootPath);
-        this.rootResolved = true;
+        try {
+          const resolved = await this.rootResolver?.({
+            workspace: this.workspaceIdentity,
+            filesystem: this.filesystem,
+          });
+          const normalized = normalizeStringArray(resolved) ?? DEFAULT_SKILL_ROOTS;
+          this.rootPaths = normalized.map(normalizeRootPath);
+          this.rootResolved = true;
+        } catch (error) {
+          this.rootResolvePromise = undefined;
+          throw error;
+        }
       })();
     }
     await this.rootResolvePromise;
