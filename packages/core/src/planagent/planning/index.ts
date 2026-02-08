@@ -148,7 +148,9 @@ export function createPlanningToolkit(agent: Agent, options: PlanningToolkitOpti
       await resolvedBackend.setTodos(guardedTodos);
       operationContext.systemContext.set(PLAN_PROGRESS_CONTEXT_KEY, false);
 
-      const toolSpan = operationContext.systemContext.get("parentToolSpan") as Span | undefined;
+      const toolSpan =
+        ((executeOptions as any).parentToolSpan as Span | undefined) ||
+        (operationContext.systemContext.get("parentToolSpan") as Span | undefined);
       if (toolSpan) {
         const pendingCount = guardedTodos.filter((todo) => todo.status === "pending").length;
         const inProgressCount = guardedTodos.filter((todo) => todo.status === "in_progress").length;

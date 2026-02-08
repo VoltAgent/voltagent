@@ -838,9 +838,9 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
             // Pass maxSteps from parent to subagents
             maxSteps,
             // Pass the parentToolSpan from executeOptions for proper span hierarchy
-            parentSpan: effectiveOperationContext?.systemContext?.get("parentToolSpan") as
-              | Span
-              | undefined,
+            parentSpan:
+              ((options as any).parentToolSpan as Span | undefined) ||
+              (effectiveOperationContext?.systemContext?.get("parentToolSpan") as Span | undefined),
           });
 
           // Return structured results with agent names and their responses

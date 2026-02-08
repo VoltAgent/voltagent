@@ -5053,7 +5053,8 @@ export class Agent {
       // Push execution metadata into systemContext for tools to consume
       oc.systemContext.set("agentId", this.id);
       oc.systemContext.set("historyEntryId", oc.operationId);
-      oc.systemContext.set("parentToolSpan", toolSpan);
+
+      executionOptions.parentToolSpan = toolSpan;
 
       const hasOutputOverride = (
         value: unknown,
@@ -5534,7 +5535,10 @@ export class Agent {
           topK ?? toolRouting?.topK ?? embeddingTopK ?? DEFAULT_TOOL_SEARCH_TOP_K,
         );
         const candidates = this.buildToolSearchCandidates();
-        const parentToolSpan = oc.systemContext.get("parentToolSpan") as Span | undefined;
+        // Check both options and systemContext for backward compatibility, prefer options
+        const parentToolSpan =
+          ((options as any).parentToolSpan as Span | undefined) ||
+          (oc.systemContext.get("parentToolSpan") as Span | undefined);
         const selectionSpanAttributes = {
           "tool.name": TOOL_ROUTING_SEARCH_TOOL_NAME,
           "tool.search.name": TOOL_ROUTING_SEARCH_TOOL_NAME,

@@ -51,9 +51,13 @@ export const createRetrieverTool = (
     execute: async ({ query }, options?: ToolExecuteOptions) => {
       // Pass complete options to retriever for access to userId, conversationId, etc.
       const startTime = Date.now();
-      const toolSpan = options?.systemContext?.get("parentToolSpan") as
-        | { setAttribute?: (key: string, value: unknown) => void }
-        | undefined;
+      const toolSpan =
+        ((options as any)?.parentToolSpan as
+          | { setAttribute?: (key: string, value: unknown) => void }
+          | undefined) ||
+        (options?.systemContext?.get("parentToolSpan") as
+          | { setAttribute?: (key: string, value: unknown) => void }
+          | undefined);
 
       const normalizeAttributeValue = (value: unknown) => {
         if (value === null || value === undefined) return null;
