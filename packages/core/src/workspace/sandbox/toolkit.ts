@@ -226,6 +226,7 @@ export const createWorkspaceSandboxToolkit = (
               maxOutputBytes: input.max_output_bytes,
               stdin: input.stdin,
               signal: operationContext.abortController?.signal,
+              operationContext,
             });
 
             setWorkspaceSpanAttributes(operationContext, {

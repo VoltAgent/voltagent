@@ -1,5 +1,6 @@
+import type { OperationContext } from "../../agent/types";
 import type { EmbeddingAdapterInput, VectorAdapter } from "../../memory/types";
-import type { WorkspaceFilesystem } from "../filesystem";
+import type { WorkspaceFilesystem, WorkspaceFilesystemCallContext } from "../filesystem";
 import type { WorkspaceIdentity } from "../types";
 
 export type WorkspaceSkillSearchMode = "bm25" | "vector" | "hybrid";
@@ -12,6 +13,7 @@ export type WorkspaceSkillSearchHybridWeights = {
 export type WorkspaceSkillsRootResolverContext = {
   workspace: WorkspaceIdentity;
   filesystem: WorkspaceFilesystem;
+  operationContext?: OperationContext;
 };
 
 export type WorkspaceSkillsRootResolver = (
@@ -57,6 +59,7 @@ export type WorkspaceSkillSearchOptions = {
   snippetLength?: number;
   lexicalWeight?: number;
   vectorWeight?: number;
+  context?: WorkspaceFilesystemCallContext;
 };
 
 export type WorkspaceSkillSearchResult = {

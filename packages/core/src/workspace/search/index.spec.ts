@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Workspace } from "..";
 import type { EmbeddingAdapter } from "../../memory/adapters/embedding/types";
 import { InMemoryVectorAdapter } from "../../memory/adapters/vector/in-memory";
 import { WorkspaceFilesystem } from "../filesystem";
-import { WorkspaceSearch } from "./index";
+import { WorkspaceSearch, createWorkspaceSearchToolkit } from "./index";
 
 const createExecuteOptions = () => ({
   systemContext: new Map(),
@@ -20,6 +20,44 @@ const buildFileData = (content: string) => {
 };
 
 describe("WorkspaceSearch", () => {
+  it("forwards operation context from toolkit to search calls", async () => {
+    const indexPaths = vi.fn(async () => ({
+      indexed: 0,
+      skipped: 0,
+      errors: [] as string[],
+    }));
+    const indexContent = vi.fn(async () => ({
+      indexed: 1,
+      skipped: 0,
+      errors: [] as string[],
+    }));
+    const search = vi.fn(async () => []);
+
+    const toolkit = createWorkspaceSearchToolkit({
+      search: {
+        indexPaths,
+        indexContent,
+        search,
+      } as any,
+    });
+    const executeOptions = createExecuteOptions() as any;
+
+    const indexTool = toolkit.tools.find((tool) => tool.name === "workspace_index");
+    const indexContentTool = toolkit.tools.find((tool) => tool.name === "workspace_index_content");
+    const searchTool = toolkit.tools.find((tool) => tool.name === "workspace_search");
+    if (!indexTool?.execute || !indexContentTool?.execute || !searchTool?.execute) {
+      throw new Error("Workspace search tools not found");
+    }
+
+    await indexTool.execute({ path: "/", glob: "**/*.txt" }, executeOptions);
+    await indexContentTool.execute({ path: "/inline.txt", content: "hello world" }, executeOptions);
+    await searchTool.execute({ query: "hello" }, executeOptions);
+
+    expect(indexPaths.mock.calls[0]?.[1]?.context?.operationContext).toBe(executeOptions);
+    expect(indexContent.mock.calls[0]?.[3]?.context?.operationContext).toBe(executeOptions);
+    expect(search.mock.calls[0]?.[1]?.context?.operationContext).toBe(executeOptions);
+  });
+
   it("returns normalized scores, line ranges, and score details", async () => {
     const filesystem = new WorkspaceFilesystem();
     const search = new WorkspaceSearch({ filesystem });

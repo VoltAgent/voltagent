@@ -14,7 +14,7 @@ import type {
 import { createTool } from "../../tool";
 import { createToolkit } from "../../tool/toolkit";
 import type { Toolkit } from "../../tool/toolkit";
-import type { WorkspaceFilesystem } from "../filesystem";
+import type { WorkspaceFilesystem, WorkspaceFilesystemCallContext } from "../filesystem";
 import { truncateIfTooLong, validatePath } from "../filesystem/utils";
 import { withOperationTimeout } from "../timeout";
 import type {
@@ -271,12 +271,12 @@ export class WorkspaceSearch {
     return WORKSPACE_SEARCH_SYSTEM_PROMPT;
   }
 
-  private async ensureAutoIndex(): Promise<void> {
+  private async ensureAutoIndex(context?: WorkspaceFilesystemCallContext): Promise<void> {
     if (!this.autoIndexPaths || this.autoIndexPaths.length === 0) {
       return;
     }
     if (!this.autoIndexPromise) {
-      this.autoIndexPromise = this.indexPaths(this.autoIndexPaths)
+      this.autoIndexPromise = this.indexPaths(this.autoIndexPaths, { context })
         .then(() => undefined)
         .catch((error) => {
           console.error("Workspace search auto-index failed:", error);
@@ -288,7 +288,7 @@ export class WorkspaceSearch {
 
   async indexPaths(
     paths?: Array<WorkspaceSearchIndexPath | string>,
-    options?: { maxFileBytes?: number },
+    options?: { maxFileBytes?: number; context?: WorkspaceFilesystemCallContext },
   ): Promise<WorkspaceSearchIndexSummary> {
     const targets = paths && paths.length > 0 ? paths : (this.autoIndexPaths ?? []);
     const summary: WorkspaceSearchIndexSummary = {
@@ -311,7 +311,9 @@ export class WorkspaceSearch {
 
       let infos: Awaited<ReturnType<WorkspaceFilesystem["globInfo"]>>;
       try {
-        infos = await this.filesystem.globInfo(glob, basePath);
+        infos = await this.filesystem.globInfo(glob, basePath, {
+          context: options?.context,
+        });
       } catch (error: any) {
         summary.errors.push(
           `Failed to glob ${basePath}: ${error?.message ? String(error.message) : "unknown error"}`,
@@ -327,7 +329,9 @@ export class WorkspaceSearch {
         }
 
         try {
-          const data = await this.filesystem.readRaw(info.path);
+          const data = await this.filesystem.readRaw(info.path, {
+            context: options?.context,
+          });
           const content = data.content.join("\n");
           const contentBytes = Buffer.byteLength(content, "utf-8");
 
@@ -414,6 +418,7 @@ export class WorkspaceSearch {
     path: string,
     content: string,
     metadata?: Record<string, unknown>,
+    _options?: { context?: WorkspaceFilesystemCallContext },
   ): Promise<WorkspaceSearchIndexSummary> {
     const normalizedPath = normalizeDocumentPath(path);
     return this.indexDocuments([
@@ -430,7 +435,7 @@ export class WorkspaceSearch {
     query: string,
     options: WorkspaceSearchOptions = {},
   ): Promise<WorkspaceSearchResult[]> {
-    await this.ensureAutoIndex();
+    await this.ensureAutoIndex(options.context);
 
     const mode = this.resolveMode(options.mode);
     const topK = options.topK ?? DEFAULT_TOP_K;
@@ -767,7 +772,10 @@ export const createWorkspaceSearchToolkit = (
 
           const summary = await context.search.indexPaths(
             [{ path: input.path || "/", glob: input.glob }],
-            { maxFileBytes: input.max_file_bytes },
+            {
+              maxFileBytes: input.max_file_bytes,
+              context: { agent: context.agent, operationContext },
+            },
           );
 
           setWorkspaceSpanAttributes(operationContext, {
@@ -809,6 +817,7 @@ export const createWorkspaceSearchToolkit = (
             input.path,
             input.content,
             input.metadata,
+            { context: { agent: context.agent, operationContext } },
           );
 
           setWorkspaceSpanAttributes(operationContext, {
@@ -888,6 +897,7 @@ export const createWorkspaceSearchToolkit = (
               snippetLength: input.snippet_length,
               lexicalWeight: input.lexical_weight,
               vectorWeight: input.vector_weight,
+              context: { agent: context.agent, operationContext },
             });
 
             setWorkspaceSpanAttributes(operationContext, {

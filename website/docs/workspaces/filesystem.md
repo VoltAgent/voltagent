@@ -28,6 +28,27 @@ const workspace = new Workspace({
 
 All filesystem tool paths are workspace-relative and must start with `/`.
 
+### Runtime context in backend factories
+
+Custom backend factories receive `operationContext`, so you can route filesystem storage at runtime (for example, by tenant/account).
+
+```ts
+import { Workspace, NodeFilesystemBackend } from "@voltagent/core";
+
+const workspace = new Workspace({
+  filesystem: {
+    backend: ({ operationContext }) => {
+      const tenantId = String(operationContext?.context.get("tenantId") ?? "default");
+      return new NodeFilesystemBackend({
+        rootDir: `./.workspace/${tenantId}`,
+      });
+    },
+  },
+});
+```
+
+For production, sanitize tenant IDs before using them in file paths.
+
 ## Filesystem tools
 
 - `ls`: list files in a directory

@@ -1,4 +1,5 @@
 import type { EmbeddingAdapterInput, VectorAdapter } from "../../memory/types";
+import type { WorkspaceFilesystemCallContext } from "../filesystem";
 
 export type WorkspaceSearchMode = "bm25" | "vector" | "hybrid";
 
@@ -36,6 +37,7 @@ export type WorkspaceSearchOptions = {
   snippetLength?: number;
   lexicalWeight?: number;
   vectorWeight?: number;
+  context?: WorkspaceFilesystemCallContext;
 };
 
 export type WorkspaceSearchResult = {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { Workspace } from "..";
 import type { FileData } from "../filesystem";
+import { createWorkspaceSkillsToolkit } from "./index";
 
 describe("WorkspaceSkills root resolver context", () => {
   it("provides workspace identity and filesystem to the resolver", async () => {
@@ -18,6 +19,82 @@ describe("WorkspaceSkills root resolver context", () => {
     const context = resolver.mock.calls[0]?.[0];
     expect(context?.workspace.id).toBe("workspace-ctx");
     expect(context?.filesystem).toBe(workspace.filesystem);
+  });
+});
+
+describe("WorkspaceSkills toolkit context forwarding", () => {
+  it("forwards operation context to skills service calls", async () => {
+    const discoverSkills = vi.fn(async () => []);
+    const searchSkills = vi.fn(async () => []);
+    const loadSkill = vi.fn(async () => ({
+      id: "/skills/data",
+      name: "Data Analyst",
+      path: "/skills/data/SKILL.md",
+      root: "/skills/data",
+      references: ["references/schema.md"],
+      instructions: "Analyze data.",
+    }));
+    const activateSkill = vi.fn(async () => ({
+      id: "/skills/data",
+      name: "Data Analyst",
+      path: "/skills/data/SKILL.md",
+      root: "/skills/data",
+    }));
+    const deactivateSkill = vi.fn(async () => true);
+    const readFileContent = vi.fn(async () => "schema");
+    const toolkit = createWorkspaceSkillsToolkit({
+      skills: {
+        discoverSkills,
+        getActiveSkills: vi.fn(() => []),
+        search: searchSkills,
+        loadSkill,
+        activateSkill,
+        deactivateSkill,
+        resolveSkillFilePath: vi.fn(() => "/skills/data/references/schema.md"),
+        readFileContent,
+      } as any,
+    });
+
+    const executeOptions = {
+      systemContext: new Map(),
+      abortController: new AbortController(),
+    } as any;
+
+    const listTool = toolkit.tools.find((tool) => tool.name === "workspace_list_skills");
+    const searchTool = toolkit.tools.find((tool) => tool.name === "workspace_search_skills");
+    const readSkillTool = toolkit.tools.find((tool) => tool.name === "workspace_read_skill");
+    const activateTool = toolkit.tools.find((tool) => tool.name === "workspace_activate_skill");
+    const deactivateTool = toolkit.tools.find((tool) => tool.name === "workspace_deactivate_skill");
+    const readReferenceTool = toolkit.tools.find(
+      (tool) => tool.name === "workspace_read_skill_reference",
+    );
+    if (
+      !listTool?.execute ||
+      !searchTool?.execute ||
+      !readSkillTool?.execute ||
+      !activateTool?.execute ||
+      !deactivateTool?.execute ||
+      !readReferenceTool?.execute
+    ) {
+      throw new Error("Workspace skills tools not found");
+    }
+
+    await listTool.execute({}, executeOptions);
+    await searchTool.execute({ query: "data" }, executeOptions);
+    await readSkillTool.execute({ skill_id: "/skills/data" }, executeOptions);
+    await activateTool.execute({ skill_id: "/skills/data" }, executeOptions);
+    await deactivateTool.execute({ skill_id: "/skills/data" }, executeOptions);
+    await readReferenceTool.execute(
+      { skill_id: "/skills/data", reference: "references/schema.md" },
+      executeOptions,
+    );
+
+    expect(discoverSkills.mock.calls[0]?.[0]?.context?.operationContext).toBe(executeOptions);
+    expect(searchSkills.mock.calls[0]?.[1]?.context?.operationContext).toBe(executeOptions);
+    expect(loadSkill.mock.calls[0]?.[1]?.context?.operationContext).toBe(executeOptions);
+    expect(activateSkill.mock.calls[0]?.[1]?.context?.operationContext).toBe(executeOptions);
+    expect(deactivateSkill.mock.calls[0]?.[1]?.context?.operationContext).toBe(executeOptions);
+    expect(readFileContent.mock.calls[0]?.[1]?.context?.operationContext).toBe(executeOptions);
   });
 });
 

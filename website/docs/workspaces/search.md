@@ -51,6 +51,42 @@ const results = await workspace.search("workspace isolation", {
 
 Direct calls still respect search tool policies (`enabled` / `needsApproval`).
 
+## Runtime context in search operations
+
+When search tools run, VoltAgent forwards the current operation context through search indexing calls.
+This means context-aware filesystem backends (for example tenant-based roots) also apply to `workspace_index` and `workspace_search`.
+
+```ts
+import { Agent, Workspace, NodeFilesystemBackend } from "@voltagent/core";
+
+const workspace = new Workspace({
+  filesystem: {
+    backend: ({ operationContext }) => {
+      const tenantId = String(operationContext?.context.get("tenantId") ?? "default");
+      return new NodeFilesystemBackend({
+        rootDir: `./.workspace/${tenantId}`,
+      });
+    },
+  },
+  search: {
+    autoIndexPaths: [{ path: "/", glob: "**/*.md" }],
+  },
+});
+
+const agent = new Agent({
+  name: "workspace-search-agent",
+  model,
+  instructions: "Use workspace search tools when needed.",
+  workspace,
+});
+
+const response = await agent.generateText("Index and search tenant docs", {
+  context: new Map([["tenantId", "acme"]]),
+});
+```
+
+For production, sanitize tenant IDs before using them in file paths.
+
 ## Snippet-only output
 
 To reduce token usage, you can omit full content in tool output:

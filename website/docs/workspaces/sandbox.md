@@ -170,6 +170,124 @@ const workspace = new Workspace({
 });
 ```
 
+## Access runtime context in custom sandboxes
+
+When `execute_command` runs through the workspace sandbox toolkit, VoltAgent forwards the current operation context to your sandbox as `options.operationContext`.
+
+This lets you build custom routing, such as tenant-aware sandbox selection.
+
+```ts
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+
+class TenantAwareSandbox implements WorkspaceSandbox {
+  name = "tenant-aware";
+  status = "ready" as const;
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
+
+    // Route by tenant (for example: separate container/session per tenant).
+    // Implement your own provider lookup here.
+    const start = Date.now();
+    return {
+      stdout: `running for tenant ${tenantId}`,
+      stderr: "",
+      exitCode: 0,
+      durationMs: Date.now() - start,
+      timedOut: false,
+      aborted: false,
+      stdoutTruncated: false,
+      stderrTruncated: false,
+    };
+  }
+}
+```
+
+If you call `workspace.sandbox.execute(...)` directly (outside the toolkit), pass `operationContext` yourself if you need it.
+
+### Tenant-aware E2B router example
+
+```ts
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+import { Workspace } from "@voltagent/core";
+import { E2BSandbox } from "@voltagent/sandbox-e2b";
+
+class TenantE2BSandboxRouter implements WorkspaceSandbox {
+  name = "tenant-e2b-router";
+  private readonly sandboxes = new Map<string, E2BSandbox>();
+
+  private getSandboxForTenant(tenantId: string): E2BSandbox {
+    let sandbox = this.sandboxes.get(tenantId);
+    if (!sandbox) {
+      sandbox = new E2BSandbox({
+        apiKey: process.env.E2B_API_KEY,
+        // Example strategy: map tenant to a template/session naming scheme
+        template: `tenant-${tenantId}`,
+      });
+      this.sandboxes.set(tenantId, sandbox);
+    }
+    return sandbox;
+  }
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
+    return this.getSandboxForTenant(tenantId).execute(options);
+  }
+}
+
+const workspace = new Workspace({
+  sandbox: new TenantE2BSandboxRouter(),
+});
+```
+
+### Tenant-aware Daytona router example
+
+```ts
+import type {
+  WorkspaceSandbox,
+  WorkspaceSandboxExecuteOptions,
+  WorkspaceSandboxResult,
+} from "@voltagent/core";
+import { Workspace } from "@voltagent/core";
+import { DaytonaSandbox } from "@voltagent/sandbox-daytona";
+
+class TenantDaytonaSandboxRouter implements WorkspaceSandbox {
+  name = "tenant-daytona-router";
+  private readonly sandboxes = new Map<string, DaytonaSandbox>();
+
+  private getSandboxForTenant(tenantId: string): DaytonaSandbox {
+    let sandbox = this.sandboxes.get(tenantId);
+    if (!sandbox) {
+      sandbox = new DaytonaSandbox({
+        apiKey: process.env.DAYTONA_API_KEY,
+        apiUrl: process.env.DAYTONA_API_URL,
+        // Example strategy: pass tenant metadata to your Daytona create params
+        createParams: { name: `tenant-${tenantId}` },
+      });
+      this.sandboxes.set(tenantId, sandbox);
+    }
+    return sandbox;
+  }
+
+  async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
+    const tenantId = String(options.operationContext?.context.get("tenantId") ?? "default");
+    return this.getSandboxForTenant(tenantId).execute(options);
+  }
+}
+
+const workspace = new Workspace({
+  sandbox: new TenantDaytonaSandboxRouter(),
+});
+```
+
 Notes:
 
 - `onStdout`/`onStderr` are optional streaming hooks for UI integration.

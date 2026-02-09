@@ -13,6 +13,47 @@ const buildExecuteOptions = () => ({
 });
 
 describe("Workspace sandbox toolkit", () => {
+  it("forwards operation context to sandbox execute options", async () => {
+    const executeCalls: Array<Record<string, unknown>> = [];
+    const workspace = new Workspace({
+      sandbox: {
+        name: "recording",
+        status: "ready",
+        async execute(options) {
+          executeCalls.push(options as unknown as Record<string, unknown>);
+          return {
+            stdout: "",
+            stderr: "",
+            exitCode: 0,
+            durationMs: 1,
+            timedOut: false,
+            aborted: false,
+            stdoutTruncated: false,
+            stderrTruncated: false,
+          };
+        },
+      },
+      filesystem: {},
+    });
+
+    const toolkit = createWorkspaceSandboxToolkit({
+      sandbox: workspace.sandbox,
+      workspace,
+      filesystem: workspace.filesystem,
+    });
+
+    const executeTool = toolkit.tools.find((tool) => tool.name === "execute_command");
+    if (!executeTool?.execute) {
+      throw new Error("execute_command tool not found");
+    }
+
+    const executeOptions = buildExecuteOptions() as any;
+    await executeTool.execute({ command: "echo", args: ["ok"] }, executeOptions);
+
+    expect(executeCalls).toHaveLength(1);
+    expect(executeCalls[0]?.operationContext).toBe(executeOptions);
+  });
+
   it("evicts large stdout to workspace files", async () => {
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "voltagent-sandbox-"));
     const sandbox = new LocalSandbox({ rootDir: tempDir });

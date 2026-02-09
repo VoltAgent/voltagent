@@ -36,6 +36,25 @@ const workspace = new Workspace({
 });
 ```
 
+### Runtime context in skills operations
+
+Skill tool calls forward the current operation context to `WorkspaceSkills` internals.
+This lets you build tenant-aware or account-aware skill routing.
+
+```ts
+const workspace = new Workspace({
+  skills: {
+    // operationContext is available when discovery is triggered from an agent operation.
+    rootPaths: async ({ operationContext }) => {
+      const tenantId = String(operationContext?.context.get("tenantId") ?? "default");
+      return ["/skills/common", `/skills/tenants/${tenantId}`];
+    },
+  },
+});
+```
+
+If you use tenant-scoped roots, prefer `autoDiscover: false` and call discovery with `refresh: true` from tools when tenant context changes.
+
 ## SKILL.md format
 
 `SKILL.md` uses YAML frontmatter plus Markdown instructions:

@@ -17,7 +17,7 @@ import { createTool } from "../../tool";
 import { createToolkit } from "../../tool/toolkit";
 import type { Toolkit } from "../../tool/toolkit";
 import { randomUUID } from "../../utils/id";
-import type { WorkspaceFilesystem } from "../filesystem";
+import type { WorkspaceFilesystem, WorkspaceFilesystemCallContext } from "../filesystem";
 import { WorkspaceBm25Index, tokenizeSearchText } from "../search/bm25";
 import { withOperationTimeout } from "../timeout";
 import type { WorkspaceToolPolicies, WorkspaceToolPolicyGroup } from "../tool-policy";
@@ -344,6 +344,10 @@ type WorkspaceSkillDocument = {
   metadata?: Record<string, unknown>;
 };
 
+type WorkspaceSkillsOperationOptions = {
+  context?: WorkspaceFilesystemCallContext;
+};
+
 export class WorkspaceSkills {
   private readonly filesystem: WorkspaceFilesystem;
   private readonly workspaceIdentity: WorkspaceSkillsRootResolverContext["workspace"];
@@ -455,12 +459,12 @@ export class WorkspaceSkills {
     return SKILLS_SYSTEM_PROMPT;
   }
 
-  private async ensureDiscovered(): Promise<void> {
+  private async ensureDiscovered(options: WorkspaceSkillsOperationOptions = {}): Promise<void> {
     if (this.discovered) {
       return;
     }
     if (!this.autoDiscoverPromise) {
-      const promise = this.discoverSkills().then(() => undefined);
+      const promise = this.discoverSkills({ context: options.context }).then(() => undefined);
       this.autoDiscoverPromise = promise;
       promise.catch(() => {
         if (this.autoDiscoverPromise === promise) {
@@ -479,7 +483,7 @@ export class WorkspaceSkills {
     }
   }
 
-  private async ensureRootPaths(): Promise<void> {
+  private async ensureRootPaths(options: WorkspaceSkillsOperationOptions = {}): Promise<void> {
     if (this.rootResolved) {
       return;
     }
@@ -496,6 +500,7 @@ export class WorkspaceSkills {
           const resolved = await this.rootResolver?.({
             workspace: this.workspaceIdentity,
             filesystem: this.filesystem,
+            operationContext: options.context?.operationContext,
           });
           const normalized = normalizeStringArray(resolved) ?? DEFAULT_SKILL_ROOTS;
           this.rootPaths = normalized.map(normalizeRootPath);
@@ -509,12 +514,12 @@ export class WorkspaceSkills {
     await this.rootResolvePromise;
   }
 
-  private async ensureIndexed(): Promise<void> {
+  private async ensureIndexed(options: WorkspaceSkillsOperationOptions = {}): Promise<void> {
     if (this.indexed) {
       return;
     }
     if (!this.autoIndexPromise) {
-      const promise = this.indexSkills().then(() => undefined);
+      const promise = this.indexSkills({ context: options.context }).then(() => undefined);
       this.autoIndexPromise = promise;
       promise.catch(() => {
         if (this.autoIndexPromise === promise) {
@@ -533,12 +538,14 @@ export class WorkspaceSkills {
     }
   }
 
-  async discoverSkills(options: { refresh?: boolean } = {}): Promise<WorkspaceSkillMetadata[]> {
+  async discoverSkills(
+    options: { refresh?: boolean; context?: WorkspaceFilesystemCallContext } = {},
+  ): Promise<WorkspaceSkillMetadata[]> {
     if (this.discovered && !options.refresh) {
       return Array.from(this.skillsById.values());
     }
 
-    await this.ensureRootPaths();
+    await this.ensureRootPaths({ context: options.context });
 
     this.skillsById.clear();
     this.skillNameMap.clear();
@@ -551,7 +558,9 @@ export class WorkspaceSkills {
     for (const root of this.rootPaths) {
       let infos: Awaited<ReturnType<WorkspaceFilesystem["globInfo"]>>;
       try {
-        infos = await this.filesystem.globInfo(this.glob, root);
+        infos = await this.filesystem.globInfo(this.glob, root, {
+          context: options.context,
+        });
       } catch {
         continue;
       }
@@ -563,7 +572,9 @@ export class WorkspaceSkills {
         }
 
         try {
-          const data = await this.filesystem.readRaw(skillPath);
+          const data = await this.filesystem.readRaw(skillPath, {
+            context: options.context,
+          });
           const content = data.content.join("\n");
           const contentBytes = Buffer.byteLength(content, "utf-8");
           if (this.maxFileBytes > 0 && contentBytes > this.maxFileBytes) {
@@ -622,8 +633,11 @@ export class WorkspaceSkills {
     return Array.from(this.skillsById.values());
   }
 
-  async loadSkill(identifier: string): Promise<WorkspaceSkill | null> {
-    await this.ensureDiscovered();
+  async loadSkill(
+    identifier: string,
+    options: WorkspaceSkillsOperationOptions = {},
+  ): Promise<WorkspaceSkill | null> {
+    await this.ensureDiscovered({ context: options.context });
     const id = this.resolveSkillId(identifier);
     if (!id) {
       return null;
@@ -639,7 +653,9 @@ export class WorkspaceSkills {
       return null;
     }
 
-    const data = await this.filesystem.readRaw(metadata.path);
+    const data = await this.filesystem.readRaw(metadata.path, {
+      context: options.context,
+    });
     const content = data.content.join("\n");
     const { data: frontmatter, instructions } = parseSkillFile(content);
     const detail: WorkspaceSkill = {
@@ -660,8 +676,11 @@ export class WorkspaceSkills {
     return detail;
   }
 
-  async activateSkill(identifier: string): Promise<WorkspaceSkillMetadata | null> {
-    await this.ensureDiscovered();
+  async activateSkill(
+    identifier: string,
+    options: WorkspaceSkillsOperationOptions = {},
+  ): Promise<WorkspaceSkillMetadata | null> {
+    await this.ensureDiscovered({ context: options.context });
     const id = this.resolveSkillId(identifier);
     if (!id) {
       return null;
@@ -670,8 +689,11 @@ export class WorkspaceSkills {
     return this.skillsById.get(id) ?? null;
   }
 
-  async deactivateSkill(identifier: string): Promise<boolean> {
-    await this.ensureDiscovered();
+  async deactivateSkill(
+    identifier: string,
+    options: WorkspaceSkillsOperationOptions = {},
+  ): Promise<boolean> {
+    await this.ensureDiscovered({ context: options.context });
     const id = this.resolveSkillId(identifier);
     if (!id) {
       return false;
@@ -685,8 +707,10 @@ export class WorkspaceSkills {
       .filter((skill): skill is WorkspaceSkillMetadata => Boolean(skill));
   }
 
-  async indexSkills(): Promise<WorkspaceSkillIndexSummary> {
-    await this.ensureDiscovered();
+  async indexSkills(
+    options: WorkspaceSkillsOperationOptions = {},
+  ): Promise<WorkspaceSkillIndexSummary> {
+    await this.ensureDiscovered({ context: options.context });
 
     const summary: WorkspaceSkillIndexSummary = {
       indexed: 0,
@@ -718,7 +742,7 @@ export class WorkspaceSkills {
 
     for (const metadata of this.skillsById.values()) {
       try {
-        const skill = await this.loadSkill(metadata.id);
+        const skill = await this.loadSkill(metadata.id, { context: options.context });
         if (!skill) {
           summary.skipped += 1;
           continue;
@@ -803,7 +827,7 @@ export class WorkspaceSkills {
     query: string,
     options: WorkspaceSkillSearchOptions = {},
   ): Promise<WorkspaceSkillSearchResult[]> {
-    await this.ensureIndexed();
+    await this.ensureIndexed({ context: options.context });
 
     const mode = this.resolveMode(options.mode);
     const topK = options.topK ?? DEFAULT_TOP_K;
@@ -876,8 +900,10 @@ export class WorkspaceSkills {
     );
   }
 
-  async buildPrompt(options: WorkspaceSkillsPromptOptions = {}): Promise<string | null> {
-    await this.ensureDiscovered();
+  async buildPrompt(
+    options: WorkspaceSkillsPromptOptions & { context?: WorkspaceFilesystemCallContext } = {},
+  ): Promise<string | null> {
+    await this.ensureDiscovered({ context: options.context });
 
     const includeAvailable = options.includeAvailable ?? true;
     const includeActivated = options.includeActivated ?? true;
@@ -904,7 +930,7 @@ export class WorkspaceSkills {
       if (activeIds.length > 0) {
         const entries: string[] = [];
         for (const id of activeIds) {
-          const skill = await this.loadSkill(id);
+          const skill = await this.loadSkill(id, { context: options.context });
           if (!skill) {
             continue;
           }
@@ -1034,22 +1060,34 @@ export class WorkspaceSkills {
     return joinPaths(skill.root, cleaned);
   }
 
-  async readFileContent(filePath: string): Promise<string> {
-    const data = await this.filesystem.readRaw(filePath);
+  async readFileContent(
+    filePath: string,
+    options: WorkspaceSkillsOperationOptions = {},
+  ): Promise<string> {
+    const data = await this.filesystem.readRaw(filePath, {
+      context: options.context,
+    });
     return data.content.join("\n");
   }
 }
 
 export const createWorkspaceSkillsPromptHook = (
-  context: WorkspaceSkillsPromptHookContext,
+  hookContext: WorkspaceSkillsPromptHookContext,
   options: WorkspaceSkillsPromptOptions = {},
 ): AgentHooks => ({
-  onPrepareMessages: async ({ messages }): Promise<OnPrepareMessagesHookResult> => {
-    if (!context.skills) {
+  onPrepareMessages: async ({
+    messages,
+    context: operationContext,
+    agent,
+  }): Promise<OnPrepareMessagesHookResult> => {
+    if (!hookContext.skills) {
       return { messages };
     }
 
-    const prompt = await context.skills.buildPrompt(options);
+    const prompt = await hookContext.skills.buildPrompt({
+      ...options,
+      context: { agent, operationContext },
+    });
     if (!prompt) {
       return { messages };
     }
@@ -1115,7 +1153,10 @@ export const createWorkspaceSkillsToolkit = (
             return "Workspace skills are not configured.";
           }
 
-          const skills = await context.skills.discoverSkills({ refresh: Boolean(input.refresh) });
+          const skills = await context.skills.discoverSkills({
+            refresh: Boolean(input.refresh),
+            context: { agent: context.agent, operationContext },
+          });
           const activeIds = new Set(context.skills.getActiveSkills().map((skill) => skill.id));
           const listed = input.active_only
             ? skills.filter((skill) => activeIds.has(skill.id))
@@ -1163,6 +1204,7 @@ export const createWorkspaceSkillsToolkit = (
               snippetLength: input.snippet_length,
               lexicalWeight: input.lexical_weight,
               vectorWeight: input.vector_weight,
+              context: { agent: context.agent, operationContext },
             });
 
             setWorkspaceSpanAttributes(operationContext, {
@@ -1202,7 +1244,9 @@ export const createWorkspaceSkillsToolkit = (
             return "Workspace skills are not configured.";
           }
 
-          const skill = await context.skills.loadSkill(input.skill_id);
+          const skill = await context.skills.loadSkill(input.skill_id, {
+            context: { agent: context.agent, operationContext },
+          });
           if (!skill) {
             return `Skill not found: ${input.skill_id}`;
           }
@@ -1241,7 +1285,9 @@ export const createWorkspaceSkillsToolkit = (
             return "Workspace skills are not configured.";
           }
 
-          const skill = await context.skills.activateSkill(input.skill_id);
+          const skill = await context.skills.activateSkill(input.skill_id, {
+            context: { agent: context.agent, operationContext },
+          });
           if (!skill) {
             return `Skill not found: ${input.skill_id}`;
           }
@@ -1280,7 +1326,9 @@ export const createWorkspaceSkillsToolkit = (
             return "Workspace skills are not configured.";
           }
 
-          const success = await context.skills.deactivateSkill(input.skill_id);
+          const success = await context.skills.deactivateSkill(input.skill_id, {
+            context: { agent: context.agent, operationContext },
+          });
           if (!success) {
             return `Skill not found: ${input.skill_id}`;
           }
@@ -1309,7 +1357,9 @@ export const createWorkspaceSkillsToolkit = (
       return "Workspace skills are not configured.";
     }
 
-    const skill = await context.skills.loadSkill(skillId);
+    const skill = await context.skills.loadSkill(skillId, {
+      context: { agent: context.agent, operationContext },
+    });
     if (!skill) {
       return `Skill not found: ${skillId}`;
     }
@@ -1330,7 +1380,9 @@ export const createWorkspaceSkillsToolkit = (
     });
 
     try {
-      const content = await context.skills.readFileContent(resolvedPath);
+      const content = await context.skills.readFileContent(resolvedPath, {
+        context: { agent: context.agent, operationContext },
+      });
       return content || "(empty)";
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

@@ -1,3 +1,5 @@
+import type { OperationContext } from "../../agent/types";
+
 export type WorkspaceSandboxExecuteOptions = {
   command: string;
   args?: string[];
@@ -9,6 +11,7 @@ export type WorkspaceSandboxExecuteOptions = {
   signal?: AbortSignal;
   onStdout?: (chunk: string) => void;
   onStderr?: (chunk: string) => void;
+  operationContext?: OperationContext;
 };
 
 export type WorkspaceSandboxStatus = "idle" | "ready" | "destroyed" | "error";
