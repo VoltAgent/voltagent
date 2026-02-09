@@ -75,7 +75,7 @@ const workspace = new Workspace({
 
 const agent = new Agent({
   name: "workspace-search-agent",
-  model,
+  model: "openai/gpt-4o-mini", // Replace with your preferred provider/model
   instructions: "Use workspace search tools when needed.",
   workspace,
 });

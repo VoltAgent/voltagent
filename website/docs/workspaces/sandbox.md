@@ -222,7 +222,18 @@ import { E2BSandbox } from "@voltagent/sandbox-e2b";
 
 class TenantE2BSandboxRouter implements WorkspaceSandbox {
   name = "tenant-e2b-router";
+  status = "ready" as const;
+  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
+  // (for example via stop/destroy) to avoid unbounded per-tenant growth.
   private readonly sandboxes = new Map<string, E2BSandbox>();
+
+  getInfo() {
+    return {
+      provider: "tenant-e2b-router",
+      status: this.status,
+      sandboxCount: this.sandboxes.size,
+    };
+  }
 
   private getSandboxForTenant(tenantId: string): E2BSandbox {
     let sandbox = this.sandboxes.get(tenantId);
@@ -261,7 +272,18 @@ import { DaytonaSandbox } from "@voltagent/sandbox-daytona";
 
 class TenantDaytonaSandboxRouter implements WorkspaceSandbox {
   name = "tenant-daytona-router";
+  status = "ready" as const;
+  // In production, add LRU/TTL eviction here and dispose evicted sandboxes
+  // (for example via stop/destroy) to avoid unbounded per-tenant growth.
   private readonly sandboxes = new Map<string, DaytonaSandbox>();
+
+  getInfo() {
+    return {
+      provider: "tenant-daytona-router",
+      status: this.status,
+      sandboxCount: this.sandboxes.size,
+    };
+  }
 
   private getSandboxForTenant(tenantId: string): DaytonaSandbox {
     let sandbox = this.sandboxes.get(tenantId);
