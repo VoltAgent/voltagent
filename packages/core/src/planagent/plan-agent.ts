@@ -770,9 +770,7 @@ function createTaskToolkit(options: {
         conversationId: operationContext.conversationId,
         parentOperationContext: operationContext,
         maxSteps: taskOptions?.maxSteps,
-        parentSpan:
-          ((executeOptions as any).parentToolSpan as Span | undefined) ||
-          (operationContext.systemContext.get("parentToolSpan") as Span | undefined),
+        parentSpan: toolSpan,
       });
 
       if (toolSpan) {

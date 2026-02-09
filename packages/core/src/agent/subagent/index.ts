@@ -752,6 +752,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
     maxSteps?: number;
     conversationId?: string;
     userId?: string;
+    parentToolSpan?: Span;
   }): Tool<any, any> {
     const {
       sourceAgent,
@@ -760,9 +761,8 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       maxSteps,
       conversationId,
       userId,
+      parentToolSpan,
     } = options;
-    // Extract parentToolSpan from outer options to avoid shadowing with inner execute options
-    const parentToolSpan = (options as any).parentToolSpan as Span | undefined;
     return createTool({
       id: "delegate_task",
       name: "delegate_task",
