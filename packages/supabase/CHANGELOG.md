@@ -1,5 +1,15 @@
 # @voltagent/supabase
 
+## 2.1.1
+
+### Patch Changes
+
+- [#1038](https://github.com/VoltAgent/voltagent/pull/1038) [`9757223`](https://github.com/VoltAgent/voltagent/commit/9757223eef1b82d6c20844857a7bfd659c4c61d7) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: deduplicate conversation step rows before Supabase upsert
+
+  `saveConversationSteps` now deduplicates rows by `id` in a batch before calling Supabase `upsert`.
+
+  This prevents Postgres errors like `ON CONFLICT DO UPDATE command cannot affect row a second time` when multiple step records with the same `id` are present in one persistence batch, while preserving current last-write-wins behavior.
+
 ## 2.1.0
 
 ### Minor Changes
