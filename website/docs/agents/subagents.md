@@ -484,6 +484,7 @@ This tool is automatically added to supervisor agents and handles delegation.
 - **Execution**:
   - Finds the sub-agent instances based on the provided names
   - Calls the `handoffTask` (or `handoffToMultiple`) method internally
+  - Tags delegated sub-agent messages with metadata so supervisor memory reads can exclude sub-agent records
   - Passes the supervisor's agent ID (`parentAgentId`) and history entry ID (`parentHistoryEntryId`) for observability
 - **Returns**:
   - **Always returns an array** of result objects (even for single agent):
