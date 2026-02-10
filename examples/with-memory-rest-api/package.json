@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "dependencies": {
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.3.6",
+    "@voltagent/core": "^2.3.7",
     "@voltagent/logger": "^2.0.2",
-    "@voltagent/postgres": "^2.1.0",
+    "@voltagent/postgres": "^2.1.1",
     "@voltagent/server-hono": "^2.0.6"
   },
   "devDependencies": {

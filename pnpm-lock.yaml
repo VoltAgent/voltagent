@@ -117,10 +117,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -154,10 +154,10 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -191,7 +191,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -267,10 +267,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/server-hono':
         specifier: ^2.0.6
@@ -388,7 +388,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/a2a-server
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.3
@@ -477,7 +477,7 @@ importers:
   examples/with-agent-tool:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       ai:
         specifier: ^6.0.0
@@ -502,7 +502,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.3
@@ -539,10 +539,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -573,10 +573,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -716,10 +716,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -756,7 +756,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/server-hono':
         specifier: ^2.0.6
@@ -796,10 +796,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -836,7 +836,7 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/server-hono':
         specifier: ^2.0.6
@@ -882,7 +882,7 @@ importers:
   examples/with-cloudflare-workers:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/serverless-hono':
         specifier: ^2.0.8
@@ -916,10 +916,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1012,10 +1012,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1046,10 +1046,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1080,10 +1080,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1114,7 +1114,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1142,10 +1142,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1225,10 +1225,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1265,10 +1265,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1299,10 +1299,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1333,7 +1333,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1361,10 +1361,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1395,10 +1395,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1503,13 +1503,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^2.0.2
         version: link:../../packages/langfuse-exporter
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1565,10 +1565,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1599,7 +1599,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1630,7 +1630,7 @@ importers:
   examples/with-mcp-server:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1664,13 +1664,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/postgres':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/postgres
       '@voltagent/server-hono':
         specifier: ^2.0.6
@@ -1695,10 +1695,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1735,10 +1735,10 @@ importers:
         specifier: ^11.0.0
         version: 11.1.7(@nestjs/common@11.1.7)(@nestjs/core@11.1.7)
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/server-core':
-        specifier: ^2.1.4
+        specifier: ^2.1.5
         version: link:../../packages/server-core
       '@voltagent/server-hono':
         specifier: ^2.0.6
@@ -1781,7 +1781,7 @@ importers:
   examples/with-netlify-functions:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/serverless-hono':
         specifier: ^2.0.8
@@ -1821,10 +1821,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1927,13 +1927,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.3
         version: link:../../packages/internal
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/resumable-streams':
         specifier: ^2.0.1
@@ -2045,10 +2045,10 @@ importers:
         specifier: ^4.0.0
         version: 4.0.1(embla-carousel@8.6.0)(typescript@5.9.3)(vite@7.2.7)(vue-router@4.5.1)(vue@3.5.22)(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/server-hono':
         specifier: ^2.0.6
@@ -2079,7 +2079,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/evals':
         specifier: ^2.0.3
@@ -2113,7 +2113,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2147,10 +2147,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2184,10 +2184,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2224,10 +2224,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2270,10 +2270,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2316,13 +2316,13 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
         version: link:../../packages/logger
       '@voltagent/postgres':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/postgres
       '@voltagent/server-hono':
         specifier: ^2.0.6
@@ -2353,10 +2353,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2390,10 +2390,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2424,7 +2424,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2455,10 +2455,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2483,7 +2483,7 @@ importers:
   examples/with-resumable-streams:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2517,10 +2517,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2551,10 +2551,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2585,10 +2585,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2625,10 +2625,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2662,10 +2662,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2699,7 +2699,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2708,7 +2708,7 @@ importers:
         specifier: ^2.0.6
         version: link:../../packages/server-hono
       '@voltagent/supabase':
-        specifier: ^2.1.1
+        specifier: ^2.1.2
         version: link:../../packages/supabase
       ai:
         specifier: ^6.0.0
@@ -2733,10 +2733,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2767,10 +2767,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2804,7 +2804,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2838,10 +2838,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2872,10 +2872,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2909,10 +2909,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2943,10 +2943,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2977,10 +2977,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3029,10 +3029,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3066,10 +3066,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3109,10 +3109,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3152,7 +3152,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3183,10 +3183,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3217,7 +3217,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3226,7 +3226,7 @@ importers:
         specifier: ^2.0.6
         version: link:../../packages/server-hono
       '@voltagent/voltagent-memory':
-        specifier: ^1.0.3
+        specifier: ^1.0.4
         version: link:../../packages/voltagent-memory
       ai:
         specifier: ^6.0.0
@@ -3248,7 +3248,7 @@ importers:
   examples/with-voltops-resumable-streams:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3279,10 +3279,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3316,10 +3316,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3353,10 +3353,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3387,10 +3387,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3421,10 +3421,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3458,10 +3458,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3492,10 +3492,10 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.6
+        specifier: ^2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3523,10 +3523,10 @@ importers:
   examples/with-zapier-mcp:
     dependencies:
       '@voltagent/core':
-        specifier: ~2.3.6
+        specifier: ~2.3.7
         version: link:../../packages/core
       '@voltagent/libsql':
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: link:../../packages/libsql
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3717,7 +3717,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^2.3.3
+        specifier: ^2.3.7
         version: link:../core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -4025,7 +4025,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^2.3.3
+        specifier: ^2.3.7
         version: link:../core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -4094,7 +4094,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^2.3.3
+        specifier: ^2.3.7
         version: link:../core
       ai:
         specifier: ^6.0.0
@@ -4204,7 +4204,7 @@ importers:
         specifier: ^1.12.1
         version: 1.17.2
       '@voltagent/core':
-        specifier: ^2.3.5
+        specifier: ^2.3.7
         version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
@@ -4250,7 +4250,7 @@ importers:
         specifier: ^2.0.2
         version: link:../a2a-server
       '@voltagent/core':
-        specifier: ^2.3.5
+        specifier: ^2.3.7
         version: link:../core
       '@voltagent/internal':
         specifier: ^1.0.2
@@ -4262,7 +4262,7 @@ importers:
         specifier: ^2.0.1
         version: link:../resumable-streams
       '@voltagent/server-core':
-        specifier: ^2.1.4
+        specifier: ^2.1.5
         version: link:../server-core
       elysia:
         specifier: ^1.1.29
@@ -4355,7 +4355,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^2.3.3
+        specifier: ^2.3.7
         version: link:../core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -4408,7 +4408,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       '@voltagent/core':
-        specifier: ^2.0.2
+        specifier: ^2.3.7
         version: link:../core
       ai:
         specifier: ^6.0.0
