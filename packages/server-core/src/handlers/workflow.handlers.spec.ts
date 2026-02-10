@@ -132,7 +132,7 @@ describe("handleListWorkflowRuns", () => {
         status: "success",
         metadata: '{"region":"us-east-1"}',
         "metadata.tenantId": "acme",
-      } as any,
+      },
       deps,
       logger,
     );
@@ -150,6 +150,42 @@ describe("handleListWorkflowRuns", () => {
           region: "us-east-1",
           tenantId: "acme",
         },
+      }),
+    );
+  });
+
+  it("ignores malformed metadata JSON and continues without metadata filter", async () => {
+    const { deps, queryWorkflowRunsByWorkflowId } = buildDeps({
+      "wf-1": {
+        runs: [createWorkflowState("exec-1", "2024-01-02T00:00:00Z", "wf-1")],
+      },
+    });
+    const previousWarnCalls = logger.warn.mock.calls.length;
+
+    const response = await handleListWorkflowRuns(
+      "wf-1",
+      {
+        metadata: "not-json",
+      },
+      deps,
+      logger,
+    );
+
+    expect(response.success).toBe(true);
+    expect(logger.warn.mock.calls.length).toBe(previousWarnCalls + 1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Ignoring invalid workflow metadata filter payload",
+      expect.objectContaining({
+        metadata: "not-json",
+      }),
+    );
+
+    const queryWorkflowRuns = queryWorkflowRunsByWorkflowId.get("wf-1");
+    expect(queryWorkflowRuns).toBeDefined();
+    expect(queryWorkflowRuns).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workflowId: "wf-1",
+        metadata: undefined,
       }),
     );
   });

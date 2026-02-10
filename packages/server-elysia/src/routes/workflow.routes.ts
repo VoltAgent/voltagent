@@ -70,6 +70,7 @@ const WorkflowListQuerySchema = t.Object(
     ),
     offset: t.Optional(t.Number({ minimum: 0, description: "Number of executions to skip" })),
   },
+  // Required for query params like metadata.tenantId=acme (dot-notation metadata filters).
   { additionalProperties: true },
 );
 
