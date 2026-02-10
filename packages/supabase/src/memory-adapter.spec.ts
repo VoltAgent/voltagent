@@ -3,7 +3,11 @@
  * Tests all functionality using mocked Supabase client
  */
 
-import { ConversationAlreadyExistsError, ConversationNotFoundError } from "@voltagent/core";
+import {
+  ConversationAlreadyExistsError,
+  ConversationNotFoundError,
+  type ConversationStepRecord,
+} from "@voltagent/core";
 import type { UIMessage } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSupabaseMock, dbError, notFound, ok } from "./__testutils__/supabase-mock";
@@ -351,6 +355,60 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       supabaseMock.queue("voltagent_memory_messages", ok(null));
 
       await expect(adapter.clearMessages("user-1")).resolves.not.toThrow();
+    });
+  });
+
+  // ============================================================================
+  // Conversation Step Tests
+  // ============================================================================
+
+  describe("Conversation Step Operations", () => {
+    it("should deduplicate step ids before upsert and keep last row", async () => {
+      const steps: ConversationStepRecord[] = [
+        {
+          id: "tool-call-1",
+          conversationId: "conv-1",
+          userId: "user-1",
+          agentId: "agent-1",
+          agentName: "Agent 1",
+          operationId: "op-1",
+          stepIndex: 4,
+          type: "tool_call",
+          role: "assistant",
+          arguments: { city: "Istanbul" },
+          createdAt: "2024-01-01T00:00:00.000Z",
+        },
+        {
+          id: "tool-call-1",
+          conversationId: "conv-1",
+          userId: "user-1",
+          agentId: "agent-1",
+          agentName: "Agent 1",
+          operationId: "op-1",
+          stepIndex: 4,
+          type: "tool_result",
+          role: "assistant",
+          result: { forecast: "sunny" },
+          createdAt: "2024-01-01T00:00:01.000Z",
+        },
+      ];
+
+      supabaseMock.queue("voltagent_memory_steps", ok(null));
+
+      await expect(adapter.saveConversationSteps(steps)).resolves.not.toThrow();
+
+      const builder = supabaseMock.getLast("voltagent_memory_steps");
+      expect(builder.upsert).toHaveBeenCalledTimes(1);
+      const [rows, options] = builder.upsert.mock.calls[0];
+
+      expect(options).toEqual({ onConflict: "id", ignoreDuplicates: false });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        id: "tool-call-1",
+        type: "tool_result",
+        result: { forecast: "sunny" },
+        created_at: "2024-01-01T00:00:01.000Z",
+      });
     });
   });
 

@@ -577,9 +577,21 @@ END OF MIGRATION SQL
       created_at: step.createdAt ?? new Date().toISOString(),
     }));
 
+    // Supabase/Postgres can error when the same PK appears multiple times in one upsert payload.
+    // Keep the last row for a given id to match existing "last write wins" adapter behavior.
+    const deduplicatedRows = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) {
+      deduplicatedRows.set(row.id, row);
+    }
+    const rowsForUpsert = Array.from(deduplicatedRows.values());
+
+    if (rowsForUpsert.length !== rows.length) {
+      this.log("Deduplicated conversation steps before upsert", rows.length - rowsForUpsert.length);
+    }
+
     const { error } = await this.client
       .from(stepsTable)
-      .upsert(rows, { onConflict: "id", ignoreDuplicates: false });
+      .upsert(rowsForUpsert, { onConflict: "id", ignoreDuplicates: false });
 
     if (error) {
       throw new Error(`Failed to save conversation steps: ${error.message}`);
