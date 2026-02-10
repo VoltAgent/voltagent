@@ -16,6 +16,7 @@ import type {
   GetMessagesOptions,
   StorageAdapter,
   StoredUIMessage,
+  WorkflowRunQuery,
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "../../types";
@@ -31,6 +32,51 @@ interface UserInfo {
   };
   createdAt: Date;
   updatedAt: Date;
+}
+
+function areMetadataValuesEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  if (typeof left !== "object" || left === null || typeof right !== "object" || right === null) {
+    return false;
+  }
+
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+      return false;
+    }
+
+    for (let index = 0; index < left.length; index++) {
+      if (!areMetadataValuesEqual(left[index], right[index])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  const leftRecord = left as Record<string, unknown>;
+  const rightRecord = right as Record<string, unknown>;
+  const leftKeys = Object.keys(leftRecord);
+  const rightKeys = Object.keys(rightRecord);
+
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
+
+  for (const key of leftKeys) {
+    if (!Object.prototype.hasOwnProperty.call(rightRecord, key)) {
+      return false;
+    }
+
+    if (!areMetadataValuesEqual(leftRecord[key], rightRecord[key])) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -517,14 +563,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   /**
    * Query workflow states with optional filters
    */
-  async queryWorkflowRuns(query: {
-    workflowId?: string;
-    status?: WorkflowStateEntry["status"];
-    from?: Date;
-    to?: Date;
-    limit?: number;
-    offset?: number;
-  }): Promise<WorkflowStateEntry[]> {
+  async queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
     const states: WorkflowStateEntry[] = [];
 
     if (query.workflowId) {
@@ -553,6 +592,20 @@ export class InMemoryStorageAdapter implements StorageAdapter {
         }
         if (query.to && state.createdAt > query.to) {
           return false;
+        }
+        if (query.userId && state.userId !== query.userId) {
+          return false;
+        }
+        if (query.metadata) {
+          const stateMetadata = state.metadata ?? {};
+          for (const [key, value] of Object.entries(query.metadata)) {
+            if (!Object.prototype.hasOwnProperty.call(stateMetadata, key)) {
+              return false;
+            }
+            if (!areMetadataValuesEqual((stateMetadata as Record<string, unknown>)[key], value)) {
+              return false;
+            }
+          }
         }
         return true;
       })

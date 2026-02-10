@@ -17,6 +17,7 @@ import type {
   GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
+  WorkflowRunQuery,
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "@voltagent/core";
@@ -1272,14 +1273,7 @@ export class D1MemoryAdapter implements StorageAdapter {
     };
   }
 
-  async queryWorkflowRuns(query: {
-    workflowId?: string;
-    status?: WorkflowStateEntry["status"];
-    from?: Date;
-    to?: Date;
-    limit?: number;
-    offset?: number;
-  }): Promise<WorkflowStateEntry[]> {
+  async queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
     await this.ensureInitialized();
 
     const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
@@ -1304,6 +1298,27 @@ export class D1MemoryAdapter implements StorageAdapter {
     if (query.to) {
       conditions.push("created_at <= ?");
       args.push(query.to.toISOString());
+    }
+
+    if (query.userId) {
+      conditions.push("user_id = ?");
+      args.push(query.userId);
+    }
+
+    if (query.metadata && Object.keys(query.metadata).length > 0) {
+      for (const [key, value] of Object.entries(query.metadata)) {
+        const escapedKey = key.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        const metadataPath = `$."${escapedKey}"`;
+        if (value === null) {
+          // Explicitly require key presence with null value
+          conditions.push("json_type(metadata, ?) = 'null'");
+          args.push(metadataPath);
+          continue;
+        }
+
+        conditions.push("json_extract(metadata, ?) = json(?)");
+        args.push(metadataPath, safeStringify(value));
+      }
     }
 
     let sql = `SELECT * FROM ${workflowStatesTable}`;

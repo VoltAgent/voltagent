@@ -928,6 +928,8 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
         status: "completed",
         from: new Date("2024-01-01T00:00:00Z"),
         to: new Date("2024-01-03T00:00:00Z"),
+        userId: "user-1",
+        metadata: { tenantId: "acme" },
         limit: 10,
         offset: 5,
       });
@@ -936,12 +938,16 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       expect(mockPoolQuery).toHaveBeenCalledTimes(1);
       const [sql, params] = mockPoolQuery.mock.calls[0];
       expect(sql).toContain("WHERE workflow_id = $1 AND status = $2 AND created_at >=");
+      expect(sql).toContain("user_id = $5");
+      expect(sql).toContain("metadata @> $6::jsonb");
       expect(sql).toContain("ORDER BY created_at DESC");
       expect(params).toEqual([
         "workflow-1",
         "completed",
         new Date("2024-01-01T00:00:00Z"),
         new Date("2024-01-03T00:00:00Z"),
+        "user-1",
+        '{"tenantId":"acme"}',
         10,
         5,
       ]);

@@ -14,6 +14,7 @@ import type {
   GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
+  WorkflowRunQuery,
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "@voltagent/core";
@@ -1321,14 +1322,7 @@ END OF MIGRATION SQL
   /**
    * Query workflow states with optional filters
    */
-  async queryWorkflowRuns(query: {
-    workflowId?: string;
-    status?: WorkflowStateEntry["status"];
-    from?: Date;
-    to?: Date;
-    limit?: number;
-    offset?: number;
-  }): Promise<WorkflowStateEntry[]> {
+  async queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
     await this.initialize();
 
     const workflowStatesTable = `${this.baseTableName}_workflow_states`;
@@ -1348,6 +1342,14 @@ END OF MIGRATION SQL
 
     if (query.to) {
       queryBuilder = queryBuilder.lte("created_at", query.to.toISOString());
+    }
+
+    if (query.userId) {
+      queryBuilder = queryBuilder.eq("user_id", query.userId);
+    }
+
+    if (query.metadata && Object.keys(query.metadata).length > 0) {
+      queryBuilder = (queryBuilder as any).contains("metadata", query.metadata);
     }
 
     queryBuilder = queryBuilder.order("created_at", { ascending: false });

@@ -71,11 +71,21 @@ Default port is 3141, but may vary based on configuration.
 | ------ | ------------------------------------------------ | ------------------------------- | ---- |
 | GET    | `/workflows`                                     | List all workflows              | No   |
 | GET    | `/workflows/:id`                                 | Get workflow details            | No   |
+| GET    | `/workflows/executions`                          | List workflow executions        | No   |
 | POST   | `/workflows/:id/execute`                         | Execute workflow                | Yes  |
 | POST   | `/workflows/:id/stream`                          | Stream workflow execution (SSE) | Yes  |
 | POST   | `/workflows/:id/executions/:executionId/suspend` | Suspend execution               | No\* |
 | POST   | `/workflows/:id/executions/:executionId/resume`  | Resume execution                | No\* |
 | GET    | `/workflows/:id/executions/:executionId/state`   | Get execution state             | No   |
+
+### Workflow Execution List Filters
+
+`GET /workflows/executions` supports these query params:
+
+- `workflowId`, `status`, `from`, `to`, `limit`, `offset`
+- `userId`
+- `metadata` (URL-encoded JSON object)
+- `metadata.<key>` (for single metadata key filters, e.g. `metadata.tenantId=acme`)
 
 ### Workflow Request Format
 

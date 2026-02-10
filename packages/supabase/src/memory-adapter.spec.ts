@@ -603,6 +603,8 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
         status: "completed",
         from: new Date("2024-01-01T00:00:00Z"),
         to: new Date("2024-01-03T00:00:00Z"),
+        userId: "user-1",
+        metadata: { tenantId: "acme" },
         limit: 10,
         offset: 5,
       });
@@ -611,8 +613,10 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       const builder = supabaseMock.getLast("voltagent_memory_workflow_states");
       expect(builder.eq).toHaveBeenCalledWith("workflow_id", "workflow-1");
       expect(builder.eq).toHaveBeenCalledWith("status", "completed");
+      expect(builder.eq).toHaveBeenCalledWith("user_id", "user-1");
       expect(builder.gte).toHaveBeenCalledWith("created_at", "2024-01-01T00:00:00.000Z");
       expect(builder.lte).toHaveBeenCalledWith("created_at", "2024-01-03T00:00:00.000Z");
+      expect(builder.contains).toHaveBeenCalledWith("metadata", { tenantId: "acme" });
       expect(builder.order).toHaveBeenCalledWith("created_at", { ascending: false });
       expect(builder.range).toHaveBeenCalledWith(5, 14);
     });

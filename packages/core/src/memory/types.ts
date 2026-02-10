@@ -193,6 +193,8 @@ export interface WorkflowRunQuery {
   to?: Date;
   limit?: number;
   offset?: number;
+  userId?: string;
+  metadata?: Record<string, unknown>;
 }
 
 // ============================================================================

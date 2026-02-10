@@ -102,7 +102,7 @@ Get the raw OpenAPI 3.1 spec at [`http://localhost:3141/doc`](http://localhost:3
 ### Workflow Endpoints
 
 - `GET /workflows` - List all workflows
-- `GET /workflows/executions` - List workflow executions (filters via query params; `workflowId` optional)
+- `GET /workflows/executions` - List workflow executions (filters via query params; supports `workflowId`, `status`, `from`, `to`, `userId`, `metadata`)
 - `POST /workflows/:id/execute` - Execute workflow
 - `POST /workflows/:id/stream` - Stream workflow execution (SSE)
 - `POST /workflows/:id/executions/:executionId/suspend` - Suspend execution

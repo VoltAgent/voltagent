@@ -615,6 +615,40 @@ describe("InMemoryStorageAdapter", () => {
       expect(result[0]?.id).toBe("exec-completed");
     });
 
+    it("should filter workflow states by userId and metadata", async () => {
+      await storage.setWorkflowState(
+        "exec-1",
+        baseState({
+          id: "exec-1",
+          status: "completed",
+          userId: "user-1",
+          metadata: { tenantId: "acme", region: "us-east-1", tags: { plan: "pro" } },
+          createdAt: new Date("2024-01-02T00:00:00Z"),
+          updatedAt: new Date("2024-01-02T00:00:00Z"),
+        }),
+      );
+      await storage.setWorkflowState(
+        "exec-2",
+        baseState({
+          id: "exec-2",
+          status: "completed",
+          userId: "user-2",
+          metadata: { tenantId: "globex", region: "eu-west-1" },
+          createdAt: new Date("2024-01-03T00:00:00Z"),
+          updatedAt: new Date("2024-01-03T00:00:00Z"),
+        }),
+      );
+
+      const result = await storage.queryWorkflowRuns({
+        workflowId: "workflow-123",
+        userId: "user-1",
+        metadata: { tenantId: "acme", region: "us-east-1", tags: { plan: "pro" } },
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.id).toBe("exec-1");
+    });
+
     it("should respect from/to and pagination", async () => {
       await storage.setWorkflowState(
         "exec-1",

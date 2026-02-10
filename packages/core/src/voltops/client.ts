@@ -931,6 +931,22 @@ export class VoltOpsClient implements IVoltOpsClient {
     databaseId: string,
     input: ManagedMemoryQueryWorkflowRunsInput,
   ): Promise<WorkflowStateEntry[]> {
+    const metadataQueryParams =
+      input.metadata && Object.keys(input.metadata).length > 0
+        ? Object.fromEntries(
+            Object.entries(input.metadata).map(([key, value]) => [
+              `metadata.${key}`,
+              value === null
+                ? "null"
+                : typeof value === "string"
+                  ? value
+                  : typeof value === "number" || typeof value === "boolean"
+                    ? String(value)
+                    : safeStringify(value),
+            ]),
+          )
+        : undefined;
+
     const query = this.buildQueryString({
       workflowId: input.workflowId,
       status: input.status,
@@ -938,6 +954,8 @@ export class VoltOpsClient implements IVoltOpsClient {
       to: input.to?.toISOString(),
       limit: input.limit,
       offset: input.offset,
+      userId: input.userId,
+      ...(metadataQueryParams ?? {}),
     });
 
     const payload = await this.request<{

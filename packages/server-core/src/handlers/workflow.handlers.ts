@@ -1,4 +1,4 @@
-import type { ServerProviderDeps, WorkflowStateEntry } from "@voltagent/core";
+import type { ServerProviderDeps, WorkflowRunQuery, WorkflowStateEntry } from "@voltagent/core";
 import { zodSchemaToJsonUI } from "@voltagent/core";
 import { type Logger, safeStringify } from "@voltagent/internal";
 import type { ApiResponse, ErrorResponse } from "../types";
@@ -542,47 +542,146 @@ function formatWorkflowState(workflowState: WorkflowStateEntry) {
   };
 }
 
+type WorkflowRunsQuery = {
+  status?: string | number;
+  from?: string | number;
+  to?: string | number;
+  limit?: string | number;
+  offset?: string | number;
+  workflowId?: string | number;
+  userId?: string | number;
+  metadata?: string;
+} & Record<string, string | number | undefined>;
+
+const WORKFLOW_RUN_STATUSES = new Set<WorkflowStateEntry["status"]>([
+  "running",
+  "suspended",
+  "completed",
+  "cancelled",
+  "error",
+]);
+
+const WORKFLOW_RUN_STATUS_ALIASES: Partial<Record<string, WorkflowStateEntry["status"]>> = {
+  success: "completed",
+  pending: "running",
+};
+
+function normalizeWorkflowRunStatus(value: string | number | undefined) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  const resolved = WORKFLOW_RUN_STATUS_ALIASES[normalized] ?? normalized;
+
+  if (WORKFLOW_RUN_STATUSES.has(resolved as WorkflowStateEntry["status"])) {
+    return resolved as WorkflowStateEntry["status"];
+  }
+
+  return undefined;
+}
+
+function parseQueryNumber(value: string | number | undefined, options?: { min?: number }) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed)) {
+    return undefined;
+  }
+
+  if (options?.min !== undefined && parsed < options.min) {
+    return undefined;
+  }
+
+  return parsed;
+}
+
+function parseQueryDate(value: string | number | undefined) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const parsed = new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+
+  return parsed;
+}
+
+function parseMetadataFilterValue(value: string | number) {
+  if (typeof value === "number") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function parseMetadataFilters(query: WorkflowRunsQuery | undefined, logger: Logger) {
+  const metadataFilters: Record<string, unknown> = {};
+
+  const rawMetadata = query?.metadata;
+  if (typeof rawMetadata === "string") {
+    try {
+      const parsed = JSON.parse(rawMetadata);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        Object.assign(metadataFilters, parsed as Record<string, unknown>);
+      }
+    } catch (error) {
+      logger.warn("Ignoring invalid workflow metadata filter payload", {
+        metadata: rawMetadata,
+        error,
+      });
+    }
+  }
+
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (!key.startsWith("metadata.") || value === undefined) {
+      continue;
+    }
+
+    const metadataKey = key.slice("metadata.".length).trim();
+    if (!metadataKey) {
+      continue;
+    }
+
+    metadataFilters[metadataKey] = parseMetadataFilterValue(value);
+  }
+
+  return Object.keys(metadataFilters).length > 0 ? metadataFilters : undefined;
+}
+
 /**
  * Handler for listing workflow execution runs
  */
 export async function handleListWorkflowRuns(
   workflowId: string | undefined,
-  query:
-    | {
-        status?: string;
-        from?: string;
-        to?: string;
-        limit?: string;
-        offset?: string;
-        workflowId?: string;
-      }
-    | undefined,
+  query: WorkflowRunsQuery | undefined,
   deps: ServerProviderDeps,
   logger: Logger,
 ): Promise<ApiResponse> {
   try {
-    const effectiveWorkflowId = query?.workflowId ?? workflowId;
+    const effectiveWorkflowId =
+      query?.workflowId !== undefined ? String(query.workflowId) : workflowId;
+    const metadataFilters = parseMetadataFilters(query, logger);
 
-    const filters: any = {
+    const filters: WorkflowRunQuery = {
       workflowId: effectiveWorkflowId,
-      status: query?.status as WorkflowStateEntry["status"] | undefined,
-      limit: query?.limit ? Number(query.limit) : undefined,
-      offset: query?.offset ? Number(query.offset) : undefined,
+      status: normalizeWorkflowRunStatus(query?.status),
+      limit: parseQueryNumber(query?.limit, { min: 1 }),
+      offset: parseQueryNumber(query?.offset, { min: 0 }),
+      userId: query?.userId !== undefined ? String(query.userId) : undefined,
+      metadata: metadataFilters,
     };
 
-    if (query?.from) {
-      const fromDate = new Date(query.from);
-      if (!Number.isNaN(fromDate.getTime())) {
-        filters.from = fromDate;
-      }
-    }
-
-    if (query?.to) {
-      const toDate = new Date(query.to);
-      if (!Number.isNaN(toDate.getTime())) {
-        filters.to = toDate;
-      }
-    }
+    filters.from = parseQueryDate(query?.from);
+    filters.to = parseQueryDate(query?.to);
 
     if (effectiveWorkflowId) {
       const registeredWorkflow = deps.workflowRegistry.getWorkflow(effectiveWorkflowId);

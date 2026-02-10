@@ -31,30 +31,47 @@ import {
 /**
  * Workflow list query parameters schema
  */
-const WorkflowListQuerySchema = t.Object({
-  workflowId: t.Optional(t.String({ description: "Filter by workflow ID" })),
-  status: t.Optional(
-    t.Union(
-      [
-        t.Literal("pending"),
-        t.Literal("running"),
-        t.Literal("success"),
-        t.Literal("error"),
-        t.Literal("suspended"),
-        t.Literal("cancelled"),
-      ],
-      { description: "Filter by execution status" },
+const WorkflowListQuerySchema = t.Object(
+  {
+    workflowId: t.Optional(t.String({ description: "Filter by workflow ID" })),
+    status: t.Optional(
+      t.Union(
+        [
+          t.Literal("pending"),
+          t.Literal("running"),
+          t.Literal("success"),
+          t.Literal("completed"),
+          t.Literal("error"),
+          t.Literal("suspended"),
+          t.Literal("cancelled"),
+        ],
+        { description: "Filter by execution status" },
+      ),
     ),
-  ),
-  limit: t.Optional(
-    t.Number({
-      minimum: 1,
-      maximum: 100,
-      description: "Maximum number of executions to return",
-    }),
-  ),
-  offset: t.Optional(t.Number({ minimum: 0, description: "Number of executions to skip" })),
-});
+    from: t.Optional(
+      t.String({ description: "Filter runs created at or after this ISO timestamp" }),
+    ),
+    to: t.Optional(
+      t.String({ description: "Filter runs created at or before this ISO timestamp" }),
+    ),
+    userId: t.Optional(t.String({ description: "Filter by user ID" })),
+    metadata: t.Optional(
+      t.String({
+        description:
+          'Filter by metadata as a JSON object string (e.g. {"tenantId":"acme"}). You can also use query keys prefixed with metadata., such as metadata.tenantId=acme.',
+      }),
+    ),
+    limit: t.Optional(
+      t.Number({
+        minimum: 1,
+        maximum: 100,
+        description: "Maximum number of executions to return",
+      }),
+    ),
+    offset: t.Optional(t.Number({ minimum: 0, description: "Number of executions to skip" })),
+  },
+  { additionalProperties: true },
+);
 
 /**
  * Workflow ID parameter schema

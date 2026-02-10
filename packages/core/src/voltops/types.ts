@@ -1172,6 +1172,8 @@ export interface ManagedMemoryQueryWorkflowRunsInput {
   to?: Date;
   limit?: number;
   offset?: number;
+  userId?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ManagedMemoryWorkflowStateUpdateInput {

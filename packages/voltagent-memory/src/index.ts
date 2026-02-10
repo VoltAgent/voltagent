@@ -12,6 +12,7 @@ import {
   type VectorAdapter,
   type VectorItem,
   type VoltOpsClient,
+  type WorkflowRunQuery,
   type WorkflowStateEntry,
   type WorkingMemoryScope,
 } from "@voltagent/core";
@@ -414,14 +415,7 @@ export class ManagedMemoryAdapter implements StorageAdapter {
     });
   }
 
-  queryWorkflowRuns(query: {
-    workflowId?: string;
-    status?: WorkflowStateEntry["status"];
-    from?: Date;
-    to?: Date;
-    limit?: number;
-    offset?: number;
-  }): Promise<WorkflowStateEntry[]> {
+  queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
     return this.withClientContext(({ client, database }) => {
       this.log("Querying managed memory workflow states", safeStringify(query));
       return client.managedMemory.workflowStates.query(database.id, query);

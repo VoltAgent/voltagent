@@ -66,6 +66,8 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
       status: "completed",
       from: new Date("2024-01-01T00:00:00Z"),
       to: new Date("2024-01-03T00:00:00Z"),
+      userId: "user-1",
+      metadata: { tenantId: "acme" },
       limit: 5,
       offset: 2,
     });
@@ -76,12 +78,17 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
     expect(sql).toContain("workflow_id = ?");
     expect(sql).toContain("status = ?");
     expect(sql).toContain("created_at >=");
+    expect(sql).toContain("user_id = ?");
+    expect(sql).toContain("json_extract(metadata, ?) = json(?)");
     expect(sql).toContain("ORDER BY created_at DESC");
     expect(args).toEqual([
       "workflow-1",
       "completed",
       "2024-01-01T00:00:00.000Z",
       "2024-01-03T00:00:00.000Z",
+      "user-1",
+      '$."tenantId"',
+      '"acme"',
       5,
       2,
     ]);

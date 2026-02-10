@@ -123,14 +123,22 @@ Retrieve executions for a workflow using query parameters.
 
 **Query Parameters:**
 
-| Name         | Type              | Description                                                                  |
-| ------------ | ----------------- | ---------------------------------------------------------------------------- |
-| `workflowId` | string (optional) | Workflow ID to filter executions (omit to get all)                           |
-| `status`     | string (optional) | Filter by status (`running`, `suspended`, `completed`, `cancelled`, `error`) |
-| `from`       | string (optional) | ISO timestamp to filter executions created after this time                   |
-| `to`         | string (optional) | ISO timestamp to filter executions created before this time                  |
-| `limit`      | number (optional) | Max results to return                                                        |
-| `offset`     | number (optional) | Offset for pagination                                                        |
+| Name             | Type              | Description                                                                                       |
+| ---------------- | ----------------- | ------------------------------------------------------------------------------------------------- |
+| `workflowId`     | string (optional) | Workflow ID to filter executions (omit to get all)                                                |
+| `status`         | string (optional) | Filter by status (`running`, `suspended`, `completed`, `cancelled`, `error`)                      |
+| `from`           | string (optional) | ISO timestamp to filter executions created on/after this time                                     |
+| `to`             | string (optional) | ISO timestamp to filter executions created on/before this time                                    |
+| `userId`         | string (optional) | Filter executions by user ID                                                                      |
+| `metadata`       | string (optional) | JSON object filter for execution metadata (URL-encoded), e.g. `{"tenantId":"acme","region":"eu"}` |
+| `metadata.<key>` | string (optional) | Filter a specific metadata key, e.g. `metadata.tenantId=acme`                                     |
+| `limit`          | number (optional) | Max results to return                                                                             |
+| `offset`         | number (optional) | Offset for pagination                                                                             |
+
+**Status aliases:**
+
+- `success` is treated as `completed`
+- `pending` is treated as `running`
 
 **Response:**
 
@@ -143,6 +151,7 @@ Retrieve executions for a workflow using query parameters.
       "workflowId": "order-approval",
       "workflowName": "Order Approval Workflow",
       "status": "completed",
+      "userId": "user-123",
       "input": {
         "employeeId": "sample-employeeId",
         "amount": 42,
@@ -200,6 +209,18 @@ Retrieve executions for a workflow using query parameters.
 
 ```bash
 curl "http://localhost:3141/workflows/executions?workflowId=order-approval&status=completed&limit=20&offset=0"
+```
+
+**Filter by user and tenant metadata (multi-tenant):**
+
+```bash
+curl "http://localhost:3141/workflows/executions?workflowId=order-approval&userId=user-123&metadata.tenantId=acme&limit=20"
+```
+
+**Filter by metadata JSON object:**
+
+```bash
+curl "http://localhost:3141/workflows/executions?metadata=%7B%22tenantId%22%3A%22acme%22%2C%22region%22%3A%22eu%22%7D"
 ```
 
 **List all executions:**

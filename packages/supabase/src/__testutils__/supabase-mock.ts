@@ -44,6 +44,7 @@ export const createQueryBuilder = (result: SupabaseResult) => {
   builder.gte = vi.fn(() => builder);
   builder.lte = vi.fn(() => builder);
   builder.range = vi.fn(() => builder);
+  builder.contains = vi.fn(() => builder);
   // single() resolves to the same shape as an awaited query
   builder.single = vi.fn(() => Promise.resolve(result));
   return builder;

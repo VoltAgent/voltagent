@@ -14,6 +14,7 @@ import type {
   GetConversationStepsOptions,
   GetMessagesOptions,
   StorageAdapter,
+  WorkflowRunQuery,
   WorkflowStateEntry,
   WorkingMemoryScope,
 } from "@voltagent/core";
@@ -1320,14 +1321,7 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   /**
    * Query workflow states with optional filters
    */
-  async queryWorkflowRuns(query: {
-    workflowId?: string;
-    status?: WorkflowStateEntry["status"];
-    from?: Date;
-    to?: Date;
-    limit?: number;
-    offset?: number;
-  }): Promise<WorkflowStateEntry[]> {
+  async queryWorkflowRuns(query: WorkflowRunQuery): Promise<WorkflowStateEntry[]> {
     await this.initPromise;
 
     const workflowStatesTable = this.getTableName(`${this.tablePrefix}_workflow_states`);
@@ -1353,6 +1347,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
     if (query.to) {
       conditions.push(`created_at <= $${paramIndex++}`);
       params.push(query.to);
+    }
+
+    if (query.userId) {
+      conditions.push(`user_id = $${paramIndex++}`);
+      params.push(query.userId);
+    }
+
+    if (query.metadata && Object.keys(query.metadata).length > 0) {
+      conditions.push(`metadata @> $${paramIndex++}::jsonb`);
+      params.push(safeStringify(query.metadata));
     }
 
     let sql = `SELECT * FROM ${workflowStatesTable}`;

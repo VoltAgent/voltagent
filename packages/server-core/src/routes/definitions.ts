@@ -433,7 +433,7 @@ export const WORKFLOW_ROUTES = {
     path: "/workflows/executions",
     summary: "List workflow executions (query-driven)",
     description:
-      "Retrieve workflow executions using query params (workflowId, status, from, to, limit, offset) without path parameters.",
+      "Retrieve workflow executions using query params (workflowId, status, from, to, limit, offset, userId) without path parameters. You can also filter metadata with `metadata` (JSON object) or key-based params such as `metadata.tenantId=acme`.",
     tags: ["Workflow Management"],
     operationId: "listWorkflowRuns",
     responses: {
