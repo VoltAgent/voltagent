@@ -117,7 +117,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -154,7 +154,7 @@ importers:
         specifier: ^21.0.0
         version: 21.1.1
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -191,7 +191,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -267,7 +267,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -388,7 +388,7 @@ importers:
         specifier: ^2.0.2
         version: link:../../packages/a2a-server
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.3
@@ -477,7 +477,7 @@ importers:
   examples/with-agent-tool:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       ai:
         specifier: ^6.0.0
@@ -502,7 +502,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.3
@@ -539,7 +539,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -573,7 +573,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -716,7 +716,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -756,7 +756,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/server-hono':
         specifier: ^2.0.6
@@ -796,7 +796,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -836,7 +836,7 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/server-hono':
         specifier: ^2.0.6
@@ -882,7 +882,7 @@ importers:
   examples/with-cloudflare-workers:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/serverless-hono':
         specifier: ^2.0.8
@@ -916,7 +916,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1012,7 +1012,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1046,7 +1046,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1080,7 +1080,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1114,7 +1114,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1142,7 +1142,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1225,7 +1225,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1265,7 +1265,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1299,7 +1299,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1333,7 +1333,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1361,7 +1361,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1395,7 +1395,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1503,7 +1503,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/langfuse-exporter':
         specifier: ^2.0.2
@@ -1565,7 +1565,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1599,7 +1599,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1630,7 +1630,7 @@ importers:
   examples/with-mcp-server:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1664,7 +1664,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -1695,7 +1695,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1735,7 +1735,7 @@ importers:
         specifier: ^11.0.0
         version: 11.1.7(@nestjs/common@11.1.7)(@nestjs/core@11.1.7)
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/server-core':
         specifier: ^2.1.5
@@ -1781,7 +1781,7 @@ importers:
   examples/with-netlify-functions:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/serverless-hono':
         specifier: ^2.0.8
@@ -1821,7 +1821,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -1927,7 +1927,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/internal':
         specifier: ^1.0.3
@@ -2045,7 +2045,7 @@ importers:
         specifier: ^4.0.0
         version: 4.0.1(embla-carousel@8.6.0)(typescript@5.9.3)(vite@7.2.7)(vue-router@4.5.1)(vue@3.5.22)(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2079,7 +2079,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/evals':
         specifier: ^2.0.3
@@ -2113,7 +2113,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2147,7 +2147,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2184,7 +2184,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2224,7 +2224,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2270,7 +2270,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2316,7 +2316,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2353,7 +2353,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2390,7 +2390,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2424,7 +2424,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2455,7 +2455,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2483,7 +2483,7 @@ importers:
   examples/with-resumable-streams:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2517,7 +2517,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2551,7 +2551,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2585,7 +2585,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2625,7 +2625,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2662,7 +2662,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2699,7 +2699,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2733,7 +2733,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2767,7 +2767,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2804,7 +2804,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -2838,7 +2838,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2872,7 +2872,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2909,7 +2909,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2943,7 +2943,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -2977,7 +2977,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3029,7 +3029,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3066,7 +3066,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3109,7 +3109,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3152,7 +3152,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3183,7 +3183,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3217,7 +3217,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.1(zod@3.25.76)
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3248,7 +3248,7 @@ importers:
   examples/with-voltops-resumable-streams:
     dependencies:
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/logger':
         specifier: ^2.0.2
@@ -3279,7 +3279,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3316,7 +3316,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3353,7 +3353,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3387,7 +3387,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3421,7 +3421,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3458,7 +3458,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3492,7 +3492,7 @@ importers:
         specifier: ^0.1.21
         version: link:../../packages/cli
       '@voltagent/core':
-        specifier: ^2.3.7
+        specifier: ^2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -3523,7 +3523,7 @@ importers:
   examples/with-zapier-mcp:
     dependencies:
       '@voltagent/core':
-        specifier: ~2.3.7
+        specifier: ~2.3.8
         version: link:../../packages/core
       '@voltagent/libsql':
         specifier: ^2.1.1
@@ -14866,8 +14866,8 @@ packages:
     dev: false
     optional: true
 
-  /@oxc-project/types@0.112.0:
-    resolution: {integrity: sha512-m6RebKHIRsax2iCwVpYW2ErQwa4ywHJrE4sCK3/8JK8ZZAWOKXaRJFl/uP51gaVyyXlaS4+chU1nSCdzYf6QqQ==}
+  /@oxc-project/types@0.113.0:
+    resolution: {integrity: sha512-Tp3XmgxwNQ9pEN9vxgJBAqdRamHibi76iowQ38O2I4PMpcvNRQNVsU2n1x1nv9yh0XoTrGFzf7cZSGxmixxrhA==}
     dev: true
 
   /@oxc-project/types@0.94.0:
@@ -17076,8 +17076,8 @@ packages:
   /@repeaterjs/repeater@3.0.6:
     resolution: {integrity: sha512-Javneu5lsuhwNCryN+pXH93VPQ8g0dBX7wItHFgYiwQmzE1sVdg5tWHiOgHywzL2W21XQopa7IwIEnNbmeUJYA==}
 
-  /@rolldown/binding-android-arm64@1.0.0-rc.3:
-    resolution: {integrity: sha512-0T1k9FinuBZ/t7rZ8jN6OpUKPnUjNdYHoj/cESWrQ3ZraAJ4OMm6z7QjSfCxqj8mOp9kTKc1zHK3kGz5vMu+nQ==}
+  /@rolldown/binding-android-arm64@1.0.0-rc.4:
+    resolution: {integrity: sha512-vRq9f4NzvbdZavhQbjkJBx7rRebDKYR9zHfO/Wg486+I7bSecdUapzCm5cyXoK+LHokTxgSq7A5baAXUZkIz0w==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [android]
@@ -17085,8 +17085,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-darwin-arm64@1.0.0-rc.3:
-    resolution: {integrity: sha512-JWWLzvcmc/3pe7qdJqPpuPk91SoE/N+f3PcWx/6ZwuyDVyungAEJPvKm/eEldiDdwTmaEzWfIR+HORxYWrCi1A==}
+  /@rolldown/binding-darwin-arm64@1.0.0-rc.4:
+    resolution: {integrity: sha512-kFgEvkWLqt3YCgKB5re9RlIrx9bRsvyVUnaTakEpOPuLGzLpLapYxE9BufJNvPg8GjT6mB1alN4yN1NjzoeM8Q==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [darwin]
@@ -17094,8 +17094,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-darwin-x64@1.0.0-rc.3:
-    resolution: {integrity: sha512-MTakBxfx3tde5WSmbHxuqlDsIW0EzQym+PJYGF4P6lG2NmKzi128OGynoFUqoD5ryCySEY85dug4v+LWGBElIw==}
+  /@rolldown/binding-darwin-x64@1.0.0-rc.4:
+    resolution: {integrity: sha512-JXmaOJGsL/+rsmMfutcDjxWM2fTaVgCHGoXS7nE8Z3c9NAYjGqHvXrAhMUZvMpHS/k7Mg+X7n/MVKb7NYWKKww==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [darwin]
@@ -17103,8 +17103,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-freebsd-x64@1.0.0-rc.3:
-    resolution: {integrity: sha512-jje3oopyOLs7IwfvXoS6Lxnmie5JJO7vW29fdGFu5YGY1EDbVDhD+P9vDihqS5X6fFiqL3ZQZCMBg6jyHkSVww==}
+  /@rolldown/binding-freebsd-x64@1.0.0-rc.4:
+    resolution: {integrity: sha512-ep3Catd6sPnHTM0P4hNEvIv5arnDvk01PfyJIJ+J3wVCG1eEaPo09tvFqdtcaTrkwQy0VWR24uz+cb4IsK53Qw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [freebsd]
@@ -17112,8 +17112,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-arm-gnueabihf@1.0.0-rc.3:
-    resolution: {integrity: sha512-A0n8P3hdLAaqzSFrQoA42p23ZKBYQOw+8EH5r15Sa9X1kD9/JXe0YT2gph2QTWvdr0CVK2BOXiK6ENfy6DXOag==}
+  /@rolldown/binding-linux-arm-gnueabihf@1.0.0-rc.4:
+    resolution: {integrity: sha512-LwA5ayKIpnsgXJEwWc3h8wPiS33NMIHd9BhsV92T8VetVAbGe2qXlJwNVDGHN5cOQ22R9uYvbrQir2AB+ntT2w==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm]
     os: [linux]
@@ -17121,8 +17121,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-arm64-gnu@1.0.0-rc.3:
-    resolution: {integrity: sha512-kWXkoxxarYISBJ4bLNf5vFkEbb4JvccOwxWDxuK9yee8lg5XA7OpvlTptfRuwEvYcOZf+7VS69Uenpmpyo5Bjw==}
+  /@rolldown/binding-linux-arm64-gnu@1.0.0-rc.4:
+    resolution: {integrity: sha512-AC1WsGdlV1MtGay/OQ4J9T7GRadVnpYRzTcygV1hKnypbYN20Yh4t6O1Sa2qRBMqv1etulUknqXjc3CTIsBu6A==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
@@ -17130,8 +17130,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-arm64-musl@1.0.0-rc.3:
-    resolution: {integrity: sha512-Z03/wrqau9Bicfgb3Dbs6SYTHliELk2PM2LpG2nFd+cGupTMF5kanLEcj2vuuJLLhptNyS61rtk7SOZ+lPsTUA==}
+  /@rolldown/binding-linux-arm64-musl@1.0.0-rc.4:
+    resolution: {integrity: sha512-lU+6rgXXViO61B4EudxtVMXSOfiZONR29Sys5VGSetUY7X8mg9FCKIIjcPPj8xNDeYzKl+H8F/qSKOBVFJChCQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
@@ -17139,8 +17139,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-x64-gnu@1.0.0-rc.3:
-    resolution: {integrity: sha512-iSXXZsQp08CSilff/DCTFZHSVEpEwdicV3W8idHyrByrcsRDVh9sGC3sev6d8BygSGj3vt8GvUKBPCoyMA4tgQ==}
+  /@rolldown/binding-linux-x64-gnu@1.0.0-rc.4:
+    resolution: {integrity: sha512-DZaN1f0PGp/bSvKhtw50pPsnln4T13ycDq1FrDWRiHmWt1JeW+UtYg9touPFf8yt993p8tS2QjybpzKNTxYEwg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
@@ -17148,8 +17148,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-linux-x64-musl@1.0.0-rc.3:
-    resolution: {integrity: sha512-qaj+MFudtdCv9xZo9znFvkgoajLdc+vwf0Kz5N44g+LU5XMe+IsACgn3UG7uTRlCCvhMAGXm1XlpEA5bZBrOcw==}
+  /@rolldown/binding-linux-x64-musl@1.0.0-rc.4:
+    resolution: {integrity: sha512-RnGxwZLN7fhMMAItnD6dZ7lvy+TI7ba+2V54UF4dhaWa/p8I/ys1E73KO6HmPmgz92ZkfD8TXS1IMV8+uhbR9g==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
@@ -17157,8 +17157,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-openharmony-arm64@1.0.0-rc.3:
-    resolution: {integrity: sha512-U662UnMETyjT65gFmG9ma+XziENrs7BBnENi/27swZPYagubfHRirXHG2oMl+pEax2WvO7Kb9gHZmMakpYqBHQ==}
+  /@rolldown/binding-openharmony-arm64@1.0.0-rc.4:
+    resolution: {integrity: sha512-6lcI79+X8klGiGd8yHuTgQRjuuJYNggmEml+RsyN596P23l/zf9FVmJ7K0KVKkFAeYEdg0iMUKyIxiV5vebDNQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [openharmony]
@@ -17166,8 +17166,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-wasm32-wasi@1.0.0-rc.3:
-    resolution: {integrity: sha512-gekrQ3Q2HiC1T5njGyuUJoGpK/l6B/TNXKed3fZXNf9YRTJn3L5MOZsFBn4bN2+UX+8+7hgdlTcEsexX988G4g==}
+  /@rolldown/binding-wasm32-wasi@1.0.0-rc.4:
+    resolution: {integrity: sha512-wz7ohsKCAIWy91blZ/1FlpPdqrsm1xpcEOQVveWoL6+aSPKL4VUcoYmmzuLTssyZxRpEwzuIxL/GDsvpjaBtOw==}
     engines: {node: '>=14.0.0'}
     cpu: [wasm32]
     requiresBuild: true
@@ -17176,8 +17176,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-win32-arm64-msvc@1.0.0-rc.3:
-    resolution: {integrity: sha512-85y5JifyMgs8m5K2XzR/VDsapKbiFiohl7s5lEj7nmNGO0pkTXE7q6TQScei96BNAsoK7JC3pA7ukA8WRHVJpg==}
+  /@rolldown/binding-win32-arm64-msvc@1.0.0-rc.4:
+    resolution: {integrity: sha512-cfiMrfuWCIgsFmcVG0IPuO6qTRHvF7NuG3wngX1RZzc6dU8FuBFb+J3MIR5WrdTNozlumfgL4cvz+R4ozBCvsQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [win32]
@@ -17185,8 +17185,8 @@ packages:
     dev: true
     optional: true
 
-  /@rolldown/binding-win32-x64-msvc@1.0.0-rc.3:
-    resolution: {integrity: sha512-a4VUQZH7LxGbUJ3qJ/TzQG8HxdHvf+jOnqf7B7oFx1TEBm+j2KNL2zr5SQ7wHkNAcaPevF6gf9tQnVBnC4mD+A==}
+  /@rolldown/binding-win32-x64-msvc@1.0.0-rc.4:
+    resolution: {integrity: sha512-p6UeR9y7ht82AH57qwGuFYn69S6CZ7LLKdCKy/8T3zS9VTrJei2/CGsTUV45Da4Z9Rbhc7G4gyWQ/Ioamqn09g==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [win32]
@@ -17206,8 +17206,8 @@ packages:
     resolution: {integrity: sha512-qWhDs6yFGR5xDfdrwiSa3CWGIHxD597uGE/A9xGqytBjANvh4rLCTTkq7szhMV4+Ygh+PMS90KVJ8xWG/TkX4w==}
     dev: false
 
-  /@rolldown/pluginutils@1.0.0-rc.3:
-    resolution: {integrity: sha512-eybk3TjzzzV97Dlj5c+XrBFW57eTNhzod66y9HrBlzJ6NsCrWCp/2kaPS3K9wJmurBC0Tdw4yPjXKZqlznim3Q==}
+  /@rolldown/pluginutils@1.0.0-rc.4:
+    resolution: {integrity: sha512-1BrrmTu0TWfOP1riA8uakjFc9bpIUGzVKETsOtzY39pPga8zELGDl8eu1Dx7/gjM5CAz14UknsUMpBO8L+YntQ==}
     dev: true
 
   /@rollup/plugin-alias@5.1.1(rollup@4.50.2):
@@ -36755,7 +36755,7 @@ packages:
     resolution: {integrity: sha512-IXgzBWvWQwE6PrDI05OvmXUIruQTcoMDzRsOd5CDvHCVLcLHMTSYvOK5Cm46kWqlV3yAbuSpBZdJ5oP5OUoStg==}
     dev: false
 
-  /rolldown-plugin-dts@0.16.11(rolldown@1.0.0-rc.3)(typescript@5.9.2):
+  /rolldown-plugin-dts@0.16.11(rolldown@1.0.0-rc.4)(typescript@5.9.2):
     resolution: {integrity: sha512-9IQDaPvPqTx3RjG2eQCK5GYZITo203BxKunGI80AGYicu1ySFTUyugicAaTZWRzFWh9DSnzkgNeMNbDWBbSs0w==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
@@ -36783,34 +36783,34 @@ packages:
       dts-resolver: 2.1.2
       get-tsconfig: 4.10.1
       magic-string: 0.30.19
-      rolldown: 1.0.0-rc.3
+      rolldown: 1.0.0-rc.4
       typescript: 5.9.2
     transitivePeerDependencies:
       - oxc-resolver
       - supports-color
     dev: true
 
-  /rolldown@1.0.0-rc.3:
-    resolution: {integrity: sha512-Po/YZECDOqVXjIXrtC5h++a5NLvKAQNrd9ggrIG3sbDfGO5BqTUsrI6l8zdniKRp3r5Tp/2JTrXqx4GIguFCMw==}
+  /rolldown@1.0.0-rc.4:
+    resolution: {integrity: sha512-V2tPDUrY3WSevrvU2E41ijZlpF+5PbZu4giH+VpNraaadsJGHa4fR6IFwsocVwEXDoAdIv5qgPPxgrvKAOIPtA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     dependencies:
-      '@oxc-project/types': 0.112.0
-      '@rolldown/pluginutils': 1.0.0-rc.3
+      '@oxc-project/types': 0.113.0
+      '@rolldown/pluginutils': 1.0.0-rc.4
     optionalDependencies:
-      '@rolldown/binding-android-arm64': 1.0.0-rc.3
-      '@rolldown/binding-darwin-arm64': 1.0.0-rc.3
-      '@rolldown/binding-darwin-x64': 1.0.0-rc.3
-      '@rolldown/binding-freebsd-x64': 1.0.0-rc.3
-      '@rolldown/binding-linux-arm-gnueabihf': 1.0.0-rc.3
-      '@rolldown/binding-linux-arm64-gnu': 1.0.0-rc.3
-      '@rolldown/binding-linux-arm64-musl': 1.0.0-rc.3
-      '@rolldown/binding-linux-x64-gnu': 1.0.0-rc.3
-      '@rolldown/binding-linux-x64-musl': 1.0.0-rc.3
-      '@rolldown/binding-openharmony-arm64': 1.0.0-rc.3
-      '@rolldown/binding-wasm32-wasi': 1.0.0-rc.3
-      '@rolldown/binding-win32-arm64-msvc': 1.0.0-rc.3
-      '@rolldown/binding-win32-x64-msvc': 1.0.0-rc.3
+      '@rolldown/binding-android-arm64': 1.0.0-rc.4
+      '@rolldown/binding-darwin-arm64': 1.0.0-rc.4
+      '@rolldown/binding-darwin-x64': 1.0.0-rc.4
+      '@rolldown/binding-freebsd-x64': 1.0.0-rc.4
+      '@rolldown/binding-linux-arm-gnueabihf': 1.0.0-rc.4
+      '@rolldown/binding-linux-arm64-gnu': 1.0.0-rc.4
+      '@rolldown/binding-linux-arm64-musl': 1.0.0-rc.4
+      '@rolldown/binding-linux-x64-gnu': 1.0.0-rc.4
+      '@rolldown/binding-linux-x64-musl': 1.0.0-rc.4
+      '@rolldown/binding-openharmony-arm64': 1.0.0-rc.4
+      '@rolldown/binding-wasm32-wasi': 1.0.0-rc.4
+      '@rolldown/binding-win32-arm64-msvc': 1.0.0-rc.4
+      '@rolldown/binding-win32-x64-msvc': 1.0.0-rc.4
     dev: true
 
   /rollup-plugin-inject@3.0.2:
@@ -38992,8 +38992,8 @@ packages:
       empathic: 2.0.0
       hookable: 5.5.3
       publint: 0.3.12
-      rolldown: 1.0.0-rc.3
-      rolldown-plugin-dts: 0.16.11(rolldown@1.0.0-rc.3)(typescript@5.9.2)
+      rolldown: 1.0.0-rc.4
+      rolldown-plugin-dts: 0.16.11(rolldown@1.0.0-rc.4)(typescript@5.9.2)
       semver: 7.7.2
       tinyexec: 1.0.1
       tinyglobby: 0.2.15
