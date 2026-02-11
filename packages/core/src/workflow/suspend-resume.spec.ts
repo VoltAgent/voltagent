@@ -1051,6 +1051,9 @@ describe.sequential("workflow suspend/resume functionality", () => {
 
     const resumed = await registry.resumeSuspendedWorkflow(workflow.id, suspended.executionId);
     expect(resumed?.status).toBe("error");
-    expect(resumed?.error?.message).toBe("Missing resume input");
+    expect(resumed?.error).toBeInstanceOf(Error);
+    if (resumed?.error instanceof Error) {
+      expect(resumed.error.message).toBe("Missing resume input");
+    }
   });
 });
