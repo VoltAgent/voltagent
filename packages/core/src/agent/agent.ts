@@ -4403,7 +4403,17 @@ export class Agent {
     baseInstructions: string,
     runtimeToolkits: Toolkit[] = [],
   ): string {
-    const toolkits = [...this.toolManager.getToolkits()];
+    type ToolkitInstructionSource = {
+      name: string;
+      instructions?: string;
+      addInstructions?: boolean;
+    };
+
+    const toolkits: ToolkitInstructionSource[] = this.toolManager.getToolkits().map((toolkit) => ({
+      name: toolkit.name,
+      instructions: toolkit.instructions,
+      addInstructions: toolkit.addInstructions,
+    }));
     const toolkitIndexByName = new Map<string, number>();
 
     for (const [index, toolkit] of toolkits.entries()) {
@@ -4411,15 +4421,20 @@ export class Agent {
     }
 
     for (const runtimeToolkit of runtimeToolkits) {
+      const runtimeToolkitSource: ToolkitInstructionSource = {
+        name: runtimeToolkit.name,
+        instructions: runtimeToolkit.instructions,
+        addInstructions: runtimeToolkit.addInstructions,
+      };
       const existingIndex = toolkitIndexByName.get(runtimeToolkit.name);
       if (existingIndex === undefined) {
         toolkitIndexByName.set(runtimeToolkit.name, toolkits.length);
-        toolkits.push(runtimeToolkit);
+        toolkits.push(runtimeToolkitSource);
         continue;
       }
 
       // Keep static ordering, but prefer runtime toolkit definitions on name collisions.
-      toolkits[existingIndex] = runtimeToolkit;
+      toolkits[existingIndex] = runtimeToolkitSource;
     }
 
     let toolInstructions = "";
