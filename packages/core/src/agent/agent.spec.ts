@@ -2937,6 +2937,56 @@ describe("Agent", () => {
       expect(retrieverIndex).toBeLessThan(workingMemoryIndex);
     });
 
+    it("should prefer runtime toolkit instructions when toolkit names collide", async () => {
+      const staticToolkit = {
+        name: "shared-toolkit",
+        addInstructions: true,
+        instructions: "Static toolkit instructions",
+        tools: [
+          new Tool({
+            name: "static-tool",
+            description: "Static tool",
+            parameters: z.object({}),
+            execute: vi.fn(),
+          }),
+        ],
+      };
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        toolkits: [staticToolkit],
+      });
+
+      const runtimeToolkit = {
+        name: "shared-toolkit",
+        addInstructions: true,
+        instructions: "Runtime toolkit instructions",
+        tools: [
+          new Tool({
+            name: "runtime-tool",
+            description: "Runtime tool",
+            parameters: z.object({}),
+            execute: vi.fn(),
+          }),
+        ],
+      };
+
+      const operationContext = (agent as any).createOperationContext("test");
+      const enriched = await (agent as any).enrichInstructions(
+        "Base content",
+        null,
+        null,
+        operationContext,
+        [runtimeToolkit],
+      );
+
+      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Runtime toolkit instructions");
+      expect(enriched).not.toContain("Static toolkit instructions");
+    });
+
     it("should add supervisor instructions when sub-agents are present", async () => {
       const subAgent = new Agent({
         name: "SubAgent",

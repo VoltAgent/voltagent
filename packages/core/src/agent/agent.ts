@@ -4403,16 +4403,28 @@ export class Agent {
     baseInstructions: string,
     runtimeToolkits: Toolkit[] = [],
   ): string {
-    const toolkits = [...this.toolManager.getToolkits(), ...runtimeToolkits];
-    let toolInstructions = "";
-    const seenToolkitNames = new Set<string>();
+    const toolkits = [...this.toolManager.getToolkits()];
+    const toolkitIndexByName = new Map<string, number>();
 
-    for (const toolkit of toolkits) {
-      if (seenToolkitNames.has(toolkit.name)) {
+    for (const [index, toolkit] of toolkits.entries()) {
+      toolkitIndexByName.set(toolkit.name, index);
+    }
+
+    for (const runtimeToolkit of runtimeToolkits) {
+      const existingIndex = toolkitIndexByName.get(runtimeToolkit.name);
+      if (existingIndex === undefined) {
+        toolkitIndexByName.set(runtimeToolkit.name, toolkits.length);
+        toolkits.push(runtimeToolkit);
         continue;
       }
-      seenToolkitNames.add(toolkit.name);
 
+      // Keep static ordering, but prefer runtime toolkit definitions on name collisions.
+      toolkits[existingIndex] = runtimeToolkit;
+    }
+
+    let toolInstructions = "";
+
+    for (const toolkit of toolkits) {
       if (toolkit.addInstructions && toolkit.instructions) {
         toolInstructions += `\n\n${toolkit.instructions}`;
       }
