@@ -49,6 +49,12 @@ const DEFAULT_MAX_PROMPT_CHARS = 12000;
 
 const SKILLS_SYSTEM_PROMPT = `You can manage workspace skills.
 
+Important:
+- Access skills with workspace skill tools only.
+- Do not use sandbox commands (for example: execute_command, ls /skills, cat /skills/...) to inspect skills.
+- Use dedicated skill read tools for references, scripts, and assets.
+
+Use these tools:
 - workspace_list_skills: list available skills
 - workspace_search_skills: search skill instructions
 - workspace_read_skill: read skill instructions
@@ -918,7 +924,10 @@ export class WorkspaceSkills {
       const skills = Array.from(this.skillsById.values()).slice(0, maxAvailable);
       if (skills.length > 0) {
         const lines = skills.map((skill) => {
-          const description = skill.description ? ` - ${skill.description}` : "";
+          const descriptionText = skill.description
+            ? truncateText(skill.description, maxInstructionChars)
+            : "";
+          const description = descriptionText ? ` - ${descriptionText}` : "";
           return `- ${skill.name} (${skill.id})${description}`;
         });
         sections.push(`Available skills:\n${lines.join("\n")}`);
@@ -928,18 +937,18 @@ export class WorkspaceSkills {
     if (includeActivated) {
       const activeIds = Array.from(this.activeSkills).slice(0, maxActivated);
       if (activeIds.length > 0) {
-        const entries: string[] = [];
-        for (const id of activeIds) {
-          const skill = await this.loadSkill(id, { context: options.context });
-          if (!skill) {
-            continue;
-          }
-          const header = `${skill.name} (${skill.id})`;
-          const body = truncateText(skill.instructions || "", maxInstructionChars);
-          entries.push(`${header}\n${body}`);
-        }
-        if (entries.length > 0) {
-          sections.push(`Activated skills:\n${entries.join("\n\n")}`);
+        const lines = activeIds
+          .map((id) => this.skillsById.get(id))
+          .filter((skill): skill is WorkspaceSkillMetadata => Boolean(skill))
+          .map((skill) => {
+            const descriptionText = skill.description
+              ? truncateText(skill.description, maxInstructionChars)
+              : "";
+            const description = descriptionText ? ` - ${descriptionText}` : "";
+            return `- ${skill.name} (${skill.id})${description}`;
+          });
+        if (lines.length > 0) {
+          sections.push(`Activated skills:\n${lines.join("\n")}`);
         }
       }
     }

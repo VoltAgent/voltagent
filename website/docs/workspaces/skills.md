@@ -113,6 +113,7 @@ const agent = new Agent({
 ```
 
 The injected prompt is wrapped in `<workspace_skills>` tags and can include both available and activated skills.
+It includes skill metadata (name, id, description). To read full `SKILL.md` instructions, use `workspace_read_skill`.
 
 ## Skill tools
 
