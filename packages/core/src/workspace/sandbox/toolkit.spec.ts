@@ -2,9 +2,10 @@ import { promises as fs } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
+import { z as z4 } from "zod/v4";
 import { Workspace } from "../index";
 import { LocalSandbox } from "./local";
-import { createWorkspaceSandboxToolkit } from "./toolkit";
+import { createExecuteCommandParametersSchema, createWorkspaceSandboxToolkit } from "./toolkit";
 
 const buildExecuteOptions = () => ({
   toolContext: { callId: "tool-call-1" },
@@ -92,5 +93,15 @@ describe("Workspace sandbox toolkit", () => {
 
     sandbox.destroy();
     await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("builds execute_command schema compatible with zod v4 json schema conversion", () => {
+    const schema = createExecuteCommandParametersSchema(z4 as any);
+    expect(() =>
+      z4.toJSONSchema(schema as any, {
+        target: "draft-7",
+        io: "input",
+      }),
+    ).not.toThrow();
   });
 });

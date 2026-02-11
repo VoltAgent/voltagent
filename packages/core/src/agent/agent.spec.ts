@@ -2269,6 +2269,66 @@ describe("Agent", () => {
   });
 
   describe("Tool Execution", () => {
+    it("should include instructions from dynamic toolkits in the system prompt", async () => {
+      const toolkitTool = new Tool({
+        name: "test-tool",
+        description: "Test tool",
+        parameters: z.object({}),
+        execute: vi.fn().mockResolvedValue("ok"),
+      });
+
+      const dynamicTools = vi.fn().mockResolvedValue([
+        {
+          name: "dynamic-toolkit",
+          description: "Runtime toolkit",
+          addInstructions: true,
+          instructions: "My test instructions",
+          tools: [toolkitTool],
+        },
+      ]);
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Base instructions",
+        model: mockModel as any,
+        tools: dynamicTools,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue({
+        text: "Generated response",
+        content: [{ type: "text", text: "Generated response" }],
+        reasoning: [],
+        files: [],
+        sources: [],
+        toolCalls: [],
+        toolResults: [],
+        finishReason: "stop",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          totalTokens: 15,
+        },
+        warnings: [],
+        request: {},
+        response: {
+          id: "test-response",
+          modelId: "test-model",
+          timestamp: new Date(),
+          messages: [],
+        },
+        steps: [],
+      } as any);
+
+      await agent.generateText("Hello");
+
+      expect(dynamicTools).toHaveBeenCalledTimes(1);
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
+      const systemMessage = callArgs.messages?.find((message: any) => message.role === "system");
+
+      expect(systemMessage?.content).toContain("Base instructions");
+      expect(systemMessage?.content).toContain("My test instructions");
+    });
+
     it("should execute tools during generation", async () => {
       const mockExecute = vi.fn().mockResolvedValue("Tool result");
       const tool = new Tool({
@@ -2980,6 +3040,7 @@ describe("Agent", () => {
         null,
         null,
         operationContext,
+        [],
       );
 
       expect(systemMessage).toMatchObject({
@@ -3009,7 +3070,13 @@ describe("Agent", () => {
       );
 
       expect(enrichSpy).toHaveBeenCalledOnce();
-      expect(enrichSpy).toHaveBeenCalledWith("String instructions", null, null, operationContext);
+      expect(enrichSpy).toHaveBeenCalledWith(
+        "String instructions",
+        null,
+        null,
+        operationContext,
+        [],
+      );
 
       expect(systemMessage).toMatchObject({
         role: "system",
