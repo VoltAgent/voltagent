@@ -1,14 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { z as z4 } from "zod/v4";
 import { Workspace } from "..";
 import type { EmbeddingAdapter } from "../../memory/adapters/embedding/types";
 import { InMemoryVectorAdapter } from "../../memory/adapters/vector/in-memory";
 import { WorkspaceFilesystem } from "../filesystem";
-import {
-  WorkspaceSearch,
-  createWorkspaceIndexContentParametersSchema,
-  createWorkspaceSearchToolkit,
-} from "./index";
+import { WorkspaceSearch, createWorkspaceSearchToolkit } from "./index";
 
 const createExecuteOptions = () => ({
   systemContext: new Map(),
@@ -25,16 +20,6 @@ const buildFileData = (content: string) => {
 };
 
 describe("WorkspaceSearch", () => {
-  it("builds workspace_index_content schema compatible with zod v4 json schema conversion", () => {
-    const schema = createWorkspaceIndexContentParametersSchema(z4 as any);
-    expect(() =>
-      z4.toJSONSchema(schema as any, {
-        target: "draft-7",
-        io: "input",
-      }),
-    ).not.toThrow();
-  });
-
   it("forwards operation context from toolkit to search calls", async () => {
     const indexPaths = vi.fn(async () => ({
       indexed: 0,

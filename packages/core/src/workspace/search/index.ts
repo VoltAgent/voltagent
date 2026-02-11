@@ -713,16 +713,6 @@ const formatSearchResults = (results: WorkspaceSearchResult[]): string => {
   return Array.isArray(truncatedOutput) ? truncatedOutput.join("\n") : truncatedOutput;
 };
 
-export const createWorkspaceIndexContentParametersSchema = (zodApi: typeof z = z) =>
-  zodApi.object({
-    path: zodApi.string().describe("Path identifier for the content"),
-    content: zodApi.string().describe("Raw content to index"),
-    metadata: zodApi
-      .record(zodApi.string(), zodApi.unknown())
-      .optional()
-      .describe("Optional metadata"),
-  });
-
 export const createWorkspaceSearchToolkit = (
   context: WorkspaceSearchToolkitContext,
   options: WorkspaceSearchToolkitOptions = {},
@@ -804,7 +794,11 @@ export const createWorkspaceSearchToolkit = (
     description: options.customIndexContentDescription || WORKSPACE_INDEX_CONTENT_TOOL_DESCRIPTION,
     tags: [...WORKSPACE_SEARCH_TAGS],
     needsApproval: resolveToolPolicy("workspace_index_content")?.needsApproval,
-    parameters: createWorkspaceIndexContentParametersSchema(),
+    parameters: z.object({
+      path: z.string().describe("Path identifier for the content"),
+      content: z.string().describe("Raw content to index"),
+      metadata: z.record(z.unknown()).optional().describe("Optional metadata"),
+    }),
     execute: async (input, executeOptions) =>
       withOperationTimeout(
         async () => {

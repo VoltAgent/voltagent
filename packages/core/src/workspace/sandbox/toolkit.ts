@@ -104,23 +104,6 @@ const DEFAULT_EVICTION_BYTES = 20000 * 4;
 const DEFAULT_EVICTION_PATH = "/sandbox_results";
 const TRUNCATION_SUFFIX = "\n... [output truncated]";
 
-export const createExecuteCommandParametersSchema = (zodApi: typeof z = z) =>
-  zodApi.object({
-    command: zodApi.string().describe("Command to execute"),
-    args: zodApi.array(zodApi.string()).optional().describe("Command arguments"),
-    cwd: zodApi.string().optional().describe("Working directory for the command"),
-    timeout_ms: zodApi.coerce.number().optional().describe("Timeout in milliseconds"),
-    env: zodApi
-      .record(zodApi.string(), zodApi.string())
-      .optional()
-      .describe("Environment variables to set"),
-    stdin: zodApi.string().optional().describe("Optional stdin input for the command"),
-    max_output_bytes: zodApi.coerce
-      .number()
-      .optional()
-      .describe("Maximum output bytes to capture per stream (stdout or stderr)"),
-  });
-
 const normalizeEvictionPath = (value?: string): string => {
   const trimmed = value?.trim();
   const base = trimmed && trimmed.length > 0 ? trimmed : DEFAULT_EVICTION_PATH;
@@ -204,7 +187,18 @@ export const createWorkspaceSandboxToolkit = (
     description: options.customToolDescription || EXECUTE_COMMAND_TOOL_DESCRIPTION,
     tags: [...WORKSPACE_SANDBOX_TAGS],
     needsApproval: resolveToolPolicy("execute_command")?.needsApproval,
-    parameters: createExecuteCommandParametersSchema(),
+    parameters: z.object({
+      command: z.string().describe("Command to execute"),
+      args: z.array(z.string()).optional().describe("Command arguments"),
+      cwd: z.string().optional().describe("Working directory for the command"),
+      timeout_ms: z.coerce.number().optional().describe("Timeout in milliseconds"),
+      env: z.record(z.string()).optional().describe("Environment variables to set"),
+      stdin: z.string().optional().describe("Optional stdin input for the command"),
+      max_output_bytes: z.coerce
+        .number()
+        .optional()
+        .describe("Maximum output bytes to capture per stream (stdout or stderr)"),
+    }),
     execute: async (input, executeOptions) =>
       withOperationTimeout(
         async () => {
