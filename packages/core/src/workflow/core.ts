@@ -925,6 +925,8 @@ export function createWorkflow<
           input,
           context: options?.context ? Array.from(options.context.entries()) : undefined,
           workflowState: workflowStateStore,
+          userId: options?.userId,
+          conversationId: options?.conversationId,
           metadata: {
             traceId: rootSpan.spanContext().traceId,
             spanId: rootSpan.spanContext().spanId,

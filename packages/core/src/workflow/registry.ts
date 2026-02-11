@@ -189,8 +189,8 @@ export class WorkflowRegistry extends SimpleEventEmitter {
     // Run the workflow with resume options
     const resumeOptions: any = {
       executionId,
-      userId: workflowState.metadata?.userId,
-      conversationId: workflowState.metadata?.conversationId,
+      userId: workflowState.userId ?? workflowState.metadata?.userId,
+      conversationId: workflowState.conversationId ?? workflowState.metadata?.conversationId,
       suspendController: suspendController,
       resumeFrom: {
         executionId,
@@ -219,8 +219,12 @@ export class WorkflowRegistry extends SimpleEventEmitter {
     this.logger.debug(`Resuming workflow from step ${resumeOptions.resumeFrom.resumeStepIndex}`);
 
     try {
-      // Always use original workflow input - resumeData is passed through resumeOptions
-      const inputToUse = workflowState.input;
+      // Prefer persisted workflow input; fall back to the workflow-start event payload.
+      // This keeps resume compatible with adapters that don't store input in a dedicated column.
+      const workflowStartEventInput = workflowState.events?.find(
+        (event) => event.type === "workflow-start",
+      )?.input;
+      const inputToUse = workflowState.input ?? workflowStartEventInput;
 
       // Add resumeData to resumeOptions if provided
       if (resumeData !== undefined) {

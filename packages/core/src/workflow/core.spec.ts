@@ -133,6 +133,44 @@ describe.sequential("workflow.run", () => {
       plan: "pro",
     });
   });
+
+  it("should persist userId and conversationId in workflow state", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "workflow-user-context",
+        name: "Workflow User Context",
+        input: z.object({
+          value: z.string(),
+        }),
+        result: z.object({
+          value: z.string(),
+        }),
+        memory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const result = await workflow.run(
+      { value: "ok" },
+      {
+        userId: "user-test-1",
+        conversationId: "conv-test-1",
+      },
+    );
+
+    const persistedState = await memory.getWorkflowState(result.executionId);
+
+    expect(persistedState?.userId).toBe("user-test-1");
+    expect(persistedState?.conversationId).toBe("conv-test-1");
+  });
 });
 
 describe.sequential("workflow streaming", () => {

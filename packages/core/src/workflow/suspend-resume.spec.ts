@@ -849,4 +849,208 @@ describe.sequential("workflow suspend/resume functionality", () => {
     expect(resumed.status).toBe("completed");
     expect(resumed.result).toBe("resumed successfully");
   });
+
+  it("should resume using workflow-start event input when persisted input is missing", async () => {
+    const { memory } = createTestStores();
+    let firstRun = true;
+
+    const workflow = createWorkflow(
+      {
+        id: "test-resume-input-from-events",
+        name: "Test Resume Input From Events",
+        result: z.object({ value: z.string() }),
+        memory,
+      },
+      andThen({
+        id: "step",
+        name: "Step",
+        execute: async ({ data, suspend }) => {
+          if (firstRun) {
+            firstRun = false;
+            await suspend("Pause for event-input fallback test");
+          }
+          return { value: data as string };
+        },
+      }),
+    );
+
+    registry.registerWorkflow(workflow);
+
+    const controller = createSuspendController();
+    const suspended = await workflow.run("event-fallback-input", {
+      suspendController: controller,
+    });
+
+    expect(suspended.status).toBe("suspended");
+
+    const persistedState = await memory.getWorkflowState(suspended.executionId);
+    expect(persistedState?.events?.some((event) => event.type === "workflow-start")).toBe(true);
+
+    await memory.updateWorkflowState(suspended.executionId, {
+      input: undefined,
+    });
+
+    const resumed = await registry.resumeSuspendedWorkflow(workflow.id, suspended.executionId);
+
+    expect(resumed?.status).toBe("completed");
+    expect(resumed?.result).toEqual({ value: "event-fallback-input" });
+  });
+
+  it("should prefer top-level resume user context and fall back to metadata when missing", async () => {
+    const { memory } = createTestStores();
+
+    let firstRunA = true;
+    const workflowA = createWorkflow(
+      {
+        id: "test-resume-user-context-precedence",
+        name: "Test Resume User Context Precedence",
+        result: z.object({ userId: z.string(), conversationId: z.string() }),
+        memory,
+      },
+      andThen({
+        id: "step",
+        execute: async ({ state, suspend }) => {
+          if (firstRunA) {
+            firstRunA = false;
+            await suspend("Pause for precedence test");
+          }
+          return {
+            userId: state.userId as string,
+            conversationId: state.conversationId as string,
+          };
+        },
+      }),
+    );
+
+    registry.registerWorkflow(workflowA);
+
+    const suspendedA = await workflowA.run("test", {
+      userId: "original-user",
+      conversationId: "original-conversation",
+      suspendController: createSuspendController(),
+    });
+
+    expect(suspendedA.status).toBe("suspended");
+
+    await memory.updateWorkflowState(suspendedA.executionId, {
+      userId: "top-user",
+      conversationId: "top-conversation",
+      metadata: {
+        userId: "meta-user",
+        conversationId: "meta-conversation",
+      },
+    });
+
+    const resumedA = await registry.resumeSuspendedWorkflow(workflowA.id, suspendedA.executionId);
+    expect(resumedA?.status).toBe("completed");
+    expect(resumedA?.result).toEqual({
+      userId: "top-user",
+      conversationId: "top-conversation",
+    });
+
+    let firstRunB = true;
+    const workflowB = createWorkflow(
+      {
+        id: "test-resume-user-context-metadata-fallback",
+        name: "Test Resume User Context Metadata Fallback",
+        result: z.object({ userId: z.string(), conversationId: z.string() }),
+        memory,
+      },
+      andThen({
+        id: "step",
+        execute: async ({ state, suspend }) => {
+          if (firstRunB) {
+            firstRunB = false;
+            await suspend("Pause for metadata fallback test");
+          }
+          return {
+            userId: state.userId as string,
+            conversationId: state.conversationId as string,
+          };
+        },
+      }),
+    );
+
+    registry.registerWorkflow(workflowB);
+
+    const suspendedB = await workflowB.run("test", {
+      userId: "original-user-b",
+      conversationId: "original-conversation-b",
+      suspendController: createSuspendController(),
+    });
+
+    expect(suspendedB.status).toBe("suspended");
+
+    await memory.updateWorkflowState(suspendedB.executionId, {
+      userId: undefined,
+      conversationId: undefined,
+      metadata: {
+        userId: "meta-user-b",
+        conversationId: "meta-conversation-b",
+      },
+    });
+
+    const resumedB = await registry.resumeSuspendedWorkflow(workflowB.id, suspendedB.executionId);
+    expect(resumedB?.status).toBe("completed");
+    expect(resumedB?.result).toEqual({
+      userId: "meta-user-b",
+      conversationId: "meta-conversation-b",
+    });
+  });
+
+  it("should fail resume when both persisted input and workflow-start event input are missing", async () => {
+    const { memory } = createTestStores();
+    let firstRun = true;
+
+    const workflow = createWorkflow(
+      {
+        id: "test-resume-missing-input-sources",
+        name: "Test Resume Missing Input Sources",
+        result: z.object({ value: z.string() }),
+        memory,
+      },
+      andThen({
+        id: "step",
+        name: "Step",
+        execute: async ({ data, suspend }) => {
+          if (firstRun) {
+            firstRun = false;
+            await suspend("Pause before removing input sources");
+          }
+
+          if (typeof data !== "string") {
+            throw new Error("Missing resume input");
+          }
+
+          return { value: data };
+        },
+      }),
+    );
+
+    registry.registerWorkflow(workflow);
+
+    const suspended = await workflow.run("missing-input", {
+      suspendController: createSuspendController(),
+    });
+
+    expect(suspended.status).toBe("suspended");
+
+    const persistedState = await memory.getWorkflowState(suspended.executionId);
+    expect(persistedState?.suspension).toBeDefined();
+
+    await memory.updateWorkflowState(suspended.executionId, {
+      input: undefined,
+      events: [],
+      suspension: persistedState?.suspension
+        ? {
+            ...persistedState.suspension,
+            checkpoint: undefined,
+          }
+        : undefined,
+    });
+
+    const resumed = await registry.resumeSuspendedWorkflow(workflow.id, suspended.executionId);
+    expect(resumed?.status).toBe("error");
+    expect(resumed?.error?.message).toBe("Missing resume input");
+  });
 });
