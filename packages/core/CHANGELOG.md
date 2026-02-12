@@ -1,5 +1,124 @@
 # @voltagent/core
 
+## 2.4.0
+
+### Minor Changes
+
+- [#1055](https://github.com/VoltAgent/voltagent/pull/1055) [`21891b4`](https://github.com/VoltAgent/voltagent/commit/21891b4574df7c771fb9b12f04402c2ffa1201bd) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add tool-aware live-eval payloads and a deterministic tool-call accuracy scorer
+
+  ### What's New
+  - `@voltagent/core`
+    - Live eval payload now includes `messages`, `toolCalls`, and `toolResults`.
+    - If `toolCalls`/`toolResults` are not explicitly provided, they are derived from the normalized message/step chain.
+    - New exported eval types: `AgentEvalToolCall` and `AgentEvalToolResult`.
+  - `@voltagent/scorers`
+    - Added prebuilt `createToolCallAccuracyScorerCode` for deterministic tool evaluation.
+    - Supports both single-tool checks (`expectedTool`) and ordered tool-chain checks (`expectedToolOrder`).
+    - Supports strict and lenient matching modes.
+
+  ### Code Examples
+
+  Built-in tool-call scorer:
+
+  ```ts
+  import { createToolCallAccuracyScorerCode } from "@voltagent/scorers";
+
+  const toolOrderScorer = createToolCallAccuracyScorerCode({
+    expectedToolOrder: ["searchProducts", "checkInventory"],
+    strictMode: false,
+  });
+  ```
+
+  Custom scorer using `toolCalls` + `toolResults`:
+
+  ```ts
+  import { buildScorer } from "@voltagent/core";
+
+  interface ToolEvalPayload extends Record<string, unknown> {
+    toolCalls?: Array<{ toolName?: string }>;
+    toolResults?: Array<{ isError?: boolean; error?: unknown }>;
+  }
+
+  const toolExecutionHealthScorer = buildScorer<ToolEvalPayload, Record<string, unknown>>({
+    id: "tool-execution-health",
+    label: "Tool Execution Health",
+  })
+    .score(({ payload }) => {
+      const toolCalls = payload.toolCalls ?? [];
+      const toolResults = payload.toolResults ?? [];
+
+      const failedResults = toolResults.filter(
+        (result) => result.isError === true || Boolean(result.error)
+      );
+      const completionRatio =
+        toolCalls.length === 0 ? 1 : Math.min(toolResults.length / toolCalls.length, 1);
+
+      return {
+        score: Math.max(0, completionRatio - failedResults.length * 0.25),
+        metadata: {
+          toolCallCount: toolCalls.length,
+          toolResultCount: toolResults.length,
+          failedResultCount: failedResults.length,
+        },
+      };
+    })
+    .build();
+  ```
+
+- [#1054](https://github.com/VoltAgent/voltagent/pull/1054) [`3556385`](https://github.com/VoltAgent/voltagent/commit/3556385f207de8c669b878ccea8257a421e15c0f) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `onToolError` hook for customizing tool error payloads before serialization
+
+  Example:
+
+  ```ts
+  import { Agent, createHooks } from "@voltagent/core";
+
+  const agent = new Agent({
+    name: "Assistant",
+    instructions: "Use tools when needed.",
+    model: "openai/gpt-4o-mini",
+    hooks: createHooks({
+      onToolError: async ({ originalError, error }) => {
+        const maybeAxios = (originalError as any).isAxiosError === true;
+        if (!maybeAxios) {
+          return;
+        }
+
+        return {
+          output: {
+            error: true,
+            name: error.name,
+            message: originalError.message,
+            code: (originalError as any).code,
+            status: (originalError as any).response?.status,
+          },
+        };
+      },
+    }),
+  });
+  ```
+
+### Patch Changes
+
+- [#1052](https://github.com/VoltAgent/voltagent/pull/1052) [`156c98e`](https://github.com/VoltAgent/voltagent/commit/156c98e738c0e86dc9fc2dc4d55ee48c8e1e2576) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: expose workspace in tool execution context - #1046
+  - Add `workspace?: Workspace` to `OperationContext`, so custom tools can access `options.workspace` during tool calls.
+  - Wire agent operation context creation to attach the configured workspace automatically.
+  - Add regression coverage showing a tool call can read workspace filesystem content and fetch sandbox output in the same execution.
+
+- [#1058](https://github.com/VoltAgent/voltagent/pull/1058) [`480981a`](https://github.com/VoltAgent/voltagent/commit/480981afe136b575d2ba6d943924dddc5e07da44) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: make workspace toolkit schemas compatible with Zod v4 record handling - #1043
+
+  ### What Changed
+  - Updated workspace toolkit input schemas to avoid single-argument `z.record(...)` usage that can fail in Zod v4 JSON schema conversion paths.
+  - `workspace_sandbox.execute_command` now uses `z.record(z.string(), z.string())` for `env`.
+  - `workspace_index_content` now uses `z.record(z.string(), z.unknown())` for `metadata`.
+
+  ### Why
+
+  With `@voltagent/core` + `zod@4`, some workspace toolkit flows could fail at runtime with:
+
+  `Cannot read properties of undefined (reading '_zod')`
+
+  This patch ensures built-in workspace toolkits (such as sandbox and search indexing) work reliably across supported Zod versions.
+
 ## 2.3.8
 
 ### Patch Changes
