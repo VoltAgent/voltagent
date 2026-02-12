@@ -51,3 +51,9 @@ VoltAgent is an open-source TypeScript framework for creating and managing AI ag
 ```bash
 npm create voltagent-app@latest -- --example with-live-evals
 ```
+
+## What This Example Demonstrates
+
+- Live eval setup with multiple scorer types (heuristic, LLM-based, and custom)
+- Custom tool-call order scorer using `payload.toolCalls`
+- Custom scorer access to `payload.toolResults` for tool execution quality checks

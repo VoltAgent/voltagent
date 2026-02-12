@@ -208,6 +208,8 @@ export type {
   AgentEvalSamplingPolicy,
   AgentEvalOperationType,
   AgentEvalPayload,
+  AgentEvalToolCall,
+  AgentEvalToolResult,
   AgentEvalContext,
   GuardrailAction,
   GuardrailSeverity,

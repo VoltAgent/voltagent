@@ -665,6 +665,30 @@ export type AgentEvalOperationType =
   | "streamObject"
   | "workflow";
 
+export interface AgentEvalToolCall extends Record<string, unknown> {
+  toolCallId?: string;
+  toolName?: string;
+  arguments?: Record<string, unknown> | null;
+  content?: string;
+  stepIndex?: number;
+  usage?: UsageInfo | null;
+  subAgentId?: string;
+  subAgentName?: string;
+}
+
+export interface AgentEvalToolResult extends Record<string, unknown> {
+  toolCallId?: string;
+  toolName?: string;
+  result?: unknown;
+  content?: string;
+  stepIndex?: number;
+  usage?: UsageInfo | null;
+  subAgentId?: string;
+  subAgentName?: string;
+  isError?: boolean;
+  error?: unknown;
+}
+
 export interface AgentEvalPayload {
   operationId: string;
   operationType: AgentEvalOperationType;
@@ -672,6 +696,22 @@ export interface AgentEvalPayload {
   output?: string | null;
   rawInput?: string | UIMessage[] | BaseMessage[];
   rawOutput?: unknown;
+  /**
+   * Full message/step chain available to scorers.
+   * Includes normalized input messages (when available) plus execution steps
+   * such as `text`, `tool_call`, and `tool_result`.
+   */
+  messages?: StepWithContent[];
+  /**
+   * Tool-call events captured during execution.
+   * If provider-native tool call payloads are available they are preserved.
+   */
+  toolCalls?: AgentEvalToolCall[];
+  /**
+   * Tool-result events captured during execution.
+   * If provider-native tool result payloads are available they are preserved.
+   */
+  toolResults?: AgentEvalToolResult[];
   userId?: string;
   conversationId?: string;
   traceId: string;
