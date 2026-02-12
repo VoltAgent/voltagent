@@ -3352,6 +3352,7 @@ export class Agent {
       abortController,
       userId: options?.userId,
       conversationId: options?.conversationId,
+      workspace: this.workspace,
       parentAgentId: options?.parentAgentId,
       traceContext,
       startTime: startTimeDate,

@@ -10,6 +10,7 @@ import type { StreamEventType } from "../utils/streams";
 import type { Voice } from "../voice";
 import type { VoltOpsClient } from "../voltops/client";
 import type { DynamicValue, DynamicValueOptions } from "../voltops/types";
+import type { Workspace } from "../workspace";
 import {
   Agent,
   type AgentHooks,
@@ -525,6 +526,10 @@ describe("Agent Type System", () => {
 
       expectTypeOf(context).toEqualTypeOf<UserContext>();
       expectTypeOf(context.get("key")).toEqualTypeOf<unknown>();
+    });
+
+    it("should expose optional workspace on OperationContext", () => {
+      expectTypeOf<OperationContext["workspace"]>().toEqualTypeOf<Workspace | undefined>();
     });
   });
 

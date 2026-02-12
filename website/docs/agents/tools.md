@@ -339,6 +339,7 @@ The `options` parameter includes all `OperationContext` fields plus an **optiona
 - `operationId`: Unique identifier for this operation
 - `userId`: Optional user identifier
 - `conversationId`: Optional conversation identifier
+- `workspace`: Workspace instance configured on the agent (if available)
 - `context`: Map for user-provided context values
 - `systemContext`: Map for internal system values
 - `isActive`: Whether the operation is still active
@@ -349,6 +350,31 @@ The `options` parameter includes all `OperationContext` fields plus an **optiona
 - `elicitation`: Optional function for requesting user input
 
 > - Since `ToolExecuteOptions` extends `Partial<OperationContext>`, you can name the second parameter anything you like (`options`, `context`, `ctx`, etc.)
+
+Example: reading workspace content inside a custom tool call:
+
+```ts
+const readWorkspaceData = createTool({
+  name: "read_workspace_data",
+  description: "Read a workspace file and inspect sandbox output",
+  parameters: z.object({ path: z.string() }),
+  execute: async ({ path }, options) => {
+    const workspace = options?.workspace;
+    if (!workspace) {
+      return "No workspace configured";
+    }
+
+    const content = await workspace.filesystem.read(path);
+    const sandboxResult = await workspace.sandbox?.execute({
+      command: "cat",
+      args: [path],
+      operationContext: options as any,
+    });
+
+    return `filesystem=${content}\nsandbox=${sandboxResult?.stdout ?? ""}`;
+  },
+});
+```
 
 ## Cancellation with AbortController
 

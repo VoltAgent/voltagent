@@ -14,6 +14,7 @@ import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { AgentRegistry } from "../registries/agent-registry";
 import { ModelProviderRegistry } from "../registries/model-provider-registry";
 import { Tool } from "../tool";
+import { Workspace } from "../workspace";
 import { Agent, renameProviderOptions } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
 import { ToolDeniedError } from "./errors";
@@ -1153,6 +1154,82 @@ describe("Agent", () => {
           tool,
           output: "tool-hook",
           error: undefined,
+        }),
+      );
+
+      operationContext.traceContext.end("completed");
+    });
+
+    it("passes workspace context to tool calls for filesystem and sandbox access", async () => {
+      const sandboxExecute = vi.fn().mockResolvedValue({
+        stdout: "sandbox-content",
+        stderr: "",
+        exitCode: 0,
+        durationMs: 5,
+        timedOut: false,
+        aborted: false,
+        stdoutTruncated: false,
+        stderrTruncated: false,
+      });
+
+      const workspace = new Workspace({
+        filesystem: {},
+        sandbox: {
+          name: "mock-sandbox",
+          status: "ready",
+          execute: sandboxExecute,
+        },
+      });
+      await workspace.filesystem.write("/docs/report.txt", "workspace-content");
+
+      const tool = new Tool({
+        name: "workspace-fetch-tool",
+        description: "Reads from workspace filesystem and sandbox",
+        parameters: z.object({}),
+        execute: async (_args, options) => {
+          const workspaceFromContext = options?.workspace;
+          if (!workspaceFromContext) {
+            return "missing-workspace";
+          }
+
+          const fileContent = (
+            await workspaceFromContext.filesystem.readRaw("/docs/report.txt")
+          ).content.join("\n");
+          const sandboxResult = await workspaceFromContext.sandbox?.execute({
+            command: "cat",
+            args: ["/docs/report.txt"],
+            operationContext: options as any,
+          });
+
+          return `${fileContent}|${sandboxResult?.stdout ?? ""}`;
+        },
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        workspace,
+        tools: [tool],
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(tool);
+      const result = await execute({});
+
+      expect(result).toBe("workspace-content|sandbox-content");
+      expect(sandboxExecute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: "cat",
+          args: ["/docs/report.txt"],
+          operationContext: expect.objectContaining({
+            operationId: operationContext.operationId,
+          }),
         }),
       );
 

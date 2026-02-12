@@ -1130,6 +1130,9 @@ export type OperationContext = {
   /** Optional conversation identifier associated with this operation */
   conversationId?: string;
 
+  /** Workspace configured on the executing agent (if any). */
+  workspace?: Workspace;
+
   /** User-managed context map for this operation */
   readonly context: Map<string | symbol, unknown>;
 
