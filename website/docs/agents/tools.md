@@ -690,7 +690,7 @@ function ReadClipboardTool({
 
 ## Agent Tool Hooks
 
-Hooks let you respond to tool execution events for logging, UI updates, or additional actions. For tool-level hooks (per tool), see the **Tool Hooks** section above.
+Hooks let you respond to tool execution events for logging, UI updates, or additional actions. Use `onToolError` when you need to customize the error payload before it is returned to the model. For tool-level hooks (per tool), see the **Tool Hooks** section above.
 
 ```ts
 import { Agent, createHooks, isAbortError } from "@voltagent/core";
@@ -715,6 +715,22 @@ const hooks = createHooks({
     } else {
       console.log(`Result:`, output);
     }
+  },
+
+  onToolError({ tool, originalError }) {
+    const maybeAxios = (originalError as any).isAxiosError === true;
+    if (!maybeAxios) {
+      return;
+    }
+
+    return {
+      output: {
+        error: true,
+        message: originalError.message,
+        code: (originalError as any).code,
+        status: (originalError as any).response?.status,
+      },
+    };
   },
 });
 

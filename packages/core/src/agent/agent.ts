@@ -105,7 +105,7 @@ import {
   type EnqueueEvalScoringArgs,
   enqueueEvalScoring as enqueueEvalScoringHelper,
 } from "./eval";
-import type { AgentHooks, OnToolEndHookResult } from "./hooks";
+import type { AgentHooks, OnToolEndHookResult, OnToolErrorHookResult } from "./hooks";
 import { stripDanglingOpenAIReasoningFromModelMessages } from "./model-message-normalizer";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type {
@@ -5312,7 +5312,8 @@ export class Agent {
             toolArguments: args,
           },
         });
-        const errorResult = buildToolErrorResult(error, toolCallId, tool.name);
+        let errorOutputOverride: unknown;
+        let hasErrorOutputOverride = false;
 
         spanOutcome = { status: "error", error: voltAgentError };
 
@@ -5332,6 +5333,20 @@ export class Agent {
           options: executionOptions,
         });
 
+        const onToolErrorResult = await hooks.onToolError?.({
+          agent: this,
+          tool,
+          args,
+          error: voltAgentError,
+          originalError: error,
+          context: oc,
+          options: executionOptions,
+        });
+        if (hasOutputOverride(onToolErrorResult)) {
+          errorOutputOverride = onToolErrorResult.output;
+          hasErrorOutputOverride = true;
+        }
+
         await hooks.onToolEnd?.({
           agent: this,
           tool,
@@ -5345,7 +5360,11 @@ export class Agent {
           oc.abortController.abort(errorValue);
         }
 
-        return errorResult;
+        if (hasErrorOutputOverride) {
+          return errorOutputOverride;
+        }
+
+        return buildToolErrorResult(error, toolCallId, tool.name);
       };
 
       const execute = tool.execute;
@@ -5964,6 +5983,17 @@ export class Agent {
       throw new Error("Provider tool did not return a result.");
     }
 
+    const hasOutputOverride = (
+      value: unknown,
+    ): value is {
+      output?: unknown;
+    } => {
+      if (!value || typeof value !== "object") {
+        return false;
+      }
+      return Object.prototype.hasOwnProperty.call(value, "output");
+    };
+
     const toolError =
       toolResult.output && typeof toolResult.output === "object" && "error" in toolResult.output
         ? String((toolResult.output as { error?: unknown }).error ?? "Tool error")
@@ -5971,6 +6001,24 @@ export class Agent {
     const hookError = toolError
       ? createVoltAgentError(toolError, { stage: "tool_execution" })
       : undefined;
+    let errorOutputOverride: unknown;
+    let hasErrorOutputOverride = false;
+
+    if (toolError && hookError) {
+      const onToolErrorResult = await hooks.onToolError?.({
+        agent: this,
+        tool: tool as any,
+        args,
+        error: hookError,
+        originalError: new Error(toolError),
+        context: oc,
+        options: executionOptions,
+      });
+      if (hasOutputOverride(onToolErrorResult)) {
+        errorOutputOverride = onToolErrorResult.output;
+        hasErrorOutputOverride = true;
+      }
+    }
 
     await hooks.onToolEnd?.({
       agent: this,
@@ -5982,6 +6030,9 @@ export class Agent {
     });
 
     if (toolError) {
+      if (hasErrorOutputOverride) {
+        return errorOutputOverride;
+      }
       throw new Error(toolError);
     }
 
@@ -6399,6 +6450,17 @@ export class Agent {
         }
         if (resOptions && typeof resOptions === "object") {
           return resOptions as OnToolEndHookResult;
+        }
+        return undefined;
+      },
+      onToolError: async (...args) => {
+        const resOptions = await options.hooks?.onToolError?.(...args);
+        const resThis = await this.hooks.onToolError?.(...args);
+        if (resThis && typeof resThis === "object") {
+          return resThis as OnToolErrorHookResult;
+        }
+        if (resOptions && typeof resOptions === "object") {
+          return resOptions as OnToolErrorHookResult;
         }
         return undefined;
       },

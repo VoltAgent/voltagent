@@ -553,6 +553,17 @@ describe("Agent Type System", () => {
           // tool/output/error types are intentionally flexible
           return { output: "override" };
         },
+        onToolError: async ({
+          context,
+          tool: _tool,
+          args: _args,
+          error: _error,
+          originalError,
+        }) => {
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          expectTypeOf(originalError).toMatchTypeOf<Error>();
+          return { output: { error: true } };
+        },
       };
 
       expectTypeOf(hooks).toMatchTypeOf<AgentHooks>();

@@ -928,6 +928,104 @@ describe("Agent", () => {
       operationContext.traceContext.end("completed");
     });
 
+    it("calls onToolError when a tool throws", async () => {
+      const onToolError = vi.fn();
+      const onToolEnd = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: createHooks({ onToolError, onToolEnd }),
+      });
+
+      const failingTool = new Tool({
+        name: "failing-tool",
+        description: "Always throws",
+        parameters: z.object({}),
+        execute: async () => {
+          throw new Error("Tool failure");
+        },
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(failingTool);
+      await execute({});
+
+      expect(onToolError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: failingTool,
+          args: {},
+          originalError: expect.objectContaining({ message: "Tool failure" }),
+          error: expect.objectContaining({
+            message: "Tool failure",
+            stage: "tool_execution",
+          }),
+        }),
+      );
+      expect(onToolEnd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: failingTool,
+          output: undefined,
+          error: expect.objectContaining({
+            message: "Tool failure",
+            stage: "tool_execution",
+          }),
+        }),
+      );
+
+      operationContext.traceContext.end("completed");
+    });
+
+    it("allows onToolError to override serialized error output", async () => {
+      const onToolError = vi.fn().mockResolvedValue({
+        output: {
+          error: true,
+          message: "Compact error payload",
+          status: 429,
+        },
+      });
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: createHooks({ onToolError }),
+      });
+
+      const failingTool = new Tool({
+        name: "failing-tool",
+        description: "Always throws",
+        parameters: z.object({}),
+        execute: async () => {
+          const error = new Error("Tool failure");
+          (error as any).stack = "should-not-be-returned";
+          throw error;
+        },
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(failingTool);
+      const result = await execute({});
+
+      expect(result).toEqual({
+        error: true,
+        message: "Compact error payload",
+        status: 429,
+      });
+      expect(onToolError).toHaveBeenCalledTimes(1);
+
+      operationContext.traceContext.end("completed");
+    });
+
     it("sanitizes circular error payloads from tools", async () => {
       const agent = new Agent({
         name: "TestAgent",
