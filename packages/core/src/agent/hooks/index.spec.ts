@@ -1,5 +1,6 @@
 import { type AgentHooks, createHooks } from ".";
 import type { Tool } from "../../tool";
+import { createVoltAgentError } from "../errors";
 import { createMockLanguageModel, createMockTool, createTestAgent } from "../test-utils";
 import type { OperationContext } from "../types";
 
@@ -372,14 +373,17 @@ describe("Agent Hooks Functionality", () => {
         startTime: new Date(),
       } as any;
 
-      const toolError = new Error("Tool execution failed");
+      const originalError = new Error("Tool execution failed");
+      const toolError = createVoltAgentError(originalError, {
+        stage: "tool_execution",
+      });
 
       await agent.hooks.onToolError?.({
         agent: agent as any,
         tool,
         args: { query: "test" },
-        error: toolError as any,
-        originalError: toolError,
+        error: toolError,
+        originalError,
         context: mockContext,
       });
 
@@ -389,7 +393,7 @@ describe("Agent Hooks Functionality", () => {
           tool,
           args: { query: "test" },
           error: toolError,
-          originalError: toolError,
+          originalError,
           context: mockContext,
         }),
       );
