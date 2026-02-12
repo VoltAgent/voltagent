@@ -332,12 +332,49 @@ function extractToolName(value: unknown): string | undefined {
 
   if (typeof value.type === "string") {
     const normalizedType = normalizeMessageType(value.type);
-    if (normalizedType !== "tool_call") {
+    if (shouldExtractToolNameFromType(normalizedType)) {
       return normalizeToolTypeName(value.type);
     }
   }
 
   return undefined;
+}
+
+function shouldExtractToolNameFromType(normalizedType: string | undefined): boolean {
+  if (!normalizedType) {
+    return false;
+  }
+
+  if (!normalizedType.startsWith("tool")) {
+    return false;
+  }
+
+  if (
+    normalizedType === "tool" ||
+    normalizedType === "tool_call" ||
+    normalizedType === "tool_result"
+  ) {
+    return false;
+  }
+
+  const streamEventPrefixes = [
+    "tool_input_",
+    "tool_output_",
+    "tool_call_",
+    "tool_result_",
+    "tool_invocation_",
+    "tool_execution_",
+  ];
+  if (streamEventPrefixes.some((prefix) => normalizedType.startsWith(prefix))) {
+    return false;
+  }
+
+  const streamEventSuffixes = ["_start", "_end", "_delta", "_chunk", "_done"];
+  if (streamEventSuffixes.some((suffix) => normalizedType.endsWith(suffix))) {
+    return false;
+  }
+
+  return normalizedType.startsWith("tool_");
 }
 
 function normalizeToolName(value: unknown): string | undefined {

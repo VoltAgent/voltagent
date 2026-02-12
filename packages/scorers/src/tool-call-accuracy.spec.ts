@@ -171,6 +171,61 @@ describe("createToolCallAccuracyScorerCode", () => {
     expect(result.score).toBe(1);
   });
 
+  it("ignores stream-event tool types when extracting tool names", async () => {
+    const scorer = createToolCallAccuracyScorerCode({
+      expectedTool: "searchProducts",
+    });
+
+    const result = await scorer.scorer({
+      payload: {
+        output: [
+          {
+            type: "tool_input_start",
+            role: "assistant",
+            content: "{}",
+          },
+          {
+            type: "tool_output_end",
+            role: "assistant",
+            content: "{}",
+          },
+          {
+            type: "tool_call_delta",
+            role: "assistant",
+            content: "{}",
+          },
+        ],
+      } satisfies ToolCallAccuracyPayload,
+      params: {} as ToolCallAccuracyParams,
+    });
+
+    expect(result.status).toBe("success");
+    expect(result.score).toBe(0);
+    expect((result.metadata?.toolCallAccuracy as Record<string, unknown>)?.actualTools).toEqual([]);
+  });
+
+  it("keeps extracting from tool_<name> type in tool call lists", async () => {
+    const scorer = createToolCallAccuracyScorerCode({
+      expectedTool: "searchProducts",
+    });
+
+    const result = await scorer.scorer({
+      payload: {
+        output: {
+          toolCalls: [
+            {
+              type: "tool_searchProducts",
+            },
+          ],
+        },
+      } satisfies ToolCallAccuracyPayload,
+      params: {} as ToolCallAccuracyParams,
+    });
+
+    expect(result.status).toBe("success");
+    expect(result.score).toBe(1);
+  });
+
   it("throws when no expected tool configuration is provided", () => {
     expect(() => createToolCallAccuracyScorerCode({})).toThrow(
       "createToolCallAccuracyScorerCode requires either expectedTool or expectedToolOrder",

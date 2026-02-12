@@ -896,24 +896,24 @@ function extractToolCallsFromMessages(
     return undefined;
   }
 
-  const toolCalls = messages
-    .map((message, index) => {
-      if (message.type !== "tool_call") {
-        return null;
-      }
+  const toolCalls: AgentEvalToolCall[] = [];
 
-      return {
-        toolCallId: message.id,
-        toolName: message.name,
-        arguments: message.arguments ?? null,
-        content: message.content,
-        stepIndex: index,
-        usage: message.usage ?? null,
-        subAgentId: message.subAgentId,
-        subAgentName: message.subAgentName,
-      };
-    })
-    .filter((entry): entry is AgentEvalToolCall => entry !== null);
+  for (const [index, message] of messages.entries()) {
+    if (message.type !== "tool_call") {
+      continue;
+    }
+
+    toolCalls.push({
+      toolCallId: message.id,
+      toolName: message.name,
+      arguments: message.arguments ?? null,
+      content: message.content,
+      stepIndex: index,
+      usage: message.usage ?? null,
+      subAgentId: message.subAgentId,
+      subAgentName: message.subAgentName,
+    });
+  }
 
   return toolCalls.length > 0 ? toolCalls : undefined;
 }
@@ -925,24 +925,24 @@ function extractToolResultsFromMessages(
     return undefined;
   }
 
-  const toolResults = messages
-    .map((message, index) => {
-      if (message.type !== "tool_result") {
-        return null;
-      }
+  const toolResults: AgentEvalToolResult[] = [];
 
-      return {
-        toolCallId: message.id,
-        toolName: message.name,
-        result: message.result ?? message.content,
-        content: message.content,
-        stepIndex: index,
-        usage: message.usage ?? null,
-        subAgentId: message.subAgentId,
-        subAgentName: message.subAgentName,
-      };
-    })
-    .filter((entry): entry is AgentEvalToolResult => entry !== null);
+  for (const [index, message] of messages.entries()) {
+    if (message.type !== "tool_result") {
+      continue;
+    }
+
+    toolResults.push({
+      toolCallId: message.id,
+      toolName: message.name,
+      result: message.result ?? message.content,
+      content: message.content,
+      stepIndex: index,
+      usage: message.usage ?? null,
+      subAgentId: message.subAgentId,
+      subAgentName: message.subAgentName,
+    });
+  }
 
   return toolResults.length > 0 ? toolResults : undefined;
 }
