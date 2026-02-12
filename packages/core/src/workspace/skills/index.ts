@@ -343,6 +343,71 @@ const parseSkillFile = (
   return { data, instructions };
 };
 
+const normalizeRelativeSkillLinkTarget = (target: string): string | null => {
+  const trimmed = target.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const withoutBrackets = trimmed.replace(/^<|>$/g, "");
+  const withoutFragment = withoutBrackets.split("#")[0] || "";
+  const withoutQuery = withoutFragment.split("?")[0] || "";
+  const normalized = normalizePath(withoutQuery.replace(/^\.\//, ""));
+  if (!normalized) {
+    return null;
+  }
+  if (
+    normalized.startsWith("/") ||
+    normalized.includes("://") ||
+    normalized.startsWith("mailto:")
+  ) {
+    return null;
+  }
+  if (normalized.includes("..")) {
+    return null;
+  }
+  return normalized;
+};
+
+const inferSkillFileAllowlistsFromInstructions = (
+  instructions: string,
+): Pick<WorkspaceSkillMetadata, "references" | "scripts" | "assets"> => {
+  const references = new Set<string>();
+  const scripts = new Set<string>();
+  const assets = new Set<string>();
+
+  const markdownLinkPattern = /\[[^\]]+\]\(([^)]+)\)/g;
+  for (const match of instructions.matchAll(markdownLinkPattern)) {
+    const rawTarget = match[1]?.trim();
+    if (!rawTarget) {
+      continue;
+    }
+    const targetWithoutTitle = rawTarget.split(/\s+/)[0] || "";
+    const normalized = normalizeRelativeSkillLinkTarget(targetWithoutTitle);
+    if (!normalized) {
+      continue;
+    }
+
+    if (normalized.startsWith("references/")) {
+      references.add(normalized);
+      continue;
+    }
+    if (normalized.startsWith("scripts/")) {
+      scripts.add(normalized);
+      continue;
+    }
+    if (normalized.startsWith("assets/")) {
+      assets.add(normalized);
+    }
+  }
+
+  return {
+    references: references.size > 0 ? Array.from(references) : undefined,
+    scripts: scripts.size > 0 ? Array.from(scripts) : undefined,
+    assets: assets.size > 0 ? Array.from(assets) : undefined,
+  };
+};
+
 type WorkspaceSkillDocument = {
   id: string;
   name: string;
@@ -589,7 +654,8 @@ export class WorkspaceSkills {
 
           const normalizedPath = normalizePath(skillPath);
           const rootPath = normalizedPath.replace(/\/SKILL\.md$/i, "");
-          const { data: frontmatter } = parseSkillFile(content);
+          const { data: frontmatter, instructions } = parseSkillFile(content);
+          const inferredFiles = inferSkillFileAllowlistsFromInstructions(instructions);
           const name =
             typeof frontmatter.name === "string" && frontmatter.name.trim().length > 0
               ? frontmatter.name.trim()
@@ -617,9 +683,9 @@ export class WorkspaceSkills {
             tags: normalizeStringArray(frontmatter.tags),
             path: skillPath,
             root: rootPath || root,
-            references: normalizeStringArray(frontmatter.references),
-            scripts: normalizeStringArray(frontmatter.scripts),
-            assets: normalizeStringArray(frontmatter.assets),
+            references: normalizeStringArray(frontmatter.references) ?? inferredFiles.references,
+            scripts: normalizeStringArray(frontmatter.scripts) ?? inferredFiles.scripts,
+            assets: normalizeStringArray(frontmatter.assets) ?? inferredFiles.assets,
           };
 
           this.skillsById.set(id, metadata);
@@ -664,6 +730,7 @@ export class WorkspaceSkills {
     });
     const content = data.content.join("\n");
     const { data: frontmatter, instructions } = parseSkillFile(content);
+    const inferredFiles = inferSkillFileAllowlistsFromInstructions(instructions);
     const detail: WorkspaceSkill = {
       ...metadata,
       description:
@@ -672,9 +739,13 @@ export class WorkspaceSkills {
           : metadata.description,
       version: typeof frontmatter.version === "string" ? frontmatter.version : metadata.version,
       tags: normalizeStringArray(frontmatter.tags) ?? metadata.tags,
-      references: normalizeStringArray(frontmatter.references) ?? metadata.references,
-      scripts: normalizeStringArray(frontmatter.scripts) ?? metadata.scripts,
-      assets: normalizeStringArray(frontmatter.assets) ?? metadata.assets,
+      references:
+        normalizeStringArray(frontmatter.references) ??
+        metadata.references ??
+        inferredFiles.references,
+      scripts:
+        normalizeStringArray(frontmatter.scripts) ?? metadata.scripts ?? inferredFiles.scripts,
+      assets: normalizeStringArray(frontmatter.assets) ?? metadata.assets ?? inferredFiles.assets,
       instructions,
     };
 

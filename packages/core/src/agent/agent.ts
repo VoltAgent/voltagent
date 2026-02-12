@@ -115,6 +115,7 @@ import type {
   ToolExecuteOptions,
   UsageInfo,
 } from "./providers/base/types";
+import { coerceStringifiedJsonToolArgs } from "./tool-input-coercion";
 export type { AgentHooks } from "./hooks";
 import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
@@ -328,6 +329,68 @@ const buildWorkspaceToolkits = (
   }
 
   return toolkits;
+};
+
+const composePrepareMessagesHooks = (
+  hooks: Array<AgentHooks["onPrepareMessages"] | null | undefined>,
+): AgentHooks["onPrepareMessages"] | undefined => {
+  const sequence = hooks.filter((hook): hook is NonNullable<AgentHooks["onPrepareMessages"]> =>
+    Boolean(hook),
+  );
+  if (sequence.length === 0) {
+    return undefined;
+  }
+
+  return async (args) => {
+    let currentArgs = args;
+    for (const hook of sequence) {
+      const result = await hook(currentArgs);
+      if (result?.messages) {
+        currentArgs = { ...currentArgs, messages: result.messages };
+      }
+    }
+    return { messages: currentArgs.messages };
+  };
+};
+
+const isWorkspaceSkillsToolkitEnabled = (options: AgentOptions["workspaceToolkits"]): boolean => {
+  if (options === false) {
+    return false;
+  }
+  if (options === undefined) {
+    return true;
+  }
+  if (options.skills === undefined) {
+    return false;
+  }
+  return options.skills !== false;
+};
+
+const resolveWorkspaceSkillsPromptHook = (
+  workspace: Workspace | undefined,
+  options: AgentOptions,
+): AgentHooks["onPrepareMessages"] | undefined => {
+  if (!workspace?.skills) {
+    return undefined;
+  }
+
+  const promptConfig = options.workspaceSkillsPrompt;
+  if (promptConfig === false) {
+    return undefined;
+  }
+
+  const hasExplicitPromptConfig = promptConfig !== undefined;
+  if (!hasExplicitPromptConfig && options.hooks?.onPrepareMessages) {
+    return undefined;
+  }
+  if (!hasExplicitPromptConfig && !isWorkspaceSkillsToolkitEnabled(options.workspaceToolkits)) {
+    return undefined;
+  }
+
+  const promptOptions =
+    typeof promptConfig === "object" && promptConfig !== null ? promptConfig : {};
+
+  return workspace.createSkillsPromptHook(promptOptions).onPrepareMessages;
 };
 
 const searchToolsParameters = z.object({
@@ -747,12 +810,19 @@ export class Agent {
     this.instructions = options.instructions;
     this.model = options.model;
     this.dynamicTools = typeof options.tools === "function" ? options.tools : undefined;
-    this.hooks = options.hooks || {};
-    this.temperature = options.temperature;
-    this.maxOutputTokens = options.maxOutputTokens;
     const globalWorkspace = AgentRegistry.getInstance().getGlobalWorkspace();
     const workspaceOption = options.workspace === undefined ? globalWorkspace : options.workspace;
     this.workspace = resolveWorkspace(workspaceOption);
+    const workspaceSkillsPromptHook = resolveWorkspaceSkillsPromptHook(this.workspace, options);
+    const onPrepareMessages = composePrepareMessagesHooks([
+      workspaceSkillsPromptHook,
+      options.hooks?.onPrepareMessages,
+    ]);
+    this.hooks = onPrepareMessages
+      ? { ...(options.hooks || {}), onPrepareMessages }
+      : options.hooks || {};
+    this.temperature = options.temperature;
+    this.maxOutputTokens = options.maxOutputTokens;
     const defaultMaxSteps = this.workspace ? 100 : 5;
     this.maxSteps = options.maxSteps ?? defaultMaxSteps;
     this.maxRetries = options.maxRetries ?? DEFAULT_LLM_MAX_RETRIES;
@@ -5864,13 +5934,36 @@ export class Agent {
         if (schema && typeof schema.safeParse === "function") {
           const parsed = schema.safeParse(rawArgs);
           if (!parsed.success) {
-            const error = new Error(
-              `Invalid arguments for tool "${name}": ${parsed.error.message}`,
+            const issues =
+              (parsed.error as { issues?: unknown; errors?: unknown }).issues ??
+              (parsed.error as { issues?: unknown; errors?: unknown }).errors ??
+              [];
+            const coercedArgs = coerceStringifiedJsonToolArgs(
+              rawArgs,
+              Array.isArray(issues) ? issues : [],
             );
-            Object.assign(error, { validationErrors: parsed.error.errors });
-            throw error;
+
+            if (coercedArgs) {
+              const reparsed = schema.safeParse(coercedArgs);
+              if (reparsed.success) {
+                parsedArgs = reparsed.data as Record<string, unknown>;
+              } else {
+                const error = new Error(
+                  `Invalid arguments for tool "${name}": ${reparsed.error.message}`,
+                );
+                Object.assign(error, { validationErrors: reparsed.error.errors });
+                throw error;
+              }
+            } else {
+              const error = new Error(
+                `Invalid arguments for tool "${name}": ${parsed.error.message}`,
+              );
+              Object.assign(error, { validationErrors: parsed.error.errors });
+              throw error;
+            }
+          } else {
+            parsedArgs = parsed.data as Record<string, unknown>;
           }
-          parsedArgs = parsed.data as Record<string, unknown>;
         }
 
         await this.ensureToolApproval(

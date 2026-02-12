@@ -255,6 +255,55 @@ Use the schema reference.`;
     expect(String(blocked)).toContain("File not allowed");
   });
 
+  it("infers reference allowlist from relative links when frontmatter list is missing", async () => {
+    const timestamp = new Date().toISOString();
+    const skillContent = `---
+name: Playwright Skill
+---
+See [Running code](references/running-code.md) for advanced commands.`;
+
+    const skillFile = {
+      content: skillContent.split("\n"),
+      created_at: timestamp,
+      modified_at: timestamp,
+    };
+
+    const referenceFile = {
+      content: ["run-code examples"],
+      created_at: timestamp,
+      modified_at: timestamp,
+    };
+
+    const workspace = new Workspace({
+      filesystem: {
+        files: {
+          "/skills/playwright/SKILL.md": skillFile,
+          "/skills/playwright/references/running-code.md": referenceFile,
+        },
+      },
+      skills: {
+        rootPaths: ["/skills"],
+        autoDiscover: false,
+      },
+    });
+
+    const toolkit = workspace.createSkillsToolkit();
+    const tool = toolkit.tools.find((entry) => entry.name === "workspace_read_skill_reference");
+    if (!tool?.execute) {
+      throw new Error("workspace_read_skill_reference tool not found");
+    }
+
+    const output = await tool.execute(
+      { skill_id: "/skills/playwright", reference: "references/running-code.md" },
+      {
+        systemContext: new Map(),
+        abortController: new AbortController(),
+      } as any,
+    );
+
+    expect(String(output)).toContain("run-code examples");
+  });
+
   it("allows listed scripts/assets with normalized paths and blocks traversal", async () => {
     const timestamp = new Date().toISOString();
     const skillContent = `---

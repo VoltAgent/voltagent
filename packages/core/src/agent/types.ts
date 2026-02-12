@@ -47,6 +47,7 @@ import type {
   WorkspaceFilesystemToolkitOptions,
   WorkspaceSandboxToolkitOptions,
   WorkspaceSearchToolkitOptions,
+  WorkspaceSkillsPromptOptions,
   WorkspaceSkillsToolkitOptions,
 } from "../workspace";
 import type { ContextInput } from "./agent";
@@ -593,6 +594,16 @@ export type AgentOptions = {
   toolRouting?: ToolRoutingConfig | false;
   workspace?: Workspace | WorkspaceConfig | false;
   workspaceToolkits?: WorkspaceToolkitOptions | false;
+  /**
+   * Controls automatic workspace skills prompt injection.
+   *
+   * - `undefined` (default): auto-inject when workspace skills are configured and no custom
+   *   `hooks.onPrepareMessages` is provided.
+   * - `true`: force auto-injection with default prompt options.
+   * - `false`: disable auto-injection.
+   * - object: force auto-injection with custom prompt options.
+   */
+  workspaceSkillsPrompt?: WorkspaceSkillsPromptOptions | boolean;
   memory?: Memory | false;
   summarization?: AgentSummarizationOptions | false;
 

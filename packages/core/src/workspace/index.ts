@@ -378,7 +378,12 @@ export class Workspace {
       mergedPolicies === undefined ? options : { ...options, toolPolicies: mergedPolicies };
     const finalOptions = this.applyOperationTimeout(mergedOptions);
     return createWorkspaceSandboxToolkit(
-      { sandbox: this.sandbox, workspace: this, filesystem: this.filesystem },
+      {
+        sandbox: this.sandbox,
+        workspace: this,
+        pathContext: this.getPathContext(),
+        filesystem: this.filesystem,
+      },
       finalOptions,
     );
   }
