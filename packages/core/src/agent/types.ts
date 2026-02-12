@@ -88,6 +88,32 @@ export type AgentFeedbackMetadata = {
   tokenId?: string;
   expiresAt?: string;
   feedbackConfig?: VoltOpsFeedbackConfig | null;
+  provided?: boolean;
+  providedAt?: string;
+  feedbackId?: string;
+};
+
+export type AgentFeedbackMarkProvidedInput = {
+  userId?: string;
+  conversationId?: string;
+  messageId?: string;
+  providedAt?: Date | string;
+  feedbackId?: string;
+};
+
+export type AgentFeedbackHandle = AgentFeedbackMetadata & {
+  isProvided: () => boolean;
+  markFeedbackProvided: (
+    input?: AgentFeedbackMarkProvidedInput,
+  ) => Promise<AgentFeedbackMetadata | null>;
+};
+
+export type AgentMarkFeedbackProvidedInput = {
+  userId: string;
+  conversationId: string;
+  messageId: string;
+  providedAt?: Date | string;
+  feedbackId?: string;
 };
 
 /**

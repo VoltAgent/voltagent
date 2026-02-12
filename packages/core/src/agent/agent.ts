@@ -129,6 +129,13 @@ import {
 } from "./context-keys";
 import { ConversationBuffer } from "./conversation-buffer";
 import {
+  createFeedbackHandle as createFeedbackHandleHelper,
+  findFeedbackMessageId as findFeedbackMessageIdHelper,
+  isFeedbackProvided as isFeedbackProvidedHelper,
+  isMessageFeedbackProvided as isMessageFeedbackProvidedHelper,
+  markFeedbackProvided as markFeedbackProvidedHelper,
+} from "./feedback";
+import {
   type NormalizedInputGuardrail,
   type NormalizedOutputGuardrail,
   runInputGuardrails as executeInputGuardrails,
@@ -161,10 +168,12 @@ import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
   AgentEvalConfig,
   AgentEvalOperationType,
+  AgentFeedbackHandle,
   AgentFeedbackMetadata,
   AgentFeedbackOptions,
   AgentFullState,
   AgentGuardrailState,
+  AgentMarkFeedbackProvidedInput,
   AgentModelConfig,
   AgentModelValue,
   AgentOptions,
@@ -429,7 +438,7 @@ export type StreamTextResultWithContext<
   // Additional context field
   context: Map<string | symbol, unknown>;
   // Feedback metadata for the trace, if enabled
-  feedback?: AgentFeedbackMetadata | null;
+  feedback?: AgentFeedbackHandle | null;
 } & Record<never, OUTPUT>;
 
 /**
@@ -471,7 +480,7 @@ export interface GenerateTextResultWithContext<
   experimental_output: OutputValue<OUTPUT>;
   output: OutputValue<OUTPUT>;
   // Feedback metadata for the trace, if enabled
-  feedback?: AgentFeedbackMetadata | null;
+  feedback?: AgentFeedbackHandle | null;
 }
 
 type LLMOperation =
@@ -1196,12 +1205,27 @@ export class Agent {
               await persistQueue.flush(buffer, oc);
             }
 
+            const feedbackValue = (() => {
+              if (!feedbackMetadata) {
+                return null;
+              }
+              const metadata = feedbackMetadata;
+              return createFeedbackHandleHelper({
+                metadata,
+                defaultUserId: oc.userId,
+                defaultConversationId: oc.conversationId,
+                resolveMessageId: () =>
+                  findFeedbackMessageIdHelper(buffer.getAllMessages(), metadata),
+                markFeedbackProvided: (input) => this.markFeedbackProvided(input),
+              });
+            })();
+
             return cloneGenerateTextResultWithContext(result, {
               text: finalText,
               context: oc.context,
               toolCalls: aggregatedToolCalls,
               toolResults: aggregatedToolResults,
-              feedback: feedbackMetadata,
+              feedback: feedbackValue,
             });
           } catch (error) {
             if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
@@ -1335,7 +1359,8 @@ export class Agent {
     const feedbackDeferred = feedbackOptions
       ? createDeferred<AgentFeedbackMetadata | null>()
       : null;
-    let feedbackValue: AgentFeedbackMetadata | null = null;
+    let feedbackMetadataValue: AgentFeedbackMetadata | null = null;
+    let feedbackValue: AgentFeedbackHandle | null = null;
     let feedbackResolved = false;
     let feedbackFinalizeRequested = false;
     let feedbackApplied = false;
@@ -1385,7 +1410,17 @@ export class Agent {
       if (feedbackPromise) {
         feedbackPromise
           .then((metadata) => {
-            feedbackValue = metadata;
+            feedbackMetadataValue = metadata;
+            feedbackValue = metadata
+              ? createFeedbackHandleHelper({
+                  metadata,
+                  defaultUserId: oc.userId,
+                  defaultConversationId: oc.conversationId,
+                  resolveMessageId: () =>
+                    findFeedbackMessageIdHelper(buffer.getAllMessages(), metadata),
+                  markFeedbackProvided: (input) => this.markFeedbackProvided(input),
+                })
+              : null;
             resolveFeedbackDeferred(metadata);
             if (feedbackFinalizeRequested) {
               scheduleFeedbackPersist(metadata);
@@ -1862,8 +1897,8 @@ export class Agent {
                   await feedbackDeferred.promise;
                 }
 
-                if (feedbackResolved && feedbackValue) {
-                  scheduleFeedbackPersist(feedbackValue);
+                if (feedbackResolved && feedbackMetadataValue) {
+                  scheduleFeedbackPersist(feedbackMetadataValue);
                 } else if (shouldDeferPersist) {
                   void persistQueue.flush(buffer, oc).catch((error) => {
                     oc.logger?.debug?.("Failed to persist deferred messages", { error });
@@ -2173,11 +2208,11 @@ export class Agent {
               if (feedbackDeferred) {
                 await feedbackDeferred.promise;
               }
-              if (feedbackResolved && feedbackValue) {
+              if (feedbackResolved && feedbackMetadataValue) {
                 controller.enqueue({
                   type: "message-metadata",
                   messageMetadata: {
-                    feedback: feedbackValue,
+                    feedback: feedbackMetadataValue,
                   },
                 } as UIStreamChunk);
               }
@@ -7009,6 +7044,32 @@ export class Agent {
       this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
 
     return voltOpsClient !== undefined;
+  }
+
+  /**
+   * Check whether feedback has already been provided for a feedback metadata object.
+   */
+  public static isFeedbackProvided(feedback?: AgentFeedbackMetadata | null): boolean {
+    return isFeedbackProvidedHelper(feedback);
+  }
+
+  /**
+   * Check whether a message already has feedback marked as provided.
+   */
+  public static isMessageFeedbackProvided(message?: UIMessage | null): boolean {
+    return isMessageFeedbackProvidedHelper(message);
+  }
+
+  /**
+   * Persist a "feedback provided" marker into assistant message metadata.
+   */
+  public async markFeedbackProvided(
+    input: AgentMarkFeedbackProvidedInput,
+  ): Promise<AgentFeedbackMetadata | null> {
+    return await markFeedbackProvidedHelper({
+      memory: this.memoryManager.getMemory(),
+      input,
+    });
   }
 
   /**
