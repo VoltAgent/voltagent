@@ -192,7 +192,7 @@ export const createWorkspaceSandboxToolkit = (
       args: z.array(z.string()).optional().describe("Command arguments"),
       cwd: z.string().optional().describe("Working directory for the command"),
       timeout_ms: z.coerce.number().optional().describe("Timeout in milliseconds"),
-      env: z.record(z.string()).optional().describe("Environment variables to set"),
+      env: z.record(z.string(), z.string()).optional().describe("Environment variables to set"),
       stdin: z.string().optional().describe("Optional stdin input for the command"),
       max_output_bytes: z.coerce
         .number()

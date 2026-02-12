@@ -797,7 +797,7 @@ export const createWorkspaceSearchToolkit = (
     parameters: z.object({
       path: z.string().describe("Path identifier for the content"),
       content: z.string().describe("Raw content to index"),
-      metadata: z.record(z.unknown()).optional().describe("Optional metadata"),
+      metadata: z.record(z.string(), z.unknown()).optional().describe("Optional metadata"),
     }),
     execute: async (input, executeOptions) =>
       withOperationTimeout(
