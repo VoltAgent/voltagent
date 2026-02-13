@@ -142,6 +142,8 @@ const result = await agent.generateText("Summarize this trace", {
 console.log(result.feedback?.url);
 ```
 
+`result.feedback` may also include `provided`, `providedAt`, and `feedbackId` so UI clients can hide feedback controls once submitted.
+
 If the feedback key is already registered, you can pass only `key` and let the stored config populate the token.
 
 ```ts
@@ -149,6 +151,22 @@ const result = await agent.generateText("Quick rating?", {
   feedback: { key: "satisfaction" },
 });
 ```
+
+To persist "already submitted" state across memory reloads, you can use the result helper:
+
+```ts
+const feedbackId = "feedback-id-from-ingestion-response"; // returned by your feedback ingestion API response
+
+if (result.feedback && !result.feedback.isProvided()) {
+  await result.feedback.markFeedbackProvided({
+    feedbackId, // optional
+  });
+}
+```
+
+You can still call `agent.markFeedbackProvided(...)` directly if you prefer explicit control.
+
+These helpers require memory-backed conversations (`userId` and `conversationId`) and are typically called from your backend after feedback ingestion succeeds.
 
 For end-to-end examples (SDK, API, and useChat), see [Feedback](/observability-docs/feedback).
 

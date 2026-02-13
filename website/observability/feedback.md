@@ -30,6 +30,9 @@ Feedback metadata shape:
   "url": "https://api.voltagent.dev/api/public/feedback/ingest/...",
   "tokenId": "...",
   "expiresAt": "2026-01-06T18:25:26.005Z",
+  "provided": true,
+  "providedAt": "2026-01-06T18:30:00.000Z",
+  "feedbackId": "feedback-id",
   "feedbackConfig": {
     "type": "categorical",
     "categories": [
@@ -39,6 +42,16 @@ Feedback metadata shape:
   }
 }
 ```
+
+## Best-practice state model
+
+For production apps, use a hybrid approach:
+
+- Keep feedback records in VoltOps as the source of truth.
+- Use message metadata (`provided`, `providedAt`, `feedbackId`) as fast UI state for hiding feedback controls.
+- After a successful feedback submit, persist the metadata state on the stored assistant message with `agent.markFeedbackProvided(...)`.
+
+This keeps UX responsive and prevents feedback controls from reappearing after conversation reloads.
 
 ## Feedback keys (registry)
 
@@ -87,6 +100,20 @@ const result = await agent.generateText("Help me reset my password", {
 
 const feedback = result.feedback;
 ```
+
+If you want to persist feedback-submitted state in memory after ingestion, use the helper on the returned feedback object:
+
+```ts
+const feedbackId = "feedback-id-from-ingestion-response"; // returned by your feedback ingestion API response
+
+if (result.feedback && !result.feedback.isProvided()) {
+  await result.feedback.markFeedbackProvided({
+    feedbackId, // optional
+  });
+}
+```
+
+Use this helper only for memory-backed conversations (requests that include `userId` and `conversationId`). If those IDs are missing, messages are not persisted, so there is nothing to mark as provided.
 
 ### Use a registered key
 
@@ -193,6 +220,11 @@ When you use the `/agents/:id/chat` endpoint (AI SDK useChat compatible), the as
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 
+const apiUrl = "http://localhost:3141"; // your VoltAgent server base URL
+const agentId = "support-agent-id"; // from route param or app config
+const userId = "user-1"; // from your auth/session layer
+const conversationId = "conv-1"; // current conversation id from your app state
+
 const transport = new DefaultChatTransport({
   api: `${apiUrl}/agents/${agentId}/chat`,
   prepareSendMessagesRequest({ messages }) {
@@ -219,11 +251,28 @@ const transport = new DefaultChatTransport({
 
 const { messages } = useChat({ transport });
 
+const isFeedbackProvided = (feedback: any): boolean =>
+  Boolean(feedback?.provided || feedback?.providedAt || feedback?.feedbackId);
+
+const isFeedbackExpired = (feedback: any): boolean =>
+  typeof feedback?.expiresAt === "string" && new Date(feedback.expiresAt).getTime() <= Date.now();
+
+const shouldShowFeedback = (message: any): boolean => {
+  const feedback = message?.metadata?.feedback;
+  if (!feedback?.url) return false;
+  if (isFeedbackExpired(feedback)) return false;
+  if (isFeedbackProvided(feedback)) return false;
+  return true;
+};
+
+// Example usage while rendering messages:
+// {messages.filter(shouldShowFeedback).map(renderFeedbackButtons)}
+
 async function submitFeedback(message: any, score: number) {
   const feedback = message?.metadata?.feedback;
-  if (!feedback?.url) return;
+  if (!feedback?.url || isFeedbackProvided(feedback)) return;
 
-  await fetch(feedback.url, {
+  const response = await fetch(feedback.url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -232,8 +281,50 @@ async function submitFeedback(message: any, score: number) {
       feedback_source_type: "app",
     }),
   });
+
+  if (!response.ok) return;
+  const { id: feedbackId } = (await response.json()) as { id?: string };
+
+  // Persist "already submitted" state for reloads
+  await markFeedbackProvided({
+    agentId,
+    userId,
+    conversationId,
+    messageId: message.id,
+    feedbackId, // optional: feedback id returned by ingestion API
+  });
+}
+
+async function markFeedbackProvided(input: {
+  agentId: string;
+  userId: string;
+  conversationId: string;
+  messageId: string;
+  feedbackId?: string;
+}) {
+  // This is a custom app endpoint you implement.
+  await fetch(`/api/agents/${input.agentId}/feedback/provided`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
 }
 ```
+
+### Persist provided-state on the server
+
+Call `agent.markFeedbackProvided(...)` after feedback submit succeeds. This is not a built-in HTTP route; expose it from your own backend endpoint.
+
+```ts
+const updated = await agent.markFeedbackProvided({
+  userId,
+  conversationId,
+  messageId,
+  feedbackId, // optional
+});
+```
+
+This updates the stored assistant message metadata so reloaded conversations still show feedback as completed.
 
 ## API usage
 

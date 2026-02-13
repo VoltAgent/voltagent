@@ -156,13 +156,25 @@ When feedback is enabled, VoltAgent attaches feedback metadata to assistant UI m
 
 ```ts
 const feedback = message.metadata?.feedback as
-  | { traceId?: string; key?: string; url?: string }
+  | {
+      traceId?: string;
+      key?: string;
+      url?: string;
+      expiresAt?: string;
+      provided?: boolean;
+      providedAt?: string;
+      feedbackId?: string;
+    }
   | undefined;
 
-if (feedback?.url) {
+const alreadyProvided = Boolean(feedback?.provided || feedback?.providedAt || feedback?.feedbackId);
+
+if (feedback?.url && !alreadyProvided) {
   console.log("Submit feedback to:", feedback.url);
 }
 ```
+
+After submitting feedback successfully, persist the provided-state in memory with `agent.markFeedbackProvided(...)` so the UI still hides feedback controls after conversation reload.
 
 See [Feedback](/observability-docs/feedback) for the full flow and API examples.
 

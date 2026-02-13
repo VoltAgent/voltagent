@@ -293,6 +293,9 @@ export const TextResponseSchema = z.object({
             tokenId: z.string().optional(),
             expiresAt: z.string().optional(),
             feedbackConfig: FeedbackConfigSchema.nullish().optional(),
+            provided: z.boolean().optional(),
+            providedAt: z.string().optional(),
+            feedbackId: z.string().optional(),
           })
           .nullable()
           .optional()
