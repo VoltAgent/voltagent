@@ -153,9 +153,9 @@ export function findFeedbackMessageId(
 
   const feedbackTokenId =
     typeof feedback.tokenId === "string" ? feedback.tokenId.trim() : undefined;
-  const feedbackTraceId = feedback.traceId.trim();
-  const feedbackKey = feedback.key.trim();
-  const feedbackUrl = feedback.url.trim();
+  const feedbackTraceId = typeof feedback.traceId === "string" ? feedback.traceId.trim() : "";
+  const feedbackKey = typeof feedback.key === "string" ? feedback.key.trim() : "";
+  const feedbackUrl = typeof feedback.url === "string" ? feedback.url.trim() : "";
 
   for (let index = messages.length - 1; index >= 0; index--) {
     const message = messages[index];
