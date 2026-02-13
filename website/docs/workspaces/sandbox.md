@@ -127,6 +127,35 @@ const daytonaWorkspace = new Workspace({
 });
 ```
 
+If you need provider-specific APIs, keep a reference to the provider and access its native SDK instance:
+
+```ts
+import { E2BSandbox } from "@voltagent/sandbox-e2b";
+
+const sandbox = new E2BSandbox({
+  apiKey: process.env.E2B_API_KEY,
+});
+
+const workspace = new Workspace({ sandbox });
+
+const e2bSandbox = await sandbox.getSandbox();
+const bytes = await e2bSandbox.files.read("/workspace/file.txt", { format: "bytes" });
+```
+
+```ts
+import { DaytonaSandbox } from "@voltagent/sandbox-daytona";
+
+const sandbox = new DaytonaSandbox({
+  apiKey: process.env.DAYTONA_API_KEY,
+  apiUrl: "http://localhost:3000",
+});
+
+const workspace = new Workspace({ sandbox });
+
+const daytonaSandbox = await sandbox.getSandbox();
+const response = await daytonaSandbox.process.executeCommand("ls -la");
+```
+
 ## Custom sandbox provider
 
 You can implement `WorkspaceSandbox` and plug it into `Workspace` directly.

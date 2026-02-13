@@ -1,10 +1,13 @@
 import * as daytonaModule from "@daytonaio/sdk";
+import type { Sandbox as DaytonaOriginalSandbox } from "@daytonaio/sdk";
 import {
   type WorkspaceSandbox,
   type WorkspaceSandboxExecuteOptions,
   type WorkspaceSandboxResult,
   normalizeCommandAndArgs,
 } from "@voltagent/core";
+
+export type DaytonaSandboxInstance = DaytonaOriginalSandbox;
 
 export type DaytonaSandboxOptions = {
   apiKey?: string;
@@ -26,17 +29,6 @@ type DaytonaExecResult = {
   artifacts?: {
     stdout?: string;
     stderr?: string;
-  };
-};
-
-type DaytonaSandboxInstance = {
-  process: {
-    executeCommand: (
-      command: string,
-      cwd?: string,
-      env?: Record<string, string>,
-      timeoutSeconds?: number,
-    ) => Promise<DaytonaExecResult>;
   };
 };
 
@@ -157,7 +149,7 @@ export class DaytonaSandbox implements WorkspaceSandbox {
     return await client.create(this.createParams, options);
   }
 
-  private async getSandbox(): Promise<DaytonaSandboxInstance> {
+  private async resolveSandbox(): Promise<DaytonaSandboxInstance> {
     if (this.sandbox) {
       return this.sandbox;
     }
@@ -173,6 +165,14 @@ export class DaytonaSandbox implements WorkspaceSandbox {
         });
     }
     return this.sandboxPromise;
+  }
+
+  /**
+   * Returns the underlying Daytona SDK sandbox instance.
+   * Use this when you need Daytona-specific APIs beyond `execute`.
+   */
+  async getSandbox(): Promise<DaytonaSandboxInstance> {
+    return this.resolveSandbox();
   }
 
   async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
@@ -197,7 +197,7 @@ export class DaytonaSandbox implements WorkspaceSandbox {
       };
     }
 
-    const sandbox = await this.getSandbox();
+    const sandbox = await this.resolveSandbox();
     const maxOutputBytes =
       options.maxOutputBytes === undefined
         ? this.maxOutputBytes
