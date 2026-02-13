@@ -103,6 +103,11 @@ Generate a text response from an agent synchronously.
     "context": {
       "role": "admin",
       "tier": "premium"
+    },
+    "conversationPersistence": {
+      "mode": "step",
+      "debounceMs": 200,
+      "flushOnToolResult": true
     }
   }
 }
@@ -183,6 +188,9 @@ Generate a text response from an agent synchronously.
 | `stopSequences` | string[] | - | Stop generation sequences |
 | `providerOptions` | object | - | Provider-specific options |
 | `context` | object | - | Dynamic agent context |
+| `conversationPersistence.mode` | string | `"step"` | Persistence strategy: `"step"` or `"finish"` |
+| `conversationPersistence.debounceMs` | number | `200` | Debounce interval for step checkpoint persistence |
+| `conversationPersistence.flushOnToolResult` | boolean | `true` | Flush immediately on `tool-result`/`tool-error` in step mode |
 
 **Response:**
 

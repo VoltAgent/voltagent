@@ -28,7 +28,7 @@ new VoltAgent({
 ## What VoltAgent Manages
 
 - Registers agents and workflows for API access and observability.
-- Applies global defaults (logger, observability, memory).
+- Applies global defaults (logger, observability, memory, conversation persistence).
 - Boots HTTP or serverless providers.
 - Registers triggers, MCP servers, and A2A servers.
 - Coordinates graceful shutdown for servers and telemetry.
@@ -84,6 +84,28 @@ new VoltAgent({
 - Workflows: workflow `memory` > `workflowMemory` > `memory` > built-in in-memory
 
 See [Memory Overview](/docs/agents/memory/overview) for adapter options.
+
+## Conversation Persistence Defaults
+
+Set a default persistence strategy for agents that do not explicitly define `conversationPersistence`.
+
+```ts
+new VoltAgent({
+  agents: { assistant },
+  agentConversationPersistence: {
+    mode: "step", // default
+    debounceMs: 200, // default
+    flushOnToolResult: true, // default
+  },
+});
+```
+
+**Precedence**
+
+- Per-call `options.conversationPersistence`
+- Agent `conversationPersistence`
+- VoltAgent `agentConversationPersistence`
+- Built-in defaults (`mode: "step"`, `debounceMs: 200`, `flushOnToolResult: true`)
 
 ## Observability and Logging
 
