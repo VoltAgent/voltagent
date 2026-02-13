@@ -499,6 +499,23 @@ const config: Config = {
             to: "/docs/getting-started/providers-models/",
             from: "/docs/providers/contributing/",
           },
+          // Redirect old getting-started file paths to explicit slugs
+          {
+            to: "/docs/quick-start/",
+            from: "/docs/getting-started/quick-start/",
+          },
+          {
+            to: "/docs/manual-setup/",
+            from: "/docs/getting-started/manual-setup/",
+          },
+          {
+            to: "/docs/overview/",
+            from: "/docs/getting-started/overview/",
+          },
+          {
+            to: "/docs/ai-assistants/",
+            from: "/docs/getting-started/ai-assistants/",
+          },
           {
             to: "/docs/agents/voltagent-instance/",
             from: "/docs/getting-started/voltagent-instance/",
