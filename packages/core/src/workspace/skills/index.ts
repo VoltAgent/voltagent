@@ -49,6 +49,12 @@ const DEFAULT_MAX_PROMPT_CHARS = 12000;
 
 const SKILLS_SYSTEM_PROMPT = `You can manage workspace skills.
 
+Important:
+- Access skills with workspace skill tools only.
+- Do not use sandbox commands (for example: execute_command, ls /skills, cat /skills/...) to inspect skills.
+- Use dedicated skill read tools for references, scripts, and assets.
+
+Use these tools:
 - workspace_list_skills: list available skills
 - workspace_search_skills: search skill instructions
 - workspace_read_skill: read skill instructions
@@ -337,6 +343,71 @@ const parseSkillFile = (
   return { data, instructions };
 };
 
+const normalizeRelativeSkillLinkTarget = (target: string): string | null => {
+  const trimmed = target.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const withoutBrackets = trimmed.replace(/^<|>$/g, "");
+  const withoutFragment = withoutBrackets.split("#")[0] || "";
+  const withoutQuery = withoutFragment.split("?")[0] || "";
+  const normalized = normalizePath(withoutQuery.replace(/^\.\//, ""));
+  if (!normalized) {
+    return null;
+  }
+  if (
+    normalized.startsWith("/") ||
+    normalized.includes("://") ||
+    normalized.startsWith("mailto:")
+  ) {
+    return null;
+  }
+  if (normalized.includes("..")) {
+    return null;
+  }
+  return normalized;
+};
+
+const inferSkillFileAllowlistsFromInstructions = (
+  instructions: string,
+): Pick<WorkspaceSkillMetadata, "references" | "scripts" | "assets"> => {
+  const references = new Set<string>();
+  const scripts = new Set<string>();
+  const assets = new Set<string>();
+
+  const markdownLinkPattern = /\[[^\]]+\]\(([^)]+)\)/g;
+  for (const match of instructions.matchAll(markdownLinkPattern)) {
+    const rawTarget = match[1]?.trim();
+    if (!rawTarget) {
+      continue;
+    }
+    const targetWithoutTitle = rawTarget.split(/\s+/)[0] || "";
+    const normalized = normalizeRelativeSkillLinkTarget(targetWithoutTitle);
+    if (!normalized) {
+      continue;
+    }
+
+    if (normalized.startsWith("references/")) {
+      references.add(normalized);
+      continue;
+    }
+    if (normalized.startsWith("scripts/")) {
+      scripts.add(normalized);
+      continue;
+    }
+    if (normalized.startsWith("assets/")) {
+      assets.add(normalized);
+    }
+  }
+
+  return {
+    references: references.size > 0 ? Array.from(references) : undefined,
+    scripts: scripts.size > 0 ? Array.from(scripts) : undefined,
+    assets: assets.size > 0 ? Array.from(assets) : undefined,
+  };
+};
+
 type WorkspaceSkillDocument = {
   id: string;
   name: string;
@@ -583,7 +654,8 @@ export class WorkspaceSkills {
 
           const normalizedPath = normalizePath(skillPath);
           const rootPath = normalizedPath.replace(/\/SKILL\.md$/i, "");
-          const { data: frontmatter } = parseSkillFile(content);
+          const { data: frontmatter, instructions } = parseSkillFile(content);
+          const inferredFiles = inferSkillFileAllowlistsFromInstructions(instructions);
           const name =
             typeof frontmatter.name === "string" && frontmatter.name.trim().length > 0
               ? frontmatter.name.trim()
@@ -611,9 +683,9 @@ export class WorkspaceSkills {
             tags: normalizeStringArray(frontmatter.tags),
             path: skillPath,
             root: rootPath || root,
-            references: normalizeStringArray(frontmatter.references),
-            scripts: normalizeStringArray(frontmatter.scripts),
-            assets: normalizeStringArray(frontmatter.assets),
+            references: normalizeStringArray(frontmatter.references) ?? inferredFiles.references,
+            scripts: normalizeStringArray(frontmatter.scripts) ?? inferredFiles.scripts,
+            assets: normalizeStringArray(frontmatter.assets) ?? inferredFiles.assets,
           };
 
           this.skillsById.set(id, metadata);
@@ -658,6 +730,7 @@ export class WorkspaceSkills {
     });
     const content = data.content.join("\n");
     const { data: frontmatter, instructions } = parseSkillFile(content);
+    const inferredFiles = inferSkillFileAllowlistsFromInstructions(instructions);
     const detail: WorkspaceSkill = {
       ...metadata,
       description:
@@ -666,9 +739,13 @@ export class WorkspaceSkills {
           : metadata.description,
       version: typeof frontmatter.version === "string" ? frontmatter.version : metadata.version,
       tags: normalizeStringArray(frontmatter.tags) ?? metadata.tags,
-      references: normalizeStringArray(frontmatter.references) ?? metadata.references,
-      scripts: normalizeStringArray(frontmatter.scripts) ?? metadata.scripts,
-      assets: normalizeStringArray(frontmatter.assets) ?? metadata.assets,
+      references:
+        normalizeStringArray(frontmatter.references) ??
+        metadata.references ??
+        inferredFiles.references,
+      scripts:
+        normalizeStringArray(frontmatter.scripts) ?? metadata.scripts ?? inferredFiles.scripts,
+      assets: normalizeStringArray(frontmatter.assets) ?? metadata.assets ?? inferredFiles.assets,
       instructions,
     };
 
@@ -918,7 +995,10 @@ export class WorkspaceSkills {
       const skills = Array.from(this.skillsById.values()).slice(0, maxAvailable);
       if (skills.length > 0) {
         const lines = skills.map((skill) => {
-          const description = skill.description ? ` - ${skill.description}` : "";
+          const descriptionText = skill.description
+            ? truncateText(skill.description, maxInstructionChars)
+            : "";
+          const description = descriptionText ? ` - ${descriptionText}` : "";
           return `- ${skill.name} (${skill.id})${description}`;
         });
         sections.push(`Available skills:\n${lines.join("\n")}`);
@@ -928,18 +1008,18 @@ export class WorkspaceSkills {
     if (includeActivated) {
       const activeIds = Array.from(this.activeSkills).slice(0, maxActivated);
       if (activeIds.length > 0) {
-        const entries: string[] = [];
-        for (const id of activeIds) {
-          const skill = await this.loadSkill(id, { context: options.context });
-          if (!skill) {
-            continue;
-          }
-          const header = `${skill.name} (${skill.id})`;
-          const body = truncateText(skill.instructions || "", maxInstructionChars);
-          entries.push(`${header}\n${body}`);
-        }
-        if (entries.length > 0) {
-          sections.push(`Activated skills:\n${entries.join("\n\n")}`);
+        const lines = activeIds
+          .map((id) => this.skillsById.get(id))
+          .filter((skill): skill is WorkspaceSkillMetadata => Boolean(skill))
+          .map((skill) => {
+            const descriptionText = skill.description
+              ? truncateText(skill.description, maxInstructionChars)
+              : "";
+            const description = descriptionText ? ` - ${descriptionText}` : "";
+            return `- ${skill.name} (${skill.id})${description}`;
+          });
+        if (lines.length > 0) {
+          sections.push(`Activated skills:\n${lines.join("\n")}`);
         }
       }
     }

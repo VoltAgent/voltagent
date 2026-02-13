@@ -40,6 +40,7 @@ import {
   LocalSandbox,
   createWorkspaceSandboxToolkit,
   detectLocalSandboxIsolation,
+  normalizeCommandAndArgs,
 } from "./sandbox";
 import {
   WorkspaceSearch,
@@ -378,7 +379,12 @@ export class Workspace {
       mergedPolicies === undefined ? options : { ...options, toolPolicies: mergedPolicies };
     const finalOptions = this.applyOperationTimeout(mergedOptions);
     return createWorkspaceSandboxToolkit(
-      { sandbox: this.sandbox, workspace: this, filesystem: this.filesystem },
+      {
+        sandbox: this.sandbox,
+        workspace: this,
+        pathContext: this.getPathContext(),
+        filesystem: this.filesystem,
+      },
       finalOptions,
     );
   }
@@ -463,6 +469,7 @@ export {
   type WorkspaceSandboxStatus,
   type WorkspaceSandboxToolName,
   createWorkspaceSandboxToolkit,
+  normalizeCommandAndArgs,
   type WorkspaceSandboxToolkitOptions,
   type WorkspaceSandboxToolkitContext,
   WorkspaceSearch,

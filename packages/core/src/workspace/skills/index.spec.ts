@@ -145,6 +145,57 @@ Analyze the files and summarize findings.`;
   });
 });
 
+describe("WorkspaceSkills prompt generation", () => {
+  it("injects only activated skill metadata without full instructions", async () => {
+    const timestamp = new Date().toISOString();
+    const workspace = new Workspace({
+      filesystem: {
+        files: {
+          "/skills/data/SKILL.md": {
+            content: `---
+name: Data Analyst
+description: Analyze CSV data
+---
+INSTRUCTIONS_SHOULD_NOT_APPEAR
+Run deep analysis and produce charts.`.split("\n"),
+            created_at: timestamp,
+            modified_at: timestamp,
+          },
+        },
+      },
+      skills: {
+        rootPaths: ["/skills"],
+        autoDiscover: false,
+      },
+    });
+
+    await workspace.skills?.discoverSkills();
+    await workspace.skills?.activateSkill("Data Analyst");
+
+    const prompt = await workspace.skills?.buildPrompt({
+      includeAvailable: false,
+      includeActivated: true,
+    });
+
+    expect(prompt).toContain("Activated skills:");
+    expect(prompt).toContain("- Data Analyst (/skills/data) - Analyze CSV data");
+    expect(prompt).not.toContain("INSTRUCTIONS_SHOULD_NOT_APPEAR");
+  });
+
+  it("includes explicit guidance to use workspace skill tools", () => {
+    const workspace = new Workspace({
+      skills: {
+        rootPaths: ["/skills"],
+      },
+    });
+
+    const instructions = workspace.skills?.getInstructions();
+    expect(instructions).toContain("Access skills with workspace skill tools only.");
+    expect(instructions).toContain("Do not use sandbox commands");
+    expect(instructions).toContain("workspace_read_skill_script");
+  });
+});
+
 describe("WorkspaceSkills file access", () => {
   it("allows listed reference files and blocks others", async () => {
     const timestamp = new Date().toISOString();
@@ -202,6 +253,55 @@ Use the schema reference.`;
       executeOptions,
     );
     expect(String(blocked)).toContain("File not allowed");
+  });
+
+  it("infers reference allowlist from relative links when frontmatter list is missing", async () => {
+    const timestamp = new Date().toISOString();
+    const skillContent = `---
+name: Playwright Skill
+---
+See [Running code](references/running-code.md) for advanced commands.`;
+
+    const skillFile = {
+      content: skillContent.split("\n"),
+      created_at: timestamp,
+      modified_at: timestamp,
+    };
+
+    const referenceFile = {
+      content: ["run-code examples"],
+      created_at: timestamp,
+      modified_at: timestamp,
+    };
+
+    const workspace = new Workspace({
+      filesystem: {
+        files: {
+          "/skills/playwright/SKILL.md": skillFile,
+          "/skills/playwright/references/running-code.md": referenceFile,
+        },
+      },
+      skills: {
+        rootPaths: ["/skills"],
+        autoDiscover: false,
+      },
+    });
+
+    const toolkit = workspace.createSkillsToolkit();
+    const tool = toolkit.tools.find((entry) => entry.name === "workspace_read_skill_reference");
+    if (!tool?.execute) {
+      throw new Error("workspace_read_skill_reference tool not found");
+    }
+
+    const output = await tool.execute(
+      { skill_id: "/skills/playwright", reference: "references/running-code.md" },
+      {
+        systemContext: new Map(),
+        abortController: new AbortController(),
+      } as any,
+    );
+
+    expect(String(output)).toContain("run-code examples");
   });
 
   it("allows listed scripts/assets with normalized paths and blocks traversal", async () => {

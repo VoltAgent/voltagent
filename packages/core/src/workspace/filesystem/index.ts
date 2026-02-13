@@ -60,13 +60,26 @@ const WORKSPACE_FILESYSTEM_SYSTEM_PROMPT = `You have access to a workspace files
 - list_tree: list files and directories with depth control
 - list_files: list files and directories with depth control (alias)
 - glob: find files matching a pattern (e.g., "**/*.ts")
-- grep: search for text within files`;
+- grep: search for text within files
 
-const LS_TOOL_DESCRIPTION = "List files and directories in a directory";
-const READ_FILE_TOOL_DESCRIPTION = "Read the contents of a file";
+Best practices:
+- Read files before editing or overwriting existing content.
+- Prefer offset/limit in read_file for large files.
+- edit_file old_string must match exactly and be unique.
+- Do not include read_file line number prefixes in edit_file old_string/new_string.`;
+
+const LS_TOOL_DESCRIPTION = "List files and directories in a workspace directory";
+const READ_FILE_TOOL_DESCRIPTION =
+  "Read file content with optional line range (offset/limit). Prefer targeted reads for large files.";
 const WRITE_FILE_TOOL_DESCRIPTION =
-  "Write content to a file. Returns an error if the file already exists unless overwrite=true; can create parent directories";
-const EDIT_FILE_TOOL_DESCRIPTION = "Edit a file by replacing a specific string with a new string";
+  "Write content to a file. Existing files require overwrite=true; parent directories can be created automatically.";
+const EDIT_FILE_TOOL_DESCRIPTION = `Edit a file by replacing exact text.
+
+Usage:
+- Read the file first and copy the exact text for old_string.
+- old_string must be unique unless replace_all=true.
+- Preserve indentation and whitespace exactly.
+- If read_file output includes line numbers, do not include those prefixes in old_string/new_string.`;
 const DELETE_FILE_TOOL_DESCRIPTION =
   "Delete a file from the filesystem. Use recursive=true to remove a directory";
 const STAT_TOOL_DESCRIPTION = "Get file or directory metadata";

@@ -30,7 +30,7 @@ const workspaceRoot = path.resolve(process.cwd(), "workspace");
 
 const workspace = new Workspace({
   id: "workspace-example",
-  name: "Workspace Example",
+  name: "Workspace Playwright Example",
   filesystem: {
     backend: new NodeFilesystemBackend({
       rootDir: workspaceRoot,
@@ -50,29 +50,15 @@ const workspace = new Workspace({
   },
 });
 
-const skillsHook = workspace.createSkillsPromptHook({
-  includeAvailable: true,
-  includeActivated: true,
-});
-
 const agent = new Agent({
-  name: "Workspace Agent",
-  instructions: [
-    "You are a helpful assistant.",
-    "Use the workspace filesystem for notes under /notes and data under /data.",
-    "Use workspace_search to find relevant files before answering.",
-    "Skills live under /skills; activate them when a task matches the description.",
-  ].join(" "),
+  name: "Workspace Playwright Agent",
+  instructions: ["You are a helpful browser automation assistant."].join(" "),
   model: "openai/gpt-4o-mini",
   memory,
   workspace,
-  hooks: skillsHook,
-  workspaceToolkits: {
-    filesystem: {
-      toolPolicies: {
-        tools: { write_file: { needsApproval: true } },
-      },
-    },
+  workspaceSkillsPrompt: {
+    includeAvailable: true,
+    includeActivated: true,
   },
 });
 

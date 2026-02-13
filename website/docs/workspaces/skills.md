@@ -86,7 +86,7 @@ Only files listed under `references`, `scripts`, or `assets` are readable via th
 
 ## Activating skills and prompt injection
 
-Activate a skill, then inject activated skills into the system prompt:
+When an agent has a workspace with `skills` configured, VoltAgent automatically injects a skills prompt into messages by default.
 
 ```ts
 import { Agent, Workspace } from "@voltagent/core";
@@ -97,22 +97,48 @@ const workspace = new Workspace({
   },
 });
 
-const skillsHook = workspace.createSkillsPromptHook({
-  includeAvailable: true,
-  includeActivated: true,
-});
-
 const agent = new Agent({
   name: "skills-agent",
   model,
   instructions: "Use workspace skills when relevant.",
   workspace,
-  hooks: skillsHook,
-  workspaceToolkits: { skills: {} },
 });
 ```
 
 The injected prompt is wrapped in `<workspace_skills>` tags and can include both available and activated skills.
+It includes skill metadata (name, id, description). To read full `SKILL.md` instructions, use `workspace_read_skill`.
+
+You can customize this behavior with `workspaceSkillsPrompt`:
+
+```ts
+const agent = new Agent({
+  name: "skills-agent",
+  model,
+  instructions: "Use workspace skills when relevant.",
+  workspace,
+  workspaceSkillsPrompt: {
+    includeAvailable: true,
+    includeActivated: true,
+    maxAvailable: 10,
+    maxActivated: 5,
+  },
+});
+```
+
+Disable auto prompt injection:
+
+```ts
+const agent = new Agent({
+  name: "skills-agent",
+  model,
+  instructions: "Use workspace skills when relevant.",
+  workspace,
+  workspaceSkillsPrompt: false,
+});
+```
+
+If you provide a custom `hooks.onPrepareMessages`, auto injection is skipped unless `workspaceSkillsPrompt` is explicitly set (`true` or options object).
+For advanced custom chaining, you can still call `workspace.createSkillsPromptHook(...)` manually.
 
 ## Skill tools
 

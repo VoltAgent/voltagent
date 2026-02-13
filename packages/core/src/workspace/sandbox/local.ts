@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { promises as fs, constants as fsConstants } from "node:fs";
 import * as path from "node:path";
+import { normalizeCommandAndArgs } from "./command-normalization";
 import type {
   WorkspaceSandbox,
   WorkspaceSandboxExecuteOptions,
@@ -499,7 +500,8 @@ export class LocalSandbox implements WorkspaceSandbox {
     }
 
     const startTime = Date.now();
-    const command = options.command?.trim();
+    const normalized = normalizeCommandAndArgs(options.command ?? "", options.args);
+    const command = normalized.command.trim();
 
     if (!command) {
       throw new Error("Sandbox command is required");
@@ -536,7 +538,7 @@ export class LocalSandbox implements WorkspaceSandbox {
 
     const { command: execCommand, args: execArgs } = await buildSandboxedCommand({
       command,
-      args: options.args ?? [],
+      args: normalized.args ?? [],
       cwd,
       isolation: this.isolation,
       rootDir: this.rootDir,

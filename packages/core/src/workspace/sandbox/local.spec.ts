@@ -106,6 +106,19 @@ describe("LocalSandbox cleanupOnDestroy", () => {
   });
 });
 
+describe("LocalSandbox command normalization", () => {
+  it("tokenizes full command lines passed via command", async () => {
+    const sandbox = new LocalSandbox();
+    const commandLine = `${process.execPath} -e "console.log('normalized')"`;
+    const result = await sandbox.execute({
+      command: commandLine,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("normalized");
+  });
+});
+
 describe("LocalSandbox isolation helpers", () => {
   const originalPath = process.env.PATH;
 

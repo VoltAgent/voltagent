@@ -4138,7 +4138,7 @@ importers:
         specifier: ^24.2.1
         version: 24.6.2
       '@voltagent/core':
-        specifier: ^2.3.5
+        specifier: ^2.3.8
         version: link:../core
       tsup:
         specifier: ^8.5.0
@@ -4157,7 +4157,7 @@ importers:
         specifier: ^24.2.1
         version: 24.6.2
       '@voltagent/core':
-        specifier: ^2.3.5
+        specifier: ^2.3.8
         version: link:../core
       tsup:
         specifier: ^8.5.0

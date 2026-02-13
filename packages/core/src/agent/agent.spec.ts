@@ -121,6 +121,148 @@ describe("Agent", () => {
     });
   });
 
+  describe("Workspace skills prompt injection", () => {
+    const createWorkspaceWithSkill = () => {
+      const timestamp = new Date().toISOString();
+      return new Workspace({
+        filesystem: {
+          files: {
+            "/skills/data/SKILL.md": {
+              content: `---
+name: Data Analyst
+description: Analyze CSV data
+---
+Use pandas and summarize findings.`.split("\n"),
+              created_at: timestamp,
+              modified_at: timestamp,
+            },
+          },
+        },
+        skills: {
+          rootPaths: ["/skills"],
+          autoDiscover: false,
+        },
+      });
+    };
+
+    const createMockGenerateTextResponse = () => ({
+      text: "Workspace response",
+      content: [{ type: "text", text: "Workspace response" }],
+      reasoning: [],
+      files: [],
+      sources: [],
+      toolCalls: [],
+      toolResults: [],
+      finishReason: "stop",
+      usage: {
+        inputTokens: 10,
+        outputTokens: 5,
+        totalTokens: 15,
+      },
+      warnings: [],
+      request: {},
+      response: {
+        id: "test-response",
+        modelId: "test-model",
+        timestamp: new Date(),
+        messages: [],
+      },
+      steps: [],
+    });
+
+    const toText = (message: ModelMessage): string => {
+      const content = (message as { content?: unknown }).content;
+      if (typeof content === "string") {
+        return content;
+      }
+      if (!Array.isArray(content)) {
+        return "";
+      }
+
+      return content
+        .map((part) => {
+          if (typeof part === "string") {
+            return part;
+          }
+          if (part && typeof part === "object" && "text" in part && typeof part.text === "string") {
+            return part.text;
+          }
+          return "";
+        })
+        .join("\n");
+    };
+
+    const getSystemTexts = (messages: ModelMessage[] | undefined): string[] =>
+      (messages || []).filter((message) => message.role === "system").map(toText);
+
+    it("auto-injects workspace skills prompt by default", async () => {
+      const workspace = createWorkspaceWithSkill();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Use skills when relevant.",
+        model: mockModel as any,
+        workspace,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue(createMockGenerateTextResponse() as any);
+
+      await agent.generateText("Analyze my data");
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0]?.[0];
+      const systemTexts = getSystemTexts(callArgs?.messages);
+
+      expect(systemTexts.some((text) => text.includes("<workspace_skills>"))).toBe(true);
+      expect(systemTexts.some((text) => text.includes("Data Analyst (/skills/data)"))).toBe(true);
+    });
+
+    it("skips auto-injection when custom onPrepareMessages exists", async () => {
+      const workspace = createWorkspaceWithSkill();
+      const onPrepareMessages = vi.fn(({ messages }) => ({ messages }));
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Use skills when relevant.",
+        model: mockModel as any,
+        workspace,
+        hooks: { onPrepareMessages },
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue(createMockGenerateTextResponse() as any);
+
+      await agent.generateText("Analyze my data");
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0]?.[0];
+      const systemTexts = getSystemTexts(callArgs?.messages);
+
+      expect(onPrepareMessages).toHaveBeenCalledTimes(1);
+      expect(systemTexts.some((text) => text.includes("<workspace_skills>"))).toBe(false);
+    });
+
+    it("allows forcing auto-injection with workspaceSkillsPrompt", async () => {
+      const workspace = createWorkspaceWithSkill();
+      const onPrepareMessages = vi.fn(({ messages }) => ({ messages }));
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Use skills when relevant.",
+        model: mockModel as any,
+        workspace,
+        hooks: { onPrepareMessages },
+        workspaceSkillsPrompt: true,
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue(createMockGenerateTextResponse() as any);
+
+      await agent.generateText("Analyze my data");
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0]?.[0];
+      const systemTexts = getSystemTexts(callArgs?.messages);
+
+      expect(onPrepareMessages).toHaveBeenCalledTimes(1);
+      expect(systemTexts.some((text) => text.includes("<workspace_skills>"))).toBe(true);
+    });
+  });
+
   describe("Text Generation", () => {
     it("should generate text from string input", async () => {
       const agent = new Agent({

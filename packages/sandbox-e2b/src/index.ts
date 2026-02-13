@@ -72,6 +72,105 @@ const DEFAULT_TIMEOUT_MS = 60000;
 const DEFAULT_MAX_OUTPUT_BYTES = 5 * 1024 * 1024;
 const SAFE_SHELL_ARG = /^[A-Za-z0-9_./:@+=-]+$/;
 
+const tokenizeCommandLine = (value: string): string[] | null => {
+  const tokens: string[] = [];
+  let current = "";
+  let quote: "'" | '"' | null = null;
+  let escapeNext = false;
+
+  const pushCurrent = () => {
+    if (current.length > 0) {
+      tokens.push(current);
+      current = "";
+    }
+  };
+
+  for (const char of value) {
+    if (escapeNext) {
+      current += char;
+      escapeNext = false;
+      continue;
+    }
+
+    if (quote === null) {
+      if (char === "\\") {
+        escapeNext = true;
+        continue;
+      }
+      if (char === "'" || char === '"') {
+        quote = char;
+        continue;
+      }
+      if (/\s/.test(char)) {
+        pushCurrent();
+        continue;
+      }
+      current += char;
+      continue;
+    }
+
+    if (quote === "'") {
+      if (char === "'") {
+        quote = null;
+      } else {
+        current += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      quote = null;
+      continue;
+    }
+
+    if (char === "\\") {
+      escapeNext = true;
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (escapeNext) {
+    current += "\\";
+  }
+
+  if (quote !== null) {
+    return null;
+  }
+
+  pushCurrent();
+  return tokens.length > 0 ? tokens : null;
+};
+
+const normalizeCommandAndArgs = (
+  command: string,
+  args?: string[],
+): { command: string; args?: string[] } => {
+  const trimmedCommand = command.trim();
+  const normalizedArgs = args && args.length > 0 ? args : undefined;
+
+  if (!trimmedCommand) {
+    return { command: trimmedCommand, args: normalizedArgs };
+  }
+
+  if (!/\s/.test(trimmedCommand)) {
+    return { command: trimmedCommand, args: normalizedArgs };
+  }
+
+  const parsed = tokenizeCommandLine(trimmedCommand);
+  if (!parsed || parsed.length === 0) {
+    return { command: trimmedCommand, args: normalizedArgs };
+  }
+
+  const [normalizedCommand, ...parsedArgs] = parsed;
+  const mergedArgs = [...parsedArgs, ...(normalizedArgs ?? [])];
+  return {
+    command: normalizedCommand,
+    args: mergedArgs.length > 0 ? mergedArgs : undefined,
+  };
+};
+
 type OutputBuffer = {
   chunks: Buffer[];
   size: number;
@@ -330,7 +429,8 @@ export class E2BSandbox implements WorkspaceSandbox {
 
   async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
     const startTime = Date.now();
-    const command = options.command?.trim();
+    const normalized = normalizeCommandAndArgs(options.command ?? "", options.args);
+    const command = normalized.command.trim();
 
     if (!command) {
       throw new Error("Sandbox command is required");
@@ -456,7 +556,7 @@ export class E2BSandbox implements WorkspaceSandbox {
     }
 
     const runCommand = async (): Promise<E2BCommandResult> => {
-      const commandLine = buildCommandLine(command, options.args);
+      const commandLine = buildCommandLine(command, normalized.args);
       const runOptions: Record<string, unknown> = {
         onStdout: (data: string) => {
           appendOutput(stdoutBuffer, data, maxOutputBytes);

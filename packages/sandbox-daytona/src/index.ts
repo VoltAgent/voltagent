@@ -1,8 +1,9 @@
 import * as daytonaModule from "@daytonaio/sdk";
-import type {
-  WorkspaceSandbox,
-  WorkspaceSandboxExecuteOptions,
-  WorkspaceSandboxResult,
+import {
+  type WorkspaceSandbox,
+  type WorkspaceSandboxExecuteOptions,
+  type WorkspaceSandboxResult,
+  normalizeCommandAndArgs,
 } from "@voltagent/core";
 
 export type DaytonaSandboxOptions = {
@@ -176,7 +177,8 @@ export class DaytonaSandbox implements WorkspaceSandbox {
 
   async execute(options: WorkspaceSandboxExecuteOptions): Promise<WorkspaceSandboxResult> {
     const startTime = Date.now();
-    const command = options.command?.trim();
+    const normalized = normalizeCommandAndArgs(options.command ?? "", options.args);
+    const command = normalized.command.trim();
 
     if (!command) {
       throw new Error("Sandbox command is required");
@@ -229,7 +231,7 @@ export class DaytonaSandbox implements WorkspaceSandbox {
 
     let response: DaytonaExecResult;
     try {
-      const commandLine = buildCommandLine(command, options.args);
+      const commandLine = buildCommandLine(command, normalized.args);
       response = await sandbox.process.executeCommand(
         commandLine,
         options.cwd ?? this.cwd,
