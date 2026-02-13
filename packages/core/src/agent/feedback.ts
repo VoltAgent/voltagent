@@ -108,7 +108,14 @@ export async function markFeedbackProvided(params: {
   }
 
   const existingFeedback = rawFeedback as AgentFeedbackMetadata;
-  const providedAt = resolveFeedbackProvidedAt(input.providedAt);
+  const existingProvidedAt =
+    typeof existingFeedback.providedAt === "string" && existingFeedback.providedAt.trim().length > 0
+      ? existingFeedback.providedAt.trim()
+      : undefined;
+  const providedAt =
+    input.providedAt !== undefined
+      ? resolveFeedbackProvidedAt(input.providedAt)
+      : (existingProvidedAt ?? resolveFeedbackProvidedAt(undefined));
   const providedFeedbackId =
     typeof input.feedbackId === "string" && input.feedbackId.trim().length > 0
       ? input.feedbackId.trim()

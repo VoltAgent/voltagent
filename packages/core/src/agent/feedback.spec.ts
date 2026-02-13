@@ -172,6 +172,66 @@ describe("feedback helpers", () => {
     expect(storedFeedback?.feedbackId).toBe("feedback-1");
   });
 
+  it("preserves existing providedAt when re-marking without an explicit timestamp", async () => {
+    const memory = new Memory({
+      storage: new InMemoryStorageAdapter(),
+    });
+
+    const userId = "user-1";
+    const conversationId = "conv-feedback";
+    const messageId = "assistant-msg-1";
+    const initialProvidedAt = "2026-02-12T00:00:00.000Z";
+
+    await memory.createConversation({
+      id: conversationId,
+      userId,
+      resourceId: "agent-1",
+      title: "Feedback test",
+      metadata: {},
+    });
+
+    await memory.addMessage(
+      {
+        id: messageId,
+        role: "assistant",
+        parts: [{ type: "text", text: "hello" }],
+        metadata: {
+          feedback: {
+            traceId: "trace-1",
+            key: "satisfaction",
+            url: "https://example.com/fb",
+            tokenId: "token-1",
+          },
+        },
+      } as UIMessage,
+      userId,
+      conversationId,
+    );
+
+    const first = await markFeedbackProvided({
+      memory,
+      input: {
+        userId,
+        conversationId,
+        messageId,
+        providedAt: initialProvidedAt,
+      },
+    });
+
+    expect(first?.providedAt).toBe(initialProvidedAt);
+
+    const second = await markFeedbackProvided({
+      memory,
+      input: {
+        userId,
+        conversationId,
+        messageId,
+      },
+    });
+
+    expect(second?.providedAt).toBe(initialProvidedAt);
+  });
+
   it("creates feedback handle with mark helper and updates local state", async () => {
     const mark = vi.fn(async () => ({
       traceId: "trace-1",

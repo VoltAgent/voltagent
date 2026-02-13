@@ -104,6 +104,8 @@ const feedback = result.feedback;
 If you want to persist feedback-submitted state in memory after ingestion, use the helper on the returned feedback object:
 
 ```ts
+const feedbackId = "feedback-id-from-ingestion-response"; // returned by your feedback ingestion API response
+
 if (result.feedback && !result.feedback.isProvided()) {
   await result.feedback.markFeedbackProvided({
     feedbackId, // optional
@@ -218,6 +220,11 @@ When you use the `/agents/:id/chat` endpoint (AI SDK useChat compatible), the as
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 
+const apiUrl = "http://localhost:3141"; // your VoltAgent server base URL
+const agentId = "support-agent-id"; // from route param or app config
+const userId = "user-1"; // from your auth/session layer
+const conversationId = "conv-1"; // current conversation id from your app state
+
 const transport = new DefaultChatTransport({
   api: `${apiUrl}/agents/${agentId}/chat`,
   prepareSendMessagesRequest({ messages }) {
@@ -276,6 +283,7 @@ async function submitFeedback(message: any, score: number) {
   });
 
   if (!response.ok) return;
+  const { id: feedbackId } = (await response.json()) as { id?: string };
 
   // Persist "already submitted" state for reloads
   await markFeedbackProvided({
@@ -283,6 +291,7 @@ async function submitFeedback(message: any, score: number) {
     userId,
     conversationId,
     messageId: message.id,
+    feedbackId, // optional: feedback id returned by ingestion API
   });
 }
 
@@ -291,6 +300,7 @@ async function markFeedbackProvided(input: {
   userId: string;
   conversationId: string;
   messageId: string;
+  feedbackId?: string;
 }) {
   // This is a custom app endpoint you implement.
   await fetch(`/api/agents/${input.agentId}/feedback/provided`, {

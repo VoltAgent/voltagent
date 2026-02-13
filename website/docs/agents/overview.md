@@ -155,6 +155,8 @@ const result = await agent.generateText("Quick rating?", {
 To persist "already submitted" state across memory reloads, you can use the result helper:
 
 ```ts
+const feedbackId = "feedback-id-from-ingestion-response"; // returned by your feedback ingestion API response
+
 if (result.feedback && !result.feedback.isProvided()) {
   await result.feedback.markFeedbackProvided({
     feedbackId, // optional
