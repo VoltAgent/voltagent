@@ -32,6 +32,7 @@ export type {
   WorkflowStepForEachItemsFunc,
   WorkflowStepForEachMapFunc,
   WorkflowStepLoopConfig,
+  WorkflowStepLoopSteps,
   WorkflowStepBranchConfig,
   WorkflowStepMapConfig,
   WorkflowStepMapEntry,
