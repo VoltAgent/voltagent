@@ -96,6 +96,7 @@ export class AgentTraceContext {
     const isSubagent = !!parentSpan && !isWorkflowParent && !!explicitParentAgentId;
     const parentAgentId = isSubagent ? explicitParentAgentId : undefined;
     const parentAgentName = isSubagent ? resolvedParent?.agentInfo?.name : undefined;
+    const linkedSpan = parentSpan ? undefined : this.resolveLinkedSpan();
 
     // Store common attributes once - these will be inherited by all child spans
     const commonAttributes: Record<string, any> = {
@@ -166,6 +167,17 @@ export class AgentTraceContext {
             "voltagent.is_subagent": true,
           }),
         },
+        links: linkedSpan
+          ? [
+              {
+                context: linkedSpan.spanContext(),
+                attributes: {
+                  "link.type": "ambient-parent",
+                  "link.source": "active-context",
+                },
+              },
+            ]
+          : undefined,
       },
       parentContext,
     );
@@ -527,6 +539,15 @@ export class AgentTraceContext {
     }
 
     return undefined;
+  }
+
+  private resolveLinkedSpan(): Span | undefined {
+    const activeSpan = trace.getSpan(context.active());
+    if (!activeSpan) {
+      return undefined;
+    }
+
+    return activeSpan;
   }
 
   /**
