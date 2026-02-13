@@ -105,6 +105,32 @@ describe("feedback helpers", () => {
     expect(findFeedbackMessageId(byFields, feedbackByFields)).toBe("assistant-2");
   });
 
+  it("does not throw when fallback feedback fields are not strings", () => {
+    const messages: UIMessage[] = [
+      {
+        id: "assistant-1",
+        role: "assistant",
+        parts: [{ type: "text", text: "a" }],
+        metadata: {
+          feedback: {
+            traceId: "trace-1",
+            key: "satisfaction",
+            url: "https://example.com/fb",
+          },
+        },
+      },
+    ];
+
+    const malformedFeedback = {
+      traceId: undefined,
+      key: null,
+      url: 42,
+    } as unknown as AgentFeedbackMetadata;
+
+    expect(() => findFeedbackMessageId(messages, malformedFeedback)).not.toThrow();
+    expect(findFeedbackMessageId(messages, malformedFeedback)).toBeUndefined();
+  });
+
   it("marks feedback provided and persists in memory", async () => {
     const memory = new Memory({
       storage: new InMemoryStorageAdapter(),
