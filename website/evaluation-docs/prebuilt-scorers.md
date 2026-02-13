@@ -2,6 +2,69 @@
 
 VoltAgent provides prebuilt scorers for common evaluation scenarios. These scorers are production-ready and can be used in both offline and live evaluations.
 
+## Evaluating Tool Calls During Agent Execution
+
+Use `createToolCallAccuracyScorerCode` from `@voltagent/scorers` to deterministically evaluate tool selection and tool order in live or offline runs.
+
+### Built-in scorer
+
+```typescript
+import { createToolCallAccuracyScorerCode } from "@voltagent/scorers";
+
+const toolOrderScorer = createToolCallAccuracyScorerCode({
+  expectedToolOrder: ["searchProducts", "checkInventory"],
+  strictMode: false, // allows extra tools as long as relative order is correct
+});
+```
+
+```typescript
+const singleToolScorer = createToolCallAccuracyScorerCode({
+  expectedTool: "searchProducts",
+  strictMode: true, // requires exactly one tool call and it must match expectedTool
+});
+```
+
+Live eval payloads already include `messages`, `toolCalls`, and `toolResults`. This scorer reads `toolCalls` first, then falls back to message-chain extraction.
+
+### Custom scorer with `toolCalls` and `toolResults`
+
+```typescript
+import { buildScorer } from "@voltagent/core";
+
+const toolExecutionHealthScorer = buildScorer({
+  id: "tool-execution-health",
+  type: "agent",
+})
+  .score(({ payload }) => {
+    const toolCalls = payload.toolCalls ?? [];
+    const toolResults = payload.toolResults ?? [];
+
+    const calledToolNames = toolCalls
+      .map((call) => call.toolName)
+      .filter((name): name is string => Boolean(name));
+
+    const failedResults = toolResults.filter((result) => result.isError === true || !!result.error);
+
+    const completionRatio =
+      toolCalls.length === 0 ? 1 : Math.min(toolResults.length / toolCalls.length, 1);
+    const score = Math.max(0, completionRatio - failedResults.length * 0.25);
+
+    return {
+      score,
+      metadata: {
+        calledToolNames,
+        toolCallCount: toolCalls.length,
+        toolResultCount: toolResults.length,
+        failedResultCount: failedResults.length,
+        completionRatio,
+      },
+    };
+  })
+  .build();
+```
+
+This pattern lets you score both tool selection (`toolCalls`) and execution quality (`toolResults`) in one scorer.
+
 ## Heuristic Scorers (No LLM Required)
 
 These scorers from AutoEvals perform deterministic evaluations without requiring an LLM or API keys:

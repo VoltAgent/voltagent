@@ -17,6 +17,7 @@ import {
 import type { VoltAgentObservability } from "../observability";
 import { randomUUID } from "../utils/id";
 import type { VoltOpsClient } from "../voltops/client";
+import type { StepWithContent } from "./providers/base/types";
 import type {
   AgentEvalConfig,
   AgentEvalContext,
@@ -27,6 +28,8 @@ import type {
   AgentEvalResult,
   AgentEvalResultCallbackArgs,
   AgentEvalScorerConfig,
+  AgentEvalToolCall,
+  AgentEvalToolResult,
   OperationContext,
 } from "./types";
 
@@ -176,6 +179,15 @@ function createScorerSpanAttributes(
   }
   if (storagePayload.output) {
     attributes["eval.output"] = storagePayload.output;
+  }
+  if (Array.isArray(storagePayload.messages) && storagePayload.messages.length > 0) {
+    attributes["eval.messages.count"] = storagePayload.messages.length;
+  }
+  if (Array.isArray(storagePayload.toolCalls) && storagePayload.toolCalls.length > 0) {
+    attributes["eval.tool_calls.count"] = storagePayload.toolCalls.length;
+  }
+  if (Array.isArray(storagePayload.toolResults) && storagePayload.toolResults.length > 0) {
+    attributes["eval.tool_results.count"] = storagePayload.toolResults.length;
   }
   // Expected is often in metadata or payload, let's check storagePayload.metadata
   // But wait, storagePayload doesn't have expected field directly usually, it's in metadata or derived.
@@ -695,7 +707,247 @@ function ensureScorerText(value: unknown): string {
   return String(value);
 }
 
-function buildEvalPayload(
+function normalizeMessageRole(role: unknown): StepWithContent["role"] {
+  if (role === "user" || role === "assistant" || role === "system" || role === "tool") {
+    return role;
+  }
+  return "assistant";
+}
+
+function normalizeMessageContent(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (value === null || value === undefined) {
+    return "";
+  }
+  try {
+    return safeStringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function normalizeMessageChainSource(source: unknown): StepWithContent[] {
+  if (typeof source === "string") {
+    return [
+      {
+        id: randomUUID(),
+        type: "text",
+        role: "user",
+        content: source,
+      },
+    ];
+  }
+
+  if (!Array.isArray(source) || source.length === 0) {
+    return [];
+  }
+
+  const normalized: StepWithContent[] = [];
+
+  for (const item of source) {
+    if (typeof item === "string") {
+      normalized.push({
+        id: randomUUID(),
+        type: "text",
+        role: "user",
+        content: item,
+      });
+      continue;
+    }
+
+    if (!isPlainRecord(item)) {
+      continue;
+    }
+
+    const role = normalizeMessageRole(item.role);
+    const rawType = item.type;
+    const messageType: StepWithContent["type"] =
+      rawType === "text" || rawType === "tool_call" || rawType === "tool_result"
+        ? rawType
+        : role === "tool"
+          ? "tool_result"
+          : "text";
+    const contentSource =
+      "parts" in item && Array.isArray(item.parts)
+        ? item.parts
+        : "content" in item
+          ? item.content
+          : item;
+    const content = normalizeMessageContent(contentSource);
+
+    const step: StepWithContent = {
+      id: typeof item.id === "string" ? item.id : randomUUID(),
+      type: messageType,
+      role,
+      content,
+    };
+
+    if (typeof item.name === "string") {
+      step.name = item.name;
+    } else if (typeof item.toolName === "string") {
+      step.name = item.toolName;
+    }
+
+    if (messageType === "tool_call") {
+      if (isPlainRecord(item.arguments)) {
+        step.arguments = item.arguments;
+      } else if (isPlainRecord(item.input)) {
+        step.arguments = item.input;
+      }
+    }
+
+    if (messageType === "tool_result" || role === "tool") {
+      if ("result" in item) {
+        step.result = item.result;
+      } else if ("output" in item) {
+        step.result = item.output;
+      } else if ("content" in item) {
+        step.result = item.content;
+      }
+    }
+
+    normalized.push(step);
+  }
+
+  return normalized;
+}
+
+function normalizeConversationSteps(steps: unknown): StepWithContent[] {
+  if (!Array.isArray(steps) || steps.length === 0) {
+    return [];
+  }
+
+  const normalized: StepWithContent[] = [];
+
+  for (const step of steps) {
+    if (!isPlainRecord(step)) {
+      continue;
+    }
+
+    const role = normalizeMessageRole(step.role);
+    const rawType = step.type;
+    const type: StepWithContent["type"] =
+      rawType === "text" || rawType === "tool_call" || rawType === "tool_result"
+        ? rawType
+        : role === "tool"
+          ? "tool_result"
+          : "text";
+
+    const normalizedStep: StepWithContent = {
+      id: typeof step.id === "string" ? step.id : randomUUID(),
+      type,
+      role,
+      content: normalizeMessageContent(step.content),
+      ...(typeof step.name === "string" ? { name: step.name } : {}),
+      ...(isPlainRecord(step.arguments) ? { arguments: step.arguments } : {}),
+      ...("result" in step ? { result: step.result } : {}),
+      ...(isPlainRecord(step.usage) ? { usage: step.usage as StepWithContent["usage"] } : {}),
+      ...(typeof step.subAgentId === "string" ? { subAgentId: step.subAgentId } : {}),
+      ...(typeof step.subAgentName === "string" ? { subAgentName: step.subAgentName } : {}),
+    };
+
+    normalized.push(normalizedStep);
+  }
+
+  return normalized;
+}
+
+function buildEvalMessageChain(
+  oc: OperationContext,
+  output: unknown,
+): StepWithContent[] | undefined {
+  const inputChain = normalizeMessageChainSource(oc.input);
+  const stepChain = normalizeConversationSteps(oc.conversationSteps);
+  const merged = [...inputChain, ...stepChain];
+
+  if (merged.length === 0) {
+    const fallbackOutput = normalizeEvalString(output);
+    if (fallbackOutput) {
+      merged.push({
+        id: randomUUID(),
+        type: "text",
+        role: "assistant",
+        content: fallbackOutput,
+      });
+    }
+  }
+
+  return merged.length > 0 ? merged : undefined;
+}
+
+function cloneUnknownArray<T>(value: unknown): T[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(safeStringify(value)) as T[];
+  } catch {
+    return [...value] as T[];
+  }
+}
+
+function extractToolCallsFromMessages(
+  messages: StepWithContent[] | undefined,
+): AgentEvalToolCall[] | undefined {
+  if (!messages || messages.length === 0) {
+    return undefined;
+  }
+
+  const toolCalls: AgentEvalToolCall[] = [];
+
+  for (const [index, message] of messages.entries()) {
+    if (message.type !== "tool_call") {
+      continue;
+    }
+
+    toolCalls.push({
+      toolCallId: message.id,
+      toolName: message.name,
+      arguments: message.arguments ?? null,
+      content: message.content,
+      stepIndex: index,
+      usage: message.usage ?? null,
+      subAgentId: message.subAgentId,
+      subAgentName: message.subAgentName,
+    });
+  }
+
+  return toolCalls.length > 0 ? toolCalls : undefined;
+}
+
+function extractToolResultsFromMessages(
+  messages: StepWithContent[] | undefined,
+): AgentEvalToolResult[] | undefined {
+  if (!messages || messages.length === 0) {
+    return undefined;
+  }
+
+  const toolResults: AgentEvalToolResult[] = [];
+
+  for (const [index, message] of messages.entries()) {
+    if (message.type !== "tool_result") {
+      continue;
+    }
+
+    toolResults.push({
+      toolCallId: message.id,
+      toolName: message.name,
+      result: message.result ?? message.content,
+      content: message.content,
+      stepIndex: index,
+      usage: message.usage ?? null,
+      subAgentId: message.subAgentId,
+      subAgentName: message.subAgentName,
+    });
+  }
+
+  return toolResults.length > 0 ? toolResults : undefined;
+}
+
+export function buildEvalPayload(
   oc: OperationContext,
   output: unknown,
   operation: AgentEvalOperationType,
@@ -707,6 +959,17 @@ function buildEvalPayload(
     return undefined;
   }
 
+  const metadataRecord = isPlainRecord(metadata) ? metadata : undefined;
+  const metadataMessages = normalizeMessageChainSource(metadataRecord?.messages);
+  const messages =
+    metadataMessages.length > 0 ? metadataMessages : buildEvalMessageChain(oc, output);
+  const toolCalls =
+    cloneUnknownArray<AgentEvalToolCall>(metadataRecord?.toolCalls) ??
+    extractToolCallsFromMessages(messages);
+  const toolResults =
+    cloneUnknownArray<AgentEvalToolResult>(metadataRecord?.toolResults) ??
+    extractToolResultsFromMessages(messages);
+
   return {
     operationId: oc.operationId,
     operationType: operation,
@@ -714,6 +977,9 @@ function buildEvalPayload(
     output: normalizeEvalString(output),
     rawInput: oc.input,
     rawOutput: output,
+    messages,
+    toolCalls,
+    toolResults,
     userId: oc.userId,
     conversationId: oc.conversationId,
     traceId: spanContext.traceId,

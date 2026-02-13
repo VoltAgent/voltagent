@@ -69,6 +69,7 @@ export class WorkflowTraceContext {
     options: WorkflowTraceContextOptions,
   ) {
     this.tracer = observability.getTracer();
+    const linkedSpan = options.parentSpan ? undefined : this.resolveLinkedSpan();
 
     // Store common attributes once - these will be inherited by all child spans
     this.commonAttributes = {
@@ -81,9 +82,11 @@ export class WorkflowTraceContext {
     };
 
     // If there's a parent span (e.g., from an agent), use it as context
+    // Otherwise, use a clean context (remove any ambient spans)
+    // This ensures workflow root spans are truly root spans.
     const parentContext = options.parentSpan
       ? trace.setSpan(context.active(), options.parentSpan)
-      : context.active();
+      : trace.deleteSpan(context.active());
 
     // Create root span with common attributes
     const spanAttributes: Record<string, any> = {
@@ -106,23 +109,36 @@ export class WorkflowTraceContext {
       }
     }
 
-    // Create span links if resuming from a previous execution
-    const links = options.resumedFrom
-      ? [
-          {
-            context: {
-              traceId: options.resumedFrom.traceId,
-              spanId: options.resumedFrom.spanId,
-              traceFlags: 1, // Sampled
-              traceState: undefined,
+    // Use links to preserve non-parent trace relationships (request context + resume context)
+    const links = [
+      ...(linkedSpan
+        ? [
+            {
+              context: linkedSpan.spanContext(),
+              attributes: {
+                "link.type": "ambient-parent",
+                "link.source": "active-context",
+              },
             },
-            attributes: {
-              "link.type": "resume",
-              "workflow.resumed": true,
+          ]
+        : []),
+      ...(options.resumedFrom
+        ? [
+            {
+              context: {
+                traceId: options.resumedFrom.traceId,
+                spanId: options.resumedFrom.spanId,
+                traceFlags: 1, // Sampled
+                traceState: undefined,
+              },
+              attributes: {
+                "link.type": "resume",
+                "workflow.resumed": true,
+              },
             },
-          },
-        ]
-      : undefined;
+          ]
+        : []),
+    ];
 
     this.rootSpan = this.tracer.startSpan(
       operationName,
@@ -137,7 +153,7 @@ export class WorkflowTraceContext {
             "workflow.previous_span_id": options.resumedFrom.spanId,
           }),
         },
-        links,
+        links: links.length > 0 ? links : undefined,
       },
       parentContext,
     );
@@ -517,6 +533,13 @@ export class WorkflowTraceContext {
    */
   updateActiveContext(span: Span): void {
     this.activeContext = trace.setSpan(this.activeContext, span);
+  }
+
+  /**
+   * Capture the current active span as a link target when we intentionally create a new root trace.
+   */
+  private resolveLinkedSpan(): Span | undefined {
+    return trace.getSpan(context.active());
   }
 
   /**

@@ -25,6 +25,7 @@ import {
   type OnPrepareModelMessagesHookArgs,
   type OnToolStartHookArgs,
   type OnToolEndHookArgs,
+  type OnToolErrorHookArgs,
   type OnHandoffHookArgs,
 } from "@voltagent/core";
 
@@ -125,6 +126,22 @@ const myAgentHooks = createHooks({
     } else {
       console.log(`[Hook] Tool ${tool.name} completed with result:`, output);
     }
+  },
+
+  /**
+   * Called only when a tool throws, before VoltAgent serializes the error payload.
+   */
+  onToolError: async (args: OnToolErrorHookArgs) => {
+    const { tool, originalError } = args;
+    console.error(`[Hook] Raw tool error from ${tool.name}:`, originalError.message);
+
+    // Return { output } to customize what gets sent back to the model.
+    return {
+      output: {
+        error: true,
+        message: "External API request failed",
+      },
+    };
   },
 
   /**
@@ -427,6 +444,39 @@ onToolEnd: async ({ agent, tool, output, error, context }) => {
 };
 ```
 
+### `onToolError`
+
+- **Triggered:** Only when a tool throws, before VoltAgent builds its default serialized error result.
+- **Argument Object (`OnToolErrorHookArgs`):**
+  - `agent`: Agent instance running the tool
+  - `tool`: The tool that failed
+  - `args`: Tool input arguments
+  - `error`: Structured `VoltAgentError` for the tool failure
+  - `originalError`: Original thrown error normalized to an `Error` instance
+  - `context`: Operation context for the current call
+  - `options`: ToolExecuteOptions (includes `toolContext`, `abortController`, etc.)
+- **Return:** Optional `{ output }` replacement payload. If omitted, VoltAgent returns its default serialized error payload.
+- **Use Cases:** Centralized error normalization (for example Axios), redacting sensitive fields, shrinking error payload size before it is sent to the model.
+
+```ts
+onToolError: async ({ tool, error, originalError }) => {
+  const maybeAxios = (originalError as any).isAxiosError === true;
+  if (!maybeAxios) {
+    return;
+  }
+
+  return {
+    output: {
+      error: true,
+      name: error.name,
+      message: originalError.message,
+      code: (originalError as any).code,
+      status: (originalError as any).response?.status,
+    },
+  };
+};
+```
+
 ### Tool-level hooks (per tool)
 
 Tool hooks run for a specific tool instance and are called before/after execution. Tool-level `onEnd` runs before agent-level `onToolEnd`. If both return `{ output }`, the agent hook wins. Any override is re-validated when `outputSchema` is present.
@@ -476,12 +526,13 @@ onHandoff: async ({ agent, sourceAgent }) => {
 - **Async Execution:** Hooks can be `async` functions. VoltAgent awaits completion before proceeding. Long-running operations in hooks add latency to agent response time.
 - **Error Handling:** Errors thrown inside hooks may interrupt agent execution. Use `try...catch` within hooks or design them to be reliable.
 - **Hook Merging:** When hooks are passed to both the Agent constructor and a method call:
-  - Most hooks (`onStart`, `onEnd`, `onError`, `onHandoff`, `onToolStart`, `onToolEnd`, `onStepFinish`, `onRetry`, `onFallback`) execute both: method-level first, then agent-level.
+  - Most hooks (`onStart`, `onEnd`, `onError`, `onHandoff`, `onToolStart`, `onToolEnd`, `onToolError`, `onStepFinish`, `onRetry`, `onFallback`) execute both: method-level first, then agent-level.
   - Message hooks (`onPrepareMessages`, `onPrepareModelMessages`) do not merge: method-level replaces agent-level entirely.
 
 ## Additional Hooks
 
 - **`onError`**: Called when an error occurs during agent execution. Receives `{ agent: Agent, error: Error, context: OperationContext }`.
+- **`onToolError`**: Called when a tool throws, before default tool error serialization. Receives `{ agent, tool, args, error, originalError, context }` and can return `{ output }`.
 - **`onStepFinish`**: Called after each step in multi-step agent execution. Receives `{ agent: Agent, step: any, context: OperationContext }`.
 - **`onRetry`**: Called when VoltAgent schedules a retry. Receives `{ source, operation, ... }` with retry metadata.
 - **`onFallback`**: Called when VoltAgent selects the next model candidate. Receives `{ stage, fromModel, nextModel, error, ... }`.

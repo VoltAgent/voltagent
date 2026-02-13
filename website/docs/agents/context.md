@@ -264,6 +264,7 @@ The `options` parameter in tool `execute` functions combines `ToolExecuteOptions
 - `operationId` - Unique operation identifier
 - `userId` - User identifier (if provided)
 - `conversationId` - Conversation identifier (if provided)
+- `workspace` - Workspace instance configured on the agent (if available)
 - `context` - User-defined context Map (read/write)
 - `systemContext` - Internal system context Map
 - `logger` - Operation-scoped logger with full context
@@ -420,6 +421,9 @@ interface OperationContext {
 
   // Optional conversation identifier
   conversationId?: string;
+
+  // Workspace configured on the agent (if any)
+  workspace?: Workspace;
 }
 ```
 
@@ -436,6 +440,7 @@ const response = await agent.generateText("Hello", {
 console.log(operationContext.userId); // "user-123"
 console.log(operationContext.conversationId); // "conv-456"
 console.log(operationContext.context.get("language")); // "en"
+console.log(operationContext.workspace?.id); // e.g. "demo-workspace"
 ```
 
 ### Operation Metadata (Read-Only)
@@ -819,7 +824,7 @@ async function demonstrateFlow() {
 
 The `OperationContext` contains:
 
-- **User-managed**: `context` (Map), `userId`, `conversationId`
+- **User-managed**: `context` (Map), `userId`, `conversationId`, `workspace`
 - **Metadata**: `operationId`, `startTime`, `isActive`, `parentAgentId`
 - **System**: `systemContext`, `logger`, `traceContext`, `conversationSteps`, `abortController`, `cancellationError`, `elicitation`
 - **Input/Output**: `input`, `output` (automatically set)

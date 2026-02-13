@@ -259,6 +259,33 @@ interface AgentEvalContext {
   output: string | null; // normalized string
   rawInput: unknown; // original input value
   rawOutput: unknown; // original output value
+  messages?: Array<{
+    id: string;
+    type: "text" | "tool_call" | "tool_result";
+    role: "user" | "assistant" | "system" | "tool";
+    content: string;
+    name?: string;
+    arguments?: Record<string, unknown>;
+    result?: unknown;
+  }>;
+  toolCalls?: Array<{
+    toolCallId?: string;
+    toolName?: string;
+    arguments?: Record<string, unknown> | null;
+    content?: string;
+    stepIndex?: number;
+    isError?: boolean;
+    error?: unknown;
+  }>;
+  toolResults?: Array<{
+    toolCallId?: string;
+    toolName?: string;
+    result?: unknown;
+    content?: string;
+    stepIndex?: number;
+    isError?: boolean;
+    error?: unknown;
+  }>;
   userId?: string;
   conversationId?: string;
   traceId: string;
@@ -270,6 +297,8 @@ interface AgentEvalContext {
 ```
 
 Use `input` and `output` for text-based scorers. Access `rawInput` and `rawOutput` for structured data.
+Use `messages`, `toolCalls`, and `toolResults` when you need process-level evaluation (for example, checking whether the agent picked the correct tool sequence).
+For concrete examples (both built-in and custom), see [Prebuilt Scorers](./prebuilt-scorers.md#evaluating-tool-calls-during-agent-execution).
 
 ## Building Custom Scorers
 

@@ -1071,6 +1071,104 @@ Use pandas and summarize findings.`.split("\n"),
       operationContext.traceContext.end("completed");
     });
 
+    it("calls onToolError when a tool throws", async () => {
+      const onToolError = vi.fn();
+      const onToolEnd = vi.fn();
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: createHooks({ onToolError, onToolEnd }),
+      });
+
+      const failingTool = new Tool({
+        name: "failing-tool",
+        description: "Always throws",
+        parameters: z.object({}),
+        execute: async () => {
+          throw new Error("Tool failure");
+        },
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(failingTool);
+      await execute({});
+
+      expect(onToolError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: failingTool,
+          args: {},
+          originalError: expect.objectContaining({ message: "Tool failure" }),
+          error: expect.objectContaining({
+            message: "Tool failure",
+            stage: "tool_execution",
+          }),
+        }),
+      );
+      expect(onToolEnd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: failingTool,
+          output: undefined,
+          error: expect.objectContaining({
+            message: "Tool failure",
+            stage: "tool_execution",
+          }),
+        }),
+      );
+
+      operationContext.traceContext.end("completed");
+    });
+
+    it("allows onToolError to override serialized error output", async () => {
+      const onToolError = vi.fn().mockResolvedValue({
+        output: {
+          error: true,
+          message: "Compact error payload",
+          status: 429,
+        },
+      });
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        hooks: createHooks({ onToolError }),
+      });
+
+      const failingTool = new Tool({
+        name: "failing-tool",
+        description: "Always throws",
+        parameters: z.object({}),
+        execute: async () => {
+          const error = new Error("Tool failure");
+          (error as any).stack = "should-not-be-returned";
+          throw error;
+        },
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(failingTool);
+      const result = await execute({});
+
+      expect(result).toEqual({
+        error: true,
+        message: "Compact error payload",
+        status: 429,
+      });
+      expect(onToolError).toHaveBeenCalledTimes(1);
+
+      operationContext.traceContext.end("completed");
+    });
+
     it("sanitizes circular error payloads from tools", async () => {
       const agent = new Agent({
         name: "TestAgent",
@@ -1198,6 +1296,82 @@ Use pandas and summarize findings.`.split("\n"),
           tool,
           output: "tool-hook",
           error: undefined,
+        }),
+      );
+
+      operationContext.traceContext.end("completed");
+    });
+
+    it("passes workspace context to tool calls for filesystem and sandbox access", async () => {
+      const sandboxExecute = vi.fn().mockResolvedValue({
+        stdout: "sandbox-content",
+        stderr: "",
+        exitCode: 0,
+        durationMs: 5,
+        timedOut: false,
+        aborted: false,
+        stdoutTruncated: false,
+        stderrTruncated: false,
+      });
+
+      const workspace = new Workspace({
+        filesystem: {},
+        sandbox: {
+          name: "mock-sandbox",
+          status: "ready",
+          execute: sandboxExecute,
+        },
+      });
+      await workspace.filesystem.write("/docs/report.txt", "workspace-content");
+
+      const tool = new Tool({
+        name: "workspace-fetch-tool",
+        description: "Reads from workspace filesystem and sandbox",
+        parameters: z.object({}),
+        execute: async (_args, options) => {
+          const workspaceFromContext = options?.workspace;
+          if (!workspaceFromContext) {
+            return "missing-workspace";
+          }
+
+          const fileContent = (
+            await workspaceFromContext.filesystem.readRaw("/docs/report.txt")
+          ).content.join("\n");
+          const sandboxResult = await workspaceFromContext.sandbox?.execute({
+            command: "cat",
+            args: ["/docs/report.txt"],
+            operationContext: options as any,
+          });
+
+          return `${fileContent}|${sandboxResult?.stdout ?? ""}`;
+        },
+      });
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        workspace,
+        tools: [tool],
+      });
+
+      const operationContext = (agent as any).createOperationContext("input");
+      const executeFactory = (agent as any).createToolExecutionFactory(
+        operationContext,
+        agent.hooks,
+      );
+
+      const execute = executeFactory(tool);
+      const result = await execute({});
+
+      expect(result).toBe("workspace-content|sandbox-content");
+      expect(sandboxExecute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: "cat",
+          args: ["/docs/report.txt"],
+          operationContext: expect.objectContaining({
+            operationId: operationContext.operationId,
+          }),
         }),
       );
 

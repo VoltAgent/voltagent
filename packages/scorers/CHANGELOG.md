@@ -1,5 +1,75 @@
 # @voltagent/scorers
 
+## 2.1.0
+
+### Minor Changes
+
+- [#1055](https://github.com/VoltAgent/voltagent/pull/1055) [`21891b4`](https://github.com/VoltAgent/voltagent/commit/21891b4574df7c771fb9b12f04402c2ffa1201bd) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add tool-aware live-eval payloads and a deterministic tool-call accuracy scorer
+
+  ### What's New
+  - `@voltagent/core`
+    - Live eval payload now includes `messages`, `toolCalls`, and `toolResults`.
+    - If `toolCalls`/`toolResults` are not explicitly provided, they are derived from the normalized message/step chain.
+    - New exported eval types: `AgentEvalToolCall` and `AgentEvalToolResult`.
+  - `@voltagent/scorers`
+    - Added prebuilt `createToolCallAccuracyScorerCode` for deterministic tool evaluation.
+    - Supports both single-tool checks (`expectedTool`) and ordered tool-chain checks (`expectedToolOrder`).
+    - Supports strict and lenient matching modes.
+
+  ### Code Examples
+
+  Built-in tool-call scorer:
+
+  ```ts
+  import { createToolCallAccuracyScorerCode } from "@voltagent/scorers";
+
+  const toolOrderScorer = createToolCallAccuracyScorerCode({
+    expectedToolOrder: ["searchProducts", "checkInventory"],
+    strictMode: false,
+  });
+  ```
+
+  Custom scorer using `toolCalls` + `toolResults`:
+
+  ```ts
+  import { buildScorer } from "@voltagent/core";
+
+  interface ToolEvalPayload extends Record<string, unknown> {
+    toolCalls?: Array<{ toolName?: string }>;
+    toolResults?: Array<{ isError?: boolean; error?: unknown }>;
+  }
+
+  const toolExecutionHealthScorer = buildScorer<ToolEvalPayload, Record<string, unknown>>({
+    id: "tool-execution-health",
+    label: "Tool Execution Health",
+  })
+    .score(({ payload }) => {
+      const toolCalls = payload.toolCalls ?? [];
+      const toolResults = payload.toolResults ?? [];
+
+      const failedResults = toolResults.filter(
+        (result) => result.isError === true || Boolean(result.error)
+      );
+      const completionRatio =
+        toolCalls.length === 0 ? 1 : Math.min(toolResults.length / toolCalls.length, 1);
+
+      return {
+        score: Math.max(0, completionRatio - failedResults.length * 0.25),
+        metadata: {
+          toolCallCount: toolCalls.length,
+          toolResultCount: toolResults.length,
+          failedResultCount: failedResults.length,
+        },
+      };
+    })
+    .build();
+  ```
+
+### Patch Changes
+
+- Updated dependencies [[`156c98e`](https://github.com/VoltAgent/voltagent/commit/156c98e738c0e86dc9fc2dc4d55ee48c8e1e2576), [`21891b4`](https://github.com/VoltAgent/voltagent/commit/21891b4574df7c771fb9b12f04402c2ffa1201bd), [`3556385`](https://github.com/VoltAgent/voltagent/commit/3556385f207de8c669b878ccea8257a421e15c0f), [`480981a`](https://github.com/VoltAgent/voltagent/commit/480981afe136b575d2ba6d943924dddc5e07da44)]:
+  - @voltagent/core@2.4.0
+
 ## 2.0.4
 
 ### Patch Changes

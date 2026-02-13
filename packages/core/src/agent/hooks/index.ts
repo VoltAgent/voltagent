@@ -74,6 +74,26 @@ export interface OnToolEndHookResult {
   output?: unknown;
 }
 
+export interface OnToolErrorHookArgs {
+  agent: Agent;
+  tool: AgentTool;
+  args: any;
+  /** Structured VoltAgentError for this failure. */
+  error: VoltAgentError | AbortError;
+  /** Original thrown value normalized to an Error instance. */
+  originalError: Error;
+  context: OperationContext;
+  options?: ToolExecuteOptions;
+}
+
+export interface OnToolErrorHookResult {
+  /**
+   * Optional replacement payload returned to the model for this tool error.
+   * When omitted, VoltAgent returns its default serialized error payload.
+   */
+  output?: unknown;
+}
+
 export interface OnPrepareMessagesHookArgs {
   /** The messages that will be sent to the LLM (AI SDK UIMessage). */
   messages: UIMessage[];
@@ -175,6 +195,9 @@ export type AgentHookOnToolStart = (args: OnToolStartHookArgs) => Promise<void> 
 export type AgentHookOnToolEnd = (
   args: OnToolEndHookArgs,
 ) => Promise<OnToolEndHookResult | undefined> | Promise<void> | OnToolEndHookResult | undefined;
+export type AgentHookOnToolError = (
+  args: OnToolErrorHookArgs,
+) => Promise<OnToolErrorHookResult | undefined> | Promise<void> | OnToolErrorHookResult | undefined;
 export type AgentHookOnPrepareMessages = (
   args: OnPrepareMessagesHookArgs,
 ) => Promise<OnPrepareMessagesHookResult> | OnPrepareMessagesHookResult;
@@ -196,6 +219,7 @@ export type AgentHooks = {
   onHandoffComplete?: AgentHookOnHandoffComplete;
   onToolStart?: AgentHookOnToolStart;
   onToolEnd?: AgentHookOnToolEnd;
+  onToolError?: AgentHookOnToolError;
   onPrepareMessages?: AgentHookOnPrepareMessages;
   onPrepareModelMessages?: AgentHookOnPrepareModelMessages;
   // Additional (kept for convenience)
@@ -215,6 +239,7 @@ const defaultHooks: Required<AgentHooks> = {
   onHandoffComplete: async (_args: OnHandoffCompleteHookArgs) => {},
   onToolStart: async (_args: OnToolStartHookArgs) => {},
   onToolEnd: async (_args: OnToolEndHookArgs) => undefined,
+  onToolError: async (_args: OnToolErrorHookArgs) => undefined,
   onPrepareMessages: async (_args: OnPrepareMessagesHookArgs) => ({}),
   onPrepareModelMessages: async (_args: OnPrepareModelMessagesHookArgs) => ({}),
   onError: async (_args: OnErrorHookArgs) => {},
@@ -234,6 +259,7 @@ export function createHooks(hooks: Partial<AgentHooks> = {}): AgentHooks {
     onHandoffComplete: hooks.onHandoffComplete || defaultHooks.onHandoffComplete,
     onToolStart: hooks.onToolStart || defaultHooks.onToolStart,
     onToolEnd: hooks.onToolEnd || defaultHooks.onToolEnd,
+    onToolError: hooks.onToolError || defaultHooks.onToolError,
     onPrepareMessages: hooks.onPrepareMessages || defaultHooks.onPrepareMessages,
     onPrepareModelMessages: hooks.onPrepareModelMessages || defaultHooks.onPrepareModelMessages,
     onError: hooks.onError || defaultHooks.onError,

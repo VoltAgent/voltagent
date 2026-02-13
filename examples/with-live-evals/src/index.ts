@@ -1,4 +1,4 @@
-import VoltAgent, { Agent, VoltAgentObservability, buildScorer } from "@voltagent/core";
+import VoltAgent, { Agent, VoltAgentObservability, buildScorer, createTool } from "@voltagent/core";
 import {
   createAnswerCorrectnessScorer,
   createAnswerRelevancyScorer,
@@ -10,6 +10,7 @@ import {
   createModerationScorer,
   createPossibleScorer,
   createSummaryScorer,
+  createToolCallAccuracyScorerCode,
   createTranslationScorer,
   scorers,
 } from "@voltagent/scorers";
@@ -71,6 +72,115 @@ const customScorer = buildScorer({
 })
   .score(() => {
     return { score: 1 };
+  })
+  .build();
+
+const productCatalog = [
+  { id: "laptop-pro-13", name: "Laptop Pro 13", price: 1299, inStock: 8 },
+  { id: "laptop-air-14", name: "Laptop Air 14", price: 999, inStock: 14 },
+  { id: "office-monitor-27", name: "Office Monitor 27", price: 299, inStock: 0 },
+];
+
+const searchProductsTool = createTool({
+  name: "searchProducts",
+  description: "Searches a small product catalog by query and returns product candidates.",
+  parameters: z.object({
+    query: z.string().describe("Product search query"),
+  }),
+  execute: async ({ query }: { query: string }) => {
+    const normalizedQuery = query.toLowerCase();
+    const matches = productCatalog.filter((product) =>
+      product.name.toLowerCase().includes(normalizedQuery),
+    );
+
+    return {
+      query,
+      total: matches.length,
+      results: matches.map(({ id, name, price }) => ({ id, name, price })),
+    };
+  },
+});
+
+const checkInventoryTool = createTool({
+  name: "checkInventory",
+  description: "Checks stock status for a product id.",
+  parameters: z.object({
+    productId: z.string().describe("Product id from searchProducts result"),
+  }),
+  execute: async ({ productId }: { productId: string }) => {
+    const found = productCatalog.find((product) => product.id === productId);
+    if (!found) {
+      return {
+        productId,
+        isError: true,
+        error: "Product not found",
+        available: 0,
+      };
+    }
+
+    return {
+      productId,
+      available: found.inStock,
+      isError: false,
+    };
+  },
+});
+
+interface ToolEvalToolResult extends Record<string, unknown> {
+  result?: unknown;
+  isError?: boolean;
+  error?: unknown;
+}
+
+interface ToolEvalPayload extends Record<string, unknown> {
+  toolCalls?: Array<{ toolName?: string }>;
+  toolResults?: ToolEvalToolResult[];
+}
+
+const toolCallOrderScorer = createToolCallAccuracyScorerCode<ToolEvalPayload>({
+  expectedToolOrder: ["searchProducts", "checkInventory"],
+  strictMode: false,
+});
+
+const toolExecutionHealthScorer = buildScorer<ToolEvalPayload, Record<string, unknown>>({
+  id: "tool-execution-health",
+  label: "Tool Execution Health",
+})
+  .score(({ payload }) => {
+    const toolCalls = payload.toolCalls ?? [];
+    const toolResults = payload.toolResults ?? [];
+
+    const calledToolNames = toolCalls
+      .map((call) => call.toolName)
+      .filter((name): name is string => Boolean(name));
+
+    const failedResults = toolResults.filter((toolResult) => {
+      if (toolResult.isError === true || Boolean(toolResult.error)) {
+        return true;
+      }
+
+      if (toolResult.result && typeof toolResult.result === "object") {
+        const resultRecord = toolResult.result as Record<string, unknown>;
+        return resultRecord.isError === true || Boolean(resultRecord.error);
+      }
+
+      return false;
+    });
+
+    const completionRatio =
+      toolCalls.length === 0 ? 1 : Math.min(toolResults.length / toolCalls.length, 1);
+    const score = Math.max(0, completionRatio - failedResults.length * 0.25);
+
+    return {
+      score,
+      metadata: {
+        calledToolNames,
+        toolCallCount: toolCalls.length,
+        toolResultCount: toolResults.length,
+        failedResultCount: failedResults.length,
+        completionRatio,
+      },
+    };
   })
   .build();
 
@@ -295,6 +405,26 @@ const supportAgent = new Agent({
   },
 });
 
+const toolEvalAgent = new Agent({
+  name: "tool-eval-demo",
+  instructions: `You are a product assistant.
+Always call searchProducts first, then call checkInventory for a selected product before finalizing your answer.
+If no products are found, explain that clearly.`,
+  model: "openai/gpt-4o-mini",
+  tools: [searchProductsTool, checkInventoryTool],
+  eval: {
+    sampling: { type: "ratio", rate: 1 },
+    scorers: {
+      toolCallOrder: {
+        scorer: toolCallOrderScorer,
+      },
+      toolExecutionHealth: {
+        scorer: toolExecutionHealthScorer,
+      },
+    },
+  },
+});
+
 const singleEvalAgent = new Agent({
   name: "single-eval-demo",
   instructions: "You are a helpful assistant that answers questions about VoltAgent.",
@@ -340,6 +470,7 @@ const scorerFeedbackAgent = new Agent({
 new VoltAgent({
   agents: {
     support: supportAgent,
+    toolEval: toolEvalAgent,
     singleEval: singleEvalAgent,
     scorerFeedback: scorerFeedbackAgent,
   },
@@ -350,7 +481,11 @@ new VoltAgent({
 (async () => {
   const question = "How can I enable live eval scorers in VoltAgent?";
   const result = await singleEvalAgent.generateText(question);
+  const toolQuestion = "Find a laptop and check inventory before recommending one.";
+  const toolResult = await toolEvalAgent.generateText(toolQuestion, { maxSteps: 4 });
 
   console.log("Question:\n", question, "\n");
   console.log("Agent response:\n", result.text, "\n");
+  console.log("Tool eval question:\n", toolQuestion, "\n");
+  console.log("Tool eval response:\n", toolResult.text, "\n");
 })();

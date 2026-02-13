@@ -10,6 +10,7 @@ import type { StreamEventType } from "../utils/streams";
 import type { Voice } from "../voice";
 import type { VoltOpsClient } from "../voltops/client";
 import type { DynamicValue, DynamicValueOptions } from "../voltops/types";
+import type { Workspace } from "../workspace";
 import {
   Agent,
   type AgentHooks,
@@ -526,6 +527,10 @@ describe("Agent Type System", () => {
       expectTypeOf(context).toEqualTypeOf<UserContext>();
       expectTypeOf(context.get("key")).toEqualTypeOf<unknown>();
     });
+
+    it("should expose optional workspace on OperationContext", () => {
+      expectTypeOf<OperationContext["workspace"]>().toEqualTypeOf<Workspace | undefined>();
+    });
   });
 
   describe("Hook Type Tests", () => {
@@ -552,6 +557,17 @@ describe("Agent Type System", () => {
           expectTypeOf(context).toMatchTypeOf<OperationContext>();
           // tool/output/error types are intentionally flexible
           return { output: "override" };
+        },
+        onToolError: async ({
+          context,
+          tool: _tool,
+          args: _args,
+          error: _error,
+          originalError,
+        }) => {
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          expectTypeOf(originalError).toMatchTypeOf<Error>();
+          return { output: { error: true } };
         },
       };
 

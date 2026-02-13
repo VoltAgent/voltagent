@@ -1,10 +1,10 @@
 {
   "name": "@voltagent/scorers",
   "description": "VoltAgent scorers re-export sourced from Viteval's prebuilt scorer set",
-  "version": "2.0.4",
+  "version": "2.1.0",
   "author": "VoltAgent",
   "dependencies": {
-    "@voltagent/core": "^2.1.1",
+    "@voltagent/core": "^2.4.0",
     "@voltagent/internal": "^1.0.2",
     "autoevals": "^0.0.131"
   },

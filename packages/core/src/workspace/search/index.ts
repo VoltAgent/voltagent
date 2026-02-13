@@ -797,7 +797,7 @@ export const createWorkspaceSearchToolkit = (
     parameters: z.object({
       path: z.string().describe("Path identifier for the content"),
       content: z.string().describe("Raw content to index"),
-      metadata: z.record(z.unknown()).optional().describe("Optional metadata"),
+      metadata: z.record(z.string(), z.unknown()).nullable().describe("Metadata object or null"),
     }),
     execute: async (input, executeOptions) =>
       withOperationTimeout(
@@ -816,7 +816,7 @@ export const createWorkspaceSearchToolkit = (
           const summary = await context.search.indexContent(
             input.path,
             input.content,
-            input.metadata,
+            input.metadata ?? undefined,
             { context: { agent: context.agent, operationContext } },
           );
 

@@ -83,6 +83,25 @@ const workspace = new Workspace({
 });
 ```
 
+## Workspace in custom tool calls
+
+When an agent has a workspace, custom tool `execute` handlers receive it through tool options (`options.workspace`).
+
+```ts
+const readWorkspaceFile = createTool({
+  name: "read_workspace_file",
+  description: "Read data from workspace inside a tool call",
+  parameters: z.object({ path: z.string() }),
+  execute: async ({ path }, options) => {
+    const workspace = options?.workspace;
+    if (!workspace) {
+      return "Workspace is not configured.";
+    }
+    return await workspace.filesystem.read(path);
+  },
+});
+```
+
 ## Workspace lifecycle + utilities
 
 You can initialize or tear down the workspace explicitly, and inspect runtime info:
