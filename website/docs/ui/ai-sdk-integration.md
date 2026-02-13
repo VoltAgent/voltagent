@@ -366,14 +366,16 @@ export function ChatInterface() {
 
 ### Provider-Specific Options
 
-| Option                            | Type     | Description                            |
-| --------------------------------- | -------- | -------------------------------------- |
-| `providerOptions`                 | object   | Provider-specific settings             |
-| `providerOptions.temperature`     | number   | Fallback temperature                   |
-| `providerOptions.maxTokens`       | number   | Fallback max tokens                    |
-| `providerOptions.reasoningEffort` | string   | For o1 models: 'low', 'medium', 'high' |
-| `providerOptions.extraOptions`    | object   | Additional provider-specific options   |
-| `providerOptions.onStepFinish`    | function | Callback when a step completes         |
+| Option                                    | Type     | Description                                        |
+| ----------------------------------------- | -------- | -------------------------------------------------- |
+| `providerOptions`                         | object   | Provider-specific settings                         |
+| `providerOptions.openai.reasoningEffort`  | string   | OpenAI reasoning effort (e.g. `"low"`, `"medium"`) |
+| `providerOptions.openai.textVerbosity`    | string   | OpenAI verbosity (`"low"`, `"medium"`, `"high"`)   |
+| `providerOptions.anthropic.sendReasoning` | boolean  | Include Anthropic reasoning metadata               |
+| `providerOptions.google.thinkingConfig`   | object   | Gemini thinking budget/configuration               |
+| `providerOptions.xai.reasoningEffort`     | string   | xAI reasoning effort                               |
+| `providerOptions.extraOptions`            | object   | Additional provider-specific options               |
+| `providerOptions.onStepFinish`            | function | Callback when a step completes                     |
 
 ### Semantic Memory Options
 
