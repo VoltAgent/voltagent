@@ -86,3 +86,23 @@ export type WorkspaceSkillsPromptOptions = {
   maxInstructionChars?: number;
   maxPromptChars?: number;
 };
+
+export type WorkspaceSkillsPromptSkill = {
+  id: string;
+  name: string;
+  description?: string;
+  path: string;
+  active: boolean;
+};
+
+export type WorkspaceSkillsPromptContext = {
+  available: WorkspaceSkillsPromptSkill[];
+  activated: WorkspaceSkillsPromptSkill[];
+};
+
+export type WorkspaceSkillsPromptContextOptions = Omit<
+  WorkspaceSkillsPromptOptions,
+  "maxPromptChars"
+> & {
+  refresh?: boolean;
+};
