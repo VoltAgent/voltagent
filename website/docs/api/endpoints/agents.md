@@ -98,7 +98,9 @@ Generate a text response from an agent synchronously.
     "seed": 42,
     "stopSequences": ["\n\n"],
     "providerOptions": {
-      "reasoningEffort": "medium"
+      "openai": {
+        "reasoningEffort": "medium"
+      }
     },
     "context": {
       "role": "admin",

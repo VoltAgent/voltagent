@@ -454,9 +454,29 @@ describe("Agent Type System", () => {
         onError: async (error) => {
           expectTypeOf(error).toEqualTypeOf<unknown>();
         },
+        openai: {
+          reasoningEffort: "medium",
+          textVerbosity: "high",
+        },
+        anthropic: {
+          sendReasoning: true,
+          cacheControl: { type: "ephemeral" },
+        },
+        google: {
+          thinkingConfig: {
+            thinkingBudget: 1024,
+          },
+        },
+        xai: {
+          reasoningEffort: "medium",
+        },
       };
 
       expectTypeOf(providerOptions).toMatchTypeOf<ProviderOptions>();
+      expectTypeOf(providerOptions.openai).not.toBeAny();
+      expectTypeOf(providerOptions.anthropic).not.toBeAny();
+      expectTypeOf(providerOptions.google).not.toBeAny();
+      expectTypeOf(providerOptions.xai).not.toBeAny();
     });
 
     it("should validate SupervisorConfig", () => {

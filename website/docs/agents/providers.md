@@ -38,6 +38,37 @@ const agent = new Agent({
 });
 ```
 
+## Provider Options (IntelliSense)
+
+Use `providerOptions` for provider-specific settings in `generateText`, `streamText`, `generateObject`, and `streamObject` calls.
+
+```ts
+await agent.generateText("Draft a summary", {
+  temperature: 0.3,
+  maxOutputTokens: 300,
+  providerOptions: {
+    openai: {
+      reasoningEffort: "medium",
+      textVerbosity: "low",
+    },
+    anthropic: {
+      sendReasoning: true,
+      cacheControl: { type: "ephemeral" },
+    },
+    google: {
+      thinkingConfig: {
+        thinkingBudget: 1024,
+      },
+    },
+    xai: {
+      reasoningEffort: "medium",
+    },
+  },
+});
+```
+
+TypeScript IntelliSense is available for `openai`, `anthropic`, `google`, and `xai` option objects.
+
 ## Provider Selection
 
 Use any ai-sdk provider package you have configured (OpenAI, Anthropic, Google, Groq, Mistral, Vertex, Bedrock, etc.), or use model strings.

@@ -1,3 +1,7 @@
+import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import type { GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import type { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
+import type { XaiProviderOptions, XaiResponsesProviderOptions } from "@ai-sdk/xai";
 import type { Span } from "@opentelemetry/api";
 import type { z } from "zod";
 import type {
@@ -270,7 +274,7 @@ export type ToolsDynamicValue =
 /**
  * Provider options type for LLM configurations
  */
-export type ProviderOptions = {
+type LegacyProviderCallOptions = {
   // Controls randomness (0-1)
   temperature?: number;
   // Maximum tokens to generate
@@ -296,7 +300,16 @@ export type ProviderOptions = {
 
   // Callback when an error occurs during generation
   onError?: (error: unknown) => Promise<void>;
+};
 
+export type ProviderOptions = LegacyProviderCallOptions & {
+  // Common provider-specific option buckets with IntelliSense
+  anthropic?: AnthropicProviderOptions & Record<string, unknown>;
+  google?: GoogleGenerativeAIProviderOptions & Record<string, unknown>;
+  openai?: OpenAIResponsesProviderOptions & Record<string, unknown>;
+  xai?: (XaiProviderOptions | XaiResponsesProviderOptions) & Record<string, unknown>;
+
+  // Allow other providers / future options without breaking changes
   [key: string]: unknown;
 };
 
