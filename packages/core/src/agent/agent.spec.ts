@@ -215,7 +215,32 @@ Use pandas and summarize findings.`.split("\n"),
       expect(systemTexts.some((text) => text.includes("Data Analyst (/skills/data)"))).toBe(true);
     });
 
-    it("skips auto-injection when custom onPrepareMessages exists", async () => {
+    it("composes auto-injection with custom onPrepareMessages by default", async () => {
+      const workspace = createWorkspaceWithSkill();
+      const onPrepareMessages = vi.fn(({ messages }) => ({
+        messages: (messages || []).filter((message) => message.role !== "system"),
+      }));
+
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Use skills when relevant.",
+        model: mockModel as any,
+        workspace,
+        hooks: { onPrepareMessages },
+      });
+
+      vi.mocked(ai.generateText).mockResolvedValue(createMockGenerateTextResponse() as any);
+
+      await agent.generateText("Analyze my data");
+
+      const callArgs = vi.mocked(ai.generateText).mock.calls[0]?.[0];
+      const systemTexts = getSystemTexts(callArgs?.messages);
+
+      expect(onPrepareMessages).toHaveBeenCalledTimes(1);
+      expect(systemTexts.some((text) => text.includes("<workspace_skills>"))).toBe(true);
+    });
+
+    it("disables auto-injection when workspaceSkillsPrompt is false", async () => {
       const workspace = createWorkspaceWithSkill();
       const onPrepareMessages = vi.fn(({ messages }) => ({ messages }));
 
@@ -225,6 +250,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
         workspace,
         hooks: { onPrepareMessages },
+        workspaceSkillsPrompt: false,
       });
 
       vi.mocked(ai.generateText).mockResolvedValue(createMockGenerateTextResponse() as any);
@@ -248,6 +274,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
         workspace,
         hooks: { onPrepareMessages },
+        workspaceToolkits: { skills: false },
         workspaceSkillsPrompt: true,
       });
 

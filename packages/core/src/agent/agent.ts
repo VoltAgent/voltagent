@@ -379,27 +379,26 @@ const resolveWorkspaceSkillsPromptHook = (
   workspace: Workspace | undefined,
   options: AgentOptions,
 ): AgentHooks["onPrepareMessages"] | undefined => {
+  const existingHook = options.hooks?.onPrepareMessages;
   if (!workspace?.skills) {
-    return undefined;
+    return existingHook;
   }
 
   const promptConfig = options.workspaceSkillsPrompt;
   if (promptConfig === false) {
-    return undefined;
+    return existingHook;
   }
 
   const hasExplicitPromptConfig = promptConfig !== undefined;
-  if (!hasExplicitPromptConfig && options.hooks?.onPrepareMessages) {
-    return undefined;
-  }
   if (!hasExplicitPromptConfig && !isWorkspaceSkillsToolkitEnabled(options.workspaceToolkits)) {
-    return undefined;
+    return existingHook;
   }
 
   const promptOptions =
     typeof promptConfig === "object" && promptConfig !== null ? promptConfig : {};
 
-  return workspace.createSkillsPromptHook(promptOptions).onPrepareMessages;
+  const skillsPromptHook = workspace.createSkillsPromptHook(promptOptions).onPrepareMessages;
+  return composePrepareMessagesHooks([existingHook, skillsPromptHook]);
 };
 
 const searchToolsParameters = z.object({
@@ -822,11 +821,7 @@ export class Agent {
     const globalWorkspace = AgentRegistry.getInstance().getGlobalWorkspace();
     const workspaceOption = options.workspace === undefined ? globalWorkspace : options.workspace;
     this.workspace = resolveWorkspace(workspaceOption);
-    const workspaceSkillsPromptHook = resolveWorkspaceSkillsPromptHook(this.workspace, options);
-    const onPrepareMessages = composePrepareMessagesHooks([
-      workspaceSkillsPromptHook,
-      options.hooks?.onPrepareMessages,
-    ]);
+    const onPrepareMessages = resolveWorkspaceSkillsPromptHook(this.workspace, options);
     this.hooks = onPrepareMessages
       ? { ...(options.hooks || {}), onPrepareMessages }
       : options.hooks || {};
