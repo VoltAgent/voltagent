@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
-    "@voltagent/core": "^2.3.5",
+    "@voltagent/core": "^2.3.8",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2"
   },

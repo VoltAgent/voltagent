@@ -40,6 +40,7 @@ import {
   LocalSandbox,
   createWorkspaceSandboxToolkit,
   detectLocalSandboxIsolation,
+  normalizeCommandAndArgs,
 } from "./sandbox";
 import {
   WorkspaceSearch,
@@ -468,6 +469,7 @@ export {
   type WorkspaceSandboxStatus,
   type WorkspaceSandboxToolName,
   createWorkspaceSandboxToolkit,
+  normalizeCommandAndArgs,
   type WorkspaceSandboxToolkitOptions,
   type WorkspaceSandboxToolkitContext,
   WorkspaceSearch,

@@ -1541,7 +1541,7 @@ importers:
         version: link:../../packages/core
       '@voltagent/scorers':
         specifier: ^2.0.2
-        version: link:../../packages/scorers
+        version: 2.1.0(@voltagent/core@packages+core)(ai@6.0.3)(zod@3.25.76)
       '@voltagent/server-hono':
         specifier: ^2.0.2
         version: link:../../packages/server-hono
@@ -2086,7 +2086,7 @@ importers:
         version: link:../../packages/evals
       '@voltagent/scorers':
         specifier: ^2.0.4
-        version: link:../../packages/scorers
+        version: 2.1.0(@voltagent/core@packages+core)(ai@6.0.3)(zod@3.25.76)
       '@voltagent/sdk':
         specifier: ^2.0.2
         version: link:../../packages/sdk
@@ -3975,7 +3975,7 @@ importers:
         version: link:../internal
       '@voltagent/scorers':
         specifier: ^2.0.2
-        version: link:../scorers
+        version: 2.1.0(@voltagent/core@packages+core)(zod@4.3.5)
       '@voltagent/sdk':
         specifier: ^2.0.2
         version: link:../sdk
@@ -4138,7 +4138,7 @@ importers:
         specifier: ^24.2.1
         version: 24.6.2
       '@voltagent/core':
-        specifier: ^2.3.5
+        specifier: ^2.3.8
         version: link:../core
       tsup:
         specifier: ^8.5.0
@@ -4157,7 +4157,7 @@ importers:
         specifier: ^24.2.1
         version: 24.6.2
       '@voltagent/core':
-        specifier: ^2.3.5
+        specifier: ^2.3.8
         version: link:../core
       tsup:
         specifier: ^8.5.0
@@ -21200,6 +21200,51 @@ packages:
 
   /@voltagent/internal@0.0.9:
     resolution: {integrity: sha512-Kaa2jW60VsfYVotuXC81LmNOJ07Lf1yq36vMteNKKa5seIsKkJ75PvIbMp52eEZ/ky/oBXrs94UXrQNqXBJ80Q==}
+    dev: false
+
+  /@voltagent/internal@1.0.3:
+    resolution: {integrity: sha512-tw2L2PptjfsPThO6S4SjouwhAiXDGcjN6kKh9rc7IqWNNGZN+4mwj8gsOroMYOMmhIbfQEr2xT7TqZGNkteDlw==}
+    dependencies:
+      type-fest: 4.41.0
+    dev: false
+
+  /@voltagent/scorers@2.1.0(@voltagent/core@packages+core)(ai@6.0.3)(zod@3.25.76):
+    resolution: {integrity: sha512-jhfiqYdUXXqPAvRXzTYED5Q1Bv8gflhy6Te45PGHie6gV70ZbwCaHU8EeHHvdcl5HzSvPZlCOjMIlZ6bwqAkJQ==}
+    peerDependencies:
+      '@voltagent/core': ^2.0.0
+      ai: ^6.0.0
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      ai:
+        optional: true
+    dependencies:
+      '@voltagent/core': link:packages/core
+      '@voltagent/internal': 1.0.3
+      ai: 6.0.3(zod@3.25.76)
+      autoevals: 0.0.131
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - encoding
+      - ws
+    dev: false
+
+  /@voltagent/scorers@2.1.0(@voltagent/core@packages+core)(zod@4.3.5):
+    resolution: {integrity: sha512-jhfiqYdUXXqPAvRXzTYED5Q1Bv8gflhy6Te45PGHie6gV70ZbwCaHU8EeHHvdcl5HzSvPZlCOjMIlZ6bwqAkJQ==}
+    peerDependencies:
+      '@voltagent/core': ^2.0.0
+      ai: ^6.0.0
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      ai:
+        optional: true
+    dependencies:
+      '@voltagent/core': link:packages/core
+      '@voltagent/internal': 1.0.3
+      autoevals: 0.0.131
+      zod: 4.3.5
+    transitivePeerDependencies:
+      - encoding
+      - ws
     dev: false
 
   /@voltagent/vercel-ai@1.0.0(@voltagent/core@packages+core)(zod@3.25.76):
