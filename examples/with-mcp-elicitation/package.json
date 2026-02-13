@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "dependencies": {
     "@voltagent/cli": "^0.1.21",
-    "@voltagent/core": "^2.3.8",
+    "@voltagent/core": "^2.4.0",
     "@voltagent/logger": "^2.0.2",
     "@voltagent/mcp-server": "^2.0.2",
     "@voltagent/server-hono": "^2.0.6",
