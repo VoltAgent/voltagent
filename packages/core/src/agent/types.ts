@@ -614,6 +614,27 @@ export type AgentSummarizationOptions = {
   model?: AgentModelValue;
 };
 
+export type AgentConversationPersistenceMode = "finish" | "step";
+
+export type AgentConversationPersistenceOptions = {
+  /**
+   * `finish` persists only at operation completion.
+   * `step` checkpoints after each step (debounced) and flushes on tool completion by default.
+   * @default "step"
+   */
+  mode?: AgentConversationPersistenceMode;
+  /**
+   * Debounce duration (ms) for step-level persistence scheduling.
+   * @default 200
+   */
+  debounceMs?: number;
+  /**
+   * When true in `step` mode, tool-result/tool-error steps trigger an immediate flush.
+   * @default true
+   */
+  flushOnToolResult?: boolean;
+};
+
 /**
  * Agent configuration options
  */
@@ -645,6 +666,7 @@ export type AgentOptions = {
   workspaceSkillsPrompt?: WorkspaceSkillsPromptOptions | boolean;
   memory?: Memory | false;
   summarization?: AgentSummarizationOptions | false;
+  conversationPersistence?: AgentConversationPersistenceOptions;
 
   // Retriever/RAG
   retriever?: BaseRetriever;

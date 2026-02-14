@@ -212,6 +212,35 @@ console.log(haiku.output);
 
 Summarization inserts a system summary and keeps the last N non-system messages before each model call. Configure it with the `summarization` option on the agent. See [Summarization](./summarization.md) for configuration and storage details.
 
+### Conversation Persistence
+
+VoltAgent persists conversation messages and step records while a run is executing. By default, it uses step-level checkpoints, which is safer for long multi-step tool chains.
+
+```ts
+const agent = new Agent({
+  name: "Assistant",
+  instructions: "Help users reliably.",
+  model: "openai/gpt-4o-mini",
+  conversationPersistence: {
+    mode: "step", // "step" (default) or "finish"
+    debounceMs: 200, // default
+    flushOnToolResult: true, // default
+  },
+});
+```
+
+You can also override this per call:
+
+```ts
+await agent.generateText("Run the workflow", {
+  conversationPersistence: {
+    mode: "finish",
+  },
+});
+```
+
+`mode: "step"` schedules persistence during execution and flushes immediately on tool completion by default. `mode: "finish"` keeps the legacy behavior of persisting only at operation completion.
+
 ### Input Types
 
 All methods accept either a string or an array of messages:

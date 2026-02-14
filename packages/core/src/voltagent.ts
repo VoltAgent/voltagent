@@ -4,6 +4,7 @@ import type { MCPServerDeps, MCPServerFactory, MCPServerLike } from "@voltagent/
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
+import type { AgentConversationPersistenceOptions } from "./agent/types";
 import { getGlobalLogger } from "./logger";
 import { MCPServerRegistry } from "./mcp";
 import type { Memory } from "./memory";
@@ -36,6 +37,7 @@ export class VoltAgent {
   private observability?: VoltAgentObservability;
   private defaultAgentMemory?: Memory;
   private defaultWorkflowMemory?: Memory;
+  private readonly defaultAgentConversationPersistence?: AgentConversationPersistenceOptions;
   private readonly mcpServers = new Set<MCPServerLike>();
   private readonly mcpServerRegistry = new MCPServerRegistry();
   private readonly a2aServers = new Set<A2AServerLike>();
@@ -56,6 +58,7 @@ export class VoltAgent {
     this.agentRefs = options.agents ?? {};
     this.defaultAgentMemory = options.agentMemory ?? options.memory;
     this.defaultWorkflowMemory = options.workflowMemory ?? options.memory;
+    this.defaultAgentConversationPersistence = options.agentConversationPersistence;
     if (options.memory) {
       this.registry.setGlobalMemory(options.memory);
     }
@@ -440,6 +443,13 @@ export class VoltAgent {
     agent.__setDefaultMemory(this.defaultAgentMemory);
   }
 
+  private applyDefaultConversationPersistenceToAgent(agent: Agent): void {
+    if (!this.defaultAgentConversationPersistence) {
+      return;
+    }
+    agent.__setDefaultConversationPersistence?.(this.defaultAgentConversationPersistence);
+  }
+
   private applyDefaultMemoryToWorkflow(
     workflow: Workflow<
       DangerouslyAllowAny,
@@ -460,6 +470,7 @@ export class VoltAgent {
   public registerAgent(agent: Agent): void {
     // Register the agent
     this.applyDefaultMemoryToAgent(agent);
+    this.applyDefaultConversationPersistenceToAgent(agent);
     agent.__setDefaultToolRouting?.(this.registry.getGlobalToolRouting());
     this.registry.registerAgent(agent);
   }

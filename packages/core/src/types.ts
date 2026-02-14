@@ -8,6 +8,7 @@ import type { MCPServerFactory, MCPServerLike } from "@voltagent/internal/mcp";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { A2AServerRegistry } from "./a2a";
 import type { Agent } from "./agent/agent";
+import type { AgentConversationPersistenceOptions } from "./agent/types";
 import type { AgentStatus } from "./agent/types";
 import type { MCPServerRegistry } from "./mcp";
 import type { Memory } from "./memory";
@@ -234,6 +235,10 @@ export type VoltAgentOptions = {
    * When enabled, agents expose searchTools/callTool and hide pool tools from the model.
    */
   toolRouting?: ToolRoutingConfig;
+  /**
+   * Default conversation persistence behavior for agents that don't define one.
+   */
+  agentConversationPersistence?: AgentConversationPersistenceOptions;
   /**
    * Optional global workspace instance or configuration.
    * Agents inherit this workspace unless they explicitly provide their own workspace or set it to false.

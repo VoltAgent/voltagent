@@ -68,6 +68,9 @@ Notes:
 - VoltOps Observability consumes these records to render the Memory Explorer “Steps” tab and to correlate traces/logs with memory.
 - Adapters that implement the step APIs persist sub-agent activity alongside primary agent steps, so hierarchies stay visible.
 - If an adapter does not support steps, the console warns with “Conversation steps are not supported by this memory adapter.”
+- By default, agents checkpoint conversation progress during multi-step runs (`conversationPersistence.mode: "step"`).
+- Tool completion events (`tool-result`, `tool-error`) trigger immediate flushes by default (`flushOnToolResult: true`), reducing history loss risk on crashes or process interruption.
+- Use `conversationPersistence.mode: "finish"` if you want end-of-turn persistence only.
 
 ### Semantic Search (Optional)
 

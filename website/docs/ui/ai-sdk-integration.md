@@ -341,12 +341,29 @@ export function ChatInterface() {
 
 ### VoltAgent Specific
 
-| Option           | Type   | Description                                        |
-| ---------------- | ------ | -------------------------------------------------- |
-| `userId`         | string | User identifier for memory persistence             |
-| `conversationId` | string | Conversation thread ID                             |
-| `context`        | object | Dynamic context (converted to Map internally)      |
-| `contextLimit`   | number | Number of previous messages to include from memory |
+| Option                                      | Type    | Description                                                                    |
+| ------------------------------------------- | ------- | ------------------------------------------------------------------------------ |
+| `userId`                                    | string  | User identifier for memory persistence                                         |
+| `conversationId`                            | string  | Conversation thread ID                                                         |
+| `context`                                   | object  | Dynamic context (converted to Map internally)                                  |
+| `contextLimit`                              | number  | Number of previous messages to include from memory                             |
+| `conversationPersistence.mode`              | string  | `"step"` (default) or `"finish"`                                               |
+| `conversationPersistence.debounceMs`        | number  | Debounce window in milliseconds (default: `200`)                               |
+| `conversationPersistence.flushOnToolResult` | boolean | Flush immediately on `tool-result`/`tool-error` in step mode (default: `true`) |
+
+Example:
+
+```ts
+options: {
+  userId,
+  conversationId,
+  conversationPersistence: {
+    mode: "step",
+    debounceMs: 200,
+    flushOnToolResult: true,
+  },
+}
+```
 
 ### AI SDK Core Options
 

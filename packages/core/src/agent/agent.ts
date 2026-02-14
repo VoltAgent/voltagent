@@ -167,6 +167,8 @@ import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
+  AgentConversationPersistenceMode,
+  AgentConversationPersistenceOptions,
   AgentEvalConfig,
   AgentEvalOperationType,
   AgentFeedbackHandle,
@@ -194,6 +196,7 @@ import type {
 
 const BUFFER_CONTEXT_KEY = Symbol("conversationBuffer");
 const QUEUE_CONTEXT_KEY = Symbol("memoryPersistQueue");
+const CONVERSATION_PERSISTENCE_OPTIONS_KEY = Symbol("conversationPersistenceOptions");
 const STEP_PERSIST_COUNT_KEY = Symbol("persistedStepCount");
 const ABORT_LISTENER_ATTACHED_KEY = Symbol("abortListenerAttached");
 const MIDDLEWARE_RETRY_FEEDBACK_KEY = Symbol("middlewareRetryFeedback");
@@ -208,6 +211,18 @@ const DEFAULT_CONVERSATION_TITLE_MAX_OUTPUT_TOKENS = 32;
 const DEFAULT_CONVERSATION_TITLE_MAX_CHARS = 80;
 const CONVERSATION_TITLE_INPUT_MAX_CHARS = 2000;
 const DEFAULT_TOOL_SEARCH_TOP_K = 1;
+
+type ResolvedConversationPersistenceOptions = {
+  mode: AgentConversationPersistenceMode;
+  debounceMs: number;
+  flushOnToolResult: boolean;
+};
+
+const DEFAULT_CONVERSATION_PERSISTENCE_OPTIONS: ResolvedConversationPersistenceOptions = {
+  mode: "step",
+  debounceMs: 200,
+  flushOnToolResult: true,
+};
 
 type ResponseMessage = AssistantModelMessage | ToolModelMessage;
 
@@ -684,6 +699,7 @@ export interface BaseGenerationOptions<TProviderOptions extends ProviderOptions 
     semanticThreshold?: number;
     mergeStrategy?: "prepend" | "append" | "interleave";
   };
+  conversationPersistence?: AgentConversationPersistenceOptions;
 
   // Steps control
   maxSteps?: number;
@@ -788,6 +804,8 @@ export class Agent {
   private readonly memory?: Memory | false;
   private readonly memoryConfigured: boolean;
   private readonly summarization?: AgentSummarizationOptions | false;
+  private conversationPersistence: ResolvedConversationPersistenceOptions;
+  private conversationPersistenceConfigured: boolean;
   private readonly workspace?: Workspace;
   private defaultObservability?: VoltAgentObservability;
   private readonly toolManager: ToolManager;
@@ -873,6 +891,10 @@ export class Agent {
     this.memoryConfigured = options.memory !== undefined;
     this.memory = options.memory;
     this.summarization = options.summarization;
+    this.conversationPersistenceConfigured = options.conversationPersistence !== undefined;
+    this.conversationPersistence = this.normalizeConversationPersistenceOptions(
+      options.conversationPersistence,
+    );
     // workspace resolved above to set default maxSteps
 
     // Initialize memory manager
@@ -1049,6 +1071,7 @@ export class Agent {
               feedback: _feedback,
               maxSteps: userMaxSteps,
               tools: userTools,
+              conversationPersistence: _conversationPersistence,
               output,
               providerOptions,
               ...aiSDKOptions
@@ -1164,7 +1187,7 @@ export class Agent {
               },
             );
 
-            this.recordStepResults(result.steps, oc);
+            void this.recordStepResults(result.steps, oc);
 
             if (!shouldDeferPersist) {
               await persistQueue.flush(buffer, oc);
@@ -1379,7 +1402,7 @@ export class Agent {
               context: oc,
             });
 
-            this.recordStepResults(undefined, oc);
+            void this.recordStepResults(undefined, oc);
 
             // Return bailed result as successful generation
             return {
@@ -1628,6 +1651,7 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
+          conversationPersistence: _conversationPersistence,
           output,
           providerOptions,
           ...aiSDKOptions
@@ -1883,7 +1907,7 @@ export class Agent {
 
                 oc.traceContext.setOutput(finalText);
 
-                this.recordStepResults(finalResult.steps, oc);
+                void this.recordStepResults(finalResult.steps, oc);
 
                 // Set finish reason - override to "stop" if bailed (not "error")
                 if (bailedResult) {
@@ -2491,6 +2515,7 @@ export class Agent {
               feedback: _feedback,
               maxSteps: userMaxSteps,
               tools: userTools,
+              conversationPersistence: _conversationPersistence,
               output: _output,
               providerOptions,
               ...aiSDKOptions
@@ -2850,6 +2875,7 @@ export class Agent {
           maxSteps: userMaxSteps,
           tools: userTools,
           onFinish: userOnFinish,
+          conversationPersistence: _conversationPersistence,
           output: _output,
           providerOptions,
           ...aiSDKOptions
@@ -3337,6 +3363,58 @@ export class Agent {
    */
   // createContext removed; use createOperationContext directly
 
+  private normalizeConversationPersistenceOptions(
+    options?: AgentConversationPersistenceOptions,
+  ): ResolvedConversationPersistenceOptions {
+    const mode = options?.mode ?? DEFAULT_CONVERSATION_PERSISTENCE_OPTIONS.mode;
+    const debounceMs =
+      typeof options?.debounceMs === "number" &&
+      Number.isFinite(options.debounceMs) &&
+      options.debounceMs >= 0
+        ? options.debounceMs
+        : DEFAULT_CONVERSATION_PERSISTENCE_OPTIONS.debounceMs;
+
+    return {
+      mode,
+      debounceMs,
+      flushOnToolResult:
+        options?.flushOnToolResult ?? DEFAULT_CONVERSATION_PERSISTENCE_OPTIONS.flushOnToolResult,
+    };
+  }
+
+  private resolveConversationPersistenceOptions(
+    options?: BaseGenerationOptions,
+  ): ResolvedConversationPersistenceOptions {
+    if (!options?.conversationPersistence) {
+      return { ...this.conversationPersistence };
+    }
+
+    return this.normalizeConversationPersistenceOptions({
+      mode: options.conversationPersistence.mode ?? this.conversationPersistence.mode,
+      debounceMs:
+        options.conversationPersistence.debounceMs ?? this.conversationPersistence.debounceMs,
+      flushOnToolResult:
+        options.conversationPersistence.flushOnToolResult ??
+        this.conversationPersistence.flushOnToolResult,
+    });
+  }
+
+  private getConversationPersistenceOptionsForContext(
+    oc: OperationContext,
+  ): ResolvedConversationPersistenceOptions {
+    const fromContext = oc.systemContext.get(CONVERSATION_PERSISTENCE_OPTIONS_KEY) as
+      | ResolvedConversationPersistenceOptions
+      | undefined;
+
+    if (fromContext) {
+      return fromContext;
+    }
+
+    const resolved = { ...this.conversationPersistence };
+    oc.systemContext.set(CONVERSATION_PERSISTENCE_OPTIONS_KEY, resolved);
+    return resolved;
+  }
+
   /**
    * Create only the OperationContext (sync)
    * Transitional helper to gradually adopt OperationContext across methods
@@ -3428,11 +3506,16 @@ export class Agent {
       });
     }
 
+    const conversationPersistence = this.resolveConversationPersistenceOptions(options);
     const systemContext = new Map<string | symbol, unknown>();
     systemContext.set(BUFFER_CONTEXT_KEY, new ConversationBuffer(undefined, logger));
+    systemContext.set(CONVERSATION_PERSISTENCE_OPTIONS_KEY, conversationPersistence);
     systemContext.set(
       QUEUE_CONTEXT_KEY,
-      new MemoryPersistQueue(this.memoryManager, { debounceMs: 200, logger }),
+      new MemoryPersistQueue(this.memoryManager, {
+        debounceMs: conversationPersistence.debounceMs,
+        logger,
+      }),
     );
     systemContext.set(AGENT_METADATA_CONTEXT_KEY, {
       agentId: this.id,
@@ -3463,10 +3546,14 @@ export class Agent {
   }
 
   private resetOperationAttemptState(oc: OperationContext): void {
+    const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
     oc.systemContext.set(BUFFER_CONTEXT_KEY, new ConversationBuffer(undefined, oc.logger));
     oc.systemContext.set(
       QUEUE_CONTEXT_KEY,
-      new MemoryPersistQueue(this.memoryManager, { debounceMs: 200, logger: oc.logger }),
+      new MemoryPersistQueue(this.memoryManager, {
+        debounceMs: conversationPersistence.debounceMs,
+        logger: oc.logger,
+      }),
     );
     oc.systemContext.delete(STEP_PERSIST_COUNT_KEY);
     oc.systemContext.delete("conversationSteps");
@@ -3488,7 +3575,11 @@ export class Agent {
   private getMemoryPersistQueue(oc: OperationContext): MemoryPersistQueue {
     let queue = oc.systemContext.get(QUEUE_CONTEXT_KEY) as MemoryPersistQueue | undefined;
     if (!queue) {
-      queue = new MemoryPersistQueue(this.memoryManager, { logger: oc.logger });
+      const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
+      queue = new MemoryPersistQueue(this.memoryManager, {
+        debounceMs: conversationPersistence.debounceMs,
+        logger: oc.logger,
+      });
       oc.systemContext.set(QUEUE_CONTEXT_KEY, queue);
     }
     return queue;
@@ -6252,103 +6343,51 @@ export class Agent {
    */
   private createStepHandler(oc: OperationContext, options?: BaseGenerationOptions) {
     const buffer = this.getConversationBuffer(oc);
+    const persistQueue = this.getMemoryPersistQueue(oc);
+    const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
 
     return async (event: StepResult<ToolSet>) => {
-      // Instead of saving immediately, collect steps in context for batch processing in onFinish
-      if (event.content && Array.isArray(event.content)) {
-        // Store the step content in context for later processing
-        if (!oc.systemContext.has("conversationSteps")) {
-          oc.systemContext.set("conversationSteps", []);
-        }
-        const conversationSteps = oc.systemContext.get(
-          "conversationSteps",
-        ) as StepResult<ToolSet>[];
-        conversationSteps.push(event);
+      const { shouldFlushForToolCompletion, bailedResult } = this.processStepContent(oc, event);
 
-        // Log each content part
-        for (const part of event.content) {
-          if (part.type === "text") {
-            oc.logger.debug("Step: Text generated", {
-              event: LogEvents.AGENT_STEP_TEXT,
-              textPreview: part.text.substring(0, 100),
-              length: part.text.length,
-            });
-          } else if (part.type === "reasoning") {
-            oc.logger.debug("Step: Reasoning generated", {
-              event: LogEvents.AGENT_STEP_TEXT,
-              textPreview: part.text.substring(0, 100),
-              length: part.text.length,
-            });
-          } else if (part.type === "tool-call") {
-            oc.logger.debug(`Step: Calling tool '${part.toolName}'`, {
-              event: LogEvents.AGENT_STEP_TOOL_CALL,
-              toolName: part.toolName,
-              toolCallId: part.toolCallId,
-              arguments: part.input,
-            });
+      const responseMessages = filterResponseMessages(event.response?.messages);
+      const hasResponseMessages = Boolean(responseMessages && responseMessages.length > 0);
+      if (hasResponseMessages && responseMessages) {
+        buffer.addModelMessages(responseMessages, "response");
+      }
 
-            oc.logger.debug(
-              buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Executing ${part.toolName}`),
-              {
-                event: LogEvents.TOOL_EXECUTION_STARTED,
-                toolName: part.toolName,
-                toolCallId: part.toolCallId,
-                args: part.input,
-              },
-            );
-          } else if (part.type === "tool-result") {
-            oc.logger.debug(`Step: Tool '${part.toolName}' completed`, {
-              event: LogEvents.AGENT_STEP_TOOL_RESULT,
-              toolName: part.toolName,
-              toolCallId: part.toolCallId,
-              result: part.output,
-              hasError: Boolean(
-                part.output && typeof part.output === "object" && "error" in part.output,
-              ),
-            });
+      const shouldFlushStepPersistence =
+        conversationPersistence.mode === "step" &&
+        conversationPersistence.flushOnToolResult &&
+        (shouldFlushForToolCompletion || Boolean(bailedResult));
 
-            // Check if this tool result indicates a subagent bail (early termination)
-            const toolResult = part.output;
-            if (Array.isArray(toolResult)) {
-              // Check for bailed result in results array
-              const bailedResult = toolResult.find((r: any) => r.bailed === true);
+      if (conversationPersistence.mode === "step") {
+        await this.recordStepResults(undefined, oc, {
+          awaitPersistence: shouldFlushStepPersistence,
+        });
+      }
 
-              if (bailedResult) {
-                const agentName = bailedResult.agentName || "unknown";
-                const response = String(bailedResult.response || "");
-
-                oc.logger.info("Subagent bailed during stream - aborting supervisor stream", {
-                  event: LogEvents.AGENT_STEP_TOOL_RESULT,
-                  agentName,
-                  bailed: true,
-                });
-
-                // Store bailed result for retrieval in onFinish
-                oc.systemContext.set("bailedResult", {
-                  agentName,
-                  response,
-                });
-
-                // Abort the stream with BailError to signal early termination
-                oc.abortController.abort(createBailError(agentName, response));
-                return; // Stop processing this step
-              }
-            }
-          } else if (part.type === "tool-error") {
-            oc.logger.debug(`Step: Tool '${part.toolName}' error`, {
-              event: LogEvents.AGENT_STEP_TOOL_RESULT,
-              toolName: part.toolName,
-              toolCallId: part.toolCallId,
-              error: part.error,
-              hasError: true,
-            });
+      if (
+        conversationPersistence.mode === "step" &&
+        (hasResponseMessages || shouldFlushStepPersistence)
+      ) {
+        try {
+          if (shouldFlushStepPersistence) {
+            await persistQueue.flush(buffer, oc);
+          } else {
+            persistQueue.scheduleSave(buffer, oc);
           }
+        } catch (error) {
+          oc.logger.debug("Failed to persist step checkpoint", {
+            error,
+            conversationId: oc.conversationId,
+            userId: oc.userId,
+          });
         }
       }
 
-      const responseMessages = filterResponseMessages(event.response?.messages);
-      if (responseMessages && responseMessages.length > 0) {
-        buffer.addModelMessages(responseMessages, "response");
+      if (bailedResult) {
+        oc.abortController.abort(createBailError(bailedResult.agentName, bailedResult.response));
+        return;
       }
 
       // Call hooks
@@ -6357,16 +6396,129 @@ export class Agent {
     };
   }
 
+  private processStepContent(
+    oc: OperationContext,
+    event: StepResult<ToolSet>,
+  ): {
+    shouldFlushForToolCompletion: boolean;
+    bailedResult?: { agentName: string; response: string };
+  } {
+    if (!event.content || !Array.isArray(event.content)) {
+      return { shouldFlushForToolCompletion: false };
+    }
+
+    if (!oc.systemContext.has("conversationSteps")) {
+      oc.systemContext.set("conversationSteps", []);
+    }
+
+    const conversationSteps = oc.systemContext.get("conversationSteps") as StepResult<ToolSet>[];
+    conversationSteps.push(event);
+
+    let shouldFlushForToolCompletion = false;
+    let bailedResult: { agentName: string; response: string } | undefined;
+
+    for (const part of event.content) {
+      if (part.type === "text" || part.type === "reasoning") {
+        oc.logger.debug("Step: Text generated", {
+          event: LogEvents.AGENT_STEP_TEXT,
+          textPreview: part.text.substring(0, 100),
+          length: part.text.length,
+        });
+        continue;
+      }
+
+      if (part.type === "tool-call") {
+        oc.logger.debug(`Step: Calling tool '${part.toolName}'`, {
+          event: LogEvents.AGENT_STEP_TOOL_CALL,
+          toolName: part.toolName,
+          toolCallId: part.toolCallId,
+          arguments: part.input,
+        });
+
+        oc.logger.debug(
+          buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Executing ${part.toolName}`),
+          {
+            event: LogEvents.TOOL_EXECUTION_STARTED,
+            toolName: part.toolName,
+            toolCallId: part.toolCallId,
+            args: part.input,
+          },
+        );
+        continue;
+      }
+
+      if (part.type === "tool-result") {
+        shouldFlushForToolCompletion = true;
+        oc.logger.debug(`Step: Tool '${part.toolName}' completed`, {
+          event: LogEvents.AGENT_STEP_TOOL_RESULT,
+          toolName: part.toolName,
+          toolCallId: part.toolCallId,
+          result: part.output,
+          hasError: Boolean(
+            part.output && typeof part.output === "object" && "error" in part.output,
+          ),
+        });
+
+        const bailFromToolResult = this.resolveBailedResultFromToolOutput(part.output);
+        if (bailFromToolResult) {
+          oc.logger.info("Subagent bailed during stream - aborting supervisor stream", {
+            event: LogEvents.AGENT_STEP_TOOL_RESULT,
+            agentName: bailFromToolResult.agentName,
+            bailed: true,
+          });
+          oc.systemContext.set("bailedResult", bailFromToolResult);
+          bailedResult = bailFromToolResult;
+        }
+        continue;
+      }
+
+      if (part.type === "tool-error") {
+        shouldFlushForToolCompletion = true;
+        oc.logger.debug(`Step: Tool '${part.toolName}' error`, {
+          event: LogEvents.AGENT_STEP_TOOL_RESULT,
+          toolName: part.toolName,
+          toolCallId: part.toolCallId,
+          error: part.error,
+          hasError: true,
+        });
+      }
+    }
+
+    return {
+      shouldFlushForToolCompletion,
+      bailedResult,
+    };
+  }
+
+  private resolveBailedResultFromToolOutput(
+    toolOutput: unknown,
+  ): { agentName: string; response: string } | undefined {
+    if (!Array.isArray(toolOutput)) {
+      return undefined;
+    }
+
+    const bailedToolResult = toolOutput.find((result: any) => result?.bailed === true);
+    if (!bailedToolResult) {
+      return undefined;
+    }
+
+    return {
+      agentName: String(bailedToolResult.agentName || "unknown"),
+      response: String(bailedToolResult.response || ""),
+    };
+  }
+
   private recordStepResults(
     steps: ReadonlyArray<StepResult<ToolSet>> | undefined,
     oc: OperationContext,
-  ): void {
+    options?: { awaitPersistence?: boolean },
+  ): Promise<void> {
     const storedSteps =
       (steps && steps.length > 0 ? steps : undefined) ||
       (oc.systemContext.get("conversationSteps") as StepResult<ToolSet>[] | undefined);
 
     if (!storedSteps?.length) {
-      return;
+      return Promise.resolve();
     }
 
     if (!oc.conversationSteps) {
@@ -6378,7 +6530,7 @@ export class Agent {
     const newSteps = storedSteps.slice(previouslyPersistedCount);
 
     if (!newSteps.length) {
-      return;
+      return Promise.resolve();
     }
 
     oc.systemContext.set(STEP_PERSIST_COUNT_KEY, previouslyPersistedCount + newSteps.length);
@@ -6511,7 +6663,7 @@ export class Agent {
     });
 
     if (stepRecords.length > 0 && oc.userId && oc.conversationId) {
-      void this.memoryManager
+      const persistStepsPromise = this.memoryManager
         .saveConversationSteps(oc, stepRecords, oc.userId, oc.conversationId)
         .catch((error) => {
           oc.logger.debug("Failed to persist conversation steps", {
@@ -6520,7 +6672,15 @@ export class Agent {
             userId: oc.userId,
           });
         });
+
+      if (options?.awaitPersistence) {
+        return persistStepsPromise;
+      }
+
+      void persistStepsPromise;
     }
+
+    return Promise.resolve();
   }
 
   /**
@@ -7200,6 +7360,20 @@ export class Agent {
       return;
     }
     this.memoryManager.setMemory(memory);
+  }
+
+  /**
+   * Internal: apply default conversation persistence when none was configured explicitly.
+   */
+  public __setDefaultConversationPersistence(
+    conversationPersistence: AgentConversationPersistenceOptions,
+  ): void {
+    if (this.conversationPersistenceConfigured) {
+      return;
+    }
+
+    this.conversationPersistence =
+      this.normalizeConversationPersistenceOptions(conversationPersistence);
   }
 
   /**

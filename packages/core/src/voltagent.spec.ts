@@ -108,4 +108,57 @@ describe("VoltAgent defaults", () => {
     expect(agent.getMemory()).toBe(sharedMemory);
     expect(workflow.memory).toBe(sharedMemory);
   });
+
+  it("applies default agent conversation persistence when agent does not configure it", () => {
+    const agent = new Agent({
+      name: "assistant",
+      instructions: "Be helpful.",
+      model: "openai/gpt-4o-mini",
+    });
+
+    new VoltAgent({
+      agents: { assistant: agent },
+      agentConversationPersistence: {
+        mode: "finish",
+        debounceMs: 10,
+        flushOnToolResult: false,
+      },
+      checkDependencies: false,
+    });
+
+    expect((agent as any).conversationPersistence).toMatchObject({
+      mode: "finish",
+      debounceMs: 10,
+      flushOnToolResult: false,
+    });
+  });
+
+  it("preserves explicit agent conversation persistence config", () => {
+    const agent = new Agent({
+      name: "assistant",
+      instructions: "Be helpful.",
+      model: "openai/gpt-4o-mini",
+      conversationPersistence: {
+        mode: "step",
+        debounceMs: 25,
+        flushOnToolResult: true,
+      },
+    });
+
+    new VoltAgent({
+      agents: { assistant: agent },
+      agentConversationPersistence: {
+        mode: "finish",
+        debounceMs: 0,
+        flushOnToolResult: false,
+      },
+      checkDependencies: false,
+    });
+
+    expect((agent as any).conversationPersistence).toMatchObject({
+      mode: "step",
+      debounceMs: 25,
+      flushOnToolResult: true,
+    });
+  });
 });
