@@ -1,5 +1,83 @@
 # @voltagent/core
 
+## 2.4.1
+
+### Patch Changes
+
+- [#1051](https://github.com/VoltAgent/voltagent/pull/1051) [`b0482cb`](https://github.com/VoltAgent/voltagent/commit/b0482cb16e3c2aff786581a1291737f772e1d19d) Thanks [@omeraplak](https://github.com/omeraplak)! - Fix workspace skill prompt injection and guidance for skill access tools.
+  - Change activated skill prompt injection to include metadata only (`name`, `id`, `description`) instead of embedding full `SKILL.md` instruction bodies.
+  - Clarify workspace skills system prompt so agents use workspace skill tools for skill access and avoid sandbox commands like `execute_command`, `ls /skills`, or `cat /skills/...`.
+
+- [#1067](https://github.com/VoltAgent/voltagent/pull/1067) [`f36545c`](https://github.com/VoltAgent/voltagent/commit/f36545c63727e1ae4e52b991e7080747e2988ccc) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: persist conversation progress incrementally during multi-step runs
+  - Added step-level conversation persistence checkpoints so completed steps are no longer only saved at turn finish.
+  - Tool completion steps (`tool-result` / `tool-error`) now trigger immediate persistence flushes in step mode.
+  - Added configurable agent persistence options:
+    - `conversationPersistence.mode` (`"step"` or `"finish"`)
+    - `conversationPersistence.debounceMs`
+    - `conversationPersistence.flushOnToolResult`
+  - Added global VoltAgent default `agentConversationPersistence` and wiring to registered agents.
+
+- [#1059](https://github.com/VoltAgent/voltagent/pull/1059) [`ec82442`](https://github.com/VoltAgent/voltagent/commit/ec824427858858fa63c8cfeb3b911f943c23ce71) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add persisted feedback-provided markers for message feedback metadata
+  - `AgentFeedbackMetadata` now supports `provided`, `providedAt`, and `feedbackId`.
+  - Added `Agent.isFeedbackProvided(...)` and `Agent.isMessageFeedbackProvided(...)` helpers.
+  - Added `agent.markFeedbackProvided(...)` to persist a feedback-submitted marker on a stored message so feedback UI can stay hidden after memory reloads.
+  - Added `result.feedback.markFeedbackProvided(...)` and `result.feedback.isProvided()` helper methods for SDK usage.
+  - Updated server response schema to include the new feedback metadata fields.
+
+  ```ts
+  const result = await agent.generateText("How was this answer?", {
+    userId: "user-1",
+    conversationId: "conv-1",
+    feedback: true,
+  });
+
+  if (result.feedback && !result.feedback.isProvided()) {
+    // call after your feedback ingestion succeeds
+    await result.feedback.markFeedbackProvided({
+      feedbackId: "fb_123", // optional
+    });
+  }
+  ```
+
+- [#1051](https://github.com/VoltAgent/voltagent/pull/1051) [`b0482cb`](https://github.com/VoltAgent/voltagent/commit/b0482cb16e3c2aff786581a1291737f772e1d19d) Thanks [@omeraplak](https://github.com/omeraplak)! - Enable workspace skills prompt injection by default when an agent has a workspace with skills configured.
+  - Agents now auto-compose a workspace skills prompt hook by default.
+  - Added `workspaceSkillsPrompt` to `AgentOptions` to customize (`WorkspaceSkillsPromptOptions`), force (`true`), or disable (`false`) prompt injection.
+  - When a custom `hooks.onPrepareMessages` is provided, it now composes with the default workspace skills prompt hook unless `workspaceSkillsPrompt` is explicitly set to `false`.
+  - Updated workspace skills docs and the `examples/with-workspace` sample to document and use the new behavior.
+
+- [#1051](https://github.com/VoltAgent/voltagent/pull/1051) [`b0482cb`](https://github.com/VoltAgent/voltagent/commit/b0482cb16e3c2aff786581a1291737f772e1d19d) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: improve workspace skill compatibility for third-party `SKILL.md` files that do not declare file allowlists in frontmatter.
+  - Infer `references`, `scripts`, and `assets` allowlists from relative Markdown links in skill instructions when explicit frontmatter arrays are missing.
+  - This enables skills like `microsoft/playwright-cli` (installed via `npx skills add ...`) to read linked reference files through workspace skill tools without manual metadata rewrites.
+
+- [#1066](https://github.com/VoltAgent/voltagent/pull/1066) [`9e5ef29`](https://github.com/VoltAgent/voltagent/commit/9e5ef29adbf8f710ce2a55910e781163c56ed8d2) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: improve `providerOptions` IntelliSense for provider-specific model settings
+  - `ProviderOptions` now includes typed option buckets for `openai`, `anthropic`, `google`, and `xai`.
+  - Existing top-level call option fields (`temperature`, `maxTokens`, `topP`, `frequencyPenalty`, `presencePenalty`, etc.) remain supported for backward compatibility.
+  - Added type-level coverage for provider-scoped options in the agent type tests.
+  - Updated docs to show provider-scoped `providerOptions` usage in agent, API endpoint, and UI integration examples.
+
+  ```ts
+  await agent.generateText("Draft a summary", {
+    temperature: 0.3,
+    providerOptions: {
+      openai: {
+        reasoningEffort: "medium",
+        textVerbosity: "low",
+      },
+      anthropic: {
+        sendReasoning: true,
+      },
+      google: {
+        thinkingConfig: {
+          thinkingBudget: 1024,
+        },
+      },
+      xai: {
+        reasoningEffort: "medium",
+      },
+    },
+  });
+  ```
+
 ## 2.4.0
 
 ### Minor Changes

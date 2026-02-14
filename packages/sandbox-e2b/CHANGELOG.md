@@ -1,5 +1,18 @@
 # @voltagent/sandbox-e2b
 
+## 2.0.2
+
+### Patch Changes
+
+- [#1051](https://github.com/VoltAgent/voltagent/pull/1051) [`b0482cb`](https://github.com/VoltAgent/voltagent/commit/b0482cb16e3c2aff786581a1291737f772e1d19d) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: align sandbox package core dependency strategy with plugin best practices
+  - Update `@voltagent/sandbox-daytona` to use `@voltagent/core` via `peerDependencies` + `devDependencies` instead of runtime `dependencies`.
+  - Raise `@voltagent/sandbox-daytona` peer minimum to `^2.3.8` to match runtime usage of `normalizeCommandAndArgs`.
+  - Align `@voltagent/sandbox-e2b` development dependency on `@voltagent/core` to `^2.3.8`.
+
+- [#1068](https://github.com/VoltAgent/voltagent/pull/1068) [`b95293b`](https://github.com/VoltAgent/voltagent/commit/b95293bb71f144ea106bcf809f446760af7c4227) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: expose the underlying E2B SDK sandbox instance from `E2BSandbox`.
+  - Added a public `getSandbox()` method that returns the original `e2b` `Sandbox` instance so provider-specific APIs (for example `files.read`) can be used directly.
+  - Added `E2BSandboxInstance` type export for the underlying SDK sandbox type.
+
 ## 2.0.1
 
 ### Patch Changes

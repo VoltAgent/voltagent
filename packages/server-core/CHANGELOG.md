@@ -1,5 +1,34 @@
 # @voltagent/server-core
 
+## 2.1.6
+
+### Patch Changes
+
+- [#1059](https://github.com/VoltAgent/voltagent/pull/1059) [`ec82442`](https://github.com/VoltAgent/voltagent/commit/ec824427858858fa63c8cfeb3b911f943c23ce71) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add persisted feedback-provided markers for message feedback metadata
+  - `AgentFeedbackMetadata` now supports `provided`, `providedAt`, and `feedbackId`.
+  - Added `Agent.isFeedbackProvided(...)` and `Agent.isMessageFeedbackProvided(...)` helpers.
+  - Added `agent.markFeedbackProvided(...)` to persist a feedback-submitted marker on a stored message so feedback UI can stay hidden after memory reloads.
+  - Added `result.feedback.markFeedbackProvided(...)` and `result.feedback.isProvided()` helper methods for SDK usage.
+  - Updated server response schema to include the new feedback metadata fields.
+
+  ```ts
+  const result = await agent.generateText("How was this answer?", {
+    userId: "user-1",
+    conversationId: "conv-1",
+    feedback: true,
+  });
+
+  if (result.feedback && !result.feedback.isProvided()) {
+    // call after your feedback ingestion succeeds
+    await result.feedback.markFeedbackProvided({
+      feedbackId: "fb_123", // optional
+    });
+  }
+  ```
+
+- Updated dependencies [[`b0482cb`](https://github.com/VoltAgent/voltagent/commit/b0482cb16e3c2aff786581a1291737f772e1d19d), [`f36545c`](https://github.com/VoltAgent/voltagent/commit/f36545c63727e1ae4e52b991e7080747e2988ccc), [`ec82442`](https://github.com/VoltAgent/voltagent/commit/ec824427858858fa63c8cfeb3b911f943c23ce71), [`b0482cb`](https://github.com/VoltAgent/voltagent/commit/b0482cb16e3c2aff786581a1291737f772e1d19d), [`b0482cb`](https://github.com/VoltAgent/voltagent/commit/b0482cb16e3c2aff786581a1291737f772e1d19d), [`9e5ef29`](https://github.com/VoltAgent/voltagent/commit/9e5ef29adbf8f710ce2a55910e781163c56ed8d2)]:
+  - @voltagent/core@2.4.1
+
 ## 2.1.5
 
 ### Patch Changes
