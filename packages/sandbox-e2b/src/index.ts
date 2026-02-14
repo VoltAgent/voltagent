@@ -3,7 +3,10 @@ import type {
   WorkspaceSandboxExecuteOptions,
   WorkspaceSandboxResult,
 } from "@voltagent/core";
+import type { Sandbox as E2BOriginalSandbox } from "e2b";
 import * as e2bModule from "e2b";
+
+export type E2BSandboxInstance = E2BOriginalSandbox;
 
 export type E2BSandboxOptions = {
   apiKey?: string;
@@ -376,7 +379,7 @@ export class E2BSandbox implements WorkspaceSandbox {
     return await Sandbox.create(createOptions);
   }
 
-  private async getSandbox(): Promise<E2BSdkSandbox> {
+  private async resolveSandbox(): Promise<E2BSdkSandbox> {
     if (this.sandbox) {
       return this.sandbox;
     }
@@ -392,6 +395,14 @@ export class E2BSandbox implements WorkspaceSandbox {
         });
     }
     return this.sandboxPromise;
+  }
+
+  /**
+   * Returns the underlying E2B SDK sandbox instance.
+   * Use this when you need E2B-specific APIs beyond `execute`.
+   */
+  async getSandbox(): Promise<E2BSandboxInstance> {
+    return (await this.resolveSandbox()) as unknown as E2BSandboxInstance;
   }
 
   private async killCommand(sandbox: E2BSdkSandbox, handle?: E2BCommandHandle): Promise<void> {
@@ -473,7 +484,7 @@ export class E2BSandbox implements WorkspaceSandbox {
               timedOut = true;
               resolve(null);
             }, remaining);
-            this.getSandbox()
+            this.resolveSandbox()
               .then((resolved) => {
                 if (settled) {
                   return;
@@ -491,7 +502,7 @@ export class E2BSandbox implements WorkspaceSandbox {
                 reject(error);
               });
           })
-        : await this.getSandbox();
+        : await this.resolveSandbox();
 
     if (!sandbox) {
       return {
