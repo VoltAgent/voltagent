@@ -943,12 +943,6 @@ footer .hoverLink:hover {
   }
 }
 
-@media (min-width: 1024px) {
-  :root .DocSearch-Modal {
-    margin-top: 85px !important;
-  }
-}
-
 .expandable-content {
   max-height: 0;
   overflow: hidden;
@@ -5353,10 +5347,6 @@ nav.table-of-contents .table-of-contents__link--active,
     display: flex !important;
     padding: 0 12px !important;
   }
-  .DocSearch-Modal {
-    margin-top: unset !important;
-    padding: unset !important;
-  }
 }
 
 /* Scrollbar styling for table of contents */
@@ -5518,13 +5508,22 @@ nav.table-of-contents .table-of-contents__link--active,
 .DocSearch-Container {
   background-color: rgba(0, 0, 0, 0.8) !important;
   backdrop-filter: blur(4px) !important;
-  margin-top: 20px !important;
+  margin-top: 0 !important;
+  /* Keep search modal above sticky docs navbar and announcement bar */
+  z-index: 2000 !important;
 }
 
 .DocSearch-Modal {
   box-shadow: none !important;
-  margin-top: 85px !important;
+  margin-top: 72px !important;
   padding: 0 5px;
+}
+
+@media (max-width: 996px) {
+  .DocSearch-Modal {
+    margin-top: 16px !important;
+    padding: 0 !important;
+  }
 }
 
 .DocSearch-Form {
