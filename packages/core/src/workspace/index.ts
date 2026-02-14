@@ -509,6 +509,9 @@ export type {
   WorkspaceSkillsConfig,
   WorkspaceSkillsRootResolver,
   WorkspaceSkillsRootResolverContext,
+  WorkspaceSkillsPromptContext,
+  WorkspaceSkillsPromptContextOptions,
+  WorkspaceSkillsPromptSkill,
   WorkspaceSkillsPromptOptions,
   WorkspaceSkillSearchHybridWeights,
 } from "./skills/types";
