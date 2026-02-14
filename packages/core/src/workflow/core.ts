@@ -2642,9 +2642,17 @@ export function serializeWorkflowStep(step: BaseStep, index: number): Serialized
     case "loop": {
       const loopStep = step as WorkflowStep<unknown, unknown, unknown, unknown> & {
         step?: BaseStep;
+        steps?: BaseStep[];
         condition?: (...args: any[]) => unknown;
         loopType?: "dowhile" | "dountil";
       };
+      const serializedSteps =
+        loopStep.steps && Array.isArray(loopStep.steps)
+          ? loopStep.steps.map((subStep, subIndex) => serializeWorkflowStep(subStep, subIndex))
+          : loopStep.step
+            ? [serializeWorkflowStep(loopStep.step, 0)]
+            : [];
+
       return {
         ...baseStep,
         ...(loopStep.condition && {
@@ -2653,8 +2661,12 @@ export function serializeWorkflowStep(step: BaseStep, index: number): Serialized
         ...(loopStep.loopType && {
           loopType: loopStep.loopType,
         }),
-        ...(loopStep.step && {
-          nestedStep: serializeWorkflowStep(loopStep.step, 0),
+        ...(serializedSteps.length === 1 && {
+          nestedStep: serializedSteps[0],
+        }),
+        ...(serializedSteps.length > 1 && {
+          subSteps: serializedSteps,
+          subStepsCount: serializedSteps.length,
         }),
       };
     }

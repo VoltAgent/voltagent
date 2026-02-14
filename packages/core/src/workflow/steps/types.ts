@@ -195,16 +195,44 @@ export interface WorkflowStepForEach<INPUT, DATA, ITEM, RESULT, MAP_DATA = ITEM>
   map?: WorkflowStepForEachMapFunc<INPUT, DATA, ITEM, MAP_DATA>;
 }
 
-export type WorkflowStepLoopConfig<INPUT, DATA, RESULT> = InternalWorkflowStepConfig<{
-  step: InternalAnyWorkflowStep<INPUT, DATA, RESULT>;
+export type WorkflowStepLoopSteps<INPUT, DATA, RESULT> =
+  | readonly [InternalAnyWorkflowStep<INPUT, DATA, RESULT>]
+  | readonly [
+      InternalAnyWorkflowStep<INPUT, DATA, DangerouslyAllowAny>,
+      ...InternalAnyWorkflowStep<INPUT, DangerouslyAllowAny, DangerouslyAllowAny>[],
+      InternalAnyWorkflowStep<INPUT, DangerouslyAllowAny, RESULT>,
+    ];
+
+type WorkflowStepLoopBaseConfig<INPUT, RESULT> = InternalWorkflowStepConfig<{
   condition: InternalWorkflowFunc<INPUT, RESULT, boolean, any, any>;
 }>;
+
+type WorkflowStepLoopSingleStepConfig<INPUT, DATA, RESULT> = WorkflowStepLoopBaseConfig<
+  INPUT,
+  RESULT
+> & {
+  step: InternalAnyWorkflowStep<INPUT, DATA, RESULT>;
+  steps?: never;
+};
+
+type WorkflowStepLoopMultiStepConfig<INPUT, DATA, RESULT> = WorkflowStepLoopBaseConfig<
+  INPUT,
+  RESULT
+> & {
+  steps: WorkflowStepLoopSteps<INPUT, DATA, RESULT>;
+  step?: never;
+};
+
+export type WorkflowStepLoopConfig<INPUT, DATA, RESULT> =
+  | WorkflowStepLoopSingleStepConfig<INPUT, DATA, RESULT>
+  | WorkflowStepLoopMultiStepConfig<INPUT, DATA, RESULT>;
 
 export interface WorkflowStepLoop<INPUT, DATA, RESULT>
   extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, any, any> {
   type: "loop";
   loopType: "dowhile" | "dountil";
-  step: InternalAnyWorkflowStep<INPUT, DATA, RESULT>;
+  step: InternalAnyWorkflowStep<INPUT, DATA, DangerouslyAllowAny>;
+  steps: WorkflowStepLoopSteps<INPUT, DATA, RESULT>;
   condition: InternalWorkflowFunc<INPUT, RESULT, boolean, any, any>;
 }
 

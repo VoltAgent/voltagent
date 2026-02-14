@@ -1,6 +1,6 @@
 # andLoop
 
-> Repeat a step with do-while or do-until semantics.
+> Repeat one or more steps with do-while or do-until semantics.
 
 ## Quick Start
 
@@ -15,10 +15,16 @@ const workflow = createWorkflowChain({
   input: z.number(),
 }).andDoWhile({
   id: "increment-until-3",
-  step: andThen({
-    id: "increment",
-    execute: async ({ data }) => data + 1,
-  }),
+  steps: [
+    andThen({
+      id: "increment",
+      execute: async ({ data }) => data + 1,
+    }),
+    andThen({
+      id: "double",
+      execute: async ({ data }) => data * 2,
+    }),
+  ],
   condition: ({ data }) => data < 3,
 });
 ```
@@ -47,7 +53,8 @@ const workflow = createWorkflowChain({
 ```typescript
 .andDoWhile({
   id: string,
-  step: Step,
+  step?: Step,
+  steps?: Step[],
   condition: (ctx) => boolean | Promise<boolean>,
   retries?: number,
   name?: string,
@@ -56,7 +63,8 @@ const workflow = createWorkflowChain({
 
 .andDoUntil({
   id: string,
-  step: Step,
+  step?: Step,
+  steps?: Step[],
   condition: (ctx) => boolean | Promise<boolean>,
   retries?: number,
   name?: string,
@@ -66,5 +74,7 @@ const workflow = createWorkflowChain({
 
 ## Notes
 
-- The step runs at least once.
+- Provide either `step` (single step) or `steps` (multiple sequential steps).
+- The configured step(s) run at least once.
+- When `steps` is provided, steps run in order on each iteration.
 - The loop continues until the condition fails (do-while) or succeeds (do-until).
