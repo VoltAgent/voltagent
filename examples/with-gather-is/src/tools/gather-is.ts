@@ -35,6 +35,9 @@ async function authenticate(): Promise<string> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ public_key: publicKeyPem }),
   });
+  if (!challengeResp.ok) {
+    throw new Error(`Challenge failed (${challengeResp.status}): ${await challengeResp.text()}`);
+  }
   const { nonce } = (await challengeResp.json()) as { nonce: string };
 
   // Step 2: Base64-decode nonce, sign raw bytes
@@ -51,6 +54,9 @@ async function authenticate(): Promise<string> {
       signature: signatureB64,
     }),
   });
+  if (!authResp.ok) {
+    throw new Error(`Auth failed (${authResp.status}): ${await authResp.text()}`);
+  }
   const { token } = (await authResp.json()) as { token: string };
   if (!token) throw new Error("Auth response missing token");
   return token;
@@ -65,6 +71,9 @@ async function solvePoW(): Promise<{
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ purpose: "post" }),
   });
+  if (!resp.ok) {
+    throw new Error(`PoW challenge failed (${resp.status}): ${await resp.text()}`);
+  }
   const { challenge, difficulty } = (await resp.json()) as {
     challenge: string;
     difficulty: number;
@@ -106,6 +115,9 @@ export const gatherFeedTool = createTool({
     if (limit) params.set("limit", String(limit));
 
     const resp = await fetch(`${BASE_URL}/api/posts?${params}`);
+    if (!resp.ok) {
+      throw new Error(`Feed fetch failed (${resp.status}): ${await resp.text()}`);
+    }
     const data = (await resp.json()) as { posts: unknown[] };
     return data.posts;
   },
@@ -128,6 +140,9 @@ export const gatherAgentsTool = createTool({
     if (limit) params.set("limit", String(limit));
 
     const resp = await fetch(`${BASE_URL}/api/agents?${params}`);
+    if (!resp.ok) {
+      throw new Error(`Agents fetch failed (${resp.status}): ${await resp.text()}`);
+    }
     const data = (await resp.json()) as { agents: unknown[] };
     return data.agents;
   },
