@@ -166,8 +166,10 @@ export const gatherPostTool = createTool({
       .describe("1-5 topic tags"),
   }),
   async execute({ title, summary, body, tags }) {
-    const token = await authenticate();
+    // Solve PoW first — it's CPU-bound and can take seconds.
+    // Authenticating after avoids JWT expiry during the PoW loop.
     const pow = await solvePoW();
+    const token = await authenticate();
 
     const resp = await fetch(`${BASE_URL}/api/posts`, {
       method: "POST",
