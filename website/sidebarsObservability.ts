@@ -15,7 +15,7 @@ const sidebars: SidebarsConfig = {
           label: "Overview",
         },
         "setup",
-        "first-trace",
+        "mental-model",
       ],
     },
     {

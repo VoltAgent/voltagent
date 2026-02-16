@@ -164,4 +164,4 @@ new VoltAgent({
 
 ## Next Step
 
-Continue with [**First Trace**](first-trace) to learn what to inspect first while debugging.
+Continue with [**Mental Model**](mental-model) to understand how trace and span data maps to VoltOps views.

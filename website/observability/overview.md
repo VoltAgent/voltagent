@@ -27,5 +27,5 @@ Experience VoltOps in action with [**Live Demo**](https://console.voltagent.dev/
 ## Start Here
 
 1. [**Setup**](setup) - Connect your VoltAgent app to VoltOps in a few minutes.
-2. [**First Trace**](first-trace) - Validate setup and learn how to read the first trace.
+2. [**Mental Model**](mental-model) - Learn how traces, spans, and context map to the UI.
 3. [**Tracing Overview**](tracing/overview) - Continue with full tracing features.
