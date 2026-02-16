@@ -8,7 +8,15 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Getting Started",
-      items: ["overview", "setup", "concept", "why"],
+      items: [
+        {
+          type: "doc",
+          id: "overview",
+          label: "Overview",
+        },
+        "setup",
+        "first-trace",
+      ],
     },
     {
       type: "doc",
