@@ -5,7 +5,6 @@ import DocItemContent from "@theme/DocItem/Content";
 import DocItemFooter from "@theme/DocItem/Footer";
 import DocItemPaginator from "@theme/DocItem/Paginator";
 import DocItemTOCDesktop from "@theme/DocItem/TOC/Desktop";
-import DocItemTOCMobile from "@theme/DocItem/TOC/Mobile";
 import DocVersionBadge from "@theme/DocVersionBadge";
 import DocVersionBanner from "@theme/DocVersionBanner";
 import Unlisted from "@theme/Unlisted";
@@ -21,7 +20,7 @@ function useDocTOC() {
   const windowSize = useWindowSize();
   const hidden = frontMatter.hide_table_of_contents;
   const canRender = !hidden && toc.length > 0;
-  const mobile = canRender ? <DocItemTOCMobile /> : undefined;
+  const mobile = undefined;
   const desktop =
     canRender && (windowSize === "desktop" || windowSize === "ssr") ? (
       <DocItemTOCDesktop />
@@ -59,7 +58,9 @@ export default function DocItemLayout({
           <DocItemPaginator />
         </div>
       </div>
-      {docTOC.desktop && <div className="col col--3">{docTOC.desktop}</div>}
+      {docTOC.desktop && (
+        <div className={clsx("col col--3", styles.tocColumn)}>{docTOC.desktop}</div>
+      )}
     </div>
   );
 }

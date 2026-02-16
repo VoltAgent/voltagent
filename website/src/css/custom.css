@@ -5339,6 +5339,17 @@ nav.table-of-contents .table-of-contents__link--active,
   max-width: 300px;
 }
 
+/* Hide all docs TOC variants on <= 1440px */
+@media (max-width: 1440px) {
+  .theme-doc-toc-desktop,
+  .theme-doc-toc-mobile,
+  .table-of-contents,
+  .tableOfContents,
+  .tocCollapsible {
+    display: none !important;
+  }
+}
+
 @media (min-width: 1024px) {
   .tableOfContents {
     padding-left: 0.5rem;
