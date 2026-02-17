@@ -877,6 +877,12 @@ export class Agent {
       options.logger,
     );
 
+    // Allow standalone Agent usage (without VoltAgent wrapper) to initialize
+    // remote observability processors that depend on the global VoltOps client.
+    if (this.voltOpsClient && !AgentRegistry.getInstance().getGlobalVoltOpsClient()) {
+      AgentRegistry.getInstance().setGlobalVoltOpsClient(this.voltOpsClient);
+    }
+
     // Log agent creation
     this.logger.debug(`Agent created: ${this.name}`, {
       event: LogEvents.AGENT_CREATED,
