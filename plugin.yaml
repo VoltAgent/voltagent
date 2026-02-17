@@ -1,0 +1,52 @@
+# plugin.yaml — VoltAgent Plugin Manifest
+# This file makes VoltAgent discoverable as an agent plugin.
+# Learn more: https://list.agenium.net/plugins
+
+name: voltagent
+display_name: VoltAgent
+version: "0.1.0"
+description: >
+  AI Agent Engineering Platform built on an open source TypeScript framework.
+  Build, deploy, and monitor AI agents with observability, multi-model support,
+  and a visual developer console.
+
+author:
+  name: VoltAgent
+  url: https://github.com/VoltAgent
+
+repository: https://github.com/VoltAgent/voltagent
+license: MIT
+
+categories:
+  - agent-frameworks
+  - developer-tools
+  - platforms
+
+tags:
+  - ai-agents
+  - typescript
+  - agent-framework
+  - observability
+  - multi-model
+  - developer-console
+  - langchain-alternative
+
+capabilities:
+  - agent-orchestration
+  - multi-model-support
+  - tool-integration
+  - observability
+  - sub-agents
+
+install:
+  npm: "@voltagent/core"
+
+runtime:
+  language: typescript
+  min_node: "18"
+
+discovery:
+  protocol: a2a
+  transport:
+    - http
+    - websocket
