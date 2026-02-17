@@ -275,14 +275,7 @@ type VoltUIMessage = {
   parts?: VoltUIPart[];
 };
 
-const VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX = "__voltagent_message_metadata__:";
 const VOLTAGENT_MESSAGE_METADATA_EVENT_NAME = "voltagent.message_metadata";
-
-function isMetadataCarrierToolCallId(toolCallId: string | undefined): boolean {
-  return (
-    typeof toolCallId === "string" && toolCallId.startsWith(VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX)
-  );
-}
 
 function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[] {
   const toolNameById = new Map<string, string>();
@@ -336,9 +329,6 @@ function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[]
     }
 
     if (isToolMessage(msg)) {
-      if (isMetadataCarrierToolCallId(msg.toolCallId)) {
-        continue;
-      }
       const toolName = msg.toolCallId ? toolNameById.get(msg.toolCallId) : undefined;
       convertedMessages.push({
         id: messageId,
