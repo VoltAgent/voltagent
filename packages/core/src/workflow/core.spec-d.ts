@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from "vitest";
-import { andForEach, andThen } from "./";
+import { andDoWhile, andForEach, andThen } from "./";
 import type { WorkflowExecuteContext } from "./internal/types";
 import type { WorkflowStateStore, WorkflowStateUpdater } from "./types";
 
@@ -51,6 +51,44 @@ describe("non-chaining API type inference", () => {
           execute: async ({ data }) => data,
         }),
       });
+      expectTypeOf(step).not.toBeNever();
+    });
+  });
+
+  describe("andDoWhile", () => {
+    it("should infer condition data from the last chained loop step", () => {
+      const step = andDoWhile({
+        id: "loop",
+        steps: [
+          andThen({
+            id: "step-1",
+            execute: async (
+              context: WorkflowExecuteContext<
+                { input: string },
+                { value: number },
+                unknown,
+                unknown
+              >,
+            ) => ({ value: context.data.value + 1 }),
+          }),
+          andThen({
+            id: "step-2",
+            execute: async (
+              context: WorkflowExecuteContext<
+                { input: string },
+                { value: number },
+                unknown,
+                unknown
+              >,
+            ) => context.data.value,
+          }),
+        ],
+        condition: async (context) => {
+          expectTypeOf(context.data).toEqualTypeOf<number>();
+          return context.data < 3;
+        },
+      });
+
       expectTypeOf(step).not.toBeNever();
     });
   });

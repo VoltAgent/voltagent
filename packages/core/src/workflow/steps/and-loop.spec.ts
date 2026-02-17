@@ -41,4 +41,39 @@ describe("andLoop", () => {
 
     expect(result).toBe(2);
   });
+
+  it("supports multiple chained steps in each loop iteration", async () => {
+    const step = andDoWhile({
+      id: "loop",
+      steps: [
+        andThen({
+          id: "increment",
+          execute: async ({ data }) => data + 1,
+        }),
+        andThen({
+          id: "double",
+          execute: async ({ data }) => data * 2,
+        }),
+      ],
+      condition: async ({ data }) => data < 20,
+    });
+
+    const result = await step.execute(
+      createMockWorkflowExecuteContext({
+        data: 1,
+      }),
+    );
+
+    expect(result).toBe(22);
+  });
+
+  it("throws when loop steps array is empty", () => {
+    expect(() =>
+      andDoUntil({
+        id: "loop",
+        steps: [] as never,
+        condition: async () => true,
+      }),
+    ).toThrow("andDoWhile/andDoUntil requires at least one step");
+  });
 });
