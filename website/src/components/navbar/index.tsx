@@ -252,7 +252,7 @@ export default function Navbar() {
                 Products
                 <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-white" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-gray-600 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[580px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-gray-600 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[580px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="grid grid-cols-2 gap-0">
                   {/* Left Column - VoltOps */}
                   <div className="p-4 border-r border-gray-700/30">
@@ -407,7 +407,7 @@ export default function Navbar() {
                 Use Cases
                 <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-white" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-gray-600 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[460px] max-h-[500px] overflow-y-auto opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-gray-600 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[460px] max-h-[500px] overflow-y-auto opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="p-3">
                   <div className="grid grid-cols-2 gap-x-2 gap-y-0">
                     {useCasesData.map((useCase) => {
@@ -437,7 +437,7 @@ export default function Navbar() {
                 Resources
                 <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-white" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-gray-600 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[580px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-gray-600 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[580px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="grid grid-cols-2 gap-0">
                   {/* Left Column - Learn */}
                   <div className="p-4 border-r border-gray-700/30">
