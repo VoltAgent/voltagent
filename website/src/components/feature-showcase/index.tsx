@@ -72,9 +72,9 @@ export function FeatureShowcase() {
     <section className="feature-showcase relative z-10 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
         {/* Main Container */}
-        <div className="overflow-hidden !border !border-solid !border-zinc-800 rounded-lg">
+        <div className="overflow-hidden !border !border-solid !border-[#3d3a39] rounded-lg">
           {/* Tab Bar + Description (unified) */}
-          <div className="!border-b !border-solid !border-t-0 !border-l-0 !border-r-0 !border-zinc-800">
+          <div className="!border-b !border-solid !border-t-0 !border-l-0 !border-r-0 !border-[#3d3a39]">
             {/* Tabs */}
             <div
               ref={tabsContainerRef}
@@ -102,17 +102,17 @@ export function FeatureShowcase() {
                       md:flex-1
                       ${
                         isActive && !hoveredTab
-                          ? "bg-zinc-800/60 text-emerald-400 border-b-2 border-emerald-400"
+                          ? "bg-[#101010] text-[#2fd6a1] border-b-2 border-[#2fd6a1]"
                           : isHighlighted
-                            ? "bg-zinc-800/40 text-emerald-500"
-                            : "bg-transparent text-zinc-100 border-b-2 border-transparent"
+                            ? "bg-[#151515] text-[#2fd6a1]"
+                            : "bg-transparent text-[#eeeeee] border-b-2 border-transparent"
                       }
                     `}
                   >
                     {Icon && (
                       <Icon
                         className={`w-3.5 h-3.5 md:w-5 md:h-5 transition-colors duration-700 ease-in-out ${
-                          isHighlighted ? "text-emerald-400" : ""
+                          isHighlighted ? "text-[#2fd6a1]" : ""
                         }`}
                       />
                     )}
@@ -127,12 +127,12 @@ export function FeatureShowcase() {
             {/* Tab Description */}
             <div
               className={`flex flex-row items-center justify-between gap-3 md:gap-4 px-4 md:px-6 py-3 md:py-4 transition-all duration-700 ease-in-out ${
-                hoveredTab ? "bg-zinc-800/40" : activeTab ? "bg-zinc-800/60" : "bg-zinc-800/40"
+                hoveredTab ? "bg-[#151515]" : activeTab ? "bg-[#101010]" : "bg-[#151515]"
               }`}
             >
               <span
                 className={`text-xs md:text-sm flex-1 transition-colors duration-700 ${
-                  hoveredTab || activeTab ? "" : "text-zinc-100"
+                  hoveredTab || activeTab ? "" : "text-[#eeeeee]"
                 }`}
               >
                 {displayTabData?.footerText ||
@@ -144,8 +144,8 @@ export function FeatureShowcase() {
                 rel="noopener noreferrer"
                 className={`text-xs md:text-sm no-underline flex items-center gap-1 flex-shrink-0 transition-colors ${
                   hoveredTab || activeTab
-                    ? " hover:text-emerald-300"
-                    : "text-zinc-100 hover:text-white"
+                    ? " hover:text-[#2fd6a1]"
+                    : "text-[#eeeeee] hover:text-white"
                 }`}
               >
                 <BookOpenIcon className="w-4 h-4" />
@@ -156,7 +156,7 @@ export function FeatureShowcase() {
           </div>
 
           {/* Content Area */}
-          <div className="bg-black">
+          <div className="bg-[#101010]">
             {displayTabData?.fullImage ? (
               /* Full Image Layout */
               <div className="h-[250px] sm:h-[350px] md:h-[600px] p-2 md:p-0">
@@ -199,17 +199,17 @@ export function FeatureShowcase() {
                 </div>
 
                 {/* Code Panel - Bottom on mobile, Left on desktop */}
-                <div className="h-[250px] sm:h-[350px] md:h-[600px] overflow-auto showcase-code-block lg:!border-r !border-solid !border-t-0 !border-b-0 !border-l-0 !border-zinc-700 order-2 lg:order-1">
+                <div className="h-[250px] sm:h-[350px] md:h-[600px] overflow-auto showcase-code-block lg:!border-r !border-solid !border-t-0 !border-b-0 !border-l-0 !border-[#3d3a39] order-2 lg:order-1">
                   {displayTabData?.triggerCode && displayTabData?.actionCode ? (
                     <div className="flex flex-col h-full">
                       {/* Code Tabs */}
-                      <div className="flex !border-b !border-solid !border-t-0 !border-l-0 !border-r-0 !border-zinc-800 bg-black">
+                      <div className="flex !border-b !border-solid !border-t-0 !border-l-0 !border-r-0 !border-[#3d3a39] bg-[#101010]">
                         <button
                           onClick={() => setActiveCodeTab("trigger")}
                           className={`px-4 py-2 text-xs font-medium transition-colors cursor-pointer border-0 outline-none ${
                             activeCodeTab === "trigger"
-                              ? "text-zinc-100 bg-zinc-900 border-b-2 border-zinc-500"
-                              : "text-zinc-500 hover:text-zinc-300 bg-transparent"
+                              ? "text-[#eeeeee] bg-[#101010] border-b-2 border-[#5c5855]"
+                              : "text-[#8a8380] hover:text-[#b8b3b0] bg-transparent"
                           }`}
                         >
                           Trigger
@@ -218,8 +218,8 @@ export function FeatureShowcase() {
                           onClick={() => setActiveCodeTab("action")}
                           className={`px-4 py-2 text-xs font-medium transition-colors cursor-pointer border-0 outline-none ${
                             activeCodeTab === "action"
-                              ? "text-zinc-100 bg-zinc-900 border-b-2 border-zinc-500"
-                              : "text-zinc-500 hover:text-zinc-300 bg-transparent"
+                              ? "text-[#eeeeee] bg-[#101010] border-b-2 border-[#5c5855]"
+                              : "text-[#8a8380] hover:text-[#b8b3b0] bg-transparent"
                           }`}
                         >
                           Action
