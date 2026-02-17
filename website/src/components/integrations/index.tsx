@@ -415,7 +415,7 @@ export function Integrations() {
           <div className="flex flex-col mb-8 sm:mb-12">
             <div className="w-full max-w-5xl">
               <div className="mb-4">
-                <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-purple-500 tracking-wide uppercase">
+                <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-main-emerald tracking-wide uppercase">
                   INTEGRATIONS
                 </h2>
                 <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:tracking-tight">
@@ -462,14 +462,14 @@ export function Integrations() {
                     {duplicatedTopLogos.map((item, index) => (
                       <div
                         key={`top-logo-${item.tooltip}-${index}`}
-                        className="group relative flex-shrink-0 bg-gray-900/50 w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-gray-800/40 hover:border-main-emerald transition-all duration-200"
+                        className="group relative flex-shrink-0 bg-[#101010] w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-[#3d3a39] hover:border-[#2fd6a1]/45 hover:bg-[#1f1d1c] transition-all duration-200"
                         onMouseEnter={handleTopRowMouseEnter}
                         onMouseLeave={handleTopRowMouseLeave}
                         onTouchStart={handleTopRowTouchStart}
                         onTouchEnd={handleTopRowTouchEnd}
                       >
                         {item.logo}
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-gray-800 text-main-emerald text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-[#1f1d1c] text-[#b8b3b0] text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg border border-solid border-[#3d3a39]">
                           {item.tooltip}
                         </div>
                       </div>
@@ -502,14 +502,14 @@ export function Integrations() {
                     {duplicatedBottomLogos.map((item, index) => (
                       <div
                         key={`bottom-logo-${item.tooltip}-${index}`}
-                        className="group relative flex-shrink-0 bg-gray-900/50 w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-gray-800/40 hover:border-main-emerald transition-all duration-200"
+                        className="group relative flex-shrink-0 bg-[#101010] w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-[#3d3a39] hover:border-[#2fd6a1]/45 hover:bg-[#1f1d1c] transition-all duration-200"
                         onMouseEnter={handleBottomRowMouseEnter}
                         onMouseLeave={handleBottomRowMouseLeave}
                         onTouchStart={handleBottomRowTouchStart}
                         onTouchEnd={handleBottomRowTouchEnd}
                       >
                         {item.logo}
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-gray-800 text-main-emerald text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-[#1f1d1c] text-[#b8b3b0] text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg border border-solid border-[#3d3a39]">
                           {item.tooltip}
                         </div>
                       </div>

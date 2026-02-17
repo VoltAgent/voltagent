@@ -277,7 +277,7 @@ export const CodeExample = ({
     <div className="relative">
       <div
         // Fixed: Removed unnecessary template literal
-        className="max-w-4xl relative overflow-y-hidden backdrop-blur-md border border-[#1e2730] hover:border-[#00d992] transition-all duration-300 rounded-lg"
+        className="max-w-4xl relative overflow-y-hidden backdrop-blur-md border border-[#3d3a39] hover:border-[#2fd6a1]/60 transition-all duration-300 rounded-lg"
       >
         <motion.div
           className="absolute top-0 left-0 w-full h-[3px] rounded-t-lg landing-xs:hidden landing-md:block"
@@ -298,7 +298,7 @@ export const CodeExample = ({
             </div>
             <div className="py-7 px-3 block landing-xs:text-[9px] landing-md:text-xs  w-full relative">
               <motion.div
-                className="absolute inset-0 bg-[#00d992]/5 rounded-r"
+                className="absolute inset-0 bg-[#2fd6a1]/6 rounded-r"
                 layoutId="codeHighlight"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

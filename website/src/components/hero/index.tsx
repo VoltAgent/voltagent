@@ -121,7 +121,7 @@ export function Hero() {
               href="https://github.com/voltagent/voltagent/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#00d992] no-underline font-semibold hover:no-underline"
+              className="text-[#2fd6a1] no-underline font-semibold hover:no-underline"
             >
               <span
                 className="inline-block relative"
@@ -145,8 +145,8 @@ export function Hero() {
           >
             AI Agent Engineering
             <LineShadowText
-              className="text-[#00d992] landing-md:mt-4 landing-xs:mt-2 ml-2 landing-sm:ml-0 italic"
-              shadowColor={"#00d992"}
+              className="text-[#2fd6a1] landing-md:mt-4 landing-xs:mt-2 ml-2 landing-sm:ml-0 italic"
+              shadowColor={"#2fd6a1"}
             >
               Platform
             </LineShadowText>
@@ -172,7 +172,7 @@ export function Hero() {
           >
             <Link
               to="/docs/"
-              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm text-main-emerald cursor-pointer bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-[#0e2c24] no-underline"
+              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm cursor-pointer bg-transparent text-[#eeeeee] border border-solid border-[#eeeeee]/65 rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-transparent hover:border-[#2fd6a1]/60 hover:text-[#f3f4f6] no-underline"
             >
               <ChevronRightIcon className="landing-xs:w-4 landing-xs:h-4 landing-md:w-6 landing-md:h-6" />
               Get Started
@@ -182,10 +182,10 @@ export function Hero() {
               type="button"
               onClick={handleCommandClick}
               aria-label="Copy npm command to clipboard"
-              className="w-full sm:w-auto flex cursor-pointer items-center justify-center border backdrop-blur-sm h-[53px] border-solid border-[#113328] rounded-md px-4 py-3 font-[monospace] text-[13px] hover:bg-[#0e2c24] transition duration-300 bg-transparent"
+              className="w-full sm:w-auto flex cursor-pointer items-center justify-center border backdrop-blur-sm h-[53px] border-solid border-[#3d3a39] rounded-md px-4 py-3 font-[monospace] text-[13px] hover:bg-[#101010] transition duration-300 bg-transparent"
             >
-              <span className="mr-2 text-main-emerald">$</span>
-              <span className="command-text text-main-emerald min-w-[220px] text-left relative">
+              <span className="mr-2 text-[#2fd6a1]">$</span>
+              <span className="command-text text-[#eeeeee] min-w-[220px] text-left relative">
                 {commandText}
                 {isTyping && !thinkingMessages.includes(commandText) && commandText !== "" && (
                   <span className="animate-pulse">|</span>
@@ -200,23 +200,23 @@ export function Hero() {
         </div>
       </div>
       {/* Platform Container */}
-      <div className="relative border border-solid border-white/10 rounded-xl md:rounded-2xl p-4 pt-6 md:p-6 mx-4 lg:mx-0 mt-16 md:mt-36">
+      <div className="relative border border-solid border-[#3d3a39] rounded-xl md:rounded-2xl p-4 pt-6 md:p-6 mx-4 lg:mx-0 mt-16 md:mt-36">
         {/* Badge */}
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0d1117] px-3 py-0.5 text-white/70 text-xs md:text-sm font-medium border border-solid border-white/20 rounded-full">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#101010] px-3 py-0.5 text-[#b8b3b0] text-xs md:text-sm font-medium border border-solid border-[#3d3a39] rounded-full">
           The Platform
         </span>
 
         {/* Two boxes with connector */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-2 md:gap-4 items-stretch">
           {/* Core Framework Box */}
-          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-xl border border-solid border-white/10 bg-zinc-800/60 transition-colors">
+          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-xl border border-solid border-[#3d3a39] bg-[#101010] transition-colors">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <span className="text-white font-semibold text-lg md:text-xl">Core Framework</span>
-              <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-white/20 text-white/50 w-fit">
+              <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-[#3d3a39] text-[#8a8380] w-fit">
                 Open Source
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-white/50">
+            <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-[#8a8380]">
               <span>Memory</span>
               <span className="text-white/20">|</span>
               <span>RAG</span>
@@ -231,7 +231,7 @@ export function Hero() {
               <span className="text-white/20">|</span>
               <span>Workflow</span>
             </div>
-            <span className="text-white text-sm md:text-base">
+            <span className="text-[#eeeeee] text-sm md:text-base">
               Build agents with open-source TypeScript framework.
             </span>
           </div>
@@ -242,19 +242,19 @@ export function Hero() {
           </div>
 
           {/* VoltOps Console Box */}
-          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-xl border border-solid border-white/10 bg-zinc-800/60 transition-colors">
+          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-xl border border-solid border-[#3d3a39] bg-[#101010] transition-colors">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <span className="text-white font-semibold text-lg md:text-xl">VoltOps Console</span>
               <div className="flex gap-2">
-                <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-white/20 text-white/50">
+                <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-[#3d3a39] text-[#8a8380]">
                   Cloud
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-white/20 text-white/50">
+                <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-[#3d3a39] text-[#8a8380]">
                   Self-Hosted
                 </span>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-white/50">
+            <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-[#8a8380]">
               <span>Observability</span>
               <span className="text-white/20">|</span>
               <span>Automation</span>
@@ -267,7 +267,7 @@ export function Hero() {
               <span className="text-white/20">|</span>
               <span>Prompts</span>
             </div>
-            <span className="text-white text-sm md:text-base">
+            <span className="text-[#eeeeee] text-sm md:text-base">
               Automate, debug, and deploy your agents with console.
             </span>
           </div>

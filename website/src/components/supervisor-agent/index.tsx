@@ -15,7 +15,7 @@ export function SupervisorAgent() {
     const baseHighlightClass = "transition-all duration-300 ease-in-out";
 
     return highlightedSection === section
-      ? `bg-gradient-to-r from-indigo-600/40 to-indigo-500/20 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-indigo-500 pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
+      ? `bg-gradient-to-r from-[#1f1d1c]/70 to-[#141211]/70 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-[#2fd6a1] pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
       : `text-gray-400 ${baseHighlightClass}`;
   };
 
@@ -36,7 +36,7 @@ export function SupervisorAgent() {
     <div className="relative w-full overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36">
         <div className="">
-          <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-indigo-500 tracking-wide uppercase">
+          <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-main-emerald tracking-wide uppercase">
             Intelligent Coordination
           </h2>
           <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:tracking-tight">
@@ -276,16 +276,16 @@ export function SupervisorAgent() {
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "centralized"
-                        ? "border-1 border-solid border-indigo-500 bg-white/10 shadow-md shadow-indigo-500/20"
-                        : "border-solid border-indigo-500/30 hover:bg-white/5"
+                        ? "border-1 border-solid border-[#2fd6a1]/65 bg-[#1f1d1c] shadow-md shadow-[#2fd6a1]/10"
+                        : "border-solid border-[#3d3a39] bg-[#101010] hover:bg-[#141211] hover:border-[#5c5855]"
                     }  flex flex-col cursor-pointer transition-all duration-300`}
                     onMouseEnter={() => handleMouseEnter("centralized")}
                     onMouseLeave={handleMouseLeave}
                     onClick={() => handleClick("centralized")}
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="bg-indigo-500/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">
-                        <CpuChipIcon className="w-5 h-5 text-indigo-500" />
+                      <div className="bg-[#2fd6a1]/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">
+                        <CpuChipIcon className="w-5 h-5 text-[#2fd6a1]" />
                       </div>
                       <div className="text-base font-semibold text-white">
                         Centralized Coordination
@@ -303,16 +303,16 @@ export function SupervisorAgent() {
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "specialized"
-                        ? "border-1 border-solid border-indigo-500 bg-white/10 shadow-md shadow-indigo-500/20"
-                        : "border-solid border-indigo-500/30 hover:bg-white/5"
+                        ? "border-1 border-solid border-[#2fd6a1]/65 bg-[#1f1d1c] shadow-md shadow-[#2fd6a1]/10"
+                        : "border-solid border-[#3d3a39] bg-[#101010] hover:bg-[#141211] hover:border-[#5c5855]"
                     }  flex flex-col cursor-pointer transition-all duration-300`}
                     onMouseEnter={() => handleMouseEnter("specialized")}
                     onMouseLeave={handleMouseLeave}
                     onClick={() => handleClick("specialized")}
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="bg-indigo-500/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">
-                        <UserPlusIcon className="w-5 h-5 text-indigo-500" />
+                      <div className="bg-[#2fd6a1]/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">
+                        <UserPlusIcon className="w-5 h-5 text-[#2fd6a1]" />
                       </div>
                       <div className="text-base font-semibold text-white">
                         Specialized Agent Roles
@@ -330,8 +330,8 @@ export function SupervisorAgent() {
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "memory"
-                        ? "border-1 border-solid border-indigo-500 bg-white/10 shadow-md shadow-indigo-500/20"
-                        : "border-solid border-indigo-500/30 hover:bg-white/5"
+                        ? "border-1 border-solid border-[#2fd6a1]/65 bg-[#1f1d1c] shadow-md shadow-[#2fd6a1]/10"
+                        : "border-solid border-[#3d3a39] bg-[#101010] hover:bg-[#141211] hover:border-[#5c5855]"
                     }  flex flex-col cursor-pointer transition-all duration-300`}
                     onMouseEnter={() => handleMouseEnter("memory")}
                     onMouseLeave={handleMouseLeave}
@@ -346,8 +346,8 @@ export function SupervisorAgent() {
                     tabIndex={0}
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="bg-indigo-500/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">
-                        <EyeIcon className="w-5 h-5 text-indigo-500" />
+                      <div className="bg-[#2fd6a1]/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">
+                        <EyeIcon className="w-5 h-5 text-[#2fd6a1]" />
                       </div>
                       <div className="text-base font-semibold text-white">Shared Memory System</div>
                     </div>
@@ -363,16 +363,16 @@ export function SupervisorAgent() {
                   <div
                     className={`h-[130px] p-5 rounded-lg ${
                       highlightedSection === "dynamic"
-                        ? "border-1 border-solid border-indigo-500 bg-white/10 shadow-md shadow-indigo-500/20"
-                        : "border-solid border-indigo-500/30 hover:bg-white/5"
+                        ? "border-1 border-solid border-[#2fd6a1]/65 bg-[#1f1d1c] shadow-md shadow-[#2fd6a1]/10"
+                        : "border-solid border-[#3d3a39] bg-[#101010] hover:bg-[#141211] hover:border-[#5c5855]"
                     }  flex flex-col cursor-pointer transition-all duration-300`}
                     onMouseEnter={() => handleMouseEnter("dynamic")}
                     onMouseLeave={handleMouseLeave}
                     onClick={() => handleClick("dynamic")}
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="bg-indigo-500/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">
-                        <UsersIcon className="w-5 h-5 text-indigo-500" />
+                      <div className="bg-[#2fd6a1]/10 w-10 h-10 rounded-md flex items-center justify-center shrink-0">
+                        <UsersIcon className="w-5 h-5 text-[#2fd6a1]" />
                       </div>
                       <div className="text-base font-semibold text-white">
                         Dynamic Agent Selection
