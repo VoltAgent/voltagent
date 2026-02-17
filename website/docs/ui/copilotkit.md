@@ -197,6 +197,163 @@ export default function App() {
 }
 ```
 
+## CopilotKit feedback -> VoltOps feedback (recommended)
+
+If you want CopilotKit thumbs up/down to persist as VoltOps trace feedback, wire them explicitly.
+
+### 1. Enable feedback on the agent
+
+```ts title="examples/with-copilotkit/server/src/index.ts"
+const mathAgent = new Agent({
+  name: "MathAgent",
+  instructions: "You are a concise math tutor.",
+  model: "openai/gpt-4o-mini",
+  feedback: {
+    key: "satisfaction",
+    feedbackConfig: {
+      type: "categorical",
+      categories: [
+        { value: 1, label: "Satisfied" },
+        { value: 0, label: "Unsatisfied" },
+      ],
+    },
+  },
+});
+```
+
+### 2. Capture message metadata + submit thumbs feedback
+
+`@voltagent/ag-ui` emits message metadata as AG-UI `CUSTOM` events with name `voltagent.message_metadata`.
+Use that payload to map each assistant `messageId` to its VoltOps feedback URL, then call the URL in `onThumbsUp` / `onThumbsDown`.
+
+```tsx title="examples/with-copilotkit/client/src/App.tsx"
+import { useEffect, useMemo, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { CopilotKit, useCopilotChatInternal } from "@copilotkit/react-core";
+import { CopilotChat } from "@copilotkit/react-ui";
+import type { Message } from "@copilotkit/shared";
+import { safeStringify } from "@voltagent/internal";
+import "@copilotkit/react-ui/styles.css";
+
+type VoltFeedbackMetadata = {
+  url?: string;
+  provided?: boolean;
+  providedAt?: string;
+  feedbackId?: string;
+};
+
+const VOLTAGENT_MESSAGE_METADATA_EVENT_NAME = "voltagent.message_metadata";
+
+function useVoltFeedbackMap() {
+  const { agent } = useCopilotChatInternal();
+  const [feedbackByMessageId, setFeedbackByMessageId] = useState<
+    Record<string, VoltFeedbackMetadata>
+  >({});
+
+  useEffect(() => {
+    if (!agent) return;
+
+    const subscription = agent.subscribe({
+      onCustomEvent: ({ event }) => {
+        if (event.name !== VOLTAGENT_MESSAGE_METADATA_EVENT_NAME) return;
+
+        const payload = event.value as
+          | {
+              messageId?: string;
+              metadata?: {
+                feedback?: VoltFeedbackMetadata;
+              };
+            }
+          | undefined;
+
+        const messageId = payload?.messageId;
+        const feedback = payload?.metadata?.feedback;
+
+        if (!messageId || !feedback?.url) return;
+        setFeedbackByMessageId((prev) => ({ ...prev, [messageId]: feedback }));
+      },
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [agent]);
+
+  return { feedbackByMessageId, setFeedbackByMessageId };
+}
+
+function isProvided(feedback?: VoltFeedbackMetadata): boolean {
+  return Boolean(feedback?.provided || feedback?.providedAt || feedback?.feedbackId);
+}
+
+async function submitVoltFeedback(input: {
+  message: Message;
+  type: "thumbsUp" | "thumbsDown";
+  feedbackByMessageId: Record<string, VoltFeedbackMetadata>;
+  setFeedbackByMessageId: Dispatch<SetStateAction<Record<string, VoltFeedbackMetadata>>>;
+}) {
+  const feedback = input.feedbackByMessageId[input.message.id];
+  if (!feedback?.url || isProvided(feedback)) return;
+
+  const score = input.type === "thumbsUp" ? 1 : 0;
+
+  const response = await fetch(feedback.url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: safeStringify({
+      score,
+      feedback_source_type: "app",
+    }),
+  });
+
+  if (!response.ok) return;
+
+  const data = (await response.json()) as { id?: string };
+  setFeedbackByMessageId((prev) => ({
+    ...prev,
+    [input.message.id]: {
+      ...feedback,
+      provided: true,
+      feedbackId: data.id,
+    },
+  }));
+}
+
+function ChatWithFeedback() {
+  const runtimeUrl = useMemo(
+    () => import.meta.env.VITE_RUNTIME_URL || "http://localhost:3141/copilotkit",
+    []
+  );
+  const { feedbackByMessageId, setFeedbackByMessageId } = useVoltFeedbackMap();
+
+  return (
+    <CopilotKit runtimeUrl={runtimeUrl}>
+      <CopilotChat
+        labels={{ initial: "Hi! How can I assist you today?", title: "Your Assistant" }}
+        onThumbsUp={(message) =>
+          void submitVoltFeedback({
+            message,
+            type: "thumbsUp",
+            feedbackByMessageId,
+            setFeedbackByMessageId,
+          })
+        }
+        onThumbsDown={(message) =>
+          void submitVoltFeedback({
+            message,
+            type: "thumbsDown",
+            feedbackByMessageId,
+            setFeedbackByMessageId,
+          })
+        }
+      />
+    </CopilotKit>
+  );
+}
+```
+
+For the complete lifecycle (including persisting `provided` state in memory with `agent.markFeedbackProvided(...)`), see [Feedback](/observability-docs/feedback).
+
 ## Tips
 
 - CopilotKit DevTools lets you switch agents when multiple are exposed (e.g., `MathAgent` vs `StoryAgent`).

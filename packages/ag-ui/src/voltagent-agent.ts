@@ -275,15 +275,7 @@ type VoltUIMessage = {
   parts?: VoltUIPart[];
 };
 
-const VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX = "__voltagent_message_metadata__:";
 const VOLTAGENT_MESSAGE_METADATA_EVENT_NAME = "voltagent.message_metadata";
-
-function isMetadataCarrierToolCallId(toolCallId: string | undefined): boolean {
-  return (
-    typeof toolCallId === "string" && toolCallId.startsWith(VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX)
-  );
-}
-
 function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[] {
   const toolNameById = new Map<string, string>();
   const convertedMessages: VoltUIMessage[] = [];
@@ -336,9 +328,6 @@ function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[]
     }
 
     if (isToolMessage(msg)) {
-      if (isMetadataCarrierToolCallId(msg.toolCallId)) {
-        continue;
-      }
       const toolName = msg.toolCallId ? toolNameById.get(msg.toolCallId) : undefined;
       convertedMessages.push({
         id: messageId,
@@ -435,18 +424,7 @@ function convertVoltStreamPartToEvents(
       },
     };
 
-    // Backward compatibility for existing clients that consume metadata from tool messages.
-    const resultEvent: ToolCallResultEvent = {
-      type: EventType.TOOL_CALL_RESULT,
-      toolCallId: `${VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX}${messageId || generateId()}`,
-      content: safeStringify({
-        messageId: messageId || undefined,
-        metadata: messageMetadata,
-      }),
-      messageId: generateId(),
-      role: "tool",
-    };
-    return [customEvent, resultEvent];
+    return [customEvent];
   }
 
   switch (part.type) {
