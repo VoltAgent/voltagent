@@ -2,6 +2,7 @@ import { AbstractAgent } from "@ag-ui/client";
 import type {
   AssistantMessage,
   BaseEvent,
+  CustomEvent,
   DeveloperMessage,
   Message,
   RunAgentInput,
@@ -275,6 +276,7 @@ type VoltUIMessage = {
 };
 
 const VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX = "__voltagent_message_metadata__:";
+const VOLTAGENT_MESSAGE_METADATA_EVENT_NAME = "voltagent.message_metadata";
 
 function isMetadataCarrierToolCallId(toolCallId: string | undefined): boolean {
   return (
@@ -397,6 +399,7 @@ type StreamConversionResult =
   | TextMessageStartEvent
   | TextMessageChunkEvent
   | TextMessageEndEvent
+  | CustomEvent
   | ToolCallStartEvent
   | ToolCallEndEvent
   | ToolCallArgsEvent
@@ -422,6 +425,17 @@ function convertVoltStreamPartToEvents(
       return null;
     }
 
+    // Best-practice carrier for app-specific metadata on AG-UI streams.
+    const customEvent: CustomEvent = {
+      type: EventType.CUSTOM,
+      name: VOLTAGENT_MESSAGE_METADATA_EVENT_NAME,
+      value: {
+        messageId: messageId || undefined,
+        metadata: messageMetadata,
+      },
+    };
+
+    // Backward compatibility for existing clients that consume metadata from tool messages.
     const resultEvent: ToolCallResultEvent = {
       type: EventType.TOOL_CALL_RESULT,
       toolCallId: `${VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX}${messageId || generateId()}`,
@@ -432,7 +446,7 @@ function convertVoltStreamPartToEvents(
       messageId: generateId(),
       role: "tool",
     };
-    return [resultEvent];
+    return [customEvent, resultEvent];
   }
 
   switch (part.type) {
