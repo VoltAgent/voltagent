@@ -435,18 +435,7 @@ function convertVoltStreamPartToEvents(
       },
     };
 
-    // Backward compatibility for existing clients that consume metadata from tool messages.
-    const resultEvent: ToolCallResultEvent = {
-      type: EventType.TOOL_CALL_RESULT,
-      toolCallId: `${VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX}${messageId || generateId()}`,
-      content: safeStringify({
-        messageId: messageId || undefined,
-        metadata: messageMetadata,
-      }),
-      messageId: generateId(),
-      role: "tool",
-    };
-    return [customEvent, resultEvent];
+    return [customEvent];
   }
 
   switch (part.type) {
