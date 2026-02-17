@@ -1,5 +1,21 @@
 # @voltagent/core
 
+## 2.4.2
+
+### Patch Changes
+
+- [#1072](https://github.com/VoltAgent/voltagent/pull/1072) [`42be052`](https://github.com/VoltAgent/voltagent/commit/42be0522175449ffa1e61181fda6f3e80beb1653) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: auto-register standalone Agent VoltOps client for remote observability export
+  - When an `Agent` is created with `voltOpsClient` and no global client is registered, the agent now seeds `AgentRegistry` with that client.
+  - This enables remote OTLP trace/log exporters that resolve credentials via global registry in standalone `new Agent(...)` setups (without `new VoltAgent(...)`).
+  - Existing global client precedence is preserved; agent-level client does not override an already configured global client.
+  - Added coverage in `client-priority.spec.ts` for both auto-register and non-override scenarios.
+
+- [#1064](https://github.com/VoltAgent/voltagent/pull/1064) [`047ff70`](https://github.com/VoltAgent/voltagent/commit/047ff70a8c47eb22748ff71f3b50b1e03ca7d4df) Thanks [@omeraplak](https://github.com/omeraplak)! - Add multi-step loop bodies for `andDoWhile` and `andDoUntil`.
+  - Loop steps now accept either a single `step` or a sequential `steps` array.
+  - When `steps` is provided, each iteration runs the steps in order and feeds each output into the next step.
+  - Workflow step serialization now includes loop `subSteps` when a loop has multiple steps.
+  - Added runtime and type tests for chained loop steps.
+
 ## 2.4.1
 
 ### Patch Changes
