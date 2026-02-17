@@ -18,8 +18,8 @@ export function AgentsDetail() {
   };
 
   return (
-    <div className="text-white relative w-full overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 landing-xs:mb-16 landing-md:mb-36">
+    <div className="text-white relative w-full overflow-hidden bg-[#101010] landing-xs:py-16 landing-md:py-24">
+      <div className="max-w-7xl mx-auto px-4">
         {/* Header - Left aligned */}
         <div className="mb-8 text-left max-w-xl">
           <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-main-emerald tracking-wide uppercase">
@@ -50,14 +50,14 @@ export function AgentsDetail() {
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "tools"
-                      ? "border border-solid border-[#2fd6a1]/55 bg-[#1f1d1c]"
-                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#2fd6a1]/45 hover:bg-[#141211]"
+                      ? "border border-solid border-[#5c5855] bg-[#1a1a1a]"
+                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
                   } transition-all duration-300 cursor-pointer`}
                   onClick={() => handleFeatureClick("tools")}
                 >
                   <div className="flex landing-xs:flex-row landing-md:flex-col landing-xs:items-center landing-md:items-start gap-2 mb-2">
-                    <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center">
-                      <WrenchIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#2fd6a1]" />
+                    <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center">
+                      <WrenchIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                     </div>
                     <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                       Tool calling
@@ -73,14 +73,14 @@ export function AgentsDetail() {
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "api"
-                      ? "border border-solid border-[#2fd6a1]/55 bg-[#1f1d1c]"
-                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#2fd6a1]/45 hover:bg-[#141211]"
+                      ? "border border-solid border-[#5c5855] bg-[#1a1a1a]"
+                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
                   } transition-all duration-300 cursor-pointer`}
                   onClick={() => handleFeatureClick("api")}
                 >
                   <div className="flex landing-xs:flex-row landing-md:flex-col landing-xs:items-center landing-md:items-start gap-2 mb-2">
-                    <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center">
-                      <WindowIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#2fd6a1]" />
+                    <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center">
+                      <WindowIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                     </div>
                     <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                       Unified API
@@ -97,14 +97,14 @@ export function AgentsDetail() {
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "prompt"
-                      ? "border border-solid border-[#2fd6a1]/55 bg-[#1f1d1c]"
-                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#2fd6a1]/45 hover:bg-[#141211]"
+                      ? "border border-solid border-[#5c5855] bg-[#1a1a1a]"
+                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
                   } transition-all duration-300 cursor-pointer`}
                   onClick={() => handleFeatureClick("prompt")}
                 >
                   <div className="flex landing-xs:flex-row landing-md:flex-col landing-xs:items-center landing-md:items-start gap-2 mb-2">
-                    <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center">
-                      <CommandLineIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#2fd6a1]" />
+                    <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center">
+                      <CommandLineIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                     </div>
                     <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                       Dynamic Prompting
@@ -121,14 +121,14 @@ export function AgentsDetail() {
                 <div
                   className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "memory"
-                      ? "border border-solid border-[#2fd6a1]/55 bg-[#1f1d1c]"
-                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#2fd6a1]/45 hover:bg-[#141211]"
+                      ? "border border-solid border-[#5c5855] bg-[#1a1a1a]"
+                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
                   } transition-all duration-300 cursor-pointer`}
                   onClick={() => handleFeatureClick("memory")}
                 >
                   <div className="flex landing-xs:flex-row landing-md:flex-col landing-xs:items-center landing-md:items-start gap-2 mb-2">
-                    <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center">
-                      <CircleStackIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#2fd6a1]" />
+                    <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center">
+                      <CircleStackIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                     </div>
                     <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                       Persistent Memory

@@ -172,7 +172,7 @@ export function Hero() {
           >
             <Link
               to="/docs/"
-              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm cursor-pointer bg-transparent text-[#eeeeee] border border-solid border-[#eeeeee]/65 rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-transparent hover:border-[#2fd6a1]/60 hover:text-[#f3f4f6] no-underline"
+              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm cursor-pointer bg-transparent text-[#eeeeee] border border-solid border-[#eeeeee]/65 rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-transparent hover:border-[#5c5855] hover:text-[#f3f4f6] no-underline"
             >
               <ChevronRightIcon className="landing-xs:w-4 landing-xs:h-4 landing-md:w-6 landing-md:h-6" />
               Get Started
@@ -200,7 +200,7 @@ export function Hero() {
         </div>
       </div>
       {/* Platform Container */}
-      <div className="relative border border-solid border-[#3d3a39] rounded-xl md:rounded-2xl p-4 pt-6 md:p-6 mx-4 lg:mx-0 mt-16 md:mt-36">
+      <div className="relative border border-solid border-[#3d3a39] rounded-lg p-4 pt-6 md:p-6 mx-4 lg:mx-0 mt-16 md:mt-36">
         {/* Badge */}
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#101010] px-3 py-0.5 text-[#b8b3b0] text-xs md:text-sm font-medium border border-solid border-[#3d3a39] rounded-full">
           The Platform
@@ -209,7 +209,7 @@ export function Hero() {
         {/* Two boxes with connector */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-2 md:gap-4 items-stretch">
           {/* Core Framework Box */}
-          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-xl border border-solid border-[#3d3a39] bg-[#101010] transition-colors">
+          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] transition-colors">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <span className="text-white font-semibold text-lg md:text-xl">Core Framework</span>
               <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-[#3d3a39] text-[#8a8380] w-fit">
@@ -242,7 +242,7 @@ export function Hero() {
           </div>
 
           {/* VoltOps Console Box */}
-          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-xl border border-solid border-[#3d3a39] bg-[#101010] transition-colors">
+          <div className="flex flex-col gap-3 p-4 md:p-6 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] transition-colors">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <span className="text-white font-semibold text-lg md:text-xl">VoltOps Console</span>
               <div className="flex gap-2">

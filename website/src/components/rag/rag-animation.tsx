@@ -195,7 +195,7 @@ export function RagExample() {
             {/* Diagram Section */}
             <div className="w-full relative  px-4 py-12" ref={diagramRef}>
               {/* Main Container with Border */}
-              <div className="border border-gray-800 rounded-xl  mx-auto max-w-6xl">
+              <div className="border border-gray-800 rounded-lg  mx-auto max-w-6xl">
                 {/* Section Headers */}
                 <div className="grid grid-cols-5 mb-12">
                   <div className="col-span-1" />

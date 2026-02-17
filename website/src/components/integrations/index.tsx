@@ -52,13 +52,13 @@ const fillAnimation = `
 
   @keyframes glowEffect {
     0% {
-      filter: drop-shadow(0 0 2px #22c55e);
+      filter: drop-shadow(0 0 2px #00d992);
     }
     50% {
-      filter: drop-shadow(0 0 8px #22c55e);
+      filter: drop-shadow(0 0 8px #00d992);
     }
     100% {
-      filter: drop-shadow(0 0 2px #22c55e);
+      filter: drop-shadow(0 0 2px #00d992);
     }
   }
 
@@ -179,7 +179,7 @@ const CustomBolt = ({ width = 150, height = 150 }) => {
           animation: "particleRotate1 3s ease-out infinite",
         }}
       >
-        <circle cx="40" cy="40" r="2" fill="#4ade80" />
+        <circle cx="40" cy="40" r="2" fill="#22c55e" />
         <circle cx="40" cy="40" r="1" fill="#fff" />
       </g>
       <g
@@ -188,7 +188,7 @@ const CustomBolt = ({ width = 150, height = 150 }) => {
           animation: "particleRotate2 3s ease-out infinite",
         }}
       >
-        <circle cx="40" cy="40" r="2" fill="#4ade80" />
+        <circle cx="40" cy="40" r="2" fill="#22c55e" />
         <circle cx="40" cy="40" r="1" fill="#fff" />
       </g>
       <g
@@ -197,7 +197,7 @@ const CustomBolt = ({ width = 150, height = 150 }) => {
           animation: "particleRotate3 3s ease-out infinite",
         }}
       >
-        <circle cx="40" cy="40" r="2" fill="#4ade80" />
+        <circle cx="40" cy="40" r="2" fill="#22c55e" />
         <circle cx="40" cy="40" r="1" fill="#fff" />
       </g>
     </svg>
@@ -462,14 +462,14 @@ export function Integrations() {
                     {duplicatedTopLogos.map((item, index) => (
                       <div
                         key={`top-logo-${item.tooltip}-${index}`}
-                        className="group relative flex-shrink-0 bg-[#101010] w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-[#3d3a39] hover:border-[#2fd6a1]/45 hover:bg-[#1f1d1c] transition-all duration-200"
+                        className="group relative flex-shrink-0 bg-[#101010] w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-[#3d3a39] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-200"
                         onMouseEnter={handleTopRowMouseEnter}
                         onMouseLeave={handleTopRowMouseLeave}
                         onTouchStart={handleTopRowTouchStart}
                         onTouchEnd={handleTopRowTouchEnd}
                       >
                         {item.logo}
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-[#1f1d1c] text-[#b8b3b0] text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg border border-solid border-[#3d3a39]">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-[#1a1a1a] text-[#b8b3b0] text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg border border-solid border-[#3d3a39]">
                           {item.tooltip}
                         </div>
                       </div>
@@ -502,14 +502,14 @@ export function Integrations() {
                     {duplicatedBottomLogos.map((item, index) => (
                       <div
                         key={`bottom-logo-${item.tooltip}-${index}`}
-                        className="group relative flex-shrink-0 bg-[#101010] w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-[#3d3a39] hover:border-[#2fd6a1]/45 hover:bg-[#1f1d1c] transition-all duration-200"
+                        className="group relative flex-shrink-0 bg-[#101010] w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-[#3d3a39] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-200"
                         onMouseEnter={handleBottomRowMouseEnter}
                         onMouseLeave={handleBottomRowMouseLeave}
                         onTouchStart={handleBottomRowTouchStart}
                         onTouchEnd={handleBottomRowTouchEnd}
                       >
                         {item.logo}
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-[#1f1d1c] text-[#b8b3b0] text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg border border-solid border-[#3d3a39]">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-[#1a1a1a] text-[#b8b3b0] text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg border border-solid border-[#3d3a39]">
                           {item.tooltip}
                         </div>
                       </div>

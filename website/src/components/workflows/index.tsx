@@ -25,10 +25,10 @@ export function Workflows() {
         <div className="grid landing-xs:grid-cols-1  landing-md:grid-cols-2 landing-lg:grid-cols-4 gap-4 sm:gap-6 h-full mt-8 landing-xs:mt-0 landing-md:mt-16">
           {/* Feature 1 */}
           <div className="relative h-full">
-            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#141211] transition-all duration-300 h-full flex flex-col">
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
               <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
-                  <Squares2X2Icon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#2fd6a1]" />
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
+                  <Squares2X2Icon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Create complex workflows with Chain API
@@ -43,10 +43,10 @@ export function Workflows() {
 
           {/* Feature 4 */}
           <div className="relative h-full">
-            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#141211] transition-all duration-300 h-full flex flex-col">
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
               <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
-                  <UsersIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#2fd6a1]" />
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
+                  <UsersIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Full TypeScript support with Zod schemas
@@ -61,10 +61,10 @@ export function Workflows() {
 
           {/* Feature 2 */}
           <div className="relative h-full">
-            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#141211] transition-all duration-300 h-full flex flex-col">
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
               <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
-                  <UserPlusIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#2fd6a1]" />
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
+                  <UserPlusIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Pause/Resume for long running workflows
@@ -79,10 +79,10 @@ export function Workflows() {
 
           {/* Feature 3 */}
           <div className="relative h-full">
-            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#141211] transition-all duration-300 h-full flex flex-col">
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
               <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
-                  <EyeIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#2fd6a1]" />
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
+                  <EyeIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Real time observability with VoltOps
