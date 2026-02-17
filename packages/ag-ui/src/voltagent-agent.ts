@@ -2,6 +2,7 @@ import { AbstractAgent } from "@ag-ui/client";
 import type {
   AssistantMessage,
   BaseEvent,
+  CustomEvent,
   DeveloperMessage,
   Message,
   RunAgentInput,
@@ -274,18 +275,29 @@ type VoltUIMessage = {
   parts?: VoltUIPart[];
 };
 
+const VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX = "__voltagent_message_metadata__:";
+const VOLTAGENT_MESSAGE_METADATA_EVENT_NAME = "voltagent.message_metadata";
+
+function isMetadataCarrierToolCallId(toolCallId: string | undefined): boolean {
+  return (
+    typeof toolCallId === "string" && toolCallId.startsWith(VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX)
+  );
+}
+
 function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[] {
   const toolNameById = new Map<string, string>();
+  const convertedMessages: VoltUIMessage[] = [];
 
-  return messages.map((msg) => {
+  for (const msg of messages) {
     const messageId = msg.id || generateId();
 
     if (isUserMessage(msg)) {
-      return {
+      convertedMessages.push({
         id: messageId,
         role: "user",
         content: extractTextContent(msg.content),
-      };
+      });
+      continue;
     }
 
     if (isAssistantMessage(msg)) {
@@ -306,24 +318,29 @@ function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[]
         });
       }
 
-      return {
+      convertedMessages.push({
         id: messageId,
         role: "assistant",
         parts,
-      };
+      });
+      continue;
     }
 
     if (isSystemMessage(msg) || isDeveloperMessage(msg)) {
-      return {
+      convertedMessages.push({
         id: messageId,
         role: "system",
         content: msg.content,
-      };
+      });
+      continue;
     }
 
     if (isToolMessage(msg)) {
+      if (isMetadataCarrierToolCallId(msg.toolCallId)) {
+        continue;
+      }
       const toolName = msg.toolCallId ? toolNameById.get(msg.toolCallId) : undefined;
-      return {
+      convertedMessages.push({
         id: messageId,
         role: "tool",
         parts: [
@@ -334,16 +351,19 @@ function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[]
             output: safelyParseJson(msg.content),
           },
         ],
-      };
+      });
+      continue;
     }
 
     // activity or any other custom role -> fold into assistant text
-    return {
+    convertedMessages.push({
       id: messageId,
       role: "assistant",
       parts: [{ type: "text", text: safeStringify((msg as any).content ?? "") }],
-    };
-  });
+    });
+  }
+
+  return convertedMessages;
 }
 
 function extractTextContent(content: UserMessage["content"] | AssistantMessage["content"]): string {
@@ -379,6 +399,7 @@ type StreamConversionResult =
   | TextMessageStartEvent
   | TextMessageChunkEvent
   | TextMessageEndEvent
+  | CustomEvent
   | ToolCallStartEvent
   | ToolCallEndEvent
   | ToolCallArgsEvent
@@ -389,6 +410,44 @@ function convertVoltStreamPartToEvents(
   fallbackMessageId: string,
 ): StreamConversionResult[] | null {
   const payload = (part as { payload?: Record<string, unknown> }).payload ?? part;
+  const partType = (part as { type: string }).type;
+
+  if (partType === "message-metadata") {
+    const messageId =
+      (part as { messageId?: string }).messageId ??
+      (payload as { messageId?: string }).messageId ??
+      fallbackMessageId;
+    const messageMetadata =
+      (payload as { messageMetadata?: unknown }).messageMetadata ??
+      (payload as { metadata?: unknown }).metadata;
+
+    if (!messageMetadata || typeof messageMetadata !== "object") {
+      return null;
+    }
+
+    // Best-practice carrier for app-specific metadata on AG-UI streams.
+    const customEvent: CustomEvent = {
+      type: EventType.CUSTOM,
+      name: VOLTAGENT_MESSAGE_METADATA_EVENT_NAME,
+      value: {
+        messageId: messageId || undefined,
+        metadata: messageMetadata,
+      },
+    };
+
+    // Backward compatibility for existing clients that consume metadata from tool messages.
+    const resultEvent: ToolCallResultEvent = {
+      type: EventType.TOOL_CALL_RESULT,
+      toolCallId: `${VOLTAGENT_METADATA_TOOL_CALL_ID_PREFIX}${messageId || generateId()}`,
+      content: safeStringify({
+        messageId: messageId || undefined,
+        metadata: messageMetadata,
+      }),
+      messageId: generateId(),
+      role: "tool",
+    };
+    return [customEvent, resultEvent];
+  }
 
   switch (part.type) {
     case "text-start": {
