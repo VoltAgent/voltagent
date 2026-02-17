@@ -277,13 +277,13 @@ export const CodeExample = ({
     <div className="relative">
       <div
         // Fixed: Removed unnecessary template literal
-        className="max-w-4xl relative overflow-y-hidden backdrop-blur-md border border-[#3d3a39] hover:border-[#2fd6a1]/60 transition-all duration-300 rounded-lg"
+        className="max-w-4xl relative overflow-y-hidden backdrop-blur-md border border-[#3d3a39] hover:border-[#5c5855] transition-all duration-300 rounded-lg"
       >
         <motion.div
           className="absolute top-0 left-0 w-full h-[3px] rounded-t-lg landing-xs:hidden landing-md:block"
           style={{
             background:
-              "linear-gradient(45deg, rgb(0, 217, 146), rgb(0, 217, 146), rgb(0, 217, 146), rgb(0, 217, 146)) 0% 0% / 300%",
+              "linear-gradient(45deg, rgb(47, 214, 161), rgb(16, 185, 129), rgb(47, 214, 161), rgb(5, 150, 105)) 0% 0% / 300%",
           }}
         />
         <pre className="text-left backdrop-blur-md bg-white/5 overflow-hidden rounded-lg p-0 text-sm font-mono m-0 landing-md:h-[340px] landing-xs:h-[275px]">

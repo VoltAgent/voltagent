@@ -71,7 +71,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
     const baseHighlightClass = "transition-all duration-300 ease-in-out cursor-pointer relative";
 
     return selectedFeature === section
-      ? `bg-gradient-to-r from-[#1f1d1c]/70 to-[#141211]/70 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-[#2fd6a1] pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
+      ? `bg-gradient-to-r from-[#1a1a1a]/70 to-[#151515]/70 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-[#2fd6a1] pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
       : `text-gray-400 hover:bg-white/5 ${baseHighlightClass} ${
           selectedFeature ? "blur-[1px] opacity-50" : ""
         }`;
@@ -250,7 +250,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               {/* Feature Info Overlay */}
               {selectedFeature && overlayPosition && (
                 <div
-                  className="absolute font-[Inter] left-0 bg-gray-900/95 backdrop-blur-sm w-full rounded-lg transition-all duration-300 shadow-lg border-solid border-[#2fd6a1]/25"
+                  className="absolute font-[Inter] left-0 bg-gray-900/95 backdrop-blur-sm w-full rounded-lg transition-all duration-300 shadow-lg border-solid border-[#3d3a39]"
                   style={{
                     top: overlayPosition.top + overlayPosition.height + 4,
                   }}

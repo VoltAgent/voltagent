@@ -36,10 +36,10 @@ export function Rag() {
         <div className="grid  landing-xs:grid-cols-2 landing-md:grid-cols-4 gap-4 h-full ">
           {/* Feature 1 */}
           <div className="relative h-full cursor-pointer">
-            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#2fd6a1]/45 hover:bg-[#1f1d1c] transition-all duration-300 h-full flex flex-col">
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
               <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
-                  <ServerStackIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#2fd6a1]" />
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
+                  <ServerStackIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Integrated Vector Database
@@ -54,10 +54,10 @@ export function Rag() {
 
           {/* Feature 2 */}
           <div className="relative h-full cursor-pointer ">
-            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#2fd6a1]/45 hover:bg-[#1f1d1c] transition-all duration-300 h-full flex flex-col">
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
               <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
-                  <FunnelIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#2fd6a1]" />
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
+                  <FunnelIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Precise Data Filtering
@@ -72,10 +72,10 @@ export function Rag() {
 
           {/* Feature 3 */}
           <div className="relative h-full cursor-pointer">
-            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#2fd6a1]/45 hover:bg-[#1f1d1c] transition-all duration-300 h-full flex flex-col">
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
               <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
-                  <SparklesIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#2fd6a1]" />
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
+                  <SparklesIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   AI Agent Integration
@@ -90,10 +90,10 @@ export function Rag() {
 
           {/* Feature 4 */}
           <div className="relative h-full cursor-pointer">
-            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#2fd6a1]/45 hover:bg-[#1f1d1c] transition-all duration-300 h-full flex flex-col">
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
               <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-[#2fd6a1]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
-                  <AdjustmentsHorizontalIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#2fd6a1]" />
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
+                  <AdjustmentsHorizontalIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Hybrid Search

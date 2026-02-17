@@ -58,6 +58,10 @@ export default function Home(): JSX.Element {
               background-color: var(--landing-home-bg) !important;
             }
 
+            .main-wrapper {
+              max-width: 100% !important;
+            }
+
             @keyframes gradientShift {
               0%,
               100% {
