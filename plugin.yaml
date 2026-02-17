@@ -4,7 +4,7 @@
 
 name: voltagent
 display_name: VoltAgent
-version: "0.1.0"
+manifest_version: "1.0"
 description: >
   AI Agent Engineering Platform built on an open source TypeScript framework.
   Build, deploy, and monitor AI agents with observability, multi-model support,
@@ -45,8 +45,8 @@ runtime:
   language: typescript
   min_node: "18"
 
-discovery:
-  protocol: a2a
-  transport:
-    - http
-    - websocket
+protocols:
+  - a2a  # via @voltagent/a2a-server
+transport:
+  - http
+  - websocket
