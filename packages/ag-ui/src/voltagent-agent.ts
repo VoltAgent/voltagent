@@ -276,7 +276,6 @@ type VoltUIMessage = {
 };
 
 const VOLTAGENT_MESSAGE_METADATA_EVENT_NAME = "voltagent.message_metadata";
-
 function convertAGUIMessagesToVoltMessages(messages: Message[]): VoltUIMessage[] {
   const toolNameById = new Map<string, string>();
   const convertedMessages: VoltUIMessage[] = [];
