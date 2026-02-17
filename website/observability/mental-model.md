@@ -33,9 +33,3 @@ In VoltOps:
 - A **trace** is one end-to-end execution.
 - A **span** is one operation inside that execution.
 - Spans are connected by parent-child relationships and rendered as nodes.
-
-## Next
-
-- [**Tracing Overview**](tracing/overview)
-- [**Trace Logs**](tracing/logs)
-- [**User Analytics**](tracing/users)

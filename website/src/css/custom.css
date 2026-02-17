@@ -5339,13 +5339,9 @@ nav.table-of-contents .table-of-contents__link--active,
   max-width: 300px;
 }
 
-/* Hide all docs TOC variants on <= 1440px */
+/* Hide blog TOC wrapper on <= 1440px. Docs TOC visibility is handled in DocItem/Layout. */
 @media (max-width: 1440px) {
-  .theme-doc-toc-desktop,
-  .theme-doc-toc-mobile,
-  .table-of-contents,
-  .tableOfContents,
-  .tocCollapsible {
+  .tableOfContents {
     display: none !important;
   }
 }
