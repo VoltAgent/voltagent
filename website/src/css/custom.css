@@ -5339,6 +5339,13 @@ nav.table-of-contents .table-of-contents__link--active,
   max-width: 300px;
 }
 
+/* Hide blog TOC wrapper on <= 1440px. Docs TOC visibility is handled in DocItem/Layout. */
+@media (max-width: 1440px) {
+  .tableOfContents {
+    display: none !important;
+  }
+}
+
 @media (min-width: 1024px) {
   .tableOfContents {
     padding-left: 0.5rem;

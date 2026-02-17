@@ -3,6 +3,16 @@
   margin-top: 0;
 }
 
+.tocColumn {
+  display: block;
+}
+
+@media (max-width: 1440px) {
+  .tocColumn {
+    display: none;
+  }
+}
+
 @media (min-width: 997px) {
   .docItemCol {
   }
