@@ -161,7 +161,3 @@ new VoltAgent({
   }),
 });
 ```
-
-## Next Step
-
-Continue with [**Mental Model**](mental-model) to understand how trace and span data maps to VoltOps views.
