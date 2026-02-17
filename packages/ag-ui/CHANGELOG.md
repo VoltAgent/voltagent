@@ -1,5 +1,14 @@
 # @voltagent/ag-ui
 
+## 1.0.4
+
+### Patch Changes
+
+- [#1074](https://github.com/VoltAgent/voltagent/pull/1074) [`e2793c1`](https://github.com/VoltAgent/voltagent/commit/e2793c1734fc9a388e13b920a913e47531f14f35) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: preserve assistant feedback metadata across AG-UI streams
+  - Map VoltAgent `message-metadata` stream chunks to AG-UI `CUSTOM` events, which are the protocol-native channel for application-specific metadata.
+  - Stop emitting legacy internal tool-result metadata markers from the adapter.
+  - Remove the legacy metadata marker filter from model-input message conversion.
+
 ## 1.0.3
 
 ### Patch Changes
