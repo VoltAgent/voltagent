@@ -194,31 +194,35 @@ export function CommunitySection() {
   }, []);
 
   return (
-    <section className="relative w-full overflow-hidden">
+    <section className="relative w-full overflow-hidden z-10">
       <GitHubStarsProvider>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36">
-          <div className="mb-16 ">
-            <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-blue-500 tracking-wide uppercase">
+        {/* Header with full-width background */}
+        <div className="w-full bg-[#101010] landing-xs:py-10 landing-md:py-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
               Community
-            </h2>
-            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight">
-              Join the movement
             </p>
-            <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
+            <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
+              Join the movement
+            </h2>
+            <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-base text-[#8a8380] mb-0">
               Our growing <span className="text-main-emerald">open source</span> community building
               the future of AI agents.
             </p>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-12 landing-xs:mt-12 landing-md:mt-0">
+        <div className="max-w-7xl mx-auto  px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 relative z-10 gap-3 md:gap-12 landing-xs:mt-12 landing-md:mt-0">
             {COMMUNITY_LINKS.map((link, index) => (
               <a
                 key={link.id}
                 href={link.url}
                 target="_blank"
                 rel="noreferrer"
-                className={`group relative landing-xs:p-6 landing-md:p-12  landing-md:border-solid border-white/10 no-underline transition-all flex flex-col items-center animate-fade-in landing-xs:unset landing-md:bg-black/20 rounded-lg hover:border-main-emerald hover:bg-black/40
-                  ${link.id === "discord" ? "col-span-2 md:col-span-1" : ""}`}
+                className={`group relative landing-xs:p-6 landing-md:p-12 z-10  landing-md:border-solid border-white/10 no-underline transition-all flex flex-col items-center animate-fade-in landing-xs:unset landing-md:bg-black/20 rounded-lg hover:border-main-emerald hover:bg-black/40
+                  ${link.id === "discord" ? "md:col-span-1" : ""}`}
                 style={{
                   animationDelay: `${index * 100}ms`,
                   animationFillMode: "both",

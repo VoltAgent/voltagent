@@ -71,7 +71,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
     const baseHighlightClass = "transition-all duration-300 ease-in-out cursor-pointer relative";
 
     return selectedFeature === section
-      ? `bg-gradient-to-r from-indigo-600/40 to-indigo-500/20 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-indigo-500 pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
+      ? `bg-gradient-to-r from-[#1a1a1a]/70 to-[#151515]/70 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-[#2fd6a1] pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
       : `text-gray-400 hover:bg-white/5 ${baseHighlightClass} ${
           selectedFeature ? "blur-[1px] opacity-50" : ""
         }`;
@@ -101,10 +101,10 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
             <code className="py-4 px-2 sm:px-3 block text-[11px] relative w-full overflow-x-auto">
               {/* Orchestrator initialization */}
               <span className={getBaseCodeClasses()}>
-                <span className="text-blue-400">const</span>
+                <span className="text-[#ff7b72]">const</span>
                 <span> orchestrator = </span>
-                <span className="text-blue-400">new</span>
-                <span className="text-green-400"> MultiAgentOrchestrator</span>
+                <span className="text-[#ff7b72]">new</span>
+                <span className="text-[#d2a8ff]"> MultiAgentOrchestrator</span>
                 <span>();</span>
                 <br />
                 <br />
@@ -117,19 +117,19 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 )} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("centralized", e)}
               >
-                <span className="text-gray-300">{"// Add individual agents"}</span>
+                <span className="text-[#8b949e]">{"// Add individual agents"}</span>
                 <br />
                 <span>orchestrator.addAgent(</span>
-                <span className="text-blue-400">new</span>
-                <span className="text-green-400"> BedrockLLMAgent</span>
+                <span className="text-[#ff7b72]">new</span>
+                <span className="text-[#d2a8ff]"> BedrockLLMAgent</span>
                 <span>{"({"}</span>
                 <br />
                 <span className="ml-4">name: </span>
-                <span className="text-yellow-300">"General Assistant"</span>
+                <span className="text-[#a5d6ff]">"General Assistant"</span>
                 <span>,</span>
                 <br />
                 <span className="ml-4">description: </span>
-                <span className="text-yellow-300">"Handles general inquiries"</span>
+                <span className="text-[#a5d6ff]">"Handles general inquiries"</span>
                 <br />
                 <span>{"}));"}</span>
                 <br />
@@ -143,36 +143,36 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 )} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("specialized", e)}
               >
-                <span className="text-gray-300">
+                <span className="text-[#8b949e]">
                   {"// Add a SupervisorAgent for complex support tasks"}
                 </span>
                 <br />
                 <span>orchestrator.addAgent(</span>
-                <span className="text-blue-400">new</span>
-                <span className="text-green-400"> SupervisorAgent</span>
+                <span className="text-[#ff7b72]">new</span>
+                <span className="text-[#d2a8ff]"> SupervisorAgent</span>
                 <span>{"({"}</span>
                 <br />
                 <span className="ml-4">name: </span>
-                <span className="text-yellow-300">"SupervisorAgent"</span>
+                <span className="text-[#a5d6ff]">"SupervisorAgent"</span>
                 <span>,</span>
                 <br />
                 <span className="ml-4">description: </span>
-                <span className="text-yellow-300">
+                <span className="text-[#a5d6ff]">
                   "You are a supervisor agent that manages the team of"
                 </span>
                 <span>,</span>
                 <br />
                 <span className="ml-4">leadAgent: </span>
-                <span className="text-blue-400">new</span>
-                <span className="text-green-400"> BedrockLLMAgent</span>
+                <span className="text-[#ff7b72]">new</span>
+                <span className="text-[#d2a8ff]"> BedrockLLMAgent</span>
                 <span>{"({"}</span>
                 <br />
                 <span className="ml-8">name: </span>
-                <span className="text-yellow-300">"Support Team"</span>
+                <span className="text-[#a5d6ff]">"Support Team"</span>
                 <span>,</span>
                 <br />
                 <span className="ml-8">description: </span>
-                <span className="text-yellow-300">
+                <span className="text-[#a5d6ff]">
                   "Coordinates support inquiries requiring multiple"
                 </span>
                 <br />
@@ -190,26 +190,26 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 className={`block ${getHighlightClasses("memory")} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("memory", e)}
               >
-                <span className="text-gray-300">
+                <span className="text-[#8b949e]">
                   {"// Add another SupervisorAgent for product development"}
                 </span>
                 <br />
                 <span>orchestrator.addAgent(</span>
-                <span className="text-blue-400">new</span>
-                <span className="text-green-400"> SupervisorAgent</span>
+                <span className="text-[#ff7b72]">new</span>
+                <span className="text-[#d2a8ff]"> SupervisorAgent</span>
                 <span>{"({"}</span>
                 <br />
                 <span className="ml-4">leadAgent: </span>
-                <span className="text-blue-400">new</span>
-                <span className="text-green-400"> AnthropicAgent</span>
+                <span className="text-[#ff7b72]">new</span>
+                <span className="text-[#d2a8ff]"> AnthropicAgent</span>
                 <span>{"({"}</span>
                 <br />
                 <span className="ml-8">name: </span>
-                <span className="text-yellow-300">"Product Team"</span>
+                <span className="text-[#a5d6ff]">"Product Team"</span>
                 <span>,</span>
                 <br />
                 <span className="ml-8">description: </span>
-                <span className="text-yellow-300">
+                <span className="text-[#a5d6ff]">
                   "Coordinates product development and feature requests"
                 </span>
                 <br />
@@ -231,11 +231,11 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
                 )} break-words whitespace-pre-wrap`}
                 onClick={(e) => handleFeatureClick("dynamic", e)}
               >
-                <span className="text-gray-300">{"// Process through classifier"}</span>
+                <span className="text-[#8b949e]">{"// Process through classifier"}</span>
                 <br />
-                <span className="text-blue-400">const</span>
+                <span className="text-[#ff7b72]">const</span>
                 <span> response = </span>
-                <span className="text-blue-400">await</span>
+                <span className="text-[#ff7b72]">await</span>
                 <span> orchestrator.routeRequest(</span>
                 <br />
                 <span className="ml-4">userInput,</span>
@@ -250,7 +250,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               {/* Feature Info Overlay */}
               {selectedFeature && overlayPosition && (
                 <div
-                  className="absolute font-[Inter] left-0 bg-gray-900/95 backdrop-blur-sm w-full rounded-lg transition-all duration-300 shadow-lg border-solid border-indigo-500/20"
+                  className="absolute font-[Inter] left-0 bg-gray-900/95 backdrop-blur-sm w-full rounded-lg transition-all duration-300 shadow-lg border border-solid border-[#3d3a39]"
                   style={{
                     top: overlayPosition.top + overlayPosition.height + 4,
                   }}

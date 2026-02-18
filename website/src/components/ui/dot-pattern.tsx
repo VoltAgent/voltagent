@@ -19,12 +19,12 @@ export const DotPattern: React.FC<DotPatternProps> = ({
   const maskId = `mask-${uniqueId}`;
 
   return (
-    <div className={`fixed pointer-events-none ${className}`}>
+    <div className={`fixed inset-0 pointer-events-none z-[1] ${className}`}>
       <svg
         width="100%"
         height="100%"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ position: "fixed", top: 0, left: 0, zIndex: -1 }}
+        style={{ position: "fixed", top: 0, left: 0 }}
       >
         <title>Decorative dot pattern background</title>
         <defs>

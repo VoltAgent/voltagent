@@ -2,10 +2,10 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: #080f11d9;
+  background-color: #020202;
   width: 100%;
   height: 64px;
-  border-bottom: 1px solid #1a2533;
+  border-bottom: none;
   backdrop-filter: blur(12px);
 }
 
@@ -182,9 +182,9 @@
   top: 64px;
   left: 0;
   right: 0;
-  background-color: #080f11;
+  background-color: #020202;
   padding: 32px 24px;
-  border-bottom: 1px solid #1a2533;
+  border-bottom: none;
   font-family: "Inter", sans-serif;
   flex-direction: column;
   gap: 24px;

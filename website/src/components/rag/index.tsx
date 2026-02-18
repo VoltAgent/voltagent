@@ -14,38 +14,42 @@ export function Rag() {
 
   return (
     <div className="relative w-full overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36">
-        <div className="mb-8 ">
-          <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-amber-500 tracking-wide uppercase">
+      {/* Header with full-width background */}
+      <div className="w-full bg-[#101010] relative z-10 landing-xs:py-10 landing-md:py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
             RAG
-          </h2>
-          <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight">
-            Accurate and context-aware responses
           </p>
-          <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
+          <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
+            Accurate and context-aware responses
+          </h2>
+          <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-base text-[#8a8380] mb-0">
             For advanced querying and dynamic analysis, integrate data into a knowledge base by
             syncing from diverse sources
           </p>
         </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 relative z-10 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
         {/* Code Example - Full Width */}
         <div className="">
           {isMobile ? <RagMobile isVisible={true} /> : <RagExample isVisible={true} />}
         </div>
         {/* Feature Cards - Grid Layout */}
-        <div className="grid  landing-xs:grid-cols-2 landing-md:grid-cols-4 gap-4 h-full ">
+        <div className="grid  landing-xs:grid-cols-1 landing-md:grid-cols-4 gap-4 h-full ">
           {/* Feature 1 */}
           <div className="relative h-full cursor-pointer">
-            <div className="p-4 rounded-lg border border-solid border-white/10 hover:border-amber-500/50 hover:bg-white/10 transition-all duration-300 h-full flex flex-col">
-              <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-amber-500/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
-                  <ServerStackIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5  text-amber-500" />
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
+              <div className="flex  items-center gap-3 mb-3">
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
+                  <ServerStackIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Integrated Vector Database
                 </div>
               </div>
-              <div className="text-gray-400 text-xs leading-relaxed">
+              <div className="text-[#8a8380] text-xs leading-relaxed">
                 Seamlessly manage and query your vector data with a unified API, compatible with
                 various providers.
               </div>
@@ -54,16 +58,16 @@ export function Rag() {
 
           {/* Feature 2 */}
           <div className="relative h-full cursor-pointer ">
-            <div className="p-4 rounded-lg border border-solid border-white/10 hover:border-amber-500/50 hover:bg-white/10 transition-all duration-300 h-full flex flex-col">
-              <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-amber-500/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
-                  <FunnelIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5  text-amber-500" />
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
+              <div className="flex  items-center gap-3 mb-3">
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
+                  <FunnelIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Precise Data Filtering
                 </div>
               </div>
-              <div className="text-gray-400 text-xs leading-relaxed">
+              <div className="text-[#8a8380] text-xs leading-relaxed">
                 Refine search results by filtering vectors based on metadata like source, date, or
                 custom attributes.
               </div>
@@ -72,16 +76,16 @@ export function Rag() {
 
           {/* Feature 3 */}
           <div className="relative h-full cursor-pointer">
-            <div className="p-4 rounded-lg border border-solid border-white/10 hover:border-amber-500/50 hover:bg-white/10 transition-all duration-300 h-full flex flex-col">
-              <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-amber-500/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
-                  <SparklesIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5  text-amber-500" />
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
+              <div className="flex  items-center gap-3 mb-3">
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
+                  <SparklesIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   AI Agent Integration
                 </div>
               </div>
-              <div className="text-gray-400 text-xs leading-relaxed">
+              <div className="text-[#8a8380] text-xs leading-relaxed">
                 Empower AI agents to access and utilize your knowledge base through dedicated vector
                 search tools.
               </div>
@@ -90,16 +94,16 @@ export function Rag() {
 
           {/* Feature 4 */}
           <div className="relative h-full cursor-pointer">
-            <div className="p-4 rounded-lg border border-solid border-white/10 hover:border-amber-500/50 hover:bg-white/10 transition-all duration-300 h-full flex flex-col">
-              <div className="flex flex-col items-start gap-3 mb-3">
-                <div className="bg-amber-500/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
-                  <AdjustmentsHorizontalIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5  text-amber-500" />
+            <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
+              <div className="flex  items-center gap-3 mb-3">
+                <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex  w-10 h-10 rounded-md items-center justify-center shrink-0">
+                  <AdjustmentsHorizontalIcon className="landing-xs:w-4 landing-xs:h-4 landing-lg:w-5 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
                 <div className="landing-xs:text-sm landing-lg:text-base font-semibold text-white">
                   Hybrid Search
                 </div>
               </div>
-              <div className="text-gray-400 text-xs leading-relaxed">
+              <div className="text-[#8a8380] text-xs leading-relaxed">
                 Combine keyword and vector search techniques for enhanced accuracy and relevance in
                 information retrieval.
               </div>

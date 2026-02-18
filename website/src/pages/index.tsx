@@ -4,7 +4,6 @@ import Layout from "@theme/Layout";
 import { AgentsDetail } from "../components/agents-detail";
 import { CommunitySection } from "../components/community-section";
 import { CompaniesMarquee } from "../components/companies/CompaniesMarquee";
-import { FeatureShowcase } from "../components/feature-showcase";
 import { FeaturedBlog } from "../components/featured-blog";
 import { Hero } from "../components/hero";
 import { Integrations } from "../components/integrations";
@@ -28,38 +27,9 @@ export default function Home(): JSX.Element {
         {description && <meta property="og:description" content={description} />}
       </Head>
       <Layout>
-        <main className="flex-1 relative overflow-hidden">
-          <div className="fixed inset-0 pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/3 via-transparent to-cyan-500/3" />
-
-            <div className="absolute top-[10%] left-[15%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[120px] animate-pulse" />
-            <div
-              className="absolute top-[50%] right-[10%] w-[400px] h-[400px] bg-cyan-500/8 rounded-full blur-[100px] animate-pulse"
-              style={{ animationDelay: "2s" }}
-            />
-            <div
-              className="absolute bottom-[20%] left-[25%] w-[450px] h-[450px] bg-emerald-400/8 rounded-full blur-[110px] animate-pulse"
-              style={{ animationDelay: "4s" }}
-            />
-            <div
-              className="absolute top-[30%] left-[60%] w-[350px] h-[350px] bg-cyan-400/6 rounded-full blur-[90px] animate-pulse"
-              style={{ animationDelay: "3s" }}
-            />
-
-            <div className="absolute inset-0 opacity-30">
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "radial-gradient(circle at 20% 50%, rgba(0, 217, 146, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 50%), radial-gradient(circle at 40% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%)",
-                }}
-              />
-            </div>
-          </div>
-
-          <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
+        <main className="flex-1 relative overflow-hidden bg-[#050507]">
+          <DotPattern dotColor="#fffdfbb0" dotSize={1.2} spacing={22} />
           <Hero />
-          <FeatureShowcase />
 
           <div className="relative">
             <CompaniesMarquee />
@@ -69,12 +39,27 @@ export default function Home(): JSX.Element {
             <Workflows />
             <Rag />
             <Integrations />
-            <FeaturedBlog />
+            {/*            <FeaturedBlog /> */}
             <CommunitySection />
           </div>
 
           {/* Global CSS for animations */}
-          <style jsx global>{`
+          <style>{`
+            :root {
+              --landing-home-bg: #050507;
+            }
+
+            html,
+            body,
+            #__docusaurus,
+            .main-wrapper {
+              background-color: var(--landing-home-bg) !important;
+            }
+
+            .main-wrapper {
+              max-width: 100% !important;
+            }
+
             @keyframes gradientShift {
               0%,
               100% {

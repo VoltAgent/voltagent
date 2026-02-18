@@ -52,13 +52,13 @@ const fillAnimation = `
 
   @keyframes glowEffect {
     0% {
-      filter: drop-shadow(0 0 2px #22c55e);
+      filter: drop-shadow(0 0 2px #00d992);
     }
     50% {
-      filter: drop-shadow(0 0 8px #22c55e);
+      filter: drop-shadow(0 0 8px #00d992);
     }
     100% {
-      filter: drop-shadow(0 0 2px #22c55e);
+      filter: drop-shadow(0 0 2px #00d992);
     }
   }
 
@@ -179,7 +179,7 @@ const CustomBolt = ({ width = 150, height = 150 }) => {
           animation: "particleRotate1 3s ease-out infinite",
         }}
       >
-        <circle cx="40" cy="40" r="2" fill="#4ade80" />
+        <circle cx="40" cy="40" r="2" fill="#22c55e" />
         <circle cx="40" cy="40" r="1" fill="#fff" />
       </g>
       <g
@@ -188,7 +188,7 @@ const CustomBolt = ({ width = 150, height = 150 }) => {
           animation: "particleRotate2 3s ease-out infinite",
         }}
       >
-        <circle cx="40" cy="40" r="2" fill="#4ade80" />
+        <circle cx="40" cy="40" r="2" fill="#22c55e" />
         <circle cx="40" cy="40" r="1" fill="#fff" />
       </g>
       <g
@@ -197,7 +197,7 @@ const CustomBolt = ({ width = 150, height = 150 }) => {
           animation: "particleRotate3 3s ease-out infinite",
         }}
       >
-        <circle cx="40" cy="40" r="2" fill="#4ade80" />
+        <circle cx="40" cy="40" r="2" fill="#22c55e" />
         <circle cx="40" cy="40" r="1" fill="#fff" />
       </g>
     </svg>
@@ -410,24 +410,26 @@ export function Integrations() {
 
   return (
     <section className="relative w-full overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36">
-        <div className="flex flex-col">
-          <div className="flex flex-col mb-8 sm:mb-12">
-            <div className="w-full max-w-5xl">
-              <div className="mb-4">
-                <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-purple-500 tracking-wide uppercase">
-                  INTEGRATIONS
-                </h2>
-                <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:tracking-tight">
-                  Easily connect with 40+ apps in no time
-                </h2>
-                <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
-                  Integrate your AI agents with your preferred tools and services effortlessly.
-                </p>
-              </div>
-            </div>
+      {/* Header with full-width background */}
+      <div className="w-full bg-[#101010] relative z-10 landing-xs:py-10 landing-md:py-10">
+        <div className="max-w-7xl mx-auto  px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-5xl">
+            <p className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
+              INTEGRATIONS
+            </p>
+            <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
+              Easily connect with 40+ apps in no time
+            </h2>
+            <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-base text-[#8a8380] mb-0">
+              Integrate your AI agents with your preferred tools and services effortlessly.
+            </p>
           </div>
+        </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 relative z-10 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
+        <div className="flex flex-col">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 md:gap-0">
             <div className="w-full flex md:w-[40%] justify-center items-center landing-xs:hidden landing-sm:flex">
               <style>{fillAnimation}</style>
@@ -462,14 +464,14 @@ export function Integrations() {
                     {duplicatedTopLogos.map((item, index) => (
                       <div
                         key={`top-logo-${item.tooltip}-${index}`}
-                        className="group relative flex-shrink-0 bg-gray-900/50 w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-gray-800/40 hover:border-main-emerald transition-all duration-200"
+                        className="group relative flex-shrink-0 bg-[#101010] w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-[#3d3a39] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-200"
                         onMouseEnter={handleTopRowMouseEnter}
                         onMouseLeave={handleTopRowMouseLeave}
                         onTouchStart={handleTopRowTouchStart}
                         onTouchEnd={handleTopRowTouchEnd}
                       >
                         {item.logo}
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-gray-800 text-main-emerald text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-[#1a1a1a] text-[#b8b3b0] text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg border border-solid border-[#3d3a39]">
                           {item.tooltip}
                         </div>
                       </div>
@@ -502,14 +504,14 @@ export function Integrations() {
                     {duplicatedBottomLogos.map((item, index) => (
                       <div
                         key={`bottom-logo-${item.tooltip}-${index}`}
-                        className="group relative flex-shrink-0 bg-gray-900/50 w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-gray-800/40 hover:border-main-emerald transition-all duration-200"
+                        className="group relative flex-shrink-0 bg-[#101010] w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-lg cursor-pointer border-solid border-[#3d3a39] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-200"
                         onMouseEnter={handleBottomRowMouseEnter}
                         onMouseLeave={handleBottomRowMouseLeave}
                         onTouchStart={handleBottomRowTouchStart}
                         onTouchEnd={handleBottomRowTouchEnd}
                       >
                         {item.logo}
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-gray-800 text-main-emerald text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-0 transform bg-[#1a1a1a] text-[#b8b3b0] text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md whitespace-nowrap z-20 shadow-lg border border-solid border-[#3d3a39]">
                           {item.tooltip}
                         </div>
                       </div>
