@@ -166,13 +166,13 @@ export function RagExample() {
     // Default border is now visible for both node types
     const baseClasses = isRedNode
       ? "border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
-      : "border-gray-500 shadow-[0_0_15px_rgba(156,163,175,0.2)]";
+      : "border-[#5c5855] shadow-[0_0_15px_rgba(92,88,85,0.2)]";
 
     if (isActive) {
       return `${baseClasses} animate-pulse ${
         isRedNode
           ? "shadow-[0_0_15px_rgba(245,158,11,0.6)]"
-          : "shadow-[0_0_15px_rgba(156,163,175,0.6)]"
+          : "shadow-[0_0_15px_rgba(92,88,85,0.6)]"
       }`;
     }
     if (isAnyNodeActive) {
@@ -195,7 +195,7 @@ export function RagExample() {
             {/* Diagram Section */}
             <div className="w-full relative  px-4 py-12" ref={diagramRef}>
               {/* Main Container with Border */}
-              <div className="border border-gray-800 rounded-lg  mx-auto max-w-6xl">
+              <div className="border border-[#3d3a39] rounded-lg  mx-auto max-w-6xl">
                 {/* Section Headers */}
                 <div className="grid grid-cols-5 mb-12">
                   <div className="col-span-1" />
@@ -217,12 +217,12 @@ export function RagExample() {
                   <div className="flex justify-end items-center">
                     <div
                       ref={inputNodeRef}
-                      className={`w-[150px] h-[50px] px-4 rounded-md border border-gray-800 text-sm flex items-center bg-gray-950 gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
+                      className={`w-[150px] h-[50px] px-4 rounded-md border border-[#3d3a39] text-sm flex items-center bg-[#101010] gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
                         "input",
                       )}`}
                     >
-                      <div className="bg-gray-800/50 w-7 h-7 rounded flex items-center justify-center">
-                        <UserIcon className="w-4 h-4 text-gray-500" />
+                      <div className="bg-[#1a1a1a] w-7 h-7 rounded flex items-center justify-center">
+                        <UserIcon className="w-4 h-4 text-[#8a8380]" />
                       </div>
                       <span className="font-medium text-white text-xs">input</span>
                     </div>
@@ -232,12 +232,12 @@ export function RagExample() {
                   <div className="flex justify-center items-center">
                     <div
                       ref={embeddingModelTopRef}
-                      className={`w-[150px] h-[50px] px-4 rounded-md border border-gray-800 text-sm flex items-center bg-gray-950 gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
+                      className={`w-[150px] h-[50px] px-4 rounded-md border border-[#3d3a39] text-sm flex items-center bg-[#101010] gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
                         "embeddingTop",
                       )}`}
                     >
-                      <div className="bg-gray-800/50 w-7 h-7 rounded flex items-center justify-center">
-                        <Square3Stack3DIcon className="w-4 h-4 text-gray-400" />
+                      <div className="bg-[#1a1a1a] w-7 h-7 rounded flex items-center justify-center">
+                        <Square3Stack3DIcon className="w-4 h-4 text-[#b8b3b0]" />
                       </div>
                       <div className="flex flex-col justify-center">
                         <span className="font-medium text-xs text-white leading-tight">
@@ -252,12 +252,12 @@ export function RagExample() {
                   <div className="flex justify-center items-center">
                     <div
                       ref={retrievalNodeRef}
-                      className={`w-[150px] h-[50px] px-4 rounded-md border border-gray-800 text-sm flex items-center bg-gray-950 gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
+                      className={`w-[150px] h-[50px] px-4 rounded-md border border-[#3d3a39] text-sm flex items-center bg-[#101010] gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
                         "retrieval",
                       )}`}
                     >
-                      <div className="bg-gray-800/50 w-7 h-7 rounded flex items-center justify-center">
-                        <CpuChipIcon className="w-4 h-4 text-gray-400" />
+                      <div className="bg-[#1a1a1a] w-7 h-7 rounded flex items-center justify-center">
+                        <CpuChipIcon className="w-4 h-4 text-[#b8b3b0]" />
                       </div>
                       <span className=" font-medium text-white text-xs">retrieval</span>
                     </div>
@@ -267,12 +267,12 @@ export function RagExample() {
                   <div className="flex justify-center items-center">
                     <div
                       ref={llmNodeRef}
-                      className={`w-[150px] h-[50px] px-4 rounded-md border border-gray-800 text-sm flex items-center bg-gray-950 gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
+                      className={`w-[150px] h-[50px] px-4 rounded-md border border-[#3d3a39] text-sm flex items-center bg-[#101010] gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
                         "llm",
                       )}`}
                     >
-                      <div className="bg-gray-800/50 w-7 h-7 rounded flex items-center justify-center">
-                        <CpuChipIcon className="w-4 h-4 text-gray-400" />
+                      <div className="bg-[#1a1a1a] w-7 h-7 rounded flex items-center justify-center">
+                        <CpuChipIcon className="w-4 h-4 text-[#b8b3b0]" />
                       </div>
                       <span className=" font-medium text-white text-xs">llm</span>
                     </div>
@@ -282,12 +282,12 @@ export function RagExample() {
                   <div className="flex justify-start items-center">
                     <div
                       ref={outputNodeRef}
-                      className={`w-[150px] h-[50px] px-4 rounded-md border border-gray-800 text-sm flex items-center bg-gray-950 gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
+                      className={`w-[150px] h-[50px] px-4 rounded-md border border-[#3d3a39] text-sm flex items-center bg-[#101010] gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
                         "output",
                       )}`}
                     >
-                      <div className="bg-gray-800/50 w-7 h-7 rounded flex items-center justify-center">
-                        <LightBulbIcon className="w-4 h-4 text-gray-500" />
+                      <div className="bg-[#1a1a1a] w-7 h-7 rounded flex items-center justify-center">
+                        <LightBulbIcon className="w-4 h-4 text-[#8a8380]" />
                       </div>
                       <span className=" font-medium text-white text-xs">output</span>
                     </div>
@@ -303,25 +303,25 @@ export function RagExample() {
                     <div className="flex gap-4">
                       <div className="relative group cursor-pointer">
                         <VoyageLogo className="w-3.5 h-3.5" />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           Voyage
                         </div>
                       </div>
                       <div className="relative group cursor-pointer">
                         <CohereLogo className="w-4 h-4" />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           Cohere
                         </div>
                       </div>
                       <div className="relative group cursor-pointer">
                         <PineconeLogo className="w-4 h-4 " />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           Pinecone
                         </div>
                       </div>
                       <div className="relative group cursor-pointer">
                         <FingerPrintIcon className="w-5 h-5 text-amber-500" />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           Custom
                         </div>
                       </div>
@@ -336,7 +336,7 @@ export function RagExample() {
                   <div className="flex justify-end items-center">
                     <div
                       ref={knowledgeBaseNodeRef}
-                      className={`w-[150px] h-[50px] px-4 rounded-md border border-gray-800 text-sm flex items-center bg-gray-950 gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
+                      className={`w-[150px] h-[50px] px-4 rounded-md border border-[#3d3a39] text-sm flex items-center bg-[#101010] gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
                         "knowledgeBase",
                       )}`}
                     >
@@ -356,7 +356,7 @@ export function RagExample() {
                   <div className="flex justify-center items-center">
                     <div
                       ref={embeddingModelBottomRef}
-                      className={`w-[150px] h-[50px] px-4 rounded-md border border-gray-800 text-sm flex items-center bg-gray-950 gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
+                      className={`w-[150px] h-[50px] px-4 rounded-md border border-[#3d3a39] text-sm flex items-center bg-[#101010] gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
                         "embeddingBottom",
                       )}`}
                     >
@@ -376,7 +376,7 @@ export function RagExample() {
                   <div className="flex justify-center items-center">
                     <div
                       ref={vectorStoreNodeRef}
-                      className={`w-[150px] h-[50px] px-4 rounded-md border border-gray-800 text-sm flex items-center bg-gray-950 gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
+                      className={`w-[150px] h-[50px] px-4 rounded-md border border-[#3d3a39] text-sm flex items-center bg-[#101010] gap-3 transition-all duration-700 ease-out opacity-100 scale-100 ${getNodeHighlightClass(
                         "vectorstore",
                       )}`}
                     >
@@ -398,19 +398,19 @@ export function RagExample() {
                     <div className="flex gap-4">
                       <div className="relative group cursor-pointer">
                         <OpenAILogo className="w-4 h-4" />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           OpenAI
                         </div>
                       </div>
                       <div className="relative group cursor-pointer">
                         <CohereLogo className="w-4 h-4 text-orange-400" />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           Cohere
                         </div>
                       </div>
                       <div className="relative group cursor-pointer ">
                         <VoyageLogo className="w-3.5 h-3.5" />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           Voyage
                         </div>
                       </div>
@@ -420,20 +420,20 @@ export function RagExample() {
                     <div className="flex gap-4">
                       <div className="relative group cursor-pointer">
                         <PineconeLogo className="w-4 h-4" />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           Pinecone
                         </div>
                       </div>
 
                       <div className="relative group cursor-pointer">
                         <PostgresLogo className="w-4 h-4" />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           Postgres
                         </div>
                       </div>
                       <div className="relative group cursor-pointer">
                         <SupabaseLogo className="w-4 h-4" />
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-[#1a1a1a] text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-[#3d3a39]">
                           Supabase
                         </div>
                       </div>
