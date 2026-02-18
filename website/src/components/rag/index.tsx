@@ -24,7 +24,7 @@ export function Rag() {
           <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
             Accurate and context-aware responses
           </h2>
-          <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-[#8a8380] mb-0">
+          <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-base text-[#8a8380] mb-0">
             For advanced querying and dynamic analysis, integrate data into a knowledge base by
             syncing from diverse sources
           </p>

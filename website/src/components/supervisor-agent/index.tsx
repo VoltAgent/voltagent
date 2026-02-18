@@ -44,7 +44,7 @@ export function SupervisorAgent() {
           <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
             Supervisor agent orchestration
           </h2>
-          <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-[#8a8380] mb-0">
+          <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-base text-[#8a8380] mb-0">
             Build powerful multi-agent systems with a central Supervisor Agent that coordinates
             specialized agents.
           </p>

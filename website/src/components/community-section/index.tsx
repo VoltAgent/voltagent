@@ -206,7 +206,7 @@ export function CommunitySection() {
             <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
               Join the movement
             </h2>
-            <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-[#8a8380] mb-0">
+            <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-base text-[#8a8380] mb-0">
               Our growing <span className="text-main-emerald">open source</span> community building
               the future of AI agents.
             </p>

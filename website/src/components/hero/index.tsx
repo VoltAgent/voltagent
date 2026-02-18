@@ -175,7 +175,7 @@ export function Hero() {
             >
               <Link
                 to="/docs/"
-                className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg landing-xs:text-md font-mono border border-solid border-[#3d3a39] backdrop-blur-sm cursor-pointer bg-transparent text-[#eeeeee] rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-transparent hover:border-[#5c5855] hover:text-[#f3f4f6] no-underline"
+                className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg landing-xs:text-base font-mono border border-solid border-[#3d3a39] backdrop-blur-sm cursor-pointer bg-transparent text-[#eeeeee] rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-transparent hover:border-[#5c5855] hover:text-[#f3f4f6] no-underline"
               >
                 <ChevronRightIcon className="landing-xs:w-4 landing-xs:h-4 landing-md:w-6 landing-md:h-6" />
                 Get Started
