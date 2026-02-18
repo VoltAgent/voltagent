@@ -923,7 +923,7 @@ export function createWorkflow<
           workflowName: name,
           status: "running" as const,
           input,
-          context: options?.context ? Array.from(options.context.entries()) : undefined,
+          context: options?.context ? Array.from(contextMap.entries()) : undefined,
           workflowState: workflowStateStore,
           userId: options?.userId,
           conversationId: options?.conversationId,
@@ -951,7 +951,7 @@ export function createWorkflow<
 
       // Create stream writer - real one for streaming, no-op for regular execution
       const streamWriter = streamController
-        ? new WorkflowStreamWriterImpl(streamController, executionId, id, name, 0, options?.context)
+        ? new WorkflowStreamWriterImpl(streamController, executionId, id, name, 0, contextMap)
         : new NoOpWorkflowStreamWriter();
 
       // Initialize workflow execution context with the correct execution ID
@@ -1013,7 +1013,7 @@ export function createWorkflow<
         from: name,
         input: input as Record<string, any>,
         status: "running",
-        context: options?.context,
+        context: contextMap,
         timestamp: new Date().toISOString(),
       });
 
@@ -1035,6 +1035,7 @@ export function createWorkflow<
         // When resuming, use the existing execution ID
         stateManager.start(input, {
           ...options,
+          context: contextMap,
           executionId: executionId, // Use the resumed execution ID
           active: options.resumeFrom.resumeStepIndex,
           workflowState: workflowStateStore,
@@ -1042,6 +1043,7 @@ export function createWorkflow<
       } else {
         stateManager.start(input, {
           ...options,
+          context: contextMap,
           executionId: executionId, // Use the created execution ID
           workflowState: workflowStateStore,
         });
@@ -1191,7 +1193,7 @@ export function createWorkflow<
               input: stateManager.state.data,
               output: undefined,
               status: "cancelled",
-              context: options?.context,
+              context: contextMap,
               timestamp: new Date().toISOString(),
               stepIndex: index,
               stepType: step.type,
@@ -1234,7 +1236,7 @@ export function createWorkflow<
               executionId,
               from: name,
               status: "cancelled",
-              context: options?.context,
+              context: contextMap,
               timestamp: new Date().toISOString(),
               metadata: { reason },
             });
@@ -1421,7 +1423,7 @@ export function createWorkflow<
                 step.id,
                 step.name || step.id,
                 index,
-                options?.context,
+                contextMap,
               )
             : new NoOpWorkflowStreamWriter();
           executionContext.streamWriter = stepWriter;
@@ -1433,7 +1435,7 @@ export function createWorkflow<
             from: step.name || step.id,
             input: stateManager.state.data,
             status: "running",
-            context: options?.context,
+            context: contextMap,
             timestamp: new Date().toISOString(),
             stepIndex: index,
             stepType: step.type,
@@ -1531,7 +1533,7 @@ export function createWorkflow<
               input: stateManager.state.data,
               output: undefined,
               status: "suspended",
-              context: options?.context,
+              context: contextMap,
               timestamp: new Date().toISOString(),
               stepIndex: index,
               metadata: {
@@ -1625,7 +1627,7 @@ export function createWorkflow<
                     step.id,
                     step.name || step.id,
                     index,
-                    options?.context,
+                    contextMap,
                   )
                 : new NoOpWorkflowStreamWriter();
 
@@ -1725,7 +1727,7 @@ export function createWorkflow<
                 input: stateManager.state.data,
                 output: result,
                 status: isSkipped ? "skipped" : "success",
-                context: options?.context,
+                context: contextMap,
                 timestamp: new Date().toISOString(),
                 stepIndex: index,
                 stepType: step.type as any,
@@ -1887,7 +1889,7 @@ export function createWorkflow<
           from: name,
           output: finalState.result,
           status: "success",
-          context: options?.context,
+          context: contextMap,
           timestamp: new Date().toISOString(),
         });
 
@@ -1930,7 +1932,7 @@ export function createWorkflow<
             executionId,
             from: name,
             status: "cancelled",
-            context: options?.context,
+            context: contextMap,
             timestamp: new Date().toISOString(),
             metadata: cancellationReason ? { reason: cancellationReason } : undefined,
           });
@@ -2024,7 +2026,7 @@ export function createWorkflow<
           from: name,
           status: "error",
           error: error,
-          context: options?.context,
+          context: contextMap,
           timestamp: new Date().toISOString(),
         });
 
