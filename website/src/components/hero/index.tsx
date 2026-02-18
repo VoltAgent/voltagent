@@ -206,7 +206,7 @@ export function Hero() {
 
       {/* Platform Container - Full Width */}
       <div className="w-full bg-[#101010] mt-16 md:mt-36 py-10 md:py-12">
-        <div className="max-w-7xl mx-auto ">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="landing-xs:text-sm landing-md:text-xl landing-xs:mb-2 landing-md:mb-12 font-semibold text-[#b8b3b0] tracking-wide uppercase flex items-center justify-center gap-2">
             <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
             The Platform
@@ -216,7 +216,7 @@ export function Hero() {
           <div className="grid grid-cols-1 relative z-10  md:grid-cols-[1fr_auto_1fr] gap-2 md:gap-4 items-stretch mt-6">
             {/* Core Framework Box */}
             <div className="flex flex-col gap-3 p-4 md:p-6 rounded-lg border border-solid border-[#3d3a39] bg-[#050507] transition-colors hover:border-[#5c5855] hover:bg-[#1a1a1a]">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <div className="flex flex-row items-center gap-2 sm:gap-3">
                 <TypeScriptLogo className="w-5 h-5 md:w-6 md:h-6 rounded" />
                 <span className="text-white font-semibold text-lg md:text-xl">Core Framework</span>
                 <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-[#3d3a39] text-[#8a8380] w-fit">
@@ -250,7 +250,7 @@ export function Hero() {
 
             {/* VoltOps Console Box */}
             <div className="flex flex-col gap-3 p-4 md:p-6 rounded-lg border border-solid border-[#3d3a39] bg-[#050507] transition-colors hover:border-[#5c5855] hover:bg-[#1a1a1a]">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <div className="flex flex-row items-center gap-2 sm:gap-3">
                 <span className="text-white font-semibold text-lg md:text-xl">VoltOps Console</span>
                 <div className="flex gap-2">
                   <span className="text-xs px-2 py-0.5 rounded-full border border-solid border-[#3d3a39] text-[#8a8380]">

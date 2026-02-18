@@ -250,23 +250,23 @@ export default function Navbar() {
             <div className={`${styles.navLink} group relative`}>
               <div className="flex items-center cursor-pointer">
                 Products
-                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-white" />
+                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-[#b8b3b0]" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-gray-600 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[580px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+              <div className="absolute left-0 top-full mt-2 bg-[#101010] border border-solid border-gray-600 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[580px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="grid grid-cols-2 gap-0">
                   {/* Left Column - VoltOps */}
                   <div className="p-4 border-r border-gray-700/30">
-                    <h3 className="text-sm font-semibold text-white mb-3 px-2 pb-3 border-b border-solid border-t-0 border-l-0 border-r-0 border-gray-700/50 font-['Inter']">
+                    <h3 className="text-sm font-semibold text-[#b8b3b0] mb-3 px-2 pb-3 border-b border-solid border-t-0 border-l-0 border-r-0 border-gray-700/50 font-['Inter']">
                       VoltOps
                     </h3>
                     <Link to="/voltops-llm-observability/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <ComputerDesktopIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <ComputerDesktopIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             Observability
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Monitor LLM calls and agent behavior
                           </span>
                         </div>
@@ -274,12 +274,12 @@ export default function Navbar() {
                     </Link>
                     <Link to="/voltops/actions-triggers" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <ArrowPathIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <ArrowPathIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             Actions & Triggers
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Triggers and actions for workflows
                           </span>
                         </div>
@@ -287,12 +287,12 @@ export default function Navbar() {
                     </Link>
                     <Link to="/voltops/evals" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <ChartBarIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <ChartBarIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             Evals
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Evaluate and improve your agents
                           </span>
                         </div>
@@ -300,12 +300,12 @@ export default function Navbar() {
                     </Link>
                     <Link to="/voltops/prompt-management" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <ChatBubbleBottomCenterTextIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <ChatBubbleBottomCenterTextIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             Prompt Management
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Manage and version your prompts
                           </span>
                         </div>
@@ -313,12 +313,12 @@ export default function Navbar() {
                     </Link>
                     <Link to="/voltops/deployment/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <CloudArrowUpIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <CloudArrowUpIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             Deployment
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Deploy AI agents to production
                           </span>
                         </div>
@@ -326,12 +326,12 @@ export default function Navbar() {
                     </Link>
                     <Link to="/voltops/rag" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <CircleStackIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <CircleStackIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             RAG
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Retrieval Augmented Generation
                           </span>
                         </div>
@@ -341,17 +341,17 @@ export default function Navbar() {
 
                   {/* Right Column - Open Source Framework */}
                   <div className="p-4">
-                    <h3 className="text-sm font-semibold text-white mb-3 px-2 pb-3 border-b border-solid border-t-0 border-l-0 border-r-0  border-gray-700/50 font-['Inter']">
+                    <h3 className="text-sm font-semibold text-[#b8b3b0] mb-3 px-2 pb-3 border-b border-solid border-t-0 border-l-0 border-r-0  border-gray-700/50 font-['Inter']">
                       Open Source Framework
                     </h3>
                     <Link to="/docs/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
                         <BoltIcon className="w-4 h-4 !text-emerald-500 group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             VoltAgent
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Build AI agents with TypeScript
                           </span>
                         </div>
@@ -360,12 +360,12 @@ export default function Navbar() {
                     <Link to="/ai-agent-marketplace/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-center justify-between transition-all duration-200 rounded-lg mb-2">
                         <div className="flex items-start">
-                          <ShoppingCartIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                          <ShoppingCartIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                           <div>
-                            <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                            <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                               Marketplace
                             </span>
-                            <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                            <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                               Discover and share AI agents
                             </span>
                           </div>
@@ -377,12 +377,12 @@ export default function Navbar() {
                     </Link>
                     <div className="group/item p-1 cursor-pointer flex items-center justify-between transition-all duration-200 rounded-lg mb-2">
                       <div className="flex items-start">
-                        <PuzzlePieceIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <PuzzlePieceIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             Agent Builder
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Build no-code agents
                           </span>
                         </div>
@@ -405,9 +405,9 @@ export default function Navbar() {
             <div className={`${styles.navLink} group relative`}>
               <div className="flex items-center cursor-pointer">
                 Use Cases
-                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-white" />
+                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-[#b8b3b0]" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-gray-600 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[460px] max-h-[500px] overflow-y-auto opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+              <div className="absolute left-0 top-full mt-2 bg-[#101010] border border-solid border-gray-600 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[460px] max-h-[500px] overflow-y-auto opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="p-3">
                   <div className="grid grid-cols-2 gap-x-2 gap-y-0">
                     {useCasesData.map((useCase) => {
@@ -419,8 +419,8 @@ export default function Navbar() {
                           className="no-underline"
                         >
                           <div className="group/item py-1.5 px-1 cursor-pointer flex items-center transition-all duration-200 rounded-lg">
-                            <Icon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-2 flex-shrink-0" />
-                            <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200">
+                            <Icon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-2 flex-shrink-0" />
+                            <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200">
                               {useCase.title}
                             </span>
                           </div>
@@ -435,23 +435,23 @@ export default function Navbar() {
             <div className={`${styles.navLink} group relative`}>
               <div className="flex items-center cursor-pointer">
                 Resources
-                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-white" />
+                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-[#b8b3b0]" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-[#0a0f14] border border-solid border-gray-600 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[580px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+              <div className="absolute left-0 top-full mt-2 bg-[#101010] border border-solid border-gray-600 rounded-lg shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(148,163,184,0.1)_inset] w-[580px] opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 translate-y-2 transition-all duration-300 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
                 <div className="grid grid-cols-2 gap-0">
                   {/* Left Column - Learn */}
                   <div className="p-4 border-r border-gray-700/30">
-                    <h3 className="text-sm font-semibold text-white mb-3 px-2 pb-3 border-b border-solid border-t-0 border-l-0 border-r-0 border-gray-700/50 font-['Inter']">
+                    <h3 className="text-sm font-semibold text-[#b8b3b0] mb-3 px-2 pb-3 border-b border-solid border-t-0 border-l-0 border-r-0 border-gray-700/50 font-['Inter']">
                       Learn
                     </h3>
                     <Link to="/tutorial/introduction" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <BookOpenIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <BookOpenIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             5 Steps Tutorial
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Learn AI agent development in 5 steps
                           </span>
                         </div>
@@ -459,12 +459,12 @@ export default function Navbar() {
                     </Link>
                     <Link to="https://voltagent.dev/examples/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <CommandLineIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <CommandLineIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             Examples
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Explore sample projects and code
                           </span>
                         </div>
@@ -474,17 +474,17 @@ export default function Navbar() {
 
                   {/* Right Column - Connect */}
                   <div className="p-4">
-                    <h3 className="text-sm font-semibold text-white mb-3 px-2 pb-3 border-b border-solid border-t-0 border-l-0 border-r-0 border-gray-700/50 font-['Inter']">
+                    <h3 className="text-sm font-semibold text-[#b8b3b0] mb-3 px-2 pb-3 border-b border-solid border-t-0 border-l-0 border-r-0 border-gray-700/50 font-['Inter']">
                       Connect
                     </h3>
                     <Link to="/blog/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <PencilSquareIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <PencilSquareIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             Blog
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Read the technical blog
                           </span>
                         </div>
@@ -492,12 +492,12 @@ export default function Navbar() {
                     </Link>
                     <Link to="/about/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <InformationCircleIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <InformationCircleIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             About Us
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Learn more about VoltAgent
                           </span>
                         </div>
@@ -505,12 +505,12 @@ export default function Navbar() {
                     </Link>
                     <Link to="/launch-week-november-25/" className="no-underline">
                       <div className="group/item p-1 cursor-pointer flex items-start transition-all duration-200 rounded-lg mb-2">
-                        <RocketLaunchIcon className="w-4 h-4 !text-white group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
+                        <RocketLaunchIcon className="w-4 h-4 !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 mr-3 mt-0.5 flex-shrink-0" />
                         <div>
-                          <span className="text-sm font-['Inter'] font-normal !text-white group-hover/item:!text-emerald-500 transition-all duration-200 block">
+                          <span className="text-sm font-['Inter'] font-normal !text-[#b8b3b0] group-hover/item:!text-emerald-500 transition-all duration-200 block">
                             Launch Week #2
                           </span>
-                          <span className="text-xs font-normal text-gray-500 font-['Inter'] leading-[1.2]">
+                          <span className="text-xs font-normal text-[#8a8380] font-['Inter'] leading-[1.2]">
                             Explore our product launch updates
                           </span>
                         </div>
@@ -631,48 +631,48 @@ export default function Navbar() {
               </h4>
               <Link to="/voltops-llm-observability/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <ComputerDesktopIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <ComputerDesktopIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     Observability
                   </span>
                 </div>
               </Link>
               <Link to="/voltops/actions-triggers" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <ArrowPathIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <ArrowPathIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     Actions & Triggers
                   </span>
                 </div>
               </Link>
               <Link to="/voltops/evals" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <ChartBarIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <ChartBarIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     Evals
                   </span>
                 </div>
               </Link>
               <Link to="/voltops/prompt-management" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <ChatBubbleBottomCenterTextIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <ChatBubbleBottomCenterTextIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     Prompt Management
                   </span>
                 </div>
               </Link>
               <Link to="/voltops/deployment/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <CloudArrowUpIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <CloudArrowUpIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     Deployment
                   </span>
                 </div>
               </Link>
               <Link to="/voltops/rag" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <CircleStackIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <CircleStackIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     RAG
                   </span>
                 </div>
@@ -683,15 +683,15 @@ export default function Navbar() {
               <Link to="/docs/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
                   <BoltIcon className="w-5 h-5 mr-2 text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     VoltAgent
                   </span>
                 </div>
               </Link>
               <Link to="/ai-agent-marketplace/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <ShoppingCartIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <ShoppingCartIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     Marketplace
                   </span>
                   <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full font-['Inter'] font-normal">
@@ -700,8 +700,8 @@ export default function Navbar() {
                 </div>
               </Link>
               <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                <PuzzlePieceIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                <PuzzlePieceIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                   Agent Builder
                 </span>
                 <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full font-['Inter'] font-normal">
@@ -743,8 +743,8 @@ export default function Navbar() {
                     className="no-underline"
                   >
                     <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                      <Icon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                      <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                      <Icon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                      <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                         {useCase.title}
                       </span>
                     </div>
@@ -772,16 +772,16 @@ export default function Navbar() {
               </h4>
               <Link to="/tutorial/introduction" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <BookOpenIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <BookOpenIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     5 Steps Tutorial
                   </span>
                 </div>
               </Link>
               <Link to="https://voltagent.dev/examples/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <CommandLineIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <CommandLineIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     Examples
                   </span>
                 </div>
@@ -791,24 +791,24 @@ export default function Navbar() {
               </h4>
               <Link to="/blog/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <PencilSquareIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <PencilSquareIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     Blog
                   </span>
                 </div>
               </Link>
               <Link to="/about/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <InformationCircleIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <InformationCircleIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     About Us
                   </span>
                 </div>
               </Link>
               <Link to="/launch-week-november-25/" className="no-underline">
                 <div className="group p-3 cursor-pointer flex items-center transition-all duration-200">
-                  <RocketLaunchIcon className="w-5 h-5 mr-2 text-white group-hover:text-emerald-500 transition-all duration-200" />
-                  <span className="text-base font-['Inter'] font-normal text-white group-hover:text-emerald-500 transition-colors duration-200">
+                  <RocketLaunchIcon className="w-5 h-5 mr-2 text-[#b8b3b0] group-hover:text-emerald-500 transition-all duration-200" />
+                  <span className="text-base font-['Inter'] font-normal text-[#b8b3b0] group-hover:text-emerald-500 transition-colors duration-200">
                     Launch Week #2
                   </span>
                 </div>
