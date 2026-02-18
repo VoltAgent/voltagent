@@ -94,7 +94,7 @@ export const CompaniesMarquee = () => {
               return (
                 <div
                   key={`${key}-${idx}-${reverse ? "reverse" : "normal"}`}
-                  className={`flex-shrink-0 flex items-center text-[#3d3a39] justify-center h-14 sm:h-16 ${
+                  className={`flex-shrink-0 flex items-center text-white/40 justify-center h-14 sm:h-16 ${
                     baseLogo.wrapperClassName ?? "w-32"
                   }`}
                 >

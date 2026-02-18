@@ -58,8 +58,8 @@ export function TwoBlocks() {
                   </span>
                 </div>
                 <p className="text-gray-400 landing-xs:text-sm landing-md:text-lg leading-relaxed">
-                  A TypeScript framework for building and AI agents with enterprise-grade
-                  capabilities and seamless integrations.
+                  A TypeScript framework for building AI agents with enterprise-grade capabilities
+                  and seamless integrations.
                 </p>
               </div>
 
@@ -91,15 +91,14 @@ export function TwoBlocks() {
               </div>
 
               {/* CTA Button */}
-              <button
-                type="button"
-                className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-emerald-400 font-semibold rounded-lg border border-emerald-400/20 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
-                onClick={() => {
-                  window.open("https://voltagent.dev/docs/", "_blank");
-                }}
+              <a
+                href="https://voltagent.dev/docs/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-emerald-400 font-semibold rounded-lg border border-emerald-400/20 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base block text-center no-underline"
               >
                 Explore VoltAgent
-              </button>
+              </a>
             </div>
           </div>
 

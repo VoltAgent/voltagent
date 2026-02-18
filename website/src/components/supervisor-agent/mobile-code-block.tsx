@@ -250,7 +250,7 @@ export const MobileCodeBlock = ({ isVisible }: MobileCodeBlockProps) => {
               {/* Feature Info Overlay */}
               {selectedFeature && overlayPosition && (
                 <div
-                  className="absolute font-[Inter] left-0 bg-gray-900/95 backdrop-blur-sm w-full rounded-lg transition-all duration-300 shadow-lg border-solid border-[#3d3a39]"
+                  className="absolute font-[Inter] left-0 bg-gray-900/95 backdrop-blur-sm w-full rounded-lg transition-all duration-300 shadow-lg border border-solid border-[#3d3a39]"
                   style={{
                     top: overlayPosition.top + overlayPosition.height + 4,
                   }}

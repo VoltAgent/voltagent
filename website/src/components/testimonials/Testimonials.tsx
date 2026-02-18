@@ -289,12 +289,7 @@ const articles = [
 ];
 
 export function Testimonials() {
-  // Check if tweets data is loaded
-  useEffect(() => {
-    console.log("Tweet data loaded:", tweetsData);
-    console.log("Type of tweetsData:", typeof tweetsData);
-    console.log("Tweet IDs:", Object.keys(tweetsData || {}));
-  }, []);
+  // Tweets data is loaded via static import
 
   // Animation control states for each row
   const [isTweetsRowPaused, setIsTweetsRowPaused] = useState(false);
@@ -480,13 +475,13 @@ export function Testimonials() {
       <div className="w-full bg-[#101010] relative z-10 landing-xs:py-10 landing-md:py-10">
         <div className="max-w-9xl xs:px-4 lg:px-8 mx-auto">
           <div className="text-left max-w-xl mx-4">
-            <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
+            <p className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
               Fast Growing Community
-            </h2>
-            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 !mb-0 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight mb-0">
-              What are they saying?
             </p>
+            <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 !mb-0 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight mb-0">
+              What are they saying?
+            </h2>
           </div>
         </div>
       </div>

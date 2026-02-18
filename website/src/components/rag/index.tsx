@@ -17,13 +17,13 @@ export function Rag() {
       {/* Header with full-width background */}
       <div className="w-full bg-[#101010] relative z-10 landing-xs:py-10 landing-md:py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
+          <p className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
             RAG
-          </h2>
-          <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
-            Accurate and context-aware responses
           </p>
+          <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
+            Accurate and context-aware responses
+          </h2>
           <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-[#8a8380] mb-0">
             For advanced querying and dynamic analysis, integrate data into a knowledge base by
             syncing from diverse sources

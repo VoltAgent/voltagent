@@ -175,7 +175,7 @@ export function Hero() {
             >
               <Link
                 to="/docs/"
-                className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-solid landing-xs:text-md font-mono border-[#3d3a39] backdrop-blur-sm cursor-pointer bg-transparent text-[#eeeeee] border border-solid rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-transparent hover:border-[#5c5855] hover:text-[#f3f4f6] no-underline"
+                className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg landing-xs:text-md font-mono border border-solid border-[#3d3a39] backdrop-blur-sm cursor-pointer bg-transparent text-[#eeeeee] rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-transparent hover:border-[#5c5855] hover:text-[#f3f4f6] no-underline"
               >
                 <ChevronRightIcon className="landing-xs:w-4 landing-xs:h-4 landing-md:w-6 landing-md:h-6" />
                 Get Started
@@ -206,7 +206,7 @@ export function Hero() {
 
       {/* Platform Container - Full Width */}
       <div className="w-full bg-[#101010] mt-16 md:mt-36 py-10 md:py-12">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4 landing-md:px-0">
           <h2 className="landing-xs:text-sm landing-md:text-xl landing-xs:mb-2 landing-md:mb-12 font-semibold text-[#b8b3b0] tracking-wide uppercase flex items-center justify-center gap-2">
             <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
             The Platform

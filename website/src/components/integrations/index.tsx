@@ -414,10 +414,10 @@ export function Integrations() {
       <div className="w-full bg-[#101010] relative z-10 landing-xs:py-10 landing-md:py-10">
         <div className="max-w-7xl mx-auto  px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-5xl">
-            <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
+            <p className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
               INTEGRATIONS
-            </h2>
+            </p>
             <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
               Easily connect with 40+ apps in no time
             </h2>

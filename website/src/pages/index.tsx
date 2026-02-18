@@ -44,7 +44,7 @@ export default function Home(): JSX.Element {
           </div>
 
           {/* Global CSS for animations */}
-          <style jsx global>{`
+          <style>{`
             :root {
               --landing-home-bg: #050507;
             }

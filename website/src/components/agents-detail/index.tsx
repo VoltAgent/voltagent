@@ -23,13 +23,13 @@ export function AgentsDetail() {
       <div className="w-full bg-[#101010] relative z-10 landing-xs:py-16 landing-md:py-12">
         <div className="max-w-7xl mx-auto   px-4">
           <div className="text-left max-w-4xl ">
-            <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
+            <p className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
               Enterprise-level AI agents
-            </h2>
-            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
-              Complete toolkit for enterprise level AI agents
             </p>
+            <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
+              Complete toolkit for enterprise level AI agents
+            </h2>
             <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-[#8a8380] mb-0">
               Design production-ready agents with unified APIs, tools, and memory.
             </p>
