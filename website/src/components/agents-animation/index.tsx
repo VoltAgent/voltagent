@@ -1019,17 +1019,14 @@ export function AgentsAnimation({ className }: { className?: string }) {
         </Node>
       </div>
 
-      {/* Background glow effect */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Central green glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[20px] md:w-[450px] md:h-[20px] rounded-full bg-[#00d992]/20 blur-[120px]" />
-
-        {/* Secondary glow */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[20px] h-[200px] md:w-[100px] md:h-[20px] rounded-full bg-[#00d992]/15 blur-[100px]" />
-
-        {/* Tertiary glow */}
-        <div className="absolute top-2/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[15px] md:w-[250px] md:h-[100px] rounded-full bg-[#00d992]/10 blur-[80px]" />
-      </div>
+      {/* Radial gradient glow - desktop only, behind diagram elements */}
+      <div
+        className="hidden lg:block absolute inset-0 pointer-events-none overflow-hidden z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 55%, rgba(0,217,146,0.12) 0%, rgba(0,217,146,0.04) 30%, transparent 65%)",
+        }}
+      />
     </div>
   );
 }
