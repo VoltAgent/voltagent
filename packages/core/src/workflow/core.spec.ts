@@ -1,12 +1,13 @@
-import type { UIMessageChunk } from "ai";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { Output, type UIMessageChunk } from "ai";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import { createTestAgent } from "../agent/test-utils";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { AgentRegistry } from "../registries/agent-registry";
 import { createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
-import { andThen } from "./steps";
+import { andAgent, andThen } from "./steps";
 
 describe.sequential("workflow.run", () => {
   beforeEach(() => {
@@ -132,6 +133,118 @@ describe.sequential("workflow.run", () => {
       greeting: "hi Ada",
       plan: "pro",
     });
+  });
+
+  it("should initialize context and persist context mutations across steps", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "workflow-context-persistence",
+        name: "Workflow Context Persistence",
+        input: z.object({
+          value: z.string(),
+        }),
+        result: z.object({
+          keyCount: z.number(),
+          hasNewKey: z.boolean(),
+        }),
+        memory,
+      },
+      andThen({
+        id: "mutate-context",
+        execute: async ({ data, state }) => {
+          if (!state.context) {
+            throw new Error("Expected workflow context to be initialized");
+          }
+          state.context.set("new_key", "new_value");
+          return data;
+        },
+      }),
+      andThen({
+        id: "read-context",
+        execute: async ({ state }) => {
+          if (!state.context) {
+            throw new Error("Expected workflow context to persist");
+          }
+          return {
+            keyCount: state.context.size,
+            hasNewKey: state.context.get("new_key") === "new_value",
+          };
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const result = await workflow.run({ value: "ok" });
+
+    expect(result.result).toEqual({
+      keyCount: 1,
+      hasNewKey: true,
+    });
+  });
+
+  it("should pass step context mutations to downstream andAgent calls", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const agent = createTestAgent();
+    const generateTextSpy = vi.spyOn(agent, "generateText").mockImplementation(
+      async (_task, options) =>
+        ({
+          output: `Found ${(options?.context?.size as number) ?? 0} keys in the context.`,
+        }) as any,
+    );
+
+    const workflow = createWorkflow(
+      {
+        id: "workflow-context-agent-persistence",
+        name: "Workflow Context Agent Persistence",
+        input: z.object({
+          value: z.string(),
+        }),
+        result: z.object({
+          output: z.string(),
+        }),
+        memory,
+      },
+      andThen({
+        id: "set-context",
+        execute: async ({ data, state }) => {
+          if (!state.context) {
+            throw new Error("Expected workflow context to be initialized");
+          }
+          state.context.set("new_key", "new_value");
+          return data;
+        },
+      }),
+      andAgent(
+        "check context",
+        agent,
+        {
+          schema: Output.text(),
+        },
+        (output) => ({ output }),
+      ),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const result = await workflow.run({ value: "ok" });
+
+    expect(result.result).toEqual({
+      output: "Found 1 keys in the context.",
+    });
+
+    expect(generateTextSpy).toHaveBeenCalledWith(
+      "check context",
+      expect.objectContaining({
+        context: expect.any(Map),
+      }),
+    );
+    const calledContext = generateTextSpy.mock.calls[0]?.[1]?.context;
+    expect(calledContext?.get("new_key")).toBe("new_value");
   });
 
   it("should persist userId and conversationId in workflow state", async () => {
