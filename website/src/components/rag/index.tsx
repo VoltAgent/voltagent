@@ -14,20 +14,23 @@ export function Rag() {
 
   return (
     <div className="relative w-full overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36">
-        <div className="mb-8 ">
+      {/* Header with full-width background */}
+      <div className="w-full bg-[#101010] landing-xs:py-12 landing-md:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-main-emerald tracking-wide uppercase">
             RAG
           </h2>
           <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:text-5xl sm:tracking-tight">
             Accurate and context-aware responses
           </p>
-          <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
+          <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400 mb-0">
             For advanced querying and dynamic analysis, integrate data into a knowledge base by
             syncing from diverse sources
           </p>
         </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
         {/* Code Example - Full Width */}
         <div className="">
           {isMobile ? <RagMobile isVisible={true} /> : <RagExample isVisible={true} />}

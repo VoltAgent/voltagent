@@ -410,24 +410,25 @@ export function Integrations() {
 
   return (
     <section className="relative w-full overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36">
-        <div className="flex flex-col">
-          <div className="flex flex-col mb-8 sm:mb-12">
-            <div className="w-full max-w-5xl">
-              <div className="mb-4">
-                <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-main-emerald tracking-wide uppercase">
-                  INTEGRATIONS
-                </h2>
-                <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:tracking-tight">
-                  Easily connect with 40+ apps in no time
-                </h2>
-                <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
-                  Integrate your AI agents with your preferred tools and services effortlessly.
-                </p>
-              </div>
-            </div>
+      {/* Header with full-width background */}
+      <div className="w-full bg-[#101010] landing-xs:py-12 landing-md:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-5xl">
+            <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-main-emerald tracking-wide uppercase">
+              INTEGRATIONS
+            </h2>
+            <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:tracking-tight">
+              Easily connect with 40+ apps in no time
+            </h2>
+            <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400 mb-0">
+              Integrate your AI agents with your preferred tools and services effortlessly.
+            </p>
           </div>
+        </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
+        <div className="flex flex-col">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 md:gap-0">
             <div className="w-full flex md:w-[40%] justify-center items-center landing-xs:hidden landing-sm:flex">
               <style>{fillAnimation}</style>

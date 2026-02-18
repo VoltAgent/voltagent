@@ -196,20 +196,23 @@ export function CommunitySection() {
   return (
     <section className="relative w-full overflow-hidden">
       <GitHubStarsProvider>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36">
-          <div className="mb-16 ">
+        {/* Header with full-width background */}
+        <div className="w-full bg-[#101010] landing-xs:py-12 landing-md:py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-blue-500 tracking-wide uppercase">
               Community
             </h2>
             <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:text-5xl sm:tracking-tight">
               Join the movement
             </p>
-            <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
+            <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400 mb-0">
               Our growing <span className="text-main-emerald">open source</span> community building
               the future of AI agents.
             </p>
           </div>
+        </div>
 
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-12 landing-xs:mt-12 landing-md:mt-0">
             {COMMUNITY_LINKS.map((link, index) => (
               <a

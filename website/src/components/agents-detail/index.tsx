@@ -18,22 +18,26 @@ export function AgentsDetail() {
   };
 
   return (
-    <div className="text-white relative w-full overflow-hidden bg-[#101010] landing-xs:py-16 landing-md:py-12 landing-md:mt-12 mb-24">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Header - Left aligned */}
-        <div className="mb-12 text-left max-w-4xl">
-          <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-main-emerald tracking-wide uppercase">
-            Enterprise-level AI agents
-          </h2>
-          <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:text-5xl sm:tracking-tight">
-            Complete toolkit for enterprise level AI agents
-          </p>
-          <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
-            Design production-ready agents with unified APIs, tools, and memory.
-          </p>
+    <div className="text-white relative w-full overflow-hidden landing-md:mt-12 mb-24">
+      {/* Header with full-width background */}
+      <div className="w-full bg-[#101010] landing-xs:py-16 landing-md:py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-left max-w-4xl">
+            <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-main-emerald tracking-wide uppercase">
+              Enterprise-level AI agents
+            </h2>
+            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:text-5xl sm:tracking-tight">
+              Complete toolkit for enterprise level AI agents
+            </p>
+            <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400 mb-0">
+              Design production-ready agents with unified APIs, tools, and memory.
+            </p>
+          </div>
         </div>
+      </div>
 
-        {/* Two column layout for code and features */}
+      {/* Two column layout for code and features */}
+      <div className="max-w-7xl mx-auto px-4 mt-12">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Code Example - Left column */}
           <div className="lg:w-1/2 h-full order-2 lg:order-2">

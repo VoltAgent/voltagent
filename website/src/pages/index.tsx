@@ -30,18 +30,18 @@ export default function Home(): JSX.Element {
       <Layout>
         <main className="flex-1 relative overflow-hidden bg-[#050507]">
           <DotPattern dotColor="#fffdfbc6" dotSize={1.2} spacing={22} />
-          {/*        <Hero />
-          <FeatureShowcase /> */}
+          <Hero />
+          <FeatureShowcase />
 
           <div className="relative">
-            {/*   <CompaniesMarquee />
+            <CompaniesMarquee />
             <AgentsDetail />
             <Testimonials />
             <SupervisorAgent />
-            <Workflows /> */}
+            <Workflows />
             <Rag />
             <Integrations />
-            <FeaturedBlog />
+            {/*            <FeaturedBlog /> */}
             <CommunitySection />
           </div>
 
