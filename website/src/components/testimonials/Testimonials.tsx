@@ -484,7 +484,7 @@ export function Testimonials() {
               <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
               Fast Growing Community
             </h2>
-            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:text-5xl sm:tracking-tight mb-0">
+            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight mb-0">
               What are they saying?
             </p>
           </div>

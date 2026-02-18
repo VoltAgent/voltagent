@@ -41,7 +41,7 @@ export function SupervisorAgent() {
             <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
             Intelligent Coordination
           </h2>
-          <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:tracking-tight">
+          <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
             Supervisor agent orchestration
           </p>
           <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-[#8a8380] mb-0">

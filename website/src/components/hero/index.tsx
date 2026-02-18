@@ -121,7 +121,7 @@ export function Hero() {
               href="https://github.com/voltagent/voltagent/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#2fd6a1] no-underline font-semibold hover:no-underline"
+              className="text-[#2fd6a1] no-underline font-normal hover:no-underline"
             >
               <span
                 className="inline-block relative"
@@ -139,7 +139,7 @@ export function Hero() {
           </h2>
 
           <h1
-            className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-semibold tracking-[-0.65px] text-left mb-6 transition-all duration-1000 ${
+            className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-normal tracking-[-0.65px] text-left mb-6 transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
@@ -159,9 +159,9 @@ export function Hero() {
           >
             <span className="text-white text-base sm:text-lg md:text-xl">
               Build enterprise multi-agent systems —{" "}
-              <span className="text-white/50">development</span>,{" "}
-              <span className="text-white/50">observability</span>, and{" "}
-              <span className="text-white/50">deployment</span> in one platform.
+              <span className="text-[#8a8380]">development</span>,{" "}
+              <span className="text-[#8a8380]">observability</span>, and{" "}
+              <span className="text-[#8a8380]">deployment</span> in one platform.
             </span>
           </div>
 
@@ -172,7 +172,7 @@ export function Hero() {
           >
             <Link
               to="/docs/"
-              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm cursor-pointer bg-transparent text-[#eeeeee] border border-solid border-[#eeeeee]/65 rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-transparent hover:border-[#5c5855] hover:text-[#f3f4f6] no-underline"
+              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-solid landing-xs:text-md font-mono border-[#3d3a39] backdrop-blur-sm cursor-pointer bg-transparent text-[#eeeeee] border border-solid rounded-md transition duration-300 flex items-center outline-none justify-center sm:justify-start gap-2 hover:bg-transparent hover:border-[#5c5855] hover:text-[#f3f4f6] no-underline"
             >
               <ChevronRightIcon className="landing-xs:w-4 landing-xs:h-4 landing-md:w-6 landing-md:h-6" />
               Get Started

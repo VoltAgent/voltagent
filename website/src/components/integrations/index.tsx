@@ -418,7 +418,7 @@ export function Integrations() {
               <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
               INTEGRATIONS
             </h2>
-            <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:tracking-tight">
+            <h2 className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight">
               Easily connect with 40+ apps in no time
             </h2>
             <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-[#8a8380] mb-0">
