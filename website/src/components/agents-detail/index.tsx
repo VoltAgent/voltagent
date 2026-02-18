@@ -47,7 +47,7 @@ export function AgentsDetail() {
 
           {/* Features Section - Right column */}
           <div className="lg:w-1/2 order-1 lg:order-1">
-            <div className="grid grid-cols-2 gap-4 h-full">
+            <div className="grid grid-cols-1 landing-md:grid-cols-2 gap-4 h-full">
               {/* Feature 1 - API */}
 
               {/* Feature 4 - Tools */}
