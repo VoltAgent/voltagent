@@ -51,7 +51,7 @@ export function SupervisorAgent() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
+      <div className="max-w-7xl relative z-10 mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
         {/* Code Example - Full Width */}
         <div className="">
           {isMobile ? <MobileVersion isVisible={true} /> : <WorkflowCodeExample isVisible={true} />}

@@ -78,7 +78,7 @@ export function FeatureShowcase() {
             {/* Tabs */}
             <div
               ref={tabsContainerRef}
-              className="flex items-center overflow-x-auto scrollbar-hide"
+              className="flex items-center  overflow-x-auto scrollbar-hide"
             >
               {tabsData.map((tab) => {
                 const Icon = iconMap[tab.icon];

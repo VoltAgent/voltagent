@@ -484,14 +484,14 @@ export function Testimonials() {
               <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
               Fast Growing Community
             </h2>
-            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight mb-0">
+            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 !mb-0 landing-md:mb-4 landing-xs:font-normal landing-md:font-normal text-white sm:text-5xl sm:tracking-tight mb-0">
               What are they saying?
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-9xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36 mt-12">
+      <div className="max-w-9xl xs:px-4   lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36 mt-12">
         <style>{scrollAnimation}</style>
 
         {/* Use locked height to preserve layout space and prevent layout shifts when the content is unmounted */}
@@ -500,7 +500,7 @@ export function Testimonials() {
           {isVisible && (
             <div ref={contentRef}>
               {/* Tweets Row - Scrolling Left */}
-              <div className="relative mb-1">
+              <div className="relative mb-1 ">
                 <div
                   ref={tweetsRowRef}
                   className="flex overflow-hidden"

@@ -20,9 +20,9 @@ export function AgentsDetail() {
   return (
     <div className="text-white relative w-full overflow-hidden landing-md:mt-12 mb-24">
       {/* Header with full-width background */}
-      <div className="w-full bg-[#101010] landing-xs:py-16 landing-md:py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-left max-w-4xl">
+      <div className="w-full bg-[#101010]  landing-xs:py-16 landing-md:py-12">
+        <div className="max-w-7xl mx-auto  px-4">
+          <div className="text-left max-w-4xl ">
             <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />
               Enterprise-level AI agents
@@ -38,7 +38,7 @@ export function AgentsDetail() {
       </div>
 
       {/* Two column layout for code and features */}
-      <div className="max-w-7xl mx-auto px-4 mt-12">
+      <div className="max-w-7xl relative z-10  mx-auto px-4 mt-12">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Code Example - Left column */}
           <div className="lg:w-1/2 h-full order-2 lg:order-2">
@@ -69,7 +69,7 @@ export function AgentsDetail() {
                       Tool calling
                     </div>
                   </div>
-                  <p className="text-gray-400 text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
+                  <p className="text-[#8a8380] text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
                     Enable agents to invoke functions and interact with systems.
                   </p>
                 </div>
@@ -93,7 +93,7 @@ export function AgentsDetail() {
                       Unified API
                     </div>
                   </div>
-                  <p className="text-gray-400 text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
+                  <p className="text-[#8a8380] text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
                     Seamlessly switch between different AI providers with a simple code update.
                   </p>
                 </div>
@@ -118,7 +118,7 @@ export function AgentsDetail() {
                       Dynamic Prompting
                     </div>
                   </div>
-                  <p className="text-gray-400 text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
+                  <p className="text-[#8a8380] text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
                     Experiment, fine-tune, and iterate your AI prompts in an integrated environment.
                   </p>
                 </div>
@@ -143,7 +143,7 @@ export function AgentsDetail() {
                       Persistent Memory
                     </div>
                   </div>
-                  <p className="text-gray-400 text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
+                  <p className="text-[#8a8380] text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
                     Store and recall interactions to enhance your agents intelligence and context.
                   </p>
                 </div>

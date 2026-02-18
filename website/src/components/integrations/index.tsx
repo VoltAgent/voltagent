@@ -428,7 +428,7 @@ export function Integrations() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
+      <div className="max-w-7xl mx-auto px-4 relative z-10 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
         <div className="flex flex-col">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 md:gap-0">
             <div className="w-full flex md:w-[40%] justify-center items-center landing-xs:hidden landing-sm:flex">

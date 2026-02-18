@@ -194,7 +194,7 @@ export function CommunitySection() {
   }, []);
 
   return (
-    <section className="relative w-full overflow-hidden">
+    <section className="relative w-full overflow-hidden relative z-10">
       <GitHubStarsProvider>
         {/* Header with full-width background */}
         <div className="w-full bg-[#101010] landing-xs:py-10 landing-md:py-10">
@@ -213,15 +213,15 @@ export function CommunitySection() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-12 landing-xs:mt-12 landing-md:mt-0">
+        <div className="max-w-7xl mx-auto  px-4 sm:px-6 lg:px-8 landing-xs:mb-16 landing-md:mb-36 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 relative z-10 gap-3 md:gap-12 landing-xs:mt-12 landing-md:mt-0">
             {COMMUNITY_LINKS.map((link, index) => (
               <a
                 key={link.id}
                 href={link.url}
                 target="_blank"
                 rel="noreferrer"
-                className={`group relative landing-xs:p-6 landing-md:p-12  landing-md:border-solid border-white/10 no-underline transition-all flex flex-col items-center animate-fade-in landing-xs:unset landing-md:bg-black/20 rounded-lg hover:border-main-emerald hover:bg-black/40
+                className={`group relative landing-xs:p-6 landing-md:p-12 relative z-10  landing-md:border-solid border-white/10 no-underline transition-all flex flex-col items-center animate-fade-in landing-xs:unset landing-md:bg-black/20 rounded-lg hover:border-main-emerald hover:bg-black/40
                   ${link.id === "discord" ? "md:col-span-1" : ""}`}
                 style={{
                   animationDelay: `${index * 100}ms`,

@@ -26,7 +26,7 @@ export function Workflows() {
         </div>
 
         {/* Feature Cards - Grid Layout */}
-        <div className="grid landing-xs:grid-cols-1  landing-md:grid-cols-2 landing-lg:grid-cols-4 gap-4 sm:gap-6 h-full mt-8 landing-xs:mt-0 landing-md:mt-16">
+        <div className="grid landing-xs:grid-cols-1 relative z-10 landing-md:grid-cols-2 landing-lg:grid-cols-4 gap-4 sm:gap-6 h-full mt-8 landing-xs:mt-0 landing-md:mt-16">
           {/* Feature 1 */}
           <div className="relative h-full">
             <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">

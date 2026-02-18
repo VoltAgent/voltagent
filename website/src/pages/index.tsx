@@ -4,7 +4,6 @@ import Layout from "@theme/Layout";
 import { AgentsDetail } from "../components/agents-detail";
 import { CommunitySection } from "../components/community-section";
 import { CompaniesMarquee } from "../components/companies/CompaniesMarquee";
-import { FeatureShowcase } from "../components/feature-showcase";
 import { FeaturedBlog } from "../components/featured-blog";
 import { Hero } from "../components/hero";
 import { Integrations } from "../components/integrations";
@@ -29,9 +28,8 @@ export default function Home(): JSX.Element {
       </Head>
       <Layout>
         <main className="flex-1 relative overflow-hidden bg-[#050507]">
-          <DotPattern dotColor="#fffdfbc6" dotSize={1.2} spacing={22} />
+          <DotPattern dotColor="#fffdfbb0" dotSize={1.2} spacing={22} />
           <Hero />
-          <FeatureShowcase />
 
           <div className="relative">
             <CompaniesMarquee />
