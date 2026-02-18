@@ -201,7 +201,7 @@ export function CommunitySection() {
             <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-blue-500 tracking-wide uppercase">
               Community
             </h2>
-            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight">
+            <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-normal landing-md:font-semibold text-white sm:text-5xl sm:tracking-tight">
               Join the movement
             </p>
             <p className="max-w-3xl  landing-md:text-xl  landing-xs:text-md text-gray-400">
