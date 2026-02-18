@@ -9,7 +9,7 @@ import { CodeExample } from "./code-example";
 
 export function AgentsDetail() {
   const [selectedFeature, setSelectedFeature] = useState<"api" | "memory" | "prompt" | "tools">(
-    "api",
+    "tools",
   );
 
   // Handler for feature card clicks
@@ -18,10 +18,10 @@ export function AgentsDetail() {
   };
 
   return (
-    <div className="text-white relative w-full overflow-hidden bg-[#101010] landing-xs:py-16 landing-md:py-24">
+    <div className="text-white relative w-full overflow-hidden bg-[#101010] landing-xs:py-16 landing-md:py-12 landing-md:mt-12 mb-24">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header - Left aligned */}
-        <div className="mb-8 text-left max-w-xl">
+        <div className="mb-12 text-left max-w-4xl">
           <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-main-emerald tracking-wide uppercase">
             Enterprise-level AI agents
           </h2>
@@ -48,11 +48,12 @@ export function AgentsDetail() {
               {/* Feature 4 - Tools */}
               <div className="relative">
                 <div
-                  className={`landing-xs:p-3  rounded-lg ${
+                  style={{ borderWidth: "1px" }}
+                  className={`landing-xs:p-3 rounded-lg border border-solid ${
                     selectedFeature === "tools"
-                      ? "border border-solid border-[#5c5855] bg-[#1a1a1a]"
-                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
-                  } transition-all duration-300 cursor-pointer`}
+                      ? "border-[#5c5855] bg-[#1a1a1a]"
+                      : "border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
+                  } transition-colors duration-300 cursor-pointer`}
                   onClick={() => handleFeatureClick("tools")}
                 >
                   <div className="flex landing-xs:flex-row landing-md:flex-col landing-xs:items-center landing-md:items-start gap-2 mb-2">
@@ -64,18 +65,19 @@ export function AgentsDetail() {
                     </div>
                   </div>
                   <p className="text-gray-400 text-xs leading-relaxed landing-xs:mb-0 landing-md:mb-4">
-                    Enable agents to invoke functions, interact with systems, and perform actions.
+                    Enable agents to invoke functions and interact with systems.
                   </p>
                 </div>
               </div>
 
               <div className="relative">
                 <div
-                  className={`landing-xs:p-3  rounded-lg ${
+                  style={{ borderWidth: "1px" }}
+                  className={`landing-xs:p-3 rounded-lg border border-solid ${
                     selectedFeature === "api"
-                      ? "border border-solid border-[#5c5855] bg-[#1a1a1a]"
-                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
-                  } transition-all duration-300 cursor-pointer`}
+                      ? "border-[#5c5855] bg-[#1a1a1a]"
+                      : "border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
+                  } transition-colors duration-300 cursor-pointer`}
                   onClick={() => handleFeatureClick("api")}
                 >
                   <div className="flex landing-xs:flex-row landing-md:flex-col landing-xs:items-center landing-md:items-start gap-2 mb-2">
@@ -95,11 +97,12 @@ export function AgentsDetail() {
               {/* Feature 3 - Prompt */}
               <div className="relative">
                 <div
-                  className={`landing-xs:p-3  rounded-lg ${
+                  style={{ borderWidth: "1px" }}
+                  className={`landing-xs:p-3 rounded-lg border border-solid ${
                     selectedFeature === "prompt"
-                      ? "border border-solid border-[#5c5855] bg-[#1a1a1a]"
-                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
-                  } transition-all duration-300 cursor-pointer`}
+                      ? "border-[#5c5855] bg-[#1a1a1a]"
+                      : "border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
+                  } transition-colors duration-300 cursor-pointer`}
                   onClick={() => handleFeatureClick("prompt")}
                 >
                   <div className="flex landing-xs:flex-row landing-md:flex-col landing-xs:items-center landing-md:items-start gap-2 mb-2">
@@ -119,11 +122,12 @@ export function AgentsDetail() {
               {/* Feature 2 - Memory */}
               <div className="relative">
                 <div
-                  className={`landing-xs:p-3  rounded-lg ${
+                  style={{ borderWidth: "1px" }}
+                  className={`landing-xs:p-3 rounded-lg border border-solid ${
                     selectedFeature === "memory"
-                      ? "border border-solid border-[#5c5855] bg-[#1a1a1a]"
-                      : "border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
-                  } transition-all duration-300 cursor-pointer`}
+                      ? "border-[#5c5855] bg-[#1a1a1a]"
+                      : "border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a]"
+                  } transition-colors duration-300 cursor-pointer`}
                   onClick={() => handleFeatureClick("memory")}
                 >
                   <div className="flex landing-xs:flex-row landing-md:flex-col landing-xs:items-center landing-md:items-start gap-2 mb-2">

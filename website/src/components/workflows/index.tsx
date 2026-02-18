@@ -26,7 +26,7 @@ export function Workflows() {
           {/* Feature 1 */}
           <div className="relative h-full">
             <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
-              <div className="flex flex-col items-start gap-3 mb-3">
+              <div className="flex  items-start gap-3 mb-3">
                 <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
                   <Squares2X2Icon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
@@ -44,7 +44,7 @@ export function Workflows() {
           {/* Feature 4 */}
           <div className="relative h-full">
             <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
-              <div className="flex flex-col items-start gap-3 mb-3">
+              <div className="flex  items-start gap-3 mb-3">
                 <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
                   <UsersIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
@@ -53,8 +53,8 @@ export function Workflows() {
                 </div>
               </div>
               <div className="text-[#8a8380] text-xs leading-relaxed">
-                Every workflow step is fully typed with Zod schemas. Get compile time safety and
-                runtime validation for all agent inputs and outputs.
+                Workflow steps are fully typed with Zod schemas. Compile time safety and runtime
+                validation for agent inputs and outputs.
               </div>
             </div>
           </div>
@@ -62,7 +62,7 @@ export function Workflows() {
           {/* Feature 2 */}
           <div className="relative h-full">
             <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
-              <div className="flex flex-col items-start gap-3 mb-3">
+              <div className="flex  items-start gap-3 mb-3">
                 <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
                   <UserPlusIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>
@@ -71,8 +71,8 @@ export function Workflows() {
                 </div>
               </div>
               <div className="text-[#8a8380] text-xs leading-relaxed">
-                Optimized for long running workflows. Pause execution, save state, and seamlessly
-                resume with human intervention when needed.
+                Pause execution, save state, and seamlessly resume with human intervention when
+                needed.
               </div>
             </div>
           </div>
@@ -80,7 +80,7 @@ export function Workflows() {
           {/* Feature 3 */}
           <div className="relative h-full">
             <div className="p-4 rounded-lg border border-solid border-[#3d3a39] bg-[#101010] hover:border-[#5c5855] hover:bg-[#1a1a1a] transition-all duration-300 h-full flex flex-col">
-              <div className="flex flex-col items-start gap-3 mb-3">
+              <div className="flex  items-start gap-3 mb-3">
                 <div className="bg-[#b8b3b0]/10 landing-xs:hidden landing-md:flex landing-md:w-8 landing-lg:w-10 landing-md:h-8 landing-lg:h-10 rounded-md items-center justify-center shrink-0">
                   <EyeIcon className="landing-md:w-4 landing-lg:w-5 landing-md:h-4 landing-lg:h-5 text-[#b8b3b0]" />
                 </div>

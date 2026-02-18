@@ -16,7 +16,7 @@ export function SupervisorAgent() {
 
     return highlightedSection === section
       ? `bg-gradient-to-r from-[#1a1a1a]/70 to-[#151515]/70 border-l-2 border-solid border-t-0 border-r-0 border-b-0 border-[#2fd6a1] pl-2 rounded-sm shadow-lg text-white ${baseHighlightClass}`
-      : `text-gray-400 ${baseHighlightClass}`;
+      : `text-[#8b949e] ${baseHighlightClass}`;
   };
 
   // Handlers for mouse over and click
@@ -61,9 +61,9 @@ export function SupervisorAgent() {
             <>
               {/* Code Section - Full Width */}
               <div className="w-[55%] border-t border-r-0 rounded-none border-b-0 rounded-lg border-t-0 border-solid border-white/10">
-                <pre className="text-left h-full bg-transparent p-0 text-xs md:text-sm font-mono m-0">
+                <pre className="text-left h-full bg-[#020202] p-0 text-xs md:text-sm font-mono m-0">
                   <div className="flex">
-                    <div className="py-5 px-2 text-right text-gray-500 select-none border-r border-gray-700/50 min-w-[40px] text-xs">
+                    <div className="py-5 px-2 text-right text-[#8b949e] select-none border-r border-[#3d3a39] min-w-[40px] text-xs">
                       <div>1</div>
                       <div>2</div>
                       <div>3</div>
@@ -102,23 +102,23 @@ export function SupervisorAgent() {
                     <code className="py-5 px-3 block text-xs">
                       {/* Orchestrator initialization - Common for all features */}
                       <span className={`block ${getHighlightClasses("orchestrator")}`}>
-                        <span className="text-blue-400">import</span>
+                        <span className="text-[#ff7b72]">import</span>
                         <span>
                           {" "}
                           {"{"} Agent {"}"}{" "}
                         </span>
-                        <span className="text-blue-400">from</span>
-                        <span className="text-yellow-300"> "@voltagent/core"</span>
+                        <span className="text-[#ff7b72]">from</span>
+                        <span className="text-[#a5d6ff]"> "@voltagent/core"</span>
                         <span>;</span>
                         <br />
 
-                        <span className="text-blue-400">import</span>
+                        <span className="text-[#ff7b72]">import</span>
                         <span>
                           {" "}
                           {"{"} openai {"}"}{" "}
                         </span>
-                        <span className="text-blue-400">from</span>
-                        <span className="text-yellow-300"> "@ai-sdk/openai"</span>
+                        <span className="text-[#ff7b72]">from</span>
+                        <span className="text-[#a5d6ff]"> "@ai-sdk/openai"</span>
                         <span>;</span>
                         <br />
                         <br />
@@ -127,33 +127,33 @@ export function SupervisorAgent() {
                       {/* Centralized Coordination */}
                       <span className={`block ${getHighlightClasses("centralized")}`}>
                         {/* Define supervisor agent */}
-                        <span className="text-gray-300">{"// Define supervisor agent"}</span>
+                        <span className="text-[#8b949e]">{"// Define supervisor agent"}</span>
                         <br />
-                        <span className="text-blue-400">const</span>
+                        <span className="text-[#ff7b72]">const</span>
                         <span> supervisorAgent = </span>
-                        <span className="text-blue-400">new</span>
-                        <span className="text-green-400"> Agent</span>
+                        <span className="text-[#ff7b72]">new</span>
+                        <span className="text-[#d2a8ff]"> Agent</span>
                         <span>{"({"}</span>
                         <br />
                         <span className="ml-4">name: </span>
-                        <span className="text-yellow-300">"Supervisor Agent"</span>
+                        <span className="text-[#a5d6ff]">"Supervisor Agent"</span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">description: </span>
-                        <span className="text-yellow-300">
+                        <span className="text-[#a5d6ff]">
                           "You manage a workflow between specialized agents."
                         </span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">llm: </span>
-                        <span className="text-blue-400">new</span>
+                        <span className="text-[#ff7b72]">new</span>
 
                         <span>(),</span>
                         <br />
                         <span className="ml-4">model: </span>
-                        <span className="text-green-400">openai</span>
+                        <span className="text-[#d2a8ff]">openai</span>
                         <span>(</span>
-                        <span className="text-yellow-300">"gpt-4o-mini"</span>
+                        <span className="text-[#a5d6ff]">"gpt-4o-mini"</span>
                         <span>),</span>
                         <br />
                         <span className="ml-4">subAgents: [storyAgent, translatorAgent]</span>
@@ -166,31 +166,31 @@ export function SupervisorAgent() {
                       {/* Specialized Agent Roles */}
                       <span className={`block ${getHighlightClasses("specialized")}`}>
                         {/* Define story agent */}
-                        <span className="text-gray-300">{"// Define story agent"}</span>
+                        <span className="text-[#8b949e]">{"// Define story agent"}</span>
                         <br />
-                        <span className="text-blue-400">const</span>
+                        <span className="text-[#ff7b72]">const</span>
                         <span> storyAgent = </span>
-                        <span className="text-blue-400">new</span>
-                        <span className="text-green-400"> Agent</span>
+                        <span className="text-[#ff7b72]">new</span>
+                        <span className="text-[#d2a8ff]"> Agent</span>
                         <span>{"({"}</span>
                         <br />
                         <span className="ml-4">name: </span>
-                        <span className="text-yellow-300">"Story Agent"</span>
+                        <span className="text-[#a5d6ff]">"Story Agent"</span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">description: </span>
-                        <span className="text-yellow-300">"You are a creative story writer."</span>
+                        <span className="text-[#a5d6ff]">"You are a creative story writer."</span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">llm: </span>
-                        <span className="text-blue-400">new</span>
+                        <span className="text-[#ff7b72]">new</span>
 
                         <span>(),</span>
                         <br />
                         <span className="ml-4">model: </span>
-                        <span className="text-green-400">openai</span>
+                        <span className="text-[#d2a8ff]">openai</span>
                         <span>(</span>
-                        <span className="text-yellow-300">"gpt-4o-mini"</span>
+                        <span className="text-[#a5d6ff]">"gpt-4o-mini"</span>
                         <span>),</span>
                         <br />
                         <span>{"});"}</span>
@@ -201,31 +201,31 @@ export function SupervisorAgent() {
                       {/* Shared Memory System */}
                       <span className={`block ${getHighlightClasses("memory")}`}>
                         {/* Define translator agent */}
-                        <span className="text-gray-300">{"// Define translator agent"}</span>
+                        <span className="text-[#8b949e]">{"// Define translator agent"}</span>
                         <br />
-                        <span className="text-blue-400">const</span>
+                        <span className="text-[#ff7b72]">const</span>
                         <span> translatorAgent = </span>
-                        <span className="text-blue-400">new</span>
-                        <span className="text-green-400"> Agent</span>
+                        <span className="text-[#ff7b72]">new</span>
+                        <span className="text-[#d2a8ff]"> Agent</span>
                         <span>{"({"}</span>
                         <br />
                         <span className="ml-4">name: </span>
-                        <span className="text-yellow-300">"Translator Agent"</span>
+                        <span className="text-[#a5d6ff]">"Translator Agent"</span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">description: </span>
-                        <span className="text-yellow-300">"Translate English text to German"</span>
+                        <span className="text-[#a5d6ff]">"Translate English text to German"</span>
                         <span>,</span>
                         <br />
                         <span className="ml-4">llm: </span>
-                        <span className="text-blue-400">new</span>
+                        <span className="text-[#ff7b72]">new</span>
 
                         <span>(),</span>
                         <br />
                         <span className="ml-4">model: </span>
-                        <span className="text-green-400">openai</span>
+                        <span className="text-[#d2a8ff]">openai</span>
                         <span>(</span>
-                        <span className="text-yellow-300">"gpt-4o-mini"</span>
+                        <span className="text-[#a5d6ff]">"gpt-4o-mini"</span>
                         <span>),</span>
                         <br />
                         <span>{"});"}</span>
@@ -236,28 +236,26 @@ export function SupervisorAgent() {
                       {/* Dynamic Agent Selection */}
                       <span className={`block ${getHighlightClasses("dynamic")}`}>
                         {/* Stream response from supervisor agent */}
-                        <span className="text-gray-300">
+                        <span className="text-[#8b949e]">
                           {"// Stream response from supervisor agent"}
                         </span>
                         <br />
-                        <span className="text-blue-400">const</span>
+                        <span className="text-[#ff7b72]">const</span>
                         <span> result = </span>
-                        <span className="text-blue-400">await</span>
+                        <span className="text-[#ff7b72]">await</span>
                         <span> supervisorAgent.streamText(</span>
                         <br />
                         <span className="ml-4" />
-                        <span className="text-yellow-300">
-                          "Write a 100 word story in English."
-                        </span>
+                        <span className="text-[#a5d6ff]">"Write a 100 word story in English."</span>
                         <br />
                         <span>);</span>
                         <br />
                         <br />
-                        <span className="text-blue-400">for await</span>
+                        <span className="text-[#ff7b72]">for await</span>
                         <span> (</span>
-                        <span className="text-blue-400">const</span>
+                        <span className="text-[#ff7b72]">const</span>
                         <span> chunk </span>
-                        <span className="text-blue-400">of</span>
+                        <span className="text-[#ff7b72]">of</span>
                         <span> result.textStream) {"{"}</span>
                         <br />
                         <span className="ml-4">console.log(chunk);</span>

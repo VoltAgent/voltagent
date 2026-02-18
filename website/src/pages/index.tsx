@@ -29,16 +29,16 @@ export default function Home(): JSX.Element {
       </Head>
       <Layout>
         <main className="flex-1 relative overflow-hidden bg-[#050507]">
-          <DotPattern dotColor="#4d4947" dotSize={1} spacing={22} />
-          <Hero />
-          <FeatureShowcase />
+          <DotPattern dotColor="#fffdfbc6" dotSize={1.2} spacing={22} />
+          {/*        <Hero />
+          <FeatureShowcase /> */}
 
           <div className="relative">
-            <CompaniesMarquee />
+            {/*   <CompaniesMarquee />
             <AgentsDetail />
             <Testimonials />
             <SupervisorAgent />
-            <Workflows />
+            <Workflows /> */}
             <Rag />
             <Integrations />
             <FeaturedBlog />
