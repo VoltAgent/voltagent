@@ -1,5 +1,16 @@
 # @voltagent/core
 
+## 2.4.3
+
+### Patch Changes
+
+- [#1078](https://github.com/VoltAgent/voltagent/pull/1078) [`fbce8aa`](https://github.com/VoltAgent/voltagent/commit/fbce8aa0dbadf50d7e19ec54ab156a2fa86170c0) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: persist workflow context mutations across steps and downstream agents/tools
+
+  Workflows now consistently use the execution context map when building step state.
+  This ensures context written in one step is visible in later steps and in `andAgent` calls.
+
+  Also aligns workflow event/stream context payloads with the normalized runtime context.
+
 ## 2.4.2
 
 ### Patch Changes
