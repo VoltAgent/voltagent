@@ -20,8 +20,8 @@ export function AgentsDetail() {
   return (
     <div className="text-white relative w-full overflow-hidden landing-md:mt-12 mb-24">
       {/* Header with full-width background */}
-      <div className="w-full bg-[#101010]  landing-xs:py-16 landing-md:py-12">
-        <div className="max-w-7xl mx-auto  px-4">
+      <div className="w-full bg-[#101010] relative z-10 landing-xs:py-16 landing-md:py-12">
+        <div className="max-w-7xl mx-auto   px-4">
           <div className="text-left max-w-4xl ">
             <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-main-emerald inline-block" />

@@ -477,7 +477,7 @@ export function Testimonials() {
   return (
     <div ref={containerRef} className={`relative ${!isVisible ? "animations-disabled" : ""}`}>
       {/* Header with full-width background */}
-      <div className="w-full bg-[#101010] landing-xs:py-10 landing-md:py-10">
+      <div className="w-full bg-[#101010] relative z-10 landing-xs:py-10 landing-md:py-10">
         <div className="max-w-9xl xs:px-4 lg:px-8 mx-auto">
           <div className="text-left max-w-xl mx-4">
             <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-[#b8b3b0] tracking-wide uppercase flex items-center gap-2">
