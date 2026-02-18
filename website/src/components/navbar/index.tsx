@@ -585,6 +585,17 @@ export default function Navbar() {
               <DiscordLogo className="w-6 h-6 text-[#5865F2] hover:text-emerald-500" />
             </Link>
           )}
+          {!isMobile && (
+            <Link
+              to="https://console.voltagent.dev/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="no-underline flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#eeeeee] border border-solid border-[#3d3a39] rounded-md hover:border-[#5c5855] hover:text-[#2fd6a1] transition-all duration-200"
+            >
+              Try VoltOps
+              <ArrowRightIcon className="w-3.5 h-3.5" />
+            </Link>
+          )}
 
           <button
             type="button"
