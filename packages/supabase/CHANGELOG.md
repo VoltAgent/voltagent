@@ -1,5 +1,13 @@
 # @voltagent/supabase
 
+## 2.1.3
+
+### Patch Changes
+
+- [#1082](https://github.com/VoltAgent/voltagent/pull/1082) [`73cf1d3`](https://github.com/VoltAgent/voltagent/commit/73cf1d32c5ffdfd3197cc9b0661350449aca2b3a) Thanks [@omeraplak](https://github.com/omeraplak)! - Fix workflow state persistence parity across SQL adapters.
+
+  This update persists and returns `input`, `context`, and top-level `workflowState` in workflow state operations. It also ensures suspended workflow state queries include `events`, `output`, and `cancellation`, and adds adapter migrations/column additions where needed.
+
 ## 2.1.2
 
 ### Patch Changes
