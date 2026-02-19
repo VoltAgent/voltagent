@@ -85,7 +85,7 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
     expect(sql).toContain("status = ?");
     expect(sql).toContain("created_at >=");
     expect(sql).toContain("user_id = ?");
-    expect(sql).toContain("json_extract(metadata, ?) = json(?)");
+    expect(sql).toContain("json_extract(metadata, ?) = json_extract(json(?), '$')");
     expect(sql).toContain("ORDER BY created_at DESC");
     expect(args).toEqual([
       "workflow-1",

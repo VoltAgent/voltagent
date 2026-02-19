@@ -241,6 +241,10 @@ export interface WorkflowRunOptions {
    */
   userId?: string;
   /**
+   * Additional execution metadata persisted with workflow state
+   */
+  metadata?: Record<string, unknown>;
+  /**
    * The user context, this can be used to track the current user context in a workflow
    */
   context?: UserContext;

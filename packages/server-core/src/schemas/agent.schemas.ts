@@ -359,6 +359,7 @@ export const WorkflowExecutionRequestSchema = z.object({
       executionId: z.string().optional(),
       context: z.any().optional(),
       workflowState: z.record(z.any()).optional(),
+      metadata: z.record(z.any()).optional(),
     })
     .optional()
     .describe("Optional execution options"),
