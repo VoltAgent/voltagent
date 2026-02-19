@@ -509,6 +509,33 @@ export const WORKFLOW_ROUTES = {
       },
     },
   },
+  attachWorkflowStream: {
+    method: "get" as const,
+    path: "/workflows/:id/executions/:executionId/stream",
+    summary: "Attach to workflow execution stream",
+    description:
+      "Attach to an in-progress workflow execution stream and receive real-time events via Server-Sent Events (SSE). Use Last-Event-ID header or `fromSequence` query parameter to replay missed events on reconnect.",
+    tags: ["Workflow Management"],
+    operationId: "attachWorkflowStream",
+    responses: {
+      200: {
+        description: "Successfully attached to workflow SSE stream",
+        contentType: "text/event-stream",
+      },
+      404: {
+        description: "Workflow or execution not found",
+        contentType: "application/json",
+      },
+      409: {
+        description: "Workflow execution is not streamable in current state",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to attach workflow stream due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   suspendWorkflow: {
     method: "post" as const,
     path: "/workflows/:id/executions/:executionId/suspend",

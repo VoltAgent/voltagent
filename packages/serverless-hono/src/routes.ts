@@ -37,6 +37,7 @@ import {
   executeTriggerHandler,
   getConversationMessagesHandler,
   getConversationStepsHandler,
+  handleAttachWorkflowStream,
   handleCancelWorkflow,
   handleChatStream,
   handleCheckUpdates,
@@ -476,6 +477,36 @@ export function registerWorkflowRoutes(app: Hono, deps: ServerProviderDeps, logg
 
     if (isErrorResponse(response)) {
       return c.json(response, 500);
+    }
+
+    return c.body(response, 200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    });
+  });
+
+  app.get(WORKFLOW_ROUTES.attachWorkflowStream.path, async (c) => {
+    const workflowId = c.req.param("id");
+    const executionId = c.req.param("executionId");
+    const query = c.req.query();
+    const lastEventId = c.req.header("last-event-id");
+
+    const response = await handleAttachWorkflowStream(
+      workflowId,
+      executionId,
+      {
+        fromSequence: query.fromSequence,
+        lastEventId,
+      },
+      deps,
+      logger,
+    );
+
+    if (isErrorResponse(response)) {
+      const status: 404 | 409 | 500 =
+        response.httpStatus === 404 || response.httpStatus === 409 ? response.httpStatus : 500;
+      return c.json(response, status);
     }
 
     return c.body(response, 200, {

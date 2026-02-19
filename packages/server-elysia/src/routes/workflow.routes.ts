@@ -1,6 +1,7 @@
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
+  handleAttachWorkflowStream,
   handleCancelWorkflow,
   handleExecuteWorkflow,
   handleGetWorkflow,
@@ -221,6 +222,59 @@ export function registerWorkflowRoutes(
         summary: "Stream workflow execution",
         description:
           "Executes a workflow and streams execution events in real-time via Server-Sent Events (SSE)",
+        tags: ["Workflows"],
+      },
+    },
+  );
+
+  // GET /workflows/:id/executions/:executionId/stream - Attach to existing workflow stream
+  app.get(
+    "/workflows/:id/executions/:executionId/stream",
+    async ({ params, query, headers, set }) => {
+      const lastEventId =
+        (headers as Record<string, string | undefined>)["last-event-id"] ??
+        (headers as Record<string, string | undefined>)["Last-Event-ID"];
+
+      const response = await handleAttachWorkflowStream(
+        params.id,
+        params.executionId,
+        {
+          fromSequence: query.fromSequence,
+          lastEventId,
+        },
+        deps,
+        logger,
+      );
+
+      if (isErrorResponse(response)) {
+        set.status = response.httpStatus || 500;
+        return response;
+      }
+
+      set.headers["Content-Type"] = "text/event-stream";
+      set.headers["Cache-Control"] = "no-cache";
+      set.headers.Connection = "keep-alive";
+      set.status = 200;
+      return response;
+    },
+    {
+      params: WorkflowExecutionParams,
+      query: t.Object({
+        fromSequence: t.Optional(
+          t.String({
+            description: "Replay events with sequence greater than this value",
+          }),
+        ),
+      }),
+      response: {
+        404: ErrorSchema,
+        409: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "Attach to workflow execution stream",
+        description:
+          "Attaches to an active workflow execution stream and supports replay via Last-Event-ID or fromSequence",
         tags: ["Workflows"],
       },
     },

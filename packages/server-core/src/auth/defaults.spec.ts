@@ -108,6 +108,7 @@ describe("Auth Defaults", () => {
       it("should require auth for workflow execution endpoints", () => {
         expect(requiresAuth("POST", "/workflows/my-workflow/run")).toBe(true);
         expect(requiresAuth("POST", "/workflows/123/stream")).toBe(true);
+        expect(requiresAuth("GET", "/workflows/123/executions/exec-1/stream")).toBe(true);
       });
 
       it("should require auth for workflow control endpoints", () => {

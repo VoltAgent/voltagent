@@ -2204,6 +2204,9 @@ export function createWorkflow<
             },
           );
 
+          // Use a fresh controller for this resumed run.
+          const resumedSuspendController = createDefaultSuspendController();
+
           // Execute the resume by calling stream again with resume options
           const executeResume = async () => {
             // Get the suspension metadata
@@ -2231,7 +2234,7 @@ export function createWorkflow<
                 resumeStepIndex,
                 resumeData: input,
               },
-              suspendController,
+              suspendController: resumedSuspendController,
             };
 
             // Re-execute with streaming from the suspension point
@@ -2283,10 +2286,10 @@ export function createWorkflow<
               return streamResult.resume(input2, opts);
             },
             suspend: (reason?: string) => {
-              suspendController.suspend(reason);
+              resumedSuspendController.suspend(reason);
             },
             cancel: (reason?: string) => {
-              suspendController.cancel(reason);
+              resumedSuspendController.cancel(reason);
             },
             abort: () => streamController.abort(),
             toUIMessageStreamResponse: eventToUIMessageStreamResponse(streamController),

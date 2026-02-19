@@ -112,6 +112,7 @@ export const PROTECTED_ROUTES = [
   // ========================================
   "POST /workflows/:id/run", // Run workflow
   "POST /workflows/:id/stream", // Stream workflow execution
+  "GET /workflows/:id/executions/:executionId/stream", // Attach workflow stream execution
 
   // ========================================
   // WORKFLOW CONTROL (State Modification)

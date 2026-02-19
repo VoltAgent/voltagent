@@ -23,6 +23,7 @@ export {
   handleGetWorkflow,
   handleExecuteWorkflow,
   handleStreamWorkflow,
+  handleAttachWorkflowStream,
   handleSuspendWorkflow,
   handleResumeWorkflow,
   handleListWorkflowRuns,
