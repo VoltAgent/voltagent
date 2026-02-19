@@ -392,7 +392,10 @@ describe("PostgreSQLMemoryAdapter Integration Tests", () => {
       expect(suspended.every((s) => s.status === "suspended")).toBe(true);
       expect(suspended[0]?.events).toEqual(states[0].events);
       expect(suspended[0]?.output).toEqual(states[0].output);
-      expect(suspended[0]?.cancellation).toEqual(states[0].cancellation);
+      expect(suspended[0]?.cancellation).toEqual({
+        reason: states[0]?.cancellation?.reason,
+        cancelledAt: states[0]?.cancellation?.cancelledAt?.toISOString(),
+      });
       expect(suspended[0]?.workflowState).toEqual(states[0].workflowState);
     });
   });
