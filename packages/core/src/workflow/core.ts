@@ -747,6 +747,14 @@ export function createWorkflow<
       executionId = options?.executionId || randomUUID();
     }
 
+    const mergeExecutionMetadata = async (patch: Record<string, unknown>) => {
+      const existingState = await executionMemory.getWorkflowState(executionId);
+      return {
+        ...(existingState?.metadata ?? {}),
+        ...patch,
+      };
+    };
+
     // Only create stream controller if one is provided (for streaming execution)
     // For normal run, we don't need a stream controller
     const streamController = externalStreamController || null;
@@ -813,6 +821,10 @@ export function createWorkflow<
         : options?.context
           ? new Map(Object.entries(options.context))
           : new Map();
+    const optionMetadata =
+      options?.metadata && typeof options.metadata === "object" && !Array.isArray(options.metadata)
+        ? options.metadata
+        : undefined;
     const workflowStateStore = options?.workflowState ?? {};
 
     // Get previous trace IDs if resuming
@@ -928,6 +940,7 @@ export function createWorkflow<
           userId: options?.userId,
           conversationId: options?.conversationId,
           metadata: {
+            ...(optionMetadata ?? {}),
             traceId: rootSpan.spanContext().traceId,
             spanId: rootSpan.spanContext().spanId,
           },
@@ -1219,10 +1232,10 @@ export function createWorkflow<
                   cancelledAt: new Date(),
                   reason,
                 },
-                metadata: {
+                metadata: await mergeExecutionMetadata({
                   ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
                   cancellationReason: reason,
-                },
+                }),
                 updatedAt: new Date(),
               });
             } catch (memoryError) {
@@ -1943,10 +1956,10 @@ export function createWorkflow<
             await executionMemory.updateWorkflowState(executionId, {
               status: "cancelled",
               workflowState: stateManager.state.workflowState,
-              metadata: {
+              metadata: await mergeExecutionMetadata({
                 ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
                 cancellationReason,
-              },
+              }),
               updatedAt: new Date(),
             });
           } catch (memoryError) {
@@ -2041,10 +2054,10 @@ export function createWorkflow<
             workflowState: stateManager.state.workflowState,
             events: collectedEvents,
             // Store a lightweight error summary in metadata for debugging
-            metadata: {
+            metadata: await mergeExecutionMetadata({
               ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
               errorMessage: error instanceof Error ? error.message : String(error),
-            },
+            }),
             updatedAt: new Date(),
           });
         } catch (memoryError) {

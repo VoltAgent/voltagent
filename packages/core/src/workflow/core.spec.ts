@@ -284,6 +284,55 @@ describe.sequential("workflow.run", () => {
     expect(persistedState?.userId).toBe("user-test-1");
     expect(persistedState?.conversationId).toBe("conv-test-1");
   });
+
+  it("should persist custom metadata in workflow state", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "workflow-metadata-context",
+        name: "Workflow Metadata Context",
+        input: z.object({
+          value: z.string(),
+        }),
+        result: z.object({
+          value: z.string(),
+        }),
+        memory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const result = await workflow.run(
+      { value: "ok" },
+      {
+        userId: "user-test-1",
+        metadata: {
+          tenantId: "acme",
+          region: "us-east-1",
+          flags: { plan: "pro" },
+        },
+      },
+    );
+
+    const persistedState = await memory.getWorkflowState(result.executionId);
+
+    expect(persistedState?.metadata).toEqual(
+      expect.objectContaining({
+        tenantId: "acme",
+        region: "us-east-1",
+        flags: { plan: "pro" },
+        traceId: expect.any(String),
+        spanId: expect.any(String),
+      }),
+    );
+  });
 });
 
 describe.sequential("workflow streaming", () => {

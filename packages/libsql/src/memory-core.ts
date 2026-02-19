@@ -1214,7 +1214,7 @@ export class LibSQLMemoryCore implements StorageAdapter {
           continue;
         }
 
-        conditions.push("json_extract(metadata, ?) = json(?)");
+        conditions.push("json_extract(metadata, ?) = json_extract(json(?), '$')");
         args.push(metadataPath, safeStringify(value));
       }
     }
