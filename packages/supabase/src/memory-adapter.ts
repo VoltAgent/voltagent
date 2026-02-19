@@ -189,10 +189,10 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
         .select("user_id, resource_id")
         .limit(1);
 
-      // Try to select workflow state event columns (for events persistence feature)
-      const { error: workflowEventsError } = await this.client
+      // Try to select workflow state columns (for full state persistence)
+      const { error: workflowStateError } = await this.client
         .from(`${this.baseTableName}_workflow_states`)
-        .select("events, output, cancellation")
+        .select("input, context, workflow_state, events, output, cancellation")
         .limit(1);
 
       const { error: stepsTableError } = await this.client
@@ -201,7 +201,7 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
         .limit(1);
 
       // If any query fails, migration is needed
-      return !!messagesError || !!conversationsError || !!workflowEventsError || !!stepsTableError;
+      return !!messagesError || !!conversationsError || !!workflowStateError || !!stepsTableError;
     } catch {
       return true;
     }
@@ -269,6 +269,9 @@ CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
   workflow_id TEXT NOT NULL,
   workflow_name TEXT NOT NULL,
   status TEXT NOT NULL,
+  input JSONB,
+  context JSONB,
+  workflow_state JSONB,
   suspension JSONB,
   events JSONB,
   output JSONB,
@@ -393,6 +396,9 @@ CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
   workflow_id TEXT NOT NULL,
   workflow_name TEXT NOT NULL,
   status TEXT NOT NULL,
+  input JSONB,
+  context JSONB,
+  workflow_state JSONB,
   suspension JSONB,
   events JSONB,
   output JSONB,
@@ -405,6 +411,15 @@ CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
 );
 
 -- Step 5b: Add workflow state columns for existing tables (migration)
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS input JSONB;
+
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS context JSONB;
+
+ALTER TABLE ${workflowStatesTable}
+ADD COLUMN IF NOT EXISTS workflow_state JSONB;
+
 ALTER TABLE ${workflowStatesTable}
 ADD COLUMN IF NOT EXISTS events JSONB;
 
@@ -1307,13 +1322,16 @@ END OF MIGRATION SQL
       workflowId: data.workflow_id,
       workflowName: data.workflow_name,
       status: data.status,
-      suspension: data.suspension || undefined,
-      events: data.events || undefined,
-      output: data.output || undefined,
-      cancellation: data.cancellation || undefined,
-      userId: data.user_id || undefined,
-      conversationId: data.conversation_id || undefined,
-      metadata: data.metadata || undefined,
+      input: data.input ?? undefined,
+      context: data.context ?? undefined,
+      workflowState: data.workflow_state ?? undefined,
+      suspension: data.suspension ?? undefined,
+      events: data.events ?? undefined,
+      output: data.output ?? undefined,
+      cancellation: data.cancellation ?? undefined,
+      userId: data.user_id ?? undefined,
+      conversationId: data.conversation_id ?? undefined,
+      metadata: data.metadata ?? undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
     };
@@ -1375,13 +1393,16 @@ END OF MIGRATION SQL
       workflowId: row.workflow_id,
       workflowName: row.workflow_name,
       status: row.status as WorkflowStateEntry["status"],
-      suspension: row.suspension || undefined,
-      events: row.events || undefined,
-      output: row.output || undefined,
-      cancellation: row.cancellation || undefined,
-      userId: row.user_id || undefined,
-      conversationId: row.conversation_id || undefined,
-      metadata: row.metadata || undefined,
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     }));
@@ -1400,13 +1421,16 @@ END OF MIGRATION SQL
       workflow_id: state.workflowId,
       workflow_name: state.workflowName,
       status: state.status,
-      suspension: state.suspension || null,
-      events: state.events || null,
-      output: state.output || null,
-      cancellation: state.cancellation || null,
+      input: state.input !== undefined ? state.input : null,
+      context: state.context !== undefined ? state.context : null,
+      workflow_state: state.workflowState !== undefined ? state.workflowState : null,
+      suspension: state.suspension !== undefined ? state.suspension : null,
+      events: state.events !== undefined ? state.events : null,
+      output: state.output !== undefined ? state.output : null,
+      cancellation: state.cancellation !== undefined ? state.cancellation : null,
       user_id: state.userId || null,
       conversation_id: state.conversationId || null,
-      metadata: state.metadata || null,
+      metadata: state.metadata !== undefined ? state.metadata : null,
       created_at: state.createdAt.toISOString(),
       updated_at: state.updatedAt.toISOString(),
     });
@@ -1462,10 +1486,16 @@ END OF MIGRATION SQL
       workflowId: row.workflow_id,
       workflowName: row.workflow_name,
       status: "suspended" as const,
-      suspension: row.suspension || undefined,
-      userId: row.user_id || undefined,
-      conversationId: row.conversation_id || undefined,
-      metadata: row.metadata || undefined,
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     }));

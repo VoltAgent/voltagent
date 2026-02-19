@@ -48,6 +48,9 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
           workflow_id: "workflow-1",
           workflow_name: "Workflow 1",
           status: "completed",
+          input: '{"requestId":"req-1"}',
+          context: '[["tenantId","acme"]]',
+          workflow_state: '{"phase":"done"}',
           suspension: null,
           events: null,
           output: null,
@@ -73,6 +76,9 @@ describe.sequential("LibSQLMemoryAdapter - Advanced Behavior", () => {
     });
 
     expect(result).toHaveLength(1);
+    expect(result[0]?.input).toEqual({ requestId: "req-1" });
+    expect(result[0]?.context).toEqual([["tenantId", "acme"]]);
+    expect(result[0]?.workflowState).toEqual({ phase: "done" });
     expect(mockExecute).toHaveBeenCalledTimes(1);
     const { sql, args } = mockExecute.mock.calls[0][0];
     expect(sql).toContain("workflow_id = ?");

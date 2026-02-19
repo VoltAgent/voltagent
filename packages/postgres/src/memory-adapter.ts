@@ -202,6 +202,9 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           workflow_id TEXT NOT NULL,
           workflow_name TEXT NOT NULL,
           status TEXT NOT NULL,
+          input JSONB,
+          context JSONB,
+          workflow_state JSONB,
           suspension JSONB,
           events JSONB,
           output JSONB,
@@ -1306,13 +1309,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       workflowId: row.workflow_id,
       workflowName: row.workflow_name,
       status: row.status,
-      suspension: row.suspension || undefined,
-      events: row.events || undefined,
-      output: row.output || undefined,
-      cancellation: row.cancellation || undefined,
-      userId: row.user_id || undefined,
-      conversationId: row.conversation_id || undefined,
-      metadata: row.metadata || undefined,
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     };
@@ -1382,13 +1388,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       workflowId: row.workflow_id,
       workflowName: row.workflow_name,
       status: row.status as WorkflowStateEntry["status"],
-      suspension: row.suspension || undefined,
-      events: row.events || undefined,
-      output: row.output || undefined,
-      cancellation: row.cancellation || undefined,
-      userId: row.user_id || undefined,
-      conversationId: row.conversation_id || undefined,
-      metadata: row.metadata || undefined,
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     }));
@@ -1408,12 +1417,15 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
 
       await client.query(
         `INSERT INTO ${workflowStatesTable}
-         (id, workflow_id, workflow_name, status, suspension, events, output, cancellation, user_id, conversation_id, metadata, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         (id, workflow_id, workflow_name, status, input, context, workflow_state, suspension, events, output, cancellation, user_id, conversation_id, metadata, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          ON CONFLICT (id) DO UPDATE SET
          workflow_id = EXCLUDED.workflow_id,
          workflow_name = EXCLUDED.workflow_name,
          status = EXCLUDED.status,
+         input = EXCLUDED.input,
+         context = EXCLUDED.context,
+         workflow_state = EXCLUDED.workflow_state,
          suspension = EXCLUDED.suspension,
          events = EXCLUDED.events,
          output = EXCLUDED.output,
@@ -1427,13 +1439,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
           state.workflowId,
           state.workflowName,
           state.status,
-          state.suspension ? safeStringify(state.suspension) : null,
-          state.events ? safeStringify(state.events) : null,
-          state.output ? safeStringify(state.output) : null,
-          state.cancellation ? safeStringify(state.cancellation) : null,
+          state.input !== undefined ? safeStringify(state.input) : null,
+          state.context !== undefined ? safeStringify(state.context) : null,
+          state.workflowState !== undefined ? safeStringify(state.workflowState) : null,
+          state.suspension !== undefined ? safeStringify(state.suspension) : null,
+          state.events !== undefined ? safeStringify(state.events) : null,
+          state.output !== undefined ? safeStringify(state.output) : null,
+          state.cancellation !== undefined ? safeStringify(state.cancellation) : null,
           state.userId || null,
           state.conversationId || null,
-          state.metadata ? safeStringify(state.metadata) : null,
+          state.metadata !== undefined ? safeStringify(state.metadata) : null,
           state.createdAt,
           state.updatedAt,
         ],
@@ -1488,10 +1503,16 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       workflowId: row.workflow_id,
       workflowName: row.workflow_name,
       status: "suspended" as const,
-      suspension: row.suspension || undefined,
-      userId: row.user_id || undefined,
-      conversationId: row.conversation_id || undefined,
-      metadata: row.metadata || undefined,
+      input: row.input ?? undefined,
+      context: row.context ?? undefined,
+      workflowState: row.workflow_state ?? undefined,
+      suspension: row.suspension ?? undefined,
+      events: row.events ?? undefined,
+      output: row.output ?? undefined,
+      cancellation: row.cancellation ?? undefined,
+      userId: row.user_id ?? undefined,
+      conversationId: row.conversation_id ?? undefined,
+      metadata: row.metadata ?? undefined,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
     }));
@@ -1563,8 +1584,8 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
   }
 
   /**
-   * Add new columns to workflow_states table for event persistence
-   * This migration adds support for events, output, and cancellation tracking
+   * Add new columns to workflow_states table for workflow state persistence.
+   * This migration adds support for input/context/workflow_state and event/output/cancellation tracking.
    */
   private async addWorkflowStateColumns(client: PoolClient): Promise<void> {
     // Use base table name for information_schema queries
@@ -1583,6 +1604,31 @@ export class PostgreSQLMemoryAdapter implements StorageAdapter {
       );
 
       const existingColumns = columnCheck.rows.map((row) => row.column_name);
+
+      if (!existingColumns.includes("input")) {
+        try {
+          await client.query(`ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN input JSONB`);
+          this.log("Added 'input' column to workflow_states table");
+        } catch (_e) {}
+      }
+
+      if (!existingColumns.includes("context")) {
+        try {
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN context JSONB`,
+          );
+          this.log("Added 'context' column to workflow_states table");
+        } catch (_e) {}
+      }
+
+      if (!existingColumns.includes("workflow_state")) {
+        try {
+          await client.query(
+            `ALTER TABLE ${this.getTableName(baseTable)} ADD COLUMN workflow_state JSONB`,
+          );
+          this.log("Added 'workflow_state' column to workflow_states table");
+        } catch (_e) {}
+      }
 
       if (!existingColumns.includes("events")) {
         try {
