@@ -1,8 +1,237 @@
 import type { ServerProviderDeps, WorkflowRunQuery, WorkflowStateEntry } from "@voltagent/core";
 import { zodSchemaToJsonUI } from "@voltagent/core";
-import { type Logger, safeStringify } from "@voltagent/internal";
+import type { Logger } from "@voltagent/internal";
 import type { ApiResponse, ErrorResponse } from "../types";
 import { processWorkflowOptions } from "../utils/options";
+import { formatSSE } from "../utils/sse";
+
+const MAX_STREAM_REPLAY_HISTORY = 500;
+
+type StreamQueryValue = string | number | null | undefined;
+
+type SSEEncoder = {
+  encode: (input?: string) => Uint8Array;
+};
+
+type WorkflowStreamSubscriber = {
+  controller: ReadableStreamDefaultController<Uint8Array>;
+  encoder: SSEEncoder;
+};
+
+type WorkflowStreamReplayEntry = {
+  sequence: number;
+  payload: unknown;
+};
+
+type WorkflowStreamSession = {
+  workflowId: string;
+  executionId: string;
+  subscribers: Set<WorkflowStreamSubscriber>;
+  replayBuffer: WorkflowStreamReplayEntry[];
+  nextSequence: number;
+  isClosed: boolean;
+  streamExecution: ResumableStreamingWorkflowExecution;
+};
+
+const activeWorkflowStreamSessions = new Map<string, WorkflowStreamSession>();
+
+type StreamingWorkflowExecution = AsyncIterable<unknown> & {
+  executionId: string;
+  workflowId?: string;
+  startAt?: Date;
+  result: Promise<unknown>;
+  status: Promise<string>;
+  endAt: Promise<Date | string>;
+};
+
+type ResumableStreamingWorkflowExecution = StreamingWorkflowExecution & {
+  resume?: (
+    input: unknown,
+    options?: {
+      stepId?: string;
+    },
+  ) => Promise<ResumableStreamingWorkflowExecution>;
+};
+
+function parseReplaySequence(value: StreamQueryValue): number | undefined {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return undefined;
+  }
+
+  return Math.floor(parsed);
+}
+
+function createWorkflowStreamSession(
+  workflowId: string,
+  executionId: string,
+  streamExecution: ResumableStreamingWorkflowExecution,
+): WorkflowStreamSession {
+  return {
+    workflowId,
+    executionId,
+    subscribers: new Set(),
+    replayBuffer: [],
+    nextSequence: 1,
+    isClosed: false,
+    streamExecution,
+  };
+}
+
+function unregisterWorkflowStreamSession(session: WorkflowStreamSession): void {
+  activeWorkflowStreamSessions.delete(session.executionId);
+}
+
+function closeWorkflowStreamSession(session: WorkflowStreamSession): void {
+  if (session.isClosed) {
+    return;
+  }
+
+  session.isClosed = true;
+
+  for (const subscriber of session.subscribers) {
+    try {
+      subscriber.controller.close();
+    } catch {
+      // no-op: stream may already be closed
+    }
+  }
+
+  session.subscribers.clear();
+  unregisterWorkflowStreamSession(session);
+}
+
+function enqueueSSEMessage(
+  subscriber: WorkflowStreamSubscriber,
+  payload: unknown,
+  sequence: number,
+): void {
+  const ssePayload = formatSSE(payload, undefined, String(sequence));
+  subscriber.controller.enqueue(subscriber.encoder.encode(ssePayload));
+}
+
+function appendReplayEvent(
+  session: WorkflowStreamSession,
+  payload: unknown,
+  sequence: number,
+): void {
+  session.replayBuffer.push({ sequence, payload });
+
+  if (session.replayBuffer.length > MAX_STREAM_REPLAY_HISTORY) {
+    session.replayBuffer.splice(0, session.replayBuffer.length - MAX_STREAM_REPLAY_HISTORY);
+  }
+}
+
+function broadcastWorkflowStreamEvent(session: WorkflowStreamSession, payload: unknown): void {
+  if (session.isClosed) {
+    return;
+  }
+
+  const sequence = session.nextSequence;
+  session.nextSequence += 1;
+  appendReplayEvent(session, payload, sequence);
+
+  for (const subscriber of session.subscribers) {
+    try {
+      enqueueSSEMessage(subscriber, payload, sequence);
+    } catch {
+      session.subscribers.delete(subscriber);
+    }
+  }
+}
+
+function createWorkflowSessionStream(
+  session: WorkflowStreamSession,
+  options?: {
+    fromSequence?: number;
+  },
+): ReadableStream {
+  let subscriber: WorkflowStreamSubscriber | undefined;
+  const replayFrom = options?.fromSequence;
+
+  return new ReadableStream({
+    start(controller) {
+      subscriber = {
+        controller,
+        encoder: new TextEncoder(),
+      };
+
+      if (replayFrom !== undefined) {
+        for (const replayEntry of session.replayBuffer) {
+          if (replayEntry.sequence > replayFrom) {
+            enqueueSSEMessage(subscriber, replayEntry.payload, replayEntry.sequence);
+          }
+        }
+      }
+
+      if (session.isClosed) {
+        controller.close();
+        return;
+      }
+
+      session.subscribers.add(subscriber);
+    },
+    cancel() {
+      if (!subscriber) {
+        return;
+      }
+
+      session.subscribers.delete(subscriber);
+    },
+  });
+}
+
+async function consumeWorkflowStream(
+  session: WorkflowStreamSession,
+  deps: ServerProviderDeps,
+  logger: Logger,
+): Promise<void> {
+  try {
+    // Iterate over the original stream source. Resume operations continue on the same underlying
+    // stream controller, while `session.streamExecution` is updated to reflect latest promises.
+    for await (const event of session.streamExecution) {
+      broadcastWorkflowStreamEvent(session, event);
+    }
+
+    const terminalExecution = session.streamExecution;
+    const result = await terminalExecution.result;
+    const status = await terminalExecution.status;
+    const endAt = await terminalExecution.endAt;
+
+    const finalEvent = {
+      type: "workflow-result",
+      executionId: terminalExecution.executionId,
+      status,
+      result,
+      endAt: endAt instanceof Date ? endAt.toISOString() : endAt,
+    };
+
+    broadcastWorkflowStreamEvent(session, finalEvent);
+
+    if (deps.workflowRegistry.activeExecutions) {
+      deps.workflowRegistry.activeExecutions.delete(terminalExecution.executionId);
+    }
+
+    closeWorkflowStreamSession(session);
+  } catch (error) {
+    logger.error("Failed during workflow stream:", { error });
+
+    if (deps.workflowRegistry.activeExecutions) {
+      deps.workflowRegistry.activeExecutions.delete(session.executionId);
+    }
+
+    broadcastWorkflowStreamEvent(session, {
+      type: "error",
+      error: error instanceof Error ? error.message : "Stream failed",
+    });
+
+    closeWorkflowStreamSession(session);
+  }
+}
 
 /**
  * Handler for listing all workflows
@@ -278,68 +507,113 @@ export async function handleStreamWorkflow(
     }
 
     const processedOptions = processWorkflowOptions(options, suspendController);
+    const workflowStream = registeredWorkflow.workflow.stream(
+      input,
+      processedOptions,
+    ) as ResumableStreamingWorkflowExecution;
+    const executionId = workflowStream.executionId;
 
-    // Create SSE stream
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
+    if (!executionId) {
+      throw new Error("Workflow stream executionId is required");
+    }
 
-        try {
-          const workflowStream = registeredWorkflow.workflow.stream(input, processedOptions);
-          const executionId = workflowStream.executionId;
+    // Track as active execution for suspend/cancel operations.
+    if (deps.workflowRegistry.activeExecutions) {
+      deps.workflowRegistry.activeExecutions.set(executionId, suspendController);
+    }
 
-          // Track as active execution
-          if (executionId && deps.workflowRegistry.activeExecutions) {
-            deps.workflowRegistry.activeExecutions.set(executionId, suspendController);
-          }
+    const existingSession = activeWorkflowStreamSessions.get(executionId);
+    if (existingSession) {
+      closeWorkflowStreamSession(existingSession);
+    }
 
-          // Stream events to client
-          for await (const event of workflowStream) {
-            const sseEvent = `data: ${safeStringify(event)}\n\n`;
-            controller.enqueue(encoder.encode(sseEvent));
-          }
+    const session = createWorkflowStreamSession(workflowId, executionId, workflowStream);
+    activeWorkflowStreamSessions.set(executionId, session);
 
-          // Send final result
-          const result = await workflowStream.result;
-          const status = await workflowStream.status;
-          const endAt = await workflowStream.endAt;
-
-          const finalEvent = {
-            type: "workflow-result",
-            executionId,
-            status,
-            result,
-            endAt: endAt instanceof Date ? endAt.toISOString() : endAt,
-          };
-
-          const sseFinalEvent = `data: ${safeStringify(finalEvent)}\n\n`;
-          controller.enqueue(encoder.encode(sseFinalEvent));
-
-          // Clean up active execution
-          if (executionId && deps.workflowRegistry.activeExecutions) {
-            deps.workflowRegistry.activeExecutions.delete(executionId);
-          }
-
-          controller.close();
-        } catch (error) {
-          logger.error("Failed during workflow stream:", { error });
-          const errorEvent = {
-            type: "error",
-            error: error instanceof Error ? error.message : "Stream failed",
-          };
-          const sseError = `data: ${safeStringify(errorEvent)}\n\n`;
-          controller.enqueue(encoder.encode(sseError));
-          controller.close();
-        }
-      },
+    consumeWorkflowStream(session, deps, logger).catch((error) => {
+      logger.error("Unhandled workflow stream consumer error", { error });
     });
 
-    return stream;
+    return createWorkflowSessionStream(session);
   } catch (error) {
     logger.error("Failed to initiate workflow stream", { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to initiate workflow stream",
+    };
+  }
+}
+
+/**
+ * Handler for attaching to an existing workflow execution stream
+ * Returns a ReadableStream for SSE
+ */
+export async function handleAttachWorkflowStream(
+  workflowId: string,
+  executionId: string,
+  query: {
+    fromSequence?: string | number;
+    lastEventId?: string | null;
+  },
+  deps: ServerProviderDeps,
+  logger: Logger,
+): Promise<ReadableStream | ErrorResponse> {
+  try {
+    const registeredWorkflow = deps.workflowRegistry.getWorkflow(workflowId);
+
+    if (!registeredWorkflow) {
+      return {
+        success: false,
+        error: "Workflow not found",
+        httpStatus: 404,
+      };
+    }
+
+    const activeSession = activeWorkflowStreamSessions.get(executionId);
+    if (activeSession && activeSession.workflowId === workflowId) {
+      const replayFromSequence =
+        parseReplaySequence(query.fromSequence) ?? parseReplaySequence(query.lastEventId);
+
+      return createWorkflowSessionStream(activeSession, {
+        fromSequence: replayFromSequence,
+      });
+    }
+
+    const workflowState = await registeredWorkflow.workflow.memory.getWorkflowState(executionId);
+    if (!workflowState || workflowState.workflowId !== workflowId) {
+      return {
+        success: false,
+        error: "Workflow execution not found",
+        httpStatus: 404,
+      };
+    }
+
+    if (workflowState.status === "completed" || workflowState.status === "cancelled") {
+      return {
+        success: false,
+        error: `Workflow execution is not streamable in '${workflowState.status}' status`,
+        httpStatus: 409,
+      };
+    }
+
+    if (workflowState.status === "error") {
+      return {
+        success: false,
+        error: "Workflow execution is not streamable in 'error' status",
+        httpStatus: 409,
+      };
+    }
+
+    return {
+      success: false,
+      error: "Workflow execution has no active stream context to attach",
+      httpStatus: 409,
+    };
+  } catch (error) {
+    logger.error("Failed to attach to workflow stream", { error });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to attach to workflow stream",
     };
   }
 }
@@ -484,6 +758,37 @@ export async function handleResumeWorkflow(
 ): Promise<ApiResponse> {
   try {
     const { resumeData, options } = body || {};
+
+    const activeSession = activeWorkflowStreamSessions.get(executionId);
+    if (
+      activeSession &&
+      activeSession.workflowId === workflowId &&
+      typeof activeSession.streamExecution.resume === "function"
+    ) {
+      const resumedStreamExecution = await activeSession.streamExecution.resume(
+        resumeData,
+        options?.stepId ? { stepId: options.stepId } : undefined,
+      );
+      activeSession.streamExecution = resumedStreamExecution;
+
+      const status = await resumedStreamExecution.status;
+      const result = await resumedStreamExecution.result;
+      const endAt = await resumedStreamExecution.endAt;
+
+      return {
+        success: true,
+        data: {
+          executionId: resumedStreamExecution.executionId,
+          startAt:
+            resumedStreamExecution.startAt instanceof Date
+              ? resumedStreamExecution.startAt.toISOString()
+              : resumedStreamExecution.startAt,
+          endAt: endAt instanceof Date ? endAt.toISOString() : endAt,
+          status,
+          result,
+        },
+      };
+    }
 
     // Use the registry to resume the workflow
     const result = await deps.workflowRegistry.resumeSuspendedWorkflow(

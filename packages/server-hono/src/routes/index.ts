@@ -2,6 +2,7 @@ import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
   UPDATE_ROUTES,
+  handleAttachWorkflowStream,
   handleCancelWorkflow,
   handleChatStream,
   handleCheckUpdates,
@@ -33,6 +34,7 @@ import {
 } from "@voltagent/server-core";
 import type { OpenAPIHonoType } from "../zod-openapi-compat";
 import {
+  attachWorkflowStreamRoute,
   cancelWorkflowRoute,
   chatRoute,
   executeWorkflowRoute,
@@ -334,6 +336,43 @@ export function registerWorkflowRoutes(
     }
 
     // It's a ReadableStream for custom SSE
+    return c.body(response, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  });
+
+  // Attach to existing workflow stream execution
+  app.openapi(attachWorkflowStreamRoute, async (c) => {
+    const workflowId = c.req.param("id");
+    const executionId = c.req.param("executionId");
+    if (!workflowId || !executionId) {
+      throw new Error("Missing workflow or execution id parameter");
+    }
+
+    const query = c.req.query();
+    const lastEventId = c.req.header("last-event-id");
+    const response = await handleAttachWorkflowStream(
+      workflowId,
+      executionId,
+      {
+        fromSequence: query.fromSequence,
+        lastEventId,
+      },
+      deps,
+      logger,
+    );
+
+    if (isErrorResponse(response)) {
+      const status: 404 | 409 | 500 =
+        response.httpStatus === 404 || response.httpStatus === 409 ? response.httpStatus : 500;
+      return c.json(response, status);
+    }
+
     return c.body(response, {
       status: 200,
       headers: {

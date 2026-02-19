@@ -792,6 +792,72 @@ Event types include:
   description: WORKFLOW_ROUTES.streamWorkflow.description,
 });
 
+// Attach to workflow stream route
+export const attachWorkflowStreamRoute = createRoute({
+  method: WORKFLOW_ROUTES.attachWorkflowStream.method,
+  path: WORKFLOW_ROUTES.attachWorkflowStream.path
+    .replace(":id", "{id}")
+    .replace(":executionId", "{executionId}"),
+  request: {
+    params: z.object({
+      id: workflowIdParam(),
+      executionId: executionIdParam(),
+    }),
+    query: z.object({
+      fromSequence: z
+        .string()
+        .optional()
+        .describe("Replay events with sequence greater than this value"),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "text/event-stream": {
+          schema: WorkflowStreamEventSchema,
+        },
+      },
+      description: `Server-Sent Events stream for an existing workflow execution.
+Each event includes SSE id for replay/reconnect support:
+'id: 42\\n'
+'data: {"type":"step-start","executionId":"...", ...}\\n\\n'`,
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.attachWorkflowStream.responses?.[404]?.description ||
+        "Workflow or execution not found",
+    },
+    409: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.attachWorkflowStream.responses?.[409]?.description ||
+        "Workflow execution is not streamable",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description:
+        WORKFLOW_ROUTES.attachWorkflowStream.responses?.[500]?.description ||
+        "Internal server error",
+    },
+  },
+  tags: [...WORKFLOW_ROUTES.attachWorkflowStream.tags],
+  summary: WORKFLOW_ROUTES.attachWorkflowStream.summary,
+  description: WORKFLOW_ROUTES.attachWorkflowStream.description,
+});
+
 // Execute workflow route
 export const executeWorkflowRoute = createRoute({
   method: WORKFLOW_ROUTES.executeWorkflow.method,
