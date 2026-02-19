@@ -726,11 +726,17 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
         workflowId: "test-workflow",
         workflowName: "Test Workflow",
         status: "suspended" as const,
+        input: { prompt: "hello" },
+        context: [["tenantId", "acme"]] as Array<[string, unknown]>,
+        workflowState: { stage: "awaiting-approval" },
         suspension: {
           suspendedAt: new Date(),
           stepIndex: 2,
           reason: "test",
         },
+        events: [{ id: "e-1", type: "workflow-start", startTime: new Date().toISOString() }],
+        output: { value: 1 },
+        cancellation: { cancelledAt: new Date(), reason: "none" },
         metadata: { test: true },
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -749,7 +755,13 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
         workflow_id: state.workflowId,
         workflow_name: state.workflowName,
         status: state.status,
+        input: state.input,
+        context: state.context,
+        workflow_state: state.workflowState,
         suspension: state.suspension,
+        events: state.events,
+        output: state.output,
+        cancellation: state.cancellation,
         user_id: null,
         conversation_id: null,
         metadata: state.metadata,
@@ -761,6 +773,12 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       expect(retrieved).toBeTruthy();
       expect(retrieved?.id).toBe("wf-1");
       expect(retrieved?.status).toBe("suspended");
+      expect(retrieved?.input).toEqual(state.input);
+      expect(retrieved?.context).toEqual(state.context);
+      expect(retrieved?.workflowState).toEqual(state.workflowState);
+      expect(retrieved?.events).toEqual(state.events);
+      expect(retrieved?.output).toEqual(state.output);
+      expect(retrieved?.cancellation).toEqual(state.cancellation);
     });
 
     it("should update workflow state", async () => {
@@ -830,10 +848,15 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
           workflowId: "workflow-a",
           workflowName: "Workflow A",
           status: "suspended" as const,
+          input: { task: 1 },
+          workflowState: { phase: "s1" },
           suspension: {
             suspendedAt: new Date(),
             stepIndex: 1,
           },
+          events: [{ id: "e-s1", type: "step-start", startTime: new Date().toISOString() }],
+          output: { partial: true },
+          cancellation: { cancelledAt: new Date(), reason: "test" },
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -850,10 +873,15 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
           workflowId: "workflow-a",
           workflowName: "Workflow A",
           status: "suspended" as const,
+          input: { task: 3 },
+          workflowState: { phase: "s3" },
           suspension: {
             suspendedAt: new Date(),
             stepIndex: 3,
           },
+          events: [{ id: "e-s3", type: "step-start", startTime: new Date().toISOString() }],
+          output: { partial: false },
+          cancellation: { cancelledAt: new Date(), reason: "test-3" },
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -875,7 +903,12 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
           workflow_id: "workflow-a",
           workflow_name: "Workflow A",
           status: "suspended",
+          input: states[0].input,
+          workflow_state: states[0].workflowState,
           suspension: states[0].suspension,
+          events: states[0].events,
+          output: states[0].output,
+          cancellation: states[0].cancellation,
           user_id: null,
           conversation_id: null,
           metadata: null,
@@ -887,7 +920,12 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
           workflow_id: "workflow-a",
           workflow_name: "Workflow A",
           status: "suspended",
+          input: states[2].input,
+          workflow_state: states[2].workflowState,
           suspension: states[2].suspension,
+          events: states[2].events,
+          output: states[2].output,
+          cancellation: states[2].cancellation,
           user_id: null,
           conversation_id: null,
           metadata: null,
@@ -899,6 +937,10 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       const suspended = await adapter.getSuspendedWorkflowStates("workflow-a");
       expect(suspended).toHaveLength(2);
       expect(suspended.every((s) => s.status === "suspended")).toBe(true);
+      expect(suspended[0]?.events).toEqual(states[0].events);
+      expect(suspended[0]?.output).toEqual(states[0].output);
+      expect(suspended[0]?.cancellation).toEqual(states[0].cancellation);
+      expect(suspended[0]?.workflowState).toEqual(states[0].workflowState);
     });
 
     it("should query workflow runs with filters and pagination", async () => {
@@ -911,6 +953,9 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
           workflow_id: "workflow-1",
           workflow_name: "Workflow 1",
           status: "completed",
+          input: { key: "value" },
+          context: [["locale", "en-US"]],
+          workflow_state: { currentStep: "done" },
           suspension: null,
           events: null,
           output: null,
@@ -935,6 +980,9 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       });
 
       expect(result).toHaveLength(1);
+      expect(result[0]?.input).toEqual({ key: "value" });
+      expect(result[0]?.context).toEqual([["locale", "en-US"]]);
+      expect(result[0]?.workflowState).toEqual({ currentStep: "done" });
       expect(mockPoolQuery).toHaveBeenCalledTimes(1);
       const [sql, params] = mockPoolQuery.mock.calls[0];
       expect(sql).toContain("WHERE workflow_id = $1 AND status = $2 AND created_at >=");
@@ -1244,6 +1292,9 @@ describe.sequential("PostgreSQLMemoryAdapter - Core Functionality", () => {
       expect(workflowStatesTableCall?.[0]).toContain("workflow_id TEXT NOT NULL");
       expect(workflowStatesTableCall?.[0]).toContain("workflow_name TEXT NOT NULL");
       expect(workflowStatesTableCall?.[0]).toContain("status TEXT NOT NULL");
+      expect(workflowStatesTableCall?.[0]).toContain("input JSONB");
+      expect(workflowStatesTableCall?.[0]).toContain("context JSONB");
+      expect(workflowStatesTableCall?.[0]).toContain("workflow_state JSONB");
       expect(workflowStatesTableCall?.[0]).toContain("suspension JSONB");
       expect(workflowStatesTableCall?.[0]).toContain("events JSONB");
       expect(workflowStatesTableCall?.[0]).toContain("output JSONB");

@@ -182,6 +182,9 @@ export class LibSQLMemoryCore implements StorageAdapter {
         workflow_id TEXT NOT NULL,
         workflow_name TEXT NOT NULL,
         status TEXT NOT NULL,
+        input TEXT,
+        context TEXT,
+        workflow_state TEXT,
         suspension TEXT,
         events TEXT,
         output TEXT,
@@ -385,6 +388,35 @@ export class LibSQLMemoryCore implements StorageAdapter {
     try {
       const tableInfo = await this.client.execute(`PRAGMA table_info(${workflowStatesTable})`);
       const columns = tableInfo.rows.map((row) => row.name as string);
+
+      if (!columns.includes("input")) {
+        try {
+          await this.client.execute(`ALTER TABLE ${workflowStatesTable} ADD COLUMN input TEXT`);
+          this.logger.debug("Added 'input' column to workflow_states table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      if (!columns.includes("context")) {
+        try {
+          await this.client.execute(`ALTER TABLE ${workflowStatesTable} ADD COLUMN context TEXT`);
+          this.logger.debug("Added 'context' column to workflow_states table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      if (!columns.includes("workflow_state")) {
+        try {
+          await this.client.execute(
+            `ALTER TABLE ${workflowStatesTable} ADD COLUMN workflow_state TEXT`,
+          );
+          this.logger.debug("Added 'workflow_state' column to workflow_states table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
 
       if (!columns.includes("events")) {
         try {
@@ -1123,7 +1155,10 @@ export class LibSQLMemoryCore implements StorageAdapter {
       id: row.id as string,
       workflowId: row.workflow_id as string,
       workflowName: row.workflow_name as string,
-      status: row.status as "running" | "suspended" | "completed" | "error",
+      status: row.status as WorkflowStateEntry["status"],
+      input: row.input ? JSON.parse(row.input as string) : undefined,
+      context: row.context ? JSON.parse(row.context as string) : undefined,
+      workflowState: row.workflow_state ? JSON.parse(row.workflow_state as string) : undefined,
       suspension: row.suspension ? JSON.parse(row.suspension as string) : undefined,
       events: row.events ? JSON.parse(row.events as string) : undefined,
       output: row.output ? JSON.parse(row.output as string) : undefined,
@@ -1210,6 +1245,9 @@ export class LibSQLMemoryCore implements StorageAdapter {
       workflowId: row.workflow_id as string,
       workflowName: row.workflow_name as string,
       status: row.status as WorkflowStateEntry["status"],
+      input: row.input ? JSON.parse(row.input as string) : undefined,
+      context: row.context ? JSON.parse(row.context as string) : undefined,
+      workflowState: row.workflow_state ? JSON.parse(row.workflow_state as string) : undefined,
       suspension: row.suspension ? JSON.parse(row.suspension as string) : undefined,
       events: row.events ? JSON.parse(row.events as string) : undefined,
       output: row.output ? JSON.parse(row.output as string) : undefined,
@@ -1228,20 +1266,23 @@ export class LibSQLMemoryCore implements StorageAdapter {
     const workflowStatesTable = `${this.tablePrefix}_workflow_states`;
     await this.client.execute({
       sql: `INSERT OR REPLACE INTO ${workflowStatesTable}
-            (id, workflow_id, workflow_name, status, suspension, events, output, cancellation, user_id, conversation_id, metadata, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (id, workflow_id, workflow_name, status, input, context, workflow_state, suspension, events, output, cancellation, user_id, conversation_id, metadata, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         executionId,
         state.workflowId,
         state.workflowName,
         state.status,
-        state.suspension ? safeStringify(state.suspension) : null,
-        state.events ? safeStringify(state.events) : null,
-        state.output ? safeStringify(state.output) : null,
-        state.cancellation ? safeStringify(state.cancellation) : null,
+        state.input !== undefined ? safeStringify(state.input) : null,
+        state.context !== undefined ? safeStringify(state.context) : null,
+        state.workflowState !== undefined ? safeStringify(state.workflowState) : null,
+        state.suspension !== undefined ? safeStringify(state.suspension) : null,
+        state.events !== undefined ? safeStringify(state.events) : null,
+        state.output !== undefined ? safeStringify(state.output) : null,
+        state.cancellation !== undefined ? safeStringify(state.cancellation) : null,
         state.userId || null,
         state.conversationId || null,
-        state.metadata ? safeStringify(state.metadata) : null,
+        state.metadata !== undefined ? safeStringify(state.metadata) : null,
         state.createdAt.toISOString(),
         state.updatedAt.toISOString(),
       ],
@@ -1282,6 +1323,9 @@ export class LibSQLMemoryCore implements StorageAdapter {
       workflowId: row.workflow_id as string,
       workflowName: row.workflow_name as string,
       status: "suspended" as const,
+      input: row.input ? JSON.parse(row.input as string) : undefined,
+      context: row.context ? JSON.parse(row.context as string) : undefined,
+      workflowState: row.workflow_state ? JSON.parse(row.workflow_state as string) : undefined,
       suspension: row.suspension ? JSON.parse(row.suspension as string) : undefined,
       events: row.events ? JSON.parse(row.events as string) : undefined,
       output: row.output ? JSON.parse(row.output as string) : undefined,
