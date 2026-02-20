@@ -126,7 +126,17 @@ const supervisorAgent = new Agent({
     // Configure which sub-agent events to forward
     fullStreamEventForwarding: {
       // Default: ['tool-call', 'tool-result']
-      types: ["tool-call", "tool-result", "text-delta", "reasoning", "source", "error", "finish"],
+      types: [
+        "tool-call",
+        "tool-result",
+        "text-delta",
+        "reasoning-start",
+        "reasoning-delta",
+        "reasoning-end",
+        "source",
+        "error",
+        "finish",
+      ],
     },
   },
 });
@@ -147,7 +157,17 @@ fullStreamEventForwarding: {
 
 // Full visibility - All events including reasoning
 fullStreamEventForwarding: {
-  types: ['tool-call', 'tool-result', 'text-delta', 'reasoning', 'source', 'error', 'finish'],
+  types: [
+    'tool-call',
+    'tool-result',
+    'text-delta',
+    'reasoning-start',
+    'reasoning-delta',
+    'reasoning-end',
+    'source',
+    'error',
+    'finish'
+  ],
 }
 
 // Clean tool names - No agent prefix (add prefix manually when consuming events if desired)
@@ -810,15 +830,15 @@ for await (const message of result.toUIMessageStream()) {
 
 **Event Types Reference:**
 
-| Event Type    | Description                      | Default         |
-| ------------- | -------------------------------- | --------------- |
-| `tool-call`   | Tool invocations                 | ✅ Included     |
-| `tool-result` | Tool results                     | ✅ Included     |
-| `text-delta`  | Text chunk generation            | ❌ NOT included |
-| `reasoning`   | Model reasoning (if available)   | ❌ NOT included |
-| `source`      | Retrieved sources (if available) | ❌ NOT included |
-| `error`       | Error events                     | ❌ NOT included |
-| `finish`      | Stream completion                | ❌ NOT included |
+| Event Type                                              | Description                              | Default         |
+| ------------------------------------------------------- | ---------------------------------------- | --------------- |
+| `tool-call`                                             | Tool invocations                         | ✅ Included     |
+| `tool-result`                                           | Tool results                             | ✅ Included     |
+| `text-delta`                                            | Text chunk generation                    | ❌ NOT included |
+| `reasoning-start` / `reasoning-delta` / `reasoning-end` | Model reasoning lifecycle (if available) | ❌ NOT included |
+| `source`                                                | Retrieved sources (if available)         | ❌ NOT included |
+| `error`                                                 | Error events                             | ❌ NOT included |
+| `finish`                                                | Stream completion                        | ❌ NOT included |
 
 ### Observability
 

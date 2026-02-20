@@ -23,6 +23,7 @@ VoltAgent provides two streaming endpoints:
 - `/agents/:id/stream` - Raw fullStream events
 
 Use `/chat` for UI integration with useChat.
+Use `/stream` when you need low-level events such as `reasoning-start`, `reasoning-delta`, and `reasoning-end`.
 
 ## Basic Implementation
 

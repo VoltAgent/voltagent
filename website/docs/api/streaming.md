@@ -77,11 +77,24 @@ while (true) {
   for (const line of lines) {
     if (line.startsWith("data: ")) {
       const event = JSON.parse(line.slice(6));
-      // Handle event.type: 'start' (includes messageId), 'text-delta', 'tool-call', 'tool-result', 'finish'
+      // Handle event types like:
+      // - lifecycle: 'start', 'start-step', 'finish-step', 'finish', 'abort', 'error'
+      // - text: 'text-start', 'text-delta', 'text-end'
+      // - reasoning: 'reasoning-start', 'reasoning-delta', 'reasoning-end'
+      // - tools: 'tool-input-start', 'tool-input-delta', 'tool-input-end', 'tool-call', 'tool-result', 'tool-error'
+      // - other: 'source', 'file', 'raw'
     }
   }
 }
 ```
+
+Common `fullStream` event types:
+
+- Lifecycle: `start`, `start-step`, `finish-step`, `finish`, `abort`, `error`
+- Text: `text-start`, `text-delta`, `text-end`
+- Reasoning: `reasoning-start`, `reasoning-delta`, `reasoning-end` (emitted only when model/provider returns reasoning traces)
+- Tools: `tool-input-start`, `tool-input-delta`, `tool-input-end`, `tool-call`, `tool-result`, `tool-error`
+- Other: `source`, `file`, `raw`
 
 ### Agents: Stream Object
 

@@ -204,12 +204,11 @@ type VoltAgentTextStreamPart<TOOLS extends Record<string, any> = Record<string, 
   };
 
 // TextStreamPart types include:
-// - text-delta
-// - tool-call
-// - tool-result
-// - finish
-// - error
-// etc.
+// - text-start, text-delta, text-end
+// - reasoning-start, reasoning-delta, reasoning-end
+// - tool-input-start, tool-input-delta, tool-input-end
+// - tool-call, tool-result, tool-error
+// - start, start-step, finish-step, finish, abort, error, source, file, raw
 ```
 
 #### Format
