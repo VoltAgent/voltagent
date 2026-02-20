@@ -92,6 +92,32 @@ describe("MemoryManager", () => {
       expect(messages[0].id).toBe("msg-1");
     });
 
+    it("should attach delegation metadata for sub-agent writes", async () => {
+      const context = createMockOperationContext();
+      context.parentAgentId = "supervisor-1";
+      context.systemContext.set(Symbol("agent-metadata"), {
+        agentId: "sub-agent-1",
+        agentName: "Sub Agent",
+      });
+
+      const message = createTestUIMessage({
+        id: "msg-sub-1",
+        role: "user",
+        parts: [{ type: "text", text: "delegated task" }],
+      });
+
+      await manager.saveMessage(context, message, "user-1", "conv-sub");
+
+      const messages = await memory.getMessages("user-1", "conv-sub");
+      expect(messages).toHaveLength(1);
+      expect(messages[0].metadata).toMatchObject({
+        operationId: "test-operation-id",
+        parentAgentId: "supervisor-1",
+        subAgentId: "sub-agent-1",
+        subAgentName: "Sub Agent",
+      });
+    });
+
     it("should generate a title when creating a conversation", async () => {
       const context = createMockOperationContext();
       context.input = "Plan a weekend trip to Rome.";
@@ -159,6 +185,43 @@ describe("MemoryManager", () => {
       expect(messages).toHaveLength(2);
       expect(messages[0].id).toBe("msg-1");
       expect(messages[1].id).toBe("msg-2");
+    });
+
+    it("should filter delegated sub-agent messages when reading parent conversation", async () => {
+      const parentContext = createMockOperationContext();
+
+      await manager.saveMessage(
+        parentContext,
+        createTestUIMessage({
+          id: "msg-parent",
+          role: "user",
+          parts: [{ type: "text", text: "parent message" }],
+        }),
+        "user-1",
+        "conv-filter",
+      );
+
+      const delegatedContext = createMockOperationContext();
+      delegatedContext.parentAgentId = "agent-1";
+      delegatedContext.systemContext.set(Symbol("agent-metadata"), {
+        agentId: "sub-agent-1",
+        agentName: "Sub Agent",
+      });
+
+      await manager.saveMessage(
+        delegatedContext,
+        createTestUIMessage({
+          id: "msg-sub",
+          role: "assistant",
+          parts: [{ type: "text", text: "sub-agent result" }],
+        }),
+        "user-1",
+        "conv-filter",
+      );
+
+      const visibleMessages = await manager.getMessages(parentContext, "user-1", "conv-filter");
+      expect(visibleMessages).toHaveLength(1);
+      expect(visibleMessages[0].id).toBe("msg-parent");
     });
 
     it("should return empty array when memory is disabled", async () => {

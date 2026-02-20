@@ -193,27 +193,107 @@ export class MemoryManager {
   }
 
   private applyOperationMetadata(message: UIMessage, context: OperationContext): UIMessage {
-    const operationId = context.operationId;
-    if (!operationId) {
-      return message;
-    }
-
     const existingMetadata =
       typeof message.metadata === "object" && message.metadata !== null
         ? (message.metadata as Record<string, unknown>)
         : undefined;
 
-    if (existingMetadata?.operationId === operationId) {
+    const nextMetadata: Record<string, unknown> = { ...(existingMetadata ?? {}) };
+    let changed = false;
+
+    const operationId = context.operationId;
+    if (operationId && nextMetadata.operationId !== operationId) {
+      nextMetadata.operationId = operationId;
+      changed = true;
+    }
+
+    const delegationMetadata = this.resolveDelegationMetadata(context);
+    if (delegationMetadata?.parentAgentId && nextMetadata.parentAgentId === undefined) {
+      nextMetadata.parentAgentId = delegationMetadata.parentAgentId;
+      changed = true;
+    }
+    if (delegationMetadata?.subAgentId && nextMetadata.subAgentId === undefined) {
+      nextMetadata.subAgentId = delegationMetadata.subAgentId;
+      changed = true;
+    }
+    if (delegationMetadata?.subAgentName && nextMetadata.subAgentName === undefined) {
+      nextMetadata.subAgentName = delegationMetadata.subAgentName;
+      changed = true;
+    }
+
+    if (!changed) {
       return message;
     }
 
     return {
       ...message,
-      metadata: {
-        ...(existingMetadata ?? {}),
-        operationId,
-      },
+      metadata: nextMetadata,
     };
+  }
+
+  private resolveDelegationMetadata(
+    context: OperationContext,
+  ): { parentAgentId: string; subAgentId?: string; subAgentName?: string } | undefined {
+    if (!context.parentAgentId) {
+      return undefined;
+    }
+
+    let subAgentId: string | undefined;
+    let subAgentName: string | undefined;
+
+    for (const value of context.systemContext.values()) {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        continue;
+      }
+
+      const record = value as Record<string, unknown>;
+      if (typeof record.agentId === "string" && record.agentId.trim().length > 0) {
+        subAgentId = record.agentId;
+      }
+      if (typeof record.agentName === "string" && record.agentName.trim().length > 0) {
+        subAgentName = record.agentName;
+      }
+
+      if (subAgentId || subAgentName) {
+        break;
+      }
+    }
+
+    return {
+      parentAgentId: context.parentAgentId,
+      ...(subAgentId ? { subAgentId } : {}),
+      ...(subAgentName ? { subAgentName } : {}),
+    };
+  }
+
+  private filterDelegatedSubAgentMessages(
+    messages: UIMessage<{ createdAt: Date }>[],
+  ): UIMessage<{ createdAt: Date }>[] {
+    return messages.filter((message) => {
+      const metadata =
+        typeof message.metadata === "object" && message.metadata !== null
+          ? (message.metadata as Record<string, unknown>)
+          : undefined;
+      if (!metadata) {
+        return true;
+      }
+
+      const subAgentId =
+        typeof metadata.subAgentId === "string" && metadata.subAgentId.trim().length > 0
+          ? metadata.subAgentId
+          : undefined;
+      const parentAgentId =
+        typeof metadata.parentAgentId === "string" && metadata.parentAgentId.trim().length > 0
+          ? metadata.parentAgentId
+          : undefined;
+
+      // Keep non-delegated records and delegated records from the current agent itself.
+      if (!subAgentId || !parentAgentId) {
+        return true;
+      }
+
+      return subAgentId === this.resourceId;
+    });
   }
 
   async saveConversationSteps(
@@ -325,6 +405,8 @@ export class MemoryManager {
         }
       }
 
+      messages = this.filterDelegatedSubAgentMessages(messages);
+
       // Log successful memory operation - PRESERVED
       memoryLogger.debug(`[Memory] Read successful (${messages.length} records)`, {
         event: LogEvents.MEMORY_OPERATION_COMPLETED,
@@ -377,13 +459,17 @@ export class MemoryManager {
         context, // Pass OperationContext to Memory
       );
 
-      memoryLogger.debug(`[Memory] Search successful (${messages.length} records)`, {
+      const filteredMessages = this.filterDelegatedSubAgentMessages(
+        messages as UIMessage<{ createdAt: Date }>[],
+      );
+
+      memoryLogger.debug(`[Memory] Search successful (${filteredMessages.length} records)`, {
         event: LogEvents.MEMORY_OPERATION_COMPLETED,
         operation: "search",
-        messages: messages.length,
+        messages: filteredMessages.length,
       });
 
-      return messages;
+      return filteredMessages;
     } catch (error) {
       memoryLogger.error(
         `Memory search failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -484,6 +570,8 @@ export class MemoryManager {
         },
         context, // Pass OperationContext to Memory
       )) as UIMessage<{ createdAt: Date }>[];
+
+      messages = this.filterDelegatedSubAgentMessages(messages);
 
       context.logger.debug(
         `[Memory] Fetched messages from memory. Message Count: ${messages.length}`,
@@ -769,10 +857,7 @@ export class MemoryManager {
   /**
    * Clear working memory
    */
-  async clearWorkingMemory(params: {
-    conversationId?: string;
-    userId?: string;
-  }): Promise<void> {
+  async clearWorkingMemory(params: { conversationId?: string; userId?: string }): Promise<void> {
     if (!this.conversationMemory) {
       return;
     }
