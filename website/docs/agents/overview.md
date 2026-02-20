@@ -81,8 +81,17 @@ const response = await agent.streamText("Write a story");
 
 for await (const chunk of response.fullStream) {
   switch (chunk.type) {
+    case "reasoning-start":
+      console.log("\nReasoning started");
+      break;
+    case "reasoning-delta":
+      process.stdout.write(chunk.delta ?? chunk.text ?? "");
+      break;
+    case "reasoning-end":
+      console.log("\nReasoning completed");
+      break;
     case "text-delta":
-      process.stdout.write(chunk.textDelta);
+      process.stdout.write(chunk.delta ?? chunk.text ?? "");
       break;
     case "tool-call":
       console.log(`\nUsing tool: ${chunk.toolName}`);
@@ -296,13 +305,13 @@ If you need clients to reconnect after refresh and continue the same response, e
 
 **Endpoint comparison:**
 
-| Endpoint         | Method | Response Type | Use Case                                                       |
-| ---------------- | ------ | ------------- | -------------------------------------------------------------- |
-| `/text`          | POST   | JSON          | Complete text response at once                                 |
-| `/stream`        | POST   | SSE           | Raw stream events (text-delta, tool-call, tool-result, finish) |
-| `/chat`          | POST   | SSE           | UI message stream for ai-sdk's useChat hook                    |
-| `/object`        | POST   | JSON          | Complete structured object at once                             |
-| `/stream-object` | POST   | SSE           | Streaming partial objects                                      |
+| Endpoint         | Method | Response Type | Use Case                                                |
+| ---------------- | ------ | ------------- | ------------------------------------------------------- |
+| `/text`          | POST   | JSON          | Complete text response at once                          |
+| `/stream`        | POST   | SSE           | Raw stream events (text/reasoning/tool/lifecycle parts) |
+| `/chat`          | POST   | SSE           | UI message stream for ai-sdk's useChat hook             |
+| `/object`        | POST   | JSON          | Complete structured object at once                      |
+| `/stream-object` | POST   | SSE           | Streaming partial objects                               |
 
 ### Structured Output via HTTP
 
@@ -583,7 +592,19 @@ const coordinator = new Agent({
   subAgents: [researchAgent, writerAgent],
   supervisorConfig: {
     fullStreamEventForwarding: {
-      types: ["tool-call", "tool-result", "text-delta", "reasoning", "source", "error", "finish"],
+      types: [
+        "tool-call",
+        "tool-result",
+        "text-start",
+        "text-delta",
+        "text-end",
+        "reasoning-start",
+        "reasoning-delta",
+        "reasoning-end",
+        "source",
+        "error",
+        "finish",
+      ],
     },
   },
 });

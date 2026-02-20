@@ -357,13 +357,13 @@ Generate a text response and stream raw fullStream data via Server-Sent Events (
 
 The stream returns raw AI SDK fullStream events. Each event is a JSON object containing the complete event data.
 
-**Event Types:**
+**Common Event Types:**
 
-- `text-delta` - Incremental text chunks with delta content
-- `tool-call` - Tool invocation events
-- `tool-result` - Tool execution results
-- `finish` - Stream completion with usage statistics
-- `error` - Error events if something goes wrong
+- Lifecycle: `start`, `start-step`, `finish-step`, `finish`, `abort`, `error`
+- Text: `text-start`, `text-delta`, `text-end`
+- Reasoning: `reasoning-start`, `reasoning-delta`, `reasoning-end` (if available from the selected model/provider)
+- Tools: `tool-input-start`, `tool-input-delta`, `tool-input-end`, `tool-call`, `tool-result`, `tool-error`
+- Other: `source`, `file`, `raw`
 
 **Use Cases:**
 
@@ -412,6 +412,15 @@ while (true) {
       const eventData = JSON.parse(line.slice(6));
       // Handle different event types
       switch (eventData.type) {
+        case "reasoning-start":
+          console.log("Reasoning started:", eventData.id);
+          break;
+        case "reasoning-delta":
+          console.log("Reasoning:", eventData.delta);
+          break;
+        case "reasoning-end":
+          console.log("Reasoning completed:", eventData.id);
+          break;
         case "text-delta":
           console.log("Text:", eventData.delta);
           break;
