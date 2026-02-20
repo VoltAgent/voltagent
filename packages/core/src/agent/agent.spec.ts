@@ -19,6 +19,7 @@ import { Agent, renameProviderOptions } from "./agent";
 import { ConversationBuffer } from "./conversation-buffer";
 import { ToolDeniedError } from "./errors";
 import { createHooks } from "./hooks";
+import { convertArrayToReadableStream } from "./test-utils";
 
 // Mock the AI SDK functions while preserving core converters
 vi.mock("ai", async () => {
@@ -34,6 +35,29 @@ vi.mock("ai", async () => {
 });
 
 describe("Agent", () => {
+  const toAsyncIterableStream = <T>(stream: ReadableStream<T>): ai.AsyncIterableStream<T> => {
+    const asyncStream = stream as ai.AsyncIterableStream<T>;
+    if (!asyncStream[Symbol.asyncIterator]) {
+      asyncStream[Symbol.asyncIterator] = async function* () {
+        const reader = stream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              break;
+            }
+            if (value !== undefined) {
+              yield value;
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      };
+    }
+    return asyncStream;
+  };
+
   let mockModel: MockLanguageModelV3;
 
   beforeEach(() => {
@@ -977,6 +1001,60 @@ Use pandas and summarize findings.`.split("\n"),
 
       const finishPart = parts.find((part) => part.type === "finish");
       expect(finishPart?.totalUsage).toEqual(lastStepUsage);
+    });
+
+    it("keeps fullStream intact after probe for ReadableStream-based providers", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "You are a helpful assistant",
+        model: mockModel as any,
+      });
+
+      const fullStream = toAsyncIterableStream(
+        convertArrayToReadableStream([
+          { type: "start" as const },
+          {
+            type: "reasoning-delta" as const,
+            id: "reasoning-1",
+            delta: "Let me think...",
+          },
+          { type: "text-delta" as const, id: "text-1", delta: "Final answer" },
+          { type: "finish" as const, finishReason: "stop", totalUsage: {} },
+        ]),
+      );
+
+      const mockStream = {
+        text: Promise.resolve("Final answer"),
+        textStream: (async function* () {
+          yield "Final answer";
+        })(),
+        fullStream,
+        usage: Promise.resolve({
+          inputTokens: 10,
+          outputTokens: 3,
+          totalTokens: 13,
+        }),
+        finishReason: Promise.resolve("stop"),
+        warnings: [],
+        toUIMessageStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn(),
+        pipeUIMessageStreamToResponse: vi.fn(),
+        pipeTextStreamToResponse: vi.fn(),
+        toTextStreamResponse: vi.fn(),
+        partialOutputStream: undefined,
+      };
+
+      vi.mocked(ai.streamText).mockReturnValue(mockStream as any);
+
+      const result = await agent.streamText("answer me");
+      const emittedTypes: string[] = [];
+      for await (const part of result.fullStream as AsyncIterable<{ type: string }>) {
+        emittedTypes.push(part.type);
+      }
+
+      expect(emittedTypes).toContain("reasoning-delta");
+      expect(emittedTypes).toContain("text-delta");
+      expect(emittedTypes).toContain("finish");
     });
   });
 

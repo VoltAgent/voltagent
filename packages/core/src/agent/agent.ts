@@ -2011,8 +2011,13 @@ export class Agent {
             });
 
             const probeResult = await this.probeStreamStart(streamResult.fullStream, attemptState);
+            const streamResultForConsumption =
+              probeResult.stream === streamResult.fullStream
+                ? streamResult
+                : this.cloneResultWithFullStream(streamResult, probeResult.stream);
+
             if (probeResult.status === "error") {
-              this.discardStream(streamResult.fullStream);
+              this.discardStream(streamResultForConsumption.fullStream);
               const fallbackEligible = this.shouldFallbackOnError(probeResult.error);
               if (!fallbackEligible || isLastModel) {
                 throw probeResult.error;
@@ -2020,7 +2025,7 @@ export class Agent {
               throw probeResult.error;
             }
 
-            return streamResult;
+            return streamResultForConsumption;
           },
         });
 
@@ -3132,8 +3137,13 @@ export class Agent {
             });
 
             const probeResult = await this.probeStreamStart(streamResult.fullStream, attemptState);
+            const streamResultForConsumption =
+              probeResult.stream === streamResult.fullStream
+                ? streamResult
+                : this.cloneResultWithFullStream(streamResult, probeResult.stream);
+
             if (probeResult.status === "error") {
-              this.discardStream(streamResult.fullStream);
+              this.discardStream(streamResultForConsumption.fullStream);
               const fallbackEligible = this.shouldFallbackOnError(probeResult.error);
               if (!fallbackEligible || isLastModel) {
                 throw probeResult.error;
@@ -3141,7 +3151,7 @@ export class Agent {
               throw probeResult.error;
             }
 
-            return streamResult;
+            return streamResultForConsumption;
           },
         });
 
@@ -5221,15 +5231,24 @@ export class Agent {
   private async probeStreamStart<PART extends { type?: string }>(
     stream: AsyncIterableStream<PART>,
     state: { hasOutput: boolean; lastError?: unknown },
-  ): Promise<{ status: "ok" } | { status: "error"; error: unknown }> {
+  ): Promise<
+    | { status: "ok"; stream: AsyncIterableStream<PART> }
+    | { status: "error"; error: unknown; stream: AsyncIterableStream<PART> }
+  > {
     const readableStream = stream as ReadableStream<PART>;
-    const reader =
-      readableStream && typeof readableStream.getReader === "function"
-        ? readableStream.getReader()
-        : null;
-    if (!reader) {
-      return { status: "ok" };
+    const canTee =
+      readableStream &&
+      typeof readableStream.getReader === "function" &&
+      typeof readableStream.tee === "function";
+
+    if (!canTee) {
+      return { status: "ok", stream };
     }
+
+    const [probeReadable, passthroughReadable] = readableStream.tee();
+    const passthroughStream = this.toAsyncIterableStream(passthroughReadable);
+    const reader = probeReadable.getReader();
+
     let sawNonStart = false;
 
     try {
@@ -5251,23 +5270,76 @@ export class Agent {
             (value as { error?: unknown }).error ??
             state.lastError ??
             new Error("Stream error before output");
-          return { status: "error", error };
+          return { status: "error", error, stream: passthroughStream };
         }
         state.hasOutput = true;
-        return { status: "ok" };
+        return { status: "ok", stream: passthroughStream };
       }
     } catch (error) {
-      return { status: "error", error: state.lastError ?? error };
+      return {
+        status: "error",
+        error: state.lastError ?? error,
+        stream: passthroughStream,
+      };
     } finally {
-      try {
-        await reader.cancel();
-      } catch (_) {
+      void reader.cancel().catch(() => {
         // Ignore probe cancellation errors.
+      });
+
+      try {
+        reader.releaseLock();
+      } catch (_) {
+        // Ignore lock release errors.
       }
     }
 
     const error = state.lastError ?? new Error("Stream ended before output");
-    return sawNonStart ? { status: "ok" } : { status: "error", error };
+    return sawNonStart
+      ? { status: "ok", stream: passthroughStream }
+      : { status: "error", error, stream: passthroughStream };
+  }
+
+  private cloneResultWithFullStream<
+    TResult extends {
+      fullStream: AsyncIterableStream<unknown>;
+    },
+  >(result: TResult, fullStream: TResult["fullStream"]): TResult {
+    const prototype = Object.getPrototypeOf(result);
+    const clone = Object.create(prototype) as TResult;
+    const descriptors = Object.getOwnPropertyDescriptors(result);
+    Object.defineProperties(clone, descriptors);
+    Object.defineProperty(clone, "fullStream", {
+      value: fullStream,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
+    return clone;
+  }
+
+  private toAsyncIterableStream<T>(stream: ReadableStream<T>): AsyncIterableStream<T> {
+    const asyncStream = stream as AsyncIterableStream<T>;
+
+    if (!asyncStream[Symbol.asyncIterator]) {
+      asyncStream[Symbol.asyncIterator] = async function* () {
+        const reader = stream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              break;
+            }
+            if (value !== undefined) {
+              yield value;
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      };
+    }
+
+    return asyncStream;
   }
 
   private discardStream(stream: AsyncIterableStream<unknown>): void {
