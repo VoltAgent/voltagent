@@ -1,5 +1,15 @@
 # @voltagent/core
 
+## 2.4.5
+
+### Patch Changes
+
+- [#1088](https://github.com/VoltAgent/voltagent/pull/1088) [`bb7f3f9`](https://github.com/VoltAgent/voltagent/commit/bb7f3f9fba9ddf9264f0d599a3336253856b204a) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: preserve stream output after startup probe on ReadableStream providers
+
+  `Agent.streamText()` and `Agent.streamObject()` now probe stream startup using a tee'd branch instead of consuming and cancelling the original `fullStream`.
+
+  This prevents early stream interruption where some providers could emit reasoning events and then terminate before forwarding final `text-delta` output to consumers.
+
 ## 2.4.4
 
 ### Patch Changes
