@@ -1,7 +1,13 @@
 import { LoggerProxy } from "../logger";
 import { SimpleEventEmitter } from "../utils/simple-event-emitter";
 import { serializeWorkflowStep } from "./core";
-import type { Workflow, WorkflowExecutionResult, WorkflowSuspendController } from "./types";
+import type {
+  Workflow,
+  WorkflowExecutionResult,
+  WorkflowRestartAllResult,
+  WorkflowRunOptions,
+  WorkflowSuspendController,
+} from "./types";
 
 /**
  * Workflow registration information
@@ -247,6 +253,62 @@ export class WorkflowRegistry extends SimpleEventEmitter {
       this.logger.error(`Resumed workflow execution ${executionId} failed:`, { error });
       throw error;
     }
+  }
+
+  /**
+   * Restart a running workflow execution from persisted checkpoint state
+   */
+  public async restartWorkflowExecution(
+    workflowId: string,
+    executionId: string,
+    options?: WorkflowRunOptions,
+  ): Promise<WorkflowExecutionResult<any, any> | null> {
+    this.logger.debug(`Attempting to restart workflow ${workflowId} execution ${executionId}`);
+
+    const registeredWorkflow = this.getWorkflow(workflowId);
+    if (!registeredWorkflow) {
+      this.logger.error(`Workflow not found: ${workflowId}`);
+      throw new Error(`Workflow not found: ${workflowId}`);
+    }
+
+    return registeredWorkflow.workflow.restart(executionId, options);
+  }
+
+  /**
+   * Restart all active (running) workflow executions
+   */
+  public async restartAllActiveWorkflowRuns(options?: {
+    workflowId?: string;
+  }): Promise<WorkflowRestartAllResult> {
+    const targetWorkflowId = options?.workflowId;
+
+    if (targetWorkflowId) {
+      const registeredWorkflow = this.getWorkflow(targetWorkflowId);
+      if (!registeredWorkflow) {
+        throw new Error(`Workflow not found: ${targetWorkflowId}`);
+      }
+      return registeredWorkflow.workflow.restartAllActive({ workflowId: targetWorkflowId });
+    }
+
+    const aggregate: WorkflowRestartAllResult = {
+      restarted: [],
+      failed: [],
+    };
+
+    for (const [workflowId, registeredWorkflow] of this.workflows.entries()) {
+      try {
+        const result = await registeredWorkflow.workflow.restartAllActive({ workflowId });
+        aggregate.restarted.push(...result.restarted);
+        aggregate.failed.push(...result.failed);
+      } catch (error) {
+        aggregate.failed.push({
+          executionId: workflowId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    return aggregate;
   }
 
   /**

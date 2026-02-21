@@ -49,6 +49,7 @@ import type {
   WorkflowConfig,
   WorkflowExecutionResult,
   WorkflowInput,
+  WorkflowRestartAllResult,
   WorkflowRunOptions,
   WorkflowStateStore,
   WorkflowStateUpdater,
@@ -968,6 +969,36 @@ export class WorkflowChain<
       RESULT_SCHEMA,
       RESUME_SCHEMA
     >;
+  }
+
+  /**
+   * Restart an interrupted execution from persisted checkpoint state
+   */
+  async restart(
+    executionId: string,
+    options?: WorkflowRunOptions,
+  ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> {
+    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+      this.config,
+      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      ...this.steps,
+    );
+    return (await workflow.restart(executionId, options)) as unknown as WorkflowExecutionResult<
+      RESULT_SCHEMA,
+      RESUME_SCHEMA
+    >;
+  }
+
+  /**
+   * Restart all active (running) executions for this workflow
+   */
+  async restartAllActive(options?: { workflowId?: string }): Promise<WorkflowRestartAllResult> {
+    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+      this.config,
+      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      ...this.steps,
+    );
+    return workflow.restartAllActive(options);
   }
 
   /**

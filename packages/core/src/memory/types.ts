@@ -148,6 +148,16 @@ export interface WorkflowStateEntry {
       stepExecutionState?: any;
       completedStepsData?: any[];
       workflowState?: Record<string, unknown>;
+      stepData?: Record<
+        string,
+        {
+          input: unknown;
+          output?: unknown;
+          status: "running" | "success" | "error" | "suspended" | "cancelled" | "skipped";
+          error?: unknown | null;
+        }
+      >;
+      usage?: UsageInfo;
     };
     suspendData?: any;
   };

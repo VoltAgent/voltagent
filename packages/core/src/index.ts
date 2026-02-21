@@ -28,6 +28,8 @@ export type {
   WorkflowHookContext,
   WorkflowHookStatus,
   WorkflowHooks,
+  WorkflowRestartAllResult,
+  WorkflowRestartCheckpoint,
   WorkflowStats,
   WorkflowStateStore,
   WorkflowStateUpdater,

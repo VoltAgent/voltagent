@@ -247,7 +247,7 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
 
 type MutableWorkflowState<DATA, RESULT> = Pick<
   Partial<WorkflowState<DATA, RESULT>>,
-  "data" | "result" | "workflowState"
+  "data" | "result" | "workflowState" | "usage"
 >;
 
 function transformToMutableState<DATA, RESULT>(
@@ -265,6 +265,10 @@ function transformToMutableState<DATA, RESULT>(
 
   if (state.workflowState !== undefined) {
     nextState.workflowState = state.workflowState;
+  }
+
+  if (state.usage !== undefined) {
+    nextState.usage = state.usage;
   }
 
   return nextState;

@@ -463,6 +463,258 @@ describe.sequential("workflow streaming", () => {
   });
 });
 
+describe.sequential("workflow.restart", () => {
+  beforeEach(() => {
+    const registry = WorkflowRegistry.getInstance();
+    (registry as any).workflows.clear();
+  });
+
+  it("should restart an interrupted running execution from checkpoint", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    const executions: string[] = [];
+
+    const workflow = createWorkflow(
+      {
+        id: "restart-interrupted",
+        name: "Restart Interrupted",
+        input: z.object({ value: z.number() }),
+        result: z.object({ total: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "step-1",
+        execute: async ({ data }) => {
+          executions.push("step-1");
+          return { value: data.value + 1 };
+        },
+      }),
+      andThen({
+        id: "step-2",
+        execute: async ({ data, getStepData }) => {
+          executions.push("step-2");
+          const step1Output = getStepData("step-1")?.output as { value?: number } | undefined;
+          return { total: (step1Output?.value ?? data.value) + 10 };
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const executionId = "restart-interrupted-exec";
+    const suspendedAt = new Date();
+    await memory.setWorkflowState(executionId, {
+      id: executionId,
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      status: "running",
+      input: { value: 2 },
+      context: [["tenant", "acme"]],
+      workflowState: { plan: "pro" },
+      metadata: {
+        __voltagent_restart_checkpoint: {
+          resumeStepIndex: 1,
+          lastCompletedStepIndex: 0,
+          stepExecutionState: { value: 3 },
+          completedStepsData: [{ stepId: "step-1", stepIndex: 0 }],
+          workflowState: { plan: "pro" },
+          stepData: {
+            "step-1": {
+              input: { value: 2 },
+              output: { value: 3 },
+              status: "success",
+              error: null,
+            },
+          },
+          usage: {
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+          },
+          eventSequence: 3,
+          checkpointedAt: suspendedAt,
+        },
+      },
+      createdAt: suspendedAt,
+      updatedAt: suspendedAt,
+    });
+
+    const restarted = await workflow.restart(executionId);
+
+    expect(restarted.status).toBe("completed");
+    expect(restarted.result).toEqual({ total: 13 });
+    expect(executions).toEqual(["step-2"]);
+
+    const persisted = await memory.getWorkflowState(executionId);
+    expect(persisted?.status).toBe("completed");
+  });
+
+  it("should fail restart when execution is not running", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "restart-invalid-status",
+        name: "Restart Invalid Status",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const completed = await workflow.run({ value: 4 });
+    await expect(workflow.restart(completed.executionId)).rejects.toThrow("Execution");
+  });
+
+  it("should restart all active runs and report partial failures", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "restart-bulk",
+        name: "Restart Bulk",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const now = new Date();
+    await memory.setWorkflowState("restart-bulk-ok", {
+      id: "restart-bulk-ok",
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      status: "running",
+      input: { value: 7 },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await memory.setWorkflowState("restart-bulk-bad", {
+      id: "restart-bulk-bad",
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      status: "running",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const summary = await workflow.restartAllActive();
+
+    expect(summary.restarted).toContain("restart-bulk-ok");
+    expect(summary.failed.some((failure) => failure.executionId === "restart-bulk-bad")).toBe(true);
+
+    const restartedState = await memory.getWorkflowState("restart-bulk-ok");
+    expect(restartedState?.status).toBe("completed");
+  });
+
+  it("should preserve workflowState, context, usage, and stepData on restart", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    let step1Runs = 0;
+
+    const workflow = createWorkflow(
+      {
+        id: "restart-preserve-state",
+        name: "Restart Preserve State",
+        input: z.object({ seed: z.number() }),
+        result: z.object({
+          previous: z.number(),
+          plan: z.string(),
+          role: z.string(),
+          tokens: z.number(),
+        }),
+        memory,
+      },
+      andThen({
+        id: "step-1",
+        execute: async ({ data }) => {
+          step1Runs += 1;
+          return { seed: data.seed + 1 };
+        },
+      }),
+      andThen({
+        id: "step-2",
+        execute: async ({ getStepData, workflowState, state }) => {
+          const previous = (getStepData("step-1")?.output as { seed: number } | undefined)?.seed;
+          return {
+            previous: previous ?? -1,
+            plan: (workflowState.plan as string) ?? "unknown",
+            role: (state.context?.get("role") as string) ?? "missing",
+            tokens: state.usage.totalTokens,
+          };
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const executionId = "restart-preserve-exec";
+    const now = new Date();
+    await memory.setWorkflowState(executionId, {
+      id: executionId,
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      status: "running",
+      input: { seed: 1 },
+      context: [["role", "admin"]],
+      workflowState: { plan: "pro" },
+      metadata: {
+        __voltagent_restart_checkpoint: {
+          resumeStepIndex: 1,
+          lastCompletedStepIndex: 0,
+          stepExecutionState: { seed: 2 },
+          completedStepsData: [{ stepId: "step-1", stepIndex: 0 }],
+          workflowState: { plan: "pro" },
+          stepData: {
+            "step-1": {
+              input: { seed: 1 },
+              output: { seed: 2 },
+              status: "success",
+              error: null,
+            },
+          },
+          usage: {
+            promptTokens: 5,
+            completionTokens: 7,
+            totalTokens: 12,
+          },
+          eventSequence: 4,
+          checkpointedAt: now,
+        },
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const restarted = await workflow.restart(executionId);
+
+    expect(restarted.status).toBe("completed");
+    expect(step1Runs).toBe(0);
+    expect(restarted.result).toEqual({
+      previous: 2,
+      plan: "pro",
+      role: "admin",
+      tokens: 12,
+    });
+    expect(restarted.usage.totalTokens).toBe(12);
+  });
+});
+
 describe.sequential("workflow memory defaults", () => {
   beforeEach(() => {
     const registry = AgentRegistry.getInstance();

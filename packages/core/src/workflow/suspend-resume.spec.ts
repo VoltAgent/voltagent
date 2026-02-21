@@ -1056,4 +1056,59 @@ describe.sequential("workflow suspend/resume functionality", () => {
       expect(resumed.error.message).toBe("Missing resume input");
     }
   });
+
+  it("should restart active runs via registry restartAllActiveWorkflowRuns", async () => {
+    const { memory } = createTestStores();
+    let executions = 0;
+
+    const workflow = createWorkflow(
+      {
+        id: "test-registry-restart-all-active",
+        name: "Test Registry Restart All Active",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => {
+          executions += 1;
+          return data;
+        },
+      }),
+    );
+
+    registry.registerWorkflow(workflow);
+
+    const now = new Date();
+    await memory.setWorkflowState("registry-restart-ok", {
+      id: "registry-restart-ok",
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      status: "running",
+      input: { value: 9 },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await memory.setWorkflowState("registry-restart-bad", {
+      id: "registry-restart-bad",
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      status: "running",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const summary = await registry.restartAllActiveWorkflowRuns({ workflowId: workflow.id });
+
+    expect(summary.restarted).toContain("registry-restart-ok");
+    expect(summary.failed.some((failure) => failure.executionId === "registry-restart-bad")).toBe(
+      true,
+    );
+
+    const restartedState = await memory.getWorkflowState("registry-restart-ok");
+    expect(restartedState?.status).toBe("completed");
+    expect(executions).toBeGreaterThan(0);
+  });
 });

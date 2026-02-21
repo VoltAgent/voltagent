@@ -33,6 +33,10 @@ export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> 
     completedStepsData?: DangerouslyAllowAny[];
     /** Shared workflow state snapshot */
     workflowState?: WorkflowStateStore;
+    /** Step data snapshots required by getStepData() after resume */
+    stepData?: Record<string, WorkflowStepData>;
+    /** Accumulated usage up to suspension point */
+    usage?: UsageInfo;
   };
 }
 
@@ -307,6 +311,8 @@ export interface WorkflowResumeOptions {
     stepExecutionState?: DangerouslyAllowAny;
     completedStepsData?: DangerouslyAllowAny[];
     workflowState?: WorkflowStateStore;
+    stepData?: Record<string, WorkflowStepData>;
+    usage?: UsageInfo;
   };
   /**
    * The step index to resume from
@@ -320,6 +326,53 @@ export interface WorkflowResumeOptions {
    * Data to pass to the resumed step (validated against resumeSchema)
    */
   resumeData?: DangerouslyAllowAny;
+}
+
+export interface WorkflowRestartCheckpoint {
+  /**
+   * Zero-based step index where execution should continue
+   */
+  resumeStepIndex: number;
+  /**
+   * Last completed step index at checkpoint time
+   */
+  lastCompletedStepIndex: number;
+  /**
+   * Current workflow data snapshot
+   */
+  stepExecutionState?: DangerouslyAllowAny;
+  /**
+   * Completed step snapshots used by downstream lookups
+   */
+  completedStepsData?: DangerouslyAllowAny[];
+  /**
+   * Shared workflow state snapshot
+   */
+  workflowState?: WorkflowStateStore;
+  /**
+   * Step data snapshots required by getStepData() after restart
+   */
+  stepData?: Record<string, WorkflowStepData>;
+  /**
+   * Usage accumulated up to checkpoint
+   */
+  usage?: UsageInfo;
+  /**
+   * Event sequence at checkpoint time
+   */
+  eventSequence?: number;
+  /**
+   * Timestamp when the checkpoint was persisted
+   */
+  checkpointedAt: Date;
+}
+
+export interface WorkflowRestartAllResult {
+  restarted: string[];
+  failed: Array<{
+    executionId: string;
+    error: string;
+  }>;
 }
 
 /**
@@ -612,6 +665,22 @@ export type Workflow<
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
   ) => WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>;
+  /**
+   * Restart an interrupted execution from persisted checkpoint state
+   * @param executionId - Execution ID to restart
+   * @param options - Optional execution overrides
+   * @returns Execution result of the restarted run
+   */
+  restart: (
+    executionId: string,
+    options?: WorkflowRunOptions,
+  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  /**
+   * Restart all active (running) executions for this workflow
+   * @param options - Optional workflow filter
+   * @returns Lists of restarted and failed execution IDs
+   */
+  restartAllActive: (options?: { workflowId?: string }) => Promise<WorkflowRestartAllResult>;
   /**
    * Create a WorkflowSuspendController that can be used to suspend the workflow
    * @returns A WorkflowSuspendController instance
