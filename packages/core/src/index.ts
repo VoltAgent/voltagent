@@ -31,6 +31,7 @@ export type {
   WorkflowRestartAllResult,
   WorkflowRestartCheckpoint,
   WorkflowStats,
+  WorkflowStartAsyncResult,
   WorkflowStateStore,
   WorkflowStateUpdater,
   WorkflowStepData,
