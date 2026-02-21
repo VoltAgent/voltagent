@@ -293,7 +293,7 @@ const started = await greeterChain.startAsync({ name: "Alice" });
 console.log(started.executionId, started.startAt); // Track this run later
 
 // Query execution state later from workflow memory
-const state = await greeterChain.memory.getWorkflowState(started.executionId);
+const state = await greeterChain.toWorkflow().memory.getWorkflowState(started.executionId);
 console.log(state?.status); // running | completed | suspended | cancelled | error
 ```
 

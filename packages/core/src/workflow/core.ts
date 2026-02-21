@@ -2172,9 +2172,24 @@ export function createWorkflow<
       input: WorkflowInput<INPUT_SCHEMA>,
       options?: WorkflowRunOptions,
     ): Promise<WorkflowStartAsyncResult> => {
-      const executionId = options?.resumeFrom?.executionId ?? options?.executionId ?? randomUUID();
-      const startAt = new Date();
       const executionMemory = options?.memory ?? defaultMemory;
+
+      if (options?.resumeFrom) {
+        const resumeExecutionId = options.resumeFrom.executionId;
+        const resumeState = await executionMemory.getWorkflowState(resumeExecutionId);
+        if (resumeState?.status === "suspended") {
+          throw new Error(
+            `startAsync does not support resumeFrom for suspended execution ${resumeExecutionId}. Use workflow.run(...) or workflow.stream(...) with resumeFrom.`,
+          );
+        }
+
+        throw new Error(
+          "startAsync does not support resumeFrom. Use workflow.run(...) or workflow.stream(...) with resumeFrom.",
+        );
+      }
+
+      const executionId = options?.executionId ?? randomUUID();
+      const startAt = new Date();
       const contextEntries =
         options?.context instanceof Map
           ? Array.from(options.context.entries())

@@ -600,6 +600,68 @@ describe.sequential("workflow.startAsync", () => {
     expect(state?.status).toBe("completed");
     expect(state?.output).toEqual({ value: 5 });
   });
+
+  it("should reject resumeFrom options to avoid overwriting suspended runs", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "start-async-reject-resume-from",
+        name: "Start Async Reject Resume From",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const executionId = "suspended-run";
+    const suspendedAt = new Date();
+    await memory.setWorkflowState(executionId, {
+      id: executionId,
+      workflowId: "start-async-reject-resume-from",
+      workflowName: "Start Async Reject Resume From",
+      status: "suspended",
+      input: { value: 10 },
+      workflowState: { stage: "waiting" },
+      suspension: {
+        suspendedAt,
+        reason: "awaiting-input",
+        stepIndex: 0,
+      },
+      metadata: {
+        marker: "preserve-me",
+      },
+      createdAt: suspendedAt,
+      updatedAt: suspendedAt,
+    });
+
+    await expect(
+      workflow.startAsync(
+        { value: 5 },
+        {
+          resumeFrom: {
+            executionId,
+            resumeStepIndex: 0,
+          },
+        },
+      ),
+    ).rejects.toThrow("startAsync does not support resumeFrom");
+
+    const persisted = await memory.getWorkflowState(executionId);
+    expect(persisted?.status).toBe("suspended");
+    expect(persisted?.metadata).toEqual(
+      expect.objectContaining({
+        marker: "preserve-me",
+      }),
+    );
+  });
 });
 
 describe.sequential("workflow memory defaults", () => {
