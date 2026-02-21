@@ -113,6 +113,43 @@ describe.sequential("workflow.restart", () => {
     expect(restarted.status).toBe("completed");
     expect(restarted.result).toEqual({ value: 12 });
   });
+
+  it("should restart all active executions through the chain API", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflowChain({
+      id: "chain-restart",
+      name: "Chain Restart",
+      input: z.object({ value: z.number() }),
+      result: z.object({ value: z.number() }),
+      memory,
+    }).andThen({
+      id: "echo",
+      execute: async ({ data }) => data,
+    });
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow.toWorkflow());
+
+    const now = new Date();
+    await memory.setWorkflowState("chain-restart-all-exec", {
+      id: "chain-restart-all-exec",
+      workflowId: "chain-restart",
+      workflowName: "Chain Restart",
+      status: "running",
+      input: { value: 12 },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const summary = await workflow.restartAllActive();
+    expect(summary.restarted).toContain("chain-restart-all-exec");
+    expect(summary.failed).toEqual([]);
+
+    const restartedState = await memory.getWorkflowState("chain-restart-all-exec");
+    expect(restartedState?.status).toBe("completed");
+    expect(restartedState?.output).toEqual({ value: 12 });
+  });
 });
 
 describe.sequential("workflow writer API", () => {

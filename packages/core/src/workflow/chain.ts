@@ -973,6 +973,9 @@ export class WorkflowChain<
 
   /**
    * Restart an interrupted execution from persisted checkpoint state
+   * This recreates a workflow instance via `createWorkflow(...)` on each call.
+   * Use persistent/shared memory (or register the workflow) so prior execution state is discoverable.
+   * For ephemeral setup patterns, prefer `chain.toWorkflow().restart(...)` and reuse that instance.
    */
   async restart(
     executionId: string,
@@ -991,14 +994,17 @@ export class WorkflowChain<
 
   /**
    * Restart all active (running) executions for this workflow
+   * This recreates a workflow instance via `createWorkflow(...)` on each call.
+   * Use persistent/shared memory (or register the workflow) so active executions can be found.
+   * For ephemeral setup patterns, prefer `chain.toWorkflow().restartAllActive()` and reuse that instance.
    */
-  async restartAllActive(options?: { workflowId?: string }): Promise<WorkflowRestartAllResult> {
+  async restartAllActive(): Promise<WorkflowRestartAllResult> {
     const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
       // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
       ...this.steps,
     );
-    return workflow.restartAllActive(options);
+    return workflow.restartAllActive();
   }
 
   /**

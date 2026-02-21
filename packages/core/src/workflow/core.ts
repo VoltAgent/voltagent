@@ -37,6 +37,7 @@ import { createSuspendController as createDefaultSuspendController } from "./sus
 import type {
   Workflow,
   WorkflowCancellationMetadata,
+  WorkflowCheckpointStepData,
   WorkflowConfig,
   WorkflowExecutionResult,
   WorkflowHookContext,
@@ -46,6 +47,7 @@ import type {
   WorkflowRestartCheckpoint,
   WorkflowResult,
   WorkflowRunOptions,
+  WorkflowSerializedStepError,
   WorkflowStateStore,
   WorkflowStateUpdater,
   WorkflowStepData,
@@ -53,10 +55,126 @@ import type {
   WorkflowSuspensionMetadata,
 } from "./types";
 
-const RESTART_CHECKPOINT_METADATA_KEY = "__voltagent_restart_checkpoint";
+export const VOLTAGENT_RESTART_CHECKPOINT_KEY = "__voltagent_restart_checkpoint";
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const serializeStepError = (error: unknown): WorkflowSerializedStepError | null => {
+  if (error == null) {
+    return null;
+  }
+
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      ...(error.stack ? { stack: error.stack } : {}),
+      ...(error.name ? { name: error.name } : {}),
+    };
+  }
+
+  if (isObjectRecord(error) && typeof error.message === "string") {
+    return {
+      message: error.message,
+      ...(typeof error.stack === "string" ? { stack: error.stack } : {}),
+      ...(typeof error.name === "string" ? { name: error.name } : {}),
+    };
+  }
+
+  return {
+    message: String(error),
+  };
+};
+
+const deserializeStepError = (error: unknown): Error | null => {
+  if (error == null) {
+    return null;
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (isObjectRecord(error) && typeof error.message === "string") {
+    const restored = new Error(error.message);
+    if (typeof error.name === "string" && error.name.length > 0) {
+      restored.name = error.name;
+    }
+    if (typeof error.stack === "string" && error.stack.length > 0) {
+      restored.stack = error.stack;
+    }
+    return restored;
+  }
+
+  return new Error(String(error));
+};
+
+const isWorkflowStepStatus = (value: unknown): value is WorkflowStepData["status"] =>
+  value === "running" ||
+  value === "success" ||
+  value === "error" ||
+  value === "suspended" ||
+  value === "cancelled" ||
+  value === "skipped";
+
+const deserializeCheckpointStepData = (value: unknown): WorkflowStepData | undefined => {
+  if (!isObjectRecord(value) || !isWorkflowStepStatus(value.status)) {
+    return undefined;
+  }
+
+  return {
+    input: value.input,
+    output: value.output,
+    status: value.status,
+    error: deserializeStepError(value.error),
+  };
+};
+
+const parseCheckpointStepDataRecord = (
+  value: unknown,
+): Record<string, WorkflowCheckpointStepData> | undefined => {
+  if (!isObjectRecord(value)) {
+    return undefined;
+  }
+
+  const parsed: Record<string, WorkflowCheckpointStepData> = {};
+
+  for (const [stepId, stepData] of Object.entries(value)) {
+    if (!isObjectRecord(stepData) || !isWorkflowStepStatus(stepData.status)) {
+      continue;
+    }
+
+    parsed[stepId] = {
+      input: stepData.input,
+      output: stepData.output,
+      status: stepData.status,
+      error: serializeStepError(stepData.error),
+    };
+  }
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+};
+
+const toValidContextMap = (context: unknown): Map<string | symbol, unknown> | undefined => {
+  if (!Array.isArray(context)) {
+    return undefined;
+  }
+
+  const entries: Array<[string | symbol, unknown]> = [];
+
+  for (const entry of context) {
+    if (!Array.isArray(entry) || entry.length !== 2) {
+      continue;
+    }
+
+    const [key, value] = entry;
+    if (typeof key === "string" || typeof key === "symbol") {
+      entries.push([key, value]);
+    }
+  }
+
+  return new Map(entries);
+};
 
 const getRestartCheckpointFromMetadata = (
   metadata: Record<string, unknown> | undefined,
@@ -65,7 +183,7 @@ const getRestartCheckpointFromMetadata = (
     return undefined;
   }
 
-  const raw = metadata[RESTART_CHECKPOINT_METADATA_KEY];
+  const raw = metadata[VOLTAGENT_RESTART_CHECKPOINT_KEY];
   if (!isObjectRecord(raw)) {
     return undefined;
   }
@@ -87,9 +205,7 @@ const getRestartCheckpointFromMetadata = (
     workflowState: isObjectRecord(raw.workflowState)
       ? (raw.workflowState as WorkflowStateStore)
       : undefined,
-    stepData: isObjectRecord(raw.stepData)
-      ? (raw.stepData as Record<string, WorkflowStepData>)
-      : undefined,
+    stepData: parseCheckpointStepDataRecord(raw.stepData),
     usage: isObjectRecord(raw.usage) ? (raw.usage as UsageInfo) : undefined,
     eventSequence,
     checkpointedAt:
@@ -696,6 +812,8 @@ export function createWorkflow<
     memory: workflowMemory,
     observability: workflowObservability,
     retryConfig: workflowRetryConfig,
+    checkpointInterval: workflowCheckpointInterval,
+    disableCheckpointing: workflowDisableCheckpointing,
   }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>,
   ...steps: ReadonlyArray<BaseStep>
 ) {
@@ -1135,7 +1253,10 @@ export function createWorkflow<
         }
         if (options.resumeFrom.checkpoint?.stepData) {
           for (const [stepId, stepData] of Object.entries(options.resumeFrom.checkpoint.stepData)) {
-            executionContext.stepData.set(stepId, stepData);
+            const restoredStepData = deserializeCheckpointStepData(stepData);
+            if (restoredStepData) {
+              executionContext.stepData.set(stepId, restoredStepData);
+            }
           }
         }
         // Store the resume input separately to pass to the step
@@ -1144,7 +1265,7 @@ export function createWorkflow<
         executionContext.currentStepIndex = startStepIndex;
       }
 
-      const serializeStepDataSnapshot = (): Record<string, WorkflowStepData> =>
+      const serializeStepDataSnapshot = (): Record<string, WorkflowCheckpointStepData> =>
         Object.fromEntries(
           Array.from(executionContext.stepData.entries()).map(([stepId, stepData]) => [
             stepId,
@@ -1152,12 +1273,28 @@ export function createWorkflow<
               input: stepData.input,
               output: stepData.output,
               status: stepData.status,
-              error: stepData.error ?? null,
+              error: serializeStepError(stepData.error),
             },
           ]),
         );
 
+      const disableCheckpointing =
+        options?.disableCheckpointing ?? workflowDisableCheckpointing ?? false;
+      const checkpointIntervalCandidate =
+        options?.checkpointInterval ?? workflowCheckpointInterval ?? 1;
+      const checkpointInterval = Number.isFinite(checkpointIntervalCandidate)
+        ? Math.max(1, Math.floor(checkpointIntervalCandidate))
+        : 1;
+
       const persistRunningCheckpoint = async (lastCompletedStepIndex: number): Promise<void> => {
+        if (disableCheckpointing) {
+          return;
+        }
+
+        if ((lastCompletedStepIndex + 1) % checkpointInterval !== 0) {
+          return;
+        }
+
         const restartCheckpoint: WorkflowRestartCheckpoint = {
           resumeStepIndex: lastCompletedStepIndex + 1,
           lastCompletedStepIndex,
@@ -1185,7 +1322,7 @@ export function createWorkflow<
           events: collectedEvents,
           metadata: await mergeExecutionMetadata({
             ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
-            [RESTART_CHECKPOINT_METADATA_KEY]: restartCheckpoint,
+            [VOLTAGENT_RESTART_CHECKPOINT_KEY]: restartCheckpoint,
           }),
           updatedAt: new Date(),
         });
@@ -2260,9 +2397,7 @@ export function createWorkflow<
       typeof persistedState.metadata?.conversationId === "string"
         ? (persistedState.metadata.conversationId as string)
         : undefined;
-    const persistedContext = persistedState.context
-      ? new Map(persistedState.context as Array<[string | symbol, unknown]>)
-      : undefined;
+    const persistedContext = toValidContextMap(persistedState.context);
     const effectiveWorkflowState =
       options?.workflowState ?? checkpoint?.workflowState ?? persistedState.workflowState ?? {};
 
@@ -2293,20 +2428,9 @@ export function createWorkflow<
     return executeInternal(inputToUse as WorkflowInput<INPUT_SCHEMA>, restartOptions);
   };
 
-  const restartAllActiveExecutions = async (options?: {
-    workflowId?: string;
-  }): Promise<WorkflowRestartAllResult> => {
-    const targetWorkflowId = options?.workflowId ?? id;
-
-    if (targetWorkflowId !== id) {
-      return {
-        restarted: [],
-        failed: [],
-      };
-    }
-
+  const restartAllActiveExecutions = async (): Promise<WorkflowRestartAllResult> => {
     const activeRuns = await defaultMemory.queryWorkflowRuns({
-      workflowId: targetWorkflowId,
+      workflowId: id,
       status: "running",
     });
 
@@ -2376,8 +2500,8 @@ export function createWorkflow<
     restart: (executionId: string, options?: WorkflowRunOptions) => {
       return restartExecution(executionId, options);
     },
-    restartAllActive: async (options?: { workflowId?: string }) => {
-      return restartAllActiveExecutions(options);
+    restartAllActive: async () => {
+      return restartAllActiveExecutions();
     },
     stream: (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
       // Create stream controller for this execution

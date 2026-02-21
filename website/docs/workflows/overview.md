@@ -572,6 +572,10 @@ await runnableWorkflow.restart("exec_1234567890_abc123");
 await runnableWorkflow.restartAllActive();
 ```
 
+You can call these APIs directly on a `WorkflowChain` too:
+`await workflow.restart("exec_...")` and `await workflow.restartAllActive()`.
+These are equivalent to `workflow.toWorkflow().restart(...)` and `workflow.toWorkflow().restartAllActive()`.
+
 For cross-workflow recovery, use `WorkflowRegistry.getInstance().restartAllActiveWorkflowRuns()`.
 
 ### Executing Workflows via REST API

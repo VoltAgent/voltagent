@@ -262,7 +262,7 @@ export class WorkflowRegistry extends SimpleEventEmitter {
     workflowId: string,
     executionId: string,
     options?: WorkflowRunOptions,
-  ): Promise<WorkflowExecutionResult<any, any> | null> {
+  ): Promise<WorkflowExecutionResult<any, any>> {
     this.logger.debug(`Attempting to restart workflow ${workflowId} execution ${executionId}`);
 
     const registeredWorkflow = this.getWorkflow(workflowId);
@@ -287,7 +287,7 @@ export class WorkflowRegistry extends SimpleEventEmitter {
       if (!registeredWorkflow) {
         throw new Error(`Workflow not found: ${targetWorkflowId}`);
       }
-      return registeredWorkflow.workflow.restartAllActive({ workflowId: targetWorkflowId });
+      return registeredWorkflow.workflow.restartAllActive();
     }
 
     const aggregate: WorkflowRestartAllResult = {
@@ -297,13 +297,14 @@ export class WorkflowRegistry extends SimpleEventEmitter {
 
     for (const [workflowId, registeredWorkflow] of this.workflows.entries()) {
       try {
-        const result = await registeredWorkflow.workflow.restartAllActive({ workflowId });
+        const result = await registeredWorkflow.workflow.restartAllActive();
         aggregate.restarted.push(...result.restarted);
         aggregate.failed.push(...result.failed);
       } catch (error) {
         aggregate.failed.push({
-          executionId: workflowId,
+          workflowId,
           error: error instanceof Error ? error.message : String(error),
+          isWorkflowFailure: true,
         });
       }
     }

@@ -34,7 +34,7 @@ export interface WorkflowSuspensionMetadata<SUSPEND_DATA = DangerouslyAllowAny> 
     /** Shared workflow state snapshot */
     workflowState?: WorkflowStateStore;
     /** Step data snapshots required by getStepData() after resume */
-    stepData?: Record<string, WorkflowStepData>;
+    stepData?: Record<string, WorkflowCheckpointStepData>;
     /** Accumulated usage up to suspension point */
     usage?: UsageInfo;
   };
@@ -286,6 +286,16 @@ export interface WorkflowRunOptions {
    */
   retryConfig?: WorkflowRetryConfig;
   /**
+   * Persist running checkpoints every N completed steps.
+   * @default 1
+   */
+  checkpointInterval?: number;
+  /**
+   * Disable running checkpoint persistence for this execution.
+   * @default false
+   */
+  disableCheckpointing?: boolean;
+  /**
    * Input guardrails to run before workflow execution
    */
   inputGuardrails?: InputGuardrail[];
@@ -311,7 +321,7 @@ export interface WorkflowResumeOptions {
     stepExecutionState?: DangerouslyAllowAny;
     completedStepsData?: DangerouslyAllowAny[];
     workflowState?: WorkflowStateStore;
-    stepData?: Record<string, WorkflowStepData>;
+    stepData?: Record<string, WorkflowCheckpointStepData>;
     usage?: UsageInfo;
   };
   /**
@@ -352,7 +362,7 @@ export interface WorkflowRestartCheckpoint {
   /**
    * Step data snapshots required by getStepData() after restart
    */
-  stepData?: Record<string, WorkflowStepData>;
+  stepData?: Record<string, WorkflowCheckpointStepData>;
   /**
    * Usage accumulated up to checkpoint
    */
@@ -370,8 +380,10 @@ export interface WorkflowRestartCheckpoint {
 export interface WorkflowRestartAllResult {
   restarted: string[];
   failed: Array<{
-    executionId: string;
+    executionId?: string;
+    workflowId?: string;
     error: string;
+    isWorkflowFailure?: boolean;
   }>;
 }
 
@@ -395,6 +407,19 @@ export type WorkflowStepData = {
   output?: DangerouslyAllowAny;
   status: WorkflowStepStatus;
   error?: Error | null;
+};
+
+export type WorkflowSerializedStepError = {
+  message: string;
+  stack?: string;
+  name?: string;
+};
+
+export type WorkflowCheckpointStepData = {
+  input: DangerouslyAllowAny;
+  output?: DangerouslyAllowAny;
+  status: WorkflowStepStatus;
+  error?: WorkflowSerializedStepError | null;
 };
 
 export type WorkflowHookContext<DATA, RESULT> = {
@@ -557,6 +582,16 @@ export type WorkflowConfig<
    * Default retry configuration for steps in this workflow
    */
   retryConfig?: WorkflowRetryConfig;
+  /**
+   * Default running checkpoint persistence interval in completed-step count.
+   * @default 1
+   */
+  checkpointInterval?: number;
+  /**
+   * Disable running checkpoint persistence for this workflow by default.
+   * @default false
+   */
+  disableCheckpointing?: boolean;
 };
 
 /**
@@ -677,10 +712,11 @@ export type Workflow<
   ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
   /**
    * Restart all active (running) executions for this workflow
-   * @param options - Optional workflow filter
+   * This method only operates on this workflow instance.
+   * Use `WorkflowRegistry.restartAllActiveWorkflowRuns({ workflowId })` for cross-workflow filtering.
    * @returns Lists of restarted and failed execution IDs
    */
-  restartAllActive: (options?: { workflowId?: string }) => Promise<WorkflowRestartAllResult>;
+  restartAllActive: () => Promise<WorkflowRestartAllResult>;
   /**
    * Create a WorkflowSuspendController that can be used to suspend the workflow
    * @returns A WorkflowSuspendController instance

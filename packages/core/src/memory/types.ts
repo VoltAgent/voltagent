@@ -154,7 +154,7 @@ export interface WorkflowStateEntry {
           input: unknown;
           output?: unknown;
           status: "running" | "success" | "error" | "suspended" | "cancelled" | "skipped";
-          error?: unknown | null;
+          error?: unknown;
         }
       >;
       usage?: UsageInfo;
