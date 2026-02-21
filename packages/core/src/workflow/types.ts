@@ -202,6 +202,24 @@ export interface WorkflowStreamResult<
   abort: () => void;
 }
 
+/**
+ * Result returned when a workflow execution is started asynchronously
+ */
+export interface WorkflowStartAsyncResult {
+  /**
+   * Unique execution ID for this workflow run
+   */
+  executionId: string;
+  /**
+   * The workflow ID
+   */
+  workflowId: string;
+  /**
+   * When the async execution was started
+   */
+  startAt: Date;
+}
+
 export interface WorkflowRetryConfig {
   /**
    * Number of retry attempts for a step when it throws an error
@@ -293,6 +311,11 @@ export interface WorkflowRunOptions {
    * Optional agent instance to supply to workflow guardrails
    */
   guardrailAgent?: Agent;
+  /**
+   * Internal flag to skip initial state creation when it is already persisted
+   * @internal
+   */
+  skipStateInit?: boolean;
 }
 
 export interface WorkflowResumeOptions {
@@ -612,6 +635,16 @@ export type Workflow<
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
   ) => WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>;
+  /**
+   * Start the workflow in the background without waiting for completion
+   * @param input - The input to the workflow
+   * @param options - Options for the workflow execution
+   * @returns Async start metadata with execution ID
+   */
+  startAsync: (
+    input: WorkflowInput<INPUT_SCHEMA>,
+    options?: WorkflowRunOptions,
+  ) => Promise<WorkflowStartAsyncResult>;
   /**
    * Create a WorkflowSuspendController that can be used to suspend the workflow
    * @returns A WorkflowSuspendController instance

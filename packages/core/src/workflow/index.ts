@@ -30,6 +30,7 @@ export type {
   WorkflowRetryConfig,
   WorkflowRunOptions,
   WorkflowResumeOptions,
+  WorkflowStartAsyncResult,
   WorkflowSuspensionMetadata,
   WorkflowSuspendController,
   WorkflowStateStore,

@@ -463,6 +463,207 @@ describe.sequential("workflow streaming", () => {
   });
 });
 
+describe.sequential("workflow.startAsync", () => {
+  beforeEach(() => {
+    const registry = WorkflowRegistry.getInstance();
+    (registry as any).workflows.clear();
+  });
+
+  it("should return immediately and complete in the background", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    let releaseStep: (() => void) | undefined;
+    const stepGate = new Promise<void>((resolve) => {
+      releaseStep = resolve;
+    });
+
+    const workflow = createWorkflow(
+      {
+        id: "start-async-background",
+        name: "Start Async Background",
+        input: z.object({ value: z.number() }),
+        result: z.object({ result: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "wait-for-release",
+        execute: async ({ data }) => {
+          await stepGate;
+          return { result: data.value * 2 };
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const startResult = await workflow.startAsync({ value: 21 });
+
+    expect(startResult).toEqual({
+      executionId: expect.any(String),
+      workflowId: "start-async-background",
+      startAt: expect.any(Date),
+    });
+
+    let runningState = await memory.getWorkflowState(startResult.executionId);
+    for (let i = 0; i < 100 && runningState?.status !== "running"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      runningState = await memory.getWorkflowState(startResult.executionId);
+    }
+    expect(runningState?.status).toBe("running");
+
+    releaseStep?.();
+
+    let completedState = await memory.getWorkflowState(startResult.executionId);
+    for (let i = 0; i < 100 && completedState?.status !== "completed"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      completedState = await memory.getWorkflowState(startResult.executionId);
+    }
+
+    expect(completedState?.status).toBe("completed");
+    expect(completedState?.output).toEqual({ result: 42 });
+  });
+
+  it("should persist error state when background execution fails", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "start-async-error",
+        name: "Start Async Error",
+        input: z.object({ value: z.number() }),
+        result: z.object({ result: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "throw-error",
+        execute: async () => {
+          throw new Error("startAsync failure");
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const startResult = await workflow.startAsync({ value: 1 });
+    let erroredState = await memory.getWorkflowState(startResult.executionId);
+
+    for (let i = 0; i < 100 && erroredState?.status !== "error"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      erroredState = await memory.getWorkflowState(startResult.executionId);
+    }
+
+    expect(erroredState?.status).toBe("error");
+    expect(erroredState?.metadata).toEqual(
+      expect.objectContaining({
+        errorMessage: "startAsync failure",
+      }),
+    );
+  });
+
+  it("should respect executionId passed in options", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "start-async-execution-id",
+        name: "Start Async Execution ID",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const executionId = "execution-id-start-async";
+    const startResult = await workflow.startAsync(
+      { value: 5 },
+      {
+        executionId,
+      },
+    );
+
+    expect(startResult.executionId).toBe(executionId);
+
+    let state = await memory.getWorkflowState(executionId);
+    for (let i = 0; i < 100 && state?.status !== "completed"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      state = await memory.getWorkflowState(executionId);
+    }
+
+    expect(state?.status).toBe("completed");
+    expect(state?.output).toEqual({ value: 5 });
+  });
+
+  it("should reject resumeFrom options to avoid overwriting suspended runs", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "start-async-reject-resume-from",
+        name: "Start Async Reject Resume From",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const executionId = "suspended-run";
+    const suspendedAt = new Date();
+    await memory.setWorkflowState(executionId, {
+      id: executionId,
+      workflowId: "start-async-reject-resume-from",
+      workflowName: "Start Async Reject Resume From",
+      status: "suspended",
+      input: { value: 10 },
+      workflowState: { stage: "waiting" },
+      suspension: {
+        suspendedAt,
+        reason: "awaiting-input",
+        stepIndex: 0,
+      },
+      metadata: {
+        marker: "preserve-me",
+      },
+      createdAt: suspendedAt,
+      updatedAt: suspendedAt,
+    });
+
+    await expect(
+      workflow.startAsync(
+        { value: 5 },
+        {
+          resumeFrom: {
+            executionId,
+            resumeStepIndex: 0,
+          },
+        },
+      ),
+    ).rejects.toThrow("startAsync does not support resumeFrom");
+
+    const persisted = await memory.getWorkflowState(executionId);
+    expect(persisted?.status).toBe("suspended");
+    expect(persisted?.metadata).toEqual(
+      expect.objectContaining({
+        marker: "preserve-me",
+      }),
+    );
+  });
+});
+
 describe.sequential("workflow memory defaults", () => {
   beforeEach(() => {
     const registry = AgentRegistry.getInstance();
