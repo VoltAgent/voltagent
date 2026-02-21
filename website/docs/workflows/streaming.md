@@ -44,9 +44,9 @@ Workflows emit these event types during execution:
 
 VoltAgent provides three methods for workflow execution:
 
+- `.stream()` - Real-time execution with event streaming
 - `.run()` - Standard execution without streaming
 - `.startAsync()` - Fire-and-forget execution (returns immediately)
-- `.stream()` - Real-time execution with event streaming
 
 ```typescript
 // Method 1: Stream execution for real-time events
@@ -783,7 +783,7 @@ Returned by `.startAsync()` method - starts in the background and returns immedi
 interface WorkflowStartAsyncResult {
   executionId: string;
   workflowId: string;
-  startedAt: Date;
+  startAt: Date;
 }
 ```
 

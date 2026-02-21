@@ -268,16 +268,32 @@ const result = await workflow.run({ name: "World" });
 
 **2. Fire-and-Forget: `.startAsync()`**
 
-Use `.startAsync()` when you want to trigger a workflow and continue immediately without waiting for completion. It returns execution metadata (`executionId`, `workflowId`, `startedAt`) right away.
+Use `.startAsync()` when you want to trigger a workflow and continue immediately without waiting for completion. It returns execution metadata (`executionId`, `workflowId`, `startAt`) right away.
 
 ```typescript
-const runnableGreeter = greeterChain.toWorkflow();
+import { InMemoryStorageAdapter, Memory, createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
 
-const started = await runnableGreeter.startAsync({ name: "Alice" });
-console.log(started.executionId); // Track this run later
+const workflowMemory = new Memory({
+  storage: new InMemoryStorageAdapter(),
+});
 
-// Query execution state from workflow memory when needed
-const state = await runnableGreeter.memory.getWorkflowState(started.executionId);
+const greeterChain = createWorkflowChain({
+  id: "async-greeter",
+  name: "Async Greeter",
+  input: z.object({ name: z.string() }),
+  result: z.object({ greeting: z.string() }),
+  memory: workflowMemory,
+}).andThen({
+  id: "create-greeting",
+  execute: async ({ data }) => ({ greeting: `Hello, ${data.name}!` }),
+});
+
+const started = await greeterChain.startAsync({ name: "Alice" });
+console.log(started.executionId, started.startAt); // Track this run later
+
+// Query execution state later from workflow memory
+const state = await greeterChain.memory.getWorkflowState(started.executionId);
 console.log(state?.status); // running | completed | suspended | cancelled | error
 ```
 

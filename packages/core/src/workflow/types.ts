@@ -217,7 +217,7 @@ export interface WorkflowStartAsyncResult {
   /**
    * When the async execution was started
    */
-  startedAt: Date;
+  startAt: Date;
 }
 
 export interface WorkflowRetryConfig {
@@ -311,6 +311,11 @@ export interface WorkflowRunOptions {
    * Optional agent instance to supply to workflow guardrails
    */
   guardrailAgent?: Agent;
+  /**
+   * Internal flag to skip initial state creation when it is already persisted
+   * @internal
+   */
+  skipStateInit?: boolean;
 }
 
 export interface WorkflowResumeOptions {

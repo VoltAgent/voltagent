@@ -501,10 +501,14 @@ describe.sequential("workflow.startAsync", () => {
     expect(startResult).toEqual({
       executionId: expect.any(String),
       workflowId: "start-async-background",
-      startedAt: expect.any(Date),
+      startAt: expect.any(Date),
     });
 
-    const runningState = await memory.getWorkflowState(startResult.executionId);
+    let runningState = await memory.getWorkflowState(startResult.executionId);
+    for (let i = 0; i < 100 && runningState?.status !== "running"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      runningState = await memory.getWorkflowState(startResult.executionId);
+    }
     expect(runningState?.status).toBe("running");
 
     releaseStep?.();

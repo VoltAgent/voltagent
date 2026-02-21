@@ -927,36 +927,73 @@ export function createWorkflow<
           throw error; // Re-throw to prevent creating a new execution
         }
       } else {
-        // Create new execution - ALWAYS create state directly (like Agent does)
+        if (options?.skipStateInit) {
+          // startAsync pre-creates running state; only enrich metadata/context here
+          try {
+            const existingWorkflowState = await executionMemory.getWorkflowState(executionId);
+            if (!existingWorkflowState) {
+              throw new Error(`Workflow state ${executionId} not found`);
+            }
 
-        // 1. Create workflow state in Memory V2 (workflow's own memory)
-        const workflowState = {
-          id: executionId,
-          workflowId: id,
-          workflowName: name,
-          status: "running" as const,
-          input,
-          context: options?.context ? Array.from(contextMap.entries()) : undefined,
-          workflowState: workflowStateStore,
-          userId: options?.userId,
-          conversationId: options?.conversationId,
-          metadata: {
-            ...(optionMetadata ?? {}),
-            traceId: rootSpan.spanContext().traceId,
-            spanId: rootSpan.spanContext().spanId,
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
+            await executionMemory.updateWorkflowState(executionId, {
+              status: "running",
+              input: existingWorkflowState.input ?? input,
+              context:
+                options?.context !== undefined
+                  ? Array.from(contextMap.entries())
+                  : existingWorkflowState.context,
+              workflowState:
+                options?.workflowState !== undefined
+                  ? workflowStateStore
+                  : (existingWorkflowState.workflowState ?? workflowStateStore),
+              userId: options?.userId ?? existingWorkflowState.userId,
+              conversationId: options?.conversationId ?? existingWorkflowState.conversationId,
+              metadata: {
+                ...(existingWorkflowState.metadata ?? {}),
+                ...(optionMetadata ?? {}),
+                traceId: rootSpan.spanContext().traceId,
+                spanId: rootSpan.spanContext().spanId,
+              },
+              updatedAt: new Date(),
+            });
 
-        try {
-          await executionMemory.setWorkflowState(executionId, workflowState);
-          runLogger.trace(`Created workflow state in Memory V2 for ${executionId}`);
-        } catch (error) {
-          runLogger.error("Failed to create workflow state in Memory V2:", { error });
-          throw new Error(
-            `Failed to create workflow state: ${error instanceof Error ? error.message : String(error)}`,
-          );
+            runLogger.trace(`Updated pre-created workflow state in Memory V2 for ${executionId}`);
+          } catch (error) {
+            runLogger.error("Failed to update pre-created workflow state in Memory V2:", { error });
+            throw new Error(
+              `Failed to update workflow state: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
+        } else {
+          // Create new execution - ALWAYS create state directly (like Agent does)
+          const workflowState = {
+            id: executionId,
+            workflowId: id,
+            workflowName: name,
+            status: "running" as const,
+            input,
+            context: options?.context ? Array.from(contextMap.entries()) : undefined,
+            workflowState: workflowStateStore,
+            userId: options?.userId,
+            conversationId: options?.conversationId,
+            metadata: {
+              ...(optionMetadata ?? {}),
+              traceId: rootSpan.spanContext().traceId,
+              spanId: rootSpan.spanContext().spanId,
+            },
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+
+          try {
+            await executionMemory.setWorkflowState(executionId, workflowState);
+            runLogger.trace(`Created workflow state in Memory V2 for ${executionId}`);
+          } catch (error) {
+            runLogger.error("Failed to create workflow state in Memory V2:", { error });
+            throw new Error(
+              `Failed to create workflow state: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
         }
       }
 
@@ -2136,11 +2173,42 @@ export function createWorkflow<
       options?: WorkflowRunOptions,
     ): Promise<WorkflowStartAsyncResult> => {
       const executionId = options?.resumeFrom?.executionId ?? options?.executionId ?? randomUUID();
-      const startedAt = new Date();
+      const startAt = new Date();
       const executionMemory = options?.memory ?? defaultMemory;
+      const contextEntries =
+        options?.context instanceof Map
+          ? Array.from(options.context.entries())
+          : options?.context
+            ? Array.from(Object.entries(options.context))
+            : undefined;
+      const optionMetadata =
+        options?.metadata &&
+        typeof options.metadata === "object" &&
+        !Array.isArray(options.metadata)
+          ? options.metadata
+          : undefined;
+
+      await executionMemory.setWorkflowState(executionId, {
+        id: executionId,
+        workflowId: id,
+        workflowName: name,
+        status: "running",
+        input,
+        context: contextEntries,
+        workflowState: options?.workflowState ?? {},
+        userId: options?.userId,
+        conversationId: options?.conversationId,
+        metadata: {
+          ...(optionMetadata ?? {}),
+        },
+        createdAt: startAt,
+        updatedAt: startAt,
+      });
+
       const executionOptions: WorkflowRunOptions = {
         ...options,
         executionId,
+        skipStateInit: true,
       };
 
       executeInternal(input, executionOptions)
@@ -2166,19 +2234,6 @@ export function createWorkflow<
               return;
             }
 
-            const contextEntries =
-              options?.context instanceof Map
-                ? Array.from(options.context.entries())
-                : options?.context
-                  ? Array.from(Object.entries(options.context))
-                  : undefined;
-            const optionMetadata =
-              options?.metadata &&
-              typeof options.metadata === "object" &&
-              !Array.isArray(options.metadata)
-                ? options.metadata
-                : undefined;
-
             await executionMemory.setWorkflowState(executionId, {
               id: executionId,
               workflowId: id,
@@ -2193,7 +2248,7 @@ export function createWorkflow<
                 ...(optionMetadata ?? {}),
                 errorMessage,
               },
-              createdAt: startedAt,
+              createdAt: startAt,
               updatedAt: new Date(),
             });
           } catch (persistenceError) {
@@ -2203,14 +2258,17 @@ export function createWorkflow<
             });
           }
         })
-        .catch(() => {
-          // Prevent unhandled rejections from the async catch handler.
+        .catch((handlerError) => {
+          logger.error("Unexpected error while handling startAsync background failure", {
+            executionId,
+            error: handlerError,
+          });
         });
 
       return {
         executionId,
         workflowId: id,
-        startedAt,
+        startAt,
       };
     },
     stream: (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
