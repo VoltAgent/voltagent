@@ -4,7 +4,7 @@ import type { Socket } from "node:net";
 import type { INestApplication } from "@nestjs/common";
 import { createWebSocketServer } from "@voltagent/server-core";
 import type { WebSocketServer } from "ws";
-import type { VoltAgentService } from "./voltagent.service";
+import { VoltAgentService } from "./voltagent.service";
 
 /**
  * Setup WebSocket support for VoltAgent console in NestJS
