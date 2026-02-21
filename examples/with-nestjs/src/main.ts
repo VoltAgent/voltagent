@@ -9,10 +9,19 @@ async function bootstrap() {
   // Enable CORS for development
   app.enableCors();
 
+  // Enable graceful shutdown hooks so the HTTP server is properly closed
+  // when the process receives SIGINT/SIGTERM, releasing the port immediately
+  app.enableShutdownHooks();
+
   // Setup VoltAgent WebSocket support
   // This must be done after app creation but before listening
   const voltAgentService = app.get(VoltAgentService);
-  setupVoltAgentWebSocket(app, voltAgentService, "/voltagent/ws");
+  const wss = setupVoltAgentWebSocket(app, voltAgentService, "/voltagent/ws");
+
+  // Close the WebSocket server when the HTTP server shuts down
+  app.getHttpServer().on("close", () => {
+    wss.close();
+  });
 
   // Get port from environment or use default
   const port = process.env.PORT || 3000;

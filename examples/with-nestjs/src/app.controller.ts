@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
-import type { VoltAgentService } from "./voltagent/voltagent.service";
+import { VoltAgentService } from "./voltagent/voltagent.service";
 
 @Controller()
 export class AppController {

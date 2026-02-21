@@ -1,7 +1,7 @@
 import { Injectable, type NestMiddleware } from "@nestjs/common";
 import type { NextFunction, Request, Response } from "express";
 import type { Hono } from "hono";
-import type { VoltAgentService } from "./voltagent.service";
+import { VoltAgentService } from "./voltagent.service";
 
 /**
  * NestJS middleware that integrates VoltAgent console

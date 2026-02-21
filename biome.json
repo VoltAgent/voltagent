@@ -84,6 +84,16 @@
           }
         }
       }
+    },
+    {
+      "include": ["**/examples/with-nestjs/**/*.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useImportType": "off"
+          }
+        }
+      }
     }
   ]
 }
