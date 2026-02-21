@@ -317,7 +317,10 @@ export type WorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA = any> =
  * Internal type to allow overriding the run method for the workflow
  */
 export interface InternalWorkflow<_INPUT, DATA, RESULT>
-  extends Omit<Workflow<DangerouslyAllowAny, DangerouslyAllowAny>, "run"> {
+  extends Omit<
+    Workflow<DangerouslyAllowAny, DangerouslyAllowAny>,
+    "run" | "restart" | "restartAllActive"
+  > {
   run: (
     input: DATA,
     options?: InternalWorkflowRunOptions,

@@ -589,6 +589,26 @@ new VoltAgent({
 
 This registration step is what connects your locally executed workflows to the broader observability layer, allowing you to monitor, debug, and manage them from a central location.
 
+### Restarting Interrupted Runs
+
+You can recover runs left in `running` state (for example after a crash) using restart APIs:
+
+```typescript
+const runnableWorkflow = workflow.toWorkflow();
+
+// Restart one execution
+await runnableWorkflow.restart("exec_1234567890_abc123");
+
+// Restart all active runs of this workflow
+await runnableWorkflow.restartAllActive();
+```
+
+You can call these APIs directly on a `WorkflowChain` too:
+`await workflow.restart("exec_...")` and `await workflow.restartAllActive()`.
+These are equivalent to `workflow.toWorkflow().restart(...)` and `workflow.toWorkflow().restartAllActive()`.
+
+For cross-workflow recovery, use `WorkflowRegistry.getInstance().restartAllActiveWorkflowRuns()`.
+
 ### Executing Workflows via REST API
 
 Once your workflows are registered with VoltAgent, they can also be executed through the REST API. This is useful for triggering workflows from web applications, mobile apps, or any external system.

@@ -27,6 +27,8 @@ export type {
   WorkflowHookContext,
   WorkflowHookStatus,
   WorkflowHooks,
+  WorkflowRestartAllResult,
+  WorkflowRestartCheckpoint,
   WorkflowRetryConfig,
   WorkflowRunOptions,
   WorkflowResumeOptions,

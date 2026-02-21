@@ -400,6 +400,52 @@ await execution.resume({ approved: true });
 await execution.resume({ approved: true }, { stepId: "step-2" });
 ```
 
+## Restart & Crash Recovery
+
+If a process crashes while a workflow is still `running`, you can restart that execution from the latest persisted checkpoint.
+
+### Restart a Single Execution
+
+```typescript
+const workflow = myWorkflowChain.toWorkflow();
+
+// executionId from logs, API response, or memory query
+const restarted = await workflow.restart("exec_1234567890_abc123");
+
+console.log(restarted.status); // "completed" | "suspended" | "cancelled" | "error"
+console.log(restarted.result);
+```
+
+### Restart All Active Runs for One Workflow
+
+```typescript
+const summary = await workflow.restartAllActive();
+
+console.log(summary.restarted); // execution IDs restarted successfully
+console.log(summary.failed); // [{ executionId, error }]
+```
+
+### Restart Active Runs via Registry
+
+Use the registry helper when you want to recover multiple registered workflows at startup.
+
+```typescript
+import { WorkflowRegistry } from "@voltagent/core";
+
+const registry = WorkflowRegistry.getInstance();
+
+// restart all active runs across all registered workflows
+const summary = await registry.restartAllActiveWorkflowRuns();
+
+console.log(summary.restarted.length, summary.failed.length);
+```
+
+### Notes
+
+- Restart is intended for runs currently in `running` state.
+- VoltAgent restores checkpointed workflow data, shared workflow state, context, and usage before continuing.
+- Steps should be idempotent where possible, because external side effects may have already occurred before a crash.
+
 ## External Suspension
 
 You can also pause workflows from outside using `createSuspendController`:
