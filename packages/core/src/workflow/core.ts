@@ -44,6 +44,7 @@ import type {
   WorkflowInput,
   WorkflowResult,
   WorkflowRunOptions,
+  WorkflowStartAsyncResult,
   WorkflowStateStore,
   WorkflowStateUpdater,
   WorkflowStreamResult,
@@ -2129,6 +2130,88 @@ export function createWorkflow<
     run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
       // Simply call executeInternal which handles everything without stream
       return executeInternal(input, options);
+    },
+    startAsync: async (
+      input: WorkflowInput<INPUT_SCHEMA>,
+      options?: WorkflowRunOptions,
+    ): Promise<WorkflowStartAsyncResult> => {
+      const executionId = options?.resumeFrom?.executionId ?? options?.executionId ?? randomUUID();
+      const startedAt = new Date();
+      const executionMemory = options?.memory ?? defaultMemory;
+      const executionOptions: WorkflowRunOptions = {
+        ...options,
+        executionId,
+      };
+
+      executeInternal(input, executionOptions)
+        .catch(async (error) => {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+
+          logger.warn("startAsync execution failed before terminal handling", {
+            executionId,
+            error,
+          });
+
+          try {
+            const existingState = await executionMemory.getWorkflowState(executionId);
+            if (existingState) {
+              await executionMemory.updateWorkflowState(executionId, {
+                status: "error",
+                metadata: {
+                  ...(existingState.metadata ?? {}),
+                  errorMessage,
+                },
+                updatedAt: new Date(),
+              });
+              return;
+            }
+
+            const contextEntries =
+              options?.context instanceof Map
+                ? Array.from(options.context.entries())
+                : options?.context
+                  ? Array.from(Object.entries(options.context))
+                  : undefined;
+            const optionMetadata =
+              options?.metadata &&
+              typeof options.metadata === "object" &&
+              !Array.isArray(options.metadata)
+                ? options.metadata
+                : undefined;
+
+            await executionMemory.setWorkflowState(executionId, {
+              id: executionId,
+              workflowId: id,
+              workflowName: name,
+              status: "error",
+              input,
+              context: contextEntries,
+              workflowState: options?.workflowState ?? {},
+              userId: options?.userId,
+              conversationId: options?.conversationId,
+              metadata: {
+                ...(optionMetadata ?? {}),
+                errorMessage,
+              },
+              createdAt: startedAt,
+              updatedAt: new Date(),
+            });
+          } catch (persistenceError) {
+            logger.warn("Failed to persist startAsync background failure", {
+              executionId,
+              error: persistenceError,
+            });
+          }
+        })
+        .catch(() => {
+          // Prevent unhandled rejections from the async catch handler.
+        });
+
+      return {
+        executionId,
+        workflowId: id,
+        startedAt,
+      };
     },
     stream: (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
       // Create stream controller for this execution

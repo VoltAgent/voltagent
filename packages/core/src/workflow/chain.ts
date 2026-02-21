@@ -50,6 +50,7 @@ import type {
   WorkflowExecutionResult,
   WorkflowInput,
   WorkflowRunOptions,
+  WorkflowStartAsyncResult,
   WorkflowStateStore,
   WorkflowStateUpdater,
   WorkflowStepData,
@@ -968,6 +969,21 @@ export class WorkflowChain<
       RESULT_SCHEMA,
       RESUME_SCHEMA
     >;
+  }
+
+  /**
+   * Start the workflow in the background without waiting for completion
+   */
+  async startAsync(
+    input: WorkflowInput<INPUT_SCHEMA>,
+    options?: WorkflowRunOptions,
+  ): Promise<WorkflowStartAsyncResult> {
+    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+      this.config,
+      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      ...this.steps,
+    );
+    return workflow.startAsync(input, options);
   }
 
   /**

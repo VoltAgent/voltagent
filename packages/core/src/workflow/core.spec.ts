@@ -463,6 +463,141 @@ describe.sequential("workflow streaming", () => {
   });
 });
 
+describe.sequential("workflow.startAsync", () => {
+  beforeEach(() => {
+    const registry = WorkflowRegistry.getInstance();
+    (registry as any).workflows.clear();
+  });
+
+  it("should return immediately and complete in the background", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    let releaseStep: (() => void) | undefined;
+    const stepGate = new Promise<void>((resolve) => {
+      releaseStep = resolve;
+    });
+
+    const workflow = createWorkflow(
+      {
+        id: "start-async-background",
+        name: "Start Async Background",
+        input: z.object({ value: z.number() }),
+        result: z.object({ result: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "wait-for-release",
+        execute: async ({ data }) => {
+          await stepGate;
+          return { result: data.value * 2 };
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const startResult = await workflow.startAsync({ value: 21 });
+
+    expect(startResult).toEqual({
+      executionId: expect.any(String),
+      workflowId: "start-async-background",
+      startedAt: expect.any(Date),
+    });
+
+    const runningState = await memory.getWorkflowState(startResult.executionId);
+    expect(runningState?.status).toBe("running");
+
+    releaseStep?.();
+
+    let completedState = await memory.getWorkflowState(startResult.executionId);
+    for (let i = 0; i < 100 && completedState?.status !== "completed"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      completedState = await memory.getWorkflowState(startResult.executionId);
+    }
+
+    expect(completedState?.status).toBe("completed");
+    expect(completedState?.output).toEqual({ result: 42 });
+  });
+
+  it("should persist error state when background execution fails", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "start-async-error",
+        name: "Start Async Error",
+        input: z.object({ value: z.number() }),
+        result: z.object({ result: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "throw-error",
+        execute: async () => {
+          throw new Error("startAsync failure");
+        },
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const startResult = await workflow.startAsync({ value: 1 });
+    let erroredState = await memory.getWorkflowState(startResult.executionId);
+
+    for (let i = 0; i < 100 && erroredState?.status !== "error"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      erroredState = await memory.getWorkflowState(startResult.executionId);
+    }
+
+    expect(erroredState?.status).toBe("error");
+    expect(erroredState?.metadata).toEqual(
+      expect.objectContaining({
+        errorMessage: "startAsync failure",
+      }),
+    );
+  });
+
+  it("should respect executionId passed in options", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflow(
+      {
+        id: "start-async-execution-id",
+        name: "Start Async Execution ID",
+        input: z.object({ value: z.number() }),
+        result: z.object({ value: z.number() }),
+        memory,
+      },
+      andThen({
+        id: "echo",
+        execute: async ({ data }) => data,
+      }),
+    );
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow);
+
+    const executionId = "execution-id-start-async";
+    const startResult = await workflow.startAsync(
+      { value: 5 },
+      {
+        executionId,
+      },
+    );
+
+    expect(startResult.executionId).toBe(executionId);
+
+    let state = await memory.getWorkflowState(executionId);
+    for (let i = 0; i < 100 && state?.status !== "completed"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      state = await memory.getWorkflowState(executionId);
+    }
+
+    expect(state?.status).toBe("completed");
+    expect(state?.output).toEqual({ value: 5 });
+  });
+});
+
 describe.sequential("workflow memory defaults", () => {
   beforeEach(() => {
     const registry = AgentRegistry.getInstance();

@@ -75,6 +75,48 @@ describe.sequential("workflow.run", () => {
   });
 });
 
+describe.sequential("workflow.startAsync", () => {
+  beforeEach(() => {
+    const registry = WorkflowRegistry.getInstance();
+    (registry as any).workflows.clear();
+  });
+
+  it("should start chain workflow execution in background", async () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+
+    const workflow = createWorkflowChain({
+      id: "chain-start-async",
+      name: "Chain Start Async",
+      input: z.object({ value: z.number() }),
+      result: z.object({ result: z.number() }),
+      memory,
+    }).andThen({
+      id: "double",
+      execute: async ({ data }) => ({ result: data.value * 2 }),
+    });
+
+    const registry = WorkflowRegistry.getInstance();
+    registry.registerWorkflow(workflow.toWorkflow());
+
+    const startResult = await workflow.startAsync({ value: 10 });
+
+    expect(startResult).toEqual({
+      executionId: expect.any(String),
+      workflowId: "chain-start-async",
+      startedAt: expect.any(Date),
+    });
+
+    let state = await memory.getWorkflowState(startResult.executionId);
+    for (let i = 0; i < 100 && state?.status !== "completed"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      state = await memory.getWorkflowState(startResult.executionId);
+    }
+
+    expect(state?.status).toBe("completed");
+    expect(state?.output).toEqual({ result: 20 });
+  });
+});
+
 describe.sequential("workflow writer API", () => {
   beforeEach(() => {
     const registry = WorkflowRegistry.getInstance();

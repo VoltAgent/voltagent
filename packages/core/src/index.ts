@@ -29,6 +29,7 @@ export type {
   WorkflowHookStatus,
   WorkflowHooks,
   WorkflowStats,
+  WorkflowStartAsyncResult,
   WorkflowStateStore,
   WorkflowStateUpdater,
   WorkflowStepData,
