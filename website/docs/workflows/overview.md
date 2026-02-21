@@ -255,7 +255,7 @@ When you use `createWorkflowChain`, you are creating a **builder** object (`Work
 
 This builder is not the final, runnable workflow itself. It's the blueprint.
 
-There are two ways to run your workflow:
+There are three ways to run your workflow:
 
 **1. The Shortcut: `.run()`**
 
@@ -266,7 +266,22 @@ Calling `.run()` directly on the chain is a convenient shortcut. Behind the scen
 const result = await workflow.run({ name: "World" });
 ```
 
-**2. The Reusable Way: `.toWorkflow()`**
+**2. Fire-and-Forget: `.startAsync()`**
+
+Use `.startAsync()` when you want to trigger a workflow and continue immediately without waiting for completion. It returns execution metadata (`executionId`, `workflowId`, `startedAt`) right away.
+
+```typescript
+const runnableGreeter = greeterChain.toWorkflow();
+
+const started = await runnableGreeter.startAsync({ name: "Alice" });
+console.log(started.executionId); // Track this run later
+
+// Query execution state from workflow memory when needed
+const state = await runnableGreeter.memory.getWorkflowState(started.executionId);
+console.log(state?.status); // running | completed | suspended | cancelled | error
+```
+
+**3. The Reusable Way: `.toWorkflow()`**
 
 The `WorkflowChain` builder has a `.toWorkflow()` method that converts your blueprint into a permanent, reusable `Workflow` object. You can store this object, pass it to other functions, or run it multiple times without rebuilding the chain.
 

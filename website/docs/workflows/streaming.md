@@ -42,9 +42,10 @@ Workflows emit these event types during execution:
 
 ### Consuming the Stream
 
-VoltAgent provides two methods for workflow execution:
+VoltAgent provides three methods for workflow execution:
 
 - `.run()` - Standard execution without streaming
+- `.startAsync()` - Fire-and-forget execution (returns immediately)
 - `.stream()` - Real-time execution with event streaming
 
 ```typescript
@@ -75,6 +76,14 @@ console.log("Final result:", result);
 // Method 2: Standard execution without streaming
 const execution = await workflow.run(input);
 console.log("Result:", execution.result);
+
+// Method 3: Fire-and-forget execution
+const started = await workflow.startAsync(input);
+console.log("Started execution:", started.executionId);
+
+// Later, inspect status/output from workflow memory
+const state = await workflow.memory.getWorkflowState(started.executionId);
+console.log("Current status:", state?.status);
 ```
 
 ## Writer API
@@ -766,15 +775,28 @@ interface WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA>
 }
 ```
 
+### WorkflowStartAsyncResult
+
+Returned by `.startAsync()` method - starts in the background and returns immediately:
+
+```typescript
+interface WorkflowStartAsyncResult {
+  executionId: string;
+  workflowId: string;
+  startedAt: Date;
+}
+```
+
 ### Key Differences
 
-| Feature          | `.run()`                  | `.stream()`            |
-| ---------------- | ------------------------- | ---------------------- |
-| Returns          | `WorkflowExecutionResult` | `WorkflowStreamResult` |
-| Event streaming  | No                        | Yes (AsyncIterable)    |
-| Field resolution | Immediate                 | Promise-based          |
-| Use case         | Simple execution          | Real-time monitoring   |
-| Resume behavior  | New execution             | Same stream continues  |
+| Feature          | `.run()`                  | `.startAsync()`            | `.stream()`            |
+| ---------------- | ------------------------- | -------------------------- | ---------------------- |
+| Returns          | `WorkflowExecutionResult` | `WorkflowStartAsyncResult` | `WorkflowStreamResult` |
+| Waits for finish | Yes                       | No                         | No                     |
+| Event streaming  | No                        | No                         | Yes (AsyncIterable)    |
+| Field resolution | Immediate                 | Immediate metadata         | Promise-based          |
+| Use case         | Simple execution          | Background trigger         | Real-time monitoring   |
+| Resume behavior  | New execution             | Via stored execution state | Same stream continues  |
 
 ### UsageInfo
 
