@@ -1,5 +1,31 @@
 # @voltagent/core
 
+## 2.5.0
+
+### Minor Changes
+
+- [#1097](https://github.com/VoltAgent/voltagent/pull/1097) [`e15bb6e`](https://github.com/VoltAgent/voltagent/commit/e15bb6e6584e179b1a69925b597557402d957325) Thanks [@omeraplak](https://github.com/omeraplak)! - Add `startAsync()` to workflow and workflow chain APIs for fire-and-forget execution.
+
+  `startAsync()` starts a workflow run in the background and returns `{ executionId, workflowId, startAt }` immediately. The run keeps existing execution semantics, respects provided `executionId`, and persists terminal states in memory for later inspection.
+
+  Also adds workflow documentation updates with `startAsync()` usage examples in the workflow overview and streaming docs.
+
+- [#1098](https://github.com/VoltAgent/voltagent/pull/1098) [`b610ec6`](https://github.com/VoltAgent/voltagent/commit/b610ec6ae335980e73f8a144e3e8a509e9da8265) Thanks [@omeraplak](https://github.com/omeraplak)! - Add workflow restart and crash-recovery APIs.
+
+  New APIs:
+  - `workflow.restart(executionId, options?)`
+  - `workflow.restartAllActive()`
+  - `workflowChain.restart(executionId, options?)`
+  - `workflowChain.restartAllActive()`
+  - `WorkflowRegistry.restartWorkflowExecution(workflowId, executionId, options?)`
+  - `WorkflowRegistry.restartAllActiveWorkflowRuns(options?)`
+
+  The workflow runtime now persists running checkpoints during execution, including step progress, shared workflow state, context, and usage snapshots, so interrupted runs in `running` state can be recovered deterministically.
+
+  New public types are now exported from `@voltagent/core` for consumer annotations, including `WorkflowRestartAllResult` and `WorkflowRestartCheckpoint`.
+
+  Also adds docs for restart/crash-recovery usage under workflow overview and suspend/resume docs.
+
 ## 2.4.5
 
 ### Patch Changes
