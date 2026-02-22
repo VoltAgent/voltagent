@@ -4364,6 +4364,25 @@ importers:
         specifier: ^6.0.0
         version: 6.0.3(zod@4.3.5)
 
+  packages/vercel-ai-exporter:
+    dependencies:
+      '@opentelemetry/core':
+        specifier: ^2.0.0
+        version: 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base':
+        specifier: ^2.0.0
+        version: 2.1.0(@opentelemetry/api@1.9.0)
+      '@voltagent/sdk':
+        specifier: ^2.0.2
+        version: link:../sdk
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@4.3.5)
+    devDependencies:
+      '@voltagent/core':
+        specifier: ^2.0.2
+        version: link:../core
+
   packages/voice:
     dependencies:
       '@xsai/generate-speech':
