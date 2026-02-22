@@ -63,6 +63,14 @@ export class WorkflowRegistry extends SimpleEventEmitter {
   }
 
   /**
+   * Clears registry state. Primarily used by tests for deterministic isolation.
+   */
+  public reset(): void {
+    this.workflows.clear();
+    this.activeExecutions.clear();
+  }
+
+  /**
    * Register a workflow with the registry
    */
   public registerWorkflow(workflow: Workflow<any, any>): void {

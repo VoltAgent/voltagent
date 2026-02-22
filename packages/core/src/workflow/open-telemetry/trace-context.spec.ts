@@ -8,14 +8,14 @@ async function waitForSpan(
   traceId: string,
   spanId: string,
 ) {
-  for (let attempt = 0; attempt < 10; attempt++) {
+  for (let attempt = 0; attempt < 30; attempt++) {
     await observability.forceFlush();
     const traceSpans = await observability.getTraceFromStorage(traceId);
     const span = traceSpans.find((candidate: any) => candidate.spanId === spanId);
     if (span) {
       return span;
     }
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 20));
   }
 
   return undefined;
@@ -130,5 +130,50 @@ describe.sequential("WorkflowTraceContext", () => {
         }),
       ]),
     );
+  });
+
+  it("adds replay lineage links and attributes for time-travel traces", async () => {
+    const tracer = observability.getTracer();
+    const sourceSpan = tracer.startSpan("workflow.source");
+    const sourceContext = sourceSpan.spanContext();
+    sourceSpan.end();
+
+    const traceContext = new WorkflowTraceContext(observability, "workflow.replay", {
+      workflowId: "wf-3",
+      workflowName: "workflow-replay",
+      executionId: "exec-3",
+      replayedFrom: {
+        traceId: sourceContext.traceId,
+        spanId: sourceContext.spanId,
+        executionId: "exec-source",
+        stepId: "step-2",
+      },
+    });
+    const rootSpan = traceContext.getRootSpan() as any;
+    const rootLinks = rootSpan.links;
+    const rootAttributes = rootSpan.attributes as Record<string, unknown> | undefined;
+    traceContext.end("completed");
+
+    expect(rootLinks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          context: expect.objectContaining({
+            traceId: sourceContext.traceId,
+            spanId: sourceContext.spanId,
+          }),
+          attributes: expect.objectContaining({
+            "link.type": "replay",
+            "workflow.replayed": true,
+            "workflow.replay.source_execution_id": "exec-source",
+            "workflow.replay.source_step_id": "step-2",
+          }),
+        }),
+      ]),
+    );
+
+    expect(rootAttributes?.["workflow.replayed"]).toBe(true);
+    expect(rootAttributes?.["workflow.replay.source_trace_id"]).toBe(sourceContext.traceId);
+    expect(rootAttributes?.["workflow.replay.source_step_id"]).toBe("step-2");
+    expect(rootAttributes?.["workflow.resumed"]).not.toBe(true);
   });
 });

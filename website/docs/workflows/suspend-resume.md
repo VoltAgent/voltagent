@@ -446,6 +446,76 @@ console.log(summary.restarted.length, summary.failed.length);
 - VoltAgent restores checkpointed workflow data, shared workflow state, context, and usage before continuing.
 - Steps should be idempotent where possible, because external side effects may have already occurred before a crash.
 
+## Time Travel & Deterministic Replay
+
+Use time travel to replay a completed/suspended/cancelled/error execution from a specific historical step.
+
+Time travel differs from restart:
+
+- `restart(executionId)` continues a `running` execution after crash/interruption.
+- `timeTravel({ executionId, stepId })` creates a new execution from historical state.
+
+### Replay from a Specific Step
+
+```typescript
+const workflow = myWorkflowChain.toWorkflow();
+
+const original = await workflow.run({ value: 1 });
+
+const replay = await workflow.timeTravel({
+  executionId: original.executionId,
+  stepId: "step-2",
+});
+
+console.log(replay.executionId); // New execution ID
+console.log(replay.result); // Replay result
+```
+
+### Replay with Overrides
+
+You can override the selected step input, resume payload, or shared workflow state:
+
+```typescript
+const replay = await workflow.timeTravel({
+  executionId: original.executionId,
+  stepId: "approval-step",
+  inputData: { amount: 2500 },
+  resumeData: { approved: true, approvedBy: "ops-user-1" },
+  workflowStateOverride: { replayReason: "incident-1234" },
+});
+```
+
+### Streaming Replay
+
+For real-time replay events, use `timeTravelStream`:
+
+```typescript
+const stream = workflow.timeTravelStream({
+  executionId: original.executionId,
+  stepId: "step-2",
+});
+
+for await (const event of stream) {
+  console.log(event.type, event.from);
+}
+
+const replayResult = await stream.result;
+console.log(replayResult);
+```
+
+### Replay Lineage Metadata
+
+Replay executions persist lineage fields so you can trace origin:
+
+- `replayedFromExecutionId`
+- `replayFromStepId`
+
+```typescript
+const replayState = await workflow.memory.getWorkflowState(replay.executionId);
+console.log(replayState?.replayedFromExecutionId);
+console.log(replayState?.replayFromStepId);
+```
+
 ## External Suspension
 
 You can also pause workflows from outside using `createSuspendController`:

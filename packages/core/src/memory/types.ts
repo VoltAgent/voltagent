@@ -189,6 +189,10 @@ export interface WorkflowStateEntry {
   userId?: string;
   /** Conversation ID if applicable */
   conversationId?: string;
+  /** Source execution ID if this run is a replay */
+  replayedFromExecutionId?: string;
+  /** Source step ID used when this run was replayed */
+  replayFromStepId?: string;
   /** Additional metadata */
   metadata?: Record<string, unknown>;
   /** Timestamps */

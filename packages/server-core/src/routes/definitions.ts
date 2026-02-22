@@ -617,6 +617,33 @@ export const WORKFLOW_ROUTES = {
       },
     },
   },
+  replayWorkflow: {
+    method: "post" as const,
+    path: "/workflows/:id/executions/:executionId/replay",
+    summary: "Replay workflow execution from a step",
+    description:
+      "Create a deterministic replay execution from a historical workflow run and selected step. Replay creates a new execution ID and preserves the original run history.",
+    tags: ["Workflow Management"],
+    operationId: "replayWorkflow",
+    responses: {
+      200: {
+        description: "Successfully replayed workflow execution",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid replay parameters",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Workflow or source execution not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to replay workflow due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
   getWorkflowState: {
     method: "get" as const,
     path: "/workflows/:id/executions/:executionId/state",

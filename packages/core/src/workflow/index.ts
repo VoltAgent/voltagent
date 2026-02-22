@@ -33,6 +33,7 @@ export type {
   WorkflowRunOptions,
   WorkflowResumeOptions,
   WorkflowStartAsyncResult,
+  WorkflowTimeTravelOptions,
   WorkflowSuspensionMetadata,
   WorkflowSuspendController,
   WorkflowStateStore,

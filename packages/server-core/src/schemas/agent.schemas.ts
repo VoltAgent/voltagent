@@ -455,3 +455,26 @@ export const WorkflowResumeResponseSchema = z.object({
     })
     .describe("Workflow resume result"),
 });
+
+export const WorkflowReplayRequestSchema = z.object({
+  stepId: z.string().min(1).describe("Step ID to replay from"),
+  inputData: z.any().optional().describe("Optional input override for the selected step"),
+  resumeData: z.any().optional().describe("Optional resume payload override"),
+  workflowStateOverride: z
+    .record(z.string(), z.any())
+    .optional()
+    .describe("Optional workflow state override for replay run"),
+});
+
+export const WorkflowReplayResponseSchema = z.object({
+  success: z.literal(true),
+  data: z
+    .object({
+      executionId: z.string(),
+      startAt: z.string(),
+      endAt: z.string().optional(),
+      status: z.string(),
+      result: z.any(),
+    })
+    .describe("Workflow replay result"),
+});

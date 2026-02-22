@@ -12,6 +12,8 @@ import {
   WorkflowExecutionRequestSchema as ZodWorkflowExecutionRequestSchema,
   WorkflowExecutionResponseSchema as ZodWorkflowExecutionResponseSchema,
   WorkflowListSchema as ZodWorkflowListSchema,
+  WorkflowReplayRequestSchema as ZodWorkflowReplayRequestSchema,
+  WorkflowReplayResponseSchema as ZodWorkflowReplayResponseSchema,
   WorkflowResponseSchema as ZodWorkflowResponseSchema,
   WorkflowResumeRequestSchema as ZodWorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema as ZodWorkflowResumeResponseSchema,
@@ -62,6 +64,8 @@ export const WorkflowCancelRequestSchema = zodToTypeBox(ZodWorkflowCancelRequest
 export const WorkflowCancelResponseSchema = zodToTypeBox(ZodWorkflowCancelResponseSchema);
 export const WorkflowResumeRequestSchema = zodToTypeBox(ZodWorkflowResumeRequestSchema);
 export const WorkflowResumeResponseSchema = zodToTypeBox(ZodWorkflowResumeResponseSchema);
+export const WorkflowReplayRequestSchema = zodToTypeBox(ZodWorkflowReplayRequestSchema);
+export const WorkflowReplayResponseSchema = zodToTypeBox(ZodWorkflowReplayResponseSchema);
 
 // Update schemas
 export const UpdateCheckResponseSchema = t.Object({

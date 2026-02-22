@@ -609,6 +609,53 @@ These are equivalent to `workflow.toWorkflow().restart(...)` and `workflow.toWor
 
 For cross-workflow recovery, use `WorkflowRegistry.getInstance().restartAllActiveWorkflowRuns()`.
 
+### Time Travel (Deterministic Replay)
+
+Use time travel when you need to replay a historical execution from a specific step for debugging or operational recovery.
+
+Unlike `restart()`, time travel creates a new execution ID and keeps the original run immutable.
+
+```typescript
+const runnableWorkflow = workflow.toWorkflow();
+
+const original = await runnableWorkflow.run({ value: 1 });
+
+const replay = await runnableWorkflow.timeTravel({
+  executionId: original.executionId,
+  stepId: "step-2",
+  // Optional overrides:
+  // inputData: { value: 100 },
+  // resumeData: { approved: true },
+  // workflowStateOverride: { replayReason: "manual-debug" },
+});
+
+console.log(replay.executionId); // New replay execution ID
+console.log(replay.result); // Final replay output
+
+const replayState = await runnableWorkflow.memory.getWorkflowState(replay.executionId);
+console.log(replayState?.replayedFromExecutionId); // original.executionId
+console.log(replayState?.replayFromStepId); // "step-2"
+```
+
+`WorkflowChain` exposes the same APIs:
+
+```typescript
+await workflow.timeTravel({
+  executionId: original.executionId,
+  stepId: "step-2",
+});
+
+const replayStream = workflow.timeTravelStream({
+  executionId: original.executionId,
+  stepId: "step-2",
+});
+```
+
+Notes:
+
+- Time travel only works for non-running executions.
+- If the source execution is still `running`, use `restart(...)` for crash recovery or wait until it reaches a terminal status.
+
 ### Executing Workflows via REST API
 
 Once your workflows are registered with VoltAgent, they can also be executed through the REST API. This is useful for triggering workflows from web applications, mobile apps, or any external system.

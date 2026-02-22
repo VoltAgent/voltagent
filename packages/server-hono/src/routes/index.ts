@@ -23,6 +23,7 @@ import {
   handleListAgentWorkspaceSkills,
   handleListWorkflowRuns,
   handleReadAgentWorkspaceFile,
+  handleReplayWorkflow,
   handleResumeChatStream,
   handleResumeWorkflow,
   handleStreamObject,
@@ -41,6 +42,7 @@ import {
   getAgentsRoute,
   getWorkflowsRoute,
   objectRoute,
+  replayWorkflowRoute,
   resumeChatStreamRoute,
   resumeWorkflowRoute,
   streamObjectRoute,
@@ -428,6 +430,22 @@ export function registerWorkflowRoutes(
     const response = await handleResumeWorkflow(workflowId, executionId, body, deps, logger);
     if (!response.success) {
       return c.json(response, 500);
+    }
+    return c.json(response, 200);
+  });
+
+  // Replay workflow execution from a historical step
+  app.openapi(replayWorkflowRoute, async (c) => {
+    const workflowId = c.req.param("id");
+    const executionId = c.req.param("executionId");
+    if (!workflowId || !executionId) {
+      throw new Error("Missing workflow or execution id parameter");
+    }
+    const body = await c.req.json();
+    const response = await handleReplayWorkflow(workflowId, executionId, body, deps, logger);
+    if (!response.success) {
+      const status = response.httpStatus || 500;
+      return c.json(response, status);
     }
     return c.json(response, 200);
   });

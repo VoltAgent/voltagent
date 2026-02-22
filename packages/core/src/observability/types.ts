@@ -162,6 +162,11 @@ export interface SpanAttributes {
   "workflow.step.index"?: number;
   "workflow.step.type"?: string;
   "workflow.step.name"?: string;
+  "workflow.replayed"?: boolean;
+  "workflow.replay.source_trace_id"?: string;
+  "workflow.replay.source_span_id"?: string;
+  "workflow.replay.source_execution_id"?: string;
+  "workflow.replay.source_step_id"?: string;
 
   // Tool-specific attributes
   "tool.name"?: string;

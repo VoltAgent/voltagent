@@ -8,6 +8,7 @@ import {
   handleGetWorkflowState,
   handleGetWorkflows,
   handleListWorkflowRuns,
+  handleReplayWorkflow,
   handleResumeWorkflow,
   handleStreamWorkflow,
   handleSuspendWorkflow,
@@ -22,6 +23,8 @@ import {
   WorkflowExecutionRequestSchema,
   WorkflowExecutionResponseSchema,
   WorkflowListSchema,
+  WorkflowReplayRequestSchema,
+  WorkflowReplayResponseSchema,
   WorkflowResponseSchema,
   WorkflowResumeRequestSchema,
   WorkflowResumeResponseSchema,
@@ -374,6 +377,42 @@ export function registerWorkflowRoutes(
       detail: {
         summary: "Resume workflow execution",
         description: "Resumes a suspended workflow execution, optionally providing resume data",
+        tags: ["Workflows"],
+      },
+    },
+  );
+
+  // POST /workflows/:id/executions/:executionId/replay - Replay workflow execution from a historical step
+  app.post(
+    "/workflows/:id/executions/:executionId/replay",
+    async ({ params, body, set }) => {
+      const response = await handleReplayWorkflow(
+        params.id,
+        params.executionId,
+        body,
+        deps,
+        logger,
+      );
+      if (!response.success) {
+        set.status = response.httpStatus || 500;
+        return response;
+      }
+      set.status = 200;
+      return response;
+    },
+    {
+      params: WorkflowExecutionParams,
+      body: WorkflowReplayRequestSchema,
+      response: {
+        200: WorkflowReplayResponseSchema,
+        400: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      detail: {
+        summary: "Replay workflow execution from step",
+        description:
+          "Creates a deterministic replay execution from a source run and the selected step ID",
         tags: ["Workflows"],
       },
     },
